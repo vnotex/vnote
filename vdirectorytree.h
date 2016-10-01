@@ -12,8 +12,11 @@ public:
 signals:
 
 public slots:
+    void setTreePath(const QString& path);
 
 private:
+    // The path of the directory tree root
+    QString treePath;
 };
 
 #endif // VDIRECTORYTREE_H

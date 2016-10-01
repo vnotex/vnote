@@ -14,10 +14,14 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         vmainwindow.cpp \
-    vdirectorytree.cpp
+    vdirectorytree.cpp \
+    vnote.cpp \
+    vnotebook.cpp
 
 HEADERS  += vmainwindow.h \
-    vdirectorytree.h
+    vdirectorytree.h \
+    vnote.h \
+    vnotebook.h
 
 RESOURCES += \
     vnote.qrc

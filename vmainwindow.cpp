@@ -1,28 +1,33 @@
 #include <QtGui>
 #include "vmainwindow.h"
 #include "vdirectorytree.h"
+#include "vnote.h"
 
 VMainWindow::VMainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     setupUI();
+
+    vnote = new VNote();
+    vnote->readGlobalConfig();
+    updateNotebookComboBox();
 }
 
 VMainWindow::~VMainWindow()
 {
-
+    delete vnote;
 }
 
 void VMainWindow::setupUI()
 {
     // Notebook directory browser tree
-    notebookLabel = new QLabel(tr("&Notebook"));
+    notebookLabel = new QLabel(tr("Notebook"));
     notebookComboBox = new QComboBox();
-    notebookLabel->setBuddy(notebookComboBox);
     directoryTree = new VDirectoryTree();
 
     QHBoxLayout *nbTopLayout = new QHBoxLayout;
-    notebookComboBox->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    notebookComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    notebookComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     nbTopLayout->setAlignment(Qt::AlignLeft);
     nbTopLayout->addWidget(notebookLabel);
     nbTopLayout->addWidget(notebookComboBox);
@@ -60,5 +65,37 @@ void VMainWindow::setupUI()
     mainSplitter->setStretchFactor(1, 1);
     mainSplitter->setStretchFactor(2, 10);
 
+    // Signals
+    connect(notebookComboBox, SIGNAL(currentIndexChanged(int)), this,
+            SLOT(setCurNotebookIndex(int)));
+    connect(this, SIGNAL(curNotebookIndexChanged(const QString&)), directoryTree,
+            SLOT(setTreePath(const QString&)));
+
     setCentralWidget(mainSplitter);
+}
+
+void VMainWindow::updateNotebookComboBox()
+{
+    const QVector<VNotebook> &notebooks = vnote->getNotebooks();
+
+    notebookComboBox->clear();
+    for (int i = 0; i <notebooks.size(); ++i) {
+        notebookComboBox->addItem(notebooks[i].getName());
+    }
+
+    notebookComboBox->setCurrentIndex(vnote->getCurNotebookIndex());
+
+    qDebug() << "update notebook combobox with" << notebookComboBox->count()
+             << "items";
+}
+
+void VMainWindow::setCurNotebookIndex(int index)
+{
+    Q_ASSERT(index < vnote->getNotebooks().size());
+    qDebug() << "set current notebook index:" << index;
+    vnote->setCurNotebookIndex(index);
+    notebookComboBox->setCurrentIndex(index);
+
+    // Update directoryTree
+    emit curNotebookIndexChanged(vnote->getNotebooks()[index].getPath());
 }
