@@ -33,6 +33,11 @@ void VDirectoryTree::initialActions()
     newSubDirAct->setStatusTip(tr("Create a new sub-directory"));
     connect(newSubDirAct, &QAction::triggered,
             this, &VDirectoryTree::newSubDirectory);
+
+    deleteDirAct = new QAction(tr("&Delete"), this);
+    deleteDirAct->setStatusTip(tr("Delete selected directory"));
+    connect(deleteDirAct, &QAction::triggered,
+            this, &VDirectoryTree::deleteDirectory);
 }
 
 void VDirectoryTree::setTreePath(const QString& path)
@@ -114,6 +119,11 @@ QTreeWidgetItem* VDirectoryTree::insertDirectoryTreeItem(QTreeWidgetItem *parent
     qDebug() << "insert new Item name:" << newItem["name"].toString()
              << "relative_path:" << relativePath;
     return item;
+}
+
+void VDirectoryTree::removeDirectoryTreeItem(QTreeWidgetItem *item)
+{
+    delete item;
 }
 
 void VDirectoryTree::updateDirectoryTreeTopLevel()
@@ -299,6 +309,7 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
             menu.addAction(newRootDirAct);
             menu.addAction(newSubDirAct);
         }
+        menu.addAction(deleteDirAct);
     }
     menu.exec(mapToGlobal(pos));
 }
@@ -390,6 +401,22 @@ void VDirectoryTree::newRootDirectory()
     } while (true);
 }
 
+void VDirectoryTree::deleteDirectory()
+{
+    QTreeWidgetItem *curItem = currentItem();
+    QJsonObject curItemJson = curItem->data(0, Qt::UserRole).toJsonObject();
+    QString curItemName = curItemJson["name"].toString();
+
+    QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Are you sure you want to delete directory \"%1\"?")
+                       .arg(curItemName));
+    msgBox.setInformativeText(tr("This will delete any files under this directory."));
+    msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Ok);
+    if (msgBox.exec() == QMessageBox::Ok) {
+        deleteDirectoryAndUpdateTree(curItem);
+    }
+}
+
 QTreeWidgetItem* VDirectoryTree::createDirectoryAndUpdateTree(QTreeWidgetItem *parent,
                                                               const QString &name, const QString &description)
 {
@@ -435,6 +462,48 @@ QTreeWidgetItem* VDirectoryTree::createDirectoryAndUpdateTree(QTreeWidgetItem *p
     }
 
     return insertDirectoryTreeItem(parent, NULL, itemJson);
+}
+
+void VDirectoryTree::deleteDirectoryAndUpdateTree(QTreeWidgetItem *item)
+{
+    QJsonObject itemJson = item->data(0, Qt::UserRole).toJsonObject();
+    QString itemName = itemJson["name"].toString();
+    QString relativePath = itemJson["relative_path"].toString();
+
+    // Update parent's config file to exclude this directory
+    QString path = QDir(treePath).filePath(relativePath);
+    QJsonObject configJson = readDirectoryConfig(path);
+    QJsonArray subDirArray = configJson["sub_directories"].toArray();
+    bool deleted = false;
+    for (int i = 0; i < subDirArray.size(); ++i) {
+        QJsonObject ele = subDirArray[i].toObject();
+        if (ele["name"].toString() == itemName) {
+            subDirArray.removeAt(i);
+            deleted = true;
+            break;
+        }
+    }
+    if (!deleted) {
+        qWarning() << "error: fail to find" << itemName << "to delete in its parent's configuration file";
+        return;
+    }
+    configJson["sub_directories"] = subDirArray;
+    if (!writeDirectoryConfig(path, configJson)) {
+        qWarning() << "error: fail to update parent's configuration file to delete" << itemName;
+        return;
+    }
+
+    // Delete the entire directory
+    QString dirName = QDir(path).filePath(itemName);
+    QDir dir(dirName);
+    if (!dir.removeRecursively()) {
+        qWarning() << "error: fail to delete" << dirName << "recursively";
+    } else {
+        qDebug() << "delete" << dirName << "recursively";
+    }
+
+    // Update the tree
+    removeDirectoryTreeItem(item);
 }
 
 bool VDirectoryTree::isConflictNameWithChildren(const QTreeWidgetItem *parent, const QString &name)

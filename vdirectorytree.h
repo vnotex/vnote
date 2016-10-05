@@ -26,6 +26,7 @@ private slots:
     void newSiblingDirectory();
     void newSubDirectory();
     void newRootDirectory();
+    void deleteDirectory();
 
 private:
     // Clean and pdate the TreeWidget according to treePath
@@ -45,6 +46,7 @@ private:
     void initialActions();
     QTreeWidgetItem* createDirectoryAndUpdateTree(QTreeWidgetItem *parent, const QString &name,
                                                   const QString &description);
+    void deleteDirectoryAndUpdateTree(QTreeWidgetItem *item);
     // If @name conflict with the children's names of @parent.
     bool isConflictNameWithChildren(const QTreeWidgetItem *parent, const QString &name);
     // Read config from the directory config json file into a QJsonObject
@@ -53,6 +55,7 @@ private:
     bool deleteDirectoryConfig(const QString &path);
     QTreeWidgetItem* insertDirectoryTreeItem(QTreeWidgetItem *parent, QTreeWidgetItem *preceding,
                                              const QJsonObject &newItem);
+    void removeDirectoryTreeItem(QTreeWidgetItem *item);
 
     // The path of the directory tree root
     QString treePath;
@@ -63,6 +66,7 @@ private:
     QAction *newRootDirAct;
     QAction *newSiblingDirAct;
     QAction *newSubDirAct;
+    QAction *deleteDirAct;
 };
 
 #endif // VDIRECTORYTREE_H
