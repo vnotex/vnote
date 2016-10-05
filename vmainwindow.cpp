@@ -1,4 +1,4 @@
-#include <QtGui>
+#include <QtWidgets>
 #include "vmainwindow.h"
 #include "vdirectorytree.h"
 #include "vnote.h"
@@ -23,7 +23,7 @@ void VMainWindow::setupUI()
     // Notebook directory browser tree
     notebookLabel = new QLabel(tr("Notebook"));
     notebookComboBox = new QComboBox();
-    directoryTree = new VDirectoryTree();
+    directoryTree = new VDirectoryTree(VNote::dirConfigFileName);
 
     QHBoxLayout *nbTopLayout = new QHBoxLayout;
     notebookComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -46,6 +46,7 @@ void VMainWindow::setupUI()
     // Editor tab widget
     editorTabWidget = new QTabWidget();
     editorTabWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    editorTabWidget->setTabBarAutoHide(true);
     QFile welcomeFile(":/resources/welcome.html");
     QString welcomeText("Welcome to VNote!");
     if (welcomeFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -72,6 +73,8 @@ void VMainWindow::setupUI()
             SLOT(setTreePath(const QString&)));
 
     setCentralWidget(mainSplitter);
+    // Create and show the status bar
+    statusBar();
 }
 
 void VMainWindow::updateNotebookComboBox()
@@ -83,10 +86,9 @@ void VMainWindow::updateNotebookComboBox()
         notebookComboBox->addItem(notebooks[i].getName());
     }
 
-    notebookComboBox->setCurrentIndex(vnote->getCurNotebookIndex());
-
     qDebug() << "update notebook combobox with" << notebookComboBox->count()
              << "items";
+    notebookComboBox->setCurrentIndex(vnote->getCurNotebookIndex());
 }
 
 void VMainWindow::setCurNotebookIndex(int index)

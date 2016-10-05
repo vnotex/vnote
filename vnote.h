@@ -16,6 +16,12 @@ public:
     const QVector<VNotebook>& getNotebooks();
     int getCurNotebookIndex() const;
     void setCurNotebookIndex(int index);
+
+    // The name of the config file in each subdirectory
+    static const QString dirConfigFileName;
+    static const QString orgName;
+    static const QString appName;
+
 private:
     // Write notebooks section of global config
     void writeGlobalConfigNotebooks(QSettings &settings);
@@ -24,8 +30,6 @@ private:
 
     QVector<VNotebook> notebooks;
     int curNotebookIndex;
-    static const QString orgName;
-    static const QString appName;
 };
 
 #endif // VNOTE_H

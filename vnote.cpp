@@ -4,6 +4,7 @@
 
 const QString VNote::orgName = QString("tamlok");
 const QString VNote::appName = QString("VNote");
+const QString VNote::dirConfigFileName = QString(".vnote.json");
 
 VNote::VNote()
     : curNotebookIndex(0)
