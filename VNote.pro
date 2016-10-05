@@ -17,13 +17,15 @@ SOURCES += main.cpp\
     vdirectorytree.cpp \
     vnote.cpp \
     vnotebook.cpp \
-    vnewdirdialog.cpp
+    vnewdirdialog.cpp \
+    vconfigmanager.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
     vnote.h \
     vnotebook.h \
-    vnewdirdialog.h
+    vnewdirdialog.h \
+    vconfigmanager.h
 
 RESOURCES += \
     vnote.qrc

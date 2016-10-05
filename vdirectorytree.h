@@ -9,7 +9,7 @@ class VDirectoryTree : public QTreeWidget
 {
     Q_OBJECT
 public:
-    VDirectoryTree(const QString &dirConfigFileName, QWidget *parent = 0);
+    VDirectoryTree(QWidget *parent = 0);
 
 signals:
 
@@ -38,8 +38,6 @@ private:
     void updateDirectoryTreeOne(QTreeWidgetItem &parent, int depth);
     // Validate if a directory is valid
     bool validatePath(const QString &path);
-    // Validate if a directory config file is valid
-    bool validateDirConfigFile(const QJsonObject &configJson);
     // Fill the QTreeWidgetItem according to its QJsonObject.
     // @relative_path is the path related to treePath.
     void fillDirectoryTreeItem(QTreeWidgetItem &item, QJsonObject itemJson, const QString &relativePath);
@@ -49,18 +47,12 @@ private:
     void deleteDirectoryAndUpdateTree(QTreeWidgetItem *item);
     // If @name conflict with the children's names of @parent.
     bool isConflictNameWithChildren(const QTreeWidgetItem *parent, const QString &name);
-    // Read config from the directory config json file into a QJsonObject
-    QJsonObject readDirectoryConfig(const QString &path);
-    bool writeDirectoryConfig(const QString &path, const QJsonObject &configJson);
-    bool deleteDirectoryConfig(const QString &path);
     QTreeWidgetItem* insertDirectoryTreeItem(QTreeWidgetItem *parent, QTreeWidgetItem *preceding,
                                              const QJsonObject &newItem);
     void removeDirectoryTreeItem(QTreeWidgetItem *item);
 
     // The path of the directory tree root
     QString treePath;
-    // The name of the config file in each subdirectory
-    QString dirConfigFileName;
 
     // Actions
     QAction *newRootDirAct;

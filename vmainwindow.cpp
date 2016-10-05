@@ -23,7 +23,7 @@ void VMainWindow::setupUI()
     // Notebook directory browser tree
     notebookLabel = new QLabel(tr("Notebook"));
     notebookComboBox = new QComboBox();
-    directoryTree = new VDirectoryTree(VNote::dirConfigFileName);
+    directoryTree = new VDirectoryTree();
 
     QHBoxLayout *nbTopLayout = new QHBoxLayout;
     notebookComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);

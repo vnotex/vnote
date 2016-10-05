@@ -2,9 +2,10 @@
 #include <QJsonObject>
 #include "vdirectorytree.h"
 #include "vnewdirdialog.h"
+#include "vconfigmanager.h"
 
-VDirectoryTree::VDirectoryTree(const QString &dirConfigFileName, QWidget *parent)
-    : QTreeWidget(parent), dirConfigFileName(dirConfigFileName)
+VDirectoryTree::VDirectoryTree(QWidget *parent)
+    : QTreeWidget(parent)
 {
     setColumnCount(1);
     setHeaderHidden(true);
@@ -54,14 +55,7 @@ void VDirectoryTree::setTreePath(const QString& path)
 
 bool VDirectoryTree::validatePath(const QString &path)
 {
-    QDir dir(path);
-    if (!dir.exists()) {
-        return false;
-    }
-
-    QString configFile = dir.filePath(dirConfigFileName);
-    QFileInfo fileInfo(configFile);
-    return fileInfo.exists() && fileInfo.isFile();
+    return QDir(path).exists();
 }
 
 void VDirectoryTree::updateDirectoryTree()
@@ -141,8 +135,8 @@ void VDirectoryTree::updateDirectoryTreeTopLevel()
         return;
     }
 
-    QJsonObject configJson = readDirectoryConfig(path);
-    if (!validateDirConfigFile(configJson)) {
+    QJsonObject configJson = VConfigManager::readDirectoryConfig(path);
+    if (configJson.isEmpty()) {
         qDebug() << "invalid notebook configuration for path:" << path;
         QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Invalid notebook configuration."));
         msgBox.setInformativeText(QString("Notebook path \"%1\" does not contain a valid configuration file.")
@@ -182,8 +176,8 @@ void VDirectoryTree::updateDirectoryTreeOne(QTreeWidgetItem &parent, int depth)
         return;
     }
 
-    QJsonObject configJson = readDirectoryConfig(path);
-    if (!validateDirConfigFile(configJson)) {
+    QJsonObject configJson = VConfigManager::readDirectoryConfig(path);
+    if (configJson.isEmpty()) {
         qDebug() << "invalid notebook configuration for directory:" << path;
         QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Invalid notebook directory configuration."));
         msgBox.setInformativeText(QString("Notebook path \"%1\" does not contain a valid configuration file.")
@@ -203,73 +197,6 @@ void VDirectoryTree::updateDirectoryTreeOne(QTreeWidgetItem &parent, int depth)
         // Update its sub-directory recursively
         updateDirectoryTreeOne(*treeItem, depth - 1);
     }
-}
-
-QJsonObject VDirectoryTree::readDirectoryConfig(const QString &path)
-{
-    QString configFile = QDir(path).filePath(dirConfigFileName);
-
-    qDebug() << "read config file:" << configFile;
-    QFile config(configFile);
-    if (!config.open(QIODevice::ReadOnly)) {
-        qWarning() << "error: fail to read directory configuration file:"
-                   << configFile;
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"),
-                           QString("Could not read directory configuration file \"%1\"")
-                           .arg(dirConfigFileName));
-        msgBox.setInformativeText(QString("Notebook directory \"%1\" may be corrupted").arg(path));
-        msgBox.exec();
-        return QJsonObject();
-    }
-
-    QByteArray configData = config.readAll();
-    return QJsonDocument::fromJson(configData).object();
-}
-
-bool VDirectoryTree::writeDirectoryConfig(const QString &path, const QJsonObject &configJson)
-{
-    QString configFile = QDir(path).filePath(dirConfigFileName);
-
-    qDebug() << "write config file:" << configFile;
-    QFile config(configFile);
-    if (!config.open(QIODevice::WriteOnly)) {
-        qWarning() << "error: fail to open directory configuration file for write:"
-                   << configFile;
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"),
-                           QString("Could not write directory configuration file \"%1\"")
-                           .arg(dirConfigFileName));
-        msgBox.exec();
-        return false;
-    }
-
-    QJsonDocument configDoc(configJson);
-    config.write(configDoc.toJson());
-    return true;
-}
-
-bool VDirectoryTree::deleteDirectoryConfig(const QString &path)
-{
-    QString configFile = QDir(path).filePath(dirConfigFileName);
-
-    QFile config(configFile);
-    if (!config.remove()) {
-        qWarning() << "error: fail to delete directory configuration file:"
-                   << configFile;
-        return false;
-    }
-    qDebug() << "delete config file:" << configFile;
-    return true;
-}
-
-bool VDirectoryTree::validateDirConfigFile(const QJsonObject &configJson)
-{
-    if (configJson.isEmpty()) {
-        return false;
-    }
-    if (!configJson.contains("version") || !configJson.contains("name")) {
-        return false;
-    }
-    return true;
 }
 
 void VDirectoryTree::updateItemSubtree(QTreeWidgetItem *item)
@@ -443,20 +370,21 @@ QTreeWidgetItem* VDirectoryTree::createDirectoryAndUpdateTree(QTreeWidgetItem *p
     configJson["sub_directories"] = QJsonArray();
     configJson["files"] = QJsonArray();
 
-    if (!writeDirectoryConfig(QDir(path).filePath(name), configJson)) {
+    if (!VConfigManager::writeDirectoryConfig(QDir(path).filePath(name), configJson)) {
         return NULL;
     }
 
     // Update parent's config file to include this new directory
-    configJson = readDirectoryConfig(path);
+    configJson = VConfigManager::readDirectoryConfig(path);
+    Q_ASSERT(!configJson.isEmpty());
     QJsonObject itemJson;
     itemJson["name"] = name;
     itemJson["description"] = description;
     QJsonArray subDirArray = configJson["sub_directories"].toArray();
     subDirArray.append(itemJson);
     configJson["sub_directories"] = subDirArray;
-    if (!writeDirectoryConfig(path, configJson)) {
-        deleteDirectoryConfig(QDir(path).filePath(name));
+    if (!VConfigManager::writeDirectoryConfig(path, configJson)) {
+        VConfigManager::deleteDirectoryConfig(QDir(path).filePath(name));
         dir.rmdir(name);
         return NULL;
     }
@@ -472,7 +400,8 @@ void VDirectoryTree::deleteDirectoryAndUpdateTree(QTreeWidgetItem *item)
 
     // Update parent's config file to exclude this directory
     QString path = QDir(treePath).filePath(relativePath);
-    QJsonObject configJson = readDirectoryConfig(path);
+    QJsonObject configJson = VConfigManager::readDirectoryConfig(path);
+    Q_ASSERT(!configJson.isEmpty());
     QJsonArray subDirArray = configJson["sub_directories"].toArray();
     bool deleted = false;
     for (int i = 0; i < subDirArray.size(); ++i) {
@@ -488,7 +417,7 @@ void VDirectoryTree::deleteDirectoryAndUpdateTree(QTreeWidgetItem *item)
         return;
     }
     configJson["sub_directories"] = subDirArray;
-    if (!writeDirectoryConfig(path, configJson)) {
+    if (!VConfigManager::writeDirectoryConfig(path, configJson)) {
         qWarning() << "error: fail to update parent's configuration file to delete" << itemName;
         return;
     }

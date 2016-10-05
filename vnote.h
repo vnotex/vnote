@@ -17,8 +17,6 @@ public:
     int getCurNotebookIndex() const;
     void setCurNotebookIndex(int index);
 
-    // The name of the config file in each subdirectory
-    static const QString dirConfigFileName;
     static const QString orgName;
     static const QString appName;
 
