@@ -2,16 +2,16 @@
 #define VDIRECTORYTREE_H
 
 #include <QTreeWidget>
-
-class QJsonObject;
+#include <QJsonObject>
 
 class VDirectoryTree : public QTreeWidget
 {
     Q_OBJECT
 public:
-    VDirectoryTree(QWidget *parent = 0);
+    explicit VDirectoryTree(QWidget *parent = 0);
 
 signals:
+    void currentDirectoryChanged(QJsonObject itemJson);
 
 public slots:
     void setTreePath(const QString& path);
@@ -27,6 +27,7 @@ private slots:
     void newSubDirectory();
     void newRootDirectory();
     void deleteDirectory();
+    void currentDirectoryItemChanged(QTreeWidgetItem *currentItem);
 
 private:
     // Clean and pdate the TreeWidget according to treePath
@@ -41,7 +42,7 @@ private:
     // Fill the QTreeWidgetItem according to its QJsonObject.
     // @relative_path is the path related to treePath.
     void fillDirectoryTreeItem(QTreeWidgetItem &item, QJsonObject itemJson, const QString &relativePath);
-    void initialActions();
+    void initActions();
     QTreeWidgetItem* createDirectoryAndUpdateTree(QTreeWidgetItem *parent, const QString &name,
                                                   const QString &description);
     void deleteDirectoryAndUpdateTree(QTreeWidgetItem *item);

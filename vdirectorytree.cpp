@@ -1,5 +1,4 @@
 #include <QtWidgets>
-#include <QJsonObject>
 #include "vdirectorytree.h"
 #include "vnewdirdialog.h"
 #include "vconfigmanager.h"
@@ -10,15 +9,17 @@ VDirectoryTree::VDirectoryTree(QWidget *parent)
     setColumnCount(1);
     setHeaderHidden(true);
     setContextMenuPolicy(Qt::CustomContextMenu);
-    initialActions();
+    initActions();
 
     connect(this, SIGNAL(itemExpanded(QTreeWidgetItem*)),
             this, SLOT(updateItemSubtree(QTreeWidgetItem*)));
     connect(this, SIGNAL(customContextMenuRequested(QPoint)),
             this, SLOT(contextMenuRequested(QPoint)));
+    connect(this, &VDirectoryTree::currentItemChanged,
+            this, &VDirectoryTree::currentDirectoryItemChanged);
 }
 
-void VDirectoryTree::initialActions()
+void VDirectoryTree::initActions()
 {
     newRootDirAct = new QAction(tr("New &root directory"), this);
     newRootDirAct->setStatusTip(tr("Create a new root directory in current notebook"));
@@ -51,6 +52,9 @@ void VDirectoryTree::setTreePath(const QString& path)
     qDebug() << "set directory tree path:" << path;
 
     updateDirectoryTree();
+    if (topLevelItemCount() > 0) {
+       setCurrentItem(topLevelItem(0));
+    }
 }
 
 bool VDirectoryTree::validatePath(const QString &path)
@@ -180,7 +184,7 @@ void VDirectoryTree::updateDirectoryTreeOne(QTreeWidgetItem &parent, int depth)
     if (configJson.isEmpty()) {
         qDebug() << "invalid notebook configuration for directory:" << path;
         QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Invalid notebook directory configuration."));
-        msgBox.setInformativeText(QString("Notebook path \"%1\" does not contain a valid configuration file.")
+        msgBox.setInformativeText(QString("Notebook directory \"%1\" does not contain a valid configuration file.")
                                   .arg(path));
         msgBox.exec();
         return;
@@ -356,7 +360,7 @@ QTreeWidgetItem* VDirectoryTree::createDirectoryAndUpdateTree(QTreeWidgetItem *p
     QString path = QDir(treePath).filePath(relativePath);
     QDir dir(path);
     if (!dir.mkdir(name)) {
-        qDebug() << "warning: fail to create directory" << name << "under" << path;
+        qWarning() << "error: fail to create directory" << name << "under" << path;
         QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Could not create directory \"%1\" under \"%2\".")
                            .arg(name).arg(path));
         msgBox.setInformativeText(QString("Please check if there already exists a directory named \"%1\".").arg(name));
@@ -457,4 +461,13 @@ bool VDirectoryTree::isConflictNameWithChildren(const QTreeWidgetItem *parent, c
         }
     }
     return false;
+}
+
+void VDirectoryTree::currentDirectoryItemChanged(QTreeWidgetItem *currentItem)
+{
+    QJsonObject itemJson = currentItem->data(0, Qt::UserRole).toJsonObject();
+    Q_ASSERT(!itemJson.isEmpty());
+    itemJson["root_path"] = treePath;
+    qDebug() << "click dir:" << itemJson;
+    emit currentDirectoryChanged(itemJson);
 }

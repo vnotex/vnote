@@ -2,6 +2,7 @@
 #include "vmainwindow.h"
 #include "vdirectorytree.h"
 #include "vnote.h"
+#include "vfilelist.h"
 
 VMainWindow::VMainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -40,8 +41,8 @@ void VMainWindow::setupUI()
     nbContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
     // File list widget
-    fileListWidget = new QListWidget();
-    fileListWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
+    fileList = new VFileList();
+    fileList->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
     // Editor tab widget
     editorTabWidget = new QTabWidget();
@@ -60,7 +61,7 @@ void VMainWindow::setupUI()
     // Main Splitter
     mainSplitter = new QSplitter();
     mainSplitter->addWidget(nbContainer);
-    mainSplitter->addWidget(fileListWidget);
+    mainSplitter->addWidget(fileList);
     mainSplitter->addWidget(editorTabWidget);
     mainSplitter->setStretchFactor(0, 1);
     mainSplitter->setStretchFactor(1, 1);
@@ -71,6 +72,8 @@ void VMainWindow::setupUI()
             SLOT(setCurNotebookIndex(int)));
     connect(this, SIGNAL(curNotebookIndexChanged(const QString&)), directoryTree,
             SLOT(setTreePath(const QString&)));
+    connect(directoryTree, &VDirectoryTree::currentDirectoryChanged,
+            fileList, &VFileList::setDirectory);
 
     setCentralWidget(mainSplitter);
     // Create and show the status bar

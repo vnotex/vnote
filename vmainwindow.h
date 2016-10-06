@@ -10,6 +10,7 @@ class QSplitter;
 class QListWidget;
 class QTabWidget;
 class VNote;
+class VFileList;
 
 class VMainWindow : public QMainWindow
 {
@@ -34,7 +35,7 @@ private:
     QLabel *notebookLabel;
     QComboBox *notebookComboBox;
     VDirectoryTree *directoryTree;
-    QListWidget *fileListWidget;
+    VFileList *fileList;
     QTabWidget *editorTabWidget;
     QSplitter *mainSplitter;
     VNote *vnote;
