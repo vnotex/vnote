@@ -19,6 +19,7 @@ public:
 
     static const QString orgName;
     static const QString appName;
+    static const QString welcomePageUrl;
 
 private:
     // Write notebooks section of global config

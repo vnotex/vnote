@@ -20,7 +20,9 @@ SOURCES += main.cpp\
     vnewdirdialog.cpp \
     vconfigmanager.cpp \
     vfilelist.cpp \
-    vnewfiledialog.cpp
+    vnewfiledialog.cpp \
+    vtabwidget.cpp \
+    vedit.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -29,7 +31,9 @@ HEADERS  += vmainwindow.h \
     vnewdirdialog.h \
     vconfigmanager.h \
     vfilelist.h \
-    vnewfiledialog.h
+    vnewfiledialog.h \
+    vtabwidget.h \
+    vedit.h
 
 RESOURCES += \
     vnote.qrc

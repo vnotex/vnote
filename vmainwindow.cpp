@@ -3,6 +3,7 @@
 #include "vdirectorytree.h"
 #include "vnote.h"
 #include "vfilelist.h"
+#include "vtabwidget.h"
 
 VMainWindow::VMainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -45,24 +46,15 @@ void VMainWindow::setupUI()
     fileList->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
     // Editor tab widget
-    editorTabWidget = new QTabWidget();
-    editorTabWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    editorTabWidget->setTabBarAutoHide(true);
-    QFile welcomeFile(":/resources/welcome.html");
-    QString welcomeText("Welcome to VNote!");
-    if (welcomeFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        welcomeText = QString(welcomeFile.readAll());
-        welcomeFile.close();
-    }
-    QTextBrowser *welcomePage = new QTextBrowser();
-    welcomePage->setHtml(welcomeText);
-    editorTabWidget->addTab(welcomePage, tr("Welcome to VNote"));
+    tabs = new VTabWidget(VNote::welcomePageUrl);
+    tabs->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    tabs->setTabBarAutoHide(true);
 
     // Main Splitter
     mainSplitter = new QSplitter();
     mainSplitter->addWidget(nbContainer);
     mainSplitter->addWidget(fileList);
-    mainSplitter->addWidget(editorTabWidget);
+    mainSplitter->addWidget(tabs);
     mainSplitter->setStretchFactor(0, 1);
     mainSplitter->setStretchFactor(1, 1);
     mainSplitter->setStretchFactor(2, 10);
@@ -74,6 +66,8 @@ void VMainWindow::setupUI()
             SLOT(setTreePath(const QString&)));
     connect(directoryTree, &VDirectoryTree::currentDirectoryChanged,
             fileList, &VFileList::setDirectory);
+    connect(fileList, &VFileList::currentFileChanged,
+            tabs, &VTabWidget::openFile);
 
     setCentralWidget(mainSplitter);
     // Create and show the status bar

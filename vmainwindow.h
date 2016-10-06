@@ -11,6 +11,7 @@ class QListWidget;
 class QTabWidget;
 class VNote;
 class VFileList;
+class VTabWidget;
 
 class VMainWindow : public QMainWindow
 {
@@ -36,7 +37,7 @@ private:
     QComboBox *notebookComboBox;
     VDirectoryTree *directoryTree;
     VFileList *fileList;
-    QTabWidget *editorTabWidget;
+    VTabWidget *tabs;
     QSplitter *mainSplitter;
     VNote *vnote;
 };

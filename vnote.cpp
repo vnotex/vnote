@@ -4,6 +4,7 @@
 
 const QString VNote::orgName = QString("tamlok");
 const QString VNote::appName = QString("VNote");
+const QString VNote::welcomePageUrl = QString(":/resources/welcome.html");
 
 VNote::VNote()
     : curNotebookIndex(0)
