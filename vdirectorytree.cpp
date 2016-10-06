@@ -465,6 +465,10 @@ bool VDirectoryTree::isConflictNameWithChildren(const QTreeWidgetItem *parent, c
 
 void VDirectoryTree::currentDirectoryItemChanged(QTreeWidgetItem *currentItem)
 {
+    if (!currentItem) {
+        emit currentDirectoryChanged(QJsonObject());
+        return;
+    }
     QJsonObject itemJson = currentItem->data(0, Qt::UserRole).toJsonObject();
     Q_ASSERT(!itemJson.isEmpty());
     itemJson["root_path"] = treePath;

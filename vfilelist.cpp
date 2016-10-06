@@ -31,7 +31,11 @@ void VFileList::initActions()
 
 void VFileList::setDirectory(QJsonObject dirJson)
 {
-    Q_ASSERT(!dirJson.isEmpty());
+    if (dirJson.isEmpty()) {
+        clearDirectoryInfo();
+        return;
+    }
+
     directoryName = dirJson["name"].toString();
     rootPath = dirJson["root_path"].toString();
     relativePath = QDir(dirJson["relative_path"].toString()).filePath(directoryName);
@@ -40,6 +44,11 @@ void VFileList::setDirectory(QJsonObject dirJson)
     updateFileList();
 }
 
+void VFileList::clearDirectoryInfo()
+{
+    directoryName = rootPath = relativePath = "";
+    clear();
+}
 
 void VFileList::updateFileList()
 {
@@ -253,6 +262,10 @@ void VFileList::deleteFileAndUpdateList(QListWidgetItem *item)
 
 void VFileList::currentFileItemChanged(QListWidgetItem *currentItem)
 {
+    if (!currentItem) {
+        emit currentFileChanged(QJsonObject());
+        return;
+    }
     QJsonObject itemJson = currentItem->data(Qt::UserRole).toJsonObject();
     Q_ASSERT(!itemJson.isEmpty());
     itemJson["path"] = QDir::cleanPath(QDir(rootPath).filePath(relativePath));

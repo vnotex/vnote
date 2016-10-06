@@ -33,6 +33,7 @@ private:
     QListWidgetItem *createFileAndUpdateList(const QString &name,
                                              const QString &description);
     void deleteFileAndUpdateList(QListWidgetItem *item);
+    void clearDirectoryInfo();
 
     QString rootPath;
     QString relativePath;
