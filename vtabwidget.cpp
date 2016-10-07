@@ -1,7 +1,7 @@
 #include <QtWidgets>
 #include <QtDebug>
 #include "vtabwidget.h"
-#include "vedit.h"
+#include "veditor.h"
 
 VTabWidget::VTabWidget(const QString &welcomePageUrl, QWidget *parent)
     : QTabWidget(parent), welcomePageUrl(welcomePageUrl)
@@ -59,11 +59,11 @@ void VTabWidget::openFile(QJsonObject fileJson)
 
 int VTabWidget::openFileInTab(const QString &path, const QString &name, bool modifiable)
 {
-    VEdit *edit = new VEdit(path, name, modifiable);
+    VEditor *editor = new VEditor(path, name, modifiable);
     QJsonObject tabJson;
     tabJson["path"] = path;
     tabJson["name"] = name;
-    int idx = appendTabWithData(edit, name, tabJson);
+    int idx = appendTabWithData(editor, name, tabJson);
     setTabToolTip(idx, path);
     return idx;
 }
@@ -85,32 +85,32 @@ int VTabWidget::findTabByFile(const QString &path, const QString &name)
 void VTabWidget::handleTabCloseRequest(int index)
 {
     qDebug() << "request closing tab" << index;
-    VEdit *edit = dynamic_cast<VEdit *>(widget(index));
-    Q_ASSERT(edit);
-    bool ok = edit->requestClose();
+    VEditor *editor = dynamic_cast<VEditor *>(widget(index));
+    Q_ASSERT(editor);
+    bool ok = editor->requestClose();
     if (ok) {
         removeTab(index);
-        delete edit;
+        delete editor;
     }
 }
 
 void VTabWidget::readFile()
 {
-    VEdit *edit = dynamic_cast<VEdit *>(currentWidget());
-    Q_ASSERT(edit);
-    edit->readFile();
+    VEditor *editor = dynamic_cast<VEditor *>(currentWidget());
+    Q_ASSERT(editor);
+    editor->readFile();
 }
 
 void VTabWidget::editFile()
 {
-    VEdit *edit = dynamic_cast<VEdit *>(currentWidget());
-    Q_ASSERT(edit);
-    edit->editFile();
+    VEditor *editor = dynamic_cast<VEditor *>(currentWidget());
+    Q_ASSERT(editor);
+    editor->editFile();
 }
 
 void VTabWidget::saveFile()
 {
-    VEdit *edit = dynamic_cast<VEdit *>(currentWidget());
-    Q_ASSERT(edit);
-    edit->saveFile();
+    VEditor *editor = dynamic_cast<VEditor *>(currentWidget());
+    Q_ASSERT(editor);
+    editor->saveFile();
 }

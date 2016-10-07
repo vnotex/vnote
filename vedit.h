@@ -3,20 +3,23 @@
 
 #include <QTextEdit>
 #include <QString>
+#include "vconstants.h"
+#include "vnotefile.h"
 
 class VEdit : public QTextEdit
 {
     Q_OBJECT
 public:
-    explicit VEdit(const QString &path, const QString &name, bool modifiable = false,
-                   QWidget *parent = 0);
-    bool requestClose();
-    // Enter edit mode
-    void editFile();
-    // Enter read mode
-    void readFile();
-    // Save file
-    void saveFile();
+    VEdit(VNoteFile *noteFile, QWidget *parent = 0);
+    void beginEdit();
+    bool tryEndEdit();
+
+    // begin: sync the buffer to noteFile->content;
+    // end: setModified(false)
+    void beginSave();
+    void endSave();
+
+    void reloadFile();
 
 signals:
 
@@ -24,19 +27,7 @@ public slots:
 
 
 private:
-    enum class DocType { Html, Markdown };
-    QString readFileFromDisk(const QString &filePath);
-    bool writeFileToDisk(const QString &filePath, const QString &text);
-    void showFileReadMode();
-    void showFileEditMode();
-    bool isMarkdown();
-
-    QString path;
-    QString name;
-    QString fileText;
-    DocType docType;
-    bool modifiable;
-    bool fileLoaded;
+    VNoteFile *noteFile;
 };
 
 #endif // VEDIT_H
