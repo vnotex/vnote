@@ -13,13 +13,13 @@ public:
     explicit VFileList(QWidget *parent = 0);
 
 signals:
-    void currentFileChanged(QJsonObject fileJson);
+    void fileClicked(QJsonObject fileJson);
 
 private slots:
     void newFile();
     void deleteFile();
     void contextMenuRequested(QPoint pos);
-    void currentFileItemChanged(QListWidgetItem *currentItem);
+    void handleItemClicked(QListWidgetItem *currentItem);
 
 public slots:
     void setDirectory(QJsonObject dirJson);

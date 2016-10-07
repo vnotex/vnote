@@ -67,7 +67,7 @@ void VMainWindow::setupUI()
             SLOT(setTreePath(const QString&)));
     connect(directoryTree, &VDirectoryTree::currentDirectoryChanged,
             fileList, &VFileList::setDirectory);
-    connect(fileList, &VFileList::currentFileChanged,
+    connect(fileList, &VFileList::fileClicked,
             tabs, &VTabWidget::openFile);
 
     setCentralWidget(mainSplitter);

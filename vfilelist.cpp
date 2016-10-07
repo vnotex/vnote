@@ -12,8 +12,8 @@ VFileList::VFileList(QWidget *parent)
 
     connect(this, &VFileList::customContextMenuRequested,
             this, &VFileList::contextMenuRequested);
-    connect(this, &VFileList::currentItemChanged,
-            this, &VFileList::currentFileItemChanged);
+    connect(this, &VFileList::itemClicked,
+            this, &VFileList::handleItemClicked);
 }
 
 void VFileList::initActions()
@@ -260,15 +260,15 @@ void VFileList::deleteFileAndUpdateList(QListWidgetItem *item)
     removeFileListItem(item);
 }
 
-void VFileList::currentFileItemChanged(QListWidgetItem *currentItem)
+void VFileList::handleItemClicked(QListWidgetItem *currentItem)
 {
     if (!currentItem) {
-        emit currentFileChanged(QJsonObject());
+        emit fileClicked(QJsonObject());
         return;
     }
     QJsonObject itemJson = currentItem->data(Qt::UserRole).toJsonObject();
     Q_ASSERT(!itemJson.isEmpty());
     itemJson["path"] = QDir::cleanPath(QDir(rootPath).filePath(relativePath));
     qDebug() << "click file:" << itemJson;
-    emit currentFileChanged(itemJson);
+    emit fileClicked(itemJson);
 }
