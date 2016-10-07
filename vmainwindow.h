@@ -9,9 +9,11 @@ class VDirectoryTree;
 class QSplitter;
 class QListWidget;
 class QTabWidget;
+class QToolBar;
 class VNote;
 class VFileList;
 class VTabWidget;
+class QAction;
 
 class VMainWindow : public QMainWindow
 {
@@ -32,6 +34,8 @@ private:
     void setupUI();
     // Update notebookComboBox according to vnote
     void updateNotebookComboBox();
+    void initActions();
+    void initToolBar();
 
     QLabel *notebookLabel;
     QComboBox *notebookComboBox;
@@ -40,6 +44,12 @@ private:
     VTabWidget *tabs;
     QSplitter *mainSplitter;
     VNote *vnote;
+    QToolBar *fileToolBar;
+
+    // Actions
+    QAction *editNoteAct;
+    QAction *saveNoteAct;
+    QAction *readNoteAct;
 };
 
 #endif // VMAINWINDOW_H

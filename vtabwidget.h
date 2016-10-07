@@ -15,6 +15,9 @@ signals:
 
 public slots:
     void openFile(QJsonObject fileJson);
+    void editFile();
+    void saveFile();
+    void readFile();
 
 private slots:
     void handleTabCloseRequest(int index);
@@ -24,7 +27,7 @@ private:
     int insertTabWithData(int index, QWidget *page, const QString &label, const QJsonObject &tabData);
     int appendTabWithData(QWidget *page, const QString &label, const QJsonObject &tabData);
     int findTabByFile(const QString &path, const QString &name);
-    int openFileInTab(const QString &path, const QString &name);
+    int openFileInTab(const QString &path, const QString &name, bool modifiable);
     QString welcomePageUrl;
 };
 

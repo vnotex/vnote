@@ -15,7 +15,7 @@ VTabWidget::VTabWidget(const QString &welcomePageUrl, QWidget *parent)
 
 void VTabWidget::openWelcomePage()
 {
-    int idx = openFileInTab(welcomePageUrl, "");
+    int idx = openFileInTab(welcomePageUrl, "", false);
     setTabText(idx, "Welcome to VNote");
     setTabToolTip(idx, "VNote");
 }
@@ -52,14 +52,14 @@ void VTabWidget::openFile(QJsonObject fileJson)
         return;
     }
 
-    idx = openFileInTab(path, name);
+    idx = openFileInTab(path, name, true);
 
     setCurrentIndex(idx);
 }
 
-int VTabWidget::openFileInTab(const QString &path, const QString &name)
+int VTabWidget::openFileInTab(const QString &path, const QString &name, bool modifiable)
 {
-    VEdit *edit = new VEdit(path, name);
+    VEdit *edit = new VEdit(path, name, modifiable);
     QJsonObject tabJson;
     tabJson["path"] = path;
     tabJson["name"] = name;
@@ -86,9 +86,31 @@ void VTabWidget::handleTabCloseRequest(int index)
 {
     qDebug() << "request closing tab" << index;
     VEdit *edit = dynamic_cast<VEdit *>(widget(index));
+    Q_ASSERT(edit);
     bool ok = edit->requestClose();
     if (ok) {
         removeTab(index);
         delete edit;
     }
+}
+
+void VTabWidget::readFile()
+{
+    VEdit *edit = dynamic_cast<VEdit *>(currentWidget());
+    Q_ASSERT(edit);
+    edit->readFile();
+}
+
+void VTabWidget::editFile()
+{
+    VEdit *edit = dynamic_cast<VEdit *>(currentWidget());
+    Q_ASSERT(edit);
+    edit->editFile();
+}
+
+void VTabWidget::saveFile()
+{
+    VEdit *edit = dynamic_cast<VEdit *>(currentWidget());
+    Q_ASSERT(edit);
+    edit->saveFile();
 }

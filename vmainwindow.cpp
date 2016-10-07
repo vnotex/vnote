@@ -9,7 +9,8 @@ VMainWindow::VMainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     setupUI();
-
+    initActions();
+    initToolBar();
     vnote = new VNote();
     vnote->readGlobalConfig();
     updateNotebookComboBox();
@@ -72,6 +73,33 @@ void VMainWindow::setupUI()
     setCentralWidget(mainSplitter);
     // Create and show the status bar
     statusBar();
+}
+
+void VMainWindow::initActions()
+{
+    editNoteAct = new QAction(tr("&Edit"), this);
+    editNoteAct->setStatusTip(tr("Edit current note"));
+    connect(editNoteAct, &QAction::triggered,
+            tabs, &VTabWidget::editFile);
+
+    readNoteAct = new QAction(tr("&Read"), this);
+    readNoteAct->setStatusTip(tr("Open current note in read mode"));
+    connect(readNoteAct, &QAction::triggered,
+            tabs, &VTabWidget::readFile);
+
+    saveNoteAct = new QAction(tr("&Save"), this);
+    saveNoteAct->setStatusTip(tr("Save current note"));
+    connect(saveNoteAct, &QAction::triggered,
+            tabs, &VTabWidget::saveFile);
+}
+
+void VMainWindow::initToolBar()
+{
+    fileToolBar = addToolBar(tr("Note"));
+    fileToolBar->setMovable(false);
+    fileToolBar->addAction(editNoteAct);
+    fileToolBar->addAction(readNoteAct);
+    fileToolBar->addAction(saveNoteAct);
 }
 
 void VMainWindow::updateNotebookComboBox()
