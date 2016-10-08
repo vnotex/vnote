@@ -47,7 +47,7 @@ void VMainWindow::setupUI()
     fileList->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
     // Editor tab widget
-    tabs = new VTabWidget(VNote::welcomePageUrl);
+    tabs = new VTabWidget();
     tabs->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     tabs->setTabBarAutoHide(true);
 

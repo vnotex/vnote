@@ -2,9 +2,10 @@
 #include <QtDebug>
 #include "vtabwidget.h"
 #include "veditor.h"
+#include "vnote.h"
 
-VTabWidget::VTabWidget(const QString &welcomePageUrl, QWidget *parent)
-    : QTabWidget(parent), welcomePageUrl(welcomePageUrl)
+VTabWidget::VTabWidget(QWidget *parent)
+    : QTabWidget(parent)
 {
     setTabsClosable(true);
     connect(tabBar(), &QTabBar::tabCloseRequested,
@@ -15,7 +16,7 @@ VTabWidget::VTabWidget(const QString &welcomePageUrl, QWidget *parent)
 
 void VTabWidget::openWelcomePage()
 {
-    int idx = openFileInTab(welcomePageUrl, "", false);
+    int idx = openFileInTab(VNote::welcomePagePath, "", false);
     setTabText(idx, "Welcome to VNote");
     setTabToolTip(idx, "VNote");
 }

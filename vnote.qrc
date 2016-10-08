@@ -1,5 +1,11 @@
-<!DOCTYPE RCC><RCC version="1.0">
-<qresource>
-    <file>resources/welcome.html</file>
-</qresource>
+<RCC>
+    <qresource prefix="/">
+        <file>resources/welcome.html</file>
+        <file>resources/qwebchannel.js</file>
+        <file>resources/template.html</file>
+        <file>resources/markdown.css</file>
+        <file>utils/marked/marked.min.js</file>
+        <file>resources/post_template.html</file>
+        <file>resources/pre_template.html</file>
+    </qresource>
 </RCC>

@@ -19,7 +19,8 @@ public:
 
     static const QString orgName;
     static const QString appName;
-    static const QString welcomePageUrl;
+    static const QString welcomePagePath;
+    static const QString templateUrl;
 
 private:
     // Write notebooks section of global config
@@ -29,6 +30,8 @@ private:
 
     QVector<VNotebook> notebooks;
     int curNotebookIndex;
+    static const QString preTemplatePath;
+    static const QString postTemplatePath;
 };
 
 #endif // VNOTE_H

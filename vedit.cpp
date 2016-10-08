@@ -37,7 +37,7 @@ void VEdit::beginSave()
         noteFile->content = toHtml();
         break;
     case DocType::Markdown:
-
+        noteFile->content = toPlainText();
         break;
     default:
         qWarning() << "error: unknown doc type" << int(noteFile->docType);

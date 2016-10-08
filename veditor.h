@@ -5,9 +5,11 @@
 #include <QString>
 #include "vconstants.h"
 #include "vnotefile.h"
+#include "vdocument.h"
 
 class QTextBrowser;
 class VEdit;
+class QWebEngineView;
 
 class VEditor : public QStackedWidget
 {
@@ -25,16 +27,17 @@ public:
 
 private:
     bool isMarkdown(const QString &name);
-    QString readFileFromDisk(const QString &filePath);
-    bool writeFileToDisk(const QString &filePath, const QString &text);
     void setupUI();
     void showFileReadMode();
     void showFileEditMode();
+    void setupMarkdownPreview();
 
     VNoteFile *noteFile;
     bool isEditMode;
     QTextBrowser *textBrowser;
     VEdit *textEditor;
+    QWebEngineView *webPreviewer;
+    VDocument document;
 };
 
 #endif // VEDITOR_H

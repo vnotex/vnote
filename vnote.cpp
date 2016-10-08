@@ -1,10 +1,14 @@
 #include <QSettings>
 #include <QDebug>
 #include "vnote.h"
+#include "utils/vutils.h"
 
 const QString VNote::orgName = QString("tamlok");
 const QString VNote::appName = QString("VNote");
-const QString VNote::welcomePageUrl = QString(":/resources/welcome.html");
+const QString VNote::welcomePagePath = QString(":/resources/welcome.html");
+const QString VNote::preTemplatePath = QString(":/resources/pre_template.html");
+const QString VNote::postTemplatePath = QString(":/resources/post_template.html");
+const QString VNote::templateUrl = QString("qrc:/resources/template.html");
 
 VNote::VNote()
     : curNotebookIndex(0)

@@ -9,7 +9,7 @@ class VTabWidget : public QTabWidget
 {
     Q_OBJECT
 public:
-    explicit VTabWidget(const QString &welcomePageUrl, QWidget *parent = 0);
+    explicit VTabWidget(QWidget *parent = 0);
 
 signals:
 
@@ -28,7 +28,6 @@ private:
     int appendTabWithData(QWidget *page, const QString &label, const QJsonObject &tabData);
     int findTabByFile(const QString &path, const QString &name);
     int openFileInTab(const QString &path, const QString &name, bool modifiable);
-    QString welcomePageUrl;
 };
 
 #endif // VTABWIDGET_H

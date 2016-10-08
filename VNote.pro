@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui webenginewidgets webchannel
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -24,7 +24,10 @@ SOURCES += main.cpp\
     vtabwidget.cpp \
     vedit.cpp \
     veditor.cpp \
-    vnotefile.cpp
+    vnotefile.cpp \
+    vdocument.cpp \
+    utils/vutils.cpp \
+    vpreviewpage.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -38,7 +41,10 @@ HEADERS  += vmainwindow.h \
     vedit.h \
     veditor.h \
     vconstants.h \
-    vnotefile.h
+    vnotefile.h \
+    vdocument.h \
+    utils/vutils.h \
+    vpreviewpage.h
 
 RESOURCES += \
     vnote.qrc
