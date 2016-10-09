@@ -8,11 +8,22 @@ const QString VNote::appName = QString("VNote");
 const QString VNote::welcomePagePath = QString(":/resources/welcome.html");
 const QString VNote::preTemplatePath = QString(":/resources/pre_template.html");
 const QString VNote::postTemplatePath = QString(":/resources/post_template.html");
-const QString VNote::templateUrl = QString("qrc:/resources/template.html");
+const QString VNote::templatePath = QString(":/resources/template.html");
+const QString VNote::defaultCssUrl = QString("qrc:/resources/markdown.css");
+
+QString VNote::templateHtml;
+QString VNote::cssUrl = VNote::defaultCssUrl;
 
 VNote::VNote()
     : curNotebookIndex(0)
 {
+    decorateTemplate();
+}
+
+void VNote::decorateTemplate()
+{
+    templateHtml = VUtils::readFileFromDisk(templatePath);
+    templateHtml.replace("CSS_PLACE_HOLDER", cssUrl);
 }
 
 void VNote::readGlobalConfig()

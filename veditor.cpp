@@ -169,7 +169,7 @@ void VEditor::setupMarkdownPreview()
     QWebChannel *channel = new QWebChannel(this);
     channel->registerObject(QStringLiteral("content"), &document);
     page->setWebChannel(channel);
-    webPreviewer->setUrl(QUrl(VNote::templateUrl));
+    webPreviewer->setHtml(VNote::templateHtml, QUrl::fromLocalFile(noteFile->path + QDir::separator()));
 
     addWidget(webPreviewer);
 }
