@@ -1,9 +1,11 @@
 #include <QtWidgets>
 #include "vedit.h"
+#include "vnote.h"
 
 VEdit::VEdit(VNoteFile *noteFile, QWidget *parent)
     : QTextEdit(parent), noteFile(noteFile)
 {
+    setFont(VNote::editorAndBrowserFont);
 }
 
 void VEdit::beginEdit()

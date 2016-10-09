@@ -4,6 +4,7 @@
 #include <QString>
 #include <QVector>
 #include <QSettings>
+#include <QFont>
 #include "vnotebook.h"
 
 class VNote
@@ -25,6 +26,7 @@ public:
     static const QString templatePath;
 
     static QString templateHtml;
+    static QFont editorAndBrowserFont;
 
 private:
     // Write notebooks section of global config

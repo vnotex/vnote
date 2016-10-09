@@ -43,6 +43,7 @@ void VEditor::setupUI()
     case DocType::Html:
         textBrowser = new QTextBrowser();
         addWidget(textBrowser);
+        textBrowser->setFont(VNote::editorAndBrowserFont);
         webPreviewer = NULL;
         break;
     default:
