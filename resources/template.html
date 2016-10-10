@@ -12,9 +12,101 @@
   'use strict';
 
   var placeholder = document.getElementById('placeholder');
+  var renderer = new marked.Renderer();
+  var toc = []; // Table of contents as a list
+
+  renderer.heading = function (text, level) {
+      var escapedText = text.toLowerCase().replace(/[^\w]+/g, '-');
+      toc.push({
+        level: level,
+        anchor: escapedText,
+        title: text
+      });
+	  return '<h' + level + '><a name="' +
+			 escapedText +
+			 '" class="anchor" href="#' +
+			 escapedText +
+			 '"><span class="header-link"></span></a>' +
+			 text + '</h' + level + '>';
+  };
+
+  var markdownToHtml = function (markdown) {
+      return marked(markdown, { renderer: renderer });
+  }
+
+  var toPerfectToc = function (toc) {
+      var i;
+      var curLevel = 1;
+      var perfToc = [];
+      for (i in toc) {
+          var item = toc[i];
+          while (item.level > curLevel + 1) {
+              curLevel += 1;
+              var tmp = { level: curLevel,
+                          anchor: item.anchor,
+                          title: '[EMPTY]'
+              };
+              perfToc.push(tmp);
+          }
+          perfToc.push(item);
+          curLevel = item.level;
+      }
+      return perfToc;
+  }
+
+  var itemToHtml = function (item) {
+      return '<a href=#' + item.anchor + '>' + item.title + '</a>';
+  }
+
+  var tocToTree = function (toc) {
+      var i;
+      var front = '<li>';
+      var ending = ['</li>'];
+      var curLevel = 1;
+      for (i in toc) {
+          var item = toc[i];
+          if (item.level == curLevel) {
+              front += '</li>';
+              front += '<li>';
+              front += itemToHtml(item);
+          } else if (item.level > curLevel) {
+              // assert(item.level - curLevel == 1)
+              front += '<ul>';
+              ending.push('</ul>');
+              front += '<li>';
+              front += itemToHtml(item);
+              ending.push('</li>');
+              curLevel = item.level;
+          } else {
+              while (item.level < curLevel) {
+                  var ele = ending.pop();
+                  front += ele;
+                  if (ele == '</ul>') {
+                      curLevel--;
+                  }
+              }
+              front += '</li>';
+              front += '<li>';
+              front += itemToHtml(item);
+          }
+      }
+      while (ending.length > 0) {
+          front += ending.pop();
+      }
+      front = front.replace("<li></li>", "");
+      front = '<ul>' + front + '</ul>';
+      return front;
+  }
+
+  var addToc = function(html) {
+      var tocTree = tocToTree(toPerfectToc(toc));
+      html = html.replace(/<p>\[TOC\]<\/p>/ig, tocTree);
+      return html;
+  }
 
   var updateText = function(text) {
-      placeholder.innerHTML = marked(text);
+      var html = markdownToHtml(text);
+      placeholder.innerHTML = addToc(html);
   }
 
   new QWebChannel(qt.webChannelTransport,
