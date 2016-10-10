@@ -7,5 +7,30 @@
         <file>utils/marked/marked.min.js</file>
         <file>resources/post_template.html</file>
         <file>resources/pre_template.html</file>
+        <file>utils/highlightjs/highlight.pack.js</file>
+        <file>utils/highlightjs/styles/androidstudio.css</file>
+        <file>utils/highlightjs/styles/atom-one-dark.css</file>
+        <file>utils/highlightjs/styles/atom-one-light.css</file>
+        <file>utils/highlightjs/styles/darcula.css</file>
+        <file>utils/highlightjs/styles/dark.css</file>
+        <file>utils/highlightjs/styles/darkula.css</file>
+        <file>utils/highlightjs/styles/default.css</file>
+        <file>utils/highlightjs/styles/github-gist.css</file>
+        <file>utils/highlightjs/styles/github.css</file>
+        <file>utils/highlightjs/styles/googlecode.css</file>
+        <file>utils/highlightjs/styles/gruvbox-dark.css</file>
+        <file>utils/highlightjs/styles/gruvbox-light.css</file>
+        <file>utils/highlightjs/styles/monokai-sublime.css</file>
+        <file>utils/highlightjs/styles/monokai.css</file>
+        <file>utils/highlightjs/styles/qtcreator_dark.css</file>
+        <file>utils/highlightjs/styles/qtcreator_light.css</file>
+        <file>utils/highlightjs/styles/rainbow.css</file>
+        <file>utils/highlightjs/styles/solarized-dark.css</file>
+        <file>utils/highlightjs/styles/solarized-light.css</file>
+        <file>utils/highlightjs/styles/tomorrow-night-blue.css</file>
+        <file>utils/highlightjs/styles/tomorrow-night-bright.css</file>
+        <file>utils/highlightjs/styles/tomorrow-night-eighties.css</file>
+        <file>utils/highlightjs/styles/tomorrow-night.css</file>
+        <file>utils/highlightjs/styles/tomorrow.css</file>
     </qresource>
 </RCC>

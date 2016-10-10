@@ -3,8 +3,10 @@
 <meta charset="utf-8">
 <head>
   <link rel="stylesheet" type="text/css" href="CSS_PLACE_HOLDER">
+  <link rel="stylesheet" type="text/css" href="qrc:/utils/highlightjs/styles/default.css">
   <script src="qrc:/utils/marked/marked.min.js"></script>
   <script src="qrc:/resources/qwebchannel.js"></script>
+  <script src="qrc:/utils/highlightjs/highlight.pack.js"></script>
 </head>
 <body>
   <div id="placeholder"></div>
@@ -29,6 +31,13 @@
 			 '"><span class="header-link"></span></a>' +
 			 text + '</h' + level + '>';
   };
+
+  // Highlight.js to highlight code block
+  marked.setOptions({
+    highlight: function (code) {
+      return hljs.highlightAuto(code).value;
+    }
+  });
 
   var markdownToHtml = function (markdown) {
       return marked(markdown, { renderer: renderer });
