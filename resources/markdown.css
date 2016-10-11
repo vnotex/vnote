@@ -47,7 +47,7 @@ a:visited {
 }
 ul, ol {
     padding: 0;
-    margin: 0;
+    padding-left: 24px;
 }
 li {
     line-height: 24px;
@@ -58,17 +58,30 @@ li ul, li ul {
 p, ul, ol {
     font-size: 16px;
     line-height: 24px;
-    max-width: 540px;
+    max-width: 800px;
 }
 pre {
     padding: 0px 24px;
     max-width: 800px;
     white-space: pre-wrap;
+    background-color: #f8f8f8;
+    border-radius: 3px;
+    border: 1px solid #cccccc;
 }
 code {
     font-family: Consolas, Monaco, Andale Mono, monospace;
     line-height: 1.5;
     font-size: 13px;
+    border: 1px solid #eaeaea;
+    background-color: #f8f8f8;
+    border-radius: 3px;
+}
+pre code {
+   margin: 0;
+   padding: 0;
+   white-space: pre;
+   border: none;
+   background: transparent;
 }
 aside {
     display: block;
@@ -79,7 +92,7 @@ blockquote {
     border-left:.5em solid #eee;
     padding: 0 2em;
     margin-left:0;
-    max-width: 476px;
+    max-width: 600;
 }
 blockquote  cite {
     font-size:14px;
@@ -92,10 +105,10 @@ blockquote cite:before {
 
 blockquote p {
     color: #666;
-    max-width: 460px;
+    max-width: 590px;
 }
 hr {
-    width: 540px;
+    width: 800;
     text-align: left;
     margin: 0 auto 0 0;
     color: #999;
