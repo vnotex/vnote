@@ -39,10 +39,17 @@
     }
   });
 
-  var markdownToHtml = function (markdown) {
-      return marked(markdown, { renderer: renderer });
+  var markdownToHtml = function (markdown, needToc) {
+      toc = [];
+      if (needToc) {
+          var html = marked(markdown, { renderer: renderer });
+          return html.replace(/<p>\[TOC\]<\/p>/ig, '<div class="vnote-toc"></div>');
+      } else {
+          return marked(markdown);
+      }
   };
 
+  // Handle wrong title levels, such as '#' followed by '###'
   var toPerfectToc = function (toc) {
       var i;
       var curLevel = 1;
@@ -67,6 +74,7 @@
       return '<a href=#' + item.anchor + '>' + item.title + '</a>';
   };
 
+  // Turn a perfect toc to a tree using <ul>
   var tocToTree = function (toc) {
       var i;
       var front = '<li>';
@@ -107,15 +115,27 @@
       return front;
   };
 
-  var addToc = function(html) {
+  var addToc = function() {
       var tocTree = tocToTree(toPerfectToc(toc));
-      html = html.replace(/<p>\[TOC\]<\/p>/ig, tocTree);
-      return html;
+      var eles = document.getElementsByClassName('vnote-toc');
+      for (var i = 0; i < eles.length; ++i) {
+          eles[i].innerHTML = tocTree;
+      }
+  };
+
+  var mdHasTocSection = function(markdown) {
+      var n = markdown.search(/(\n|^)\[toc\]/i);
+      return n != -1;
   };
 
   var updateText = function(text) {
-      var html = markdownToHtml(text);
-      placeholder.innerHTML = addToc(html);
+      var needToc = mdHasTocSection(text);
+      var html = markdownToHtml(text, needToc);
+      placeholder.innerHTML = html;
+
+      if (needToc) {
+          addToc();
+      }
   };
 
   new QWebChannel(qt.webChannelTransport,
