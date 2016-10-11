@@ -41,7 +41,7 @@
 
   var markdownToHtml = function (markdown) {
       return marked(markdown, { renderer: renderer });
-  }
+  };
 
   var toPerfectToc = function (toc) {
       var i;
@@ -61,11 +61,11 @@
           curLevel = item.level;
       }
       return perfToc;
-  }
+  };
 
   var itemToHtml = function (item) {
       return '<a href=#' + item.anchor + '>' + item.title + '</a>';
-  }
+  };
 
   var tocToTree = function (toc) {
       var i;
@@ -105,18 +105,18 @@
       front = front.replace("<li></li>", "");
       front = '<ul>' + front + '</ul>';
       return front;
-  }
+  };
 
   var addToc = function(html) {
       var tocTree = tocToTree(toPerfectToc(toc));
       html = html.replace(/<p>\[TOC\]<\/p>/ig, tocTree);
       return html;
-  }
+  };
 
   var updateText = function(text) {
       var html = markdownToHtml(text);
       placeholder.innerHTML = addToc(html);
-  }
+  };
 
   new QWebChannel(qt.webChannelTransport,
     function(channel) {
