@@ -29,7 +29,9 @@ SOURCES += main.cpp\
     utils/vutils.cpp \
     vpreviewpage.cpp \
     utils/peg-highlight/pmh_parser.c \
-    hgmarkdownhighlighter.cpp
+    hgmarkdownhighlighter.cpp \
+    vstyleparser.cpp \
+    utils/peg-highlight/pmh_styleparser.c
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -49,7 +51,9 @@ HEADERS  += vmainwindow.h \
     vpreviewpage.h \
     utils/peg-highlight/pmh_parser.h \
     hgmarkdownhighlighter.h \
-    utils/peg-highlight/pmh_definitions.h
+    utils/peg-highlight/pmh_definitions.h \
+    vstyleparser.h \
+    utils/peg-highlight/pmh_styleparser.h
 
 RESOURCES += \
     vnote.qrc

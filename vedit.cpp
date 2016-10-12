@@ -1,11 +1,15 @@
 #include <QtWidgets>
 #include "vedit.h"
 #include "vnote.h"
+#include "vconfigmanager.h"
 
 VEdit::VEdit(VNoteFile *noteFile, QWidget *parent)
     : QTextEdit(parent), noteFile(noteFile)
 {
-    setFont(VNote::editorAndBrowserFont);
+    setFont(VConfigInst->baseEditFont);
+    if (noteFile->docType == DocType::Markdown) {
+        setPalette(VConfigInst->mdEditPalette);
+    }
 }
 
 void VEdit::beginEdit()

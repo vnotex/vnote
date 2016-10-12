@@ -32,5 +32,8 @@
         <file>utils/highlightjs/styles/tomorrow-night-eighties.css</file>
         <file>utils/highlightjs/styles/tomorrow-night.css</file>
         <file>utils/highlightjs/styles/tomorrow.css</file>
+        <file>resources/styles/default.mdhl</file>
+        <file>resources/styles/solarized-light.mdhl</file>
+        <file>resources/styles/solarized-dark.mdhl</file>
     </qresource>
 </RCC>

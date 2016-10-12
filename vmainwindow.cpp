@@ -4,10 +4,12 @@
 #include "vnote.h"
 #include "vfilelist.h"
 #include "vtabwidget.h"
+#include "vconfigmanager.h"
 
 VMainWindow::VMainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
+    VConfigInst;
     setupUI();
     initActions();
     initToolBar();

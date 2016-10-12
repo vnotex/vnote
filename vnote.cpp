@@ -13,13 +13,11 @@ const QString VNote::defaultCssUrl = QString("qrc:/resources/markdown.css");
 
 QString VNote::templateHtml;
 QString VNote::cssUrl = VNote::defaultCssUrl;
-QFont VNote::editorAndBrowserFont;
 
 VNote::VNote()
     : curNotebookIndex(0)
 {
     decorateTemplate();
-    editorAndBrowserFont.setPointSize(11);
 }
 
 void VNote::decorateTemplate()

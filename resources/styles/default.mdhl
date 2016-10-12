@@ -1,0 +1,79 @@
+# This is the default markdown styles used for Peg-Markdown-Highlight
+# Created by Le Tan (tamlokveer@gmail.com)
+
+H1
+foreground: 111111
+font-style: bold
+font-size: +12
+
+H2
+foreground: 111111
+font-style: bold
+font-size: +10
+
+H3
+foreground: 111111
+font-style: bold
+font-size: +8
+
+H4
+foreground: 111111
+font-size: +6
+
+H5
+foreground: 111111
+font-size: +4
+
+H6
+foreground: 111111
+font-size: +2
+
+HRULE
+foreground: 586e75
+
+LIST_BULLET
+foreground: d33682
+font-style: bold
+font-size: +2
+
+LIST_ENUMERATOR
+foreground: 0000ff
+
+LINK
+foreground: 2aa198
+
+AUTO_LINK_URL
+foreground: 2aa198
+
+AUTO_LINK_EMAIL
+foreground: 2aa198
+
+IMAGE
+foreground: d33682
+
+REFERENCE
+foreground: b58900
+
+CODE
+foreground: 5f00ff
+
+EMPH
+font-style: italic
+
+STRONG
+font-style: bold
+
+HTML_ENTITY
+foreground: 6c71c4
+
+COMMENT
+foreground: 93a1a1
+
+VERBATIM
+foreground: 859900
+
+BLOCKQUOTE
+foreground: 00af00
+
+STRIKE
+strike-color: 586e75

@@ -52,7 +52,8 @@ class HGMarkdownHighlighter : public QObject
     Q_OBJECT
 
 public:
-    HGMarkdownHighlighter(QTextDocument *parent = 0, int aWaitInterval = 2000);
+    HGMarkdownHighlighter(const QVector<HighlightingStyle> &styles,
+                          QTextDocument *parent = 0, int aWaitInterval = 2000);
     ~HGMarkdownHighlighter();
     void setStyles(const QVector<HighlightingStyle> &styles);
     int waitInterval;
@@ -73,7 +74,6 @@ private:
     void clearFormatting();
     void highlight();
     void parse();
-    void setDefaultStyles();
 };
 
 #endif

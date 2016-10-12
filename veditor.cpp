@@ -9,6 +9,7 @@
 #include "utils/vutils.h"
 #include "vpreviewpage.h"
 #include "hgmarkdownhighlighter.h"
+#include "vconfigmanager.h"
 
 VEditor::VEditor(const QString &path, const QString &name, bool modifiable,
                  QWidget *parent)
@@ -43,13 +44,14 @@ void VEditor::setupUI()
         setupMarkdownPreview();
         textBrowser = NULL;
 
-        mdHighlighter = new HGMarkdownHighlighter(textEditor->document(), 500);
+        mdHighlighter = new HGMarkdownHighlighter(VConfigInst->mdHighlightingStyles,
+                                                  textEditor->document(), 500);
         break;
 
     case DocType::Html:
         textBrowser = new QTextBrowser();
         addWidget(textBrowser);
-        textBrowser->setFont(VNote::editorAndBrowserFont);
+        textBrowser->setFont(VConfigInst->baseEditFont);
         webPreviewer = NULL;
         break;
     default:

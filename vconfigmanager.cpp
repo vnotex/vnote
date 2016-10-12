@@ -6,12 +6,33 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QtDebug>
+#include <QTextEdit>
+#include "utils/vutils.h"
+#include "vstyleparser.h"
 
 const QString VConfigManager::dirConfigFileName = QString(".vnote.json");
+VConfigManager* VConfigManager::instance = NULL;
 
 VConfigManager::VConfigManager()
+    : baseEditFont(QFont())
 {
+}
 
+VConfigManager* VConfigManager::getInst()
+{
+    if (!instance) {
+        instance = new VConfigManager();
+        instance->initialize();
+    }
+    return instance;
+}
+
+void VConfigManager::initialize()
+{
+    baseEditFont.setPointSize(11);
+    baseEditPalette = QTextEdit().palette();
+
+    updateMarkdownEditStyle();
 }
 
 QJsonObject VConfigManager::readDirectoryConfig(const QString &path)
@@ -59,4 +80,20 @@ bool VConfigManager::deleteDirectoryConfig(const QString &path)
     }
     qDebug() << "delete config file:" << configFile;
     return true;
+}
+
+void VConfigManager::updateMarkdownEditStyle()
+{
+    // Read style file .mdhl
+    QString file(":/resources/styles/default.mdhl");
+
+    QString styleStr = VUtils::readFileFromDisk(file);
+    if (styleStr.isEmpty()) {
+        return;
+    }
+
+    VStyleParser parser;
+    parser.parseMarkdownStyle(styleStr);
+    mdHighlightingStyles = parser.fetchMarkdownStyles(baseEditFont);
+    mdEditPalette = parser.fetchMarkdownEditorStyles(baseEditPalette);
 }

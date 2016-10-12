@@ -18,8 +18,7 @@
 const int WorkerThread::initCapacity = 1024;
 
 WorkerThread::WorkerThread()
-    : QThread(NULL), content(NULL), result(NULL),
-      capacity(0)
+    : QThread(NULL), content(NULL), capacity(0), result(NULL)
 {
     resizeBuffer(initCapacity);
 }
@@ -86,12 +85,14 @@ void WorkerThread::run()
 }
 
 // Will be freeed by parent automatically
-HGMarkdownHighlighter::HGMarkdownHighlighter(QTextDocument *parent,
+HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &styles,
+                                             QTextDocument *parent,
                                              int aWaitInterval) : QObject(parent)
 {
     workerThread = new WorkerThread();
     cached_elements = NULL;
     waitInterval = aWaitInterval;
+    setStyles(styles);
     timer = new QTimer(this);
     timer->setSingleShot(true);
     timer->setInterval(aWaitInterval);
@@ -123,63 +124,6 @@ void HGMarkdownHighlighter::setStyles(const QVector<HighlightingStyle> &styles)
     this->highlightingStyles = styles;
 }
 
-#define STY(type, format) styles.append({type, format})
-
-void HGMarkdownHighlighter::setDefaultStyles()
-{
-    QVector<HighlightingStyle> &styles = this->highlightingStyles;
-    styles.clear();
-
-    QTextCharFormat headers; headers.setForeground(QBrush(Qt::darkBlue));
-    headers.setBackground(QBrush(QColor(230,230,240)));
-    STY(pmh_H1, headers);
-    STY(pmh_H2, headers);
-    STY(pmh_H3, headers);
-    STY(pmh_H4, headers);
-    STY(pmh_H5, headers);
-    STY(pmh_H6, headers);
-
-    QTextCharFormat hrule; hrule.setForeground(QBrush(Qt::darkGray));
-    hrule.setBackground(QBrush(Qt::lightGray));
-    STY(pmh_HRULE, hrule);
-
-    QTextCharFormat list; list.setForeground(QBrush(Qt::magenta));
-    STY(pmh_LIST_BULLET, list);
-    STY(pmh_LIST_ENUMERATOR, list);
-
-    QTextCharFormat link; link.setForeground(QBrush(Qt::darkCyan));
-    link.setBackground(QBrush(QColor(205,240,240)));
-    STY(pmh_LINK, link);
-    STY(pmh_AUTO_LINK_URL, link);
-    STY(pmh_AUTO_LINK_EMAIL, link);
-
-    QTextCharFormat image; image.setForeground(QBrush(Qt::darkCyan));
-    image.setBackground(QBrush(Qt::cyan));
-    STY(pmh_IMAGE, image);
-
-    QTextCharFormat ref; ref.setForeground(QBrush(QColor(213,178,178)));
-    STY(pmh_REFERENCE, ref);
-
-    QTextCharFormat code; code.setForeground(QBrush(Qt::darkGreen));
-    code.setBackground(QBrush(QColor(217,231,217)));
-    STY(pmh_CODE, code);
-    STY(pmh_VERBATIM, code);
-
-    QTextCharFormat emph; emph.setForeground(QBrush(Qt::darkYellow));
-    emph.setFontItalic(true);
-    STY(pmh_EMPH, emph);
-
-    QTextCharFormat strong; strong.setForeground(QBrush(Qt::magenta));
-    strong.setFontWeight(QFont::Bold);
-    STY(pmh_STRONG, strong);
-
-    QTextCharFormat comment; comment.setForeground(QBrush(Qt::gray));
-    STY(pmh_COMMENT, comment);
-
-    QTextCharFormat blockquote; blockquote.setForeground(QBrush(Qt::darkRed));
-    STY(pmh_BLOCKQUOTE, blockquote);
-}
-
 void HGMarkdownHighlighter::clearFormatting()
 {
     QTextBlock block = document->firstBlock();
@@ -195,8 +139,10 @@ void HGMarkdownHighlighter::highlight()
         return;
     }
 
-    if (highlightingStyles.isEmpty())
-        this->setDefaultStyles();
+    if (highlightingStyles.isEmpty()) {
+        qWarning() << "error: HighlightingStyles is not set";
+        return;
+    }
 
     this->clearFormatting();
 
