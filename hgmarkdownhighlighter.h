@@ -24,10 +24,21 @@ QT_END_NAMESPACE
 class WorkerThread : public QThread
 {
 public:
+    WorkerThread();
     ~WorkerThread();
+    void prepareAndStart(const char *data);
+    pmh_element** retriveResult();
+
+protected:
     void run();
+
+private:
+    void resizeBuffer(int newCap);
+
     char *content;
+    int capacity;
     pmh_element **result;
+    static const int initCapacity;
 };
 
 struct HighlightingStyle
@@ -42,7 +53,8 @@ class HGMarkdownHighlighter : public QObject
 
 public:
     HGMarkdownHighlighter(QTextDocument *parent = 0, int aWaitInterval = 2000);
-    void setStyles(QVector<HighlightingStyle> &styles);
+    ~HGMarkdownHighlighter();
+    void setStyles(const QVector<HighlightingStyle> &styles);
     int waitInterval;
 
 private slots:
@@ -56,7 +68,7 @@ private:
     WorkerThread *workerThread;
     bool parsePending;
     pmh_element **cached_elements;
-    QVector<HighlightingStyle> *highlightingStyles;
+    QVector<HighlightingStyle> highlightingStyles;
 
     void clearFormatting();
     void highlight();

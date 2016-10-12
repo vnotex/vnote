@@ -28,7 +28,9 @@ VEditor::VEditor(const QString &path, const QString &name, bool modifiable,
 
 VEditor::~VEditor()
 {
-    delete noteFile;
+    if (noteFile) {
+        delete noteFile;
+    }
 }
 
 void VEditor::setupUI()

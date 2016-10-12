@@ -8,26 +8,88 @@
  */
 
 #include <QtGui>
+#include <QtDebug>
 #include "hgmarkdownhighlighter.h"
+
+#ifndef QT_NO_DEBUG
+#define V_HIGHLIGHT_DEBUG
+#endif
+
+const int WorkerThread::initCapacity = 1024;
+
+WorkerThread::WorkerThread()
+    : QThread(NULL), content(NULL), result(NULL),
+      capacity(0)
+{
+    resizeBuffer(initCapacity);
+}
 
 WorkerThread::~WorkerThread()
 {
-    if (result != NULL)
+    if (result) {
         pmh_free_elements(result);
-    free(content);
+        result = NULL;
+    }
+    if (content) {
+        delete [] content;
+        capacity = 0;
+        content = NULL;
+    }
 }
+
+void WorkerThread::resizeBuffer(int newCap)
+{
+    if (newCap == capacity) {
+        return;
+    }
+    if (capacity > 0) {
+        Q_ASSERT(content);
+        delete [] content;
+    }
+    capacity = newCap;
+    content = new char [capacity];
+}
+
+void WorkerThread::prepareAndStart(const char *data)
+{
+    Q_ASSERT(data);
+    int len = strlen(data);
+    if (len >= capacity) {
+        resizeBuffer(qMax(2 * capacity, len + 1));
+    }
+    Q_ASSERT(content);
+    memcpy(content, data, len);
+    content[len] = '\0';
+
+    if (result) {
+        pmh_free_elements(result);
+        result = NULL;
+    }
+
+    start();
+}
+
+pmh_element** WorkerThread::retriveResult()
+{
+    Q_ASSERT(result);
+    pmh_element** ret = result;
+    result = NULL;
+    return ret;
+}
+
 void WorkerThread::run()
 {
     if (content == NULL)
         return;
+    Q_ASSERT(!result);
     pmh_markdown_to_elements(content, pmh_EXT_NONE, &result);
 }
 
+// Will be freeed by parent automatically
 HGMarkdownHighlighter::HGMarkdownHighlighter(QTextDocument *parent,
                                              int aWaitInterval) : QObject(parent)
 {
-    highlightingStyles = NULL;
-    workerThread = NULL;
+    workerThread = new WorkerThread();
     cached_elements = NULL;
     waitInterval = aWaitInterval;
     timer = new QTimer(this);
@@ -37,20 +99,36 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(QTextDocument *parent,
     document = parent;
     connect(document, SIGNAL(contentsChange(int,int,int)),
             this, SLOT(handleContentsChange(int,int,int)));
-
+    connect(workerThread, SIGNAL(finished()), this, SLOT(threadFinished()));
     this->parse();
 }
 
-void HGMarkdownHighlighter::setStyles(QVector<HighlightingStyle> &styles)
+HGMarkdownHighlighter::~HGMarkdownHighlighter()
 {
-    this->highlightingStyles = &styles;
+    if (workerThread) {
+        if (workerThread->isRunning()) {
+            workerThread->wait();
+        }
+        delete workerThread;
+        workerThread = NULL;
+    }
+    if (cached_elements) {
+        pmh_free_elements(cached_elements);
+        cached_elements = NULL;
+    }
 }
 
-#define STY(type, format) styles->append((HighlightingStyle){type, format})
+void HGMarkdownHighlighter::setStyles(const QVector<HighlightingStyle> &styles)
+{
+    this->highlightingStyles = styles;
+}
+
+#define STY(type, format) styles.append({type, format})
 
 void HGMarkdownHighlighter::setDefaultStyles()
 {
-    QVector<HighlightingStyle> *styles = new QVector<HighlightingStyle>();
+    QVector<HighlightingStyle> &styles = this->highlightingStyles;
+    styles.clear();
 
     QTextCharFormat headers; headers.setForeground(QBrush(Qt::darkBlue));
     headers.setBackground(QBrush(QColor(230,230,240)));
@@ -100,8 +178,6 @@ void HGMarkdownHighlighter::setDefaultStyles()
 
     QTextCharFormat blockquote; blockquote.setForeground(QBrush(Qt::darkRed));
     STY(pmh_BLOCKQUOTE, blockquote);
-
-    this->setStyles(*styles);
 }
 
 void HGMarkdownHighlighter::clearFormatting()
@@ -116,18 +192,23 @@ void HGMarkdownHighlighter::clearFormatting()
 void HGMarkdownHighlighter::highlight()
 {
     if (cached_elements == NULL) {
-        qDebug() << "cached_elements is NULL";
         return;
     }
 
-    if (highlightingStyles == NULL)
+    if (highlightingStyles.isEmpty())
         this->setDefaultStyles();
 
     this->clearFormatting();
 
-    for (int i = 0; i < highlightingStyles->size(); i++)
+    // To make sure content is not changed by highlight operations.
+    // May be resource-consuming. Can be removed if no need.
+#ifdef V_HIGHLIGHT_DEBUG
+    QString oriContent = document->toPlainText();
+#endif
+
+    for (int i = 0; i < highlightingStyles.size(); i++)
     {
-        HighlightingStyle style = highlightingStyles->at(i);
+        const HighlightingStyle &style = highlightingStyles[i];
         pmh_element *elem_cursor = cached_elements[style.type];
         while (elem_cursor != NULL)
         {
@@ -176,26 +257,26 @@ void HGMarkdownHighlighter::highlight()
     }
 
     document->markContentsDirty(0, document->characterCount());
+
+#ifdef V_HIGHLIGHT_DEBUG
+    if (oriContent != document->toPlainText()) {
+        qWarning() << "warning: content was changed before and after highlighting";
+    }
+#endif
+
 }
 
 void HGMarkdownHighlighter::parse()
 {
-    if (workerThread != NULL && workerThread->isRunning()) {
+    if (workerThread->isRunning()) {
         parsePending = true;
         return;
     }
 
     QString content = document->toPlainText();
     QByteArray ba = content.toUtf8();
-    char *content_cstring = strdup((char *)ba.data());
-
-    if (workerThread != NULL)
-        delete workerThread;
-    workerThread = new WorkerThread();
-    workerThread->content = content_cstring;
-    connect(workerThread, SIGNAL(finished()), this, SLOT(threadFinished()));
     parsePending = false;
-    workerThread->start();
+    workerThread->prepareAndStart((const char *)ba.data());
 }
 
 void HGMarkdownHighlighter::threadFinished()
@@ -205,11 +286,10 @@ void HGMarkdownHighlighter::threadFinished()
         return;
     }
 
-    if (cached_elements != NULL)
+    if (cached_elements != NULL) {
         pmh_free_elements(cached_elements);
-    cached_elements = workerThread->result;
-    workerThread->result = NULL;
-
+    }
+    cached_elements = workerThread->retriveResult();
     this->highlight();
 }
 
