@@ -38,6 +38,7 @@ private:
     void initToolBar();
 
     QLabel *notebookLabel;
+    QLabel *directoryLabel;
     QComboBox *notebookComboBox;
     VDirectoryTree *directoryTree;
     VFileList *fileList;

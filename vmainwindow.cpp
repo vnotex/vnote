@@ -27,18 +27,15 @@ void VMainWindow::setupUI()
 {
     // Notebook directory browser tree
     notebookLabel = new QLabel(tr("Notebook"));
+    directoryLabel = new QLabel(tr("Directory"));
     notebookComboBox = new QComboBox();
+    notebookComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     directoryTree = new VDirectoryTree();
 
-    QHBoxLayout *nbTopLayout = new QHBoxLayout;
-    notebookComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    notebookComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    nbTopLayout->setAlignment(Qt::AlignLeft);
-    nbTopLayout->addWidget(notebookLabel);
-    nbTopLayout->addWidget(notebookComboBox);
-
     QVBoxLayout *nbLayout = new QVBoxLayout;
-    nbLayout->addLayout(nbTopLayout);
+    nbLayout->addWidget(notebookLabel);
+    nbLayout->addWidget(notebookComboBox);
+    nbLayout->addWidget(directoryLabel);
     nbLayout->addWidget(directoryTree);
     QWidget *nbContainer = new QWidget();
     nbContainer->setLayout(nbLayout);
