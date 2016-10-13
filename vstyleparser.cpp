@@ -77,8 +77,8 @@ QTextCharFormat VStyleParser::QTextCharFormatFromAttrs(pmh_style_attribute *attr
             if (!finalFamily.isEmpty()) {
                 format.setFontFamily(finalFamily);
             }
-        }
             break;
+        }
 
         case pmh_attr_type_font_style:
         {
@@ -128,10 +128,8 @@ QVector<HighlightingStyle> VStyleParser::fetchMarkdownStyles(const QFont &baseFo
     return styles;
 }
 
-QPalette VStyleParser::fetchMarkdownEditorStyles(const QPalette &basePalette) const
+void VStyleParser::fetchMarkdownEditorStyles(QPalette &palette, QFont &font) const
 {
-    QPalette palette(basePalette);
-
     // editor
     pmh_style_attribute *editorStyles = markdownStyles->editor_styles;
     while (editorStyles) {
@@ -145,6 +143,16 @@ QPalette VStyleParser::fetchMarkdownEditorStyles(const QPalette &basePalette) co
             palette.setColor(QPalette::Base,
                              QColorFromPmhAttr(editorStyles->value->argb_color));
             break;
+
+        case pmh_attr_type_font_family:
+        {
+            QString familyList(editorStyles->value->font_family);
+            QString finalFamily = filterAvailableFontFamily(familyList);
+            if (!finalFamily.isEmpty()) {
+                font.setFamily(finalFamily);
+            }
+            break;
+        }
 
         default:
                 qWarning() << "warning: unimplemented editor attr type:" << editorStyles->type;
@@ -177,8 +185,6 @@ QPalette VStyleParser::fetchMarkdownEditorStyles(const QPalette &basePalette) co
         }
         selStyles = selStyles->next;
     }
-
-    return palette;
 }
 
 // @familyList is a comma separated string

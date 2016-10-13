@@ -25,6 +25,7 @@ public:
 
     QFont baseEditFont;
     QPalette baseEditPalette;
+    QFont mdEditFont;
     QPalette mdEditPalette;
     QVector<HighlightingStyle> mdHighlightingStyles;
 

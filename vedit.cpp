@@ -6,9 +6,11 @@
 VEdit::VEdit(VNoteFile *noteFile, QWidget *parent)
     : QTextEdit(parent), noteFile(noteFile)
 {
-    setFont(VConfigInst->baseEditFont);
     if (noteFile->docType == DocType::Markdown) {
         setPalette(VConfigInst->mdEditPalette);
+        setFont(VConfigInst->mdEditFont);
+    } else {
+        setFont(VConfigInst->baseEditFont);
     }
 }
 

@@ -52,7 +52,7 @@ void WorkerThread::resizeBuffer(int newCap)
 void WorkerThread::prepareAndStart(const char *data)
 {
     Q_ASSERT(data);
-    int len = strlen(data);
+    int len = int(strlen(data));
     if (len >= capacity) {
         resizeBuffer(qMax(2 * capacity, len + 1));
     }
@@ -245,6 +245,7 @@ void HGMarkdownHighlighter::handleContentsChange(int position, int charsRemoved,
     if (charsRemoved == 0 && charsAdded == 0)
         return;
 
+    position;
     timer->stop();
     timer->start();
 }

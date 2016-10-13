@@ -22,7 +22,7 @@ public:
 
     void parseMarkdownStyle(const QString &styleStr);
     QVector<HighlightingStyle> fetchMarkdownStyles(const QFont &baseFont) const;
-    QPalette fetchMarkdownEditorStyles(const QPalette &basePalette) const;
+    void fetchMarkdownEditorStyles(QPalette &palette, QFont &font) const;
 
 private:
     QColor QColorFromPmhAttr(pmh_attr_argb_color *attr) const;

@@ -2,7 +2,7 @@
 # Created by Le Tan (tamlokveer@gmail.com)
 
 editor
-font-family: Georgia, Palatino, Arial, serif
+font-family: Microsoft YaHei, WenQuanYi Micro Hei, Droid Sans, SimSun, Georgia, Palatino, Arial, serif
 
 H1
 foreground: 111111

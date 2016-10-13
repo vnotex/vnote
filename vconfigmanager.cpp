@@ -95,5 +95,7 @@ void VConfigManager::updateMarkdownEditStyle()
     VStyleParser parser;
     parser.parseMarkdownStyle(styleStr);
     mdHighlightingStyles = parser.fetchMarkdownStyles(baseEditFont);
-    mdEditPalette = parser.fetchMarkdownEditorStyles(baseEditPalette);
+    mdEditPalette = baseEditPalette;
+    mdEditFont = baseEditFont;
+    parser.fetchMarkdownEditorStyles(mdEditPalette, mdEditFont);
 }
