@@ -3,6 +3,7 @@
 
 #include <QPalette>
 #include <QVector>
+#include <QString>
 #include "hgmarkdownhighlighter.h"
 
 extern "C" {
@@ -28,6 +29,7 @@ private:
     QBrush QBrushFromPmhAttr(pmh_attr_argb_color *attr) const;
     QTextCharFormat QTextCharFormatFromAttrs(pmh_style_attribute *attrs,
                                              const QFont &baseFont) const;
+    QString filterAvailableFontFamily(const QString &familyList) const;
     pmh_style_collection *markdownStyles;
 };
 

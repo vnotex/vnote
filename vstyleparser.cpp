@@ -1,12 +1,14 @@
 #include "vstyleparser.h"
 
 #include <QFont>
+#include <QFontDatabase>
 #include <QPalette>
 #include <QTextEdit>
 #include <QColor>
 #include <QBrush>
 #include <QVector>
 #include <QtDebug>
+#include <QStringList>
 
 VStyleParser::VStyleParser()
 {
@@ -69,7 +71,13 @@ QTextCharFormat VStyleParser::QTextCharFormatFromAttrs(pmh_style_attribute *attr
         }
 
         case pmh_attr_type_font_family:
-            // TODO
+        {
+            QString familyList(attrs->value->font_family);
+            QString finalFamily = filterAvailableFontFamily(familyList);
+            if (!finalFamily.isEmpty()) {
+                format.setFontFamily(finalFamily);
+            }
+        }
             break;
 
         case pmh_attr_type_font_style:
@@ -171,4 +179,26 @@ QPalette VStyleParser::fetchMarkdownEditorStyles(const QPalette &basePalette) co
     }
 
     return palette;
+}
+
+// @familyList is a comma separated string
+QString VStyleParser::filterAvailableFontFamily(const QString &familyList) const
+{
+    QStringList families = familyList.split(',', QString::SkipEmptyParts);
+    QStringList availFamilies = QFontDatabase().families();
+
+    qDebug() << "family:" << familyList;
+    for (int i = 0; i < families.size(); ++i) {
+        QString family = families[i].trimmed().toLower();
+        for (int j = 0; j < availFamilies.size(); ++j) {
+            QString availFamily = availFamilies[j];
+            availFamily.remove(QRegExp("\\[.*\\]"));
+            if (family == availFamily.trimmed().toLower()) {
+                qDebug() << "matched family:" << availFamilies[j];
+                return availFamilies[j];
+            }
+        }
+    }
+
+    return QString();
 }

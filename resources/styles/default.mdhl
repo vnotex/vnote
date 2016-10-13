@@ -1,6 +1,9 @@
 # This is the default markdown styles used for Peg-Markdown-Highlight
 # Created by Le Tan (tamlokveer@gmail.com)
 
+editor
+font-family: Georgia, Palatino, Arial, serif
+
 H1
 foreground: 111111
 font-style: bold
@@ -59,6 +62,7 @@ foreground: b58900
 
 CODE
 foreground: af5f00
+font-family: Consolas, Monaco, Andale Mono, monospace
 
 EMPH
 font-style: italic
