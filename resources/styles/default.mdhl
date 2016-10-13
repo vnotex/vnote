@@ -40,13 +40,16 @@ LIST_ENUMERATOR
 foreground: 0000ff
 
 LINK
-foreground: 2aa198
+foreground: 005fff
+font-style: underlined
 
 AUTO_LINK_URL
-foreground: 2aa198
+foreground: 005fff
+font-style: underlined
 
 AUTO_LINK_EMAIL
-foreground: 2aa198
+foreground: 005fff
+font-style: underlined
 
 IMAGE
 foreground: d33682
@@ -55,7 +58,7 @@ REFERENCE
 foreground: b58900
 
 CODE
-foreground: 5f00ff
+foreground: af5f00
 
 EMPH
 font-style: italic
@@ -70,7 +73,7 @@ COMMENT
 foreground: 93a1a1
 
 VERBATIM
-foreground: 859900
+foreground: 00cdcd
 
 BLOCKQUOTE
 foreground: 00af00
