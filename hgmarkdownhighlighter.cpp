@@ -15,7 +15,7 @@
 #define V_HIGHLIGHT_DEBUG
 #endif
 
-const int WorkerThread::initCapacity = 1024;
+const unsigned int WorkerThread::initCapacity = 1024;
 
 WorkerThread::WorkerThread()
     : QThread(NULL), content(NULL), capacity(0), result(NULL)
@@ -36,7 +36,7 @@ WorkerThread::~WorkerThread()
     }
 }
 
-void WorkerThread::resizeBuffer(int newCap)
+void WorkerThread::resizeBuffer(unsigned int newCap)
 {
     if (newCap == capacity) {
         return;
@@ -52,7 +52,7 @@ void WorkerThread::resizeBuffer(int newCap)
 void WorkerThread::prepareAndStart(const char *data)
 {
     Q_ASSERT(data);
-    int len = int(strlen(data));
+    unsigned int len = strlen(data);
     if (len >= capacity) {
         resizeBuffer(qMax(2 * capacity, len + 1));
     }
@@ -133,6 +133,47 @@ void HGMarkdownHighlighter::clearFormatting()
     }
 }
 
+void HGMarkdownHighlighter::highlightOneRegion(const HighlightingStyle &style,
+                                               unsigned long pos, unsigned long end, bool clearBeforeHighlight)
+{
+    // "The QTextLayout object can only be modified from the
+    // documentChanged implementation of a QAbstractTextDocumentLayout
+    // subclass. Any changes applied from the outside cause undefined
+    // behavior." -- we are breaking this rule here. There might be
+    // a better (more correct) way to do this.
+    int startBlockNum = document->findBlock(pos).blockNumber();
+    int endBlockNum = document->findBlock(end).blockNumber();
+    for (int i = startBlockNum; i <= endBlockNum; ++i)
+    {
+        QTextBlock block = document->findBlockByNumber(i);
+
+        QTextLayout *layout = block.layout();
+        if (clearBeforeHighlight) {
+            layout->clearFormats();
+        }
+        QVector<QTextLayout::FormatRange> list = layout->formats();
+        int blockpos = block.position();
+        QTextLayout::FormatRange r;
+        r.format = style.format;
+
+        if (i == startBlockNum) {
+            r.start = pos - blockpos;
+            r.length = (startBlockNum == endBlockNum)
+                        ? end - pos
+                        : block.length() - r.start;
+        } else if (i == endBlockNum) {
+            r.start = 0;
+            r.length = end - blockpos;
+        } else {
+            r.start = 0;
+            r.length = block.length();
+        }
+
+        list.append(r);
+        layout->setFormats(list);
+    }
+}
+
 void HGMarkdownHighlighter::highlight()
 {
     if (cached_elements == NULL) {
@@ -162,45 +203,12 @@ void HGMarkdownHighlighter::highlight()
                 elem_cursor = elem_cursor->next;
                 continue;
             }
-
-            // "The QTextLayout object can only be modified from the
-            // documentChanged implementation of a QAbstractTextDocumentLayout
-            // subclass. Any changes applied from the outside cause undefined
-            // behavior." -- we are breaking this rule here. There might be
-            // a better (more correct) way to do this.
-
-            int startBlockNum = document->findBlock(elem_cursor->pos).blockNumber();
-            int endBlockNum = document->findBlock(elem_cursor->end).blockNumber();
-            for (int j = startBlockNum; j <= endBlockNum; j++)
-            {
-                QTextBlock block = document->findBlockByNumber(j);
-
-                QTextLayout *layout = block.layout();
-                QList<QTextLayout::FormatRange> list = layout->additionalFormats();
-                int blockpos = block.position();
-                QTextLayout::FormatRange r;
-                r.format = style.format;
-
-                if (j == startBlockNum) {
-                    r.start = elem_cursor->pos - blockpos;
-                    r.length = (startBlockNum == endBlockNum)
-                                ? elem_cursor->end - elem_cursor->pos
-                                : block.length() - r.start;
-                } else if (j == endBlockNum) {
-                    r.start = 0;
-                    r.length = elem_cursor->end - blockpos;
-                } else {
-                    r.start = 0;
-                    r.length = block.length();
-                }
-
-                list.append(r);
-                layout->setAdditionalFormats(list);
-            }
-
+            highlightOneRegion(style, elem_cursor->pos, elem_cursor->end);
             elem_cursor = elem_cursor->next;
         }
     }
+
+    highlightCodeBlock();
 
     document->markContentsDirty(0, document->characterCount());
 
@@ -210,6 +218,40 @@ void HGMarkdownHighlighter::highlight()
     }
 #endif
 
+}
+
+void HGMarkdownHighlighter::highlightCodeBlock()
+{
+    QRegExp codeRegStart("^```");
+    QRegExp codeRegEnd("^```$");
+
+    HighlightingStyle style;
+    int index = 0;
+    for (index = 0; index < highlightingStyles.size(); ++index) {
+        if (highlightingStyles[index].type == pmh_VERBATIM) {
+            style = highlightingStyles[index];
+            break;
+        }
+    }
+    if (index == highlightingStyles.size()) {
+        style.type = pmh_VERBATIM;
+        style.format.setForeground(QBrush(Qt::darkYellow));
+    }
+    int pos = 0;
+    while (true) {
+        QTextCursor startCursor = document->find(codeRegStart, pos);
+        if (!startCursor.hasSelection()) {
+            break;
+        }
+        pos = startCursor.selectionEnd();
+        QTextCursor endCursor = document->find(codeRegEnd, pos);
+        if (!endCursor.hasSelection()) {
+            break;
+        }
+        pos = endCursor.selectionEnd();
+        highlightOneRegion(style, startCursor.selectionStart(), endCursor.selectionEnd(),
+                           true);
+    }
 }
 
 void HGMarkdownHighlighter::parse()
@@ -245,7 +287,6 @@ void HGMarkdownHighlighter::handleContentsChange(int position, int charsRemoved,
     if (charsRemoved == 0 && charsAdded == 0)
         return;
 
-    position;
     timer->stop();
     timer->start();
 }

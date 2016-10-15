@@ -77,7 +77,8 @@ COMMENT
 foreground: 93a1a1
 
 VERBATIM
-foreground: 00cdcd
+foreground: 551A8B
+font-family: Consolas, Monaco, Andale Mono, monospace
 
 BLOCKQUOTE
 foreground: 00af00

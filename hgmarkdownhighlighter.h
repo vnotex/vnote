@@ -33,12 +33,12 @@ protected:
     void run();
 
 private:
-    void resizeBuffer(int newCap);
+    void resizeBuffer(unsigned int newCap);
 
     char *content;
-    int capacity;
+    unsigned int capacity;
     pmh_element **result;
-    static const int initCapacity;
+    static const unsigned int initCapacity;
 };
 
 struct HighlightingStyle
@@ -73,6 +73,9 @@ private:
 
     void clearFormatting();
     void highlight();
+    void highlightOneRegion(const HighlightingStyle &style, unsigned long pos,
+                            unsigned long end, bool clearBeforeHighlight = false);
+    void highlightCodeBlock();
     void parse();
 };
 
