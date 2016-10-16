@@ -11,6 +11,8 @@
 #include "hgmarkdownhighlighter.h"
 #include "vconfigmanager.h"
 
+extern VConfigManager vconfig;
+
 VEditor::VEditor(const QString &path, const QString &name, bool modifiable,
                  QWidget *parent)
     : QStackedWidget(parent)
@@ -44,14 +46,14 @@ void VEditor::setupUI()
         setupMarkdownPreview();
         textBrowser = NULL;
 
-        mdHighlighter = new HGMarkdownHighlighter(VConfigInst->mdHighlightingStyles,
+        mdHighlighter = new HGMarkdownHighlighter(vconfig.getMdHighlightingStyles(),
                                                   textEditor->document(), 500);
         break;
 
     case DocType::Html:
         textBrowser = new QTextBrowser();
         addWidget(textBrowser);
-        textBrowser->setFont(VConfigInst->baseEditFont);
+        textBrowser->setFont(vconfig.getBaseEditFont());
         webPreviewer = NULL;
         break;
     default:

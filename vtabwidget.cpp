@@ -3,6 +3,9 @@
 #include "vtabwidget.h"
 #include "veditor.h"
 #include "vnote.h"
+#include "vconfigmanager.h"
+
+extern VConfigManager vconfig;
 
 VTabWidget::VTabWidget(QWidget *parent)
     : QTabWidget(parent)
@@ -16,7 +19,7 @@ VTabWidget::VTabWidget(QWidget *parent)
 
 void VTabWidget::openWelcomePage()
 {
-    int idx = openFileInTab(VNote::welcomePagePath, "", false);
+    int idx = openFileInTab(vconfig.getWelcomePagePath(), "", false);
     setTabText(idx, "Welcome to VNote");
     setTabToolTip(idx, "VNote");
 }

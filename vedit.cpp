@@ -3,14 +3,16 @@
 #include "vnote.h"
 #include "vconfigmanager.h"
 
+extern VConfigManager vconfig;
+
 VEdit::VEdit(VNoteFile *noteFile, QWidget *parent)
     : QTextEdit(parent), noteFile(noteFile)
 {
     if (noteFile->docType == DocType::Markdown) {
-        setPalette(VConfigInst->mdEditPalette);
-        setFont(VConfigInst->mdEditFont);
+        setPalette(vconfig.getMdEditPalette());
+        setFont(vconfig.getMdEditFont());
     } else {
-        setFont(VConfigInst->baseEditFont);
+        setFont(vconfig.getBaseEditFont());
     }
 }
 

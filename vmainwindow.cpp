@@ -6,15 +6,15 @@
 #include "vtabwidget.h"
 #include "vconfigmanager.h"
 
+extern VConfigManager vconfig;
+
 VMainWindow::VMainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    VConfigInst;
+    vnote = new VNote();
     setupUI();
     initActions();
     initToolBar();
-    vnote = new VNote();
-    vnote->readGlobalConfig();
     updateNotebookComboBox();
 }
 
@@ -106,22 +106,28 @@ void VMainWindow::updateNotebookComboBox()
     const QVector<VNotebook> &notebooks = vnote->getNotebooks();
 
     notebookComboBox->clear();
+    if (notebooks.isEmpty()) {
+        return;
+    }
     for (int i = 0; i <notebooks.size(); ++i) {
         notebookComboBox->addItem(notebooks[i].getName());
     }
 
     qDebug() << "update notebook combobox with" << notebookComboBox->count()
              << "items";
-    notebookComboBox->setCurrentIndex(vnote->getCurNotebookIndex());
+    notebookComboBox->setCurrentIndex(vconfig.getCurNotebookIndex());
 }
 
 void VMainWindow::setCurNotebookIndex(int index)
 {
     Q_ASSERT(index < vnote->getNotebooks().size());
     qDebug() << "set current notebook index:" << index;
-    vnote->setCurNotebookIndex(index);
-    notebookComboBox->setCurrentIndex(index);
+    vconfig.setCurNotebookIndex(index);
 
     // Update directoryTree
-    emit curNotebookIndexChanged(vnote->getNotebooks()[index].getPath());
+    QString treePath;
+    if (index > -1) {
+        treePath = vnote->getNotebooks()[index].getPath();
+    }
+    emit curNotebookIndexChanged(treePath);
 }

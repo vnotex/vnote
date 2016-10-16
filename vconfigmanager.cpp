@@ -10,29 +10,100 @@
 #include "utils/vutils.h"
 #include "vstyleparser.h"
 
+const QString VConfigManager::orgName = QString("tamlok");
+const QString VConfigManager::appName = QString("vnote");
 const QString VConfigManager::dirConfigFileName = QString(".vnote.json");
-VConfigManager* VConfigManager::instance = NULL;
+const QString VConfigManager::defaultConfigFilePath = QString(":/resources/vnote.ini");
 
 VConfigManager::VConfigManager()
-    : baseEditFont(QFont())
+    : userSettings(NULL), defaultSettings(NULL)
 {
 }
 
-VConfigManager* VConfigManager::getInst()
+VConfigManager::~VConfigManager()
 {
-    if (!instance) {
-        instance = new VConfigManager();
-        instance->initialize();
+    if (userSettings) {
+        delete userSettings;
     }
-    return instance;
+    if (defaultSettings) {
+        delete defaultSettings;
+    }
 }
 
 void VConfigManager::initialize()
 {
+    userSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, orgName, appName);
+    defaultSettings = new QSettings(defaultConfigFilePath, QSettings::IniFormat);
+
     baseEditFont.setPointSize(11);
     baseEditPalette = QTextEdit().palette();
 
+    welcomePagePath = getConfigFromSettings("global", "welcome_page_path").toString();
+    templatePath = getConfigFromSettings("global", "template_path").toString();
+    preTemplatePath = getConfigFromSettings("global", "pre_template_path").toString();
+    postTemplatePath = getConfigFromSettings("global", "post_template_path").toString();
+    templateCssUrl = getConfigFromSettings("global", "template_css_url").toString();
+    curNotebookIndex = getConfigFromSettings("global", "current_notebook").toInt();
+
+    // Update notebooks
+    readNotebookFromSettings();
+
     updateMarkdownEditStyle();
+}
+
+void VConfigManager::readNotebookFromSettings()
+{
+    notebooks.clear();
+    int size = userSettings->beginReadArray("notebooks");
+    for (int i = 0; i < size; ++i) {
+        userSettings->setArrayIndex(i);
+        VNotebook notebook;
+        QString name = userSettings->value("name").toString();
+        QString path = userSettings->value("path").toString();
+        notebook.setName(name);
+        notebook.setPath(path);
+        notebooks.append(notebook);
+    }
+    userSettings->endArray();
+    qDebug() << "read" << notebooks.size()
+             << "notebook items from [notebooks] section";
+}
+
+void VConfigManager::writeNotebookToSettings()
+{
+    userSettings->beginWriteArray("notebooks");
+    for (int i = 0; i < notebooks.size(); ++i) {
+        userSettings->setArrayIndex(i);
+        userSettings->setValue("name", notebooks[i].getName());
+        userSettings->setValue("path", notebooks[i].getPath());
+    }
+    userSettings->endArray();
+    qDebug() << "write" << notebooks.size()
+             << "notebook items in [notebooks] section";
+}
+
+QVariant VConfigManager::getConfigFromSettings(const QString &section, const QString &key)
+{
+    QString fullKey = section + "/" + key;
+    // First, look up the user-scoped config file
+    QVariant value = userSettings->value(fullKey);
+    if (!value.isNull()) {
+        qDebug() << "user config:" << fullKey << value.toString();
+        return value;
+    }
+
+    // Second, look up the default config file
+    value = defaultSettings->value(fullKey);
+    qDebug() << "default config:" << fullKey << value.toString();
+    return value;
+}
+
+void VConfigManager::setConfigToSettings(const QString &section, const QString &key, const QVariant &value)
+{
+    // Set the user-scoped config file
+    QString fullKey = section + "/" + key;
+    userSettings->setValue(fullKey, value);
+    qDebug() << "set user config:" << fullKey << value.toString();
 }
 
 QJsonObject VConfigManager::readDirectoryConfig(const QString &path)

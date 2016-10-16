@@ -35,5 +35,6 @@
         <file>resources/styles/default.mdhl</file>
         <file>resources/styles/solarized-light.mdhl</file>
         <file>resources/styles/solarized-dark.mdhl</file>
+        <file>resources/vnote.ini</file>
     </qresource>
 </RCC>

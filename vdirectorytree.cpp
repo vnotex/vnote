@@ -48,6 +48,10 @@ void VDirectoryTree::setTreePath(const QString& path)
         return;
     }
 
+    if (path.isEmpty()) {
+        clear();
+        return;
+    }
     treePath = path;
     qDebug() << "set directory tree path:" << path;
 
