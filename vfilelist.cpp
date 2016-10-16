@@ -2,7 +2,7 @@
 #include <QtWidgets>
 #include "vfilelist.h"
 #include "vconfigmanager.h"
-#include "vnewfiledialog.h"
+#include "dialog/vnewfiledialog.h"
 
 VFileList::VFileList(QWidget *parent)
     : QListWidget(parent)

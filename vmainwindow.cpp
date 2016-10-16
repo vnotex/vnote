@@ -5,17 +5,21 @@
 #include "vfilelist.h"
 #include "vtabwidget.h"
 #include "vconfigmanager.h"
+#include "dialog/vnewnotebookdialog.h"
 
 extern VConfigManager vconfig;
 
 VMainWindow::VMainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
+    // Must be called before those who uses VConfigManager
     vnote = new VNote();
     setupUI();
     initActions();
     initToolBar();
-    updateNotebookComboBox();
+    initMenuBar();
+
+    updateNotebookComboBox(vnote->getNotebooks());
 }
 
 VMainWindow::~VMainWindow()
@@ -28,12 +32,24 @@ void VMainWindow::setupUI()
     // Notebook directory browser tree
     notebookLabel = new QLabel(tr("Notebook"));
     directoryLabel = new QLabel(tr("Directory"));
+    newNotebookBtn = new QPushButton(QIcon(":/resources/icons/create_notebook.png"), "");
+    newNotebookBtn->setToolTip(tr("Create a new notebook"));
+    deleteNotebookBtn = new QPushButton(QIcon(":/resources/icons/delete_notebook.png"), "");
+    deleteNotebookBtn->setToolTip(tr("Delete current notebook"));
+    notebookInfoBtn = new QPushButton(QIcon(":/resources/icons/notebook_info.png"), "");
+    notebookInfoBtn->setToolTip(tr("View and edit current notebook's information"));
     notebookComboBox = new QComboBox();
     notebookComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     directoryTree = new VDirectoryTree();
 
+    QHBoxLayout *nbBtnLayout = new QHBoxLayout;
+    nbBtnLayout->addWidget(notebookLabel);
+    nbBtnLayout->addStretch();
+    nbBtnLayout->addWidget(newNotebookBtn);
+    nbBtnLayout->addWidget(deleteNotebookBtn);
+    nbBtnLayout->addWidget(notebookInfoBtn);
     QVBoxLayout *nbLayout = new QVBoxLayout;
-    nbLayout->addWidget(notebookLabel);
+    nbLayout->addLayout(nbBtnLayout);
     nbLayout->addWidget(notebookComboBox);
     nbLayout->addWidget(directoryLabel);
     nbLayout->addWidget(directoryTree);
@@ -68,6 +84,10 @@ void VMainWindow::setupUI()
             fileList, &VFileList::setDirectory);
     connect(fileList, &VFileList::fileClicked,
             tabs, &VTabWidget::openFile);
+    connect(newNotebookBtn, &QPushButton::clicked,
+            this, &VMainWindow::onNewNotebookBtnClicked);
+    connect(vnote, &VNote::notebooksChanged,
+            this, &VMainWindow::updateNotebookComboBox);
 
     setCentralWidget(mainSplitter);
     // Create and show the status bar
@@ -94,17 +114,27 @@ void VMainWindow::initActions()
 
 void VMainWindow::initToolBar()
 {
-    fileToolBar = addToolBar(tr("Note"));
+    QToolBar *fileToolBar = addToolBar(tr("Note"));
     fileToolBar->setMovable(false);
     fileToolBar->addAction(editNoteAct);
     fileToolBar->addAction(readNoteAct);
     fileToolBar->addAction(saveNoteAct);
 }
 
-void VMainWindow::updateNotebookComboBox()
+void VMainWindow::initMenuBar()
 {
-    const QVector<VNotebook> &notebooks = vnote->getNotebooks();
+    QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
+    QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
 
+    // To be implemented
+}
+
+void VMainWindow::updateNotebookComboBox(const QVector<VNotebook> &notebooks)
+{
+    // Clearing and inserting items will emit the signal which corrupt the vconfig's
+    // current index. We save it first and then set the combobox index to the
+    // right one to resrote it.
+    int curIndex = vconfig.getCurNotebookIndex();
     notebookComboBox->clear();
     if (notebooks.isEmpty()) {
         return;
@@ -114,20 +144,53 @@ void VMainWindow::updateNotebookComboBox()
     }
 
     qDebug() << "update notebook combobox with" << notebookComboBox->count()
-             << "items";
-    notebookComboBox->setCurrentIndex(vconfig.getCurNotebookIndex());
+             << "items, current notebook" << curIndex;
+    notebookComboBox->setCurrentIndex(curIndex);
 }
 
 void VMainWindow::setCurNotebookIndex(int index)
 {
     Q_ASSERT(index < vnote->getNotebooks().size());
-    qDebug() << "set current notebook index:" << index;
-    vconfig.setCurNotebookIndex(index);
-
     // Update directoryTree
     QString treePath;
     if (index > -1) {
+        vconfig.setCurNotebookIndex(index);
         treePath = vnote->getNotebooks()[index].getPath();
     }
     emit curNotebookIndexChanged(treePath);
+}
+
+void VMainWindow::onNewNotebookBtnClicked()
+{
+    qDebug() << "request to create a notebook";
+    QString info;
+    QString defaultName("new_notebook");
+    QString defaultPath;
+    do {
+        VNewNotebookDialog dialog(tr("Create a new notebook"), info, defaultName,
+                                  defaultPath, this);
+        if (dialog.exec() == QDialog::Accepted) {
+            QString name = dialog.getNameInput();
+            QString path = dialog.getPathInput();
+            if (isConflictWithExistingNotebooks(name, path)) {
+                info = "Name already exists or the path already has a notebook.";
+                defaultName = name;
+                defaultPath = path;
+                continue;
+            }
+            vnote->createNotebook(name, path);
+        }
+        break;
+    } while (true);
+}
+
+bool VMainWindow::isConflictWithExistingNotebooks(const QString &name, const QString &path)
+{
+    const QVector<VNotebook> &notebooks = vnote->getNotebooks();
+    for (int i = 0; i < notebooks.size(); ++i) {
+        if (notebooks[i].getName() == name || notebooks[i].getPath() == path) {
+            return true;
+        }
+    }
+    return false;
 }

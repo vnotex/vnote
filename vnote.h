@@ -5,10 +5,12 @@
 #include <QVector>
 #include <QSettings>
 #include <QFont>
+#include <QObject>
 #include "vnotebook.h"
 
-class VNote
+class VNote : public QObject
 {
+    Q_OBJECT
 public:
     VNote();
 
@@ -17,6 +19,11 @@ public:
     static void decorateTemplate();
 
     static QString templateHtml;
+
+    void createNotebook(const QString &name, const QString &path);
+
+signals:
+    void notebooksChanged(const QVector<VNotebook> &notebooks);
 
 private:
     QVector<VNotebook> notebooks;

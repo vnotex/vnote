@@ -1,6 +1,6 @@
 #include <QtWidgets>
 #include "vdirectorytree.h"
-#include "vnewdirdialog.h"
+#include "dialog/vnewdirdialog.h"
 #include "vconfigmanager.h"
 
 VDirectoryTree::VDirectoryTree(QWidget *parent)

@@ -14,6 +14,8 @@ class VNote;
 class VFileList;
 class VTabWidget;
 class QAction;
+class QPushButton;
+class VNotebook;
 
 class VMainWindow : public QMainWindow
 {
@@ -26,26 +28,31 @@ public:
 private slots:
     // Change current notebook index and update the directory tree
     void setCurNotebookIndex(int index);
+    // Create a notebook
+    void onNewNotebookBtnClicked();
+    void updateNotebookComboBox(const QVector<VNotebook> &notebooks);
 
 signals:
     void curNotebookIndexChanged(const QString &path);
 
 private:
     void setupUI();
-    // Update notebookComboBox according to vnote
-    void updateNotebookComboBox();
     void initActions();
     void initToolBar();
+    void initMenuBar();
+    bool isConflictWithExistingNotebooks(const QString &name, const QString &path);
 
     QLabel *notebookLabel;
     QLabel *directoryLabel;
     QComboBox *notebookComboBox;
+    QPushButton *newNotebookBtn;
+    QPushButton *deleteNotebookBtn;
+    QPushButton *notebookInfoBtn;
     VDirectoryTree *directoryTree;
     VFileList *fileList;
     VTabWidget *tabs;
     QSplitter *mainSplitter;
     VNote *vnote;
-    QToolBar *fileToolBar;
 
     // Actions
     QAction *editNoteAct;

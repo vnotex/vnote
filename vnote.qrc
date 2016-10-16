@@ -36,5 +36,8 @@
         <file>resources/styles/solarized-light.mdhl</file>
         <file>resources/styles/solarized-dark.mdhl</file>
         <file>resources/vnote.ini</file>
+        <file>resources/icons/create_notebook.png</file>
+        <file>resources/icons/delete_notebook.png</file>
+        <file>resources/icons/notebook_info.png</file>
     </qresource>
 </RCC>

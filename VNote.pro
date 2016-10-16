@@ -17,10 +17,10 @@ SOURCES += main.cpp\
     vdirectorytree.cpp \
     vnote.cpp \
     vnotebook.cpp \
-    vnewdirdialog.cpp \
+    dialog/vnewdirdialog.cpp \
     vconfigmanager.cpp \
     vfilelist.cpp \
-    vnewfiledialog.cpp \
+    dialog/vnewfiledialog.cpp \
     vtabwidget.cpp \
     vedit.cpp \
     veditor.cpp \
@@ -31,16 +31,17 @@ SOURCES += main.cpp\
     utils/peg-highlight/pmh_parser.c \
     hgmarkdownhighlighter.cpp \
     vstyleparser.cpp \
-    utils/peg-highlight/pmh_styleparser.c
+    utils/peg-highlight/pmh_styleparser.c \
+    dialog/vnewnotebookdialog.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
     vnote.h \
     vnotebook.h \
-    vnewdirdialog.h \
+    dialog/vnewdirdialog.h \
     vconfigmanager.h \
     vfilelist.h \
-    vnewfiledialog.h \
+    dialog/vnewfiledialog.h \
     vtabwidget.h \
     vedit.h \
     veditor.h \
@@ -53,7 +54,8 @@ HEADERS  += vmainwindow.h \
     hgmarkdownhighlighter.h \
     utils/peg-highlight/pmh_definitions.h \
     vstyleparser.h \
-    utils/peg-highlight/pmh_styleparser.h
+    utils/peg-highlight/pmh_styleparser.h \
+    dialog/vnewnotebookdialog.h
 
 RESOURCES += \
     vnote.qrc
