@@ -67,6 +67,7 @@ pre {
     background-color: #f8f8f8;
     border-radius: 3px;
     border: 1px solid #cccccc;
+    overflow: auto;
 }
 code {
     font-family: Consolas, Monaco, Andale Mono, monospace;

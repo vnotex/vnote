@@ -1,11 +1,12 @@
 #include <QtWidgets>
+#include <QDir>
 #include "vnewnotebookdialog.h"
 
 VNewNotebookDialog::VNewNotebookDialog(const QString &title, const QString &info,
                                        const QString &defaultName, const QString &defaultPath,
                                        QWidget *parent)
-    : QDialog(parent), title(title), info(info), defaultName(defaultName), defaultPath(defaultPath),
-      infoLabel(NULL)
+    : QDialog(parent), infoLabel(NULL),
+      title(title), info(info), defaultName(defaultName), defaultPath(defaultPath)
 {
     setupUI();
 
@@ -81,6 +82,6 @@ QString VNewNotebookDialog::getPathInput() const
 void VNewNotebookDialog::handleBrowseBtnClicked()
 {
     QString dirPath = QFileDialog::getExistingDirectory(this, tr("Select a directory as the path of the notebook"),
-                                                        "", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+                                                        QDir::homePath(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
     pathEdit->setText(dirPath);
 }

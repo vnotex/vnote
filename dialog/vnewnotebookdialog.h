@@ -33,8 +33,8 @@ private:
     QPushButton *cancelBtn;
 
     QString title;
-    QString defaultName;
     QString info;
+    QString defaultName;
     QString defaultPath;
 };
 
