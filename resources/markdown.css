@@ -80,10 +80,10 @@ code {
 pre code {
    margin: 0;
    padding: 0;
-   white-space: pre;
    border: none;
    background: transparent;
    white-space: pre-wrap;
+   overflow: auto;
 }
 aside {
     display: block;
