@@ -11,8 +11,10 @@ VEdit::VEdit(VNoteFile *noteFile, QWidget *parent)
     if (noteFile->docType == DocType::Markdown) {
         setPalette(vconfig.getMdEditPalette());
         setFont(vconfig.getMdEditFont());
+        setAcceptRichText(false);
     } else {
         setFont(vconfig.getBaseEditFont());
+        setAutoFormatting(QTextEdit::AutoBulletList);
     }
 }
 
@@ -24,6 +26,7 @@ void VEdit::beginEdit()
         setHtml(noteFile->content);
         break;
     case DocType::Markdown:
+        setFont(vconfig.getMdEditFont());
         setPlainText(noteFile->content);
         break;
     default:
