@@ -86,6 +86,8 @@ void VMainWindow::setupUI()
             tabs, &VTabWidget::openFile);
     connect(newNotebookBtn, &QPushButton::clicked,
             this, &VMainWindow::onNewNotebookBtnClicked);
+    connect(deleteNotebookBtn, &QPushButton::clicked,
+            this, &VMainWindow::onDeleteNotebookBtnClicked);
     connect(vnote, &VNote::notebooksChanged,
             this, &VMainWindow::updateNotebookComboBox);
 
@@ -193,4 +195,20 @@ bool VMainWindow::isConflictWithExistingNotebooks(const QString &name, const QSt
         }
     }
     return false;
+}
+
+void VMainWindow::onDeleteNotebookBtnClicked()
+{
+    int curIndex = notebookComboBox->currentIndex();
+    QString curName = vnote->getNotebooks()[curIndex].getName();
+    QString curPath = vnote->getNotebooks()[curIndex].getPath();
+
+    QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Are you sure you want to delete notebook \"%1\"?")
+                       .arg(curName));
+    msgBox.setInformativeText(QString("This will delete any files in this notebook (\"%1\").").arg(curPath));
+    msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Ok);
+    if (msgBox.exec() == QMessageBox::Ok) {
+        vnote->removeNotebook(curName);
+    }
 }

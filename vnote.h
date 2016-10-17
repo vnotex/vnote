@@ -21,6 +21,7 @@ public:
     static QString templateHtml;
 
     void createNotebook(const QString &name, const QString &path);
+    void removeNotebook(const QString &name);
 
 signals:
     void notebooksChanged(const QVector<VNotebook> &notebooks);

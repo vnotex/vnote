@@ -30,6 +30,7 @@ private slots:
     void setCurNotebookIndex(int index);
     // Create a notebook
     void onNewNotebookBtnClicked();
+    void onDeleteNotebookBtnClicked();
     void updateNotebookComboBox(const QVector<VNotebook> &notebooks);
 
 signals:
