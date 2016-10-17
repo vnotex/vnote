@@ -32,6 +32,7 @@ private slots:
     void onNewNotebookBtnClicked();
     void onDeleteNotebookBtnClicked();
     void updateNotebookComboBox(const QVector<VNotebook> &notebooks);
+    void importNoteFromFile();
 
 signals:
     void curNotebookIndexChanged(const QString &path);
@@ -59,6 +60,7 @@ private:
     QAction *editNoteAct;
     QAction *saveNoteAct;
     QAction *readNoteAct;
+    QAction *importNoteAct;
 };
 
 #endif // VMAINWINDOW_H

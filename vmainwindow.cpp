@@ -112,6 +112,11 @@ void VMainWindow::initActions()
     saveNoteAct->setStatusTip(tr("Save current note"));
     connect(saveNoteAct, &QAction::triggered,
             tabs, &VTabWidget::saveFile);
+
+    importNoteAct = new QAction(tr("&Import note from file"), this);
+    importNoteAct->setStatusTip(tr("Import notes into current directory from files"));
+    connect(importNoteAct, &QAction::triggered,
+            this, &VMainWindow::importNoteFromFile);
 }
 
 void VMainWindow::initToolBar()
@@ -129,6 +134,7 @@ void VMainWindow::initMenuBar()
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
 
     // To be implemented
+    fileMenu->addAction(importNoteAct);
 }
 
 void VMainWindow::updateNotebookComboBox(const QVector<VNotebook> &notebooks)
@@ -211,4 +217,28 @@ void VMainWindow::onDeleteNotebookBtnClicked()
     if (msgBox.exec() == QMessageBox::Ok) {
         vnote->removeNotebook(curName);
     }
+}
+
+void VMainWindow::importNoteFromFile()
+{
+    QStringList files = QFileDialog::getOpenFileNames(this,tr("Select files(HTML or Markdown) to be imported as notes"),
+                                                      QDir::homePath());
+    if (files.isEmpty()) {
+        return;
+    }
+    QStringList failedFiles;
+    for (int i = 0; i < files.size(); ++i) {
+        bool ret = fileList->importFile(files[i]);
+        if (!ret) {
+            failedFiles.append(files[i]);
+        }
+    }
+    QMessageBox msgBox(QMessageBox::Information, tr("Import note from file"),
+                       QString("Imported notes: %1 succeed, %2 failed.")
+                       .arg(files.size() - failedFiles.size()).arg(failedFiles.size()));
+    if (!failedFiles.isEmpty()) {
+        msgBox.setInformativeText(tr("Failed to import files may be due to name conflicts."));
+    }
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.exec();
 }

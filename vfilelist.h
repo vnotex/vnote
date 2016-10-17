@@ -11,6 +11,7 @@ class VFileList : public QListWidget
     Q_OBJECT
 public:
     explicit VFileList(QWidget *parent = 0);
+    bool importFile(const QString &name);
 
 signals:
     void fileClicked(QJsonObject fileJson);

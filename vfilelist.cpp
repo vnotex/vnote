@@ -20,8 +20,8 @@ void VFileList::initActions()
 {
     newFileAct = new QAction(tr("&New note"), this);
     newFileAct->setStatusTip(tr("Create a new note in current directory"));
-    connect(newFileAct, &QAction::triggered,
-            this, &VFileList::newFile);
+    connect(newFileAct, SIGNAL(triggered(bool)),
+            this, SLOT(newFile()));
 
     deleteFileAct = new QAction(tr("&Delete"), this);
     deleteFileAct->setStatusTip(tr("Delete selected note"));
@@ -248,7 +248,6 @@ void VFileList::deleteFileAndUpdateList(QListWidgetItem *item)
         return;
     }
 
-
     // Delete the file
     QFile file(filePath);
     if (!file.remove()) {
@@ -271,4 +270,46 @@ void VFileList::handleItemClicked(QListWidgetItem *currentItem)
     itemJson["path"] = QDir::cleanPath(QDir(rootPath).filePath(relativePath));
     qDebug() << "click file:" << itemJson;
     emit fileClicked(itemJson);
+}
+
+bool VFileList::importFile(const QString &name)
+{
+    if (name.isEmpty()) {
+        return false;
+    }
+    if (isConflictNameWithExisting(name)) {
+        return false;
+    }
+
+    // Copy file @name to current directory
+    QString targetPath = QDir(rootPath).filePath(relativePath);
+    QString srcName = QFileInfo(name).fileName();
+    if (srcName.isEmpty()) {
+        return false;
+    }
+    QString targetName = QDir(targetPath).filePath(srcName);
+
+    bool ret = QFile::copy(name, targetName);
+    if (!ret) {
+        qWarning() << "error: fail to copy" << name << "to" << targetName;
+        return false;
+    }
+
+    // Update current directory's config file to include this new file
+    QJsonObject dirJson = VConfigManager::readDirectoryConfig(targetPath);
+    Q_ASSERT(!dirJson.isEmpty());
+    QJsonObject fileJson;
+    fileJson["name"] = srcName;
+    fileJson["description"] = "";
+    QJsonArray fileArray = dirJson["files"].toArray();
+    fileArray.push_front(fileJson);
+    dirJson["files"] = fileArray;
+    if (!VConfigManager::writeDirectoryConfig(targetPath, dirJson)) {
+        qWarning() << "error: fail to update directory's configuration file to add a new file"
+                   << srcName;
+        QFile(targetName).remove();
+        return false;
+    }
+
+    return insertFileListItem(fileJson, true);
 }
