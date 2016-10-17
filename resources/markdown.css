@@ -82,6 +82,7 @@ pre code {
    white-space: pre;
    border: none;
    background: transparent;
+   white-space: pre-wrap;
 }
 aside {
     display: block;
