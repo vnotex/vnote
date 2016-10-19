@@ -11,32 +11,9 @@
 #include <QtDebug>
 #include "hgmarkdownhighlighter.h"
 
-#ifndef QT_NO_DEBUG
-#define V_HIGHLIGHT_DEBUG
-#endif
+const int HGMarkdownHighlighter::initCapacity = 1024;
 
-const unsigned int WorkerThread::initCapacity = 1024;
-
-WorkerThread::WorkerThread()
-    : QThread(NULL), content(NULL), capacity(0), result(NULL)
-{
-    resizeBuffer(initCapacity);
-}
-
-WorkerThread::~WorkerThread()
-{
-    if (result) {
-        pmh_free_elements(result);
-        result = NULL;
-    }
-    if (content) {
-        delete [] content;
-        capacity = 0;
-        content = NULL;
-    }
-}
-
-void WorkerThread::resizeBuffer(unsigned int newCap)
+void HGMarkdownHighlighter::resizeBuffer(int newCap)
 {
     if (newCap == capacity) {
         return;
@@ -49,74 +26,59 @@ void WorkerThread::resizeBuffer(unsigned int newCap)
     content = new char [capacity];
 }
 
-void WorkerThread::prepareAndStart(const char *data)
-{
-    Q_ASSERT(data);
-    unsigned int len = strlen(data);
-    if (len >= capacity) {
-        resizeBuffer(qMax(2 * capacity, len + 1));
-    }
-    Q_ASSERT(content);
-    memcpy(content, data, len);
-    content[len] = '\0';
-
-    if (result) {
-        pmh_free_elements(result);
-        result = NULL;
-    }
-
-    start();
-}
-
-pmh_element** WorkerThread::retriveResult()
-{
-    Q_ASSERT(result);
-    pmh_element** ret = result;
-    result = NULL;
-    return ret;
-}
-
-void WorkerThread::run()
-{
-    if (content == NULL)
-        return;
-    Q_ASSERT(!result);
-    pmh_markdown_to_elements(content, pmh_EXT_NONE, &result);
-}
-
 // Will be freeed by parent automatically
-HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &styles,
-                                             QTextDocument *parent,
-                                             int aWaitInterval) : QObject(parent)
+HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &styles, int waitInterval,
+                                             QTextDocument *parent)
+    : QSyntaxHighlighter(parent), parsing(0),
+      waitInterval(waitInterval), content(NULL), capacity(0), result(NULL)
 {
-    workerThread = new WorkerThread();
-    cached_elements = NULL;
-    waitInterval = aWaitInterval;
+    codeBlockStartExp = QRegExp("^```");
+    codeBlockEndExp = QRegExp("^```$");
+    codeBlockFormat.setForeground(QBrush(Qt::darkYellow));
+    for (int index = 0; index < styles.size(); ++index) {
+        if (styles[index].type == pmh_VERBATIM) {
+            codeBlockFormat = styles[index].format;
+            break;
+        }
+    }
+
+    resizeBuffer(initCapacity);
     setStyles(styles);
+    document = parent;
     timer = new QTimer(this);
     timer->setSingleShot(true);
-    timer->setInterval(aWaitInterval);
-    connect(timer, SIGNAL(timeout()), this, SLOT(timerTimeout()));
-    document = parent;
-    connect(document, SIGNAL(contentsChange(int,int,int)),
-            this, SLOT(handleContentsChange(int,int,int)));
-    connect(workerThread, SIGNAL(finished()), this, SLOT(threadFinished()));
-    this->parse();
+    timer->setInterval(this->waitInterval);
+    connect(timer, &QTimer::timeout, this, &HGMarkdownHighlighter::timerTimeout);
+    connect(document, &QTextDocument::contentsChange,
+            this, &HGMarkdownHighlighter::handleContentChange);
 }
 
 HGMarkdownHighlighter::~HGMarkdownHighlighter()
 {
-    if (workerThread) {
-        if (workerThread->isRunning()) {
-            workerThread->wait();
+    if (result) {
+        pmh_free_elements(result);
+        result = NULL;
+    }
+    if (content) {
+        delete [] content;
+        capacity = 0;
+        content = NULL;
+    }
+}
+
+void HGMarkdownHighlighter::highlightBlock(const QString &text)
+{
+    int blockNum = currentBlock().blockNumber();
+    if (!parsing && blockHighlights.size() > blockNum) {
+        QVector<HLUnit> &units = blockHighlights[blockNum];
+        for (int i = 0; i < units.size(); ++i) {
+            // TODO: merge two format within the same range
+            const HLUnit& unit = units[i];
+            setFormat(unit.start, unit.length, highlightingStyles[unit.styleIndex].format);
         }
-        delete workerThread;
-        workerThread = NULL;
     }
-    if (cached_elements) {
-        pmh_free_elements(cached_elements);
-        cached_elements = NULL;
-    }
+    setCurrentBlockState(0);
+    highlightCodeBlock(text);
 }
 
 void HGMarkdownHighlighter::setStyles(const QVector<HighlightingStyle> &styles)
@@ -124,174 +86,148 @@ void HGMarkdownHighlighter::setStyles(const QVector<HighlightingStyle> &styles)
     this->highlightingStyles = styles;
 }
 
-void HGMarkdownHighlighter::clearFormatting()
+void HGMarkdownHighlighter::initBlockHighlightFromResult(int nrBlocks)
 {
-    QTextBlock block = document->firstBlock();
-    while (block.isValid()) {
-        block.layout()->clearAdditionalFormats();
-        block = block.next();
+    blockHighlights.resize(nrBlocks);
+    for (int i = 0; i < blockHighlights.size(); ++i) {
+        blockHighlights[i].clear();
     }
-}
 
-void HGMarkdownHighlighter::highlightOneRegion(const HighlightingStyle &style,
-                                               unsigned long pos, unsigned long end, bool clearBeforeHighlight)
-{
-    // "The QTextLayout object can only be modified from the
-    // documentChanged implementation of a QAbstractTextDocumentLayout
-    // subclass. Any changes applied from the outside cause undefined
-    // behavior." -- we are breaking this rule here. There might be
-    // a better (more correct) way to do this.
-    int startBlockNum = document->findBlock(pos).blockNumber();
-    int endBlockNum = document->findBlock(end).blockNumber();
-    for (int i = startBlockNum; i <= endBlockNum; ++i)
-    {
-        QTextBlock block = document->findBlockByNumber(i);
-
-        QTextLayout *layout = block.layout();
-        if (clearBeforeHighlight) {
-            layout->clearFormats();
-        }
-        QVector<QTextLayout::FormatRange> list = layout->formats();
-        int blockpos = block.position();
-        QTextLayout::FormatRange r;
-        r.format = style.format;
-
-        if (i == startBlockNum) {
-            r.start = pos - blockpos;
-            r.length = (startBlockNum == endBlockNum)
-                        ? end - pos
-                        : block.length() - r.start;
-        } else if (i == endBlockNum) {
-            r.start = 0;
-            r.length = end - blockpos;
-        } else {
-            r.start = 0;
-            r.length = block.length();
-        }
-
-        list.append(r);
-        layout->setFormats(list);
-    }
-}
-
-void HGMarkdownHighlighter::highlight()
-{
-    if (cached_elements == NULL) {
+    if (!result) {
         return;
     }
-
-    if (highlightingStyles.isEmpty()) {
-        qWarning() << "error: HighlightingStyles is not set";
-        return;
-    }
-
-    this->clearFormatting();
-
-    // To make sure content is not changed by highlight operations.
-    // May be resource-consuming. Can be removed if no need.
-#ifdef V_HIGHLIGHT_DEBUG
-    QString oriContent = document->toPlainText();
-#endif
 
     for (int i = 0; i < highlightingStyles.size(); i++)
     {
         const HighlightingStyle &style = highlightingStyles[i];
-        pmh_element *elem_cursor = cached_elements[style.type];
+        pmh_element *elem_cursor = result[style.type];
         while (elem_cursor != NULL)
         {
             if (elem_cursor->end <= elem_cursor->pos) {
                 elem_cursor = elem_cursor->next;
                 continue;
             }
-            highlightOneRegion(style, elem_cursor->pos, elem_cursor->end);
+            initBlockHighlihgtOne(elem_cursor->pos, elem_cursor->end, i);
             elem_cursor = elem_cursor->next;
         }
     }
 
-    highlightCodeBlock();
-
-    document->markContentsDirty(0, document->characterCount());
-
-#ifdef V_HIGHLIGHT_DEBUG
-    if (oriContent != document->toPlainText()) {
-        qWarning() << "warning: content was changed before and after highlighting";
-    }
-#endif
-
+    pmh_free_elements(result);
+    result = NULL;
 }
 
-void HGMarkdownHighlighter::highlightCodeBlock()
+void HGMarkdownHighlighter::initBlockHighlihgtOne(unsigned long pos, unsigned long end, int styleIndex)
 {
-    QRegExp codeRegStart("^```");
-    QRegExp codeRegEnd("^```$");
+    int startBlockNum = document->findBlock(pos).blockNumber();
+    int endBlockNum = document->findBlock(end).blockNumber();
+    for (int i = startBlockNum; i <= endBlockNum; ++i)
+    {
+        QTextBlock block = document->findBlockByNumber(i);
+        int blockStartPos = block.position();
+        HLUnit unit;
+        if (i == startBlockNum) {
+            unit.start = pos - blockStartPos;
+            unit.length = (startBlockNum == endBlockNum) ?
+                          (end - pos) : (block.length() - unit.start);
+        } else if (i == endBlockNum) {
+            unit.start = 0;
+            unit.length = end - blockStartPos;
+        } else {
+            unit.start = 0;
+            unit.length = block.length();
+        }
+        unit.styleIndex = styleIndex;
 
-    HighlightingStyle style;
-    int index = 0;
-    for (index = 0; index < highlightingStyles.size(); ++index) {
-        if (highlightingStyles[index].type == pmh_VERBATIM) {
-            style = highlightingStyles[index];
-            break;
+        blockHighlights[i].append(unit);
+    }
+}
+
+void HGMarkdownHighlighter::highlightCodeBlock(const QString &text)
+{
+    int nextIndex = 0;
+    int startIndex = 0;
+    if (previousBlockState() != 1) {
+        startIndex = codeBlockStartExp.indexIn(text);
+        if (startIndex >= 0) {
+            nextIndex = startIndex + codeBlockStartExp.matchedLength();
+        } else {
+            nextIndex = -1;
         }
     }
-    if (index == highlightingStyles.size()) {
-        style.type = pmh_VERBATIM;
-        style.format.setForeground(QBrush(Qt::darkYellow));
-    }
-    int pos = 0;
-    while (true) {
-        QTextCursor startCursor = document->find(codeRegStart, pos);
-        if (!startCursor.hasSelection()) {
-            break;
+
+    while (nextIndex >= 0) {
+        int endIndex = codeBlockEndExp.indexIn(text, nextIndex);
+        int codeBlockLength;
+        if (endIndex == -1) {
+            setCurrentBlockState(1);
+            codeBlockLength = text.length() - startIndex;
+        } else {
+            codeBlockLength = endIndex - startIndex + codeBlockEndExp.matchedLength();
         }
-        pos = startCursor.selectionEnd();
-        QTextCursor endCursor = document->find(codeRegEnd, pos);
-        if (!endCursor.hasSelection()) {
-            break;
+        setFormat(startIndex, codeBlockLength, codeBlockFormat);
+        startIndex = codeBlockStartExp.indexIn(text, startIndex + codeBlockLength);
+        if (startIndex >= 0) {
+            nextIndex = startIndex + codeBlockStartExp.matchedLength();
+        } else {
+            nextIndex = -1;
         }
-        pos = endCursor.selectionEnd();
-        highlightOneRegion(style, startCursor.selectionStart(), endCursor.selectionEnd(),
-                           true);
     }
 }
 
 void HGMarkdownHighlighter::parse()
 {
-    if (workerThread->isRunning()) {
-        parsePending = true;
+    if (!parsing.testAndSetRelaxed(0, 1)) {
         return;
     }
 
-    QString content = document->toPlainText();
-    QByteArray ba = content.toUtf8();
-    parsePending = false;
-    workerThread->prepareAndStart((const char *)ba.data());
+    int nrBlocks = document->blockCount();
+    parseInternal();
+
+    if (highlightingStyles.isEmpty()) {
+        qWarning() << "error: HighlightingStyles is not set";
+        return;
+    }
+    initBlockHighlightFromResult(nrBlocks);
+    parsing.store(0);
 }
 
-void HGMarkdownHighlighter::threadFinished()
+void HGMarkdownHighlighter::parseInternal()
 {
-    if (parsePending) {
-        this->parse();
-        return;
+    QString text = document->toPlainText();
+    QByteArray ba = text.toUtf8();
+    const char *data = (const char *)ba.data();
+   int len = ba.size();
+
+    if (result) {
+        pmh_free_elements(result);
+        result = NULL;
     }
 
-    if (cached_elements != NULL) {
-        pmh_free_elements(cached_elements);
+    if (len == 0) {
+        return;
+    } else if (len >= capacity) {
+        resizeBuffer(qMax(2 * capacity, len + 1));
+    } else if (len < (capacity >> 2)) {
+        resizeBuffer(qMax(capacity >> 1, len + 1));
     }
-    cached_elements = workerThread->retriveResult();
-    this->highlight();
+
+    memcpy(content, data, len);
+    content[len] = '\0';
+
+    pmh_markdown_to_elements(content, pmh_EXT_NONE, &result);
 }
 
-void HGMarkdownHighlighter::handleContentsChange(int position, int charsRemoved,
-                                                 int charsAdded)
+void HGMarkdownHighlighter::handleContentChange(int position, int charsRemoved, int charsAdded)
 {
-    if (charsRemoved == 0 && charsAdded == 0)
+    if (charsRemoved == 0 && charsAdded == 0) {
         return;
-
+    }
     timer->stop();
     timer->start();
 }
 
 void HGMarkdownHighlighter::timerTimeout()
 {
-    this->parse();
+    parse();
+    rehighlight();
 }

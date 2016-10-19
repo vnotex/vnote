@@ -11,7 +11,8 @@
 #define HGMARKDOWNHIGHLIGHTER_H
 
 #include <QTextCharFormat>
-#include <QThread>
+#include <QSyntaxHighlighter>
+#include <QAtomicInt>
 
 extern "C" {
 #include "utils/peg-highlight/pmh_parser.h"
@@ -21,62 +22,65 @@ QT_BEGIN_NAMESPACE
 class QTextDocument;
 QT_END_NAMESPACE
 
-class WorkerThread : public QThread
-{
-public:
-    WorkerThread();
-    ~WorkerThread();
-    void prepareAndStart(const char *data);
-    pmh_element** retriveResult();
-
-protected:
-    void run();
-
-private:
-    void resizeBuffer(unsigned int newCap);
-
-    char *content;
-    unsigned int capacity;
-    pmh_element **result;
-    static const unsigned int initCapacity;
-};
-
 struct HighlightingStyle
 {
     pmh_element_type type;
     QTextCharFormat format;
 };
 
-class HGMarkdownHighlighter : public QObject
+// One continuous region for a certain markdown highlight style
+// within a QTextBlock.
+// Pay attention to the change of HighlightingStyles[]
+struct HLUnit
+{
+    // Highlight offset @start and @length with style HighlightingStyles[styleIndex]
+    // within a QTextBlock
+    unsigned long start;
+    unsigned long length;
+    unsigned int styleIndex;
+};
+
+class HGMarkdownHighlighter : public QSyntaxHighlighter
 {
     Q_OBJECT
 
 public:
-    HGMarkdownHighlighter(const QVector<HighlightingStyle> &styles,
-                          QTextDocument *parent = 0, int aWaitInterval = 2000);
+    HGMarkdownHighlighter(const QVector<HighlightingStyle> &styles, int waitInterval,
+                          QTextDocument *parent = 0);
     ~HGMarkdownHighlighter();
     void setStyles(const QVector<HighlightingStyle> &styles);
-    int waitInterval;
+
+protected:
+    void highlightBlock(const QString &text) Q_DECL_OVERRIDE;
 
 private slots:
-    void handleContentsChange(int position, int charsRemoved, int charsAdded);
-    void threadFinished();
+    void handleContentChange(int position, int charsRemoved, int charsAdded);
     void timerTimeout();
 
 private:
-    QTimer *timer;
-    QTextDocument *document;
-    WorkerThread *workerThread;
-    bool parsePending;
-    pmh_element **cached_elements;
-    QVector<HighlightingStyle> highlightingStyles;
+    QRegExp codeBlockStartExp;
+    QRegExp codeBlockEndExp;
+    QTextCharFormat codeBlockFormat;
 
-    void clearFormatting();
-    void highlight();
-    void highlightOneRegion(const HighlightingStyle &style, unsigned long pos,
-                            unsigned long end, bool clearBeforeHighlight = false);
-    void highlightCodeBlock();
+    QTextDocument *document;
+    QVector<HighlightingStyle> highlightingStyles;
+    QVector<QVector<HLUnit> > blockHighlights;
+    QAtomicInt parsing;
+    QTimer *timer;
+    int waitInterval;
+
+    char *content;
+    int capacity;
+    pmh_element **result;
+    static const int initCapacity;
+    void resizeBuffer(int newCap);
+
+    void highlightCodeBlock(const QString &text);
     void parse();
+    void parseInternal();
+    void initBlockHighlightFromResult(int nrBlocks);
+    void initBlockHighlihgtOne(unsigned long pos, unsigned long end,
+                               int styleIndex);
 };
 
 #endif

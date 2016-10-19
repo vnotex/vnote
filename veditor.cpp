@@ -22,7 +22,6 @@ VEditor::VEditor(const QString &path, const QString &name, bool modifiable,
     noteFile = new VNoteFile(path, name, fileText, docType, modifiable);
 
     isEditMode = false;
-    mdHighlighter = NULL;
 
     setupUI();
 
@@ -45,9 +44,6 @@ void VEditor::setupUI()
     case DocType::Markdown:
         setupMarkdownPreview();
         textBrowser = NULL;
-
-        mdHighlighter = new HGMarkdownHighlighter(vconfig.getMdHighlightingStyles(),
-                                                  textEditor->document(), 500);
         break;
 
     case DocType::Html:

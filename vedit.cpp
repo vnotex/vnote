@@ -2,16 +2,20 @@
 #include "vedit.h"
 #include "vnote.h"
 #include "vconfigmanager.h"
+#include "hgmarkdownhighlighter.h"
 
 extern VConfigManager vconfig;
 
 VEdit::VEdit(VNoteFile *noteFile, QWidget *parent)
-    : QTextEdit(parent), noteFile(noteFile)
+    : QTextEdit(parent), noteFile(noteFile), mdHighlighter(NULL)
 {
     if (noteFile->docType == DocType::Markdown) {
         setPalette(vconfig.getMdEditPalette());
         setFont(vconfig.getMdEditFont());
         setAcceptRichText(false);
+
+        mdHighlighter = new HGMarkdownHighlighter(vconfig.getMdHighlightingStyles(),
+                                                  500, document());
     } else {
         setFont(vconfig.getBaseEditFont());
         setAutoFormatting(QTextEdit::AutoBulletList);

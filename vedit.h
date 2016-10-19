@@ -6,6 +6,8 @@
 #include "vconstants.h"
 #include "vnotefile.h"
 
+class HGMarkdownHighlighter;
+
 class VEdit : public QTextEdit
 {
     Q_OBJECT
@@ -28,6 +30,7 @@ public slots:
 
 private:
     VNoteFile *noteFile;
+    HGMarkdownHighlighter *mdHighlighter;
 };
 
 #endif // VEDIT_H

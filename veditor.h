@@ -10,7 +10,6 @@
 class QTextBrowser;
 class VEdit;
 class QWebEngineView;
-class HGMarkdownHighlighter;
 
 class VEditor : public QStackedWidget
 {
@@ -39,7 +38,6 @@ private:
     VEdit *textEditor;
     QWebEngineView *webPreviewer;
     VDocument document;
-    HGMarkdownHighlighter *mdHighlighter;
 };
 
 #endif // VEDITOR_H

@@ -115,15 +115,17 @@ void VStyleParser::parseMarkdownStyle(const QString &styleStr)
 
 QVector<HighlightingStyle> VStyleParser::fetchMarkdownStyles(const QFont &baseFont) const
 {
-    QVector<HighlightingStyle> styles(pmh_NUM_LANG_TYPES);
+    QVector<HighlightingStyle> styles;
 
     for (int i = 0; i < pmh_NUM_LANG_TYPES; ++i) {
         pmh_style_attribute *attr = markdownStyles->element_styles[i];
         if (!attr) {
             continue;
         }
-        styles[i].type = attr->lang_element_type;
-        styles[i].format = QTextCharFormatFromAttrs(attr, baseFont);
+        HighlightingStyle style;
+        style.type = attr->lang_element_type;
+        style.format = QTextCharFormatFromAttrs(attr, baseFont);
+        styles.append(style);
     }
     return styles;
 }
