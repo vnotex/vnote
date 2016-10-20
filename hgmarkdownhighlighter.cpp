@@ -206,9 +206,9 @@ void HGMarkdownHighlighter::parseInternal()
     if (len == 0) {
         return;
     } else if (len >= capacity) {
-        resizeBuffer(qMax(2 * capacity, len + 1));
+        resizeBuffer(qMax(2 * capacity, len * 2));
     } else if (len < (capacity >> 2)) {
-        resizeBuffer(qMax(capacity >> 1, len + 1));
+        resizeBuffer(qMax(capacity >> 1, len * 2));
     }
 
     memcpy(content, data, len);
