@@ -110,6 +110,7 @@ void VMainWindow::initActions()
 
     saveNoteAct = new QAction(tr("&Save"), this);
     saveNoteAct->setStatusTip(tr("Save current note"));
+    saveNoteAct->setShortcut(QKeySequence::Save);
     connect(saveNoteAct, &QAction::triggered,
             tabs, &VTabWidget::saveFile);
 

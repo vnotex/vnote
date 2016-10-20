@@ -118,8 +118,8 @@ void VEditor::readFile()
     if (!isEditMode) {
         return;
     }
-    bool canExit = textEditor->tryEndEdit();
-    if (!canExit) {
+
+    if (textEditor->isModified()) {
         // Need to save the changes
         QMessageBox msgBox;
         msgBox.setText("The note has been modified.");
@@ -149,21 +149,22 @@ void VEditor::readFile()
 
 bool VEditor::saveFile()
 {
-    if (!isEditMode || !noteFile->modifiable) {
+    if (!isEditMode || !noteFile->modifiable || !textEditor->isModified()) {
         return true;
     }
-    textEditor->beginSave();
+    textEditor->saveFile();
     bool ret = VUtils::writeFileToDisk(QDir(noteFile->path).filePath(noteFile->name),
-                               noteFile->content);
+                                       noteFile->content);
     if (!ret) {
         QMessageBox msgBox(QMessageBox::Warning, tr("Fail to save to file"),
                            QString("Fail to write to disk when saving a note. Please try it again."));
         msgBox.setStandardButtons(QMessageBox::Ok);
         msgBox.setDefaultButton(QMessageBox::Ok);
         msgBox.exec();
+        textEditor->setModified(true);
         return false;
     }
-    textEditor->endSave();
+    textEditor->setModified(false);
     return true;
 }
 

@@ -38,12 +38,7 @@ void VEdit::beginEdit()
     }
 }
 
-bool VEdit::tryEndEdit()
-{
-    return !document()->isModified();
-}
-
-void VEdit::beginSave()
+void VEdit::saveFile()
 {
     if (!document()->isModified()) {
         return;
@@ -59,11 +54,6 @@ void VEdit::beginSave()
     default:
         qWarning() << "error: unknown doc type" << int(noteFile->docType);
     }
-}
-
-void VEdit::endSave()
-{
-    document()->setModified(false);
 }
 
 void VEdit::reloadFile()

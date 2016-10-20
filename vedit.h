@@ -14,12 +14,12 @@ class VEdit : public QTextEdit
 public:
     VEdit(VNoteFile *noteFile, QWidget *parent = 0);
     void beginEdit();
-    bool tryEndEdit();
 
-    // begin: sync the buffer to noteFile->content;
-    // end: setModified(false)
-    void beginSave();
-    void endSave();
+    // Save buffer content to noteFile->content.
+    void saveFile();
+
+    inline void setModified(bool modified);
+    inline bool isModified() const;
 
     void reloadFile();
 
@@ -32,5 +32,16 @@ private:
     VNoteFile *noteFile;
     HGMarkdownHighlighter *mdHighlighter;
 };
+
+
+inline bool VEdit::isModified() const
+{
+    return document()->isModified();
+}
+
+inline void VEdit::setModified(bool modified)
+{
+    document()->setModified(modified);
+}
 
 #endif // VEDIT_H
