@@ -7,28 +7,31 @@ font-family: Microsoft YaHei, WenQuanYi Micro Hei, Droid Sans, SimSun, Georgia, 
 H1
 foreground: 111111
 font-style: bold
-font-size: +12
+font-size: +8
 
 H2
 foreground: 111111
 font-style: bold
-font-size: +10
+font-size: +6
 
 H3
 foreground: 111111
 font-style: bold
-font-size: +8
+font-size: +4
 
 H4
 foreground: 111111
-font-size: +6
+font-style: bold
+font-size: +2
 
 H5
 foreground: 111111
-font-size: +4
+font-style: bold
+font-size: +2
 
 H6
 foreground: 111111
+font-style: bold
 font-size: +2
 
 HRULE
