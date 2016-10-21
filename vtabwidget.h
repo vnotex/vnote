@@ -15,6 +15,8 @@ signals:
 
 public slots:
     void openFile(QJsonObject fileJson);
+    // Close the file forcely
+    void closeFile(QJsonObject fileJson);
     void editFile();
     void saveFile();
     void readFile();

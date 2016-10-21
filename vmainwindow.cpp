@@ -84,6 +84,10 @@ void VMainWindow::setupUI()
             fileList, &VFileList::setDirectory);
     connect(fileList, &VFileList::fileClicked,
             tabs, &VTabWidget::openFile);
+    connect(fileList, &VFileList::fileDeleted,
+            tabs, &VTabWidget::closeFile);
+    connect(fileList, &VFileList::fileCreated,
+            tabs, &VTabWidget::openFile);
     connect(newNotebookBtn, &QPushButton::clicked,
             this, &VMainWindow::onNewNotebookBtnClicked);
     connect(deleteNotebookBtn, &QPushButton::clicked,

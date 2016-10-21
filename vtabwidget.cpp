@@ -11,6 +11,7 @@ VTabWidget::VTabWidget(QWidget *parent)
     : QTabWidget(parent)
 {
     setTabsClosable(true);
+    setMovable(true);
     connect(tabBar(), &QTabBar::tabCloseRequested,
             this, &VTabWidget::handleTabCloseRequest);
 
@@ -48,17 +49,48 @@ void VTabWidget::openFile(QJsonObject fileJson)
 
     QString path = fileJson["path"].toString();
     QString name = fileJson["name"].toString();
+    int mode = 0;
+    if (fileJson.contains("mode")) {
+        mode = fileJson["mode"].toInt();
+    }
 
     // Find if it has been opened already
     int idx = findTabByFile(path, name);
     if (idx > -1) {
-        setCurrentIndex(idx);
-        return;
+        goto out;
     }
 
     idx = openFileInTab(path, name, true);
 
+out:
     setCurrentIndex(idx);
+    if (mode == 1) {
+        VEditor *editor = dynamic_cast<VEditor *>(currentWidget());
+        Q_ASSERT(editor);
+        editor->editFile();
+    }
+}
+
+void VTabWidget::closeFile(QJsonObject fileJson)
+{
+    if (fileJson.isEmpty()) {
+        return;
+    }
+    qDebug() << "close file:" << fileJson;
+
+    QString path = fileJson["path"].toString();
+    QString name = fileJson["name"].toString();
+
+    // Find if it has been opened already
+    int idx = findTabByFile(path, name);
+    if (idx == -1) {
+        return;
+    }
+
+    QWidget* page = widget(idx);
+    Q_ASSERT(page);
+    removeTab(idx);
+    delete page;
 }
 
 int VTabWidget::openFileInTab(const QString &path, const QString &name, bool modifiable)

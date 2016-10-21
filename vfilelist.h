@@ -15,6 +15,8 @@ public:
 
 signals:
     void fileClicked(QJsonObject fileJson);
+    void fileDeleted(QJsonObject fileJson);
+    void fileCreated(QJsonObject fileJson);
 
 private slots:
     void newFile();

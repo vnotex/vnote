@@ -96,6 +96,7 @@ void VEditor::showFileEditMode()
     isEditMode = true;
     textEditor->beginEdit();
     setCurrentWidget(textEditor);
+    textEditor->setFocus();
 }
 
 bool VEditor::requestClose()

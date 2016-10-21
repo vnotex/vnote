@@ -126,6 +126,13 @@ void VFileList::newFile()
             QListWidgetItem *newItem = createFileAndUpdateList(name, description);
             if (newItem) {
                 this->setCurrentItem(newItem);
+
+                // Open this file in edit mode
+                QJsonObject itemJson = newItem->data(Qt::UserRole).toJsonObject();
+                Q_ASSERT(!itemJson.isEmpty());
+                itemJson["path"] = QDir::cleanPath(QDir(rootPath).filePath(relativePath));
+                itemJson["mode"] = 1;
+                emit fileCreated(itemJson);
             }
         }
         break;
@@ -135,6 +142,7 @@ void VFileList::newFile()
 void VFileList::deleteFile()
 {
     QListWidgetItem *curItem = currentItem();
+    Q_ASSERT(curItem);
     QJsonObject curItemJson = curItem->data(Qt::UserRole).toJsonObject();
     QString curItemName = curItemJson["name"].toString();
 
@@ -145,6 +153,10 @@ void VFileList::deleteFile()
     msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
     msgBox.setDefaultButton(QMessageBox::Ok);
     if (msgBox.exec() == QMessageBox::Ok) {
+        // First close this file forcely
+        curItemJson["path"] = QDir::cleanPath(QDir(rootPath).filePath(relativePath));
+        emit fileDeleted(curItemJson);
+
         deleteFileAndUpdateList(curItem);
     }
 }
@@ -268,7 +280,6 @@ void VFileList::handleItemClicked(QListWidgetItem *currentItem)
     QJsonObject itemJson = currentItem->data(Qt::UserRole).toJsonObject();
     Q_ASSERT(!itemJson.isEmpty());
     itemJson["path"] = QDir::cleanPath(QDir(rootPath).filePath(relativePath));
-    qDebug() << "click file:" << itemJson;
     emit fileClicked(itemJson);
 }
 
