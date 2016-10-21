@@ -3,6 +3,7 @@
 #include "vfilelist.h"
 #include "vconfigmanager.h"
 #include "dialog/vnewfiledialog.h"
+#include "vnote.h"
 
 VFileList::VFileList(QWidget *parent)
     : QListWidget(parent)
@@ -96,14 +97,19 @@ QListWidgetItem* VFileList::insertFileListItem(QJsonObject fileJson, bool atFron
     } else {
         addItem(item);
     }
+    // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
+    update();
     qDebug() << "add new list item:" << fileJson["name"].toString();
     return item;
 }
 
 void VFileList::removeFileListItem(QListWidgetItem *item)
 {
-    // Qt ensures it will be removed from QListWidget automatically
+    setCurrentRow(-1);
+    removeItemWidget(item);
     delete item;
+    // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
+    update();
 }
 
 void VFileList::newFile()
@@ -125,13 +131,15 @@ void VFileList::newFile()
             }
             QListWidgetItem *newItem = createFileAndUpdateList(name, description);
             if (newItem) {
-                this->setCurrentItem(newItem);
+                setCurrentItem(newItem);
+                // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
+                update();
 
                 // Open this file in edit mode
                 QJsonObject itemJson = newItem->data(Qt::UserRole).toJsonObject();
                 Q_ASSERT(!itemJson.isEmpty());
                 itemJson["path"] = QDir::cleanPath(QDir(rootPath).filePath(relativePath));
-                itemJson["mode"] = 1;
+                itemJson["mode"] = OpenFileMode::Edit;
                 emit fileCreated(itemJson);
             }
         }
@@ -277,9 +285,12 @@ void VFileList::handleItemClicked(QListWidgetItem *currentItem)
         emit fileClicked(QJsonObject());
         return;
     }
+    // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
+    update();
     QJsonObject itemJson = currentItem->data(Qt::UserRole).toJsonObject();
     Q_ASSERT(!itemJson.isEmpty());
     itemJson["path"] = QDir::cleanPath(QDir(rootPath).filePath(relativePath));
+    itemJson["mode"] = OpenFileMode::Read;
     emit fileClicked(itemJson);
 }
 

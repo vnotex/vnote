@@ -8,6 +8,8 @@
 #include <QObject>
 #include "vnotebook.h"
 
+enum OpenFileMode {Read = 0, Edit};
+
 class VNote : public QObject
 {
     Q_OBJECT
