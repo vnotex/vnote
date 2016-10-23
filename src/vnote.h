@@ -20,7 +20,12 @@ public:
 
     static void decorateTemplate();
 
+    // Used by Marked
     static QString templateHtml;
+
+    // Used by other markdown converter
+    static QString preTemplateHtml;
+    static QString postTemplateHtml;
 
     void createNotebook(const QString &name, const QString &path);
     void removeNotebook(const QString &name);

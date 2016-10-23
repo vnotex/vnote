@@ -1,3 +1,6 @@
 [submodule "src/utils/marked"]
 	path = src/utils/marked
 	url = https://github.com/chjj/marked.git
+[submodule "hoedown"]
+	path = hoedown
+	url = https://github.com/tamlok/hoedown.git

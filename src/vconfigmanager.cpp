@@ -45,6 +45,11 @@ void VConfigManager::initialize()
     templateCssUrl = getConfigFromSettings("global", "template_css_url").toString();
     curNotebookIndex = getConfigFromSettings("global", "current_notebook").toInt();
 
+    markdownExtensions = hoedown_extensions(HOEDOWN_EXT_TABLES | HOEDOWN_EXT_FENCED_CODE |
+                                            HOEDOWN_EXT_HIGHLIGHT | HOEDOWN_EXT_AUTOLINK |
+                                            HOEDOWN_EXT_QUOTE | HOEDOWN_EXT_MATH);
+    mdConverterType = (MarkdownConverterType)getConfigFromSettings("global", "markdown_converter").toInt();
+
     // Update notebooks
     readNotebookFromSettings();
 

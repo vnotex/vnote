@@ -32,7 +32,8 @@ SOURCES += main.cpp\
     hgmarkdownhighlighter.cpp \
     vstyleparser.cpp \
     utils/peg-highlight/pmh_styleparser.c \
-    dialog/vnewnotebookdialog.cpp
+    dialog/vnewnotebookdialog.cpp \
+    vmarkdownconverter.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -55,7 +56,15 @@ HEADERS  += vmainwindow.h \
     utils/peg-highlight/pmh_definitions.h \
     vstyleparser.h \
     utils/peg-highlight/pmh_styleparser.h \
-    dialog/vnewnotebookdialog.h
+    dialog/vnewnotebookdialog.h \
+    vmarkdownconverter.h
 
 RESOURCES += \
     vnote.qrc
+
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../hoedown/release/ -lhoedown
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../hoedown/debug/ -lhoedown
+else:unix: LIBS += -L$$OUT_PWD/../hoedown/ -lhoedown
+
+INCLUDEPATH += $$PWD/../hoedown
+DEPENDPATH += $$PWD/../hoedown

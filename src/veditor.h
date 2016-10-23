@@ -6,6 +6,8 @@
 #include "vconstants.h"
 #include "vnotefile.h"
 #include "vdocument.h"
+#include "vmarkdownconverter.h"
+#include "vconfigmanager.h"
 
 class QTextBrowser;
 class VEdit;
@@ -31,6 +33,7 @@ private:
     void showFileReadMode();
     void showFileEditMode();
     void setupMarkdownPreview();
+    void previewByConverter();
 
     VNoteFile *noteFile;
     bool isEditMode;
@@ -38,6 +41,7 @@ private:
     VEdit *textEditor;
     QWebEngineView *webPreviewer;
     VDocument document;
+    MarkdownConverterType mdConverterType;
 };
 
 #endif // VEDITOR_H

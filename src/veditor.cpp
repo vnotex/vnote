@@ -10,12 +10,13 @@
 #include "vpreviewpage.h"
 #include "hgmarkdownhighlighter.h"
 #include "vconfigmanager.h"
+#include "vmarkdownconverter.h"
 
 extern VConfigManager vconfig;
 
 VEditor::VEditor(const QString &path, const QString &name, bool modifiable,
                  QWidget *parent)
-    : QStackedWidget(parent)
+    : QStackedWidget(parent), mdConverterType(vconfig.getMdConverterType())
 {
     DocType docType = isMarkdown(name) ? DocType::Markdown : DocType::Html;
     QString fileText = VUtils::readFileFromDisk(QDir(path).filePath(name));
@@ -83,12 +84,28 @@ void VEditor::showFileReadMode()
         setCurrentWidget(textBrowser);
         break;
     case DocType::Markdown:
-        document.setText(noteFile->content);
+        if (mdConverterType == MarkdownConverterType::Marked) {
+            document.setText(noteFile->content);
+        } else {
+            previewByConverter();
+        }
         setCurrentWidget(webPreviewer);
         break;
     default:
         qWarning() << "error: unknown doc type" << int(noteFile->docType);
     }
+}
+
+void VEditor::previewByConverter()
+{
+    VMarkdownConverter mdConverter;
+    QString content = noteFile->content;
+    QString html = mdConverter.generateHtml(content, vconfig.getMarkdownExtensions());
+    QRegularExpression tocExp("<p>\\[TOC\\]<\\/p>", QRegularExpression::CaseInsensitiveOption);
+    QString toc = mdConverter.generateToc(content, vconfig.getMarkdownExtensions());
+    html.replace(tocExp, toc);
+    QString completeHtml = VNote::preTemplateHtml + html + VNote::postTemplateHtml;
+    webPreviewer->setHtml(completeHtml, QUrl::fromLocalFile(noteFile->path + QDir::separator()));
 }
 
 void VEditor::showFileEditMode()
@@ -175,10 +192,12 @@ void VEditor::setupMarkdownPreview()
     VPreviewPage *page = new VPreviewPage(this);
     webPreviewer->setPage(page);
 
-    QWebChannel *channel = new QWebChannel(this);
-    channel->registerObject(QStringLiteral("content"), &document);
-    page->setWebChannel(channel);
-    webPreviewer->setHtml(VNote::templateHtml, QUrl::fromLocalFile(noteFile->path + QDir::separator()));
+    if (mdConverterType == MarkdownConverterType::Marked) {
+        QWebChannel *channel = new QWebChannel(this);
+        channel->registerObject(QStringLiteral("content"), &document);
+        page->setWebChannel(channel);
+        webPreviewer->setHtml(VNote::templateHtml, QUrl::fromLocalFile(noteFile->path + QDir::separator()));
+    }
 
     addWidget(webPreviewer);
 }

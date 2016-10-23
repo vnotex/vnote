@@ -10,6 +10,8 @@
 VConfigManager vconfig;
 
 QString VNote::templateHtml;
+QString VNote::preTemplateHtml;
+QString VNote::postTemplateHtml;
 
 VNote::VNote() : QObject()
 {
@@ -21,8 +23,17 @@ VNote::VNote() : QObject()
 
 void VNote::decorateTemplate()
 {
-    templateHtml = VUtils::readFileFromDisk(vconfig.getTemplatePath());
-    templateHtml.replace("CSS_PLACE_HOLDER", vconfig.getTemplateCssUrl());
+    if (templateHtml.isEmpty()) {
+        templateHtml = VUtils::readFileFromDisk(vconfig.getTemplatePath());
+        templateHtml.replace("CSS_PLACE_HOLDER", vconfig.getTemplateCssUrl());
+    }
+    if (preTemplateHtml.isEmpty()) {
+        preTemplateHtml = VUtils::readFileFromDisk(vconfig.getPreTemplatePath());
+        preTemplateHtml.replace("CSS_PLACE_HOLDER", vconfig.getTemplateCssUrl());
+    }
+    if (postTemplateHtml.isEmpty()) {
+        postTemplateHtml = VUtils::readFileFromDisk(vconfig.getPostTemplatePath());
+    }
 }
 
 const QVector<VNotebook>& VNote::getNotebooks()
