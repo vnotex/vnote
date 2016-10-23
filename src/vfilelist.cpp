@@ -58,7 +58,8 @@ void VFileList::updateFileList()
 
     if (!QDir(path).exists()) {
         qDebug() << "invalid notebook directory:" << path;
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Invalid notebook directory."));
+        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Invalid notebook directory."),
+                           QMessageBox::Ok, this);
         msgBox.setInformativeText(QString("Notebook directory \"%1\" either does not exist or is not valid.")
                                   .arg(path));
         msgBox.exec();
@@ -68,7 +69,8 @@ void VFileList::updateFileList()
     QJsonObject configJson = VConfigManager::readDirectoryConfig(path);
     if (configJson.isEmpty()) {
         qDebug() << "invalid notebook configuration for directory:" << path;
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Invalid notebook directory configuration."));
+        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Invalid notebook directory configuration."),
+                           QMessageBox::Ok, this);
         msgBox.setInformativeText(QString("Notebook directory \"%1\" does not contain a valid configuration file.")
                                   .arg(path));
         msgBox.exec();
@@ -156,9 +158,9 @@ void VFileList::deleteFile()
 
     QMessageBox msgBox(QMessageBox::Warning, tr("Warning"),
                        QString("Are you sure you want to delete note \"%1\"?")
-                       .arg(curItemName));
+                       .arg(curItemName), QMessageBox::Ok | QMessageBox::Cancel,
+                       this);
     msgBox.setInformativeText(tr("This may be not recoverable."));
-    msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
     msgBox.setDefaultButton(QMessageBox::Ok);
     if (msgBox.exec() == QMessageBox::Ok) {
         // First close this file forcely
@@ -209,7 +211,7 @@ QListWidgetItem* VFileList::createFileAndUpdateList(const QString &name,
     if (!file.open(QIODevice::WriteOnly)) {
         qWarning() << "error: fail to create file:" << filePath;
         QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Could not create file \"%1\" under \"%2\".")
-                           .arg(name).arg(path));
+                           .arg(name).arg(path), QMessageBox::Ok, this);
         msgBox.setInformativeText(QString("Please check if there already exists a file named \"%1\".").arg(name));
         msgBox.exec();
         return NULL;

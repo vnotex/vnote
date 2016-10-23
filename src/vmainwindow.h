@@ -16,6 +16,7 @@ class VTabWidget;
 class QAction;
 class QPushButton;
 class VNotebook;
+class QActionGroup;
 
 class VMainWindow : public QMainWindow
 {
@@ -33,6 +34,8 @@ private slots:
     void onDeleteNotebookBtnClicked();
     void updateNotebookComboBox(const QVector<VNotebook> &notebooks);
     void importNoteFromFile();
+    void changeMarkdownConverter(QAction *action);
+    void aboutMessage();
 
 signals:
     void curNotebookIndexChanged(const QString &path);
@@ -61,6 +64,11 @@ private:
     QAction *saveNoteAct;
     QAction *readNoteAct;
     QAction *importNoteAct;
+    QActionGroup *converterAct;
+    QAction *markedAct;
+    QAction *hoedownAct;
+    QAction *aboutAct;
+    QAction *aboutQtAct;
 };
 
 #endif // VMAINWINDOW_H

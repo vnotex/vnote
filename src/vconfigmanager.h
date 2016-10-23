@@ -57,6 +57,7 @@ public:
 
     inline hoedown_extensions getMarkdownExtensions() const;
     inline MarkdownConverterType getMdConverterType() const;
+    inline void setMarkdownConverterType(MarkdownConverterType type);
 
     inline QString getPreTemplatePath() const;
     inline QString getPostTemplatePath() const;
@@ -174,6 +175,15 @@ inline QString VConfigManager::getPreTemplatePath() const
 inline QString VConfigManager::getPostTemplatePath() const
 {
     return postTemplatePath;
+}
+
+inline void VConfigManager::setMarkdownConverterType(MarkdownConverterType type)
+{
+    if (mdConverterType == type) {
+        return;
+    }
+    mdConverterType = type;
+    setConfigToSettings("global", "markdown_converter", type);
 }
 
 #endif // VCONFIGMANAGER_H

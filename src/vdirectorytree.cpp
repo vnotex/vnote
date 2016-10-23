@@ -136,7 +136,8 @@ void VDirectoryTree::updateDirectoryTreeTopLevel()
 
     if (!validatePath(path)) {
         qDebug() << "invalid notebook path:" << path;
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Invalid notebook path."));
+        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Invalid notebook path."),
+                           QMessageBox::Ok, this);
         msgBox.setInformativeText(QString("Notebook path \"%1\" either does not exist or is not valid.")
                                   .arg(path));
         msgBox.exec();
@@ -146,7 +147,8 @@ void VDirectoryTree::updateDirectoryTreeTopLevel()
     QJsonObject configJson = VConfigManager::readDirectoryConfig(path);
     if (configJson.isEmpty()) {
         qDebug() << "invalid notebook configuration for path:" << path;
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Invalid notebook configuration."));
+        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Invalid notebook configuration."),
+                           QMessageBox::Ok, this);
         msgBox.setInformativeText(QString("Notebook path \"%1\" does not contain a valid configuration file.")
                                   .arg(path));
         msgBox.exec();
@@ -177,7 +179,8 @@ void VDirectoryTree::updateDirectoryTreeOne(QTreeWidgetItem &parent, int depth)
     QString path(QDir::cleanPath(treePath + QDir::separator() + relativePath));
     if (!validatePath(path)) {
         qDebug() << "invalide notebook directory:" << path;
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Invalid notebook directory."));
+        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Invalid notebook directory."),
+                           QMessageBox::Ok, this);
         msgBox.setInformativeText(QString("Notebook directory \"%1\" either does not exist or is not a valid notebook directory.")
                                   .arg(path));
         msgBox.exec();
@@ -187,7 +190,8 @@ void VDirectoryTree::updateDirectoryTreeOne(QTreeWidgetItem &parent, int depth)
     QJsonObject configJson = VConfigManager::readDirectoryConfig(path);
     if (configJson.isEmpty()) {
         qDebug() << "invalid notebook configuration for directory:" << path;
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Invalid notebook directory configuration."));
+        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Invalid notebook directory configuration."),
+                           QMessageBox::Ok, this);
         msgBox.setInformativeText(QString("Notebook directory \"%1\" does not contain a valid configuration file.")
                                   .arg(path));
         msgBox.exec();
@@ -343,9 +347,8 @@ void VDirectoryTree::deleteDirectory()
     QString curItemName = curItemJson["name"].toString();
 
     QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Are you sure you want to delete directory \"%1\"?")
-                       .arg(curItemName));
+                       .arg(curItemName), QMessageBox::Ok | QMessageBox::Cancel, this);
     msgBox.setInformativeText(tr("This will delete any files under this directory."));
-    msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
     msgBox.setDefaultButton(QMessageBox::Ok);
     if (msgBox.exec() == QMessageBox::Ok) {
         deleteDirectoryAndUpdateTree(curItem);
@@ -366,7 +369,7 @@ QTreeWidgetItem* VDirectoryTree::createDirectoryAndUpdateTree(QTreeWidgetItem *p
     if (!dir.mkdir(name)) {
         qWarning() << "error: fail to create directory" << name << "under" << path;
         QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Could not create directory \"%1\" under \"%2\".")
-                           .arg(name).arg(path));
+                           .arg(name).arg(path), QMessageBox::Ok, this);
         msgBox.setInformativeText(QString("Please check if there already exists a directory named \"%1\".").arg(name));
         msgBox.exec();
         return NULL;

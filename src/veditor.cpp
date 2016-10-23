@@ -139,7 +139,7 @@ void VEditor::readFile()
 
     if (textEditor->isModified()) {
         // Need to save the changes
-        QMessageBox msgBox;
+        QMessageBox msgBox(this);
         msgBox.setText("The note has been modified.");
         msgBox.setInformativeText("Do you want to save your changes?");
         msgBox.setIcon(QMessageBox::Information);
@@ -175,8 +175,8 @@ bool VEditor::saveFile()
                                        noteFile->content);
     if (!ret) {
         QMessageBox msgBox(QMessageBox::Warning, tr("Fail to save to file"),
-                           QString("Fail to write to disk when saving a note. Please try it again."));
-        msgBox.setStandardButtons(QMessageBox::Ok);
+                           QString("Fail to write to disk when saving a note. Please try it again."),
+                           QMessageBox::Ok, this);
         msgBox.setDefaultButton(QMessageBox::Ok);
         msgBox.exec();
         textEditor->setModified(true);

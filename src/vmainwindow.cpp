@@ -122,6 +122,27 @@ void VMainWindow::initActions()
     importNoteAct->setStatusTip(tr("Import notes into current directory from files"));
     connect(importNoteAct, &QAction::triggered,
             this, &VMainWindow::importNoteFromFile);
+
+    converterAct = new QActionGroup(this);
+    markedAct = new QAction(tr("Marked"), converterAct);
+    markedAct->setStatusTip(tr("Use Marked to convert Markdown to HTML (Re-open current tabs to make it work)"));
+    markedAct->setCheckable(true);
+    markedAct->setData(int(MarkdownConverterType::Marked));
+    hoedownAct = new QAction(tr("Hoedown"), converterAct);
+    hoedownAct->setStatusTip(tr("Use Hoedown to convert Markdown to HTML (Re-open current tabs to make it work)"));
+    hoedownAct->setCheckable(true);
+    hoedownAct->setData(int(MarkdownConverterType::Hoedown));
+    connect(converterAct, &QActionGroup::triggered,
+            this, &VMainWindow::changeMarkdownConverter);
+
+    aboutAct = new QAction(tr("&About"), this);
+    aboutAct->setStatusTip(tr("Show information about VNote"));
+    connect(aboutAct, &QAction::triggered,
+            this, &VMainWindow::aboutMessage);
+    aboutQtAct = new QAction(tr("About &Qt"), this);
+    aboutQtAct->setStatusTip(tr("Show information about Qt"));
+    connect(aboutQtAct, &QAction::triggered,
+            qApp, &QApplication::aboutQt);
 }
 
 void VMainWindow::initToolBar()
@@ -136,10 +157,28 @@ void VMainWindow::initToolBar()
 void VMainWindow::initMenuBar()
 {
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
+    QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
+    QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
+    QMenu *markdownMenu = menuBar()->addMenu(tr("&Markdown"));
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
 
-    // To be implemented
+    // File Menu
     fileMenu->addAction(importNoteAct);
+
+    // Markdown Menu
+    QMenu *converterMenu = markdownMenu->addMenu(tr("&Converter"));
+    converterMenu->addAction(hoedownAct);
+    converterMenu->addAction(markedAct);
+    MarkdownConverterType converterType = vconfig.getMdConverterType();
+    if (converterType == MarkdownConverterType::Marked) {
+        markedAct->setChecked(true);
+    } else if (converterType == MarkdownConverterType::Hoedown) {
+        hoedownAct->setChecked(true);
+    }
+
+    // Help menu
+    helpMenu->addAction(aboutQtAct);
+    helpMenu->addAction(aboutAct);
 }
 
 void VMainWindow::updateNotebookComboBox(const QVector<VNotebook> &notebooks)
@@ -215,9 +254,8 @@ void VMainWindow::onDeleteNotebookBtnClicked()
     QString curPath = vnote->getNotebooks()[curIndex].getPath();
 
     QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Are you sure you want to delete notebook \"%1\"?")
-                       .arg(curName));
+                       .arg(curName), QMessageBox::Ok | QMessageBox::Cancel, this);
     msgBox.setInformativeText(QString("This will delete any files in this notebook (\"%1\").").arg(curPath));
-    msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
     msgBox.setDefaultButton(QMessageBox::Ok);
     if (msgBox.exec() == QMessageBox::Ok) {
         vnote->removeNotebook(curName);
@@ -240,10 +278,27 @@ void VMainWindow::importNoteFromFile()
     }
     QMessageBox msgBox(QMessageBox::Information, tr("Import note from file"),
                        QString("Imported notes: %1 succeed, %2 failed.")
-                       .arg(files.size() - failedFiles.size()).arg(failedFiles.size()));
+                       .arg(files.size() - failedFiles.size()).arg(failedFiles.size()),
+                       QMessageBox::Ok, this);
     if (!failedFiles.isEmpty()) {
         msgBox.setInformativeText(tr("Failed to import files may be due to name conflicts."));
     }
-    msgBox.setStandardButtons(QMessageBox::Ok);
     msgBox.exec();
+}
+
+void VMainWindow::changeMarkdownConverter(QAction *action)
+{
+    if (!action) {
+        return;
+    }
+    MarkdownConverterType type = (MarkdownConverterType)action->data().toInt();
+    qDebug() << "switch to converter" << type;
+    vconfig.setMarkdownConverterType(type);
+}
+
+void VMainWindow::aboutMessage()
+{
+    QMessageBox::about(this, tr("About VNote"),
+                       tr("VNote is a Vim-inspired note taking application for Markdown.\n"
+                          "Visit https://github.com/tamlok/vnote.git for more information."));
 }
