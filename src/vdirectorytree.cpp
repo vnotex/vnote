@@ -350,7 +350,7 @@ void VDirectoryTree::deleteDirectory()
     QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Are you sure you want to delete directory \"%1\"?")
                        .arg(curItemName), QMessageBox::Ok | QMessageBox::Cancel, this);
     msgBox.setInformativeText(tr("This will delete any files under this directory."));
-    msgBox.setDefaultButton(QMessageBox::Ok);
+    msgBox.setDefaultButton(QMessageBox::Cancel);
     if (msgBox.exec() == QMessageBox::Ok) {
         deleteDirectoryAndUpdateTree(curItem);
     }
@@ -378,7 +378,6 @@ QTreeWidgetItem* VDirectoryTree::createDirectoryAndUpdateTree(QTreeWidgetItem *p
 
     QJsonObject configJson;
     configJson["version"] = "1";
-    configJson["name"] = name;
     configJson["sub_directories"] = QJsonArray();
     configJson["files"] = QJsonArray();
 

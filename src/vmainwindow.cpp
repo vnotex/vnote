@@ -274,7 +274,7 @@ void VMainWindow::onDeleteNotebookBtnClicked()
     QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Are you sure you want to delete notebook \"%1\"?")
                        .arg(curName), QMessageBox::Ok | QMessageBox::Cancel, this);
     msgBox.setInformativeText(QString("This will delete any files in this notebook (\"%1\").").arg(curPath));
-    msgBox.setDefaultButton(QMessageBox::Ok);
+    msgBox.setDefaultButton(QMessageBox::Cancel);
     if (msgBox.exec() == QMessageBox::Ok) {
         vnote->removeNotebook(curName);
     }
