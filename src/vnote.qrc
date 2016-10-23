@@ -39,5 +39,8 @@
         <file>resources/icons/create_notebook.png</file>
         <file>resources/icons/delete_notebook.png</file>
         <file>resources/icons/notebook_info.png</file>
+        <file>resources/icons/create_rootdir.png</file>
+        <file>resources/icons/delete_dir.png</file>
+        <file>resources/icons/dir_info.png</file>
     </qresource>
 </RCC>

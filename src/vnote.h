@@ -29,6 +29,7 @@ public:
 
     void createNotebook(const QString &name, const QString &path);
     void removeNotebook(const QString &name);
+    void renameNotebook(const QString &name, const QString &newName);
 
 signals:
     void notebooksChanged(const QVector<VNotebook> &notebooks);

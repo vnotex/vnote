@@ -32,6 +32,7 @@ private slots:
     // Create a notebook
     void onNewNotebookBtnClicked();
     void onDeleteNotebookBtnClicked();
+    void onNotebookInfoBtnClicked();
     void updateNotebookComboBox(const QVector<VNotebook> &notebooks);
     void importNoteFromFile();
     void changeMarkdownConverter(QAction *action);
@@ -45,7 +46,7 @@ private:
     void initActions();
     void initToolBar();
     void initMenuBar();
-    bool isConflictWithExistingNotebooks(const QString &name, const QString &path);
+    bool isConflictWithExistingNotebooks(const QString &name);
 
     QLabel *notebookLabel;
     QLabel *directoryLabel;
@@ -53,6 +54,9 @@ private:
     QPushButton *newNotebookBtn;
     QPushButton *deleteNotebookBtn;
     QPushButton *notebookInfoBtn;
+    QPushButton *newRootDirBtn;
+    QPushButton *deleteDirBtn;
+    QPushButton *dirInfoBtn;
     VDirectoryTree *directoryTree;
     VFileList *fileList;
     VTabWidget *tabs;

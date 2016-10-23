@@ -90,3 +90,23 @@ void VNote::removeNotebook(const QString &name)
     }
     emit notebooksChanged(notebooks);
 }
+
+void VNote::renameNotebook(const QString &name, const QString &newName)
+{
+    QString path;
+    int index;
+    for (index = 0; index < notebooks.size(); ++index) {
+        if (notebooks[index].getName() == name) {
+            path = notebooks[index].getPath();
+            break;
+        }
+    }
+    if (index == notebooks.size()) {
+        return;
+    }
+
+    notebooks[index].setName(newName);
+    vconfig.setNotebooks(notebooks);
+
+    emit notebooksChanged(notebooks);
+}
