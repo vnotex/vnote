@@ -15,6 +15,9 @@ signals:
 
 public slots:
     void setTreePath(const QString& path);
+    void newRootDirectory();
+    void deleteDirectory();
+    void editDirectoryInfo();
 
 private slots:
     // Read config file and pdate the subtree of @item in the directory tree.
@@ -25,8 +28,6 @@ private slots:
     void contextMenuRequested(QPoint pos);
     void newSiblingDirectory();
     void newSubDirectory();
-    void newRootDirectory();
-    void deleteDirectory();
     void currentDirectoryItemChanged(QTreeWidgetItem *currentItem);
 
 private:
@@ -51,6 +52,7 @@ private:
     QTreeWidgetItem* insertDirectoryTreeItem(QTreeWidgetItem *parent, QTreeWidgetItem *preceding,
                                              const QJsonObject &newItem);
     void removeDirectoryTreeItem(QTreeWidgetItem *item);
+    void setDirectoryInfo(QTreeWidgetItem *item, const QString &newName, const QString &newDescription);
 
     // The path of the directory tree root
     QString treePath;

@@ -112,6 +112,12 @@ void VMainWindow::setupUI()
             this, &VMainWindow::onNotebookInfoBtnClicked);
     connect(vnote, &VNote::notebooksChanged,
             this, &VMainWindow::updateNotebookComboBox);
+    connect(newRootDirBtn, &QPushButton::clicked,
+            directoryTree, &VDirectoryTree::newRootDirectory);
+    connect(deleteDirBtn, &QPushButton::clicked,
+            directoryTree, &VDirectoryTree::deleteDirectory);
+    connect(dirInfoBtn, &QPushButton::clicked,
+            directoryTree, &VDirectoryTree::editDirectoryInfo);
 
     setCentralWidget(mainSplitter);
     // Create and show the status bar

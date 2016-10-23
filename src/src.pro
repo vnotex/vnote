@@ -34,7 +34,8 @@ SOURCES += main.cpp\
     utils/peg-highlight/pmh_styleparser.c \
     dialog/vnewnotebookdialog.cpp \
     vmarkdownconverter.cpp \
-    dialog/vnotebookinfodialog.cpp
+    dialog/vnotebookinfodialog.cpp \
+    dialog/vdirinfodialog.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -59,7 +60,8 @@ HEADERS  += vmainwindow.h \
     utils/peg-highlight/pmh_styleparser.h \
     dialog/vnewnotebookdialog.h \
     vmarkdownconverter.h \
-    dialog/vnotebookinfodialog.h
+    dialog/vnotebookinfodialog.h \
+    dialog/vdirinfodialog.h
 
 RESOURCES += \
     vnote.qrc
