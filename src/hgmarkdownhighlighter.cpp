@@ -32,8 +32,8 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
     : QSyntaxHighlighter(parent), parsing(0),
       waitInterval(waitInterval), content(NULL), capacity(0), result(NULL)
 {
-    codeBlockStartExp = QRegExp("^```");
-    codeBlockEndExp = QRegExp("^```$");
+    codeBlockStartExp = QRegExp("^(\\s)*```");
+    codeBlockEndExp = QRegExp("^(\\s)*```$");
     codeBlockFormat.setForeground(QBrush(Qt::darkYellow));
     for (int index = 0; index < styles.size(); ++index) {
         if (styles[index].type == pmh_VERBATIM) {
