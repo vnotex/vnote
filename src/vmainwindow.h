@@ -27,19 +27,22 @@ public:
     ~VMainWindow();
 
 private slots:
-    // Change current notebook index and update the directory tree
     void setCurNotebookIndex(int index);
     // Create a notebook
     void onNewNotebookBtnClicked();
     void onDeleteNotebookBtnClicked();
     void onNotebookInfoBtnClicked();
     void updateNotebookComboBox(const QVector<VNotebook> &notebooks);
+    void notebookComboBoxAdded(const QVector<VNotebook> &notebooks, int idx);
+    void notebookComboBoxDeleted(const QVector<VNotebook> &notebooks, const QString &deletedName);
+    void notebookComboBoxRenamed(const QVector<VNotebook> &notebooks,
+                                 const QString &oldName, const QString &newName);
     void importNoteFromFile();
     void changeMarkdownConverter(QAction *action);
     void aboutMessage();
 
 signals:
-    void curNotebookIndexChanged(const QString &path);
+    void curNotebookChanged(const QString &notebookName);
 
 private:
     void setupUI();
@@ -47,6 +50,9 @@ private:
     void initToolBar();
     void initMenuBar();
     bool isConflictWithExistingNotebooks(const QString &name);
+
+    // If true, comboBox changes will not trigger any signal out
+    bool notebookComboMuted;
 
     QLabel *notebookLabel;
     QLabel *directoryLabel;

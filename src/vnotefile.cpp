@@ -1,9 +1,9 @@
 #include "vnotefile.h"
 
-VNoteFile::VNoteFile(const QString &path, const QString &name,
+VNoteFile::VNoteFile(const QString &basePath, const QString &fileName,
                      const QString &content, DocType docType, bool modifiable)
-    : path(path), name(name), content(content), docType(docType),
-      modifiable(modifiable)
+    : basePath(basePath), fileName(fileName),
+      content(content), docType(docType), modifiable(modifiable)
 {
 
 }

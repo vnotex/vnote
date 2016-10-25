@@ -7,11 +7,11 @@
 class VNoteFile
 {
 public:
-    VNoteFile(const QString &path, const QString &name, const QString &content,
+    VNoteFile(const QString &basePath, const QString &fileName, const QString &content,
               DocType docType, bool modifiable);
 
-    QString path;
-    QString name;
+    QString basePath;
+    QString fileName;
     QString content;
     DocType docType;
     bool modifiable;

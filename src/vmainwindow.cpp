@@ -11,7 +11,7 @@
 extern VConfigManager vconfig;
 
 VMainWindow::VMainWindow(QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent), notebookComboMuted(false)
 {
     // Must be called before those who uses VConfigManager
     vnote = new VNote();
@@ -50,7 +50,7 @@ void VMainWindow::setupUI()
 
     notebookComboBox = new QComboBox();
     notebookComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    directoryTree = new VDirectoryTree();
+    directoryTree = new VDirectoryTree(vnote);
 
     QHBoxLayout *nbBtnLayout = new QHBoxLayout;
     nbBtnLayout->addWidget(notebookLabel);
@@ -74,11 +74,11 @@ void VMainWindow::setupUI()
     nbContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
     // File list widget
-    fileList = new VFileList();
+    fileList = new VFileList(vnote);
     fileList->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
     // Editor tab widget
-    tabs = new VTabWidget();
+    tabs = new VTabWidget(vnote);
     tabs->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     tabs->setTabBarAutoHide(true);
 
@@ -94,24 +94,41 @@ void VMainWindow::setupUI()
     // Signals
     connect(notebookComboBox, SIGNAL(currentIndexChanged(int)), this,
             SLOT(setCurNotebookIndex(int)));
-    connect(this, SIGNAL(curNotebookIndexChanged(const QString&)), directoryTree,
-            SLOT(setTreePath(const QString&)));
+
+    connect(vnote, &VNote::notebooksRenamed,
+            fileList, &VFileList::handleNotebookRenamed);
     connect(directoryTree, &VDirectoryTree::currentDirectoryChanged,
             fileList, &VFileList::setDirectory);
+    connect(directoryTree, &VDirectoryTree::directoryRenamed,
+            fileList, &VFileList::handleDirectoryRenamed);
+
     connect(fileList, &VFileList::fileClicked,
             tabs, &VTabWidget::openFile);
     connect(fileList, &VFileList::fileDeleted,
             tabs, &VTabWidget::closeFile);
     connect(fileList, &VFileList::fileCreated,
             tabs, &VTabWidget::openFile);
+
     connect(newNotebookBtn, &QPushButton::clicked,
             this, &VMainWindow::onNewNotebookBtnClicked);
     connect(deleteNotebookBtn, &QPushButton::clicked,
             this, &VMainWindow::onDeleteNotebookBtnClicked);
     connect(notebookInfoBtn, &QPushButton::clicked,
             this, &VMainWindow::onNotebookInfoBtnClicked);
+
     connect(vnote, &VNote::notebooksChanged,
             this, &VMainWindow::updateNotebookComboBox);
+    connect(vnote, &VNote::notebooksDeleted,
+            this, &VMainWindow::notebookComboBoxDeleted);
+    connect(vnote, &VNote::notebooksRenamed,
+            this, &VMainWindow::notebookComboBoxRenamed);
+    connect(vnote, &VNote::notebooksAdded,
+            this, &VMainWindow::notebookComboBoxAdded);
+
+    connect(this, &VMainWindow::curNotebookChanged,
+            directoryTree, &VDirectoryTree::setNotebook);
+    connect(vnote, &VNote::notebooksRenamed,
+            directoryTree, &VDirectoryTree::handleNotebookRenamed);
     connect(newRootDirBtn, &QPushButton::clicked,
             directoryTree, &VDirectoryTree::newRootDirectory);
     connect(deleteDirBtn, &QPushButton::clicked,
@@ -207,38 +224,87 @@ void VMainWindow::initMenuBar()
 
 void VMainWindow::updateNotebookComboBox(const QVector<VNotebook> &notebooks)
 {
-    // Clearing and inserting items will emit the signal which corrupt the vconfig's
-    // current index. We save it first and then set the combobox index to the
-    // right one to resrote it.
-    int curIndex = vconfig.getCurNotebookIndex();
+    notebookComboMuted = true;
     notebookComboBox->clear();
-    if (notebooks.isEmpty()) {
-        return;
-    }
-    for (int i = 0; i <notebooks.size(); ++i) {
+    for (int i = 0; i < notebooks.size(); ++i) {
         notebookComboBox->addItem(notebooks[i].getName());
     }
+    notebookComboMuted = false;
 
-    qDebug() << "update notebook combobox with" << notebookComboBox->count()
-             << "items, current notebook" << curIndex;
-    notebookComboBox->setCurrentIndex(curIndex);
+    int index = vconfig.getCurNotebookIndex();
+    if (notebooks.isEmpty()) {
+        index = -1;
+    }
+    if (notebookComboBox->currentIndex() == index) {
+        setCurNotebookIndex(index);
+    } else {
+        notebookComboBox->setCurrentIndex(index);
+    }
 }
 
+void VMainWindow::notebookComboBoxAdded(const QVector<VNotebook> &notebooks, int idx)
+{
+    notebookComboMuted = true;
+    notebookComboBox->insertItem(idx, notebooks[idx].getName());
+    notebookComboMuted = false;
+    if (notebookComboBox->currentIndex() == vconfig.getCurNotebookIndex()) {
+        setCurNotebookIndex(vconfig.getCurNotebookIndex());
+    } else {
+        notebookComboBox->setCurrentIndex(vconfig.getCurNotebookIndex());
+    }
+}
+
+void VMainWindow::notebookComboBoxDeleted(const QVector<VNotebook> &notebooks, const QString &deletedName)
+{
+    notebookComboMuted = true;
+    int nrItem = notebookComboBox->count();
+    for (int i = 0; i < nrItem; ++i) {
+        if (notebookComboBox->itemText(i) == deletedName) {
+            notebookComboBox->removeItem(i);
+            break;
+        }
+    }
+    notebookComboMuted = false;
+
+    if (notebookComboBox->currentIndex() == vconfig.getCurNotebookIndex()) {
+        setCurNotebookIndex(vconfig.getCurNotebookIndex());
+    } else {
+        notebookComboBox->setCurrentIndex(vconfig.getCurNotebookIndex());
+    }
+    Q_ASSERT(notebooks.size() == notebookComboBox->count());
+}
+
+void VMainWindow::notebookComboBoxRenamed(const QVector<VNotebook> &notebooks,
+                                          const QString &oldName, const QString &newName)
+{
+    int nrItem = notebookComboBox->count();
+    for (int i = 0; i < nrItem; ++i) {
+        if (notebookComboBox->itemText(i) == oldName) {
+            notebookComboBox->setItemText(i, newName);
+            break;
+        }
+    }
+    // Renaming a notebook won't change current index
+}
+
+// Maybe called multiple times
 void VMainWindow::setCurNotebookIndex(int index)
 {
+    if (notebookComboMuted) {
+        return;
+    }
     Q_ASSERT(index < vnote->getNotebooks().size());
     // Update directoryTree
-    QString treePath;
+    QString notebook;
     if (index > -1) {
         vconfig.setCurNotebookIndex(index);
-        treePath = vnote->getNotebooks()[index].getPath();
+        notebook = vnote->getNotebooks()[index].getName();
     }
-    emit curNotebookIndexChanged(treePath);
+    emit curNotebookChanged(notebook);
 }
 
 void VMainWindow::onNewNotebookBtnClicked()
 {
-    qDebug() << "request to create a notebook";
     QString info;
     QString defaultName("new_notebook");
     QString defaultPath;

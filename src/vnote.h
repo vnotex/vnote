@@ -32,7 +32,12 @@ public:
     void renameNotebook(const QString &name, const QString &newName);
 
 signals:
+    // Force to do a fully update
     void notebooksChanged(const QVector<VNotebook> &notebooks);
+    void notebooksAdded(const QVector<VNotebook> &notebooks, int idx);
+    void notebooksDeleted(const QVector<VNotebook> &notebooks, const QString &deletedName);
+    void notebooksRenamed(const QVector<VNotebook> &notebooks,
+                          const QString &oldName, const QString &newName);
 
 private:
     QVector<VNotebook> notebooks;

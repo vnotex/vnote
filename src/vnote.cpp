@@ -46,7 +46,6 @@ void VNote::createNotebook(const QString &name, const QString &path)
     // Create a directory config file in @path
     QJsonObject configJson;
     configJson["version"] = "1";
-    configJson["name"] = name;
     configJson["sub_directories"] = QJsonArray();
     configJson["files"] = QJsonArray();
     if (!vconfig.writeDirectoryConfig(path, configJson)) {
@@ -60,13 +59,14 @@ void VNote::createNotebook(const QString &name, const QString &path)
     // Set current index to the new notebook
     vconfig.setCurNotebookIndex(0);
 
-    emit notebooksChanged(notebooks);
+    emit notebooksAdded(notebooks, 0);
 }
 
 void VNote::removeNotebook(const QString &name)
 {
     // Update notebooks settings
     QString path;
+    int curIndex = vconfig.getCurNotebookIndex();
     int index;
     for (index = 0; index < notebooks.size(); ++index) {
         if (notebooks[index].getName() == name) {
@@ -79,7 +79,11 @@ void VNote::removeNotebook(const QString &name)
     }
     notebooks.remove(index);
     vconfig.setNotebooks(notebooks);
-    vconfig.setCurNotebookIndex(notebooks.isEmpty() ? -1 : 0);
+    if (notebooks.isEmpty()) {
+        vconfig.setCurNotebookIndex(-1);
+    } else if (index == curIndex) {
+        vconfig.setCurNotebookIndex(0);
+    }
 
     // Delete the directory
     QDir dir(path);
@@ -88,7 +92,7 @@ void VNote::removeNotebook(const QString &name)
     } else {
         qDebug() << "delete" << path << "recursively";
     }
-    emit notebooksChanged(notebooks);
+    emit notebooksDeleted(notebooks, name);
 }
 
 void VNote::renameNotebook(const QString &name, const QString &newName)
@@ -108,5 +112,5 @@ void VNote::renameNotebook(const QString &name, const QString &newName)
     notebooks[index].setName(newName);
     vconfig.setNotebooks(notebooks);
 
-    emit notebooksChanged(notebooks);
+    emit notebooksRenamed(notebooks, name, newName);
 }

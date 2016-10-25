@@ -4,12 +4,16 @@
 #include <QTabWidget>
 #include <QJsonObject>
 #include <QString>
+#include <QFileInfo>
+#include <QDir>
+
+class VNote;
 
 class VTabWidget : public QTabWidget
 {
     Q_OBJECT
 public:
-    explicit VTabWidget(QWidget *parent = 0);
+    explicit VTabWidget(VNote *vnote, QWidget *parent = 0);
 
 signals:
 
@@ -26,10 +30,18 @@ private slots:
 
 private:
     void openWelcomePage();
-    int insertTabWithData(int index, QWidget *page, const QString &label, const QJsonObject &tabData);
-    int appendTabWithData(QWidget *page, const QString &label, const QJsonObject &tabData);
-    int findTabByFile(const QString &path, const QString &name);
-    int openFileInTab(const QString &path, const QString &name, bool modifiable);
+    int insertTabWithData(int index, QWidget *page, const QJsonObject &tabData);
+    int appendTabWithData(QWidget *page, const QJsonObject &tabData);
+    int findTabByFile(const QString &notebook, const QString &relativePath) const;
+    int openFileInTab(const QString &notebook, const QString &relativePath, bool modifiable);
+    inline QString getFileName(const QString &relativePath) const;
+
+    VNote *vnote;
 };
+
+inline QString VTabWidget::getFileName(const QString &path) const
+{
+    return QFileInfo(QDir::cleanPath(path)).fileName();
+}
 
 #endif // VTABWIDGET_H

@@ -3,21 +3,28 @@
 
 #include <QTreeWidget>
 #include <QJsonObject>
+#include "vnotebook.h"
+
+class VNote;
 
 class VDirectoryTree : public QTreeWidget
 {
     Q_OBJECT
 public:
-    explicit VDirectoryTree(QWidget *parent = 0);
+    explicit VDirectoryTree(VNote *vnote, QWidget *parent = 0);
 
 signals:
     void currentDirectoryChanged(QJsonObject itemJson);
+    void directoryRenamed(const QString &notebook, const QString &oldRelativePath,
+                          const QString &newRelativePath);
 
 public slots:
-    void setTreePath(const QString& path);
+    void setNotebook(const QString &notebookName);
     void newRootDirectory();
     void deleteDirectory();
     void editDirectoryInfo();
+    void handleNotebookRenamed(const QVector<VNotebook> &notebooks, const QString &oldName,
+                               const QString &newName);
 
 private slots:
     // Read config file and pdate the subtree of @item in the directory tree.
@@ -31,30 +38,33 @@ private slots:
     void currentDirectoryItemChanged(QTreeWidgetItem *currentItem);
 
 private:
+    QString calculateItemRelativePath(QTreeWidgetItem *item);
     // Clean and pdate the TreeWidget according to treePath
     void updateDirectoryTree();
     // Update the top-level items of the directory tree. Will not clean the tree at first.
     void updateDirectoryTreeTopLevel();
-    // Update one directory, going into @depth levels. Not cleaning the tree item at first,
-    // so you must ensure @parent has no child before calling this function.
-    void updateDirectoryTreeOne(QTreeWidgetItem &parent, int depth);
+
+    // @relativePath is the relative path of the direcotry we are updating
+    void updateDirectoryTreeOne(QTreeWidgetItem &parent, const QString &relativePath, int depth);
     // Validate if a directory is valid
     bool validatePath(const QString &path);
-    // Fill the QTreeWidgetItem according to its QJsonObject.
-    // @relative_path is the path related to treePath.
-    void fillDirectoryTreeItem(QTreeWidgetItem &item, QJsonObject itemJson, const QString &relativePath);
+
+    void fillDirectoryTreeItem(QTreeWidgetItem &item, QJsonObject itemJson);
     void initActions();
-    QTreeWidgetItem* createDirectoryAndUpdateTree(QTreeWidgetItem *parent, const QString &name,
-                                                  const QString &description);
+    QTreeWidgetItem* createDirectoryAndUpdateTree(QTreeWidgetItem *parent, const QString &name);
     void deleteDirectoryAndUpdateTree(QTreeWidgetItem *item);
     // If @name conflict with the children's names of @parent.
     bool isConflictNameWithChildren(const QTreeWidgetItem *parent, const QString &name);
+
     QTreeWidgetItem* insertDirectoryTreeItem(QTreeWidgetItem *parent, QTreeWidgetItem *preceding,
                                              const QJsonObject &newItem);
     void removeDirectoryTreeItem(QTreeWidgetItem *item);
-    void setDirectoryInfo(QTreeWidgetItem *item, const QString &newName, const QString &newDescription);
+    void renameDirectory(QTreeWidgetItem *item, const QString &newName);
 
-    // The path of the directory tree root
+    VNote *vnote;
+
+    QString notebook;
+    // Used for cache
     QString treePath;
 
     // Actions

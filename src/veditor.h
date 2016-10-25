@@ -12,12 +12,12 @@
 class QTextBrowser;
 class VEdit;
 class QWebEngineView;
+class VNote;
 
 class VEditor : public QStackedWidget
 {
 public:
-    VEditor(const QString &path, const QString &name, bool modifiable,
-            QWidget *parent = 0);
+    VEditor(const QString &path, bool modifiable, QWidget *parent = 0);
     ~VEditor();
     bool requestClose();
     // Enter edit mode

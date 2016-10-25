@@ -2,10 +2,9 @@
 #include "vdirinfodialog.h"
 
 VDirInfoDialog::VDirInfoDialog(const QString &title, const QString &info,
-                               const QString &defaultName, const QString &defaultDescription,
+                               const QString &defaultName,
                                QWidget *parent)
-    : QDialog(parent), infoLabel(NULL), title(title), info(info), defaultName(defaultName),
-      defaultDescription(defaultDescription)
+    : QDialog(parent), infoLabel(NULL), title(title), info(info), defaultName(defaultName)
 {
     setupUI();
 
@@ -26,10 +25,6 @@ void VDirInfoDialog::setupUI()
     nameEdit->selectAll();
     nameLabel->setBuddy(nameEdit);
 
-    QLabel *descriptionLabel = new QLabel(tr("&Description"));
-    descriptionEdit = new QLineEdit(defaultDescription);
-    descriptionLabel->setBuddy(descriptionEdit);
-
     okBtn = new QPushButton(tr("&OK"));
     okBtn->setDefault(true);
     cancelBtn = new QPushButton(tr("&Cancel"));
@@ -40,8 +35,6 @@ void VDirInfoDialog::setupUI()
     }
     topLayout->addWidget(nameLabel);
     topLayout->addWidget(nameEdit);
-    topLayout->addWidget(descriptionLabel);
-    topLayout->addWidget(descriptionEdit);
 
     QHBoxLayout *btmLayout = new QHBoxLayout();
     btmLayout->addStretch();
@@ -64,9 +57,4 @@ void VDirInfoDialog::enableOkButton()
 QString VDirInfoDialog::getNameInput() const
 {
     return nameEdit->text();
-}
-
-QString VDirInfoDialog::getDescriptionInput() const
-{
-    return descriptionEdit->text();
 }

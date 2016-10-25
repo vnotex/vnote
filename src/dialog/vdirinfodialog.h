@@ -13,9 +13,8 @@ class VDirInfoDialog : public QDialog
     Q_OBJECT
 public:
     VDirInfoDialog(const QString &title, const QString &info, const QString &defaultName,
-                        const QString &defaultDescription, QWidget *parent = 0);
+                   QWidget *parent = 0);
     QString getNameInput() const;
-    QString getDescriptionInput() const;
 
 private slots:
     void enableOkButton();
@@ -26,13 +25,11 @@ private:
     QLabel *infoLabel;
     QLabel *nameLabel;
     QLineEdit *nameEdit;
-    QLineEdit *descriptionEdit;
     QPushButton *okBtn;
     QPushButton *cancelBtn;
 
     QString title;
     QString info;
     QString defaultName;
-    QString defaultDescription;
 };
 #endif // VDIRINFODIALOG_H

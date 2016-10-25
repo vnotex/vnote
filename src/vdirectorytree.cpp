@@ -3,9 +3,10 @@
 #include "dialog/vnewdirdialog.h"
 #include "vconfigmanager.h"
 #include "dialog/vdirinfodialog.h"
+#include "vnote.h"
 
-VDirectoryTree::VDirectoryTree(QWidget *parent)
-    : QTreeWidget(parent)
+VDirectoryTree::VDirectoryTree(VNote *vnote, QWidget *parent)
+    : QTreeWidget(parent), vnote(vnote)
 {
     setColumnCount(1);
     setHeaderHidden(true);
@@ -43,19 +44,26 @@ void VDirectoryTree::initActions()
             this, &VDirectoryTree::deleteDirectory);
 }
 
-void VDirectoryTree::setTreePath(const QString& path)
+void VDirectoryTree::setNotebook(const QString& notebookName)
 {
-    if (path == treePath) {
+    if (notebook == notebookName) {
         return;
     }
 
-    treePath = path;
-    if (path.isEmpty()) {
+    notebook = notebookName;
+    treePath = "";
+    if (notebook.isEmpty()) {
         clear();
         return;
     }
-
-    qDebug() << "set directory tree path:" << path;
+    const QVector<VNotebook> &notebooks = vnote->getNotebooks();
+    for (int i = 0; i < notebooks.size(); ++i) {
+        if (notebooks[i].getName() == notebook) {
+            treePath = notebooks[i].getPath();
+            break;
+        }
+    }
+    Q_ASSERT(!treePath.isEmpty());
 
     updateDirectoryTree();
     if (topLevelItemCount() > 0) {
@@ -76,21 +84,15 @@ void VDirectoryTree::updateDirectoryTree()
     for (int i = 0; i < nrTopLevelItems; ++i) {
         QTreeWidgetItem *item = topLevelItem(i);
         Q_ASSERT(item);
-        updateDirectoryTreeOne(*item, 1);
+        QJsonObject itemJson = item->data(0, Qt::UserRole).toJsonObject();
+        Q_ASSERT(!itemJson.isEmpty());
+        updateDirectoryTreeOne(*item, itemJson["name"].toString(), 1);
     }
 }
 
-// QJsonObject stored in each item's data[UserRole]:
-// 1. @item's related item in its parent's [sub_directories] section;
-// 2. "relative_path": the path where this item exists, relative to the treePath.
-void VDirectoryTree::fillDirectoryTreeItem(QTreeWidgetItem &item, QJsonObject itemJson, const QString &relativePath)
+void VDirectoryTree::fillDirectoryTreeItem(QTreeWidgetItem &item, QJsonObject itemJson)
 {
     item.setText(0, itemJson["name"].toString());
-    QString description = itemJson["description"].toString();
-    if (!description.isEmpty()) {
-        item.setToolTip(0, description);
-    }
-    itemJson["relative_path"] = relativePath;
     item.setData(0, Qt::UserRole, itemJson);
 }
 
@@ -98,30 +100,21 @@ QTreeWidgetItem* VDirectoryTree::insertDirectoryTreeItem(QTreeWidgetItem *parent
                                                          const QJsonObject &newItem)
 {
     QTreeWidgetItem *item;
-    QString relativePath;
     if (parent) {
         if (preceding) {
             item = new QTreeWidgetItem(parent, preceding);
         } else {
             item = new QTreeWidgetItem(parent);
         }
-        QJsonObject parentJson = parent->data(0, Qt::UserRole).toJsonObject();
-        Q_ASSERT(!parentJson.isEmpty());
-        QString parentRelativePath = parentJson["relative_path"].toString();
-        QString parentName = parentJson["name"].toString();
-        relativePath = QDir(parentRelativePath).filePath(parentName);
     } else {
         if (preceding) {
             item = new QTreeWidgetItem(this, preceding);
         } else {
             item = new QTreeWidgetItem(this);
         }
-        relativePath = "";
     }
 
-    fillDirectoryTreeItem(*item, newItem, relativePath);
-    qDebug() << "insert new Item name:" << newItem["name"].toString()
-             << "relative_path:" << relativePath;
+    fillDirectoryTreeItem(*item, newItem);
     return item;
 }
 
@@ -169,15 +162,17 @@ void VDirectoryTree::updateDirectoryTreeTopLevel()
     qDebug() << "updated" << dirJson.size() << "top-level items";
 }
 
-void VDirectoryTree::updateDirectoryTreeOne(QTreeWidgetItem &parent, int depth)
+void VDirectoryTree::updateDirectoryTreeOne(QTreeWidgetItem &parent, const QString &relativePath,
+                                            int depth)
 {
     Q_ASSERT(parent.childCount() == 0);
     // Going deep enough
     if (depth <= 0) {
         return;
     }
-    QJsonObject parentJson = parent.data(0, Qt::UserRole).toJsonObject();
-    QString relativePath = QDir(parentJson["relative_path"].toString()).filePath(parentJson["name"].toString());
+
+    qDebug() << "update directory" << relativePath;
+
     QString path(QDir::cleanPath(treePath + QDir::separator() + relativePath));
     if (!validatePath(path)) {
         qDebug() << "invalide notebook directory:" << path;
@@ -209,24 +204,41 @@ void VDirectoryTree::updateDirectoryTreeOne(QTreeWidgetItem &parent, int depth)
         preItem = treeItem;
 
         // Update its sub-directory recursively
-        updateDirectoryTreeOne(*treeItem, depth - 1);
+        updateDirectoryTreeOne(*treeItem, QDir::cleanPath(QDir(relativePath).filePath(dirItem["name"].toString())), depth - 1);
     }
+}
+
+QString VDirectoryTree::calculateItemRelativePath(QTreeWidgetItem *item)
+{
+    if (!item) {
+        return ".";
+    }
+    QJsonObject itemJson = item->data(0, Qt::UserRole).toJsonObject();
+    Q_ASSERT(!itemJson.isEmpty());
+    QString name = itemJson["name"].toString();
+    Q_ASSERT(!name.isEmpty());
+    return QDir::cleanPath(calculateItemRelativePath(item->parent()) +
+                           QDir::separator() + name);
 }
 
 void VDirectoryTree::updateItemSubtree(QTreeWidgetItem *item)
 {
     QJsonObject itemJson = item->data(0, Qt::UserRole).toJsonObject();
     Q_ASSERT(!itemJson.isEmpty());
+    QString relativePath = calculateItemRelativePath(item);
     int nrChild = item->childCount();
     if (nrChild == 0) {
-        updateDirectoryTreeOne(*item, 2);
+        updateDirectoryTreeOne(*item, relativePath, 2);
     } else {
         for (int i = 0; i < nrChild; ++i) {
             QTreeWidgetItem *childItem = item->child(i);
             if (childItem->childCount() > 0) {
                 continue;
             }
-            updateDirectoryTreeOne(*childItem, 1);
+            QJsonObject childJson = childItem->data(0, Qt::UserRole).toJsonObject();
+            Q_ASSERT(!childJson.isEmpty());
+            updateDirectoryTreeOne(*childItem,
+                                   QDir::cleanPath(QDir(relativePath).filePath(childJson["name"].toString())), 1);
         }
     }
 }
@@ -264,20 +276,17 @@ void VDirectoryTree::newSiblingDirectory()
 
     QString text("&Directory name:");
     QString defaultText("new_directory");
-    QString defaultDescription("");
     do {
         VNewDirDialog dialog(QString("Create a new directory under %1").arg(parentItemName), text,
-                             defaultText, tr("&Description:"), defaultDescription, this);
+                             defaultText, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
-            QString description = dialog.getDescriptionInput();
             if (isConflictNameWithChildren(parentItem, name)) {
                 text = "Name already exists.\nPlease choose another name:";
                 defaultText = name;
-                defaultDescription = description;
                 continue;
             }
-            QTreeWidgetItem *newItem = createDirectoryAndUpdateTree(parentItem, name, description);
+            QTreeWidgetItem *newItem = createDirectoryAndUpdateTree(parentItem, name);
             if (newItem) {
                 this->setCurrentItem(newItem);
             }
@@ -297,20 +306,18 @@ void VDirectoryTree::newSubDirectory()
 
     QString text("&Directory name:");
     QString defaultText("new_directory");
-    QString defaultDescription("");
+
     do {
         VNewDirDialog dialog(QString("Create a new directory under %1").arg(curItemName), text,
-                             defaultText, tr("&Description:"), defaultDescription, this);
+                             defaultText, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
-            QString description = dialog.getDescriptionInput();
             if (isConflictNameWithChildren(curItem, name)) {
                 text = "Name already exists.\nPlease choose another name:";
                 defaultText = name;
-                defaultDescription = description;
                 continue;
             }
-            QTreeWidgetItem *newItem = createDirectoryAndUpdateTree(curItem, name, description);
+            QTreeWidgetItem *newItem = createDirectoryAndUpdateTree(curItem, name);
             if (newItem) {
                 this->setCurrentItem(newItem);
             }
@@ -323,20 +330,18 @@ void VDirectoryTree::newRootDirectory()
 {
     QString text("&Directory name:");
     QString defaultText("new_directory");
-    QString defaultDescription("");
+
     do {
         VNewDirDialog dialog(tr("Create a new root directory"), text,
-                             defaultText, tr("&Description:"), defaultDescription, this);
+                             defaultText, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
-            QString description = dialog.getDescriptionInput();
             if (isConflictNameWithChildren(NULL, name)) {
                 text = "Name already exists.\nPlease choose another name:";
                 defaultText = name;
-                defaultDescription = description;
                 continue;
             }
-            QTreeWidgetItem *newItem = createDirectoryAndUpdateTree(NULL, name, description);
+            QTreeWidgetItem *newItem = createDirectoryAndUpdateTree(NULL, name);
             if (newItem) {
                 this->setCurrentItem(newItem);
             }
@@ -364,15 +369,10 @@ void VDirectoryTree::deleteDirectory()
 }
 
 QTreeWidgetItem* VDirectoryTree::createDirectoryAndUpdateTree(QTreeWidgetItem *parent,
-                                                              const QString &name, const QString &description)
+                                                              const QString &name)
 {
-    QString relativePath("");
-    QJsonObject parentJson;
-    if (parent) {
-        parentJson = parent->data(0, Qt::UserRole).toJsonObject();
-        relativePath = QDir(parentJson["relative_path"].toString()).filePath(parentJson["name"].toString());
-    }
-    QString path = QDir(treePath).filePath(relativePath);
+    QString relativePath = calculateItemRelativePath(parent);
+    QString path = QDir::cleanPath(QDir(treePath).filePath(relativePath));
     QDir dir(path);
     if (!dir.mkdir(name)) {
         qWarning() << "error: fail to create directory" << name << "under" << path;
@@ -388,7 +388,7 @@ QTreeWidgetItem* VDirectoryTree::createDirectoryAndUpdateTree(QTreeWidgetItem *p
     configJson["sub_directories"] = QJsonArray();
     configJson["files"] = QJsonArray();
 
-    if (!VConfigManager::writeDirectoryConfig(QDir(path).filePath(name), configJson)) {
+    if (!VConfigManager::writeDirectoryConfig(QDir::cleanPath(QDir(path).filePath(name)), configJson)) {
         return NULL;
     }
 
@@ -397,12 +397,11 @@ QTreeWidgetItem* VDirectoryTree::createDirectoryAndUpdateTree(QTreeWidgetItem *p
     Q_ASSERT(!configJson.isEmpty());
     QJsonObject itemJson;
     itemJson["name"] = name;
-    itemJson["description"] = description;
     QJsonArray subDirArray = configJson["sub_directories"].toArray();
     subDirArray.append(itemJson);
     configJson["sub_directories"] = subDirArray;
     if (!VConfigManager::writeDirectoryConfig(path, configJson)) {
-        VConfigManager::deleteDirectoryConfig(QDir(path).filePath(name));
+        VConfigManager::deleteDirectoryConfig(QDir::cleanPath(QDir(path).filePath(name)));
         dir.rmdir(name);
         return NULL;
     }
@@ -412,12 +411,15 @@ QTreeWidgetItem* VDirectoryTree::createDirectoryAndUpdateTree(QTreeWidgetItem *p
 
 void VDirectoryTree::deleteDirectoryAndUpdateTree(QTreeWidgetItem *item)
 {
+    if (!item) {
+        return;
+    }
     QJsonObject itemJson = item->data(0, Qt::UserRole).toJsonObject();
     QString itemName = itemJson["name"].toString();
-    QString relativePath = itemJson["relative_path"].toString();
+    QString parentRelativePath = calculateItemRelativePath(item->parent());
 
     // Update parent's config file to exclude this directory
-    QString path = QDir(treePath).filePath(relativePath);
+    QString path = QDir::cleanPath(QDir(treePath).filePath(parentRelativePath));
     QJsonObject configJson = VConfigManager::readDirectoryConfig(path);
     Q_ASSERT(!configJson.isEmpty());
     QJsonArray subDirArray = configJson["sub_directories"].toArray();
@@ -441,7 +443,7 @@ void VDirectoryTree::deleteDirectoryAndUpdateTree(QTreeWidgetItem *item)
     }
 
     // Delete the entire directory
-    QString dirName = QDir(path).filePath(itemName);
+    QString dirName = QDir::cleanPath(QDir(path).filePath(itemName));
     QDir dir(dirName);
     if (!dir.removeRecursively()) {
         qWarning() << "error: fail to delete" << dirName << "recursively";
@@ -485,8 +487,8 @@ void VDirectoryTree::currentDirectoryItemChanged(QTreeWidgetItem *currentItem)
     }
     QJsonObject itemJson = currentItem->data(0, Qt::UserRole).toJsonObject();
     Q_ASSERT(!itemJson.isEmpty());
-    itemJson["root_path"] = treePath;
-    qDebug() << "click dir:" << itemJson;
+    itemJson["notebook"] = notebook;
+    itemJson["relative_path"] = calculateItemRelativePath(currentItem);
     emit currentDirectoryChanged(itemJson);
 }
 
@@ -498,35 +500,29 @@ void VDirectoryTree::editDirectoryInfo()
     }
     QJsonObject curItemJson = curItem->data(0, Qt::UserRole).toJsonObject();
     QString curItemName = curItemJson["name"].toString();
-    QString curDescription = curItemJson["description"].toString();
 
     QString info;
     QString defaultName = curItemName;
-    QString defaultDescription = curDescription;
 
     do {
-        VDirInfoDialog dialog(tr("Directory Information"), info, defaultName,
-                              defaultDescription, this);
+        VDirInfoDialog dialog(tr("Directory Information"), info, defaultName, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
-            QString description = dialog.getDescriptionInput();
-            if (name == curItemName && description == curDescription) {
+            if (name == curItemName) {
                 return;
             }
             if (isConflictNameWithChildren(curItem->parent(), name)) {
                 info = "Name already exists.\nPlease choose another name:";
                 defaultName = name;
-                defaultDescription = description;
                 continue;
             }
-            setDirectoryInfo(curItem, name, description);
+            renameDirectory(curItem, name);
         }
         break;
     } while (true);
 }
 
-void VDirectoryTree::setDirectoryInfo(QTreeWidgetItem *item, const QString &newName,
-                                      const QString &newDescription)
+void VDirectoryTree::renameDirectory(QTreeWidgetItem *item, const QString &newName)
 {
     if (!item) {
         return;
@@ -534,14 +530,10 @@ void VDirectoryTree::setDirectoryInfo(QTreeWidgetItem *item, const QString &newN
     QJsonObject itemJson = item->data(0, Qt::UserRole).toJsonObject();
     QString name = itemJson["name"].toString();
 
-    QString relativePath("");
-    QJsonObject parentJson;
     QTreeWidgetItem *parent = item->parent();
-    if (parent) {
-        parentJson = parent->data(0, Qt::UserRole).toJsonObject();
-        relativePath = QDir(parentJson["relative_path"].toString()).filePath(parentJson["name"].toString());
-    }
-    QString path = QDir(treePath).filePath(relativePath);
+    QString parentRelativePath = calculateItemRelativePath(parent);
+
+    QString path = QDir::cleanPath(QDir(treePath).filePath(parentRelativePath));
     QDir dir(path);
 
     if (!dir.rename(name, newName)) {
@@ -562,7 +554,6 @@ void VDirectoryTree::setDirectoryInfo(QTreeWidgetItem *item, const QString &newN
         QJsonObject tmp = subDirArray[index].toObject();
         if (tmp["name"].toString() == name) {
             tmp["name"] = newName;
-            tmp["description"] = newDescription;
             subDirArray[index] = tmp;
             break;
         }
@@ -576,16 +567,30 @@ void VDirectoryTree::setDirectoryInfo(QTreeWidgetItem *item, const QString &newN
 
     // Update item
     itemJson["name"] = newName;
-    itemJson["description"] = newDescription;
     item->setData(0, Qt::UserRole, itemJson);
     item->setText(0, newName);
-    item->setToolTip(0, newDescription);
 
-    // Reconstruct every child
-    for (int i = 0; i < item->childCount(); ++i) {
-        QTreeWidgetItem *tmp = item->child(i);
-        item->removeChild(tmp);
-        delete tmp;
+    QString oldPath = QDir::cleanPath(QDir(parentRelativePath).filePath(name));
+    QString newPath = QDir::cleanPath(QDir(parentRelativePath).filePath(newName));
+    qDebug() << "directory renamed" << oldPath << "to" << newPath;
+    emit directoryRenamed(notebook, oldPath, newPath);
+}
+
+void VDirectoryTree::handleNotebookRenamed(const QVector<VNotebook> &notebooks,
+                                           const QString &oldName, const QString &newName)
+{
+    if (oldName == notebook) {
+        // Update treePath (though treePath actually will not be changed)
+        notebook = newName;
+        treePath.clear();
+        const QVector<VNotebook> &notebooks = vnote->getNotebooks();
+        for (int i = 0; i < notebooks.size(); ++i) {
+            if (notebooks[i].getName() == notebook) {
+                treePath = notebooks[i].getPath();
+                break;
+            }
+        }
+        Q_ASSERT(!treePath.isEmpty());
+        qDebug() << "directoryTree update notebook" << oldName << "to" << newName << "path" << treePath;
     }
-    updateDirectoryTreeOne(*item, 2);
 }

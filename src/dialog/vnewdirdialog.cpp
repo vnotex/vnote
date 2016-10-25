@@ -2,10 +2,8 @@
 #include "vnewdirdialog.h"
 
 VNewDirDialog::VNewDirDialog(const QString &title, const QString &name, const QString &defaultName,
-                             const QString &description, const QString &defaultDescription,
                              QWidget *parent)
-    : QDialog(parent), title(title), name(name), defaultName(defaultName),
-      description(description), defaultDescription(defaultDescription)
+    : QDialog(parent), title(title), name(name), defaultName(defaultName)
 {
     setupUI();
 
@@ -21,10 +19,6 @@ void VNewDirDialog::setupUI()
     nameEdit->selectAll();
     nameLabel->setBuddy(nameEdit);
 
-    descriptionLabel = new QLabel(description);
-    descriptionEdit = new QLineEdit(defaultDescription);
-    descriptionLabel->setBuddy(descriptionEdit);
-
     okBtn = new QPushButton(tr("&OK"));
     okBtn->setDefault(true);
     cancelBtn = new QPushButton(tr("&Cancel"));
@@ -32,8 +26,6 @@ void VNewDirDialog::setupUI()
     QVBoxLayout *topLayout = new QVBoxLayout();
     topLayout->addWidget(nameLabel);
     topLayout->addWidget(nameEdit);
-    topLayout->addWidget(descriptionLabel);
-    topLayout->addWidget(descriptionEdit);
 
     QHBoxLayout *btmLayout = new QHBoxLayout();
     btmLayout->addStretch();
@@ -56,9 +48,4 @@ void VNewDirDialog::enableOkButton(const QString &editText)
 QString VNewDirDialog::getNameInput() const
 {
     return nameEdit->text();
-}
-
-QString VNewDirDialog::getDescriptionInput() const
-{
-    return descriptionEdit->text();
 }

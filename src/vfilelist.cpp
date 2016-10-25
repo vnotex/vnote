@@ -5,8 +5,8 @@
 #include "dialog/vnewfiledialog.h"
 #include "vnote.h"
 
-VFileList::VFileList(QWidget *parent)
-    : QListWidget(parent)
+VFileList::VFileList(VNote *vnote, QWidget *parent)
+    : QListWidget(parent), vnote(vnote)
 {
     setContextMenuPolicy(Qt::CustomContextMenu);
     initActions();
@@ -37,17 +37,24 @@ void VFileList::setDirectory(QJsonObject dirJson)
         return;
     }
 
-    directoryName = dirJson["name"].toString();
-    rootPath = dirJson["root_path"].toString();
-    relativePath = QDir(dirJson["relative_path"].toString()).filePath(directoryName);
-    qDebug() << "FileList update:" << rootPath << relativePath << directoryName;
+    notebook = dirJson["notebook"].toString();
+    relativePath = dirJson["relative_path"].toString();
+    rootPath = "";
+    const QVector<VNotebook> &notebooks = vnote->getNotebooks();
+    for (int i = 0; i < notebooks.size(); ++i) {
+        if (notebooks[i].getName() == notebook) {
+            rootPath = notebooks[i].getPath();
+            break;
+        }
+    }
+    Q_ASSERT(!rootPath.isEmpty());
 
     updateFileList();
 }
 
 void VFileList::clearDirectoryInfo()
 {
-    directoryName = rootPath = relativePath = "";
+    notebook = relativePath = rootPath = "";
     clear();
 }
 
@@ -89,9 +96,6 @@ QListWidgetItem* VFileList::insertFileListItem(QJsonObject fileJson, bool atFron
 {
     Q_ASSERT(!fileJson.isEmpty());
     QListWidgetItem *item = new QListWidgetItem(fileJson["name"].toString());
-    if (!fileJson["description"].toString().isEmpty()) {
-        item->setToolTip(fileJson["description"].toString());
-    }
     item->setData(Qt::UserRole, fileJson);
 
     if (atFront) {
@@ -118,20 +122,17 @@ void VFileList::newFile()
 {
     QString text("&Note name:");
     QString defaultText("new_note");
-    QString defaultDescription("");
     do {
-        VNewFileDialog dialog(QString("Create a new note under %1").arg(directoryName), text,
-                              defaultText, tr("&Description:"), defaultDescription, this);
+        VNewFileDialog dialog(QString("Create a new note under %1").arg(getDirectoryName()), text,
+                              defaultText, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
-            QString description = dialog.getDescriptionInput();
             if (isConflictNameWithExisting(name)) {
                 text = "Name already exists.\nPlease choose another name:";
                 defaultText = name;
-                defaultDescription = description;
                 continue;
             }
-            QListWidgetItem *newItem = createFileAndUpdateList(name, description);
+            QListWidgetItem *newItem = createFileAndUpdateList(name);
             if (newItem) {
                 setCurrentItem(newItem);
                 // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
@@ -140,7 +141,8 @@ void VFileList::newFile()
                 // Open this file in edit mode
                 QJsonObject itemJson = newItem->data(Qt::UserRole).toJsonObject();
                 Q_ASSERT(!itemJson.isEmpty());
-                itemJson["path"] = QDir::cleanPath(QDir(rootPath).filePath(relativePath));
+                itemJson["notebook"] = notebook;
+                itemJson["relative_path"] = QDir::cleanPath(QDir(relativePath).filePath(name));
                 itemJson["mode"] = OpenFileMode::Edit;
                 emit fileCreated(itemJson);
             }
@@ -164,7 +166,8 @@ void VFileList::deleteFile()
     msgBox.setDefaultButton(QMessageBox::Ok);
     if (msgBox.exec() == QMessageBox::Ok) {
         // First close this file forcely
-        curItemJson["path"] = QDir::cleanPath(QDir(rootPath).filePath(relativePath));
+        curItemJson["notebook"] = notebook;
+        curItemJson["relative_path"] = QDir::cleanPath(QDir(relativePath).filePath(curItemName));
         emit fileDeleted(curItemJson);
 
         deleteFileAndUpdateList(curItem);
@@ -176,7 +179,7 @@ void VFileList::contextMenuRequested(QPoint pos)
     QListWidgetItem *item = itemAt(pos);
     QMenu menu(this);
 
-    if (directoryName.isEmpty()) {
+    if (notebook.isEmpty()) {
         return;
     }
     menu.addAction(newFileAct);
@@ -201,8 +204,7 @@ bool VFileList::isConflictNameWithExisting(const QString &name)
     return false;
 }
 
-QListWidgetItem* VFileList::createFileAndUpdateList(const QString &name,
-                                                    const QString &description)
+QListWidgetItem* VFileList::createFileAndUpdateList(const QString &name)
 {
     QString path = QDir(rootPath).filePath(relativePath);
     QString filePath = QDir(path).filePath(name);
@@ -224,7 +226,6 @@ QListWidgetItem* VFileList::createFileAndUpdateList(const QString &name,
     Q_ASSERT(!dirJson.isEmpty());
     QJsonObject fileJson;
     fileJson["name"] = name;
-    fileJson["description"] = description;
     QJsonArray fileArray = dirJson["files"].toArray();
     fileArray.push_front(fileJson);
     dirJson["files"] = fileArray;
@@ -291,7 +292,8 @@ void VFileList::handleItemClicked(QListWidgetItem *currentItem)
     update();
     QJsonObject itemJson = currentItem->data(Qt::UserRole).toJsonObject();
     Q_ASSERT(!itemJson.isEmpty());
-    itemJson["path"] = QDir::cleanPath(QDir(rootPath).filePath(relativePath));
+    itemJson["notebook"] = notebook;
+    itemJson["relative_path"] = QDir::cleanPath(QDir(relativePath).filePath(itemJson["name"].toString()));
     itemJson["mode"] = OpenFileMode::Read;
     emit fileClicked(itemJson);
 }
@@ -324,7 +326,6 @@ bool VFileList::importFile(const QString &name)
     Q_ASSERT(!dirJson.isEmpty());
     QJsonObject fileJson;
     fileJson["name"] = srcName;
-    fileJson["description"] = "";
     QJsonArray fileArray = dirJson["files"].toArray();
     fileArray.push_front(fileJson);
     dirJson["files"] = fileArray;
@@ -336,4 +337,31 @@ bool VFileList::importFile(const QString &name)
     }
 
     return insertFileListItem(fileJson, true);
+}
+
+void VFileList::handleNotebookRenamed(const QVector<VNotebook> &notebooks,
+                                      const QString &oldName, const QString &newName)
+{
+    if (oldName == notebook) {
+        // Update treePath (though treePath actually will not be changed)
+        notebook = newName;
+        rootPath.clear();
+        const QVector<VNotebook> &notebooks = vnote->getNotebooks();
+        for (int i = 0; i < notebooks.size(); ++i) {
+            if (notebooks[i].getName() == notebook) {
+                rootPath = notebooks[i].getPath();
+                break;
+            }
+        }
+        Q_ASSERT(!rootPath.isEmpty());
+    }
+}
+
+void VFileList::handleDirectoryRenamed(const QString &notebook,
+                                       const QString &oldRelativePath, const QString &newRelativePath)
+{
+    if (notebook == this->notebook
+        && oldRelativePath == relativePath) {
+        relativePath = newRelativePath;
+    }
 }

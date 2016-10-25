@@ -2,6 +2,7 @@
 #include <QTextBrowser>
 #include <QWebChannel>
 #include <QWebEngineView>
+#include <QFileInfo>
 #include "veditor.h"
 #include "vedit.h"
 #include "vdocument.h"
@@ -11,16 +12,20 @@
 #include "hgmarkdownhighlighter.h"
 #include "vconfigmanager.h"
 #include "vmarkdownconverter.h"
+#include "vnotebook.h"
 
 extern VConfigManager vconfig;
 
-VEditor::VEditor(const QString &path, const QString &name, bool modifiable,
-                 QWidget *parent)
+VEditor::VEditor(const QString &path, bool modifiable, QWidget *parent)
     : QStackedWidget(parent), mdConverterType(vconfig.getMdConverterType())
 {
-    DocType docType = isMarkdown(name) ? DocType::Markdown : DocType::Html;
-    QString fileText = VUtils::readFileFromDisk(QDir(path).filePath(name));
-    noteFile = new VNoteFile(path, name, fileText, docType, modifiable);
+    DocType docType = isMarkdown(path) ? DocType::Markdown : DocType::Html;
+    QString basePath = QFileInfo(path).path();
+    QString fileName = QFileInfo(path).fileName();
+    qDebug() << "VEditor basePath" << basePath << "file" << fileName;
+    QString fileText = VUtils::readFileFromDisk(path);
+    noteFile = new VNoteFile(basePath, fileName, fileText,
+                             docType, modifiable);
 
     isEditMode = false;
 
@@ -105,7 +110,7 @@ void VEditor::previewByConverter()
     QString toc = mdConverter.generateToc(content, vconfig.getMarkdownExtensions());
     html.replace(tocExp, toc);
     QString completeHtml = VNote::preTemplateHtml + html + VNote::postTemplateHtml;
-    webPreviewer->setHtml(completeHtml, QUrl::fromLocalFile(noteFile->path + QDir::separator()));
+    webPreviewer->setHtml(completeHtml, QUrl::fromLocalFile(noteFile->basePath + QDir::separator()));
 }
 
 void VEditor::showFileEditMode()
@@ -171,7 +176,7 @@ bool VEditor::saveFile()
         return true;
     }
     textEditor->saveFile();
-    bool ret = VUtils::writeFileToDisk(QDir(noteFile->path).filePath(noteFile->name),
+    bool ret = VUtils::writeFileToDisk(QDir(noteFile->basePath).filePath(noteFile->fileName),
                                        noteFile->content);
     if (!ret) {
         QMessageBox msgBox(QMessageBox::Warning, tr("Fail to save to file"),
@@ -196,7 +201,8 @@ void VEditor::setupMarkdownPreview()
         QWebChannel *channel = new QWebChannel(this);
         channel->registerObject(QStringLiteral("content"), &document);
         page->setWebChannel(channel);
-        webPreviewer->setHtml(VNote::templateHtml, QUrl::fromLocalFile(noteFile->path + QDir::separator()));
+        webPreviewer->setHtml(VNote::templateHtml,
+                              QUrl::fromLocalFile(noteFile->basePath + QDir::separator()));
     }
 
     addWidget(webPreviewer);

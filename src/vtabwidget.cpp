@@ -7,8 +7,8 @@
 
 extern VConfigManager vconfig;
 
-VTabWidget::VTabWidget(QWidget *parent)
-    : QTabWidget(parent)
+VTabWidget::VTabWidget(VNote *vnote, QWidget *parent)
+    : QTabWidget(parent), vnote(vnote)
 {
     setTabsClosable(true);
     setMovable(true);
@@ -20,24 +20,25 @@ VTabWidget::VTabWidget(QWidget *parent)
 
 void VTabWidget::openWelcomePage()
 {
-    int idx = openFileInTab(vconfig.getWelcomePagePath(), "", false);
+    int idx = openFileInTab("", vconfig.getWelcomePagePath(), false);
     setTabText(idx, "Welcome to VNote");
     setTabToolTip(idx, "VNote");
 }
 
-int VTabWidget::insertTabWithData(int index, QWidget *page, const QString &label,
+int VTabWidget::insertTabWithData(int index, QWidget *page,
                                   const QJsonObject &tabData)
 {
+    QString label = getFileName(tabData["relative_path"].toString());
     int idx = insertTab(index, page, label);
     QTabBar *tabs = tabBar();
     tabs->setTabData(idx, tabData);
-    Q_ASSERT(tabs->tabText(idx) == label);
+
     return idx;
 }
 
-int VTabWidget::appendTabWithData(QWidget *page, const QString &label, const QJsonObject &tabData)
+int VTabWidget::appendTabWithData(QWidget *page, const QJsonObject &tabData)
 {
-    return insertTabWithData(count(), page, label, tabData);
+    return insertTabWithData(count(), page, tabData);
 }
 
 void VTabWidget::openFile(QJsonObject fileJson)
@@ -45,22 +46,23 @@ void VTabWidget::openFile(QJsonObject fileJson)
     if (fileJson.isEmpty()) {
         return;
     }
-    qDebug() << "open file:" << fileJson;
 
-    QString path = fileJson["path"].toString();
-    QString name = fileJson["name"].toString();
+    QString notebook = fileJson["notebook"].toString();
+    QString relativePath = fileJson["relative_path"].toString();
     int mode = OpenFileMode::Read;
     if (fileJson.contains("mode")) {
         mode = fileJson["mode"].toInt();
     }
 
+    qDebug() << "open notebook[" << notebook << "] path[" << relativePath << "]" << mode;
+
     // Find if it has been opened already
-    int idx = findTabByFile(path, name);
+    int idx = findTabByFile(notebook, relativePath);
     if (idx > -1) {
         goto out;
     }
 
-    idx = openFileInTab(path, name, true);
+    idx = openFileInTab(notebook, relativePath, true);
 
 out:
     setCurrentIndex(idx);
@@ -78,11 +80,11 @@ void VTabWidget::closeFile(QJsonObject fileJson)
     }
     qDebug() << "close file:" << fileJson;
 
-    QString path = fileJson["path"].toString();
-    QString name = fileJson["name"].toString();
+    QString notebook = fileJson["notebook"].toString();
+    QString relativePath = fileJson["relative_path"].toString();
 
     // Find if it has been opened already
-    int idx = findTabByFile(path, name);
+    int idx = findTabByFile(notebook, relativePath);
     if (idx == -1) {
         return;
     }
@@ -93,25 +95,34 @@ void VTabWidget::closeFile(QJsonObject fileJson)
     delete page;
 }
 
-int VTabWidget::openFileInTab(const QString &path, const QString &name, bool modifiable)
+int VTabWidget::openFileInTab(const QString &notebook, const QString &relativePath,
+                              bool modifiable)
 {
-    VEditor *editor = new VEditor(path, name, modifiable);
+    QString rootPath;
+    const QVector<VNotebook> &notebooks = vnote->getNotebooks();
+    for (int i = 0; i < notebooks.size(); ++i) {
+        if (notebooks[i].getName() == notebook) {
+            rootPath = notebooks[i].getPath();
+            break;
+        }
+    }
+
+    VEditor *editor = new VEditor(QDir::cleanPath(QDir(rootPath).filePath(relativePath)),
+                                  modifiable);
     QJsonObject tabJson;
-    tabJson["path"] = path;
-    tabJson["name"] = name;
-    int idx = appendTabWithData(editor, name, tabJson);
-    setTabToolTip(idx, path);
-    return idx;
+    tabJson["notebook"] = notebook;
+    tabJson["relative_path"] = relativePath;
+    return appendTabWithData(editor, tabJson);
 }
 
-int VTabWidget::findTabByFile(const QString &path, const QString &name)
+int VTabWidget::findTabByFile(const QString &notebook, const QString &relativePath) const
 {
     QTabBar *tabs = tabBar();
     int nrTabs = tabs->count();
 
     for (int i = 0; i < nrTabs; ++i) {
         QJsonObject tabJson = tabs->tabData(i).toJsonObject();
-        if (tabJson["name"] == name && tabJson["path"] == path) {
+        if (tabJson["notebook"] == notebook && tabJson["relative_path"] == relativePath) {
             return i;
         }
     }
