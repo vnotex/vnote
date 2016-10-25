@@ -1,30 +1,32 @@
-#ifndef VFILELIST_H
-#define VFILELIST_H
+#ifndef VFILELISTPANEL_H
+#define VFILELISTPANEL_H
 
-#include <QListWidget>
+#include <QWidget>
+#include <QString>
+#include <QVector>
 #include <QJsonObject>
-#include <QFileInfo>
 #include <QDir>
+#include <QFile>
 #include "vnotebook.h"
 
-class QAction;
 class VNote;
+class VFileList;
+class QPushButton;
+class QListWidgetItem;
 
-class VFileList : public QListWidget
+class VFileListPanel : public QWidget
 {
     Q_OBJECT
 public:
-    explicit VFileList(VNote *vnote, QWidget *parent = 0);
+    VFileListPanel(VNote *vnote, QWidget *parent = 0);
     bool importFile(const QString &name);
 
 signals:
     void fileClicked(QJsonObject fileJson);
     void fileDeleted(QJsonObject fileJson);
     void fileCreated(QJsonObject fileJson);
-
-private slots:
-    void contextMenuRequested(QPoint pos);
-    void handleItemClicked(QListWidgetItem *currentItem);
+    void fileRenamed(const QString &notebook, const QString &oldPath,
+                     const QString &newPath);
 
 public slots:
     void setDirectory(QJsonObject dirJson);
@@ -32,17 +34,16 @@ public slots:
                                const QString &newName);
     void handleDirectoryRenamed(const QString &notebook, const QString &oldRelativePath,
                                 const QString &newRelativePath);
-    void newFile();
-    void deleteFile();
+
+private slots:
+    void onNewFileBtnClicked();
+    void onDeleteFileBtnClicked();
+    void onFileInfoBtnClicked();
 
 private:
-    void updateFileList();
-    QListWidgetItem *insertFileListItem(QJsonObject fileJson, bool atFront = false);
-    void removeFileListItem(QListWidgetItem *item);
-    void initActions();
+    void setupUI();
     bool isConflictNameWithExisting(const QString &name);
-    QListWidgetItem *createFileAndUpdateList(const QString &name);
-    void deleteFileAndUpdateList(QListWidgetItem *item);
+    void renameFile(QListWidgetItem *item, const QString &newName);
     void clearDirectoryInfo();
     inline QString getDirectoryName();
 
@@ -53,17 +54,17 @@ private:
     // Used for cache
     QString rootPath;
 
-    // Actions
-    QAction *newFileAct;
-    QAction *deleteFileAct;
+    VFileList *fileList;
+    QPushButton *newFileBtn;
+    QPushButton *deleteFileBtn;
+    QPushButton *fileInfoBtn;
 };
 
-inline QString VFileList::getDirectoryName()
+inline QString VFileListPanel::getDirectoryName()
 {
     if (relativePath.isEmpty()) {
         return "";
     }
     return QFileInfo(QDir::cleanPath(relativePath)).fileName();
 }
-
-#endif // VFILELIST_H
+#endif // VFILELISTPANEL_H

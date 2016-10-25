@@ -2,7 +2,7 @@
 #include "vmainwindow.h"
 #include "vdirectorytree.h"
 #include "vnote.h"
-#include "vfilelist.h"
+#include "vfilelistpanel.h"
 #include "vtabwidget.h"
 #include "vconfigmanager.h"
 #include "dialog/vnewnotebookdialog.h"
@@ -73,9 +73,8 @@ void VMainWindow::setupUI()
     nbContainer->setLayout(nbLayout);
     nbContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
-    // File list widget
-    fileList = new VFileList(vnote);
-    fileList->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
+    fileListPanel = new VFileListPanel(vnote);
+    fileListPanel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
     // Editor tab widget
     tabs = new VTabWidget(vnote);
@@ -85,7 +84,7 @@ void VMainWindow::setupUI()
     // Main Splitter
     mainSplitter = new QSplitter();
     mainSplitter->addWidget(nbContainer);
-    mainSplitter->addWidget(fileList);
+    mainSplitter->addWidget(fileListPanel);
     mainSplitter->addWidget(tabs);
     mainSplitter->setStretchFactor(0, 1);
     mainSplitter->setStretchFactor(1, 1);
@@ -96,17 +95,17 @@ void VMainWindow::setupUI()
             SLOT(setCurNotebookIndex(int)));
 
     connect(vnote, &VNote::notebooksRenamed,
-            fileList, &VFileList::handleNotebookRenamed);
+            fileListPanel, &VFileListPanel::handleNotebookRenamed);
     connect(directoryTree, &VDirectoryTree::currentDirectoryChanged,
-            fileList, &VFileList::setDirectory);
+            fileListPanel, &VFileListPanel::setDirectory);
     connect(directoryTree, &VDirectoryTree::directoryRenamed,
-            fileList, &VFileList::handleDirectoryRenamed);
+            fileListPanel, &VFileListPanel::handleDirectoryRenamed);
 
-    connect(fileList, &VFileList::fileClicked,
+    connect(fileListPanel, &VFileListPanel::fileClicked,
             tabs, &VTabWidget::openFile);
-    connect(fileList, &VFileList::fileDeleted,
+    connect(fileListPanel, &VFileListPanel::fileDeleted,
             tabs, &VTabWidget::closeFile);
-    connect(fileList, &VFileList::fileCreated,
+    connect(fileListPanel, &VFileListPanel::fileCreated,
             tabs, &VTabWidget::openFile);
 
     connect(newNotebookBtn, &QPushButton::clicked,
@@ -383,14 +382,18 @@ void VMainWindow::onNotebookInfoBtnClicked()
 
 void VMainWindow::importNoteFromFile()
 {
+    static QString lastPath = QDir::homePath();
     QStringList files = QFileDialog::getOpenFileNames(this,tr("Select files(HTML or Markdown) to be imported as notes"),
-                                                      QDir::homePath());
+                                                      lastPath);
     if (files.isEmpty()) {
         return;
     }
+    // Update lastPath
+    lastPath = QFileInfo(files[0]).path();
+
     QStringList failedFiles;
     for (int i = 0; i < files.size(); ++i) {
-        bool ret = fileList->importFile(files[i]);
+        bool ret = fileListPanel->importFile(files[i]);
         if (!ret) {
             failedFiles.append(files[i]);
         }

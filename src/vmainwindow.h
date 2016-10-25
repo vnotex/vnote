@@ -11,12 +11,12 @@ class QListWidget;
 class QTabWidget;
 class QToolBar;
 class VNote;
-class VFileList;
 class VTabWidget;
 class QAction;
 class QPushButton;
 class VNotebook;
 class QActionGroup;
+class VFileListPanel;
 
 class VMainWindow : public QMainWindow
 {
@@ -63,8 +63,8 @@ private:
     QPushButton *newRootDirBtn;
     QPushButton *deleteDirBtn;
     QPushButton *dirInfoBtn;
+    VFileListPanel *fileListPanel;
     VDirectoryTree *directoryTree;
-    VFileList *fileList;
     VTabWidget *tabs;
     QSplitter *mainSplitter;
     VNote *vnote;

@@ -35,7 +35,9 @@ SOURCES += main.cpp\
     dialog/vnewnotebookdialog.cpp \
     vmarkdownconverter.cpp \
     dialog/vnotebookinfodialog.cpp \
-    dialog/vdirinfodialog.cpp
+    dialog/vdirinfodialog.cpp \
+    vfilelistpanel.cpp \
+    dialog/vfileinfodialog.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -61,7 +63,9 @@ HEADERS  += vmainwindow.h \
     dialog/vnewnotebookdialog.h \
     vmarkdownconverter.h \
     dialog/vnotebookinfodialog.h \
-    dialog/vdirinfodialog.h
+    dialog/vdirinfodialog.h \
+    vfilelistpanel.h \
+    dialog/vfileinfodialog.h
 
 RESOURCES += \
     vnote.qrc

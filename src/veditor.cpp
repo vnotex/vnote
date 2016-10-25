@@ -175,9 +175,20 @@ bool VEditor::saveFile()
     if (!isEditMode || !noteFile->modifiable || !textEditor->isModified()) {
         return true;
     }
+    // Make sure the file already exists. Temporary deal with cases when user delete or move
+    // a file.
+    QString filePath = QDir(noteFile->basePath).filePath(noteFile->fileName);
+    if (!QFile(filePath).exists()) {
+        qWarning() << "error:" << filePath << "being written has been removed";
+        QMessageBox msgBox(QMessageBox::Warning, tr("Fail to save to file"),
+                           QString("%1 being written has been removed.").arg(filePath),
+                           QMessageBox::Ok, this);
+        msgBox.setDefaultButton(QMessageBox::Ok);
+        msgBox.exec();
+        return false;
+    }
     textEditor->saveFile();
-    bool ret = VUtils::writeFileToDisk(QDir(noteFile->basePath).filePath(noteFile->fileName),
-                                       noteFile->content);
+    bool ret = VUtils::writeFileToDisk(filePath, noteFile->content);
     if (!ret) {
         QMessageBox msgBox(QMessageBox::Warning, tr("Fail to save to file"),
                            QString("Fail to write to disk when saving a note. Please try it again."),

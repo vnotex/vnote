@@ -42,5 +42,8 @@
         <file>resources/icons/create_rootdir.png</file>
         <file>resources/icons/delete_dir.png</file>
         <file>resources/icons/dir_info.png</file>
+        <file>resources/icons/create_note.png</file>
+        <file>resources/icons/delete_note.png</file>
+        <file>resources/icons/note_info.png</file>
     </qresource>
 </RCC>

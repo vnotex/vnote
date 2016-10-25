@@ -54,7 +54,7 @@ void VTabWidget::openFile(QJsonObject fileJson)
         mode = fileJson["mode"].toInt();
     }
 
-    qDebug() << "open notebook[" << notebook << "] path[" << relativePath << "]" << mode;
+    qDebug() << "open notebook" << notebook << "path" << relativePath << mode;
 
     // Find if it has been opened already
     int idx = findTabByFile(notebook, relativePath);

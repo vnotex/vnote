@@ -55,7 +55,6 @@ void VFileList::setDirectory(QJsonObject dirJson)
 void VFileList::clearDirectoryInfo()
 {
     notebook = relativePath = rootPath = "";
-    clear();
 }
 
 void VFileList::updateFileList()
@@ -357,6 +356,7 @@ void VFileList::handleNotebookRenamed(const QVector<VNotebook> &notebooks,
     }
 }
 
+// FIXME: when @oldRelativePath is part of relativePath, we also need to update relativePath partialy
 void VFileList::handleDirectoryRenamed(const QString &notebook,
                                        const QString &oldRelativePath, const QString &newRelativePath)
 {
