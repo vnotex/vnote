@@ -40,6 +40,8 @@ private slots:
     void importNoteFromFile();
     void changeMarkdownConverter(QAction *action);
     void aboutMessage();
+    void changeExpandTab(bool checked);
+    void setTabStopWidth(QAction *action);
 
 signals:
     void curNotebookChanged(const QString &notebookName);
@@ -79,6 +81,11 @@ private:
     QAction *hoedownAct;
     QAction *aboutAct;
     QAction *aboutQtAct;
+    QAction *expandTabAct;
+    QActionGroup *tabStopWidthAct;
+    QAction *twoSpaceTabAct;
+    QAction *fourSpaceTabAct;
+    QAction *eightSpaceTabAct;
 };
 
 #endif // VMAINWINDOW_H

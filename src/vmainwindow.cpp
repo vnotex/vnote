@@ -183,6 +183,28 @@ void VMainWindow::initActions()
     aboutQtAct->setStatusTip(tr("Show information about Qt"));
     connect(aboutQtAct, &QAction::triggered,
             qApp, &QApplication::aboutQt);
+
+    expandTabAct = new QAction(tr("&Expand tab"), this);
+    expandTabAct->setStatusTip(tr("Expand tab to spaces"));
+    expandTabAct->setCheckable(true);
+    connect(expandTabAct, &QAction::triggered,
+            this, &VMainWindow::changeExpandTab);
+
+    tabStopWidthAct = new QActionGroup(this);
+    twoSpaceTabAct = new QAction(tr("2 spaces"), tabStopWidthAct);
+    twoSpaceTabAct->setStatusTip(tr("Expand tab to 2 spaces"));
+    twoSpaceTabAct->setCheckable(true);
+    twoSpaceTabAct->setData(2);
+    fourSpaceTabAct = new QAction(tr("4 spaces"), tabStopWidthAct);
+    fourSpaceTabAct->setStatusTip(tr("Expand tab to 4 spaces"));
+    fourSpaceTabAct->setCheckable(true);
+    fourSpaceTabAct->setData(4);
+    eightSpaceTabAct = new QAction(tr("8 spaces"), tabStopWidthAct);
+    eightSpaceTabAct->setStatusTip(tr("Expand tab to 8 spaces"));
+    eightSpaceTabAct->setCheckable(true);
+    eightSpaceTabAct->setData(8);
+    connect(tabStopWidthAct, &QActionGroup::triggered,
+            this, &VMainWindow::setTabStopWidth);
 }
 
 void VMainWindow::initToolBar()
@@ -204,6 +226,32 @@ void VMainWindow::initMenuBar()
 
     // File Menu
     fileMenu->addAction(importNoteAct);
+
+    // Edit Menu
+    editMenu->addAction(expandTabAct);
+    if (vconfig.getIsExpandTab()) {
+        expandTabAct->setChecked(true);
+    } else {
+        expandTabAct->setChecked(false);
+    }
+    QMenu *tabStopWidthMenu = editMenu->addMenu(tr("Tab stop width"));
+    tabStopWidthMenu->addAction(twoSpaceTabAct);
+    tabStopWidthMenu->addAction(fourSpaceTabAct);
+    tabStopWidthMenu->addAction(eightSpaceTabAct);
+    int tabStopWidth = vconfig.getTabStopWidth();
+    switch (tabStopWidth) {
+    case 2:
+        twoSpaceTabAct->setChecked(true);
+        break;
+    case 4:
+        fourSpaceTabAct->setChecked(true);
+        break;
+    case 8:
+        eightSpaceTabAct->setChecked(true);
+        break;
+    default:
+        qWarning() << "error: unsupported tab stop width" << tabStopWidth <<  "in config";
+    }
 
     // Markdown Menu
     QMenu *converterMenu = markdownMenu->addMenu(tr("&Converter"));
@@ -423,4 +471,17 @@ void VMainWindow::aboutMessage()
     QMessageBox::about(this, tr("About VNote"),
                        tr("VNote is a Vim-inspired note taking application for Markdown.\n"
                           "Visit https://github.com/tamlok/vnote.git for more information."));
+}
+
+void VMainWindow::changeExpandTab(bool checked)
+{
+    vconfig.setIsExpandTab(checked);
+}
+
+void VMainWindow::setTabStopWidth(QAction *action)
+{
+    if (!action) {
+        return;
+    }
+    vconfig.setTabStopWidth(action->data().toInt());
 }

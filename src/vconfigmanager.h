@@ -62,6 +62,11 @@ public:
     inline QString getPreTemplatePath() const;
     inline QString getPostTemplatePath() const;
 
+    inline int getTabStopWidth() const;
+    inline void setTabStopWidth(int tabStopWidth);
+    inline bool getIsExpandTab() const;
+    inline void setIsExpandTab(bool isExpandTab);
+
 private:
     void updateMarkdownEditStyle();
     QVariant getConfigFromSettings(const QString &section, const QString &key);
@@ -85,6 +90,11 @@ private:
     // Markdown Converter
     hoedown_extensions markdownExtensions;
     MarkdownConverterType mdConverterType;
+
+    // Num of spaces
+    int tabStopWidth;
+    // Expand tab to @tabStopWidth spaces
+    bool isExpandTab;
 
     // The name of the config file in each directory
     static const QString dirConfigFileName;
@@ -184,6 +194,34 @@ inline void VConfigManager::setMarkdownConverterType(MarkdownConverterType type)
     }
     mdConverterType = type;
     setConfigToSettings("global", "markdown_converter", type);
+}
+
+inline int VConfigManager::getTabStopWidth() const
+{
+    return tabStopWidth;
+}
+
+inline bool VConfigManager::getIsExpandTab() const
+{
+    return isExpandTab;
+}
+
+inline void VConfigManager::setTabStopWidth(int tabStopWidth)
+{
+    if (tabStopWidth == this->tabStopWidth) {
+        return;
+    }
+    this->tabStopWidth = tabStopWidth;
+    setConfigToSettings("global", "tab_stop_width", tabStopWidth);
+}
+
+inline void VConfigManager::setIsExpandTab(bool isExpandTab)
+{
+    if (isExpandTab == this->isExpandTab) {
+        return;
+    }
+    this->isExpandTab = isExpandTab;
+    setConfigToSettings("global", "is_expand_tab", this->isExpandTab);
 }
 
 #endif // VCONFIGMANAGER_H

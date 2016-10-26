@@ -50,6 +50,9 @@ void VConfigManager::initialize()
                                             HOEDOWN_EXT_QUOTE | HOEDOWN_EXT_MATH);
     mdConverterType = (MarkdownConverterType)getConfigFromSettings("global", "markdown_converter").toInt();
 
+    tabStopWidth = getConfigFromSettings("global", "tab_stop_width").toInt();
+    isExpandTab = getConfigFromSettings("global", "is_expand_tab").toBool();
+
     // Update notebooks
     readNotebookFromSettings();
 

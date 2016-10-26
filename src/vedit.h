@@ -23,12 +23,14 @@ public:
 
     void reloadFile();
 
-signals:
-
-public slots:
-
+protected:
+    void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 
 private:
+    void updateTabSettings();
+
+    bool isExpandTab;
+    QString tabSpaces;
     VNoteFile *noteFile;
     HGMarkdownHighlighter *mdHighlighter;
 };

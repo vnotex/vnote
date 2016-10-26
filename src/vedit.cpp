@@ -13,18 +13,46 @@ VEdit::VEdit(VNoteFile *noteFile, QWidget *parent)
         setPalette(vconfig.getMdEditPalette());
         setFont(vconfig.getMdEditFont());
         setAcceptRichText(false);
-
         mdHighlighter = new HGMarkdownHighlighter(vconfig.getMdHighlightingStyles(),
                                                   500, document());
     } else {
         setFont(vconfig.getBaseEditFont());
         setAutoFormatting(QTextEdit::AutoBulletList);
     }
+
+    updateTabSettings();
+}
+
+void VEdit::updateTabSettings()
+{
+    switch (noteFile->docType) {
+    case DocType::Markdown:
+        if (vconfig.getTabStopWidth() > 0) {
+            QFontMetrics metrics(vconfig.getMdEditFont());
+            setTabStopWidth(vconfig.getTabStopWidth() * metrics.width(' '));
+        }
+        break;
+    case DocType::Html:
+        if (vconfig.getTabStopWidth() > 0) {
+            QFontMetrics metrics(vconfig.getBaseEditFont());
+            setTabStopWidth(vconfig.getTabStopWidth() * metrics.width(' '));
+        }
+        break;
+    default:
+        qWarning() << "error: unknown doc type" << int(noteFile->docType);
+        return;
+    }
+
+    isExpandTab = vconfig.getIsExpandTab();
+    if (isExpandTab && (vconfig.getTabStopWidth() > 0)) {
+        tabSpaces = QString(vconfig.getTabStopWidth(), ' ');
+    }
 }
 
 void VEdit::beginEdit()
 {
     setReadOnly(false);
+    updateTabSettings();
     switch (noteFile->docType) {
     case DocType::Html:
         setHtml(noteFile->content);
@@ -68,4 +96,15 @@ void VEdit::reloadFile()
     default:
         qWarning() << "error: unknown doc type" << int(noteFile->docType);
     }
+}
+
+void VEdit::keyPressEvent(QKeyEvent *event)
+{
+    if ((event->key() == Qt::Key_Tab) && isExpandTab) {
+        QTextCursor cursor(document());
+        cursor.setPosition(textCursor().position());
+        cursor.insertText(tabSpaces);
+        return;
+    }
+    QTextEdit::keyPressEvent(event);
 }
