@@ -76,6 +76,11 @@ void VConfigManager::readNotebookFromSettings()
 
 void VConfigManager::writeNotebookToSettings()
 {
+    // Clear it first
+    userSettings->beginGroup("notebooks");
+    userSettings->remove("");
+    userSettings->endGroup();
+
     userSettings->beginWriteArray("notebooks");
     for (int i = 0; i < notebooks.size(); ++i) {
         userSettings->setArrayIndex(i);
