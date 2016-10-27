@@ -13,9 +13,16 @@
 class QJsonObject;
 class QString;
 
-enum MarkdownConverterType {
+enum MarkdownConverterType
+{
     Hoedown = 0,
     Marked
+};
+
+struct VColor
+{
+    QString name;
+    QString rgb; // 'FFFFFF', ithout '#'
 };
 
 class VConfigManager
@@ -48,6 +55,7 @@ public:
     inline QString getTemplateCssUrl() const;
 
     inline QFont getBaseEditFont() const;
+    inline QPalette getBaseEditPalette() const;
 
     inline int getCurNotebookIndex() const;
     inline void setCurNotebookIndex(int index);
@@ -67,12 +75,23 @@ public:
     inline bool getIsExpandTab() const;
     inline void setIsExpandTab(bool isExpandTab);
 
+    inline const QVector<VColor> &getPredefinedColors() const;
+
+    inline const QString &getCurBackgroundColor() const;
+    inline void setCurBackgroundColor(const QString &colorName);
+
+    inline const QString &getCustomBackgroundColor() const;
+    inline void setCustomBackgroundColor(const QString &colorRgb);
+
 private:
     void updateMarkdownEditStyle();
     QVariant getConfigFromSettings(const QString &section, const QString &key);
     void setConfigToSettings(const QString &section, const QString &key, const QVariant &value);
     void readNotebookFromSettings();
     void writeNotebookToSettings();
+    void readPredefinedColorsFromSettings();
+    // Update baseEditPalette according to curBackgroundColor
+    void updatePaletteColor();
 
     QFont baseEditFont;
     QPalette baseEditPalette;
@@ -95,6 +114,11 @@ private:
     int tabStopWidth;
     // Expand tab to @tabStopWidth spaces
     bool isExpandTab;
+
+    // App defined color
+    QVector<VColor> predefinedColors;
+    QString curBackgroundColor;
+    QString customBackgroundColor;
 
     // The name of the config file in each directory
     static const QString dirConfigFileName;
@@ -140,6 +164,11 @@ inline QString VConfigManager::getTemplateCssUrl() const
 inline QFont VConfigManager::getBaseEditFont() const
 {
     return baseEditFont;
+}
+
+inline QPalette VConfigManager::getBaseEditPalette() const
+{
+    return baseEditPalette;
 }
 
 inline int VConfigManager::getCurNotebookIndex() const
@@ -222,6 +251,43 @@ inline void VConfigManager::setIsExpandTab(bool isExpandTab)
     }
     this->isExpandTab = isExpandTab;
     setConfigToSettings("global", "is_expand_tab", this->isExpandTab);
+}
+
+inline const QVector<VColor>& VConfigManager::getPredefinedColors() const
+{
+    return predefinedColors;
+}
+
+inline const QString& VConfigManager::getCurBackgroundColor() const
+{
+    return curBackgroundColor;
+}
+
+inline void VConfigManager::setCurBackgroundColor(const QString &colorName)
+{
+    if (curBackgroundColor == colorName) {
+        return;
+    }
+    curBackgroundColor = colorName;
+    setConfigToSettings("global", "current_background_color",
+                        curBackgroundColor);
+    updatePaletteColor();
+}
+
+inline const QString& VConfigManager::getCustomBackgroundColor() const
+{
+    return customBackgroundColor;
+}
+
+inline void VConfigManager::setCustomBackgroundColor(const QString &colorRgb)
+{
+    if (customBackgroundColor == colorRgb) {
+        return;
+    }
+    customBackgroundColor = colorRgb;
+    setConfigToSettings("global", "custom_background_color",
+                        customBackgroundColor);
+    updatePaletteColor();
 }
 
 #endif // VCONFIGMANAGER_H

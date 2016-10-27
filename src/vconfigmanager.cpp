@@ -53,10 +53,32 @@ void VConfigManager::initialize()
     tabStopWidth = getConfigFromSettings("global", "tab_stop_width").toInt();
     isExpandTab = getConfigFromSettings("global", "is_expand_tab").toBool();
 
+    readPredefinedColorsFromSettings();
+    curBackgroundColor = getConfigFromSettings("global", "current_background_color").toString();
+    customBackgroundColor = getConfigFromSettings("global", "custom_background_color").toString();
+
+    updatePaletteColor();
+
     // Update notebooks
     readNotebookFromSettings();
 
     updateMarkdownEditStyle();
+}
+
+void VConfigManager::readPredefinedColorsFromSettings()
+{
+    predefinedColors.clear();
+    int size = defaultSettings->beginReadArray("predefined_colors");
+    for (int i = 0; i < size; ++i) {
+        defaultSettings->setArrayIndex(i);
+        VColor color;
+        color.name = defaultSettings->value("name").toString();
+        color.rgb = defaultSettings->value("rgb").toString();
+        predefinedColors.append(color);
+    }
+    defaultSettings->endArray();
+    qDebug() << "read" << predefinedColors.size()
+             << "pre-defined colors from [predefined_colors] section";
 }
 
 void VConfigManager::readNotebookFromSettings()
@@ -182,4 +204,30 @@ void VConfigManager::updateMarkdownEditStyle()
     mdEditPalette = baseEditPalette;
     mdEditFont = baseEditFont;
     parser.fetchMarkdownEditorStyles(mdEditPalette, mdEditFont);
+}
+
+void VConfigManager::updatePaletteColor()
+{
+    QString rgb;
+    if (curBackgroundColor == "Custom") {
+        rgb = customBackgroundColor;
+    } else if (curBackgroundColor == "System") {
+        return;
+    } else {
+        for (int i = 0; i < predefinedColors.size(); ++i) {
+            if (predefinedColors[i].name == curBackgroundColor) {
+                rgb = predefinedColors[i].rgb;
+                break;
+            }
+        }
+    }
+    if (rgb.isEmpty()) {
+        return;
+    }
+
+    baseEditPalette.setColor(QPalette::Base,
+                             QColor(VUtils::QRgbFromString(rgb)));
+
+    // Update markdown editor palette
+    updateMarkdownEditStyle();
 }

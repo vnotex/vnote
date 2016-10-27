@@ -10,17 +10,32 @@ VEdit::VEdit(VNoteFile *noteFile, QWidget *parent)
     : QTextEdit(parent), noteFile(noteFile), mdHighlighter(NULL)
 {
     if (noteFile->docType == DocType::Markdown) {
-        setPalette(vconfig.getMdEditPalette());
-        setFont(vconfig.getMdEditFont());
         setAcceptRichText(false);
         mdHighlighter = new HGMarkdownHighlighter(vconfig.getMdHighlightingStyles(),
                                                   500, document());
     } else {
-        setFont(vconfig.getBaseEditFont());
         setAutoFormatting(QTextEdit::AutoBulletList);
     }
 
     updateTabSettings();
+    updateFontAndPalette();
+}
+
+void VEdit::updateFontAndPalette()
+{
+    switch (noteFile->docType) {
+    case DocType::Markdown:
+        setFont(vconfig.getMdEditFont());
+        setPalette(vconfig.getMdEditPalette());
+        break;
+    case DocType::Html:
+        setFont(vconfig.getBaseEditFont());
+        setPalette(vconfig.getBaseEditPalette());
+        break;
+    default:
+        qWarning() << "error: unknown doc type" << int(noteFile->docType);
+        return;
+    }
 }
 
 void VEdit::updateTabSettings()
@@ -53,6 +68,7 @@ void VEdit::beginEdit()
 {
     setReadOnly(false);
     updateTabSettings();
+    updateFontAndPalette();
     switch (noteFile->docType) {
     case DocType::Html:
         setHtml(noteFile->content);

@@ -42,6 +42,7 @@ private slots:
     void aboutMessage();
     void changeExpandTab(bool checked);
     void setTabStopWidth(QAction *action);
+    void setEditorBackgroundColor(QAction *action);
 
 signals:
     void curNotebookChanged(const QString &notebookName);
@@ -52,6 +53,7 @@ private:
     void initToolBar();
     void initMenuBar();
     bool isConflictWithExistingNotebooks(const QString &name);
+    void initPredefinedColorPixmaps();
 
     // If true, comboBox changes will not trigger any signal out
     bool notebookComboMuted;
@@ -86,6 +88,9 @@ private:
     QAction *twoSpaceTabAct;
     QAction *fourSpaceTabAct;
     QAction *eightSpaceTabAct;
+    QActionGroup *backgroundColorAct;
+
+    QVector<QPixmap> predefinedColorPixmaps;
 };
 
 #endif // VMAINWINDOW_H

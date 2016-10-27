@@ -28,6 +28,7 @@ protected:
 
 private:
     void updateTabSettings();
+    void updateFontAndPalette();
 
     bool isExpandTab;
     QString tabSpaces;

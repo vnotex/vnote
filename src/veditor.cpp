@@ -56,6 +56,7 @@ void VEditor::setupUI()
         textBrowser = new QTextBrowser();
         addWidget(textBrowser);
         textBrowser->setFont(vconfig.getBaseEditFont());
+        textBrowser->setPalette(vconfig.getBaseEditPalette());
         webPreviewer = NULL;
         break;
     default:
@@ -86,6 +87,8 @@ void VEditor::showFileReadMode()
     switch (noteFile->docType) {
     case DocType::Html:
         textBrowser->setHtml(noteFile->content);
+        textBrowser->setFont(vconfig.getBaseEditFont());
+        textBrowser->setPalette(vconfig.getBaseEditPalette());
         setCurrentWidget(textBrowser);
         break;
     case DocType::Markdown:
