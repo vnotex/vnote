@@ -18,7 +18,7 @@ public:
 
     const QVector<VNotebook>& getNotebooks();
 
-    static void decorateTemplate();
+    void initTemplate();
 
     // Used by Marked
     static QString templateHtml;
@@ -30,6 +30,9 @@ public:
     void createNotebook(const QString &name, const QString &path);
     void removeNotebook(const QString &name);
     void renameNotebook(const QString &name, const QString &newName);
+
+public slots:
+    void updateTemplate();
 
 signals:
     // Force to do a fully update

@@ -55,9 +55,11 @@ void VConfigManager::initialize()
 
     readPredefinedColorsFromSettings();
     curBackgroundColor = getConfigFromSettings("global", "current_background_color").toString();
-    customBackgroundColor = getConfigFromSettings("global", "custom_background_color").toString();
 
     updatePaletteColor();
+
+    curRenderBackgroundColor = getConfigFromSettings("global",
+                                                     "current_render_background_color").toString();
 
     // Update notebooks
     readNotebookFromSettings();
@@ -209,9 +211,7 @@ void VConfigManager::updateMarkdownEditStyle()
 void VConfigManager::updatePaletteColor()
 {
     QString rgb;
-    if (curBackgroundColor == "Custom") {
-        rgb = customBackgroundColor;
-    } else if (curBackgroundColor == "System") {
+    if (curBackgroundColor == "System") {
         return;
     } else {
         for (int i = 0; i < predefinedColors.size(); ++i) {

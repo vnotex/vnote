@@ -80,8 +80,8 @@ public:
     inline const QString &getCurBackgroundColor() const;
     inline void setCurBackgroundColor(const QString &colorName);
 
-    inline const QString &getCustomBackgroundColor() const;
-    inline void setCustomBackgroundColor(const QString &colorRgb);
+    inline const QString &getCurRenderBackgroundColor() const;
+    inline void setCurRenderBackgroundColor(const QString &colorName);
 
 private:
     void updateMarkdownEditStyle();
@@ -118,7 +118,7 @@ private:
     // App defined color
     QVector<VColor> predefinedColors;
     QString curBackgroundColor;
-    QString customBackgroundColor;
+    QString curRenderBackgroundColor;
 
     // The name of the config file in each directory
     static const QString dirConfigFileName;
@@ -274,20 +274,19 @@ inline void VConfigManager::setCurBackgroundColor(const QString &colorName)
     updatePaletteColor();
 }
 
-inline const QString& VConfigManager::getCustomBackgroundColor() const
+inline const QString& VConfigManager::getCurRenderBackgroundColor() const
 {
-    return customBackgroundColor;
+    return curRenderBackgroundColor;
 }
 
-inline void VConfigManager::setCustomBackgroundColor(const QString &colorRgb)
+inline void VConfigManager::setCurRenderBackgroundColor(const QString &colorName)
 {
-    if (customBackgroundColor == colorRgb) {
+    if (curRenderBackgroundColor == colorName) {
         return;
     }
-    customBackgroundColor = colorRgb;
-    setConfigToSettings("global", "custom_background_color",
-                        customBackgroundColor);
-    updatePaletteColor();
+    curRenderBackgroundColor = colorName;
+    setConfigToSettings("global", "current_render_background_color",
+                        curRenderBackgroundColor);
 }
 
 #endif // VCONFIGMANAGER_H

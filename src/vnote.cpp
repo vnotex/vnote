@@ -16,24 +16,52 @@ QString VNote::postTemplateHtml;
 VNote::VNote() : QObject()
 {
     vconfig.initialize();
-    decorateTemplate();
+    initTemplate();
     notebooks = vconfig.getNotebooks();
     emit notebooksChanged(notebooks);
 }
 
-void VNote::decorateTemplate()
+void VNote::initTemplate()
 {
-    if (templateHtml.isEmpty()) {
-        templateHtml = VUtils::readFileFromDisk(vconfig.getTemplatePath());
-        templateHtml.replace("CSS_PLACE_HOLDER", vconfig.getTemplateCssUrl());
+    if (templateHtml.isEmpty() || preTemplateHtml.isEmpty()
+        || postTemplateHtml.isEmpty()) {
+        updateTemplate();
     }
-    if (preTemplateHtml.isEmpty()) {
-        preTemplateHtml = VUtils::readFileFromDisk(vconfig.getPreTemplatePath());
-        preTemplateHtml.replace("CSS_PLACE_HOLDER", vconfig.getTemplateCssUrl());
+}
+
+void VNote::updateTemplate()
+{
+    // Get background color
+    QString rgb;
+    const QString &curRenderBg = vconfig.getCurRenderBackgroundColor();
+    const QVector<VColor> &predefinedColors = vconfig.getPredefinedColors();
+    if (curRenderBg != "System") {
+        for (int i = 0; i < predefinedColors.size(); ++i) {
+            if (predefinedColors[i].name == curRenderBg) {
+                rgb = predefinedColors[i].rgb;
+                break;
+            }
+        }
     }
-    if (postTemplateHtml.isEmpty()) {
-        postTemplateHtml = VUtils::readFileFromDisk(vconfig.getPostTemplatePath());
+    QString cssStyle;
+    if (!rgb.isEmpty()) {
+        cssStyle = "body { background-color: #" + rgb + "; }";
     }
+    QString styleHolder("<!-- BACKGROUND_PLACE_HOLDER -->");
+    QString cssHolder("CSS_PLACE_HOLDER");
+    templateHtml = VUtils::readFileFromDisk(vconfig.getTemplatePath());
+    templateHtml.replace(cssHolder, vconfig.getTemplateCssUrl());
+    if (!cssStyle.isEmpty()) {
+        templateHtml.replace(styleHolder, cssStyle);
+    }
+
+    preTemplateHtml = VUtils::readFileFromDisk(vconfig.getPreTemplatePath());
+    preTemplateHtml.replace(cssHolder, vconfig.getTemplateCssUrl());
+    if (!cssStyle.isEmpty()) {
+        preTemplateHtml.replace(styleHolder, cssStyle);
+    }
+
+    postTemplateHtml = VUtils::readFileFromDisk(vconfig.getPostTemplatePath());
 }
 
 const QVector<VNotebook>& VNote::getNotebooks()

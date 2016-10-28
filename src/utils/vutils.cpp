@@ -40,8 +40,6 @@ QRgb VUtils::QRgbFromString(const QString &str)
     QString gStr = str.mid(2, 2);
     QString bStr = str.right(2);
 
-    qDebug() << rStr << gStr << bStr;
-
     bool ok, ret = true;
     int red = rStr.toInt(&ok, 16);
     ret = ret && ok;

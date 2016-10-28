@@ -211,6 +211,10 @@ void VMainWindow::initActions()
     backgroundColorAct = new QActionGroup(this);
     connect(backgroundColorAct, &QActionGroup::triggered,
             this, &VMainWindow::setEditorBackgroundColor);
+
+    renderBackgroundAct = new QActionGroup(this);
+    connect(renderBackgroundAct, &QActionGroup::triggered,
+            this, &VMainWindow::setRenderBackgroundColor);
 }
 
 void VMainWindow::initToolBar()
@@ -258,43 +262,7 @@ void VMainWindow::initMenuBar()
     default:
         qWarning() << "error: unsupported tab stop width" << tabStopWidth <<  "in config";
     }
-
-    QMenu *backgroundColorMenu = editMenu->addMenu(tr("&Background Color"));
-    // System background color
-    const QString &curBgColor = vconfig.getCurBackgroundColor();
-    QAction *tmpAct = new QAction(tr("System"), backgroundColorAct);
-    tmpAct->setStatusTip(tr("Use system's background color configuration for editor"));
-    tmpAct->setCheckable(true);
-    tmpAct->setData("System");
-    if (curBgColor == "System") {
-        tmpAct->setChecked(true);
-    }
-    backgroundColorMenu->addAction(tmpAct);
-    const QVector<VColor> &bgColors = vconfig.getPredefinedColors();
-    for (int i = 0; i < bgColors.size(); ++i) {
-        tmpAct = new QAction(bgColors[i].name, backgroundColorAct);
-        tmpAct->setStatusTip(tr("Set background color for editor"));
-        tmpAct->setCheckable(true);
-        tmpAct->setData(bgColors[i].name);
-        tmpAct->setIcon(QIcon(predefinedColorPixmaps[i]));
-        if (curBgColor == bgColors[i].name) {
-            tmpAct->setChecked(true);
-        }
-
-        backgroundColorMenu->addAction(tmpAct);
-    }
-    // Custom background color
-    tmpAct = new QAction(tr("Custom"), backgroundColorAct);
-    tmpAct->setStatusTip(tr("Set customed background color for editor"));
-    tmpAct->setCheckable(true);
-    tmpAct->setData("Custom");
-    if (!vconfig.getCustomBackgroundColor().isEmpty()) {
-        tmpAct->setIcon(QIcon(predefinedColorPixmaps.back()));
-    }
-    if (curBgColor == "Custom") {
-        tmpAct->setChecked(true);
-    }
-    backgroundColorMenu->addAction(tmpAct);
+    initEditorBackgroundMenu(editMenu);
 
     // Markdown Menu
     QMenu *converterMenu = markdownMenu->addMenu(tr("&Converter"));
@@ -306,6 +274,8 @@ void VMainWindow::initMenuBar()
     } else if (converterType == MarkdownConverterType::Hoedown) {
         hoedownAct->setChecked(true);
     }
+
+    initRenderBackgroundMenu(markdownMenu);
 
     // Help menu
     helpMenu->addAction(aboutQtAct);
@@ -534,10 +504,6 @@ void VMainWindow::setEditorBackgroundColor(QAction *action)
     if (!action) {
         return;
     }
-    // TODO: implement custom color logics
-    if (action->data().toString() == "Custom") {
-        return;
-    }
 
     vconfig.setCurBackgroundColor(action->data().toString());
 }
@@ -554,12 +520,69 @@ void VMainWindow::initPredefinedColorPixmaps()
         pixmap.fill(color);
         predefinedColorPixmaps.append(pixmap);
     }
+}
 
-    const QString &customBgColor = vconfig.getCustomBackgroundColor();
-    if (!customBgColor.isEmpty()) {
-        QColor color(VUtils::QRgbFromString(customBgColor));
-        QPixmap pixmap(size, size);
-        pixmap.fill(color);
-        predefinedColorPixmaps.append(pixmap);
+void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
+{
+    QMenu *renderBgMenu = menu->addMenu(tr("&Rendering background"));
+    const QString &curBgColor = vconfig.getCurRenderBackgroundColor();
+    QAction *tmpAct = new QAction(tr("System"), renderBackgroundAct);
+    tmpAct->setStatusTip(tr("Use system's background color configuration for rendering"));
+    tmpAct->setCheckable(true);
+    tmpAct->setData("System");
+    if (curBgColor == "System") {
+        tmpAct->setChecked(true);
     }
+    renderBgMenu->addAction(tmpAct);
+
+    const QVector<VColor> &bgColors = vconfig.getPredefinedColors();
+    for (int i = 0; i < bgColors.size(); ++i) {
+        tmpAct = new QAction(bgColors[i].name, renderBackgroundAct);
+        tmpAct->setStatusTip(tr("Set background color for rendering"));
+        tmpAct->setCheckable(true);
+        tmpAct->setData(bgColors[i].name);
+        tmpAct->setIcon(QIcon(predefinedColorPixmaps[i]));
+        if (curBgColor == bgColors[i].name) {
+            tmpAct->setChecked(true);
+        }
+
+        renderBgMenu->addAction(tmpAct);
+    }
+}
+
+void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
+{
+    QMenu *backgroundColorMenu = menu->addMenu(tr("&Background Color"));
+    // System background color
+    const QString &curBgColor = vconfig.getCurBackgroundColor();
+    QAction *tmpAct = new QAction(tr("System"), backgroundColorAct);
+    tmpAct->setStatusTip(tr("Use system's background color configuration for editor"));
+    tmpAct->setCheckable(true);
+    tmpAct->setData("System");
+    if (curBgColor == "System") {
+        tmpAct->setChecked(true);
+    }
+    backgroundColorMenu->addAction(tmpAct);
+    const QVector<VColor> &bgColors = vconfig.getPredefinedColors();
+    for (int i = 0; i < bgColors.size(); ++i) {
+        tmpAct = new QAction(bgColors[i].name, backgroundColorAct);
+        tmpAct->setStatusTip(tr("Set background color for editor"));
+        tmpAct->setCheckable(true);
+        tmpAct->setData(bgColors[i].name);
+        tmpAct->setIcon(QIcon(predefinedColorPixmaps[i]));
+        if (curBgColor == bgColors[i].name) {
+            tmpAct->setChecked(true);
+        }
+
+        backgroundColorMenu->addAction(tmpAct);
+    }
+}
+
+void VMainWindow::setRenderBackgroundColor(QAction *action)
+{
+    if (!action) {
+        return;
+    }
+    vconfig.setCurRenderBackgroundColor(action->data().toString());
+    vnote->updateTemplate();
 }
