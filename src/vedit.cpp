@@ -98,6 +98,7 @@ void VEdit::saveFile()
     default:
         qWarning() << "error: unknown doc type" << int(noteFile->docType);
     }
+    document()->setModified(false);
 }
 
 void VEdit::reloadFile()

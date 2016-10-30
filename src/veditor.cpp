@@ -201,7 +201,6 @@ bool VEditor::saveFile()
         textEditor->setModified(true);
         return false;
     }
-    textEditor->setModified(false);
     return true;
 }
 
