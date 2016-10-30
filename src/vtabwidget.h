@@ -6,6 +6,7 @@
 #include <QString>
 #include <QFileInfo>
 #include <QDir>
+#include "vnotebook.h"
 
 class VNote;
 
@@ -24,6 +25,8 @@ public slots:
     void editFile();
     void saveFile();
     void readFile();
+    void handleNotebookRenamed(const QVector<VNotebook> &notebooks, const QString &oldName,
+                               const QString &newName);
 
 private slots:
     void handleTabCloseRequest(int index);

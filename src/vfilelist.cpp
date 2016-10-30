@@ -424,17 +424,7 @@ void VFileList::handleNotebookRenamed(const QVector<VNotebook> &notebooks,
                                       const QString &oldName, const QString &newName)
 {
     if (oldName == notebook) {
-        // Update treePath (though treePath actually will not be changed)
         notebook = newName;
-        rootPath.clear();
-        const QVector<VNotebook> &notebooks = vnote->getNotebooks();
-        for (int i = 0; i < notebooks.size(); ++i) {
-            if (notebooks[i].getName() == notebook) {
-                rootPath = notebooks[i].getPath();
-                break;
-            }
-        }
-        Q_ASSERT(!rootPath.isEmpty());
     }
 }
 

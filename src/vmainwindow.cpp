@@ -109,6 +109,8 @@ void VMainWindow::setupUI()
             tabs, &VTabWidget::closeFile);
     connect(fileList, &VFileList::fileCreated,
             tabs, &VTabWidget::openFile);
+    connect(vnote, &VNote::notebooksRenamed,
+            tabs, &VTabWidget::handleNotebookRenamed);
 
     connect(newNotebookBtn, &QPushButton::clicked,
             this, &VMainWindow::onNewNotebookBtnClicked);

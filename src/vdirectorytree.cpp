@@ -580,17 +580,7 @@ void VDirectoryTree::handleNotebookRenamed(const QVector<VNotebook> &notebooks,
                                            const QString &oldName, const QString &newName)
 {
     if (oldName == notebook) {
-        // Update treePath (though treePath actually will not be changed)
         notebook = newName;
-        treePath.clear();
-        const QVector<VNotebook> &notebooks = vnote->getNotebooks();
-        for (int i = 0; i < notebooks.size(); ++i) {
-            if (notebooks[i].getName() == notebook) {
-                treePath = notebooks[i].getPath();
-                break;
-            }
-        }
-        Q_ASSERT(!treePath.isEmpty());
-        qDebug() << "directoryTree update notebook" << oldName << "to" << newName << "path" << treePath;
+        qDebug() << "directoryTree update notebook" << oldName << "to" << newName;
     }
 }
