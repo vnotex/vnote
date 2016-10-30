@@ -36,7 +36,6 @@ SOURCES += main.cpp\
     vmarkdownconverter.cpp \
     dialog/vnotebookinfodialog.cpp \
     dialog/vdirinfodialog.cpp \
-    vfilelistpanel.cpp \
     dialog/vfileinfodialog.cpp
 
 HEADERS  += vmainwindow.h \
@@ -64,7 +63,6 @@ HEADERS  += vmainwindow.h \
     vmarkdownconverter.h \
     dialog/vnotebookinfodialog.h \
     dialog/vdirinfodialog.h \
-    vfilelistpanel.h \
     dialog/vfileinfodialog.h
 
 RESOURCES += \

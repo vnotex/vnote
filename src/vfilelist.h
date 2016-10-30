@@ -1,7 +1,7 @@
 #ifndef VFILELIST_H
 #define VFILELIST_H
 
-#include <QListWidget>
+#include <QWidget>
 #include <QJsonObject>
 #include <QFileInfo>
 #include <QDir>
@@ -9,8 +9,11 @@
 
 class QAction;
 class VNote;
+class QListWidget;
+class QListWidgetItem;
+class QPushButton;
 
-class VFileList : public QListWidget
+class VFileList : public QWidget
 {
     Q_OBJECT
 public:
@@ -21,10 +24,15 @@ signals:
     void fileClicked(QJsonObject fileJson);
     void fileDeleted(QJsonObject fileJson);
     void fileCreated(QJsonObject fileJson);
+    void fileRenamed(const QString &notebook, const QString &oldPath,
+                     const QString &newPath);
 
 private slots:
     void contextMenuRequested(QPoint pos);
     void handleItemClicked(QListWidgetItem *currentItem);
+    void onNewFileBtnClicked();
+    void onDeleteFileBtnClicked();
+    void onFileInfoBtnClicked();
 
 public slots:
     void setDirectory(QJsonObject dirJson);
@@ -36,6 +44,7 @@ public slots:
     void deleteFile();
 
 private:
+    void setupUI();
     void updateFileList();
     QListWidgetItem *insertFileListItem(QJsonObject fileJson, bool atFront = false);
     void removeFileListItem(QListWidgetItem *item);
@@ -45,6 +54,7 @@ private:
     void deleteFileAndUpdateList(QListWidgetItem *item);
     void clearDirectoryInfo();
     inline QString getDirectoryName();
+    void renameFile(QListWidgetItem *item, const QString &newName);
 
     VNote *vnote;
     QString notebook;
@@ -52,6 +62,11 @@ private:
     QString relativePath;
     // Used for cache
     QString rootPath;
+
+    QListWidget *fileList;
+    QPushButton *newFileBtn;
+    QPushButton *deleteFileBtn;
+    QPushButton *fileInfoBtn;
 
     // Actions
     QAction *newFileAct;

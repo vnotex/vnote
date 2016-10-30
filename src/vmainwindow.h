@@ -16,7 +16,7 @@ class QAction;
 class QPushButton;
 class VNotebook;
 class QActionGroup;
-class VFileListPanel;
+class VFileList;
 
 class VMainWindow : public QMainWindow
 {
@@ -70,7 +70,7 @@ private:
     QPushButton *newRootDirBtn;
     QPushButton *deleteDirBtn;
     QPushButton *dirInfoBtn;
-    VFileListPanel *fileListPanel;
+    VFileList *fileList;
     VDirectoryTree *directoryTree;
     VTabWidget *tabs;
     QSplitter *mainSplitter;
