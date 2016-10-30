@@ -45,5 +45,10 @@
         <file>resources/icons/create_note.png</file>
         <file>resources/icons/delete_note.png</file>
         <file>resources/icons/note_info.png</file>
+        <file>resources/icons/create_note_tb.svg</file>
+        <file>resources/icons/save_note.svg</file>
+        <file>resources/icons/edit_note.svg</file>
+        <file>resources/icons/save_exit.svg</file>
+        <file>resources/icons/discard_exit.svg</file>
     </qresource>
 </RCC>

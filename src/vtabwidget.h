@@ -17,6 +17,8 @@ public:
     explicit VTabWidget(VNote *vnote, QWidget *parent = 0);
 
 signals:
+    void tabModeChanged(const QString &notebook, const QString &relativePath,
+                        bool editMode, bool modifiable);
 
 public slots:
     void openFile(QJsonObject fileJson);
@@ -25,11 +27,13 @@ public slots:
     void editFile();
     void saveFile();
     void readFile();
+    void saveAndReadFile();
     void handleNotebookRenamed(const QVector<VNotebook> &notebooks, const QString &oldName,
                                const QString &newName);
 
 private slots:
     void handleTabCloseRequest(int index);
+    void onCurrentChanged(int index);
 
 private:
     void openWelcomePage();

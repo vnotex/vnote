@@ -44,6 +44,8 @@ private slots:
     void setTabStopWidth(QAction *action);
     void setEditorBackgroundColor(QAction *action);
     void setRenderBackgroundColor(QAction *action);
+    void updateToolbarFromTabChage(const QString &notebook, const QString &relativePath,
+                                   bool editMode, bool modifiable);
 
 signals:
     void curNotebookChanged(const QString &notebookName);
@@ -77,9 +79,11 @@ private:
     VNote *vnote;
 
     // Actions
+    QAction *newNoteAct;
     QAction *editNoteAct;
     QAction *saveNoteAct;
-    QAction *readNoteAct;
+    QAction *saveExitAct;
+    QAction *discardExitAct;
     QAction *importNoteAct;
     QActionGroup *converterAct;
     QAction *markedAct;

@@ -1,4 +1,5 @@
 #include <QtWidgets>
+#include <QList>
 #include "vmainwindow.h"
 #include "vdirectorytree.h"
 #include "vnote.h"
@@ -81,16 +82,23 @@ void VMainWindow::setupUI()
     // Editor tab widget
     tabs = new VTabWidget(vnote);
     tabs->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    tabs->setTabBarAutoHide(true);
 
     // Main Splitter
     mainSplitter = new QSplitter();
     mainSplitter->addWidget(nbContainer);
     mainSplitter->addWidget(fileList);
     mainSplitter->addWidget(tabs);
+    QList<int> sizes;
+    int sa = nbContainer->minimumSizeHint().width();
+    int sb = fileList->minimumSizeHint().width();
+    int sc = qMax(mainSplitter->sizeHint().width() - sa - sb, sa + sb);
+    sizes.append(sa);
+    sizes.append(sb);
+    sizes.append(sc);
+    mainSplitter->setSizes(sizes);
     mainSplitter->setStretchFactor(0, 1);
     mainSplitter->setStretchFactor(1, 1);
-    mainSplitter->setStretchFactor(2, 10);
+    mainSplitter->setStretchFactor(2, 200);
 
     // Signals
     connect(notebookComboBox, SIGNAL(currentIndexChanged(int)), this,
@@ -111,6 +119,8 @@ void VMainWindow::setupUI()
             tabs, &VTabWidget::openFile);
     connect(vnote, &VNote::notebooksRenamed,
             tabs, &VTabWidget::handleNotebookRenamed);
+    connect(tabs, &VTabWidget::tabModeChanged,
+            this, &VMainWindow::updateToolbarFromTabChage);
 
     connect(newNotebookBtn, &QPushButton::clicked,
             this, &VMainWindow::onNewNotebookBtnClicked);
@@ -146,17 +156,32 @@ void VMainWindow::setupUI()
 
 void VMainWindow::initActions()
 {
-    editNoteAct = new QAction(tr("&Edit"), this);
+    newNoteAct = new QAction(QIcon(":/resources/icons/create_note_tb.svg"),
+                             tr("&New note"), this);
+    newNoteAct->setStatusTip(tr("Create a new note"));
+    connect(newNoteAct, &QAction::triggered,
+            fileList, &VFileList::newFile);
+
+    editNoteAct = new QAction(QIcon(":/resources/icons/edit_note.svg"),
+                              tr("&Edit"), this);
     editNoteAct->setStatusTip(tr("Edit current note"));
     connect(editNoteAct, &QAction::triggered,
             tabs, &VTabWidget::editFile);
 
-    readNoteAct = new QAction(tr("&Read"), this);
-    readNoteAct->setStatusTip(tr("Open current note in read mode"));
-    connect(readNoteAct, &QAction::triggered,
+    discardExitAct = new QAction(QIcon(":/resources/icons/discard_exit.svg"),
+                                 tr("Discard changes and exit"), this);
+    discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
+    connect(discardExitAct, &QAction::triggered,
             tabs, &VTabWidget::readFile);
 
-    saveNoteAct = new QAction(tr("&Save"), this);
+    saveExitAct = new QAction(QIcon(":/resources/icons/save_exit.svg"),
+                              tr("Save changes and exit"), this);
+    saveExitAct->setStatusTip(tr("Save changes and exit edit mode"));
+    connect(saveExitAct, &QAction::triggered,
+            tabs, &VTabWidget::saveAndReadFile);
+
+    saveNoteAct = new QAction(QIcon(":/resources/icons/save_note.svg"),
+                              tr("&Save"), this);
     saveNoteAct->setStatusTip(tr("Save current note"));
     saveNoteAct->setShortcut(QKeySequence::Save);
     connect(saveNoteAct, &QAction::triggered,
@@ -223,9 +248,16 @@ void VMainWindow::initToolBar()
 {
     QToolBar *fileToolBar = addToolBar(tr("Note"));
     fileToolBar->setMovable(false);
+    fileToolBar->addAction(newNoteAct);
     fileToolBar->addAction(editNoteAct);
-    fileToolBar->addAction(readNoteAct);
+    fileToolBar->addAction(saveExitAct);
+    fileToolBar->addAction(discardExitAct);
     fileToolBar->addAction(saveNoteAct);
+
+    editNoteAct->setVisible(false);
+    saveExitAct->setVisible(false);
+    discardExitAct->setVisible(false);
+    saveNoteAct->setVisible(false);
 }
 
 void VMainWindow::initMenuBar()
@@ -587,4 +619,26 @@ void VMainWindow::setRenderBackgroundColor(QAction *action)
     }
     vconfig.setCurRenderBackgroundColor(action->data().toString());
     vnote->updateTemplate();
+}
+
+void VMainWindow::updateToolbarFromTabChage(const QString &notebook, const QString &relativePath,
+                                            bool editMode, bool modifiable)
+{
+    if (notebook.isEmpty() || !modifiable) {
+        editNoteAct->setVisible(false);
+        saveExitAct->setVisible(false);
+        discardExitAct->setVisible(false);
+        saveNoteAct->setVisible(false);
+        return;
+    } else if (editMode) {
+        editNoteAct->setVisible(false);
+        saveExitAct->setVisible(true);
+        discardExitAct->setVisible(true);
+        saveNoteAct->setVisible(true);
+    } else {
+        editNoteAct->setVisible(true);
+        saveExitAct->setVisible(false);
+        discardExitAct->setVisible(false);
+        saveNoteAct->setVisible(false);
+    }
 }

@@ -8,9 +8,9 @@
 #include "vdocument.h"
 #include "vmarkdownconverter.h"
 #include "vconfigmanager.h"
+#include "vedit.h"
 
 class QTextBrowser;
-class VEdit;
 class QWebEngineView;
 class VNote;
 
@@ -26,6 +26,9 @@ public:
     void readFile();
     // Save file
     bool saveFile();
+
+    inline bool getIsEditMode() const;
+    inline bool isModified() const;
 
 private:
     bool isMarkdown(const QString &name);
@@ -43,5 +46,15 @@ private:
     VDocument document;
     MarkdownConverterType mdConverterType;
 };
+
+inline bool VEditor::getIsEditMode() const
+{
+    return isEditMode;
+}
+
+inline bool VEditor::isModified() const
+{
+    return textEditor->isModified();
+}
 
 #endif // VEDITOR_H

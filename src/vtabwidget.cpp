@@ -12,10 +12,10 @@ VTabWidget::VTabWidget(VNote *vnote, QWidget *parent)
 {
     setTabsClosable(true);
     setMovable(true);
-    connect(tabBar(), &QTabBar::tabCloseRequested,
+    connect(this, &VTabWidget::tabCloseRequested,
             this, &VTabWidget::handleTabCloseRequest);
-
-    openWelcomePage();
+    connect(this, &VTabWidget::currentChanged,
+            this, &VTabWidget::onCurrentChanged);
 }
 
 void VTabWidget::openWelcomePage()
@@ -33,6 +33,8 @@ int VTabWidget::insertTabWithData(int index, QWidget *page,
     QTabBar *tabs = tabBar();
     tabs->setTabData(idx, tabData);
 
+    // Need to update again with tabData
+    onCurrentChanged(idx);
     return idx;
 }
 
@@ -112,6 +114,7 @@ int VTabWidget::openFileInTab(const QString &notebook, const QString &relativePa
     QJsonObject tabJson;
     tabJson["notebook"] = notebook;
     tabJson["relative_path"] = relativePath;
+    tabJson["modifiable"] = modifiable;
     return appendTabWithData(editor, tabJson);
 }
 
@@ -146,6 +149,14 @@ void VTabWidget::readFile()
     VEditor *editor = dynamic_cast<VEditor *>(currentWidget());
     Q_ASSERT(editor);
     editor->readFile();
+    onCurrentChanged(currentIndex());
+}
+
+void VTabWidget::saveAndReadFile()
+{
+    saveFile();
+    readFile();
+    onCurrentChanged(currentIndex());
 }
 
 void VTabWidget::editFile()
@@ -153,6 +164,7 @@ void VTabWidget::editFile()
     VEditor *editor = dynamic_cast<VEditor *>(currentWidget());
     Q_ASSERT(editor);
     editor->editFile();
+    onCurrentChanged(currentIndex());
 }
 
 void VTabWidget::saveFile()
@@ -174,4 +186,27 @@ void VTabWidget::handleNotebookRenamed(const QVector<VNotebook> &notebooks,
             tabs->setTabData(i, tabJson);
         }
     }
+}
+
+void VTabWidget::onCurrentChanged(int index)
+{
+    if (index == -1) {
+        emit tabModeChanged("", "", false, false);
+        return;
+    }
+
+    QJsonObject tabJson = tabBar()->tabData(index).toJsonObject();
+    if (tabJson.isEmpty()) {
+        // Maybe the tab data has not been set yet
+        return;
+    }
+
+    QString notebook = tabJson["notebook"].toString();
+    QString relativePath = tabJson["relative_path"].toString();
+    VEditor *editor = (VEditor *)widget(index);
+    bool editMode = editor->getIsEditMode();
+    bool modifiable = tabJson["modifiable"].toBool();
+
+    emit tabModeChanged(notebook, relativePath,
+                        editMode, modifiable);
 }
