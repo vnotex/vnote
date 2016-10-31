@@ -7,12 +7,14 @@
 #include "vnotefile.h"
 
 class HGMarkdownHighlighter;
+class VEditOperations;
 
 class VEdit : public QTextEdit
 {
     Q_OBJECT
 public:
     VEdit(VNoteFile *noteFile, QWidget *parent = 0);
+    ~VEdit();
     void beginEdit();
 
     // Save buffer content to noteFile->content.
@@ -25,6 +27,8 @@ public:
 
 protected:
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
+    bool canInsertFromMimeData(const QMimeData *source) const Q_DECL_OVERRIDE;
+    void insertFromMimeData(const QMimeData *source) Q_DECL_OVERRIDE;
 
 private:
     void updateTabSettings();
@@ -34,6 +38,7 @@ private:
     QString tabSpaces;
     VNoteFile *noteFile;
     HGMarkdownHighlighter *mdHighlighter;
+    VEditOperations *editOps;
 };
 
 

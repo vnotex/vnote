@@ -69,9 +69,7 @@ void VTabWidget::openFile(QJsonObject fileJson)
 out:
     setCurrentIndex(idx);
     if (mode == OpenFileMode::Edit) {
-        VEditor *editor = dynamic_cast<VEditor *>(currentWidget());
-        Q_ASSERT(editor);
-        editor->editFile();
+        editFile();
     }
 }
 

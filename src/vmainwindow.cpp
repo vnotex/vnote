@@ -88,17 +88,9 @@ void VMainWindow::setupUI()
     mainSplitter->addWidget(nbContainer);
     mainSplitter->addWidget(fileList);
     mainSplitter->addWidget(tabs);
-    QList<int> sizes;
-    int sa = nbContainer->minimumSizeHint().width();
-    int sb = fileList->minimumSizeHint().width();
-    int sc = qMax(mainSplitter->sizeHint().width() - sa - sb, sa + sb);
-    sizes.append(sa);
-    sizes.append(sb);
-    sizes.append(sc);
-    mainSplitter->setSizes(sizes);
-    mainSplitter->setStretchFactor(0, 1);
-    mainSplitter->setStretchFactor(1, 1);
-    mainSplitter->setStretchFactor(2, 200);
+    mainSplitter->setStretchFactor(0, 0);
+    mainSplitter->setStretchFactor(1, 0);
+    mainSplitter->setStretchFactor(2, 1);
 
     // Signals
     connect(notebookComboBox, SIGNAL(currentIndexChanged(int)), this,

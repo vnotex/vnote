@@ -1,6 +1,8 @@
 #include "vutils.h"
 #include <QFile>
+#include <QDir>
 #include <QDebug>
+#include <QRegularExpression>
 
 VUtils::VUtils()
 {
@@ -53,4 +55,24 @@ QRgb VUtils::QRgbFromString(const QString &str)
     }
     qWarning() << "error: fail to construct QRgb from string" << str;
     return QRgb();
+}
+
+QString VUtils::generateImageFileName(const QString &path, const QString &title,
+                                      const QString &format)
+{
+    Q_ASSERT(!title.isEmpty());
+    QRegularExpression regExp("[^a-zA-Z0-9_]+");
+    QString baseName(title.toLower());
+    baseName.replace(regExp, "_");
+    baseName.prepend('_');
+    QString imageName = baseName + "." + format.toLower();
+    QString filePath = QDir(path).filePath(imageName);
+    int index = 1;
+
+    while (QFile(filePath).exists()) {
+        imageName = QString("%1_%2.%3").arg(baseName).arg(index++)
+                                       .arg(format.toLower());
+        filePath = QDir(path).filePath(imageName);
+    }
+    return imageName;
 }

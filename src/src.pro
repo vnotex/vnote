@@ -36,7 +36,10 @@ SOURCES += main.cpp\
     vmarkdownconverter.cpp \
     dialog/vnotebookinfodialog.cpp \
     dialog/vdirinfodialog.cpp \
-    dialog/vfileinfodialog.cpp
+    dialog/vfileinfodialog.cpp \
+    veditoperations.cpp \
+    vmdeditoperations.cpp \
+    dialog/vinsertimagedialog.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -63,7 +66,10 @@ HEADERS  += vmainwindow.h \
     vmarkdownconverter.h \
     dialog/vnotebookinfodialog.h \
     dialog/vdirinfodialog.h \
-    dialog/vfileinfodialog.h
+    dialog/vfileinfodialog.h \
+    veditoperations.h \
+    vmdeditoperations.h \
+    dialog/vinsertimagedialog.h
 
 RESOURCES += \
     vnote.qrc

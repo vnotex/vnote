@@ -3,6 +3,7 @@
 #include "vnote.h"
 #include "vconfigmanager.h"
 #include "hgmarkdownhighlighter.h"
+#include "vmdeditoperations.h"
 
 extern VConfigManager vconfig;
 
@@ -13,12 +14,22 @@ VEdit::VEdit(VNoteFile *noteFile, QWidget *parent)
         setAcceptRichText(false);
         mdHighlighter = new HGMarkdownHighlighter(vconfig.getMdHighlightingStyles(),
                                                   500, document());
+        editOps = new VMdEditOperations(this, noteFile);
     } else {
         setAutoFormatting(QTextEdit::AutoBulletList);
+        editOps = NULL;
     }
 
     updateTabSettings();
     updateFontAndPalette();
+}
+
+VEdit::~VEdit()
+{
+    if (editOps) {
+        delete editOps;
+        editOps = NULL;
+    }
 }
 
 void VEdit::updateFontAndPalette()
@@ -124,4 +135,32 @@ void VEdit::keyPressEvent(QKeyEvent *event)
         return;
     }
     QTextEdit::keyPressEvent(event);
+}
+
+bool VEdit::canInsertFromMimeData(const QMimeData *source) const
+{
+    return source->hasImage() || source->hasUrls()
+           || QTextEdit::canInsertFromMimeData(source);
+}
+
+void VEdit::insertFromMimeData(const QMimeData *source)
+{
+    if (source->hasImage()) {
+        // Image data in the clipboard
+        if (editOps) {
+            bool ret = editOps->insertImageFromMimeData(source);
+            if (ret) {
+                return;
+            }
+        }
+    } else if (source->hasUrls()) {
+        // Paste an image file
+        if (editOps) {
+            bool ret = editOps->insertURLFromMimeData(source);
+            if (ret) {
+                return;
+            }
+        }
+    }
+    QTextEdit::insertFromMimeData(source);
 }
