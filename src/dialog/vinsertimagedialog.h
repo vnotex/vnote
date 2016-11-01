@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QImage>
 #include <QString>
+#include <QByteArray>
 
 class QLabel;
 class QLineEdit;
@@ -21,7 +22,11 @@ public:
     QString getPathInput() const;
 
     void setImage(const QImage &image);
+    QImage getImage() const;
     void setBrowseable(bool browseable);
+
+public slots:
+    void imageDownloaded(const QByteArray &data);
 
 private slots:
     void enableOkButton();

@@ -2,6 +2,9 @@
 #define VMDEDITOPERATIONS_H
 
 #include <QObject>
+#include <QString>
+#include <QUrl>
+#include <QImage>
 #include "veditoperations.h"
 
 // Editor operations for Markdown
@@ -11,7 +14,9 @@ public:
     VMdEditOperations(VEdit *editor, VNoteFile *noteFile);
     bool insertImageFromMimeData(const QMimeData *source) Q_DECL_OVERRIDE;
     bool insertURLFromMimeData(const QMimeData *source) Q_DECL_OVERRIDE;
-    bool insertImageFromPath(const QString &imagePath);
+    bool insertImageFromURL(const QUrl &imageUrl);
+    void insertImageFromPath(const QString &title, const QString &path, const QString &oriImagePath);
+    void insertImageFromQImage(const QString &title, const QString &path, const QImage &image);
 };
 
 #endif // VMDEDITOPERATIONS_H

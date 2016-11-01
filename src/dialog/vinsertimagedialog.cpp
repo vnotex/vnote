@@ -118,3 +118,15 @@ void VInsertImageDialog::setBrowseable(bool browseable)
     pathEdit->setVisible(browseable);
     browseBtn->setVisible(browseable);
 }
+
+void VInsertImageDialog::imageDownloaded(const QByteArray &data)
+{
+    setImage(QImage::fromData(data));
+}
+
+QImage VInsertImageDialog::getImage() const
+{
+    if (!image) {
+        return QImage();
+    } else return *image;
+}

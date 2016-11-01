@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui webenginewidgets webchannel
+QT       += core gui webenginewidgets webchannel network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -39,7 +39,8 @@ SOURCES += main.cpp\
     dialog/vfileinfodialog.cpp \
     veditoperations.cpp \
     vmdeditoperations.cpp \
-    dialog/vinsertimagedialog.cpp
+    dialog/vinsertimagedialog.cpp \
+    vdownloader.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -69,7 +70,8 @@ HEADERS  += vmainwindow.h \
     dialog/vfileinfodialog.h \
     veditoperations.h \
     vmdeditoperations.h \
-    dialog/vinsertimagedialog.h
+    dialog/vinsertimagedialog.h \
+    vdownloader.h
 
 RESOURCES += \
     vnote.qrc
