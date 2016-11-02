@@ -14,3 +14,8 @@ void VEditOperations::insertTextAtCurPos(const QString &text)
     cursor.setPosition(editor->textCursor().position());
     cursor.insertText(text);
 }
+
+VEditOperations::~VEditOperations()
+{
+
+}

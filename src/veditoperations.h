@@ -9,6 +9,7 @@ class VEditOperations
 {
 public:
     VEditOperations(VEdit *editor, VNoteFile *noteFile);
+    virtual ~VEditOperations();
     virtual bool insertImageFromMimeData(const QMimeData *source) = 0;
     virtual bool insertURLFromMimeData(const QMimeData *source) = 0;
 
