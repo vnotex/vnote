@@ -37,18 +37,18 @@ void VMainWindow::setupUI()
     notebookLabel = new QLabel(tr("Notebook"));
     directoryLabel = new QLabel(tr("Directory"));
 
-    newNotebookBtn = new QPushButton(QIcon(":/resources/icons/create_notebook.png"), "");
+    newNotebookBtn = new QPushButton(QIcon(":/resources/icons/create_notebook.svg"), "");
     newNotebookBtn->setToolTip(tr("Create a new notebook"));
-    deleteNotebookBtn = new QPushButton(QIcon(":/resources/icons/delete_notebook.png"), "");
+    deleteNotebookBtn = new QPushButton(QIcon(":/resources/icons/delete_notebook.svg"), "");
     deleteNotebookBtn->setToolTip(tr("Delete current notebook"));
-    notebookInfoBtn = new QPushButton(QIcon(":/resources/icons/notebook_info.png"), "");
+    notebookInfoBtn = new QPushButton(QIcon(":/resources/icons/notebook_info.svg"), "");
     notebookInfoBtn->setToolTip(tr("View and edit current notebook's information"));
 
-    newRootDirBtn = new QPushButton(QIcon(":/resources/icons/create_rootdir.png"), "");
+    newRootDirBtn = new QPushButton(QIcon(":/resources/icons/create_rootdir.svg"), "");
     newRootDirBtn->setToolTip(tr("Create a new root directory"));
-    deleteDirBtn = new QPushButton(QIcon(":/resources/icons/delete_dir.png"), "");
+    deleteDirBtn = new QPushButton(QIcon(":/resources/icons/delete_dir.svg"), "");
     deleteDirBtn->setToolTip(tr("Delete current directory"));
-    dirInfoBtn = new QPushButton(QIcon(":/resources/icons/dir_info.png"), "");
+    dirInfoBtn = new QPushButton(QIcon(":/resources/icons/dir_info.svg"), "");
     dirInfoBtn->setToolTip(tr("View and edit current directory's information"));
 
     notebookComboBox = new QComboBox();

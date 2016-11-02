@@ -36,19 +36,19 @@
         <file>resources/styles/solarized-light.mdhl</file>
         <file>resources/styles/solarized-dark.mdhl</file>
         <file>resources/vnote.ini</file>
-        <file>resources/icons/create_notebook.png</file>
-        <file>resources/icons/delete_notebook.png</file>
-        <file>resources/icons/notebook_info.png</file>
-        <file>resources/icons/create_rootdir.png</file>
-        <file>resources/icons/delete_dir.png</file>
-        <file>resources/icons/dir_info.png</file>
-        <file>resources/icons/create_note.png</file>
-        <file>resources/icons/delete_note.png</file>
-        <file>resources/icons/note_info.png</file>
         <file>resources/icons/create_note_tb.svg</file>
         <file>resources/icons/save_note.svg</file>
         <file>resources/icons/edit_note.svg</file>
         <file>resources/icons/save_exit.svg</file>
         <file>resources/icons/discard_exit.svg</file>
+        <file>resources/icons/create_note.svg</file>
+        <file>resources/icons/create_notebook.svg</file>
+        <file>resources/icons/create_rootdir.svg</file>
+        <file>resources/icons/delete_dir.svg</file>
+        <file>resources/icons/delete_note.svg</file>
+        <file>resources/icons/delete_notebook.svg</file>
+        <file>resources/icons/note_info.svg</file>
+        <file>resources/icons/dir_info.svg</file>
+        <file>resources/icons/notebook_info.svg</file>
     </qresource>
 </RCC>

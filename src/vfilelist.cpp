@@ -15,11 +15,11 @@ VFileList::VFileList(VNote *vnote, QWidget *parent)
 
 void VFileList::setupUI()
 {
-    newFileBtn = new QPushButton(QIcon(":/resources/icons/create_note.png"), "");
+    newFileBtn = new QPushButton(QIcon(":/resources/icons/create_note.svg"), "");
     newFileBtn->setToolTip(tr("Create a new note"));
-    deleteFileBtn = new QPushButton(QIcon(":/resources/icons/delete_note.png"), "");
+    deleteFileBtn = new QPushButton(QIcon(":/resources/icons/delete_note.svg"), "");
     deleteFileBtn->setToolTip(tr("Delete current note"));
-    fileInfoBtn = new QPushButton(QIcon(":/resources/icons/note_info.png"), "");
+    fileInfoBtn = new QPushButton(QIcon(":/resources/icons/note_info.svg"), "");
     fileInfoBtn->setToolTip(tr("View and edit current note's information"));
 
     fileList = new QListWidget(this);
