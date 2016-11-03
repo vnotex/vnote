@@ -50,5 +50,8 @@
         <file>resources/icons/note_info.svg</file>
         <file>resources/icons/dir_info.svg</file>
         <file>resources/icons/notebook_info.svg</file>
+        <file>resources/icons/expand.svg</file>
+        <file>resources/icons/two_panels.svg</file>
+        <file>resources/icons/one_panel.svg</file>
     </qresource>
 </RCC>

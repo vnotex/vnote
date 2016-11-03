@@ -179,6 +179,27 @@ void VMainWindow::initActions()
     connect(saveNoteAct, &QAction::triggered,
             tabs, &VTabWidget::saveFile);
 
+    viewAct = new QActionGroup(this);
+    twoPanelViewAct = new QAction(QIcon(":/resources/icons/two_panels.svg"),
+                                  tr("&Two Panels"), viewAct);
+    twoPanelViewAct->setStatusTip(tr("Display the directory and notes browser panel"));
+    twoPanelViewAct->setCheckable(true);
+    twoPanelViewAct->setData(2);
+    onePanelViewAct = new QAction(QIcon(":/resources/icons/one_panel.svg"),
+                                  tr("&Single panel"), viewAct);
+    onePanelViewAct->setStatusTip(tr("Display only the notes browser panel"));
+    onePanelViewAct->setCheckable(true);
+    onePanelViewAct->setData(1);
+    expandViewAct = new QAction(QIcon(":/resources/icons/expand.svg"),
+                                tr("&Expand"), viewAct);
+    expandViewAct->setStatusTip(tr("Expand the editing area"));
+    expandViewAct->setCheckable(true);
+    expandViewAct->setData(0);
+    connect(viewAct, &QActionGroup::triggered,
+            this, &VMainWindow::changePanelView);
+    // Must be called after setting up the signal to sync the state and settings
+    twoPanelViewAct->setChecked(true);
+
     importNoteAct = new QAction(tr("&Import note from file"), this);
     importNoteAct->setStatusTip(tr("Import notes into current directory from files"));
     connect(importNoteAct, &QAction::triggered,
@@ -239,7 +260,6 @@ void VMainWindow::initActions()
 void VMainWindow::initToolBar()
 {
     QToolBar *fileToolBar = addToolBar(tr("Note"));
-    fileToolBar->setMovable(false);
     fileToolBar->addAction(newNoteAct);
     fileToolBar->addAction(editNoteAct);
     fileToolBar->addAction(saveExitAct);
@@ -250,6 +270,11 @@ void VMainWindow::initToolBar()
     saveExitAct->setVisible(false);
     discardExitAct->setVisible(false);
     saveNoteAct->setVisible(false);
+
+    QToolBar *viewToolBar = addToolBar(tr("View"));
+    viewToolBar->addAction(twoPanelViewAct);
+    viewToolBar->addAction(onePanelViewAct);
+    viewToolBar->addAction(expandViewAct);
 }
 
 void VMainWindow::initMenuBar()
@@ -632,5 +657,41 @@ void VMainWindow::updateToolbarFromTabChage(const QString &notebook, const QStri
         saveExitAct->setVisible(false);
         discardExitAct->setVisible(false);
         saveNoteAct->setVisible(false);
+    }
+}
+
+void VMainWindow::changePanelView(QAction *action)
+{
+    if (!action) {
+        return;
+    }
+    int nrPanel = action->data().toInt();
+
+    changeSplitterView(nrPanel);
+}
+
+void VMainWindow::changeSplitterView(int nrPanel)
+{
+    switch (nrPanel) {
+    case 0:
+        // Expand
+        mainSplitter->widget(0)->hide();
+        mainSplitter->widget(1)->hide();
+        mainSplitter->widget(2)->show();
+        break;
+    case 1:
+        // Single panel
+        mainSplitter->widget(0)->hide();
+        mainSplitter->widget(1)->show();
+        mainSplitter->widget(2)->show();
+        break;
+    case 2:
+        // Two panels
+        mainSplitter->widget(0)->show();
+        mainSplitter->widget(1)->show();
+        mainSplitter->widget(2)->show();
+        break;
+    default:
+        qWarning() << "error: invalid panel number" << nrPanel;
     }
 }
