@@ -69,6 +69,7 @@ void VFileList::setDirectory(QJsonObject dirJson)
     fileList->clear();
     if (dirJson.isEmpty()) {
         clearDirectoryInfo();
+        emit directoryChanged("", "");
         return;
     }
 
@@ -85,6 +86,8 @@ void VFileList::setDirectory(QJsonObject dirJson)
     Q_ASSERT(!rootPath.isEmpty());
 
     updateFileList();
+
+    emit directoryChanged(notebook, relativePath);
 }
 
 void VFileList::clearDirectoryInfo()

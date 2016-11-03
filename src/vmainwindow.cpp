@@ -102,6 +102,8 @@ void VMainWindow::setupUI()
             fileList, &VFileList::setDirectory);
     connect(directoryTree, &VDirectoryTree::directoryRenamed,
             fileList, &VFileList::handleDirectoryRenamed);
+    connect(fileList, &VFileList::directoryChanged,
+            this, &VMainWindow::handleFileListDirectoryChanged);
 
     connect(fileList, &VFileList::fileClicked,
             tabs, &VTabWidget::openFile);
@@ -266,6 +268,7 @@ void VMainWindow::initToolBar()
     fileToolBar->addAction(discardExitAct);
     fileToolBar->addAction(saveNoteAct);
 
+    newNoteAct->setEnabled(false);
     editNoteAct->setEnabled(false);
     saveExitAct->setVisible(false);
     discardExitAct->setVisible(false);
@@ -693,5 +696,14 @@ void VMainWindow::changeSplitterView(int nrPanel)
         break;
     default:
         qWarning() << "error: invalid panel number" << nrPanel;
+    }
+}
+
+void VMainWindow::handleFileListDirectoryChanged(const QString &notebook, const QString &relativePath)
+{
+    if (relativePath.isEmpty()) {
+        newNoteAct->setEnabled(false);
+    } else {
+        newNoteAct->setEnabled(true);
     }
 }

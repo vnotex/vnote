@@ -47,6 +47,7 @@ private slots:
     void updateToolbarFromTabChage(const QString &notebook, const QString &relativePath,
                                    bool editMode, bool modifiable);
     void changePanelView(QAction *action);
+    void handleFileListDirectoryChanged(const QString &notebook, const QString &relativePath);
 
 signals:
     void curNotebookChanged(const QString &notebookName);

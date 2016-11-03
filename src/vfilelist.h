@@ -26,6 +26,7 @@ signals:
     void fileCreated(QJsonObject fileJson);
     void fileRenamed(const QString &notebook, const QString &oldPath,
                      const QString &newPath);
+    void directoryChanged(const QString &notebook, const QString &relativePath);
 
 private slots:
     void contextMenuRequested(QPoint pos);
