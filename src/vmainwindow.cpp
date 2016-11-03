@@ -266,7 +266,7 @@ void VMainWindow::initToolBar()
     fileToolBar->addAction(discardExitAct);
     fileToolBar->addAction(saveNoteAct);
 
-    editNoteAct->setVisible(false);
+    editNoteAct->setEnabled(false);
     saveExitAct->setVisible(false);
     discardExitAct->setVisible(false);
     saveNoteAct->setVisible(false);
@@ -642,18 +642,18 @@ void VMainWindow::updateToolbarFromTabChage(const QString &notebook, const QStri
                                             bool editMode, bool modifiable)
 {
     if (notebook.isEmpty() || !modifiable) {
-        editNoteAct->setVisible(false);
+        editNoteAct->setEnabled(false);
         saveExitAct->setVisible(false);
         discardExitAct->setVisible(false);
         saveNoteAct->setVisible(false);
         return;
     } else if (editMode) {
-        editNoteAct->setVisible(false);
+        editNoteAct->setEnabled(false);
         saveExitAct->setVisible(true);
         discardExitAct->setVisible(true);
         saveNoteAct->setVisible(true);
     } else {
-        editNoteAct->setVisible(true);
+        editNoteAct->setEnabled(true);
         saveExitAct->setVisible(false);
         discardExitAct->setVisible(false);
         saveNoteAct->setVisible(false);
