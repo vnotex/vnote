@@ -4,11 +4,11 @@
 #include "vdirectorytree.h"
 #include "vnote.h"
 #include "vfilelist.h"
-#include "vtabwidget.h"
 #include "vconfigmanager.h"
 #include "dialog/vnewnotebookdialog.h"
 #include "dialog/vnotebookinfodialog.h"
 #include "utils/vutils.h"
+#include "veditarea.h"
 
 extern VConfigManager vconfig;
 
@@ -79,15 +79,14 @@ void VMainWindow::setupUI()
     fileList = new VFileList(vnote);
     fileList->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
-    // Editor tab widget
-    tabs = new VTabWidget(vnote);
-    tabs->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    editArea = new VEditArea(vnote);
+    editArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     // Main Splitter
     mainSplitter = new QSplitter();
     mainSplitter->addWidget(nbContainer);
     mainSplitter->addWidget(fileList);
-    mainSplitter->addWidget(tabs);
+    mainSplitter->addWidget(editArea);
     mainSplitter->setStretchFactor(0, 0);
     mainSplitter->setStretchFactor(1, 0);
     mainSplitter->setStretchFactor(2, 1);
@@ -106,14 +105,14 @@ void VMainWindow::setupUI()
             this, &VMainWindow::handleFileListDirectoryChanged);
 
     connect(fileList, &VFileList::fileClicked,
-            tabs, &VTabWidget::openFile);
+            editArea, &VEditArea::openFile);
     connect(fileList, &VFileList::fileDeleted,
-            tabs, &VTabWidget::closeFile);
+            editArea, &VEditArea::closeFile);
     connect(fileList, &VFileList::fileCreated,
-            tabs, &VTabWidget::openFile);
+            editArea, &VEditArea::openFile);
     connect(vnote, &VNote::notebooksRenamed,
-            tabs, &VTabWidget::handleNotebookRenamed);
-    connect(tabs, &VTabWidget::tabModeChanged,
+            editArea, &VEditArea::handleNotebookRenamed);
+    connect(editArea, &VEditArea::curTabStatusChanged,
             this, &VMainWindow::updateToolbarFromTabChage);
 
     connect(newNotebookBtn, &QPushButton::clicked,
@@ -160,26 +159,26 @@ void VMainWindow::initActions()
                               tr("&Edit"), this);
     editNoteAct->setStatusTip(tr("Edit current note"));
     connect(editNoteAct, &QAction::triggered,
-            tabs, &VTabWidget::editFile);
+            editArea, &VEditArea::editFile);
 
     discardExitAct = new QAction(QIcon(":/resources/icons/discard_exit.svg"),
                                  tr("Discard changes and exit"), this);
     discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
     connect(discardExitAct, &QAction::triggered,
-            tabs, &VTabWidget::readFile);
+            editArea, &VEditArea::readFile);
 
     saveExitAct = new QAction(QIcon(":/resources/icons/save_exit.svg"),
                               tr("Save changes and exit"), this);
     saveExitAct->setStatusTip(tr("Save changes and exit edit mode"));
     connect(saveExitAct, &QAction::triggered,
-            tabs, &VTabWidget::saveAndReadFile);
+            editArea, &VEditArea::saveAndReadFile);
 
     saveNoteAct = new QAction(QIcon(":/resources/icons/save_note.svg"),
                               tr("&Save"), this);
     saveNoteAct->setStatusTip(tr("Save current note"));
     saveNoteAct->setShortcut(QKeySequence::Save);
     connect(saveNoteAct, &QAction::triggered,
-            tabs, &VTabWidget::saveFile);
+            editArea, &VEditArea::saveFile);
 
     viewAct = new QActionGroup(this);
     twoPanelViewAct = new QAction(QIcon(":/resources/icons/two_panels.svg"),

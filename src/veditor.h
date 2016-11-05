@@ -16,6 +16,7 @@ class VNote;
 
 class VEditor : public QStackedWidget
 {
+    Q_OBJECT
 public:
     VEditor(const QString &path, bool modifiable, QWidget *parent = 0);
     ~VEditor();
@@ -29,6 +30,13 @@ public:
 
     inline bool getIsEditMode() const;
     inline bool isModified() const;
+    void focusTab();
+
+signals:
+    void getFocused();
+
+private slots:
+    void handleFocusChanged(QWidget *old, QWidget *now);
 
 private:
     bool isMarkdown(const QString &name);
@@ -37,6 +45,7 @@ private:
     void showFileEditMode();
     void setupMarkdownPreview();
     void previewByConverter();
+    inline bool isChild(QObject *obj);
 
     VNoteFile *noteFile;
     bool isEditMode;
@@ -55,6 +64,17 @@ inline bool VEditor::getIsEditMode() const
 inline bool VEditor::isModified() const
 {
     return textEditor->isModified();
+}
+
+inline bool VEditor::isChild(QObject *obj)
+{
+    while (obj) {
+        if (obj == this) {
+            return true;
+        }
+        obj = obj->parent();
+    }
+    return false;
 }
 
 #endif // VEDITOR_H

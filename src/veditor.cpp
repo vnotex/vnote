@@ -32,6 +32,9 @@ VEditor::VEditor(const QString &path, bool modifiable, QWidget *parent)
     setupUI();
 
     showFileReadMode();
+
+    connect(qApp, &QApplication::focusChanged,
+            this, &VEditor::handleFocusChanged);
 }
 
 VEditor::~VEditor()
@@ -148,7 +151,7 @@ void VEditor::readFile()
     if (textEditor->isModified()) {
         // Need to save the changes
         QMessageBox msgBox(this);
-        msgBox.setText("The note has been modified.");
+        msgBox.setText(QString("The note \"%1\" has been modified.").arg(noteFile->fileName));
         msgBox.setInformativeText("Do you want to save your changes?");
         msgBox.setIcon(QMessageBox::Information);
         msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
@@ -219,4 +222,16 @@ void VEditor::setupMarkdownPreview()
     }
 
     addWidget(webPreviewer);
+}
+
+void VEditor::focusTab()
+{
+    currentWidget()->setFocus();
+}
+
+void VEditor::handleFocusChanged(QWidget *old, QWidget *now)
+{
+    if (isChild(now)) {
+        emit getFocused();
+    }
 }

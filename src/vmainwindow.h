@@ -11,12 +11,12 @@ class QListWidget;
 class QTabWidget;
 class QToolBar;
 class VNote;
-class VTabWidget;
 class QAction;
 class QPushButton;
 class VNotebook;
 class QActionGroup;
 class VFileList;
+class VEditArea;
 
 class VMainWindow : public QMainWindow
 {
@@ -65,6 +65,7 @@ private:
 
     // If true, comboBox changes will not trigger any signal out
     bool notebookComboMuted;
+    VNote *vnote;
 
     QLabel *notebookLabel;
     QLabel *directoryLabel;
@@ -77,9 +78,8 @@ private:
     QPushButton *dirInfoBtn;
     VFileList *fileList;
     VDirectoryTree *directoryTree;
-    VTabWidget *tabs;
     QSplitter *mainSplitter;
-    VNote *vnote;
+    VEditArea *editArea;
 
     // Actions
     QAction *newNoteAct;

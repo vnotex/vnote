@@ -53,5 +53,8 @@
         <file>resources/icons/expand.svg</file>
         <file>resources/icons/two_panels.svg</file>
         <file>resources/icons/one_panel.svg</file>
+        <file>resources/icons/split_window.svg</file>
+        <file>resources/icons/corner_menu.svg</file>
+        <file>resources/icons/remove_split.svg</file>
     </qresource>
 </RCC>
