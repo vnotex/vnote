@@ -7,7 +7,7 @@
 #include <QFileInfo>
 #include <QDir>
 #include "vnotebook.h"
-#include "veditor.h"
+#include "vedittab.h"
 
 class VNote;
 class QPushButton;
@@ -60,7 +60,7 @@ private:
     int appendTabWithData(QWidget *page, const QJsonObject &tabData);
     int openFileInTab(const QString &notebook, const QString &relativePath, bool modifiable);
     inline QString getFileName(const QString &relativePath) const;
-    inline VEditor *getTab(int tabIndex) const;
+    inline VEditTab *getTab(int tabIndex) const;
     void noticeTabStatus(int index);
 
     VNote *vnote;
@@ -77,9 +77,9 @@ inline QString VEditWindow::getFileName(const QString &path) const
     return QFileInfo(QDir::cleanPath(path)).fileName();
 }
 
-inline VEditor* VEditWindow::getTab(int tabIndex) const
+inline VEditTab* VEditWindow::getTab(int tabIndex) const
 {
-    return dynamic_cast<VEditor *>(widget(tabIndex));
+    return dynamic_cast<VEditTab *>(widget(tabIndex));
 }
 
 #endif // VEDITWINDOW_H

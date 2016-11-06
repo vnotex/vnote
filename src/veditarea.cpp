@@ -1,7 +1,7 @@
 #include <QtWidgets>
 #include "veditarea.h"
 #include "veditwindow.h"
-#include "veditor.h"
+#include "vedittab.h"
 #include "vnote.h"
 #include "vconfigmanager.h"
 
@@ -143,16 +143,16 @@ int VEditArea::openFileInWindow(int windowIndex, const QString &notebook, const 
 
 void VEditArea::setCurrentTab(int windowIndex, int tabIndex, bool setFocus)
 {
-    setCurrentWindow(windowIndex, setFocus);
-
     VEditWindow *win = getWindow(windowIndex);
     win->setCurrentIndex(tabIndex);
+
+    setCurrentWindow(windowIndex, setFocus);
 }
 
 void VEditArea::setCurrentWindow(int windowIndex, bool setFocus)
 {
     if (curWindowIndex == windowIndex) {
-        return;
+        goto out;
     }
     qDebug() << "current window" << windowIndex;
     curWindowIndex = windowIndex;
@@ -160,7 +160,13 @@ void VEditArea::setCurrentWindow(int windowIndex, bool setFocus)
         getWindow(windowIndex)->focusWindow();
     }
 
+out:
     // Update tab status
+    noticeTabStatus();
+}
+
+void VEditArea::noticeTabStatus()
+{
     QString notebook, relativePath;
     bool editMode, modifiable;
     getWindow(curWindowIndex)->getTabStatus(notebook, relativePath, editMode, modifiable);

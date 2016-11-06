@@ -22,7 +22,6 @@ SOURCES += main.cpp\
     vfilelist.cpp \
     dialog/vnewfiledialog.cpp \
     vedit.cpp \
-    veditor.cpp \
     vnotefile.cpp \
     vdocument.cpp \
     utils/vutils.cpp \
@@ -41,7 +40,8 @@ SOURCES += main.cpp\
     dialog/vinsertimagedialog.cpp \
     vdownloader.cpp \
     veditarea.cpp \
-    veditwindow.cpp
+    veditwindow.cpp \
+    vedittab.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -52,7 +52,6 @@ HEADERS  += vmainwindow.h \
     vfilelist.h \
     dialog/vnewfiledialog.h \
     vedit.h \
-    veditor.h \
     vconstants.h \
     vnotefile.h \
     vdocument.h \
@@ -73,7 +72,8 @@ HEADERS  += vmainwindow.h \
     dialog/vinsertimagedialog.h \
     vdownloader.h \
     veditarea.h \
-    veditwindow.h
+    veditwindow.h \
+    vedittab.h
 
 RESOURCES += \
     vnote.qrc

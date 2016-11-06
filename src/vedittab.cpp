@@ -3,7 +3,7 @@
 #include <QWebChannel>
 #include <QWebEngineView>
 #include <QFileInfo>
-#include "veditor.h"
+#include "vedittab.h"
 #include "vedit.h"
 #include "vdocument.h"
 #include "vnote.h"
@@ -16,13 +16,13 @@
 
 extern VConfigManager vconfig;
 
-VEditor::VEditor(const QString &path, bool modifiable, QWidget *parent)
+VEditTab::VEditTab(const QString &path, bool modifiable, QWidget *parent)
     : QStackedWidget(parent), mdConverterType(vconfig.getMdConverterType())
 {
     DocType docType = isMarkdown(path) ? DocType::Markdown : DocType::Html;
     QString basePath = QFileInfo(path).path();
     QString fileName = QFileInfo(path).fileName();
-    qDebug() << "VEditor basePath" << basePath << "file" << fileName;
+    qDebug() << "VEditTab basePath" << basePath << "file" << fileName;
     QString fileText = VUtils::readFileFromDisk(path);
     noteFile = new VNoteFile(basePath, fileName, fileText,
                              docType, modifiable);
@@ -34,17 +34,17 @@ VEditor::VEditor(const QString &path, bool modifiable, QWidget *parent)
     showFileReadMode();
 
     connect(qApp, &QApplication::focusChanged,
-            this, &VEditor::handleFocusChanged);
+            this, &VEditTab::handleFocusChanged);
 }
 
-VEditor::~VEditor()
+VEditTab::~VEditTab()
 {
     if (noteFile) {
         delete noteFile;
     }
 }
 
-void VEditor::setupUI()
+void VEditTab::setupUI()
 {
     textEditor = new VEdit(noteFile);
     addWidget(textEditor);
@@ -67,7 +67,7 @@ void VEditor::setupUI()
     }
 }
 
-bool VEditor::isMarkdown(const QString &name)
+bool VEditTab::isMarkdown(const QString &name)
 {
     const QVector<QString> mdPostfix({"md", "markdown", "mkd"});
 
@@ -84,7 +84,7 @@ bool VEditor::isMarkdown(const QString &name)
     return false;
 }
 
-void VEditor::showFileReadMode()
+void VEditTab::showFileReadMode()
 {
     isEditMode = false;
     switch (noteFile->docType) {
@@ -107,7 +107,7 @@ void VEditor::showFileReadMode()
     }
 }
 
-void VEditor::previewByConverter()
+void VEditTab::previewByConverter()
 {
     VMarkdownConverter mdConverter;
     QString content = noteFile->content;
@@ -119,7 +119,7 @@ void VEditor::previewByConverter()
     webPreviewer->setHtml(completeHtml, QUrl::fromLocalFile(noteFile->basePath + QDir::separator()));
 }
 
-void VEditor::showFileEditMode()
+void VEditTab::showFileEditMode()
 {
     isEditMode = true;
     textEditor->beginEdit();
@@ -127,13 +127,13 @@ void VEditor::showFileEditMode()
     textEditor->setFocus();
 }
 
-bool VEditor::requestClose()
+bool VEditTab::requestClose()
 {
     readFile();
     return !isEditMode;
 }
 
-void VEditor::editFile()
+void VEditTab::editFile()
 {
     if (isEditMode || !noteFile->modifiable) {
         return;
@@ -142,7 +142,7 @@ void VEditor::editFile()
     showFileEditMode();
 }
 
-void VEditor::readFile()
+void VEditTab::readFile()
 {
     if (!isEditMode) {
         return;
@@ -176,7 +176,7 @@ void VEditor::readFile()
     showFileReadMode();
 }
 
-bool VEditor::saveFile()
+bool VEditTab::saveFile()
 {
     if (!isEditMode || !noteFile->modifiable || !textEditor->isModified()) {
         return true;
@@ -207,7 +207,7 @@ bool VEditor::saveFile()
     return true;
 }
 
-void VEditor::setupMarkdownPreview()
+void VEditTab::setupMarkdownPreview()
 {
     webPreviewer = new QWebEngineView(this);
     VPreviewPage *page = new VPreviewPage(this);
@@ -224,12 +224,12 @@ void VEditor::setupMarkdownPreview()
     addWidget(webPreviewer);
 }
 
-void VEditor::focusTab()
+void VEditTab::focusTab()
 {
     currentWidget()->setFocus();
 }
 
-void VEditor::handleFocusChanged(QWidget *old, QWidget *now)
+void VEditTab::handleFocusChanged(QWidget *old, QWidget *now)
 {
     if (isChild(now)) {
         emit getFocused();

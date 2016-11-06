@@ -1,7 +1,7 @@
 #include <QtWidgets>
 #include <QtDebug>
 #include "veditwindow.h"
-#include "veditor.h"
+#include "vedittab.h"
 #include "vnote.h"
 #include "vconfigmanager.h"
 
@@ -107,6 +107,7 @@ out:
         editFile();
     }
     focusWindow();
+    noticeTabStatus(idx);
     return idx;
 }
 
@@ -119,7 +120,7 @@ void VEditWindow::closeFile(const QString &notebook, const QString &relativePath
     }
 
     // Do not check if modified
-    VEditor *editor = getTab(idx);
+    VEditTab *editor = getTab(idx);
     Q_ASSERT(editor);
     removeTab(idx);
     delete editor;
@@ -149,9 +150,9 @@ int VEditWindow::openFileInTab(const QString &notebook, const QString &relativeP
         }
     }
 
-    VEditor *editor = new VEditor(QDir::cleanPath(QDir(rootPath).filePath(relativePath)),
-                                  modifiable);
-    connect(editor, &VEditor::getFocused,
+    VEditTab *editor = new VEditTab(QDir::cleanPath(QDir(rootPath).filePath(relativePath)),
+                                    modifiable);
+    connect(editor, &VEditTab::getFocused,
             this, &VEditWindow::getFocused);
 
     QJsonObject tabJson;
@@ -178,7 +179,7 @@ int VEditWindow::findTabByFile(const QString &notebook, const QString &relativeP
 bool VEditWindow::handleTabCloseRequest(int index)
 {
     qDebug() << "request closing tab" << index;
-    VEditor *editor = getTab(index);
+    VEditTab *editor = getTab(index);
     Q_ASSERT(editor);
     bool ok = editor->requestClose();
     if (ok) {
@@ -194,7 +195,7 @@ bool VEditWindow::handleTabCloseRequest(int index)
 
 void VEditWindow::readFile()
 {
-    VEditor *editor = getTab(currentIndex());
+    VEditTab *editor = getTab(currentIndex());
     Q_ASSERT(editor);
     editor->readFile();
     noticeTabStatus(currentIndex());
@@ -209,7 +210,7 @@ void VEditWindow::saveAndReadFile()
 
 void VEditWindow::editFile()
 {
-    VEditor *editor = getTab(currentIndex());
+    VEditTab *editor = getTab(currentIndex());
     Q_ASSERT(editor);
     editor->editFile();
     noticeTabStatus(currentIndex());
@@ -217,7 +218,7 @@ void VEditWindow::editFile()
 
 void VEditWindow::saveFile()
 {
-    VEditor *editor = getTab(currentIndex());
+    VEditTab *editor = getTab(currentIndex());
     Q_ASSERT(editor);
     editor->saveFile();
 }
@@ -248,7 +249,7 @@ void VEditWindow::noticeTabStatus(int index)
 
     QString notebook = tabJson["notebook"].toString();
     QString relativePath = tabJson["relative_path"].toString();
-    VEditor *editor = getTab(index);
+    VEditTab *editor = getTab(index);
     bool editMode = editor->getIsEditMode();
     bool modifiable = tabJson["modifiable"].toBool();
 
@@ -270,7 +271,7 @@ void VEditWindow::getTabStatus(QString &notebook, QString &relativePath,
     Q_ASSERT(!tabJson.isEmpty());
     notebook = tabJson["notebook"].toString();
     relativePath = tabJson["relative_path"].toString();
-    VEditor *editor = getTab(idx);
+    VEditTab *editor = getTab(idx);
     editMode = editor->getIsEditMode();
     modifiable = tabJson["modifiable"].toBool();
 }

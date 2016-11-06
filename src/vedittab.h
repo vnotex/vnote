@@ -1,5 +1,5 @@
-#ifndef VEDITOR_H
-#define VEDITOR_H
+#ifndef VEDITTAB_H
+#define VEDITTAB_H
 
 #include <QStackedWidget>
 #include <QString>
@@ -14,12 +14,12 @@ class QTextBrowser;
 class QWebEngineView;
 class VNote;
 
-class VEditor : public QStackedWidget
+class VEditTab : public QStackedWidget
 {
     Q_OBJECT
 public:
-    VEditor(const QString &path, bool modifiable, QWidget *parent = 0);
-    ~VEditor();
+    VEditTab(const QString &path, bool modifiable, QWidget *parent = 0);
+    ~VEditTab();
     bool requestClose();
     // Enter edit mode
     void editFile();
@@ -56,17 +56,17 @@ private:
     MarkdownConverterType mdConverterType;
 };
 
-inline bool VEditor::getIsEditMode() const
+inline bool VEditTab::getIsEditMode() const
 {
     return isEditMode;
 }
 
-inline bool VEditor::isModified() const
+inline bool VEditTab::isModified() const
 {
     return textEditor->isModified();
 }
 
-inline bool VEditor::isChild(QObject *obj)
+inline bool VEditTab::isChild(QObject *obj)
 {
     while (obj) {
         if (obj == this) {
@@ -77,4 +77,4 @@ inline bool VEditor::isChild(QObject *obj)
     return false;
 }
 
-#endif // VEDITOR_H
+#endif // VEDITTAB_H
