@@ -46,8 +46,17 @@ void VEditWindow::setupCornerWidget()
     rightMenu->addAction(splitAct);
     rightMenu->addAction(removeSplitAct);
     rightBtn->setMenu(rightMenu);
-
     setCornerWidget(rightBtn, Qt::TopRightCorner);
+
+    // Left corner button
+    tabListAct = new QActionGroup(this);
+    connect(tabListAct, &QActionGroup::triggered,
+            this, &VEditWindow::tabListJump);
+    leftBtn = new QPushButton(QIcon(":/resources/icons/corner_tablist.svg"),
+                              "", this);
+    QMenu *leftMenu = new QMenu(this);
+    leftBtn->setMenu(leftMenu);
+    setCornerWidget(leftBtn, Qt::TopLeftCorner);
 }
 
 void VEditWindow::splitWindow()
@@ -124,6 +133,8 @@ void VEditWindow::closeFile(const QString &notebook, const QString &relativePath
     Q_ASSERT(editor);
     removeTab(idx);
     delete editor;
+
+    updateTabListMenu();
 }
 
 bool VEditWindow::closeAllFiles()
@@ -159,7 +170,9 @@ int VEditWindow::openFileInTab(const QString &notebook, const QString &relativeP
     tabJson["notebook"] = notebook;
     tabJson["relative_path"] = relativePath;
     tabJson["modifiable"] = modifiable;
-    return appendTabWithData(editor, tabJson);
+    int idx = appendTabWithData(editor, tabJson);
+    updateTabListMenu();
+    return idx;
 }
 
 int VEditWindow::findTabByFile(const QString &notebook, const QString &relativePath) const
@@ -186,6 +199,7 @@ bool VEditWindow::handleTabCloseRequest(int index)
         removeTab(index);
         delete editor;
     }
+    updateTabListMenu();
     noticeTabStatus(currentIndex());
     // User clicks the close button. We should make this window
     // to be current window.
@@ -305,4 +319,40 @@ void VEditWindow::contextMenuRequested(QPoint pos)
 
     menu.addAction(removeSplitAct);
     menu.exec(this->mapToGlobal(pos));
+}
+
+void VEditWindow::tabListJump(QAction *action)
+{
+    if (!action) {
+        return;
+    }
+
+    QJsonObject tabJson = action->data().toJsonObject();
+    int idx = findTabByFile(tabJson["notebook"].toString(),
+                            tabJson["relative_path"].toString());
+    Q_ASSERT(idx >= 0);
+    setCurrentIndex(idx);
+    noticeTabStatus(idx);
+}
+
+void VEditWindow::updateTabListMenu()
+{
+    // Re-generate the tab list menu
+    QMenu *menu = leftBtn->menu();
+    QList<QAction *> actions = menu->actions();
+    int nrActions = actions.size();
+    for (int i = 0; i < nrActions; ++i) {
+        QAction *tmpAct = actions.at(i);
+        menu->removeAction(tmpAct);
+        tabListAct->removeAction(tmpAct);
+        delete tmpAct;
+    }
+
+    QTabBar *tabbar = tabBar();
+    int nrTab = tabbar->count();
+    for (int i = 0; i < nrTab; ++i) {
+        QAction *action = new QAction(tabbar->tabText(i), tabListAct);
+        action->setData(tabbar->tabData(i));
+        menu->addAction(action);
+    }
 }

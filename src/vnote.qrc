@@ -56,5 +56,6 @@
         <file>resources/icons/split_window.svg</file>
         <file>resources/icons/corner_menu.svg</file>
         <file>resources/icons/remove_split.svg</file>
+        <file>resources/icons/corner_tablist.svg</file>
     </qresource>
 </RCC>

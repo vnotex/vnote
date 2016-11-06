@@ -11,6 +11,7 @@
 
 class VNote;
 class QPushButton;
+class QActionGroup;
 
 class VEditWindow : public QTabWidget
 {
@@ -52,6 +53,7 @@ private slots:
     void removeSplit();
     void handleTabbarClicked(int index);
     void contextMenuRequested(QPoint pos);
+    void tabListJump(QAction *action);
 
 private:
     void setupCornerWidget();
@@ -62,14 +64,18 @@ private:
     inline QString getFileName(const QString &relativePath) const;
     inline VEditTab *getTab(int tabIndex) const;
     void noticeTabStatus(int index);
+    void updateTabListMenu();
 
     VNote *vnote;
     // Button in the right corner
     QPushButton *rightBtn;
+    // Button in the left corner
+    QPushButton *leftBtn;
 
     // Actions
     QAction *splitAct;
     QAction *removeSplitAct;
+    QActionGroup *tabListAct;
 };
 
 inline QString VEditWindow::getFileName(const QString &path) const
