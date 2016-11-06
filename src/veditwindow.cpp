@@ -14,11 +14,14 @@ VEditWindow::VEditWindow(VNote *vnote, QWidget *parent)
 
     setTabsClosable(true);
     setMovable(true);
+    setContextMenuPolicy(Qt::CustomContextMenu);
 
     connect(this, &VEditWindow::tabCloseRequested,
             this, &VEditWindow::handleTabCloseRequest);
     connect(this, &VEditWindow::tabBarClicked,
             this, &VEditWindow::handleTabbarClicked);
+    connect(this, &VEditWindow::customContextMenuRequested,
+            this, &VEditWindow::contextMenuRequested);
 }
 
 void VEditWindow::setupCornerWidget()
@@ -293,4 +296,12 @@ void VEditWindow::mousePressEvent(QMouseEvent *event)
 {
     emit getFocused();
     QTabWidget::mousePressEvent(event);
+}
+
+void VEditWindow::contextMenuRequested(QPoint pos)
+{
+    QMenu menu(this);
+
+    menu.addAction(removeSplitAct);
+    menu.exec(this->mapToGlobal(pos));
 }

@@ -51,6 +51,7 @@ private slots:
     void splitWindow();
     void removeSplit();
     void handleTabbarClicked(int index);
+    void contextMenuRequested(QPoint pos);
 
 private:
     void setupCornerWidget();
