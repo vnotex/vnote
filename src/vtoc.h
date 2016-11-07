@@ -12,6 +12,9 @@ enum VHeaderType
 
 struct VHeader
 {
+    VHeader() : level(1), lineNumber(-1) {}
+    VHeader(int level, const QString &name, const QString &anchor, int lineNumber)
+        : level(level), name(name), anchor(anchor), lineNumber(lineNumber) {}
     int level;
     QString name;
     QString anchor;

@@ -298,16 +298,17 @@ void VEditTab::parseTocLi(QXmlStreamReader &xml, QVector<VHeader> &headers, int 
                     qWarning() << "error: TOC HTML <a> should be ended by </a>" << xml.name();
                     return;
                 }
-                VHeader header;
-                header.level = level;
-                header.name = name;
-                header.anchor = anchor;
-                header.lineNumber = -1;
+                VHeader header(level, name, anchor, -1);
                 headers.append(header);
             } else {
                 // Error
                 return;
             }
+        } else if (xml.name() == "ul") {
+            // Such as header 3 under header 1 directly
+            VHeader header(level, "[Empty]", "#", -1);
+            headers.append(header);
+            parseTocUl(xml, headers, level + 1);
         } else {
             qWarning() << "error: TOC HTML <li> should contain <a> or <ul>" << xml.name();
             return;
