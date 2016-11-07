@@ -217,12 +217,13 @@ void VEditTab::setupMarkdownPreview()
     VPreviewPage *page = new VPreviewPage(this);
     webPreviewer->setPage(page);
 
+    QWebChannel *channel = new QWebChannel(this);
+    channel->registerObject(QStringLiteral("content"), &document);
+    connect(&document, &VDocument::tocChanged,
+            this, &VEditTab::updateTocFromHtml);
+    page->setWebChannel(channel);
+
     if (mdConverterType == MarkdownConverterType::Marked) {
-        QWebChannel *channel = new QWebChannel(this);
-        channel->registerObject(QStringLiteral("content"), &document);
-        connect(&document, &VDocument::tocChanged,
-                this, &VEditTab::updateTocFromHtml);
-        page->setWebChannel(channel);
         webPreviewer->setHtml(VNote::templateHtml,
                               QUrl::fromLocalFile(noteFile->basePath + QDir::separator()));
     }
@@ -344,7 +345,7 @@ void VEditTab::scrollToAnchor(const VAnchor &anchor)
         }
     } else {
         if (!anchor.anchor.isEmpty()) {
-            document.scrollToAnchor(anchor.anchor.mid(1));
+            document.scrollToAnchor(anchor.anchor.mid(1), mdConverterType);
         }
     }
 }

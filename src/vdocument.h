@@ -16,7 +16,7 @@ public:
     void setText(const QString &text);
     QString getText();
     QString getToc();
-    void scrollToAnchor(const QString &anchor);
+    void scrollToAnchor(const QString &anchor, int type);
 
 public slots:
     // Will be called in the HTML side
@@ -25,7 +25,7 @@ public slots:
 signals:
     void textChanged(const QString &text);
     void tocChanged(const QString &toc);
-    void requestScrollToAnchor(const QString &anchor);
+    void requestScrollToAnchor(const QString &anchor, int type);
 
 private:
     QString m_text;

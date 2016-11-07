@@ -7,7 +7,38 @@
   </style>
   <link rel="stylesheet" type="text/css" href="CSS_PLACE_HOLDER">
   <link rel="stylesheet" type="text/css" href="qrc:/utils/highlightjs/styles/default.css">
+  <script src="qrc:/resources/qwebchannel.js"></script>
   <script src="qrc:/utils/highlightjs/highlight.pack.js"></script>
   <script>hljs.initHighlightingOnLoad();</script>
 </head>
 <body>
+  <script>
+  'use strict';
+  var content;
+
+  // Type = 0, Hoedown, getElementById;
+  // Type = 1, Marked, getElementsByTagName;
+  var scrollToAnchor = function(anchor, type) {
+      switch (type) {
+      case 0:
+          document.getElementById(anchor).scrollIntoView();
+          break;
+      case 1:
+          var eles = document.getElementsByTagName('a');
+          for (var i = 0; i < eles.length; ++i) {
+             if (eles[i].name == anchor) {
+                eles[i].scrollIntoView();
+                break;
+             }
+          }
+          break;
+      }
+  };
+
+  new QWebChannel(qt.webChannelTransport,
+    function(channel) {
+      content = channel.objects.content;
+      content.requestScrollToAnchor.connect(scrollToAnchor);
+    }
+  );
+  </script>
