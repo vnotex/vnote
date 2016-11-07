@@ -120,6 +120,8 @@ void VNote::removeNotebook(const QString &name)
     } else {
         qDebug() << "delete" << path << "recursively";
     }
+
+    notebookPathHash.remove(name);
     emit notebooksDeleted(notebooks, name);
 }
 
@@ -140,5 +142,23 @@ void VNote::renameNotebook(const QString &name, const QString &newName)
     notebooks[index].setName(newName);
     vconfig.setNotebooks(notebooks);
 
+    notebookPathHash.remove(name);
     emit notebooksRenamed(notebooks, name, newName);
+}
+
+QString VNote::getNotebookPath(const QString &name)
+{
+    QString path = notebookPathHash.value(name);
+    if (path.isEmpty()) {
+        for (int i = 0; i < notebooks.size(); ++i) {
+            if (notebooks[i].getName() == name) {
+                path = notebooks[i].getPath();
+                break;
+            }
+        }
+        if (!path.isEmpty()) {
+            notebookPathHash.insert(name, path);
+        }
+    }
+    return path;
 }

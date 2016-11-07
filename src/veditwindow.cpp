@@ -165,6 +165,8 @@ int VEditWindow::openFileInTab(const QString &notebook, const QString &relativeP
                                     modifiable);
     connect(editor, &VEditTab::getFocused,
             this, &VEditWindow::getFocused);
+    connect(editor, &VEditTab::outlineChanged,
+            this, &VEditWindow::handleOutlineChanged);
 
     QJsonObject tabJson;
     tabJson["notebook"] = notebook;
@@ -290,6 +292,16 @@ void VEditWindow::getTabStatus(QString &notebook, QString &relativePath,
     modifiable = tabJson["modifiable"].toBool();
 }
 
+VToc VEditWindow::getTabOutline() const
+{
+    int idx = currentIndex();
+    if (idx == -1) {
+        return VToc();
+    }
+
+    return getTab(idx)->getOutline();
+}
+
 void VEditWindow::focusWindow()
 {
     int idx = currentIndex();
@@ -305,6 +317,7 @@ void VEditWindow::handleTabbarClicked(int index)
     // The child will emit getFocused here
     focusWindow();
     noticeTabStatus(index);
+    emit outlineChanged(getTab(index)->getOutline());
 }
 
 void VEditWindow::mousePressEvent(QMouseEvent *event)
@@ -354,5 +367,32 @@ void VEditWindow::updateTabListMenu()
         QAction *action = new QAction(tabbar->tabText(i), tabListAct);
         action->setData(tabbar->tabData(i));
         menu->addAction(action);
+    }
+}
+
+void VEditWindow::handleOutlineChanged(const VToc &toc)
+{
+    // Only propagate it if it is current tab
+    int idx = currentIndex();
+    QJsonObject tabJson = tabBar()->tabData(idx).toJsonObject();
+    Q_ASSERT(!tabJson.isEmpty());
+    QString path = vnote->getNotebookPath(tabJson["notebook"].toString());
+    path = QDir::cleanPath(QDir(path).filePath(tabJson["relative_path"].toString()));
+
+    if (toc.filePath == path) {
+        emit outlineChanged(toc);
+    }
+}
+
+void VEditWindow::scrollCurTab(const VAnchor &anchor)
+{
+    int idx = currentIndex();
+    QJsonObject tabJson = tabBar()->tabData(idx).toJsonObject();
+    Q_ASSERT(!tabJson.isEmpty());
+    QString path = vnote->getNotebookPath(tabJson["notebook"].toString());
+    path = QDir::cleanPath(QDir(path).filePath(tabJson["relative_path"].toString()));
+
+    if (path == anchor.filePath) {
+        getTab(idx)->scrollToAnchor(anchor);
     }
 }

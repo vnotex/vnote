@@ -17,6 +17,8 @@ class VNotebook;
 class QActionGroup;
 class VFileList;
 class VEditArea;
+class QToolBox;
+class VOutline;
 
 class VMainWindow : public QMainWindow
 {
@@ -57,6 +59,7 @@ private:
     void initActions();
     void initToolBar();
     void initMenuBar();
+    void initDockWindows();
     bool isConflictWithExistingNotebooks(const QString &name);
     void initPredefinedColorPixmaps();
     void initRenderBackgroundMenu(QMenu *menu);
@@ -80,6 +83,8 @@ private:
     VDirectoryTree *directoryTree;
     QSplitter *mainSplitter;
     VEditArea *editArea;
+    QToolBox *toolBox;
+    VOutline *outline;
 
     // Actions
     QAction *newNoteAct;
@@ -104,6 +109,9 @@ private:
     QAction *eightSpaceTabAct;
     QActionGroup *backgroundColorAct;
     QActionGroup *renderBackgroundAct;
+
+    // Menus
+    QMenu *viewMenu;
 
     QVector<QPixmap> predefinedColorPixmaps;
 };

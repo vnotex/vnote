@@ -6,6 +6,7 @@
 #include <QSettings>
 #include <QFont>
 #include <QObject>
+#include <QHash>
 #include "vnotebook.h"
 
 enum OpenFileMode {Read = 0, Edit};
@@ -31,6 +32,8 @@ public:
     void removeNotebook(const QString &name);
     void renameNotebook(const QString &name, const QString &newName);
 
+    QString getNotebookPath(const QString &name);
+
 public slots:
     void updateTemplate();
 
@@ -44,6 +47,7 @@ signals:
 
 private:
     QVector<VNotebook> notebooks;
+    QHash<QString, QString> notebookPathHash;
 };
 
 #endif // VNOTE_H

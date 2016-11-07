@@ -9,6 +9,7 @@
 #include "dialog/vnotebookinfodialog.h"
 #include "utils/vutils.h"
 #include "veditarea.h"
+#include "voutline.h"
 
 extern VConfigManager vconfig;
 
@@ -22,6 +23,7 @@ VMainWindow::VMainWindow(QWidget *parent)
     initActions();
     initToolBar();
     initMenuBar();
+    initDockWindows();
 
     updateNotebookComboBox(vnote->getNotebooks());
 }
@@ -283,7 +285,7 @@ void VMainWindow::initMenuBar()
 {
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
     QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
-    QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
+    viewMenu = menuBar()->addMenu(tr("&View"));
     QMenu *markdownMenu = menuBar()->addMenu(tr("&Markdown"));
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
 
@@ -333,6 +335,22 @@ void VMainWindow::initMenuBar()
     // Help menu
     helpMenu->addAction(aboutQtAct);
     helpMenu->addAction(aboutAct);
+}
+
+void VMainWindow::initDockWindows()
+{
+    QDockWidget *dock = new QDockWidget(tr("Tools"), this);
+    dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    toolBox = new QToolBox(this);
+    outline = new VOutline(this);
+    connect(editArea, &VEditArea::outlineChanged,
+            outline, &VOutline::updateOutline);
+    connect(outline, &VOutline::outlineItemActivated,
+            editArea, &VEditArea::handleOutlineItemActivated);
+    toolBox->addItem(outline, QIcon(":/resources/icons/outline.svg"), tr("Outline"));
+    dock->setWidget(toolBox);
+    addDockWidget(Qt::RightDockWidgetArea, dock);
+    viewMenu->addAction(dock->toggleViewAction());
 }
 
 void VMainWindow::updateNotebookComboBox(const QVector<VNotebook> &notebooks)

@@ -8,6 +8,7 @@
 #include <QDir>
 #include "vnotebook.h"
 #include "vedittab.h"
+#include "vtoc.h"
 
 class VNote;
 class QPushButton;
@@ -33,8 +34,10 @@ public:
     void setRemoveSplitEnable(bool enabled);
     void getTabStatus(QString &notebook, QString &relativePath,
                       bool &editMode, bool &modifiable) const;
+    VToc getTabOutline() const;
     // Focus to current tab's editor
     void focusWindow();
+    void scrollCurTab(const VAnchor &anchor);
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
@@ -46,6 +49,7 @@ signals:
     void requestRemoveSplit(VEditWindow *curWindow);
     // This widget or its children get the focus
     void getFocused();
+    void outlineChanged(const VToc &toc);
 
 private slots:
     bool handleTabCloseRequest(int index);
@@ -54,6 +58,7 @@ private slots:
     void handleTabbarClicked(int index);
     void contextMenuRequested(QPoint pos);
     void tabListJump(QAction *action);
+    void handleOutlineChanged(const VToc &toc);
 
 private:
     void setupCornerWidget();

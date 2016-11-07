@@ -19,9 +19,12 @@
   var placeholder = document.getElementById('placeholder');
   var renderer = new marked.Renderer();
   var toc = []; // Table of contents as a list
+  var content; // Channel variable with content
+  var nameCounter = 0;
 
   renderer.heading = function (text, level) {
-      var escapedText = text.toLowerCase().replace(/[^\w]+/g, '-');
+      // Use number to avoid issues with Chinese
+      var escapedText = 'toc_' + nameCounter++;
       toc.push({
         level: level,
         anchor: escapedText,
@@ -44,11 +47,12 @@
 
   var markdownToHtml = function (markdown, needToc) {
       toc = [];
+      var html = marked(markdown, { renderer: renderer });
+      nameCounter = 0;
       if (needToc) {
-          var html = marked(markdown, { renderer: renderer });
           return html.replace(/<p>\[TOC\]<\/p>/ig, '<div class="vnote-toc"></div>');
       } else {
-          return marked(markdown);
+          return html;
       }
   };
 
@@ -74,7 +78,7 @@
   };
 
   var itemToHtml = function (item) {
-      return '<a href=#' + item.anchor + '>' + item.title + '</a>';
+      return '<a href="#' + item.anchor + '">' + item.title + '</a>';
   };
 
   // Turn a perfect toc to a tree using <ul>
@@ -118,11 +122,16 @@
       return front;
   };
 
-  var addToc = function() {
+  var handleToc = function(needToc) {
       var tocTree = tocToTree(toPerfectToc(toc));
-      var eles = document.getElementsByClassName('vnote-toc');
-      for (var i = 0; i < eles.length; ++i) {
-          eles[i].innerHTML = tocTree;
+      content.setToc(tocTree);
+
+      // Add it to html
+      if (needToc) {
+          var eles = document.getElementsByClassName('vnote-toc');
+          for (var i = 0; i < eles.length; ++i) {
+              eles[i].innerHTML = tocTree;
+          }
       }
   };
 
@@ -136,16 +145,25 @@
       var html = markdownToHtml(text, needToc);
       placeholder.innerHTML = html;
 
-      if (needToc) {
-          addToc();
+      handleToc(needToc);
+  };
+
+  var scrollToAnchor = function(anchor) {
+      var eles = document.getElementsByTagName('a');
+      for (var i = 0; i < eles.length; ++i) {
+         if (eles[i].name == anchor) {
+            eles[i].scrollIntoView();
+            break;
+         }
       }
   };
 
   new QWebChannel(qt.webChannelTransport,
     function(channel) {
-      var content = channel.objects.content;
+      content = channel.objects.content;
       updateText(content.text);
       content.textChanged.connect(updateText);
+      content.requestScrollToAnchor.connect(scrollToAnchor);
     }
   );
   </script>

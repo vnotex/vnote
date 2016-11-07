@@ -12,6 +12,7 @@
 #include <QSplitter>
 #include "vnotebook.h"
 #include "veditwindow.h"
+#include "vtoc.h"
 
 class VNote;
 
@@ -24,6 +25,7 @@ public:
 signals:
     void curTabStatusChanged(const QString &notebook, const QString &relativePath,
                              bool editMode, bool modifiable);
+    void outlineChanged(const VToc &toc);
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
@@ -38,11 +40,13 @@ public slots:
     void saveAndReadFile();
     void handleNotebookRenamed(const QVector<VNotebook> &notebooks, const QString &oldName,
                                const QString &newName);
+    void handleOutlineItemActivated(const VAnchor &anchor);
 
 private slots:
     void handleSplitWindowRequest(VEditWindow *curWindow);
     void handleRemoveSplitRequest(VEditWindow *curWindow);
     void handleWindowFocused();
+    void handleOutlineChanged(const VToc &toc);
 
 private:
     void setupUI();

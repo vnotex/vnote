@@ -9,10 +9,12 @@
 #include "vmarkdownconverter.h"
 #include "vconfigmanager.h"
 #include "vedit.h"
+#include "vtoc.h"
 
 class QTextBrowser;
 class QWebEngineView;
 class VNote;
+class QXmlStreamReader;
 
 class VEditTab : public QStackedWidget
 {
@@ -31,12 +33,16 @@ public:
     inline bool getIsEditMode() const;
     inline bool isModified() const;
     void focusTab();
+    const VToc& getOutline() const;
+    void scrollToAnchor(const VAnchor& anchor);
 
 signals:
     void getFocused();
+    void outlineChanged(const VToc &toc);
 
 private slots:
     void handleFocusChanged(QWidget *old, QWidget *now);
+    void updateTocFromHtml(const QString &tocHtml);
 
 private:
     bool isMarkdown(const QString &name);
@@ -46,6 +52,8 @@ private:
     void setupMarkdownPreview();
     void previewByConverter();
     inline bool isChild(QObject *obj);
+    void parseTocUl(QXmlStreamReader &xml, QVector<VHeader> &headers, int level);
+    void parseTocLi(QXmlStreamReader &xml, QVector<VHeader> &headers, int level);
 
     VNoteFile *noteFile;
     bool isEditMode;
@@ -54,6 +62,7 @@ private:
     QWebEngineView *webPreviewer;
     VDocument document;
     MarkdownConverterType mdConverterType;
+    VToc tableOfContent;
 };
 
 inline bool VEditTab::getIsEditMode() const

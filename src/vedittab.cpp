@@ -3,6 +3,7 @@
 #include <QWebChannel>
 #include <QWebEngineView>
 #include <QFileInfo>
+#include <QXmlStreamReader>
 #include "vedittab.h"
 #include "vedit.h"
 #include "vdocument.h"
@@ -13,6 +14,7 @@
 #include "vconfigmanager.h"
 #include "vmarkdownconverter.h"
 #include "vnotebook.h"
+#include "vtoc.h"
 
 extern VConfigManager vconfig;
 
@@ -117,6 +119,8 @@ void VEditTab::previewByConverter()
     html.replace(tocExp, toc);
     QString completeHtml = VNote::preTemplateHtml + html + VNote::postTemplateHtml;
     webPreviewer->setHtml(completeHtml, QUrl::fromLocalFile(noteFile->basePath + QDir::separator()));
+    // Hoedown will add '\n' while Marked does not
+    updateTocFromHtml(toc.replace("\n", ""));
 }
 
 void VEditTab::showFileEditMode()
@@ -216,6 +220,8 @@ void VEditTab::setupMarkdownPreview()
     if (mdConverterType == MarkdownConverterType::Marked) {
         QWebChannel *channel = new QWebChannel(this);
         channel->registerObject(QStringLiteral("content"), &document);
+        connect(&document, &VDocument::tocChanged,
+                this, &VEditTab::updateTocFromHtml);
         page->setWebChannel(channel);
         webPreviewer->setHtml(VNote::templateHtml,
                               QUrl::fromLocalFile(noteFile->basePath + QDir::separator()));
@@ -233,5 +239,111 @@ void VEditTab::handleFocusChanged(QWidget *old, QWidget *now)
 {
     if (isChild(now)) {
         emit getFocused();
+    }
+}
+
+void VEditTab::updateTocFromHtml(const QString &tocHtml)
+{
+    qDebug() << tocHtml;
+    tableOfContent.type = VHeaderType::Anchor;
+    QVector<VHeader> &headers = tableOfContent.headers;
+    headers.clear();
+
+    QXmlStreamReader xml(tocHtml);
+    if (xml.readNextStartElement()) {
+        if (xml.name() == "ul") {
+            parseTocUl(xml, headers, 1);
+        } else {
+            qWarning() << "error: TOC HTML does not start with <ul>";
+        }
+    }
+    if (xml.hasError()) {
+        qWarning() << "error: fail to parse TOC in HTML";
+        return;
+    }
+
+    tableOfContent.curHeaderIndex = 0;
+    tableOfContent.filePath = QDir::cleanPath(QDir(noteFile->basePath).filePath(noteFile->fileName));
+    tableOfContent.valid = true;
+
+    emit outlineChanged(tableOfContent);
+}
+
+void VEditTab::parseTocUl(QXmlStreamReader &xml, QVector<VHeader> &headers, int level)
+{
+    Q_ASSERT(xml.isStartElement() && xml.name() == "ul");
+
+    while (xml.readNextStartElement()) {
+        if (xml.name() == "li") {
+            parseTocLi(xml, headers, level);
+        } else {
+            qWarning() << "error: TOC HTML <ul> should contain <li>" << xml.name();
+            break;
+        }
+    }
+}
+
+void VEditTab::parseTocLi(QXmlStreamReader &xml, QVector<VHeader> &headers, int level)
+{
+    Q_ASSERT(xml.isStartElement() && xml.name() == "li");
+
+    if (xml.readNextStartElement()) {
+        if (xml.name() == "a") {
+            QString anchor = xml.attributes().value("href").toString();
+            QString name;
+            if (xml.readNext()) {
+                if (xml.tokenString() == "Characters") {
+                    name = xml.text().toString();
+                } else if (!xml.isEndElement()) {
+                    qWarning() << "error: TOC HTML <a> should be ended by </a>" << xml.name();
+                    return;
+                }
+                VHeader header;
+                header.level = level;
+                header.name = name;
+                header.anchor = anchor;
+                header.lineNumber = -1;
+                headers.append(header);
+            } else {
+                // Error
+                return;
+            }
+        } else {
+            qWarning() << "error: TOC HTML <li> should contain <a> or <ul>" << xml.name();
+            return;
+        }
+    }
+
+    while (xml.readNext()) {
+        if (xml.isEndElement()) {
+            if (xml.name() == "li") {
+                return;
+            }
+            continue;
+        }
+        if (xml.name() == "ul") {
+            // Nested unordered list
+            parseTocUl(xml, headers, level + 1);
+        } else {
+            return;
+        }
+    }
+}
+
+const VToc& VEditTab::getOutline() const
+{
+    return tableOfContent;
+}
+
+void VEditTab::scrollToAnchor(const VAnchor &anchor)
+{
+    if (isEditMode) {
+        if (anchor.lineNumber > -1) {
+
+        }
+    } else {
+        if (!anchor.anchor.isEmpty()) {
+            document.scrollToAnchor(anchor.anchor.mid(1));
+        }
     }
 }

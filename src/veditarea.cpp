@@ -37,6 +37,8 @@ void VEditArea::insertSplitWindow(int idx)
             this, &VEditArea::handleRemoveSplitRequest);
     connect(win, &VEditWindow::getFocused,
             this, &VEditArea::handleWindowFocused);
+    connect(win, &VEditWindow::outlineChanged,
+            this, &VEditArea::handleOutlineChanged);
 
     int nrWin = splitter->count();
     if (nrWin == 1) {
@@ -163,6 +165,7 @@ void VEditArea::setCurrentWindow(int windowIndex, bool setFocus)
 out:
     // Update tab status
     noticeTabStatus();
+    emit outlineChanged(getWindow(windowIndex)->getTabOutline());
 }
 
 void VEditArea::noticeTabStatus()
@@ -277,4 +280,18 @@ void VEditArea::handleWindowFocused()
             break;
         }
     }
+}
+
+void VEditArea::handleOutlineChanged(const VToc &toc)
+{
+    QObject *winObject = sender();
+    if (splitter->widget(curWindowIndex) == winObject) {
+        emit outlineChanged(toc);
+    }
+}
+
+void VEditArea::handleOutlineItemActivated(const VAnchor &anchor)
+{
+    // Notice current window
+    getWindow(curWindowIndex)->scrollCurTab(anchor);
 }
