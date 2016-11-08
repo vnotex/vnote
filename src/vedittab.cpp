@@ -345,7 +345,7 @@ void VEditTab::scrollToAnchor(const VAnchor &anchor)
         }
     } else {
         if (!anchor.anchor.isEmpty()) {
-            document.scrollToAnchor(anchor.anchor.mid(1), mdConverterType);
+            document.scrollToAnchor(anchor.anchor.mid(1));
         }
     }
 }

@@ -39,7 +39,7 @@ QString VDocument::getToc()
     return m_toc;
 }
 
-void VDocument::scrollToAnchor(const QString &anchor, int type)
+void VDocument::scrollToAnchor(const QString &anchor)
 {
-    emit requestScrollToAnchor(anchor, type);
+    emit requestScrollToAnchor(anchor);
 }

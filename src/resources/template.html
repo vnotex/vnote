@@ -30,11 +30,8 @@
         anchor: escapedText,
         title: text
       });
-	  return '<h' + level + '><a name="' +
-			 escapedText +
-			 '" class="anchor" href="#' +
-			 escapedText +
-			 '"><span class="header-link"></span></a>' +
+	  return '<h' + level + ' id="' +
+             escapedText + '">' +
 			 text + '</h' + level + '>';
   };
 
@@ -148,23 +145,8 @@
       handleToc(needToc);
   };
 
-  // Type = 0, Hoedown, getElementById;
-  // Type = 1, Marked, getElementsByTagName;
-  var scrollToAnchor = function(anchor, type) {
-      switch (type) {
-      case 0:
-          document.getElementById(anchor).scrollIntoView();
-          break;
-      case 1:
-          var eles = document.getElementsByTagName('a');
-          for (var i = 0; i < eles.length; ++i) {
-             if (eles[i].name == anchor) {
-                eles[i].scrollIntoView();
-                break;
-             }
-          }
-          break;
-      }
+  var scrollToAnchor = function(anchor) {
+      document.getElementById(anchor).scrollIntoView();
   };
 
   new QWebChannel(qt.webChannelTransport,
