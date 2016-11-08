@@ -23,6 +23,7 @@ struct VHeader
 
 struct VAnchor
 {
+    VAnchor() : lineNumber(-1) {}
     VAnchor(const QString filePath, const QString &anchor, int lineNumber)
         : filePath(filePath), anchor(anchor), lineNumber(lineNumber) {}
     QString filePath;
@@ -36,7 +37,6 @@ public:
     VToc();
 
     QVector<VHeader> headers;
-    int curHeaderIndex;
     int type;
     QString filePath;
     bool valid;

@@ -26,6 +26,7 @@ signals:
     void curTabStatusChanged(const QString &notebook, const QString &relativePath,
                              bool editMode, bool modifiable);
     void outlineChanged(const VToc &toc);
+    void curHeaderChanged(const VAnchor &anchor);
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
@@ -47,6 +48,7 @@ private slots:
     void handleRemoveSplitRequest(VEditWindow *curWindow);
     void handleWindowFocused();
     void handleOutlineChanged(const VToc &toc);
+    void handleCurHeaderChanged(const VAnchor &anchor);
 
 private:
     void setupUI();

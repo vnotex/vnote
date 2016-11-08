@@ -50,6 +50,7 @@ signals:
     // This widget or its children get the focus
     void getFocused();
     void outlineChanged(const VToc &toc);
+    void curHeaderChanged(const VAnchor &anchor);
 
 private slots:
     bool handleTabCloseRequest(int index);
@@ -59,6 +60,7 @@ private slots:
     void contextMenuRequested(QPoint pos);
     void tabListJump(QAction *action);
     void handleOutlineChanged(const VToc &toc);
+    void handleCurHeaderChanged(const VAnchor &anchor);
 
 private:
     void setupCornerWidget();

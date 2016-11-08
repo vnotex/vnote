@@ -10,6 +10,7 @@ VOutline::VOutline(QWidget *parent)
 {
     setColumnCount(1);
     setHeaderHidden(true);
+    setSelectionMode(QAbstractItemView::SingleSelection);
 
     connect(this, &VOutline::itemClicked,
             this, &VOutline::handleItemClicked);
@@ -64,7 +65,11 @@ void VOutline::updateTreeByLevel(const QVector<VHeader> &headers, int &index,
 
 void VOutline::expandTree()
 {
+    if (topLevelItemCount() == 0) {
+        return;
+    }
     expandAll();
+    setItemSelected(topLevelItem(0), true);
 }
 
 
@@ -76,4 +81,51 @@ void VOutline::handleItemClicked(QTreeWidgetItem *item, int column)
     int lineNumber = itemJson["line_number"].toInt();
     qDebug() << "click anchor" << anchor << lineNumber;
     emit outlineItemActivated(VAnchor(outline.filePath, anchor, lineNumber));
+}
+
+void VOutline::updateCurHeader(const VAnchor &anchor)
+{
+    curHeader = anchor;
+    if (outline.type == VHeaderType::Anchor) {
+        selectAnchor(anchor.anchor);
+    } else {
+        // Select by lineNumber
+    }
+}
+
+void VOutline::selectAnchor(const QString &anchor)
+{
+    QList<QTreeWidgetItem *> selected = selectedItems();
+    foreach (QTreeWidgetItem *item, selected) {
+        setItemSelected(item, false);
+    }
+
+    int nrTop = topLevelItemCount();
+    for (int i = 0; i < nrTop; ++i) {
+        if (selectAnchorOne(topLevelItem(i), anchor)) {
+            return;
+        }
+    }
+}
+
+bool VOutline::selectAnchorOne(QTreeWidgetItem *item, const QString &anchor)
+{
+    if (!item) {
+        return false;
+    }
+    QJsonObject itemJson = item->data(0, Qt::UserRole).toJsonObject();
+    QString itemAnchor = itemJson["anchor"].toString();
+    if (itemAnchor == anchor) {
+        // Select this item
+        setItemSelected(item, true);
+        return true;
+    }
+
+    int nrChild = item->childCount();
+    for (int i = 0; i < nrChild; ++i) {
+        if (selectAnchorOne(item->child(i), anchor)) {
+            return true;
+        }
+    }
+    return false;
 }

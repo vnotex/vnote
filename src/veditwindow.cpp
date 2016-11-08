@@ -167,6 +167,8 @@ int VEditWindow::openFileInTab(const QString &notebook, const QString &relativeP
             this, &VEditWindow::getFocused);
     connect(editor, &VEditTab::outlineChanged,
             this, &VEditWindow::handleOutlineChanged);
+    connect(editor, &VEditTab::curHeaderChanged,
+            this, &VEditWindow::handleCurHeaderChanged);
 
     QJsonObject tabJson;
     tabJson["notebook"] = notebook;
@@ -381,6 +383,20 @@ void VEditWindow::handleOutlineChanged(const VToc &toc)
 
     if (toc.filePath == path) {
         emit outlineChanged(toc);
+    }
+}
+
+void VEditWindow::handleCurHeaderChanged(const VAnchor &anchor)
+{
+    // Only propagate it if it is current tab
+    int idx = currentIndex();
+    QJsonObject tabJson = tabBar()->tabData(idx).toJsonObject();
+    Q_ASSERT(!tabJson.isEmpty());
+    QString path = vnote->getNotebookPath(tabJson["notebook"].toString());
+    path = QDir::cleanPath(QDir(path).filePath(tabJson["relative_path"].toString()));
+
+    if (anchor.filePath == path) {
+        emit curHeaderChanged(anchor);
     }
 }
 

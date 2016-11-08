@@ -221,6 +221,8 @@ void VEditTab::setupMarkdownPreview()
     channel->registerObject(QStringLiteral("content"), &document);
     connect(&document, &VDocument::tocChanged,
             this, &VEditTab::updateTocFromHtml);
+    connect(&document, &VDocument::headerChanged,
+            this, &VEditTab::updateCurHeader);
     page->setWebChannel(channel);
 
     if (mdConverterType == MarkdownConverterType::Marked) {
@@ -263,7 +265,6 @@ void VEditTab::updateTocFromHtml(const QString &tocHtml)
         return;
     }
 
-    tableOfContent.curHeaderIndex = 0;
     tableOfContent.filePath = QDir::cleanPath(QDir(noteFile->basePath).filePath(noteFile->fileName));
     tableOfContent.valid = true;
 
@@ -347,5 +348,17 @@ void VEditTab::scrollToAnchor(const VAnchor &anchor)
         if (!anchor.anchor.isEmpty()) {
             document.scrollToAnchor(anchor.anchor.mid(1));
         }
+    }
+}
+
+void VEditTab::updateCurHeader(const QString &anchor)
+{
+    if (curHeader == anchor) {
+        return;
+    }
+    curHeader = anchor;
+    if (!anchor.isEmpty()) {
+        emit curHeaderChanged(VAnchor(QDir::cleanPath(QDir(noteFile->basePath).filePath(noteFile->fileName)),
+                                      "#" + anchor, -1));
     }
 }

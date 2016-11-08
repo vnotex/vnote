@@ -347,6 +347,8 @@ void VMainWindow::initDockWindows()
             outline, &VOutline::updateOutline);
     connect(outline, &VOutline::outlineItemActivated,
             editArea, &VEditArea::handleOutlineItemActivated);
+    connect(editArea, &VEditArea::curHeaderChanged,
+            outline, &VOutline::updateCurHeader);
     toolBox->addItem(outline, QIcon(":/resources/icons/outline.svg"), tr("Outline"));
     dock->setWidget(toolBox);
     addDockWidget(Qt::RightDockWidgetArea, dock);

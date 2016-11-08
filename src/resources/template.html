@@ -157,6 +157,29 @@
       content.requestScrollToAnchor.connect(scrollToAnchor);
     }
   );
+
+  window.onscroll = function() {
+    var scrollTop = document.documentElement.scrollTop || document.body.scrollTop || window.pageYOffset;
+    var eles = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
+
+    if (eles.length == 0) {
+        return;
+    }
+    var curIdx = 0;
+    var biaScrollTop = scrollTop + 20;
+    for (var i = 0; i < eles.length; ++i) {
+        if (biaScrollTop >= eles[i].offsetTop) {
+            curIdx = i;
+        } else {
+            break;
+        }
+    }
+
+    var curHeader = eles[curIdx].getAttribute("id");
+    if (curHeader != null) {
+        content.setHeader(curHeader);
+    }
+  }
   </script>
 </body>
 </html>

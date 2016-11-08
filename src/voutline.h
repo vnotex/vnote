@@ -15,6 +15,7 @@ signals:
 
 public slots:
     void updateOutline(const VToc &toc);
+    void updateCurHeader(const VAnchor &anchor);
 
 private slots:
     void handleItemClicked(QTreeWidgetItem *item, int column);
@@ -24,8 +25,11 @@ private:
     void updateTreeByLevel(const QVector<VHeader> &headers, int &index, QTreeWidgetItem *parent,
                            QTreeWidgetItem *last, int level);
     void expandTree();
+    void selectAnchor(const QString &anchor);
+    bool selectAnchorOne(QTreeWidgetItem *item, const QString &anchor);
 
     VToc outline;
+    VAnchor curHeader;
 };
 
 #endif // VOUTLINE_H

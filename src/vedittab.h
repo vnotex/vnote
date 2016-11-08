@@ -39,10 +39,12 @@ public:
 signals:
     void getFocused();
     void outlineChanged(const VToc &toc);
+    void curHeaderChanged(const VAnchor &anchor);
 
 private slots:
     void handleFocusChanged(QWidget *old, QWidget *now);
     void updateTocFromHtml(const QString &tocHtml);
+    void updateCurHeader(const QString &anchor);
 
 private:
     bool isMarkdown(const QString &name);
@@ -63,6 +65,7 @@ private:
     VDocument document;
     MarkdownConverterType mdConverterType;
     VToc tableOfContent;
+    QString curHeader;
 };
 
 inline bool VEditTab::getIsEditMode() const

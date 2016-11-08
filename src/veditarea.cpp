@@ -39,6 +39,8 @@ void VEditArea::insertSplitWindow(int idx)
             this, &VEditArea::handleWindowFocused);
     connect(win, &VEditWindow::outlineChanged,
             this, &VEditArea::handleOutlineChanged);
+    connect(win, &VEditWindow::curHeaderChanged,
+            this, &VEditArea::handleCurHeaderChanged);
 
     int nrWin = splitter->count();
     if (nrWin == 1) {
@@ -287,6 +289,14 @@ void VEditArea::handleOutlineChanged(const VToc &toc)
     QObject *winObject = sender();
     if (splitter->widget(curWindowIndex) == winObject) {
         emit outlineChanged(toc);
+    }
+}
+
+void VEditArea::handleCurHeaderChanged(const VAnchor &anchor)
+{
+    QObject *winObject = sender();
+    if (splitter->widget(curWindowIndex) == winObject) {
+        emit curHeaderChanged(anchor);
     }
 }
 

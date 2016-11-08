@@ -21,15 +21,18 @@ public:
 public slots:
     // Will be called in the HTML side
     void setToc(const QString &toc);
+    void setHeader(const QString &anchor);
 
 signals:
     void textChanged(const QString &text);
     void tocChanged(const QString &toc);
     void requestScrollToAnchor(const QString &anchor);
+    void headerChanged(const QString &anchor);
 
 private:
     QString m_text;
     QString m_toc;
+    QString m_header;
 };
 
 #endif // VDOCUMENT_H

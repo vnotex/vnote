@@ -43,3 +43,12 @@ void VDocument::scrollToAnchor(const QString &anchor)
 {
     emit requestScrollToAnchor(anchor);
 }
+
+void VDocument::setHeader(const QString &anchor)
+{
+    if (anchor == m_header) {
+        return;
+    }
+    m_header = anchor;
+    emit headerChanged(m_header);
+}
