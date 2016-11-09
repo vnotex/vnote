@@ -12,17 +12,25 @@
   <script>hljs.initHighlightingOnLoad();</script>
 </head>
 <body>
+  <div id="placeholder"></div>
   <script>
   'use strict';
+  var placeholder = document.getElementById('placeholder');
   var content;
 
   var scrollToAnchor = function(anchor) {
       document.getElementById(anchor).scrollIntoView();
   };
 
+  var updateHtml = function(html) {
+      placeholder.innerHTML = html;
+  }
+
   new QWebChannel(qt.webChannelTransport,
     function(channel) {
       content = channel.objects.content;
+      updateHtml(content.html);
+      content.htmlChanged.connect(updateHtml);
       content.requestScrollToAnchor.connect(scrollToAnchor);
     }
   );
@@ -35,7 +43,7 @@
         return;
     }
     var curIdx = 0;
-    var biaScrollTop = scrollTop + 20;
+    var biaScrollTop = scrollTop + 50;
     for (var i = 0; i < eles.length; ++i) {
         if (biaScrollTop >= eles[i].offsetTop) {
             curIdx = i;

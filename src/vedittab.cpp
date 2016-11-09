@@ -117,8 +117,7 @@ void VEditTab::previewByConverter()
     QRegularExpression tocExp("<p>\\[TOC\\]<\\/p>", QRegularExpression::CaseInsensitiveOption);
     QString toc = mdConverter.generateToc(content, vconfig.getMarkdownExtensions());
     html.replace(tocExp, toc);
-    QString completeHtml = VNote::preTemplateHtml + html + VNote::postTemplateHtml;
-    webPreviewer->setHtml(completeHtml, QUrl::fromLocalFile(noteFile->basePath + QDir::separator()));
+    document.setHtml(html);
     // Hoedown will add '\n' while Marked does not
     updateTocFromHtml(toc.replace("\n", ""));
 }
@@ -227,6 +226,9 @@ void VEditTab::setupMarkdownPreview()
 
     if (mdConverterType == MarkdownConverterType::Marked) {
         webPreviewer->setHtml(VNote::templateHtml,
+                              QUrl::fromLocalFile(noteFile->basePath + QDir::separator()));
+    } else {
+        webPreviewer->setHtml(VNote::preTemplateHtml + VNote::postTemplateHtml,
                               QUrl::fromLocalFile(noteFile->basePath + QDir::separator()));
     }
 

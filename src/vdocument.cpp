@@ -52,3 +52,12 @@ void VDocument::setHeader(const QString &anchor)
     m_header = anchor;
     emit headerChanged(m_header);
 }
+
+void VDocument::setHtml(const QString &html)
+{
+    if (html == m_html) {
+        return;
+    }
+    m_html = html;
+    emit htmlChanged(m_html);
+}
