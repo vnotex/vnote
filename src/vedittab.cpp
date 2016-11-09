@@ -333,9 +333,14 @@ void VEditTab::parseTocLi(QXmlStreamReader &xml, QVector<VHeader> &headers, int 
     }
 }
 
-const VToc& VEditTab::getOutline() const
+void VEditTab::requestUpdateCurHeader()
 {
-    return tableOfContent;
+    emit curHeaderChanged(curHeader);
+}
+
+void VEditTab::requestUpdateOutline()
+{
+    emit outlineChanged(tableOfContent);
 }
 
 void VEditTab::scrollToAnchor(const VAnchor &anchor)
@@ -353,12 +358,12 @@ void VEditTab::scrollToAnchor(const VAnchor &anchor)
 
 void VEditTab::updateCurHeader(const QString &anchor)
 {
-    if (curHeader == anchor) {
+    if (curHeader.anchor.mid(1) == anchor) {
         return;
     }
-    curHeader = anchor;
+    curHeader = VAnchor(QDir::cleanPath(QDir(noteFile->basePath).filePath(noteFile->fileName)),
+                        "#" + anchor, -1);
     if (!anchor.isEmpty()) {
-        emit curHeaderChanged(VAnchor(QDir::cleanPath(QDir(noteFile->basePath).filePath(noteFile->fileName)),
-                                      "#" + anchor, -1));
+        emit curHeaderChanged(curHeader);
     }
 }

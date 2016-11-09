@@ -93,7 +93,7 @@ int VEditWindow::insertTabWithData(int index, QWidget *page,
     int idx = insertTab(index, page, label);
     QTabBar *tabs = tabBar();
     tabs->setTabData(idx, tabData);
-    noticeTabStatus(currentIndex());
+    noticeStatus(currentIndex());
     return idx;
 }
 
@@ -116,7 +116,7 @@ out:
         editFile();
     }
     focusWindow();
-    noticeTabStatus(idx);
+    noticeStatus(idx);
     return idx;
 }
 
@@ -204,7 +204,7 @@ bool VEditWindow::handleTabCloseRequest(int index)
         delete editor;
     }
     updateTabListMenu();
-    noticeTabStatus(currentIndex());
+    noticeStatus(currentIndex());
     // User clicks the close button. We should make this window
     // to be current window.
     emit getFocused();
@@ -216,14 +216,14 @@ void VEditWindow::readFile()
     VEditTab *editor = getTab(currentIndex());
     Q_ASSERT(editor);
     editor->readFile();
-    noticeTabStatus(currentIndex());
+    noticeStatus(currentIndex());
 }
 
 void VEditWindow::saveAndReadFile()
 {
     saveFile();
     readFile();
-    noticeTabStatus(currentIndex());
+    noticeStatus(currentIndex());
 }
 
 void VEditWindow::editFile()
@@ -231,7 +231,7 @@ void VEditWindow::editFile()
     VEditTab *editor = getTab(currentIndex());
     Q_ASSERT(editor);
     editor->editFile();
-    noticeTabStatus(currentIndex());
+    noticeStatus(currentIndex());
 }
 
 void VEditWindow::saveFile()
@@ -275,33 +275,29 @@ void VEditWindow::noticeTabStatus(int index)
                           editMode, modifiable);
 }
 
-void VEditWindow::getTabStatus(QString &notebook, QString &relativePath,
-                               bool &editMode, bool &modifiable) const
+void VEditWindow::requestUpdateTabStatus()
 {
-    int idx = currentIndex();
-    if (idx == -1) {
-        notebook = relativePath = "";
-        editMode = modifiable = false;
-        return;
-    }
-
-    QJsonObject tabJson = tabBar()->tabData(idx).toJsonObject();
-    Q_ASSERT(!tabJson.isEmpty());
-    notebook = tabJson["notebook"].toString();
-    relativePath = tabJson["relative_path"].toString();
-    VEditTab *editor = getTab(idx);
-    editMode = editor->getIsEditMode();
-    modifiable = tabJson["modifiable"].toBool();
+    noticeTabStatus(currentIndex());
 }
 
-VToc VEditWindow::getTabOutline() const
+void VEditWindow::requestUpdateOutline()
 {
     int idx = currentIndex();
     if (idx == -1) {
-        return VToc();
+        emit outlineChanged(VToc());
+        return;
     }
+    getTab(idx)->requestUpdateOutline();
+}
 
-    return getTab(idx)->getOutline();
+void VEditWindow::requestUpdateCurHeader()
+{
+    int idx = currentIndex();
+    if (idx == -1) {
+        emit curHeaderChanged(VAnchor());
+        return;
+    }
+    getTab(idx)->requestUpdateCurHeader();
 }
 
 void VEditWindow::focusWindow()
@@ -318,8 +314,7 @@ void VEditWindow::handleTabbarClicked(int index)
 {
     // The child will emit getFocused here
     focusWindow();
-    noticeTabStatus(index);
-    emit outlineChanged(getTab(index)->getOutline());
+    noticeStatus(index);
 }
 
 void VEditWindow::mousePressEvent(QMouseEvent *event)
@@ -347,7 +342,7 @@ void VEditWindow::tabListJump(QAction *action)
                             tabJson["relative_path"].toString());
     Q_ASSERT(idx >= 0);
     setCurrentIndex(idx);
-    noticeTabStatus(idx);
+    noticeStatus(idx);
 }
 
 void VEditWindow::updateTabListMenu()
@@ -410,5 +405,19 @@ void VEditWindow::scrollCurTab(const VAnchor &anchor)
 
     if (path == anchor.filePath) {
         getTab(idx)->scrollToAnchor(anchor);
+    }
+}
+
+void VEditWindow::noticeStatus(int index)
+{
+    noticeTabStatus(index);
+
+    if (index == -1) {
+        emit outlineChanged(VToc());
+        emit curHeaderChanged(VAnchor());
+    } else {
+        VEditTab *tab = getTab(index);
+        tab->requestUpdateOutline();
+        tab->requestUpdateCurHeader();
     }
 }

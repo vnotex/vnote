@@ -165,17 +165,16 @@ void VEditArea::setCurrentWindow(int windowIndex, bool setFocus)
     }
 
 out:
-    // Update tab status
-    noticeTabStatus();
-    emit outlineChanged(getWindow(windowIndex)->getTabOutline());
+    // Update status
+    updateWindowStatus();
 }
 
-void VEditArea::noticeTabStatus()
+void VEditArea::updateWindowStatus()
 {
-    QString notebook, relativePath;
-    bool editMode, modifiable;
-    getWindow(curWindowIndex)->getTabStatus(notebook, relativePath, editMode, modifiable);
-    emit curTabStatusChanged(notebook, relativePath, editMode, modifiable);
+    VEditWindow *win = getWindow(curWindowIndex);
+    win->requestUpdateTabStatus();
+    win->requestUpdateOutline();
+    win->requestUpdateCurHeader();
 }
 
 void VEditArea::closeFile(QJsonObject fileJson)

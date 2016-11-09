@@ -33,7 +33,8 @@ public:
     inline bool getIsEditMode() const;
     inline bool isModified() const;
     void focusTab();
-    const VToc& getOutline() const;
+    void requestUpdateOutline();
+    void requestUpdateCurHeader();
     void scrollToAnchor(const VAnchor& anchor);
 
 signals:
@@ -65,7 +66,7 @@ private:
     VDocument document;
     MarkdownConverterType mdConverterType;
     VToc tableOfContent;
-    QString curHeader;
+    VAnchor curHeader;
 };
 
 inline bool VEditTab::getIsEditMode() const

@@ -32,9 +32,9 @@ public:
                                const QString &newName);
     bool closeAllFiles();
     void setRemoveSplitEnable(bool enabled);
-    void getTabStatus(QString &notebook, QString &relativePath,
-                      bool &editMode, bool &modifiable) const;
-    VToc getTabOutline() const;
+    void requestUpdateTabStatus();
+    void requestUpdateOutline();
+    void requestUpdateCurHeader();
     // Focus to current tab's editor
     void focusWindow();
     void scrollCurTab(const VAnchor &anchor);
@@ -72,6 +72,7 @@ private:
     inline VEditTab *getTab(int tabIndex) const;
     void noticeTabStatus(int index);
     void updateTabListMenu();
+    void noticeStatus(int index);
 
     VNote *vnote;
     // Button in the right corner

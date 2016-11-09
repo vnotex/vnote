@@ -60,7 +60,7 @@ private:
     inline VEditWindow *getWindow(int windowIndex) const;
     void insertSplitWindow(int idx);
     void removeSplitWindow(VEditWindow *win);
-    void noticeTabStatus();
+    void updateWindowStatus();
 
     VNote *vnote;
     int curWindowIndex;
