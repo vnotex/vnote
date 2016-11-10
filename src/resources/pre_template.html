@@ -9,7 +9,6 @@
   <link rel="stylesheet" type="text/css" href="qrc:/utils/highlightjs/styles/default.css">
   <script src="qrc:/resources/qwebchannel.js"></script>
   <script src="qrc:/utils/highlightjs/highlight.pack.js"></script>
-  <script>hljs.initHighlightingOnLoad();</script>
 </head>
 <body>
   <div id="placeholder"></div>
@@ -24,6 +23,11 @@
 
   var updateHtml = function(html) {
       placeholder.innerHTML = html;
+
+      var codes = document.getElementsByTagName('code');
+      for (var i = 0; i < codes.length; ++i) {
+          hljs.highlightBlock(codes[i]);
+      }
   }
 
   new QWebChannel(qt.webChannelTransport,
