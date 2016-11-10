@@ -15,33 +15,11 @@ VFileList::VFileList(VNote *vnote, QWidget *parent)
 
 void VFileList::setupUI()
 {
-    newFileBtn = new QPushButton(QIcon(":/resources/icons/create_note.svg"), "");
-    newFileBtn->setToolTip(tr("Create a new note"));
-    deleteFileBtn = new QPushButton(QIcon(":/resources/icons/delete_note.svg"), "");
-    deleteFileBtn->setToolTip(tr("Delete current note"));
-    fileInfoBtn = new QPushButton(QIcon(":/resources/icons/note_info.svg"), "");
-    fileInfoBtn->setToolTip(tr("View and edit current note's information"));
-
     fileList = new QListWidget(this);
     fileList->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    QHBoxLayout *topLayout = new QHBoxLayout;
-    topLayout->addStretch();
-    topLayout->addWidget(newFileBtn);
-    topLayout->addWidget(deleteFileBtn);
-    topLayout->addWidget(fileInfoBtn);
-
     QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->addLayout(topLayout);
     mainLayout->addWidget(fileList);
-
-    // Signals
-    connect(newFileBtn, &QPushButton::clicked,
-            this, &VFileList::onNewFileBtnClicked);
-    connect(deleteFileBtn, &QPushButton::clicked,
-            this, &VFileList::onDeleteFileBtnClicked);
-    connect(fileInfoBtn, &QPushButton::clicked,
-            this, &VFileList::onFileInfoBtnClicked);
 
     connect(fileList, &QListWidget::customContextMenuRequested,
             this, &VFileList::contextMenuRequested);
@@ -53,15 +31,23 @@ void VFileList::setupUI()
 
 void VFileList::initActions()
 {
-    newFileAct = new QAction(tr("&New note"), this);
+    newFileAct = new QAction(QIcon(":/resources/icons/create_note.svg"),
+                             tr("&New note"), this);
     newFileAct->setStatusTip(tr("Create a new note in current directory"));
     connect(newFileAct, SIGNAL(triggered(bool)),
             this, SLOT(newFile()));
 
-    deleteFileAct = new QAction(tr("&Delete"), this);
+    deleteFileAct = new QAction(QIcon(":/resources/icons/delete_note.svg"),
+                                tr("&Delete"), this);
     deleteFileAct->setStatusTip(tr("Delete selected note"));
     connect(deleteFileAct, &QAction::triggered,
             this, &VFileList::deleteFile);
+
+    fileInfoAct = new QAction(QIcon(":/resources/icons/note_info.svg"),
+                              tr("&Info"), this);
+    fileInfoAct->setStatusTip(tr("View and edit current note's information"));
+    connect(fileInfoAct, &QAction::triggered,
+            this, &VFileList::fileInfo);
 }
 
 void VFileList::setDirectory(QJsonObject dirJson)
@@ -128,29 +114,9 @@ void VFileList::updateFileList()
     }
 }
 
-void VFileList::onNewFileBtnClicked()
-{
-    if (relativePath.isEmpty()) {
-        return;
-    }
-    newFile();
-}
-
-void VFileList::onDeleteFileBtnClicked()
+void VFileList::fileInfo()
 {
     QListWidgetItem *curItem = fileList->currentItem();
-    if (!curItem) {
-        return;
-    }
-    deleteFile();
-}
-
-void VFileList::onFileInfoBtnClicked()
-{
-    QListWidgetItem *curItem = fileList->currentItem();
-    if (!curItem) {
-        return;
-    }
     QJsonObject curItemJson = curItem->data(Qt::UserRole).toJsonObject();
     Q_ASSERT(!curItemJson.isEmpty());
     QString curItemName = curItemJson["name"].toString();
@@ -269,6 +235,7 @@ void VFileList::contextMenuRequested(QPoint pos)
     menu.addAction(newFileAct);
     if (item) {
         menu.addAction(deleteFileAct);
+        menu.addAction(fileInfoAct);
     }
 
     menu.exec(fileList->mapToGlobal(pos));

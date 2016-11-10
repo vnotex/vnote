@@ -31,9 +31,7 @@ signals:
 private slots:
     void contextMenuRequested(QPoint pos);
     void handleItemClicked(QListWidgetItem *currentItem);
-    void onNewFileBtnClicked();
-    void onDeleteFileBtnClicked();
-    void onFileInfoBtnClicked();
+    void fileInfo();
 
 public slots:
     void setDirectory(QJsonObject dirJson);
@@ -65,13 +63,11 @@ private:
     QString rootPath;
 
     QListWidget *fileList;
-    QPushButton *newFileBtn;
-    QPushButton *deleteFileBtn;
-    QPushButton *fileInfoBtn;
 
     // Actions
     QAction *newFileAct;
     QAction *deleteFileAct;
+    QAction *fileInfoAct;
 };
 
 inline QString VFileList::getDirectoryName()
