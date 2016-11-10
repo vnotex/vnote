@@ -21,6 +21,7 @@ void VOutline::updateOutline(const VToc &toc)
     outline = toc;
     updateTreeFromOutline(outline);
     expandTree();
+    updateCurHeader(curHeader);
 }
 
 void VOutline::updateTreeFromOutline(const VToc &toc)
@@ -90,6 +91,7 @@ void VOutline::updateCurHeader(const VAnchor &anchor)
         selectAnchor(anchor.anchor);
     } else {
         // Select by lineNumber
+        selectLineNumber(anchor.lineNumber);
     }
 }
 
@@ -124,6 +126,43 @@ bool VOutline::selectAnchorOne(QTreeWidgetItem *item, const QString &anchor)
     int nrChild = item->childCount();
     for (int i = 0; i < nrChild; ++i) {
         if (selectAnchorOne(item->child(i), anchor)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void VOutline::selectLineNumber(int lineNumber)
+{
+    QList<QTreeWidgetItem *> selected = selectedItems();
+    foreach (QTreeWidgetItem *item, selected) {
+        setItemSelected(item, false);
+    }
+
+    int nrTop = topLevelItemCount();
+    for (int i = 0; i < nrTop; ++i) {
+        if (selectLineNumberOne(topLevelItem(i), lineNumber)) {
+            return;
+        }
+    }
+}
+
+bool VOutline::selectLineNumberOne(QTreeWidgetItem *item, int lineNumber)
+{
+    if (!item) {
+        return false;
+    }
+    QJsonObject itemJson = item->data(0, Qt::UserRole).toJsonObject();
+    int itemLineNum = itemJson["line_number"].toInt();
+    if (itemLineNum == lineNumber) {
+        // Select this item
+        setItemSelected(item, true);
+        return true;
+    }
+
+    int nrChild = item->childCount();
+    for (int i = 0; i < nrChild; ++i) {
+        if (selectLineNumberOne(item->child(i), lineNumber)) {
             return true;
         }
     }

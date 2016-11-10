@@ -49,6 +49,10 @@ VEditTab::~VEditTab()
 void VEditTab::setupUI()
 {
     textEditor = new VEdit(noteFile);
+    connect(textEditor, &VEdit::headersChanged,
+            this, &VEditTab::updateTocFromHeaders);
+    connect(textEditor, SIGNAL(curHeaderChanged(int)),
+            this, SLOT(updateCurHeader(int)));
     addWidget(textEditor);
 
     switch (noteFile->docType) {
@@ -220,8 +224,8 @@ void VEditTab::setupMarkdownPreview()
     channel->registerObject(QStringLiteral("content"), &document);
     connect(&document, &VDocument::tocChanged,
             this, &VEditTab::updateTocFromHtml);
-    connect(&document, &VDocument::headerChanged,
-            this, &VEditTab::updateCurHeader);
+    connect(&document, SIGNAL(headerChanged(const QString&)),
+            this, SLOT(updateCurHeader(const QString &)));
     page->setWebChannel(channel);
 
     if (mdConverterType == MarkdownConverterType::Marked) {
@@ -267,6 +271,16 @@ void VEditTab::updateTocFromHtml(const QString &tocHtml)
         return;
     }
 
+    tableOfContent.filePath = QDir::cleanPath(QDir(noteFile->basePath).filePath(noteFile->fileName));
+    tableOfContent.valid = true;
+
+    emit outlineChanged(tableOfContent);
+}
+
+void VEditTab::updateTocFromHeaders(const QVector<VHeader> &headers)
+{
+    tableOfContent.type = VHeaderType::LineNumber;
+    tableOfContent.headers = headers;
     tableOfContent.filePath = QDir::cleanPath(QDir(noteFile->basePath).filePath(noteFile->fileName));
     tableOfContent.valid = true;
 
@@ -349,7 +363,7 @@ void VEditTab::scrollToAnchor(const VAnchor &anchor)
 {
     if (isEditMode) {
         if (anchor.lineNumber > -1) {
-
+            textEditor->scrollToLine(anchor.lineNumber);
         }
     } else {
         if (!anchor.anchor.isEmpty()) {
@@ -366,6 +380,18 @@ void VEditTab::updateCurHeader(const QString &anchor)
     curHeader = VAnchor(QDir::cleanPath(QDir(noteFile->basePath).filePath(noteFile->fileName)),
                         "#" + anchor, -1);
     if (!anchor.isEmpty()) {
+        emit curHeaderChanged(curHeader);
+    }
+}
+
+void VEditTab::updateCurHeader(int lineNumber)
+{
+    if (curHeader.lineNumber == lineNumber) {
+        return;
+    }
+    curHeader = VAnchor(QDir::cleanPath(QDir(noteFile->basePath).filePath(noteFile->fileName)),
+                        "", lineNumber);
+    if (lineNumber > -1) {
         emit curHeaderChanged(curHeader);
     }
 }

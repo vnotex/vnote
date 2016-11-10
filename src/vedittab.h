@@ -46,6 +46,8 @@ private slots:
     void handleFocusChanged(QWidget *old, QWidget *now);
     void updateTocFromHtml(const QString &tocHtml);
     void updateCurHeader(const QString &anchor);
+    void updateCurHeader(int lineNumber);
+    void updateTocFromHeaders(const QVector<VHeader> &headers);
 
 private:
     bool isMarkdown(const QString &name);

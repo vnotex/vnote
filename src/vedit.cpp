@@ -1,9 +1,11 @@
 #include <QtWidgets>
+#include <QVector>
 #include "vedit.h"
 #include "vnote.h"
 #include "vconfigmanager.h"
 #include "hgmarkdownhighlighter.h"
 #include "vmdeditoperations.h"
+#include "vtoc.h"
 
 extern VConfigManager vconfig;
 
@@ -14,6 +16,8 @@ VEdit::VEdit(VNoteFile *noteFile, QWidget *parent)
         setAcceptRichText(false);
         mdHighlighter = new HGMarkdownHighlighter(vconfig.getMdHighlightingStyles(),
                                                   500, document());
+        connect(mdHighlighter, &HGMarkdownHighlighter::highlightCompleted,
+                this, &VEdit::generateEditOutline);
         editOps = new VMdEditOperations(this, noteFile);
     } else {
         setAutoFormatting(QTextEdit::AutoBulletList);
@@ -22,6 +26,8 @@ VEdit::VEdit(VNoteFile *noteFile, QWidget *parent)
 
     updateTabSettings();
     updateFontAndPalette();
+    connect(this, &VEdit::cursorPositionChanged,
+            this, &VEdit::updateCurHeader);
 }
 
 VEdit::~VEdit()
@@ -163,4 +169,51 @@ void VEdit::insertFromMimeData(const QMimeData *source)
         }
     }
     QTextEdit::insertFromMimeData(source);
+}
+
+void VEdit::generateEditOutline()
+{
+    QTextDocument *doc = document();
+    headers.clear();
+    // Assume that each block contains only one line
+    // Only support # syntax for now
+    QRegExp headerReg("(#{1,6})\\s*(\\S.*)");  // Need to trim the spaces
+    for (QTextBlock block = doc->begin(); block != doc->end(); block = block.next()) {
+        Q_ASSERT(block.lineCount() == 1);
+        if (headerReg.exactMatch(block.text())) {
+            VHeader header(headerReg.cap(1).length(),
+                           headerReg.cap(2).trimmed(), "", block.firstLineNumber());
+            headers.append(header);
+        }
+    }
+
+    emit headersChanged(headers);
+    updateCurHeader();
+}
+
+void VEdit::scrollToLine(int lineNumber)
+{
+    Q_ASSERT(lineNumber >= 0);
+
+    // Move the cursor to the end first
+    moveCursor(QTextCursor::End);
+    QTextCursor cursor(document()->findBlockByLineNumber(lineNumber));
+    cursor.movePosition(QTextCursor::EndOfLine);
+    setTextCursor(cursor);
+
+    setFocus();
+}
+
+void VEdit::updateCurHeader()
+{
+    int curHeader = 0;
+    QTextCursor cursor(this->textCursor());
+    int curLine = cursor.block().firstLineNumber();
+    for (int i = headers.size() - 1; i >= 0; --i) {
+        if (headers[i].lineNumber <= curLine) {
+            curHeader = headers[i].lineNumber;
+            break;
+        }
+    }
+    emit curHeaderChanged(curHeader);
 }

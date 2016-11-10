@@ -28,6 +28,12 @@ struct HighlightingStyle
     QTextCharFormat format;
 };
 
+enum HighlightBlockState
+{
+    BlockNormal = 0,
+    BlockCodeBlock = 1,
+};
+
 // One continuous region for a certain markdown highlight style
 // within a QTextBlock.
 // Pay attention to the change of HighlightingStyles[]
@@ -49,6 +55,9 @@ public:
                           QTextDocument *parent = 0);
     ~HGMarkdownHighlighter();
     void setStyles(const QVector<HighlightingStyle> &styles);
+
+signals:
+    void highlightCompleted();
 
 protected:
     void highlightBlock(const QString &text) Q_DECL_OVERRIDE;

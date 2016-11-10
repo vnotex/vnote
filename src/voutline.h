@@ -27,6 +27,8 @@ private:
     void expandTree();
     void selectAnchor(const QString &anchor);
     bool selectAnchorOne(QTreeWidgetItem *item, const QString &anchor);
+    void selectLineNumber(int lineNumber);
+    bool selectLineNumberOne(QTreeWidgetItem *item, int lineNumber);
 
     VToc outline;
     VAnchor curHeader;

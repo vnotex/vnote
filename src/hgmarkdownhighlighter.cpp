@@ -77,7 +77,7 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
             setFormat(unit.start, unit.length, highlightingStyles[unit.styleIndex].format);
         }
     }
-    setCurrentBlockState(0);
+    setCurrentBlockState(HighlightBlockState::BlockNormal);
     highlightCodeBlock(text);
 }
 
@@ -146,7 +146,7 @@ void HGMarkdownHighlighter::highlightCodeBlock(const QString &text)
 {
     int nextIndex = 0;
     int startIndex = 0;
-    if (previousBlockState() != 1) {
+    if (previousBlockState() != HighlightBlockState::BlockCodeBlock) {
         startIndex = codeBlockStartExp.indexIn(text);
         if (startIndex >= 0) {
             nextIndex = startIndex + codeBlockStartExp.matchedLength();
@@ -159,7 +159,7 @@ void HGMarkdownHighlighter::highlightCodeBlock(const QString &text)
         int endIndex = codeBlockEndExp.indexIn(text, nextIndex);
         int codeBlockLength;
         if (endIndex == -1) {
-            setCurrentBlockState(1);
+            setCurrentBlockState(HighlightBlockState::BlockCodeBlock);
             codeBlockLength = text.length() - startIndex;
         } else {
             codeBlockLength = endIndex - startIndex + codeBlockEndExp.matchedLength();
@@ -230,4 +230,5 @@ void HGMarkdownHighlighter::timerTimeout()
 {
     parse();
     rehighlight();
+    emit highlightCompleted();
 }
