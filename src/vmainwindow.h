@@ -76,9 +76,6 @@ private:
     QPushButton *newNotebookBtn;
     QPushButton *deleteNotebookBtn;
     QPushButton *notebookInfoBtn;
-    QPushButton *newRootDirBtn;
-    QPushButton *deleteDirBtn;
-    QPushButton *dirInfoBtn;
     VFileList *fileList;
     VDirectoryTree *directoryTree;
     QSplitter *mainSplitter;
@@ -87,6 +84,7 @@ private:
     VOutline *outline;
 
     // Actions
+    QAction *newRootDirAct;
     QAction *newNoteAct;
     QAction *editNoteAct;
     QAction *saveNoteAct;

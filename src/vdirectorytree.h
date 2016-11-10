@@ -72,6 +72,7 @@ private:
     QAction *newSiblingDirAct;
     QAction *newSubDirAct;
     QAction *deleteDirAct;
+    QAction *dirInfoAct;
 };
 
 #endif // VDIRECTORYTREE_H

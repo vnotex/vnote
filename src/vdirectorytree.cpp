@@ -23,7 +23,8 @@ VDirectoryTree::VDirectoryTree(VNote *vnote, QWidget *parent)
 
 void VDirectoryTree::initActions()
 {
-    newRootDirAct = new QAction(tr("New &root directory"), this);
+    newRootDirAct = new QAction(QIcon(":/resources/icons/create_rootdir.svg"),
+                                tr("New &root directory"), this);
     newRootDirAct->setStatusTip(tr("Create a new root directory in current notebook"));
     connect(newRootDirAct, &QAction::triggered,
             this, &VDirectoryTree::newRootDirectory);
@@ -38,10 +39,17 @@ void VDirectoryTree::initActions()
     connect(newSubDirAct, &QAction::triggered,
             this, &VDirectoryTree::newSubDirectory);
 
-    deleteDirAct = new QAction(tr("&Delete"), this);
+    deleteDirAct = new QAction(QIcon(":/resources/icons/delete_dir.svg"),
+                               tr("&Delete"), this);
     deleteDirAct->setStatusTip(tr("Delete selected directory"));
     connect(deleteDirAct, &QAction::triggered,
             this, &VDirectoryTree::deleteDirectory);
+
+    dirInfoAct = new QAction(QIcon(":/resources/icons/dir_info.svg"),
+                             tr("&Info"), this);
+    dirInfoAct->setStatusTip(tr("View and edit current directory's information"));
+    connect(dirInfoAct, &QAction::triggered,
+            this, &VDirectoryTree::editDirectoryInfo);
 }
 
 void VDirectoryTree::setNotebook(const QString& notebookName)
@@ -263,6 +271,7 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
             menu.addAction(newSubDirAct);
         }
         menu.addAction(deleteDirAct);
+        menu.addAction(dirInfoAct);
     }
     menu.exec(mapToGlobal(pos));
 }

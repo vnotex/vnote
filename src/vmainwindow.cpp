@@ -46,13 +46,6 @@ void VMainWindow::setupUI()
     notebookInfoBtn = new QPushButton(QIcon(":/resources/icons/notebook_info.svg"), "");
     notebookInfoBtn->setToolTip(tr("View and edit current notebook's information"));
 
-    newRootDirBtn = new QPushButton(QIcon(":/resources/icons/create_rootdir.svg"), "");
-    newRootDirBtn->setToolTip(tr("Create a new root directory"));
-    deleteDirBtn = new QPushButton(QIcon(":/resources/icons/delete_dir.svg"), "");
-    deleteDirBtn->setToolTip(tr("Delete current directory"));
-    dirInfoBtn = new QPushButton(QIcon(":/resources/icons/dir_info.svg"), "");
-    dirInfoBtn->setToolTip(tr("View and edit current directory's information"));
-
     notebookComboBox = new QComboBox();
     notebookComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     directoryTree = new VDirectoryTree(vnote);
@@ -66,9 +59,6 @@ void VMainWindow::setupUI()
     QHBoxLayout *dirBtnLayout = new QHBoxLayout;
     dirBtnLayout->addWidget(directoryLabel);
     dirBtnLayout->addStretch();
-    dirBtnLayout->addWidget(newRootDirBtn);
-    dirBtnLayout->addWidget(deleteDirBtn);
-    dirBtnLayout->addWidget(dirInfoBtn);
     QVBoxLayout *nbLayout = new QVBoxLayout;
     nbLayout->addLayout(nbBtnLayout);
     nbLayout->addWidget(notebookComboBox);
@@ -137,12 +127,6 @@ void VMainWindow::setupUI()
             directoryTree, &VDirectoryTree::setNotebook);
     connect(vnote, &VNote::notebooksRenamed,
             directoryTree, &VDirectoryTree::handleNotebookRenamed);
-    connect(newRootDirBtn, &QPushButton::clicked,
-            directoryTree, &VDirectoryTree::newRootDirectory);
-    connect(deleteDirBtn, &QPushButton::clicked,
-            directoryTree, &VDirectoryTree::deleteDirectory);
-    connect(dirInfoBtn, &QPushButton::clicked,
-            directoryTree, &VDirectoryTree::editDirectoryInfo);
 
     setCentralWidget(mainSplitter);
     // Create and show the status bar
@@ -151,6 +135,11 @@ void VMainWindow::setupUI()
 
 void VMainWindow::initActions()
 {
+    newRootDirAct = new QAction(QIcon(":/resources/icons/create_rootdir_tb.svg"),
+                                tr("&New rood directory"), this);
+    newRootDirAct->setStatusTip(tr("Create a new root directory"));
+    connect(newRootDirAct, &QAction::triggered,
+            directoryTree, &VDirectoryTree::newRootDirectory);
     newNoteAct = new QAction(QIcon(":/resources/icons/create_note_tb.svg"),
                              tr("&New note"), this);
     newNoteAct->setStatusTip(tr("Create a new note"));
@@ -263,12 +252,14 @@ void VMainWindow::initActions()
 void VMainWindow::initToolBar()
 {
     QToolBar *fileToolBar = addToolBar(tr("Note"));
+    fileToolBar->addAction(newRootDirAct);
     fileToolBar->addAction(newNoteAct);
     fileToolBar->addAction(editNoteAct);
     fileToolBar->addAction(saveExitAct);
     fileToolBar->addAction(discardExitAct);
     fileToolBar->addAction(saveNoteAct);
 
+    newRootDirAct->setEnabled(false);
     newNoteAct->setEnabled(false);
     editNoteAct->setEnabled(false);
     saveExitAct->setVisible(false);
@@ -432,6 +423,9 @@ void VMainWindow::setCurNotebookIndex(int index)
     if (index > -1) {
         vconfig.setCurNotebookIndex(index);
         notebook = vnote->getNotebooks()[index].getName();
+        newRootDirAct->setEnabled(true);
+    } else {
+        newRootDirAct->setEnabled(false);
     }
     emit curNotebookChanged(notebook);
 }
