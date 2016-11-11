@@ -9,6 +9,7 @@ TEMPLATE = subdirs
 CONFIG += c++11
 
 SUBDIRS = hoedown \
+    peg-highlight \
     src
 
-src.depends = hoedown
+src.depends = hoedown peg-highlight

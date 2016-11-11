@@ -7,8 +7,8 @@
 #include "hgmarkdownhighlighter.h"
 
 extern "C" {
-#include "utils/peg-highlight/pmh_definitions.h"
-#include "utils/peg-highlight/pmh_styleparser.h"
+#include <pmh_definitions.h>
+#include <pmh_styleparser.h>
 }
 
 class QColor;

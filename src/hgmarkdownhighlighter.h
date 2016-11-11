@@ -15,7 +15,7 @@
 #include <QAtomicInt>
 
 extern "C" {
-#include "utils/peg-highlight/pmh_parser.h"
+#include <pmh_parser.h>
 }
 
 QT_BEGIN_NAMESPACE
