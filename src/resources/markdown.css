@@ -73,8 +73,7 @@ code {
     font-family: Consolas, Monaco, Andale Mono, monospace;
     line-height: 1.5;
     font-size: 13px;
-    border: 1px solid #eaeaea;
-    background-color: #f8f8f8;
+    border: 1px solid #363636;
     border-radius: 3px;
 }
 pre code {
