@@ -16,6 +16,7 @@ extern VConfigManager vconfig;
 VMainWindow::VMainWindow(QWidget *parent)
     : QMainWindow(parent), notebookComboMuted(false)
 {
+    setWindowIcon(QIcon(":/resources/icons/vnote.ico"));
     // Must be called before those who uses VConfigManager
     vnote = new VNote();
     initPredefinedColorPixmaps();

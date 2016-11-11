@@ -59,5 +59,7 @@
         <file>resources/icons/corner_tablist.svg</file>
         <file>resources/icons/outline.svg</file>
         <file>resources/icons/create_rootdir_tb.svg</file>
+        <file>resources/icons/vnote.svg</file>
+        <file>resources/icons/vnote.ico</file>
     </qresource>
 </RCC>

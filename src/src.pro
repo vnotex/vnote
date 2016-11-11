@@ -11,6 +11,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = VNote
 TEMPLATE = app
 
+RC_ICONS = resources/icons/vnote.ico
 
 SOURCES += main.cpp\
         vmainwindow.cpp \
