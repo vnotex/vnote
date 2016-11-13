@@ -258,17 +258,19 @@ void VEditTab::updateTocFromHtml(const QString &tocHtml)
     QVector<VHeader> &headers = tableOfContent.headers;
     headers.clear();
 
-    QXmlStreamReader xml(tocHtml);
-    if (xml.readNextStartElement()) {
-        if (xml.name() == "ul") {
-            parseTocUl(xml, headers, 1);
-        } else {
-            qWarning() << "error: TOC HTML does not start with <ul>";
+    if (!tocHtml.isEmpty()) {
+        QXmlStreamReader xml(tocHtml);
+        if (xml.readNextStartElement()) {
+            if (xml.name() == "ul") {
+                parseTocUl(xml, headers, 1);
+            } else {
+                qWarning() << "error: TOC HTML does not start with <ul>";
+            }
         }
-    }
-    if (xml.hasError()) {
-        qWarning() << "error: fail to parse TOC in HTML";
-        return;
+        if (xml.hasError()) {
+            qWarning() << "error: fail to parse TOC in HTML";
+            return;
+        }
     }
 
     tableOfContent.filePath = QDir::cleanPath(QDir(noteFile->basePath).filePath(noteFile->fileName));

@@ -20,6 +20,7 @@ void VFileList::setupUI()
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(fileList);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
 
     connect(fileList, &QListWidget::customContextMenuRequested,
             this, &VFileList::contextMenuRequested);

@@ -61,5 +61,6 @@
         <file>resources/icons/create_rootdir_tb.svg</file>
         <file>resources/icons/vnote.svg</file>
         <file>resources/icons/vnote.ico</file>
+        <file>resources/vnote.qss</file>
     </qresource>
 </RCC>

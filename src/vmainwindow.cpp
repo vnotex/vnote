@@ -42,10 +42,13 @@ void VMainWindow::setupUI()
 
     newNotebookBtn = new QPushButton(QIcon(":/resources/icons/create_notebook.svg"), "");
     newNotebookBtn->setToolTip(tr("Create a new notebook"));
+    newNotebookBtn->setProperty("OnMainWindow", true);
     deleteNotebookBtn = new QPushButton(QIcon(":/resources/icons/delete_notebook.svg"), "");
     deleteNotebookBtn->setToolTip(tr("Delete current notebook"));
+    deleteNotebookBtn->setProperty("OnMainWindow", true);
     notebookInfoBtn = new QPushButton(QIcon(":/resources/icons/notebook_info.svg"), "");
     notebookInfoBtn->setToolTip(tr("View and edit current notebook's information"));
+    notebookInfoBtn->setProperty("OnMainWindow", true);
 
     notebookComboBox = new QComboBox();
     notebookComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
@@ -57,14 +60,13 @@ void VMainWindow::setupUI()
     nbBtnLayout->addWidget(newNotebookBtn);
     nbBtnLayout->addWidget(deleteNotebookBtn);
     nbBtnLayout->addWidget(notebookInfoBtn);
-    QHBoxLayout *dirBtnLayout = new QHBoxLayout;
-    dirBtnLayout->addWidget(directoryLabel);
-    dirBtnLayout->addStretch();
+    nbBtnLayout->setContentsMargins(0, 0, 0, 0);
     QVBoxLayout *nbLayout = new QVBoxLayout;
     nbLayout->addLayout(nbBtnLayout);
     nbLayout->addWidget(notebookComboBox);
-    nbLayout->addLayout(dirBtnLayout);
+    nbLayout->addWidget(directoryLabel);
     nbLayout->addWidget(directoryTree);
+    nbLayout->setContentsMargins(5, 0, 0, 0);
     QWidget *nbContainer = new QWidget();
     nbContainer->setLayout(nbLayout);
     nbContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);

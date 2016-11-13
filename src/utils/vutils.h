@@ -3,6 +3,8 @@
 
 #include <QString>
 #include <QColor>
+#include <QVector>
+#include <QPair>
 #include "vconfigmanager.h"
 
 class VUtils
@@ -16,6 +18,16 @@ public:
     static QRgb QRgbFromString(const QString &str);
     static QString generateImageFileName(const QString &path, const QString &title,
                                          const QString &format = "png");
+    static void processStyle(QString &style);
+private:
+    static inline void addQssVarToMap(QVector<QPair<QString, QString> > &map,
+                                      const QString &key, const QString &value);
 };
+
+inline void VUtils::addQssVarToMap(QVector<QPair<QString, QString> > &map,
+                                   const QString &key, const QString &value)
+{
+    map.append(QPair<QString, QString>(key, value));
+}
 
 #endif // VUTILS_H

@@ -1,0 +1,37 @@
+QPushButton[OnMainWindow="true"] {
+    padding: 3px;
+    border: none;
+    background-color: transparent;
+}
+
+QPushButton[OnMainWindow="true"]::menu-indicator {
+    image: none;
+}
+
+QPushButton[OnMainWindow="true"]::hover {
+    background-color: @hover-color;
+}
+
+QToolBar {
+    border: none;
+}
+
+QToolButton::hover {
+    background-color: @hover-color;
+}
+
+QMenuBar {
+    border: none;
+}
+
+QMenuBar::item:selected {
+    background-color: @hover-color;
+}
+
+QDockWidget::close-button, QDockWidget::float-button {
+    border: none;
+}
+
+QDockWidget::close-button:hover, QDockWidget::float-button:hover {
+    background-color: @hover-color;
+}

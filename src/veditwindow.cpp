@@ -42,6 +42,7 @@ void VEditWindow::setupCornerWidget()
 
     rightBtn = new QPushButton(QIcon(":/resources/icons/corner_menu.svg"),
                                "", this);
+    rightBtn->setProperty("OnMainWindow", true);
     QMenu *rightMenu = new QMenu(this);
     rightMenu->addAction(splitAct);
     rightMenu->addAction(removeSplitAct);
@@ -54,6 +55,7 @@ void VEditWindow::setupCornerWidget()
             this, &VEditWindow::tabListJump);
     leftBtn = new QPushButton(QIcon(":/resources/icons/corner_tablist.svg"),
                               "", this);
+    leftBtn->setProperty("OnMainWindow", true);
     QMenu *leftMenu = new QMenu(this);
     leftBtn->setMenu(leftMenu);
     setCornerWidget(leftBtn, Qt::TopLeftCorner);
