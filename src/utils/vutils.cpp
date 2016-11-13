@@ -91,3 +91,20 @@ void VUtils::processStyle(QString &style)
         style.replace("@" + map.first, map.second);
     }
 }
+
+bool VUtils::isMarkdown(const QString &name)
+{
+    const QVector<QString> mdPostfix({"md", "markdown", "mkd"});
+
+    QStringList list = name.split('.', QString::SkipEmptyParts);
+    if (list.isEmpty()) {
+        return false;
+    }
+    const QString &postfix = list.last();
+    for (int i = 0; i < mdPostfix.size(); ++i) {
+        if (postfix == mdPostfix[i]) {
+            return true;
+        }
+    }
+    return false;
+}

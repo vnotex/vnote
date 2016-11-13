@@ -76,6 +76,7 @@ void VMainWindow::setupUI()
 
     editArea = new VEditArea(vnote);
     editArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    fileList->setEditArea(editArea);
 
     // Main Splitter
     mainSplitter = new QSplitter();
@@ -109,6 +110,10 @@ void VMainWindow::setupUI()
             editArea, &VEditArea::handleNotebookRenamed);
     connect(editArea, &VEditArea::curTabStatusChanged,
             this, &VMainWindow::handleCurTabStatusChanged);
+    connect(directoryTree, &VDirectoryTree::directoryRenamed,
+            editArea, &VEditArea::handleDirectoryRenamed);
+    connect(fileList, &VFileList::fileRenamed,
+            editArea, &VEditArea::handleFileRenamed);
 
     connect(newNotebookBtn, &QPushButton::clicked,
             this, &VMainWindow::onNewNotebookBtnClicked);

@@ -22,8 +22,7 @@ public:
     int findTabByFile(const QString &notebook, const QString &relativePath) const;
     int openFile(const QString &notebook, const QString &relativePath,
                  int mode);
-    // Close the file forcely
-    void closeFile(const QString &notebook, const QString &relativePath);
+    bool closeFile(const QString &notebook, const QString &relativePath, bool isForced);
     void editFile();
     void saveFile();
     void readFile();
@@ -38,6 +37,10 @@ public:
     // Focus to current tab's editor
     void focusWindow();
     void scrollCurTab(const VAnchor &anchor);
+    void handleDirectoryRenamed(const QString &notebook,
+                                const QString &oldRelativePath, const QString &newRelativePath);
+    void handleFileRenamed(const QString &notebook,
+                           const QString &oldRelativePath, const QString &newRelativePath);
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;

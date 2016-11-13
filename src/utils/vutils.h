@@ -19,6 +19,7 @@ public:
     static QString generateImageFileName(const QString &path, const QString &title,
                                          const QString &format = "png");
     static void processStyle(QString &style);
+    static bool isMarkdown(const QString &fileName);
 private:
     static inline void addQssVarToMap(QVector<QPair<QString, QString> > &map,
                                       const QString &key, const QString &value);

@@ -5,6 +5,8 @@
 #include "dialog/vnewfiledialog.h"
 #include "dialog/vfileinfodialog.h"
 #include "vnote.h"
+#include "veditarea.h"
+#include "utils/vutils.h"
 
 VFileList::VFileList(VNote *vnote, QWidget *parent)
     : QWidget(parent), vnote(vnote)
@@ -219,6 +221,7 @@ void VFileList::deleteFile()
         // First close this file forcely
         curItemJson["notebook"] = notebook;
         curItemJson["relative_path"] = QDir::cleanPath(QDir(relativePath).filePath(curItemName));
+        curItemJson["is_forced"] = true;
         emit fileDeleted(curItemJson);
 
         deleteFileAndUpdateList(curItem);
@@ -399,13 +402,12 @@ void VFileList::handleNotebookRenamed(const QVector<VNotebook> &notebooks,
     }
 }
 
-// FIXME: when @oldRelativePath is part of relativePath, we also need to update relativePath partialy
 void VFileList::handleDirectoryRenamed(const QString &notebook,
                                        const QString &oldRelativePath, const QString &newRelativePath)
 {
     if (notebook == this->notebook
-        && oldRelativePath == relativePath) {
-        relativePath = newRelativePath;
+        && relativePath.startsWith(oldRelativePath)) {
+        relativePath.replace(0, oldRelativePath.size(), newRelativePath);
     }
 }
 
@@ -417,6 +419,32 @@ void VFileList::renameFile(QListWidgetItem *item, const QString &newName)
     QJsonObject itemJson = item->data(Qt::UserRole).toJsonObject();
     Q_ASSERT(!itemJson.isEmpty());
     QString name = itemJson["name"].toString();
+
+    // If change the file type, we need to convert it
+    DocType docType = VUtils::isMarkdown(name) ? DocType::Markdown : DocType::Html;
+    DocType newDocType = VUtils::isMarkdown(newName) ? DocType::Markdown : DocType::Html;
+    if (docType != newDocType) {
+        QString fileRelativePath = QDir::cleanPath(QDir(relativePath).filePath(name));
+        if (editArea->isFileOpened(notebook, fileRelativePath)) {
+            QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Rename will change the note type"),
+                               QMessageBox::Ok | QMessageBox::Cancel, this);
+            msgBox.setDefaultButton(QMessageBox::Ok);
+            msgBox.setInformativeText(QString("You should close the note %1 before continue").arg(name));
+            if (QMessageBox::Ok == msgBox.exec()) {
+                QJsonObject curItemJson;
+                curItemJson["notebook"] = notebook;
+                curItemJson["relative_path"] = fileRelativePath;
+                curItemJson["is_forced"] = false;
+                if (!editArea->closeFile(curItemJson)) {
+                    return;
+                }
+            } else {
+                return;
+            }
+        }
+        convertFileType(notebook, fileRelativePath, docType, newDocType);
+    }
+
     QString path = QDir(rootPath).filePath(relativePath);
     QFile file(QDir(path).filePath(name));
     QString newFilePath(QDir(path).filePath(newName));
@@ -461,4 +489,21 @@ void VFileList::renameFile(QListWidgetItem *item, const QString &newName)
     QString newPath = QDir::cleanPath(QDir(relativePath).filePath(newName));
     qDebug() << "file renamed" << oldPath << "to" << newPath;
     emit fileRenamed(notebook, oldPath, newPath);
+}
+
+void VFileList::convertFileType(const QString &notebook, const QString &fileRelativePath,
+                                DocType oldType, DocType newType)
+{
+    Q_ASSERT(oldType != newType);
+    QString filePath = QDir(vnote->getNotebookPath(notebook)).filePath(fileRelativePath);
+    QString fileText = VUtils::readFileFromDisk(filePath);
+    QTextEdit editor;
+    if (oldType == DocType::Markdown) {
+        editor.setPlainText(fileText);
+        fileText = editor.toHtml();
+    } else {
+        editor.setHtml(fileText);
+        fileText = editor.toPlainText();
+    }
+    VUtils::writeFileToDisk(filePath, fileText);
 }

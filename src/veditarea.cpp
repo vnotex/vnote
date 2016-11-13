@@ -178,19 +178,22 @@ void VEditArea::updateWindowStatus()
     win->requestUpdateCurHeader();
 }
 
-void VEditArea::closeFile(QJsonObject fileJson)
+bool VEditArea::closeFile(QJsonObject fileJson)
 {
     if (fileJson.isEmpty()) {
-        return;
+        return true;
     }
     QString notebook = fileJson["notebook"].toString();
     QString relativePath = fileJson["relative_path"].toString();
+    bool isForced = fileJson["is_forced"].toBool();
 
     int nrWin = splitter->count();
+    bool ret = false;
     for (int i = 0; i < nrWin; ++i) {
         VEditWindow *win = getWindow(i);
-        win->closeFile(notebook, relativePath);
+        ret = ret || win->closeFile(notebook, relativePath, isForced);
     }
+    return ret;
 }
 
 void VEditArea::editFile()
@@ -225,6 +228,29 @@ void VEditArea::handleNotebookRenamed(const QVector<VNotebook> &notebooks,
         VEditWindow *win = getWindow(i);
         win->handleNotebookRenamed(notebooks, oldName, newName);
     }
+    updateWindowStatus();
+}
+
+void VEditArea::handleDirectoryRenamed(const QString &notebook, const QString &oldRelativePath,
+                                       const QString &newRelativePath)
+{
+    int nrWin = splitter->count();
+    for (int i = 0; i < nrWin; ++i) {
+        VEditWindow *win = getWindow(i);
+        win->handleDirectoryRenamed(notebook, oldRelativePath, newRelativePath);
+    }
+    updateWindowStatus();
+}
+
+void VEditArea::handleFileRenamed(const QString &notebook,
+                                  const QString &oldRelativePath, const QString &newRelativePath)
+{
+    int nrWin = splitter->count();
+    for (int i = 0; i < nrWin; ++i) {
+        VEditWindow *win = getWindow(i);
+        win->handleFileRenamed(notebook, oldRelativePath, newRelativePath);
+    }
+    updateWindowStatus();
 }
 
 void VEditArea::handleSplitWindowRequest(VEditWindow *curWindow)
@@ -304,4 +330,9 @@ void VEditArea::handleOutlineItemActivated(const VAnchor &anchor)
 {
     // Notice current window
     getWindow(curWindowIndex)->scrollCurTab(anchor);
+}
+
+bool VEditArea::isFileOpened(const QString &notebook, const QString &relativePath)
+{
+    return !findTabsByFile(notebook, relativePath).isEmpty();
 }

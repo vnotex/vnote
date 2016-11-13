@@ -6,12 +6,14 @@
 #include <QFileInfo>
 #include <QDir>
 #include "vnotebook.h"
+#include "vconstants.h"
 
 class QAction;
 class VNote;
 class QListWidget;
 class QListWidgetItem;
 class QPushButton;
+class VEditArea;
 
 class VFileList : public QWidget
 {
@@ -19,6 +21,7 @@ class VFileList : public QWidget
 public:
     explicit VFileList(VNote *vnote, QWidget *parent = 0);
     bool importFile(const QString &name);
+    inline void setEditArea(VEditArea *editArea);
 
 signals:
     void fileClicked(QJsonObject fileJson);
@@ -54,6 +57,8 @@ private:
     void clearDirectoryInfo();
     inline QString getDirectoryName();
     void renameFile(QListWidgetItem *item, const QString &newName);
+    void convertFileType(const QString &notebook, const QString &fileRelativePath,
+                         DocType oldType, DocType newType);
 
     VNote *vnote;
     QString notebook;
@@ -61,6 +66,8 @@ private:
     QString relativePath;
     // Used for cache
     QString rootPath;
+
+    VEditArea *editArea;
 
     QListWidget *fileList;
 
@@ -76,6 +83,11 @@ inline QString VFileList::getDirectoryName()
         return "";
     }
     return QFileInfo(QDir::cleanPath(relativePath)).fileName();
+}
+
+inline void VFileList::setEditArea(VEditArea *editArea)
+{
+    this->editArea = editArea;
 }
 
 #endif // VFILELIST_H

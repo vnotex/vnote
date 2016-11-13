@@ -21,7 +21,7 @@ extern VConfigManager vconfig;
 VEditTab::VEditTab(const QString &path, bool modifiable, QWidget *parent)
     : QStackedWidget(parent), mdConverterType(vconfig.getMdConverterType())
 {
-    DocType docType = isMarkdown(path) ? DocType::Markdown : DocType::Html;
+    DocType docType = VUtils::isMarkdown(path) ? DocType::Markdown : DocType::Html;
     QString basePath = QFileInfo(path).path();
     QString fileName = QFileInfo(path).fileName();
     qDebug() << "VEditTab basePath" << basePath << "file" << fileName;
@@ -73,23 +73,6 @@ void VEditTab::setupUI()
     default:
         qWarning() << "error: unknown doc type" << int(noteFile->docType);
     }
-}
-
-bool VEditTab::isMarkdown(const QString &name)
-{
-    const QVector<QString> mdPostfix({"md", "markdown", "mkd"});
-
-    QStringList list = name.split('.', QString::SkipEmptyParts);
-    if (list.isEmpty()) {
-        return false;
-    }
-    const QString &postfix = list.last();
-    for (int i = 0; i < mdPostfix.size(); ++i) {
-        if (postfix == mdPostfix[i]) {
-            return true;
-        }
-    }
-    return false;
 }
 
 void VEditTab::showFileReadMode()
@@ -401,4 +384,11 @@ void VEditTab::updateCurHeader(int lineNumber)
     if (lineNumber > -1) {
         emit curHeaderChanged(curHeader);
     }
+}
+
+void VEditTab::updatePath(const QString &newPath)
+{
+    QFileInfo info(newPath);
+    noteFile->basePath = info.path();
+    noteFile->fileName = info.fileName();
 }

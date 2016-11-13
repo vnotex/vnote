@@ -36,6 +36,7 @@ public:
     void requestUpdateOutline();
     void requestUpdateCurHeader();
     void scrollToAnchor(const VAnchor& anchor);
+    void updatePath(const QString &newPath);
 
 signals:
     void getFocused();
@@ -51,7 +52,6 @@ private slots:
     void updateTocFromHeaders(const QVector<VHeader> &headers);
 
 private:
-    bool isMarkdown(const QString &name);
     void setupUI();
     void showFileReadMode();
     void showFileEditMode();

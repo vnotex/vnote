@@ -123,21 +123,26 @@ out:
     return idx;
 }
 
-void VEditWindow::closeFile(const QString &notebook, const QString &relativePath)
+bool VEditWindow::closeFile(const QString &notebook, const QString &relativePath, bool isForced)
 {
     // Find if it has been opened already
     int idx = findTabByFile(notebook, relativePath);
     if (idx == -1) {
-        return;
+        return true;
     }
 
-    // Do not check if modified
     VEditTab *editor = getTab(idx);
     Q_ASSERT(editor);
-    removeTab(idx);
-    delete editor;
-
+    bool ok = true;
+    if (!isForced) {
+        ok = editor->requestClose();
+    }
+    if (ok) {
+        removeTab(idx);
+        delete editor;
+    }
     updateTabListMenu();
+    return ok;
 }
 
 bool VEditWindow::closeAllFiles()
@@ -155,17 +160,8 @@ bool VEditWindow::closeAllFiles()
 int VEditWindow::openFileInTab(const QString &notebook, const QString &relativePath,
                               bool modifiable)
 {
-    QString rootPath;
-    const QVector<VNotebook> &notebooks = vnote->getNotebooks();
-    for (int i = 0; i < notebooks.size(); ++i) {
-        if (notebooks[i].getName() == notebook) {
-            rootPath = notebooks[i].getPath();
-            break;
-        }
-    }
-
-    VEditTab *editor = new VEditTab(QDir::cleanPath(QDir(rootPath).filePath(relativePath)),
-                                    modifiable);
+    QString path = QDir::cleanPath(QDir(vnote->getNotebookPath(notebook)).filePath(relativePath));
+    VEditTab *editor = new VEditTab(path, modifiable);
     connect(editor, &VEditTab::getFocused,
             this, &VEditWindow::getFocused);
     connect(editor, &VEditTab::outlineChanged,
@@ -200,7 +196,6 @@ int VEditWindow::findTabByFile(const QString &notebook, const QString &relativeP
 
 bool VEditWindow::handleTabCloseRequest(int index)
 {
-    qDebug() << "request closing tab" << index;
     VEditTab *editor = getTab(index);
     Q_ASSERT(editor);
     bool ok = editor->requestClose();
@@ -257,6 +252,51 @@ void VEditWindow::handleNotebookRenamed(const QVector<VNotebook> &notebooks,
             tabJson["notebook"] = newName;
             tabs->setTabData(i, tabJson);
             tabs->setTabToolTip(i, generateTooltip(tabJson));
+        }
+    }
+    updateTabListMenu();
+}
+
+void VEditWindow::handleDirectoryRenamed(const QString &notebook, const QString &oldRelativePath,
+                                         const QString &newRelativePath)
+{
+    QTabBar *tabs = tabBar();
+    int nrTabs = tabs->count();
+    for (int i = 0; i < nrTabs; ++i) {
+        QJsonObject tabJson = tabs->tabData(i).toJsonObject();
+        if (tabJson["notebook"].toString() == notebook) {
+            QString relativePath = tabJson["relative_path"].toString();
+            if (relativePath.startsWith(oldRelativePath)) {
+                relativePath.replace(0, oldRelativePath.size(), newRelativePath);
+                tabJson["relative_path"] = relativePath;
+                tabs->setTabData(i, tabJson);
+                tabs->setTabToolTip(i, generateTooltip(tabJson));
+                QString path = QDir::cleanPath(QDir(vnote->getNotebookPath(notebook)).filePath(relativePath));
+                getTab(i)->updatePath(path);
+            }
+        }
+    }
+    updateTabListMenu();
+}
+
+void VEditWindow::handleFileRenamed(const QString &notebook, const QString &oldRelativePath,
+                                    const QString &newRelativePath)
+{
+    QTabBar *tabs = tabBar();
+    int nrTabs = tabs->count();
+    for (int i = 0; i < nrTabs; ++i) {
+        QJsonObject tabJson = tabs->tabData(i).toJsonObject();
+        if (tabJson["notebook"].toString() == notebook) {
+            QString relativePath = tabJson["relative_path"].toString();
+            if (relativePath == oldRelativePath) {
+                relativePath = newRelativePath;
+                tabJson["relative_path"] = relativePath;
+                tabs->setTabData(i, tabJson);
+                tabs->setTabToolTip(i, generateTooltip(tabJson));
+                tabs->setTabText(i, getFileName(relativePath));
+                QString path = QDir::cleanPath(QDir(vnote->getNotebookPath(notebook)).filePath(relativePath));
+                getTab(i)->updatePath(path);
+            }
         }
     }
     updateTabListMenu();

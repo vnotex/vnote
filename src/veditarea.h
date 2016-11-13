@@ -21,6 +21,7 @@ class VEditArea : public QWidget
     Q_OBJECT
 public:
     explicit VEditArea(VNote *vnote, QWidget *parent = 0);
+    bool isFileOpened(const QString &notebook, const QString &relativePath);
 
 signals:
     void curTabStatusChanged(const QString &notebook, const QString &relativePath,
@@ -33,8 +34,7 @@ protected:
 
 public slots:
     void openFile(QJsonObject fileJson);
-    // Close the file forcely
-    void closeFile(QJsonObject fileJson);
+    bool closeFile(QJsonObject fileJson);
     void editFile();
     void saveFile();
     void readFile();
@@ -42,6 +42,10 @@ public slots:
     void handleNotebookRenamed(const QVector<VNotebook> &notebooks, const QString &oldName,
                                const QString &newName);
     void handleOutlineItemActivated(const VAnchor &anchor);
+    void handleDirectoryRenamed(const QString &notebook,
+                                const QString &oldRelativePath, const QString &newRelativePath);
+    void handleFileRenamed(const QString &notebook,
+                           const QString &oldRelativePath, const QString &newRelativePath);
 
 private slots:
     void handleSplitWindowRequest(VEditWindow *curWindow);
