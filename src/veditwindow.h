@@ -44,7 +44,7 @@ protected:
 
 signals:
     void tabStatusChanged(const QString &notebook, const QString &relativePath,
-                          bool editMode, bool modifiable);
+                          bool editMode, bool modifiable, bool modified);
     void requestSplitWindow(VEditWindow *curWindow);
     void requestRemoveSplit(VEditWindow *curWindow);
     // This widget or its children get the focus
@@ -61,6 +61,7 @@ private slots:
     void tabListJump(QAction *action);
     void handleOutlineChanged(const VToc &toc);
     void handleCurHeaderChanged(const VAnchor &anchor);
+    void handleTabStatusChanged();
 
 private:
     void setupCornerWidget();
@@ -73,6 +74,7 @@ private:
     void noticeTabStatus(int index);
     void updateTabListMenu();
     void noticeStatus(int index);
+    inline QString generateTooltip(const QJsonObject &tabData) const;
 
     VNote *vnote;
     // Button in the right corner
@@ -94,6 +96,12 @@ inline QString VEditWindow::getFileName(const QString &path) const
 inline VEditTab* VEditWindow::getTab(int tabIndex) const
 {
     return dynamic_cast<VEditTab *>(widget(tabIndex));
+}
+
+inline QString VEditWindow::generateTooltip(const QJsonObject &tabData) const
+{
+    // [Notebook]relativePath
+    return QString("[%1] %2").arg(tabData["notebook"].toString()).arg(tabData["relative_path"].toString());
 }
 
 #endif // VEDITWINDOW_H

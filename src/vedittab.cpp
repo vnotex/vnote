@@ -53,6 +53,8 @@ void VEditTab::setupUI()
             this, &VEditTab::updateTocFromHeaders);
     connect(textEditor, SIGNAL(curHeaderChanged(int)),
             this, SLOT(updateCurHeader(int)));
+    connect(textEditor, &VEdit::textChanged,
+            this, &VEditTab::statusChanged);
     addWidget(textEditor);
 
     switch (noteFile->docType) {
@@ -185,6 +187,7 @@ void VEditTab::readFile()
 
 bool VEditTab::saveFile()
 {
+    bool ret;
     if (!isEditMode || !noteFile->modifiable || !textEditor->isModified()) {
         return true;
     }
@@ -201,7 +204,7 @@ bool VEditTab::saveFile()
         return false;
     }
     textEditor->saveFile();
-    bool ret = VUtils::writeFileToDisk(filePath, noteFile->content);
+    ret = VUtils::writeFileToDisk(filePath, noteFile->content);
     if (!ret) {
         QMessageBox msgBox(QMessageBox::Warning, tr("Fail to save to file"),
                            QString("Fail to write to disk when saving a note. Please try it again."),
@@ -209,9 +212,11 @@ bool VEditTab::saveFile()
         msgBox.setDefaultButton(QMessageBox::Ok);
         msgBox.exec();
         textEditor->setModified(true);
-        return false;
+        ret = false;
     }
-    return true;
+    ret = true;
+    emit statusChanged();
+    return ret;
 }
 
 void VEditTab::setupMarkdownPreview()

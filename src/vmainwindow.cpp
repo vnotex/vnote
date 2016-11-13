@@ -108,7 +108,7 @@ void VMainWindow::setupUI()
     connect(vnote, &VNote::notebooksRenamed,
             editArea, &VEditArea::handleNotebookRenamed);
     connect(editArea, &VEditArea::curTabStatusChanged,
-            this, &VMainWindow::updateToolbarFromTabChage);
+            this, &VMainWindow::handleCurTabStatusChanged);
 
     connect(newNotebookBtn, &QPushButton::clicked,
             this, &VMainWindow::onNewNotebookBtnClicked);
@@ -657,10 +657,9 @@ void VMainWindow::setRenderBackgroundColor(QAction *action)
     vnote->updateTemplate();
 }
 
-void VMainWindow::updateToolbarFromTabChage(const QString &notebook, const QString &relativePath,
-                                            bool editMode, bool modifiable)
+void VMainWindow::updateToolbarFromTabChage(bool empty, bool editMode, bool modifiable)
 {
-    if (notebook.isEmpty() || !modifiable) {
+    if (empty || !modifiable) {
         editNoteAct->setEnabled(false);
         saveExitAct->setVisible(false);
         discardExitAct->setVisible(false);
@@ -677,6 +676,21 @@ void VMainWindow::updateToolbarFromTabChage(const QString &notebook, const QStri
         discardExitAct->setVisible(false);
         saveNoteAct->setVisible(false);
     }
+}
+
+void VMainWindow::handleCurTabStatusChanged(const QString &notebook, const QString &relativePath,
+                                            bool editMode, bool modifiable, bool modified)
+{
+    updateToolbarFromTabChage(notebook.isEmpty(), editMode, modifiable);
+
+    QString title;
+    if (!notebook.isEmpty()) {
+        title = QString("[%1] %2").arg(notebook).arg(relativePath);
+        if (modified) {
+            title.append('*');
+        }
+    }
+    updateWindowTitle(title);
 }
 
 void VMainWindow::changePanelView(QAction *action)
@@ -722,4 +736,13 @@ void VMainWindow::handleFileListDirectoryChanged(const QString &notebook, const 
     } else {
         newNoteAct->setEnabled(true);
     }
+}
+
+void VMainWindow::updateWindowTitle(const QString &str)
+{
+    QString title = "VNote";
+    if (!str.isEmpty()) {
+        title = title + " - " + str;
+    }
+    setWindowTitle(title);
 }

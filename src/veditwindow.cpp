@@ -95,6 +95,7 @@ int VEditWindow::insertTabWithData(int index, QWidget *page,
     int idx = insertTab(index, page, label);
     QTabBar *tabs = tabBar();
     tabs->setTabData(idx, tabData);
+    tabs->setTabToolTip(idx, generateTooltip(tabData));
     noticeStatus(currentIndex());
     return idx;
 }
@@ -171,6 +172,8 @@ int VEditWindow::openFileInTab(const QString &notebook, const QString &relativeP
             this, &VEditWindow::handleOutlineChanged);
     connect(editor, &VEditTab::curHeaderChanged,
             this, &VEditWindow::handleCurHeaderChanged);
+    connect(editor, &VEditTab::statusChanged,
+            this, &VEditWindow::handleTabStatusChanged);
 
     QJsonObject tabJson;
     tabJson["notebook"] = notebook;
@@ -253,14 +256,16 @@ void VEditWindow::handleNotebookRenamed(const QVector<VNotebook> &notebooks,
         if (tabJson["notebook"] == oldName) {
             tabJson["notebook"] = newName;
             tabs->setTabData(i, tabJson);
+            tabs->setTabToolTip(i, generateTooltip(tabJson));
         }
     }
+    updateTabListMenu();
 }
 
 void VEditWindow::noticeTabStatus(int index)
 {
     if (index == -1) {
-        emit tabStatusChanged("", "", false, false);
+        emit tabStatusChanged("", "", false, false, false);
         return;
     }
 
@@ -274,7 +279,7 @@ void VEditWindow::noticeTabStatus(int index)
     bool modifiable = tabJson["modifiable"].toBool();
 
     emit tabStatusChanged(notebook, relativePath,
-                          editMode, modifiable);
+                          editMode, modifiable, editor->isModified());
 }
 
 void VEditWindow::requestUpdateTabStatus()
@@ -364,6 +369,7 @@ void VEditWindow::updateTabListMenu()
     int nrTab = tabbar->count();
     for (int i = 0; i < nrTab; ++i) {
         QAction *action = new QAction(tabbar->tabText(i), tabListAct);
+        action->setStatusTip(generateTooltip(tabbar->tabData(i).toJsonObject()));
         action->setData(tabbar->tabData(i));
         menu->addAction(action);
     }
@@ -422,4 +428,9 @@ void VEditWindow::noticeStatus(int index)
         tab->requestUpdateOutline();
         tab->requestUpdateCurHeader();
     }
+}
+
+void VEditWindow::handleTabStatusChanged()
+{
+    noticeTabStatus(currentIndex());
 }

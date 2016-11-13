@@ -24,7 +24,7 @@ public:
 
 signals:
     void curTabStatusChanged(const QString &notebook, const QString &relativePath,
-                             bool editMode, bool modifiable);
+                             bool editMode, bool modifiable, bool modified);
     void outlineChanged(const VToc &toc);
     void curHeaderChanged(const VAnchor &anchor);
 

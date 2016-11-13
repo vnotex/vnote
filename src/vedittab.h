@@ -41,6 +41,7 @@ signals:
     void getFocused();
     void outlineChanged(const VToc &toc);
     void curHeaderChanged(const VAnchor &anchor);
+    void statusChanged();
 
 private slots:
     void handleFocusChanged(QWidget *old, QWidget *now);

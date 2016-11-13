@@ -46,8 +46,8 @@ private slots:
     void setTabStopWidth(QAction *action);
     void setEditorBackgroundColor(QAction *action);
     void setRenderBackgroundColor(QAction *action);
-    void updateToolbarFromTabChage(const QString &notebook, const QString &relativePath,
-                                   bool editMode, bool modifiable);
+    void handleCurTabStatusChanged(const QString &notebook, const QString &relativePath,
+                                   bool editMode, bool modifiable, bool modified);
     void changePanelView(QAction *action);
     void handleFileListDirectoryChanged(const QString &notebook, const QString &relativePath);
 
@@ -65,6 +65,8 @@ private:
     void initRenderBackgroundMenu(QMenu *menu);
     void initEditorBackgroundMenu(QMenu *menu);
     void changeSplitterView(int nrPanel);
+    void updateWindowTitle(const QString &str);
+    void updateToolbarFromTabChage(bool empty, bool editMode, bool modifiable);
 
     // If true, comboBox changes will not trigger any signal out
     bool notebookComboMuted;
