@@ -62,5 +62,6 @@
         <file>resources/icons/vnote.svg</file>
         <file>resources/icons/vnote.ico</file>
         <file>resources/vnote.qss</file>
+        <file>resources/icons/note_info_tb.svg</file>
     </qresource>
 </RCC>

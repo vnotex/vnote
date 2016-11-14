@@ -72,7 +72,6 @@ private:
     int insertTabWithData(int index, QWidget *page, const QJsonObject &tabData);
     int appendTabWithData(QWidget *page, const QJsonObject &tabData);
     int openFileInTab(const QString &notebook, const QString &relativePath, bool modifiable);
-    inline QString getFileName(const QString &relativePath) const;
     inline VEditTab *getTab(int tabIndex) const;
     void noticeTabStatus(int index);
     void updateTabListMenu();
@@ -90,11 +89,6 @@ private:
     QAction *removeSplitAct;
     QActionGroup *tabListAct;
 };
-
-inline QString VEditWindow::getFileName(const QString &path) const
-{
-    return QFileInfo(QDir::cleanPath(path)).fileName();
-}
 
 inline VEditTab* VEditWindow::getTab(int tabIndex) const
 {

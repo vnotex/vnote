@@ -50,7 +50,7 @@ void VFileList::initActions()
                               tr("&Info"), this);
     fileInfoAct->setStatusTip(tr("View and edit current note's information"));
     connect(fileInfoAct, &QAction::triggered,
-            this, &VFileList::fileInfo);
+            this, &VFileList::curFileInfo);
 }
 
 void VFileList::setDirectory(QJsonObject dirJson)
@@ -117,21 +117,26 @@ void VFileList::updateFileList()
     }
 }
 
-void VFileList::fileInfo()
+void VFileList::curFileInfo()
 {
     QListWidgetItem *curItem = fileList->currentItem();
     QJsonObject curItemJson = curItem->data(Qt::UserRole).toJsonObject();
     Q_ASSERT(!curItemJson.isEmpty());
     QString curItemName = curItemJson["name"].toString();
+    fileInfo(notebook, QDir(relativePath).filePath(curItemName));
+}
 
+void VFileList::fileInfo(const QString &p_notebook, const QString &p_relativePath)
+{
+    qDebug() << "fileInfo" << p_notebook << p_relativePath;
     QString info;
-    QString defaultName = curItemName;
-
+    QString defaultName = VUtils::directoryNameFromPath(p_relativePath);
+    QString curName = defaultName;
     do {
         VFileInfoDialog dialog(tr("Note Information"), info, defaultName, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
-            if (name == curItemName) {
+            if (name == curName) {
                 return;
             }
             if (isConflictNameWithExisting(name)) {
@@ -139,7 +144,7 @@ void VFileList::fileInfo()
                 defaultName = name;
                 continue;
             }
-            renameFile(curItem, name);
+            renameFile(p_notebook, p_relativePath, name);
         }
         break;
     } while (true);
@@ -176,8 +181,8 @@ void VFileList::newFile()
     QString text("&Note name:");
     QString defaultText("new_note");
     do {
-        VNewFileDialog dialog(QString("Create a new note under %1").arg(getDirectoryName()), text,
-                              defaultText, this);
+        VNewFileDialog dialog(QString("Create a new note under %1").arg(VUtils::directoryNameFromPath(relativePath)),
+                              text, defaultText, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
             if (isConflictNameWithExisting(name)) {
@@ -257,6 +262,24 @@ bool VFileList::isConflictNameWithExisting(const QString &name)
         }
     }
     return false;
+}
+
+QListWidgetItem* VFileList::findItem(const QString &p_notebook, const QString &p_relativePath)
+{
+    if (p_notebook != notebook || VUtils::basePathFromPath(p_relativePath) != QDir::cleanPath(relativePath)) {
+        return NULL;
+    }
+    QString name = VUtils::fileNameFromPath(p_relativePath);
+    int nrChild = fileList->count();
+    for (int i = 0; i < nrChild; ++i) {
+        QListWidgetItem *item = fileList->item(i);
+        QJsonObject itemJson = item->data(Qt::UserRole).toJsonObject();
+        Q_ASSERT(!itemJson.isEmpty());
+        if (itemJson["name"].toString() == name) {
+            return item;
+        }
+    }
+    return NULL;
 }
 
 QListWidgetItem* VFileList::createFileAndUpdateList(const QString &name)
@@ -411,29 +434,25 @@ void VFileList::handleDirectoryRenamed(const QString &notebook,
     }
 }
 
-void VFileList::renameFile(QListWidgetItem *item, const QString &newName)
+// @p_relativePath contains the flie name
+void VFileList::renameFile(const QString &p_notebook,
+                           const QString &p_relativePath, const QString &p_newName)
 {
-    if (!item) {
-        return;
-    }
-    QJsonObject itemJson = item->data(Qt::UserRole).toJsonObject();
-    Q_ASSERT(!itemJson.isEmpty());
-    QString name = itemJson["name"].toString();
+    QString name = VUtils::fileNameFromPath(p_relativePath);
 
     // If change the file type, we need to convert it
     DocType docType = VUtils::isMarkdown(name) ? DocType::Markdown : DocType::Html;
-    DocType newDocType = VUtils::isMarkdown(newName) ? DocType::Markdown : DocType::Html;
+    DocType newDocType = VUtils::isMarkdown(p_newName) ? DocType::Markdown : DocType::Html;
     if (docType != newDocType) {
-        QString fileRelativePath = QDir::cleanPath(QDir(relativePath).filePath(name));
-        if (editArea->isFileOpened(notebook, fileRelativePath)) {
+        if (editArea->isFileOpened(p_notebook, p_relativePath)) {
             QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Rename will change the note type"),
                                QMessageBox::Ok | QMessageBox::Cancel, this);
             msgBox.setDefaultButton(QMessageBox::Ok);
             msgBox.setInformativeText(QString("You should close the note %1 before continue").arg(name));
             if (QMessageBox::Ok == msgBox.exec()) {
                 QJsonObject curItemJson;
-                curItemJson["notebook"] = notebook;
-                curItemJson["relative_path"] = fileRelativePath;
+                curItemJson["notebook"] = p_notebook;
+                curItemJson["relative_path"] = p_relativePath;
                 curItemJson["is_forced"] = false;
                 if (!editArea->closeFile(curItemJson)) {
                     return;
@@ -442,18 +461,18 @@ void VFileList::renameFile(QListWidgetItem *item, const QString &newName)
                 return;
             }
         }
-        convertFileType(notebook, fileRelativePath, docType, newDocType);
+        convertFileType(p_notebook, p_relativePath, docType, newDocType);
     }
 
-    QString path = QDir(rootPath).filePath(relativePath);
+    QString path = QDir(vnote->getNotebookPath(p_notebook)).filePath(VUtils::basePathFromPath(p_relativePath));
     QFile file(QDir(path).filePath(name));
-    QString newFilePath(QDir(path).filePath(newName));
+    QString newFilePath(QDir(path).filePath(p_newName));
     Q_ASSERT(file.exists());
     if (!file.rename(newFilePath)) {
         qWarning() << "error: fail to rename file" << name << "under" << path;
         QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Could not rename note \"%1\" under \"%2\".")
                            .arg(name).arg(path), QMessageBox::Ok, this);
-        msgBox.setInformativeText(QString("Please check if there already exists a file named \"%1\".").arg(newName));
+        msgBox.setInformativeText(QString("Please check if there already exists a file named \"%1\".").arg(p_newName));
         msgBox.exec();
         return;
     }
@@ -466,7 +485,7 @@ void VFileList::renameFile(QListWidgetItem *item, const QString &newName)
     for (index = 0; index < fileArray.size(); ++index) {
         QJsonObject tmp = fileArray[index].toObject();
         if (tmp["name"].toString() == name) {
-            tmp["name"] = newName;
+            tmp["name"] = p_newName;
             fileArray[index] = tmp;
             break;
         }
@@ -475,20 +494,24 @@ void VFileList::renameFile(QListWidgetItem *item, const QString &newName)
     dirJson["files"] = fileArray;
     if (!VConfigManager::writeDirectoryConfig(path, dirJson)) {
         qWarning() << "error: fail to rename file"
-                   << name << "to" << newName;
+                   << name << "to" << p_newName;
         file.rename(name);
         return;
     }
 
     // Update item
-    itemJson["name"] = newName;
-    item->setData(Qt::UserRole, itemJson);
-    item->setText(newName);
+    QListWidgetItem *item = findItem(p_notebook, p_relativePath);
+    if (item) {
+        QJsonObject itemJson = item->data(Qt::UserRole).toJsonObject();
+        itemJson["name"] = p_newName;
+        item->setData(Qt::UserRole, itemJson);
+        item->setText(p_newName);
+    }
 
-    QString oldPath = QDir::cleanPath(QDir(relativePath).filePath(name));
-    QString newPath = QDir::cleanPath(QDir(relativePath).filePath(newName));
+    QString oldPath = QDir::cleanPath(p_relativePath);
+    QString newPath = QDir::cleanPath(QDir(VUtils::basePathFromPath(p_relativePath)).filePath(p_newName));
     qDebug() << "file renamed" << oldPath << "to" << newPath;
-    emit fileRenamed(notebook, oldPath, newPath);
+    emit fileRenamed(p_notebook, oldPath, newPath);
 }
 
 void VFileList::convertFileType(const QString &notebook, const QString &fileRelativePath,

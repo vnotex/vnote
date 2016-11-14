@@ -4,6 +4,7 @@
 #include "vedittab.h"
 #include "vnote.h"
 #include "vconfigmanager.h"
+#include "utils/vutils.h"
 
 extern VConfigManager vconfig;
 
@@ -91,7 +92,7 @@ void VEditWindow::openWelcomePage()
 int VEditWindow::insertTabWithData(int index, QWidget *page,
                                    const QJsonObject &tabData)
 {
-    QString label = getFileName(tabData["relative_path"].toString());
+    QString label = VUtils::fileNameFromPath(tabData["relative_path"].toString());
     int idx = insertTab(index, page, label);
     QTabBar *tabs = tabBar();
     tabs->setTabData(idx, tabData);
@@ -293,7 +294,7 @@ void VEditWindow::handleFileRenamed(const QString &notebook, const QString &oldR
                 tabJson["relative_path"] = relativePath;
                 tabs->setTabData(i, tabJson);
                 tabs->setTabToolTip(i, generateTooltip(tabJson));
-                tabs->setTabText(i, getFileName(relativePath));
+                tabs->setTabText(i, VUtils::fileNameFromPath(relativePath));
                 QString path = QDir::cleanPath(QDir(vnote->getNotebookPath(notebook)).filePath(relativePath));
                 getTab(i)->updatePath(path);
             }

@@ -22,6 +22,7 @@ public:
     explicit VFileList(VNote *vnote, QWidget *parent = 0);
     bool importFile(const QString &name);
     inline void setEditArea(VEditArea *editArea);
+    void fileInfo(const QString &p_notebook, const QString &p_relativePath);
 
 signals:
     void fileClicked(QJsonObject fileJson);
@@ -34,7 +35,7 @@ signals:
 private slots:
     void contextMenuRequested(QPoint pos);
     void handleItemClicked(QListWidgetItem *currentItem);
-    void fileInfo();
+    void curFileInfo();
 
 public slots:
     void setDirectory(QJsonObject dirJson);
@@ -55,10 +56,11 @@ private:
     QListWidgetItem *createFileAndUpdateList(const QString &name);
     void deleteFileAndUpdateList(QListWidgetItem *item);
     void clearDirectoryInfo();
-    inline QString getDirectoryName();
-    void renameFile(QListWidgetItem *item, const QString &newName);
+    void renameFile(const QString &p_notebook,
+                    const QString &p_relativePath, const QString &p_newName);
     void convertFileType(const QString &notebook, const QString &fileRelativePath,
                          DocType oldType, DocType newType);
+    QListWidgetItem *findItem(const QString &p_notebook, const QString &p_relativePath);
 
     VNote *vnote;
     QString notebook;
@@ -76,14 +78,6 @@ private:
     QAction *deleteFileAct;
     QAction *fileInfoAct;
 };
-
-inline QString VFileList::getDirectoryName()
-{
-    if (relativePath.isEmpty()) {
-        return "";
-    }
-    return QFileInfo(QDir::cleanPath(relativePath)).fileName();
-}
 
 inline void VFileList::setEditArea(VEditArea *editArea)
 {

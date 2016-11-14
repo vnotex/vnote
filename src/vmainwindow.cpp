@@ -148,11 +148,18 @@ void VMainWindow::initActions()
     newRootDirAct->setStatusTip(tr("Create a new root directory"));
     connect(newRootDirAct, &QAction::triggered,
             directoryTree, &VDirectoryTree::newRootDirectory);
+
     newNoteAct = new QAction(QIcon(":/resources/icons/create_note_tb.svg"),
                              tr("&New note"), this);
     newNoteAct->setStatusTip(tr("Create a new note"));
     connect(newNoteAct, &QAction::triggered,
             fileList, &VFileList::newFile);
+
+    noteInfoAct = new QAction(QIcon(":/resources/icons/note_info_tb.svg"),
+                              tr("&Note info"), this);
+    noteInfoAct->setStatusTip(tr("Current note information"));
+    connect(noteInfoAct, &QAction::triggered,
+            this, &VMainWindow::curEditFileInfo);
 
     editNoteAct = new QAction(QIcon(":/resources/icons/edit_note.svg"),
                               tr("&Edit"), this);
@@ -262,6 +269,7 @@ void VMainWindow::initToolBar()
     QToolBar *fileToolBar = addToolBar(tr("Note"));
     fileToolBar->addAction(newRootDirAct);
     fileToolBar->addAction(newNoteAct);
+    fileToolBar->addAction(noteInfoAct);
     fileToolBar->addAction(editNoteAct);
     fileToolBar->addAction(saveExitAct);
     fileToolBar->addAction(discardExitAct);
@@ -269,6 +277,7 @@ void VMainWindow::initToolBar()
 
     newRootDirAct->setEnabled(false);
     newNoteAct->setEnabled(false);
+    noteInfoAct->setEnabled(false);
     editNoteAct->setEnabled(false);
     saveExitAct->setVisible(false);
     discardExitAct->setVisible(false);
@@ -669,7 +678,6 @@ void VMainWindow::updateToolbarFromTabChage(bool empty, bool editMode, bool modi
         saveExitAct->setVisible(false);
         discardExitAct->setVisible(false);
         saveNoteAct->setVisible(false);
-        return;
     } else if (editMode) {
         editNoteAct->setEnabled(false);
         saveExitAct->setVisible(true);
@@ -680,6 +688,12 @@ void VMainWindow::updateToolbarFromTabChage(bool empty, bool editMode, bool modi
         saveExitAct->setVisible(false);
         discardExitAct->setVisible(false);
         saveNoteAct->setVisible(false);
+    }
+
+    if (empty) {
+        noteInfoAct->setEnabled(false);
+    } else {
+        noteInfoAct->setEnabled(true);
     }
 }
 
@@ -696,6 +710,9 @@ void VMainWindow::handleCurTabStatusChanged(const QString &notebook, const QStri
         }
     }
     updateWindowTitle(title);
+
+    curEditNotebook = notebook;
+    curEditRelativePath = relativePath;
 }
 
 void VMainWindow::changePanelView(QAction *action)
@@ -750,4 +767,9 @@ void VMainWindow::updateWindowTitle(const QString &str)
         title = title + " - " + str;
     }
     setWindowTitle(title);
+}
+
+void VMainWindow::curEditFileInfo()
+{
+    fileList->fileInfo(curEditNotebook, curEditRelativePath);
 }

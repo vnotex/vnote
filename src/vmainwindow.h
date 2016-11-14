@@ -50,6 +50,7 @@ private slots:
                                    bool editMode, bool modifiable, bool modified);
     void changePanelView(QAction *action);
     void handleFileListDirectoryChanged(const QString &notebook, const QString &relativePath);
+    void curEditFileInfo();
 
 signals:
     void curNotebookChanged(const QString &notebookName);
@@ -72,6 +73,9 @@ private:
     bool notebookComboMuted;
     VNote *vnote;
 
+    QString curEditNotebook;
+    QString curEditRelativePath;
+
     QLabel *notebookLabel;
     QLabel *directoryLabel;
     QComboBox *notebookComboBox;
@@ -88,6 +92,7 @@ private:
     // Actions
     QAction *newRootDirAct;
     QAction *newNoteAct;
+    QAction *noteInfoAct;
     QAction *editNoteAct;
     QAction *saveNoteAct;
     QAction *saveExitAct;

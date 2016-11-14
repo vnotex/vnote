@@ -20,6 +20,9 @@ public:
                                          const QString &format = "png");
     static void processStyle(QString &style);
     static bool isMarkdown(const QString &fileName);
+    static inline QString directoryNameFromPath(const QString& path);
+    static QString fileNameFromPath(const QString &path);
+    static QString basePathFromPath(const QString &path);
 private:
     static inline void addQssVarToMap(QVector<QPair<QString, QString> > &map,
                                       const QString &key, const QString &value);
@@ -29,6 +32,11 @@ inline void VUtils::addQssVarToMap(QVector<QPair<QString, QString> > &map,
                                    const QString &key, const QString &value)
 {
     map.append(QPair<QString, QString>(key, value));
+}
+
+inline QString VUtils::directoryNameFromPath(const QString &path)
+{
+    return fileNameFromPath(path);
 }
 
 #endif // VUTILS_H

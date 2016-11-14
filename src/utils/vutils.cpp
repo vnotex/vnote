@@ -108,3 +108,16 @@ bool VUtils::isMarkdown(const QString &name)
     }
     return false;
 }
+
+QString VUtils::fileNameFromPath(const QString &path)
+{
+    if (path.isEmpty()) {
+        return path;
+    }
+    return QFileInfo(QDir::cleanPath(path)).fileName();
+}
+
+QString VUtils::basePathFromPath(const QString &path)
+{
+    return QFileInfo(path).path();
+}
