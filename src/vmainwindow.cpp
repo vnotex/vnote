@@ -161,6 +161,12 @@ void VMainWindow::initActions()
     connect(noteInfoAct, &QAction::triggered,
             this, &VMainWindow::curEditFileInfo);
 
+    deleteNoteAct = new QAction(QIcon(":/resources/icons/delete_note_tb.svg"),
+                                tr("&Delete note"), this);
+    deleteNoteAct->setStatusTip(tr("Delete current note"));
+    connect(deleteNoteAct, &QAction::triggered,
+            this, &VMainWindow::deleteCurNote);
+
     editNoteAct = new QAction(QIcon(":/resources/icons/edit_note.svg"),
                               tr("&Edit"), this);
     editNoteAct->setStatusTip(tr("Edit current note"));
@@ -270,6 +276,7 @@ void VMainWindow::initToolBar()
     fileToolBar->addAction(newRootDirAct);
     fileToolBar->addAction(newNoteAct);
     fileToolBar->addAction(noteInfoAct);
+    fileToolBar->addAction(deleteNoteAct);
     fileToolBar->addAction(editNoteAct);
     fileToolBar->addAction(saveExitAct);
     fileToolBar->addAction(discardExitAct);
@@ -278,6 +285,7 @@ void VMainWindow::initToolBar()
     newRootDirAct->setEnabled(false);
     newNoteAct->setEnabled(false);
     noteInfoAct->setEnabled(false);
+    deleteNoteAct->setEnabled(false);
     editNoteAct->setEnabled(false);
     saveExitAct->setVisible(false);
     discardExitAct->setVisible(false);
@@ -678,16 +686,19 @@ void VMainWindow::updateToolbarFromTabChage(bool empty, bool editMode, bool modi
         saveExitAct->setVisible(false);
         discardExitAct->setVisible(false);
         saveNoteAct->setVisible(false);
+        deleteNoteAct->setEnabled(false);
     } else if (editMode) {
         editNoteAct->setEnabled(false);
         saveExitAct->setVisible(true);
         discardExitAct->setVisible(true);
         saveNoteAct->setVisible(true);
+        deleteNoteAct->setEnabled(true);
     } else {
         editNoteAct->setEnabled(true);
         saveExitAct->setVisible(false);
         discardExitAct->setVisible(false);
         saveNoteAct->setVisible(false);
+        deleteNoteAct->setEnabled(true);
     }
 
     if (empty) {
@@ -772,4 +783,9 @@ void VMainWindow::updateWindowTitle(const QString &str)
 void VMainWindow::curEditFileInfo()
 {
     fileList->fileInfo(curEditNotebook, curEditRelativePath);
+}
+
+void VMainWindow::deleteCurNote()
+{
+    fileList->deleteFile(curEditNotebook, curEditRelativePath);
 }

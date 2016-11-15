@@ -23,6 +23,7 @@ public:
     bool importFile(const QString &name);
     inline void setEditArea(VEditArea *editArea);
     void fileInfo(const QString &p_notebook, const QString &p_relativePath);
+    void deleteFile(const QString &p_notebook, const QString &p_relativePath);
 
 signals:
     void fileClicked(QJsonObject fileJson);
@@ -36,6 +37,7 @@ private slots:
     void contextMenuRequested(QPoint pos);
     void handleItemClicked(QListWidgetItem *currentItem);
     void curFileInfo();
+    void deleteCurFile();
 
 public slots:
     void setDirectory(QJsonObject dirJson);
@@ -44,7 +46,6 @@ public slots:
     void handleDirectoryRenamed(const QString &notebook, const QString &oldRelativePath,
                                 const QString &newRelativePath);
     void newFile();
-    void deleteFile();
 
 private:
     void setupUI();
@@ -54,7 +55,8 @@ private:
     void initActions();
     bool isConflictNameWithExisting(const QString &name);
     QListWidgetItem *createFileAndUpdateList(const QString &name);
-    void deleteFileAndUpdateList(QListWidgetItem *item);
+    void deleteFileAndUpdateList(const QString &p_notebook,
+                                 const QString &p_relativePath);
     void clearDirectoryInfo();
     void renameFile(const QString &p_notebook,
                     const QString &p_relativePath, const QString &p_newName);

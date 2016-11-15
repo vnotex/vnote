@@ -51,6 +51,7 @@ private slots:
     void changePanelView(QAction *action);
     void handleFileListDirectoryChanged(const QString &notebook, const QString &relativePath);
     void curEditFileInfo();
+    void deleteCurNote();
 
 signals:
     void curNotebookChanged(const QString &notebookName);
@@ -93,6 +94,7 @@ private:
     QAction *newRootDirAct;
     QAction *newNoteAct;
     QAction *noteInfoAct;
+    QAction *deleteNoteAct;
     QAction *editNoteAct;
     QAction *saveNoteAct;
     QAction *saveExitAct;

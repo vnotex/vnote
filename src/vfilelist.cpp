@@ -44,7 +44,7 @@ void VFileList::initActions()
                                 tr("&Delete"), this);
     deleteFileAct->setStatusTip(tr("Delete selected note"));
     connect(deleteFileAct, &QAction::triggered,
-            this, &VFileList::deleteFile);
+            this, &VFileList::deleteCurFile);
 
     fileInfoAct = new QAction(QIcon(":/resources/icons/note_info.svg"),
                               tr("&Info"), this);
@@ -130,7 +130,7 @@ void VFileList::fileInfo(const QString &p_notebook, const QString &p_relativePat
 {
     qDebug() << "fileInfo" << p_notebook << p_relativePath;
     QString info;
-    QString defaultName = VUtils::directoryNameFromPath(p_relativePath);
+    QString defaultName = VUtils::fileNameFromPath(p_relativePath);
     QString curName = defaultName;
     do {
         VFileInfoDialog dialog(tr("Note Information"), info, defaultName, this);
@@ -209,27 +209,34 @@ void VFileList::newFile()
     } while (true);
 }
 
-void VFileList::deleteFile()
+void VFileList::deleteCurFile()
 {
     QListWidgetItem *curItem = fileList->currentItem();
     Q_ASSERT(curItem);
     QJsonObject curItemJson = curItem->data(Qt::UserRole).toJsonObject();
     QString curItemName = curItemJson["name"].toString();
+    deleteFile(notebook, QDir(relativePath).filePath(curItemName));
+}
 
+// @p_relativePath contains the file name
+void VFileList::deleteFile(const QString &p_notebook, const QString &p_relativePath)
+{
+    QString fileName = VUtils::fileNameFromPath(p_relativePath);
     QMessageBox msgBox(QMessageBox::Warning, tr("Warning"),
                        QString("Are you sure you want to delete note \"%1\"?")
-                       .arg(curItemName), QMessageBox::Ok | QMessageBox::Cancel,
+                       .arg(fileName), QMessageBox::Ok | QMessageBox::Cancel,
                        this);
     msgBox.setInformativeText(tr("This may be not recoverable."));
     msgBox.setDefaultButton(QMessageBox::Ok);
     if (msgBox.exec() == QMessageBox::Ok) {
         // First close this file forcely
-        curItemJson["notebook"] = notebook;
-        curItemJson["relative_path"] = QDir::cleanPath(QDir(relativePath).filePath(curItemName));
+        QJsonObject curItemJson;
+        curItemJson["notebook"] = p_notebook;
+        curItemJson["relative_path"] = QDir::cleanPath(p_relativePath);
         curItemJson["is_forced"] = true;
         emit fileDeleted(curItemJson);
 
-        deleteFileAndUpdateList(curItem);
+        deleteFileAndUpdateList(p_notebook, p_relativePath);
     }
 }
 
@@ -317,12 +324,11 @@ QListWidgetItem* VFileList::createFileAndUpdateList(const QString &name)
     return insertFileListItem(fileJson, true);
 }
 
-void VFileList::deleteFileAndUpdateList(QListWidgetItem *item)
+void VFileList::deleteFileAndUpdateList(const QString &p_notebook,
+                                        const QString &p_relativePath)
 {
-    Q_ASSERT(item);
-    QJsonObject itemJson = item->data(Qt::UserRole).toJsonObject();
-    QString path = QDir(rootPath).filePath(relativePath);
-    QString fileName = itemJson["name"].toString();
+    QString path = QDir(vnote->getNotebookPath(p_notebook)).filePath(VUtils::basePathFromPath(p_relativePath));
+    QString fileName = VUtils::fileNameFromPath(p_relativePath);
     QString filePath = QDir(path).filePath(fileName);
 
     // Update current directory's config file to exclude this file
@@ -357,7 +363,10 @@ void VFileList::deleteFileAndUpdateList(QListWidgetItem *item)
         qDebug() << "delete" << filePath;
     }
 
-    removeFileListItem(item);
+    QListWidgetItem *item = findItem(p_notebook, p_relativePath);
+    if (item) {
+        removeFileListItem(item);
+    }
 }
 
 void VFileList::handleItemClicked(QListWidgetItem *currentItem)
