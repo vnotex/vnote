@@ -241,7 +241,6 @@ void VEditTab::handleFocusChanged(QWidget *old, QWidget *now)
 
 void VEditTab::updateTocFromHtml(const QString &tocHtml)
 {
-    qDebug() << tocHtml;
     tableOfContent.type = VHeaderType::Anchor;
     QVector<VHeader> &headers = tableOfContent.headers;
     headers.clear();

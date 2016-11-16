@@ -81,11 +81,17 @@ void VOutline::handleItemClicked(QTreeWidgetItem *item, int column)
     QString anchor = itemJson["anchor"].toString();
     int lineNumber = itemJson["line_number"].toInt();
     qDebug() << "click anchor" << anchor << lineNumber;
-    emit outlineItemActivated(VAnchor(outline.filePath, anchor, lineNumber));
+    curHeader.filePath = outline.filePath;
+    curHeader.anchor = anchor;
+    curHeader.lineNumber = lineNumber;
+    emit outlineItemActivated(curHeader);
 }
 
 void VOutline::updateCurHeader(const VAnchor &anchor)
 {
+    if (anchor == curHeader) {
+        return;
+    }
     curHeader = anchor;
     if (outline.type == VHeaderType::Anchor) {
         selectAnchor(anchor.anchor);
