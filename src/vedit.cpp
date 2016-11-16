@@ -199,7 +199,7 @@ void VEdit::scrollToLine(int lineNumber)
     // Move the cursor to the end first
     moveCursor(QTextCursor::End);
     QTextCursor cursor(document()->findBlockByLineNumber(lineNumber));
-    cursor.movePosition(QTextCursor::EndOfLine);
+    cursor.movePosition(QTextCursor::EndOfBlock);
     setTextCursor(cursor);
 
     setFocus();
