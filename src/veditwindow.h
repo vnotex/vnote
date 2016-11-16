@@ -77,6 +77,7 @@ private:
     void updateTabListMenu();
     void noticeStatus(int index);
     inline QString generateTooltip(const QJsonObject &tabData) const;
+    inline QString generateTabText(const QString &p_name, bool p_modified) const;
 
     VNote *vnote;
     // Button in the right corner
@@ -99,6 +100,11 @@ inline QString VEditWindow::generateTooltip(const QJsonObject &tabData) const
 {
     // [Notebook]relativePath
     return QString("[%1] %2").arg(tabData["notebook"].toString()).arg(tabData["relative_path"].toString());
+}
+
+inline QString VEditWindow::generateTabText(const QString &p_name, bool p_modified) const
+{
+    return p_modified ? (p_name + "*") : p_name;
 }
 
 #endif // VEDITWINDOW_H

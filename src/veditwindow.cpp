@@ -85,7 +85,7 @@ void VEditWindow::setRemoveSplitEnable(bool enabled)
 void VEditWindow::openWelcomePage()
 {
     int idx = openFileInTab("", vconfig.getWelcomePagePath(), false);
-    setTabText(idx, "Welcome to VNote");
+    setTabText(idx, generateTabText("Welcome to VNote", false));
     setTabToolTip(idx, "VNote");
 }
 
@@ -290,13 +290,14 @@ void VEditWindow::handleFileRenamed(const QString &notebook, const QString &oldR
         if (tabJson["notebook"].toString() == notebook) {
             QString relativePath = tabJson["relative_path"].toString();
             if (relativePath == oldRelativePath) {
+                VEditTab *tab = getTab(i);
                 relativePath = newRelativePath;
                 tabJson["relative_path"] = relativePath;
                 tabs->setTabData(i, tabJson);
                 tabs->setTabToolTip(i, generateTooltip(tabJson));
-                tabs->setTabText(i, VUtils::fileNameFromPath(relativePath));
+                tabs->setTabText(i, generateTabText(VUtils::fileNameFromPath(relativePath), tab->isModified()));
                 QString path = QDir::cleanPath(QDir(vnote->getNotebookPath(notebook)).filePath(relativePath));
-                getTab(i)->updatePath(path);
+                tab->updatePath(path);
             }
         }
     }
@@ -318,6 +319,10 @@ void VEditWindow::noticeTabStatus(int index)
     VEditTab *editor = getTab(index);
     bool editMode = editor->getIsEditMode();
     bool modifiable = tabJson["modifiable"].toBool();
+
+    // Update tab text
+    tabBar()->setTabText(index, generateTabText(VUtils::fileNameFromPath(relativePath),
+                                                editor->isModified()));
 
     emit tabStatusChanged(notebook, relativePath,
                           editMode, modifiable, editor->isModified());
