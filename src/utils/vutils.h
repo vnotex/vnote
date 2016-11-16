@@ -24,6 +24,7 @@ public:
     static QString fileNameFromPath(const QString &path);
     static QString basePathFromPath(const QString &path);
     static QVector<QString> imagesFromMarkdownFile(const QString &filePath);
+    static void makeDirectory(const QString &path);
 private:
     static inline void addQssVarToMap(QVector<QPair<QString, QString> > &map,
                                       const QString &key, const QString &value);

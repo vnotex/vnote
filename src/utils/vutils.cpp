@@ -144,3 +144,18 @@ QVector<QString> VUtils::imagesFromMarkdownFile(const QString &filePath)
     }
     return images;
 }
+
+void VUtils::makeDirectory(const QString &path)
+{
+    if (path.isEmpty()) {
+        return;
+    }
+
+    // mkdir will return false if it already exists
+    QString basePath = basePathFromPath(path);
+    QString dirName = directoryNameFromPath(path);
+    QDir dir(basePath);
+    if (dir.mkdir(dirName)) {
+        qDebug() << "mkdir" << path;
+    }
+}
