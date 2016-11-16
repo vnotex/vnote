@@ -23,6 +23,7 @@ public:
     static inline QString directoryNameFromPath(const QString& path);
     static QString fileNameFromPath(const QString &path);
     static QString basePathFromPath(const QString &path);
+    static QVector<QString> imagesFromMarkdownFile(const QString &filePath);
 private:
     static inline void addQssVarToMap(QVector<QPair<QString, QString> > &map,
                                       const QString &key, const QString &value);

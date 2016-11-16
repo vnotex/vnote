@@ -355,6 +355,9 @@ void VFileList::deleteFileAndUpdateList(const QString &p_notebook,
         return;
     }
 
+    // Delete local images in ./images
+    deleteLocalImages(filePath);
+
     // Delete the file
     QFile file(filePath);
     if (!file.remove()) {
@@ -538,4 +541,21 @@ void VFileList::convertFileType(const QString &notebook, const QString &fileRela
         fileText = editor.toPlainText();
     }
     VUtils::writeFileToDisk(filePath, fileText);
+}
+
+void VFileList::deleteLocalImages(const QString &filePath)
+{
+    if (!VUtils::isMarkdown(filePath)) {
+        return;
+    }
+
+    QVector<QString> images = VUtils::imagesFromMarkdownFile(filePath);
+    int deleted = 0;
+    for (int i = 0; i < images.size(); ++i) {
+        QFile file(images[i]);
+        if (file.remove()) {
+            ++deleted;
+        }
+    }
+    qDebug() << "delete" << deleted << "images for" << filePath;
 }

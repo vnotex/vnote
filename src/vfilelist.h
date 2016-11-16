@@ -63,6 +63,7 @@ private:
     void convertFileType(const QString &notebook, const QString &fileRelativePath,
                          DocType oldType, DocType newType);
     QListWidgetItem *findItem(const QString &p_notebook, const QString &p_relativePath);
+    void deleteLocalImages(const QString &filePath);
 
     VNote *vnote;
     QString notebook;

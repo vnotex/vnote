@@ -3,6 +3,7 @@
 #include <QDir>
 #include <QDebug>
 #include <QRegularExpression>
+#include <QRegExp>
 
 VUtils::VUtils()
 {
@@ -120,4 +121,26 @@ QString VUtils::fileNameFromPath(const QString &path)
 QString VUtils::basePathFromPath(const QString &path)
 {
     return QFileInfo(path).path();
+}
+
+// Collect image links like ![](images/xx.jpg)
+QVector<QString> VUtils::imagesFromMarkdownFile(const QString &filePath)
+{
+    Q_ASSERT(isMarkdown(filePath));
+    QVector<QString> images;
+    if (filePath.isEmpty()) {
+        return images;
+    }
+    QString basePath = basePathFromPath(filePath);
+    QString text = readFileFromDisk(filePath);
+    QRegExp regExp("\\!\\[[^\\]]*\\]\\((images/[^/\\)]+)\\)");
+    int pos = 0;
+
+    while (pos < text.size() && (pos = regExp.indexIn(text, pos)) != -1) {
+        Q_ASSERT(regExp.captureCount() == 1);
+        qDebug() << regExp.capturedTexts()[0] << regExp.capturedTexts()[1];
+        images.append(QDir(basePath).filePath(regExp.capturedTexts()[1]));
+        pos += regExp.matchedLength();
+    }
+    return images;
 }
