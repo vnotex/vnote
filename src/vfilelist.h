@@ -29,8 +29,8 @@ signals:
     void fileClicked(QJsonObject fileJson);
     void fileDeleted(QJsonObject fileJson);
     void fileCreated(QJsonObject fileJson);
-    void fileRenamed(const QString &notebook, const QString &oldPath,
-                     const QString &newPath);
+    void fileRenamed(const QString &p_srcNotebook, const QString &p_srcRelativePath,
+                     const QString &p_destNotebook, const QString &p_destRelativePath);
     void directoryChanged(const QString &notebook, const QString &relativePath);
 
 private slots:
@@ -38,6 +38,9 @@ private slots:
     void handleItemClicked(QListWidgetItem *currentItem);
     void curFileInfo();
     void deleteCurFile();
+    void copySelectedFiles(bool p_isCut = false);
+    void cutSelectedFiles();
+    void pasteFilesInCurDir();
 
 public slots:
     void setDirectory(QJsonObject dirJson);
@@ -58,12 +61,18 @@ private:
     void deleteFileAndUpdateList(const QString &p_notebook,
                                  const QString &p_relativePath);
     void clearDirectoryInfo();
-    void renameFile(const QString &p_notebook,
-                    const QString &p_relativePath, const QString &p_newName);
     void convertFileType(const QString &notebook, const QString &fileRelativePath,
                          DocType oldType, DocType newType);
     QListWidgetItem *findItem(const QString &p_notebook, const QString &p_relativePath);
     void deleteLocalImages(const QString &filePath);
+    void copyFileInfoToClipboard(const QJsonArray &p_files, bool p_isCut);
+    void pasteFiles(const QString &p_notebook, const QString &p_dirRelativePath);
+    bool copyFile(const QString &p_srcNotebook, const QString &p_srcRelativePath,
+                  const QString &p_destNotebook, const QString &p_destRelativePath,
+                  bool p_isCut);
+    int removeFileInConfig(const QString &p_filePath);
+    bool addFileInConfig(const QString &p_filePath, int p_index);
+    QJsonObject readFileInConfig(const QString &p_filePath);
 
     VNote *vnote;
     QString notebook;
@@ -80,6 +89,9 @@ private:
     QAction *newFileAct;
     QAction *deleteFileAct;
     QAction *fileInfoAct;
+    QAction *copyAct;
+    QAction *cutAct;
+    QAction *pasteAct;
 };
 
 inline void VFileList::setEditArea(VEditArea *editArea)

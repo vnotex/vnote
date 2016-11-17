@@ -6,6 +6,7 @@
 #include <QVector>
 #include <QPair>
 #include "vconfigmanager.h"
+#include "vconstants.h"
 
 class VUtils
 {
@@ -25,6 +26,8 @@ public:
     static QString basePathFromPath(const QString &path);
     static QVector<QString> imagesFromMarkdownFile(const QString &filePath);
     static void makeDirectory(const QString &path);
+    static ClipboardOpType opTypeInClipboard();
+    static bool copyFile(const QString &p_srcFilePath, const QString &p_destFilePath, bool p_isCut);
 private:
     static inline void addQssVarToMap(QVector<QPair<QString, QString> > &map,
                                       const QString &key, const QString &value);

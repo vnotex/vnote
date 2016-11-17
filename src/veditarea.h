@@ -44,8 +44,8 @@ public slots:
     void handleOutlineItemActivated(const VAnchor &anchor);
     void handleDirectoryRenamed(const QString &notebook,
                                 const QString &oldRelativePath, const QString &newRelativePath);
-    void handleFileRenamed(const QString &notebook,
-                           const QString &oldRelativePath, const QString &newRelativePath);
+    void handleFileRenamed(const QString &p_srcNotebook, const QString &p_srcRelativePath,
+                           const QString &p_destNotebook, const QString &p_destRelativePath);
 
 private slots:
     void handleSplitWindowRequest(VEditWindow *curWindow);

@@ -280,23 +280,23 @@ void VEditWindow::handleDirectoryRenamed(const QString &notebook, const QString 
     updateTabListMenu();
 }
 
-void VEditWindow::handleFileRenamed(const QString &notebook, const QString &oldRelativePath,
-                                    const QString &newRelativePath)
+void VEditWindow::handleFileRenamed(const QString &p_srcNotebook, const QString &p_srcRelativePath,
+                                    const QString &p_destNotebook, const QString &p_destRelativePath)
 {
     QTabBar *tabs = tabBar();
     int nrTabs = tabs->count();
     for (int i = 0; i < nrTabs; ++i) {
         QJsonObject tabJson = tabs->tabData(i).toJsonObject();
-        if (tabJson["notebook"].toString() == notebook) {
+        if (tabJson["notebook"].toString() == p_srcNotebook) {
             QString relativePath = tabJson["relative_path"].toString();
-            if (relativePath == oldRelativePath) {
+            if (relativePath == p_srcRelativePath) {
                 VEditTab *tab = getTab(i);
-                relativePath = newRelativePath;
-                tabJson["relative_path"] = relativePath;
+                tabJson["notebook"] = p_destNotebook;
+                tabJson["relative_path"] = p_destRelativePath;
                 tabs->setTabData(i, tabJson);
                 tabs->setTabToolTip(i, generateTooltip(tabJson));
-                tabs->setTabText(i, generateTabText(VUtils::fileNameFromPath(relativePath), tab->isModified()));
-                QString path = QDir::cleanPath(QDir(vnote->getNotebookPath(notebook)).filePath(relativePath));
+                tabs->setTabText(i, generateTabText(VUtils::fileNameFromPath(p_destRelativePath), tab->isModified()));
+                QString path = QDir::cleanPath(QDir(vnote->getNotebookPath(p_destNotebook)).filePath(p_destRelativePath));
                 tab->updatePath(path);
             }
         }

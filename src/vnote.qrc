@@ -64,5 +64,8 @@
         <file>resources/vnote.qss</file>
         <file>resources/icons/note_info_tb.svg</file>
         <file>resources/icons/delete_note_tb.svg</file>
+        <file>resources/icons/copy.svg</file>
+        <file>resources/icons/cut.svg</file>
+        <file>resources/icons/paste.svg</file>
     </qresource>
 </RCC>

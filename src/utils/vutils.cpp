@@ -4,6 +4,11 @@
 #include <QDebug>
 #include <QRegularExpression>
 #include <QRegExp>
+#include <QClipboard>
+#include <QApplication>
+#include <QMimeData>
+#include <QJsonObject>
+#include <QJsonDocument>
 
 VUtils::VUtils()
 {
@@ -158,4 +163,43 @@ void VUtils::makeDirectory(const QString &path)
     if (dir.mkdir(dirName)) {
         qDebug() << "mkdir" << path;
     }
+}
+
+ClipboardOpType VUtils::opTypeInClipboard()
+{
+    QClipboard *clipboard = QApplication::clipboard();
+    const QMimeData *mimeData = clipboard->mimeData();
+
+    if (mimeData->hasText()) {
+        QString text = mimeData->text();
+        QJsonObject clip = QJsonDocument::fromJson(text.toLocal8Bit()).object();
+        if (clip.contains("operation")) {
+            return (ClipboardOpType)clip["operation"].toInt();
+        }
+    }
+    return ClipboardOpType::Invalid;
+}
+
+bool VUtils::copyFile(const QString &p_srcFilePath, const QString &p_destFilePath, bool p_isCut)
+{
+    QString srcPath = QDir::cleanPath(p_srcFilePath);
+    QString destPath = QDir::cleanPath(p_destFilePath);
+
+    if (srcPath == destPath) {
+        return true;
+    }
+
+    if (p_isCut) {
+        QFile file(srcPath);
+        if (!file.rename(destPath)) {
+            qWarning() << "error: fail to copy file" << srcPath << destPath;
+            return false;
+        }
+    } else {
+        if (!QFile::copy(srcPath, destPath)) {
+            qWarning() << "error: fail to copy file" << srcPath << destPath;
+            return false;
+        }
+    }
+    return true;
 }

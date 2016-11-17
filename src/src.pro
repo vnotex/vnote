@@ -42,7 +42,8 @@ SOURCES += main.cpp\
     veditwindow.cpp \
     vedittab.cpp \
     voutline.cpp \
-    vtoc.cpp
+    vtoc.cpp \
+    vfilelocation.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -73,7 +74,8 @@ HEADERS  += vmainwindow.h \
     veditwindow.h \
     vedittab.h \
     voutline.h \
-    vtoc.h
+    vtoc.h \
+    vfilelocation.h
 
 RESOURCES += \
     vnote.qrc

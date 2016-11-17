@@ -242,13 +242,14 @@ void VEditArea::handleDirectoryRenamed(const QString &notebook, const QString &o
     updateWindowStatus();
 }
 
-void VEditArea::handleFileRenamed(const QString &notebook,
-                                  const QString &oldRelativePath, const QString &newRelativePath)
+void VEditArea::handleFileRenamed(const QString &p_srcNotebook, const QString &p_srcRelativePath,
+                                  const QString &p_destNotebook, const QString &p_destRelativePath)
 {
+    qDebug() << "fileRenamed" << p_srcNotebook << p_srcRelativePath << p_destNotebook << p_destRelativePath;
     int nrWin = splitter->count();
     for (int i = 0; i < nrWin; ++i) {
         VEditWindow *win = getWindow(i);
-        win->handleFileRenamed(notebook, oldRelativePath, newRelativePath);
+        win->handleFileRenamed(p_srcNotebook, p_srcRelativePath, p_destNotebook, p_destRelativePath);
     }
     updateWindowStatus();
 }
