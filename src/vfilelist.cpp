@@ -271,13 +271,21 @@ void VFileList::contextMenuRequested(QPoint pos)
     menu.addAction(newFileAct);
     if (item) {
         menu.addAction(deleteFileAct);
-        menu.addAction(fileInfoAct);
+        menu.addSeparator();
         menu.addAction(copyAct);
         menu.addAction(cutAct);
     }
 
     if (VUtils::opTypeInClipboard() == ClipboardOpType::CopyFile) {
+        if (!item) {
+            menu.addSeparator();
+        }
         menu.addAction(pasteAct);
+    }
+
+    if (item) {
+        menu.addSeparator();
+        menu.addAction(fileInfoAct);
     }
     menu.exec(fileList->mapToGlobal(pos));
 }
