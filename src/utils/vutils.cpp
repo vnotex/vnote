@@ -9,6 +9,7 @@
 #include <QMimeData>
 #include <QJsonObject>
 #include <QJsonDocument>
+#include <QDateTime>
 
 VUtils::VUtils()
 {
@@ -71,6 +72,9 @@ QString VUtils::generateImageFileName(const QString &path, const QString &title,
     QString baseName(title.toLower());
     baseName.replace(regExp, "_");
     baseName.prepend('_');
+
+    // Add current time to make the name be most likely unique
+    baseName = baseName + '_' + QString::number(QDateTime::currentDateTime().toTime_t());
     QString imageName = baseName + "." + format.toLower();
     QString filePath = QDir(path).filePath(imageName);
     int index = 1;
