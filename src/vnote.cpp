@@ -21,6 +21,17 @@ VNote::VNote() : QObject()
     emit notebooksChanged(notebooks);
 }
 
+void VNote::initPalette(QPalette palette)
+{
+    m_palette.clear();
+
+    m_palette.append(QPair<QString, QString>("base-background",
+                                             palette.background().color().name()));
+    m_palette.append(QPair<QString, QString>("base-foreground",
+                                             palette.background().color().name()));
+    m_palette.append(QPair<QString, QString>("hover-color", "#42A5F5"));
+}
+
 void VNote::initTemplate()
 {
     if (templateHtml.isEmpty() || preTemplateHtml.isEmpty()

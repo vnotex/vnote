@@ -6,7 +6,9 @@
 #include <QSettings>
 #include <QFont>
 #include <QObject>
+#include <QPair>
 #include <QHash>
+#include <QPalette>
 #include "vnotebook.h"
 
 enum OpenFileMode {Read = 0, Edit};
@@ -34,6 +36,9 @@ public:
 
     QString getNotebookPath(const QString &name);
 
+    inline const QVector<QPair<QString, QString> > &getPallete() const;
+    void initPalette(QPalette palette);
+
 public slots:
     void updateTemplate();
 
@@ -48,6 +53,12 @@ signals:
 private:
     QVector<VNotebook> notebooks;
     QHash<QString, QString> notebookPathHash;
+    QVector<QPair<QString, QString> > m_palette;
 };
+
+inline const QVector<QPair<QString, QString> >& VNote::getPallete() const
+{
+    return m_palette;
+}
 
 #endif // VNOTE_H

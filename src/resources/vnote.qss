@@ -35,3 +35,44 @@ QDockWidget::close-button, QDockWidget::float-button {
 QDockWidget::close-button:hover, QDockWidget::float-button:hover {
     background-color: @hover-color;
 }
+
+/* QComboBox */
+QComboBox[OnMainWindow="true"] {
+    border: 1px solid grey;
+    background-color: @base-background;
+}
+
+QComboBox[OnMainWindow="true"]:on { /* shift the text when the popup opens */
+    padding-top: 3px;
+    padding-left: 4px;
+}
+
+QComboBox[OnMainWindow="true"]::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px;
+    border: none;
+    background: transparent;
+}
+
+QComboBox[OnMainWindow="true"]::down-arrow {
+    image: url(:/resources/icons/arrow_dropdown.svg);
+    width: 20px;
+}
+
+QComboBox[OnMainWindow="true"]::down-arrow:on { /* shift the arrow when popup is open */
+    top: 1px;
+    left: 1px;
+}
+
+QComboBox[OnMainWindow="true"]::item {
+    padding-left: 20px;
+    border: none;
+    height: 20px;
+}
+
+QComboBox[OnMainWindow="true"]::item:selected {
+    padding-left: 20px;
+    border: none;
+    background-color: @hover-color;
+}

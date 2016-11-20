@@ -2,6 +2,9 @@
 #define VMAINWINDOW_H
 
 #include <QMainWindow>
+#include <QVector>
+#include <QPair>
+#include <QString>
 
 class QLabel;
 class QComboBox;
@@ -27,6 +30,7 @@ class VMainWindow : public QMainWindow
 public:
     VMainWindow(QWidget *parent = 0);
     ~VMainWindow();
+    const QVector<QPair<QString, QString> > &getPalette() const;
 
 private slots:
     void setCurNotebookIndex(int index);

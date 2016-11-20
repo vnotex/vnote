@@ -19,6 +19,7 @@ VMainWindow::VMainWindow(QWidget *parent)
     setWindowIcon(QIcon(":/resources/icons/vnote.ico"));
     // Must be called before those who uses VConfigManager
     vnote = new VNote();
+    vnote->initPalette(palette());
     initPredefinedColorPixmaps();
     setupUI();
     initActions();
@@ -52,6 +53,7 @@ void VMainWindow::setupUI()
     notebookInfoBtn->setProperty("OnMainWindow", true);
 
     notebookComboBox = new QComboBox();
+    notebookComboBox->setProperty("OnMainWindow", true);
     notebookComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     directoryTree = new VDirectoryTree(vnote);
 
@@ -820,4 +822,9 @@ void VMainWindow::restoreStateAndGeometry()
         restoreState(state);
     }
     toolDock->setVisible(vconfig.getToolsDockChecked());
+}
+
+const QVector<QPair<QString, QString> >& VMainWindow::getPalette() const
+{
+    return vnote->getPallete();
 }

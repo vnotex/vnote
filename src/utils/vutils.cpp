@@ -87,14 +87,8 @@ QString VUtils::generateImageFileName(const QString &path, const QString &title,
     return imageName;
 }
 
-void VUtils::processStyle(QString &style)
+void VUtils::processStyle(QString &style, const QVector<QPair<QString, QString> > &varMap)
 {
-    QVector<QPair<QString, QString> > varMap;
-
-    // Initialize varMap
-    addQssVarToMap(varMap, "base-color", "#4CAF50");
-    addQssVarToMap(varMap, "hover-color", "#42A5F5");
-
     // Process style
     for (int i = 0; i < varMap.size(); ++i) {
         const QPair<QString, QString> &map = varMap[i];

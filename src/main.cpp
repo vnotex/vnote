@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 
     QString style = VUtils::readFileFromDisk(":/resources/vnote.qss");
     if (!style.isEmpty()) {
-        VUtils::processStyle(style);
+        VUtils::processStyle(style, w.getPalette());
         app.setStyleSheet(style);
     }
 
