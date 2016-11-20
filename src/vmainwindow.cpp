@@ -25,6 +25,7 @@ VMainWindow::VMainWindow(QWidget *parent)
     initToolBar();
     initMenuBar();
     initDockWindows();
+    restoreStateAndGeometry();
 
     updateNotebookComboBox(vnote->getNotebooks());
 }
@@ -273,6 +274,7 @@ void VMainWindow::initActions()
 void VMainWindow::initToolBar()
 {
     QToolBar *fileToolBar = addToolBar(tr("Note"));
+    fileToolBar->setObjectName("note");
     fileToolBar->addAction(newRootDirAct);
     fileToolBar->addAction(newNoteAct);
     fileToolBar->addAction(noteInfoAct);
@@ -292,6 +294,7 @@ void VMainWindow::initToolBar()
     saveNoteAct->setVisible(false);
 
     QToolBar *viewToolBar = addToolBar(tr("View"));
+    viewToolBar->setObjectName("view");
     viewToolBar->addAction(twoPanelViewAct);
     viewToolBar->addAction(onePanelViewAct);
     viewToolBar->addAction(expandViewAct);
@@ -355,8 +358,9 @@ void VMainWindow::initMenuBar()
 
 void VMainWindow::initDockWindows()
 {
-    QDockWidget *dock = new QDockWidget(tr("Tools"), this);
-    dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    toolDock = new QDockWidget(tr("Tools"), this);
+    toolDock->setObjectName("tools_dock");
+    toolDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     toolBox = new QToolBox(this);
     outline = new VOutline(this);
     connect(editArea, &VEditArea::outlineChanged,
@@ -366,9 +370,9 @@ void VMainWindow::initDockWindows()
     connect(editArea, &VEditArea::curHeaderChanged,
             outline, &VOutline::updateCurHeader);
     toolBox->addItem(outline, QIcon(":/resources/icons/outline.svg"), tr("Outline"));
-    dock->setWidget(toolBox);
-    addDockWidget(Qt::RightDockWidgetArea, dock);
-    viewMenu->addAction(dock->toggleViewAction());
+    toolDock->setWidget(toolBox);
+    addDockWidget(Qt::RightDockWidgetArea, toolDock);
+    viewMenu->addAction(toolDock->toggleViewAction());
 }
 
 void VMainWindow::updateNotebookComboBox(const QVector<VNotebook> &notebooks)
@@ -788,4 +792,30 @@ void VMainWindow::curEditFileInfo()
 void VMainWindow::deleteCurNote()
 {
     fileList->deleteFile(curEditNotebook, curEditRelativePath);
+}
+
+void VMainWindow::closeEvent(QCloseEvent *event)
+{
+    saveStateAndGeometry();
+    QMainWindow::closeEvent(event);
+}
+
+void VMainWindow::saveStateAndGeometry()
+{
+    vconfig.setMainWindowGeometry(saveGeometry());
+    vconfig.setMainWindowState(saveState());
+    vconfig.setToolsDockChecked(toolDock->isVisible());
+}
+
+void VMainWindow::restoreStateAndGeometry()
+{
+    const QByteArray &geometry = vconfig.getMainWindowGeometry();
+    if (!geometry.isEmpty()) {
+        restoreGeometry(geometry);
+    }
+    const QByteArray &state = vconfig.getMainWindowState();
+    if (!state.isEmpty()) {
+        restoreState(state);
+    }
+    toolDock->setVisible(vconfig.getToolsDockChecked());
 }

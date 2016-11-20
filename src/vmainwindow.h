@@ -56,6 +56,9 @@ private slots:
 signals:
     void curNotebookChanged(const QString &notebookName);
 
+protected:
+    void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
+
 private:
     void setupUI();
     void initActions();
@@ -69,6 +72,8 @@ private:
     void changeSplitterView(int nrPanel);
     void updateWindowTitle(const QString &str);
     void updateToolbarFromTabChage(bool empty, bool editMode, bool modifiable);
+    void saveStateAndGeometry();
+    void restoreStateAndGeometry();
 
     // If true, comboBox changes will not trigger any signal out
     bool notebookComboMuted;
@@ -87,6 +92,7 @@ private:
     VDirectoryTree *directoryTree;
     QSplitter *mainSplitter;
     VEditArea *editArea;
+    QDockWidget *toolDock;
     QToolBox *toolBox;
     VOutline *outline;
 

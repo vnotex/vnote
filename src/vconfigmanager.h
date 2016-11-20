@@ -83,6 +83,15 @@ public:
     inline const QString &getCurRenderBackgroundColor() const;
     inline void setCurRenderBackgroundColor(const QString &colorName);
 
+    inline bool getToolsDockChecked() const;
+    inline void setToolsDockChecked(bool p_checked);
+
+    inline const QByteArray &getMainWindowGeometry() const;
+    inline void setMainWindowGeometry(const QByteArray &p_geometry);
+
+    inline const QByteArray &getMainWindowState() const;
+    inline void setMainWindowState(const QByteArray &p_state);
+
 private:
     void updateMarkdownEditStyle();
     QVariant getConfigFromSettings(const QString &section, const QString &key);
@@ -119,6 +128,11 @@ private:
     QVector<VColor> predefinedColors;
     QString curBackgroundColor;
     QString curRenderBackgroundColor;
+
+    bool m_toolsDockChecked;
+
+    QByteArray m_mainWindowGeometry;
+    QByteArray m_mainWindowState;
 
     // The name of the config file in each directory
     static const QString dirConfigFileName;
@@ -287,6 +301,42 @@ inline void VConfigManager::setCurRenderBackgroundColor(const QString &colorName
     curRenderBackgroundColor = colorName;
     setConfigToSettings("global", "current_render_background_color",
                         curRenderBackgroundColor);
+}
+
+inline bool VConfigManager::getToolsDockChecked() const
+{
+    return m_toolsDockChecked;
+}
+
+inline void VConfigManager::setToolsDockChecked(bool p_checked)
+{
+    m_toolsDockChecked = p_checked;
+    setConfigToSettings("session", "tools_dock_checked",
+                        m_toolsDockChecked);
+}
+
+inline const QByteArray& VConfigManager::getMainWindowGeometry() const
+{
+    return m_mainWindowGeometry;
+}
+
+inline void VConfigManager::setMainWindowGeometry(const QByteArray &p_geometry)
+{
+    m_mainWindowGeometry = p_geometry;
+    setConfigToSettings("session", "main_window_geometry",
+                        m_mainWindowGeometry);
+}
+
+inline const QByteArray& VConfigManager::getMainWindowState() const
+{
+    return m_mainWindowState;
+}
+
+inline void VConfigManager::setMainWindowState(const QByteArray &p_state)
+{
+    m_mainWindowState = p_state;
+    setConfigToSettings("session", "main_window_state",
+                        m_mainWindowState);
 }
 
 #endif // VCONFIGMANAGER_H

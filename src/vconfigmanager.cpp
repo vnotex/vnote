@@ -61,6 +61,10 @@ void VConfigManager::initialize()
     curRenderBackgroundColor = getConfigFromSettings("global",
                                                      "current_render_background_color").toString();
 
+    m_toolsDockChecked = getConfigFromSettings("session", "tools_dock_checked").toBool();
+    m_mainWindowGeometry = getConfigFromSettings("session", "main_window_geometry").toByteArray();
+    m_mainWindowState = getConfigFromSettings("session", "main_window_state").toByteArray();
+
     // Update notebooks
     readNotebookFromSettings();
 
