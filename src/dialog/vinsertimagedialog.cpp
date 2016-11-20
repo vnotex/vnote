@@ -1,4 +1,6 @@
 #include <QtWidgets>
+#include <QValidator>
+#include <QRegExp>
 #include "vinsertimagedialog.h"
 
 VInsertImageDialog::VInsertImageDialog(const QString &title, const QString &defaultImageTitle,
@@ -39,6 +41,9 @@ void VInsertImageDialog::setupUI()
     imageTitleEdit = new QLineEdit(defaultImageTitle);
     imageTitleEdit->selectAll();
     imageTitleLabel->setBuddy(imageTitleEdit);
+    QRegExp regExp("[\\w\\(\\)@#%\\*\\-\\+=\\?<>\\,\\.]+");
+    QValidator *validator = new QRegExpValidator(regExp, this);
+    imageTitleEdit->setValidator(validator);
 
     okBtn = new QPushButton(tr("&OK"));
     okBtn->setDefault(true);

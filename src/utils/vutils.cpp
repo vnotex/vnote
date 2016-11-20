@@ -2,7 +2,6 @@
 #include <QFile>
 #include <QDir>
 #include <QDebug>
-#include <QRegularExpression>
 #include <QRegExp>
 #include <QClipboard>
 #include <QApplication>
@@ -68,13 +67,15 @@ QString VUtils::generateImageFileName(const QString &path, const QString &title,
                                       const QString &format)
 {
     Q_ASSERT(!title.isEmpty());
-    QRegularExpression regExp("[^a-zA-Z0-9_]+");
+    QRegExp regExp("\\W");
     QString baseName(title.toLower());
-    baseName.replace(regExp, "_");
+    baseName.remove(regExp);
     baseName.prepend('_');
 
-    // Add current time to make the name be most likely unique
+    // Add current time and random number to make the name be most likely unique
     baseName = baseName + '_' + QString::number(QDateTime::currentDateTime().toTime_t());
+    baseName = baseName + '_' + QString::number(qrand());
+
     QString imageName = baseName + "." + format.toLower();
     QString filePath = QDir(path).filePath(imageName);
     int index = 1;
