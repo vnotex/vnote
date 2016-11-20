@@ -6,6 +6,7 @@
 #include "hgmarkdownhighlighter.h"
 #include "vmdeditoperations.h"
 #include "vtoc.h"
+#include "utils/vutils.h"
 
 extern VConfigManager vconfig;
 
@@ -93,9 +94,18 @@ void VEdit::beginEdit()
     case DocType::Markdown:
         setFont(vconfig.getMdEditFont());
         setPlainText(noteFile->content);
+        initInitImages();
         break;
     default:
         qWarning() << "error: unknown doc type" << int(noteFile->docType);
+    }
+}
+
+void VEdit::endEdit()
+{
+    setReadOnly(true);
+    if (noteFile->docType == DocType::Markdown) {
+        clearUnusedImages();
     }
 }
 
@@ -217,4 +227,62 @@ void VEdit::updateCurHeader()
         }
     }
     emit curHeaderChanged(curHeader);
+}
+
+void VEdit::insertImage(const QString &name)
+{
+    m_insertedImages.append(name);
+}
+
+void VEdit::initInitImages()
+{
+    m_initImages = VUtils::imagesFromMarkdownFile(QDir(noteFile->basePath).filePath(noteFile->fileName));
+}
+
+void VEdit::clearUnusedImages()
+{
+    QVector<QString> images = VUtils::imagesFromMarkdownFile(QDir(noteFile->basePath).filePath(noteFile->fileName));
+
+    if (!m_insertedImages.isEmpty()) {
+        QVector<QString> imageNames(images.size());
+        for (int i = 0; i < imageNames.size(); ++i) {
+            imageNames[i] = VUtils::fileNameFromPath(images[i]);
+        }
+
+        QDir dir = QDir(QDir(noteFile->basePath).filePath("images"));
+        for (int i = 0; i < m_insertedImages.size(); ++i) {
+            QString name = m_insertedImages[i];
+            int j;
+            for (j = 0; j < imageNames.size(); ++j) {
+                if (name == imageNames[j]) {
+                    break;
+                }
+            }
+
+            // Delete it
+            if (j == imageNames.size()) {
+                QString imagePath = dir.filePath(name);
+                QFile(imagePath).remove();
+                qDebug() << "delete inserted image" << imagePath;
+            }
+        }
+        m_insertedImages.clear();
+    }
+
+    for (int i = 0; i < m_initImages.size(); ++i) {
+        QString imagePath = m_initImages[i];
+        int j;
+        for (j = 0; j < images.size(); ++j) {
+            if (imagePath == images[j]) {
+                break;
+            }
+        }
+
+        // Delete it
+        if (j == images.size()) {
+            QFile(imagePath).remove();
+            qDebug() << "delete existing image" << imagePath;
+        }
+    }
+    m_initImages.clear();
 }

@@ -55,6 +55,8 @@ void VMdEditOperations::insertImageFromQImage(const QString &title, const QStrin
 
     QString md = QString("![%1](images/%2)").arg(title).arg(fileName);
     insertTextAtCurPos(md);
+
+    editor->insertImage(fileName);
 }
 
 void VMdEditOperations::insertImageFromPath(const QString &title,
@@ -76,6 +78,8 @@ void VMdEditOperations::insertImageFromPath(const QString &title,
 
     QString md = QString("![%1](images/%2)").arg(title).arg(fileName);
     insertTextAtCurPos(md);
+
+    editor->insertImage(fileName);
 }
 
 bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)

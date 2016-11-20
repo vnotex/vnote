@@ -164,7 +164,7 @@ void VEditTab::readFile()
             return;
         }
     }
-    textEditor->setReadOnly(true);
+    textEditor->endEdit();
     showFileReadMode();
 }
 

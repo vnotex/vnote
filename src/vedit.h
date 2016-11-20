@@ -17,6 +17,7 @@ public:
     VEdit(VNoteFile *noteFile, QWidget *parent = 0);
     ~VEdit();
     void beginEdit();
+    void endEdit();
 
     // Save buffer content to noteFile->content.
     void saveFile();
@@ -26,6 +27,7 @@ public:
 
     void reloadFile();
     void scrollToLine(int lineNumber);
+    void insertImage(const QString &name);
 
 signals:
     void headersChanged(const QVector<VHeader> &headers);
@@ -43,6 +45,8 @@ private slots:
 private:
     void updateTabSettings();
     void updateFontAndPalette();
+    void initInitImages();
+    void clearUnusedImages();
 
     bool isExpandTab;
     QString tabSpaces;
@@ -50,6 +54,8 @@ private:
     HGMarkdownHighlighter *mdHighlighter;
     VEditOperations *editOps;
     QVector<VHeader> headers;
+    QVector<QString> m_insertedImages;
+    QVector<QString> m_initImages;
 };
 
 
