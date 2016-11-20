@@ -380,7 +380,8 @@ void VMainWindow::updateNotebookComboBox(const QVector<VNotebook> &notebooks)
     notebookComboMuted = true;
     notebookComboBox->clear();
     for (int i = 0; i < notebooks.size(); ++i) {
-        notebookComboBox->addItem(notebooks[i].getName());
+        notebookComboBox->addItem(QIcon(":/resources/icons/notebook_item.svg"),
+                                  notebooks[i].getName());
     }
     notebookComboMuted = false;
 
@@ -398,7 +399,8 @@ void VMainWindow::updateNotebookComboBox(const QVector<VNotebook> &notebooks)
 void VMainWindow::notebookComboBoxAdded(const QVector<VNotebook> &notebooks, int idx)
 {
     notebookComboMuted = true;
-    notebookComboBox->insertItem(idx, notebooks[idx].getName());
+    notebookComboBox->insertItem(idx, QIcon(":/resources/icons/notebook_item.svg"),
+                                 notebooks[idx].getName());
     notebookComboMuted = false;
     if (notebookComboBox->currentIndex() == vconfig.getCurNotebookIndex()) {
         setCurNotebookIndex(vconfig.getCurNotebookIndex());

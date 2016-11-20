@@ -102,6 +102,7 @@ void VDirectoryTree::fillDirectoryTreeItem(QTreeWidgetItem &item, QJsonObject it
 {
     item.setText(0, itemJson["name"].toString());
     item.setData(0, Qt::UserRole, itemJson);
+    item.setIcon(0, QIcon(":/resources/icons/dir_item.svg"));
 }
 
 QTreeWidgetItem* VDirectoryTree::insertDirectoryTreeItem(QTreeWidgetItem *parent, QTreeWidgetItem *preceding,

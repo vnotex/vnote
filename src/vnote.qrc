@@ -67,5 +67,7 @@
         <file>resources/icons/copy.svg</file>
         <file>resources/icons/cut.svg</file>
         <file>resources/icons/paste.svg</file>
+        <file>resources/icons/dir_item.svg</file>
+        <file>resources/icons/notebook_item.svg</file>
     </qresource>
 </RCC>
