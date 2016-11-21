@@ -26,18 +26,10 @@ struct VAnchor
     VAnchor() : lineNumber(-1) {}
     VAnchor(const QString filePath, const QString &anchor, int lineNumber)
         : filePath(filePath), anchor(anchor), lineNumber(lineNumber) {}
-    inline bool operator ==(const VAnchor &p_anchor) const;
     QString filePath;
     QString anchor;
     int lineNumber;
 };
-
-inline bool VAnchor::operator ==(const VAnchor &p_anchor) const
-{
-    return p_anchor.filePath == filePath &&
-           p_anchor.anchor == anchor &&
-           p_anchor.lineNumber == lineNumber;
-}
 
 class VToc
 {

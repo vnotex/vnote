@@ -359,6 +359,7 @@ void VEditTab::scrollToAnchor(const VAnchor &anchor)
             document.scrollToAnchor(anchor.anchor.mid(1));
         }
     }
+    curHeader = anchor;
 }
 
 void VEditTab::updateCurHeader(const QString &anchor)

@@ -196,6 +196,19 @@ bool VEditArea::closeFile(QJsonObject fileJson)
     return ret;
 }
 
+bool VEditArea::closeAllFiles(bool p_forced)
+{
+    int nrWin = splitter->count();
+    for (int i = 0; i < nrWin; ++i) {
+        VEditWindow *win = getWindow(i);
+        setCurrentWindow(i, false);
+        if (!win->closeAllFiles(p_forced)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void VEditArea::editFile()
 {
     VEditWindow *win = getWindow(curWindowIndex);
@@ -267,7 +280,7 @@ void VEditArea::handleSplitWindowRequest(VEditWindow *curWindow)
 
 void VEditArea::handleRemoveSplitRequest(VEditWindow *curWindow)
 {
-    if (!curWindow) {
+    if (!curWindow || splitter->count() <= 1) {
         return;
     }
     int idx = splitter->indexOf(curWindow);

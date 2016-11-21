@@ -22,6 +22,7 @@ class VEditArea : public QWidget
 public:
     explicit VEditArea(VNote *vnote, QWidget *parent = 0);
     bool isFileOpened(const QString &notebook, const QString &relativePath);
+    bool closeAllFiles(bool p_forced);
 
 signals:
     void curTabStatusChanged(const QString &notebook, const QString &relativePath,

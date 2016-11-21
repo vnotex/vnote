@@ -71,7 +71,7 @@ void VEditWindow::removeSplit()
 {
     // Close all the files one by one
     // If user do not want to close a file, just stop removing
-    if (closeAllFiles()) {
+    if (closeAllFiles(false)) {
         Q_ASSERT(count() == 0);
         emit requestRemoveSplit(this);
     }
@@ -124,18 +124,21 @@ out:
     return idx;
 }
 
+// Return true if we closed the file
 bool VEditWindow::closeFile(const QString &notebook, const QString &relativePath, bool isForced)
 {
     // Find if it has been opened already
     int idx = findTabByFile(notebook, relativePath);
     if (idx == -1) {
-        return true;
+        return false;
     }
 
     VEditTab *editor = getTab(idx);
     Q_ASSERT(editor);
     bool ok = true;
     if (!isForced) {
+        setCurrentIndex(idx);
+        noticeStatus(idx);
         ok = editor->requestClose();
     }
     if (ok) {
@@ -146,16 +149,31 @@ bool VEditWindow::closeFile(const QString &notebook, const QString &relativePath
     return ok;
 }
 
-bool VEditWindow::closeAllFiles()
+bool VEditWindow::closeAllFiles(bool p_forced)
 {
     int nrTab = count();
+    bool ret = true;
     for (int i = 0; i < nrTab; ++i) {
-        // Always close the first tab
-        if (!handleTabCloseRequest(0)) {
-            return false;
+        VEditTab *editor = getTab(0);
+        bool ok = true;
+        if (!p_forced) {
+            setCurrentIndex(0);
+            noticeStatus(0);
+            ok = editor->requestClose();
+        }
+        if (ok) {
+            removeTab(0);
+            delete editor;
+        } else {
+            ret = false;
+            break;
         }
     }
-    return true;
+    updateTabListMenu();
+    if (ret) {
+        emit requestRemoveSplit(this);
+    }
+    return ret;
 }
 
 int VEditWindow::openFileInTab(const QString &notebook, const QString &relativePath,

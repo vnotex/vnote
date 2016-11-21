@@ -89,9 +89,6 @@ void VOutline::handleItemClicked(QTreeWidgetItem *item, int column)
 
 void VOutline::updateCurHeader(const VAnchor &anchor)
 {
-    if (anchor == curHeader) {
-        return;
-    }
     curHeader = anchor;
     if (outline.type == VHeaderType::Anchor) {
         selectAnchor(anchor.anchor);

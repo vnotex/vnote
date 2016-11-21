@@ -800,6 +800,11 @@ void VMainWindow::deleteCurNote()
 
 void VMainWindow::closeEvent(QCloseEvent *event)
 {
+    if (!editArea->closeAllFiles(false)) {
+        // Fail to close all the opened files, cancel closing app
+        event->ignore();
+        return;
+    }
     saveStateAndGeometry();
     QMainWindow::closeEvent(event);
 }
