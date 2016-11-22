@@ -3,9 +3,15 @@
 #include <QFile>
 #include <QTextCodec>
 #include "utils/vutils.h"
+#include "vsingleinstanceguard.h"
 
 int main(int argc, char *argv[])
 {
+    VSingleInstanceGuard guard;
+    if (!guard.tryRun()) {
+        return 0;
+    }
+
     QApplication app(argc, argv);
 
     QTextCodec *codec = QTextCodec::codecForName("UTF8");
