@@ -41,7 +41,7 @@ void VInsertImageDialog::setupUI()
     imageTitleEdit = new QLineEdit(defaultImageTitle);
     imageTitleEdit->selectAll();
     imageTitleLabel->setBuddy(imageTitleEdit);
-    QRegExp regExp("[\\w\\(\\)@#%\\*\\-\\+=\\?<>\\,\\.]+");
+    QRegExp regExp("[\\w\\(\\)@#%\\*\\-\\+=\\?<>\\,\\.\\s]+");
     QValidator *validator = new QRegExpValidator(regExp, this);
     imageTitleEdit->setValidator(validator);
 
