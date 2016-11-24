@@ -65,6 +65,7 @@ protected:
 
 private:
     void setupUI();
+    QWidget *setupDirectoryPanel();
     void initActions();
     void initToolBar();
     void initMenuBar();

@@ -38,41 +38,7 @@ VMainWindow::~VMainWindow()
 
 void VMainWindow::setupUI()
 {
-    // Notebook directory browser tree
-    notebookLabel = new QLabel(tr("Notebook"));
-    directoryLabel = new QLabel(tr("Directory"));
-
-    newNotebookBtn = new QPushButton(QIcon(":/resources/icons/create_notebook.svg"), "");
-    newNotebookBtn->setToolTip(tr("Create a new notebook"));
-    newNotebookBtn->setProperty("OnMainWindow", true);
-    deleteNotebookBtn = new QPushButton(QIcon(":/resources/icons/delete_notebook.svg"), "");
-    deleteNotebookBtn->setToolTip(tr("Delete current notebook"));
-    deleteNotebookBtn->setProperty("OnMainWindow", true);
-    notebookInfoBtn = new QPushButton(QIcon(":/resources/icons/notebook_info.svg"), "");
-    notebookInfoBtn->setToolTip(tr("View and edit current notebook's information"));
-    notebookInfoBtn->setProperty("OnMainWindow", true);
-
-    notebookComboBox = new QComboBox();
-    notebookComboBox->setProperty("OnMainWindow", true);
-    notebookComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    directoryTree = new VDirectoryTree(vnote);
-
-    QHBoxLayout *nbBtnLayout = new QHBoxLayout;
-    nbBtnLayout->addWidget(notebookLabel);
-    nbBtnLayout->addStretch();
-    nbBtnLayout->addWidget(newNotebookBtn);
-    nbBtnLayout->addWidget(deleteNotebookBtn);
-    nbBtnLayout->addWidget(notebookInfoBtn);
-    nbBtnLayout->setContentsMargins(0, 0, 0, 0);
-    QVBoxLayout *nbLayout = new QVBoxLayout;
-    nbLayout->addLayout(nbBtnLayout);
-    nbLayout->addWidget(notebookComboBox);
-    nbLayout->addWidget(directoryLabel);
-    nbLayout->addWidget(directoryTree);
-    nbLayout->setContentsMargins(5, 0, 0, 0);
-    QWidget *nbContainer = new QWidget();
-    nbContainer->setLayout(nbLayout);
-    nbContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
+    QWidget *directoryPanel = setupDirectoryPanel();
 
     fileList = new VFileList(vnote);
     fileList->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
@@ -83,7 +49,7 @@ void VMainWindow::setupUI()
 
     // Main Splitter
     mainSplitter = new QSplitter();
-    mainSplitter->addWidget(nbContainer);
+    mainSplitter->addWidget(directoryPanel);
     mainSplitter->addWidget(fileList);
     mainSplitter->addWidget(editArea);
     mainSplitter->setStretchFactor(0, 0);
@@ -142,6 +108,46 @@ void VMainWindow::setupUI()
     setCentralWidget(mainSplitter);
     // Create and show the status bar
     statusBar();
+}
+
+QWidget *VMainWindow::setupDirectoryPanel()
+{
+    notebookLabel = new QLabel(tr("Notebook"));
+    directoryLabel = new QLabel(tr("Directory"));
+
+    newNotebookBtn = new QPushButton(QIcon(":/resources/icons/create_notebook.svg"), "");
+    newNotebookBtn->setToolTip(tr("Create a new notebook"));
+    newNotebookBtn->setProperty("OnMainWindow", true);
+    deleteNotebookBtn = new QPushButton(QIcon(":/resources/icons/delete_notebook.svg"), "");
+    deleteNotebookBtn->setToolTip(tr("Delete current notebook"));
+    deleteNotebookBtn->setProperty("OnMainWindow", true);
+    notebookInfoBtn = new QPushButton(QIcon(":/resources/icons/notebook_info.svg"), "");
+    notebookInfoBtn->setToolTip(tr("View and edit current notebook's information"));
+    notebookInfoBtn->setProperty("OnMainWindow", true);
+
+    notebookComboBox = new QComboBox();
+    notebookComboBox->setProperty("OnMainWindow", true);
+    notebookComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    directoryTree = new VDirectoryTree(vnote);
+
+    QHBoxLayout *nbBtnLayout = new QHBoxLayout;
+    nbBtnLayout->addWidget(notebookLabel);
+    nbBtnLayout->addStretch();
+    nbBtnLayout->addWidget(newNotebookBtn);
+    nbBtnLayout->addWidget(deleteNotebookBtn);
+    nbBtnLayout->addWidget(notebookInfoBtn);
+    nbBtnLayout->setContentsMargins(0, 0, 0, 0);
+    QVBoxLayout *nbLayout = new QVBoxLayout;
+    nbLayout->addLayout(nbBtnLayout);
+    nbLayout->addWidget(notebookComboBox);
+    nbLayout->addWidget(directoryLabel);
+    nbLayout->addWidget(directoryTree);
+    nbLayout->setContentsMargins(5, 0, 0, 0);
+    QWidget *nbContainer = new QWidget();
+    nbContainer->setLayout(nbLayout);
+    nbContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
+
+    return nbContainer;
 }
 
 void VMainWindow::initActions()
