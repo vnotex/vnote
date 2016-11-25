@@ -83,10 +83,10 @@ void VFileList::setDirectory(QJsonObject dirJson)
     notebook = dirJson["notebook"].toString();
     relativePath = dirJson["relative_path"].toString();
     rootPath = "";
-    const QVector<VNotebook> &notebooks = vnote->getNotebooks();
+    const QVector<VNotebook *> &notebooks = vnote->getNotebooks();
     for (int i = 0; i < notebooks.size(); ++i) {
-        if (notebooks[i].getName() == notebook) {
-            rootPath = notebooks[i].getPath();
+        if (notebooks[i]->getName() == notebook) {
+            rootPath = notebooks[i]->getPath();
             break;
         }
     }
@@ -428,14 +428,6 @@ bool VFileList::importFile(const QString &name)
     }
 
     return insertFileListItem(fileJson, true);
-}
-
-void VFileList::handleNotebookRenamed(const QVector<VNotebook> &notebooks,
-                                      const QString &oldName, const QString &newName)
-{
-    if (oldName == notebook) {
-        notebook = newName;
-    }
 }
 
 void VFileList::handleDirectoryRenamed(const QString &notebook,

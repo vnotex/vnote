@@ -17,9 +17,9 @@ class VNote : public QObject
 {
     Q_OBJECT
 public:
-    VNote();
+    VNote(QObject *parent = 0);
 
-    const QVector<VNotebook>& getNotebooks();
+    const QVector<VNotebook *>& getNotebooks();
 
     void initTemplate();
 
@@ -31,8 +31,8 @@ public:
     static QString postTemplateHtml;
 
     void createNotebook(const QString &name, const QString &path);
-    void removeNotebook(const QString &name);
-    void renameNotebook(const QString &name, const QString &newName);
+    void removeNotebook(int idx);
+    void renameNotebook(int idx, const QString &newName);
 
     QString getNotebookPath(const QString &name);
 
@@ -43,15 +43,13 @@ public slots:
     void updateTemplate();
 
 signals:
-    // Force to do a fully update
-    void notebooksChanged(const QVector<VNotebook> &notebooks);
-    void notebooksAdded(const QVector<VNotebook> &notebooks, int idx);
-    void notebooksDeleted(const QVector<VNotebook> &notebooks, const QString &deletedName);
-    void notebooksRenamed(const QVector<VNotebook> &notebooks,
-                          const QString &oldName, const QString &newName);
+    void notebookAdded(const VNotebook *p_notebook, int p_idx);
+    void notebookDeleted(int p_oriIdx);
+    void notebookRenamed(const VNotebook *p_notebook, int p_idx);
 
 private:
-    QVector<VNotebook> notebooks;
+    // Maintain all the notebooks. Other holder should use QPointer.
+    QVector<VNotebook *> m_notebooks;
     QHash<QString, QString> notebookPathHash;
     QVector<QPair<QString, QString> > m_palette;
 };

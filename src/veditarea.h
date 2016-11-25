@@ -40,8 +40,6 @@ public slots:
     void saveFile();
     void readFile();
     void saveAndReadFile();
-    void handleNotebookRenamed(const QVector<VNotebook> &notebooks, const QString &oldName,
-                               const QString &newName);
     void handleOutlineItemActivated(const VAnchor &anchor);
     void handleDirectoryRenamed(const QString &notebook,
                                 const QString &oldRelativePath, const QString &newRelativePath);

@@ -29,7 +29,6 @@ class VMainWindow : public QMainWindow
 
 public:
     VMainWindow(QWidget *parent = 0);
-    ~VMainWindow();
     const QVector<QPair<QString, QString> > &getPalette() const;
 
 private slots:
@@ -38,11 +37,10 @@ private slots:
     void onNewNotebookBtnClicked();
     void onDeleteNotebookBtnClicked();
     void onNotebookInfoBtnClicked();
-    void updateNotebookComboBox(const QVector<VNotebook> &notebooks);
-    void notebookComboBoxAdded(const QVector<VNotebook> &notebooks, int idx);
-    void notebookComboBoxDeleted(const QVector<VNotebook> &notebooks, const QString &deletedName);
-    void notebookComboBoxRenamed(const QVector<VNotebook> &notebooks,
-                                 const QString &oldName, const QString &newName);
+    void updateNotebookComboBox(const QVector<VNotebook *> &p_notebooks);
+    void notebookComboBoxAdded(const VNotebook *p_notebook, int p_idx);
+    void notebookComboBoxDeleted(int p_oriIdx);
+    void notebookComboBoxRenamed(const VNotebook *p_notebook, int p_idx);
     void importNoteFromFile();
     void changeMarkdownConverter(QAction *action);
     void aboutMessage();

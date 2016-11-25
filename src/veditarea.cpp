@@ -233,17 +233,6 @@ void VEditArea::saveAndReadFile()
     win->saveAndReadFile();
 }
 
-void VEditArea::handleNotebookRenamed(const QVector<VNotebook> &notebooks,
-                                      const QString &oldName, const QString &newName)
-{
-    int nrWin = splitter->count();
-    for (int i = 0; i < nrWin; ++i) {
-        VEditWindow *win = getWindow(i);
-        win->handleNotebookRenamed(notebooks, oldName, newName);
-    }
-    updateWindowStatus();
-}
-
 void VEditArea::handleDirectoryRenamed(const QString &notebook, const QString &oldRelativePath,
                                        const QString &newRelativePath)
 {

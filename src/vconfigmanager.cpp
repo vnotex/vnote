@@ -65,9 +65,6 @@ void VConfigManager::initialize()
     m_mainWindowGeometry = getConfigFromSettings("session", "main_window_geometry").toByteArray();
     m_mainWindowState = getConfigFromSettings("session", "main_window_state").toByteArray();
 
-    // Update notebooks
-    readNotebookFromSettings();
-
     updateMarkdownEditStyle();
 }
 
@@ -87,25 +84,23 @@ void VConfigManager::readPredefinedColorsFromSettings()
              << "pre-defined colors from [predefined_colors] section";
 }
 
-void VConfigManager::readNotebookFromSettings()
+void VConfigManager::readNotebookFromSettings(QVector<VNotebook *> &p_notebooks, QObject *parent)
 {
-    notebooks.clear();
+    Q_ASSERT(p_notebooks.isEmpty());
     int size = userSettings->beginReadArray("notebooks");
     for (int i = 0; i < size; ++i) {
         userSettings->setArrayIndex(i);
-        VNotebook notebook;
         QString name = userSettings->value("name").toString();
         QString path = userSettings->value("path").toString();
-        notebook.setName(name);
-        notebook.setPath(path);
-        notebooks.append(notebook);
+        VNotebook *notebook = new VNotebook(name, path, parent);
+        p_notebooks.append(notebook);
     }
     userSettings->endArray();
-    qDebug() << "read" << notebooks.size()
+    qDebug() << "read" << p_notebooks.size()
              << "notebook items from [notebooks] section";
 }
 
-void VConfigManager::writeNotebookToSettings()
+void VConfigManager::writeNotebookToSettings(const QVector<VNotebook *> &p_notebooks)
 {
     // Clear it first
     userSettings->beginGroup("notebooks");
@@ -113,13 +108,14 @@ void VConfigManager::writeNotebookToSettings()
     userSettings->endGroup();
 
     userSettings->beginWriteArray("notebooks");
-    for (int i = 0; i < notebooks.size(); ++i) {
+    for (int i = 0; i < p_notebooks.size(); ++i) {
         userSettings->setArrayIndex(i);
-        userSettings->setValue("name", notebooks[i].getName());
-        userSettings->setValue("path", notebooks[i].getPath());
+        const VNotebook &notebook = *p_notebooks[i];
+        userSettings->setValue("name", notebook.getName());
+        userSettings->setValue("path", notebook.getPath());
     }
     userSettings->endArray();
-    qDebug() << "write" << notebooks.size()
+    qDebug() << "write" << p_notebooks.size()
              << "notebook items in [notebooks] section";
 }
 

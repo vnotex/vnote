@@ -60,8 +60,8 @@ public:
     inline int getCurNotebookIndex() const;
     inline void setCurNotebookIndex(int index);
 
-    inline const QVector<VNotebook>& getNotebooks() const;
-    inline void setNotebooks(const QVector<VNotebook> &notebooks);
+    inline void getNotebooks(QVector<VNotebook *> &p_notebooks, QObject *parent);
+    inline void setNotebooks(const QVector<VNotebook *> &p_notebooks);
 
     inline hoedown_extensions getMarkdownExtensions() const;
     inline MarkdownConverterType getMdConverterType() const;
@@ -96,8 +96,8 @@ private:
     void updateMarkdownEditStyle();
     QVariant getConfigFromSettings(const QString &section, const QString &key);
     void setConfigToSettings(const QString &section, const QString &key, const QVariant &value);
-    void readNotebookFromSettings();
-    void writeNotebookToSettings();
+    void readNotebookFromSettings(QVector<VNotebook *> &p_notebooks, QObject *parent);
+    void writeNotebookToSettings(const QVector<VNotebook *> &p_notebooks);
     void readPredefinedColorsFromSettings();
     // Update baseEditPalette according to curBackgroundColor
     void updatePaletteColor();
@@ -113,7 +113,6 @@ private:
     QString postTemplatePath;
     QString templateCssUrl;
     int curNotebookIndex;
-    QVector<VNotebook> notebooks;
 
     // Markdown Converter
     hoedown_extensions markdownExtensions;
@@ -199,15 +198,14 @@ inline void VConfigManager::setCurNotebookIndex(int index)
     setConfigToSettings("global", "current_notebook", index);
 }
 
-inline const QVector<VNotebook>& VConfigManager::getNotebooks() const
+inline void VConfigManager::getNotebooks(QVector<VNotebook *> &p_notebooks, QObject *parent)
 {
-    return notebooks;
+    readNotebookFromSettings(p_notebooks, parent);
 }
 
-inline void VConfigManager::setNotebooks(const QVector<VNotebook> &notebooks)
+inline void VConfigManager::setNotebooks(const QVector<VNotebook *> &p_notebooks)
 {
-    this->notebooks = notebooks;
-    writeNotebookToSettings();
+    writeNotebookToSettings(p_notebooks);
 }
 
 inline hoedown_extensions VConfigManager::getMarkdownExtensions() const

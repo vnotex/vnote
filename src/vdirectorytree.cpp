@@ -64,10 +64,10 @@ void VDirectoryTree::setNotebook(const QString& notebookName)
         clear();
         return;
     }
-    const QVector<VNotebook> &notebooks = vnote->getNotebooks();
+    const QVector<VNotebook *> &notebooks = vnote->getNotebooks();
     for (int i = 0; i < notebooks.size(); ++i) {
-        if (notebooks[i].getName() == notebook) {
-            treePath = notebooks[i].getPath();
+        if (notebooks[i]->getName() == notebook) {
+            treePath = notebooks[i]->getPath();
             break;
         }
     }
@@ -584,13 +584,4 @@ void VDirectoryTree::renameDirectory(QTreeWidgetItem *item, const QString &newNa
     QString newPath = QDir::cleanPath(QDir(parentRelativePath).filePath(newName));
     qDebug() << "directory renamed" << oldPath << "to" << newPath;
     emit directoryRenamed(notebook, oldPath, newPath);
-}
-
-void VDirectoryTree::handleNotebookRenamed(const QVector<VNotebook> &notebooks,
-                                           const QString &oldName, const QString &newName)
-{
-    if (oldName == notebook) {
-        notebook = newName;
-        qDebug() << "directoryTree update notebook" << oldName << "to" << newName;
-    }
 }

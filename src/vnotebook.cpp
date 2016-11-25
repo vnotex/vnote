@@ -1,31 +1,37 @@
 #include "vnotebook.h"
 
-VNotebook::VNotebook()
+VNotebook::VNotebook(QObject *parent)
+    : QObject(parent)
 {
 
 }
 
-VNotebook::VNotebook(const QString &name, const QString &path)
-    : name(name), path(path)
+VNotebook::VNotebook(const QString &name, const QString &path, QObject *parent)
+    : QObject(parent), m_name(name), m_path(path)
 {
 }
 
 QString VNotebook::getName() const
 {
-    return this->name;
+    return m_name;
 }
 
 QString VNotebook::getPath() const
 {
-    return this->path;
+    return m_path;
 }
 
 void VNotebook::setName(const QString &name)
 {
-    this->name = name;
+    m_name = name;
 }
 
 void VNotebook::setPath(const QString &path)
 {
-    this->path = path;
+    m_path = path;
+}
+
+void VNotebook::close(bool p_forced)
+{
+    //TODO
 }

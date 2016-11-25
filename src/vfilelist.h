@@ -44,8 +44,6 @@ private slots:
 
 public slots:
     void setDirectory(QJsonObject dirJson);
-    void handleNotebookRenamed(const QVector<VNotebook> &notebooks, const QString &oldName,
-                               const QString &newName);
     void handleDirectoryRenamed(const QString &notebook, const QString &oldRelativePath,
                                 const QString &newRelativePath);
     void newFile();

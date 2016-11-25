@@ -27,8 +27,6 @@ public:
     void saveFile();
     void readFile();
     void saveAndReadFile();
-    void handleNotebookRenamed(const QVector<VNotebook> &notebooks, const QString &oldName,
-                               const QString &newName);
     bool closeAllFiles(bool p_forced);
     void setRemoveSplitEnable(bool enabled);
     void requestUpdateTabStatus();

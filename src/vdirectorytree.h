@@ -23,8 +23,6 @@ public slots:
     void newRootDirectory();
     void deleteDirectory();
     void editDirectoryInfo();
-    void handleNotebookRenamed(const QVector<VNotebook> &notebooks, const QString &oldName,
-                               const QString &newName);
 
 private slots:
     // Read config file and pdate the subtree of @item in the directory tree.

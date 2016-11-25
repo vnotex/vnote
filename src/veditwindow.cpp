@@ -260,22 +260,6 @@ void VEditWindow::saveFile()
     editor->saveFile();
 }
 
-void VEditWindow::handleNotebookRenamed(const QVector<VNotebook> &notebooks,
-                                        const QString &oldName, const QString &newName)
-{
-    QTabBar *tabs = tabBar();
-    int nrTabs = tabs->count();
-    for (int i = 0; i < nrTabs; ++i) {
-        QJsonObject tabJson = tabs->tabData(i).toJsonObject();
-        if (tabJson["notebook"] == oldName) {
-            tabJson["notebook"] = newName;
-            tabs->setTabData(i, tabJson);
-            tabs->setTabToolTip(i, generateTooltip(tabJson));
-        }
-    }
-    updateTabListMenu();
-}
-
 void VEditWindow::handleDirectoryRenamed(const QString &notebook, const QString &oldRelativePath,
                                          const QString &newRelativePath)
 {

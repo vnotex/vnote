@@ -13,12 +13,12 @@ QString VNote::templateHtml;
 QString VNote::preTemplateHtml;
 QString VNote::postTemplateHtml;
 
-VNote::VNote() : QObject()
+VNote::VNote(QObject *parent)
+    : QObject(parent)
 {
     vconfig.initialize();
     initTemplate();
-    notebooks = vconfig.getNotebooks();
-    emit notebooksChanged(notebooks);
+    vconfig.getNotebooks(m_notebooks, this);
 }
 
 void VNote::initPalette(QPalette palette)
@@ -75,9 +75,9 @@ void VNote::updateTemplate()
     postTemplateHtml = VUtils::readFileFromDisk(vconfig.getPostTemplatePath());
 }
 
-const QVector<VNotebook>& VNote::getNotebooks()
+const QVector<VNotebook *> &VNote::getNotebooks()
 {
-    return notebooks;
+    return m_notebooks;
 }
 
 void VNote::createNotebook(const QString &name, const QString &path)
@@ -92,78 +92,66 @@ void VNote::createNotebook(const QString &name, const QString &path)
     }
 
     // Update notebooks settings
-    notebooks.prepend(VNotebook(name, path));
-    vconfig.setNotebooks(notebooks);
+    VNotebook *nb = new VNotebook(name, path, this);
+    m_notebooks.prepend(nb);
+    vconfig.setNotebooks(m_notebooks);
 
     // Set current index to the new notebook
     vconfig.setCurNotebookIndex(0);
 
-    emit notebooksAdded(notebooks, 0);
+    emit notebookAdded(nb, 0);
 }
 
-void VNote::removeNotebook(const QString &name)
+void VNote::removeNotebook(int idx)
 {
-    // Update notebooks settings
-    QString path;
+    Q_ASSERT(idx >= 0 && idx < m_notebooks.size());
+    VNotebook *nb = m_notebooks[idx];
+    QString name = nb->getName();
+    QString path = nb->getPath();
+
+    // Update notebook settings
     int curIndex = vconfig.getCurNotebookIndex();
-    int index;
-    for (index = 0; index < notebooks.size(); ++index) {
-        if (notebooks[index].getName() == name) {
-            path = notebooks[index].getPath();
-            break;
-        }
-    }
-    if (index == notebooks.size()) {
-        return;
-    }
-    notebooks.remove(index);
-    vconfig.setNotebooks(notebooks);
-    if (notebooks.isEmpty()) {
+    m_notebooks.remove(idx);
+    vconfig.setNotebooks(m_notebooks);
+    if (m_notebooks.isEmpty()) {
         vconfig.setCurNotebookIndex(-1);
-    } else if (index == curIndex) {
+    } else if (idx == curIndex) {
         vconfig.setCurNotebookIndex(0);
     }
+
+    // Close all the directory and files
+    notebookPathHash.remove(name);
+    nb->close(true);
+    delete nb;
+    qDebug() << "notebook" << name << "deleted";
 
     // Delete the directory
     QDir dir(path);
     if (!dir.removeRecursively()) {
-        qWarning() << "error: fail to delete" << path << "recursively";
-    } else {
-        qDebug() << "delete" << path << "recursively";
+        qWarning() << "failed to delete" << path << "recursively";
     }
-
-    notebookPathHash.remove(name);
-    emit notebooksDeleted(notebooks, name);
+    emit notebookDeleted(idx);
 }
 
-void VNote::renameNotebook(const QString &name, const QString &newName)
+void VNote::renameNotebook(int idx, const QString &newName)
 {
-    QString path;
-    int index;
-    for (index = 0; index < notebooks.size(); ++index) {
-        if (notebooks[index].getName() == name) {
-            path = notebooks[index].getPath();
-            break;
-        }
-    }
-    if (index == notebooks.size()) {
-        return;
-    }
-
-    notebooks[index].setName(newName);
-    vconfig.setNotebooks(notebooks);
-
+    Q_ASSERT(idx >= 0 && idx < m_notebooks.size());
+    VNotebook *nb = m_notebooks[idx];
+    QString name = nb->getName();
     notebookPathHash.remove(name);
-    emit notebooksRenamed(notebooks, name, newName);
+    nb->setName(newName);
+    vconfig.setNotebooks(m_notebooks);
+
+    emit notebookRenamed(nb, idx);
 }
 
 QString VNote::getNotebookPath(const QString &name)
 {
     QString path = notebookPathHash.value(name);
     if (path.isEmpty()) {
-        for (int i = 0; i < notebooks.size(); ++i) {
-            if (notebooks[i].getName() == name) {
-                path = notebooks[i].getPath();
+        for (int i = 0; i < m_notebooks.size(); ++i) {
+            if (m_notebooks[i]->getName() == name) {
+                path = m_notebooks[i]->getPath();
                 break;
             }
         }
