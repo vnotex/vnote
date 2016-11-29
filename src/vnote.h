@@ -10,8 +10,7 @@
 #include <QHash>
 #include <QPalette>
 #include "vnotebook.h"
-
-enum OpenFileMode {Read = 0, Edit};
+#include "vconstants.h"
 
 class VNote : public QObject
 {

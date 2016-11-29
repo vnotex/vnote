@@ -3,13 +3,14 @@
 
 #include <QStackedWidget>
 #include <QString>
+#include <QPointer>
 #include "vconstants.h"
-#include "vnotefile.h"
 #include "vdocument.h"
 #include "vmarkdownconverter.h"
 #include "vconfigmanager.h"
 #include "vedit.h"
 #include "vtoc.h"
+#include "vfile.h"
 
 class QTextBrowser;
 class QWebEngineView;
@@ -20,9 +21,9 @@ class VEditTab : public QStackedWidget
 {
     Q_OBJECT
 public:
-    VEditTab(const QString &path, bool modifiable, QWidget *parent = 0);
+    VEditTab(VFile *p_file, OpenFileMode p_mode, QWidget *p_parent = 0);
     ~VEditTab();
-    bool requestClose();
+    bool closeFile(bool p_forced);
     // Enter edit mode
     void editFile();
     // Enter read mode
@@ -36,8 +37,7 @@ public:
     void requestUpdateOutline();
     void requestUpdateCurHeader();
     void scrollToAnchor(const VAnchor& anchor);
-    void updatePath(const QString &newPath);
-
+    inline VFile *getFile();
 signals:
     void getFocused();
     void outlineChanged(const VToc &toc);
@@ -61,7 +61,7 @@ private:
     void parseTocUl(QXmlStreamReader &xml, QVector<VHeader> &headers, int level);
     void parseTocLi(QXmlStreamReader &xml, QVector<VHeader> &headers, int level);
 
-    VNoteFile *noteFile;
+    QPointer<VFile> m_file;
     bool isEditMode;
     QTextBrowser *textBrowser;
     VEdit *textEditor;
@@ -91,6 +91,11 @@ inline bool VEditTab::isChild(QObject *obj)
         obj = obj->parent();
     }
     return false;
+}
+
+inline VFile *VEditTab::getFile()
+{
+    return m_file;
 }
 
 #endif // VEDITTAB_H

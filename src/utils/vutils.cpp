@@ -9,7 +9,6 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QDateTime>
-
 VUtils::VUtils()
 {
 }
@@ -201,4 +200,39 @@ bool VUtils::copyFile(const QString &p_srcFilePath, const QString &p_destFilePat
         }
     }
     return true;
+}
+
+int VUtils::showMessage(QMessageBox::Icon p_icon, const QString &p_title, const QString &p_text, const QString &p_infoText,
+                        QMessageBox::StandardButtons p_buttons, QMessageBox::StandardButton p_defaultBtn, QWidget *p_parent)
+{
+    QMessageBox msgBox(p_icon, p_title, p_text, p_buttons, p_parent);
+    msgBox.setInformativeText(p_infoText);
+    msgBox.setDefaultButton(p_defaultBtn);
+    return msgBox.exec();
+}
+
+QString VUtils::generateCopiedFileName(const QString &p_dirPath, const QString &p_fileName)
+{
+    QString suffix;
+    QString base = p_fileName;
+    int dotIdx = p_fileName.lastIndexOf('.');
+    if (dotIdx != -1) {
+        // .md
+        suffix = p_fileName.right(p_fileName.size() - dotIdx);
+        base = p_fileName.left(dotIdx);
+    }
+    QDir dir(p_dirPath);
+    QString name = p_fileName;
+    QString filePath = dir.filePath(name);
+    int index = 0;
+    while (QFile(filePath).exists()) {
+        QString seq;
+        if (index > 0) {
+            seq = QString::number(index);
+        }
+        index++;
+        name = QString("%1_copy%2%3").arg(base).arg(seq).arg(suffix);
+        filePath = dir.filePath(name);
+    }
+    return name;
 }

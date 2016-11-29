@@ -7,9 +7,10 @@
 #include "vnote.h"
 #include "veditarea.h"
 #include "utils/vutils.h"
+#include "vfile.h"
 
-VFileList::VFileList(VNote *vnote, QWidget *parent)
-    : QWidget(parent), vnote(vnote)
+VFileList::VFileList(QWidget *parent)
+    : QWidget(parent)
 {
     setupUI();
     initActions();
@@ -43,14 +44,14 @@ void VFileList::initActions()
     deleteFileAct = new QAction(QIcon(":/resources/icons/delete_note.svg"),
                                 tr("&Delete"), this);
     deleteFileAct->setStatusTip(tr("Delete selected note"));
-    connect(deleteFileAct, &QAction::triggered,
-            this, &VFileList::deleteCurFile);
+    connect(deleteFileAct, SIGNAL(triggered(bool)),
+            this, SLOT(deleteFile()));
 
     fileInfoAct = new QAction(QIcon(":/resources/icons/note_info.svg"),
                               tr("&Info"), this);
     fileInfoAct->setStatusTip(tr("View and edit current note's information"));
-    connect(fileInfoAct, &QAction::triggered,
-            this, &VFileList::curFileInfo);
+    connect(fileInfoAct, SIGNAL(triggered(bool)),
+            this, SLOT(fileInfo()));
 
     copyAct = new QAction(QIcon(":/resources/icons/copy.svg"),
                           tr("&Copy"), this);
@@ -71,85 +72,49 @@ void VFileList::initActions()
             this, &VFileList::pasteFilesInCurDir);
 }
 
-void VFileList::setDirectory(QJsonObject dirJson)
+void VFileList::setDirectory(VDirectory *p_directory)
 {
-    fileList->clear();
-    if (dirJson.isEmpty()) {
-        clearDirectoryInfo();
-        emit directoryChanged("", "");
+    if (m_directory == p_directory) {
+        return;
+    }
+    m_directory = p_directory;
+    if (!m_directory) {
+        fileList->clear();
         return;
     }
 
-    notebook = dirJson["notebook"].toString();
-    relativePath = dirJson["relative_path"].toString();
-    rootPath = "";
-    const QVector<VNotebook *> &notebooks = vnote->getNotebooks();
-    for (int i = 0; i < notebooks.size(); ++i) {
-        if (notebooks[i]->getName() == notebook) {
-            rootPath = notebooks[i]->getPath();
-            break;
-        }
-    }
-    Q_ASSERT(!rootPath.isEmpty());
-
+    qDebug() << "filelist set directory" << m_directory->getName();
     updateFileList();
-
-    emit directoryChanged(notebook, relativePath);
-}
-
-void VFileList::clearDirectoryInfo()
-{
-    notebook = relativePath = rootPath = "";
 }
 
 void VFileList::updateFileList()
 {
-    QString path = QDir(rootPath).filePath(relativePath);
-
     fileList->clear();
-    if (!QDir(path).exists()) {
-        qDebug() << "invalid notebook directory:" << path;
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Invalid notebook directory."),
-                           QMessageBox::Ok, this);
-        msgBox.setInformativeText(QString("Notebook directory \"%1\" either does not exist or is not valid.")
-                                  .arg(path));
-        msgBox.exec();
+    if (!m_directory->open()) {
         return;
     }
-
-    QJsonObject configJson = VConfigManager::readDirectoryConfig(path);
-    if (configJson.isEmpty()) {
-        qDebug() << "invalid notebook configuration for directory:" << path;
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Invalid notebook directory configuration."),
-                           QMessageBox::Ok, this);
-        msgBox.setInformativeText(QString("Notebook directory \"%1\" does not contain a valid configuration file.")
-                                  .arg(path));
-        msgBox.exec();
-        return;
-    }
-
-    // Handle files section
-    QJsonArray filesJson = configJson["files"].toArray();
-    for (int i = 0; i < filesJson.size(); ++i) {
-        QJsonObject fileItem = filesJson[i].toObject();
-        insertFileListItem(fileItem);
+    const QVector<VFile *> &files = m_directory->getFiles();
+    for (int i = 0; i < files.size(); ++i) {
+        VFile *file = files[i];
+        insertFileListItem(file);
     }
 }
 
-void VFileList::curFileInfo()
+void VFileList::fileInfo()
 {
     QListWidgetItem *curItem = fileList->currentItem();
-    QJsonObject curItemJson = curItem->data(Qt::UserRole).toJsonObject();
-    Q_ASSERT(!curItemJson.isEmpty());
-    QString curItemName = curItemJson["name"].toString();
-    fileInfo(notebook, QDir(relativePath).filePath(curItemName));
+    Q_ASSERT(curItem);
+    fileInfo(getVFile(curItem));
 }
 
-void VFileList::fileInfo(const QString &p_notebook, const QString &p_relativePath)
+void VFileList::fileInfo(VFile *p_file)
 {
-    qDebug() << "fileInfo" << p_notebook << p_relativePath;
+    if (!p_file) {
+        return;
+    }
+    VDirectory *dir = p_file->getDirectory();
     QString info;
-    QString defaultName = VUtils::fileNameFromPath(p_relativePath);
+    QString defaultName = p_file->getName();
     QString curName = defaultName;
     do {
         VFileInfoDialog dialog(tr("Note Information"), info, defaultName, this);
@@ -158,23 +123,22 @@ void VFileList::fileInfo(const QString &p_notebook, const QString &p_relativePat
             if (name == curName) {
                 return;
             }
-            if (isConflictNameWithExisting(name)) {
-                info = "Name already exists.\nPlease choose another name:";
+            if (dir->findFile(name)) {
+                info = "Name already exists.\nPlease choose another name.";
                 defaultName = name;
                 continue;
             }
-            copyFile(p_notebook, p_relativePath, p_notebook,
-                     QDir(VUtils::basePathFromPath(p_relativePath)).filePath(name), true);
+            copyFile(dir, name, p_file, true);
         }
         break;
     } while (true);
 }
 
-QListWidgetItem* VFileList::insertFileListItem(QJsonObject fileJson, bool atFront)
+QListWidgetItem* VFileList::insertFileListItem(VFile *file, bool atFront)
 {
-    Q_ASSERT(!fileJson.isEmpty());
-    QListWidgetItem *item = new QListWidgetItem(fileJson["name"].toString());
-    item->setData(Qt::UserRole, fileJson);
+    Q_ASSERT(file);
+    QListWidgetItem *item = new QListWidgetItem(file->getName());
+    item->setData(Qt::UserRole, QVariant::fromValue(file));
 
     if (atFront) {
         fileList->insertItem(0, item);
@@ -183,7 +147,7 @@ QListWidgetItem* VFileList::insertFileListItem(QJsonObject fileJson, bool atFron
     }
     // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
     fileList->update();
-    qDebug() << "add new list item:" << fileJson["name"].toString();
+    qDebug() << "VFileList adds" << file->getName();
     return item;
 }
 
@@ -198,65 +162,91 @@ void VFileList::removeFileListItem(QListWidgetItem *item)
 
 void VFileList::newFile()
 {
+    if (!m_directory) {
+        return;
+    }
+    QString info = QString("Create a new note under %1.").arg(m_directory->getName());
     QString text("&Note name:");
     QString defaultText("new_note");
     do {
-        VNewFileDialog dialog(QString("Create a new note under %1").arg(VUtils::directoryNameFromPath(relativePath)),
-                              text, defaultText, this);
+        VNewFileDialog dialog(QString("Create new note"), info, text, defaultText, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
-            if (isConflictNameWithExisting(name)) {
-                text = "Name already exists.\nPlease choose another name:";
+            if (m_directory->findFile(name)) {
+                info = "Name already exists.\nPlease choose another name.";
                 defaultText = name;
                 continue;
             }
-            QListWidgetItem *newItem = createFileAndUpdateList(name);
-            if (newItem) {
-                fileList->setCurrentItem(newItem);
-                // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
-                fileList->update();
-
-                // Open this file in edit mode
-                QJsonObject itemJson = newItem->data(Qt::UserRole).toJsonObject();
-                Q_ASSERT(!itemJson.isEmpty());
-                itemJson["notebook"] = notebook;
-                itemJson["relative_path"] = QDir::cleanPath(QDir(relativePath).filePath(name));
-                itemJson["mode"] = OpenFileMode::Edit;
-                emit fileCreated(itemJson);
+            VFile *file = m_directory->createFile(name);
+            if (!file) {
+                VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                                    QString("Failed to create file %1.").arg(name), "",
+                                    QMessageBox::Ok, QMessageBox::Ok, this);
+                return;
             }
+            QVector<QListWidgetItem *> items = updateFileListAdded();
+            Q_ASSERT(items.size() == 1);
+            fileList->setCurrentItem(items[0]);
+            // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
+            fileList->update();
+
+            // Open it in edit mode
+            emit fileCreated(file, OpenFileMode::Edit);
         }
         break;
     } while (true);
 }
 
-void VFileList::deleteCurFile()
+QVector<QListWidgetItem *> VFileList::updateFileListAdded()
+{
+    QVector<QListWidgetItem *> ret;
+    const QVector<VFile *> &files = m_directory->getFiles();
+    for (int i = 0; i < files.size(); ++i) {
+        VFile *file = files[i];
+        if (i >= fileList->count()) {
+            QListWidgetItem *item = insertFileListItem(file, false);
+            ret.append(item);
+        } else {
+            VFile *itemFile = getVFile(fileList->item(i));
+            if (itemFile != file) {
+                QListWidgetItem *item = insertFileListItem(file, false);
+                ret.append(item);
+            }
+        }
+    }
+    qDebug() << ret.size() << "items added";
+    return ret;
+}
+
+// Delete the file related to current item
+void VFileList::deleteFile()
 {
     QListWidgetItem *curItem = fileList->currentItem();
     Q_ASSERT(curItem);
-    QJsonObject curItemJson = curItem->data(Qt::UserRole).toJsonObject();
-    QString curItemName = curItemJson["name"].toString();
-    deleteFile(notebook, QDir(relativePath).filePath(curItemName));
+    deleteFile(getVFile(curItem));
 }
 
-// @p_relativePath contains the file name
-void VFileList::deleteFile(const QString &p_notebook, const QString &p_relativePath)
+// @p_file may or may not be listed in VFileList
+void VFileList::deleteFile(VFile *p_file)
 {
-    QString fileName = VUtils::fileNameFromPath(p_relativePath);
-    QMessageBox msgBox(QMessageBox::Warning, tr("Warning"),
-                       QString("Are you sure you want to delete note \"%1\"?")
-                       .arg(fileName), QMessageBox::Ok | QMessageBox::Cancel,
-                       this);
-    msgBox.setInformativeText(tr("This may be not recoverable."));
-    msgBox.setDefaultButton(QMessageBox::Ok);
-    if (msgBox.exec() == QMessageBox::Ok) {
-        // First close this file forcely
-        QJsonObject curItemJson;
-        curItemJson["notebook"] = p_notebook;
-        curItemJson["relative_path"] = QDir::cleanPath(p_relativePath);
-        curItemJson["is_forced"] = true;
-        emit fileDeleted(curItemJson);
+    if (!p_file) {
+        return;
+    }
+    VDirectory *dir = p_file->getDirectory();
+    QString fileName = p_file->getName();
+    int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                       QString("Are you sure to delete note %1?").arg(fileName), tr("This may be unrecoverable!"),
+                       QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Ok, this);
+    if (ret == QMessageBox::Ok) {
+        editArea->closeFile(p_file, true);
 
-        deleteFileAndUpdateList(p_notebook, p_relativePath);
+        // Remove the item before deleting it totally, or p_file will be invalid.
+        QListWidgetItem *item = findItem(p_file);
+        if (item) {
+            removeFileListItem(item);
+        }
+
+        dir->deleteFile(p_file);
     }
 }
 
@@ -265,7 +255,7 @@ void VFileList::contextMenuRequested(QPoint pos)
     QListWidgetItem *item = fileList->itemAt(pos);
     QMenu menu(this);
 
-    if (notebook.isEmpty()) {
+    if (!m_directory) {
         return;
     }
     menu.addAction(newFileAct);
@@ -290,187 +280,56 @@ void VFileList::contextMenuRequested(QPoint pos)
     menu.exec(fileList->mapToGlobal(pos));
 }
 
-bool VFileList::isConflictNameWithExisting(const QString &name)
+QListWidgetItem* VFileList::findItem(const VFile *p_file)
 {
-    int nrChild = fileList->count();
-    for (int i = 0; i < nrChild; ++i) {
-        QListWidgetItem *item = fileList->item(i);
-        QJsonObject itemJson = item->data(Qt::UserRole).toJsonObject();
-        Q_ASSERT(!itemJson.isEmpty());
-        if (itemJson["name"].toString() == name) {
-            return true;
-        }
-    }
-    return false;
-}
-
-QListWidgetItem* VFileList::findItem(const QString &p_notebook, const QString &p_relativePath)
-{
-    if (p_notebook != notebook || VUtils::basePathFromPath(p_relativePath) != QDir::cleanPath(relativePath)) {
+    if (!p_file || p_file->getDirectory() != m_directory) {
         return NULL;
     }
-    QString name = VUtils::fileNameFromPath(p_relativePath);
+
     int nrChild = fileList->count();
     for (int i = 0; i < nrChild; ++i) {
         QListWidgetItem *item = fileList->item(i);
-        QJsonObject itemJson = item->data(Qt::UserRole).toJsonObject();
-        Q_ASSERT(!itemJson.isEmpty());
-        if (itemJson["name"].toString() == name) {
+        if (p_file == getVFile(item)) {
             return item;
         }
     }
     return NULL;
 }
 
-QListWidgetItem* VFileList::createFileAndUpdateList(const QString &name)
-{
-    QString path = QDir(rootPath).filePath(relativePath);
-    QString filePath = QDir(path).filePath(name);
-    QFile file(filePath);
-
-    if (!file.open(QIODevice::WriteOnly)) {
-        qWarning() << "error: fail to create file:" << filePath;
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Could not create file \"%1\" under \"%2\".")
-                           .arg(name).arg(path), QMessageBox::Ok, this);
-        msgBox.setInformativeText(QString("Please check if there already exists a file named \"%1\".").arg(name));
-        msgBox.exec();
-        return NULL;
-    }
-    file.close();
-    qDebug() << "create file:" << filePath;
-
-    if (!addFileInConfig(filePath, 0)) {
-        file.remove();
-        return NULL;
-    }
-
-    return insertFileListItem(readFileInConfig(filePath), true);
-}
-
-void VFileList::deleteFileAndUpdateList(const QString &p_notebook,
-                                        const QString &p_relativePath)
-{
-    QString filePath = QDir(vnote->getNotebookPath(p_notebook)).filePath(p_relativePath);
-
-    if (!removeFileInConfig(filePath)) {
-        return;
-    }
-
-    // Delete local images in ./images
-    deleteLocalImages(filePath);
-
-    // Delete the file
-    QFile file(filePath);
-    if (!file.remove()) {
-        qWarning() << "error: fail to delete" << filePath;
-    } else {
-        qDebug() << "delete" << filePath;
-    }
-
-    QListWidgetItem *item = findItem(p_notebook, p_relativePath);
-    if (item) {
-        removeFileListItem(item);
-    }
-}
-
 void VFileList::handleItemClicked(QListWidgetItem *currentItem)
 {
     if (!currentItem) {
-        emit fileClicked(QJsonObject());
+        emit fileClicked(NULL);
         return;
     }
     // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
     fileList->update();
-    QJsonObject itemJson = currentItem->data(Qt::UserRole).toJsonObject();
-    Q_ASSERT(!itemJson.isEmpty());
-    itemJson["notebook"] = notebook;
-    itemJson["relative_path"] = QDir::cleanPath(QDir(relativePath).filePath(itemJson["name"].toString()));
-    itemJson["mode"] = OpenFileMode::Read;
-    emit fileClicked(itemJson);
+    emit fileClicked(getVFile(currentItem), OpenFileMode::Read);
 }
 
-bool VFileList::importFile(const QString &name)
+bool VFileList::importFile(const QString &p_srcFilePath)
 {
-    if (name.isEmpty()) {
+    if (p_srcFilePath.isEmpty()) {
         return false;
     }
-    if (isConflictNameWithExisting(name)) {
-        return false;
-    }
-
+    Q_ASSERT(m_directory);
     // Copy file @name to current directory
-    QString targetPath = QDir(rootPath).filePath(relativePath);
-    QString srcName = QFileInfo(name).fileName();
+    QString targetPath = m_directory->retrivePath();
+    QString srcName = VUtils::fileNameFromPath(p_srcFilePath);
     if (srcName.isEmpty()) {
         return false;
     }
-    QString targetName = QDir(targetPath).filePath(srcName);
-
-    bool ret = QFile::copy(name, targetName);
+    QString targetFilePath = QDir(targetPath).filePath(srcName);
+    bool ret = VUtils::copyFile(p_srcFilePath, targetFilePath, false);
     if (!ret) {
-        qWarning() << "error: fail to copy" << name << "to" << targetName;
         return false;
     }
 
-    // Update current directory's config file to include this new file
-    QJsonObject dirJson = VConfigManager::readDirectoryConfig(targetPath);
-    Q_ASSERT(!dirJson.isEmpty());
-    QJsonObject fileJson;
-    fileJson["name"] = srcName;
-    QJsonArray fileArray = dirJson["files"].toArray();
-    fileArray.push_front(fileJson);
-    dirJson["files"] = fileArray;
-    if (!VConfigManager::writeDirectoryConfig(targetPath, dirJson)) {
-        qWarning() << "error: fail to update directory's configuration file to add a new file"
-                   << srcName;
-        QFile(targetName).remove();
-        return false;
+    VFile *destFile = m_directory->addFile(srcName, -1);
+    if (destFile) {
+        return insertFileListItem(destFile, false);
     }
-
-    return insertFileListItem(fileJson, true);
-}
-
-void VFileList::handleDirectoryRenamed(const QString &notebook,
-                                       const QString &oldRelativePath, const QString &newRelativePath)
-{
-    if (notebook == this->notebook
-        && relativePath.startsWith(oldRelativePath)) {
-        relativePath.replace(0, oldRelativePath.size(), newRelativePath);
-    }
-}
-
-void VFileList::convertFileType(const QString &notebook, const QString &fileRelativePath,
-                                DocType oldType, DocType newType)
-{
-    Q_ASSERT(oldType != newType);
-    QString filePath = QDir(vnote->getNotebookPath(notebook)).filePath(fileRelativePath);
-    QString fileText = VUtils::readFileFromDisk(filePath);
-    QTextEdit editor;
-    if (oldType == DocType::Markdown) {
-        editor.setPlainText(fileText);
-        fileText = editor.toHtml();
-    } else {
-        editor.setHtml(fileText);
-        fileText = editor.toPlainText();
-    }
-    VUtils::writeFileToDisk(filePath, fileText);
-}
-
-void VFileList::deleteLocalImages(const QString &filePath)
-{
-    if (!VUtils::isMarkdown(filePath)) {
-        return;
-    }
-
-    QVector<QString> images = VUtils::imagesFromMarkdownFile(filePath);
-    int deleted = 0;
-    for (int i = 0; i < images.size(); ++i) {
-        QFile file(images[i]);
-        if (file.remove()) {
-            ++deleted;
-        }
-    }
-    qDebug() << "delete" << deleted << "images for" << filePath;
+    return false;
 }
 
 void VFileList::copySelectedFiles(bool p_isCut)
@@ -480,14 +339,15 @@ void VFileList::copySelectedFiles(bool p_isCut)
         return;
     }
     QJsonArray files;
-    QDir dir(relativePath);
+    m_copiedFiles.clear();
     for (int i = 0; i < items.size(); ++i) {
-        QJsonObject itemJson = items[i]->data(Qt::UserRole).toJsonObject();
-        QString itemName = itemJson["name"].toString();
+        VFile *file = getVFile(items[i]);
         QJsonObject fileJson;
-        fileJson["notebook"] = notebook;
-        fileJson["relative_path"] = dir.filePath(itemName);
+        fileJson["notebook"] = file->retriveNotebook();
+        fileJson["path"] = file->retrivePath();
         files.append(fileJson);
+
+        m_copiedFiles.append(file);
     }
 
     copyFileInfoToClipboard(files, p_isCut);
@@ -511,219 +371,71 @@ void VFileList::copyFileInfoToClipboard(const QJsonArray &p_files, bool p_isCut)
 
 void VFileList::pasteFilesInCurDir()
 {
-    pasteFiles(notebook, relativePath);
+    pasteFiles(m_directory);
 }
 
-void VFileList::pasteFiles(const QString &p_notebook, const QString &p_dirRelativePath)
+void VFileList::pasteFiles(VDirectory *p_destDir)
 {
-    qDebug() << "paste files to" << p_notebook << p_dirRelativePath;
+    qDebug() << "paste files to" << p_destDir->getName();
     QClipboard *clipboard = QApplication::clipboard();
     QString text = clipboard->text();
     QJsonObject clip = QJsonDocument::fromJson(text.toLocal8Bit()).object();
     Q_ASSERT(!clip.isEmpty() && clip["operation"] == (int)ClipboardOpType::CopyFile);
-
     bool isCut = clip["is_cut"].toBool();
-    QJsonArray sources = clip["sources"].toArray();
 
-    int nrFiles = sources.size();
-    QDir destDir(p_dirRelativePath);
     int nrPasted = 0;
-    for (int i = 0; i < nrFiles; ++i) {
-        QJsonObject file = sources[i].toObject();
-        QString srcNotebook = file["notebook"].toString();
-        QString srcRelativePath = file["relative_path"].toString();
-        bool ret = copyFile(srcNotebook, srcRelativePath, p_notebook,
-                            destDir.filePath(VUtils::fileNameFromPath(srcRelativePath)), isCut);
-        if (ret) {
+    for (int i = 0; i < m_copiedFiles.size(); ++i) {
+        QPointer<VFile> srcFile = m_copiedFiles[i];
+        if (!srcFile) {
+            continue;
+        }
+        QString fileName = srcFile->getName();
+        VDirectory *srcDir = srcFile->getDirectory();
+        if (srcDir == p_destDir && !isCut) {
+            // Copy and paste in the same directory.
+            // Rename it to xx_copy.md
+            fileName = VUtils::generateCopiedFileName(srcDir->retrivePath(), fileName);
+        }
+        if (copyFile(p_destDir, fileName, srcFile, isCut)) {
             nrPasted++;
         }
     }
+
     qDebug() << "pasted" << nrPasted << "files sucessfully";
     clipboard->clear();
+    m_copiedFiles.clear();
 }
 
-bool VFileList::copyFile(const QString &p_srcNotebook, const QString &p_srcRelativePath,
-                         const QString &p_destNotebook, const QString &p_destRelativePath,
-                         bool p_isCut)
+bool VFileList::copyFile(VDirectory *p_destDir, const QString &p_destName, VFile *p_file, bool p_cut)
 {
-    QString srcPath = QDir(vnote->getNotebookPath(p_srcNotebook)).filePath(p_srcRelativePath);
-    srcPath = QDir::cleanPath(srcPath);
-    QString destPath = QDir(vnote->getNotebookPath(p_destNotebook)).filePath(p_destRelativePath);
-    destPath = QDir::cleanPath(destPath);
+    QString srcPath = QDir::cleanPath(p_file->retrivePath());
+    QString destPath = QDir::cleanPath(QDir(p_destDir->retrivePath()).filePath(p_destName));
     if (srcPath == destPath) {
         return true;
     }
-
-    // If change the file type, we need to convert it
-    bool needConversion = false;
-    DocType docType = VUtils::isMarkdown(srcPath) ? DocType::Markdown : DocType::Html;
+    // If change the file type, we need to close it first
+    DocType docType = p_file->getDocType();
     DocType newDocType = VUtils::isMarkdown(destPath) ? DocType::Markdown : DocType::Html;
     if (docType != newDocType) {
-        if (editArea->isFileOpened(p_srcNotebook, p_srcRelativePath)) {
-            QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Rename will change the note type"),
-                               QMessageBox::Ok | QMessageBox::Cancel, this);
-            msgBox.setDefaultButton(QMessageBox::Ok);
-            msgBox.setInformativeText(QString("You should close the note %1 before continue")
-                                      .arg(VUtils::fileNameFromPath(p_srcRelativePath)));
-            if (QMessageBox::Ok == msgBox.exec()) {
-                QJsonObject curItemJson;
-                curItemJson["notebook"] = p_srcNotebook;
-                curItemJson["relative_path"] = p_srcRelativePath;
-                curItemJson["is_forced"] = false;
-                if (!editArea->closeFile(curItemJson)) {
+        if (editArea->isFileOpened(p_file)) {
+            int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                                          QString("The renaming will change the note type."),
+                                          QString("You should close the note %1 before continue.").arg(p_file->getName()),
+                                          QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Ok, this);
+            if (QMessageBox::Ok == ret) {
+                if (!editArea->closeFile(p_file, false)) {
                     return false;
                 }
             } else {
                 return false;
             }
         }
-        // Convert it later
-        needConversion = true;
     }
 
-    QVector<QString> images;
-    if (docType == DocType::Markdown) {
-        images = VUtils::imagesFromMarkdownFile(srcPath);
-    }
-
-    // Copy the file
-    if (!VUtils::copyFile(srcPath, destPath, p_isCut)) {
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Fail to copy %1 from %2.")
-                           .arg(p_srcRelativePath).arg(p_srcNotebook), QMessageBox::Ok, this);
-        msgBox.setInformativeText(QString("Please check if there already exists a file with the same name"));
-        msgBox.exec();
-        return false;
-    }
-
-    if (needConversion) {
-        convertFileType(p_destNotebook, p_destRelativePath, docType, newDocType);
-    }
-
-    // We need to copy images when it is still markdown
-    if (!images.isEmpty()) {
-        if (newDocType == DocType::Markdown) {
-            QString dirPath = QDir(VUtils::basePathFromPath(destPath)).filePath("images");
-            VUtils::makeDirectory(dirPath);
-            int nrPasted = 0;
-            for (int i = 0; i < images.size(); ++i) {
-                if (!QFile(images[i]).exists()) {
-                    continue;
-                }
-
-                QString destImagePath = QDir(dirPath).filePath(VUtils::fileNameFromPath(images[i]));
-                if (VUtils::copyFile(images[i], destImagePath, p_isCut)) {
-                    nrPasted++;
-                } else {
-                    QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Fail to copy image %1.")
-                                       .arg(images[i]), QMessageBox::Ok, this);
-                    msgBox.setInformativeText(QString("Please check if there already exists a file with the same name and manually copy it"));
-                    msgBox.exec();
-                }
-            }
-            qDebug() << "pasted" << nrPasted << "images sucessfully";
-        } else {
-            // Delete the images
-            for (int i = 0; i < images.size(); ++i) {
-                QFile file(images[i]);
-                file.remove();
-            }
-        }
-    }
-
-    int idx = -1;
-    if (p_isCut) {
-        // Remove src in the config
-        idx = removeFileInConfig(srcPath);
-        if (VUtils::basePathFromPath(srcPath) != VUtils::basePathFromPath(destPath)) {
-            idx = -1;
-        }
-    }
-
-    // Add dest in the config
-    addFileInConfig(destPath, idx);
-
+    VFile *destFile = VDirectory::copyFile(p_destDir, p_destName, p_file, p_cut);
     updateFileList();
-
-    if (p_isCut) {
-        emit fileRenamed(p_srcNotebook, p_srcRelativePath,
-                         p_destNotebook, p_destRelativePath);
+    if (destFile) {
+        emit fileUpdated(destFile);
     }
-    return true;
-}
-
-int VFileList::removeFileInConfig(const QString &p_filePath)
-{
-    QString dirPath = VUtils::basePathFromPath(p_filePath);
-    QString fileName = VUtils::fileNameFromPath(p_filePath);
-    // Update current directory's config file to exclude this file
-    QJsonObject dirJson = VConfigManager::readDirectoryConfig(dirPath);
-    Q_ASSERT(!dirJson.isEmpty());
-    QJsonArray fileArray = dirJson["files"].toArray();
-    bool deleted = false;
-    int idx = -1;
-    for (int i = 0; i < fileArray.size(); ++i) {
-        QJsonObject ele = fileArray[i].toObject();
-        if (ele["name"].toString() == fileName) {
-            fileArray.removeAt(i);
-            deleted = true;
-            idx = i;
-            break;
-        }
-    }
-    if (!deleted) {
-        qWarning() << "error: fail to find" << fileName << "to delete";
-        return idx;
-    }
-    dirJson["files"] = fileArray;
-    if (!VConfigManager::writeDirectoryConfig(dirPath, dirJson)) {
-        qWarning() << "error: fail to update directory's configuration file to delete"
-                   << fileName;
-        return idx;
-    }
-    return idx;
-}
-
-// @index = -1, add it to the end of the list
-bool VFileList::addFileInConfig(const QString &p_filePath, int p_index)
-{
-    QString dirPath = VUtils::basePathFromPath(p_filePath);
-    QString fileName = VUtils::fileNameFromPath(p_filePath);
-
-    // Update current directory's config file to include this file
-    QJsonObject dirJson = VConfigManager::readDirectoryConfig(dirPath);
-    Q_ASSERT(!dirJson.isEmpty());
-    QJsonObject fileJson;
-    fileJson["name"] = fileName;
-    QJsonArray fileArray = dirJson["files"].toArray();
-    if (p_index == -1) {
-        p_index = fileArray.size();
-    }
-    fileArray.insert(p_index, fileJson);
-    dirJson["files"] = fileArray;
-    if (!VConfigManager::writeDirectoryConfig(dirPath, dirJson)) {
-        qWarning() << "error: fail to update directory's configuration file to add a new file"
-                   << fileName;
-        return false;
-    }
-
-    return true;
-}
-
-QJsonObject VFileList::readFileInConfig(const QString &p_filePath)
-{
-    QString dirPath = VUtils::basePathFromPath(p_filePath);
-    QString fileName = VUtils::fileNameFromPath(p_filePath);
-
-    QJsonObject dirJson = VConfigManager::readDirectoryConfig(dirPath);
-    Q_ASSERT(!dirJson.isEmpty());
-
-    qDebug() << "config" << p_filePath;
-    QJsonArray fileArray = dirJson["files"].toArray();
-    for (int i = 0; i < fileArray.size(); ++i) {
-        QJsonObject ele = fileArray[i].toObject();
-        if (ele["name"].toString() == fileName) {
-            return ele;
-        }
-    }
-    return QJsonObject();
+    return destFile != NULL;
 }

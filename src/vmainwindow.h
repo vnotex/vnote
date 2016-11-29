@@ -4,7 +4,9 @@
 #include <QMainWindow>
 #include <QVector>
 #include <QPair>
+#include <QPointer>
 #include <QString>
+#include "vfile.h"
 
 class QLabel;
 class QComboBox;
@@ -48,15 +50,13 @@ private slots:
     void setTabStopWidth(QAction *action);
     void setEditorBackgroundColor(QAction *action);
     void setRenderBackgroundColor(QAction *action);
-    void handleCurTabStatusChanged(const QString &notebook, const QString &relativePath,
-                                   bool editMode, bool modifiable, bool modified);
+    void handleCurTabStatusChanged(const VFile *p_file, bool p_editMode);
     void changePanelView(QAction *action);
-    void handleFileListDirectoryChanged(const QString &notebook, const QString &relativePath);
     void curEditFileInfo();
     void deleteCurNote();
 
 signals:
-    void curNotebookChanged(const QString &notebookName);
+    void curNotebookChanged(VNotebook *p_notebook);
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -74,16 +74,14 @@ private:
     void initEditorBackgroundMenu(QMenu *menu);
     void changeSplitterView(int nrPanel);
     void updateWindowTitle(const QString &str);
-    void updateToolbarFromTabChage(bool empty, bool editMode, bool modifiable);
+    void updateToolbarFromTabChage(const VFile *p_file, bool p_editMode);
     void saveStateAndGeometry();
     void restoreStateAndGeometry();
 
     // If true, comboBox changes will not trigger any signal out
     bool notebookComboMuted;
     VNote *vnote;
-
-    QString curEditNotebook;
-    QString curEditRelativePath;
+    QPointer<VFile> m_curFile;
 
     QLabel *notebookLabel;
     QLabel *directoryLabel;

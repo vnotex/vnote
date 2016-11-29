@@ -1,9 +1,9 @@
 #include <QtWidgets>
 #include "vnewdirdialog.h"
 
-VNewDirDialog::VNewDirDialog(const QString &title, const QString &name, const QString &defaultName,
+VNewDirDialog::VNewDirDialog(const QString &title, const QString &info, const QString &name, const QString &defaultName,
                              QWidget *parent)
-    : QDialog(parent), title(title), name(name), defaultName(defaultName)
+    : QDialog(parent), title(title), info(info), name(name), defaultName(defaultName)
 {
     setupUI();
 
@@ -14,6 +14,11 @@ VNewDirDialog::VNewDirDialog(const QString &title, const QString &name, const QS
 
 void VNewDirDialog::setupUI()
 {
+    QLabel *infoLabel = NULL;
+    if (!info.isEmpty()) {
+        infoLabel = new QLabel(info);
+    }
+
     nameLabel = new QLabel(name);
     nameEdit = new QLineEdit(defaultName);
     nameEdit->selectAll();
@@ -23,7 +28,7 @@ void VNewDirDialog::setupUI()
     okBtn->setDefault(true);
     cancelBtn = new QPushButton(tr("&Cancel"));
 
-    QVBoxLayout *topLayout = new QVBoxLayout();
+    QHBoxLayout *topLayout = new QHBoxLayout();
     topLayout->addWidget(nameLabel);
     topLayout->addWidget(nameEdit);
 
@@ -33,6 +38,9 @@ void VNewDirDialog::setupUI()
     btmLayout->addWidget(cancelBtn);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
+    if (infoLabel) {
+        mainLayout->addWidget(infoLabel);
+    }
     mainLayout->addLayout(topLayout);
     mainLayout->addLayout(btmLayout);
     setLayout(mainLayout);

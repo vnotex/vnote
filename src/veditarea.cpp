@@ -4,6 +4,7 @@
 #include "vedittab.h"
 #include "vnote.h"
 #include "vconfigmanager.h"
+#include "vfile.h"
 
 VEditArea::VEditArea(VNote *vnote, QWidget *parent)
     : QWidget(parent), vnote(vnote), curWindowIndex(0)
@@ -79,25 +80,17 @@ void VEditArea::removeSplitWindow(VEditWindow *win)
 
 // A given file can be opened in multiple split windows. A given file could be
 // opened at most in one tab inside a window.
-void VEditArea::openFile(QJsonObject fileJson)
+void VEditArea::openFile(VFile *p_file, OpenFileMode p_mode)
 {
-    if (fileJson.isEmpty()) {
+    if (!p_file) {
         return;
     }
-
-    QString notebook = fileJson["notebook"].toString();
-    QString relativePath = fileJson["relative_path"].toString();
-    int mode = OpenFileMode::Read;
-    if (fileJson.contains("mode")) {
-        mode = fileJson["mode"].toInt();
-    }
-
-    qDebug() << "open notebook" << notebook << "path" << relativePath << mode;
+    qDebug() << "VEditArea open" << p_file->getName() << (int)p_mode;
 
     // Find if it has been opened already
     int winIdx, tabIdx;
     bool setFocus = false;
-    auto tabs = findTabsByFile(notebook, relativePath);
+    auto tabs = findTabsByFile(p_file);
     if (!tabs.empty()) {
         // Current window first
         winIdx = tabs[0].first;
@@ -115,19 +108,19 @@ void VEditArea::openFile(QJsonObject fileJson)
 
     // Open it in current window
     winIdx = curWindowIndex;
-    tabIdx = openFileInWindow(winIdx, notebook, relativePath, mode);
+    tabIdx = openFileInWindow(winIdx, p_file, p_mode);
 
 out:
     setCurrentTab(winIdx, tabIdx, setFocus);
 }
 
-QVector<QPair<int, int> > VEditArea::findTabsByFile(const QString &notebook, const QString &relativePath)
+QVector<QPair<int, int> > VEditArea::findTabsByFile(const VFile *p_file)
 {
     QVector<QPair<int, int> > tabs;
     int nrWin = splitter->count();
     for (int winIdx = 0; winIdx < nrWin; ++winIdx) {
         VEditWindow *win = getWindow(winIdx);
-        int tabIdx = win->findTabByFile(notebook, relativePath);
+        int tabIdx = win->findTabByFile(p_file);
         if (tabIdx != -1) {
             QPair<int, int> match;
             match.first = winIdx;
@@ -138,12 +131,11 @@ QVector<QPair<int, int> > VEditArea::findTabsByFile(const QString &notebook, con
     return tabs;
 }
 
-int VEditArea::openFileInWindow(int windowIndex, const QString &notebook, const QString &relativePath,
-                                int mode)
+int VEditArea::openFileInWindow(int windowIndex, VFile *p_file, OpenFileMode p_mode)
 {
     Q_ASSERT(windowIndex < splitter->count());
     VEditWindow *win = getWindow(windowIndex);
-    return win->openFile(notebook, relativePath, mode);
+    return win->openFile(p_file, p_mode);
 }
 
 void VEditArea::setCurrentTab(int windowIndex, int tabIndex, bool setFocus)
@@ -178,21 +170,18 @@ void VEditArea::updateWindowStatus()
     win->requestUpdateCurHeader();
 }
 
-bool VEditArea::closeFile(QJsonObject fileJson)
+bool VEditArea::closeFile(const VFile *p_file, bool p_forced)
 {
-    if (fileJson.isEmpty()) {
+    if (!p_file) {
         return true;
     }
-    QString notebook = fileJson["notebook"].toString();
-    QString relativePath = fileJson["relative_path"].toString();
-    bool isForced = fileJson["is_forced"].toBool();
-
     int nrWin = splitter->count();
     bool ret = false;
     for (int i = 0; i < nrWin; ++i) {
         VEditWindow *win = getWindow(i);
-        ret = ret || win->closeFile(notebook, relativePath, isForced);
+        ret = ret || win->closeFile(p_file, p_forced);
     }
+    updateWindowStatus();
     return ret;
 }
 
@@ -206,6 +195,7 @@ bool VEditArea::closeAllFiles(bool p_forced)
             return false;
         }
     }
+    updateWindowStatus();
     return true;
 }
 
@@ -231,29 +221,6 @@ void VEditArea::saveAndReadFile()
 {
     VEditWindow *win = getWindow(curWindowIndex);
     win->saveAndReadFile();
-}
-
-void VEditArea::handleDirectoryRenamed(const QString &notebook, const QString &oldRelativePath,
-                                       const QString &newRelativePath)
-{
-    int nrWin = splitter->count();
-    for (int i = 0; i < nrWin; ++i) {
-        VEditWindow *win = getWindow(i);
-        win->handleDirectoryRenamed(notebook, oldRelativePath, newRelativePath);
-    }
-    updateWindowStatus();
-}
-
-void VEditArea::handleFileRenamed(const QString &p_srcNotebook, const QString &p_srcRelativePath,
-                                  const QString &p_destNotebook, const QString &p_destRelativePath)
-{
-    qDebug() << "fileRenamed" << p_srcNotebook << p_srcRelativePath << p_destNotebook << p_destRelativePath;
-    int nrWin = splitter->count();
-    for (int i = 0; i < nrWin; ++i) {
-        VEditWindow *win = getWindow(i);
-        win->handleFileRenamed(p_srcNotebook, p_srcRelativePath, p_destNotebook, p_destRelativePath);
-    }
-    updateWindowStatus();
 }
 
 void VEditArea::handleSplitWindowRequest(VEditWindow *curWindow)
@@ -287,7 +254,6 @@ void VEditArea::handleRemoveSplitRequest(VEditWindow *curWindow)
 
 void VEditArea::mousePressEvent(QMouseEvent *event)
 {
-    return;
     qDebug() << "VEditArea press event" << event;
     QPoint pos = event->pos();
     int nrWin = splitter->count();
@@ -335,7 +301,15 @@ void VEditArea::handleOutlineItemActivated(const VAnchor &anchor)
     getWindow(curWindowIndex)->scrollCurTab(anchor);
 }
 
-bool VEditArea::isFileOpened(const QString &notebook, const QString &relativePath)
+bool VEditArea::isFileOpened(const VFile *p_file)
 {
-    return !findTabsByFile(notebook, relativePath).isEmpty();
+    return !findTabsByFile(p_file).isEmpty();
+}
+
+void VEditArea::handleFileUpdated(const VFile *p_file)
+{
+    int nrWin = splitter->count();
+    for (int i = 0; i < nrWin; ++i) {
+        getWindow(i)->updateFileInfo(p_file);
+    }
 }

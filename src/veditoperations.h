@@ -1,22 +1,24 @@
 #ifndef VEDITOPERATIONS_H
 #define VEDITOPERATIONS_H
 
-class VNoteFile;
+#include <QPointer>
+#include "vfile.h"
+
 class VEdit;
 class QMimeData;
 
 class VEditOperations
 {
 public:
-    VEditOperations(VEdit *editor, VNoteFile *noteFile);
+    VEditOperations(VEdit *p_editor, VFile *p_file);
     virtual ~VEditOperations();
     virtual bool insertImageFromMimeData(const QMimeData *source) = 0;
     virtual bool insertURLFromMimeData(const QMimeData *source) = 0;
 
 protected:
     void insertTextAtCurPos(const QString &text);
-    VEdit *editor;
-    VNoteFile *noteFile;
+    VEdit *m_editor;
+    QPointer<VFile> m_file;
 };
 
 #endif // VEDITOPERATIONS_H

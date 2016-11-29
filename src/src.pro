@@ -23,7 +23,6 @@ SOURCES += main.cpp\
     vfilelist.cpp \
     dialog/vnewfiledialog.cpp \
     vedit.cpp \
-    vnotefile.cpp \
     vdocument.cpp \
     utils/vutils.cpp \
     vpreviewpage.cpp \
@@ -43,8 +42,9 @@ SOURCES += main.cpp\
     vedittab.cpp \
     voutline.cpp \
     vtoc.cpp \
-    vfilelocation.cpp \
-    vsingleinstanceguard.cpp
+    vsingleinstanceguard.cpp \
+    vdirectory.cpp \
+    vfile.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -56,7 +56,6 @@ HEADERS  += vmainwindow.h \
     dialog/vnewfiledialog.h \
     vedit.h \
     vconstants.h \
-    vnotefile.h \
     vdocument.h \
     utils/vutils.h \
     vpreviewpage.h \
@@ -76,8 +75,9 @@ HEADERS  += vmainwindow.h \
     vedittab.h \
     voutline.h \
     vtoc.h \
-    vfilelocation.h \
-    vsingleinstanceguard.h
+    vsingleinstanceguard.h \
+    vdirectory.h \
+    vfile.h
 
 RESOURCES += \
     vnote.qrc

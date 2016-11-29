@@ -18,37 +18,33 @@
 
 extern VConfigManager vconfig;
 
-VEditTab::VEditTab(const QString &path, bool modifiable, QWidget *parent)
-    : QStackedWidget(parent), mdConverterType(vconfig.getMdConverterType())
+VEditTab::VEditTab(VFile *p_file, OpenFileMode p_mode, QWidget *p_parent)
+    : QStackedWidget(p_parent), m_file(p_file), isEditMode(false),
+      mdConverterType(vconfig.getMdConverterType())
 {
-    DocType docType = VUtils::isMarkdown(path) ? DocType::Markdown : DocType::Html;
-    QString basePath = QFileInfo(path).path();
-    QString fileName = QFileInfo(path).fileName();
-    qDebug() << "VEditTab basePath" << basePath << "file" << fileName;
-    QString fileText = VUtils::readFileFromDisk(path);
-    noteFile = new VNoteFile(basePath, fileName, fileText,
-                             docType, modifiable);
-
-    isEditMode = false;
-
+    qDebug() << "ready to open" << p_file->getName();
+    Q_ASSERT(!m_file->isOpened());
+    m_file->open();
     setupUI();
-
-    showFileReadMode();
-
+    if (p_mode == OpenFileMode::Edit) {
+        showFileEditMode();
+    } else {
+        showFileReadMode();
+    }
     connect(qApp, &QApplication::focusChanged,
             this, &VEditTab::handleFocusChanged);
 }
 
 VEditTab::~VEditTab()
 {
-    if (noteFile) {
-        delete noteFile;
+    if (m_file) {
+        m_file->close();
     }
 }
 
 void VEditTab::setupUI()
 {
-    textEditor = new VEdit(noteFile);
+    textEditor = new VEdit(m_file);
     connect(textEditor, &VEdit::headersChanged,
             this, &VEditTab::updateTocFromHeaders);
     connect(textEditor, SIGNAL(curHeaderChanged(int)),
@@ -57,7 +53,7 @@ void VEditTab::setupUI()
             this, &VEditTab::statusChanged);
     addWidget(textEditor);
 
-    switch (noteFile->docType) {
+    switch (m_file->getDocType()) {
     case DocType::Markdown:
         setupMarkdownPreview();
         textBrowser = NULL;
@@ -71,37 +67,38 @@ void VEditTab::setupUI()
         webPreviewer = NULL;
         break;
     default:
-        qWarning() << "error: unknown doc type" << int(noteFile->docType);
+        qWarning() << "error: unknown doc type" << int(m_file->getDocType());
     }
 }
 
 void VEditTab::showFileReadMode()
 {
+    qDebug() << "read" << m_file->getName();
     isEditMode = false;
-    switch (noteFile->docType) {
+    switch (m_file->getDocType()) {
     case DocType::Html:
-        textBrowser->setHtml(noteFile->content);
+        textBrowser->setHtml(m_file->getContent());
         textBrowser->setFont(vconfig.getBaseEditFont());
         textBrowser->setPalette(vconfig.getBaseEditPalette());
         setCurrentWidget(textBrowser);
         break;
     case DocType::Markdown:
         if (mdConverterType == MarkdownConverterType::Marked) {
-            document.setText(noteFile->content);
+            document.setText(m_file->getContent());
         } else {
             previewByConverter();
         }
         setCurrentWidget(webPreviewer);
         break;
     default:
-        qWarning() << "error: unknown doc type" << int(noteFile->docType);
+        qWarning() << "error: unknown doc type" << int(m_file->getDocType());
     }
 }
 
 void VEditTab::previewByConverter()
 {
     VMarkdownConverter mdConverter;
-    QString content = noteFile->content;
+    QString &content = m_file->getContent();
     QString html = mdConverter.generateHtml(content, vconfig.getMarkdownExtensions());
     QRegularExpression tocExp("<p>\\[TOC\\]<\\/p>", QRegularExpression::CaseInsensitiveOption);
     QString toc = mdConverter.generateToc(content, vconfig.getMarkdownExtensions());
@@ -119,15 +116,22 @@ void VEditTab::showFileEditMode()
     textEditor->setFocus();
 }
 
-bool VEditTab::requestClose()
+bool VEditTab::closeFile(bool p_forced)
 {
-    readFile();
+    if (p_forced && isEditMode) {
+        // Discard buffer content
+        textEditor->reloadFile();
+        textEditor->endEdit();
+        showFileReadMode();
+    } else {
+        readFile();
+    }
     return !isEditMode;
 }
 
 void VEditTab::editFile()
 {
-    if (isEditMode || !noteFile->modifiable) {
+    if (isEditMode) {
         return;
     }
 
@@ -141,14 +145,12 @@ void VEditTab::readFile()
     }
 
     if (textEditor->isModified()) {
-        // Need to save the changes
-        QMessageBox msgBox(this);
-        msgBox.setText(QString("The note \"%1\" has been modified.").arg(noteFile->fileName));
-        msgBox.setInformativeText("Do you want to save your changes?");
-        msgBox.setIcon(QMessageBox::Information);
-        msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
-        msgBox.setDefaultButton(QMessageBox::Save);
-        int ret = msgBox.exec();
+        // Prompt to save the changes
+        int ret = VUtils::showMessage(QMessageBox::Information, tr("Information"),
+                                      QString("Note %1 has been modified.").arg(m_file->getName()),
+                                      tr("Do you want to save your changes?"),
+                                      QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
+                                      QMessageBox::Save, this);
         switch (ret) {
         case QMessageBox::Save:
             saveFile();
@@ -171,33 +173,27 @@ void VEditTab::readFile()
 bool VEditTab::saveFile()
 {
     bool ret;
-    if (!isEditMode || !noteFile->modifiable || !textEditor->isModified()) {
+    if (!isEditMode || !textEditor->isModified()) {
         return true;
     }
     // Make sure the file already exists. Temporary deal with cases when user delete or move
     // a file.
-    QString filePath = QDir(noteFile->basePath).filePath(noteFile->fileName);
+    QString filePath = m_file->retrivePath();
     if (!QFile(filePath).exists()) {
-        qWarning() << "error:" << filePath << "being written has been removed";
-        QMessageBox msgBox(QMessageBox::Warning, tr("Fail to save to file"),
-                           QString("%1 being written has been removed.").arg(filePath),
-                           QMessageBox::Ok, this);
-        msgBox.setDefaultButton(QMessageBox::Ok);
-        msgBox.exec();
+        qWarning() << filePath << "being written has been removed";
+        VUtils::showMessage(QMessageBox::Warning, tr("Warning"), tr("Fail to save note"),
+                            QString("%1 being written has been removed.").arg(filePath),
+                            QMessageBox::Ok, QMessageBox::Ok, this);
         return false;
     }
     textEditor->saveFile();
-    ret = VUtils::writeFileToDisk(filePath, noteFile->content);
+    ret = m_file->save();
     if (!ret) {
-        QMessageBox msgBox(QMessageBox::Warning, tr("Fail to save to file"),
-                           QString("Fail to write to disk when saving a note. Please try it again."),
-                           QMessageBox::Ok, this);
-        msgBox.setDefaultButton(QMessageBox::Ok);
-        msgBox.exec();
+        VUtils::showMessage(QMessageBox::Warning, tr("Warning"), tr("Fail to save note"),
+                            QString("Fail to write to disk when saving a note. Please try it again."),
+                            QMessageBox::Ok, QMessageBox::Ok, this);
         textEditor->setModified(true);
-        ret = false;
     }
-    ret = true;
     emit statusChanged();
     return ret;
 }
@@ -218,10 +214,10 @@ void VEditTab::setupMarkdownPreview()
 
     if (mdConverterType == MarkdownConverterType::Marked) {
         webPreviewer->setHtml(VNote::templateHtml,
-                              QUrl::fromLocalFile(noteFile->basePath + QDir::separator()));
+                              QUrl::fromLocalFile(m_file->retriveBasePath() + QDir::separator()));
     } else {
         webPreviewer->setHtml(VNote::preTemplateHtml + VNote::postTemplateHtml,
-                              QUrl::fromLocalFile(noteFile->basePath + QDir::separator()));
+                              QUrl::fromLocalFile(m_file->retriveBasePath() + QDir::separator()));
     }
 
     addWidget(webPreviewer);
@@ -260,7 +256,7 @@ void VEditTab::updateTocFromHtml(const QString &tocHtml)
         }
     }
 
-    tableOfContent.filePath = QDir::cleanPath(QDir(noteFile->basePath).filePath(noteFile->fileName));
+    tableOfContent.filePath = m_file->retrivePath();
     tableOfContent.valid = true;
 
     emit outlineChanged(tableOfContent);
@@ -270,7 +266,7 @@ void VEditTab::updateTocFromHeaders(const QVector<VHeader> &headers)
 {
     tableOfContent.type = VHeaderType::LineNumber;
     tableOfContent.headers = headers;
-    tableOfContent.filePath = QDir::cleanPath(QDir(noteFile->basePath).filePath(noteFile->fileName));
+    tableOfContent.filePath = m_file->retrivePath();
     tableOfContent.valid = true;
 
     emit outlineChanged(tableOfContent);
@@ -367,8 +363,7 @@ void VEditTab::updateCurHeader(const QString &anchor)
     if (curHeader.anchor.mid(1) == anchor) {
         return;
     }
-    curHeader = VAnchor(QDir::cleanPath(QDir(noteFile->basePath).filePath(noteFile->fileName)),
-                        "#" + anchor, -1);
+    curHeader = VAnchor(m_file->retrivePath(), "#" + anchor, -1);
     if (!anchor.isEmpty()) {
         emit curHeaderChanged(curHeader);
     }
@@ -379,16 +374,8 @@ void VEditTab::updateCurHeader(int lineNumber)
     if (curHeader.lineNumber == lineNumber) {
         return;
     }
-    curHeader = VAnchor(QDir::cleanPath(QDir(noteFile->basePath).filePath(noteFile->fileName)),
-                        "", lineNumber);
+    curHeader = VAnchor(m_file->retrivePath(), "", lineNumber);
     if (lineNumber > -1) {
         emit curHeaderChanged(curHeader);
     }
-}
-
-void VEditTab::updatePath(const QString &newPath)
-{
-    QFileInfo info(newPath);
-    noteFile->basePath = info.path();
-    noteFile->fileName = info.fileName();
 }

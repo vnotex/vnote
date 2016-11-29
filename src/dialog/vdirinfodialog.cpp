@@ -20,7 +20,7 @@ void VDirInfoDialog::setupUI()
     if (!info.isEmpty()) {
         infoLabel = new QLabel(info);
     }
-    nameLabel = new QLabel(tr("&Name"));
+    nameLabel = new QLabel(tr("&Name:"));
     nameEdit = new QLineEdit(defaultName);
     nameEdit->selectAll();
     nameLabel->setBuddy(nameEdit);
@@ -29,10 +29,7 @@ void VDirInfoDialog::setupUI()
     okBtn->setDefault(true);
     cancelBtn = new QPushButton(tr("&Cancel"));
 
-    QVBoxLayout *topLayout = new QVBoxLayout();
-    if (infoLabel) {
-        topLayout->addWidget(infoLabel);
-    }
+    QHBoxLayout *topLayout = new QHBoxLayout();
     topLayout->addWidget(nameLabel);
     topLayout->addWidget(nameEdit);
 
@@ -42,6 +39,9 @@ void VDirInfoDialog::setupUI()
     btmLayout->addWidget(cancelBtn);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
+    if (infoLabel) {
+        mainLayout->addWidget(infoLabel);
+    }
     mainLayout->addLayout(topLayout);
     mainLayout->addLayout(btmLayout);
     setLayout(mainLayout);

@@ -35,7 +35,7 @@ void VMainWindow::setupUI()
 {
     QWidget *directoryPanel = setupDirectoryPanel();
 
-    fileList = new VFileList(vnote);
+    fileList = new VFileList();
     fileList->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
     editArea = new VEditArea(vnote);
@@ -57,23 +57,14 @@ void VMainWindow::setupUI()
 
     connect(directoryTree, &VDirectoryTree::currentDirectoryChanged,
             fileList, &VFileList::setDirectory);
-    connect(directoryTree, &VDirectoryTree::directoryRenamed,
-            fileList, &VFileList::handleDirectoryRenamed);
-    connect(fileList, &VFileList::directoryChanged,
-            this, &VMainWindow::handleFileListDirectoryChanged);
-
     connect(fileList, &VFileList::fileClicked,
             editArea, &VEditArea::openFile);
-    connect(fileList, &VFileList::fileDeleted,
-            editArea, &VEditArea::closeFile);
     connect(fileList, &VFileList::fileCreated,
             editArea, &VEditArea::openFile);
+    connect(fileList, &VFileList::fileUpdated,
+            editArea, &VEditArea::handleFileUpdated);
     connect(editArea, &VEditArea::curTabStatusChanged,
             this, &VMainWindow::handleCurTabStatusChanged);
-    connect(directoryTree, &VDirectoryTree::directoryRenamed,
-            editArea, &VEditArea::handleDirectoryRenamed);
-    connect(fileList, &VFileList::fileRenamed,
-            editArea, &VEditArea::handleFileRenamed);
 
     connect(newNotebookBtn, &QPushButton::clicked,
             this, &VMainWindow::onNewNotebookBtnClicked);
@@ -433,10 +424,10 @@ void VMainWindow::setCurNotebookIndex(int index)
     }
     Q_ASSERT(index < vnote->getNotebooks().size());
     // Update directoryTree
-    QString notebook;
+    VNotebook *notebook = NULL;
     if (index > -1) {
         vconfig.setCurNotebookIndex(index);
-        notebook = vnote->getNotebooks()[index]->getName();
+        notebook = vnote->getNotebooks()[index];
         newRootDirAct->setEnabled(true);
     } else {
         newRootDirAct->setEnabled(false);
@@ -525,7 +516,8 @@ void VMainWindow::onNotebookInfoBtnClicked()
 void VMainWindow::importNoteFromFile()
 {
     static QString lastPath = QDir::homePath();
-    QStringList files = QFileDialog::getOpenFileNames(this,tr("Select files(HTML or Markdown) to be imported as notes"),
+    QStringList files = QFileDialog::getOpenFileNames(this,
+                                                      tr("Select files(HTML or Markdown) to be imported as notes"),
                                                       lastPath);
     if (files.isEmpty()) {
         return;
@@ -668,15 +660,15 @@ void VMainWindow::setRenderBackgroundColor(QAction *action)
     vnote->updateTemplate();
 }
 
-void VMainWindow::updateToolbarFromTabChage(bool empty, bool editMode, bool modifiable)
+void VMainWindow::updateToolbarFromTabChage(const VFile *p_file, bool p_editMode)
 {
-    if (empty || !modifiable) {
+    if (!p_file) {
         editNoteAct->setEnabled(false);
         saveExitAct->setVisible(false);
         discardExitAct->setVisible(false);
         saveNoteAct->setVisible(false);
         deleteNoteAct->setEnabled(false);
-    } else if (editMode) {
+    } else if (p_editMode) {
         editNoteAct->setEnabled(false);
         saveExitAct->setVisible(true);
         discardExitAct->setVisible(true);
@@ -690,29 +682,26 @@ void VMainWindow::updateToolbarFromTabChage(bool empty, bool editMode, bool modi
         deleteNoteAct->setEnabled(true);
     }
 
-    if (empty) {
-        noteInfoAct->setEnabled(false);
-    } else {
+    if (p_file) {
         noteInfoAct->setEnabled(true);
+    } else {
+        noteInfoAct->setEnabled(false);
     }
 }
 
-void VMainWindow::handleCurTabStatusChanged(const QString &notebook, const QString &relativePath,
-                                            bool editMode, bool modifiable, bool modified)
+void VMainWindow::handleCurTabStatusChanged(const VFile *p_file, bool p_editMode)
 {
-    updateToolbarFromTabChage(notebook.isEmpty(), editMode, modifiable);
+    updateToolbarFromTabChage(p_file, p_editMode);
 
     QString title;
-    if (!notebook.isEmpty()) {
-        title = QString("[%1] %2").arg(notebook).arg(relativePath);
-        if (modified) {
+    if (p_file) {
+        title = QString("[%1] %2").arg(p_file->retriveNotebook()).arg(p_file->retrivePath());
+        if (p_file->isModified()) {
             title.append('*');
         }
     }
     updateWindowTitle(title);
-
-    curEditNotebook = notebook;
-    curEditRelativePath = relativePath;
+    m_curFile = const_cast<VFile *>(p_file);
 }
 
 void VMainWindow::changePanelView(QAction *action)
@@ -751,15 +740,6 @@ void VMainWindow::changeSplitterView(int nrPanel)
     }
 }
 
-void VMainWindow::handleFileListDirectoryChanged(const QString &notebook, const QString &relativePath)
-{
-    if (relativePath.isEmpty()) {
-        newNoteAct->setEnabled(false);
-    } else {
-        newNoteAct->setEnabled(true);
-    }
-}
-
 void VMainWindow::updateWindowTitle(const QString &str)
 {
     QString title = "VNote";
@@ -771,12 +751,14 @@ void VMainWindow::updateWindowTitle(const QString &str)
 
 void VMainWindow::curEditFileInfo()
 {
-    fileList->fileInfo(curEditNotebook, curEditRelativePath);
+    Q_ASSERT(m_curFile);
+    fileList->fileInfo(m_curFile);
 }
 
 void VMainWindow::deleteCurNote()
 {
-    fileList->deleteFile(curEditNotebook, curEditRelativePath);
+    Q_ASSERT(m_curFile);
+    fileList->deleteFile(m_curFile);
 }
 
 void VMainWindow::closeEvent(QCloseEvent *event)

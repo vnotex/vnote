@@ -3,9 +3,10 @@
 
 #include <QTextEdit>
 #include <QString>
+#include <QPointer>
 #include "vconstants.h"
-#include "vnotefile.h"
 #include "vtoc.h"
+#include "vfile.h"
 
 class HGMarkdownHighlighter;
 class VEditOperations;
@@ -14,12 +15,12 @@ class VEdit : public QTextEdit
 {
     Q_OBJECT
 public:
-    VEdit(VNoteFile *noteFile, QWidget *parent = 0);
+    VEdit(VFile *p_file, QWidget *p_parent = 0);
     ~VEdit();
     void beginEdit();
     void endEdit();
 
-    // Save buffer content to noteFile->content.
+    // Save buffer content to VFile.
     void saveFile();
 
     inline void setModified(bool modified);
@@ -48,9 +49,9 @@ private:
     void initInitImages();
     void clearUnusedImages();
 
+    QPointer<VFile> m_file;
     bool isExpandTab;
     QString tabSpaces;
-    VNoteFile *noteFile;
     HGMarkdownHighlighter *mdHighlighter;
     VEditOperations *editOps;
     QVector<VHeader> headers;
@@ -67,6 +68,9 @@ inline bool VEdit::isModified() const
 inline void VEdit::setModified(bool modified)
 {
     document()->setModified(modified);
+    if (m_file) {
+        m_file->setModified(modified);
+    }
 }
 
 #endif // VEDIT_H

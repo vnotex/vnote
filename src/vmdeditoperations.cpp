@@ -9,13 +9,13 @@
 #include <QMessageBox>
 #include "vmdeditoperations.h"
 #include "dialog/vinsertimagedialog.h"
-#include "vnotefile.h"
 #include "utils/vutils.h"
 #include "vedit.h"
 #include "vdownloader.h"
+#include "vfile.h"
 
-VMdEditOperations::VMdEditOperations(VEdit *editor, VNoteFile *noteFile)
-    : VEditOperations(editor, noteFile)
+VMdEditOperations::VMdEditOperations(VEdit *p_editor, VFile *p_file)
+    : VEditOperations(p_editor, p_file)
 {
 }
 
@@ -26,13 +26,11 @@ bool VMdEditOperations::insertImageFromMimeData(const QMimeData *source)
         return false;
     }
     VInsertImageDialog dialog(QObject::tr("Insert image from clipboard"), QObject::tr("image_title"),
-                              "", (QWidget *)editor);
+                              "", (QWidget *)m_editor);
     dialog.setBrowseable(false);
     dialog.setImage(image);
     if (dialog.exec() == QDialog::Accepted) {
-        insertImageFromQImage(dialog.getImageTitleInput(),
-                              QDir::cleanPath(QDir(noteFile->basePath).filePath("images")),
-                              image);
+        insertImageFromQImage(dialog.getImageTitleInput(), m_file->retriveImagePath(), image);
     }
     return true;
 }
@@ -48,7 +46,7 @@ void VMdEditOperations::insertImageFromQImage(const QString &title, const QStrin
     bool ret = image.save(filePath);
     if (!ret) {
         QMessageBox msgBox(QMessageBox::Warning, QObject::tr("Warning"), QString("Fail to save image %1").arg(filePath),
-                           QMessageBox::Ok, (QWidget *)editor);
+                           QMessageBox::Ok, (QWidget *)m_editor);
         msgBox.exec();
         return;
     }
@@ -56,7 +54,7 @@ void VMdEditOperations::insertImageFromQImage(const QString &title, const QStrin
     QString md = QString("![%1](images/%2)").arg(title).arg(fileName);
     insertTextAtCurPos(md);
 
-    editor->insertImage(fileName);
+    m_editor->insertImage(fileName);
 }
 
 void VMdEditOperations::insertImageFromPath(const QString &title,
@@ -71,7 +69,7 @@ void VMdEditOperations::insertImageFromPath(const QString &title,
     if (!ret) {
         qWarning() << "error: fail to copy" << oriImagePath << "to" << filePath;
         QMessageBox msgBox(QMessageBox::Warning, QObject::tr("Warning"), QString("Fail to save image %1").arg(filePath),
-                           QMessageBox::Ok, (QWidget *)editor);
+                           QMessageBox::Ok, (QWidget *)m_editor);
         msgBox.exec();
         return;
     }
@@ -79,7 +77,7 @@ void VMdEditOperations::insertImageFromPath(const QString &title,
     QString md = QString("![%1](images/%2)").arg(title).arg(fileName);
     insertTextAtCurPos(md);
 
-    editor->insertImage(fileName);
+    m_editor->insertImage(fileName);
 }
 
 bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
@@ -105,7 +103,7 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
     }
 
 
-    VInsertImageDialog dialog(title, QObject::tr("image_title"), imagePath, (QWidget *)editor);
+    VInsertImageDialog dialog(title, QObject::tr("image_title"), imagePath, (QWidget *)m_editor);
     dialog.setBrowseable(false);
     if (isLocal) {
         dialog.setImage(image);
@@ -118,12 +116,10 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
     }
     if (dialog.exec() == QDialog::Accepted) {
         if (isLocal) {
-            insertImageFromPath(dialog.getImageTitleInput(),
-                                QDir::cleanPath(QDir(noteFile->basePath).filePath("images")),
+            insertImageFromPath(dialog.getImageTitleInput(), m_file->retriveImagePath(),
                                 imagePath);
         } else {
-            insertImageFromQImage(dialog.getImageTitleInput(),
-                                QDir::cleanPath(QDir(noteFile->basePath).filePath("images")),
+            insertImageFromQImage(dialog.getImageTitleInput(), m_file->retriveImagePath(),
                                 dialog.getImage());
         }
     }

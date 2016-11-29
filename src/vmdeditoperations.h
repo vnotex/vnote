@@ -11,7 +11,7 @@
 class VMdEditOperations : public VEditOperations
 {
 public:
-    VMdEditOperations(VEdit *editor, VNoteFile *noteFile);
+    VMdEditOperations(VEdit *p_editor, VFile *p_file);
     bool insertImageFromMimeData(const QMimeData *source) Q_DECL_OVERRIDE;
     bool insertURLFromMimeData(const QMimeData *source) Q_DECL_OVERRIDE;
     bool insertImageFromURL(const QUrl &imageUrl);

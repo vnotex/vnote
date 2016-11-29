@@ -15,18 +15,18 @@
 #include "vtoc.h"
 
 class VNote;
+class VFile;
 
 class VEditArea : public QWidget
 {
     Q_OBJECT
 public:
     explicit VEditArea(VNote *vnote, QWidget *parent = 0);
-    bool isFileOpened(const QString &notebook, const QString &relativePath);
+    bool isFileOpened(const VFile *p_file);
     bool closeAllFiles(bool p_forced);
 
 signals:
-    void curTabStatusChanged(const QString &notebook, const QString &relativePath,
-                             bool editMode, bool modifiable, bool modified);
+    void curTabStatusChanged(const VFile *p_file, bool p_editMode);
     void outlineChanged(const VToc &toc);
     void curHeaderChanged(const VAnchor &anchor);
 
@@ -34,17 +34,14 @@ protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
 
 public slots:
-    void openFile(QJsonObject fileJson);
-    bool closeFile(QJsonObject fileJson);
+    void openFile(VFile *p_file, OpenFileMode p_mode);
+    bool closeFile(const VFile *p_file, bool p_forced);
     void editFile();
     void saveFile();
     void readFile();
     void saveAndReadFile();
     void handleOutlineItemActivated(const VAnchor &anchor);
-    void handleDirectoryRenamed(const QString &notebook,
-                                const QString &oldRelativePath, const QString &newRelativePath);
-    void handleFileRenamed(const QString &p_srcNotebook, const QString &p_srcRelativePath,
-                           const QString &p_destNotebook, const QString &p_destRelativePath);
+    void handleFileUpdated(const VFile *p_file);
 
 private slots:
     void handleSplitWindowRequest(VEditWindow *curWindow);
@@ -55,9 +52,8 @@ private slots:
 
 private:
     void setupUI();
-    QVector<QPair<int, int> > findTabsByFile(const QString &notebook, const QString &relativePath);
-    int openFileInWindow(int windowIndex, const QString &notebook, const QString &relativePath,
-                         int mode);
+    QVector<QPair<int, int> > findTabsByFile(const VFile *p_file);
+    int openFileInWindow(int windowIndex, VFile *p_file, OpenFileMode p_mode);
     void setCurrentTab(int windowIndex, int tabIndex, bool setFocus);
     void setCurrentWindow(int windowIndex, bool setFocus);
     inline VEditWindow *getWindow(int windowIndex) const;

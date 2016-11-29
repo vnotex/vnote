@@ -1,14 +1,16 @@
 #include "vnotebook.h"
-
-VNotebook::VNotebook(QObject *parent)
-    : QObject(parent)
-{
-
-}
+#include "vdirectory.h"
+#include "utils/vutils.h"
 
 VNotebook::VNotebook(const QString &name, const QString &path, QObject *parent)
     : QObject(parent), m_name(name), m_path(path)
 {
+    m_rootDir = new VDirectory(this, VUtils::directoryNameFromPath(path));
+}
+
+VNotebook::~VNotebook()
+{
+    delete m_rootDir;
 }
 
 QString VNotebook::getName() const
@@ -33,5 +35,10 @@ void VNotebook::setPath(const QString &path)
 
 void VNotebook::close(bool p_forced)
 {
-    //TODO
+    m_rootDir->close();
+}
+
+bool VNotebook::open()
+{
+    return m_rootDir->open();
 }

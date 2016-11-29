@@ -13,16 +13,16 @@
 class VNote;
 class QPushButton;
 class QActionGroup;
+class VFile;
 
 class VEditWindow : public QTabWidget
 {
     Q_OBJECT
 public:
     explicit VEditWindow(VNote *vnote, QWidget *parent = 0);
-    int findTabByFile(const QString &notebook, const QString &relativePath) const;
-    int openFile(const QString &notebook, const QString &relativePath,
-                 int mode);
-    bool closeFile(const QString &notebook, const QString &relativePath, bool isForced);
+    int findTabByFile(const VFile *p_file) const;
+    int openFile(VFile *p_file, OpenFileMode p_mode);
+    bool closeFile(const VFile *p_file, bool p_forced);
     void editFile();
     void saveFile();
     void readFile();
@@ -34,18 +34,14 @@ public:
     void requestUpdateCurHeader();
     // Focus to current tab's editor
     void focusWindow();
-    void scrollCurTab(const VAnchor &anchor);
-    void handleDirectoryRenamed(const QString &notebook,
-                                const QString &oldRelativePath, const QString &newRelativePath);
-    void handleFileRenamed(const QString &p_srcNotebook, const QString &p_srcRelativePath,
-                           const QString &p_destNotebook, const QString &p_destRelativePath);
+    void scrollCurTab(const VAnchor &p_anchor);
+    void updateFileInfo(const VFile *p_file);
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
 
 signals:
-    void tabStatusChanged(const QString &notebook, const QString &relativePath,
-                          bool editMode, bool modifiable, bool modified);
+    void tabStatusChanged(const VFile *p_file, bool p_editMode);
     void requestSplitWindow(VEditWindow *curWindow);
     void requestRemoveSplit(VEditWindow *curWindow);
     // This widget or its children get the focus
@@ -60,21 +56,21 @@ private slots:
     void handleTabbarClicked(int index);
     void contextMenuRequested(QPoint pos);
     void tabListJump(QAction *action);
-    void handleOutlineChanged(const VToc &toc);
-    void handleCurHeaderChanged(const VAnchor &anchor);
+    void handleOutlineChanged(const VToc &p_toc);
+    void handleCurHeaderChanged(const VAnchor &p_anchor);
     void handleTabStatusChanged();
 
 private:
     void setupCornerWidget();
-    void openWelcomePage();
-    int insertTabWithData(int index, QWidget *page, const QJsonObject &tabData);
-    int appendTabWithData(QWidget *page, const QJsonObject &tabData);
-    int openFileInTab(const QString &notebook, const QString &relativePath, bool modifiable);
+    void removeEditTab(int p_index);
+    int insertEditTab(int p_index, VFile *p_file, QWidget *p_page);
+    int appendEditTab(VFile *p_file, QWidget *p_page);
+    int openFileInTab(VFile *p_file, OpenFileMode p_mode);
     inline VEditTab *getTab(int tabIndex) const;
-    void noticeTabStatus(int index);
+    void noticeTabStatus(int p_index);
     void updateTabListMenu();
     void noticeStatus(int index);
-    inline QString generateTooltip(const QJsonObject &tabData) const;
+    inline QString generateTooltip(const VFile *p_file) const;
     inline QString generateTabText(const QString &p_name, bool p_modified) const;
 
     VNote *vnote;
@@ -94,10 +90,13 @@ inline VEditTab* VEditWindow::getTab(int tabIndex) const
     return dynamic_cast<VEditTab *>(widget(tabIndex));
 }
 
-inline QString VEditWindow::generateTooltip(const QJsonObject &tabData) const
+inline QString VEditWindow::generateTooltip(const VFile *p_file) const
 {
-    // [Notebook]relativePath
-    return QString("[%1] %2").arg(tabData["notebook"].toString()).arg(tabData["relative_path"].toString());
+    if (!p_file) {
+        return "";
+    }
+    // [Notebook]path
+    return QString("[%1] %2").arg(p_file->retriveNotebook()).arg(p_file->retrivePath());
 }
 
 inline QString VEditWindow::generateTabText(const QString &p_name, bool p_modified) const

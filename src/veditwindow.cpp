@@ -5,6 +5,7 @@
 #include "vnote.h"
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
+#include "vfile.h"
 
 extern VConfigManager vconfig;
 
@@ -70,11 +71,9 @@ void VEditWindow::splitWindow()
 void VEditWindow::removeSplit()
 {
     // Close all the files one by one
-    // If user do not want to close a file, just stop removing
-    if (closeAllFiles(false)) {
-        Q_ASSERT(count() == 0);
-        emit requestRemoveSplit(this);
-    }
+    // If user do not want to close a file, just stop removing.
+    // Otherwise, closeAllFiles() will emit requestRemoveSplit.
+    closeAllFiles(false);
 }
 
 void VEditWindow::setRemoveSplitEnable(bool enabled)
@@ -82,68 +81,67 @@ void VEditWindow::setRemoveSplitEnable(bool enabled)
     removeSplitAct->setVisible(enabled);
 }
 
-void VEditWindow::openWelcomePage()
+void VEditWindow::removeEditTab(int p_index)
 {
-    int idx = openFileInTab("", vconfig.getWelcomePagePath(), false);
-    setTabText(idx, generateTabText("Welcome to VNote", false));
-    setTabToolTip(idx, "VNote");
+    if (p_index > -1 && p_index < tabBar()->count()) {
+        VEditTab *editor = getTab(p_index);
+        removeTab(p_index);
+        delete editor;
+        if (tabBar()->count() == 0) {
+            emit requestRemoveSplit(this);
+        }
+    }
 }
 
-int VEditWindow::insertTabWithData(int index, QWidget *page,
-                                   const QJsonObject &tabData)
+int VEditWindow::insertEditTab(int p_index, VFile *p_file, QWidget *p_page)
 {
-    QString label = VUtils::fileNameFromPath(tabData["relative_path"].toString());
-    int idx = insertTab(index, page, label);
+    int idx = insertTab(p_index, p_page, p_file->getName());
     QTabBar *tabs = tabBar();
-    tabs->setTabData(idx, tabData);
-    tabs->setTabToolTip(idx, generateTooltip(tabData));
+    tabs->setTabToolTip(idx, generateTooltip(p_file));
     noticeStatus(currentIndex());
     return idx;
 }
 
-int VEditWindow::appendTabWithData(QWidget *page, const QJsonObject &tabData)
+int VEditWindow::appendEditTab(VFile *p_file, QWidget *p_page)
 {
-    return insertTabWithData(count(), page, tabData);
+    return insertEditTab(count(), p_file, p_page);
 }
 
-int VEditWindow::openFile(const QString &notebook, const QString &relativePath, int mode)
+int VEditWindow::openFile(VFile *p_file, OpenFileMode p_mode)
 {
+    qDebug() << "open" << p_file->getName();
     // Find if it has been opened already
-    int idx = findTabByFile(notebook, relativePath);
+    int idx = findTabByFile(p_file);
     if (idx > -1) {
         goto out;
     }
-    idx = openFileInTab(notebook, relativePath, true);
+    idx = openFileInTab(p_file, p_mode);
 out:
     setCurrentIndex(idx);
-    if (mode == OpenFileMode::Edit) {
-        editFile();
-    }
     focusWindow();
     noticeStatus(idx);
     return idx;
 }
 
-// Return true if we closed the file
-bool VEditWindow::closeFile(const QString &notebook, const QString &relativePath, bool isForced)
+// Return true if we closed the file actually
+bool VEditWindow::closeFile(const VFile *p_file, bool p_forced)
 {
     // Find if it has been opened already
-    int idx = findTabByFile(notebook, relativePath);
+    int idx = findTabByFile(p_file);
     if (idx == -1) {
         return false;
     }
 
     VEditTab *editor = getTab(idx);
     Q_ASSERT(editor);
-    bool ok = true;
-    if (!isForced) {
+    if (!p_forced) {
         setCurrentIndex(idx);
         noticeStatus(idx);
-        ok = editor->requestClose();
     }
+    // Even p_forced is true we need to delete unused images.
+    bool ok = editor->closeFile(p_forced);
     if (ok) {
-        removeTab(idx);
-        delete editor;
+        removeEditTab(idx);
     }
     updateTabListMenu();
     return ok;
@@ -155,15 +153,15 @@ bool VEditWindow::closeAllFiles(bool p_forced)
     bool ret = true;
     for (int i = 0; i < nrTab; ++i) {
         VEditTab *editor = getTab(0);
-        bool ok = true;
+
         if (!p_forced) {
             setCurrentIndex(0);
             noticeStatus(0);
-            ok = editor->requestClose();
         }
+        // Even p_forced is true we need to delete unused images.
+        bool ok = editor->closeFile(p_forced);
         if (ok) {
-            removeTab(0);
-            delete editor;
+            removeEditTab(0);
         } else {
             ret = false;
             break;
@@ -176,11 +174,9 @@ bool VEditWindow::closeAllFiles(bool p_forced)
     return ret;
 }
 
-int VEditWindow::openFileInTab(const QString &notebook, const QString &relativePath,
-                              bool modifiable)
+int VEditWindow::openFileInTab(VFile *p_file, OpenFileMode p_mode)
 {
-    QString path = QDir::cleanPath(QDir(vnote->getNotebookPath(notebook)).filePath(relativePath));
-    VEditTab *editor = new VEditTab(path, modifiable);
+    VEditTab *editor = new VEditTab(p_file, p_mode);
     connect(editor, &VEditTab::getFocused,
             this, &VEditWindow::getFocused);
     connect(editor, &VEditTab::outlineChanged,
@@ -190,23 +186,16 @@ int VEditWindow::openFileInTab(const QString &notebook, const QString &relativeP
     connect(editor, &VEditTab::statusChanged,
             this, &VEditWindow::handleTabStatusChanged);
 
-    QJsonObject tabJson;
-    tabJson["notebook"] = notebook;
-    tabJson["relative_path"] = relativePath;
-    tabJson["modifiable"] = modifiable;
-    int idx = appendTabWithData(editor, tabJson);
+    int idx = appendEditTab(p_file, editor);
     updateTabListMenu();
     return idx;
 }
 
-int VEditWindow::findTabByFile(const QString &notebook, const QString &relativePath) const
+int VEditWindow::findTabByFile(const VFile *p_file) const
 {
-    QTabBar *tabs = tabBar();
-    int nrTabs = tabs->count();
-
+    int nrTabs = tabBar()->count();
     for (int i = 0; i < nrTabs; ++i) {
-        QJsonObject tabJson = tabs->tabData(i).toJsonObject();
-        if (tabJson["notebook"] == notebook && tabJson["relative_path"] == relativePath) {
+        if (getTab(i)->getFile() == p_file) {
             return i;
         }
     }
@@ -217,10 +206,9 @@ bool VEditWindow::handleTabCloseRequest(int index)
 {
     VEditTab *editor = getTab(index);
     Q_ASSERT(editor);
-    bool ok = editor->requestClose();
+    bool ok = editor->closeFile(false);
     if (ok) {
-        removeTab(index);
-        delete editor;
+        removeEditTab(index);
     }
     updateTabListMenu();
     noticeStatus(currentIndex());
@@ -260,81 +248,29 @@ void VEditWindow::saveFile()
     editor->saveFile();
 }
 
-void VEditWindow::handleDirectoryRenamed(const QString &notebook, const QString &oldRelativePath,
-                                         const QString &newRelativePath)
+void VEditWindow::noticeTabStatus(int p_index)
 {
-    QTabBar *tabs = tabBar();
-    int nrTabs = tabs->count();
-    for (int i = 0; i < nrTabs; ++i) {
-        QJsonObject tabJson = tabs->tabData(i).toJsonObject();
-        if (tabJson["notebook"].toString() == notebook) {
-            QString relativePath = tabJson["relative_path"].toString();
-            if (relativePath.startsWith(oldRelativePath)) {
-                relativePath.replace(0, oldRelativePath.size(), newRelativePath);
-                tabJson["relative_path"] = relativePath;
-                tabs->setTabData(i, tabJson);
-                tabs->setTabToolTip(i, generateTooltip(tabJson));
-                QString path = QDir::cleanPath(QDir(vnote->getNotebookPath(notebook)).filePath(relativePath));
-                getTab(i)->updatePath(path);
-            }
-        }
-    }
-    updateTabListMenu();
-}
-
-void VEditWindow::handleFileRenamed(const QString &p_srcNotebook, const QString &p_srcRelativePath,
-                                    const QString &p_destNotebook, const QString &p_destRelativePath)
-{
-    QTabBar *tabs = tabBar();
-    int nrTabs = tabs->count();
-    for (int i = 0; i < nrTabs; ++i) {
-        QJsonObject tabJson = tabs->tabData(i).toJsonObject();
-        if (tabJson["notebook"].toString() == p_srcNotebook) {
-            QString relativePath = tabJson["relative_path"].toString();
-            if (relativePath == p_srcRelativePath) {
-                VEditTab *tab = getTab(i);
-                tabJson["notebook"] = p_destNotebook;
-                tabJson["relative_path"] = p_destRelativePath;
-                tabs->setTabData(i, tabJson);
-                tabs->setTabToolTip(i, generateTooltip(tabJson));
-                tabs->setTabText(i, generateTabText(VUtils::fileNameFromPath(p_destRelativePath), tab->isModified()));
-                QString path = QDir::cleanPath(QDir(vnote->getNotebookPath(p_destNotebook)).filePath(p_destRelativePath));
-                tab->updatePath(path);
-            }
-        }
-    }
-    updateTabListMenu();
-}
-
-void VEditWindow::noticeTabStatus(int index)
-{
-    if (index == -1) {
-        emit tabStatusChanged("", "", false, false, false);
+    if (p_index == -1) {
+        emit tabStatusChanged(NULL, false);
         return;
     }
 
-    QJsonObject tabJson = tabBar()->tabData(index).toJsonObject();
-    Q_ASSERT(!tabJson.isEmpty());
-
-    QString notebook = tabJson["notebook"].toString();
-    QString relativePath = tabJson["relative_path"].toString();
-    VEditTab *editor = getTab(index);
+    VEditTab *editor = getTab(p_index);
+    const VFile *file = editor->getFile();
     bool editMode = editor->getIsEditMode();
-    bool modifiable = tabJson["modifiable"].toBool();
 
     // Update tab text
-    tabBar()->setTabText(index, generateTabText(VUtils::fileNameFromPath(relativePath),
-                                                editor->isModified()));
-
-    emit tabStatusChanged(notebook, relativePath,
-                          editMode, modifiable, editor->isModified());
+    tabBar()->setTabText(p_index, generateTabText(file->getName(), file->isModified()));
+    emit tabStatusChanged(file, editMode);
 }
 
+// Be requested to report current status
 void VEditWindow::requestUpdateTabStatus()
 {
     noticeTabStatus(currentIndex());
 }
 
+// Be requested to report current outline
 void VEditWindow::requestUpdateOutline()
 {
     int idx = currentIndex();
@@ -345,6 +281,7 @@ void VEditWindow::requestUpdateOutline()
     getTab(idx)->requestUpdateOutline();
 }
 
+// Be requested to report current header
 void VEditWindow::requestUpdateCurHeader()
 {
     int idx = currentIndex();
@@ -355,6 +292,7 @@ void VEditWindow::requestUpdateCurHeader()
     getTab(idx)->requestUpdateCurHeader();
 }
 
+// Focus this windows. Try to focus current tab.
 void VEditWindow::focusWindow()
 {
     int idx = currentIndex();
@@ -392,9 +330,8 @@ void VEditWindow::tabListJump(QAction *action)
         return;
     }
 
-    QJsonObject tabJson = action->data().toJsonObject();
-    int idx = findTabByFile(tabJson["notebook"].toString(),
-                            tabJson["relative_path"].toString());
+    QPointer<VFile> file = action->data().value<QPointer<VFile>>();
+    int idx = findTabByFile(file);
     Q_ASSERT(idx >= 0);
     setCurrentIndex(idx);
     noticeStatus(idx);
@@ -416,54 +353,57 @@ void VEditWindow::updateTabListMenu()
     QTabBar *tabbar = tabBar();
     int nrTab = tabbar->count();
     for (int i = 0; i < nrTab; ++i) {
-        QAction *action = new QAction(tabbar->tabText(i), tabListAct);
-        action->setStatusTip(generateTooltip(tabbar->tabData(i).toJsonObject()));
-        action->setData(tabbar->tabData(i));
+        VEditTab *editor = getTab(i);
+        QPointer<VFile> file = editor->getFile();
+        QAction *action = new QAction(file->getName(), tabListAct);
+        action->setStatusTip(generateTooltip(file));
+        action->setData(QVariant::fromValue(file));
         menu->addAction(action);
     }
 }
 
-void VEditWindow::handleOutlineChanged(const VToc &toc)
+void VEditWindow::handleOutlineChanged(const VToc &p_toc)
 {
     // Only propagate it if it is current tab
     int idx = currentIndex();
-    QJsonObject tabJson = tabBar()->tabData(idx).toJsonObject();
-    Q_ASSERT(!tabJson.isEmpty());
-    QString path = vnote->getNotebookPath(tabJson["notebook"].toString());
-    path = QDir::cleanPath(QDir(path).filePath(tabJson["relative_path"].toString()));
-
-    if (toc.filePath == path) {
-        emit outlineChanged(toc);
+    if (idx == -1) {
+        emit outlineChanged(VToc());
+        return;
+    }
+    const VFile *file = getTab(idx)->getFile();
+    if (p_toc.filePath == file->retrivePath()) {
+        emit outlineChanged(p_toc);
     }
 }
 
-void VEditWindow::handleCurHeaderChanged(const VAnchor &anchor)
+void VEditWindow::handleCurHeaderChanged(const VAnchor &p_anchor)
 {
     // Only propagate it if it is current tab
     int idx = currentIndex();
-    QJsonObject tabJson = tabBar()->tabData(idx).toJsonObject();
-    Q_ASSERT(!tabJson.isEmpty());
-    QString path = vnote->getNotebookPath(tabJson["notebook"].toString());
-    path = QDir::cleanPath(QDir(path).filePath(tabJson["relative_path"].toString()));
-
-    if (anchor.filePath == path) {
-        emit curHeaderChanged(anchor);
+    if (idx == -1) {
+        emit curHeaderChanged(VAnchor());
+        return;
+    }
+    const VFile *file = getTab(idx)->getFile();
+    if (p_anchor.filePath == file->retrivePath()) {
+        emit curHeaderChanged(p_anchor);
     }
 }
 
-void VEditWindow::scrollCurTab(const VAnchor &anchor)
+void VEditWindow::scrollCurTab(const VAnchor &p_anchor)
 {
     int idx = currentIndex();
-    QJsonObject tabJson = tabBar()->tabData(idx).toJsonObject();
-    Q_ASSERT(!tabJson.isEmpty());
-    QString path = vnote->getNotebookPath(tabJson["notebook"].toString());
-    path = QDir::cleanPath(QDir(path).filePath(tabJson["relative_path"].toString()));
-
-    if (path == anchor.filePath) {
-        getTab(idx)->scrollToAnchor(anchor);
+    if (idx == -1) {
+        emit curHeaderChanged(VAnchor());
+        return;
+    }
+    const VFile *file = getTab(idx)->getFile();
+    if (file->retrivePath() == p_anchor.filePath) {
+        getTab(idx)->scrollToAnchor(p_anchor);
     }
 }
 
+// Update tab status, outline and current header.
 void VEditWindow::noticeStatus(int index)
 {
     noticeTabStatus(index);
@@ -481,4 +421,16 @@ void VEditWindow::noticeStatus(int index)
 void VEditWindow::handleTabStatusChanged()
 {
     noticeTabStatus(currentIndex());
+}
+
+void VEditWindow::updateFileInfo(const VFile *p_file)
+{
+    if (!p_file) {
+        return;
+    }
+    int idx = findTabByFile(p_file);
+    if (idx > -1) {
+        noticeStatus(idx);
+        updateTabListMenu();
+    }
 }

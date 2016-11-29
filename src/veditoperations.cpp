@@ -3,15 +3,15 @@
 #include "vedit.h"
 #include "veditoperations.h"
 
-VEditOperations::VEditOperations(VEdit *editor, VNoteFile *noteFile)
-    : editor(editor), noteFile(noteFile)
+VEditOperations::VEditOperations(VEdit *p_editor, VFile *p_file)
+    : m_editor(p_editor), m_file(p_file)
 {
 }
 
 void VEditOperations::insertTextAtCurPos(const QString &text)
 {
-    QTextCursor cursor(editor->document());
-    cursor.setPosition(editor->textCursor().position());
+    QTextCursor cursor(m_editor->document());
+    cursor.setPosition(m_editor->textCursor().position());
     cursor.insertText(text);
 }
 

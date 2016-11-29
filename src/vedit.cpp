@@ -10,18 +10,20 @@
 
 extern VConfigManager vconfig;
 
-VEdit::VEdit(VNoteFile *noteFile, QWidget *parent)
-    : QTextEdit(parent), noteFile(noteFile), mdHighlighter(NULL)
+VEdit::VEdit(VFile *p_file, QWidget *p_parent)
+    : QTextEdit(p_parent), m_file(p_file), mdHighlighter(NULL)
 {
-    if (noteFile->docType == DocType::Markdown) {
+    connect(document(), &QTextDocument::modificationChanged,
+            (VFile *)m_file, &VFile::setModified);
+
+    if (m_file->getDocType() == DocType::Markdown) {
         setAcceptRichText(false);
         mdHighlighter = new HGMarkdownHighlighter(vconfig.getMdHighlightingStyles(),
                                                   500, document());
         connect(mdHighlighter, &HGMarkdownHighlighter::highlightCompleted,
                 this, &VEdit::generateEditOutline);
-        editOps = new VMdEditOperations(this, noteFile);
+        editOps = new VMdEditOperations(this, m_file);
     } else {
-        setAutoFormatting(QTextEdit::AutoBulletList);
         editOps = NULL;
     }
 
@@ -33,6 +35,10 @@ VEdit::VEdit(VNoteFile *noteFile, QWidget *parent)
 
 VEdit::~VEdit()
 {
+    if (m_file) {
+        disconnect(document(), &QTextDocument::modificationChanged,
+                   (VFile *)m_file, &VFile::setModified);
+    }
     if (editOps) {
         delete editOps;
         editOps = NULL;
@@ -41,7 +47,7 @@ VEdit::~VEdit()
 
 void VEdit::updateFontAndPalette()
 {
-    switch (noteFile->docType) {
+    switch (m_file->getDocType()) {
     case DocType::Markdown:
         setFont(vconfig.getMdEditFont());
         setPalette(vconfig.getMdEditPalette());
@@ -51,14 +57,14 @@ void VEdit::updateFontAndPalette()
         setPalette(vconfig.getBaseEditPalette());
         break;
     default:
-        qWarning() << "error: unknown doc type" << int(noteFile->docType);
+        qWarning() << "error: unknown doc type" << int(m_file->getDocType());
         return;
     }
 }
 
 void VEdit::updateTabSettings()
 {
-    switch (noteFile->docType) {
+    switch (m_file->getDocType()) {
     case DocType::Markdown:
         if (vconfig.getTabStopWidth() > 0) {
             QFontMetrics metrics(vconfig.getMdEditFont());
@@ -72,7 +78,7 @@ void VEdit::updateTabSettings()
         }
         break;
     default:
-        qWarning() << "error: unknown doc type" << int(noteFile->docType);
+        qWarning() << "error: unknown doc type" << int(m_file->getDocType());
         return;
     }
 
@@ -84,27 +90,28 @@ void VEdit::updateTabSettings()
 
 void VEdit::beginEdit()
 {
-    setReadOnly(false);
     updateTabSettings();
     updateFontAndPalette();
-    switch (noteFile->docType) {
+    switch (m_file->getDocType()) {
     case DocType::Html:
-        setHtml(noteFile->content);
+        setHtml(m_file->getContent());
         break;
     case DocType::Markdown:
         setFont(vconfig.getMdEditFont());
-        setPlainText(noteFile->content);
+        setPlainText(m_file->getContent());
         initInitImages();
         break;
     default:
-        qWarning() << "error: unknown doc type" << int(noteFile->docType);
+        qWarning() << "error: unknown doc type" << int(m_file->getDocType());
     }
+    setReadOnly(false);
+    setModified(false);
 }
 
 void VEdit::endEdit()
 {
     setReadOnly(true);
-    if (noteFile->docType == DocType::Markdown) {
+    if (m_file->getDocType() == DocType::Markdown) {
         clearUnusedImages();
     }
 }
@@ -115,31 +122,32 @@ void VEdit::saveFile()
         return;
     }
 
-    switch (noteFile->docType) {
+    switch (m_file->getDocType()) {
     case DocType::Html:
-        noteFile->content = toHtml();
+        m_file->setContent(toHtml());
         break;
     case DocType::Markdown:
-        noteFile->content = toPlainText();
+        m_file->setContent(toPlainText());
         break;
     default:
-        qWarning() << "error: unknown doc type" << int(noteFile->docType);
+        qWarning() << "error: unknown doc type" << int(m_file->getDocType());
     }
     document()->setModified(false);
 }
 
 void VEdit::reloadFile()
 {
-    switch (noteFile->docType) {
+    switch (m_file->getDocType()) {
     case DocType::Html:
-        setHtml(noteFile->content);
+        setHtml(m_file->getContent());
         break;
     case DocType::Markdown:
-        setPlainText(noteFile->content);
+        setPlainText(m_file->getContent());
         break;
     default:
-        qWarning() << "error: unknown doc type" << int(noteFile->docType);
+        qWarning() << "error: unknown doc type" << int(m_file->getDocType());
     }
+    setModified(false);
 }
 
 void VEdit::keyPressEvent(QKeyEvent *event)
@@ -236,12 +244,12 @@ void VEdit::insertImage(const QString &name)
 
 void VEdit::initInitImages()
 {
-    m_initImages = VUtils::imagesFromMarkdownFile(QDir(noteFile->basePath).filePath(noteFile->fileName));
+    m_initImages = VUtils::imagesFromMarkdownFile(m_file->retrivePath());
 }
 
 void VEdit::clearUnusedImages()
 {
-    QVector<QString> images = VUtils::imagesFromMarkdownFile(QDir(noteFile->basePath).filePath(noteFile->fileName));
+    QVector<QString> images = VUtils::imagesFromMarkdownFile(m_file->retrivePath());
 
     if (!m_insertedImages.isEmpty()) {
         QVector<QString> imageNames(images.size());
@@ -249,7 +257,7 @@ void VEdit::clearUnusedImages()
             imageNames[i] = VUtils::fileNameFromPath(images[i]);
         }
 
-        QDir dir = QDir(QDir(noteFile->basePath).filePath("images"));
+        QDir dir = QDir(m_file->retriveImagePath());
         for (int i = 0; i < m_insertedImages.size(); ++i) {
             QString name = m_insertedImages[i];
             int j;

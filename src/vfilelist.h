@@ -5,13 +5,16 @@
 #include <QJsonObject>
 #include <QFileInfo>
 #include <QDir>
+#include <QPointer>
+#include <QListWidgetItem>
 #include "vnotebook.h"
 #include "vconstants.h"
+#include "vdirectory.h"
+#include "vfile.h"
 
 class QAction;
 class VNote;
 class QListWidget;
-class QListWidgetItem;
 class QPushButton;
 class VEditArea;
 
@@ -19,69 +22,49 @@ class VFileList : public QWidget
 {
     Q_OBJECT
 public:
-    explicit VFileList(VNote *vnote, QWidget *parent = 0);
-    bool importFile(const QString &name);
+    explicit VFileList(QWidget *parent = 0);
+    bool importFile(const QString &p_srcFilePath);
     inline void setEditArea(VEditArea *editArea);
-    void fileInfo(const QString &p_notebook, const QString &p_relativePath);
-    void deleteFile(const QString &p_notebook, const QString &p_relativePath);
+    void fileInfo(VFile *p_file);
+    void deleteFile(VFile *p_file);
 
 signals:
-    void fileClicked(QJsonObject fileJson);
-    void fileDeleted(QJsonObject fileJson);
-    void fileCreated(QJsonObject fileJson);
-    void fileRenamed(const QString &p_srcNotebook, const QString &p_srcRelativePath,
-                     const QString &p_destNotebook, const QString &p_destRelativePath);
-    void directoryChanged(const QString &notebook, const QString &relativePath);
+    void fileClicked(VFile *p_file, OpenFileMode mode = OpenFileMode::Read);
+    void fileCreated(VFile *p_file, OpenFileMode mode = OpenFileMode::Read);
+    void fileUpdated(const VFile *p_file);
 
 private slots:
     void contextMenuRequested(QPoint pos);
     void handleItemClicked(QListWidgetItem *currentItem);
-    void curFileInfo();
-    void deleteCurFile();
+    void fileInfo();
+    // m_copiedFiles will keep the files's VFile.
     void copySelectedFiles(bool p_isCut = false);
     void cutSelectedFiles();
     void pasteFilesInCurDir();
+    void deleteFile();
 
 public slots:
-    void setDirectory(QJsonObject dirJson);
-    void handleDirectoryRenamed(const QString &notebook, const QString &oldRelativePath,
-                                const QString &newRelativePath);
+    void setDirectory(VDirectory *p_directory);
     void newFile();
 
 private:
     void setupUI();
     void updateFileList();
-    QListWidgetItem *insertFileListItem(QJsonObject fileJson, bool atFront = false);
+    QListWidgetItem *insertFileListItem(VFile *file, bool atFront = false);
     void removeFileListItem(QListWidgetItem *item);
     void initActions();
-    bool isConflictNameWithExisting(const QString &name);
-    QListWidgetItem *createFileAndUpdateList(const QString &name);
-    void deleteFileAndUpdateList(const QString &p_notebook,
-                                 const QString &p_relativePath);
-    void clearDirectoryInfo();
-    void convertFileType(const QString &notebook, const QString &fileRelativePath,
-                         DocType oldType, DocType newType);
-    QListWidgetItem *findItem(const QString &p_notebook, const QString &p_relativePath);
-    void deleteLocalImages(const QString &filePath);
+    QListWidgetItem *findItem(const VFile *p_file);
     void copyFileInfoToClipboard(const QJsonArray &p_files, bool p_isCut);
-    void pasteFiles(const QString &p_notebook, const QString &p_dirRelativePath);
-    bool copyFile(const QString &p_srcNotebook, const QString &p_srcRelativePath,
-                  const QString &p_destNotebook, const QString &p_destRelativePath,
-                  bool p_isCut);
-    int removeFileInConfig(const QString &p_filePath);
-    bool addFileInConfig(const QString &p_filePath, int p_index);
-    QJsonObject readFileInConfig(const QString &p_filePath);
-
-    VNote *vnote;
-    QString notebook;
-    // Current directory's relative path
-    QString relativePath;
-    // Used for cache
-    QString rootPath;
+    void pasteFiles(VDirectory *p_destDir);
+    bool copyFile(VDirectory *p_destDir, const QString &p_destName, VFile *p_file, bool p_cut);
+    // New items have been added to direcotry. Update file list accordingly.
+    QVector<QListWidgetItem *> updateFileListAdded();
+    inline QPointer<VFile> getVFile(QListWidgetItem *p_item);
 
     VEditArea *editArea;
-
     QListWidget *fileList;
+    QPointer<VDirectory> m_directory;
+    QVector<QPointer<VFile> > m_copiedFiles;
 
     // Actions
     QAction *newFileAct;
@@ -95,6 +78,12 @@ private:
 inline void VFileList::setEditArea(VEditArea *editArea)
 {
     this->editArea = editArea;
+}
+
+inline QPointer<VFile> VFileList::getVFile(QListWidgetItem *p_item)
+{
+    Q_ASSERT(p_item);
+    return p_item->data(Qt::UserRole).value<VFile *>();
 }
 
 #endif // VFILELIST_H
