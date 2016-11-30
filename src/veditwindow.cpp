@@ -61,6 +61,8 @@ void VEditWindow::setupCornerWidget()
     QMenu *leftMenu = new QMenu(this);
     leftBtn->setMenu(leftMenu);
     setCornerWidget(leftBtn, Qt::TopLeftCorner);
+    connect(leftMenu, &QMenu::aboutToShow,
+            this, &VEditWindow::updateTabListMenu);
 }
 
 void VEditWindow::splitWindow()
@@ -143,7 +145,6 @@ bool VEditWindow::closeFile(const VFile *p_file, bool p_forced)
     if (ok) {
         removeEditTab(idx);
     }
-    updateTabListMenu();
     return ok;
 }
 
@@ -167,7 +168,6 @@ bool VEditWindow::closeAllFiles(bool p_forced)
             break;
         }
     }
-    updateTabListMenu();
     if (ret) {
         emit requestRemoveSplit(this);
     }
@@ -187,7 +187,6 @@ int VEditWindow::openFileInTab(VFile *p_file, OpenFileMode p_mode)
             this, &VEditWindow::handleTabStatusChanged);
 
     int idx = appendEditTab(p_file, editor);
-    updateTabListMenu();
     return idx;
 }
 
@@ -210,7 +209,6 @@ bool VEditWindow::handleTabCloseRequest(int index)
     if (ok) {
         removeEditTab(index);
     }
-    updateTabListMenu();
     noticeStatus(currentIndex());
     // User clicks the close button. We should make this window
     // to be current window.
@@ -431,6 +429,5 @@ void VEditWindow::updateFileInfo(const VFile *p_file)
     int idx = findTabByFile(p_file);
     if (idx > -1) {
         noticeStatus(idx);
-        updateTabListMenu();
     }
 }

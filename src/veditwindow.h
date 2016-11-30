@@ -59,6 +59,7 @@ private slots:
     void handleOutlineChanged(const VToc &p_toc);
     void handleCurHeaderChanged(const VAnchor &p_anchor);
     void handleTabStatusChanged();
+    void updateTabListMenu();
 
 private:
     void setupCornerWidget();
@@ -68,7 +69,6 @@ private:
     int openFileInTab(VFile *p_file, OpenFileMode p_mode);
     inline VEditTab *getTab(int tabIndex) const;
     void noticeTabStatus(int p_index);
-    void updateTabListMenu();
     void noticeStatus(int index);
     inline QString generateTooltip(const VFile *p_file) const;
     inline QString generateTabText(const QString &p_name, bool p_modified) const;
