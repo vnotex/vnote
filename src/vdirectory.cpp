@@ -126,15 +126,7 @@ VDirectory *VDirectory::createSubDirectory(const QString &p_name)
         return NULL;
     }
 
-    // Update parent's config file to include this new directory
-    QJsonObject dirJson = VConfigManager::readDirectoryConfig(path);
-    Q_ASSERT(!dirJson.isEmpty());
-    QJsonObject itemJson;
-    itemJson["name"] = p_name;
-    QJsonArray subDirArray = dirJson["sub_directories"].toArray();
-    subDirArray.append(itemJson);
-    dirJson["sub_directories"] = subDirArray;
-    if (!VConfigManager::writeDirectoryConfig(path, dirJson)) {
+    if (!createSubDirectoryInConfig(p_name)) {
         VConfigManager::deleteDirectoryConfig(QDir(path).filePath(p_name));
         dir.rmdir(p_name);
         return NULL;
@@ -143,6 +135,26 @@ VDirectory *VDirectory::createSubDirectory(const QString &p_name)
     VDirectory *ret = new VDirectory(m_notebook, p_name, this);
     m_subDirs.append(ret);
     return ret;
+}
+
+bool VDirectory::createSubDirectoryInConfig(const QString &p_name, int p_index)
+{
+    QString path = retrivePath();
+    QJsonObject dirJson = VConfigManager::readDirectoryConfig(path);
+    Q_ASSERT(!dirJson.isEmpty());
+    QJsonObject itemJson;
+    itemJson["name"] = p_name;
+    QJsonArray subDirArray = dirJson["sub_directories"].toArray();
+    if (p_index == -1) {
+        subDirArray.append(itemJson);
+    } else {
+        subDirArray.insert(p_index, itemJson);
+    }
+    dirJson["sub_directories"] = subDirArray;
+    if (!VConfigManager::writeDirectoryConfig(path, dirJson)) {
+        return false;
+    }
+    return true;
 }
 
 VDirectory *VDirectory::findSubDirectory(const QString &p_name)
@@ -169,6 +181,22 @@ VFile *VDirectory::findFile(const QString &p_name)
         }
     }
     return NULL;
+}
+
+bool VDirectory::containsFile(const VFile *p_file) const
+{
+    if (!p_file) {
+        return false;
+    }
+    QObject *paDir = p_file->parent();
+    while (paDir) {
+        if (paDir == this) {
+            return true;
+        } else {
+            paDir = paDir->parent();
+        }
+    }
+    return false;
 }
 
 VFile *VDirectory::createFile(const QString &p_name)
@@ -254,24 +282,77 @@ VFile *VDirectory::addFile(const QString &p_name, int p_index)
     return file;
 }
 
-void VDirectory::deleteSubDirectory(VDirectory *p_subDir)
+VDirectory *VDirectory::addSubDirectory(VDirectory *p_dir, int p_index)
 {
     if (!open()) {
-        return;
+        return NULL;
     }
+    if (!createSubDirectoryInConfig(p_dir->getName(), p_index)) {
+        return NULL;
+    }
+    if (p_index == -1) {
+        m_subDirs.append(p_dir);
+    } else {
+        m_subDirs.insert(p_index, p_dir);
+    }
+    p_dir->setParent(this);
+    return p_dir;
+}
+
+VDirectory *VDirectory::addSubDirectory(const QString &p_name, int p_index)
+{
+    if (!open()) {
+        return NULL;
+    }
+    if (!createSubDirectoryInConfig(p_name, p_index)) {
+        return NULL;
+    }
+    VDirectory *dir = new VDirectory(m_notebook, p_name, this);
+    if (!dir) {
+        return NULL;
+    }
+    if (p_index == -1) {
+        m_subDirs.append(dir);
+    } else {
+        m_subDirs.insert(p_index, dir);
+    }
+    return dir;
+}
+
+void VDirectory::deleteSubDirectory(VDirectory *p_subDir)
+{
+    QString dirPath = p_subDir->retrivePath();
+
+    removeSubDirectory(p_subDir);
+
+    // Delete the entire directory
+    p_subDir->close();
+    QDir dir(dirPath);
+    if (!dir.removeRecursively()) {
+        qWarning() << "failed to remove" << dirPath << "recursively";
+    } else {
+        qDebug() << "deleted" << dirPath;
+    }
+    delete p_subDir;
+}
+
+int VDirectory::removeSubDirectory(VDirectory *p_dir)
+{
+    Q_ASSERT(m_opened);
+    Q_ASSERT(p_dir);
+
     QString path = retrivePath();
 
     int index;
     for (index = 0; index < m_subDirs.size(); ++index) {
-        if (m_subDirs[index] == p_subDir) {
+        if (m_subDirs[index] == p_dir) {
             break;
         }
     }
-    if (index == m_subDirs.size()) {
-        return;
-    }
+    Q_ASSERT(index != m_subDirs.size());
     m_subDirs.remove(index);
-    QString name = p_subDir->getName();
+
+    QString name = p_dir->getName();
     // Update config to exclude this directory
     QJsonObject dirJson = VConfigManager::readDirectoryConfig(path);
     QJsonArray subDirArray = dirJson["sub_directories"].toArray();
@@ -281,6 +362,7 @@ void VDirectory::deleteSubDirectory(VDirectory *p_subDir)
         if (ele["name"].toString() == name) {
             subDirArray.removeAt(i);
             deleted = true;
+            index = i;
             break;
         }
     }
@@ -289,17 +371,7 @@ void VDirectory::deleteSubDirectory(VDirectory *p_subDir)
     if (!VConfigManager::writeDirectoryConfig(path, dirJson)) {
         qWarning() << "failed to update configuration in" << path;
     }
-
-    // Delete the entire directory
-    p_subDir->close();
-    delete p_subDir;
-    QString dirName = QDir(path).filePath(name);
-    QDir dir(dirName);
-    if (!dir.removeRecursively()) {
-        qWarning() << "failed to delete" << dirName << "recursively";
-    } else {
-        qDebug() << "deleted" << dirName;
-    }
+    return index;
 }
 
 // After calling this, p_file->parent() remain the same.
@@ -465,4 +537,38 @@ VFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
     }
 
     return destFile;
+}
+
+// Copy @p_srcDir to be a sub-directory of @p_destDir with name @p_destName.
+VDirectory *VDirectory::copyDirectory(VDirectory *p_destDir, const QString &p_destName,
+                                      VDirectory *p_srcDir, bool p_cut)
+{
+    QString srcPath = QDir::cleanPath(p_srcDir->retrivePath());
+    QString destPath = QDir::cleanPath(QDir(p_destDir->retrivePath()).filePath(p_destName));
+    if (srcPath == destPath) {
+        return p_srcDir;
+    }
+    VDirectory *srcParentDir = p_srcDir->getParentDirectory();
+
+    // Copy the directory
+    if (!VUtils::copyDirectory(srcPath, destPath, p_cut)) {
+        return NULL;
+    }
+
+    // Handle VDirectory
+    int index = -1;
+    VDirectory *destDir = NULL;
+    if (p_cut) {
+        // Remove the directory from config
+        index = srcParentDir->removeSubDirectory(p_srcDir);
+        p_srcDir->setName(p_destName);
+        if (srcParentDir != p_destDir) {
+            index = -1;
+        }
+        // Add the directory to new dir's config
+        destDir = p_destDir->addSubDirectory(p_srcDir, index);
+    } else {
+        destDir = p_destDir->addSubDirectory(p_destName, -1);
+    }
+    return destDir;
 }

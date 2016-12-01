@@ -33,7 +33,7 @@ void VNotebook::setPath(const QString &path)
     m_path = path;
 }
 
-void VNotebook::close(bool p_forced)
+void VNotebook::close()
 {
     m_rootDir->close();
 }

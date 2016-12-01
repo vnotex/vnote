@@ -121,7 +121,7 @@ void VNote::removeNotebook(int idx)
 
     // Close all the directory and files
     notebookPathHash.remove(name);
-    nb->close(true);
+    nb->close();
     delete nb;
     qDebug() << "notebook" << name << "deleted";
 

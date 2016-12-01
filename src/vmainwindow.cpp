@@ -57,6 +57,11 @@ void VMainWindow::setupUI()
 
     connect(directoryTree, &VDirectoryTree::currentDirectoryChanged,
             fileList, &VFileList::setDirectory);
+    connect(directoryTree, &VDirectoryTree::directoryUpdated,
+            editArea, &VEditArea::handleDirectoryUpdated);
+    connect(directoryTree, &VDirectoryTree::currentDirectoryChanged,
+            this, &VMainWindow::handleCurrentDirectoryChanged);
+
     connect(fileList, &VFileList::fileClicked,
             editArea, &VEditArea::openFile);
     connect(fileList, &VFileList::fileCreated,
@@ -695,7 +700,7 @@ void VMainWindow::handleCurTabStatusChanged(const VFile *p_file, bool p_editMode
 
     QString title;
     if (p_file) {
-        title = QString("[%1] %2").arg(p_file->retriveNotebook()).arg(p_file->retrivePath());
+        title = QString("[%1] %2").arg(p_file->getNotebook()).arg(p_file->retrivePath());
         if (p_file->isModified()) {
             title.append('*');
         }
@@ -795,4 +800,9 @@ void VMainWindow::restoreStateAndGeometry()
 const QVector<QPair<QString, QString> >& VMainWindow::getPalette() const
 {
     return vnote->getPallete();
+}
+
+void VMainWindow::handleCurrentDirectoryChanged(const VDirectory *p_dir)
+{
+    newNoteAct->setEnabled(p_dir);
 }

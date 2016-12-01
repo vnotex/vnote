@@ -313,3 +313,11 @@ void VEditArea::handleFileUpdated(const VFile *p_file)
         getWindow(i)->updateFileInfo(p_file);
     }
 }
+
+void VEditArea::handleDirectoryUpdated(const VDirectory *p_dir)
+{
+    int nrWin = splitter->count();
+    for (int i = 0; i < nrWin; ++i) {
+        getWindow(i)->updateDirectoryInfo(p_dir);
+    }
+}

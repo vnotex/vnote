@@ -36,6 +36,7 @@ public:
     void focusWindow();
     void scrollCurTab(const VAnchor &p_anchor);
     void updateFileInfo(const VFile *p_file);
+    void updateDirectoryInfo(const VDirectory *p_dir);
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
@@ -96,7 +97,7 @@ inline QString VEditWindow::generateTooltip(const VFile *p_file) const
         return "";
     }
     // [Notebook]path
-    return QString("[%1] %2").arg(p_file->retriveNotebook()).arg(p_file->retrivePath());
+    return QString("[%1] %2").arg(p_file->getNotebook()).arg(p_file->retrivePath());
 }
 
 inline QString VEditWindow::generateTabText(const QString &p_name, bool p_modified) const

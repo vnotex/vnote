@@ -258,7 +258,9 @@ void VEditWindow::noticeTabStatus(int p_index)
     bool editMode = editor->getIsEditMode();
 
     // Update tab text
-    tabBar()->setTabText(p_index, generateTabText(file->getName(), file->isModified()));
+    QTabBar *tabs = tabBar();
+    tabs->setTabText(p_index, generateTabText(file->getName(), file->isModified()));
+    tabs->setTabToolTip(p_index, generateTooltip(file));
     emit tabStatusChanged(file, editMode);
 }
 
@@ -429,5 +431,21 @@ void VEditWindow::updateFileInfo(const VFile *p_file)
     int idx = findTabByFile(p_file);
     if (idx > -1) {
         noticeStatus(idx);
+    }
+}
+
+void VEditWindow::updateDirectoryInfo(const VDirectory *p_dir)
+{
+    if (!p_dir) {
+        return;
+    }
+
+    int nrTab = tabBar()->count();
+    for (int i = 0; i < nrTab; ++i) {
+        VEditTab *editor = getTab(i);
+        QPointer<VFile> file = editor->getFile();
+        if (p_dir->containsFile(file)) {
+            noticeStatus(i);
+        }
     }
 }

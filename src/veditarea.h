@@ -16,6 +16,7 @@
 
 class VNote;
 class VFile;
+class VDirectory;
 
 class VEditArea : public QWidget
 {
@@ -42,6 +43,7 @@ public slots:
     void saveAndReadFile();
     void handleOutlineItemActivated(const VAnchor &anchor);
     void handleFileUpdated(const VFile *p_file);
+    void handleDirectoryUpdated(const VDirectory *p_dir);
 
 private slots:
     void handleSplitWindowRequest(VEditWindow *curWindow);

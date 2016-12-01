@@ -266,7 +266,8 @@ void VFileList::contextMenuRequested(QPoint pos)
         menu.addAction(cutAct);
     }
 
-    if (VUtils::opTypeInClipboard() == ClipboardOpType::CopyFile) {
+    if (VUtils::opTypeInClipboard() == ClipboardOpType::CopyFile
+        && !m_copiedFiles.isEmpty()) {
         if (!item) {
             menu.addSeparator();
         }
@@ -343,7 +344,7 @@ void VFileList::copySelectedFiles(bool p_isCut)
     for (int i = 0; i < items.size(); ++i) {
         VFile *file = getVFile(items[i]);
         QJsonObject fileJson;
-        fileJson["notebook"] = file->retriveNotebook();
+        fileJson["notebook"] = file->getNotebook();
         fileJson["path"] = file->retrivePath();
         files.append(fileJson);
 

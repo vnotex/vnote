@@ -54,6 +54,7 @@ private slots:
     void changePanelView(QAction *action);
     void curEditFileInfo();
     void deleteCurNote();
+    void handleCurrentDirectoryChanged(const VDirectory *p_dir);
 
 signals:
     void curNotebookChanged(VNotebook *p_notebook);

@@ -18,8 +18,7 @@ public:
 
 signals:
     void currentDirectoryChanged(VDirectory *p_directory);
-    void directoryRenamed(const QString &notebook, const QString &oldRelativePath,
-                          const QString &newRelativePath);
+    void directoryUpdated(const VDirectory *p_directory);
 
 public slots:
     void setNotebook(VNotebook *p_notebook);
@@ -33,19 +32,32 @@ private slots:
     void contextMenuRequested(QPoint pos);
     void newSubDirectory();
     void currentDirectoryItemChanged(QTreeWidgetItem *currentItem);
+    void copySelectedDirectories(bool p_cut = false);
+    void cutSelectedDirectories();
+    void pasteDirectoriesInCurDir();
+
+protected:
+    void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
 
 private:
     void updateDirectoryTreeOne(QTreeWidgetItem *p_parent, int depth);
     void fillTreeItem(QTreeWidgetItem &p_item, const QString &p_name,
                       VDirectory *p_directory, const QIcon &p_icon);
     void initActions();
-    // New directories added to @p_item. Update @p_item's children items.
-    // If @p_item is NULL, then top level items added.
-    QVector<QTreeWidgetItem *> updateItemChildrenAdded(QTreeWidgetItem *p_item);
+    // Update @p_item's direct children only: deleted, added, renamed.
+    void updateItemChildren(QTreeWidgetItem *p_item);
+    // Find the corresponding item of @p_dir;
+    // Return's NULL if no item is found and it is the root directory if @p_widget is true.
+    QTreeWidgetItem *findVDirectory(const VDirectory *p_dir, bool &p_widget);
     inline QPointer<VDirectory> getVDirectory(QTreeWidgetItem *p_item);
+    void copyDirectoryInfoToClipboard(const QJsonArray &p_dirs, bool p_cut);
+    void pasteDirectories(VDirectory *p_destDir);
+    bool copyDirectory(VDirectory *p_destDir, const QString &p_destName,
+                       VDirectory *p_srcDir, bool p_cut);
 
     VNote *vnote;
     QPointer<VNotebook> m_notebook;
+    QVector<QPointer<VDirectory> > m_copiedDirs;
 
     // Actions
     QAction *newRootDirAct;
@@ -53,6 +65,9 @@ private:
     QAction *newSubDirAct;
     QAction *deleteDirAct;
     QAction *dirInfoAct;
+    QAction *copyAct;
+    QAction *cutAct;
+    QAction *pasteAct;
 };
 
 inline QPointer<VDirectory> VDirectoryTree::getVDirectory(QTreeWidgetItem *p_item)

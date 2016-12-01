@@ -202,6 +202,54 @@ bool VUtils::copyFile(const QString &p_srcFilePath, const QString &p_destFilePat
     return true;
 }
 
+// Copy @p_srcDirPath to be @p_destDirPath.
+bool VUtils::copyDirectory(const QString &p_srcDirPath, const QString &p_destDirPath, bool p_isCut)
+{
+    QString srcPath = QDir::cleanPath(p_srcDirPath);
+    QString destPath = QDir::cleanPath(p_destDirPath);
+    if (srcPath == destPath) {
+        return true;
+    }
+
+    // Make a directory
+    QDir parentDir(VUtils::basePathFromPath(p_destDirPath));
+    QString dirName = VUtils::fileNameFromPath(p_destDirPath);
+    if (!parentDir.mkdir(dirName)) {
+        qWarning() << QString("failed to create target directory %1: already exists").arg(p_destDirPath);
+        return false;
+    }
+
+    // Handle sub-dirs recursively and copy files.
+    QDir srcDir(p_srcDirPath);
+    QDir destDir(p_destDirPath);
+    Q_ASSERT(srcDir.exists() && destDir.exists());
+    QFileInfoList nodes = srcDir.entryInfoList(QDir::Dirs | QDir::Files | QDir::Hidden
+                                               | QDir::NoSymLinks | QDir::NoDotAndDotDot);
+    for (int i = 0; i < nodes.size(); ++i) {
+        const QFileInfo &fileInfo = nodes.at(i);
+        QString name = fileInfo.fileName();
+        if (fileInfo.isDir()) {
+            if (!copyDirectory(srcDir.filePath(name), destDir.filePath(name), p_isCut)) {
+                return false;
+            }
+        } else {
+            Q_ASSERT(fileInfo.isFile());
+            if (!copyFile(srcDir.filePath(name), destDir.filePath(name), p_isCut)) {
+                return false;
+            }
+        }
+    }
+
+    // Delete the src dir if p_isCut
+    if (p_isCut) {
+        if (!srcDir.removeRecursively()) {
+            qWarning() << "failed to remove directory" << p_srcDirPath;
+            return false;
+        }
+    }
+    return true;
+}
+
 int VUtils::showMessage(QMessageBox::Icon p_icon, const QString &p_title, const QString &p_text, const QString &p_infoText,
                         QMessageBox::StandardButtons p_buttons, QMessageBox::StandardButton p_defaultBtn, QWidget *p_parent)
 {
@@ -233,6 +281,24 @@ QString VUtils::generateCopiedFileName(const QString &p_dirPath, const QString &
         index++;
         name = QString("%1_copy%2%3").arg(base).arg(seq).arg(suffix);
         filePath = dir.filePath(name);
+    }
+    return name;
+}
+
+QString VUtils::generateCopiedDirName(const QString &p_parentDirPath, const QString &p_dirName)
+{
+    QDir dir(p_parentDirPath);
+    QString name = p_dirName;
+    QString dirPath = dir.filePath(name);
+    int index = 0;
+    while (QDir(dirPath).exists()) {
+        QString seq;
+        if (index > 0) {
+            seq = QString::number(index);
+        }
+        index++;
+        name = QString("%1_copy%2").arg(p_dirName).arg(seq);
+        dirPath = dir.filePath(name);
     }
     return name;
 }

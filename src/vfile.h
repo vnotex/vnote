@@ -25,7 +25,7 @@ public:
     inline DocType getDocType() const;
     inline QString &getContent();
     inline void setContent(const QString &p_content);
-    inline QString retriveNotebook() const;
+    inline QString getNotebook() const;
     inline QString retrivePath() const;
     inline QString retriveRelativePath() const;
     inline QString retriveBasePath() const;
@@ -80,9 +80,9 @@ inline QString &VFile::getContent()
     return m_content;
 }
 
-inline QString VFile::retriveNotebook() const
+inline QString VFile::getNotebook() const
 {
-    return getDirectory()->retriveNotebook();
+    return getDirectory()->getNotebook();
 }
 
 inline QString VFile::retrivePath() const

@@ -21,6 +21,7 @@ public:
     static QString generateImageFileName(const QString &path, const QString &title,
                                          const QString &format = "png");
     static QString generateCopiedFileName(const QString &p_dirPath, const QString &p_fileName);
+    static QString generateCopiedDirName(const QString &p_parentDirPath, const QString &p_dirName);
     static void processStyle(QString &style, const QVector<QPair<QString, QString> > &varMap);
     static bool isMarkdown(const QString &fileName);
     static inline QString directoryNameFromPath(const QString& path);
@@ -30,6 +31,7 @@ public:
     static void makeDirectory(const QString &path);
     static ClipboardOpType opTypeInClipboard();
     static bool copyFile(const QString &p_srcFilePath, const QString &p_destFilePath, bool p_isCut);
+    static bool copyDirectory(const QString &p_srcDirPath, const QString &p_destDirPath, bool p_isCut);
     static int showMessage(QMessageBox::Icon p_icon, const QString &p_title, const QString &p_text,
                            const QString &p_infoText, QMessageBox::StandardButtons p_buttons,
                            QMessageBox::StandardButton p_defaultBtn, QWidget *p_parent);

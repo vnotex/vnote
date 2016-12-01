@@ -16,8 +16,8 @@ public:
     // Open the root directory to load contents
     bool open();
     // Close all the directory and files of this notebook.
-    // If @p_forced, unsaved files will also be closed without a confirm.
-    void close(bool p_forced);
+    // Please make sure all files belonging to this notebook have been closed in the tab.
+    void close();
 
     QString getName() const;
     QString getPath() const;
