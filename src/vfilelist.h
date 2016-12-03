@@ -47,6 +47,9 @@ public slots:
     void setDirectory(VDirectory *p_directory);
     void newFile();
 
+protected:
+    void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
+
 private:
     void setupUI();
     void updateFileList();

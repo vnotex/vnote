@@ -17,8 +17,11 @@ public slots:
     void updateOutline(const VToc &toc);
     void updateCurHeader(const VAnchor &anchor);
 
+protected:
+    void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
+
 private slots:
-    void handleItemClicked(QTreeWidgetItem *item, int column);
+    void handleCurItemChanged(QTreeWidgetItem *p_curItem, QTreeWidgetItem *p_preItem);
 
 private:
     void updateTreeFromOutline(const VToc &toc);

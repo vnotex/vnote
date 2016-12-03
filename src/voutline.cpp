@@ -2,6 +2,7 @@
 #include <QVector>
 #include <QString>
 #include <QJsonObject>
+#include <QKeyEvent>
 #include "voutline.h"
 #include "vtoc.h"
 
@@ -12,16 +13,17 @@ VOutline::VOutline(QWidget *parent)
     setHeaderHidden(true);
     setSelectionMode(QAbstractItemView::SingleSelection);
 
-    connect(this, &VOutline::itemClicked,
-            this, &VOutline::handleItemClicked);
+    connect(this, &VOutline::currentItemChanged,
+            this, &VOutline::handleCurItemChanged);
 }
 
 void VOutline::updateOutline(const VToc &toc)
 {
+    // Clear current header
+    curHeader = VAnchor();
     outline = toc;
     updateTreeFromOutline(outline);
     expandTree();
-    updateCurHeader(curHeader);
 }
 
 void VOutline::updateTreeFromOutline(const VToc &toc)
@@ -70,25 +72,34 @@ void VOutline::expandTree()
         return;
     }
     expandAll();
-    setItemSelected(topLevelItem(0), true);
 }
 
-
-void VOutline::handleItemClicked(QTreeWidgetItem *item, int column)
+void VOutline::handleCurItemChanged(QTreeWidgetItem *p_curItem, QTreeWidgetItem *p_preItem)
 {
-    Q_ASSERT(item && column == 0);
-    QJsonObject itemJson = item->data(0, Qt::UserRole).toJsonObject();
+    if (!p_curItem) {
+        return;
+    }
+    QJsonObject itemJson = p_curItem->data(0, Qt::UserRole).toJsonObject();
     QString anchor = itemJson["anchor"].toString();
     int lineNumber = itemJson["line_number"].toInt();
-    qDebug() << "click anchor" << anchor << lineNumber;
-    curHeader.filePath = outline.filePath;
-    curHeader.anchor = anchor;
-    curHeader.lineNumber = lineNumber;
+    VAnchor tmp;
+    tmp.filePath = outline.filePath;
+    tmp.anchor = anchor;
+    tmp.lineNumber = lineNumber;
+    if (tmp == curHeader) {
+        return;
+    }
+    curHeader = tmp;
+    qDebug() << "current header changed" << tmp.anchor << tmp.lineNumber;
     emit outlineItemActivated(curHeader);
 }
 
 void VOutline::updateCurHeader(const VAnchor &anchor)
 {
+    qDebug() << "update current header" << anchor.anchor << anchor.lineNumber;
+    if (anchor == curHeader) {
+        return;
+    }
     curHeader = anchor;
     if (outline.type == VHeaderType::Anchor) {
         selectAnchor(anchor.anchor);
@@ -100,11 +111,6 @@ void VOutline::updateCurHeader(const VAnchor &anchor)
 
 void VOutline::selectAnchor(const QString &anchor)
 {
-    QList<QTreeWidgetItem *> selected = selectedItems();
-    foreach (QTreeWidgetItem *item, selected) {
-        setItemSelected(item, false);
-    }
-
     int nrTop = topLevelItemCount();
     for (int i = 0; i < nrTop; ++i) {
         if (selectAnchorOne(topLevelItem(i), anchor)) {
@@ -121,8 +127,7 @@ bool VOutline::selectAnchorOne(QTreeWidgetItem *item, const QString &anchor)
     QJsonObject itemJson = item->data(0, Qt::UserRole).toJsonObject();
     QString itemAnchor = itemJson["anchor"].toString();
     if (itemAnchor == anchor) {
-        // Select this item
-        setItemSelected(item, true);
+        setCurrentItem(item);
         return true;
     }
 
@@ -137,11 +142,6 @@ bool VOutline::selectAnchorOne(QTreeWidgetItem *item, const QString &anchor)
 
 void VOutline::selectLineNumber(int lineNumber)
 {
-    QList<QTreeWidgetItem *> selected = selectedItems();
-    foreach (QTreeWidgetItem *item, selected) {
-        setItemSelected(item, false);
-    }
-
     int nrTop = topLevelItemCount();
     for (int i = 0; i < nrTop; ++i) {
         if (selectLineNumberOne(topLevelItem(i), lineNumber)) {
@@ -159,7 +159,7 @@ bool VOutline::selectLineNumberOne(QTreeWidgetItem *item, int lineNumber)
     int itemLineNum = itemJson["line_number"].toInt();
     if (itemLineNum == lineNumber) {
         // Select this item
-        setItemSelected(item, true);
+        setCurrentItem(item);
         return true;
     }
 
@@ -170,4 +170,15 @@ bool VOutline::selectLineNumberOne(QTreeWidgetItem *item, int lineNumber)
         }
     }
     return false;
+}
+
+void VOutline::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Return) {
+        QTreeWidgetItem *item = currentItem();
+        if (item) {
+            item->setExpanded(!item->isExpanded());
+        }
+    }
+    QTreeWidget::keyPressEvent(event);
 }

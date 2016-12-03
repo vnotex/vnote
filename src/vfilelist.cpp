@@ -28,7 +28,7 @@ void VFileList::setupUI()
 
     connect(fileList, &QListWidget::customContextMenuRequested,
             this, &VFileList::contextMenuRequested);
-    connect(fileList, &QListWidget::itemActivated,
+    connect(fileList, &QListWidget::itemClicked,
             this, &VFileList::handleItemClicked);
 
     setLayout(mainLayout);
@@ -442,4 +442,15 @@ bool VFileList::copyFile(VDirectory *p_destDir, const QString &p_destName, VFile
         emit fileUpdated(destFile);
     }
     return destFile != NULL;
+}
+
+void VFileList::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Return) {
+        QListWidgetItem *item = fileList->currentItem();
+        if (item) {
+            handleItemClicked(item);
+        }
+    }
+    QWidget::keyPressEvent(event);
 }

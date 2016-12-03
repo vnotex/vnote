@@ -346,6 +346,10 @@ void VEditTab::requestUpdateOutline()
 
 void VEditTab::scrollToAnchor(const VAnchor &anchor)
 {
+    if (anchor == curHeader) {
+        return;
+    }
+    curHeader = anchor;
     if (isEditMode) {
         if (anchor.lineNumber > -1) {
             textEditor->scrollToLine(anchor.lineNumber);
@@ -355,7 +359,6 @@ void VEditTab::scrollToAnchor(const VAnchor &anchor)
             document.scrollToAnchor(anchor.anchor.mid(1));
         }
     }
-    curHeader = anchor;
 }
 
 void VEditTab::updateCurHeader(const QString &anchor)
