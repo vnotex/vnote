@@ -38,6 +38,7 @@ private slots:
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
+    void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 
 private:
     void updateDirectoryTreeOne(QTreeWidgetItem *p_parent, int depth);

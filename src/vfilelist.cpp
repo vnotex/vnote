@@ -20,6 +20,7 @@ void VFileList::setupUI()
 {
     fileList = new QListWidget(this);
     fileList->setContextMenuPolicy(Qt::CustomContextMenu);
+    fileList->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(fileList);
@@ -27,7 +28,7 @@ void VFileList::setupUI()
 
     connect(fileList, &QListWidget::customContextMenuRequested,
             this, &VFileList::contextMenuRequested);
-    connect(fileList, &QListWidget::itemClicked,
+    connect(fileList, &QListWidget::itemActivated,
             this, &VFileList::handleItemClicked);
 
     setLayout(mainLayout);
@@ -221,9 +222,11 @@ QVector<QListWidgetItem *> VFileList::updateFileListAdded()
 // Delete the file related to current item
 void VFileList::deleteFile()
 {
-    QListWidgetItem *curItem = fileList->currentItem();
-    Q_ASSERT(curItem);
-    deleteFile(getVFile(curItem));
+    QList<QListWidgetItem *> items = fileList->selectedItems();
+    Q_ASSERT(!items.isEmpty());
+    for (int i = 0; i < items.size(); ++i) {
+        deleteFile(getVFile(items.at(i)));
+    }
 }
 
 // @p_file may or may not be listed in VFileList
@@ -274,7 +277,7 @@ void VFileList::contextMenuRequested(QPoint pos)
         menu.addAction(pasteAct);
     }
 
-    if (item) {
+    if (item && fileList->selectedItems().size() == 1) {
         menu.addSeparator();
         menu.addAction(fileInfoAct);
     }

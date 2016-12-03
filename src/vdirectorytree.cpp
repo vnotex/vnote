@@ -483,6 +483,17 @@ void VDirectoryTree::mousePressEvent(QMouseEvent *event)
     QTreeWidget::mousePressEvent(event);
 }
 
+void VDirectoryTree::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Return) {
+        QTreeWidgetItem *item = currentItem();
+        if (item) {
+            item->setExpanded(!item->isExpanded());
+        }
+    }
+    QTreeWidget::keyPressEvent(event);
+}
+
 bool VDirectoryTree::copyDirectory(VDirectory *p_destDir, const QString &p_destName,
                                    VDirectory *p_srcDir, bool p_cut)
 {
