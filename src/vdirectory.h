@@ -56,12 +56,13 @@ public:
     inline QString retriveRelativePath() const;
     inline QString getNotebook() const;
 
+    static QJsonObject createDirectoryJson();
+
 private:
     // Get the path of @p_dir recursively
     QString retrivePath(const VDirectory *p_dir) const;
     // Get teh relative path of @p_dir recursively related to the notebook path
     QString retriveRelativePath(const VDirectory *p_dir) const;
-    QJsonObject createDirectoryJson() const;
     bool createFileInConfig(const QString &p_name, int p_index = -1);
     bool createSubDirectoryInConfig(const QString &p_name, int p_index = -1);
 

@@ -75,89 +75,12 @@ void VNote::updateTemplate()
     postTemplateHtml = VUtils::readFileFromDisk(vconfig.getPostTemplatePath());
 }
 
-const QVector<VNotebook *> &VNote::getNotebooks()
+const QVector<VNotebook *> &VNote::getNotebooks() const
 {
     return m_notebooks;
 }
 
-void VNote::createNotebook(const QString &name, const QString &path)
+QVector<VNotebook *> &VNote::getNotebooks()
 {
-    // Create a directory config file in @path
-    QJsonObject configJson;
-    configJson["version"] = "1";
-    configJson["sub_directories"] = QJsonArray();
-    configJson["files"] = QJsonArray();
-    if (!vconfig.writeDirectoryConfig(path, configJson)) {
-        return;
-    }
-
-    // Update notebooks settings
-    VNotebook *nb = new VNotebook(name, path, this);
-    m_notebooks.prepend(nb);
-    vconfig.setNotebooks(m_notebooks);
-
-    // Set current index to the new notebook
-    vconfig.setCurNotebookIndex(0);
-
-    emit notebookAdded(nb, 0);
-}
-
-void VNote::removeNotebook(int idx)
-{
-    Q_ASSERT(idx >= 0 && idx < m_notebooks.size());
-    VNotebook *nb = m_notebooks[idx];
-    QString name = nb->getName();
-    QString path = nb->getPath();
-
-    // Update notebook settings
-    int curIndex = vconfig.getCurNotebookIndex();
-    m_notebooks.remove(idx);
-    vconfig.setNotebooks(m_notebooks);
-    if (m_notebooks.isEmpty()) {
-        vconfig.setCurNotebookIndex(-1);
-    } else if (idx == curIndex) {
-        vconfig.setCurNotebookIndex(0);
-    }
-
-    // Close all the directory and files
-    notebookPathHash.remove(name);
-    nb->close();
-    delete nb;
-    qDebug() << "notebook" << name << "deleted";
-
-    // Delete the directory
-    QDir dir(path);
-    if (!dir.removeRecursively()) {
-        qWarning() << "failed to delete" << path << "recursively";
-    }
-    emit notebookDeleted(idx);
-}
-
-void VNote::renameNotebook(int idx, const QString &newName)
-{
-    Q_ASSERT(idx >= 0 && idx < m_notebooks.size());
-    VNotebook *nb = m_notebooks[idx];
-    QString name = nb->getName();
-    notebookPathHash.remove(name);
-    nb->setName(newName);
-    vconfig.setNotebooks(m_notebooks);
-
-    emit notebookRenamed(nb, idx);
-}
-
-QString VNote::getNotebookPath(const QString &name)
-{
-    QString path = notebookPathHash.value(name);
-    if (path.isEmpty()) {
-        for (int i = 0; i < m_notebooks.size(); ++i) {
-            if (m_notebooks[i]->getName() == name) {
-                path = m_notebooks[i]->getPath();
-                break;
-            }
-        }
-        if (!path.isEmpty()) {
-            notebookPathHash.insert(name, path);
-        }
-    }
-    return path;
+    return m_notebooks;
 }

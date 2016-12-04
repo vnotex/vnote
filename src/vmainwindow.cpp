@@ -5,16 +5,15 @@
 #include "vnote.h"
 #include "vfilelist.h"
 #include "vconfigmanager.h"
-#include "dialog/vnewnotebookdialog.h"
-#include "dialog/vnotebookinfodialog.h"
 #include "utils/vutils.h"
 #include "veditarea.h"
 #include "voutline.h"
+#include "vnotebookselector.h"
 
 extern VConfigManager vconfig;
 
 VMainWindow::VMainWindow(QWidget *parent)
-    : QMainWindow(parent), notebookComboMuted(false)
+    : QMainWindow(parent)
 {
     setWindowIcon(QIcon(":/resources/icons/vnote.ico"));
     // Must be called before those who uses VConfigManager
@@ -28,7 +27,7 @@ VMainWindow::VMainWindow(QWidget *parent)
     initDockWindows();
     restoreStateAndGeometry();
 
-    updateNotebookComboBox(vnote->getNotebooks());
+    notebookSelector->update();
 }
 
 void VMainWindow::setupUI()
@@ -41,6 +40,8 @@ void VMainWindow::setupUI()
     editArea = new VEditArea(vnote);
     editArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     fileList->setEditArea(editArea);
+    directoryTree->setEditArea(editArea);
+    notebookSelector->setEditArea(editArea);
 
     // Main Splitter
     mainSplitter = new QSplitter();
@@ -52,15 +53,13 @@ void VMainWindow::setupUI()
     mainSplitter->setStretchFactor(2, 1);
 
     // Signals
-    connect(notebookComboBox, SIGNAL(currentIndexChanged(int)), this,
-            SLOT(setCurNotebookIndex(int)));
-
     connect(directoryTree, &VDirectoryTree::currentDirectoryChanged,
             fileList, &VFileList::setDirectory);
     connect(directoryTree, &VDirectoryTree::directoryUpdated,
             editArea, &VEditArea::handleDirectoryUpdated);
-    connect(directoryTree, &VDirectoryTree::currentDirectoryChanged,
-            this, &VMainWindow::handleCurrentDirectoryChanged);
+
+    connect(notebookSelector, &VNotebookSelector::notebookUpdated,
+            editArea, &VEditArea::handleNotebookUpdated);
 
     connect(fileList, &VFileList::fileClicked,
             editArea, &VEditArea::openFile);
@@ -70,23 +69,6 @@ void VMainWindow::setupUI()
             editArea, &VEditArea::handleFileUpdated);
     connect(editArea, &VEditArea::curTabStatusChanged,
             this, &VMainWindow::handleCurTabStatusChanged);
-
-    connect(newNotebookBtn, &QPushButton::clicked,
-            this, &VMainWindow::onNewNotebookBtnClicked);
-    connect(deleteNotebookBtn, &QPushButton::clicked,
-            this, &VMainWindow::onDeleteNotebookBtnClicked);
-    connect(notebookInfoBtn, &QPushButton::clicked,
-            this, &VMainWindow::onNotebookInfoBtnClicked);
-
-    connect(vnote, &VNote::notebookDeleted,
-            this, &VMainWindow::notebookComboBoxDeleted);
-    connect(vnote, &VNote::notebookRenamed,
-            this, &VMainWindow::notebookComboBoxRenamed);
-    connect(vnote, &VNote::notebookAdded,
-            this, &VMainWindow::notebookComboBoxAdded);
-
-    connect(this, &VMainWindow::curNotebookChanged,
-            directoryTree, &VDirectoryTree::setNotebook);
 
     setCentralWidget(mainSplitter);
     // Create and show the status bar
@@ -108,9 +90,9 @@ QWidget *VMainWindow::setupDirectoryPanel()
     notebookInfoBtn->setToolTip(tr("View and edit current notebook's information"));
     notebookInfoBtn->setProperty("OnMainWindow", true);
 
-    notebookComboBox = new QComboBox();
-    notebookComboBox->setProperty("OnMainWindow", true);
-    notebookComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    notebookSelector = new VNotebookSelector(vnote);
+    notebookSelector->setProperty("OnMainWindow", true);
+    notebookSelector->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     directoryTree = new VDirectoryTree(vnote);
 
     QHBoxLayout *nbBtnLayout = new QHBoxLayout;
@@ -122,7 +104,7 @@ QWidget *VMainWindow::setupDirectoryPanel()
     nbBtnLayout->setContentsMargins(0, 0, 0, 0);
     QVBoxLayout *nbLayout = new QVBoxLayout;
     nbLayout->addLayout(nbBtnLayout);
-    nbLayout->addWidget(notebookComboBox);
+    nbLayout->addWidget(notebookSelector);
     nbLayout->addWidget(directoryLabel);
     nbLayout->addWidget(directoryTree);
     nbLayout->setContentsMargins(5, 0, 0, 0);
@@ -130,6 +112,20 @@ QWidget *VMainWindow::setupDirectoryPanel()
     nbContainer->setLayout(nbLayout);
     nbContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
+    connect(notebookSelector, &VNotebookSelector::curNotebookChanged,
+            directoryTree, &VDirectoryTree::setNotebook);
+    connect(notebookSelector, &VNotebookSelector::curNotebookChanged,
+            this, &VMainWindow::handleCurrentNotebookChanged);
+
+    connect(newNotebookBtn, &QPushButton::clicked,
+            notebookSelector, &VNotebookSelector::newNotebook);
+    connect(deleteNotebookBtn, SIGNAL(clicked(bool)),
+            notebookSelector, SLOT(deleteNotebook()));
+    connect(notebookInfoBtn, SIGNAL(clicked(bool)),
+            notebookSelector, SLOT(editNotebookInfo()));
+
+    connect(directoryTree, &VDirectoryTree::currentDirectoryChanged,
+            this, &VMainWindow::handleCurrentDirectoryChanged);
     return nbContainer;
 }
 
@@ -364,158 +360,6 @@ void VMainWindow::initDockWindows()
     toolDock->setWidget(toolBox);
     addDockWidget(Qt::RightDockWidgetArea, toolDock);
     viewMenu->addAction(toolDock->toggleViewAction());
-}
-
-void VMainWindow::updateNotebookComboBox(const QVector<VNotebook *> &p_notebooks)
-{
-    notebookComboMuted = true;
-    notebookComboBox->clear();
-    for (int i = 0; i < p_notebooks.size(); ++i) {
-        notebookComboBox->addItem(QIcon(":/resources/icons/notebook_item.svg"),
-                                  p_notebooks[i]->getName());
-    }
-    notebookComboMuted = false;
-
-    int index = vconfig.getCurNotebookIndex();
-    if (p_notebooks.isEmpty()) {
-        index = -1;
-    }
-    if (notebookComboBox->currentIndex() == index) {
-        setCurNotebookIndex(index);
-    } else {
-        notebookComboBox->setCurrentIndex(index);
-    }
-}
-
-void VMainWindow::notebookComboBoxAdded(const VNotebook *p_notebook, int p_idx)
-{
-    notebookComboMuted = true;
-    notebookComboBox->insertItem(p_idx, QIcon(":/resources/icons/notebook_item.svg"),
-                                 p_notebook->getName());
-    notebookComboMuted = false;
-    if (notebookComboBox->currentIndex() == vconfig.getCurNotebookIndex()) {
-        setCurNotebookIndex(vconfig.getCurNotebookIndex());
-    } else {
-        notebookComboBox->setCurrentIndex(vconfig.getCurNotebookIndex());
-    }
-}
-
-void VMainWindow::notebookComboBoxDeleted(int p_oriIdx)
-{
-    Q_ASSERT(p_oriIdx >= 0 && p_oriIdx < notebookComboBox->count());
-    notebookComboMuted = true;
-    notebookComboBox->removeItem(p_oriIdx);
-    notebookComboMuted = false;
-
-    if (notebookComboBox->currentIndex() == vconfig.getCurNotebookIndex()) {
-        setCurNotebookIndex(vconfig.getCurNotebookIndex());
-    } else {
-        notebookComboBox->setCurrentIndex(vconfig.getCurNotebookIndex());
-    }
-}
-
-void VMainWindow::notebookComboBoxRenamed(const VNotebook *p_notebook, int p_idx)
-{
-    Q_ASSERT(p_idx >= 0 && p_idx < notebookComboBox->count());
-    notebookComboBox->setItemText(p_idx, p_notebook->getName());
-    // Renaming a notebook won't change current index
-}
-
-// Maybe called multiple times
-void VMainWindow::setCurNotebookIndex(int index)
-{
-    if (notebookComboMuted) {
-        return;
-    }
-    Q_ASSERT(index < vnote->getNotebooks().size());
-    // Update directoryTree
-    VNotebook *notebook = NULL;
-    if (index > -1) {
-        vconfig.setCurNotebookIndex(index);
-        notebook = vnote->getNotebooks()[index];
-        newRootDirAct->setEnabled(true);
-    } else {
-        newRootDirAct->setEnabled(false);
-    }
-    emit curNotebookChanged(notebook);
-}
-
-void VMainWindow::onNewNotebookBtnClicked()
-{
-    QString info;
-    QString defaultName("new_notebook");
-    QString defaultPath;
-    do {
-        VNewNotebookDialog dialog(tr("Create a new notebook"), info, defaultName,
-                                  defaultPath, this);
-        if (dialog.exec() == QDialog::Accepted) {
-            QString name = dialog.getNameInput();
-            QString path = dialog.getPathInput();
-            if (isConflictWithExistingNotebooks(name)) {
-                info = "Name already exists.";
-                defaultName = name;
-                defaultPath = path;
-                continue;
-            }
-            vnote->createNotebook(name, path);
-        }
-        break;
-    } while (true);
-}
-
-bool VMainWindow::isConflictWithExistingNotebooks(const QString &name)
-{
-    const QVector<VNotebook *> &notebooks = vnote->getNotebooks();
-    for (int i = 0; i < notebooks.size(); ++i) {
-        if (notebooks[i]->getName() == name) {
-            return true;
-        }
-    }
-    return false;
-}
-
-void VMainWindow::onDeleteNotebookBtnClicked()
-{
-    int curIndex = notebookComboBox->currentIndex();
-    QString curName = vnote->getNotebooks()[curIndex]->getName();
-    QString curPath = vnote->getNotebooks()[curIndex]->getPath();
-
-    QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Are you sure you want to delete notebook \"%1\"?")
-                       .arg(curName), QMessageBox::Ok | QMessageBox::Cancel, this);
-    msgBox.setInformativeText(QString("This will delete any files in this notebook (\"%1\").").arg(curPath));
-    msgBox.setDefaultButton(QMessageBox::Cancel);
-    if (msgBox.exec() == QMessageBox::Ok) {
-        vnote->removeNotebook(curIndex);
-    }
-}
-
-void VMainWindow::onNotebookInfoBtnClicked()
-{
-    int curIndex = notebookComboBox->currentIndex();
-    if (curIndex < 0) {
-        return;
-    }
-    QString info;
-    QString curName = vnote->getNotebooks()[curIndex]->getName();
-    QString defaultPath = vnote->getNotebooks()[curIndex]->getPath();
-    QString defaultName(curName);
-    do {
-        VNotebookInfoDialog dialog(tr("Notebook information"), info, defaultName,
-                                  defaultPath, this);
-        if (dialog.exec() == QDialog::Accepted) {
-            QString name = dialog.getNameInput();
-            if (name == curName) {
-                return;
-            }
-            if (isConflictWithExistingNotebooks(name)) {
-                info = "Name already exists.";
-                defaultName = name;
-                continue;
-            }
-            vnote->renameNotebook(curIndex, name);
-        }
-        break;
-    } while (true);
 }
 
 void VMainWindow::importNoteFromFile()
@@ -805,4 +649,9 @@ const QVector<QPair<QString, QString> >& VMainWindow::getPalette() const
 void VMainWindow::handleCurrentDirectoryChanged(const VDirectory *p_dir)
 {
     newNoteAct->setEnabled(p_dir);
+}
+
+void VMainWindow::handleCurrentNotebookChanged(const VNotebook *p_notebook)
+{
+    newRootDirAct->setEnabled(p_notebook);
 }

@@ -50,6 +50,8 @@ void VEditWindow::setupCornerWidget()
     rightMenu->addAction(removeSplitAct);
     rightBtn->setMenu(rightMenu);
     setCornerWidget(rightBtn, Qt::TopRightCorner);
+    connect(rightMenu, &QMenu::aboutToShow,
+            this, &VEditWindow::updateSplitMenu);
 
     // Left corner button
     tabListAct = new QActionGroup(this);
@@ -78,21 +80,13 @@ void VEditWindow::removeSplit()
     closeAllFiles(false);
 }
 
-void VEditWindow::setRemoveSplitEnable(bool enabled)
-{
-    removeSplitAct->setVisible(enabled);
-}
-
 void VEditWindow::removeEditTab(int p_index)
 {
-    if (p_index > -1 && p_index < tabBar()->count()) {
-        VEditTab *editor = getTab(p_index);
-        removeTab(p_index);
-        delete editor;
-        if (tabBar()->count() == 0) {
-            emit requestRemoveSplit(this);
-        }
-    }
+    Q_ASSERT(p_index > -1 && p_index < tabBar()->count());
+
+    VEditTab *editor = getTab(p_index);
+    removeTab(p_index);
+    delete editor;
 }
 
 int VEditWindow::insertEditTab(int p_index, VFile *p_file, QWidget *p_page)
@@ -100,7 +94,6 @@ int VEditWindow::insertEditTab(int p_index, VFile *p_file, QWidget *p_page)
     int idx = insertTab(p_index, p_page, p_file->getName());
     QTabBar *tabs = tabBar();
     tabs->setTabToolTip(idx, generateTooltip(p_file));
-    noticeStatus(currentIndex());
     return idx;
 }
 
@@ -121,7 +114,6 @@ int VEditWindow::openFile(VFile *p_file, OpenFileMode p_mode)
 out:
     setCurrentIndex(idx);
     focusWindow();
-    noticeStatus(idx);
     return idx;
 }
 
@@ -145,7 +137,48 @@ bool VEditWindow::closeFile(const VFile *p_file, bool p_forced)
     if (ok) {
         removeEditTab(idx);
     }
+    if (count() == 0) {
+        emit requestRemoveSplit(this);
+    }
     return ok;
+}
+
+bool VEditWindow::closeFile(const VDirectory *p_dir, bool p_forced)
+{
+    Q_ASSERT(p_dir);
+    int i = 0;
+    while (i < count()) {
+        VEditTab *editor = getTab(i);
+        QPointer<VFile> file = editor->getFile();
+        if (p_dir->containsFile(file)) {
+            if (!closeFile(file, p_forced)) {
+                return false;
+            }
+            // Closed a file, so don't need to add i.
+        } else {
+            ++i;
+        }
+    }
+    return true;
+}
+
+bool VEditWindow::closeFile(const VNotebook *p_notebook, bool p_forced)
+{
+    Q_ASSERT(p_notebook);
+    int i = 0;
+    while (i < count()) {
+        VEditTab *editor = getTab(i);
+        QPointer<VFile> file = editor->getFile();
+        if (p_notebook->containsFile(file)) {
+            if (!closeFile(file, p_forced)) {
+                return false;
+            }
+            // Closed a file, so don't need to add i.
+        } else {
+            ++i;
+        }
+    }
+    return true;
 }
 
 bool VEditWindow::closeAllFiles(bool p_forced)
@@ -168,7 +201,7 @@ bool VEditWindow::closeAllFiles(bool p_forced)
             break;
         }
     }
-    if (ret) {
+    if (count() == 0) {
         emit requestRemoveSplit(this);
     }
     return ret;
@@ -192,7 +225,7 @@ int VEditWindow::openFileInTab(VFile *p_file, OpenFileMode p_mode)
 
 int VEditWindow::findTabByFile(const VFile *p_file) const
 {
-    int nrTabs = tabBar()->count();
+    int nrTabs = count();
     for (int i = 0; i < nrTabs; ++i) {
         if (getTab(i)->getFile() == p_file) {
             return i;
@@ -209,10 +242,13 @@ bool VEditWindow::handleTabCloseRequest(int index)
     if (ok) {
         removeEditTab(index);
     }
-    noticeStatus(currentIndex());
+
     // User clicks the close button. We should make this window
     // to be current window.
     emit getFocused();
+    if (count() == 0) {
+        emit requestRemoveSplit(this);
+    }
     return ok;
 }
 
@@ -221,14 +257,12 @@ void VEditWindow::readFile()
     VEditTab *editor = getTab(currentIndex());
     Q_ASSERT(editor);
     editor->readFile();
-    noticeStatus(currentIndex());
 }
 
 void VEditWindow::saveAndReadFile()
 {
     saveFile();
     readFile();
-    noticeStatus(currentIndex());
 }
 
 void VEditWindow::editFile()
@@ -236,7 +270,6 @@ void VEditWindow::editFile()
     VEditTab *editor = getTab(currentIndex());
     Q_ASSERT(editor);
     editor->editFile();
-    noticeStatus(currentIndex());
 }
 
 void VEditWindow::saveFile()
@@ -307,7 +340,6 @@ void VEditWindow::handleTabbarClicked(int index)
 {
     // The child will emit getFocused here
     focusWindow();
-    noticeStatus(index);
 }
 
 void VEditWindow::mousePressEvent(QMouseEvent *event)
@@ -320,8 +352,10 @@ void VEditWindow::contextMenuRequested(QPoint pos)
 {
     QMenu menu(this);
 
-    menu.addAction(removeSplitAct);
-    menu.exec(this->mapToGlobal(pos));
+    if (canRemoveSplit()) {
+        menu.addAction(removeSplitAct);
+        menu.exec(this->mapToGlobal(pos));
+    }
 }
 
 void VEditWindow::tabListJump(QAction *action)
@@ -360,6 +394,22 @@ void VEditWindow::updateTabListMenu()
         action->setData(QVariant::fromValue(file));
         menu->addAction(action);
     }
+}
+
+void VEditWindow::updateSplitMenu()
+{
+    if (canRemoveSplit()) {
+        removeSplitAct->setVisible(true);
+    } else {
+        removeSplitAct->setVisible(false);
+    }
+}
+
+bool VEditWindow::canRemoveSplit()
+{
+    QSplitter *splitter = dynamic_cast<QSplitter *>(parent());
+    Q_ASSERT(splitter);
+    return splitter->count() > 1;
 }
 
 void VEditWindow::handleOutlineChanged(const VToc &p_toc)
@@ -406,6 +456,7 @@ void VEditWindow::scrollCurTab(const VAnchor &p_anchor)
 // Update tab status, outline and current header.
 void VEditWindow::noticeStatus(int index)
 {
+    qDebug() << "tab" << index;
     noticeTabStatus(index);
 
     if (index == -1) {
@@ -440,11 +491,27 @@ void VEditWindow::updateDirectoryInfo(const VDirectory *p_dir)
         return;
     }
 
-    int nrTab = tabBar()->count();
+    int nrTab = count();
     for (int i = 0; i < nrTab; ++i) {
         VEditTab *editor = getTab(i);
         QPointer<VFile> file = editor->getFile();
         if (p_dir->containsFile(file)) {
+            noticeStatus(i);
+        }
+    }
+}
+
+void VEditWindow::updateNotebookInfo(const VNotebook *p_notebook)
+{
+    if (!p_notebook) {
+        return;
+    }
+
+    int nrTab = count();
+    for (int i = 0; i < nrTab; ++i) {
+        VEditTab *editor = getTab(i);
+        QPointer<VFile> file = editor->getFile();
+        if (p_notebook->containsFile(file)) {
             noticeStatus(i);
         }
     }

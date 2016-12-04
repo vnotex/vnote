@@ -44,7 +44,8 @@ SOURCES += main.cpp\
     vtoc.cpp \
     vsingleinstanceguard.cpp \
     vdirectory.cpp \
-    vfile.cpp
+    vfile.cpp \
+    vnotebookselector.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -77,7 +78,8 @@ HEADERS  += vmainwindow.h \
     vtoc.h \
     vsingleinstanceguard.h \
     vdirectory.h \
-    vfile.h
+    vfile.h \
+    vnotebookselector.h
 
 RESOURCES += \
     vnote.qrc

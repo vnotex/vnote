@@ -25,6 +25,9 @@ public:
     explicit VEditArea(VNote *vnote, QWidget *parent = 0);
     bool isFileOpened(const VFile *p_file);
     bool closeAllFiles(bool p_forced);
+    bool closeFile(const VFile *p_file, bool p_forced);
+    bool closeFile(const VDirectory *p_dir, bool p_forced);
+    bool closeFile(const VNotebook *p_notebook, bool p_forced);
 
 signals:
     void curTabStatusChanged(const VFile *p_file, bool p_editMode);
@@ -36,7 +39,6 @@ protected:
 
 public slots:
     void openFile(VFile *p_file, OpenFileMode p_mode);
-    bool closeFile(const VFile *p_file, bool p_forced);
     void editFile();
     void saveFile();
     void readFile();
@@ -44,6 +46,7 @@ public slots:
     void handleOutlineItemActivated(const VAnchor &anchor);
     void handleFileUpdated(const VFile *p_file);
     void handleDirectoryUpdated(const VDirectory *p_dir);
+    void handleNotebookUpdated(const VNotebook *p_notebook);
 
 private slots:
     void handleSplitWindowRequest(VEditWindow *curWindow);
@@ -72,6 +75,7 @@ private:
 
 inline VEditWindow* VEditArea::getWindow(int windowIndex) const
 {
+    Q_ASSERT(windowIndex < splitter->count());
     return dynamic_cast<VEditWindow *>(splitter->widget(windowIndex));
 }
 

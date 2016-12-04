@@ -24,40 +24,37 @@ void VNewNotebookDialog::setupUI()
     if (!info.isEmpty()) {
         infoLabel = new QLabel(info);
     }
-    nameLabel = new QLabel(tr("&Name"));
+    nameLabel = new QLabel(tr("Notebook &name:"));
     nameEdit = new QLineEdit(defaultName);
     nameEdit->selectAll();
     nameLabel->setBuddy(nameEdit);
+    QHBoxLayout *nameLayout = new QHBoxLayout();
+    nameLayout->addWidget(nameLabel);
+    nameLayout->addWidget(nameEdit);
 
-    QLabel *pathLabel = new QLabel(tr("&Path"));
+    QLabel *pathLabel = new QLabel(tr("Notebook &path:"));
     pathEdit = new QLineEdit(defaultPath);
     pathLabel->setBuddy(pathEdit);
     browseBtn = new QPushButton(tr("&Browse"));
-
     QHBoxLayout *pathLayout = new QHBoxLayout();
+    pathLayout->addWidget(pathLabel);
     pathLayout->addWidget(pathEdit);
     pathLayout->addWidget(browseBtn);
 
     okBtn = new QPushButton(tr("&OK"));
     okBtn->setDefault(true);
     cancelBtn = new QPushButton(tr("&Cancel"));
-
-    QVBoxLayout *topLayout = new QVBoxLayout();
-    if (infoLabel) {
-        topLayout->addWidget(infoLabel);
-    }
-    topLayout->addWidget(nameLabel);
-    topLayout->addWidget(nameEdit);
-    topLayout->addWidget(pathLabel);
-    topLayout->addLayout(pathLayout);
-
     QHBoxLayout *btmLayout = new QHBoxLayout();
     btmLayout->addStretch();
     btmLayout->addWidget(okBtn);
     btmLayout->addWidget(cancelBtn);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
-    mainLayout->addLayout(topLayout);
+    if (infoLabel) {
+        mainLayout->addWidget(infoLabel);
+    }
+    mainLayout->addLayout(nameLayout);
+    mainLayout->addLayout(pathLayout);
     mainLayout->addLayout(btmLayout);
     setLayout(mainLayout);
 

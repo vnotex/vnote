@@ -5,6 +5,7 @@
 #include <QString>
 
 class VDirectory;
+class VFile;
 
 class VNotebook : public QObject
 {
@@ -18,12 +19,16 @@ public:
     // Close all the directory and files of this notebook.
     // Please make sure all files belonging to this notebook have been closed in the tab.
     void close();
+    bool containsFile(const VFile *p_file) const;
 
     QString getName() const;
     QString getPath() const;
-    void setName(const QString &name);
-    void setPath(const QString &path);
     inline VDirectory *getRootDir();
+    void rename(const QString &p_name);
+
+    static VNotebook *createNotebook(const QString &p_name, const QString &p_path,
+                                     QObject *p_parent = 0);
+    static void deleteNotebook(VNotebook *p_notebook);
 
 signals:
     void contentChanged();

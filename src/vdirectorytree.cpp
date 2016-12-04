@@ -6,9 +6,10 @@
 #include "vnote.h"
 #include "vdirectory.h"
 #include "utils/vutils.h"
+#include "veditarea.h"
 
 VDirectoryTree::VDirectoryTree(VNote *vnote, QWidget *parent)
-    : QTreeWidget(parent), vnote(vnote)
+    : QTreeWidget(parent), vnote(vnote), m_editArea(NULL)
 {
     setColumnCount(1);
     setHeaderHidden(true);
@@ -343,6 +344,7 @@ void VDirectoryTree::deleteDirectory()
                                   tr("This will delete any files under this directory."), QMessageBox::Ok | QMessageBox::Cancel,
                                   QMessageBox::Ok, this);
     if (ret == QMessageBox::Ok) {
+        m_editArea->closeFile(curDir, true);
         VDirectory *parentDir = curDir->getParentDirectory();
         Q_ASSERT(parentDir);
         parentDir->deleteSubDirectory(curDir);

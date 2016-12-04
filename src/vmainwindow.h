@@ -24,6 +24,7 @@ class VFileList;
 class VEditArea;
 class QToolBox;
 class VOutline;
+class VNotebookSelector;
 
 class VMainWindow : public QMainWindow
 {
@@ -34,15 +35,6 @@ public:
     const QVector<QPair<QString, QString> > &getPalette() const;
 
 private slots:
-    void setCurNotebookIndex(int index);
-    // Create a notebook
-    void onNewNotebookBtnClicked();
-    void onDeleteNotebookBtnClicked();
-    void onNotebookInfoBtnClicked();
-    void updateNotebookComboBox(const QVector<VNotebook *> &p_notebooks);
-    void notebookComboBoxAdded(const VNotebook *p_notebook, int p_idx);
-    void notebookComboBoxDeleted(int p_oriIdx);
-    void notebookComboBoxRenamed(const VNotebook *p_notebook, int p_idx);
     void importNoteFromFile();
     void changeMarkdownConverter(QAction *action);
     void aboutMessage();
@@ -55,9 +47,7 @@ private slots:
     void curEditFileInfo();
     void deleteCurNote();
     void handleCurrentDirectoryChanged(const VDirectory *p_dir);
-
-signals:
-    void curNotebookChanged(VNotebook *p_notebook);
+    void handleCurrentNotebookChanged(const VNotebook *p_notebook);
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -69,7 +59,6 @@ private:
     void initToolBar();
     void initMenuBar();
     void initDockWindows();
-    bool isConflictWithExistingNotebooks(const QString &name);
     void initPredefinedColorPixmaps();
     void initRenderBackgroundMenu(QMenu *menu);
     void initEditorBackgroundMenu(QMenu *menu);
@@ -79,14 +68,12 @@ private:
     void saveStateAndGeometry();
     void restoreStateAndGeometry();
 
-    // If true, comboBox changes will not trigger any signal out
-    bool notebookComboMuted;
     VNote *vnote;
     QPointer<VFile> m_curFile;
 
     QLabel *notebookLabel;
     QLabel *directoryLabel;
-    QComboBox *notebookComboBox;
+    VNotebookSelector *notebookSelector;
     QPushButton *newNotebookBtn;
     QPushButton *deleteNotebookBtn;
     QPushButton *notebookInfoBtn;

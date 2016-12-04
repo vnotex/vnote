@@ -23,12 +23,13 @@ public:
     int findTabByFile(const VFile *p_file) const;
     int openFile(VFile *p_file, OpenFileMode p_mode);
     bool closeFile(const VFile *p_file, bool p_forced);
+    bool closeFile(const VDirectory *p_dir, bool p_forced);
+    bool closeFile(const VNotebook *p_notebook, bool p_forced);
     void editFile();
     void saveFile();
     void readFile();
     void saveAndReadFile();
     bool closeAllFiles(bool p_forced);
-    void setRemoveSplitEnable(bool enabled);
     void requestUpdateTabStatus();
     void requestUpdateOutline();
     void requestUpdateCurHeader();
@@ -37,6 +38,7 @@ public:
     void scrollCurTab(const VAnchor &p_anchor);
     void updateFileInfo(const VFile *p_file);
     void updateDirectoryInfo(const VDirectory *p_dir);
+    void updateNotebookInfo(const VNotebook *p_notebook);
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
@@ -61,6 +63,7 @@ private slots:
     void handleCurHeaderChanged(const VAnchor &p_anchor);
     void handleTabStatusChanged();
     void updateTabListMenu();
+    void updateSplitMenu();
 
 private:
     void setupCornerWidget();
@@ -73,6 +76,7 @@ private:
     void noticeStatus(int index);
     inline QString generateTooltip(const VFile *p_file) const;
     inline QString generateTabText(const QString &p_name, bool p_modified) const;
+    bool canRemoveSplit();
 
     VNote *vnote;
     // Button in the right corner

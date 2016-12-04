@@ -9,12 +9,14 @@
 #include "vnotebook.h"
 
 class VNote;
+class VEditArea;
 
 class VDirectoryTree : public QTreeWidget
 {
     Q_OBJECT
 public:
     explicit VDirectoryTree(VNote *vnote, QWidget *parent = 0);
+    inline void setEditArea(VEditArea *p_editArea);
 
 signals:
     void currentDirectoryChanged(VDirectory *p_directory);
@@ -59,6 +61,7 @@ private:
     VNote *vnote;
     QPointer<VNotebook> m_notebook;
     QVector<QPointer<VDirectory> > m_copiedDirs;
+    VEditArea *m_editArea;
 
     // Actions
     QAction *newRootDirAct;
@@ -75,6 +78,11 @@ inline QPointer<VDirectory> VDirectoryTree::getVDirectory(QTreeWidgetItem *p_ite
 {
     Q_ASSERT(p_item);
     return p_item->data(0, Qt::UserRole).value<VDirectory *>();
+}
+
+inline void VDirectoryTree::setEditArea(VEditArea *p_editArea)
+{
+    m_editArea = p_editArea;
 }
 
 #endif // VDIRECTORYTREE_H

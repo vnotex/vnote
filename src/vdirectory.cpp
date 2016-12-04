@@ -97,7 +97,7 @@ QString VDirectory::retriveRelativePath(const VDirectory *p_dir) const
     }
 }
 
-QJsonObject VDirectory::createDirectoryJson() const
+QJsonObject VDirectory::createDirectoryJson()
 {
     QJsonObject dirJson;
     dirJson["version"] = "1";

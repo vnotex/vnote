@@ -22,7 +22,8 @@ VEditTab::VEditTab(VFile *p_file, OpenFileMode p_mode, QWidget *p_parent)
     : QStackedWidget(p_parent), m_file(p_file), isEditMode(false),
       mdConverterType(vconfig.getMdConverterType())
 {
-    qDebug() << "ready to open" << p_file->getName();
+    tableOfContent.filePath = p_file->retrivePath();
+    curHeader.filePath = p_file->retrivePath();
     Q_ASSERT(!m_file->isOpened());
     m_file->open();
     setupUI();
