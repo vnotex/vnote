@@ -36,18 +36,16 @@ QDockWidget::close-button:hover, QDockWidget::float-button:hover {
     background-color: @hover-color;
 }
 
-/* QComboBox */
-QComboBox[OnMainWindow="true"] {
+/* QComboBox#NotebookSelector */
+QComboBox#NotebookSelector {
     border: 1px solid grey;
     background-color: @base-background;
-}
-
-QComboBox[OnMainWindow="true"]:on { /* shift the text when the popup opens */
+    font-size: 14px;
     padding-top: 3px;
-    padding-left: 4px;
+    padding-bottom: 3px;
 }
 
-QComboBox[OnMainWindow="true"]::drop-down {
+QComboBox#NotebookSelector::drop-down {
     subcontrol-origin: padding;
     subcontrol-position: top right;
     width: 20px;
@@ -55,24 +53,23 @@ QComboBox[OnMainWindow="true"]::drop-down {
     background: transparent;
 }
 
-QComboBox[OnMainWindow="true"]::down-arrow {
+QComboBox#NotebookSelector::down-arrow {
     image: url(:/resources/icons/arrow_dropdown.svg);
     width: 20px;
 }
 
-QComboBox[OnMainWindow="true"]::down-arrow:on { /* shift the arrow when popup is open */
-    top: 1px;
-    left: 1px;
+QComboBox#NotebookSelector QListWidget {
+    border: 1px solid grey;
+    background-color: @base-background;
+    font-size: 14px;
 }
 
-QComboBox[OnMainWindow="true"]::item {
-    padding-left: 20px;
-    border: none;
-    height: 20px;
+QComboBox#NotebookSelector QListWidget::item {
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
 
-QComboBox[OnMainWindow="true"]::item:selected {
-    padding-left: 20px;
-    border: none;
+QComboBox#NotebookSelector QListWidget::item:hover {
     background-color: @hover-color;
 }
+/* End QComboBox#NotebookSelector */

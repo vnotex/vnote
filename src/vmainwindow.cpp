@@ -80,30 +80,14 @@ QWidget *VMainWindow::setupDirectoryPanel()
     notebookLabel = new QLabel(tr("Notebook"));
     directoryLabel = new QLabel(tr("Directory"));
 
-    newNotebookBtn = new QPushButton(QIcon(":/resources/icons/create_notebook.svg"), "");
-    newNotebookBtn->setToolTip(tr("Create a new notebook"));
-    newNotebookBtn->setProperty("OnMainWindow", true);
-    deleteNotebookBtn = new QPushButton(QIcon(":/resources/icons/delete_notebook.svg"), "");
-    deleteNotebookBtn->setToolTip(tr("Delete current notebook"));
-    deleteNotebookBtn->setProperty("OnMainWindow", true);
-    notebookInfoBtn = new QPushButton(QIcon(":/resources/icons/notebook_info.svg"), "");
-    notebookInfoBtn->setToolTip(tr("View and edit current notebook's information"));
-    notebookInfoBtn->setProperty("OnMainWindow", true);
-
     notebookSelector = new VNotebookSelector(vnote);
-    notebookSelector->setProperty("OnMainWindow", true);
-    notebookSelector->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    notebookSelector->setObjectName("NotebookSelector");
+    notebookSelector->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+
     directoryTree = new VDirectoryTree(vnote);
 
-    QHBoxLayout *nbBtnLayout = new QHBoxLayout;
-    nbBtnLayout->addWidget(notebookLabel);
-    nbBtnLayout->addStretch();
-    nbBtnLayout->addWidget(newNotebookBtn);
-    nbBtnLayout->addWidget(deleteNotebookBtn);
-    nbBtnLayout->addWidget(notebookInfoBtn);
-    nbBtnLayout->setContentsMargins(0, 0, 0, 0);
     QVBoxLayout *nbLayout = new QVBoxLayout;
-    nbLayout->addLayout(nbBtnLayout);
+    nbLayout->addWidget(notebookLabel);
     nbLayout->addWidget(notebookSelector);
     nbLayout->addWidget(directoryLabel);
     nbLayout->addWidget(directoryTree);
@@ -116,13 +100,6 @@ QWidget *VMainWindow::setupDirectoryPanel()
             directoryTree, &VDirectoryTree::setNotebook);
     connect(notebookSelector, &VNotebookSelector::curNotebookChanged,
             this, &VMainWindow::handleCurrentNotebookChanged);
-
-    connect(newNotebookBtn, &QPushButton::clicked,
-            notebookSelector, &VNotebookSelector::newNotebook);
-    connect(deleteNotebookBtn, SIGNAL(clicked(bool)),
-            notebookSelector, SLOT(deleteNotebook()));
-    connect(notebookInfoBtn, SIGNAL(clicked(bool)),
-            notebookSelector, SLOT(editNotebookInfo()));
 
     connect(directoryTree, &VDirectoryTree::currentDirectoryChanged,
             this, &VMainWindow::handleCurrentDirectoryChanged);

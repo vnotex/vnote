@@ -74,9 +74,6 @@ private:
     QLabel *notebookLabel;
     QLabel *directoryLabel;
     VNotebookSelector *notebookSelector;
-    QPushButton *newNotebookBtn;
-    QPushButton *deleteNotebookBtn;
-    QPushButton *notebookInfoBtn;
     VFileList *fileList;
     VDirectoryTree *directoryTree;
     QSplitter *mainSplitter;
