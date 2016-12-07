@@ -46,7 +46,7 @@ void VEditWindow::setupCornerWidget()
 
     rightBtn = new QPushButton(QIcon(":/resources/icons/corner_menu.svg"),
                                "", this);
-    rightBtn->setProperty("FlatBtn", true);
+    rightBtn->setProperty("CornerBtn", true);
     QMenu *rightMenu = new QMenu(this);
     rightMenu->addAction(splitAct);
     rightMenu->addAction(removeSplitAct);
@@ -61,7 +61,7 @@ void VEditWindow::setupCornerWidget()
             this, &VEditWindow::tabListJump);
     leftBtn = new QPushButton(QIcon(":/resources/icons/corner_tablist.svg"),
                               "", this);
-    leftBtn->setProperty("FlatBtn", true);
+    leftBtn->setProperty("CornerBtn", true);
     QMenu *leftMenu = new QMenu(this);
     leftBtn->setMenu(leftMenu);
     setCornerWidget(leftBtn, Qt::TopLeftCorner);
@@ -534,7 +534,7 @@ bool VEditWindow::eventFilter(QObject *watched, QEvent *event)
 bool VEditWindow::scrollerVisible() const
 {
     QTabBar *bar = tabBar();
-    int barWidth = bar->width();
+    int barWidth = rect().width() - leftBtn->width() - rightBtn->width();
     int nrTab = count();
     int tabsWidth = 0;
     for (int i = 0; i < nrTab; ++i) {

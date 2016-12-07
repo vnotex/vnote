@@ -30,6 +30,20 @@ void VNote::initPalette(QPalette palette)
     m_palette.append(QPair<QString, QString>("base-foreground",
                                              palette.background().color().name()));
     m_palette.append(QPair<QString, QString>("hover-color", "#42A5F5"));
+    m_palette.append(QPair<QString, QString>("base-color", "#81C784"));
+
+    // Material Design Colors
+    m_palette.append(QPair<QString, QString>("teal0", "#E0F2F1"));
+    m_palette.append(QPair<QString, QString>("teal1", "#B2DFDB"));
+    m_palette.append(QPair<QString, QString>("teal2", "#80CBC4"));
+    m_palette.append(QPair<QString, QString>("teal3", "#4DB6AC"));
+    m_palette.append(QPair<QString, QString>("teal4", "#26A69A"));
+
+    m_palette.append(QPair<QString, QString>("Indigo0", "#E8EAF6"));
+    m_palette.append(QPair<QString, QString>("Indigo1", "#C5CAE9"));
+    m_palette.append(QPair<QString, QString>("Indigo2", "#9FA8DA"));
+    m_palette.append(QPair<QString, QString>("Indigo3", "#7986CB"));
+    m_palette.append(QPair<QString, QString>("Indigo4", "#5C6BC0"));
 }
 
 void VNote::initTemplate()

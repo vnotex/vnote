@@ -78,7 +78,9 @@ void VMainWindow::setupUI()
 QWidget *VMainWindow::setupDirectoryPanel()
 {
     notebookLabel = new QLabel(tr("Notebook"));
+    notebookLabel->setProperty("TitleLabel", true);
     directoryLabel = new QLabel(tr("Directory"));
+    directoryLabel->setProperty("TitleLabel", true);
 
     notebookSelector = new VNotebookSelector(vnote);
     notebookSelector->setObjectName("NotebookSelector");
@@ -91,7 +93,8 @@ QWidget *VMainWindow::setupDirectoryPanel()
     nbLayout->addWidget(notebookSelector);
     nbLayout->addWidget(directoryLabel);
     nbLayout->addWidget(directoryTree);
-    nbLayout->setContentsMargins(5, 0, 0, 0);
+    nbLayout->setContentsMargins(2, 0, 0, 0);
+    nbLayout->setSpacing(0);
     QWidget *nbContainer = new QWidget();
     nbContainer->setLayout(nbLayout);
     nbContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);

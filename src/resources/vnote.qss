@@ -1,14 +1,15 @@
-QPushButton[FlatBtn="true"] {
-    padding: 3px;
+QPushButton[CornerBtn="true"] {
+    padding: 0px;
+    margin: 0px;
     border: none;
     background-color: transparent;
 }
 
-QPushButton[FlatBtn="true"]::menu-indicator {
+QPushButton[CornerBtn="true"]::menu-indicator {
     image: none;
 }
 
-QPushButton[FlatBtn="true"]::hover {
+QPushButton[CornerBtn="true"]::hover {
     background-color: @hover-color;
 }
 
@@ -28,6 +29,11 @@ QMenuBar::item:selected {
     background-color: @hover-color;
 }
 
+/* DockWidget */
+QDockWidget::Title {
+    background: @base-color;
+}
+
 QDockWidget::close-button, QDockWidget::float-button {
     border: none;
 }
@@ -35,10 +41,11 @@ QDockWidget::close-button, QDockWidget::float-button {
 QDockWidget::close-button:hover, QDockWidget::float-button:hover {
     background-color: @hover-color;
 }
+/* End DockWidget */
 
 /* QComboBox#NotebookSelector */
 QComboBox#NotebookSelector {
-    border: 1px solid grey;
+    border: none;
     background-color: @base-background;
     font-size: 14px;
     padding-top: 3px;
@@ -74,12 +81,59 @@ QComboBox#NotebookSelector QListWidget::item:hover {
 }
 /* End QComboBox#NotebookSelector */
 
+QTreeWidget {
+    padding-top: 3px;
+    border: none;
+}
+
 QTreeWidget::item {
     padding-top: 3px;
     padding-bottom: 3px;
+}
+
+QListWidget {
+    border: none;
 }
 
 QListWidget::item {
     padding-top: 3px;
     padding-bottom: 3px;
 }
+
+QListWidget#FileList {
+    border-top: 2px solid @base-color;
+}
+
+QSplitter {
+    border: none;
+}
+
+QSplitter::handle {
+    background-color: @base-color;
+}
+
+QSplitter::handle:vertical {
+    height: 2px;
+}
+
+/* QMainWindow */
+QMainWindow::separator {
+    background-color: @base-color;
+    height: 2px;
+}
+/* End QMainWindow */
+
+QTabWidget {
+    border: none;
+}
+
+QLabel[TitleLabel="true"] {
+    padding-top: 3px;
+    padding-bottom: 3px;
+    background-color: @base-color;
+}
+
+QToolBox::tab {
+    background-color: @Indigo2;
+}
+

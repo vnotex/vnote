@@ -22,6 +22,7 @@ void VEditArea::setupUI()
     QHBoxLayout *mainLayout = new QHBoxLayout();
     mainLayout->addWidget(splitter);
     mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
 
     setLayout(mainLayout);
 }
