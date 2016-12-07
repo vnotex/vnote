@@ -70,5 +70,6 @@
         <file>resources/icons/dir_item.svg</file>
         <file>resources/icons/notebook_item.svg</file>
         <file>resources/icons/arrow_dropdown.svg</file>
+        <file>resources/icons/current_tab.svg</file>
     </qresource>
 </RCC>

@@ -44,7 +44,7 @@ void VEditWindow::setupCornerWidget()
 
     rightBtn = new QPushButton(QIcon(":/resources/icons/corner_menu.svg"),
                                "", this);
-    rightBtn->setProperty("OnMainWindow", true);
+    rightBtn->setProperty("FlatBtn", true);
     QMenu *rightMenu = new QMenu(this);
     rightMenu->addAction(splitAct);
     rightMenu->addAction(removeSplitAct);
@@ -59,7 +59,7 @@ void VEditWindow::setupCornerWidget()
             this, &VEditWindow::tabListJump);
     leftBtn = new QPushButton(QIcon(":/resources/icons/corner_tablist.svg"),
                               "", this);
-    leftBtn->setProperty("OnMainWindow", true);
+    leftBtn->setProperty("FlatBtn", true);
     QMenu *leftMenu = new QMenu(this);
     leftBtn->setMenu(leftMenu);
     setCornerWidget(leftBtn, Qt::TopLeftCorner);
@@ -384,14 +384,18 @@ void VEditWindow::updateTabListMenu()
         delete tmpAct;
     }
 
+    int curTab = currentIndex();
     QTabBar *tabbar = tabBar();
     int nrTab = tabbar->count();
     for (int i = 0; i < nrTab; ++i) {
         VEditTab *editor = getTab(i);
         QPointer<VFile> file = editor->getFile();
-        QAction *action = new QAction(file->getName(), tabListAct);
+        QAction *action = new QAction(tabbar->tabText(i), tabListAct);
         action->setStatusTip(generateTooltip(file));
         action->setData(QVariant::fromValue(file));
+        if (i == curTab) {
+            action->setIcon(QIcon(":/resources/icons/current_tab.svg"));
+        }
         menu->addAction(action);
     }
 }
