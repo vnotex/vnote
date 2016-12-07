@@ -18,6 +18,8 @@ VEditWindow::VEditWindow(VNote *vnote, QWidget *parent)
     setMovable(true);
     setContextMenuPolicy(Qt::CustomContextMenu);
 
+    tabBar()->installEventFilter(this);
+
     connect(this, &VEditWindow::tabCloseRequested,
             this, &VEditWindow::handleTabCloseRequest);
     connect(this, &VEditWindow::tabBarClicked,
@@ -518,5 +520,35 @@ void VEditWindow::updateNotebookInfo(const VNotebook *p_notebook)
         if (p_notebook->containsFile(file)) {
             noticeStatus(i);
         }
+    }
+}
+
+bool VEditWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    if (event->type() == QEvent::Resize) {
+        setLeftCornerWidgetVisible(scrollerVisible());
+    }
+    return QTabWidget::eventFilter(watched, event);
+}
+
+bool VEditWindow::scrollerVisible() const
+{
+    QTabBar *bar = tabBar();
+    int barWidth = bar->width();
+    int nrTab = count();
+    int tabsWidth = 0;
+    for (int i = 0; i < nrTab; ++i) {
+        tabsWidth += bar->tabRect(i).width();
+    }
+    return tabsWidth > barWidth;
+}
+
+void VEditWindow::setLeftCornerWidgetVisible(bool p_visible)
+{
+    if (p_visible) {
+        setCornerWidget(leftBtn, Qt::TopLeftCorner);
+        leftBtn->setVisible(true);
+    } else {
+        setCornerWidget(NULL, Qt::TopLeftCorner);
     }
 }
