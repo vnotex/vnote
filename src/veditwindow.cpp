@@ -396,7 +396,9 @@ void VEditWindow::updateTabListMenu()
         action->setStatusTip(generateTooltip(file));
         action->setData(QVariant::fromValue(file));
         if (i == curTab) {
-            action->setIcon(QIcon(":/resources/icons/current_tab.svg"));
+            QFont font;
+            font.setBold(true);
+            action->setFont(font);
         }
         menu->addAction(action);
     }
