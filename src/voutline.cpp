@@ -55,6 +55,7 @@ void VOutline::updateTreeByLevel(const QVector<VHeader> &headers, int &index,
             itemJson["line_number"] = header.lineNumber;
             item->setData(0, Qt::UserRole, itemJson);
             item->setText(0, header.name);
+            item->setToolTip(0, header.name);
 
             last = item;
             ++index;
