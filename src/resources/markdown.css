@@ -72,10 +72,8 @@ pre {
 code {
     font-family: Consolas, Monaco, Andale Mono, monospace;
     line-height: 1.5;
-    font-size: 13px;
-    border: 1px solid #cccccc;
-    background-color: AntiqueWhite;
-    border-radius: 3px;
+    font-size: 14px;
+    color: #4527A0;
 }
 pre code {
    margin: 0;
@@ -84,6 +82,7 @@ pre code {
    background: transparent;
    white-space: pre-wrap;
    overflow: auto;
+   color: #444444;
 }
 aside {
     display: block;
