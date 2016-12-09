@@ -45,6 +45,7 @@ void VMainWindow::setupUI()
 
     // Main Splitter
     mainSplitter = new QSplitter();
+    mainSplitter->setObjectName("MainSplitter");
     mainSplitter->addWidget(directoryPanel);
     mainSplitter->addWidget(fileList);
     mainSplitter->addWidget(editArea);
@@ -79,23 +80,28 @@ QWidget *VMainWindow::setupDirectoryPanel()
 {
     notebookLabel = new QLabel(tr("Notebook"));
     notebookLabel->setProperty("TitleLabel", true);
+    notebookLabel->setProperty("NotebookPanel", true);
     directoryLabel = new QLabel(tr("Directory"));
     directoryLabel->setProperty("TitleLabel", true);
+    directoryLabel->setProperty("NotebookPanel", true);
 
     notebookSelector = new VNotebookSelector(vnote);
     notebookSelector->setObjectName("NotebookSelector");
+    notebookSelector->setProperty("NotebookPanel", true);
     notebookSelector->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
 
     directoryTree = new VDirectoryTree(vnote);
+    directoryTree->setProperty("NotebookPanel", true);
 
     QVBoxLayout *nbLayout = new QVBoxLayout;
     nbLayout->addWidget(notebookLabel);
     nbLayout->addWidget(notebookSelector);
     nbLayout->addWidget(directoryLabel);
     nbLayout->addWidget(directoryTree);
-    nbLayout->setContentsMargins(2, 0, 0, 0);
+    nbLayout->setContentsMargins(0, 0, 0, 0);
     nbLayout->setSpacing(0);
     QWidget *nbContainer = new QWidget();
+    nbContainer->setObjectName("NotebookPanel");
     nbContainer->setLayout(nbLayout);
     nbContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
@@ -241,15 +247,18 @@ void VMainWindow::initActions()
 void VMainWindow::initToolBar()
 {
     QToolBar *fileToolBar = addToolBar(tr("Note"));
-    fileToolBar->setObjectName("note");
+    fileToolBar->setObjectName("NoteToolBar");
+    fileToolBar->setMovable(false);
     fileToolBar->addAction(newRootDirAct);
     fileToolBar->addAction(newNoteAct);
     fileToolBar->addAction(noteInfoAct);
     fileToolBar->addAction(deleteNoteAct);
+    fileToolBar->addSeparator();
     fileToolBar->addAction(editNoteAct);
     fileToolBar->addAction(saveExitAct);
     fileToolBar->addAction(discardExitAct);
     fileToolBar->addAction(saveNoteAct);
+    fileToolBar->addSeparator();
 
     newRootDirAct->setEnabled(false);
     newNoteAct->setEnabled(false);
@@ -261,7 +270,8 @@ void VMainWindow::initToolBar()
     saveNoteAct->setVisible(false);
 
     QToolBar *viewToolBar = addToolBar(tr("View"));
-    viewToolBar->setObjectName("view");
+    viewToolBar->setObjectName("ViewToolBar");
+    viewToolBar->setMovable(false);
     viewToolBar->addAction(twoPanelViewAct);
     viewToolBar->addAction(onePanelViewAct);
     viewToolBar->addAction(expandViewAct);

@@ -100,10 +100,6 @@ QListWidget::item {
     padding-bottom: 3px;
 }
 
-QListWidget#FileList {
-    border-top: 2px solid @base-color;
-}
-
 QSplitter {
     border: none;
 }
@@ -113,13 +109,17 @@ QSplitter::handle {
 }
 
 QSplitter::handle:vertical {
-    height: 2px;
+    height: 1px;
+}
+
+QSplitter#MainSplitter {
+    border-top: 2px solid @base-color;
 }
 
 /* QMainWindow */
 QMainWindow::separator {
     background-color: @base-color;
-    height: 2px;
+    height: 1px;
 }
 /* End QMainWindow */
 
@@ -137,3 +137,6 @@ QToolBox::tab {
     background-color: @Indigo2;
 }
 
+QWidget[NotebookPanel="true"] {
+    padding-left: 3px;
+}
