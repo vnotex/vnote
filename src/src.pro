@@ -46,7 +46,8 @@ SOURCES += main.cpp\
     vdirectory.cpp \
     vfile.cpp \
     vnotebookselector.cpp \
-    vnofocusitemdelegate.cpp
+    vnofocusitemdelegate.cpp \
+    vavatar.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -81,7 +82,8 @@ HEADERS  += vmainwindow.h \
     vdirectory.h \
     vfile.h \
     vnotebookselector.h \
-    vnofocusitemdelegate.h
+    vnofocusitemdelegate.h \
+    vavatar.h
 
 RESOURCES += \
     vnote.qrc

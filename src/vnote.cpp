@@ -46,6 +46,16 @@ void VNote::initPalette(QPalette palette)
     m_palette.append(QPair<QString, QString>("Indigo4", "#5C6BC0"));
 }
 
+QString VNote::getColorFromPalette(const QString &p_name) const
+{
+    for (int i = 0; i < m_palette.size(); ++i) {
+        if (m_palette[i].first == p_name) {
+            return m_palette[i].second;
+        }
+    }
+    return "White";
+}
+
 void VNote::initTemplate()
 {
     if (templateHtml.isEmpty() || preTemplateHtml.isEmpty()

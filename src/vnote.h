@@ -30,8 +30,9 @@ public:
     static QString preTemplateHtml;
     static QString postTemplateHtml;
 
-    inline const QVector<QPair<QString, QString> > &getPallete() const;
+    inline const QVector<QPair<QString, QString> > &getPalette() const;
     void initPalette(QPalette palette);
+    QString getColorFromPalette(const QString &p_name) const;
 
 public slots:
     void updateTemplate();
@@ -42,7 +43,7 @@ private:
     QVector<QPair<QString, QString> > m_palette;
 };
 
-inline const QVector<QPair<QString, QString> >& VNote::getPallete() const
+inline const QVector<QPair<QString, QString> >& VNote::getPalette() const
 {
     return m_palette;
 }

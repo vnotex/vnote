@@ -25,6 +25,7 @@ class VEditArea;
 class QToolBox;
 class VOutline;
 class VNotebookSelector;
+class VAvatar;
 
 class VMainWindow : public QMainWindow
 {
@@ -51,6 +52,7 @@ private slots:
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
+    void resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
 
 private:
     void setupUI();
@@ -59,6 +61,7 @@ private:
     void initToolBar();
     void initMenuBar();
     void initDockWindows();
+    void initAvatar();
     void initPredefinedColorPixmaps();
     void initRenderBackgroundMenu(QMenu *menu);
     void initEditorBackgroundMenu(QMenu *menu);
@@ -67,6 +70,7 @@ private:
     void updateToolbarFromTabChage(const VFile *p_file, bool p_editMode);
     void saveStateAndGeometry();
     void restoreStateAndGeometry();
+    void repositionAvatar();
 
     VNote *vnote;
     QPointer<VFile> m_curFile;
@@ -81,6 +85,9 @@ private:
     QDockWidget *toolDock;
     QToolBox *toolBox;
     VOutline *outline;
+    VAvatar *m_avatar;
+    QToolBar *m_fileToolBar;
+    QToolBar *m_viewToolBar;
 
     // Actions
     QAction *newRootDirAct;

@@ -140,3 +140,4 @@ QToolBox::tab {
 QWidget[NotebookPanel="true"] {
     padding-left: 3px;
 }
+

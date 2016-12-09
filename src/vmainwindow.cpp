@@ -9,6 +9,7 @@
 #include "veditarea.h"
 #include "voutline.h"
 #include "vnotebookselector.h"
+#include "vavatar.h"
 
 extern VConfigManager vconfig;
 
@@ -25,6 +26,7 @@ VMainWindow::VMainWindow(QWidget *parent)
     initToolBar();
     initMenuBar();
     initDockWindows();
+    initAvatar();
     restoreStateAndGeometry();
 
     notebookSelector->update();
@@ -246,19 +248,19 @@ void VMainWindow::initActions()
 
 void VMainWindow::initToolBar()
 {
-    QToolBar *fileToolBar = addToolBar(tr("Note"));
-    fileToolBar->setObjectName("NoteToolBar");
-    fileToolBar->setMovable(false);
-    fileToolBar->addAction(newRootDirAct);
-    fileToolBar->addAction(newNoteAct);
-    fileToolBar->addAction(noteInfoAct);
-    fileToolBar->addAction(deleteNoteAct);
-    fileToolBar->addSeparator();
-    fileToolBar->addAction(editNoteAct);
-    fileToolBar->addAction(saveExitAct);
-    fileToolBar->addAction(discardExitAct);
-    fileToolBar->addAction(saveNoteAct);
-    fileToolBar->addSeparator();
+    m_fileToolBar = addToolBar(tr("Note"));
+    m_fileToolBar->setObjectName("NoteToolBar");
+    m_fileToolBar->setMovable(false);
+    m_fileToolBar->addAction(newRootDirAct);
+    m_fileToolBar->addAction(newNoteAct);
+    m_fileToolBar->addAction(noteInfoAct);
+    m_fileToolBar->addAction(deleteNoteAct);
+    m_fileToolBar->addSeparator();
+    m_fileToolBar->addAction(editNoteAct);
+    m_fileToolBar->addAction(saveExitAct);
+    m_fileToolBar->addAction(discardExitAct);
+    m_fileToolBar->addAction(saveNoteAct);
+    m_fileToolBar->addSeparator();
 
     newRootDirAct->setEnabled(false);
     newNoteAct->setEnabled(false);
@@ -269,12 +271,12 @@ void VMainWindow::initToolBar()
     discardExitAct->setVisible(false);
     saveNoteAct->setVisible(false);
 
-    QToolBar *viewToolBar = addToolBar(tr("View"));
-    viewToolBar->setObjectName("ViewToolBar");
-    viewToolBar->setMovable(false);
-    viewToolBar->addAction(twoPanelViewAct);
-    viewToolBar->addAction(onePanelViewAct);
-    viewToolBar->addAction(expandViewAct);
+    m_viewToolBar = addToolBar(tr("View"));
+    m_viewToolBar->setObjectName("ViewToolBar");
+    m_viewToolBar->setMovable(false);
+    m_viewToolBar->addAction(twoPanelViewAct);
+    m_viewToolBar->addAction(onePanelViewAct);
+    m_viewToolBar->addAction(expandViewAct);
 }
 
 void VMainWindow::initMenuBar()
@@ -350,6 +352,15 @@ void VMainWindow::initDockWindows()
     toolDock->setWidget(toolBox);
     addDockWidget(Qt::RightDockWidgetArea, toolDock);
     viewMenu->addAction(toolDock->toggleViewAction());
+}
+
+void VMainWindow::initAvatar()
+{
+    m_avatar = new VAvatar(this);
+    m_avatar->setAvatarPixmap(":/resources/icons/vnote.svg");
+    m_avatar->setColor(vnote->getColorFromPalette("base-color"), vnote->getColorFromPalette("Indigo4"),
+                       vnote->getColorFromPalette("teal4"));
+    m_avatar->hide();
 }
 
 void VMainWindow::importNoteFromFile()
@@ -633,7 +644,7 @@ void VMainWindow::restoreStateAndGeometry()
 
 const QVector<QPair<QString, QString> >& VMainWindow::getPalette() const
 {
-    return vnote->getPallete();
+    return vnote->getPalette();
 }
 
 void VMainWindow::handleCurrentDirectoryChanged(const VDirectory *p_dir)
@@ -644,4 +655,21 @@ void VMainWindow::handleCurrentDirectoryChanged(const VDirectory *p_dir)
 void VMainWindow::handleCurrentNotebookChanged(const VNotebook *p_notebook)
 {
     newRootDirAct->setEnabled(p_notebook);
+}
+
+void VMainWindow::resizeEvent(QResizeEvent *event)
+{
+    repositionAvatar();
+    QMainWindow::resizeEvent(event);
+}
+
+void VMainWindow::repositionAvatar()
+{
+    int diameter = mainSplitter->pos().y();
+    int x = width() - diameter - 5;
+    int y = 0;
+    qDebug() << "avatar:" << diameter << x << y;
+    m_avatar->setDiameter(diameter);
+    m_avatar->move(x, y);
+    m_avatar->show();
 }
