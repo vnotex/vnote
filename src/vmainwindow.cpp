@@ -27,6 +27,9 @@ VMainWindow::VMainWindow(QWidget *parent)
     initMenuBar();
     initDockWindows();
     initAvatar();
+
+    setContextMenuPolicy(Qt::NoContextMenu);
+
     restoreStateAndGeometry();
 
     notebookSelector->update();
