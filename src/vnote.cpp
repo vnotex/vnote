@@ -30,7 +30,7 @@ void VNote::initPalette(QPalette palette)
     m_palette.append(QPair<QString, QString>("base-foreground",
                                              palette.background().color().name()));
     m_palette.append(QPair<QString, QString>("hover-color", "#42A5F5"));
-    m_palette.append(QPair<QString, QString>("base-color", "#81C784"));
+    m_palette.append(QPair<QString, QString>("base-color", "#BDBDBD"));
 
     // Material Design Colors
     m_palette.append(QPair<QString, QString>("teal0", "#E0F2F1"));
@@ -44,6 +44,16 @@ void VNote::initPalette(QPalette palette)
     m_palette.append(QPair<QString, QString>("Indigo2", "#9FA8DA"));
     m_palette.append(QPair<QString, QString>("Indigo3", "#7986CB"));
     m_palette.append(QPair<QString, QString>("Indigo4", "#5C6BC0"));
+
+    m_palette.append(QPair<QString, QString>("Grey0", "#FAFAFA"));
+    m_palette.append(QPair<QString, QString>("Grey1", "#F5F5F5"));
+    m_palette.append(QPair<QString, QString>("Grey2", "#EEEEEE"));
+    m_palette.append(QPair<QString, QString>("Grey3", "#E0E0E0"));
+    m_palette.append(QPair<QString, QString>("Grey4", "#BDBDBD"));
+    m_palette.append(QPair<QString, QString>("Grey5", "#9E9E9E"));
+    m_palette.append(QPair<QString, QString>("Grey6", "#757575"));
+    m_palette.append(QPair<QString, QString>("Grey7", "#616161"));
+    m_palette.append(QPair<QString, QString>("Grey8", "#424242"));
 }
 
 QString VNote::getColorFromPalette(const QString &p_name) const

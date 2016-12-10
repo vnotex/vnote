@@ -47,9 +47,10 @@ QDockWidget::close-button:hover, QDockWidget::float-button:hover {
 QComboBox#NotebookSelector {
     border: none;
     background-color: @base-background;
-    font-size: 14px;
+    font-size: 20px;
     padding-top: 3px;
     padding-bottom: 3px;
+    icon-size: 30px;
 }
 
 QComboBox#NotebookSelector::drop-down {
@@ -68,7 +69,7 @@ QComboBox#NotebookSelector::down-arrow {
 QComboBox#NotebookSelector QListWidget {
     border: 1px solid grey;
     background-color: @base-background;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 QComboBox#NotebookSelector QListWidget::item {
@@ -109,7 +110,7 @@ QSplitter::handle {
 }
 
 QSplitter::handle:vertical {
-    height: 1px;
+    height: 2px;
 }
 
 QSplitter#MainSplitter {
@@ -119,7 +120,7 @@ QSplitter#MainSplitter {
 /* QMainWindow */
 QMainWindow::separator {
     background-color: @base-color;
-    height: 1px;
+    height: 2px;
 }
 /* End QMainWindow */
 
@@ -131,10 +132,6 @@ QLabel[TitleLabel="true"] {
     padding-top: 3px;
     padding-bottom: 3px;
     background-color: @base-color;
-}
-
-QToolBox::tab {
-    background-color: @Indigo2;
 }
 
 QWidget[NotebookPanel="true"] {
