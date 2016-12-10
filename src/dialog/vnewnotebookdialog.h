@@ -7,6 +7,7 @@ class QLabel;
 class QLineEdit;
 class QPushButton;
 class QString;
+class QCheckBox;
 
 class VNewNotebookDialog : public QDialog
 {
@@ -16,6 +17,7 @@ public:
                        const QString &defaultPath, QWidget *parent = 0);
     QString getNameInput() const;
     QString getPathInput() const;
+    bool getImportCheck() const;
 
 private slots:
     void enableOkButton();
@@ -28,6 +30,7 @@ private:
     QLabel *nameLabel;
     QLineEdit *nameEdit;
     QLineEdit *pathEdit;
+    QCheckBox *importCheck;
     QPushButton *browseBtn;
     QPushButton *okBtn;
     QPushButton *cancelBtn;

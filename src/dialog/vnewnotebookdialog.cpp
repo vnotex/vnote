@@ -41,6 +41,10 @@ void VNewNotebookDialog::setupUI()
     pathLayout->addWidget(pathEdit);
     pathLayout->addWidget(browseBtn);
 
+    importCheck = new QCheckBox(tr("Import existing notebook"), this);
+    importCheck->setChecked(true);
+    importCheck->setToolTip(tr("When checked, VNote won't create a new config file if there already exists one."));
+
     okBtn = new QPushButton(tr("&OK"));
     okBtn->setDefault(true);
     cancelBtn = new QPushButton(tr("&Cancel"));
@@ -55,6 +59,7 @@ void VNewNotebookDialog::setupUI()
     }
     mainLayout->addLayout(nameLayout);
     mainLayout->addLayout(pathLayout);
+    mainLayout->addWidget(importCheck);
     mainLayout->addLayout(btmLayout);
     setLayout(mainLayout);
 
@@ -81,4 +86,9 @@ void VNewNotebookDialog::handleBrowseBtnClicked()
     QString dirPath = QFileDialog::getExistingDirectory(this, tr("Select a directory as the path of the notebook"),
                                                         QDir::homePath(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
     pathEdit->setText(dirPath);
+}
+
+bool VNewNotebookDialog::getImportCheck() const
+{
+    return importCheck->isChecked();
 }

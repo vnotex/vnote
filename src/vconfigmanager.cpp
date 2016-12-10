@@ -159,6 +159,13 @@ QJsonObject VConfigManager::readDirectoryConfig(const QString &path)
     return QJsonDocument::fromJson(configData).object();
 }
 
+bool VConfigManager::directoryConfigExist(const QString &path)
+{
+     QString configFile = QDir(path).filePath(dirConfigFileName);
+     QFile config(configFile);
+     return config.exists();
+}
+
 bool VConfigManager::writeDirectoryConfig(const QString &path, const QJsonObject &configJson)
 {
     QString configFile = QDir(path).filePath(dirConfigFileName);

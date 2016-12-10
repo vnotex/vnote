@@ -36,6 +36,7 @@ public:
     // Read config from the directory config json file into a QJsonObject
     static QJsonObject readDirectoryConfig(const QString &path);
     static bool writeDirectoryConfig(const QString &path, const QJsonObject &configJson);
+    static bool directoryConfigExist(const QString &path);
     static bool deleteDirectoryConfig(const QString &path);
 
     // Constants

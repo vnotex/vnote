@@ -44,7 +44,8 @@ private:
     VNotebook *findNotebook(const QString &p_name);
     // Return the index of @p_notebook in m_noteboks.
     int indexOfNotebook(const VNotebook *p_notebook);
-    void createNotebook(const QString &p_name, const QString &p_path);
+    // if @p_import is true, we will use the existing config file.
+    void createNotebook(const QString &p_name, const QString &p_path, bool p_import);
     void deleteNotebook(VNotebook *p_notebook);
     void addNotebookItem(const QString &p_name);
     // @p_index is the index of m_notebooks, NOT of QComboBox.

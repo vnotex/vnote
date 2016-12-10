@@ -169,7 +169,7 @@ bool VNotebookSelector::newNotebook()
                 defaultPath = path;
                 continue;
             }
-            createNotebook(name, path);
+            createNotebook(name, path, dialog.getImportCheck());
             return true;
         }
         break;
@@ -187,9 +187,9 @@ VNotebook *VNotebookSelector::findNotebook(const QString &p_name)
     return NULL;
 }
 
-void VNotebookSelector::createNotebook(const QString &p_name, const QString &p_path)
+void VNotebookSelector::createNotebook(const QString &p_name, const QString &p_path, bool p_import)
 {
-    VNotebook *nb = VNotebook::createNotebook(p_name, p_path, m_vnote);
+    VNotebook *nb = VNotebook::createNotebook(p_name, p_path, p_import, m_vnote);
     m_notebooks.append(nb);
     vconfig.setNotebooks(m_notebooks);
 

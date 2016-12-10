@@ -38,10 +38,16 @@ bool VNotebook::open()
 }
 
 VNotebook *VNotebook::createNotebook(const QString &p_name, const QString &p_path,
-                                     QObject *p_parent)
+                                     bool p_import, QObject *p_parent)
 {
     VNotebook *nb = new VNotebook(p_name, p_path, p_parent);
     if (!nb) {
+        return nb;
+    }
+
+    // Check if there alread exists a config file.
+    if (p_import && VConfigManager::directoryConfigExist(p_path)) {
+        qDebug() << "import existing notebook";
         return nb;
     }
 
