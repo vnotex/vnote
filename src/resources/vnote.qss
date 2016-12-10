@@ -64,6 +64,7 @@ QComboBox#NotebookSelector::drop-down {
 QComboBox#NotebookSelector::down-arrow {
     image: url(:/resources/icons/arrow_dropdown.svg);
     width: 20px;
+    height: 20px;
 }
 
 QComboBox#NotebookSelector QListWidget {
@@ -88,8 +89,8 @@ QTreeWidget {
 }
 
 QTreeWidget::item {
-    padding-top: 3px;
-    padding-bottom: 3px;
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
 
 QListWidget {
@@ -97,8 +98,8 @@ QListWidget {
 }
 
 QListWidget::item {
-    padding-top: 3px;
-    padding-bottom: 3px;
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
 
 QSplitter {
