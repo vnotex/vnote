@@ -171,26 +171,7 @@ void VMainWindow::initActions()
     connect(saveNoteAct, &QAction::triggered,
             editArea, &VEditArea::saveFile);
 
-    viewAct = new QActionGroup(this);
-    twoPanelViewAct = new QAction(QIcon(":/resources/icons/two_panels.svg"),
-                                  tr("&Two Panels"), viewAct);
-    twoPanelViewAct->setStatusTip(tr("Display the directory and notes browser panel"));
-    twoPanelViewAct->setCheckable(true);
-    twoPanelViewAct->setData(2);
-    onePanelViewAct = new QAction(QIcon(":/resources/icons/one_panel.svg"),
-                                  tr("&Single panel"), viewAct);
-    onePanelViewAct->setStatusTip(tr("Display only the notes browser panel"));
-    onePanelViewAct->setCheckable(true);
-    onePanelViewAct->setData(1);
-    expandViewAct = new QAction(QIcon(":/resources/icons/expand.svg"),
-                                tr("&Expand"), viewAct);
-    expandViewAct->setStatusTip(tr("Expand the editing area"));
-    expandViewAct->setCheckable(true);
-    expandViewAct->setData(0);
-    connect(viewAct, &QActionGroup::triggered,
-            this, &VMainWindow::changePanelView);
-    // Must be called after setting up the signal to sync the state and settings
-    twoPanelViewAct->setChecked(true);
+    initViewActions();
 
     importNoteAct = new QAction(tr("&Import note from file"), this);
     importNoteAct->setStatusTip(tr("Import notes into current directory from files"));
@@ -249,6 +230,34 @@ void VMainWindow::initActions()
             this, &VMainWindow::setRenderBackgroundColor);
 }
 
+void VMainWindow::initViewActions()
+{
+    onePanelViewAct = new QAction(QIcon(":/resources/icons/one_panel.svg"),
+                                  tr("&Single Panel"), this);
+    onePanelViewAct->setStatusTip(tr("Display only the notes browser panel"));
+    connect(onePanelViewAct, &QAction::triggered,
+            this, &VMainWindow::onePanelView);
+
+    twoPanelViewAct = new QAction(QIcon(":/resources/icons/two_panels.svg"),
+                                  tr("&Two Panels"), this);
+    twoPanelViewAct->setStatusTip(tr("Display the directory and notes browser panel"));
+    connect(twoPanelViewAct, &QAction::triggered,
+            this, &VMainWindow::twoPanelView);
+
+    QMenu *panelMenu = new QMenu(this);
+    panelMenu->addAction(onePanelViewAct);
+    panelMenu->addAction(twoPanelViewAct);
+
+    expandViewAct = new QAction(QIcon(":/resources/icons/expand.svg"),
+                                tr("&Expand"), this);
+    expandViewAct->setStatusTip(tr("Expand the editing area"));
+    expandViewAct->setCheckable(true);
+    expandViewAct->setMenu(panelMenu);
+    connect(expandViewAct, &QAction::triggered,
+            this, &VMainWindow::expandPanelView);
+
+}
+
 void VMainWindow::initToolBar()
 {
     m_fileToolBar = addToolBar(tr("Note"));
@@ -277,8 +286,6 @@ void VMainWindow::initToolBar()
     m_viewToolBar = addToolBar(tr("View"));
     m_viewToolBar->setObjectName("ViewToolBar");
     m_viewToolBar->setMovable(false);
-    m_viewToolBar->addAction(twoPanelViewAct);
-    m_viewToolBar->addAction(onePanelViewAct);
     m_viewToolBar->addAction(expandViewAct);
 }
 
@@ -557,14 +564,27 @@ void VMainWindow::handleCurTabStatusChanged(const VFile *p_file, bool p_editMode
     m_curFile = const_cast<VFile *>(p_file);
 }
 
-void VMainWindow::changePanelView(QAction *action)
+void VMainWindow::onePanelView()
 {
-    if (!action) {
-        return;
-    }
-    int nrPanel = action->data().toInt();
+    changeSplitterView(1);
+    expandViewAct->setChecked(false);
+}
 
-    changeSplitterView(nrPanel);
+void VMainWindow::twoPanelView()
+{
+    changeSplitterView(2);
+    expandViewAct->setChecked(false);
+}
+
+void VMainWindow::expandPanelView(bool p_checked)
+{
+    int nrSplits = 0;
+    if (p_checked) {
+        nrSplits = 0;
+    } else {
+        nrSplits = 2;
+    }
+    changeSplitterView(nrSplits);
 }
 
 void VMainWindow::changeSplitterView(int nrPanel)

@@ -44,7 +44,9 @@ private slots:
     void setEditorBackgroundColor(QAction *action);
     void setRenderBackgroundColor(QAction *action);
     void handleCurTabStatusChanged(const VFile *p_file, bool p_editMode);
-    void changePanelView(QAction *action);
+    void onePanelView();
+    void twoPanelView();
+    void expandPanelView(bool p_checked);
     void curEditFileInfo();
     void deleteCurNote();
     void handleCurrentDirectoryChanged(const VDirectory *p_dir);
@@ -58,6 +60,7 @@ private:
     void setupUI();
     QWidget *setupDirectoryPanel();
     void initActions();
+    void initViewActions();
     void initToolBar();
     void initMenuBar();
     void initDockWindows();
@@ -98,7 +101,6 @@ private:
     QAction *saveNoteAct;
     QAction *saveExitAct;
     QAction *discardExitAct;
-    QActionGroup *viewAct;
     QAction *twoPanelViewAct;
     QAction *onePanelViewAct;
     QAction *expandViewAct;
