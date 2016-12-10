@@ -1,9 +1,11 @@
 <?xml version="1.0"?>
 <svg width="512" height="512" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
  <!-- Created with SVG-edit - http://svg-edit.googlecode.com/ -->
+ <title>vnote</title>
  <g>
   <title>Layer 1</title>
-  <rect stroke-opacity="0" id="svg_1" height="512" width="512" y="0" x="0" stroke-width="5" stroke="#000000" fill="#007f00"/>
-  <text stroke="#000000" transform="matrix(43.26813891090647,0,0,13.274300463995566,-6171.349170333156,-1955.6540426635258) " font-weight="bold" xml:space="preserve" text-anchor="middle" font-family="Sans-serif" font-size="24" id="svg_2" y="179.303718" x="148.329363" stroke-opacity="0" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="0" fill="#ffffff">V</text>
+  <rect stroke="#000000" ry="20" rx="20" stroke-opacity="0" id="svg_11" height="499.999992" width="484.999989" y="5.000008" x="13.000011" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="5" fill="#d6eace"/>
+  <text id="svg_2" font-style="normal" stroke="#81c784" transform="matrix(14.012826561688586,0,0,14.012826561688586,-1215.2407164192903,-2535.520818092498) " font-weight="bold" xml:space="preserve" text-anchor="middle" font-family="Monospace" font-size="24" y="212.207742" x="112.686643" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="0" fill="#96d0b6">V</text>
+  <text font-style="italic" stroke="#81c784" transform="matrix(22.702206131684456,0,0,22.702206131684456,-2571.2843278758924,-4616.601176816053) " font-weight="bold" xml:space="preserve" text-anchor="middle" font-family="Monospace" font-size="24" id="svg_1" y="222.744625" x="121.421504" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="0" fill="#15ae68">V</text>
  </g>
 </svg>

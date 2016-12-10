@@ -71,5 +71,6 @@
         <file>resources/icons/notebook_item.svg</file>
         <file>resources/icons/arrow_dropdown.svg</file>
         <file>resources/icons/current_tab.svg</file>
+        <file>resources/icons/vnote.png</file>
     </qresource>
 </RCC>
