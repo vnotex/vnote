@@ -60,6 +60,7 @@ private:
     void setupUI();
     QWidget *setupDirectoryPanel();
     void initActions();
+    void initEditActions();
     void initViewActions();
     void initToolBar();
     void initMenuBar();

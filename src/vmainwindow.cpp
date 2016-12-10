@@ -146,30 +146,7 @@ void VMainWindow::initActions()
     connect(deleteNoteAct, &QAction::triggered,
             this, &VMainWindow::deleteCurNote);
 
-    editNoteAct = new QAction(QIcon(":/resources/icons/edit_note.svg"),
-                              tr("&Edit"), this);
-    editNoteAct->setStatusTip(tr("Edit current note"));
-    connect(editNoteAct, &QAction::triggered,
-            editArea, &VEditArea::editFile);
-
-    discardExitAct = new QAction(QIcon(":/resources/icons/discard_exit.svg"),
-                                 tr("Discard changes and exit"), this);
-    discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
-    connect(discardExitAct, &QAction::triggered,
-            editArea, &VEditArea::readFile);
-
-    saveExitAct = new QAction(QIcon(":/resources/icons/save_exit.svg"),
-                              tr("Save changes and exit"), this);
-    saveExitAct->setStatusTip(tr("Save changes and exit edit mode"));
-    connect(saveExitAct, &QAction::triggered,
-            editArea, &VEditArea::saveAndReadFile);
-
-    saveNoteAct = new QAction(QIcon(":/resources/icons/save_note.svg"),
-                              tr("&Save"), this);
-    saveNoteAct->setStatusTip(tr("Save current note"));
-    saveNoteAct->setShortcut(QKeySequence::Save);
-    connect(saveNoteAct, &QAction::triggered,
-            editArea, &VEditArea::saveFile);
+    initEditActions();
 
     initViewActions();
 
@@ -230,6 +207,39 @@ void VMainWindow::initActions()
             this, &VMainWindow::setRenderBackgroundColor);
 }
 
+void VMainWindow::initEditActions()
+{
+    editNoteAct = new QAction(QIcon(":/resources/icons/edit_note.svg"),
+                              tr("&Edit"), this);
+    editNoteAct->setStatusTip(tr("Edit current note"));
+    connect(editNoteAct, &QAction::triggered,
+            editArea, &VEditArea::editFile);
+
+    discardExitAct = new QAction(QIcon(":/resources/icons/discard_exit.svg"),
+                                 tr("Discard changes and exit"), this);
+    discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
+    connect(discardExitAct, &QAction::triggered,
+            editArea, &VEditArea::readFile);
+
+    QMenu *exitEditMenu = new QMenu(this);
+    exitEditMenu->addAction(discardExitAct);
+
+    saveExitAct = new QAction(QIcon(":/resources/icons/save_exit.svg"),
+                              tr("Save changes and exit"), this);
+    saveExitAct->setStatusTip(tr("Save changes and exit edit mode"));
+    saveExitAct->setMenu(exitEditMenu);
+    connect(saveExitAct, &QAction::triggered,
+            editArea, &VEditArea::saveAndReadFile);
+
+    saveNoteAct = new QAction(QIcon(":/resources/icons/save_note.svg"),
+                              tr("&Save"), this);
+    saveNoteAct->setStatusTip(tr("Save current note"));
+    saveNoteAct->setShortcut(QKeySequence::Save);
+    connect(saveNoteAct, &QAction::triggered,
+            editArea, &VEditArea::saveFile);
+
+}
+
 void VMainWindow::initViewActions()
 {
     onePanelViewAct = new QAction(QIcon(":/resources/icons/one_panel.svg"),
@@ -270,7 +280,6 @@ void VMainWindow::initToolBar()
     m_fileToolBar->addSeparator();
     m_fileToolBar->addAction(editNoteAct);
     m_fileToolBar->addAction(saveExitAct);
-    m_fileToolBar->addAction(discardExitAct);
     m_fileToolBar->addAction(saveNoteAct);
     m_fileToolBar->addSeparator();
 
@@ -278,9 +287,8 @@ void VMainWindow::initToolBar()
     newNoteAct->setEnabled(false);
     noteInfoAct->setEnabled(false);
     deleteNoteAct->setEnabled(false);
-    editNoteAct->setEnabled(false);
+    editNoteAct->setVisible(false);
     saveExitAct->setVisible(false);
-    discardExitAct->setVisible(false);
     saveNoteAct->setVisible(false);
 
     m_viewToolBar = addToolBar(tr("View"));
@@ -523,21 +531,18 @@ void VMainWindow::setRenderBackgroundColor(QAction *action)
 void VMainWindow::updateToolbarFromTabChage(const VFile *p_file, bool p_editMode)
 {
     if (!p_file) {
-        editNoteAct->setEnabled(false);
+        editNoteAct->setVisible(false);
         saveExitAct->setVisible(false);
-        discardExitAct->setVisible(false);
         saveNoteAct->setVisible(false);
         deleteNoteAct->setEnabled(false);
     } else if (p_editMode) {
-        editNoteAct->setEnabled(false);
+        editNoteAct->setVisible(false);
         saveExitAct->setVisible(true);
-        discardExitAct->setVisible(true);
         saveNoteAct->setVisible(true);
         deleteNoteAct->setEnabled(true);
     } else {
-        editNoteAct->setEnabled(true);
+        editNoteAct->setVisible(true);
         saveExitAct->setVisible(false);
-        discardExitAct->setVisible(false);
         saveNoteAct->setVisible(false);
         deleteNoteAct->setEnabled(true);
     }
