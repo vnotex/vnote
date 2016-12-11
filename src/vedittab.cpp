@@ -1,5 +1,4 @@
 #include <QtWidgets>
-#include <QTextBrowser>
 #include <QWebChannel>
 #include <QWebEngineView>
 #include <QFileInfo>
@@ -15,12 +14,13 @@
 #include "vmarkdownconverter.h"
 #include "vnotebook.h"
 #include "vtoc.h"
+#include "vmdedit.h"
 
 extern VConfigManager vconfig;
 
 VEditTab::VEditTab(VFile *p_file, OpenFileMode p_mode, QWidget *p_parent)
     : QStackedWidget(p_parent), m_file(p_file), isEditMode(false),
-      mdConverterType(vconfig.getMdConverterType())
+      mdConverterType(vconfig.getMdConverterType()), m_fileModified(false)
 {
     tableOfContent.filePath = p_file->retrivePath();
     curHeader.filePath = p_file->retrivePath();
@@ -45,31 +45,46 @@ VEditTab::~VEditTab()
 
 void VEditTab::setupUI()
 {
-    textEditor = new VEdit(m_file);
-    connect(textEditor, &VEdit::headersChanged,
-            this, &VEditTab::updateTocFromHeaders);
-    connect(textEditor, SIGNAL(curHeaderChanged(int)),
-            this, SLOT(updateCurHeader(int)));
-    connect(textEditor, &VEdit::textChanged,
-            this, &VEditTab::statusChanged);
-    addWidget(textEditor);
-
     switch (m_file->getDocType()) {
     case DocType::Markdown:
+        m_textEditor = new VMdEdit(m_file, this);
+        connect(dynamic_cast<VMdEdit *>(m_textEditor), &VMdEdit::headersChanged,
+                this, &VEditTab::updateTocFromHeaders);
+        connect(m_textEditor, SIGNAL(curHeaderChanged(int)),
+                this, SLOT(updateCurHeader(int)));
+        connect(m_textEditor, &VEdit::textChanged,
+                this, &VEditTab::handleTextChanged);
+        addWidget(m_textEditor);
+
         setupMarkdownPreview();
-        textBrowser = NULL;
         break;
 
     case DocType::Html:
-        textBrowser = new QTextBrowser();
-        addWidget(textBrowser);
-        textBrowser->setFont(vconfig.getBaseEditFont());
-        textBrowser->setPalette(vconfig.getBaseEditPalette());
+        m_textEditor = new VEdit(m_file, this);
+        connect(m_textEditor, &VEdit::textChanged,
+                this, &VEditTab::handleTextChanged);
+        m_textEditor->reloadFile();
+        addWidget(m_textEditor);
         webPreviewer = NULL;
         break;
     default:
         qWarning() << "error: unknown doc type" << int(m_file->getDocType());
+        Q_ASSERT(false);
     }
+}
+
+void VEditTab::handleTextChanged()
+{
+    if (m_fileModified) {
+        return;
+    }
+    noticeStatusChanged();
+}
+
+void VEditTab::noticeStatusChanged()
+{
+    m_fileModified = m_file->isModified();
+    emit statusChanged();
 }
 
 void VEditTab::showFileReadMode()
@@ -78,10 +93,7 @@ void VEditTab::showFileReadMode()
     isEditMode = false;
     switch (m_file->getDocType()) {
     case DocType::Html:
-        textBrowser->setHtml(m_file->getContent());
-        textBrowser->setFont(vconfig.getBaseEditFont());
-        textBrowser->setPalette(vconfig.getBaseEditPalette());
-        setCurrentWidget(textBrowser);
+        m_textEditor->setReadOnly(true);
         break;
     case DocType::Markdown:
         if (mdConverterType == MarkdownConverterType::Marked) {
@@ -93,7 +105,9 @@ void VEditTab::showFileReadMode()
         break;
     default:
         qWarning() << "error: unknown doc type" << int(m_file->getDocType());
+        Q_ASSERT(false);
     }
+    noticeStatusChanged();
 }
 
 void VEditTab::previewByConverter()
@@ -112,17 +126,18 @@ void VEditTab::previewByConverter()
 void VEditTab::showFileEditMode()
 {
     isEditMode = true;
-    textEditor->beginEdit();
-    setCurrentWidget(textEditor);
-    textEditor->setFocus();
+    m_textEditor->beginEdit();
+    setCurrentWidget(m_textEditor);
+    m_textEditor->setFocus();
+    noticeStatusChanged();
 }
 
 bool VEditTab::closeFile(bool p_forced)
 {
     if (p_forced && isEditMode) {
         // Discard buffer content
-        textEditor->reloadFile();
-        textEditor->endEdit();
+        m_textEditor->reloadFile();
+        m_textEditor->endEdit();
         showFileReadMode();
     } else {
         readFile();
@@ -145,7 +160,7 @@ void VEditTab::readFile()
         return;
     }
 
-    if (textEditor->isModified()) {
+    if (m_textEditor->isModified()) {
         // Prompt to save the changes
         int ret = VUtils::showMessage(QMessageBox::Information, tr("Information"),
                                       QString("Note %1 has been modified.").arg(m_file->getName()),
@@ -157,7 +172,7 @@ void VEditTab::readFile()
             saveFile();
             // Fall through
         case QMessageBox::Discard:
-            textEditor->reloadFile();
+            m_textEditor->reloadFile();
             break;
         case QMessageBox::Cancel:
             // Nothing to do if user cancel this action
@@ -167,14 +182,14 @@ void VEditTab::readFile()
             return;
         }
     }
-    textEditor->endEdit();
+    m_textEditor->endEdit();
     showFileReadMode();
 }
 
 bool VEditTab::saveFile()
 {
     bool ret;
-    if (!isEditMode || !textEditor->isModified()) {
+    if (!isEditMode || !m_textEditor->isModified()) {
         return true;
     }
     // Make sure the file already exists. Temporary deal with cases when user delete or move
@@ -187,15 +202,15 @@ bool VEditTab::saveFile()
                             QMessageBox::Ok, QMessageBox::Ok, this);
         return false;
     }
-    textEditor->saveFile();
+    m_textEditor->saveFile();
     ret = m_file->save();
     if (!ret) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"), tr("Fail to save note"),
                             QString("Fail to write to disk when saving a note. Please try it again."),
                             QMessageBox::Ok, QMessageBox::Ok, this);
-        textEditor->setModified(true);
+        m_textEditor->setModified(true);
     }
-    emit statusChanged();
+    noticeStatusChanged();
     return ret;
 }
 
@@ -353,7 +368,7 @@ void VEditTab::scrollToAnchor(const VAnchor &anchor)
     curHeader = anchor;
     if (isEditMode) {
         if (anchor.lineNumber > -1) {
-            textEditor->scrollToLine(anchor.lineNumber);
+            m_textEditor->scrollToLine(anchor.lineNumber);
         }
     } else {
         if (!anchor.anchor.isEmpty()) {

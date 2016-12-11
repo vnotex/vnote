@@ -530,6 +530,7 @@ void VMainWindow::setRenderBackgroundColor(QAction *action)
 
 void VMainWindow::updateToolbarFromTabChage(const VFile *p_file, bool p_editMode)
 {
+    qDebug() << "update toolbar";
     if (!p_file) {
         editNoteAct->setVisible(false);
         saveExitAct->setVisible(false);

@@ -13,6 +13,7 @@
 #include "vedit.h"
 #include "vdownloader.h"
 #include "vfile.h"
+#include "vmdedit.h"
 
 VMdEditOperations::VMdEditOperations(VEdit *p_editor, VFile *p_file)
     : VEditOperations(p_editor, p_file)
@@ -54,7 +55,9 @@ void VMdEditOperations::insertImageFromQImage(const QString &title, const QStrin
     QString md = QString("![%1](images/%2)").arg(title).arg(fileName);
     insertTextAtCurPos(md);
 
-    m_editor->insertImage(fileName);
+    VMdEdit *mdEditor = dynamic_cast<VMdEdit *>(m_editor);
+    Q_ASSERT(mdEditor);
+    mdEditor->insertImage(fileName);
 }
 
 void VMdEditOperations::insertImageFromPath(const QString &title,
@@ -77,7 +80,9 @@ void VMdEditOperations::insertImageFromPath(const QString &title,
     QString md = QString("![%1](images/%2)").arg(title).arg(fileName);
     insertTextAtCurPos(md);
 
-    m_editor->insertImage(fileName);
+    VMdEdit *mdEditor = dynamic_cast<VMdEdit *>(m_editor);
+    Q_ASSERT(mdEditor);
+    mdEditor->insertImage(fileName);
 }
 
 bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)

@@ -12,7 +12,6 @@
 #include "vtoc.h"
 #include "vfile.h"
 
-class QTextBrowser;
 class QWebEngineView;
 class VNote;
 class QXmlStreamReader;
@@ -38,6 +37,7 @@ public:
     void requestUpdateCurHeader();
     void scrollToAnchor(const VAnchor& anchor);
     inline VFile *getFile();
+
 signals:
     void getFocused();
     void outlineChanged(const VToc &toc);
@@ -50,6 +50,7 @@ private slots:
     void updateCurHeader(const QString &anchor);
     void updateCurHeader(int lineNumber);
     void updateTocFromHeaders(const QVector<VHeader> &headers);
+    void handleTextChanged();
 
 private:
     void setupUI();
@@ -60,16 +61,17 @@ private:
     inline bool isChild(QObject *obj);
     void parseTocUl(QXmlStreamReader &xml, QVector<VHeader> &headers, int level);
     void parseTocLi(QXmlStreamReader &xml, QVector<VHeader> &headers, int level);
+    void noticeStatusChanged();
 
     QPointer<VFile> m_file;
     bool isEditMode;
-    QTextBrowser *textBrowser;
-    VEdit *textEditor;
+    VEdit *m_textEditor;
     QWebEngineView *webPreviewer;
     VDocument document;
     MarkdownConverterType mdConverterType;
     VToc tableOfContent;
     VAnchor curHeader;
+    bool m_fileModified;
 };
 
 inline bool VEditTab::getIsEditMode() const
@@ -79,7 +81,7 @@ inline bool VEditTab::getIsEditMode() const
 
 inline bool VEditTab::isModified() const
 {
-    return textEditor->isModified();
+    return m_textEditor->isModified();
 }
 
 inline bool VEditTab::isChild(QObject *obj)
