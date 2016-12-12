@@ -120,7 +120,7 @@ void VMdEdit::insertFromMimeData(const QMimeData *source)
     VEdit::insertFromMimeData(source);
 }
 
-void VMdEdit::insertImage(const QString &p_name)
+void VMdEdit::imageInserted(const QString &p_name)
 {
     m_insertedImages.append(p_name);
 }

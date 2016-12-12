@@ -29,31 +29,33 @@ VInsertImageDialog::~VInsertImageDialog()
 
 void VInsertImageDialog::setupUI()
 {
-    pathLabel = new QLabel(tr("&From"));
+    pathLabel = new QLabel(tr("&From:"));
     pathEdit = new QLineEdit(defaultPath);
     pathLabel->setBuddy(pathEdit);
     browseBtn = new QPushButton(tr("&Browse"));
     QHBoxLayout *pathLayout = new QHBoxLayout();
+    pathLayout->addWidget(pathLabel);
     pathLayout->addWidget(pathEdit);
     pathLayout->addWidget(browseBtn);
 
-    imageTitleLabel = new QLabel(tr("&Title"));
+    imageTitleLabel = new QLabel(tr("&Title:"));
     imageTitleEdit = new QLineEdit(defaultImageTitle);
     imageTitleEdit->selectAll();
     imageTitleLabel->setBuddy(imageTitleEdit);
     QRegExp regExp("[\\w\\(\\)@#%\\*\\-\\+=\\?<>\\,\\.\\s]+");
     QValidator *validator = new QRegExpValidator(regExp, this);
     imageTitleEdit->setValidator(validator);
+    QHBoxLayout *titleLayout = new QHBoxLayout();
+    titleLayout->addWidget(imageTitleLabel);
+    titleLayout->addWidget(imageTitleEdit);
 
     okBtn = new QPushButton(tr("&OK"));
     okBtn->setDefault(true);
     cancelBtn = new QPushButton(tr("&Cancel"));
 
     QVBoxLayout *topLayout = new QVBoxLayout();
-    topLayout->addWidget(pathLabel);
     topLayout->addLayout(pathLayout);
-    topLayout->addWidget(imageTitleLabel);
-    topLayout->addWidget(imageTitleEdit);
+    topLayout->addLayout(titleLayout);
 
     QHBoxLayout *btmLayout = new QHBoxLayout();
     btmLayout->addStretch();
@@ -96,10 +98,19 @@ void VInsertImageDialog::handleBrowseBtnClicked()
     static QString lastPath = QDir::homePath();
     QString filePath = QFileDialog::getOpenFileName(this, tr("Select the image to be inserted"),
                                                     lastPath, tr("Images (*.png *.xpm *.jpg *.bmp *.gif)"));
+    if (filePath.isNull() || filePath.isEmpty()) {
+        return;
+    }
+
     // Update lastPath
     lastPath = QFileInfo(filePath).path();
 
     pathEdit->setText(filePath);
+    QImage image(filePath);
+    if (image.isNull()) {
+        return;
+    }
+    setImage(image);
 }
 
 void VInsertImageDialog::setImage(const QImage &image)

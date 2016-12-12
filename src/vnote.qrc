@@ -72,5 +72,7 @@
         <file>resources/icons/arrow_dropdown.svg</file>
         <file>resources/icons/current_tab.svg</file>
         <file>resources/icons/vnote.png</file>
+        <file>resources/icons/insert_image.svg</file>
+        <file>resources/icons/import_note.svg</file>
     </qresource>
 </RCC>

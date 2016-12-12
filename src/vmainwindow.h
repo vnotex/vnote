@@ -7,6 +7,7 @@
 #include <QPointer>
 #include <QString>
 #include "vfile.h"
+#include "vedittab.h"
 
 class QLabel;
 class QComboBox;
@@ -43,7 +44,7 @@ private slots:
     void setTabStopWidth(QAction *action);
     void setEditorBackgroundColor(QAction *action);
     void setRenderBackgroundColor(QAction *action);
-    void handleCurTabStatusChanged(const VFile *p_file, bool p_editMode);
+    void handleCurTabStatusChanged(const VFile *p_file, const VEditTab *p_editTab, bool p_editMode);
     void onePanelView();
     void twoPanelView();
     void expandPanelView(bool p_checked);
@@ -51,6 +52,7 @@ private slots:
     void deleteCurNote();
     void handleCurrentDirectoryChanged(const VDirectory *p_dir);
     void handleCurrentNotebookChanged(const VNotebook *p_notebook);
+    void insertImage();
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -78,6 +80,7 @@ private:
 
     VNote *vnote;
     QPointer<VFile> m_curFile;
+    QPointer<VEditTab> m_curTab;
 
     QLabel *notebookLabel;
     QLabel *directoryLabel;
@@ -111,6 +114,7 @@ private:
     QAction *hoedownAct;
     QAction *aboutAct;
     QAction *aboutQtAct;
+    QAction *m_insertImageAct;
     QAction *expandTabAct;
     QActionGroup *tabStopWidthAct;
     QAction *twoSpaceTabAct;

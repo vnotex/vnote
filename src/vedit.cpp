@@ -80,3 +80,10 @@ void VEdit::setModified(bool p_modified)
         m_file->setModified(p_modified);
     }
 }
+
+void VEdit::insertImage()
+{
+    if (m_editOps) {
+        m_editOps->insertImage();
+    }
+}

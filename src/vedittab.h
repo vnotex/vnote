@@ -37,6 +37,7 @@ public:
     void requestUpdateCurHeader();
     void scrollToAnchor(const VAnchor& anchor);
     inline VFile *getFile();
+    void insertImage();
 
 signals:
     void getFocused();

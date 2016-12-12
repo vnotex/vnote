@@ -150,7 +150,7 @@ void VEditArea::updateWindowStatus()
 {
     if (curWindowIndex == -1) {
         Q_ASSERT(splitter->count() == 0);
-        emit curTabStatusChanged(NULL, false);
+        emit curTabStatusChanged(NULL, NULL, false);
         emit outlineChanged(VToc());
         emit curHeaderChanged(VAnchor());
         return;
@@ -375,4 +375,13 @@ void VEditArea::handleNotebookUpdated(const VNotebook *p_notebook)
     for (int i = 0; i < nrWin; ++i) {
         getWindow(i)->updateNotebookInfo(p_notebook);
     }
+}
+
+VEditTab *VEditArea::currentEditTab()
+{
+    if (curWindowIndex == -1) {
+        return NULL;
+    }
+    VEditWindow *win = getWindow(curWindowIndex);
+    return win->currentEditTab();
 }

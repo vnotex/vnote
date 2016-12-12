@@ -57,7 +57,7 @@ void VMdEditOperations::insertImageFromQImage(const QString &title, const QStrin
 
     VMdEdit *mdEditor = dynamic_cast<VMdEdit *>(m_editor);
     Q_ASSERT(mdEditor);
-    mdEditor->insertImage(fileName);
+    mdEditor->imageInserted(fileName);
 }
 
 void VMdEditOperations::insertImageFromPath(const QString &title,
@@ -82,7 +82,7 @@ void VMdEditOperations::insertImageFromPath(const QString &title,
 
     VMdEdit *mdEditor = dynamic_cast<VMdEdit *>(m_editor);
     Q_ASSERT(mdEditor);
-    mdEditor->insertImage(fileName);
+    mdEditor->imageInserted(fileName);
 }
 
 bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
@@ -146,6 +146,19 @@ bool VMdEditOperations::insertURLFromMimeData(const QMimeData *source)
         } else {
             insertTextAtCurPos(urlStr);
         }
+    }
+    return true;
+}
+
+bool VMdEditOperations::insertImage()
+{
+    VInsertImageDialog dialog(QObject::tr("Insert Image From File"), QObject::tr("image_title"),
+                              "", (QWidget *)m_editor);
+    if (dialog.exec() == QDialog::Accepted) {
+        QString title = dialog.getImageTitleInput();
+        QString imagePath = dialog.getPathInput();
+        qDebug() << "insert image from" << imagePath << "as" << title;
+        insertImageFromPath(title, m_file->retriveImagePath(), imagePath);
     }
     return true;
 }

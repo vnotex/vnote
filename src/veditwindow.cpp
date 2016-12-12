@@ -284,7 +284,7 @@ void VEditWindow::saveFile()
 void VEditWindow::noticeTabStatus(int p_index)
 {
     if (p_index == -1) {
-        emit tabStatusChanged(NULL, false);
+        emit tabStatusChanged(NULL, NULL, false);
         return;
     }
 
@@ -296,7 +296,7 @@ void VEditWindow::noticeTabStatus(int p_index)
     QTabBar *tabs = tabBar();
     tabs->setTabText(p_index, generateTabText(file->getName(), file->isModified()));
     tabs->setTabToolTip(p_index, generateTooltip(file));
-    emit tabStatusChanged(file, editMode);
+    emit tabStatusChanged(file, editor, editMode);
 }
 
 // Be requested to report current status
@@ -553,4 +553,13 @@ void VEditWindow::setLeftCornerWidgetVisible(bool p_visible)
     } else {
         setCornerWidget(NULL, Qt::TopLeftCorner);
     }
+}
+
+VEditTab *VEditWindow::currentEditTab()
+{
+    int idx = currentIndex();
+    if (idx == -1) {
+        return NULL;
+    }
+    return getTab(idx);
 }

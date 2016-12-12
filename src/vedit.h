@@ -24,6 +24,8 @@ public:
     bool isModified() const;
     virtual void reloadFile();
     virtual void scrollToLine(int p_lineNumber);
+    // User requests to insert an image.
+    virtual void insertImage();
 
 protected:
     QPointer<VFile> m_file;

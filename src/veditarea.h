@@ -28,9 +28,11 @@ public:
     bool closeFile(const VFile *p_file, bool p_forced);
     bool closeFile(const VDirectory *p_dir, bool p_forced);
     bool closeFile(const VNotebook *p_notebook, bool p_forced);
+    // Returns current edit tab.
+    VEditTab *currentEditTab();
 
 signals:
-    void curTabStatusChanged(const VFile *p_file, bool p_editMode);
+    void curTabStatusChanged(const VFile *p_file, const VEditTab *p_editTab, bool p_editMode);
     void outlineChanged(const VToc &toc);
     void curHeaderChanged(const VAnchor &anchor);
 

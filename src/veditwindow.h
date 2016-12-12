@@ -39,13 +39,14 @@ public:
     void updateFileInfo(const VFile *p_file);
     void updateDirectoryInfo(const VDirectory *p_dir);
     void updateNotebookInfo(const VNotebook *p_notebook);
+    VEditTab *currentEditTab();
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
     bool eventFilter(QObject *watched, QEvent *event) Q_DECL_OVERRIDE;
 
 signals:
-    void tabStatusChanged(const VFile *p_file, bool p_editMode);
+    void tabStatusChanged(const VFile *p_file, const VEditTab *p_editTab, bool p_editMode);
     void requestSplitWindow(VEditWindow *curWindow);
     void requestRemoveSplit(VEditWindow *curWindow);
     // This widget or its children get the focus

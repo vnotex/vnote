@@ -14,6 +14,7 @@ public:
     virtual ~VEditOperations();
     virtual bool insertImageFromMimeData(const QMimeData *source) = 0;
     virtual bool insertURLFromMimeData(const QMimeData *source) = 0;
+    virtual bool insertImage() = 0;
 
 protected:
     void insertTextAtCurPos(const QString &text);

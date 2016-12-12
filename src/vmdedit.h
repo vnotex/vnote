@@ -18,7 +18,8 @@ public:
     void saveFile() Q_DECL_OVERRIDE;
     void reloadFile() Q_DECL_OVERRIDE;
 
-    void insertImage(const QString &p_name);
+    // An image has been inserted.
+    void imageInserted(const QString &p_name);
 
     // Scroll to m_headers[p_headerIndex].
     void scrollToHeader(int p_headerIndex);

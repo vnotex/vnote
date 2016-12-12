@@ -149,7 +149,8 @@ void VMainWindow::initActions()
 
     initViewActions();
 
-    importNoteAct = new QAction(tr("&Import note from file"), this);
+    importNoteAct = new QAction(QIcon(":/resources/icons/import_note.svg"),
+                                tr("&Import Notes From Files"), this);
     importNoteAct->setStatusTip(tr("Import notes into current directory from files"));
     connect(importNoteAct, &QAction::triggered,
             this, &VMainWindow::importNoteFromFile);
@@ -175,22 +176,28 @@ void VMainWindow::initActions()
     connect(aboutQtAct, &QAction::triggered,
             qApp, &QApplication::aboutQt);
 
-    expandTabAct = new QAction(tr("&Expand tab"), this);
+    m_insertImageAct = new QAction(QIcon(":/resources/icons/insert_image.svg"),
+                                   tr("Insert &Image"), this);
+    m_insertImageAct->setStatusTip(tr("Insert an image from file"));
+    connect(m_insertImageAct, &QAction::triggered,
+            this, &VMainWindow::insertImage);
+
+    expandTabAct = new QAction(tr("&Expand Tab"), this);
     expandTabAct->setStatusTip(tr("Expand tab to spaces"));
     expandTabAct->setCheckable(true);
     connect(expandTabAct, &QAction::triggered,
             this, &VMainWindow::changeExpandTab);
 
     tabStopWidthAct = new QActionGroup(this);
-    twoSpaceTabAct = new QAction(tr("2 spaces"), tabStopWidthAct);
+    twoSpaceTabAct = new QAction(tr("2 Spaces"), tabStopWidthAct);
     twoSpaceTabAct->setStatusTip(tr("Expand tab to 2 spaces"));
     twoSpaceTabAct->setCheckable(true);
     twoSpaceTabAct->setData(2);
-    fourSpaceTabAct = new QAction(tr("4 spaces"), tabStopWidthAct);
+    fourSpaceTabAct = new QAction(tr("4 Spaces"), tabStopWidthAct);
     fourSpaceTabAct->setStatusTip(tr("Expand tab to 4 spaces"));
     fourSpaceTabAct->setCheckable(true);
     fourSpaceTabAct->setData(4);
-    eightSpaceTabAct = new QAction(tr("8 spaces"), tabStopWidthAct);
+    eightSpaceTabAct = new QAction(tr("8 Spaces"), tabStopWidthAct);
     eightSpaceTabAct->setStatusTip(tr("Expand tab to 8 spaces"));
     eightSpaceTabAct->setCheckable(true);
     eightSpaceTabAct->setData(8);
@@ -308,6 +315,8 @@ void VMainWindow::initMenuBar()
     fileMenu->addAction(importNoteAct);
 
     // Edit Menu
+    editMenu->addAction(m_insertImageAct);
+    editMenu->addSeparator();
     editMenu->addAction(expandTabAct);
     if (vconfig.getIsExpandTab()) {
         expandTabAct->setChecked(true);
@@ -554,7 +563,7 @@ void VMainWindow::updateToolbarFromTabChage(const VFile *p_file, bool p_editMode
     }
 }
 
-void VMainWindow::handleCurTabStatusChanged(const VFile *p_file, bool p_editMode)
+void VMainWindow::handleCurTabStatusChanged(const VFile *p_file, const VEditTab *p_editTab, bool p_editMode)
 {
     updateToolbarFromTabChage(p_file, p_editMode);
 
@@ -567,6 +576,7 @@ void VMainWindow::handleCurTabStatusChanged(const VFile *p_file, bool p_editMode
     }
     updateWindowTitle(title);
     m_curFile = const_cast<VFile *>(p_file);
+    m_curTab = const_cast<VEditTab *>(p_editTab);
 }
 
 void VMainWindow::onePanelView()
@@ -700,4 +710,13 @@ void VMainWindow::repositionAvatar()
     m_avatar->setDiameter(diameter);
     m_avatar->move(x, y);
     m_avatar->show();
+}
+
+void VMainWindow::insertImage()
+{
+    if (!m_curTab) {
+        return;
+    }
+    Q_ASSERT(m_curTab == editArea->currentEditTab());
+    m_curTab->insertImage();
 }

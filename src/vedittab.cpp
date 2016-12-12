@@ -434,3 +434,12 @@ void VEditTab::updateCurHeader(int p_lineNumber, int p_outlineIndex)
         emit curHeaderChanged(curHeader);
     }
 }
+
+void VEditTab::insertImage()
+{
+    qDebug() << "insert image";
+    if (!isEditMode) {
+        return;
+    }
+    m_textEditor->insertImage();
+}
