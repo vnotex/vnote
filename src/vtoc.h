@@ -23,12 +23,14 @@ struct VHeader
 
 struct VAnchor
 {
-    VAnchor() : lineNumber(-1) {}
+    VAnchor() : lineNumber(-1), m_outlineIndex(0) {}
     VAnchor(const QString filePath, const QString &anchor, int lineNumber)
-        : filePath(filePath), anchor(anchor), lineNumber(lineNumber) {}
+        : filePath(filePath), anchor(anchor), lineNumber(lineNumber), m_outlineIndex(0) {}
     QString filePath;
     QString anchor;
     int lineNumber;
+    // Index of this anchor in VToc outline.
+    int m_outlineIndex;
 
     bool operator==(const VAnchor &p_anchor) const {
         return (p_anchor.filePath == filePath

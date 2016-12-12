@@ -53,6 +53,7 @@ void VOutline::updateTreeByLevel(const QVector<VHeader> &headers, int &index,
             QJsonObject itemJson;
             itemJson["anchor"] = header.anchor;
             itemJson["line_number"] = header.lineNumber;
+            itemJson["outline_index"] = index;
             item->setData(0, Qt::UserRole, itemJson);
             item->setText(0, header.name);
             item->setToolTip(0, header.name);
@@ -83,10 +84,12 @@ void VOutline::handleCurItemChanged(QTreeWidgetItem *p_curItem, QTreeWidgetItem 
     QJsonObject itemJson = p_curItem->data(0, Qt::UserRole).toJsonObject();
     QString anchor = itemJson["anchor"].toString();
     int lineNumber = itemJson["line_number"].toInt();
+    int outlineIndex = itemJson["outline_index"].toInt();
     VAnchor tmp;
     tmp.filePath = outline.filePath;
     tmp.anchor = anchor;
     tmp.lineNumber = lineNumber;
+    tmp.m_outlineIndex = outlineIndex;
     if (tmp == curHeader) {
         return;
     }

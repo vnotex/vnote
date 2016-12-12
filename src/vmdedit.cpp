@@ -53,12 +53,15 @@ void VMdEdit::beginEdit()
 
     setFont(vconfig.getMdEditFont());
 
-    setPlainText(m_file->getContent());
+    Q_ASSERT(m_file->getContent() == toPlainText());
 
     initInitImages();
 
     setReadOnly(false);
     setModified(false);
+
+    // Request update outline.
+    generateEditOutline();
 }
 
 void VMdEdit::endEdit()
@@ -180,13 +183,14 @@ void VMdEdit::updateCurHeader()
     int curHeader = 0;
     QTextCursor cursor(this->textCursor());
     int curLine = cursor.block().firstLineNumber();
-    for (int i = m_headers.size() - 1; i >= 0; --i) {
+    int i = 0;
+    for (i = m_headers.size() - 1; i >= 0; --i) {
         if (m_headers[i].lineNumber <= curLine) {
             curHeader = m_headers[i].lineNumber;
             break;
         }
     }
-    emit curHeaderChanged(curHeader);
+    emit curHeaderChanged(curHeader, i == -1 ? 0 : i);
 }
 
 void VMdEdit::generateEditOutline()
@@ -208,4 +212,14 @@ void VMdEdit::generateEditOutline()
 
     emit headersChanged(m_headers);
     updateCurHeader();
+}
+
+void VMdEdit::scrollToHeader(int p_headerIndex)
+{
+    Q_ASSERT(p_headerIndex >= 0);
+    if (p_headerIndex < m_headers.size()) {
+        int line = m_headers[p_headerIndex].lineNumber;
+        qDebug() << "scroll editor to" << p_headerIndex << "line" << line;
+        scrollToLine(line);
+    }
 }

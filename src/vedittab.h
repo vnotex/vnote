@@ -48,7 +48,7 @@ private slots:
     void handleFocusChanged(QWidget *old, QWidget *now);
     void updateTocFromHtml(const QString &tocHtml);
     void updateCurHeader(const QString &anchor);
-    void updateCurHeader(int lineNumber);
+    void updateCurHeader(int p_lineNumber, int p_outlineIndex);
     void updateTocFromHeaders(const QVector<VHeader> &headers);
     void handleTextChanged();
 
@@ -62,6 +62,7 @@ private:
     void parseTocUl(QXmlStreamReader &xml, QVector<VHeader> &headers, int level);
     void parseTocLi(QXmlStreamReader &xml, QVector<VHeader> &headers, int level);
     void noticeStatusChanged();
+    void scrollPreviewToHeader(int p_outlineIndex);
 
     QPointer<VFile> m_file;
     bool isEditMode;

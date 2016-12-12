@@ -50,10 +50,11 @@ void VEditTab::setupUI()
         m_textEditor = new VMdEdit(m_file, this);
         connect(dynamic_cast<VMdEdit *>(m_textEditor), &VMdEdit::headersChanged,
                 this, &VEditTab::updateTocFromHeaders);
-        connect(m_textEditor, SIGNAL(curHeaderChanged(int)),
-                this, SLOT(updateCurHeader(int)));
+        connect(m_textEditor, SIGNAL(curHeaderChanged(int, int)),
+                this, SLOT(updateCurHeader(int, int)));
         connect(m_textEditor, &VEdit::textChanged,
                 this, &VEditTab::handleTextChanged);
+        m_textEditor->reloadFile();
         addWidget(m_textEditor);
 
         setupMarkdownPreview();
@@ -91,6 +92,7 @@ void VEditTab::showFileReadMode()
 {
     qDebug() << "read" << m_file->getName();
     isEditMode = false;
+    int outlineIndex = curHeader.m_outlineIndex;
     switch (m_file->getDocType()) {
     case DocType::Html:
         m_textEditor->setReadOnly(true);
@@ -98,16 +100,30 @@ void VEditTab::showFileReadMode()
     case DocType::Markdown:
         if (mdConverterType == MarkdownConverterType::Marked) {
             document.setText(m_file->getContent());
+            updateTocFromHtml(document.getToc());
         } else {
             previewByConverter();
         }
         setCurrentWidget(webPreviewer);
+        scrollPreviewToHeader(outlineIndex);
         break;
     default:
         qWarning() << "error: unknown doc type" << int(m_file->getDocType());
         Q_ASSERT(false);
     }
     noticeStatusChanged();
+}
+
+void VEditTab::scrollPreviewToHeader(int p_outlineIndex)
+{
+    Q_ASSERT(p_outlineIndex >= 0);
+    if (p_outlineIndex < tableOfContent.headers.size()) {
+        QString anchor = tableOfContent.headers[p_outlineIndex].anchor;
+        qDebug() << "scroll preview to" << p_outlineIndex << anchor;
+        if (!anchor.isEmpty()) {
+            document.scrollToAnchor(anchor.mid(1));
+        }
+    }
 }
 
 void VEditTab::previewByConverter()
@@ -126,8 +142,14 @@ void VEditTab::previewByConverter()
 void VEditTab::showFileEditMode()
 {
     isEditMode = true;
+
+    // beginEdit() may change curHeader.
+    int outlineIndex = curHeader.m_outlineIndex;
     m_textEditor->beginEdit();
     setCurrentWidget(m_textEditor);
+    if (m_file->getDocType() == DocType::Markdown) {
+        dynamic_cast<VMdEdit *>(m_textEditor)->scrollToHeader(outlineIndex);
+    }
     m_textEditor->setFocus();
     noticeStatusChanged();
 }
@@ -253,6 +275,9 @@ void VEditTab::handleFocusChanged(QWidget *old, QWidget *now)
 
 void VEditTab::updateTocFromHtml(const QString &tocHtml)
 {
+    if (isEditMode) {
+        return;
+    }
     tableOfContent.type = VHeaderType::Anchor;
     QVector<VHeader> &headers = tableOfContent.headers;
     headers.clear();
@@ -280,6 +305,9 @@ void VEditTab::updateTocFromHtml(const QString &tocHtml)
 
 void VEditTab::updateTocFromHeaders(const QVector<VHeader> &headers)
 {
+    if (!isEditMode) {
+        return;
+    }
     tableOfContent.type = VHeaderType::LineNumber;
     tableOfContent.headers = headers;
     tableOfContent.filePath = m_file->retrivePath();
@@ -379,22 +407,30 @@ void VEditTab::scrollToAnchor(const VAnchor &anchor)
 
 void VEditTab::updateCurHeader(const QString &anchor)
 {
-    if (curHeader.anchor.mid(1) == anchor) {
+    if (isEditMode || curHeader.anchor.mid(1) == anchor) {
         return;
     }
     curHeader = VAnchor(m_file->retrivePath(), "#" + anchor, -1);
     if (!anchor.isEmpty()) {
+        const QVector<VHeader> &headers = tableOfContent.headers;
+        for (int i = 0; i < headers.size(); ++i) {
+            if (headers[i].anchor == curHeader.anchor) {
+                curHeader.m_outlineIndex = i;
+                break;
+            }
+        }
         emit curHeaderChanged(curHeader);
     }
 }
 
-void VEditTab::updateCurHeader(int lineNumber)
+void VEditTab::updateCurHeader(int p_lineNumber, int p_outlineIndex)
 {
-    if (curHeader.lineNumber == lineNumber) {
+    if (!isEditMode || curHeader.lineNumber == p_lineNumber) {
         return;
     }
-    curHeader = VAnchor(m_file->retrivePath(), "", lineNumber);
-    if (lineNumber > -1) {
+    curHeader = VAnchor(m_file->retrivePath(), "", p_lineNumber);
+    curHeader.m_outlineIndex = p_outlineIndex;
+    if (p_lineNumber > -1) {
         emit curHeaderChanged(curHeader);
     }
 }

@@ -20,9 +20,12 @@ public:
 
     void insertImage(const QString &p_name);
 
+    // Scroll to m_headers[p_headerIndex].
+    void scrollToHeader(int p_headerIndex);
+
 signals:
     void headersChanged(const QVector<VHeader> &headers);
-    void curHeaderChanged(int lineNumber);
+    void curHeaderChanged(int p_lineNumber, int p_outlineIndex);
 
 private slots:
     void generateEditOutline();
