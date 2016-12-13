@@ -122,25 +122,25 @@ QWidget *VMainWindow::setupDirectoryPanel()
 void VMainWindow::initActions()
 {
     newRootDirAct = new QAction(QIcon(":/resources/icons/create_rootdir_tb.svg"),
-                                tr("&New rood directory"), this);
-    newRootDirAct->setStatusTip(tr("Create a new root directory"));
+                                tr("New &Rood Directory"), this);
+    newRootDirAct->setStatusTip(tr("Create a root directory in current notebook"));
     connect(newRootDirAct, &QAction::triggered,
             directoryTree, &VDirectoryTree::newRootDirectory);
 
     newNoteAct = new QAction(QIcon(":/resources/icons/create_note_tb.svg"),
-                             tr("&New note"), this);
-    newNoteAct->setStatusTip(tr("Create a new note"));
+                             tr("New &Note"), this);
+    newNoteAct->setStatusTip(tr("Create a note in current directory"));
     connect(newNoteAct, &QAction::triggered,
             fileList, &VFileList::newFile);
 
     noteInfoAct = new QAction(QIcon(":/resources/icons/note_info_tb.svg"),
-                              tr("&Note info"), this);
-    noteInfoAct->setStatusTip(tr("Current note information"));
+                              tr("Note &Info"), this);
+    noteInfoAct->setStatusTip(tr("View and edit info of current note"));
     connect(noteInfoAct, &QAction::triggered,
             this, &VMainWindow::curEditFileInfo);
 
     deleteNoteAct = new QAction(QIcon(":/resources/icons/delete_note_tb.svg"),
-                                tr("&Delete note"), this);
+                                tr("&Delete Note"), this);
     deleteNoteAct->setStatusTip(tr("Delete current note"));
     connect(deleteNoteAct, &QAction::triggered,
             this, &VMainWindow::deleteCurNote);
@@ -151,17 +151,18 @@ void VMainWindow::initActions()
 
     importNoteAct = new QAction(QIcon(":/resources/icons/import_note.svg"),
                                 tr("&Import Notes From Files"), this);
-    importNoteAct->setStatusTip(tr("Import notes into current directory from files"));
+    importNoteAct->setStatusTip(tr("Import notes from files into current directory"));
     connect(importNoteAct, &QAction::triggered,
             this, &VMainWindow::importNoteFromFile);
 
     converterAct = new QActionGroup(this);
     markedAct = new QAction(tr("Marked"), converterAct);
-    markedAct->setStatusTip(tr("Use Marked to convert Markdown to HTML (Re-open current tabs to make it work)"));
+    markedAct->setStatusTip(tr("Use Marked to convert Markdown to HTML (re-open current tabs to make it work)"));
     markedAct->setCheckable(true);
     markedAct->setData(int(MarkdownConverterType::Marked));
+
     hoedownAct = new QAction(tr("Hoedown"), converterAct);
-    hoedownAct->setStatusTip(tr("Use Hoedown to convert Markdown to HTML (Re-open current tabs to make it work)"));
+    hoedownAct->setStatusTip(tr("Use Hoedown to convert Markdown to HTML (re-open current tabs to make it work)"));
     hoedownAct->setCheckable(true);
     hoedownAct->setData(int(MarkdownConverterType::Hoedown));
     connect(converterAct, &QActionGroup::triggered,
@@ -178,12 +179,12 @@ void VMainWindow::initActions()
 
     m_insertImageAct = new QAction(QIcon(":/resources/icons/insert_image.svg"),
                                    tr("Insert &Image"), this);
-    m_insertImageAct->setStatusTip(tr("Insert an image from file"));
+    m_insertImageAct->setStatusTip(tr("Insert an image from file in current note"));
     connect(m_insertImageAct, &QAction::triggered,
             this, &VMainWindow::insertImage);
 
     expandTabAct = new QAction(tr("&Expand Tab"), this);
-    expandTabAct->setStatusTip(tr("Expand tab to spaces"));
+    expandTabAct->setStatusTip(tr("Expand entered tab to spaces"));
     expandTabAct->setCheckable(true);
     connect(expandTabAct, &QAction::triggered,
             this, &VMainWindow::changeExpandTab);
@@ -222,7 +223,7 @@ void VMainWindow::initEditActions()
             editArea, &VEditArea::editFile);
 
     discardExitAct = new QAction(QIcon(":/resources/icons/discard_exit.svg"),
-                                 tr("Discard changes and exit"), this);
+                                 tr("Discard Changes And Exit"), this);
     discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
     connect(discardExitAct, &QAction::triggered,
             editArea, &VEditArea::readFile);
@@ -231,15 +232,15 @@ void VMainWindow::initEditActions()
     exitEditMenu->addAction(discardExitAct);
 
     saveExitAct = new QAction(QIcon(":/resources/icons/save_exit.svg"),
-                              tr("Save changes and exit"), this);
+                              tr("Save Changes And Exit"), this);
     saveExitAct->setStatusTip(tr("Save changes and exit edit mode"));
     saveExitAct->setMenu(exitEditMenu);
     connect(saveExitAct, &QAction::triggered,
             editArea, &VEditArea::saveAndReadFile);
 
     saveNoteAct = new QAction(QIcon(":/resources/icons/save_note.svg"),
-                              tr("&Save"), this);
-    saveNoteAct->setStatusTip(tr("Save current note"));
+                              tr("Save"), this);
+    saveNoteAct->setStatusTip(tr("Save changes of current note"));
     saveNoteAct->setShortcut(QKeySequence::Save);
     connect(saveNoteAct, &QAction::triggered,
             editArea, &VEditArea::saveFile);
@@ -250,13 +251,13 @@ void VMainWindow::initViewActions()
 {
     onePanelViewAct = new QAction(QIcon(":/resources/icons/one_panel.svg"),
                                   tr("&Single Panel"), this);
-    onePanelViewAct->setStatusTip(tr("Display only the notes browser panel"));
+    onePanelViewAct->setStatusTip(tr("Display only the note panel"));
     connect(onePanelViewAct, &QAction::triggered,
             this, &VMainWindow::onePanelView);
 
     twoPanelViewAct = new QAction(QIcon(":/resources/icons/two_panels.svg"),
                                   tr("&Two Panels"), this);
-    twoPanelViewAct->setStatusTip(tr("Display the directory and notes browser panel"));
+    twoPanelViewAct->setStatusTip(tr("Display both the directory and note panel"));
     connect(twoPanelViewAct, &QAction::triggered,
             this, &VMainWindow::twoPanelView);
 
@@ -265,8 +266,8 @@ void VMainWindow::initViewActions()
     panelMenu->addAction(twoPanelViewAct);
 
     expandViewAct = new QAction(QIcon(":/resources/icons/expand.svg"),
-                                tr("&Expand"), this);
-    expandViewAct->setStatusTip(tr("Expand the editing area"));
+                                tr("Expand"), this);
+    expandViewAct->setStatusTip(tr("Expand the edit area"));
     expandViewAct->setCheckable(true);
     expandViewAct->setMenu(panelMenu);
     connect(expandViewAct, &QAction::triggered,
@@ -323,7 +324,7 @@ void VMainWindow::initMenuBar()
     } else {
         expandTabAct->setChecked(false);
     }
-    QMenu *tabStopWidthMenu = editMenu->addMenu(tr("Tab stop width"));
+    QMenu *tabStopWidthMenu = editMenu->addMenu(tr("Tab Stop Width"));
     tabStopWidthMenu->addAction(twoSpaceTabAct);
     tabStopWidthMenu->addAction(fourSpaceTabAct);
     tabStopWidthMenu->addAction(eightSpaceTabAct);
@@ -339,7 +340,7 @@ void VMainWindow::initMenuBar()
         eightSpaceTabAct->setChecked(true);
         break;
     default:
-        qWarning() << "error: unsupported tab stop width" << tabStopWidth <<  "in config";
+        qWarning() << "unsupported tab stop width" << tabStopWidth <<  "in config";
     }
     initEditorBackgroundMenu(editMenu);
 
@@ -473,10 +474,10 @@ void VMainWindow::initPredefinedColorPixmaps()
 
 void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
 {
-    QMenu *renderBgMenu = menu->addMenu(tr("&Rendering background"));
+    QMenu *renderBgMenu = menu->addMenu(tr("&Rendering Background"));
     const QString &curBgColor = vconfig.getCurRenderBackgroundColor();
     QAction *tmpAct = new QAction(tr("System"), renderBackgroundAct);
-    tmpAct->setStatusTip(tr("Use system's background color configuration for rendering"));
+    tmpAct->setStatusTip(tr("Use system's background color configuration for markdown rendering"));
     tmpAct->setCheckable(true);
     tmpAct->setData("System");
     if (curBgColor == "System") {
@@ -487,7 +488,7 @@ void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
     const QVector<VColor> &bgColors = vconfig.getPredefinedColors();
     for (int i = 0; i < bgColors.size(); ++i) {
         tmpAct = new QAction(bgColors[i].name, renderBackgroundAct);
-        tmpAct->setStatusTip(tr("Set background color for rendering"));
+        tmpAct->setStatusTip(tr("Set as the background color for markdown rendering"));
         tmpAct->setCheckable(true);
         tmpAct->setData(bgColors[i].name);
         tmpAct->setIcon(QIcon(predefinedColorPixmaps[i]));
@@ -515,7 +516,7 @@ void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
     const QVector<VColor> &bgColors = vconfig.getPredefinedColors();
     for (int i = 0; i < bgColors.size(); ++i) {
         tmpAct = new QAction(bgColors[i].name, backgroundColorAct);
-        tmpAct->setStatusTip(tr("Set background color for editor"));
+        tmpAct->setStatusTip(tr("Set as the background color for editor"));
         tmpAct->setCheckable(true);
         tmpAct->setData(bgColors[i].name);
         tmpAct->setIcon(QIcon(predefinedColorPixmaps[i]));
@@ -624,7 +625,7 @@ void VMainWindow::changeSplitterView(int nrPanel)
         mainSplitter->widget(2)->show();
         break;
     default:
-        qWarning() << "error: invalid panel number" << nrPanel;
+        qWarning() << "invalid panel number" << nrPanel;
     }
 }
 
