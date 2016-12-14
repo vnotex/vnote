@@ -50,6 +50,8 @@ void VEditTab::setupUI()
         m_textEditor = new VMdEdit(m_file, this);
         connect(dynamic_cast<VMdEdit *>(m_textEditor), &VMdEdit::headersChanged,
                 this, &VEditTab::updateTocFromHeaders);
+        connect(dynamic_cast<VMdEdit *>(m_textEditor), &VMdEdit::statusChanged,
+                this, &VEditTab::noticeStatusChanged);
         connect(m_textEditor, SIGNAL(curHeaderChanged(int, int)),
                 this, SLOT(updateCurHeader(int, int)));
         connect(m_textEditor, &VEdit::textChanged,

@@ -52,6 +52,7 @@ private slots:
     void updateCurHeader(int p_lineNumber, int p_outlineIndex);
     void updateTocFromHeaders(const QVector<VHeader> &headers);
     void handleTextChanged();
+    void noticeStatusChanged();
 
 private:
     void setupUI();
@@ -62,7 +63,6 @@ private:
     inline bool isChild(QObject *obj);
     void parseTocUl(QXmlStreamReader &xml, QVector<VHeader> &headers, int level);
     void parseTocLi(QXmlStreamReader &xml, QVector<VHeader> &headers, int level);
-    void noticeStatusChanged();
     void scrollPreviewToHeader(int p_outlineIndex);
 
     QPointer<VFile> m_file;

@@ -9,6 +9,8 @@
 
 extern VConfigManager vconfig;
 
+enum ImageProperty { ImagePath = 1 };
+
 VMdEdit::VMdEdit(VFile *p_file, QWidget *p_parent)
     : VEdit(p_file, p_parent), m_mdHighlighter(NULL)
 {
@@ -19,6 +21,8 @@ VMdEdit::VMdEdit(VFile *p_file, QWidget *p_parent)
                                                 500, document());
     connect(m_mdHighlighter, &HGMarkdownHighlighter::highlightCompleted,
             this, &VMdEdit::generateEditOutline);
+    connect(m_mdHighlighter, &HGMarkdownHighlighter::imageBlocksUpdated,
+            this, &VMdEdit::updateImageBlocks);
     m_editOps = new VMdEditOperations(this, m_file);
 
     connect(this, &VMdEdit::cursorPositionChanged,
@@ -53,7 +57,7 @@ void VMdEdit::beginEdit()
 
     setFont(vconfig.getMdEditFont());
 
-    Q_ASSERT(m_file->getContent() == toPlainText());
+    Q_ASSERT(m_file->getContent() == toPlainTextWithoutImg());
 
     initInitImages();
 
@@ -75,13 +79,15 @@ void VMdEdit::saveFile()
     if (!document()->isModified()) {
         return;
     }
-    m_file->setContent(toPlainText());
+    m_file->setContent(toPlainTextWithoutImg());
     document()->setModified(false);
 }
 
 void VMdEdit::reloadFile()
 {
-    setPlainText(m_file->getContent());
+    QString &content = m_file->getContent();
+    Q_ASSERT(content.indexOf(QChar::ObjectReplacementCharacter) == -1);
+    setPlainText(content);
     setModified(false);
 }
 
@@ -222,4 +228,209 @@ void VMdEdit::scrollToHeader(int p_headerIndex)
         qDebug() << "scroll editor to" << p_headerIndex << "line" << line;
         scrollToLine(line);
     }
+}
+
+void VMdEdit::updateImageBlocks(QSet<int> p_imageBlocks)
+{
+    // We need to handle blocks backward to avoid shifting all the following blocks.
+    // Inserting the preview image block may cause highlighter to emit signal again.
+    QList<int> blockList = p_imageBlocks.toList();
+    std::sort(blockList.begin(), blockList.end(), std::greater<int>());
+    auto it = blockList.begin();
+    while (it != blockList.end()) {
+        previewImageOfBlock(*it);
+        ++it;
+    }
+
+    // Clean up un-referenced QChar::ObjectReplacementCharacter.
+    clearOrphanImagePreviewBlock();
+
+    emit statusChanged();
+}
+
+void VMdEdit::clearOrphanImagePreviewBlock()
+{
+    QTextDocument *doc = document();
+    QTextBlock block = doc->begin();
+    while (block.isValid()) {
+        if (isOrphanImagePreviewBlock(block)) {
+            qDebug() << "remove orphan image preview block" << block.blockNumber();
+            QTextBlock nextBlock = block.next();
+            removeBlock(block);
+            block = nextBlock;
+        } else {
+            block = block.next();
+        }
+    }
+}
+
+bool VMdEdit::isOrphanImagePreviewBlock(QTextBlock p_block)
+{
+    if (isImagePreviewBlock(p_block)) {
+        // It is an orphan image preview block if previous block is not
+        // a block need to preview (containing exactly one image).
+        QTextBlock prevBlock = p_block.previous();
+        if (prevBlock.isValid()) {
+            if (fetchImageToPreview(prevBlock.text()).isEmpty()) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return true;
+        }
+    }
+    return false;
+}
+
+QString VMdEdit::fetchImageToPreview(const QString &p_text)
+{
+    QRegExp regExp("\\!\\[[^\\]]*\\]\\((images/[^/\\)]+)\\)");
+    int index = regExp.indexIn(p_text);
+    if (index == -1) {
+        return QString();
+    }
+    int lastIndex = regExp.lastIndexIn(p_text);
+    if (lastIndex != index) {
+        return QString();
+    }
+    return regExp.capturedTexts()[1];
+}
+
+void VMdEdit::previewImageOfBlock(int p_block)
+{
+    QTextDocument *doc = document();
+    QTextBlock block = doc->findBlockByNumber(p_block);
+    if (!block.isValid()) {
+        return;
+    }
+
+    QString text = block.text();
+    QString imageLink = fetchImageToPreview(text);
+    if (imageLink.isEmpty()) {
+        return;
+    }
+    QString imagePath = QDir(m_file->retriveBasePath()).filePath(imageLink);
+    qDebug() << "block" << p_block << "image" << imagePath;
+
+    if (isImagePreviewBlock(p_block + 1)) {
+        updateImagePreviewBlock(p_block + 1, imagePath);
+        return;
+    }
+    insertImagePreviewBlock(p_block, imagePath);
+}
+
+bool VMdEdit::isImagePreviewBlock(int p_block)
+{
+    QTextDocument *doc = document();
+    QTextBlock block = doc->findBlockByNumber(p_block);
+    if (!block.isValid()) {
+        return false;
+    }
+    QString text = block.text().trimmed();
+    return text == QString(QChar::ObjectReplacementCharacter);
+}
+
+bool VMdEdit::isImagePreviewBlock(QTextBlock p_block)
+{
+    if (!p_block.isValid()) {
+        return false;
+    }
+    QString text = p_block.text().trimmed();
+    return text == QString(QChar::ObjectReplacementCharacter);
+}
+
+void VMdEdit::insertImagePreviewBlock(int p_block, const QString &p_image)
+{
+    QTextDocument *doc = document();
+
+    QImage image(p_image);
+    if (image.isNull()) {
+        return;
+    }
+
+    // Store current status.
+    bool modified = isModified();
+    int pos = textCursor().position();
+
+    QTextCursor cursor(doc->findBlockByNumber(p_block));
+    cursor.beginEditBlock();
+    cursor.movePosition(QTextCursor::EndOfBlock);
+    cursor.insertBlock();
+
+    QTextImageFormat imgFormat;
+    imgFormat.setName(p_image);
+    imgFormat.setProperty(ImagePath, p_image);
+    cursor.insertImage(imgFormat);
+    Q_ASSERT(cursor.block().text().at(0) == QChar::ObjectReplacementCharacter);
+    cursor.endEditBlock();
+
+    QTextCursor tmp = textCursor();
+    tmp.setPosition(pos);
+    setTextCursor(tmp);
+    setModified(modified);
+    emit statusChanged();
+}
+
+void VMdEdit::updateImagePreviewBlock(int p_block, const QString &p_image)
+{
+    Q_ASSERT(isImagePreviewBlock(p_block));
+    QTextDocument *doc = document();
+    QTextBlock block = doc->findBlockByNumber(p_block);
+    if (!block.isValid()) {
+        return;
+    }
+    QTextCursor cursor(block);
+    QTextImageFormat format = cursor.charFormat().toImageFormat();
+    Q_ASSERT(format.isValid());
+    QString curPath = format.property(ImagePath).toString();
+
+    if (curPath == p_image) {
+        return;
+    }
+    // Update it with the new image.
+    QImage image(p_image);
+    if (image.isNull()) {
+        // Delete current preview block.
+        removeBlock(block);
+        qDebug() << "remove invalid image in block" << p_block;
+        return;
+    }
+    format.setName(p_image);
+    qDebug() << "update block" << p_block << "to image" << p_image;
+}
+
+void VMdEdit::removeBlock(QTextBlock p_block)
+{
+    QTextCursor cursor(p_block);
+    cursor.select(QTextCursor::BlockUnderCursor);
+    cursor.removeSelectedText();
+}
+
+QString VMdEdit::toPlainTextWithoutImg() const
+{
+    QString text = toPlainText();
+    int start = 0;
+    do {
+        int index = text.indexOf(QChar::ObjectReplacementCharacter, start);
+        if (index == -1) {
+            break;
+        }
+        start = removeObjectReplacementLine(text, index);
+    } while (start < text.size());
+    qDebug() << text;
+    return text;
+}
+
+int VMdEdit::removeObjectReplacementLine(QString &p_text, int p_index) const
+{
+    Q_ASSERT(p_text.size() > p_index && p_text.at(p_index) == QChar::ObjectReplacementCharacter);
+    Q_ASSERT(p_text.at(p_index + 1) == '\n');
+    int prevLineIdx = p_text.lastIndexOf('\n', p_index);
+    if (prevLineIdx == -1) {
+        prevLineIdx = 0;
+    }
+    // Remove \n[....?\n]
+    p_text.remove(prevLineIdx + 1, p_index - prevLineIdx + 1);
+    return prevLineIdx;
 }

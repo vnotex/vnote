@@ -29,7 +29,7 @@ void VLogger(QtMsgType type, const QMessageLogContext &context, const QString &m
 
 int main(int argc, char *argv[])
 {
-    qInstallMessageHandler(VLogger);
+    //qInstallMessageHandler(VLogger);
 
     VSingleInstanceGuard guard;
     if (!guard.tryRun()) {

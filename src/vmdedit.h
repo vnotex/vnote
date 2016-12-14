@@ -23,14 +23,19 @@ public:
 
     // Scroll to m_headers[p_headerIndex].
     void scrollToHeader(int p_headerIndex);
+    // Like toPlainText(), but remove special blocks containing images.
+    QString toPlainTextWithoutImg() const;
 
 signals:
     void headersChanged(const QVector<VHeader> &headers);
     void curHeaderChanged(int p_lineNumber, int p_outlineIndex);
+    void statusChanged();
 
 private slots:
     void generateEditOutline();
     void updateCurHeader();
+    // Update block list containing image links.
+    void updateImageBlocks(QSet<int> p_imageBlocks);
 
 protected:
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
@@ -42,6 +47,23 @@ private:
     void updateTabSettings();
     void initInitImages();
     void clearUnusedImages();
+    // p_text[p_index] is QChar::ObjectReplacementCharacter. Remove the line containing it.
+    // Returns the index of previous line's '\n'.
+    int removeObjectReplacementLine(QString &p_text, int p_index) const;
+    void previewImageOfBlock(int p_block);
+    bool isImagePreviewBlock(int p_block);
+    bool isImagePreviewBlock(QTextBlock p_block);
+    // p_block is a image preview block. We need to update it with image.
+    void updateImagePreviewBlock(int p_block, const QString &p_image);
+    // Insert a block after @p_block to preview image @p_image.
+    void insertImagePreviewBlock(int p_block, const QString &p_image);
+    // Clean up un-referenced image preview block.
+    void clearOrphanImagePreviewBlock();
+    void removeBlock(QTextBlock p_block);
+    bool isOrphanImagePreviewBlock(QTextBlock p_block);
+    // Returns the image relative path (image/xxx.png) only when
+    // there is one and only one image link.
+    QString fetchImageToPreview(const QString &p_text);
 
     HGMarkdownHighlighter *m_mdHighlighter;
     QVector<QString> m_insertedImages;
@@ -49,7 +71,6 @@ private:
     bool m_expandTab;
     QString m_tabSpaces;
     QVector<VHeader> m_headers;
-
 };
 
 #endif // VMDEDIT_H

@@ -13,6 +13,7 @@
 #include <QTextCharFormat>
 #include <QSyntaxHighlighter>
 #include <QAtomicInt>
+#include <QSet>
 
 extern "C" {
 #include <pmh_parser.h>
@@ -58,6 +59,7 @@ public:
 
 signals:
     void highlightCompleted();
+    void imageBlocksUpdated(QSet<int> p_blocks);
 
 protected:
     void highlightBlock(const QString &text) Q_DECL_OVERRIDE;
@@ -74,6 +76,8 @@ private:
     QTextDocument *document;
     QVector<HighlightingStyle> highlightingStyles;
     QVector<QVector<HLUnit> > blockHighlights;
+    // Block numbers containing image link(s).
+    QSet<int> imageBlocks;
     QAtomicInt parsing;
     QTimer *timer;
     int waitInterval;
@@ -81,15 +85,17 @@ private:
     char *content;
     int capacity;
     pmh_element **result;
-    static const int initCapacity;
-    void resizeBuffer(int newCap);
 
+    static const int initCapacity;
+
+    void resizeBuffer(int newCap);
     void highlightCodeBlock(const QString &text);
     void parse();
     void parseInternal();
     void initBlockHighlightFromResult(int nrBlocks);
     void initBlockHighlihgtOne(unsigned long pos, unsigned long end,
                                int styleIndex);
+    void updateImageBlocks();
 };
 
 #endif
