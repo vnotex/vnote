@@ -135,10 +135,20 @@ void VEditTab::previewByConverter()
     QString html = mdConverter.generateHtml(content, vconfig.getMarkdownExtensions());
     QRegularExpression tocExp("<p>\\[TOC\\]<\\/p>", QRegularExpression::CaseInsensitiveOption);
     QString toc = mdConverter.generateToc(content, vconfig.getMarkdownExtensions());
+    processHoedownToc(toc);
     html.replace(tocExp, toc);
     document.setHtml(html);
     // Hoedown will add '\n' while Marked does not
-    updateTocFromHtml(toc.replace("\n", ""));
+    updateTocFromHtml(toc);
+}
+
+void VEditTab::processHoedownToc(QString &p_toc)
+{
+    // Hoedown will add '\n'.
+    p_toc.replace("\n", "");
+    // Hoedown will translate `_` in title to `<em>`.
+    p_toc.replace("<em>", "_");
+    p_toc.replace("</em>", "_");
 }
 
 void VEditTab::showFileEditMode()

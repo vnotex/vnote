@@ -60,6 +60,7 @@ private:
     void showFileEditMode();
     void setupMarkdownPreview();
     void previewByConverter();
+    void processHoedownToc(QString &p_toc);
     inline bool isChild(QObject *obj);
     void parseTocUl(QXmlStreamReader &xml, QVector<VHeader> &headers, int level);
     void parseTocLi(QXmlStreamReader &xml, QVector<VHeader> &headers, int level);
