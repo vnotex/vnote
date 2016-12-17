@@ -7,6 +7,8 @@
 #include <QImageReader>
 #include <QDir>
 #include <QMessageBox>
+#include <QKeyEvent>
+#include <QTextCursor>
 #include "vmdeditoperations.h"
 #include "dialog/vinsertimagedialog.h"
 #include "utils/vutils.h"
@@ -162,3 +164,266 @@ bool VMdEditOperations::insertImage()
     }
     return true;
 }
+
+bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
+{
+    switch (p_event->key()) {
+    case Qt::Key_Tab:
+    {
+        if (handleKeyTab(p_event)) {
+            return true;
+        }
+        break;
+    }
+
+    case Qt::Key_Backtab:
+    {
+        if (handleKeyBackTab(p_event)) {
+            return true;
+        }
+        break;
+    }
+
+    case Qt::Key_H:
+    {
+        if (handleKeyH(p_event)) {
+            return true;
+        }
+        break;
+    }
+
+    case Qt::Key_W:
+    {
+        if (handleKeyW(p_event)) {
+            return true;
+        }
+        break;
+    }
+
+    case Qt::Key_U:
+    {
+        if (handleKeyU(p_event)) {
+            return true;
+        }
+        break;
+    }
+
+    case Qt::Key_B:
+    {
+        if (handleKeyB(p_event)) {
+            return true;
+        }
+        break;
+    }
+
+    case Qt::Key_I:
+    {
+        if (handleKeyI(p_event)) {
+            return true;
+        }
+        break;
+    }
+
+    default:
+        // Fall through.
+        break;
+    }
+
+    m_keyState = KeyState::Normal;
+    return false;
+}
+
+bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)
+{
+    QTextDocument *doc = m_editor->document();
+    QString text("\t");
+    if (m_expandTab) {
+        text = m_tabSpaces;
+    }
+
+    if (p_event->modifiers() == Qt::NoModifier) {
+        QTextCursor cursor = m_editor->textCursor();
+        cursor.beginEditBlock();
+        if (cursor.hasSelection()) {
+            // Indent each selected line.
+            QTextBlock block = doc->findBlock(cursor.selectionStart());
+            QTextBlock endBlock = doc->findBlock(cursor.selectionEnd());
+            int endBlockNum = endBlock.blockNumber();
+            while (true) {
+                Q_ASSERT(block.isValid());
+                QTextCursor blockCursor(block);
+                blockCursor.insertText(text);
+
+                if (block.blockNumber() == endBlockNum) {
+                    break;
+                }
+                block = block.next();
+            }
+        } else {
+            // Just insert "tab".
+            insertTextAtCurPos(text);
+        }
+        cursor.endEditBlock();
+    } else {
+        return false;
+    }
+    p_event->accept();
+    return true;
+}
+
+bool VMdEditOperations::handleKeyBackTab(QKeyEvent *p_event)
+{
+    QTextDocument *doc = m_editor->document();
+    QTextCursor cursor = m_editor->textCursor();
+    QTextBlock block = doc->findBlock(cursor.selectionStart());
+    QTextBlock endBlock = doc->findBlock(cursor.selectionEnd());
+    int endBlockNum = endBlock.blockNumber();
+    cursor.beginEditBlock();
+    for (; block.isValid() && block.blockNumber() <= endBlockNum;
+         block = block.next()) {
+        QTextCursor blockCursor(block);
+        QString text = block.text();
+        if (text.isEmpty()) {
+            continue;
+        } else if (text[0] == '\t') {
+            blockCursor.deleteChar();
+            continue;
+        } else if (text[0] != ' ') {
+            continue;
+        } else {
+            // Spaces.
+            if (m_expandTab) {
+                int width = m_tabSpaces.size();
+                for (int i = 0; i < width; ++i) {
+                    if (text[i] == ' ') {
+                        blockCursor.deleteChar();
+                    } else {
+                        break;
+                    }
+                }
+                continue;
+            } else {
+                blockCursor.deleteChar();
+                continue;
+            }
+        }
+    }
+    cursor.endEditBlock();
+    p_event->accept();
+    return true;
+}
+
+bool VMdEditOperations::handleKeyB(QKeyEvent *p_event)
+{
+    if (p_event->modifiers() == Qt::ControlModifier) {
+        // Ctrl+B, Bold.
+        QTextCursor cursor = m_editor->textCursor();
+        if (cursor.hasSelection()) {
+            // Insert ** around the selected text.
+            int start = cursor.selectionStart();
+            int end = cursor.selectionEnd();
+            cursor.beginEditBlock();
+            cursor.clearSelection();
+            cursor.setPosition(start, QTextCursor::MoveAnchor);
+            cursor.insertText("**");
+            cursor.setPosition(end + 2, QTextCursor::MoveAnchor);
+            cursor.insertText("**");
+            cursor.endEditBlock();
+            m_editor->setTextCursor(cursor);
+        } else {
+            // Insert **** and place cursor in the middle.
+            cursor.beginEditBlock();
+            cursor.insertText("****");
+            cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 2);
+            cursor.endEditBlock();
+            m_editor->setTextCursor(cursor);
+        }
+
+        p_event->accept();
+        return true;
+    }
+    return false;
+}
+
+bool VMdEditOperations::handleKeyH(QKeyEvent *p_event)
+{
+    if (p_event->modifiers() == Qt::ControlModifier) {
+        // Ctrl+H, equal to backspace.
+        QTextCursor cursor = m_editor->textCursor();
+        cursor.deletePreviousChar();
+
+        p_event->accept();
+        return true;
+    }
+    return false;
+}
+
+bool VMdEditOperations::handleKeyI(QKeyEvent *p_event)
+{
+    if (p_event->modifiers() == Qt::ControlModifier) {
+        // Ctrl+I, Italic.
+        QTextCursor cursor = m_editor->textCursor();
+        if (cursor.hasSelection()) {
+            // Insert * around the selected text.
+            int start = cursor.selectionStart();
+            int end = cursor.selectionEnd();
+            cursor.beginEditBlock();
+            cursor.clearSelection();
+            cursor.setPosition(start, QTextCursor::MoveAnchor);
+            cursor.insertText("*");
+            cursor.setPosition(end + 1, QTextCursor::MoveAnchor);
+            cursor.insertText("*");
+            cursor.endEditBlock();
+            m_editor->setTextCursor(cursor);
+        } else {
+            // Insert ** and place cursor in the middle.
+            cursor.beginEditBlock();
+            cursor.insertText("**");
+            cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 1);
+            cursor.endEditBlock();
+            m_editor->setTextCursor(cursor);
+        }
+
+        p_event->accept();
+        return true;
+    }
+    return false;
+}
+
+bool VMdEditOperations::handleKeyU(QKeyEvent *p_event)
+{
+    if (p_event->modifiers() == Qt::ControlModifier) {
+        // Ctrl+U, delete till the start of line.
+        QTextCursor cursor = m_editor->textCursor();
+        bool ret;
+        if (cursor.atBlockStart()) {
+            ret = cursor.movePosition(QTextCursor::PreviousWord, QTextCursor::KeepAnchor);
+        } else {
+            ret = cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::KeepAnchor);
+        }
+        if (ret) {
+            cursor.removeSelectedText();
+        }
+
+        p_event->accept();
+        return true;
+    }
+    return false;
+}
+
+bool VMdEditOperations::handleKeyW(QKeyEvent *p_event)
+{
+    if (p_event->modifiers() == Qt::ControlModifier) {
+        // Ctrl+W, delete till the start of previous word.
+        QTextCursor cursor = m_editor->textCursor();
+        bool ret = cursor.movePosition(QTextCursor::PreviousWord, QTextCursor::KeepAnchor);
+        if (ret) {
+            cursor.removeSelectedText();
+        }
+
+        p_event->accept();
+        return true;
+    }
+    return false;
+}
+

@@ -28,7 +28,7 @@ VMdEdit::VMdEdit(VFile *p_file, QWidget *p_parent)
     connect(this, &VMdEdit::cursorPositionChanged,
             this, &VMdEdit::updateCurHeader);
 
-    updateTabSettings();
+    m_editOps->updateTabSettings();
     updateFontAndPalette();
 }
 
@@ -38,21 +38,9 @@ void VMdEdit::updateFontAndPalette()
     setPalette(vconfig.getMdEditPalette());
 }
 
-void VMdEdit::updateTabSettings()
-{
-    if (vconfig.getTabStopWidth() > 0) {
-        QFontMetrics metrics(vconfig.getMdEditFont());
-        setTabStopWidth(vconfig.getTabStopWidth() * metrics.width(' '));
-    }
-    m_expandTab = vconfig.getIsExpandTab();
-    if (m_expandTab && (vconfig.getTabStopWidth() > 0)) {
-        m_tabSpaces = QString(vconfig.getTabStopWidth(), ' ');
-    }
-}
-
 void VMdEdit::beginEdit()
 {
-    updateTabSettings();
+    m_editOps->updateTabSettings();
     updateFontAndPalette();
 
     setFont(vconfig.getMdEditFont());
@@ -93,10 +81,7 @@ void VMdEdit::reloadFile()
 
 void VMdEdit::keyPressEvent(QKeyEvent *event)
 {
-    if ((event->key() == Qt::Key_Tab) && m_expandTab) {
-        QTextCursor cursor(document());
-        cursor.setPosition(textCursor().position());
-        cursor.insertText(m_tabSpaces);
+    if (m_editOps->handleKeyPressEvent(event)) {
         return;
     }
     VEdit::keyPressEvent(event);
@@ -381,6 +366,10 @@ void VMdEdit::updateImagePreviewBlock(int p_block, const QString &p_image)
         return;
     }
     QTextCursor cursor(block);
+    int shift = block.text().indexOf(QChar::ObjectReplacementCharacter);
+    if (shift > 0) {
+        cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, shift + 1);
+    }
     QTextImageFormat format = cursor.charFormat().toImageFormat();
     Q_ASSERT(format.isValid());
     QString curPath = format.property(ImagePath).toString();
@@ -418,7 +407,6 @@ QString VMdEdit::toPlainTextWithoutImg() const
         }
         start = removeObjectReplacementLine(text, index);
     } while (start < text.size());
-    qDebug() << text;
     return text;
 }
 

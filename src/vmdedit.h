@@ -44,7 +44,6 @@ protected:
 
 private:
     void updateFontAndPalette();
-    void updateTabSettings();
     void initInitImages();
     void clearUnusedImages();
     // p_text[p_index] is QChar::ObjectReplacementCharacter. Remove the line containing it.
@@ -68,8 +67,6 @@ private:
     HGMarkdownHighlighter *m_mdHighlighter;
     QVector<QString> m_insertedImages;
     QVector<QString> m_initImages;
-    bool m_expandTab;
-    QString m_tabSpaces;
     QVector<VHeader> m_headers;
 };
 

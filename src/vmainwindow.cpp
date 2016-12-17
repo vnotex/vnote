@@ -130,6 +130,7 @@ void VMainWindow::initActions()
     newNoteAct = new QAction(QIcon(":/resources/icons/create_note_tb.svg"),
                              tr("New &Note"), this);
     newNoteAct->setStatusTip(tr("Create a note in current directory"));
+    newNoteAct->setShortcut(QKeySequence("Ctrl+N"));
     connect(newNoteAct, &QAction::triggered,
             fileList, &VFileList::newFile);
 
@@ -219,12 +220,14 @@ void VMainWindow::initEditActions()
     editNoteAct = new QAction(QIcon(":/resources/icons/edit_note.svg"),
                               tr("&Edit"), this);
     editNoteAct->setStatusTip(tr("Edit current note"));
+    editNoteAct->setShortcut(QKeySequence("Ctrl+W"));
     connect(editNoteAct, &QAction::triggered,
             editArea, &VEditArea::editFile);
 
     discardExitAct = new QAction(QIcon(":/resources/icons/discard_exit.svg"),
                                  tr("Discard Changes And Exit"), this);
     discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
+    discardExitAct->setShortcut(QKeySequence("Ctrl+Q"));
     connect(discardExitAct, &QAction::triggered,
             editArea, &VEditArea::readFile);
 
@@ -235,6 +238,7 @@ void VMainWindow::initEditActions()
                               tr("Save Changes And Exit"), this);
     saveExitAct->setStatusTip(tr("Save changes and exit edit mode"));
     saveExitAct->setMenu(exitEditMenu);
+    saveExitAct->setShortcut(QKeySequence("Ctrl+R"));
     connect(saveExitAct, &QAction::triggered,
             editArea, &VEditArea::saveAndReadFile);
 
@@ -269,6 +273,7 @@ void VMainWindow::initViewActions()
                                 tr("Expand"), this);
     expandViewAct->setStatusTip(tr("Expand the edit area"));
     expandViewAct->setCheckable(true);
+    expandViewAct->setShortcut(QKeySequence("Ctrl+E"));
     expandViewAct->setMenu(panelMenu);
     connect(expandViewAct, &QAction::triggered,
             this, &VMainWindow::expandPanelView);
