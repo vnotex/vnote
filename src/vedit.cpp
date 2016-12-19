@@ -18,14 +18,9 @@ VEdit::VEdit(VFile *p_file, QWidget *p_parent)
 
 VEdit::~VEdit()
 {
-    qDebug() << "VEdit destruction";
     if (m_file) {
         disconnect(document(), &QTextDocument::modificationChanged,
                    (VFile *)m_file, &VFile::setModified);
-    }
-    if (m_editOps) {
-        delete m_editOps;
-        m_editOps = NULL;
     }
 }
 

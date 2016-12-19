@@ -8,8 +8,8 @@
 extern VConfigManager vconfig;
 
 VEditOperations::VEditOperations(VEdit *p_editor, VFile *p_file)
-    : m_editor(p_editor), m_file(p_file), m_expandTab(false),
-      m_keyState(KeyState::Normal)
+    : QObject(p_editor), m_editor(p_editor), m_file(p_file), m_expandTab(false),
+      m_keyState(KeyState::Normal), m_pendingTime(2)
 {
     updateTabSettings();
 }

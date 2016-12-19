@@ -3,6 +3,8 @@
 
 #include <QPointer>
 #include <QString>
+#include <QObject>
+#include <QList>
 #include "vfile.h"
 
 class VEdit;
@@ -11,8 +13,9 @@ class QKeyEvent;
 
 enum class KeyState { Normal = 0, Vim };
 
-class VEditOperations
+class VEditOperations: public QObject
 {
+    Q_OBJECT
 public:
     VEditOperations(VEdit *p_editor, VFile *p_file);
     virtual ~VEditOperations();
@@ -32,6 +35,9 @@ protected:
     bool m_expandTab;
     QString m_tabSpaces;
     KeyState m_keyState;
+    // Seconds for pending mode.
+    int m_pendingTime;
+    QList<QString> m_pendingKey;
 };
 
 #endif // VEDITOPERATIONS_H

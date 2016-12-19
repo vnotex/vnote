@@ -2,13 +2,13 @@
 #include <QImage>
 #include <QVariant>
 #include <QMimeData>
-#include <QObject>
 #include <QWidget>
 #include <QImageReader>
 #include <QDir>
 #include <QMessageBox>
 #include <QKeyEvent>
 #include <QTextCursor>
+#include <QTimer>
 #include "vmdeditoperations.h"
 #include "dialog/vinsertimagedialog.h"
 #include "utils/vutils.h"
@@ -20,6 +20,10 @@
 VMdEditOperations::VMdEditOperations(VEdit *p_editor, VFile *p_file)
     : VEditOperations(p_editor, p_file)
 {
+    m_pendingTimer = new QTimer(this);
+    m_pendingTimer->setSingleShot(true);
+    m_pendingTimer->setInterval(m_pendingTime * 1000);  // milliseconds
+    connect(m_pendingTimer, &QTimer::timeout, this, &VMdEditOperations::pendingTimerTimeout);
 }
 
 bool VMdEditOperations::insertImageFromMimeData(const QMimeData *source)
@@ -28,7 +32,7 @@ bool VMdEditOperations::insertImageFromMimeData(const QMimeData *source)
     if (image.isNull()) {
         return false;
     }
-    VInsertImageDialog dialog(QObject::tr("Insert image from clipboard"), QObject::tr("image_title"),
+    VInsertImageDialog dialog(tr("Insert image from clipboard"), tr("image_title"),
                               "", (QWidget *)m_editor);
     dialog.setBrowseable(false);
     dialog.setImage(image);
@@ -48,7 +52,7 @@ void VMdEditOperations::insertImageFromQImage(const QString &title, const QStrin
     VUtils::makeDirectory(path);
     bool ret = image.save(filePath);
     if (!ret) {
-        QMessageBox msgBox(QMessageBox::Warning, QObject::tr("Warning"), QString("Fail to save image %1").arg(filePath),
+        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Fail to save image %1").arg(filePath),
                            QMessageBox::Ok, (QWidget *)m_editor);
         msgBox.exec();
         return;
@@ -73,7 +77,7 @@ void VMdEditOperations::insertImageFromPath(const QString &title,
     bool ret = QFile::copy(oriImagePath, filePath);
     if (!ret) {
         qWarning() << "error: fail to copy" << oriImagePath << "to" << filePath;
-        QMessageBox msgBox(QMessageBox::Warning, QObject::tr("Warning"), QString("Fail to save image %1").arg(filePath),
+        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Fail to save image %1").arg(filePath),
                            QMessageBox::Ok, (QWidget *)m_editor);
         msgBox.exec();
         return;
@@ -154,7 +158,7 @@ bool VMdEditOperations::insertURLFromMimeData(const QMimeData *source)
 
 bool VMdEditOperations::insertImage()
 {
-    VInsertImageDialog dialog(QObject::tr("Insert Image From File"), QObject::tr("image_title"),
+    VInsertImageDialog dialog(tr("Insert Image From File"), tr("image_title"),
                               "", (QWidget *)m_editor);
     if (dialog.exec() == QDialog::Accepted) {
         QString title = dialog.getImageTitleInput();
@@ -165,71 +169,114 @@ bool VMdEditOperations::insertImage()
     return true;
 }
 
+bool VMdEditOperations::shouldTriggerVimMode(QKeyEvent *p_event)
+{
+    if (m_keyState == KeyState::Vim) {
+        return true;
+    } else {
+        if (p_event->modifiers() == (Qt::ControlModifier | Qt::AltModifier)) {
+            switch (p_event->key()) {
+            // Should add one item for each supported Ctrl+ALT+<Key> Vim binding.
+            case Qt::Key_H:
+            case Qt::Key_J:
+            case Qt::Key_K:
+            case Qt::Key_L:
+            case Qt::Key_0:
+            case Qt::Key_1:
+            case Qt::Key_2:
+            case Qt::Key_3:
+            case Qt::Key_4:
+            case Qt::Key_5:
+            case Qt::Key_6:
+            case Qt::Key_7:
+            case Qt::Key_8:
+            case Qt::Key_9:
+                return true;
+            default:
+                break;
+            }
+        }
+    }
+    return false;
+}
+
 bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
 {
-    switch (p_event->key()) {
-    case Qt::Key_Tab:
-    {
-        if (handleKeyTab(p_event)) {
+    if (shouldTriggerVimMode(p_event)) {
+        if (handleKeyPressVim(p_event)) {
             return true;
         }
-        break;
-    }
-
-    case Qt::Key_Backtab:
-    {
-        if (handleKeyBackTab(p_event)) {
-            return true;
+    } else {
+        switch (p_event->key()) {
+        case Qt::Key_Tab:
+        {
+            if (handleKeyTab(p_event)) {
+                return true;
+            }
+            break;
         }
-        break;
-    }
 
-    case Qt::Key_H:
-    {
-        if (handleKeyH(p_event)) {
-            return true;
+        case Qt::Key_Backtab:
+        {
+            if (handleKeyBackTab(p_event)) {
+                return true;
+            }
+            break;
         }
-        break;
-    }
 
-    case Qt::Key_W:
-    {
-        if (handleKeyW(p_event)) {
-            return true;
+        case Qt::Key_B:
+        {
+            if (handleKeyB(p_event)) {
+                return true;
+            }
+            break;
         }
-        break;
-    }
 
-    case Qt::Key_U:
-    {
-        if (handleKeyU(p_event)) {
-            return true;
+        case Qt::Key_D:
+        {
+            if (handleKeyD(p_event)) {
+                return true;
+            }
+            break;
         }
-        break;
-    }
 
-    case Qt::Key_B:
-    {
-        if (handleKeyB(p_event)) {
-            return true;
+        case Qt::Key_H:
+        {
+            if (handleKeyH(p_event)) {
+                return true;
+            }
+            break;
         }
-        break;
-    }
 
-    case Qt::Key_I:
-    {
-        if (handleKeyI(p_event)) {
-            return true;
+        case Qt::Key_I:
+        {
+            if (handleKeyI(p_event)) {
+                return true;
+            }
+            break;
         }
-        break;
+
+        case Qt::Key_U:
+        {
+            if (handleKeyU(p_event)) {
+                return true;
+            }
+            break;
+        }
+
+        case Qt::Key_W:
+        {
+            if (handleKeyW(p_event)) {
+                return true;
+            }
+            break;
+        }
+
+        default:
+            break;
+        }
     }
 
-    default:
-        // Fall through.
-        break;
-    }
-
-    m_keyState = KeyState::Normal;
     return false;
 }
 
@@ -273,6 +320,9 @@ bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)
 
 bool VMdEditOperations::handleKeyBackTab(QKeyEvent *p_event)
 {
+    if (p_event->modifiers() != Qt::ShiftModifier) {
+        return false;
+    }
     QTextDocument *doc = m_editor->document();
     QTextCursor cursor = m_editor->textCursor();
     QTextBlock block = doc->findBlock(cursor.selectionStart());
@@ -339,6 +389,20 @@ bool VMdEditOperations::handleKeyB(QKeyEvent *p_event)
             m_editor->setTextCursor(cursor);
         }
 
+        p_event->accept();
+        return true;
+    }
+    return false;
+}
+
+bool VMdEditOperations::handleKeyD(QKeyEvent *p_event)
+{
+    if (p_event->modifiers() == Qt::ControlModifier) {
+        // Ctrl+D, enter Vim-pending mode.
+        // Will accept the key stroke in m_pendingTime as Vim normal command.
+        m_keyState = KeyState::Vim;
+        m_pendingTimer->stop();
+        m_pendingTimer->start();
         p_event->accept();
         return true;
     }
@@ -425,5 +489,108 @@ bool VMdEditOperations::handleKeyW(QKeyEvent *p_event)
         return true;
     }
     return false;
+}
+
+bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
+{
+    int modifiers = p_event->modifiers();
+    bool ctrlAlt = modifiers == (Qt::ControlModifier | Qt::AltModifier);
+    switch (p_event->key()) {
+    // Ctrl may be sent out first.
+    case Qt::Key_Control:
+    {
+        goto pending;
+        break;
+    }
+
+    case Qt::Key_H:
+    case Qt::Key_J:
+    case Qt::Key_K:
+    case Qt::Key_L:
+    {
+        if (modifiers == Qt::NoModifier || ctrlAlt) {
+            QTextCursor::MoveOperation op;
+            switch (p_event->key()) {
+            case Qt::Key_H:
+                op = QTextCursor::Left;
+                break;
+            case Qt::Key_J:
+                op = QTextCursor::Down;
+                break;
+            case Qt::Key_K:
+                op = QTextCursor::Up;
+                break;
+            case Qt::Key_L:
+                op = QTextCursor::Right;
+            }
+            // Move cursor <repeat> characters left/Down/Up/Right.
+            int repeat = keySeqToNumber(m_pendingKey);
+            QTextCursor cursor = m_editor->textCursor();
+            cursor.movePosition(op, QTextCursor::MoveAnchor,
+                                repeat == 0 ? 1 : repeat);
+            m_editor->setTextCursor(cursor);
+        }
+        break;
+    }
+
+    case Qt::Key_0:
+    case Qt::Key_1:
+    case Qt::Key_2:
+    case Qt::Key_3:
+    case Qt::Key_4:
+    case Qt::Key_5:
+    case Qt::Key_6:
+    case Qt::Key_7:
+    case Qt::Key_8:
+    case Qt::Key_9:
+    {
+        if (modifiers == Qt::NoModifier || ctrlAlt) {
+            int num = p_event->key() - Qt::Key_0;
+            m_pendingKey.append(QString::number(num));
+            goto pending;
+        }
+        break;
+    }
+
+    default:
+        // Unknown key. End Vim mode.
+        break;
+    }
+
+    m_keyState = KeyState::Normal;
+    m_pendingKey.clear();
+    m_pendingTimer->stop();
+    p_event->accept();
+    return true;
+
+pending:
+    if (m_pendingTimer->isActive()) {
+        m_pendingTimer->stop();
+        m_pendingTimer->start();
+    }
+    p_event->accept();
+    return true;
+}
+
+int VMdEditOperations::keySeqToNumber(const QList<QString> &p_seq)
+{
+    int num = 0;
+    for (int i = 0; i < p_seq.size(); ++i) {
+        QString tmp = p_seq.at(i);
+        bool ok;
+        int tmpInt = tmp.toInt(&ok);
+        if (!ok) {
+            return 0;
+        }
+        num = num * 10 + tmpInt;
+    }
+    return num;
+}
+
+void VMdEditOperations::pendingTimerTimeout()
+{
+    qDebug() << "key pending timer timeout";
+    m_keyState = KeyState::Normal;
+    m_pendingKey.clear();
 }
 
