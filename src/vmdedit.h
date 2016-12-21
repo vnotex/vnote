@@ -60,6 +60,8 @@ private:
     void clearOrphanImagePreviewBlock();
     void removeBlock(QTextBlock p_block);
     bool isOrphanImagePreviewBlock(QTextBlock p_block);
+    // Block that has the QChar::ObjectReplacementCharacter as well as some non-space characters.
+    void clearCorruptedImagePreviewBlock(QTextBlock p_block);
     // Returns the image relative path (image/xxx.png) only when
     // there is one and only one image link.
     QString fetchImageToPreview(const QString &p_text);

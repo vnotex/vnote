@@ -244,6 +244,7 @@ void VMdEdit::clearOrphanImagePreviewBlock()
             removeBlock(block);
             block = nextBlock;
         } else {
+            clearCorruptedImagePreviewBlock(block);
             block = block.next();
         }
     }
@@ -266,6 +267,35 @@ bool VMdEdit::isOrphanImagePreviewBlock(QTextBlock p_block)
         }
     }
     return false;
+}
+
+void VMdEdit::clearCorruptedImagePreviewBlock(QTextBlock p_block)
+{
+    if (!p_block.isValid()) {
+        return;
+    }
+    QString text = p_block.text();
+    QVector<int> replacementChars;
+    bool onlySpaces = true;
+    for (int i = 0; i < text.size(); ++i) {
+        if (text[i] == QChar::ObjectReplacementCharacter) {
+            replacementChars.append(i);
+        } else if (!text[i].isSpace()) {
+            onlySpaces = false;
+        }
+    }
+    if (!onlySpaces && !replacementChars.isEmpty()) {
+        // ObjectReplacementCharacter mixed with other non-space texts.
+        // Users corrupt the image preview block. Just remove the char.
+        QTextCursor cursor(p_block);
+        int blockPos = p_block.position();
+        for (int i = replacementChars.size() - 1; i >= 0; --i) {
+            int pos = replacementChars[i];
+            cursor.setPosition(blockPos + pos);
+            cursor.deleteChar();
+        }
+        Q_ASSERT(text.remove(QChar::ObjectReplacementCharacter) == p_block.text());
+    }
 }
 
 QString VMdEdit::fetchImageToPreview(const QString &p_text)
