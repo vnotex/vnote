@@ -382,9 +382,22 @@ bool VMdEditOperations::handleKeyB(QKeyEvent *p_event)
             m_editor->setTextCursor(cursor);
         } else {
             // Insert **** and place cursor in the middle.
+            // Or if there are two * after current cursor, just skip them.
             cursor.beginEditBlock();
-            cursor.insertText("****");
-            cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 2);
+            int pos = cursor.positionInBlock();
+            bool hasStars = false;
+            QString text = cursor.block().text();
+            if (pos <= text.size() - 2) {
+                if (text[pos] == '*' && text[pos + 1] == '*') {
+                    hasStars = true;
+                }
+            }
+            if (hasStars) {
+                cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 2);
+            } else {
+                cursor.insertText("****");
+                cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 2);
+            }
             cursor.endEditBlock();
             m_editor->setTextCursor(cursor);
         }
@@ -441,9 +454,22 @@ bool VMdEditOperations::handleKeyI(QKeyEvent *p_event)
             m_editor->setTextCursor(cursor);
         } else {
             // Insert ** and place cursor in the middle.
+            // Or if there are one * after current cursor, just skip it.
             cursor.beginEditBlock();
-            cursor.insertText("**");
-            cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 1);
+            int pos = cursor.positionInBlock();
+            bool hasStar = false;
+            QString text = cursor.block().text();
+            if (pos <= text.size() - 1) {
+                if (text[pos] == '*') {
+                    hasStar = true;
+                }
+            }
+            if (hasStar) {
+                cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 1);
+            } else {
+                cursor.insertText("**");
+                cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 1);
+            }
             cursor.endEditBlock();
             m_editor->setTextCursor(cursor);
         }
