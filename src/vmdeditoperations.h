@@ -40,6 +40,7 @@ private:
     bool handleKeyPressVim(QKeyEvent *p_event);
     bool shouldTriggerVimMode(QKeyEvent *p_event);
     int keySeqToNumber(const QList<QString> &p_seq);
+    bool suffixNumAllowed(const QList<QString> &p_seq);
 
     QTimer *m_pendingTimer;
 };
