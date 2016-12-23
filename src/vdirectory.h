@@ -55,6 +55,8 @@ public:
     inline QString retrivePath() const;
     inline QString retriveRelativePath() const;
     inline QString getNotebook() const;
+    inline bool isExpanded() const;
+    void setExpanded(bool p_expanded);
 
     static QJsonObject createDirectoryJson();
 
@@ -73,6 +75,8 @@ private:
     // Owner of the files
     QVector<VFile *> m_files;
     bool m_opened;
+    // Whether expanded in the directory tree.
+    bool m_expanded;
 };
 
 inline const QVector<VDirectory *> &VDirectory::getSubDirs() const
@@ -123,6 +127,11 @@ inline QString VDirectory::retrivePath() const
 inline QString VDirectory::retriveRelativePath() const
 {
     return retriveRelativePath(this);
+}
+
+inline bool VDirectory::isExpanded() const
+{
+    return m_expanded;
 }
 
 #endif // VDIRECTORY_H

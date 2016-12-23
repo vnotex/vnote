@@ -30,7 +30,8 @@ public slots:
     void updateDirectoryTree();
 
 private slots:
-    void updateChildren(QTreeWidgetItem *p_item);
+    void handleItemExpanded(QTreeWidgetItem *p_item);
+    void handleItemCollapsed(QTreeWidgetItem *p_item);
     void contextMenuRequested(QPoint pos);
     void newSubDirectory();
     void currentDirectoryItemChanged(QTreeWidgetItem *currentItem);
@@ -57,6 +58,7 @@ private:
     void pasteDirectories(VDirectory *p_destDir);
     bool copyDirectory(VDirectory *p_destDir, const QString &p_destName,
                        VDirectory *p_srcDir, bool p_cut);
+    void updateChildren(QTreeWidgetItem *p_item);
 
     VNote *vnote;
     QPointer<VNotebook> m_notebook;

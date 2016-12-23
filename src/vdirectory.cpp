@@ -9,7 +9,8 @@
 
 VDirectory::VDirectory(VNotebook *p_notebook,
                        const QString &p_name, QObject *p_parent)
-    : QObject(p_parent), m_notebook(p_notebook), m_name(p_name), m_opened(false)
+    : QObject(p_parent), m_notebook(p_notebook), m_name(p_name), m_opened(false),
+      m_expanded(false)
 {
 }
 
@@ -572,3 +573,12 @@ VDirectory *VDirectory::copyDirectory(VDirectory *p_destDir, const QString &p_de
     }
     return destDir;
 }
+
+void VDirectory::setExpanded(bool p_expanded)
+{
+    if (p_expanded) {
+        Q_ASSERT(m_opened);
+    }
+    m_expanded = p_expanded;
+}
+

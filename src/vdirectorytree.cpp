@@ -17,7 +17,9 @@ VDirectoryTree::VDirectoryTree(VNote *vnote, QWidget *parent)
     initActions();
 
     connect(this, SIGNAL(itemExpanded(QTreeWidgetItem*)),
-            this, SLOT(updateChildren(QTreeWidgetItem*)));
+            this, SLOT(handleItemExpanded(QTreeWidgetItem*)));
+    connect(this, SIGNAL(itemCollapsed(QTreeWidgetItem*)),
+            this, SLOT(handleItemCollapsed(QTreeWidgetItem*)));
     connect(this, SIGNAL(customContextMenuRequested(QPoint)),
             this, SLOT(contextMenuRequested(QPoint)));
     connect(this, &VDirectoryTree::currentItemChanged,
@@ -145,6 +147,22 @@ void VDirectoryTree::updateDirectoryTreeOne(QTreeWidgetItem *p_parent, int depth
 
         updateDirectoryTreeOne(item, depth - 1);
     }
+    if (dir->isExpanded()) {
+        expandItem(p_parent);
+    }
+}
+
+void VDirectoryTree::handleItemCollapsed(QTreeWidgetItem *p_item)
+{
+    VDirectory *dir = getVDirectory(p_item);
+    dir->setExpanded(false);
+}
+
+void VDirectoryTree::handleItemExpanded(QTreeWidgetItem *p_item)
+{
+    updateChildren(p_item);
+    VDirectory *dir = getVDirectory(p_item);
+    dir->setExpanded(true);
 }
 
 // Update @p_item's children items
