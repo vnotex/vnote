@@ -348,7 +348,7 @@ void VFileList::copySelectedFiles(bool p_isCut)
     for (int i = 0; i < items.size(); ++i) {
         VFile *file = getVFile(items[i]);
         QJsonObject fileJson;
-        fileJson["notebook"] = file->getNotebook();
+        fileJson["notebook"] = file->getNotebookName();
         fileJson["path"] = file->retrivePath();
         files.append(fileJson);
 
@@ -454,4 +454,18 @@ void VFileList::keyPressEvent(QKeyEvent *event)
         }
     }
     QWidget::keyPressEvent(event);
+}
+
+bool VFileList::locateFile(const VFile *p_file)
+{
+    if (p_file) {
+        if (p_file->getDirectory() != m_directory) {
+            return false;
+        }
+        QListWidgetItem *item = findItem(p_file);
+        if (item) {
+            fileList->setCurrentItem(item);
+        }
+    }
+    return false;
 }

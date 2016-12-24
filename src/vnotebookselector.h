@@ -19,6 +19,8 @@ public:
     explicit VNotebookSelector(VNote *vnote, QWidget *p_parent = 0);
     void update();
     inline void setEditArea(VEditArea *p_editArea);
+    // Select notebook @p_notebook.
+    bool locateNotebook(const VNotebook *p_notebook);
 
 signals:
     void curNotebookChanged(VNotebook *p_notebook);

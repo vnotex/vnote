@@ -6,19 +6,26 @@
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
 #include "vfile.h"
+#include "vmainwindow.h"
 
 extern VConfigManager vconfig;
 
 VEditWindow::VEditWindow(VNote *vnote, QWidget *parent)
     : QTabWidget(parent), vnote(vnote)
 {
+    initTabActions();
     setupCornerWidget();
 
     setTabsClosable(true);
     setMovable(true);
     setContextMenuPolicy(Qt::CustomContextMenu);
 
-    tabBar()->installEventFilter(this);
+    QTabBar *bar = tabBar();
+    bar->installEventFilter(this);
+    bar->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(bar, &QTabBar::customContextMenuRequested,
+            this, &VEditWindow::tabbarContextMenuRequested);
+
 
     connect(this, &VEditWindow::tabCloseRequested,
             this, &VEditWindow::handleTabCloseRequest);
@@ -28,18 +35,27 @@ VEditWindow::VEditWindow(VNote *vnote, QWidget *parent)
             this, &VEditWindow::contextMenuRequested);
 }
 
+void VEditWindow::initTabActions()
+{
+    locateAct = new QAction(QIcon(":/resources/icons/locate_note.svg"),
+                            tr("Locate"), this);
+    locateAct->setStatusTip(tr("Locate the directory of current note"));
+    connect(locateAct, &QAction::triggered,
+            this, &VEditWindow::handleLocateAct);
+}
+
 void VEditWindow::setupCornerWidget()
 {
     // Right corner button
     // Actions
     splitAct = new QAction(QIcon(":/resources/icons/split_window.svg"),
-                                    tr("Split"), this);
+                           tr("Split"), this);
     splitAct->setStatusTip(tr("Split current window vertically"));
     connect(splitAct, &QAction::triggered,
             this, &VEditWindow::splitWindow);
 
     removeSplitAct = new QAction(QIcon(":/resources/icons/remove_split.svg"),
-                                          tr("Remove split"), this);
+                                 tr("Remove split"), this);
     removeSplitAct->setStatusTip(tr("Remove current split window"));
     connect(removeSplitAct, &QAction::triggered,
             this, &VEditWindow::removeSplit);
@@ -361,6 +377,20 @@ void VEditWindow::contextMenuRequested(QPoint pos)
     }
 }
 
+void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
+{
+    QMenu menu(this);
+
+    QTabBar *bar = tabBar();
+    int tab = bar->tabAt(p_pos);
+    if (tab == -1) {
+        return;
+    }
+    locateAct->setData(tab);
+    menu.addAction(locateAct);
+    menu.exec(mapToGlobal(p_pos));
+}
+
 void VEditWindow::tabListJump(QAction *action)
 {
     if (!action) {
@@ -562,4 +592,13 @@ VEditTab *VEditWindow::currentEditTab()
         return NULL;
     }
     return getTab(idx);
+}
+
+void VEditWindow::handleLocateAct()
+{
+    int tab = locateAct->data().toInt();
+    qDebug() << "context menu of tab" << tab;
+    VEditTab *editor = getTab(tab);
+    QPointer<VFile> file = editor->getFile();
+    vnote->getMainWindow()->locateFile(file);
 }

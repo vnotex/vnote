@@ -17,6 +17,8 @@ class VDirectoryTree : public QTreeWidget
 public:
     explicit VDirectoryTree(VNote *vnote, QWidget *parent = 0);
     inline void setEditArea(VEditArea *p_editArea);
+    bool locateDirectory(const VDirectory *p_directory);
+    inline const VNotebook *currentNotebook() const;
 
 signals:
     void currentDirectoryChanged(VDirectory *p_directory);
@@ -59,6 +61,8 @@ private:
     bool copyDirectory(VDirectory *p_destDir, const QString &p_destName,
                        VDirectory *p_srcDir, bool p_cut);
     void updateChildren(QTreeWidgetItem *p_item);
+    // Expand/create the directory tree nodes to @p_directory.
+    QTreeWidgetItem *expandToVDirectory(const VDirectory *p_directory);
 
     VNote *vnote;
     QPointer<VNotebook> m_notebook;
@@ -85,6 +89,11 @@ inline QPointer<VDirectory> VDirectoryTree::getVDirectory(QTreeWidgetItem *p_ite
 inline void VDirectoryTree::setEditArea(VEditArea *p_editArea)
 {
     m_editArea = p_editArea;
+}
+
+inline const VNotebook *VDirectoryTree::currentNotebook() const
+{
+    return m_notebook;
 }
 
 #endif // VDIRECTORYTREE_H

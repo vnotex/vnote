@@ -66,8 +66,11 @@ private slots:
     void handleTabStatusChanged();
     void updateTabListMenu();
     void updateSplitMenu();
+    void tabbarContextMenuRequested(QPoint p_pos);
+    void handleLocateAct();
 
 private:
+    void initTabActions();
     void setupCornerWidget();
     void removeEditTab(int p_index);
     int insertEditTab(int p_index, VFile *p_file, QWidget *p_page);
@@ -79,7 +82,7 @@ private:
     inline QString generateTooltip(const VFile *p_file) const;
     inline QString generateTabText(const QString &p_name, bool p_modified) const;
     bool canRemoveSplit();
-    // If the scroller of the tabBar() is visible.
+    // If the scroller of the tabBar() is visible
     bool scrollerVisible() const;
     void setLeftCornerWidgetVisible(bool p_visible);
 
@@ -93,6 +96,8 @@ private:
     QAction *splitAct;
     QAction *removeSplitAct;
     QActionGroup *tabListAct;
+    // Locate current note in the directory and file list
+    QAction *locateAct;
 };
 
 inline VEditTab* VEditWindow::getTab(int tabIndex) const
@@ -106,7 +111,7 @@ inline QString VEditWindow::generateTooltip(const VFile *p_file) const
         return "";
     }
     // [Notebook]path
-    return QString("[%1] %2").arg(p_file->getNotebook()).arg(p_file->retrivePath());
+    return QString("[%1] %2").arg(p_file->getNotebookName()).arg(p_file->retrivePath());
 }
 
 inline QString VEditWindow::generateTabText(const QString &p_name, bool p_modified) const

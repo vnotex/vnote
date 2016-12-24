@@ -7,6 +7,8 @@
 #include "vdirectory.h"
 #include "vconstants.h"
 
+class VNotebook;
+
 class VFile : public QObject
 {
     Q_OBJECT
@@ -25,7 +27,8 @@ public:
     inline DocType getDocType() const;
     inline QString &getContent();
     inline void setContent(const QString &p_content);
-    inline QString getNotebook() const;
+    inline VNotebook *getNotebook();
+    inline QString getNotebookName() const;
     inline QString retrivePath() const;
     inline QString retriveRelativePath() const;
     inline QString retriveBasePath() const;
@@ -80,7 +83,12 @@ inline QString &VFile::getContent()
     return m_content;
 }
 
-inline QString VFile::getNotebook() const
+inline QString VFile::getNotebookName() const
+{
+    return getDirectory()->getNotebookName();
+}
+
+inline VNotebook *VFile::getNotebook()
 {
     return getDirectory()->getNotebook();
 }

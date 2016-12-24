@@ -35,6 +35,7 @@ class VMainWindow : public QMainWindow
 public:
     VMainWindow(QWidget *parent = 0);
     const QVector<QPair<QString, QString> > &getPalette() const;
+    void locateFile(VFile *p_file) const;
 
 private slots:
     void importNoteFromFile();

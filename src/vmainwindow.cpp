@@ -575,7 +575,7 @@ void VMainWindow::handleCurTabStatusChanged(const VFile *p_file, const VEditTab 
 
     QString title;
     if (p_file) {
-        title = QString("[%1] %2").arg(p_file->getNotebook()).arg(p_file->retrivePath());
+        title = QString("[%1] %2").arg(p_file->getNotebookName()).arg(p_file->retrivePath());
         if (p_file->isModified()) {
             title.append('*');
         }
@@ -726,3 +726,25 @@ void VMainWindow::insertImage()
     Q_ASSERT(m_curTab == editArea->currentEditTab());
     m_curTab->insertImage();
 }
+
+void VMainWindow::locateFile(VFile *p_file) const
+{
+    if (!p_file) {
+        return;
+    }
+    qDebug() << "locate file" << p_file->retrivePath();
+    VNotebook *notebook = p_file->getNotebook();
+    if (notebookSelector->locateNotebook(notebook)) {
+        while (directoryTree->currentNotebook() != notebook) {
+            QCoreApplication::sendPostedEvents();
+        }
+        VDirectory *dir = p_file->getDirectory();
+        if (directoryTree->locateDirectory(dir)) {
+            while (fileList->currentDirectory() != dir) {
+                QCoreApplication::sendPostedEvents();
+            }
+            fileList->locateFile(p_file);
+        }
+    }
+}
+

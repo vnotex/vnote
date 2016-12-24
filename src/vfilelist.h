@@ -27,6 +27,8 @@ public:
     inline void setEditArea(VEditArea *editArea);
     void fileInfo(VFile *p_file);
     void deleteFile(VFile *p_file);
+    bool locateFile(const VFile *p_file);
+    inline const VDirectory *currentDirectory() const;
 
 signals:
     void fileClicked(VFile *p_file, OpenFileMode mode = OpenFileMode::Read);
@@ -87,6 +89,11 @@ inline QPointer<VFile> VFileList::getVFile(QListWidgetItem *p_item)
 {
     Q_ASSERT(p_item);
     return p_item->data(Qt::UserRole).value<VFile *>();
+}
+
+inline const VDirectory *VFileList::currentDirectory() const
+{
+    return m_directory;
 }
 
 #endif // VFILELIST_H

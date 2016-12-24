@@ -428,7 +428,7 @@ void VDirectoryTree::copySelectedDirectories(bool p_cut)
     for (int i = 0; i < items.size(); ++i) {
         VDirectory *dir = getVDirectory(items[i]);
         QJsonObject dirJson;
-        dirJson["notebook"] = dir->getNotebook();
+        dirJson["notebook"] = dir->getNotebookName();
         dirJson["path"] = dir->retrivePath();
         dirs.append(dirJson);
 
@@ -561,7 +561,7 @@ QTreeWidgetItem *VDirectoryTree::findVDirectory(const VDirectory *p_dir, bool &p
     p_widget = false;
     if (!p_dir) {
         return NULL;
-    } else if (p_dir->getNotebook() != m_notebook->getName()) {
+    } else if (p_dir->getNotebookName() != m_notebook->getName()) {
         return NULL;
     } else if (p_dir == m_notebook->getRootDir()) {
         p_widget = true;
@@ -585,6 +585,59 @@ QTreeWidgetItem *VDirectoryTree::findVDirectory(const VDirectory *p_dir, bool &p
         for (int i = 0; i < nrChild; ++i) {
             QTreeWidgetItem *item = topLevelItem(i);
             if (getVDirectory(item) == p_dir) {
+                return item;
+            }
+        }
+    }
+    return NULL;
+}
+
+bool VDirectoryTree::locateDirectory(const VDirectory *p_directory)
+{
+    if (p_directory) {
+        qDebug() << "locate directory" << p_directory->retrivePath()
+                 << "in" << m_notebook->getName();
+        if (p_directory->getNotebook() != m_notebook) {
+            return false;
+        }
+        QTreeWidgetItem *item = expandToVDirectory(p_directory);
+        if (item) {
+            setCurrentItem(item);
+        }
+        return item;
+    }
+    return false;
+}
+
+QTreeWidgetItem *VDirectoryTree::expandToVDirectory(const VDirectory *p_directory)
+{
+    if (!p_directory || p_directory->getNotebook() != m_notebook
+        || p_directory == m_notebook->getRootDir()) {
+        return NULL;
+    }
+
+    if (p_directory->getParentDirectory() == m_notebook->getRootDir()) {
+        // Top-level items.
+        int nrChild = topLevelItemCount();
+        for (int i = 0; i < nrChild; ++i) {
+            QTreeWidgetItem *item = topLevelItem(i);
+            if (getVDirectory(item) == p_directory) {
+                return item;
+            }
+        }
+    } else {
+        QTreeWidgetItem *pItem = expandToVDirectory(p_directory->getParentDirectory());
+        if (!pItem) {
+            return NULL;
+        }
+        int nrChild = pItem->childCount();
+        if (nrChild == 0) {
+            updateDirectoryTreeOne(pItem, 1);
+        }
+        nrChild = pItem->childCount();
+        for (int i = 0; i < nrChild; ++i) {
+            QTreeWidgetItem *item = pItem->child(i);
+            if (getVDirectory(item) == p_directory) {
                 return item;
             }
         }

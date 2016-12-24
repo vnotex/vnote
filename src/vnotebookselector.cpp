@@ -343,3 +343,16 @@ int VNotebookSelector::indexOfListItem(const QListWidgetItem *p_item)
     }
     return -1;
 }
+
+bool VNotebookSelector::locateNotebook(const VNotebook *p_notebook)
+{
+    if (p_notebook) {
+        for (int i = 0; i < m_notebooks.size(); ++i) {
+            if (m_notebooks[i] == p_notebook) {
+                setCurrentIndexNotebook(i);
+                return true;
+            }
+        }
+    }
+    return false;
+}

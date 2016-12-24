@@ -76,5 +76,6 @@
         <file>resources/icons/import_note.svg</file>
         <file>resources/icons/editing.svg</file>
         <file>resources/icons/reading.svg</file>
+        <file>resources/icons/locate_note.svg</file>
     </qresource>
 </RCC>

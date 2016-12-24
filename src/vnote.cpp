@@ -6,6 +6,7 @@
 #include "vnote.h"
 #include "utils/vutils.h"
 #include "vconfigmanager.h"
+#include "vmainwindow.h"
 
 VConfigManager vconfig;
 
@@ -14,7 +15,7 @@ QString VNote::preTemplateHtml;
 QString VNote::postTemplateHtml;
 
 VNote::VNote(QObject *parent)
-    : QObject(parent)
+    : QObject(parent), m_mainWindow(dynamic_cast<VMainWindow *>(parent))
 {
     vconfig.initialize();
     initTemplate();

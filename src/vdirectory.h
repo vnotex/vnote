@@ -51,10 +51,12 @@ public:
     inline bool isOpened() const;
     inline VDirectory *getParentDirectory();
     inline const VDirectory *getParentDirectory() const;
+    inline VNotebook *getNotebook();
+    inline const VNotebook *getNotebook() const;
     inline const QVector<VFile *> &getFiles() const;
     inline QString retrivePath() const;
     inline QString retriveRelativePath() const;
-    inline QString getNotebook() const;
+    inline QString getNotebookName() const;
     inline bool isExpanded() const;
     void setExpanded(bool p_expanded);
 
@@ -114,9 +116,19 @@ inline const QVector<VFile *> &VDirectory::getFiles() const
     return m_files;
 }
 
-inline QString VDirectory::getNotebook() const
+inline QString VDirectory::getNotebookName() const
 {
     return m_notebook->getName();
+}
+
+inline VNotebook *VDirectory::getNotebook()
+{
+    return m_notebook;
+}
+
+inline const VNotebook *VDirectory::getNotebook() const
+{
+    return m_notebook;
 }
 
 inline QString VDirectory::retrivePath() const
