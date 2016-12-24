@@ -55,6 +55,17 @@ void VNote::initPalette(QPalette palette)
     m_palette.append(QPair<QString, QString>("Grey6", "#757575"));
     m_palette.append(QPair<QString, QString>("Grey7", "#616161"));
     m_palette.append(QPair<QString, QString>("Grey8", "#424242"));
+
+    m_palette.append(QPair<QString, QString>("Green0", "#E8F5E9"));
+    m_palette.append(QPair<QString, QString>("Green1", "#C8E6C9"));
+    m_palette.append(QPair<QString, QString>("Green2", "#A5D6A7"));
+    m_palette.append(QPair<QString, QString>("Green3", "#81C784"));
+    m_palette.append(QPair<QString, QString>("Green4", "#66BB6A"));
+    m_palette.append(QPair<QString, QString>("Green5", "#4CAF50"));
+    m_palette.append(QPair<QString, QString>("Green6", "#43A047"));
+    m_palette.append(QPair<QString, QString>("Green7", "#388E3C"));
+    m_palette.append(QPair<QString, QString>("Green8", "#2E7D32"));
+    m_palette.append(QPair<QString, QString>("Green9", "#1B5E20"));
 }
 
 QString VNote::getColorFromPalette(const QString &p_name) const

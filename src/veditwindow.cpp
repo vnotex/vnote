@@ -694,3 +694,14 @@ bool VEditWindow::addEditTab(QWidget *p_widget)
     noticeTabStatus(idx);
     return true;
 }
+
+void VEditWindow::setCurrentWindow(bool p_current)
+{
+    if (p_current) {
+        rightBtn->setIcon(QIcon(":/resources/icons/corner_menu_cur.svg"));
+        leftBtn->setIcon(QIcon(":/resources/icons/corner_tablist_cur.svg"));
+    } else {
+        rightBtn->setIcon(QIcon(":/resources/icons/corner_menu.svg"));
+        leftBtn->setIcon(QIcon(":/resources/icons/corner_tablist.svg"));
+    }
+}

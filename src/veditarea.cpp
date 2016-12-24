@@ -133,15 +133,22 @@ void VEditArea::setCurrentTab(int windowIndex, int tabIndex, bool setFocus)
 
 void VEditArea::setCurrentWindow(int windowIndex, bool setFocus)
 {
+    int nrWin = splitter->count();
     if (curWindowIndex == windowIndex) {
         goto out;
     }
     curWindowIndex = windowIndex;
     if (curWindowIndex > -1 && setFocus) {
-        getWindow(windowIndex)->focusWindow();
+        getWindow(curWindowIndex)->focusWindow();
     }
 
 out:
+    for (int i = 0; i < nrWin; ++i) {
+        getWindow(i)->setCurrentWindow(false);
+    }
+    if (curWindowIndex > -1) {
+        getWindow(curWindowIndex)->setCurrentWindow(true);
+    }
     // Update status
     updateWindowStatus();
 }

@@ -79,5 +79,7 @@
         <file>resources/icons/locate_note.svg</file>
         <file>resources/icons/move_tab_left.svg</file>
         <file>resources/icons/move_tab_right.svg</file>
+        <file>resources/icons/corner_menu_cur.svg</file>
+        <file>resources/icons/corner_tablist_cur.svg</file>
     </qresource>
 </RCC>

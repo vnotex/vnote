@@ -43,6 +43,8 @@ public:
     VEditTab *currentEditTab();
     // Insert a tab with @p_widget. @p_widget is a fully initialized VEditTab.
     bool addEditTab(QWidget *p_widget);
+    // Set whether it is the current window.
+    void setCurrentWindow(bool p_current);
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
