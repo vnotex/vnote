@@ -14,12 +14,13 @@ class VNote;
 class QPushButton;
 class QActionGroup;
 class VFile;
+class VEditArea;
 
 class VEditWindow : public QTabWidget
 {
     Q_OBJECT
 public:
-    explicit VEditWindow(VNote *vnote, QWidget *parent = 0);
+    explicit VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent = 0);
     int findTabByFile(const VFile *p_file) const;
     int openFile(VFile *p_file, OpenFileMode p_mode);
     bool closeFile(const VFile *p_file, bool p_forced);
@@ -40,6 +41,8 @@ public:
     void updateDirectoryInfo(const VDirectory *p_dir);
     void updateNotebookInfo(const VNotebook *p_notebook);
     VEditTab *currentEditTab();
+    // Insert a tab with @p_widget. @p_widget is a fully initialized VEditTab.
+    bool addEditTab(QWidget *p_widget);
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
@@ -68,6 +71,8 @@ private slots:
     void updateSplitMenu();
     void tabbarContextMenuRequested(QPoint p_pos);
     void handleLocateAct();
+    void handleMoveLeftAct();
+    void handleMoveRightAct();
 
 private:
     void initTabActions();
@@ -87,6 +92,7 @@ private:
     void setLeftCornerWidgetVisible(bool p_visible);
 
     VNote *vnote;
+    VEditArea *m_editArea;
     // Button in the right corner
     QPushButton *rightBtn;
     // Button in the left corner
@@ -97,7 +103,9 @@ private:
     QAction *removeSplitAct;
     QActionGroup *tabListAct;
     // Locate current note in the directory and file list
-    QAction *locateAct;
+    QAction *m_locateAct;
+    QAction *m_moveLeftAct;
+    QAction *m_moveRightAct;
 };
 
 inline VEditTab* VEditWindow::getTab(int tabIndex) const

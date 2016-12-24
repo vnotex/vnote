@@ -7,11 +7,12 @@
 #include "utils/vutils.h"
 #include "vfile.h"
 #include "vmainwindow.h"
+#include "veditarea.h"
 
 extern VConfigManager vconfig;
 
-VEditWindow::VEditWindow(VNote *vnote, QWidget *parent)
-    : QTabWidget(parent), vnote(vnote)
+VEditWindow::VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent)
+    : QTabWidget(parent), vnote(vnote), m_editArea(editArea)
 {
     initTabActions();
     setupCornerWidget();
@@ -37,11 +38,23 @@ VEditWindow::VEditWindow(VNote *vnote, QWidget *parent)
 
 void VEditWindow::initTabActions()
 {
-    locateAct = new QAction(QIcon(":/resources/icons/locate_note.svg"),
-                            tr("Locate"), this);
-    locateAct->setStatusTip(tr("Locate the directory of current note"));
-    connect(locateAct, &QAction::triggered,
+    m_locateAct = new QAction(QIcon(":/resources/icons/locate_note.svg"),
+                              tr("Locate"), this);
+    m_locateAct->setStatusTip(tr("Locate the directory of current note"));
+    connect(m_locateAct, &QAction::triggered,
             this, &VEditWindow::handleLocateAct);
+
+    m_moveLeftAct = new QAction(QIcon(":/resources/icons/move_tab_left.svg"),
+                                tr("Move One Split Left"), this);
+    m_moveLeftAct->setStatusTip(tr("Move current tab to the split on the left"));
+    connect(m_moveLeftAct, &QAction::triggered,
+            this, &VEditWindow::handleMoveLeftAct);
+
+    m_moveRightAct = new QAction(QIcon(":/resources/icons/move_tab_right.svg"),
+                                 tr("Move One Split Right"), this);
+    m_moveRightAct->setStatusTip(tr("Move current tab to the split on the right"));
+    connect(m_moveRightAct, &QAction::triggered,
+            this, &VEditWindow::handleMoveRightAct);
 }
 
 void VEditWindow::setupCornerWidget()
@@ -111,7 +124,6 @@ int VEditWindow::insertEditTab(int p_index, VFile *p_file, QWidget *p_page)
 {
     int idx = insertTab(p_index, p_page, p_file->getName());
     setTabToolTip(idx, generateTooltip(p_file));
-    setTabIcon(idx, QIcon(":/resources/icons/reading.svg"));
     return idx;
 }
 
@@ -386,8 +398,23 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
     if (tab == -1) {
         return;
     }
-    locateAct->setData(tab);
-    menu.addAction(locateAct);
+    m_locateAct->setData(tab);
+    menu.addAction(m_locateAct);
+
+    int totalWin = m_editArea->windowCount();
+    int idx = m_editArea->windowIndex(this);
+    if (totalWin > 1) {
+        menu.addSeparator();
+        if (idx > 0) {
+            m_moveLeftAct->setData(tab);
+            menu.addAction(m_moveLeftAct);
+        }
+        if (idx < totalWin - 1) {
+            m_moveRightAct->setData(tab);
+            menu.addAction(m_moveRightAct);
+        }
+    }
+
     menu.exec(mapToGlobal(p_pos));
 }
 
@@ -596,9 +623,74 @@ VEditTab *VEditWindow::currentEditTab()
 
 void VEditWindow::handleLocateAct()
 {
-    int tab = locateAct->data().toInt();
-    qDebug() << "context menu of tab" << tab;
+    int tab = m_locateAct->data().toInt();
     VEditTab *editor = getTab(tab);
     QPointer<VFile> file = editor->getFile();
     vnote->getMainWindow()->locateFile(file);
+}
+
+void VEditWindow::handleMoveLeftAct()
+{
+    int tab = m_locateAct->data().toInt();
+    Q_ASSERT(tab != -1);
+    VEditTab *editor = getTab(tab);
+    // Remove it from current window. This won't close the split even if it is
+    // the only tab.
+    removeTab(tab);
+
+    // Disconnect all the signals.
+    disconnect(editor, 0, this, 0);
+
+    int idx = m_editArea->windowIndex(this);
+    m_editArea->moveTab(editor, idx, idx - 1);
+
+    // If there is no tab, remove current split.
+    if (count() == 0) {
+        emit requestRemoveSplit(this);
+    }
+}
+
+void VEditWindow::handleMoveRightAct()
+{
+    int tab = m_locateAct->data().toInt();
+    Q_ASSERT(tab != -1);
+    VEditTab *editor = getTab(tab);
+    // Remove it from current window. This won't close the split even if it is
+    // the only tab.
+    removeTab(tab);
+
+    // Disconnect all the signals.
+    disconnect(editor, 0, this, 0);
+
+    int idx = m_editArea->windowIndex(this);
+    m_editArea->moveTab(editor, idx, idx + 1);
+
+    // If there is no tab, remove current split.
+    if (count() == 0) {
+        emit requestRemoveSplit(this);
+    }
+}
+
+bool VEditWindow::addEditTab(QWidget *p_widget)
+{
+    if (!p_widget) {
+        return false;
+    }
+    VEditTab *editor = dynamic_cast<VEditTab *>(p_widget);
+    if (!editor) {
+        return false;
+    }
+    // Connect the signals.
+    connect(editor, &VEditTab::getFocused,
+            this, &VEditWindow::getFocused);
+    connect(editor, &VEditTab::outlineChanged,
+            this, &VEditWindow::handleOutlineChanged);
+    connect(editor, &VEditTab::curHeaderChanged,
+            this, &VEditWindow::handleCurHeaderChanged);
+    connect(editor, &VEditTab::statusChanged,
+            this, &VEditWindow::handleTabStatusChanged);
+    int idx = appendEditTab(editor->getFile(), editor);
+    setCurrentIndex(idx);
+    noticeTabStatus(idx);
+    return true;
 }

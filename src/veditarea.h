@@ -30,6 +30,14 @@ public:
     bool closeFile(const VNotebook *p_notebook, bool p_forced);
     // Returns current edit tab.
     VEditTab *currentEditTab();
+    // Returns the count of VEditWindow.
+    inline int windowCount() const;
+    // Returns the index of @p_window.
+    int windowIndex(const VEditWindow *p_window) const;
+    // Move tab widget @p_widget from window @p_fromIdx to @p_toIdx.
+    // @p_widget has been removed from the original window.
+    // If fail, just delete the p_widget.
+    void moveTab(QWidget *p_widget, int p_fromIdx, int p_toIdx);
 
 signals:
     void curTabStatusChanged(const VFile *p_file, const VEditTab *p_editTab, bool p_editMode);
@@ -79,6 +87,11 @@ inline VEditWindow* VEditArea::getWindow(int windowIndex) const
 {
     Q_ASSERT(windowIndex < splitter->count());
     return dynamic_cast<VEditWindow *>(splitter->widget(windowIndex));
+}
+
+inline int VEditArea::windowCount() const
+{
+    return splitter->count();
 }
 
 #endif // VEDITAREA_H

@@ -29,7 +29,7 @@ void VEditArea::setupUI()
 
 void VEditArea::insertSplitWindow(int idx)
 {
-    VEditWindow *win = new VEditWindow(vnote);
+    VEditWindow *win = new VEditWindow(vnote, this);
     splitter->insertWidget(idx, win);
     connect(win, &VEditWindow::tabStatusChanged,
             this, &VEditArea::curTabStatusChanged);
@@ -384,4 +384,28 @@ VEditTab *VEditArea::currentEditTab()
     }
     VEditWindow *win = getWindow(curWindowIndex);
     return win->currentEditTab();
+}
+
+int VEditArea::windowIndex(const VEditWindow *p_window) const
+{
+    int nrWin = splitter->count();
+    for (int i = 0; i < nrWin; ++i) {
+        if (p_window == getWindow(i)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+void VEditArea::moveTab(QWidget *p_widget, int p_fromIdx, int p_toIdx)
+{
+    int nrWin = splitter->count();
+    if (!p_widget || p_fromIdx < 0 || p_fromIdx >= nrWin
+        || p_toIdx < 0 || p_toIdx >= nrWin) {
+        return;
+    }
+    qDebug() << "move widget" << p_widget << "from" << p_fromIdx << "to" << p_toIdx;
+    if (!getWindow(p_toIdx)->addEditTab(p_widget)) {
+        delete p_widget;
+    }
 }
