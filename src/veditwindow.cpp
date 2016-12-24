@@ -94,8 +94,8 @@ void VEditWindow::removeEditTab(int p_index)
 int VEditWindow::insertEditTab(int p_index, VFile *p_file, QWidget *p_page)
 {
     int idx = insertTab(p_index, p_page, p_file->getName());
-    QTabBar *tabs = tabBar();
-    tabs->setTabToolTip(idx, generateTooltip(p_file));
+    setTabToolTip(idx, generateTooltip(p_file));
+    setTabIcon(idx, QIcon(":/resources/icons/reading.svg"));
     return idx;
 }
 
@@ -293,9 +293,10 @@ void VEditWindow::noticeTabStatus(int p_index)
     bool editMode = editor->getIsEditMode();
 
     // Update tab text
-    QTabBar *tabs = tabBar();
-    tabs->setTabText(p_index, generateTabText(file->getName(), file->isModified()));
-    tabs->setTabToolTip(p_index, generateTooltip(file));
+    setTabText(p_index, generateTabText(file->getName(), file->isModified()));
+    setTabToolTip(p_index, generateTooltip(file));
+    setTabIcon(p_index, editMode ? QIcon(":/resources/icons/editing.svg") :
+               QIcon(":/resources/icons/reading.svg"));
     emit tabStatusChanged(file, editor, editMode);
 }
 
@@ -387,12 +388,11 @@ void VEditWindow::updateTabListMenu()
     }
 
     int curTab = currentIndex();
-    QTabBar *tabbar = tabBar();
-    int nrTab = tabbar->count();
+    int nrTab = count();
     for (int i = 0; i < nrTab; ++i) {
         VEditTab *editor = getTab(i);
         QPointer<VFile> file = editor->getFile();
-        QAction *action = new QAction(tabbar->tabText(i), tabListAct);
+        QAction *action = new QAction(tabIcon(i), tabText(i), tabListAct);
         action->setStatusTip(generateTooltip(file));
         action->setData(QVariant::fromValue(file));
         if (i == curTab) {

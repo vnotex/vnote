@@ -74,5 +74,7 @@
         <file>resources/icons/vnote.png</file>
         <file>resources/icons/insert_image.svg</file>
         <file>resources/icons/import_note.svg</file>
+        <file>resources/icons/editing.svg</file>
+        <file>resources/icons/reading.svg</file>
     </qresource>
 </RCC>
