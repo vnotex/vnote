@@ -76,7 +76,7 @@ void VOutline::expandTree()
     expandAll();
 }
 
-void VOutline::handleCurItemChanged(QTreeWidgetItem *p_curItem, QTreeWidgetItem *p_preItem)
+void VOutline::handleCurItemChanged(QTreeWidgetItem *p_curItem, QTreeWidgetItem * /*p_preItem*/)
 {
     if (!p_curItem) {
         return;

@@ -11,7 +11,7 @@ class VEdit;
 class QMimeData;
 class QKeyEvent;
 
-enum class KeyState { Normal = 0, Vim };
+enum class KeyState { Normal = 0, Vim, VimVisual};
 
 class VEditOperations: public QObject
 {

@@ -13,7 +13,7 @@ VAvatar::VAvatar(QWidget *p_parent)
     resize(m_diameter, m_diameter);
 }
 
-void VAvatar::paintEvent(QPaintEvent *p_event)
+void VAvatar::paintEvent(QPaintEvent * /*p_event*/)
 {
     int diameter = width();
     int x = diameter / 2;

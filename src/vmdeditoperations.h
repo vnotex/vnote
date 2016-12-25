@@ -37,6 +37,7 @@ private:
     bool handleKeyI(QKeyEvent *p_event);
     bool handleKeyU(QKeyEvent *p_event);
     bool handleKeyW(QKeyEvent *p_event);
+    bool handleKeyEsc(QKeyEvent *p_event);
     bool handleKeyPressVim(QKeyEvent *p_event);
     bool shouldTriggerVimMode(QKeyEvent *p_event);
     int keySeqToNumber(const QList<QString> &p_seq);
