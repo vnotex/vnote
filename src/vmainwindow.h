@@ -45,6 +45,7 @@ private slots:
     void setTabStopWidth(QAction *action);
     void setEditorBackgroundColor(QAction *action);
     void setRenderBackgroundColor(QAction *action);
+    void changeHighlightCursorLine(bool p_checked);
     void handleCurTabStatusChanged(const VFile *p_file, const VEditTab *p_editTab, bool p_editMode);
     void onePanelView();
     void twoPanelView();
@@ -122,6 +123,7 @@ private:
     QAction *fourSpaceTabAct;
     QAction *eightSpaceTabAct;
     QActionGroup *backgroundColorAct;
+    QAction *m_cursorLineAct;
     QActionGroup *renderBackgroundAct;
 
     // Menus

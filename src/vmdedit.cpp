@@ -8,6 +8,7 @@
 #include "utils/vutils.h"
 
 extern VConfigManager vconfig;
+extern VNote *g_vnote;
 
 enum ImageProperty { ImagePath = 1 };
 
@@ -27,6 +28,10 @@ VMdEdit::VMdEdit(VFile *p_file, QWidget *p_parent)
 
     connect(this, &VMdEdit::cursorPositionChanged,
             this, &VMdEdit::updateCurHeader);
+    if (vconfig.getHighlightCursorLine()) {
+        connect(this, &VMdEdit::cursorPositionChanged,
+                this, &VMdEdit::highlightCurrentLine);
+    }
 
     m_editOps->updateTabSettings();
     updateFontAndPalette();
@@ -451,4 +456,21 @@ int VMdEdit::removeObjectReplacementLine(QString &p_text, int p_index) const
     // Remove \n[....?\n]
     p_text.remove(prevLineIdx + 1, p_index - prevLineIdx + 1);
     return prevLineIdx;
+}
+
+void VMdEdit::highlightCurrentLine()
+{
+    static QColor lineColor = QColor(g_vnote->getColorFromPalette("Indigo1"));
+    QList<QTextEdit::ExtraSelection> extraSelects;
+
+    if (!isReadOnly()) {
+        QTextEdit::ExtraSelection select;
+
+        select.format.setBackground(lineColor);
+        select.format.setProperty(QTextFormat::FullWidthSelection, true);
+        select.cursor = textCursor();
+        select.cursor.clearSelection();
+        extraSelects.append(select);
+    }
+    setExtraSelections(extraSelects);
 }

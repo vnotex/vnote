@@ -36,6 +36,7 @@ private slots:
     void updateCurHeader();
     // Update block list containing image links.
     void updateImageBlocks(QSet<int> p_imageBlocks);
+    void highlightCurrentLine();
 
 protected:
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;

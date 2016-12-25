@@ -76,6 +76,9 @@ public:
     inline bool getIsExpandTab() const;
     inline void setIsExpandTab(bool isExpandTab);
 
+    inline bool getHighlightCursorLine() const;
+    inline void setHighlightCursorLine(bool p_cursorLine);
+
     inline const QVector<VColor> &getPredefinedColors() const;
 
     inline const QString &getCurBackgroundColor() const;
@@ -123,6 +126,9 @@ private:
     int tabStopWidth;
     // Expand tab to @tabStopWidth spaces
     bool isExpandTab;
+
+    // Highlight current cursor line.
+    bool m_highlightCursorLine;
 
     // App defined color
     QVector<VColor> predefinedColors;
@@ -264,6 +270,20 @@ inline void VConfigManager::setIsExpandTab(bool isExpandTab)
     }
     this->isExpandTab = isExpandTab;
     setConfigToSettings("global", "is_expand_tab", this->isExpandTab);
+}
+
+inline bool VConfigManager::getHighlightCursorLine() const
+{
+    return m_highlightCursorLine;
+}
+
+inline void VConfigManager::setHighlightCursorLine(bool p_cursorLine)
+{
+    if (p_cursorLine == m_highlightCursorLine) {
+        return;
+    }
+    m_highlightCursorLine = p_cursorLine;
+    setConfigToSettings("global", "highlight_cursor_line", m_highlightCursorLine);
 }
 
 inline const QVector<VColor>& VConfigManager::getPredefinedColors() const

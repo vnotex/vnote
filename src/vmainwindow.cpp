@@ -13,12 +13,15 @@
 
 extern VConfigManager vconfig;
 
+VNote *g_vnote;
+
 VMainWindow::VMainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     setWindowIcon(QIcon(":/resources/icons/vnote.ico"));
     // Must be called before those who uses VConfigManager
     vnote = new VNote(this);
+    g_vnote = vnote;
     vnote->initPalette(palette());
     initPredefinedColorPixmaps();
     setupUI();
@@ -210,6 +213,12 @@ void VMainWindow::initActions()
     connect(backgroundColorAct, &QActionGroup::triggered,
             this, &VMainWindow::setEditorBackgroundColor);
 
+    m_cursorLineAct = new QAction(tr("Highlight Cursor Line"), this);
+    m_cursorLineAct->setStatusTip(tr("Highlight current cursor line"));
+    m_cursorLineAct->setCheckable(true);
+    connect(m_cursorLineAct, &QAction::triggered,
+            this, &VMainWindow::changeHighlightCursorLine);
+
     renderBackgroundAct = new QActionGroup(this);
     connect(renderBackgroundAct, &QActionGroup::triggered,
             this, &VMainWindow::setRenderBackgroundColor);
@@ -348,6 +357,12 @@ void VMainWindow::initMenuBar()
         qWarning() << "unsupported tab stop width" << tabStopWidth <<  "in config";
     }
     initEditorBackgroundMenu(editMenu);
+    editMenu->addAction(m_cursorLineAct);
+    if (vconfig.getHighlightCursorLine()) {
+        m_cursorLineAct->setChecked(true);
+    } else {
+        m_cursorLineAct->setChecked(false);
+    }
 
     // Markdown Menu
     QMenu *converterMenu = markdownMenu->addMenu(tr("&Converter"));
@@ -444,6 +459,11 @@ void VMainWindow::aboutMessage()
 void VMainWindow::changeExpandTab(bool checked)
 {
     vconfig.setIsExpandTab(checked);
+}
+
+void VMainWindow::changeHighlightCursorLine(bool p_checked)
+{
+    vconfig.setHighlightCursorLine(p_checked);
 }
 
 void VMainWindow::setTabStopWidth(QAction *action)

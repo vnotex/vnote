@@ -52,6 +52,7 @@ void VConfigManager::initialize()
 
     tabStopWidth = getConfigFromSettings("global", "tab_stop_width").toInt();
     isExpandTab = getConfigFromSettings("global", "is_expand_tab").toBool();
+    m_highlightCursorLine = getConfigFromSettings("global", "highlight_cursor_line").toBool();
 
     readPredefinedColorsFromSettings();
     curBackgroundColor = getConfigFromSettings("global", "current_background_color").toString();
