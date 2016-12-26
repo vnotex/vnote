@@ -278,7 +278,7 @@ void VEditTab::focusTab()
     currentWidget()->setFocus();
 }
 
-void VEditTab::handleFocusChanged(QWidget *old, QWidget *now)
+void VEditTab::handleFocusChanged(QWidget * /* old */, QWidget *now)
 {
     if (isChild(now)) {
         emit getFocused();

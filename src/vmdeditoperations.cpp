@@ -182,56 +182,6 @@ bool VMdEditOperations::shouldTriggerVimMode(QKeyEvent *p_event)
         return false;
     } else if (m_keyState == KeyState::Vim || m_keyState == KeyState::VimVisual) {
         return true;
-    } else {
-        if (modifiers == (Qt::ControlModifier | Qt::AltModifier)) {
-            switch (key) {
-            // Should add one item for each supported Ctrl+ALT+<Key> Vim binding.
-            case Qt::Key_H:
-            case Qt::Key_J:
-            case Qt::Key_K:
-            case Qt::Key_L:
-            case Qt::Key_0:
-            case Qt::Key_1:
-            case Qt::Key_2:
-            case Qt::Key_3:
-            case Qt::Key_4:
-            case Qt::Key_5:
-            case Qt::Key_6:
-            case Qt::Key_7:
-            case Qt::Key_8:
-            case Qt::Key_9:
-            case Qt::Key_X:
-            case Qt::Key_W:
-            case Qt::Key_E:
-            case Qt::Key_B:
-            case Qt::Key_G:
-            case Qt::Key_V:
-            case Qt::Key_Y:
-            case Qt::Key_Dollar:
-            case Qt::Key_AsciiCircum:
-            {
-                return true;
-            }
-            default:
-                m_pendingKey.clear();
-                break;
-            }
-        } else if (modifiers ==
-                   (Qt::ControlModifier | Qt::ShiftModifier | Qt::AltModifier)) {
-            switch (key) {
-            case Qt::Key_G:
-            case Qt::Key_Dollar:
-            case Qt::Key_AsciiCircum:
-            {
-                return true;
-            }
-
-            default:
-                // Should not clear the m_pendingKey.
-                // Consider Ctrl+Shift+Alt+G.
-                break;
-            }
-        }
     }
     return false;
 }
@@ -586,8 +536,6 @@ bool VMdEditOperations::handleKeyEsc(QKeyEvent *p_event)
 bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
 {
     int modifiers = p_event->modifiers();
-    bool ctrlAlt = modifiers == (Qt::ControlModifier | Qt::AltModifier);
-    bool ctrlShiftAlt = modifiers == (Qt::ControlModifier | Qt::ShiftModifier | Qt::AltModifier);
     bool visualMode = m_keyState == KeyState::VimVisual;
     QTextCursor::MoveMode mode = visualMode ? QTextCursor::KeepAnchor
                                               : QTextCursor::MoveAnchor;
@@ -607,7 +555,7 @@ bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
     case Qt::Key_K:
     case Qt::Key_L:
     {
-        if (modifiers == Qt::NoModifier || ctrlAlt) {
+        if (modifiers == Qt::NoModifier) {
             QTextCursor::MoveOperation op;
             switch (p_event->key()) {
             case Qt::Key_H:
@@ -624,12 +572,11 @@ bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
             }
             // Move cursor <repeat> characters left/Down/Up/Right.
             int repeat = keySeqToNumber(m_pendingKey);
+            m_pendingKey.clear();
             QTextCursor cursor = m_editor->textCursor();
             cursor.movePosition(op, mode, repeat == 0 ? 1 : repeat);
             m_editor->setTextCursor(cursor);
-            if (visualMode) {
-                goto pending;
-            }
+            goto pending;
         }
         break;
     }
@@ -644,7 +591,7 @@ bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
     case Qt::Key_8:
     case Qt::Key_9:
     {
-        if (modifiers == Qt::NoModifier || ctrlAlt) {
+        if (modifiers == Qt::NoModifier) {
             if (!suffixNumAllowed(m_pendingKey)) {
                 break;
             }
@@ -658,47 +605,55 @@ bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
     case Qt::Key_X:
     {
         // Delete characters.
-        if (modifiers == Qt::NoModifier || ctrlAlt) {
+        if (modifiers == Qt::NoModifier) {
             int repeat = keySeqToNumber(m_pendingKey);
+            m_pendingKey.clear();
             QTextCursor cursor = m_editor->textCursor();
             if (repeat == 0) {
                 repeat = 1;
             }
             cursor.beginEditBlock();
-            for (int i = 0; i < repeat; ++i) {
-                cursor.deleteChar();
+            if (cursor.hasSelection()) {
+                QClipboard *clipboard = QApplication::clipboard();
+                clipboard->setText(cursor.selectedText());
+                cursor.removeSelectedText();
+            } else {
+                for (int i = 0; i < repeat; ++i) {
+                    cursor.deleteChar();
+                }
             }
             cursor.endEditBlock();
             m_editor->setTextCursor(cursor);
+            goto pending;
         }
         break;
     }
 
     case Qt::Key_W:
     {
-        if (modifiers == Qt::NoModifier || ctrlAlt) {
+        if (modifiers == Qt::NoModifier) {
             // Move to the start of the next word.
             // Slightly different from the Vim behavior.
             int repeat = keySeqToNumber(m_pendingKey);
+            m_pendingKey.clear();
             QTextCursor cursor = m_editor->textCursor();
             if (repeat == 0) {
                 repeat = 1;
             }
             cursor.movePosition(QTextCursor::NextWord, mode, repeat);
             m_editor->setTextCursor(cursor);
-            if (visualMode) {
-                goto pending;
-            }
+            goto pending;
         }
         break;
     }
 
     case Qt::Key_E:
     {
-        if (modifiers == Qt::NoModifier || ctrlAlt) {
+        if (modifiers == Qt::NoModifier) {
             // Move to the end of the next word.
             // Slightly different from the Vim behavior.
             int repeat = keySeqToNumber(m_pendingKey);
+            m_pendingKey.clear();
             QTextCursor cursor = m_editor->textCursor();
             if (repeat == 0) {
                 repeat = 1;
@@ -717,19 +672,18 @@ bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
             }
             cursor.endEditBlock();
             m_editor->setTextCursor(cursor);
-            if (visualMode) {
-                goto pending;
-            }
+            goto pending;
         }
         break;
     }
 
     case Qt::Key_B:
     {
-        if (modifiers == Qt::NoModifier || ctrlAlt) {
+        if (modifiers == Qt::NoModifier) {
             // Move to the start of the previous word.
             // Slightly different from the Vim behavior.
             int repeat = keySeqToNumber(m_pendingKey);
+            m_pendingKey.clear();
             QTextCursor cursor = m_editor->textCursor();
             if (repeat == 0) {
                 repeat = 1;
@@ -747,42 +701,35 @@ bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
             }
             cursor.endEditBlock();
             m_editor->setTextCursor(cursor);
-            if (visualMode) {
-                goto pending;
-            }
+            goto pending;
         }
         break;
     }
 
     case Qt::Key_0:
     {
-        if (modifiers == Qt::NoModifier || ctrlAlt) {
+        if (modifiers == Qt::NoModifier) {
             if (keySeqToNumber(m_pendingKey) == 0) {
                 QTextCursor cursor = m_editor->textCursor();
                 cursor.movePosition(QTextCursor::StartOfLine, mode);
                 m_editor->setTextCursor(cursor);
-                if (visualMode) {
-                    goto pending;
-                }
             } else {
                 m_pendingKey.append("0");
-                goto pending;
             }
+            goto pending;
         }
         break;
     }
 
     case Qt::Key_Dollar:
     {
-        if (modifiers == Qt::ShiftModifier || ctrlShiftAlt) {
+        if (modifiers == Qt::ShiftModifier) {
             if (m_pendingKey.isEmpty()) {
                 // Go to end of line.
                 QTextCursor cursor = m_editor->textCursor();
                 cursor.movePosition(QTextCursor::EndOfLine, mode);
                 m_editor->setTextCursor(cursor);
-                if (visualMode) {
-                    goto pending;
-                }
+                goto pending;
             }
         }
         break;
@@ -790,7 +737,7 @@ bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
 
     case Qt::Key_AsciiCircum:
     {
-        if (modifiers == Qt::ShiftModifier || ctrlShiftAlt) {
+        if (modifiers == Qt::ShiftModifier) {
             if (m_pendingKey.isEmpty()) {
                 // Go to first non-space character of current line.
                 QTextCursor cursor = m_editor->textCursor();
@@ -809,9 +756,7 @@ bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
                 }
                 cursor.endEditBlock();
                 m_editor->setTextCursor(cursor);
-                if (visualMode) {
-                    goto pending;
-                }
+                goto pending;
             }
         }
         break;
@@ -819,7 +764,7 @@ bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
 
     case Qt::Key_G:
     {
-        if (modifiers == Qt::NoModifier || ctrlAlt) {
+        if (modifiers == Qt::NoModifier) {
             // g, pending or go to first line.
             if (m_pendingKey.isEmpty()) {
                 m_pendingKey.append("g");
@@ -829,13 +774,12 @@ bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
                 QTextCursor cursor = m_editor->textCursor();
                 cursor.movePosition(QTextCursor::Start, mode);
                 m_editor->setTextCursor(cursor);
-                if (visualMode) {
-                    goto pending;
-                }
+                goto pending;
             }
-        } else if (modifiers == Qt::ShiftModifier || ctrlShiftAlt) {
+        } else if (modifiers == Qt::ShiftModifier) {
             // G, go to a certain line or the end of document.
             int lineNum = keySeqToNumber(m_pendingKey);
+            m_pendingKey.clear();
             QTextCursor cursor = m_editor->textCursor();
             if (lineNum == 0) {
                 cursor.movePosition(QTextCursor::End, mode);
@@ -850,16 +794,14 @@ bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
                 }
             }
             m_editor->setTextCursor(cursor);
-            if (visualMode) {
-                goto pending;
-            }
+            goto pending;
         }
         break;
     }
 
     case Qt::Key_V:
     {
-        if (modifiers == Qt::NoModifier || ctrlAlt) {
+        if (modifiers == Qt::NoModifier) {
             // V to enter visual mode.
             if (m_pendingKey.isEmpty() && m_keyState != KeyState::VimVisual) {
                 m_keyState = KeyState::VimVisual;
@@ -871,8 +813,7 @@ bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
 
     case Qt::Key_Y:
     {
-        // TODO: support y2j.
-        if (modifiers == Qt::NoModifier || ctrlAlt) {
+        if (modifiers == Qt::NoModifier) {
             if (m_pendingKey.isEmpty()) {
                 QTextCursor cursor = m_editor->textCursor();
                 if (cursor.hasSelection()) {
@@ -880,6 +821,31 @@ bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
                     QClipboard *clipboard = QApplication::clipboard();
                     clipboard->setText(text);
                 }
+                goto pending;
+            }
+        }
+        break;
+    }
+
+    case Qt::Key_D:
+    {
+        if (modifiers == Qt::NoModifier) {
+            // d, pending or delete current line.
+            QTextCursor cursor = m_editor->textCursor();
+            if (m_pendingKey.isEmpty()) {
+                if (cursor.hasSelection()) {
+                    cursor.deleteChar();
+                    m_editor->setTextCursor(cursor);
+                } else {
+                    m_pendingKey.append("d");
+                }
+                goto pending;
+            } else if (m_pendingKey.size() == 1 && m_pendingKey.at(0) == "d") {
+                m_pendingKey.clear();
+                cursor.select(QTextCursor::BlockUnderCursor);
+                cursor.removeSelectedText();
+                m_editor->setTextCursor(cursor);
+                goto pending;
             }
         }
         break;
@@ -904,7 +870,7 @@ bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
 
 pending:
     // When pending in Ctrl+Alt, we just want to clear m_pendingKey.
-    if (m_pendingTimer->isActive() || ctrlAlt) {
+    if (m_pendingTimer->isActive()) {
         m_pendingTimer->stop();
         m_pendingTimer->start();
     }
@@ -930,9 +896,7 @@ int VMdEditOperations::keySeqToNumber(const QList<QString> &p_seq)
 void VMdEditOperations::pendingTimerTimeout()
 {
     qDebug() << "key pending timer timeout";
-    int modifiers = QGuiApplication::keyboardModifiers();
-    if (modifiers == (Qt::ControlModifier | Qt::AltModifier)
-        || m_keyState == KeyState::VimVisual) {
+    if (m_keyState == KeyState::VimVisual) {
         m_pendingTimer->start();
         return;
     }

@@ -248,7 +248,7 @@ void HGMarkdownHighlighter::parseInternal()
     pmh_markdown_to_elements(content, pmh_EXT_NONE, &result);
 }
 
-void HGMarkdownHighlighter::handleContentChange(int position, int charsRemoved, int charsAdded)
+void HGMarkdownHighlighter::handleContentChange(int /* position */, int charsRemoved, int charsAdded)
 {
     if (charsRemoved == 0 && charsAdded == 0) {
         return;

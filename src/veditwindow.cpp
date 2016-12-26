@@ -367,7 +367,7 @@ void VEditWindow::focusWindow()
     getTab(idx)->focusTab();
 }
 
-void VEditWindow::handleTabbarClicked(int index)
+void VEditWindow::handleTabbarClicked(int /* index */)
 {
     // The child will emit getFocused here
     focusWindow();
