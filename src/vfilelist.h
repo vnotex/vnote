@@ -44,6 +44,7 @@ private slots:
     void cutSelectedFiles();
     void pasteFilesInCurDir();
     void deleteFile();
+    void handleRowsMoved(const QModelIndex &p_parent, int p_start, int p_end, const QModelIndex &p_destination, int p_row);
 
 public slots:
     void setDirectory(VDirectory *p_directory);
@@ -64,7 +65,9 @@ private:
     bool copyFile(VDirectory *p_destDir, const QString &p_destName, VFile *p_file, bool p_cut);
     // New items have been added to direcotry. Update file list accordingly.
     QVector<QListWidgetItem *> updateFileListAdded();
-    inline QPointer<VFile> getVFile(QListWidgetItem *p_item);
+    inline QPointer<VFile> getVFile(QListWidgetItem *p_item) const;
+    // Check if the list items match exactly the contents of the directory.
+    bool identicalListWithDirectory() const;
 
     VEditArea *editArea;
     QListWidget *fileList;
@@ -85,10 +88,10 @@ inline void VFileList::setEditArea(VEditArea *editArea)
     this->editArea = editArea;
 }
 
-inline QPointer<VFile> VFileList::getVFile(QListWidgetItem *p_item)
+inline QPointer<VFile> VFileList::getVFile(QListWidgetItem *p_item) const
 {
     Q_ASSERT(p_item);
-    return p_item->data(Qt::UserRole).value<VFile *>();
+    return (VFile *)p_item->data(Qt::UserRole).toULongLong();
 }
 
 inline const VDirectory *VFileList::currentDirectory() const

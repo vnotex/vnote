@@ -59,6 +59,8 @@ public:
     inline QString getNotebookName() const;
     inline bool isExpanded() const;
     void setExpanded(bool p_expanded);
+    void reorderFiles(int p_first, int p_last, int p_destStart);
+    bool reorderFilesInConfig(int p_first, int p_last, int p_destStart);
 
     static QJsonObject createDirectoryJson();
 

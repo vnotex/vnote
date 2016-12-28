@@ -21,6 +21,7 @@ void VFileList::setupUI()
     fileList = new QListWidget(this);
     fileList->setContextMenuPolicy(Qt::CustomContextMenu);
     fileList->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    fileList->setDragDropMode(QAbstractItemView::InternalMove);
     fileList->setObjectName("FileList");
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
@@ -31,6 +32,8 @@ void VFileList::setupUI()
             this, &VFileList::contextMenuRequested);
     connect(fileList, &QListWidget::itemClicked,
             this, &VFileList::handleItemClicked);
+    connect(fileList->model(), &QAbstractItemModel::rowsMoved,
+            this, &VFileList::handleRowsMoved);
 
     setLayout(mainLayout);
 }
@@ -140,8 +143,9 @@ QListWidgetItem* VFileList::insertFileListItem(VFile *file, bool atFront)
 {
     Q_ASSERT(file);
     QListWidgetItem *item = new QListWidgetItem(file->getName());
-    item->setData(Qt::UserRole, QVariant::fromValue(file));
-
+    unsigned long long ptr = (long long)file;
+    item->setData(Qt::UserRole, ptr);
+    Q_ASSERT(sizeof(file) <= sizeof(ptr));
     if (atFront) {
         fileList->insertItem(0, item);
     } else {
@@ -468,4 +472,28 @@ bool VFileList::locateFile(const VFile *p_file)
         }
     }
     return false;
+}
+
+void VFileList::handleRowsMoved(const QModelIndex &p_parent, int p_start, int p_end, const QModelIndex &p_destination, int p_row)
+{
+    if (p_parent == p_destination) {
+        // Items[p_start, p_end] are moved to p_row.
+        m_directory->reorderFiles(p_start, p_end, p_row);
+        Q_ASSERT(identicalListWithDirectory());
+    }
+}
+
+bool VFileList::identicalListWithDirectory() const
+{
+    const QVector<VFile *> files = m_directory->getFiles();
+    int nrItems = fileList->count();
+    if (nrItems != files.size()) {
+        return false;
+    }
+    for (int i = 0; i < nrItems; ++i) {
+        if (getVFile(fileList->item(i)) != files.at(i)) {
+            return false;
+        }
+    }
+    return true;
 }

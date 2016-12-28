@@ -582,3 +582,59 @@ void VDirectory::setExpanded(bool p_expanded)
     m_expanded = p_expanded;
 }
 
+void VDirectory::reorderFiles(int p_first, int p_last, int p_destStart)
+{
+    Q_ASSERT(m_opened);
+    Q_ASSERT(p_first <= p_last);
+    Q_ASSERT(p_last < m_files.size());
+    Q_ASSERT(p_destStart < p_first || p_destStart > p_last);
+    Q_ASSERT(p_destStart >= 0 && p_destStart <= m_files.size());
+
+    if (!reorderFilesInConfig(p_first, p_last, p_destStart)) {
+        qWarning() << "failed to reorder files in config" << p_first << p_last << p_destStart;
+        return;
+    }
+
+    // Reorder m_files.
+    if (p_destStart > p_last) {
+        int to = p_destStart - 1;
+        for (int i = p_first; i <= p_last; ++i) {
+            // Move p_first to p_destStart every time.
+            m_files.move(p_first, to);
+        }
+    } else {
+        int to = p_destStart;
+        for (int i = p_first; i <= p_last; ++i) {
+            m_files.move(i, to++);
+        }
+    }
+}
+
+bool VDirectory::reorderFilesInConfig(int p_first, int p_last, int p_destStart)
+{
+    QString path = retrivePath();
+    QJsonObject dirJson = VConfigManager::readDirectoryConfig(path);
+    Q_ASSERT(!dirJson.isEmpty());
+    QJsonArray fileArray = dirJson["files"].toArray();
+    Q_ASSERT(fileArray.size() == m_files.size());
+
+    if (p_destStart > p_last) {
+        int to = p_destStart - 1;
+        for (int i = p_first; i <= p_last; ++i) {
+            // Move p_first to p_destStart every time.
+            QJsonValue ele = fileArray.takeAt(p_first);
+            fileArray.insert(to, ele);
+        }
+    } else {
+        int to = p_destStart;
+        for (int i = p_first; i <= p_last; ++i) {
+            QJsonValue ele = fileArray.takeAt(i);
+            fileArray.insert(to++, ele);
+        }
+    }
+    dirJson["files"] = fileArray;
+    if (!VConfigManager::writeDirectoryConfig(path, dirJson)) {
+        return false;
+    }
+    return true;
+}
