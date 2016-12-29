@@ -1,4 +1,5 @@
 #include "vdocument.h"
+#include <QDebug>
 
 VDocument::VDocument(QObject *parent) : QObject(parent)
 {
@@ -60,4 +61,11 @@ void VDocument::setHtml(const QString &html)
     }
     m_html = html;
     emit htmlChanged(m_html);
+}
+
+void VDocument::setLog(const QString &p_log)
+{
+    qDebug() << "JS:" << p_log;
+    m_log = p_log;
+    emit logChanged(m_log);
 }
