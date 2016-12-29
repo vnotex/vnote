@@ -12,10 +12,15 @@ extern VNote *g_vnote;
 
 enum ImageProperty { ImagePath = 1 };
 
+const QString VMdEdit::c_cursorLineColor = "Indigo1";
+const QString VMdEdit::c_cursorLineColorVim = "Green2";
+
 VMdEdit::VMdEdit(VFile *p_file, QWidget *p_parent)
     : VEdit(p_file, p_parent), m_mdHighlighter(NULL)
 {
     Q_ASSERT(p_file->getDocType() == DocType::Markdown);
+
+    m_cursorLineColor = QColor(g_vnote->getColorFromPalette(c_cursorLineColor));
 
     setAcceptRichText(false);
     m_mdHighlighter = new HGMarkdownHighlighter(vconfig.getMdHighlightingStyles(),
@@ -25,6 +30,8 @@ VMdEdit::VMdEdit(VFile *p_file, QWidget *p_parent)
     connect(m_mdHighlighter, &HGMarkdownHighlighter::imageBlocksUpdated,
             this, &VMdEdit::updateImageBlocks);
     m_editOps = new VMdEditOperations(this, m_file);
+    connect(m_editOps, &VEditOperations::keyStateChanged,
+            this, &VMdEdit::handleEditStateChanged);
 
     connect(this, &VMdEdit::cursorPositionChanged,
             this, &VMdEdit::updateCurHeader);
@@ -460,17 +467,27 @@ int VMdEdit::removeObjectReplacementLine(QString &p_text, int p_index) const
 
 void VMdEdit::highlightCurrentLine()
 {
-    static QColor lineColor = QColor(g_vnote->getColorFromPalette("Indigo1"));
     QList<QTextEdit::ExtraSelection> extraSelects;
 
     if (!isReadOnly()) {
         QTextEdit::ExtraSelection select;
 
-        select.format.setBackground(lineColor);
+        select.format.setBackground(m_cursorLineColor);
         select.format.setProperty(QTextFormat::FullWidthSelection, true);
         select.cursor = textCursor();
         select.cursor.clearSelection();
         extraSelects.append(select);
     }
     setExtraSelections(extraSelects);
+}
+
+void VMdEdit::handleEditStateChanged(KeyState p_state)
+{
+    qDebug() << "edit state" << (int)p_state;
+    if (p_state == KeyState::Normal) {
+        m_cursorLineColor = QColor(g_vnote->getColorFromPalette(c_cursorLineColor));
+    } else {
+        m_cursorLineColor = QColor(g_vnote->getColorFromPalette(c_cursorLineColorVim));
+    }
+    highlightCurrentLine();
 }

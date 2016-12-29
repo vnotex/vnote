@@ -27,6 +27,7 @@ private:
     bool insertImageFromURL(const QUrl &imageUrl);
     void insertImageFromPath(const QString &title, const QString &path, const QString &oriImagePath);
     void insertImageFromQImage(const QString &title, const QString &path, const QImage &image);
+    void setKeyState(KeyState p_state);
 
     // Key press handlers.
     bool handleKeyTab(QKeyEvent *p_event);

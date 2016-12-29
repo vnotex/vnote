@@ -414,7 +414,7 @@ bool VMdEditOperations::handleKeyD(QKeyEvent *p_event)
     if (p_event->modifiers() == Qt::ControlModifier) {
         // Ctrl+D, enter Vim-pending mode.
         // Will accept the key stroke in m_pendingTime as Vim normal command.
-        m_keyState = KeyState::Vim;
+        setKeyState(KeyState::Vim);
         m_pendingTimer->stop();
         m_pendingTimer->start();
         p_event->accept();
@@ -526,7 +526,7 @@ bool VMdEditOperations::handleKeyEsc(QKeyEvent *p_event)
     m_editor->setTextCursor(cursor);
 
     m_pendingTimer->stop();
-    m_keyState = KeyState::Normal;
+    setKeyState(KeyState::Normal);
     m_pendingKey.clear();
 
     p_event->accept();
@@ -804,7 +804,7 @@ bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
         if (modifiers == Qt::NoModifier) {
             // V to enter visual mode.
             if (m_pendingKey.isEmpty() && m_keyState != KeyState::VimVisual) {
-                m_keyState = KeyState::VimVisual;
+                setKeyState(KeyState::VimVisual);
                 goto pending;
             }
         }
@@ -863,7 +863,7 @@ bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
         cursor.clearSelection();
         m_editor->setTextCursor(cursor);
     }
-    m_keyState = KeyState::Normal;
+    setKeyState(KeyState::Normal);
     m_pendingKey.clear();
     p_event->accept();
     return true;
@@ -900,7 +900,7 @@ void VMdEditOperations::pendingTimerTimeout()
         m_pendingTimer->start();
         return;
     }
-    m_keyState = KeyState::Normal;
+    setKeyState(KeyState::Normal);
     m_pendingKey.clear();
 }
 
@@ -915,5 +915,14 @@ bool VMdEditOperations::suffixNumAllowed(const QList<QString> &p_seq)
         }
     }
     return true;
+}
+
+void VMdEditOperations::setKeyState(KeyState p_state)
+{
+    if (m_keyState == p_state) {
+        return;
+    }
+    m_keyState = p_state;
+    emit keyStateChanged(m_keyState);
 }
 

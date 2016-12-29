@@ -27,6 +27,9 @@ public:
     virtual bool handleKeyPressEvent(QKeyEvent *p_event) = 0;
     void updateTabSettings();
 
+signals:
+    void keyStateChanged(KeyState p_state);
+
 protected:
     void insertTextAtCurPos(const QString &p_text);
 

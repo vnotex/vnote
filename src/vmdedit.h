@@ -4,7 +4,9 @@
 #include "vedit.h"
 #include <QVector>
 #include <QString>
+#include <QColor>
 #include "vtoc.h"
+#include "veditoperations.h"
 
 class HGMarkdownHighlighter;
 
@@ -37,6 +39,7 @@ private slots:
     // Update block list containing image links.
     void updateImageBlocks(QSet<int> p_imageBlocks);
     void highlightCurrentLine();
+    void handleEditStateChanged(KeyState p_state);
 
 protected:
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
@@ -71,6 +74,10 @@ private:
     QVector<QString> m_insertedImages;
     QVector<QString> m_initImages;
     QVector<VHeader> m_headers;
+    QColor m_cursorLineColor;
+
+    static const QString c_cursorLineColor;
+    static const QString c_cursorLineColorVim;
 };
 
 #endif // VMDEDIT_H
