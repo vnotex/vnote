@@ -40,6 +40,7 @@ private slots:
     void updateImageBlocks(QSet<int> p_imageBlocks);
     void highlightCurrentLine();
     void handleEditStateChanged(KeyState p_state);
+    void handleSelectionChanged();
 
 protected:
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
@@ -69,12 +70,14 @@ private:
     // Returns the image relative path (image/xxx.png) only when
     // there is one and only one image link.
     QString fetchImageToPreview(const QString &p_text);
+    void clearAllImagePreviewBlocks();
 
     HGMarkdownHighlighter *m_mdHighlighter;
     QVector<QString> m_insertedImages;
     QVector<QString> m_initImages;
     QVector<VHeader> m_headers;
     QColor m_cursorLineColor;
+    bool m_previewImage;
 
     static const QString c_cursorLineColor;
     static const QString c_cursorLineColorVim;

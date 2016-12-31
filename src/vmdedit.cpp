@@ -16,7 +16,7 @@ const QString VMdEdit::c_cursorLineColor = "Indigo1";
 const QString VMdEdit::c_cursorLineColorVim = "Green2";
 
 VMdEdit::VMdEdit(VFile *p_file, QWidget *p_parent)
-    : VEdit(p_file, p_parent), m_mdHighlighter(NULL)
+    : VEdit(p_file, p_parent), m_mdHighlighter(NULL), m_previewImage(true)
 {
     Q_ASSERT(p_file->getDocType() == DocType::Markdown);
 
@@ -39,6 +39,9 @@ VMdEdit::VMdEdit(VFile *p_file, QWidget *p_parent)
         connect(this, &VMdEdit::cursorPositionChanged,
                 this, &VMdEdit::highlightCurrentLine);
     }
+
+    connect(this, &VMdEdit::selectionChanged,
+            this, &VMdEdit::handleSelectionChanged);
 
     m_editOps->updateTabSettings();
     updateFontAndPalette();
@@ -229,6 +232,9 @@ void VMdEdit::scrollToHeader(int p_headerIndex)
 
 void VMdEdit::updateImageBlocks(QSet<int> p_imageBlocks)
 {
+    if (!m_previewImage) {
+        return;
+    }
     // We need to handle blocks backward to avoid shifting all the following blocks.
     // Inserting the preview image block may cause highlighter to emit signal again.
     QList<int> blockList = p_imageBlocks.toList();
@@ -308,6 +314,25 @@ void VMdEdit::clearCorruptedImagePreviewBlock(QTextBlock p_block)
         }
         Q_ASSERT(text.remove(QChar::ObjectReplacementCharacter) == p_block.text());
     }
+}
+
+void VMdEdit::clearAllImagePreviewBlocks()
+{
+    QTextDocument *doc = document();
+    QTextBlock block = doc->begin();
+    bool modified = isModified();
+    while (block.isValid()) {
+        if (isImagePreviewBlock(block)) {
+            QTextBlock nextBlock = block.next();
+            removeBlock(block);
+            block = nextBlock;
+        } else {
+            clearCorruptedImagePreviewBlock(block);
+            block = block.next();
+        }
+    }
+    setModified(modified);
+    emit statusChanged();
 }
 
 QString VMdEdit::fetchImageToPreview(const QString &p_text)
@@ -490,4 +515,22 @@ void VMdEdit::handleEditStateChanged(KeyState p_state)
         m_cursorLineColor = QColor(g_vnote->getColorFromPalette(c_cursorLineColorVim));
     }
     highlightCurrentLine();
+}
+
+void VMdEdit::handleSelectionChanged()
+{
+    QString text = textCursor().selectedText();
+    if (text.isEmpty() && !m_previewImage) {
+        m_previewImage = true;
+        m_mdHighlighter->updateHighlight();
+    } else if (m_previewImage) {
+        if (text.trimmed() == QString(QChar::ObjectReplacementCharacter)) {
+            // Select the image and some whitespaces.
+            // We can let the user copy the image.
+            return;
+        } else if (text.contains(QChar::ObjectReplacementCharacter)) {
+            m_previewImage = false;
+            clearAllImagePreviewBlocks();
+        }
+    }
 }

@@ -56,6 +56,8 @@ public:
                           QTextDocument *parent = 0);
     ~HGMarkdownHighlighter();
     void setStyles(const QVector<HighlightingStyle> &styles);
+    // Request to update highlihgt (re-parse and re-highlight)
+    void updateHighlight();
 
 signals:
     void highlightCompleted();

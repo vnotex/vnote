@@ -263,3 +263,9 @@ void HGMarkdownHighlighter::timerTimeout()
     rehighlight();
     emit highlightCompleted();
 }
+
+void HGMarkdownHighlighter::updateHighlight()
+{
+    timer->stop();
+    timerTimeout();
+}
