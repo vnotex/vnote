@@ -17,6 +17,7 @@
 class VNote;
 class VFile;
 class VDirectory;
+class VFindReplaceDialog;
 
 class VEditArea : public QWidget
 {
@@ -38,6 +39,7 @@ public:
     // @p_widget has been removed from the original window.
     // If fail, just delete the p_widget.
     void moveTab(QWidget *p_widget, int p_fromIdx, int p_toIdx);
+    inline VFindReplaceDialog *getFindReplaceDialog() const;
 
 signals:
     void curTabStatusChanged(const VFile *p_file, const VEditTab *p_editTab, bool p_editMode);
@@ -81,6 +83,7 @@ private:
 
     // Splitter holding multiple split windows
     QSplitter *splitter;
+    VFindReplaceDialog *m_findReplace;
 };
 
 inline VEditWindow* VEditArea::getWindow(int windowIndex) const
@@ -92,6 +95,11 @@ inline VEditWindow* VEditArea::getWindow(int windowIndex) const
 inline int VEditArea::windowCount() const
 {
     return splitter->count();
+}
+
+inline VFindReplaceDialog *VEditArea::getFindReplaceDialog() const
+{
+    return m_findReplace;
 }
 
 #endif // VEDITAREA_H

@@ -1,5 +1,5 @@
 QPushButton[CornerBtn="true"] {
-    padding: 0px;
+    padding: 4px 0px 4px 0px;
     margin: 0px;
     border: none;
     background-color: transparent;
@@ -10,6 +10,28 @@ QPushButton[CornerBtn="true"]::menu-indicator {
 }
 
 QPushButton[CornerBtn="true"]::hover {
+    background-color: @hover-color;
+}
+
+QPushButton[FlatBtn="true"] {
+    padding: 4px;
+    margin: 0px;
+    border: none;
+    background-color: transparent;
+}
+
+QPushButton[FlatBtn="true"]::hover {
+    background-color: @hover-color;
+}
+
+QPushButton[TitleBtn="true"] {
+    padding: 4px;
+    margin: 0px;
+    border: none;
+    background-color: @base-color;
+}
+
+QPushButton[TitleBtn="true"]::hover {
     background-color: @hover-color;
 }
 

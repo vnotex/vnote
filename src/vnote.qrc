@@ -81,5 +81,6 @@
         <file>resources/icons/move_tab_right.svg</file>
         <file>resources/icons/corner_menu_cur.svg</file>
         <file>resources/icons/corner_tablist_cur.svg</file>
+        <file>resources/icons/close.svg</file>
     </qresource>
 </RCC>

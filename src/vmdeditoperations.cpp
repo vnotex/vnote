@@ -260,11 +260,12 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
 
         case Qt::Key_BracketLeft:
         {
-            if (p_event->modifiers() != Qt::ControlModifier) {
-                break;
+            if (handleKeyBracketLeft(p_event)) {
+                return true;
             }
-            // Ctrl+[, Fall through.
+            break;
         }
+
         case Qt::Key_Escape:
         {
             if (handleKeyEsc(p_event)) {
@@ -279,6 +280,28 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
     }
 
     return false;
+}
+
+bool VMdEditOperations::handleKeyBracketLeft(QKeyEvent *p_event)
+{
+    // 1. If it is not in Normal state, just go back to Normal state;
+    // 2. If it is already Normal state, try to clear selection;
+    // 3. Anyway, we accept this event.
+    if (p_event->modifiers() == Qt::ControlModifier) {
+        if (m_keyState != KeyState::Normal) {
+            m_pendingTimer->stop();
+            setKeyState(KeyState::Normal);
+            m_pendingKey.clear();
+        } else {
+            QTextCursor cursor = m_editor->textCursor();
+            if (cursor.hasSelection()) {
+                cursor.clearSelection();
+                m_editor->setTextCursor(cursor);
+            }
+        }
+    }
+    p_event->accept();
+    return true;
 }
 
 bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)
@@ -520,17 +543,27 @@ bool VMdEditOperations::handleKeyW(QKeyEvent *p_event)
 
 bool VMdEditOperations::handleKeyEsc(QKeyEvent *p_event)
 {
-    // Esc, clear any Vim mode, clear selection.
-    QTextCursor cursor = m_editor->textCursor();
-    cursor.clearSelection();
-    m_editor->setTextCursor(cursor);
-
-    m_pendingTimer->stop();
-    setKeyState(KeyState::Normal);
-    m_pendingKey.clear();
-
-    p_event->accept();
-    return true;
+    // 1. If it is not in Normal state, just go back to Normal state;
+    // 2. If it is already Normal state, try to clear selection;
+    // 3. Otherwise, ignore this event and let parent handles it.
+    bool accept = false;
+    if (m_keyState != KeyState::Normal) {
+        m_pendingTimer->stop();
+        setKeyState(KeyState::Normal);
+        m_pendingKey.clear();
+        accept = true;
+    } else {
+        QTextCursor cursor = m_editor->textCursor();
+        if (cursor.hasSelection()) {
+            cursor.clearSelection();
+            m_editor->setTextCursor(cursor);
+            accept = true;
+        }
+    }
+    if (accept) {
+        p_event->accept();
+    }
+    return accept;
 }
 
 bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
@@ -925,4 +958,3 @@ void VMdEditOperations::setKeyState(KeyState p_state)
     m_keyState = p_state;
     emit keyStateChanged(m_keyState);
 }
-

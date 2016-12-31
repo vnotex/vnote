@@ -10,6 +10,7 @@
 #include "voutline.h"
 #include "vnotebookselector.h"
 #include "vavatar.h"
+#include "dialog/vfindreplacedialog.h"
 
 extern VConfigManager vconfig;
 
@@ -725,6 +726,16 @@ void VMainWindow::resizeEvent(QResizeEvent *event)
 {
     repositionAvatar();
     QMainWindow::resizeEvent(event);
+}
+
+void VMainWindow::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Escape) {
+        editArea->getFindReplaceDialog()->closeDialog();
+        event->accept();
+        return;
+    }
+    QMainWindow::keyPressEvent(event);
 }
 
 void VMainWindow::repositionAvatar()

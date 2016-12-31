@@ -5,26 +5,33 @@
 #include "vnote.h"
 #include "vconfigmanager.h"
 #include "vfile.h"
+#include "dialog/vfindreplacedialog.h"
 
 VEditArea::VEditArea(VNote *vnote, QWidget *parent)
     : QWidget(parent), vnote(vnote), curWindowIndex(-1)
 {
     setupUI();
+
+    insertSplitWindow(0);
+    setCurrentWindow(0, false);
 }
 
 void VEditArea::setupUI()
 {
     splitter = new QSplitter(this);
+    m_findReplace = new VFindReplaceDialog(this);
 
-    insertSplitWindow(0);
-    setCurrentWindow(0, false);
-
-    QHBoxLayout *mainLayout = new QHBoxLayout();
+    QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addWidget(splitter);
+    mainLayout->addWidget(m_findReplace);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
+    mainLayout->setStretch(0, 1);
+    mainLayout->setStretch(1, 0);
 
     setLayout(mainLayout);
+
+    m_findReplace->hide();
 }
 
 void VEditArea::insertSplitWindow(int idx)
@@ -308,7 +315,6 @@ void VEditArea::handleRemoveSplitRequest(VEditWindow *curWindow)
 
 void VEditArea::mousePressEvent(QMouseEvent *event)
 {
-    qDebug() << "VEditArea press event" << event;
     QPoint pos = event->pos();
     int nrWin = splitter->count();
     for (int i = 0; i < nrWin; ++i) {

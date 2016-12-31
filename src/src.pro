@@ -48,7 +48,8 @@ SOURCES += main.cpp\
     vnotebookselector.cpp \
     vnofocusitemdelegate.cpp \
     vavatar.cpp \
-    vmdedit.cpp
+    vmdedit.cpp \
+    dialog/vfindreplacedialog.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -85,7 +86,8 @@ HEADERS  += vmainwindow.h \
     vnotebookselector.h \
     vnofocusitemdelegate.h \
     vavatar.h \
-    vmdedit.h
+    vmdedit.h \
+    dialog/vfindreplacedialog.h
 
 RESOURCES += \
     vnote.qrc
