@@ -42,6 +42,8 @@ VMdEdit::VMdEdit(VFile *p_file, QWidget *p_parent)
 
     connect(this, &VMdEdit::selectionChanged,
             this, &VMdEdit::handleSelectionChanged);
+    connect(QApplication::clipboard(), &QClipboard::changed,
+            this, &VMdEdit::handleClipboardChanged);
 
     m_editOps->updateTabSettings();
     updateFontAndPalette();
@@ -473,21 +475,20 @@ QString VMdEdit::toPlainTextWithoutImg() const
             break;
         }
         start = removeObjectReplacementLine(text, index);
-    } while (start < text.size());
+    } while (start > -1 && start < text.size());
     return text;
 }
 
 int VMdEdit::removeObjectReplacementLine(QString &p_text, int p_index) const
 {
     Q_ASSERT(p_text.size() > p_index && p_text.at(p_index) == QChar::ObjectReplacementCharacter);
-    Q_ASSERT(p_text.at(p_index + 1) == '\n');
     int prevLineIdx = p_text.lastIndexOf('\n', p_index);
     if (prevLineIdx == -1) {
         prevLineIdx = 0;
     }
-    // Remove \n[....?\n]
-    p_text.remove(prevLineIdx + 1, p_index - prevLineIdx + 1);
-    return prevLineIdx;
+    // Remove [\n....?]
+    p_text.remove(prevLineIdx, p_index - prevLineIdx + 1);
+    return prevLineIdx - 1;
 }
 
 void VMdEdit::highlightCurrentLine()
@@ -533,4 +534,52 @@ void VMdEdit::handleSelectionChanged()
             clearAllImagePreviewBlocks();
         }
     }
+}
+
+void VMdEdit::handleClipboardChanged(QClipboard::Mode p_mode)
+{
+    if (p_mode == QClipboard::Clipboard) {
+        QClipboard *clipboard = QApplication::clipboard();
+        const QMimeData *mimeData = clipboard->mimeData();
+        if (mimeData->hasText()) {
+            QString text = mimeData->text();
+            if (clipboard->ownsClipboard() &&
+                (text.trimmed() == QString(QChar::ObjectReplacementCharacter))) {
+                QString imagePath = selectedImage();
+                qDebug() <<  "clipboard" << imagePath;
+                Q_ASSERT(!imagePath.isEmpty());
+                QImage image(imagePath);
+                Q_ASSERT(!image.isNull());
+                clipboard->clear(QClipboard::Clipboard);
+                clipboard->setImage(image, QClipboard::Clipboard);
+            }
+        }
+    }
+}
+
+QString VMdEdit::selectedImage()
+{
+    QString imagePath;
+    QTextCursor cursor = textCursor();
+    if (!cursor.hasSelection()) {
+        return imagePath;
+    }
+    int start = cursor.selectionStart();
+    int end = cursor.selectionEnd();
+    QTextDocument *doc = document();
+    QTextBlock startBlock = doc->findBlock(start);
+    QTextBlock endBlock = doc->findBlock(end);
+    QTextBlock block = startBlock;
+    while (block.isValid()) {
+        if (isImagePreviewBlock(block)) {
+            QString image = fetchImageToPreview(block.previous().text());
+            imagePath = QDir(m_file->retriveBasePath()).filePath(image);
+            break;
+        }
+        if (block == endBlock) {
+            break;
+        }
+        block = block.next();
+    }
+    return imagePath;
 }

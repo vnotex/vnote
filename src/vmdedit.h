@@ -5,6 +5,7 @@
 #include <QVector>
 #include <QString>
 #include <QColor>
+#include <QClipboard>
 #include "vtoc.h"
 #include "veditoperations.h"
 
@@ -41,6 +42,7 @@ private slots:
     void highlightCurrentLine();
     void handleEditStateChanged(KeyState p_state);
     void handleSelectionChanged();
+    void handleClipboardChanged(QClipboard::Mode p_mode);
 
 protected:
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
@@ -71,6 +73,8 @@ private:
     // there is one and only one image link.
     QString fetchImageToPreview(const QString &p_text);
     void clearAllImagePreviewBlocks();
+    // There is a QChar::ObjectReplacementCharacter in the selection. Find out the image path.
+    QString selectedImage();
 
     HGMarkdownHighlighter *m_mdHighlighter;
     QVector<QString> m_insertedImages;
