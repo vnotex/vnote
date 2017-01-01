@@ -158,7 +158,7 @@ bool VNotebookSelector::newNotebook()
     QString defaultPath;
 
     do {
-        VNewNotebookDialog dialog(tr("Create notebook"), info, defaultName,
+        VNewNotebookDialog dialog(tr("Create Notebook"), info, defaultName,
                                   defaultPath, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();

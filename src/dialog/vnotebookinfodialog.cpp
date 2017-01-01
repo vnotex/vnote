@@ -25,17 +25,15 @@ void VNotebookInfoDialog::setupUI()
     nameEdit = new QLineEdit(defaultName);
     nameEdit->selectAll();
     nameLabel->setBuddy(nameEdit);
-    QHBoxLayout *nameLayout = new QHBoxLayout();
-    nameLayout->addWidget(nameLabel);
-    nameLayout->addWidget(nameEdit);
 
     QLabel *pathLabel = new QLabel(tr("Notebook &path:"));
     pathEdit = new QLineEdit(defaultPath);
     pathLabel->setBuddy(pathEdit);
     pathEdit->setReadOnly(true);
-    QHBoxLayout *pathLayout = new QHBoxLayout();
-    pathLayout->addWidget(pathLabel);
-    pathLayout->addWidget(pathEdit);
+
+    QFormLayout *topLayout = new QFormLayout();
+    topLayout->addRow(nameLabel, nameEdit);
+    topLayout->addRow(pathLabel, pathEdit);
 
     okBtn = new QPushButton(tr("&OK"));
     okBtn->setDefault(true);
@@ -45,15 +43,16 @@ void VNotebookInfoDialog::setupUI()
     btmLayout->addWidget(okBtn);
     btmLayout->addWidget(cancelBtn);
 
+    pathEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
+
     QVBoxLayout *mainLayout = new QVBoxLayout();
     if (infoLabel) {
         mainLayout->addWidget(infoLabel);
     }
-    mainLayout->addLayout(nameLayout);
-    mainLayout->addLayout(pathLayout);
+    mainLayout->addLayout(topLayout);
     mainLayout->addLayout(btmLayout);
     setLayout(mainLayout);
-
+    mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     setWindowTitle(title);
 }
 

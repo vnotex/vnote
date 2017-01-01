@@ -26,24 +26,24 @@ void VNewNotebookDialog::setupUI()
     }
     nameLabel = new QLabel(tr("Notebook &name:"));
     nameEdit = new QLineEdit(defaultName);
-    nameEdit->selectAll();
     nameLabel->setBuddy(nameEdit);
-    QHBoxLayout *nameLayout = new QHBoxLayout();
-    nameLayout->addWidget(nameLabel);
-    nameLayout->addWidget(nameEdit);
 
     QLabel *pathLabel = new QLabel(tr("Notebook &path:"));
     pathEdit = new QLineEdit(defaultPath);
     pathLabel->setBuddy(pathEdit);
     browseBtn = new QPushButton(tr("&Browse"));
-    QHBoxLayout *pathLayout = new QHBoxLayout();
-    pathLayout->addWidget(pathLabel);
-    pathLayout->addWidget(pathEdit);
-    pathLayout->addWidget(browseBtn);
 
     importCheck = new QCheckBox(tr("Import existing notebook"), this);
     importCheck->setChecked(true);
     importCheck->setToolTip(tr("When checked, VNote won't create a new config file if there already exists one."));
+
+    QGridLayout *topLayout = new QGridLayout();
+    topLayout->addWidget(nameLabel, 0, 0);
+    topLayout->addWidget(nameEdit, 0, 1, 1, 2);
+    topLayout->addWidget(pathLabel, 1, 0);
+    topLayout->addWidget(pathEdit, 1, 1);
+    topLayout->addWidget(browseBtn, 1, 2);
+    topLayout->addWidget(importCheck, 2, 1);
 
     okBtn = new QPushButton(tr("&OK"));
     okBtn->setDefault(true);
@@ -57,12 +57,10 @@ void VNewNotebookDialog::setupUI()
     if (infoLabel) {
         mainLayout->addWidget(infoLabel);
     }
-    mainLayout->addLayout(nameLayout);
-    mainLayout->addLayout(pathLayout);
-    mainLayout->addWidget(importCheck);
+    mainLayout->addLayout(topLayout);
     mainLayout->addLayout(btmLayout);
     setLayout(mainLayout);
-
+    mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     setWindowTitle(title);
 }
 
@@ -91,4 +89,10 @@ void VNewNotebookDialog::handleBrowseBtnClicked()
 bool VNewNotebookDialog::getImportCheck() const
 {
     return importCheck->isChecked();
+}
+
+void VNewNotebookDialog::showEvent(QShowEvent *event)
+{
+    nameEdit->setFocus();
+    QDialog::showEvent(event);
 }

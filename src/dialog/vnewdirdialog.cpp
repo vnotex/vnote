@@ -37,6 +37,8 @@ void VNewDirDialog::setupUI()
     btmLayout->addWidget(okBtn);
     btmLayout->addWidget(cancelBtn);
 
+    nameEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
+
     QVBoxLayout *mainLayout = new QVBoxLayout();
     if (infoLabel) {
         mainLayout->addWidget(infoLabel);
@@ -44,7 +46,7 @@ void VNewDirDialog::setupUI()
     mainLayout->addLayout(topLayout);
     mainLayout->addLayout(btmLayout);
     setLayout(mainLayout);
-
+    mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     setWindowTitle(title);
 }
 

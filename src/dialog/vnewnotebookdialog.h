@@ -23,6 +23,9 @@ private slots:
     void enableOkButton();
     void handleBrowseBtnClicked();
 
+protected:
+    void showEvent(QShowEvent *event) Q_DECL_OVERRIDE;
+
 private:
     void setupUI();
 

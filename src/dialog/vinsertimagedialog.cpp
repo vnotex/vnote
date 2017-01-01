@@ -33,29 +33,28 @@ void VInsertImageDialog::setupUI()
     pathEdit = new QLineEdit(defaultPath);
     pathLabel->setBuddy(pathEdit);
     browseBtn = new QPushButton(tr("&Browse"));
-    QHBoxLayout *pathLayout = new QHBoxLayout();
-    pathLayout->addWidget(pathLabel);
-    pathLayout->addWidget(pathEdit);
-    pathLayout->addWidget(browseBtn);
 
-    imageTitleLabel = new QLabel(tr("&Title:"));
+    imageTitleLabel = new QLabel(tr("&Image title:"));
     imageTitleEdit = new QLineEdit(defaultImageTitle);
     imageTitleEdit->selectAll();
     imageTitleLabel->setBuddy(imageTitleEdit);
     QRegExp regExp("[\\w\\(\\)@#%\\*\\-\\+=\\?<>\\,\\.\\s]+");
     QValidator *validator = new QRegExpValidator(regExp, this);
     imageTitleEdit->setValidator(validator);
-    QHBoxLayout *titleLayout = new QHBoxLayout();
-    titleLayout->addWidget(imageTitleLabel);
-    titleLayout->addWidget(imageTitleEdit);
+
+    QGridLayout *topLayout = new QGridLayout();
+    topLayout->addWidget(pathLabel, 0, 0);
+    topLayout->addWidget(pathEdit, 0, 1);
+    topLayout->addWidget(browseBtn, 0, 2);
+    topLayout->addWidget(imageTitleLabel, 1, 0);
+    topLayout->addWidget(imageTitleEdit, 1, 1, 1, 2);
+    topLayout->setColumnStretch(0, 0);
+    topLayout->setColumnStretch(1, 1);
+    topLayout->setColumnStretch(2, 0);
 
     okBtn = new QPushButton(tr("&OK"));
     okBtn->setDefault(true);
     cancelBtn = new QPushButton(tr("&Cancel"));
-
-    QVBoxLayout *topLayout = new QVBoxLayout();
-    topLayout->addLayout(pathLayout);
-    topLayout->addLayout(titleLayout);
 
     QHBoxLayout *btmLayout = new QHBoxLayout();
     btmLayout->addStretch();
@@ -70,7 +69,7 @@ void VInsertImageDialog::setupUI()
     mainLayout->addLayout(btmLayout);
     mainLayout->addWidget(imagePreviewLabel);
     setLayout(mainLayout);
-    layout()->setSizeConstraint(QLayout::SetFixedSize);
+    mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     setWindowTitle(title);
 }
 

@@ -20,7 +20,7 @@ void VFileInfoDialog::setupUI()
     if (!info.isEmpty()) {
         infoLabel = new QLabel(info);
     }
-    nameLabel = new QLabel(tr("&Name"));
+    nameLabel = new QLabel(tr("&Name:"));
     nameEdit = new QLineEdit(defaultName);
     nameEdit->selectAll();
     nameLabel->setBuddy(nameEdit);
@@ -38,12 +38,15 @@ void VFileInfoDialog::setupUI()
     btmLayout->addWidget(okBtn);
     btmLayout->addWidget(cancelBtn);
 
+    nameEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
+
     QVBoxLayout *mainLayout = new QVBoxLayout();
     if (infoLabel) {
         mainLayout->addWidget(infoLabel);
     }
     mainLayout->addLayout(topLayout);
     mainLayout->addLayout(btmLayout);
+    mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     setLayout(mainLayout);
 
     setWindowTitle(title);
