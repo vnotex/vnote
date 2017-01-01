@@ -29,12 +29,12 @@ VDirectoryTree::VDirectoryTree(VNote *vnote, QWidget *parent)
 void VDirectoryTree::initActions()
 {
     newRootDirAct = new QAction(QIcon(":/resources/icons/create_rootdir.svg"),
-                                tr("New &root directory"), this);
+                                tr("New &Root Directory"), this);
     newRootDirAct->setStatusTip(tr("Create a new root directory in current notebook"));
     connect(newRootDirAct, &QAction::triggered,
             this, &VDirectoryTree::newRootDirectory);
 
-    newSubDirAct = new QAction(tr("&New sub-directory"), this);
+    newSubDirAct = new QAction(tr("&New Sub-Directory"), this);
     newSubDirAct->setStatusTip(tr("Create a new sub-directory"));
     connect(newSubDirAct, &QAction::triggered,
             this, &VDirectoryTree::newSubDirectory);
@@ -298,11 +298,11 @@ void VDirectoryTree::newSubDirectory()
     QString defaultText("new_directory");
 
     do {
-        VNewDirDialog dialog(tr("Create directory"), info, text, defaultText, this);
+        VNewDirDialog dialog(tr("Create Directory"), info, text, defaultText, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
             if (curDir->findSubDirectory(name)) {
-                info = QString("Name already exists under %1.\nPlease choose another name.").arg(curDir->getName());
+                info = QString("Name already exists under %1. Please choose another name.").arg(curDir->getName());
                 defaultText = name;
                 continue;
             }
@@ -329,11 +329,11 @@ void VDirectoryTree::newRootDirectory()
     QString defaultText("new_directory");
     VDirectory *rootDir = m_notebook->getRootDir();
     do {
-        VNewDirDialog dialog(tr("Create root directory"), info, text, defaultText, this);
+        VNewDirDialog dialog(tr("Create Root Directory"), info, text, defaultText, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
             if (rootDir->findSubDirectory(name)) {
-                info = QString("Name already exists in notebook %1.\nPlease choose another name.").arg(m_notebook->getName());
+                info = QString("Name already exists in notebook %1. Please choose another name.").arg(m_notebook->getName());
                 defaultText = name;
                 continue;
             }
@@ -400,7 +400,7 @@ void VDirectoryTree::editDirectoryInfo()
                 return;
             }
             if (parentDir->findSubDirectory(name)) {
-                info = "Name already exists.\nPlease choose another name.";
+                info = "Name already exists. Please choose another name.";
                 defaultName = name;
                 continue;
             }

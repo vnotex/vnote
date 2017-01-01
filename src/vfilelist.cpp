@@ -41,8 +41,8 @@ void VFileList::setupUI()
 void VFileList::initActions()
 {
     newFileAct = new QAction(QIcon(":/resources/icons/create_note.svg"),
-                             tr("&New note"), this);
-    newFileAct->setStatusTip(tr("Create a new note in current directory"));
+                             tr("&New Note"), this);
+    newFileAct->setStatusTip(tr("Create a note in current directory"));
     connect(newFileAct, SIGNAL(triggered(bool)),
             this, SLOT(newFile()));
 
@@ -129,7 +129,7 @@ void VFileList::fileInfo(VFile *p_file)
                 return;
             }
             if (dir->findFile(name)) {
-                info = "Name already exists.\nPlease choose another name.";
+                info = "Name already exists. Please choose another name.";
                 defaultName = name;
                 continue;
             }
@@ -171,15 +171,15 @@ void VFileList::newFile()
     if (!m_directory) {
         return;
     }
-    QString info = QString("Create a new note under %1.").arg(m_directory->getName());
+    QString info = QString("Create a note under %1.").arg(m_directory->getName());
     QString text("&Note name:");
     QString defaultText("new_note");
     do {
-        VNewFileDialog dialog(QString("Create new note"), info, text, defaultText, this);
+        VNewFileDialog dialog(QString("Create Note"), info, text, defaultText, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
             if (m_directory->findFile(name)) {
-                info = "Name already exists.\nPlease choose another name.";
+                info = "Name already exists. Please choose another name.";
                 defaultText = name;
                 continue;
             }

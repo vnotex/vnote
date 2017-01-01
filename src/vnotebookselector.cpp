@@ -261,7 +261,7 @@ void VNotebookSelector::editNotebookInfo()
     QString defaultPath = notebook->getPath();
     QString defaultName(curName);
     do {
-        VNotebookInfoDialog dialog(tr("Notebook information"), info, defaultName,
+        VNotebookInfoDialog dialog(tr("Notebook Information"), info, defaultName,
                                    defaultPath, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
