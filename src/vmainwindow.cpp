@@ -25,10 +25,11 @@ VMainWindow::VMainWindow(QWidget *parent)
     g_vnote = vnote;
     vnote->initPalette(palette());
     initPredefinedColorPixmaps();
+
     setupUI();
-    initActions();
-    initToolBar();
+
     initMenuBar();
+    initToolBar();
     initDockWindows();
     initAvatar();
 
@@ -80,8 +81,8 @@ void VMainWindow::setupUI()
             this, &VMainWindow::handleCurTabStatusChanged);
 
     setCentralWidget(mainSplitter);
-    // Create and show the status bar
-    statusBar();
+    // TODO: Create and show the status bar
+    // statusBar();
 }
 
 QWidget *VMainWindow::setupDirectoryPanel()
@@ -123,8 +124,52 @@ QWidget *VMainWindow::setupDirectoryPanel()
     return nbContainer;
 }
 
-void VMainWindow::initActions()
+void VMainWindow::initToolBar()
 {
+    initFileToolBar();
+    initViewToolBar();
+}
+
+void VMainWindow::initViewToolBar()
+{
+    QToolBar *viewToolBar = addToolBar(tr("View"));
+    viewToolBar->setObjectName("ViewToolBar");
+    viewToolBar->setMovable(false);
+
+    QAction *onePanelViewAct = new QAction(QIcon(":/resources/icons/one_panel.svg"),
+                                           tr("&Single Panel"), this);
+    onePanelViewAct->setStatusTip(tr("Display only the note panel"));
+    connect(onePanelViewAct, &QAction::triggered,
+            this, &VMainWindow::onePanelView);
+
+    QAction *twoPanelViewAct = new QAction(QIcon(":/resources/icons/two_panels.svg"),
+                                           tr("&Two Panels"), this);
+    twoPanelViewAct->setStatusTip(tr("Display both the directory and note panel"));
+    connect(twoPanelViewAct, &QAction::triggered,
+            this, &VMainWindow::twoPanelView);
+
+    QMenu *panelMenu = new QMenu(this);
+    panelMenu->addAction(onePanelViewAct);
+    panelMenu->addAction(twoPanelViewAct);
+
+    expandViewAct = new QAction(QIcon(":/resources/icons/expand.svg"),
+                                         tr("Expand"), this);
+    expandViewAct->setStatusTip(tr("Expand the edit area"));
+    expandViewAct->setCheckable(true);
+    expandViewAct->setShortcut(QKeySequence("Ctrl+E"));
+    expandViewAct->setMenu(panelMenu);
+    connect(expandViewAct, &QAction::triggered,
+            this, &VMainWindow::expandPanelView);
+
+    viewToolBar->addAction(expandViewAct);
+}
+
+void VMainWindow::initFileToolBar()
+{
+    QToolBar *fileToolBar = addToolBar(tr("Note"));
+    fileToolBar->setObjectName("NoteToolBar");
+    fileToolBar->setMovable(false);
+
     newRootDirAct = new QAction(QIcon(":/resources/icons/create_rootdir_tb.svg"),
                                 tr("New &Rood Directory"), this);
     newRootDirAct->setStatusTip(tr("Create a root directory in current notebook"));
@@ -150,83 +195,6 @@ void VMainWindow::initActions()
     connect(deleteNoteAct, &QAction::triggered,
             this, &VMainWindow::deleteCurNote);
 
-    initEditActions();
-
-    initViewActions();
-
-    importNoteAct = new QAction(QIcon(":/resources/icons/import_note.svg"),
-                                tr("&Import Notes From Files"), this);
-    importNoteAct->setStatusTip(tr("Import notes from files into current directory"));
-    connect(importNoteAct, &QAction::triggered,
-            this, &VMainWindow::importNoteFromFile);
-
-    converterAct = new QActionGroup(this);
-    markedAct = new QAction(tr("Marked"), converterAct);
-    markedAct->setStatusTip(tr("Use Marked to convert Markdown to HTML (re-open current tabs to make it work)"));
-    markedAct->setCheckable(true);
-    markedAct->setData(int(MarkdownConverterType::Marked));
-
-    hoedownAct = new QAction(tr("Hoedown"), converterAct);
-    hoedownAct->setStatusTip(tr("Use Hoedown to convert Markdown to HTML (re-open current tabs to make it work)"));
-    hoedownAct->setCheckable(true);
-    hoedownAct->setData(int(MarkdownConverterType::Hoedown));
-    connect(converterAct, &QActionGroup::triggered,
-            this, &VMainWindow::changeMarkdownConverter);
-
-    aboutAct = new QAction(tr("&About"), this);
-    aboutAct->setStatusTip(tr("Show information about VNote"));
-    connect(aboutAct, &QAction::triggered,
-            this, &VMainWindow::aboutMessage);
-    aboutQtAct = new QAction(tr("About &Qt"), this);
-    aboutQtAct->setStatusTip(tr("Show information about Qt"));
-    connect(aboutQtAct, &QAction::triggered,
-            qApp, &QApplication::aboutQt);
-
-    m_insertImageAct = new QAction(QIcon(":/resources/icons/insert_image.svg"),
-                                   tr("Insert &Image"), this);
-    m_insertImageAct->setStatusTip(tr("Insert an image from file in current note"));
-    connect(m_insertImageAct, &QAction::triggered,
-            this, &VMainWindow::insertImage);
-
-    expandTabAct = new QAction(tr("&Expand Tab"), this);
-    expandTabAct->setStatusTip(tr("Expand entered tab to spaces"));
-    expandTabAct->setCheckable(true);
-    connect(expandTabAct, &QAction::triggered,
-            this, &VMainWindow::changeExpandTab);
-
-    tabStopWidthAct = new QActionGroup(this);
-    twoSpaceTabAct = new QAction(tr("2 Spaces"), tabStopWidthAct);
-    twoSpaceTabAct->setStatusTip(tr("Expand tab to 2 spaces"));
-    twoSpaceTabAct->setCheckable(true);
-    twoSpaceTabAct->setData(2);
-    fourSpaceTabAct = new QAction(tr("4 Spaces"), tabStopWidthAct);
-    fourSpaceTabAct->setStatusTip(tr("Expand tab to 4 spaces"));
-    fourSpaceTabAct->setCheckable(true);
-    fourSpaceTabAct->setData(4);
-    eightSpaceTabAct = new QAction(tr("8 Spaces"), tabStopWidthAct);
-    eightSpaceTabAct->setStatusTip(tr("Expand tab to 8 spaces"));
-    eightSpaceTabAct->setCheckable(true);
-    eightSpaceTabAct->setData(8);
-    connect(tabStopWidthAct, &QActionGroup::triggered,
-            this, &VMainWindow::setTabStopWidth);
-
-    backgroundColorAct = new QActionGroup(this);
-    connect(backgroundColorAct, &QActionGroup::triggered,
-            this, &VMainWindow::setEditorBackgroundColor);
-
-    m_cursorLineAct = new QAction(tr("Highlight Cursor Line"), this);
-    m_cursorLineAct->setStatusTip(tr("Highlight current cursor line"));
-    m_cursorLineAct->setCheckable(true);
-    connect(m_cursorLineAct, &QAction::triggered,
-            this, &VMainWindow::changeHighlightCursorLine);
-
-    renderBackgroundAct = new QActionGroup(this);
-    connect(renderBackgroundAct, &QActionGroup::triggered,
-            this, &VMainWindow::setRenderBackgroundColor);
-}
-
-void VMainWindow::initEditActions()
-{
     editNoteAct = new QAction(QIcon(":/resources/icons/edit_note.svg"),
                               tr("&Edit"), this);
     editNoteAct->setStatusTip(tr("Edit current note"));
@@ -259,52 +227,6 @@ void VMainWindow::initEditActions()
     connect(saveNoteAct, &QAction::triggered,
             editArea, &VEditArea::saveFile);
 
-}
-
-void VMainWindow::initViewActions()
-{
-    onePanelViewAct = new QAction(QIcon(":/resources/icons/one_panel.svg"),
-                                  tr("&Single Panel"), this);
-    onePanelViewAct->setStatusTip(tr("Display only the note panel"));
-    connect(onePanelViewAct, &QAction::triggered,
-            this, &VMainWindow::onePanelView);
-
-    twoPanelViewAct = new QAction(QIcon(":/resources/icons/two_panels.svg"),
-                                  tr("&Two Panels"), this);
-    twoPanelViewAct->setStatusTip(tr("Display both the directory and note panel"));
-    connect(twoPanelViewAct, &QAction::triggered,
-            this, &VMainWindow::twoPanelView);
-
-    QMenu *panelMenu = new QMenu(this);
-    panelMenu->addAction(onePanelViewAct);
-    panelMenu->addAction(twoPanelViewAct);
-
-    expandViewAct = new QAction(QIcon(":/resources/icons/expand.svg"),
-                                tr("Expand"), this);
-    expandViewAct->setStatusTip(tr("Expand the edit area"));
-    expandViewAct->setCheckable(true);
-    expandViewAct->setShortcut(QKeySequence("Ctrl+E"));
-    expandViewAct->setMenu(panelMenu);
-    connect(expandViewAct, &QAction::triggered,
-            this, &VMainWindow::expandPanelView);
-
-}
-
-void VMainWindow::initToolBar()
-{
-    m_fileToolBar = addToolBar(tr("Note"));
-    m_fileToolBar->setObjectName("NoteToolBar");
-    m_fileToolBar->setMovable(false);
-    m_fileToolBar->addAction(newRootDirAct);
-    m_fileToolBar->addAction(newNoteAct);
-    m_fileToolBar->addAction(noteInfoAct);
-    m_fileToolBar->addAction(deleteNoteAct);
-    m_fileToolBar->addSeparator();
-    m_fileToolBar->addAction(editNoteAct);
-    m_fileToolBar->addAction(saveExitAct);
-    m_fileToolBar->addAction(saveNoteAct);
-    m_fileToolBar->addSeparator();
-
     newRootDirAct->setEnabled(false);
     newNoteAct->setEnabled(false);
     noteInfoAct->setEnabled(false);
@@ -313,25 +235,136 @@ void VMainWindow::initToolBar()
     saveExitAct->setVisible(false);
     saveNoteAct->setVisible(false);
 
-    m_viewToolBar = addToolBar(tr("View"));
-    m_viewToolBar->setObjectName("ViewToolBar");
-    m_viewToolBar->setMovable(false);
-    m_viewToolBar->addAction(expandViewAct);
+    fileToolBar->addAction(newRootDirAct);
+    fileToolBar->addAction(newNoteAct);
+    fileToolBar->addAction(noteInfoAct);
+    fileToolBar->addAction(deleteNoteAct);
+    fileToolBar->addSeparator();
+    fileToolBar->addAction(editNoteAct);
+    fileToolBar->addAction(saveExitAct);
+    fileToolBar->addAction(saveNoteAct);
+    fileToolBar->addSeparator();
 }
 
 void VMainWindow::initMenuBar()
 {
-    QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
-    QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
-    viewMenu = menuBar()->addMenu(tr("&View"));
-    QMenu *markdownMenu = menuBar()->addMenu(tr("&Markdown"));
+    initFileMenu();
+    initEditMenu();
+    initViewMenu();
+    initMarkdownMenu();
+    initHelpMenu();
+}
+
+void VMainWindow::initHelpMenu()
+{
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
 
-    // File Menu
-    fileMenu->addAction(importNoteAct);
+    QAction *aboutAct = new QAction(tr("&About"), this);
+    aboutAct->setStatusTip(tr("Show information about VNote"));
+    connect(aboutAct, &QAction::triggered,
+            this, &VMainWindow::aboutMessage);
+    QAction *aboutQtAct = new QAction(tr("About &Qt"), this);
+    aboutQtAct->setStatusTip(tr("Show information about Qt"));
+    connect(aboutQtAct, &QAction::triggered,
+            qApp, &QApplication::aboutQt);
 
-    // Edit Menu
-    editMenu->addAction(m_insertImageAct);
+    helpMenu->addAction(aboutQtAct);
+    helpMenu->addAction(aboutAct);
+}
+
+void VMainWindow::initMarkdownMenu()
+{
+    QMenu *markdownMenu = menuBar()->addMenu(tr("&Markdown"));
+    QMenu *converterMenu = markdownMenu->addMenu(tr("&Converter"));
+
+    QActionGroup *converterAct = new QActionGroup(this);
+    QAction *markedAct = new QAction(tr("Marked"), converterAct);
+    markedAct->setStatusTip(tr("Use Marked to convert Markdown to HTML (re-open current tabs to make it work)"));
+    markedAct->setCheckable(true);
+    markedAct->setData(int(MarkdownConverterType::Marked));
+
+    QAction *hoedownAct = new QAction(tr("Hoedown"), converterAct);
+    hoedownAct->setStatusTip(tr("Use Hoedown to convert Markdown to HTML (re-open current tabs to make it work)"));
+    hoedownAct->setCheckable(true);
+    hoedownAct->setData(int(MarkdownConverterType::Hoedown));
+    connect(converterAct, &QActionGroup::triggered,
+            this, &VMainWindow::changeMarkdownConverter);
+
+    converterMenu->addAction(hoedownAct);
+    converterMenu->addAction(markedAct);
+    MarkdownConverterType converterType = vconfig.getMdConverterType();
+    if (converterType == MarkdownConverterType::Marked) {
+        markedAct->setChecked(true);
+    } else if (converterType == MarkdownConverterType::Hoedown) {
+        hoedownAct->setChecked(true);
+    }
+
+    initRenderBackgroundMenu(markdownMenu);
+}
+
+void VMainWindow::initViewMenu()
+{
+    viewMenu = menuBar()->addMenu(tr("&View"));
+}
+
+void VMainWindow::initFileMenu()
+{
+    QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
+
+    // Import notes from files.
+    QAction *importNoteAct = new QAction(QIcon(":/resources/icons/import_note.svg"),
+                                         tr("&Import Notes From Files"), this);
+    importNoteAct->setStatusTip(tr("Import notes from files into current directory"));
+    connect(importNoteAct, &QAction::triggered,
+            this, &VMainWindow::importNoteFromFile);
+
+    fileMenu->addAction(importNoteAct);
+}
+
+void VMainWindow::initEditMenu()
+{
+    QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
+
+    // Inser image.
+    QAction *insertImageAct = new QAction(QIcon(":/resources/icons/insert_image.svg"),
+                                          tr("Insert &Image"), this);
+    insertImageAct->setStatusTip(tr("Insert an image from file in current note"));
+    connect(insertImageAct, &QAction::triggered,
+            this, &VMainWindow::insertImage);
+
+    // Expand Tab into spaces.
+    QAction *expandTabAct = new QAction(tr("&Expand Tab"), this);
+    expandTabAct->setStatusTip(tr("Expand entered tab to spaces"));
+    expandTabAct->setCheckable(true);
+    connect(expandTabAct, &QAction::triggered,
+            this, &VMainWindow::changeExpandTab);
+
+    // Tab stop width.
+    QActionGroup *tabStopWidthAct = new QActionGroup(this);
+    QAction *twoSpaceTabAct = new QAction(tr("2 Spaces"), tabStopWidthAct);
+    twoSpaceTabAct->setStatusTip(tr("Expand tab to 2 spaces"));
+    twoSpaceTabAct->setCheckable(true);
+    twoSpaceTabAct->setData(2);
+    QAction *fourSpaceTabAct = new QAction(tr("4 Spaces"), tabStopWidthAct);
+    fourSpaceTabAct->setStatusTip(tr("Expand tab to 4 spaces"));
+    fourSpaceTabAct->setCheckable(true);
+    fourSpaceTabAct->setData(4);
+    QAction *eightSpaceTabAct = new QAction(tr("8 Spaces"), tabStopWidthAct);
+    eightSpaceTabAct->setStatusTip(tr("Expand tab to 8 spaces"));
+    eightSpaceTabAct->setCheckable(true);
+    eightSpaceTabAct->setData(8);
+    connect(tabStopWidthAct, &QActionGroup::triggered,
+            this, &VMainWindow::setTabStopWidth);
+
+    // Highlight current cursor line.
+    QAction *cursorLineAct = new QAction(tr("Highlight Cursor Line"), this);
+    cursorLineAct->setStatusTip(tr("Highlight current cursor line"));
+    cursorLineAct->setCheckable(true);
+    connect(cursorLineAct, &QAction::triggered,
+            this, &VMainWindow::changeHighlightCursorLine);
+
+
+    editMenu->addAction(insertImageAct);
     editMenu->addSeparator();
     editMenu->addAction(expandTabAct);
     if (vconfig.getIsExpandTab()) {
@@ -358,29 +391,12 @@ void VMainWindow::initMenuBar()
         qWarning() << "unsupported tab stop width" << tabStopWidth <<  "in config";
     }
     initEditorBackgroundMenu(editMenu);
-    editMenu->addAction(m_cursorLineAct);
+    editMenu->addAction(cursorLineAct);
     if (vconfig.getHighlightCursorLine()) {
-        m_cursorLineAct->setChecked(true);
+        cursorLineAct->setChecked(true);
     } else {
-        m_cursorLineAct->setChecked(false);
+        cursorLineAct->setChecked(false);
     }
-
-    // Markdown Menu
-    QMenu *converterMenu = markdownMenu->addMenu(tr("&Converter"));
-    converterMenu->addAction(hoedownAct);
-    converterMenu->addAction(markedAct);
-    MarkdownConverterType converterType = vconfig.getMdConverterType();
-    if (converterType == MarkdownConverterType::Marked) {
-        markedAct->setChecked(true);
-    } else if (converterType == MarkdownConverterType::Hoedown) {
-        hoedownAct->setChecked(true);
-    }
-
-    initRenderBackgroundMenu(markdownMenu);
-
-    // Help menu
-    helpMenu->addAction(aboutQtAct);
-    helpMenu->addAction(aboutAct);
 }
 
 void VMainWindow::initDockWindows()
@@ -500,6 +516,10 @@ void VMainWindow::initPredefinedColorPixmaps()
 
 void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
 {
+    QActionGroup *renderBackgroundAct = new QActionGroup(this);
+    connect(renderBackgroundAct, &QActionGroup::triggered,
+            this, &VMainWindow::setRenderBackgroundColor);
+
     QMenu *renderBgMenu = menu->addMenu(tr("&Rendering Background"));
     const QString &curBgColor = vconfig.getCurRenderBackgroundColor();
     QAction *tmpAct = new QAction(tr("System"), renderBackgroundAct);
@@ -529,6 +549,11 @@ void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
 void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
 {
     QMenu *backgroundColorMenu = menu->addMenu(tr("&Background Color"));
+
+    QActionGroup *backgroundColorAct = new QActionGroup(this);
+    connect(backgroundColorAct, &QActionGroup::triggered,
+            this, &VMainWindow::setEditorBackgroundColor);
+
     // System background color
     const QString &curBgColor = vconfig.getCurBackgroundColor();
     QAction *tmpAct = new QAction(tr("System"), backgroundColorAct);

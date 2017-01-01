@@ -64,11 +64,18 @@ protected:
 private:
     void setupUI();
     QWidget *setupDirectoryPanel();
-    void initActions();
-    void initEditActions();
-    void initViewActions();
+
     void initToolBar();
+    void initFileToolBar();
+    void initViewToolBar();
+
     void initMenuBar();
+    void initFileMenu();
+    void initEditMenu();
+    void initViewMenu();
+    void initMarkdownMenu();
+    void initHelpMenu();
+
     void initDockWindows();
     void initAvatar();
     void initPredefinedColorPixmaps();
@@ -96,8 +103,6 @@ private:
     QToolBox *toolBox;
     VOutline *outline;
     VAvatar *m_avatar;
-    QToolBar *m_fileToolBar;
-    QToolBar *m_viewToolBar;
 
     // Actions
     QAction *newRootDirAct;
@@ -108,24 +113,7 @@ private:
     QAction *saveNoteAct;
     QAction *saveExitAct;
     QAction *discardExitAct;
-    QAction *twoPanelViewAct;
-    QAction *onePanelViewAct;
     QAction *expandViewAct;
-    QAction *importNoteAct;
-    QActionGroup *converterAct;
-    QAction *markedAct;
-    QAction *hoedownAct;
-    QAction *aboutAct;
-    QAction *aboutQtAct;
-    QAction *m_insertImageAct;
-    QAction *expandTabAct;
-    QActionGroup *tabStopWidthAct;
-    QAction *twoSpaceTabAct;
-    QAction *fourSpaceTabAct;
-    QAction *eightSpaceTabAct;
-    QActionGroup *backgroundColorAct;
-    QAction *m_cursorLineAct;
-    QActionGroup *renderBackgroundAct;
 
     // Menus
     QMenu *viewMenu;
