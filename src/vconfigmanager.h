@@ -96,6 +96,9 @@ public:
     inline const QByteArray &getMainWindowState() const;
     inline void setMainWindowState(const QByteArray &p_state);
 
+    inline const QByteArray &getMainSplitterState() const;
+    inline void setMainSplitterState(const QByteArray &p_state);
+
 private:
     void updateMarkdownEditStyle();
     QVariant getConfigFromSettings(const QString &section, const QString &key);
@@ -139,6 +142,7 @@ private:
 
     QByteArray m_mainWindowGeometry;
     QByteArray m_mainWindowState;
+    QByteArray m_mainSplitterState;
 
     // The name of the config file in each directory
     static const QString dirConfigFileName;
@@ -356,6 +360,17 @@ inline void VConfigManager::setMainWindowState(const QByteArray &p_state)
     m_mainWindowState = p_state;
     setConfigToSettings("session", "main_window_state",
                         m_mainWindowState);
+}
+
+inline const QByteArray& VConfigManager::getMainSplitterState() const
+{
+    return m_mainSplitterState;
+}
+
+inline void VConfigManager::setMainSplitterState(const QByteArray &p_state)
+{
+    m_mainSplitterState = p_state;
+    setConfigToSettings("session", "main_splitter_state", m_mainSplitterState);
 }
 
 #endif // VCONFIGMANAGER_H

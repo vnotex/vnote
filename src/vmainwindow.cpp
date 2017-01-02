@@ -717,6 +717,7 @@ void VMainWindow::saveStateAndGeometry()
     vconfig.setMainWindowGeometry(saveGeometry());
     vconfig.setMainWindowState(saveState());
     vconfig.setToolsDockChecked(toolDock->isVisible());
+    vconfig.setMainSplitterState(mainSplitter->saveState());
 }
 
 void VMainWindow::restoreStateAndGeometry()
@@ -730,6 +731,10 @@ void VMainWindow::restoreStateAndGeometry()
         restoreState(state);
     }
     toolDock->setVisible(vconfig.getToolsDockChecked());
+    const QByteArray &splitterState = vconfig.getMainSplitterState();
+    if (!splitterState.isEmpty()) {
+        mainSplitter->restoreState(splitterState);
+    }
 }
 
 const QVector<QPair<QString, QString> >& VMainWindow::getPalette() const

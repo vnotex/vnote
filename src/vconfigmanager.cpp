@@ -65,6 +65,7 @@ void VConfigManager::initialize()
     m_toolsDockChecked = getConfigFromSettings("session", "tools_dock_checked").toBool();
     m_mainWindowGeometry = getConfigFromSettings("session", "main_window_geometry").toByteArray();
     m_mainWindowState = getConfigFromSettings("session", "main_window_state").toByteArray();
+    m_mainSplitterState = getConfigFromSettings("session", "main_splitter_state").toByteArray();
 
     updateMarkdownEditStyle();
 }
