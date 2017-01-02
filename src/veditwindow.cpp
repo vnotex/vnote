@@ -362,6 +362,7 @@ void VEditWindow::focusWindow()
     int idx = currentIndex();
     if (idx == -1) {
         setFocus();
+        emit getFocused();
         return;
     }
     getTab(idx)->focusTab();
@@ -375,7 +376,7 @@ void VEditWindow::handleTabbarClicked(int /* index */)
 
 void VEditWindow::mousePressEvent(QMouseEvent *event)
 {
-    emit getFocused();
+    focusWindow();
     QTabWidget::mousePressEvent(event);
 }
 
@@ -703,5 +704,13 @@ void VEditWindow::setCurrentWindow(bool p_current)
     } else {
         rightBtn->setIcon(QIcon(":/resources/icons/corner_menu.svg"));
         leftBtn->setIcon(QIcon(":/resources/icons/corner_tablist.svg"));
+    }
+}
+
+void VEditWindow::clearFindSelectionInWebView()
+{
+    int nrTab = count();
+    for (int i = 0; i < nrTab; ++i) {
+        getTab(i)->clearFindSelectionInWebView();
     }
 }

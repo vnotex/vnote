@@ -99,6 +99,18 @@ public:
     inline const QByteArray &getMainSplitterState() const;
     inline void setMainSplitterState(const QByteArray &p_state);
 
+    inline bool getFindCaseSensitive() const;
+    inline void setFindCaseSensitive(bool p_enabled);
+
+    inline bool getFindWholeWordOnly() const;
+    inline void setFindWholeWordOnly(bool p_enabled);
+
+    inline bool getFindRegularExpression() const;
+    inline void setFindRegularExpression(bool p_enabled);
+
+    inline bool getFindIncrementalSearch() const;
+    inline void setFindIncrementalSearch(bool p_enabled);
+
 private:
     void updateMarkdownEditStyle();
     QVariant getConfigFromSettings(const QString &section, const QString &key);
@@ -143,6 +155,12 @@ private:
     QByteArray m_mainWindowGeometry;
     QByteArray m_mainWindowState;
     QByteArray m_mainSplitterState;
+
+    // Find/Replace dialog options
+    bool m_findCaseSensitive;
+    bool m_findWholeWordOnly;
+    bool m_findRegularExpression;
+    bool m_findIncrementalSearch;
 
     // The name of the config file in each directory
     static const QString dirConfigFileName;
@@ -371,6 +389,64 @@ inline void VConfigManager::setMainSplitterState(const QByteArray &p_state)
 {
     m_mainSplitterState = p_state;
     setConfigToSettings("session", "main_splitter_state", m_mainSplitterState);
+}
+
+inline bool VConfigManager::getFindCaseSensitive() const
+{
+    return m_findCaseSensitive;
+}
+
+inline void VConfigManager::setFindCaseSensitive(bool p_enabled)
+{
+    if (m_findCaseSensitive == p_enabled) {
+        return;
+    }
+    m_findCaseSensitive = p_enabled;
+    setConfigToSettings("global", "find_case_sensitive", m_findCaseSensitive);
+}
+
+inline bool VConfigManager::getFindWholeWordOnly() const
+{
+    return m_findWholeWordOnly;
+}
+
+inline void VConfigManager::setFindWholeWordOnly(bool p_enabled)
+{
+    if (m_findWholeWordOnly == p_enabled) {
+        return;
+    }
+    m_findWholeWordOnly = p_enabled;
+    setConfigToSettings("global", "find_whole_word_only", m_findWholeWordOnly);
+}
+
+inline bool VConfigManager::getFindRegularExpression() const
+{
+    return m_findRegularExpression;
+}
+
+inline void VConfigManager::setFindRegularExpression(bool p_enabled)
+{
+    if (m_findRegularExpression == p_enabled) {
+        return;
+    }
+    m_findRegularExpression = p_enabled;
+    setConfigToSettings("global", "find_regular_expression",
+                        m_findRegularExpression);
+}
+
+inline bool VConfigManager::getFindIncrementalSearch() const
+{
+    return m_findIncrementalSearch;
+}
+
+inline void VConfigManager::setFindIncrementalSearch(bool p_enabled)
+{
+    if (m_findIncrementalSearch == p_enabled) {
+        return;
+    }
+    m_findIncrementalSearch = p_enabled;
+    setConfigToSettings("global", "find_incremental_search",
+                        m_findIncrementalSearch);
 }
 
 #endif // VCONFIGMANAGER_H

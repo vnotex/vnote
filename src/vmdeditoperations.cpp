@@ -287,6 +287,7 @@ bool VMdEditOperations::handleKeyBracketLeft(QKeyEvent *p_event)
     // 1. If it is not in Normal state, just go back to Normal state;
     // 2. If it is already Normal state, try to clear selection;
     // 3. Anyway, we accept this event.
+    bool accept = false;
     if (p_event->modifiers() == Qt::ControlModifier) {
         if (m_keyState != KeyState::Normal) {
             m_pendingTimer->stop();
@@ -299,9 +300,12 @@ bool VMdEditOperations::handleKeyBracketLeft(QKeyEvent *p_event)
                 m_editor->setTextCursor(cursor);
             }
         }
+        accept = true;
     }
-    p_event->accept();
-    return true;
+    if (accept) {
+        p_event->accept();
+    }
+    return accept;
 }
 
 bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)

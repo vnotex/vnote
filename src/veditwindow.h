@@ -45,6 +45,7 @@ public:
     bool addEditTab(QWidget *p_widget);
     // Set whether it is the current window.
     void setCurrentWindow(bool p_current);
+    void clearFindSelectionInWebView();
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;

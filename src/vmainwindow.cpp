@@ -48,6 +48,7 @@ void VMainWindow::setupUI()
 
     editArea = new VEditArea(vnote);
     editArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_findReplaceDialog = editArea->getFindReplaceDialog();
     fileList->setEditArea(editArea);
     directoryTree->setEditArea(editArea);
     notebookSelector->setEditArea(editArea);
@@ -79,10 +80,12 @@ void VMainWindow::setupUI()
             editArea, &VEditArea::handleFileUpdated);
     connect(editArea, &VEditArea::curTabStatusChanged,
             this, &VMainWindow::handleCurTabStatusChanged);
+    connect(m_findReplaceDialog, &VFindReplaceDialog::findTextChanged,
+            this, &VMainWindow::handleFindDialogTextChanged);
 
     setCentralWidget(mainSplitter);
-    // TODO: Create and show the status bar
-    // statusBar();
+    // Create and show the status bar
+    statusBar();
 }
 
 QWidget *VMainWindow::setupDirectoryPanel()
@@ -179,7 +182,7 @@ void VMainWindow::initFileToolBar()
     newNoteAct = new QAction(QIcon(":/resources/icons/create_note_tb.svg"),
                              tr("New &Note"), this);
     newNoteAct->setStatusTip(tr("Create a note in current directory"));
-    newNoteAct->setShortcut(QKeySequence("Ctrl+N"));
+    newNoteAct->setShortcut(QKeySequence::New);
     connect(newNoteAct, &QAction::triggered,
             fileList, &VFileList::newFile);
 
@@ -325,12 +328,48 @@ void VMainWindow::initEditMenu()
 {
     QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
 
-    // Inser image.
-    QAction *insertImageAct = new QAction(QIcon(":/resources/icons/insert_image.svg"),
-                                          tr("Insert &Image"), this);
-    insertImageAct->setStatusTip(tr("Insert an image from file in current note"));
-    connect(insertImageAct, &QAction::triggered,
+    // Insert image.
+    m_insertImageAct = new QAction(QIcon(":/resources/icons/insert_image.svg"),
+                                   tr("Insert &Image"), this);
+    m_insertImageAct->setStatusTip(tr("Insert an image from file in current note"));
+    connect(m_insertImageAct, &QAction::triggered,
             this, &VMainWindow::insertImage);
+
+    // Find/Replace.
+    m_findReplaceAct = new QAction(QIcon(":/resources/icons/find_replace.svg"),
+                                   tr("Find/Replace"), this);
+    m_findReplaceAct->setStatusTip(tr("Open Find/Replace dialog to search in current note"));
+    m_findReplaceAct->setShortcut(QKeySequence::Find);
+    connect(m_findReplaceAct, &QAction::triggered,
+            this, &VMainWindow::openFindDialog);
+
+    m_findNextAct = new QAction(tr("Find Next"), this);
+    m_findNextAct->setStatusTip(tr("Find next occurence"));
+    m_findNextAct->setShortcut(QKeySequence::FindNext);
+    connect(m_findNextAct, SIGNAL(triggered(bool)),
+            m_findReplaceDialog, SLOT(findNext()));
+
+    m_findPreviousAct = new QAction(tr("Find Previous"), this);
+    m_findPreviousAct->setStatusTip(tr("Find previous occurence"));
+    m_findPreviousAct->setShortcut(QKeySequence::FindPrevious);
+    connect(m_findPreviousAct, SIGNAL(triggered(bool)),
+            m_findReplaceDialog, SLOT(findPrevious()));
+
+    m_replaceAct = new QAction(tr("Replace"), this);
+    m_replaceAct->setStatusTip(tr("Replace current occurence"));
+    m_replaceAct->setShortcut(QKeySequence::Replace);
+    connect(m_replaceAct, SIGNAL(triggered(bool)),
+            m_findReplaceDialog, SLOT(replace()));
+
+    m_replaceFindAct = new QAction(tr("Replace && Find"), this);
+    m_replaceFindAct->setStatusTip(tr("Replace current occurence and find the next one"));
+    connect(m_replaceFindAct, SIGNAL(triggered(bool)),
+            m_findReplaceDialog, SLOT(replaceFind()));
+
+    m_replaceAllAct = new QAction(tr("Replace All"), this);
+    m_replaceAllAct->setStatusTip(tr("Replace all occurences in current note"));
+    connect(m_replaceAllAct, SIGNAL(triggered(bool)),
+            m_findReplaceDialog, SLOT(replaceAll()));
 
     // Expand Tab into spaces.
     QAction *expandTabAct = new QAction(tr("&Expand Tab"), this);
@@ -364,8 +403,25 @@ void VMainWindow::initEditMenu()
             this, &VMainWindow::changeHighlightCursorLine);
 
 
-    editMenu->addAction(insertImageAct);
+    editMenu->addAction(m_insertImageAct);
     editMenu->addSeparator();
+    m_insertImageAct->setEnabled(false);
+
+    QMenu *findReplaceMenu = editMenu->addMenu(tr("Find/Replace"));
+    findReplaceMenu->addAction(m_findReplaceAct);
+    findReplaceMenu->addAction(m_findNextAct);
+    findReplaceMenu->addAction(m_findPreviousAct);
+    findReplaceMenu->addAction(m_replaceAct);
+    findReplaceMenu->addAction(m_replaceFindAct);
+    findReplaceMenu->addAction(m_replaceAllAct);
+    editMenu->addSeparator();
+    m_findReplaceAct->setEnabled(false);
+    m_findNextAct->setEnabled(false);
+    m_findPreviousAct->setEnabled(false);
+    m_replaceAct->setEnabled(false);
+    m_replaceFindAct->setEnabled(false);
+    m_replaceAllAct->setEnabled(false);
+
     editMenu->addAction(expandTabAct);
     if (vconfig.getIsExpandTab()) {
         expandTabAct->setChecked(true);
@@ -588,36 +644,56 @@ void VMainWindow::setRenderBackgroundColor(QAction *action)
     vnote->updateTemplate();
 }
 
-void VMainWindow::updateToolbarFromTabChage(const VFile *p_file, bool p_editMode)
+void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
+                                                       bool p_editMode)
 {
-    qDebug() << "update toolbar";
-    if (!p_file) {
+    if (p_file) {
+        if (p_editMode) {
+            editNoteAct->setVisible(false);
+            saveExitAct->setVisible(true);
+            saveNoteAct->setVisible(true);
+            deleteNoteAct->setEnabled(true);
+
+            m_insertImageAct->setEnabled(true);
+        } else {
+            editNoteAct->setVisible(true);
+            saveExitAct->setVisible(false);
+            saveNoteAct->setVisible(false);
+            deleteNoteAct->setEnabled(true);
+
+            m_insertImageAct->setEnabled(false);
+            m_replaceAct->setEnabled(false);
+            m_replaceFindAct->setEnabled(false);
+            m_replaceAllAct->setEnabled(false);
+        }
+        noteInfoAct->setEnabled(true);
+
+        m_findReplaceAct->setEnabled(true);
+    } else {
         editNoteAct->setVisible(false);
         saveExitAct->setVisible(false);
         saveNoteAct->setVisible(false);
         deleteNoteAct->setEnabled(false);
-    } else if (p_editMode) {
-        editNoteAct->setVisible(false);
-        saveExitAct->setVisible(true);
-        saveNoteAct->setVisible(true);
-        deleteNoteAct->setEnabled(true);
-    } else {
-        editNoteAct->setVisible(true);
-        saveExitAct->setVisible(false);
-        saveNoteAct->setVisible(false);
-        deleteNoteAct->setEnabled(true);
-    }
-
-    if (p_file) {
-        noteInfoAct->setEnabled(true);
-    } else {
         noteInfoAct->setEnabled(false);
+
+        m_insertImageAct->setEnabled(false);
+        // Find/Replace
+        m_findReplaceAct->setEnabled(false);
+        m_findNextAct->setEnabled(false);
+        m_findPreviousAct->setEnabled(false);
+        m_replaceAct->setEnabled(false);
+        m_replaceFindAct->setEnabled(false);
+        m_replaceAllAct->setEnabled(false);
+        m_findReplaceDialog->closeDialog();
     }
 }
 
 void VMainWindow::handleCurTabStatusChanged(const VFile *p_file, const VEditTab *p_editTab, bool p_editMode)
 {
-    updateToolbarFromTabChage(p_file, p_editMode);
+    updateActionStateFromTabStatusChange(p_file, p_editMode);
+    if (p_file) {
+        m_findReplaceDialog->updateState(p_file->getDocType(), p_editMode);
+    }
 
     QString title;
     if (p_file) {
@@ -761,7 +837,7 @@ void VMainWindow::resizeEvent(QResizeEvent *event)
 void VMainWindow::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Escape) {
-        editArea->getFindReplaceDialog()->closeDialog();
+        m_findReplaceDialog->closeDialog();
         event->accept();
         return;
     }
@@ -807,5 +883,23 @@ void VMainWindow::locateFile(VFile *p_file) const
             fileList->locateFile(p_file);
         }
     }
+}
+
+void VMainWindow::handleFindDialogTextChanged(const QString &p_text, uint /* p_options */)
+{
+    bool enabled = true;
+    if (p_text.isEmpty()) {
+        enabled = false;
+    }
+    m_findNextAct->setEnabled(enabled);
+    m_findPreviousAct->setEnabled(enabled);
+    m_replaceAct->setEnabled(enabled);
+    m_replaceFindAct->setEnabled(enabled);
+    m_replaceAllAct->setEnabled(enabled);
+}
+
+void VMainWindow::openFindDialog()
+{
+    m_findReplaceDialog->openDialog(editArea->getSelectedText());
 }
 

@@ -38,6 +38,16 @@ public:
     void scrollToAnchor(const VAnchor& anchor);
     inline VFile *getFile();
     void insertImage();
+    // Search @p_text in current note.
+    void findText(const QString &p_text, uint p_options, bool p_peek,
+                  bool p_forward = true);
+    // Replace @p_text with @p_replaceText in current note.
+    void replaceText(const QString &p_text, uint p_options,
+                     const QString &p_replaceText, bool p_findNext);
+    void replaceTextAll(const QString &p_text, uint p_options,
+                        const QString &p_replaceText);
+    QString getSelectedText() const;
+    void clearFindSelectionInWebView();
 
 signals:
     void getFocused();
@@ -65,6 +75,8 @@ private:
     void parseTocUl(QXmlStreamReader &xml, QVector<VHeader> &headers, int level);
     void parseTocLi(QXmlStreamReader &xml, QVector<VHeader> &headers, int level);
     void scrollPreviewToHeader(int p_outlineIndex);
+    void findTextInWebView(const QString &p_text, uint p_options, bool p_peek,
+                           bool p_forward);
 
     QPointer<VFile> m_file;
     bool isEditMode;

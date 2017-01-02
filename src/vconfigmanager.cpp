@@ -68,6 +68,15 @@ void VConfigManager::initialize()
     m_mainSplitterState = getConfigFromSettings("session", "main_splitter_state").toByteArray();
 
     updateMarkdownEditStyle();
+
+    m_findCaseSensitive = getConfigFromSettings("global",
+                                                "find_case_sensitive").toBool();
+    m_findWholeWordOnly = getConfigFromSettings("global",
+                                                "find_whole_word_only").toBool();
+    m_findRegularExpression = getConfigFromSettings("global",
+                                                    "find_regular_expression").toBool();
+    m_findIncrementalSearch = getConfigFromSettings("global",
+                                                    "find_incremental_search").toBool();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

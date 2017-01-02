@@ -82,5 +82,6 @@
         <file>resources/icons/corner_menu_cur.svg</file>
         <file>resources/icons/corner_tablist_cur.svg</file>
         <file>resources/icons/close.svg</file>
+        <file>resources/icons/find_replace.svg</file>
     </qresource>
 </RCC>

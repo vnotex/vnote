@@ -15,6 +15,7 @@
 #include "vnotebook.h"
 #include "vtoc.h"
 #include "vmdedit.h"
+#include "dialog/vfindreplacedialog.h"
 
 extern VConfigManager vconfig;
 
@@ -107,6 +108,7 @@ void VEditTab::showFileReadMode()
             previewByConverter();
         }
         setCurrentWidget(webPreviewer);
+        clearFindSelectionInWebView();
         scrollPreviewToHeader(outlineIndex);
         break;
     default:
@@ -276,6 +278,7 @@ void VEditTab::setupMarkdownPreview()
 void VEditTab::focusTab()
 {
     currentWidget()->setFocus();
+    emit getFocused();
 }
 
 void VEditTab::handleFocusChanged(QWidget * /* old */, QWidget *now)
@@ -454,4 +457,61 @@ void VEditTab::insertImage()
         return;
     }
     m_textEditor->insertImage();
+}
+
+void VEditTab::findText(const QString &p_text, uint p_options, bool p_peek,
+                        bool p_forward)
+{
+    if (isEditMode || !webPreviewer) {
+        m_textEditor->findText(p_text, p_options, p_peek, p_forward);
+    } else {
+        findTextInWebView(p_text, p_options, p_peek, p_forward);
+    }
+}
+
+void VEditTab::replaceText(const QString &p_text, uint p_options,
+                           const QString &p_replaceText, bool p_findNext)
+{
+    if (isEditMode) {
+        m_textEditor->replaceText(p_text, p_options, p_replaceText, p_findNext);
+    }
+}
+
+void VEditTab::replaceTextAll(const QString &p_text, uint p_options,
+                              const QString &p_replaceText)
+{
+    if (isEditMode) {
+        m_textEditor->replaceTextAll(p_text, p_options, p_replaceText);
+    }
+}
+
+void VEditTab::findTextInWebView(const QString &p_text, uint p_options,
+                                 bool p_peek, bool p_forward)
+{
+    Q_ASSERT(webPreviewer);
+    QWebEnginePage::FindFlags flags;
+    if (p_options & FindOption::CaseSensitive) {
+        flags |= QWebEnginePage::FindCaseSensitively;
+    }
+    if (!p_forward) {
+        flags |= QWebEnginePage::FindBackward;
+    }
+    webPreviewer->findText(p_text, flags);
+}
+
+QString VEditTab::getSelectedText() const
+{
+    if (isEditMode || !webPreviewer) {
+        QTextCursor cursor = m_textEditor->textCursor();
+        return cursor.selectedText();
+    } else {
+        return webPreviewer->selectedText();
+    }
+}
+
+void VEditTab::clearFindSelectionInWebView()
+{
+    if (webPreviewer) {
+        webPreviewer->findText("");
+    }
 }

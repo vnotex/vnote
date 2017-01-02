@@ -7,6 +7,8 @@
 #include "vfile.h"
 #include "dialog/vfindreplacedialog.h"
 
+extern VConfigManager vconfig;
+
 VEditArea::VEditArea(VNote *vnote, QWidget *parent)
     : QWidget(parent), vnote(vnote), curWindowIndex(-1)
 {
@@ -20,6 +22,14 @@ void VEditArea::setupUI()
 {
     splitter = new QSplitter(this);
     m_findReplace = new VFindReplaceDialog(this);
+    m_findReplace->setOption(FindOption::CaseSensitive,
+                             vconfig.getFindCaseSensitive());
+    m_findReplace->setOption(FindOption::WholeWordOnly,
+                             vconfig.getFindWholeWordOnly());
+    m_findReplace->setOption(FindOption::RegularExpression,
+                             vconfig.getFindRegularExpression());
+    m_findReplace->setOption(FindOption::IncrementalSearch,
+                             vconfig.getFindIncrementalSearch());
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addWidget(splitter);
@@ -31,6 +41,22 @@ void VEditArea::setupUI()
 
     setLayout(mainLayout);
 
+    connect(m_findReplace, &VFindReplaceDialog::findTextChanged,
+            this, &VEditArea::handleFindTextChanged);
+    connect(m_findReplace, &VFindReplaceDialog::findOptionChanged,
+            this, &VEditArea::handleFindOptionChanged);
+    connect(m_findReplace, SIGNAL(findNext(const QString &, uint, bool)),
+            this, SLOT(handleFindNext(const QString &, uint, bool)));
+    connect(m_findReplace,
+            SIGNAL(replace(const QString &, uint, const QString &, bool)),
+            this,
+            SLOT(handleReplace(const QString &, uint, const QString &, bool)));
+    connect(m_findReplace,
+            SIGNAL(replaceAll(const QString &, uint, const QString &)),
+            this,
+            SLOT(handleReplaceAll(const QString &, uint, const QString &)));
+    connect(m_findReplace, &VFindReplaceDialog::dialogClosed,
+            this, &VEditArea::handleFindDialogClosed);
     m_findReplace->hide();
 }
 
@@ -420,5 +446,82 @@ void VEditArea::moveTab(QWidget *p_widget, int p_fromIdx, int p_toIdx)
     qDebug() << "move widget" << p_widget << "from" << p_fromIdx << "to" << p_toIdx;
     if (!getWindow(p_toIdx)->addEditTab(p_widget)) {
         delete p_widget;
+    }
+}
+
+// Only propogate the search in the IncrementalSearch case.
+void VEditArea::handleFindTextChanged(const QString &p_text, uint p_options)
+{
+    VEditTab *tab = currentEditTab();
+    if (tab) {
+        if (p_options & FindOption::IncrementalSearch) {
+            tab->findText(p_text, p_options, true);
+        }
+    }
+}
+
+void VEditArea::handleFindOptionChanged(uint p_options)
+{
+    qDebug() << "find option changed" << p_options;
+    vconfig.setFindCaseSensitive(p_options & FindOption::CaseSensitive);
+    vconfig.setFindWholeWordOnly(p_options & FindOption::WholeWordOnly);
+    vconfig.setFindRegularExpression(p_options & FindOption::RegularExpression);
+    vconfig.setFindIncrementalSearch(p_options & FindOption::IncrementalSearch);
+}
+
+void VEditArea::handleFindNext(const QString &p_text, uint p_options,
+                               bool p_forward)
+{
+    qDebug() << "find next" << p_text << p_options << p_forward;
+    VEditTab *tab = currentEditTab();
+    if (tab) {
+        tab->findText(p_text, p_options, false, p_forward);
+    }
+}
+
+void VEditArea::handleReplace(const QString &p_text, uint p_options,
+                              const QString &p_replaceText, bool p_findNext)
+{
+    qDebug() << "replace" << p_text << p_options << "with" << p_replaceText
+             << p_findNext;
+    VEditTab *tab = currentEditTab();
+    if (tab) {
+        tab->replaceText(p_text, p_options, p_replaceText, p_findNext);
+    }
+}
+
+void VEditArea::handleReplaceAll(const QString &p_text, uint p_options,
+                                 const QString &p_replaceText)
+{
+    qDebug() << "replace all" << p_text << p_options << "with" << p_replaceText;
+    VEditTab *tab = currentEditTab();
+    if (tab) {
+        tab->replaceTextAll(p_text, p_options, p_replaceText);
+    }
+}
+
+// Let VEditArea get focus after VFindReplaceDialog is closed.
+void VEditArea::handleFindDialogClosed()
+{
+    if (curWindowIndex == -1) {
+        setFocus();
+    } else {
+        getWindow(curWindowIndex)->focusWindow();
+    }
+
+    // Clear all the selection in Web view.
+    int nrWin = splitter->count();
+    for (int i = 0; i < nrWin; ++i) {
+        getWindow(i)->clearFindSelectionInWebView();
+    }
+}
+
+QString VEditArea::getSelectedText()
+{
+    VEditTab *tab = currentEditTab();
+    if (tab) {
+        return tab->getSelectedText();
+    } else {
+        return QString();
     }
 }

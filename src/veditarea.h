@@ -40,6 +40,8 @@ public:
     // If fail, just delete the p_widget.
     void moveTab(QWidget *p_widget, int p_fromIdx, int p_toIdx);
     inline VFindReplaceDialog *getFindReplaceDialog() const;
+    // Return selected text of current edit tab.
+    QString getSelectedText();
 
 signals:
     void curTabStatusChanged(const VFile *p_file, const VEditTab *p_editTab, bool p_editMode);
@@ -66,6 +68,14 @@ private slots:
     void handleWindowFocused();
     void handleOutlineChanged(const VToc &toc);
     void handleCurHeaderChanged(const VAnchor &anchor);
+    void handleFindTextChanged(const QString &p_text, uint p_options);
+    void handleFindOptionChanged(uint p_options);
+    void handleFindNext(const QString &p_text, uint p_options, bool p_forward);
+    void handleReplace(const QString &p_text, uint p_options,
+                       const QString &p_replaceText, bool p_findNext);
+    void handleReplaceAll(const QString &p_text, uint p_options,
+                          const QString &p_replaceText);
+    void handleFindDialogClosed();
 
 private:
     void setupUI();

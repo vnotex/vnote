@@ -27,6 +27,7 @@ class QToolBox;
 class VOutline;
 class VNotebookSelector;
 class VAvatar;
+class VFindReplaceDialog;
 
 class VMainWindow : public QMainWindow
 {
@@ -55,6 +56,8 @@ private slots:
     void handleCurrentDirectoryChanged(const VDirectory *p_dir);
     void handleCurrentNotebookChanged(const VNotebook *p_notebook);
     void insertImage();
+    void handleFindDialogTextChanged(const QString &p_text, uint p_options);
+    void openFindDialog();
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -83,7 +86,8 @@ private:
     void initEditorBackgroundMenu(QMenu *menu);
     void changeSplitterView(int nrPanel);
     void updateWindowTitle(const QString &str);
-    void updateToolbarFromTabChage(const VFile *p_file, bool p_editMode);
+    void updateActionStateFromTabStatusChange(const VFile *p_file,
+                                              bool p_editMode);
     void saveStateAndGeometry();
     void restoreStateAndGeometry();
     void repositionAvatar();
@@ -103,6 +107,7 @@ private:
     QToolBox *toolBox;
     VOutline *outline;
     VAvatar *m_avatar;
+    VFindReplaceDialog *m_findReplaceDialog;
 
     // Actions
     QAction *newRootDirAct;
@@ -114,6 +119,14 @@ private:
     QAction *saveExitAct;
     QAction *discardExitAct;
     QAction *expandViewAct;
+
+    QAction *m_insertImageAct;
+    QAction *m_findReplaceAct;
+    QAction *m_findNextAct;
+    QAction *m_findPreviousAct;
+    QAction *m_replaceAct;
+    QAction *m_replaceFindAct;
+    QAction *m_replaceAllAct;
 
     // Menus
     QMenu *viewMenu;
