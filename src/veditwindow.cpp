@@ -32,6 +32,8 @@ VEditWindow::VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent)
             this, &VEditWindow::handleTabCloseRequest);
     connect(this, &VEditWindow::tabBarClicked,
             this, &VEditWindow::handleTabbarClicked);
+    connect(this, &VEditWindow::currentChanged,
+            this, &VEditWindow::handleCurrentIndexChanged);
     connect(this, &VEditWindow::customContextMenuRequested,
             this, &VEditWindow::contextMenuRequested);
 }
@@ -368,9 +370,18 @@ void VEditWindow::focusWindow()
     getTab(idx)->focusTab();
 }
 
-void VEditWindow::handleTabbarClicked(int /* index */)
+void VEditWindow::handleTabbarClicked(int p_index)
 {
-    // The child will emit getFocused here
+    // Only handle the case when (p_index == currentIndex()) here
+    // because currentIndex() is not changed yet. If we focus window
+    // now, we may change the current index forcely.
+    if (p_index == currentIndex()) {
+        focusWindow();
+    }
+}
+
+void VEditWindow::handleCurrentIndexChanged(int /* p_index */)
+{
     focusWindow();
 }
 

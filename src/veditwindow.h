@@ -64,7 +64,8 @@ private slots:
     bool handleTabCloseRequest(int index);
     void splitWindow();
     void removeSplit();
-    void handleTabbarClicked(int index);
+    void handleTabbarClicked(int p_index);
+    void handleCurrentIndexChanged(int p_index);
     void contextMenuRequested(QPoint pos);
     void tabListJump(QAction *action);
     void handleOutlineChanged(const VToc &p_toc);
