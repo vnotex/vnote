@@ -9,6 +9,8 @@
 #include "vfile.h"
 
 class VEditOperations;
+class QLabel;
+class QTimer;
 
 class VEdit : public QTextEdit
 {
@@ -26,16 +28,27 @@ public:
     virtual void scrollToLine(int p_lineNumber);
     // User requests to insert an image.
     virtual void insertImage();
-    virtual bool findText(const QString &p_text, uint p_options, bool p_peek,
-                          bool p_forward);
-    virtual void replaceText(const QString &p_text, uint p_options,
-                             const QString &p_replaceText, bool p_findNext);
-    virtual void replaceTextAll(const QString &p_text, uint p_options,
-                                const QString &p_replaceText);
+    bool findTextHelper(const QString &p_text, uint p_options,
+                        bool p_forward, bool &p_wrapped);
+    bool peekText(const QString &p_text, uint p_options);
+    bool findText(const QString &p_text, uint p_options, bool p_forward);
+    void replaceText(const QString &p_text, uint p_options,
+                     const QString &p_replaceText, bool p_findNext);
+    void replaceTextAll(const QString &p_text, uint p_options,
+                        const QString &p_replaceText);
+
+private slots:
+    void labelTimerTimeout();
 
 protected:
     QPointer<VFile> m_file;
     VEditOperations *m_editOps;
+
+private:
+    QLabel *m_wrapLabel;
+    QTimer *m_labelTimer;
+
+    void showWrapLabel();
 };
 
 

@@ -22,7 +22,7 @@ void VFindReplaceDialog::setupUI()
     titleLayout->setSpacing(0);
 
     // Find
-    QLabel *findLabel = new QLabel(tr("&Find:"));
+    QLabel *findLabel = new QLabel(tr("Find:"));
     m_findEdit = new QLineEdit();
     m_findEdit->setPlaceholderText(tr("Enter text to search"));
     findLabel->setBuddy(m_findEdit);
@@ -37,7 +37,7 @@ void VFindReplaceDialog::setupUI()
     m_replaceEdit = new QLineEdit();
     m_replaceEdit->setPlaceholderText(tr("Enter text to replace with"));
     replaceLabel->setBuddy(m_replaceEdit);
-    m_replaceBtn = new QPushButton(tr("R&eplace"));
+    m_replaceBtn = new QPushButton(tr("Replace"));
     m_replaceBtn->setProperty("FlatBtn", true);
     m_replaceFindBtn = new QPushButton(tr("Replace && Fin&d"));
     m_replaceFindBtn->setProperty("FlatBtn", true);

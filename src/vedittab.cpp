@@ -463,7 +463,11 @@ void VEditTab::findText(const QString &p_text, uint p_options, bool p_peek,
                         bool p_forward)
 {
     if (isEditMode || !webPreviewer) {
-        m_textEditor->findText(p_text, p_options, p_peek, p_forward);
+        if (p_peek) {
+            m_textEditor->peekText(p_text, p_options);
+        } else {
+            m_textEditor->findText(p_text, p_options, p_forward);
+        }
     } else {
         findTextInWebView(p_text, p_options, p_peek, p_forward);
     }
@@ -486,7 +490,7 @@ void VEditTab::replaceTextAll(const QString &p_text, uint p_options,
 }
 
 void VEditTab::findTextInWebView(const QString &p_text, uint p_options,
-                                 bool p_peek, bool p_forward)
+                                 bool /* p_peek */, bool p_forward)
 {
     Q_ASSERT(webPreviewer);
     QWebEnginePage::FindFlags flags;
