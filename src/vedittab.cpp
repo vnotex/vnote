@@ -400,6 +400,7 @@ void VEditTab::requestUpdateCurHeader()
 
 void VEditTab::requestUpdateOutline()
 {
+    checkToc();
     emit outlineChanged(tableOfContent);
 }
 
@@ -427,6 +428,9 @@ void VEditTab::updateCurHeader(const QString &anchor)
     }
     curHeader = VAnchor(m_file->retrivePath(), "#" + anchor, -1);
     if (!anchor.isEmpty()) {
+        if (checkToc()) {
+            emit outlineChanged(tableOfContent);
+        }
         const QVector<VHeader> &headers = tableOfContent.headers;
         for (int i = 0; i < headers.size(); ++i) {
             if (headers[i].anchor == curHeader.anchor) {
@@ -442,6 +446,9 @@ void VEditTab::updateCurHeader(int p_lineNumber, int p_outlineIndex)
 {
     if (!isEditMode || curHeader.lineNumber == p_lineNumber) {
         return;
+    }
+    if (checkToc()) {
+        emit outlineChanged(tableOfContent);
     }
     curHeader = VAnchor(m_file->retrivePath(), "", p_lineNumber);
     curHeader.m_outlineIndex = p_outlineIndex;
@@ -519,3 +526,14 @@ void VEditTab::clearFindSelectionInWebView()
         webPreviewer->findText("");
     }
 }
+
+bool VEditTab::checkToc()
+{
+    bool ret = false;
+    if (tableOfContent.filePath != m_file->retrivePath()) {
+        tableOfContent.filePath = m_file->retrivePath();
+        ret = true;
+    }
+    return ret;
+}
+

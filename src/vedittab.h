@@ -77,6 +77,9 @@ private:
     void scrollPreviewToHeader(int p_outlineIndex);
     void findTextInWebView(const QString &p_text, uint p_options, bool p_peek,
                            bool p_forward);
+    // Check if @tableOfContent is outdated (such as renaming the file).
+    // Return true if we need to update toc.
+    bool checkToc();
 
     QPointer<VFile> m_file;
     bool isEditMode;
