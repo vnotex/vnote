@@ -35,10 +35,6 @@ VMdEdit::VMdEdit(VFile *p_file, QWidget *p_parent)
 
     connect(this, &VMdEdit::cursorPositionChanged,
             this, &VMdEdit::updateCurHeader);
-    if (vconfig.getHighlightCursorLine()) {
-        connect(this, &VMdEdit::cursorPositionChanged,
-                this, &VMdEdit::highlightCurrentLine);
-    }
 
     connect(this, &VMdEdit::selectionChanged,
             this, &VMdEdit::handleSelectionChanged);
@@ -59,8 +55,6 @@ void VMdEdit::beginEdit()
 {
     m_editOps->updateTabSettings();
     updateFontAndPalette();
-
-    setFont(vconfig.getMdEditFont());
 
     Q_ASSERT(m_file->getContent() == toPlainTextWithoutImg());
 
@@ -489,22 +483,6 @@ int VMdEdit::removeObjectReplacementLine(QString &p_text, int p_index) const
     // Remove [\n....?]
     p_text.remove(prevLineIdx, p_index - prevLineIdx + 1);
     return prevLineIdx - 1;
-}
-
-void VMdEdit::highlightCurrentLine()
-{
-    QList<QTextEdit::ExtraSelection> extraSelects;
-
-    if (!isReadOnly()) {
-        QTextEdit::ExtraSelection select;
-
-        select.format.setBackground(m_cursorLineColor);
-        select.format.setProperty(QTextFormat::FullWidthSelection, true);
-        select.cursor = textCursor();
-        select.cursor.clearSelection();
-        extraSelects.append(select);
-    }
-    setExtraSelections(extraSelects);
 }
 
 void VMdEdit::handleEditStateChanged(KeyState p_state)

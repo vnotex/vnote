@@ -108,7 +108,7 @@ void VEditTab::showFileReadMode()
             previewByConverter();
         }
         setCurrentWidget(webPreviewer);
-        clearFindSelectionInWebView();
+        clearSearchedWordHighlight();
         scrollPreviewToHeader(outlineIndex);
         break;
     default:
@@ -520,11 +520,12 @@ QString VEditTab::getSelectedText() const
     }
 }
 
-void VEditTab::clearFindSelectionInWebView()
+void VEditTab::clearSearchedWordHighlight()
 {
     if (webPreviewer) {
         webPreviewer->findText("");
     }
+    m_textEditor->clearSearchedWordHighlight();
 }
 
 bool VEditTab::checkToc()

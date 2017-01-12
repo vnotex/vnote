@@ -53,6 +53,8 @@ void VConfigManager::initialize()
     tabStopWidth = getConfigFromSettings("global", "tab_stop_width").toInt();
     isExpandTab = getConfigFromSettings("global", "is_expand_tab").toBool();
     m_highlightCursorLine = getConfigFromSettings("global", "highlight_cursor_line").toBool();
+    m_highlightSelectedWord = getConfigFromSettings("global", "highlight_selected_word").toBool();
+    m_highlightSearchedWord = getConfigFromSettings("global", "highlight_searched_word").toBool();
 
     readPredefinedColorsFromSettings();
     curBackgroundColor = getConfigFromSettings("global", "current_background_color").toString();
@@ -228,23 +230,21 @@ void VConfigManager::updateMarkdownEditStyle()
 
 void VConfigManager::updatePaletteColor()
 {
-    QString rgb;
-    if (curBackgroundColor == "System") {
-        return;
-    } else {
+    static const QColor defaultColor = baseEditPalette.color(QPalette::Base);
+    QColor newColor = defaultColor;
+    if (curBackgroundColor != "System") {
         for (int i = 0; i < predefinedColors.size(); ++i) {
             if (predefinedColors[i].name == curBackgroundColor) {
-                rgb = predefinedColors[i].rgb;
+                QString rgb = predefinedColors[i].rgb;
+                if (!rgb.isEmpty()) {
+                    newColor = QColor(VUtils::QRgbFromString(rgb));
+                }
                 break;
             }
         }
     }
-    if (rgb.isEmpty()) {
-        return;
-    }
 
-    baseEditPalette.setColor(QPalette::Base,
-                             QColor(VUtils::QRgbFromString(rgb)));
+    baseEditPalette.setColor(QPalette::Base, newColor);
 
     // Update markdown editor palette
     updateMarkdownEditStyle();

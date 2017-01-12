@@ -371,6 +371,12 @@ void VMainWindow::initEditMenu()
     connect(m_replaceAllAct, SIGNAL(triggered(bool)),
             m_findReplaceDialog, SLOT(replaceAll()));
 
+    QAction *searchedWordAct = new QAction(tr("Highlight Searched Pattern"), this);
+    searchedWordAct->setStatusTip(tr("Highlight all occurences of searched pattern"));
+    searchedWordAct->setCheckable(true);
+    connect(searchedWordAct, &QAction::triggered,
+            this, &VMainWindow::changeHighlightSearchedWord);
+
     // Expand Tab into spaces.
     QAction *expandTabAct = new QAction(tr("&Expand Tab"), this);
     expandTabAct->setStatusTip(tr("Expand entered tab to spaces"));
@@ -402,6 +408,12 @@ void VMainWindow::initEditMenu()
     connect(cursorLineAct, &QAction::triggered,
             this, &VMainWindow::changeHighlightCursorLine);
 
+    // Highlight selected word.
+    QAction *selectedWordAct = new QAction(tr("Highlight Selected Word"), this);
+    selectedWordAct->setStatusTip(tr("Highlight all occurences of selected word"));
+    selectedWordAct->setCheckable(true);
+    connect(selectedWordAct, &QAction::triggered,
+            this, &VMainWindow::changeHighlightSelectedWord);
 
     editMenu->addAction(m_insertImageAct);
     editMenu->addSeparator();
@@ -414,6 +426,14 @@ void VMainWindow::initEditMenu()
     findReplaceMenu->addAction(m_replaceAct);
     findReplaceMenu->addAction(m_replaceFindAct);
     findReplaceMenu->addAction(m_replaceAllAct);
+    findReplaceMenu->addSeparator();
+    findReplaceMenu->addAction(searchedWordAct);
+    if (vconfig.getHighlightSearchedWord()) {
+        searchedWordAct->setChecked(true);
+    } else {
+        searchedWordAct->setChecked(false);
+    }
+
     editMenu->addSeparator();
     m_findReplaceAct->setEnabled(false);
     m_findNextAct->setEnabled(false);
@@ -447,11 +467,19 @@ void VMainWindow::initEditMenu()
         qWarning() << "unsupported tab stop width" << tabStopWidth <<  "in config";
     }
     initEditorBackgroundMenu(editMenu);
+    editMenu->addSeparator();
     editMenu->addAction(cursorLineAct);
     if (vconfig.getHighlightCursorLine()) {
         cursorLineAct->setChecked(true);
     } else {
         cursorLineAct->setChecked(false);
+    }
+
+    editMenu->addAction(selectedWordAct);
+    if (vconfig.getHighlightSelectedWord()) {
+        selectedWordAct->setChecked(true);
+    } else {
+        selectedWordAct->setChecked(false);
     }
 }
 
@@ -479,7 +507,7 @@ void VMainWindow::initAvatar()
     m_avatar = new VAvatar(this);
     m_avatar->setAvatarPixmap(":/resources/icons/vnote.svg");
     m_avatar->setColor(vnote->getColorFromPalette("base-color"), vnote->getColorFromPalette("Indigo4"),
-                       vnote->getColorFromPalette("teal4"));
+                       vnote->getColorFromPalette("Teal4"));
     m_avatar->hide();
 }
 
@@ -537,6 +565,16 @@ void VMainWindow::changeExpandTab(bool checked)
 void VMainWindow::changeHighlightCursorLine(bool p_checked)
 {
     vconfig.setHighlightCursorLine(p_checked);
+}
+
+void VMainWindow::changeHighlightSelectedWord(bool p_checked)
+{
+    vconfig.setHighlightSelectedWord(p_checked);
+}
+
+void VMainWindow::changeHighlightSearchedWord(bool p_checked)
+{
+    vconfig.setHighlightSearchedWord(p_checked);
 }
 
 void VMainWindow::setTabStopWidth(QAction *action)

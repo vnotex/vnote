@@ -10,12 +10,18 @@
 #include "dialog/vfindreplacedialog.h"
 
 extern VConfigManager vconfig;
+extern VNote *g_vnote;
 
 VEdit::VEdit(VFile *p_file, QWidget *p_parent)
     : QTextEdit(p_parent), m_file(p_file), m_editOps(NULL)
 {
     const int labelTimerInterval = 500;
+    const int selectedWordTimerInterval = 500;
     const int labelSize = 64;
+
+    m_cursorLineColor = QColor(g_vnote->getColorFromPalette("Indigo1"));
+    m_selectedWordColor = QColor("Yellow");
+    m_searchedWordColor = QColor(g_vnote->getColorFromPalette("Green4"));
 
     QPixmap wrapPixmap(":/resources/icons/search_wrap.svg");
     m_wrapLabel = new QLabel(this);
@@ -26,8 +32,23 @@ VEdit::VEdit(VFile *p_file, QWidget *p_parent)
     m_labelTimer->setInterval(labelTimerInterval);
     connect(m_labelTimer, &QTimer::timeout,
             this, &VEdit::labelTimerTimeout);
+
+    m_selectedWordTimer = new QTimer(this);
+    m_selectedWordTimer->setSingleShot(true);
+    m_selectedWordTimer->setInterval(selectedWordTimerInterval);
+    connect(m_selectedWordTimer, &QTimer::timeout,
+            this, &VEdit::highlightSelectedWord);
+
     connect(document(), &QTextDocument::modificationChanged,
             (VFile *)m_file, &VFile::setModified);
+
+    m_extraSelections.resize((int)SelectionId::MaxSelection);
+    updateFontAndPalette();
+
+    connect(this, &VEdit::cursorPositionChanged,
+            this, &VEdit::highlightCurrentLine);
+    connect(this, &VEdit::selectionChanged,
+            this, &VEdit::triggerHighlightSelectedWord);
 }
 
 VEdit::~VEdit()
@@ -40,6 +61,8 @@ VEdit::~VEdit()
 
 void VEdit::beginEdit()
 {
+    updateFontAndPalette();
+
     setReadOnly(false);
     setModified(false);
 }
@@ -130,6 +153,8 @@ bool VEdit::peekText(const QString &p_text, uint p_options)
     return found;
 }
 
+// Use QTextEdit::find() instead of QTextDocument::find() because the later has
+// bugs in searching backward.
 bool VEdit::findTextHelper(const QString &p_text, uint p_options,
                            bool p_forward, bool &p_wrapped)
 {
@@ -186,6 +211,49 @@ bool VEdit::findTextHelper(const QString &p_text, uint p_options,
     return found;
 }
 
+QList<QTextCursor> VEdit::findTextAll(const QString &p_text, uint p_options)
+{
+    QList<QTextCursor> results;
+    if (p_text.isEmpty()) {
+        return results;
+    }
+    // Options
+    QTextDocument::FindFlags findFlags;
+    bool caseSensitive = false;
+    if (p_options & FindOption::CaseSensitive) {
+        findFlags |= QTextDocument::FindCaseSensitively;
+        caseSensitive = true;
+    }
+    if (p_options & FindOption::WholeWordOnly) {
+        findFlags |= QTextDocument::FindWholeWords;
+    }
+    // Use regular expression
+    bool useRegExp = false;
+    QRegExp exp;
+    if (p_options & FindOption::RegularExpression) {
+        useRegExp = true;
+        exp = QRegExp(p_text,
+                      caseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive);
+    }
+    int startPos = 0;
+    QTextCursor cursor;
+    QTextDocument *doc = document();
+    while (true) {
+        if (useRegExp) {
+            cursor = doc->find(exp, startPos, findFlags);
+        } else {
+            cursor = doc->find(p_text, startPos, findFlags);
+        }
+        if (cursor.isNull()) {
+            break;
+        } else {
+            results.append(cursor);
+            startPos = cursor.selectionEnd();
+        }
+    }
+    return results;
+}
+
 bool VEdit::findText(const QString &p_text, uint p_options, bool p_forward)
 {
     bool found = false;
@@ -196,8 +264,14 @@ bool VEdit::findText(const QString &p_text, uint p_options, bool p_forward)
     } else {
         bool wrapped = false;
         found = findTextHelper(p_text, p_options, p_forward, wrapped);
-        if (found && wrapped) {
-            showWrapLabel();
+        if (found) {
+            if (wrapped) {
+                showWrapLabel();
+            }
+            highlightSearchedWord(p_text, p_options);
+        } else {
+            // Simply clear previous highlight.
+            highlightSearchedWord("", p_options);
         }
     }
     qDebug() << "findText" << p_text << p_options << p_forward
@@ -293,4 +367,138 @@ void VEdit::showWrapLabel()
 void VEdit::labelTimerTimeout()
 {
     m_wrapLabel->hide();
+}
+
+void VEdit::updateFontAndPalette()
+{
+    setFont(vconfig.getBaseEditFont());
+    setPalette(vconfig.getBaseEditPalette());
+}
+
+void VEdit::highlightExtraSelections()
+{
+    int nrExtra = m_extraSelections.size();
+    Q_ASSERT(nrExtra == (int)SelectionId::MaxSelection);
+    QList<QTextEdit::ExtraSelection> extraSelects;
+    for (int i = 0; i < nrExtra; ++i) {
+        extraSelects.append(m_extraSelections[i]);
+    }
+    setExtraSelections(extraSelects);
+}
+
+void VEdit::highlightCurrentLine()
+{
+    QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::CurrentLine];
+    if (vconfig.getHighlightCursorLine() && !isReadOnly()) {
+        // Need to highlight current line.
+        selects.clear();
+
+        QTextEdit::ExtraSelection select;
+        select.format.setBackground(m_cursorLineColor);
+        select.format.setProperty(QTextFormat::FullWidthSelection, true);
+        select.cursor = textCursor();
+        select.cursor.clearSelection();
+        selects.append(select);
+    } else {
+        // Need to clear current line highlight.
+        if (selects.isEmpty()) {
+            return;
+        }
+        selects.clear();
+    }
+
+    highlightExtraSelections();
+}
+
+void VEdit::setReadOnly(bool p_ro)
+{
+    QTextEdit::setReadOnly(p_ro);
+    highlightCurrentLine();
+}
+
+void VEdit::highlightSelectedWord()
+{
+    QString text;
+    if (vconfig.getHighlightSelectedWord()) {
+        text = textCursor().selectedText().trimmed();
+        if (wordInSearchedSelection(text)) {
+            qDebug() << "select searched word, just skip";
+            text = "";
+        }
+    }
+    QTextCharFormat format;
+    format.setBackground(m_selectedWordColor);
+    highlightTextAll(text, FindOption::CaseSensitive, SelectionId::SelectedWord,
+                     format);
+}
+
+bool VEdit::wordInSearchedSelection(const QString &p_text)
+{
+    QString text = p_text.trimmed();
+    QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::SearchedKeyword];
+    for (int i = 0; i < selects.size(); ++i) {
+        QString searchedWord = selects[i].cursor.selectedText();
+        if (text == searchedWord.trimmed()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void VEdit::triggerHighlightSelectedWord()
+{
+    QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::SelectedWord];
+    if (!vconfig.getHighlightSelectedWord() && selects.isEmpty()) {
+        return;
+    }
+    m_selectedWordTimer->stop();
+    QString text = textCursor().selectedText().trimmed();
+    if (text.isEmpty()) {
+        // Clear previous selection right now.
+        highlightSelectedWord();
+    } else {
+        m_selectedWordTimer->start();
+    }
+}
+
+void VEdit::highlightTextAll(const QString &p_text, uint p_options,
+                             SelectionId p_id, QTextCharFormat p_format)
+{
+    QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)p_id];
+    if (!p_text.isEmpty()) {
+        selects.clear();
+
+        QList<QTextCursor> occurs = findTextAll(p_text, p_options);
+        for (int i = 0; i < occurs.size(); ++i) {
+            QTextEdit::ExtraSelection select;
+            select.format = p_format;
+            select.cursor = occurs[i];
+            selects.append(select);
+        }
+        qDebug() << "highlight" << selects.size() << "occurences of" << p_text;
+    } else {
+        if (selects.isEmpty()) {
+            return;
+        }
+        selects.clear();
+    }
+    highlightExtraSelections();
+}
+
+void VEdit::highlightSearchedWord(const QString &p_text, uint p_options)
+{
+    QTextCharFormat format;
+    format.setBackground(m_searchedWordColor);
+    QString text;
+    if (vconfig.getHighlightSearchedWord()) {
+        text = p_text;
+    }
+    highlightTextAll(text, p_options, SelectionId::SearchedKeyword, format);
+}
+
+void VEdit::clearSearchedWordHighlight()
+{
+    QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::SearchedKeyword];
+    selects.clear();
+    highlightExtraSelections();
 }

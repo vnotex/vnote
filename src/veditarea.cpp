@@ -509,10 +509,10 @@ void VEditArea::handleFindDialogClosed()
         getWindow(curWindowIndex)->focusWindow();
     }
 
-    // Clear all the selection in Web view.
+    // Clear all the search highlight.
     int nrWin = splitter->count();
     for (int i = 0; i < nrWin; ++i) {
-        getWindow(i)->clearFindSelectionInWebView();
+        getWindow(i)->clearSearchedWordHighlight();
     }
 }
 

@@ -47,6 +47,8 @@ private slots:
     void setEditorBackgroundColor(QAction *action);
     void setRenderBackgroundColor(QAction *action);
     void changeHighlightCursorLine(bool p_checked);
+    void changeHighlightSelectedWord(bool p_checked);
+    void changeHighlightSearchedWord(bool p_checked);
     void handleCurTabStatusChanged(const VFile *p_file, const VEditTab *p_editTab, bool p_editMode);
     void onePanelView();
     void twoPanelView();

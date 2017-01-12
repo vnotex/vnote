@@ -718,10 +718,10 @@ void VEditWindow::setCurrentWindow(bool p_current)
     }
 }
 
-void VEditWindow::clearFindSelectionInWebView()
+void VEditWindow::clearSearchedWordHighlight()
 {
     int nrTab = count();
     for (int i = 0; i < nrTab; ++i) {
-        getTab(i)->clearFindSelectionInWebView();
+        getTab(i)->clearSearchedWordHighlight();
     }
 }

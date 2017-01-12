@@ -79,6 +79,12 @@ public:
     inline bool getHighlightCursorLine() const;
     inline void setHighlightCursorLine(bool p_cursorLine);
 
+    inline bool getHighlightSelectedWord() const;
+    inline void setHighlightSelectedWord(bool p_selectedWord);
+
+    inline bool getHighlightSearchedWord() const;
+    inline void setHighlightSearchedWord(bool p_searchedWord);
+
     inline const QVector<VColor> &getPredefinedColors() const;
 
     inline const QString &getCurBackgroundColor() const;
@@ -144,6 +150,12 @@ private:
 
     // Highlight current cursor line.
     bool m_highlightCursorLine;
+
+    // Highlight selected word.
+    bool m_highlightSelectedWord;
+
+    // Highlight searched word.
+    bool m_highlightSearchedWord;
 
     // App defined color
     QVector<VColor> predefinedColors;
@@ -306,6 +318,36 @@ inline void VConfigManager::setHighlightCursorLine(bool p_cursorLine)
     }
     m_highlightCursorLine = p_cursorLine;
     setConfigToSettings("global", "highlight_cursor_line", m_highlightCursorLine);
+}
+
+inline bool VConfigManager::getHighlightSelectedWord() const
+{
+    return m_highlightSelectedWord;
+}
+
+inline void VConfigManager::setHighlightSelectedWord(bool p_selectedWord)
+{
+    if (p_selectedWord == m_highlightSelectedWord) {
+        return;
+    }
+    m_highlightSelectedWord = p_selectedWord;
+    setConfigToSettings("global", "highlight_selected_word",
+                        m_highlightSelectedWord);
+}
+
+inline bool VConfigManager::getHighlightSearchedWord() const
+{
+    return m_highlightSearchedWord;
+}
+
+inline void VConfigManager::setHighlightSearchedWord(bool p_searchedWord)
+{
+    if (p_searchedWord == m_highlightSearchedWord) {
+        return;
+    }
+    m_highlightSearchedWord = p_searchedWord;
+    setConfigToSettings("global", "highlight_searched_word",
+                        m_highlightSearchedWord);
 }
 
 inline const QVector<VColor>& VConfigManager::getPredefinedColors() const

@@ -47,7 +47,7 @@ public:
     void replaceTextAll(const QString &p_text, uint p_options,
                         const QString &p_replaceText);
     QString getSelectedText() const;
-    void clearFindSelectionInWebView();
+    void clearSearchedWordHighlight();
 
 signals:
     void getFocused();

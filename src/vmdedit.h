@@ -39,7 +39,6 @@ private slots:
     void updateCurHeader();
     // Update block list containing image links.
     void updateImageBlocks(QSet<int> p_imageBlocks);
-    void highlightCurrentLine();
     void handleEditStateChanged(KeyState p_state);
     void handleSelectionChanged();
     void handleClipboardChanged(QClipboard::Mode p_mode);
@@ -48,9 +47,9 @@ protected:
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
     bool canInsertFromMimeData(const QMimeData *source) const Q_DECL_OVERRIDE;
     void insertFromMimeData(const QMimeData *source) Q_DECL_OVERRIDE;
+    void updateFontAndPalette() Q_DECL_OVERRIDE;
 
 private:
-    void updateFontAndPalette();
     void initInitImages();
     void clearUnusedImages();
     // p_text[p_index] is QChar::ObjectReplacementCharacter. Remove the line containing it.
@@ -80,7 +79,6 @@ private:
     QVector<QString> m_insertedImages;
     QVector<QString> m_initImages;
     QVector<VHeader> m_headers;
-    QColor m_cursorLineColor;
     bool m_previewImage;
 
     static const QString c_cursorLineColor;
