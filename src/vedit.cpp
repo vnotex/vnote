@@ -96,8 +96,6 @@ void VEdit::scrollToLine(int p_lineNumber)
     QTextCursor cursor(document()->findBlockByLineNumber(p_lineNumber));
     cursor.movePosition(QTextCursor::EndOfBlock);
     setTextCursor(cursor);
-
-    setFocus();
 }
 
 bool VEdit::isModified() const
