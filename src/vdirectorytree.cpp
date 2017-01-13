@@ -222,6 +222,7 @@ void VDirectoryTree::updateItemChildren(QTreeWidgetItem *p_item)
             fillTreeItem(*item, dir->getName(), dir, QIcon(":/resources/icons/dir_item.svg"));
             updateDirectoryTreeOne(item, 1);
         }
+        expandItemTree(item);
     }
 
     // Delete items without corresponding VDirectory
@@ -643,4 +644,20 @@ QTreeWidgetItem *VDirectoryTree::expandToVDirectory(const VDirectory *p_director
         }
     }
     return NULL;
+}
+
+void VDirectoryTree::expandItemTree(QTreeWidgetItem *p_item)
+{
+    if (!p_item) {
+        return;
+    }
+    VDirectory *dir = getVDirectory(p_item);
+    int nrChild = p_item->childCount();
+    for (int i = 0; i < nrChild; ++i) {
+        expandItemTree(p_item->child(i));
+    }
+    if (dir->isExpanded()) {
+        Q_ASSERT(nrChild > 0);
+        expandItem(p_item);
+    }
 }

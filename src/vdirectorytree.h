@@ -63,6 +63,8 @@ private:
     void updateChildren(QTreeWidgetItem *p_item);
     // Expand/create the directory tree nodes to @p_directory.
     QTreeWidgetItem *expandToVDirectory(const VDirectory *p_directory);
+    // Expand the tree under @p_item according to VDirectory.isOpened().
+    void expandItemTree(QTreeWidgetItem *p_item);
 
     VNote *vnote;
     QPointer<VNotebook> m_notebook;
