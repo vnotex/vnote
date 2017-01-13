@@ -516,6 +516,9 @@ void VMdEdit::handleSelectionChanged()
 
 void VMdEdit::handleClipboardChanged(QClipboard::Mode p_mode)
 {
+    if (!hasFocus()) {
+        return;
+    }
     if (p_mode == QClipboard::Clipboard) {
         QClipboard *clipboard = QApplication::clipboard();
         const QMimeData *mimeData = clipboard->mimeData();
