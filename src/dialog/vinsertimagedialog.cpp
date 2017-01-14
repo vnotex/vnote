@@ -6,7 +6,7 @@
 VInsertImageDialog::VInsertImageDialog(const QString &title, const QString &defaultImageTitle,
                                        const QString &defaultPath, QWidget *parent)
     : QDialog(parent), title(title), defaultImageTitle(defaultImageTitle), defaultPath(defaultPath),
-      image(NULL), browseable(true)
+      image(NULL)
 {
     setupUI();
 
@@ -126,12 +126,14 @@ void VInsertImageDialog::setImage(const QImage &image)
     enableOkButton();
 }
 
-void VInsertImageDialog::setBrowseable(bool browseable)
+void VInsertImageDialog::setBrowseable(bool browseable, bool visible)
 {
-    this->browseable = browseable;
-    pathLabel->setVisible(browseable);
-    pathEdit->setVisible(browseable);
-    browseBtn->setVisible(browseable);
+    pathEdit->setReadOnly(!browseable);
+    browseBtn->setEnabled(browseable);
+
+    pathLabel->setVisible(visible);
+    pathEdit->setVisible(visible);
+    browseBtn->setVisible(visible);
 }
 
 void VInsertImageDialog::imageDownloaded(const QByteArray &data)

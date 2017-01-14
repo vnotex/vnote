@@ -20,6 +20,8 @@
 #include "vfile.h"
 #include "vmdedit.h"
 
+const QString VMdEditOperations::c_defaultImageTitle = "image";
+
 VMdEditOperations::VMdEditOperations(VEdit *p_editor, VFile *p_file)
     : VEditOperations(p_editor, p_file)
 {
@@ -35,8 +37,8 @@ bool VMdEditOperations::insertImageFromMimeData(const QMimeData *source)
     if (image.isNull()) {
         return false;
     }
-    VInsertImageDialog dialog(tr("Insert image from clipboard"), tr("image_title"),
-                              "", (QWidget *)m_editor);
+    VInsertImageDialog dialog(tr("Insert Image From Clipboard"),
+                              c_defaultImageTitle, "", (QWidget *)m_editor);
     dialog.setBrowseable(false);
     dialog.setImage(image);
     if (dialog.exec() == QDialog::Accepted) {
@@ -110,15 +112,16 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
             qWarning() << "error: image is null";
             return false;
         }
-        title = "Insert image from file";
+        title = "Insert Image From File";
     } else {
         imagePath = imageUrl.toString();
-        title = "Insert image from network";
+        title = "Insert Image From Network";
     }
 
 
-    VInsertImageDialog dialog(title, QObject::tr("image_title"), imagePath, (QWidget *)m_editor);
-    dialog.setBrowseable(false);
+    VInsertImageDialog dialog(title, c_defaultImageTitle,
+                              imagePath, (QWidget *)m_editor);
+    dialog.setBrowseable(false, true);
     if (isLocal) {
         dialog.setImage(image);
     } else {
@@ -161,8 +164,8 @@ bool VMdEditOperations::insertURLFromMimeData(const QMimeData *source)
 
 bool VMdEditOperations::insertImage()
 {
-    VInsertImageDialog dialog(tr("Insert Image From File"), tr("image_title"),
-                              "", (QWidget *)m_editor);
+    VInsertImageDialog dialog(tr("Insert Image From File"),
+                              c_defaultImageTitle, "", (QWidget *)m_editor);
     if (dialog.exec() == QDialog::Accepted) {
         QString title = dialog.getImageTitleInput();
         QString imagePath = dialog.getPathInput();

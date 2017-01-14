@@ -23,7 +23,7 @@ public:
 
     void setImage(const QImage &image);
     QImage getImage() const;
-    void setBrowseable(bool browseable);
+    void setBrowseable(bool browseable, bool visible = false);
 
 public slots:
     void imageDownloaded(const QByteArray &data);
@@ -48,7 +48,6 @@ private:
     QString defaultImageTitle;
     QString defaultPath;
     QImage *image;
-    bool browseable;
 };
 
 #endif // VINSERTIMAGEDIALOG_H

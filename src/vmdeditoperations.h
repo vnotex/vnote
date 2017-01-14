@@ -46,6 +46,8 @@ private:
     bool suffixNumAllowed(const QList<QString> &p_seq);
 
     QTimer *m_pendingTimer;
+
+    static const QString c_defaultImageTitle;
 };
 
 #endif // VMDEDITOPERATIONS_H
