@@ -1,12 +1,16 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 16.2.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 width="512px" height="512px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve">
-<g>
-	<polygon points="256,307.7 384,192 304,192 304,96 207.6,96 207.6,192 128,192 	"/>
-	<path d="M465.4,297.2l-71.4-55h-42l62,61.8h-50.6c-2.3,0-4.3,1.2-5.4,2.9l-18.4,45.5H172.1l-18.4-45.5c-1-1.8-3.1-2.9-5.4-2.9H97.8
-		l62.2-61.8h-42.2l-71.4,55c-10.6,6.2-15.8,19-14.1,31.6l8.7,66.9c2.3,13.1,9.7,20.3,28.1,20.3h373.8c19.1,0,25.8-7.6,28.1-20.3
-		l8.7-66.9C481.4,315.9,476,303.4,465.4,297.2z"/>
-</g>
+<?xml version="1.0"?>
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+ <!-- Created with SVG-edit - http://svg-edit.googlecode.com/ -->
+ <g>
+  <title>Layer 1</title>
+  <line id="svg_5" y2="489.185676" x2="44" y1="34" x1="44" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="40" stroke="#000000" fill="none"/>
+  <line stroke="#000000" id="svg_6" y2="54" x2="390.999993" y1="54" x1="24" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="40" fill="none"/>
+  <line stroke="#000000" id="svg_7" y2="469" x2="484.000004" y1="469" x1="47" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="40" fill="none"/>
+  <line stroke="#000000" id="svg_8" y2="158.857947" x2="464" y1="476" x1="464" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="40" fill="none"/>
+  <line stroke="#000000" transform="rotate(-4.735957622528076 421.4303894042967,108.79380035400366) " id="svg_9" y2="175.227609" x2="463.123079" y1="42.359998" x1="379.737676" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="40" fill="none"/>
+  <rect ry="1" rx="1" stroke="#000000" id="svg_10" height="133.000003" width="224" y="334.999998" x="136.5" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="40" fill="none"/>
+  <line id="svg_13" y2="180.117859" x2="172.5" y1="74" x1="172.5" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="40" stroke="#000000" fill="none"/>
+  <rect stroke="#000000" id="svg_14" ry="1" rx="1" height="100.000001" width="143.000001" y="63.499997" x="134.5" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="40" fill="none"/>
+  <line id="svg_15" y2="168.05893" x2="194.5" y1="61.941071" x1="194.5" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="40" stroke="#000000" fill="none"/>
+ </g>
 </svg>
