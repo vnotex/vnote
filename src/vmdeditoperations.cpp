@@ -297,25 +297,27 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
     return false;
 }
 
+// Let Ctrl+[ behave exactly like ESC.
 bool VMdEditOperations::handleKeyBracketLeft(QKeyEvent *p_event)
 {
     // 1. If it is not in Normal state, just go back to Normal state;
     // 2. If it is already Normal state, try to clear selection;
-    // 3. Anyway, we accept this event.
+    // 3. Otherwise, ignore this event and let parent handles it.
     bool accept = false;
     if (p_event->modifiers() == Qt::ControlModifier) {
         if (m_keyState != KeyState::Normal) {
             m_pendingTimer->stop();
             setKeyState(KeyState::Normal);
             m_pendingKey.clear();
+            accept = true;
         } else {
             QTextCursor cursor = m_editor->textCursor();
             if (cursor.hasSelection()) {
                 cursor.clearSelection();
                 m_editor->setTextCursor(cursor);
+                accept = true;
             }
         }
-        accept = true;
     }
     if (accept) {
         p_event->accept();
@@ -593,11 +595,14 @@ bool VMdEditOperations::handleKeyW(QKeyEvent *p_event)
     if (p_event->modifiers() == Qt::ControlModifier) {
         // Ctrl+W, delete till the start of previous word.
         QTextCursor cursor = m_editor->textCursor();
-        bool ret = cursor.movePosition(QTextCursor::PreviousWord, QTextCursor::KeepAnchor);
-        if (ret) {
+        if (cursor.hasSelection()) {
             cursor.removeSelectedText();
+        } else {
+            bool ret = cursor.movePosition(QTextCursor::PreviousWord, QTextCursor::KeepAnchor);
+            if (ret) {
+                cursor.removeSelectedText();
+            }
         }
-
         p_event->accept();
         return true;
     }

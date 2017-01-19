@@ -874,7 +874,9 @@ void VMainWindow::resizeEvent(QResizeEvent *event)
 
 void VMainWindow::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_Escape) {
+    if (event->key() == Qt::Key_Escape
+        || (event->key() == Qt::Key_BracketLeft
+            && event->modifiers() == Qt::ControlModifier)) {
         m_findReplaceDialog->closeDialog();
         event->accept();
         return;
