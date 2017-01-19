@@ -249,6 +249,14 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
             break;
         }
 
+        case Qt::Key_O:
+        {
+            if (handleKeyO(p_event)) {
+                return true;
+            }
+            break;
+        }
+
         case Qt::Key_U:
         {
             if (handleKeyU(p_event)) {
@@ -509,6 +517,50 @@ bool VMdEditOperations::handleKeyI(QKeyEvent *p_event)
             m_editor->setTextCursor(cursor);
         }
 
+        p_event->accept();
+        return true;
+    }
+    return false;
+}
+
+bool VMdEditOperations::handleKeyO(QKeyEvent *p_event)
+{
+    if (p_event->modifiers() == Qt::ControlModifier) {
+        // Ctrl+O, inline codeblock.
+        QTextCursor cursor = m_editor->textCursor();
+        if (cursor.hasSelection()) {
+            // Insert ` around the selected text.
+            int start = cursor.selectionStart();
+            int end = cursor.selectionEnd();
+            cursor.beginEditBlock();
+            cursor.clearSelection();
+            cursor.setPosition(start, QTextCursor::MoveAnchor);
+            cursor.insertText("`");
+            cursor.setPosition(end + 1, QTextCursor::MoveAnchor);
+            cursor.insertText("`");
+            cursor.endEditBlock();
+            m_editor->setTextCursor(cursor);
+        } else {
+            // Insert `` and place cursor in the middle.
+            // Or if there are one ` after current cursor, just skip it.
+            cursor.beginEditBlock();
+            int pos = cursor.positionInBlock();
+            bool hasBackquote = false;
+            QString text = cursor.block().text();
+            if (pos <= text.size() - 1) {
+                if (text[pos] == '`') {
+                    hasBackquote = true;
+                }
+            }
+            if (hasBackquote) {
+                cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 1);
+            } else {
+                cursor.insertText("``");
+                cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 1);
+            }
+            cursor.endEditBlock();
+            m_editor->setTextCursor(cursor);
+        }
         p_event->accept();
         return true;
     }

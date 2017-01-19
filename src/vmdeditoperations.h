@@ -36,6 +36,7 @@ private:
     bool handleKeyD(QKeyEvent *p_event);
     bool handleKeyH(QKeyEvent *p_event);
     bool handleKeyI(QKeyEvent *p_event);
+    bool handleKeyO(QKeyEvent *p_event);
     bool handleKeyU(QKeyEvent *p_event);
     bool handleKeyW(QKeyEvent *p_event);
     bool handleKeyEsc(QKeyEvent *p_event);
