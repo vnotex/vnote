@@ -15,6 +15,7 @@
 class QWebEngineView;
 class VNote;
 class QXmlStreamReader;
+class VEditArea;
 
 class VEditTab : public QStackedWidget
 {
@@ -22,6 +23,7 @@ class VEditTab : public QStackedWidget
 public:
     VEditTab(VFile *p_file, OpenFileMode p_mode, QWidget *p_parent = 0);
     ~VEditTab();
+    void init(VEditArea *p_editArea);
     bool closeFile(bool p_forced);
     // Enter edit mode
     void editFile();
@@ -63,6 +65,7 @@ private slots:
     void updateTocFromHeaders(const QVector<VHeader> &headers);
     void handleTextChanged();
     void noticeStatusChanged();
+    void handleWebKeyPressed(int p_key);
 
 private:
     void setupUI();
@@ -90,6 +93,7 @@ private:
     VToc tableOfContent;
     VAnchor curHeader;
     bool m_fileModified;
+    VEditArea *m_editArea;
 };
 
 inline bool VEditTab::getIsEditMode() const

@@ -242,6 +242,7 @@ bool VEditWindow::closeAllFiles(bool p_forced)
 int VEditWindow::openFileInTab(VFile *p_file, OpenFileMode p_mode)
 {
     VEditTab *editor = new VEditTab(p_file, p_mode);
+    editor->init(m_editArea);
     connect(editor, &VEditTab::getFocused,
             this, &VEditWindow::getFocused);
     connect(editor, &VEditTab::outlineChanged,

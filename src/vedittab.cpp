@@ -16,12 +16,14 @@
 #include "vtoc.h"
 #include "vmdedit.h"
 #include "dialog/vfindreplacedialog.h"
+#include "veditarea.h"
 
 extern VConfigManager vconfig;
 
 VEditTab::VEditTab(VFile *p_file, OpenFileMode p_mode, QWidget *p_parent)
     : QStackedWidget(p_parent), m_file(p_file), isEditMode(false),
-      mdConverterType(vconfig.getMdConverterType()), m_fileModified(false)
+      mdConverterType(vconfig.getMdConverterType()), m_fileModified(false),
+      m_editArea(NULL)
 {
     tableOfContent.filePath = p_file->retrivePath();
     curHeader.filePath = p_file->retrivePath();
@@ -42,6 +44,11 @@ VEditTab::~VEditTab()
     if (m_file) {
         m_file->close();
     }
+}
+
+void VEditTab::init(VEditArea *p_editArea)
+{
+    m_editArea = p_editArea;
 }
 
 void VEditTab::setupUI()
@@ -262,6 +269,8 @@ void VEditTab::setupMarkdownPreview()
             this, &VEditTab::updateTocFromHtml);
     connect(&document, SIGNAL(headerChanged(const QString&)),
             this, SLOT(updateCurHeader(const QString &)));
+    connect(&document, &VDocument::keyPressed,
+            this, &VEditTab::handleWebKeyPressed);
     page->setWebChannel(channel);
 
     if (mdConverterType == MarkdownConverterType::Marked) {
@@ -536,5 +545,18 @@ bool VEditTab::checkToc()
         ret = true;
     }
     return ret;
+}
+
+void VEditTab::handleWebKeyPressed(int p_key)
+{
+    switch (p_key) {
+    // Esc
+    case 27:
+        m_editArea->getFindReplaceDialog()->closeDialog();
+        break;
+
+    default:
+        break;
+    }
 }
 
