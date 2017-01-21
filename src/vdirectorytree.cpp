@@ -315,6 +315,7 @@ void VDirectoryTree::newSubDirectory()
                 return;
             }
             updateItemChildren(curItem);
+            locateDirectory(subDir);
         }
         break;
     } while (true);
@@ -346,6 +347,7 @@ void VDirectoryTree::newRootDirectory()
                 return;
             }
             updateItemChildren(NULL);
+            locateDirectory(subDir);
         }
         break;
     } while (true);
