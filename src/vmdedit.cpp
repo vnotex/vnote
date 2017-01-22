@@ -268,14 +268,28 @@ bool VMdEdit::isOrphanImagePreviewBlock(QTextBlock p_block)
 {
     if (isImagePreviewBlock(p_block)) {
         // It is an orphan image preview block if previous block is not
-        // a block need to preview (containing exactly one image).
+        // a block need to preview (containing exactly one image) or the image
+        // paths are not equal to each other.
         QTextBlock prevBlock = p_block.previous();
         if (prevBlock.isValid()) {
-            if (fetchImageToPreview(prevBlock.text()).isEmpty()) {
+            QString imageLink = fetchImageToPreview(prevBlock.text());
+            if (imageLink.isEmpty()) {
                 return true;
-            } else {
-                return false;
             }
+            QString imagePath = QDir(m_file->retriveBasePath()).filePath(imageLink);
+
+            // Get image preview block's image path.
+            QTextCursor cursor(p_block);
+            int shift = p_block.text().indexOf(QChar::ObjectReplacementCharacter);
+            if (shift > 0) {
+                cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor,
+                                    shift + 1);
+            }
+            QTextImageFormat format = cursor.charFormat().toImageFormat();
+            Q_ASSERT(format.isValid());
+            QString curPath = format.property(ImagePath).toString();
+
+            return curPath != imagePath;
         } else {
             return true;
         }
