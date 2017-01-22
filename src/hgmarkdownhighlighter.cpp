@@ -1,12 +1,3 @@
-/* PEG Markdown Highlight
- * Copyright 2011-2016 Ali Rantakari -- http://hasseg.org
- * Licensed under the GPL2+ and MIT licenses (see LICENSE for more info).
- * 
- * highlighter.cpp
- * 
- * Qt 4.7 example for highlighting a rich text widget.
- */
-
 #include <QtGui>
 #include <QtDebug>
 #include "hgmarkdownhighlighter.h"
@@ -36,9 +27,13 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
     codeBlockEndExp = QRegExp("^(\\s)*```$");
     codeBlockFormat.setForeground(QBrush(Qt::darkYellow));
     for (int index = 0; index < styles.size(); ++index) {
-        if (styles[index].type == pmh_VERBATIM) {
+        const pmh_element_type &eleType = styles[index].type;
+        if (eleType == pmh_VERBATIM) {
             codeBlockFormat = styles[index].format;
-            break;
+        } else if (eleType == pmh_LINK) {
+            m_linkFormat = styles[index].format;
+        } else if (eleType == pmh_IMAGE) {
+            m_imageFormat = styles[index].format;
         }
     }
 
@@ -77,8 +72,16 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
             setFormat(unit.start, unit.length, highlightingStyles[unit.styleIndex].format);
         }
     }
-    setCurrentBlockState(HighlightBlockState::BlockNormal);
+
+    // We use PEG Markdown Highlight as the main highlighter.
+    // We can use other highlighting methods to complement it.
+
+    // PEG Markdown Highlight does not handle the ``` code block correctly.
+    setCurrentBlockState(HighlightBlockState::Normal);
     highlightCodeBlock(text);
+
+    // PEG Markdown Highlight does not handle links with spaces in the URL.
+    highlightLinkWithSpacesInURL(text);
 }
 
 void HGMarkdownHighlighter::setStyles(const QVector<HighlightingStyle> &styles)
@@ -177,7 +180,7 @@ void HGMarkdownHighlighter::highlightCodeBlock(const QString &text)
 {
     int nextIndex = 0;
     int startIndex = 0;
-    if (previousBlockState() != HighlightBlockState::BlockCodeBlock) {
+    if (previousBlockState() != HighlightBlockState::CodeBlock) {
         startIndex = codeBlockStartExp.indexIn(text);
         if (startIndex >= 0) {
             nextIndex = startIndex + codeBlockStartExp.matchedLength();
@@ -190,7 +193,7 @@ void HGMarkdownHighlighter::highlightCodeBlock(const QString &text)
         int endIndex = codeBlockEndExp.indexIn(text, nextIndex);
         int codeBlockLength;
         if (endIndex == -1) {
-            setCurrentBlockState(HighlightBlockState::BlockCodeBlock);
+            setCurrentBlockState(HighlightBlockState::CodeBlock);
             codeBlockLength = text.length() - startIndex;
         } else {
             codeBlockLength = endIndex - startIndex + codeBlockEndExp.matchedLength();
@@ -202,6 +205,29 @@ void HGMarkdownHighlighter::highlightCodeBlock(const QString &text)
         } else {
             nextIndex = -1;
         }
+    }
+}
+
+void HGMarkdownHighlighter::highlightLinkWithSpacesInURL(const QString &p_text)
+{
+    if (currentBlockState() == HighlightBlockState::CodeBlock) {
+        return;
+    }
+    // TODO: should select links with spaces in URL.
+    QRegExp regExp("[\\!]?\\[[^\\]]*\\]\\(([^\\n\\)]+)\\)");
+    int index = regExp.indexIn(p_text);
+    while (index >= 0) {
+        Q_ASSERT(regExp.captureCount() == 1);
+        int length = regExp.matchedLength();
+        const QString &capturedText = regExp.capturedTexts()[1];
+        if (capturedText.contains(' ')) {
+            if (p_text[index] == '!' && m_imageFormat.isValid()) {
+                setFormat(index, length, m_imageFormat);
+            } else if (m_linkFormat.isValid()) {
+                setFormat(index, length, m_linkFormat);
+            }
+        }
+        index = regExp.indexIn(p_text, index + length);
     }
 }
 

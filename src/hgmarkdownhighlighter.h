@@ -1,12 +1,3 @@
-/* PEG Markdown Highlight
- * Copyright 2011-2016 Ali Rantakari -- http://hasseg.org
- * Licensed under the GPL2+ and MIT licenses (see LICENSE for more info).
- * 
- * highlighter.h
- * 
- * Qt 4.7 example for highlighting a rich text widget.
- */
-
 #ifndef HGMARKDOWNHIGHLIGHTER_H
 #define HGMARKDOWNHIGHLIGHTER_H
 
@@ -31,8 +22,8 @@ struct HighlightingStyle
 
 enum HighlightBlockState
 {
-    BlockNormal = 0,
-    BlockCodeBlock = 1,
+    Normal = 0,
+    CodeBlock = 1,
 };
 
 // One continuous region for a certain markdown highlight style
@@ -74,6 +65,8 @@ private:
     QRegExp codeBlockStartExp;
     QRegExp codeBlockEndExp;
     QTextCharFormat codeBlockFormat;
+    QTextCharFormat m_linkFormat;
+    QTextCharFormat m_imageFormat;
 
     QTextDocument *document;
     QVector<HighlightingStyle> highlightingStyles;
@@ -92,6 +85,7 @@ private:
 
     void resizeBuffer(int newCap);
     void highlightCodeBlock(const QString &text);
+    void highlightLinkWithSpacesInURL(const QString &p_text);
     void parse();
     void parseInternal();
     void initBlockHighlightFromResult(int nrBlocks);

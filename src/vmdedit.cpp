@@ -204,7 +204,7 @@ void VMdEdit::generateEditOutline()
     QRegExp headerReg("(#{1,6})\\s*(\\S.*)");  // Need to trim the spaces
     for (QTextBlock block = doc->begin(); block != doc->end(); block = block.next()) {
         Q_ASSERT(block.lineCount() == 1);
-        if ((block.userState() == HighlightBlockState::BlockNormal) &&
+        if ((block.userState() == HighlightBlockState::Normal) &&
             headerReg.exactMatch(block.text())) {
             VHeader header(headerReg.cap(1).length(),
                            headerReg.cap(2).trimmed(), "", block.firstLineNumber());
