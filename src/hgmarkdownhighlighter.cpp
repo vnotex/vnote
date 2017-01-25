@@ -219,7 +219,7 @@ void HGMarkdownHighlighter::highlightLinkWithSpacesInURL(const QString &p_text)
     while (index >= 0) {
         Q_ASSERT(regExp.captureCount() == 1);
         int length = regExp.matchedLength();
-        const QString &capturedText = regExp.capturedTexts()[1];
+        QString capturedText = regExp.capturedTexts()[1];
         if (capturedText.contains(' ')) {
             if (p_text[index] == '!' && m_imageFormat.isValid()) {
                 setFormat(index, length, m_imageFormat);
