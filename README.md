@@ -129,7 +129,7 @@ VNote提供很多快捷键，从而提供一个愉悦的编辑体验。
 一些例子：
 
 - `Ctrl+W` 进入编辑模式；`Ctrl+R` 保存并进入阅读模式；`Ctrl+E` 最大化编辑区；
-- `Ctrl+D` 进入暂时Vim模式（比如支持`hjkl`移动光标；
+- `Ctrl+D` 进入暂时Vim模式（比如支持`hjkl`移动光标）；
 - `Ctrl+B`, `Ctrl+I`, `Ctrl+O` 插入粗体、斜体和行内代码。
 
 ## Window Split (窗口分割)
@@ -142,7 +142,7 @@ VNote支持无限水平窗口分割，方便你进行笔记的整理和撰写。
 ## Highly Configurable (高度可定制)
 In VNote, almost everything is configurable, such as background color, font, and Markdown style. VNote uses a plaintext file to record all your configuration, so you could just copy that file to initialize a new VNote on another computer.
 
-VNote中，几乎一起都是可以定制的，例如背景颜色、字体以及Markdown样式等。VNote使用一个纯文本文件来记录你的所有配置，因此通过拷贝该文件就能够很快地在另一台电脑上初始化一个新的VNote。
+VNote中，几乎一切都是可以定制的，例如背景颜色、字体以及Markdown样式等。VNote使用一个纯文本文件来记录你的所有配置，因此通过拷贝该文件就能够很快地在另一台电脑上初始化一个新的VNote。
 
 ![VNote Highly Configurable](screenshots/vnote_008.png)
 
@@ -162,23 +162,25 @@ VNote还支持其他很多的功能，比如：
 ![VNote Find](screenshots/vnote_009.png)
 
 ***
-# Downloads
+# Downloads (下载)
 [Github Release](https://github.com/tamlok/vnote/releases)
 
 ***
-# Build & Development
-## Clone & Init
+# Build & Development (构建与开发)
+## Clone & Init (克隆代码仓库)
 ```
 git clone https://github.com/tamlok/vnote.git vnote.git
 cd vnote.git
 git submodule update --init
 ```
 
-## Download Qt & Have Fun
+## Download Qt & Have Fun (下载Qt)
 Download [Qt 5.7.0](http://info.qt.io/download-qt-for-application-development) and open `VNote.pro` as a project.
 
+下载[Qt 5.7.0](http://info.qt.io/download-qt-for-application-development)，导入`VNote.pro`创建一个工程。
+
 ***
-# Dependencies
+# Dependencies (依赖)
 - [Qt 5.7](http://qt-project.org) (L-GPL v3)
 - [PEG Markdown Highlight](http://hasseg.org/peg-markdown-highlight/) (MIT License)
 - [Hoedown 3.0.7](https://github.com/hoedown/hoedown/) (ISC License)
@@ -187,5 +189,6 @@ Download [Qt 5.7.0](http://info.qt.io/download-qt-for-application-development) a
 - [Ionicons 2.0.1](https://github.com/driftyco/ionicons/) (MIT License)
 
 ***
-# License
+# License (代码许可)
 VNote is licensed under the [MIT license](http://opensource.org/licenses/MIT).
+
