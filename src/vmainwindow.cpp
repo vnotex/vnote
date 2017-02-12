@@ -11,6 +11,7 @@
 #include "vnotebookselector.h"
 #include "vavatar.h"
 #include "dialog/vfindreplacedialog.h"
+#include "dialog/vsettingsdialog.h"
 
 extern VConfigManager vconfig;
 
@@ -20,7 +21,6 @@ VMainWindow::VMainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     setWindowIcon(QIcon(":/resources/icons/vnote.ico"));
-    // Must be called before those who uses VConfigManager
     vnote = new VNote(this);
     g_vnote = vnote;
     vnote->initPalette(palette());
@@ -174,7 +174,7 @@ void VMainWindow::initFileToolBar()
     fileToolBar->setMovable(false);
 
     newRootDirAct = new QAction(QIcon(":/resources/icons/create_rootdir_tb.svg"),
-                                tr("New &Rood Directory"), this);
+                                tr("New &Root Directory"), this);
     newRootDirAct->setStatusTip(tr("Create a root directory in current notebook"));
     connect(newRootDirAct, &QAction::triggered,
             directoryTree, &VDirectoryTree::newRootDirectory);
@@ -321,7 +321,16 @@ void VMainWindow::initFileMenu()
     connect(importNoteAct, &QAction::triggered,
             this, &VMainWindow::importNoteFromFile);
 
+    // Settings.
+    QAction *settingsAct = new QAction(QIcon(":/resources/icons/settings.svg"),
+                                       tr("Settings"), this);
+    settingsAct->setStatusTip(tr("View and change settings for VNote"));
+    connect(settingsAct, &QAction::triggered,
+            this, &VMainWindow::viewSettings);
+
     fileMenu->addAction(importNoteAct);
+    fileMenu->addSeparator();
+    fileMenu->addAction(settingsAct);
 }
 
 void VMainWindow::initEditMenu()
@@ -379,7 +388,7 @@ void VMainWindow::initEditMenu()
 
     // Expand Tab into spaces.
     QAction *expandTabAct = new QAction(tr("&Expand Tab"), this);
-    expandTabAct->setStatusTip(tr("Expand entered tab to spaces"));
+    expandTabAct->setStatusTip(tr("Expand entered Tab to spaces"));
     expandTabAct->setCheckable(true);
     connect(expandTabAct, &QAction::triggered,
             this, &VMainWindow::changeExpandTab);
@@ -387,15 +396,15 @@ void VMainWindow::initEditMenu()
     // Tab stop width.
     QActionGroup *tabStopWidthAct = new QActionGroup(this);
     QAction *twoSpaceTabAct = new QAction(tr("2 Spaces"), tabStopWidthAct);
-    twoSpaceTabAct->setStatusTip(tr("Expand tab to 2 spaces"));
+    twoSpaceTabAct->setStatusTip(tr("Expand Tab to 2 spaces"));
     twoSpaceTabAct->setCheckable(true);
     twoSpaceTabAct->setData(2);
     QAction *fourSpaceTabAct = new QAction(tr("4 Spaces"), tabStopWidthAct);
-    fourSpaceTabAct->setStatusTip(tr("Expand tab to 4 spaces"));
+    fourSpaceTabAct->setStatusTip(tr("Expand Tab to 4 spaces"));
     fourSpaceTabAct->setCheckable(true);
     fourSpaceTabAct->setData(4);
     QAction *eightSpaceTabAct = new QAction(tr("8 Spaces"), tabStopWidthAct);
-    eightSpaceTabAct->setStatusTip(tr("Expand tab to 8 spaces"));
+    eightSpaceTabAct->setStatusTip(tr("Expand Tab to 8 spaces"));
     eightSpaceTabAct->setCheckable(true);
     eightSpaceTabAct->setData(8);
     connect(tabStopWidthAct, &QActionGroup::triggered,
@@ -530,12 +539,12 @@ void VMainWindow::importNoteFromFile()
             failedFiles.append(files[i]);
         }
     }
-    QMessageBox msgBox(QMessageBox::Information, tr("Import note from file"),
+    QMessageBox msgBox(QMessageBox::Information, tr("Import Notes From File"),
                        QString("Imported notes: %1 succeed, %2 failed.")
                        .arg(files.size() - failedFiles.size()).arg(failedFiles.size()),
                        QMessageBox::Ok, this);
     if (!failedFiles.isEmpty()) {
-        msgBox.setInformativeText(tr("Failed to import files may be due to name conflicts."));
+        msgBox.setInformativeText(tr("Failed to import files maybe due to name conflicts."));
     }
     msgBox.exec();
 }
@@ -617,7 +626,7 @@ void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
     QMenu *renderBgMenu = menu->addMenu(tr("&Rendering Background"));
     const QString &curBgColor = vconfig.getCurRenderBackgroundColor();
     QAction *tmpAct = new QAction(tr("System"), renderBackgroundAct);
-    tmpAct->setStatusTip(tr("Use system's background color configuration for markdown rendering"));
+    tmpAct->setStatusTip(tr("Use system's background color configuration for Markdown rendering"));
     tmpAct->setCheckable(true);
     tmpAct->setData("System");
     if (curBgColor == "System") {
@@ -628,7 +637,7 @@ void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
     const QVector<VColor> &bgColors = vconfig.getPredefinedColors();
     for (int i = 0; i < bgColors.size(); ++i) {
         tmpAct = new QAction(bgColors[i].name, renderBackgroundAct);
-        tmpAct->setStatusTip(tr("Set as the background color for markdown rendering"));
+        tmpAct->setStatusTip(tr("Set as the background color for Markdown rendering"));
         tmpAct->setCheckable(true);
         tmpAct->setData(bgColors[i].name);
         tmpAct->setIcon(QIcon(predefinedColorPixmaps[i]));
@@ -943,3 +952,8 @@ void VMainWindow::openFindDialog()
     m_findReplaceDialog->openDialog(editArea->getSelectedText());
 }
 
+void VMainWindow::viewSettings()
+{
+    VSettingsDialog settingsDialog(this);
+    settingsDialog.exec();
+}

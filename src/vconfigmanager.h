@@ -117,6 +117,9 @@ public:
     inline bool getFindIncrementalSearch() const;
     inline void setFindIncrementalSearch(bool p_enabled);
 
+    inline QString getLanguage() const;
+    inline void setLanguage(const QString &p_language);
+
 private:
     void updateMarkdownEditStyle();
     QVariant getConfigFromSettings(const QString &section, const QString &key);
@@ -173,6 +176,9 @@ private:
     bool m_findWholeWordOnly;
     bool m_findRegularExpression;
     bool m_findIncrementalSearch;
+
+    // Language
+    QString m_language;
 
     // The name of the config file in each directory
     static const QString dirConfigFileName;
@@ -489,6 +495,21 @@ inline void VConfigManager::setFindIncrementalSearch(bool p_enabled)
     m_findIncrementalSearch = p_enabled;
     setConfigToSettings("global", "find_incremental_search",
                         m_findIncrementalSearch);
+}
+
+inline QString VConfigManager::getLanguage() const
+{
+    return m_language;
+}
+
+inline void VConfigManager::setLanguage(const QString &p_language)
+{
+    if (m_language == p_language) {
+        return;
+    }
+    m_language = p_language;
+    setConfigToSettings("global", "language",
+                        m_language);
 }
 
 #endif // VCONFIGMANAGER_H

@@ -84,5 +84,6 @@
         <file>resources/icons/close.svg</file>
         <file>resources/icons/find_replace.svg</file>
         <file>resources/icons/search_wrap.svg</file>
+        <file>resources/icons/settings.svg</file>
     </qresource>
 </RCC>

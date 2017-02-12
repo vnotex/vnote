@@ -35,6 +35,12 @@ public:
     static int showMessage(QMessageBox::Icon p_icon, const QString &p_title, const QString &p_text,
                            const QString &p_infoText, QMessageBox::StandardButtons p_buttons,
                            QMessageBox::StandardButton p_defaultBtn, QWidget *p_parent);
+    static const QVector<QPair<QString, QString> > &getAvailableLanguages();
+    static bool isValidLanguage(const QString &p_lang);
+
+private:
+    // <value, name>
+    static const QVector<QPair<QString, QString>> c_availableLanguages;
 };
 
 inline QString VUtils::directoryNameFromPath(const QString &path)

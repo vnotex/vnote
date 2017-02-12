@@ -9,6 +9,10 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QDateTime>
+
+const QVector<QPair<QString, QString>> VUtils::c_availableLanguages = {QPair<QString, QString>("en_US", "Englisth (US)"),
+                                                                       QPair<QString, QString>("zh_CN", "Chinese")};
+
 VUtils::VUtils()
 {
 }
@@ -301,4 +305,19 @@ QString VUtils::generateCopiedDirName(const QString &p_parentDirPath, const QStr
         dirPath = dir.filePath(name);
     }
     return name;
+}
+
+const QVector<QPair<QString, QString>>& VUtils::getAvailableLanguages()
+{
+    return c_availableLanguages;
+}
+
+bool VUtils::isValidLanguage(const QString &p_lang)
+{
+    for (auto lang : c_availableLanguages) {
+        if (lang.first == p_lang) {
+            return true;
+        }
+    }
+    return false;
 }

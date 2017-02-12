@@ -79,6 +79,8 @@ void VConfigManager::initialize()
                                                     "find_regular_expression").toBool();
     m_findIncrementalSearch = getConfigFromSettings("global",
                                                     "find_incremental_search").toBool();
+
+    m_language = getConfigFromSettings("global", "language").toString();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

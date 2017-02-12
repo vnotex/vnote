@@ -1,9 +1,15 @@
 #include "vmainwindow.h"
 #include <QApplication>
+#include <QTranslator>
+#include <QDebug>
+#include <QLibraryInfo>
 #include <QFile>
 #include <QTextCodec>
 #include "utils/vutils.h"
 #include "vsingleinstanceguard.h"
+#include "vconfigmanager.h"
+
+VConfigManager vconfig;
 
 void VLogger(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
@@ -37,6 +43,27 @@ int main(int argc, char *argv[])
     }
 
     QApplication app(argc, argv);
+    vconfig.initialize();
+
+    QString locale = vconfig.getLanguage();
+    if (locale == "System" || !VUtils::isValidLanguage(locale)) {
+        locale = QLocale::system().name();
+    }
+    qDebug() << "use locale" << locale;
+
+    // load translation for Qt
+    QTranslator qtTranslator;
+    if (!qtTranslator.load("qt_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath))) {
+        qtTranslator.load("qt_" + locale, "translations");
+    }
+    app.installTranslator(&qtTranslator);
+
+    // load translation for vnote
+    QTranslator translator;
+    if (translator.load("vnote_" + locale, ":/translations")) {
+        qDebug() << "install VNote translator";
+        app.installTranslator(&translator);
+    }
 
     QTextCodec *codec = QTextCodec::codecForName("UTF8");
     if (codec) {

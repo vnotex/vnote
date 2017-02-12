@@ -40,6 +40,7 @@ public:
 
 private slots:
     void importNoteFromFile();
+    void viewSettings();
     void changeMarkdownConverter(QAction *action);
     void aboutMessage();
     void changeExpandTab(bool checked);

@@ -8,7 +8,7 @@
 #include "vconfigmanager.h"
 #include "vmainwindow.h"
 
-VConfigManager vconfig;
+extern VConfigManager vconfig;
 
 QString VNote::templateHtml;
 QString VNote::preTemplateHtml;
@@ -17,7 +17,6 @@ QString VNote::postTemplateHtml;
 VNote::VNote(QObject *parent)
     : QObject(parent), m_mainWindow(dynamic_cast<VMainWindow *>(parent))
 {
-    vconfig.initialize();
     initTemplate();
     vconfig.getNotebooks(m_notebooks, this);
 }

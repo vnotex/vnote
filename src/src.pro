@@ -13,8 +13,10 @@ TEMPLATE = app
 
 RC_ICONS = resources/icons/vnote.ico
 
+TRANSLATIONS += translations/vnote_zh_CN.ts
+
 SOURCES += main.cpp\
-        vmainwindow.cpp \
+    vmainwindow.cpp \
     vdirectorytree.cpp \
     vnote.cpp \
     vnotebook.cpp \
@@ -49,7 +51,8 @@ SOURCES += main.cpp\
     vnofocusitemdelegate.cpp \
     vavatar.cpp \
     vmdedit.cpp \
-    dialog/vfindreplacedialog.cpp
+    dialog/vfindreplacedialog.cpp \
+    dialog/vsettingsdialog.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -87,10 +90,12 @@ HEADERS  += vmainwindow.h \
     vnofocusitemdelegate.h \
     vavatar.h \
     vmdedit.h \
-    dialog/vfindreplacedialog.h
+    dialog/vfindreplacedialog.h \
+    dialog/vsettingsdialog.h
 
 RESOURCES += \
-    vnote.qrc
+    vnote.qrc \
+    translations.qrc
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../hoedown/release/ -lhoedown
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../hoedown/debug/ -lhoedown
