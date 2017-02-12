@@ -142,9 +142,11 @@ void VFileList::fileInfo(VFile *p_file)
 QListWidgetItem* VFileList::insertFileListItem(VFile *file, bool atFront)
 {
     Q_ASSERT(file);
-    QListWidgetItem *item = new QListWidgetItem(file->getName());
+    QString fileName = file->getName();
+    QListWidgetItem *item = new QListWidgetItem(fileName);
     unsigned long long ptr = (long long)file;
     item->setData(Qt::UserRole, ptr);
+    item->setToolTip(fileName);
     Q_ASSERT(sizeof(file) <= sizeof(ptr));
     if (atFront) {
         fileList->insertItem(0, item);
@@ -153,7 +155,7 @@ QListWidgetItem* VFileList::insertFileListItem(VFile *file, bool atFront)
     }
     // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
     fileList->update();
-    qDebug() << "VFileList adds" << file->getName();
+    qDebug() << "VFileList adds" << fileName;
     return item;
 }
 

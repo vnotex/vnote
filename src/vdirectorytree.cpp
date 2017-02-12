@@ -103,6 +103,7 @@ void VDirectoryTree::fillTreeItem(QTreeWidgetItem &p_item, const QString &p_name
                                   VDirectory *p_directory, const QIcon &p_icon)
 {
     p_item.setText(0, p_name);
+    p_item.setToolTip(0, p_name);
     p_item.setData(0, Qt::UserRole, QVariant::fromValue(p_directory));
     p_item.setIcon(0, p_icon);
 }
