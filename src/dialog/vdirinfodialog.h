@@ -5,7 +5,7 @@
 
 class QLabel;
 class QLineEdit;
-class QPushButton;
+class QDialogButtonBox;
 class QString;
 
 class VDirInfoDialog : public QDialog
@@ -25,8 +25,7 @@ private:
     QLabel *infoLabel;
     QLabel *nameLabel;
     QLineEdit *nameEdit;
-    QPushButton *okBtn;
-    QPushButton *cancelBtn;
+    QDialogButtonBox *m_btnBox;
 
     QString title;
     QString info;

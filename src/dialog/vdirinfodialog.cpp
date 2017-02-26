@@ -9,8 +9,6 @@ VDirInfoDialog::VDirInfoDialog(const QString &title, const QString &info,
     setupUI();
 
     connect(nameEdit, &QLineEdit::textChanged, this, &VDirInfoDialog::enableOkButton);
-    connect(okBtn, &QPushButton::clicked, this, &VDirInfoDialog::accept);
-    connect(cancelBtn, &QPushButton::clicked, this, &VDirInfoDialog::reject);
 
     enableOkButton();
 }
@@ -25,19 +23,16 @@ void VDirInfoDialog::setupUI()
     nameEdit->selectAll();
     nameLabel->setBuddy(nameEdit);
 
-    okBtn = new QPushButton(tr("&OK"));
-    okBtn->setDefault(true);
-    cancelBtn = new QPushButton(tr("&Cancel"));
+    // Ok is the default button.
+    m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    connect(m_btnBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+    connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     QHBoxLayout *topLayout = new QHBoxLayout();
     topLayout->addWidget(nameLabel);
     topLayout->addWidget(nameEdit);
 
-    QHBoxLayout *btmLayout = new QHBoxLayout();
-    btmLayout->addStretch();
-    btmLayout->addWidget(okBtn);
-    btmLayout->addWidget(cancelBtn);
-
+    QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
     nameEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
@@ -45,7 +40,7 @@ void VDirInfoDialog::setupUI()
         mainLayout->addWidget(infoLabel);
     }
     mainLayout->addLayout(topLayout);
-    mainLayout->addLayout(btmLayout);
+    mainLayout->addWidget(m_btnBox);
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     setLayout(mainLayout);
 
@@ -54,6 +49,7 @@ void VDirInfoDialog::setupUI()
 
 void VDirInfoDialog::enableOkButton()
 {
+    QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
     okBtn->setEnabled(!nameEdit->text().isEmpty());
 }
 

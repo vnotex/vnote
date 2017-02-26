@@ -8,6 +8,7 @@ class QLineEdit;
 class QPushButton;
 class QString;
 class QCheckBox;
+class QDialogButtonBox;
 
 class VNewNotebookDialog : public QDialog
 {
@@ -35,8 +36,7 @@ private:
     QLineEdit *pathEdit;
     QCheckBox *importCheck;
     QPushButton *browseBtn;
-    QPushButton *okBtn;
-    QPushButton *cancelBtn;
+    QDialogButtonBox *m_btnBox;
 
     QString title;
     QString info;

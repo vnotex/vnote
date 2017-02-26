@@ -13,8 +13,6 @@ VInsertImageDialog::VInsertImageDialog(const QString &title, const QString &defa
     connect(imageTitleEdit, &QLineEdit::textChanged, this, &VInsertImageDialog::enableOkButton);
     connect(pathEdit, &QLineEdit::textChanged, this, &VInsertImageDialog::enableOkButton);
     connect(browseBtn, &QPushButton::clicked, this, &VInsertImageDialog::handleBrowseBtnClicked);
-    connect(okBtn, &QPushButton::clicked, this, &VInsertImageDialog::accept);
-    connect(cancelBtn, &QPushButton::clicked, this, &VInsertImageDialog::reject);
 
     enableOkButton();
 }
@@ -52,21 +50,17 @@ void VInsertImageDialog::setupUI()
     topLayout->setColumnStretch(1, 1);
     topLayout->setColumnStretch(2, 0);
 
-    okBtn = new QPushButton(tr("&OK"));
-    okBtn->setDefault(true);
-    cancelBtn = new QPushButton(tr("&Cancel"));
-
-    QHBoxLayout *btmLayout = new QHBoxLayout();
-    btmLayout->addStretch();
-    btmLayout->addWidget(okBtn);
-    btmLayout->addWidget(cancelBtn);
+    // Ok is the default button.
+    m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    connect(m_btnBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+    connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     imagePreviewLabel = new QLabel();
     imagePreviewLabel->setVisible(false);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(topLayout);
-    mainLayout->addLayout(btmLayout);
+    mainLayout->addWidget(m_btnBox);
     mainLayout->addWidget(imagePreviewLabel);
     setLayout(mainLayout);
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
@@ -79,6 +73,7 @@ void VInsertImageDialog::enableOkButton()
     if (imageTitleEdit->text().isEmpty() || !image) {
         enabled = false;
     }
+    QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
     okBtn->setEnabled(enabled);
 }
 

@@ -9,6 +9,7 @@
 class QLabel;
 class QLineEdit;
 class QPushButton;
+class QDialogButtonBox;
 
 class VInsertImageDialog : public QDialog
 {
@@ -40,8 +41,7 @@ private:
     QLabel *pathLabel;
     QLineEdit *pathEdit;
     QPushButton *browseBtn;
-    QPushButton *okBtn;
-    QPushButton *cancelBtn;
+    QDialogButtonBox *m_btnBox;
     QLabel *imagePreviewLabel;
 
     QString title;

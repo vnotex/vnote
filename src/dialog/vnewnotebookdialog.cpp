@@ -13,8 +13,6 @@ VNewNotebookDialog::VNewNotebookDialog(const QString &title, const QString &info
     connect(nameEdit, &QLineEdit::textChanged, this, &VNewNotebookDialog::enableOkButton);
     connect(pathEdit, &QLineEdit::textChanged, this, &VNewNotebookDialog::enableOkButton);
     connect(browseBtn, &QPushButton::clicked, this, &VNewNotebookDialog::handleBrowseBtnClicked);
-    connect(okBtn, &QPushButton::clicked, this, &VNewNotebookDialog::accept);
-    connect(cancelBtn, &QPushButton::clicked, this, &VNewNotebookDialog::reject);
 
     enableOkButton();
 }
@@ -45,20 +43,17 @@ void VNewNotebookDialog::setupUI()
     topLayout->addWidget(browseBtn, 1, 2);
     topLayout->addWidget(importCheck, 2, 1);
 
-    okBtn = new QPushButton(tr("&OK"));
-    okBtn->setDefault(true);
-    cancelBtn = new QPushButton(tr("&Cancel"));
-    QHBoxLayout *btmLayout = new QHBoxLayout();
-    btmLayout->addStretch();
-    btmLayout->addWidget(okBtn);
-    btmLayout->addWidget(cancelBtn);
+    // Ok is the default button.
+    m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    connect(m_btnBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+    connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     if (infoLabel) {
         mainLayout->addWidget(infoLabel);
     }
     mainLayout->addLayout(topLayout);
-    mainLayout->addLayout(btmLayout);
+    mainLayout->addWidget(m_btnBox);
     setLayout(mainLayout);
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     setWindowTitle(title);
@@ -66,6 +61,7 @@ void VNewNotebookDialog::setupUI()
 
 void VNewNotebookDialog::enableOkButton()
 {
+    QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
     okBtn->setEnabled(!pathEdit->text().isEmpty() && !nameEdit->text().isEmpty());
 }
 
