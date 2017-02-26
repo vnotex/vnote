@@ -35,7 +35,7 @@ QBrush VStyleParser::QBrushFromPmhAttr(pmh_attr_argb_color *attr) const
 void markdownStyleErrorCB(char *errMsg, int lineNr, void *context)
 {
     (void)context;
-    qDebug() << "parser error:" << errMsg << lineNr;
+    qWarning() << "parser error:" << errMsg << lineNr;
 }
 
 QTextCharFormat VStyleParser::QTextCharFormatFromAttrs(pmh_style_attribute *attrs,
@@ -96,7 +96,7 @@ QTextCharFormat VStyleParser::QTextCharFormatFromAttrs(pmh_style_attribute *attr
         }
 
         default:
-            qWarning() << "warning: unimplemented format attr type:" << attrs->type;
+            qWarning() << "unimplemented format attr type:" << attrs->type;
             break;
         }
         attrs = attrs->next;
@@ -157,7 +157,7 @@ void VStyleParser::fetchMarkdownEditorStyles(QPalette &palette, QFont &font) con
         }
 
         default:
-                qWarning() << "warning: unimplemented editor attr type:" << editorStyles->type;
+                qWarning() << "unimplemented editor attr type:" << editorStyles->type;
         }
         editorStyles = editorStyles->next;
     }
@@ -165,7 +165,7 @@ void VStyleParser::fetchMarkdownEditorStyles(QPalette &palette, QFont &font) con
     // editor-current-line
     pmh_style_attribute *curLineStyles = markdownStyles->editor_current_line_styles;
     if (curLineStyles) {
-        qDebug() << "editor-current-line style is not supported";
+        qWarning() << "editor-current-line style is not supported";
     }
 
     // editor-selection
@@ -183,7 +183,7 @@ void VStyleParser::fetchMarkdownEditorStyles(QPalette &palette, QFont &font) con
             break;
 
         default:
-            qWarning() << "warning: unimplemented selection attr type:" << selStyles->type;
+            qWarning() << "unimplemented selection attr type:" << selStyles->type;
         }
         selStyles = selStyles->next;
     }

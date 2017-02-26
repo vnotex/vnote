@@ -141,13 +141,13 @@ void VMainWindow::initViewToolBar()
 
     QAction *onePanelViewAct = new QAction(QIcon(":/resources/icons/one_panel.svg"),
                                            tr("&Single Panel"), this);
-    onePanelViewAct->setStatusTip(tr("Display only the note panel"));
+    onePanelViewAct->setStatusTip(tr("Display only the note list panel"));
     connect(onePanelViewAct, &QAction::triggered,
             this, &VMainWindow::onePanelView);
 
     QAction *twoPanelViewAct = new QAction(QIcon(":/resources/icons/two_panels.svg"),
                                            tr("&Two Panels"), this);
-    twoPanelViewAct->setStatusTip(tr("Display both the directory and note panel"));
+    twoPanelViewAct->setStatusTip(tr("Display both the directory and note list panel"));
     connect(twoPanelViewAct, &QAction::triggered,
             this, &VMainWindow::twoPanelView);
 
@@ -188,7 +188,7 @@ void VMainWindow::initFileToolBar()
 
     noteInfoAct = new QAction(QIcon(":/resources/icons/note_info_tb.svg"),
                               tr("Note &Info"), this);
-    noteInfoAct->setStatusTip(tr("View and edit info of current note"));
+    noteInfoAct->setStatusTip(tr("View and edit the information of current note"));
     connect(noteInfoAct, &QAction::triggered,
             this, &VMainWindow::curEditFileInfo);
 
@@ -225,7 +225,7 @@ void VMainWindow::initFileToolBar()
 
     saveNoteAct = new QAction(QIcon(":/resources/icons/save_note.svg"),
                               tr("Save"), this);
-    saveNoteAct->setStatusTip(tr("Save changes of current note"));
+    saveNoteAct->setStatusTip(tr("Save changes to current note"));
     saveNoteAct->setShortcut(QKeySequence::Save);
     connect(saveNoteAct, &QAction::triggered,
             editArea, &VEditArea::saveFile);
@@ -340,7 +340,7 @@ void VMainWindow::initEditMenu()
     // Insert image.
     m_insertImageAct = new QAction(QIcon(":/resources/icons/insert_image.svg"),
                                    tr("Insert &Image"), this);
-    m_insertImageAct->setStatusTip(tr("Insert an image from file in current note"));
+    m_insertImageAct->setStatusTip(tr("Insert an image from file into current note"));
     connect(m_insertImageAct, &QAction::triggered,
             this, &VMainWindow::insertImage);
 
@@ -418,8 +418,8 @@ void VMainWindow::initEditMenu()
             this, &VMainWindow::changeHighlightCursorLine);
 
     // Highlight selected word.
-    QAction *selectedWordAct = new QAction(tr("Highlight Selected Word"), this);
-    selectedWordAct->setStatusTip(tr("Highlight all occurences of selected word"));
+    QAction *selectedWordAct = new QAction(tr("Highlight Selected Words"), this);
+    selectedWordAct->setStatusTip(tr("Highlight all occurences of selected words"));
     selectedWordAct->setCheckable(true);
     connect(selectedWordAct, &QAction::triggered,
             this, &VMainWindow::changeHighlightSelectedWord);
@@ -544,7 +544,7 @@ void VMainWindow::importNoteFromFile()
                        .arg(files.size() - failedFiles.size()).arg(failedFiles.size()),
                        QMessageBox::Ok, this);
     if (!failedFiles.isEmpty()) {
-        msgBox.setInformativeText(tr("Failed to import files maybe due to name conflicts."));
+        msgBox.setInformativeText(tr("Fail to import files maybe due to name conflicts."));
     }
     msgBox.exec();
 }

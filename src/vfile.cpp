@@ -52,7 +52,7 @@ void VFile::deleteDiskFile()
     if (file.remove()) {
         qDebug() << "deleted" << filePath;
     } else {
-        qWarning() << "failed to delete" << filePath;
+        qWarning() << "fail to delete" << filePath;
     }
 }
 

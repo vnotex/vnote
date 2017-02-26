@@ -52,7 +52,7 @@ void VNotebookSelector::initActions()
 
     m_notebookInfoAct = new QAction(QIcon(":/resources/icons/notebook_info.svg"),
                                     tr("&Info"));
-    m_notebookInfoAct->setStatusTip(tr("View and edit current notebook's information"));
+    m_notebookInfoAct->setStatusTip(tr("View and edit information of current notebook"));
     connect(m_notebookInfoAct, SIGNAL(triggered(bool)),
             this, SLOT(editNotebookInfo()));
 }

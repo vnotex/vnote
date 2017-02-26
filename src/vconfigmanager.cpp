@@ -165,7 +165,7 @@ QJsonObject VConfigManager::readDirectoryConfig(const QString &path)
     qDebug() << "read config file:" << configFile;
     QFile config(configFile);
     if (!config.open(QIODevice::ReadOnly)) {
-        qWarning() << "error: fail to read directory configuration file:"
+        qWarning() << "fail to read directory configuration file:"
                    << configFile;
         return QJsonObject();
     }
@@ -188,7 +188,7 @@ bool VConfigManager::writeDirectoryConfig(const QString &path, const QJsonObject
     qDebug() << "write config file:" << configFile;
     QFile config(configFile);
     if (!config.open(QIODevice::WriteOnly)) {
-        qWarning() << "error: fail to open directory configuration file for write:"
+        qWarning() << "fail to open directory configuration file for write:"
                    << configFile;
         return false;
     }
@@ -204,7 +204,7 @@ bool VConfigManager::deleteDirectoryConfig(const QString &path)
 
     QFile config(configFile);
     if (!config.remove()) {
-        qWarning() << "error: fail to delete directory configuration file:"
+        qWarning() << "fail to delete directory configuration file:"
                    << configFile;
         return false;
     }

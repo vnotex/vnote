@@ -79,7 +79,7 @@ void VEditTab::setupUI()
         webPreviewer = NULL;
         break;
     default:
-        qWarning() << "error: unknown doc type" << int(m_file->getDocType());
+        qWarning() << "unknown doc type" << int(m_file->getDocType());
         Q_ASSERT(false);
     }
 }
@@ -119,7 +119,7 @@ void VEditTab::showFileReadMode()
         scrollPreviewToHeader(outlineIndex);
         break;
     default:
-        qWarning() << "error: unknown doc type" << int(m_file->getDocType());
+        qWarning() << "unknown doc type" << int(m_file->getDocType());
         Q_ASSERT(false);
     }
     noticeStatusChanged();
@@ -221,7 +221,7 @@ void VEditTab::readFile()
             // Nothing to do if user cancel this action
             return;
         default:
-            qWarning() << "error: wrong return value from QMessageBox:" << ret;
+            qWarning() << "wrong return value from QMessageBox:" << ret;
             return;
         }
     }
@@ -240,7 +240,7 @@ bool VEditTab::saveFile()
     QString filePath = m_file->retrivePath();
     if (!QFile(filePath).exists()) {
         qWarning() << filePath << "being written has been removed";
-        VUtils::showMessage(QMessageBox::Warning, tr("Warning"), tr("Fail to save note"),
+        VUtils::showMessage(QMessageBox::Warning, tr("Warning"), tr("Fail to save note."),
                             QString("%1 being written has been removed.").arg(filePath),
                             QMessageBox::Ok, QMessageBox::Ok, this);
         return false;
@@ -248,7 +248,7 @@ bool VEditTab::saveFile()
     m_textEditor->saveFile();
     ret = m_file->save();
     if (!ret) {
-        VUtils::showMessage(QMessageBox::Warning, tr("Warning"), tr("Fail to save note"),
+        VUtils::showMessage(QMessageBox::Warning, tr("Warning"), tr("Fail to save note."),
                             QString("Fail to write to disk when saving a note. Please try it again."),
                             QMessageBox::Ok, QMessageBox::Ok, this);
         m_textEditor->setModified(true);
@@ -312,11 +312,11 @@ void VEditTab::updateTocFromHtml(const QString &tocHtml)
             if (xml.name() == "ul") {
                 parseTocUl(xml, headers, 1);
             } else {
-                qWarning() << "error: TOC HTML does not start with <ul>";
+                qWarning() << "TOC HTML does not start with <ul>";
             }
         }
         if (xml.hasError()) {
-            qWarning() << "error: fail to parse TOC in HTML";
+            qWarning() << "fail to parse TOC in HTML";
             return;
         }
     }
@@ -348,7 +348,7 @@ void VEditTab::parseTocUl(QXmlStreamReader &xml, QVector<VHeader> &headers, int 
         if (xml.name() == "li") {
             parseTocLi(xml, headers, level);
         } else {
-            qWarning() << "error: TOC HTML <ul> should contain <li>" << xml.name();
+            qWarning() << "TOC HTML <ul> should contain <li>" << xml.name();
             break;
         }
     }
@@ -366,7 +366,7 @@ void VEditTab::parseTocLi(QXmlStreamReader &xml, QVector<VHeader> &headers, int 
                 if (xml.tokenString() == "Characters") {
                     name = xml.text().toString();
                 } else if (!xml.isEndElement()) {
-                    qWarning() << "error: TOC HTML <a> should be ended by </a>" << xml.name();
+                    qWarning() << "TOC HTML <a> should be ended by </a>" << xml.name();
                     return;
                 }
                 VHeader header(level, name, anchor, -1);
@@ -381,7 +381,7 @@ void VEditTab::parseTocLi(QXmlStreamReader &xml, QVector<VHeader> &headers, int 
             headers.append(header);
             parseTocUl(xml, headers, level + 1);
         } else {
-            qWarning() << "error: TOC HTML <li> should contain <a> or <ul>" << xml.name();
+            qWarning() << "TOC HTML <li> should contain <a> or <ul>" << xml.name();
             return;
         }
     }

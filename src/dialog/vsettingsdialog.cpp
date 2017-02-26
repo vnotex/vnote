@@ -38,7 +38,7 @@ void VSettingsDialog::loadConfiguration()
     return;
 err:
     VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                        QString("Failed to load configuration."), "",
+                        QString("Fail to load configuration."), "",
                         QMessageBox::Ok, QMessageBox::Ok, NULL);
     QMetaObject::invokeMethod(this, "reject", Qt::QueuedConnection);
 }
@@ -57,7 +57,7 @@ void VSettingsDialog::saveConfiguration()
     return;
 err:
     VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                        QString("Failed to save configuration. Please try it again."), "",
+                        QString("Fail to save configuration. Please try it again."), "",
                         QMessageBox::Ok, QMessageBox::Ok, NULL);
 }
 
@@ -66,7 +66,7 @@ const QVector<QString> VGeneralTab::c_availableLangs = { "System", "English", "C
 VGeneralTab::VGeneralTab(QWidget *p_parent)
     : QWidget(p_parent), m_langChanged(false)
 {
-    QLabel *langLabel = new QLabel(tr("Language:"));
+    QLabel *langLabel = new QLabel(tr("&Language:"));
     m_langCombo = new QComboBox(this);
     m_langCombo->addItem(tr("System"), "System");
     auto langs = VUtils::getAvailableLanguages();
@@ -75,6 +75,7 @@ VGeneralTab::VGeneralTab(QWidget *p_parent)
     }
     connect(m_langCombo, SIGNAL(currentIndexChanged(int)),
             this, SLOT(handleIndexChange(int)));
+    langLabel->setBuddy(m_langCombo);
 
     QFormLayout *optionLayout = new QFormLayout();
     optionLayout->addRow(langLabel, m_langCombo);
@@ -120,7 +121,7 @@ bool VGeneralTab::loadLanguage()
         }
     }
     if (!found) {
-        qWarning() << "invalid language configuration (use default value)";
+        qWarning() << "invalid language configuration (using default value)";
         m_langCombo->setCurrentIndex(0);
     }
     return true;

@@ -1,6 +1,6 @@
 #include "vmarkdownconverter.h"
 
-VMarkdownConverter::VMarkdownConverter()   
+VMarkdownConverter::VMarkdownConverter()
 {
     hoedownHtmlFlags = (hoedown_html_flags)0;
     nestingLevel = 16;

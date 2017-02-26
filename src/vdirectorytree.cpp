@@ -65,7 +65,7 @@ void VDirectoryTree::initActions()
 
     pasteAct = new QAction(QIcon(":/resources/icons/paste.svg"),
                           tr("&Paste"), this);
-    pasteAct->setStatusTip(tr("Paste directories"));
+    pasteAct->setStatusTip(tr("Paste directories under this directory"));
     connect(pasteAct, &QAction::triggered,
             this, &VDirectoryTree::pasteDirectoriesInCurDir);
 }
@@ -91,7 +91,7 @@ void VDirectoryTree::setNotebook(VNotebook *p_notebook)
     }
     if (!m_notebook->open()) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                            QString("Failed to open notebook %1").arg(m_notebook->getName()), "",
+                            QString("Fail to open notebook %1.").arg(m_notebook->getName()), "",
                             QMessageBox::Ok, QMessageBox::Ok, this);
         clear();
         return;
@@ -134,7 +134,7 @@ void VDirectoryTree::updateDirectoryTreeOne(QTreeWidgetItem *p_parent, int depth
     VDirectory *dir = getVDirectory(p_parent);
     if (!dir->open()) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                            QString("Failed to open directory %1").arg(dir->getName()), "",
+                            QString("Fail to open directory %1.").arg(dir->getName()), "",
                             QMessageBox::Ok, QMessageBox::Ok, this);
         return;
     }
@@ -296,7 +296,7 @@ void VDirectoryTree::newSubDirectory()
     VDirectory *curDir = getVDirectory(curItem);
 
     QString info = QString("Create sub-directory under %1.").arg(curDir->getName());
-    QString text("&Directory name:");
+    QString text("Directory &name:");
     QString defaultText("new_directory");
 
     do {
@@ -311,7 +311,7 @@ void VDirectoryTree::newSubDirectory()
             VDirectory *subDir = curDir->createSubDirectory(name);
             if (!subDir) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    QString("Failed to create directory %1.").arg(name), "",
+                                    QString("Fail to create directory %1.").arg(name), "",
                                     QMessageBox::Ok, QMessageBox::Ok, this);
                 return;
             }
@@ -328,7 +328,7 @@ void VDirectoryTree::newRootDirectory()
         return;
     }
     QString info = QString("Create root directory in notebook %1.").arg(m_notebook->getName());
-    QString text("&Directory name:");
+    QString text("Directory &name:");
     QString defaultText("new_directory");
     VDirectory *rootDir = m_notebook->getRootDir();
     do {
@@ -343,7 +343,7 @@ void VDirectoryTree::newRootDirectory()
             VDirectory *subDir = rootDir->createSubDirectory(name);
             if (!subDir) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    QString("Failed to create directory %1.").arg(name), "",
+                                    QString("Fail to create directory %1.").arg(name), "",
                                     QMessageBox::Ok, QMessageBox::Ok, this);
                 return;
             }
@@ -410,7 +410,7 @@ void VDirectoryTree::editDirectoryInfo()
             }
             if (!curDir->rename(name)) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    QString("Failed to rename directory %1.").arg(curName), "",
+                                    QString("Fail to rename directory %1.").arg(curName), "",
                                     QMessageBox::Ok, QMessageBox::Ok, this);
                 return;
             }
@@ -552,8 +552,8 @@ bool VDirectoryTree::copyDirectory(VDirectory *p_destDir, const QString &p_destN
         emit directoryUpdated(destDir);
     } else {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                            QString("Failed to copy directory %1.").arg(srcName),
-                            QString("Please check if there alread exists a directory with the same name"),
+                            QString("Fail to copy directory %1.").arg(srcName),
+                            QString("Please check if there alread exists a directory with the same name."),
                             QMessageBox::Ok, QMessageBox::Ok, this);
     }
 

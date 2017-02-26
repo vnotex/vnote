@@ -10,7 +10,7 @@
 #include <QJsonDocument>
 #include <QDateTime>
 
-const QVector<QPair<QString, QString>> VUtils::c_availableLanguages = {QPair<QString, QString>("en_US", "Englisth (US)"),
+const QVector<QPair<QString, QString>> VUtils::c_availableLanguages = {QPair<QString, QString>("en_US", "Englisth(US)"),
                                                                        QPair<QString, QString>("zh_CN", "Chinese")};
 
 VUtils::VUtils()
@@ -21,7 +21,7 @@ QString VUtils::readFileFromDisk(const QString &filePath)
 {
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qWarning() << "error: fail to read file" << filePath;
+        qWarning() << "fail to read file" << filePath;
         return QString();
     }
     QString fileText(file.readAll());
@@ -34,7 +34,7 @@ bool VUtils::writeFileToDisk(const QString &filePath, const QString &text)
 {
     QFile file(filePath);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        qWarning() << "error: fail to open file" << filePath << "to write to";
+        qWarning() << "fail to open file" << filePath << "to write";
         return false;
     }
     QTextStream stream(&file);
@@ -62,7 +62,7 @@ QRgb VUtils::QRgbFromString(const QString &str)
     if (ret) {
         return qRgb(red, green, blue);
     }
-    qWarning() << "error: fail to construct QRgb from string" << str;
+    qWarning() << "fail to construct QRgb from string" << str;
     return QRgb();
 }
 
@@ -194,12 +194,12 @@ bool VUtils::copyFile(const QString &p_srcFilePath, const QString &p_destFilePat
     if (p_isCut) {
         QFile file(srcPath);
         if (!file.rename(destPath)) {
-            qWarning() << "error: fail to copy file" << srcPath << destPath;
+            qWarning() << "fail to copy file" << srcPath << destPath;
             return false;
         }
     } else {
         if (!QFile::copy(srcPath, destPath)) {
-            qWarning() << "error: fail to copy file" << srcPath << destPath;
+            qWarning() << "fail to copy file" << srcPath << destPath;
             return false;
         }
     }
@@ -219,7 +219,7 @@ bool VUtils::copyDirectory(const QString &p_srcDirPath, const QString &p_destDir
     QDir parentDir(VUtils::basePathFromPath(p_destDirPath));
     QString dirName = VUtils::fileNameFromPath(p_destDirPath);
     if (!parentDir.mkdir(dirName)) {
-        qWarning() << QString("failed to create target directory %1: already exists").arg(p_destDirPath);
+        qWarning() << QString("fail to create target directory %1: already exists").arg(p_destDirPath);
         return false;
     }
 
@@ -247,7 +247,7 @@ bool VUtils::copyDirectory(const QString &p_srcDirPath, const QString &p_destDir
     // Delete the src dir if p_isCut
     if (p_isCut) {
         if (!srcDir.removeRecursively()) {
-            qWarning() << "failed to remove directory" << p_srcDirPath;
+            qWarning() << "fail to remove directory" << p_srcDirPath;
             return false;
         }
     }

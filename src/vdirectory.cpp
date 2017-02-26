@@ -117,7 +117,7 @@ VDirectory *VDirectory::createSubDirectory(const QString &p_name)
     QString path = retrivePath();
     QDir dir(path);
     if (!dir.mkdir(p_name)) {
-        qWarning() << "failed to create directory" << p_name << "under" << path;
+        qWarning() << "fail to create directory" << p_name << "under" << path;
         return NULL;
     }
 
@@ -210,7 +210,7 @@ VFile *VDirectory::createFile(const QString &p_name)
     QString filePath = QDir(path).filePath(p_name);
     QFile file(filePath);
     if (!file.open(QIODevice::WriteOnly)) {
-        qWarning() << "failed to create file" << p_name;
+        qWarning() << "fail to create file" << p_name;
         return NULL;
     }
     file.close();
@@ -330,7 +330,7 @@ void VDirectory::deleteSubDirectory(VDirectory *p_subDir)
     p_subDir->close();
     QDir dir(dirPath);
     if (!dir.removeRecursively()) {
-        qWarning() << "failed to remove" << dirPath << "recursively";
+        qWarning() << "fail to remove" << dirPath << "recursively";
     } else {
         qDebug() << "deleted" << dirPath;
     }
@@ -370,7 +370,7 @@ int VDirectory::removeSubDirectory(VDirectory *p_dir)
     Q_ASSERT(deleted);
     dirJson["sub_directories"] = subDirArray;
     if (!VConfigManager::writeDirectoryConfig(path, dirJson)) {
-        qWarning() << "failed to update configuration in" << path;
+        qWarning() << "fail to update configuration in" << path;
     }
     return index;
 }
@@ -409,7 +409,7 @@ int VDirectory::removeFile(VFile *p_file)
     Q_ASSERT(deleted);
     dirJson["files"] = subFileArray;
     if (!VConfigManager::writeDirectoryConfig(path, dirJson)) {
-        qWarning() << "failed to update configuration in" << path;
+        qWarning() << "fail to update configuration in" << path;
     }
     return index;
 }
@@ -435,7 +435,7 @@ bool VDirectory::rename(const QString &p_name)
     QDir dir(parentPath);
     QString name = m_name;
     if (!dir.rename(m_name, p_name)) {
-        qWarning() << "failed to rename directory" << m_name << "to" << p_name;
+        qWarning() << "fail to rename directory" << m_name << "to" << p_name;
         return false;
     }
     m_name = p_name;
@@ -522,8 +522,8 @@ VFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
                     nrPasted++;
                 } else {
                     VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                        QString("Failed to copy image %1.").arg(images[i]),
-                                        tr("Please check if there already exists a file with the same name and manually copy it."),
+                                        QString("Fail to copy image %1.").arg(images[i]),
+                                        tr("Please check if there already exists a file with the same name and then manually copy it."),
                                         QMessageBox::Ok, QMessageBox::Ok, NULL);
                 }
             }
@@ -591,7 +591,7 @@ void VDirectory::reorderFiles(int p_first, int p_last, int p_destStart)
     Q_ASSERT(p_destStart >= 0 && p_destStart <= m_files.size());
 
     if (!reorderFilesInConfig(p_first, p_last, p_destStart)) {
-        qWarning() << "failed to reorder files in config" << p_first << p_last << p_destStart;
+        qWarning() << "fail to reorder files in config" << p_first << p_last << p_destStart;
         return;
     }
 

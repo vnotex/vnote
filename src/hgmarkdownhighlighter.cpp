@@ -241,7 +241,7 @@ void HGMarkdownHighlighter::parse()
     parseInternal();
 
     if (highlightingStyles.isEmpty()) {
-        qWarning() << "error: HighlightingStyles is not set";
+        qWarning() << "HighlightingStyles is not set";
         return;
     }
     initBlockHighlightFromResult(nrBlocks);

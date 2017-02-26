@@ -43,7 +43,7 @@ bool VSingleInstanceGuard::tryRun()
 {
     // If we can attach to the sharedmemory, there is another instance running.
     if (tryAttach()) {
-        qDebug() << "Another instance is running";
+        qDebug() << "another instance is running";
         return false;
     }
 
@@ -62,11 +62,11 @@ bool VSingleInstanceGuard::tryRun()
     } else {
         // Maybe another thread create it
         if (tryAttach()) {
-            qDebug() << "Another instance is running";
+            qDebug() << "another instance is running";
             return false;
         } else {
             // Something wrong here
-            qWarning() << "error: failed to create or attach shared memory segment";
+            qWarning() << "fail to create or attach shared memory segment";
             return false;
         }
     }

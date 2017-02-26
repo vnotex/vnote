@@ -72,7 +72,7 @@ void VFileList::initActions()
 
     pasteAct = new QAction(QIcon(":/resources/icons/paste.svg"),
                           tr("&Paste"), this);
-    pasteAct->setStatusTip(tr("Paste notes"));
+    pasteAct->setStatusTip(tr("Paste notes in current directory"));
     connect(pasteAct, &QAction::triggered,
             this, &VFileList::pasteFilesInCurDir);
 }
@@ -188,7 +188,7 @@ void VFileList::newFile()
             VFile *file = m_directory->createFile(name);
             if (!file) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    QString("Failed to create file %1.").arg(name), "",
+                                    QString("Fail to create note %1.").arg(name), "",
                                     QMessageBox::Ok, QMessageBox::Ok, this);
                 return;
             }

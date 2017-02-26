@@ -72,7 +72,7 @@ void VNotebook::deleteNotebook(VNotebook *p_notebook)
 
     QDir dir(path);
     if (!dir.removeRecursively()) {
-        qWarning() << "failed to delete" << path;
+        qWarning() << "fail to delete" << path;
     }
 }
 

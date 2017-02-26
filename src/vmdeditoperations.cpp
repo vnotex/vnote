@@ -57,7 +57,7 @@ void VMdEditOperations::insertImageFromQImage(const QString &title, const QStrin
     VUtils::makeDirectory(path);
     bool ret = image.save(filePath);
     if (!ret) {
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Fail to save image %1").arg(filePath),
+        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Fail to save image %1.").arg(filePath),
                            QMessageBox::Ok, (QWidget *)m_editor);
         msgBox.exec();
         return;
@@ -81,8 +81,8 @@ void VMdEditOperations::insertImageFromPath(const QString &title,
     VUtils::makeDirectory(path);
     bool ret = QFile::copy(oriImagePath, filePath);
     if (!ret) {
-        qWarning() << "error: fail to copy" << oriImagePath << "to" << filePath;
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Fail to save image %1").arg(filePath),
+        qWarning() << "fail to copy" << oriImagePath << "to" << filePath;
+        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Fail to save image %1.").arg(filePath),
                            QMessageBox::Ok, (QWidget *)m_editor);
         msgBox.exec();
         return;
@@ -109,7 +109,7 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
         image = QImage(imagePath);
 
         if (image.isNull()) {
-            qWarning() << "error: image is null";
+            qWarning() << "image is null";
             return false;
         }
         title = "Insert Image From File";
