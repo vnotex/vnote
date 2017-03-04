@@ -248,42 +248,42 @@
     <message>
         <location filename="../veditwindow.cpp" line="50"/>
         <source>Move One Split Left</source>
-        <translation>左移一个分隔窗口</translation>
+        <translation>左移一个分割窗口</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="51"/>
         <source>Move current tab to the split on the left</source>
-        <translation>将当前标签页往左移动一个分隔窗口</translation>
+        <translation>将当前标签页往左移动一个分割窗口</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="56"/>
         <source>Move One Split Right</source>
-        <translation>右移一个分隔窗口</translation>
+        <translation>右移一个分割窗口</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="57"/>
         <source>Move current tab to the split on the right</source>
-        <translation>将当前标签页往右移动一个分隔窗口</translation>
+        <translation>将当前标签页往右移动一个分割窗口</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="67"/>
         <source>Split</source>
-        <translation>分隔</translation>
+        <translation>分割</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="68"/>
         <source>Split current window vertically</source>
-        <translation>竖直分隔当前窗口</translation>
+        <translation>竖直分割当前窗口</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="73"/>
         <source>Remove split</source>
-        <translation>移除分隔</translation>
+        <translation>移除分割</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="74"/>
         <source>Remove current split window</source>
-        <translation>移除当前分隔窗口</translation>
+        <translation>移除当前分割窗口</translation>
     </message>
 </context>
 <context>
