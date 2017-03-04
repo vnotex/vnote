@@ -410,6 +410,11 @@ void VFileList::pasteFiles(VDirectory *p_destDir)
         }
         if (copyFile(p_destDir, fileName, srcFile, isCut)) {
             nrPasted++;
+        } else {
+            VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                                tr("Fail to copy note %1.").arg(srcFile->getName()),
+                                tr("Please check if there already exists a file with the same name in the target directory."),
+                                QMessageBox::Ok, QMessageBox::Ok, this);
         }
     }
 

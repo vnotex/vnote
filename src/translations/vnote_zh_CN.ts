@@ -189,8 +189,8 @@
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="556"/>
-        <source>Please check if there alread exists a directory with the same name.</source>
-        <translation>请检查目标文件夹中是否已经存在同名文件夹。</translation>
+        <source>Please check if there already exists a directory with the same name.</source>
+        <translation>请检查是否存在同名目录。</translation>
     </message>
 </context>
 <context>
@@ -384,7 +384,8 @@
     <message>
         <location filename="../vfilelist.cpp" line="190"/>
         <location filename="../vfilelist.cpp" line="247"/>
-        <location filename="../vfilelist.cpp" line="433"/>
+        <location filename="../vfilelist.cpp" line="414"/>
+        <location filename="../vfilelist.cpp" line="438"/>
         <source>Warning</source>
         <translation>警告</translation>
     </message>
@@ -404,12 +405,22 @@
         <translation>该操作不可撤消！</translation>
     </message>
     <message>
-        <location filename="../vfilelist.cpp" line="434"/>
+        <location filename="../vfilelist.cpp" line="415"/>
+        <source>Fail to copy note %1.</source>
+        <translation>复制笔记失败: %1。</translation>
+    </message>
+    <message>
+        <location filename="../vfilelist.cpp" line="416"/>
+        <source>Please check if there already exists a file with the same name in the target directory.</source>
+        <translation>请检查目标文件夹中是否存在同名文件。</translation>
+    </message>
+    <message>
+        <location filename="../vfilelist.cpp" line="439"/>
         <source>The renaming will change the note type.</source>
         <translation>重命名会更改笔记类型。</translation>
     </message>
     <message>
-        <location filename="../vfilelist.cpp" line="435"/>
+        <location filename="../vfilelist.cpp" line="440"/>
         <source>You should close the note %1 before continue.</source>
         <translation>请在继续前先关闭笔记: %1。</translation>
     </message>

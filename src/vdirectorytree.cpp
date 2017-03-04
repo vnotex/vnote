@@ -553,7 +553,7 @@ bool VDirectoryTree::copyDirectory(VDirectory *p_destDir, const QString &p_destN
     } else {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                             tr("Fail to copy directory %1.").arg(srcName),
-                            tr("Please check if there alread exists a directory with the same name."),
+                            tr("Please check if there already exists a directory with the same name."),
                             QMessageBox::Ok, QMessageBox::Ok, this);
     }
 
