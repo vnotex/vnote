@@ -188,7 +188,7 @@ void VMainWindow::initFileToolBar()
 
     noteInfoAct = new QAction(QIcon(":/resources/icons/note_info_tb.svg"),
                               tr("Note &Info"), this);
-    noteInfoAct->setStatusTip(tr("View and edit the information of current note"));
+    noteInfoAct->setStatusTip(tr("View and edit current note's information"));
     connect(noteInfoAct, &QAction::triggered,
             this, &VMainWindow::curEditFileInfo);
 
@@ -263,11 +263,11 @@ void VMainWindow::initHelpMenu()
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
 
     QAction *aboutAct = new QAction(tr("&About"), this);
-    aboutAct->setStatusTip(tr("Show information about VNote"));
+    aboutAct->setStatusTip(tr("View information about VNote"));
     connect(aboutAct, &QAction::triggered,
             this, &VMainWindow::aboutMessage);
     QAction *aboutQtAct = new QAction(tr("About &Qt"), this);
-    aboutQtAct->setStatusTip(tr("Show information about Qt"));
+    aboutQtAct->setStatusTip(tr("View information about Qt"));
     connect(aboutQtAct, &QAction::triggered,
             qApp, &QApplication::aboutQt);
 

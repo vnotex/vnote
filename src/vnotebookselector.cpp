@@ -51,8 +51,8 @@ void VNotebookSelector::initActions()
             this, SLOT(deleteNotebook()));
 
     m_notebookInfoAct = new QAction(QIcon(":/resources/icons/notebook_info.svg"),
-                                    tr("&Info"));
-    m_notebookInfoAct->setStatusTip(tr("View and edit information of current notebook"));
+                                    tr("&Info"), this);
+    m_notebookInfoAct->setStatusTip(tr("View and edit current notebook's information"));
     connect(m_notebookInfoAct, SIGNAL(triggered(bool)),
             this, SLOT(editNotebookInfo()));
 }
@@ -100,7 +100,7 @@ void VNotebookSelector::insertAddNotebookItem()
     QFont font;
     font.setItalic(true);
     item->setData(Qt::FontRole, font);
-    item->setToolTip(tr("Create or import a notebook."));
+    item->setToolTip(tr("Create or import a notebook"));
     m_listWidget->insertItem(0, item);
 }
 
@@ -158,13 +158,13 @@ bool VNotebookSelector::newNotebook()
     QString defaultPath;
 
     do {
-        VNewNotebookDialog dialog(tr("Create Notebook"), info, defaultName,
+        VNewNotebookDialog dialog(tr("Add Notebook"), info, defaultName,
                                   defaultPath, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
             QString path = dialog.getPathInput();
             if (findNotebook(name)) {
-                info = "Name already exists. Please choose another name.";
+                info = tr("Name already exists. Please choose another name.");
                 defaultName = name;
                 defaultPath = path;
                 continue;

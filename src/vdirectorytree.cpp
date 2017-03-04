@@ -58,7 +58,7 @@ void VDirectoryTree::initActions()
             this, &VDirectoryTree::copySelectedDirectories);
 
     cutAct = new QAction(QIcon(":/resources/icons/cut.svg"),
-                          tr("&Cut"), this);
+                          tr("C&ut"), this);
     cutAct->setStatusTip(tr("Cut selected directories"));
     connect(cutAct, &QAction::triggered,
             this, &VDirectoryTree::cutSelectedDirectories);

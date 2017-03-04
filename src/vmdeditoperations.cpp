@@ -57,7 +57,7 @@ void VMdEditOperations::insertImageFromQImage(const QString &title, const QStrin
     VUtils::makeDirectory(path);
     bool ret = image.save(filePath);
     if (!ret) {
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Fail to save image %1.").arg(filePath),
+        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Fail to save image %1.").arg(filePath),
                            QMessageBox::Ok, (QWidget *)m_editor);
         msgBox.exec();
         return;
@@ -82,7 +82,7 @@ void VMdEditOperations::insertImageFromPath(const QString &title,
     bool ret = QFile::copy(oriImagePath, filePath);
     if (!ret) {
         qWarning() << "fail to copy" << oriImagePath << "to" << filePath;
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), QString("Fail to save image %1.").arg(filePath),
+        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Fail to save image %1.").arg(filePath),
                            QMessageBox::Ok, (QWidget *)m_editor);
         msgBox.exec();
         return;

@@ -65,7 +65,7 @@ void VFileList::initActions()
             this, &VFileList::copySelectedFiles);
 
     cutAct = new QAction(QIcon(":/resources/icons/cut.svg"),
-                          tr("&Cut"), this);
+                          tr("C&ut"), this);
     cutAct->setStatusTip(tr("Cut selected notes"));
     connect(cutAct, &QAction::triggered,
             this, &VFileList::cutSelectedFiles);
