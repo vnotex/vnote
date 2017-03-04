@@ -540,7 +540,7 @@ void VMainWindow::importNoteFromFile()
         }
     }
     QMessageBox msgBox(QMessageBox::Information, tr("Import Notes From File"),
-                       QString("Imported notes: %1 succeed, %2 failed.")
+                       tr("Imported notes: %1 succeed, %2 failed.")
                        .arg(files.size() - failedFiles.size()).arg(failedFiles.size()),
                        QMessageBox::Ok, this);
     if (!failedFiles.isEmpty()) {

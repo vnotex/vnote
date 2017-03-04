@@ -522,7 +522,7 @@ VFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
                     nrPasted++;
                 } else {
                     VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                        QString("Fail to copy image %1.").arg(images[i]),
+                                        tr("Fail to copy image %1.").arg(images[i]),
                                         tr("Please check if there already exists a file with the same name and then manually copy it."),
                                         QMessageBox::Ok, QMessageBox::Ok, NULL);
                 }

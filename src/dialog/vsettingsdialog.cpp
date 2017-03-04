@@ -38,7 +38,7 @@ void VSettingsDialog::loadConfiguration()
     return;
 err:
     VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                        QString("Fail to load configuration."), "",
+                        tr("Fail to load configuration."), "",
                         QMessageBox::Ok, QMessageBox::Ok, NULL);
     QMetaObject::invokeMethod(this, "reject", Qt::QueuedConnection);
 }
@@ -57,7 +57,7 @@ void VSettingsDialog::saveConfiguration()
     return;
 err:
     VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                        QString("Fail to save configuration. Please try it again."), "",
+                        tr("Fail to save configuration. Please try it again."), "",
                         QMessageBox::Ok, QMessageBox::Ok, NULL);
 }
 

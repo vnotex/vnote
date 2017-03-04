@@ -206,7 +206,7 @@ void VEditTab::readFile()
     if (m_textEditor->isModified()) {
         // Prompt to save the changes
         int ret = VUtils::showMessage(QMessageBox::Information, tr("Information"),
-                                      QString("Note %1 has been modified.").arg(m_file->getName()),
+                                      tr("Note %1 has been modified.").arg(m_file->getName()),
                                       tr("Do you want to save your changes?"),
                                       QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
                                       QMessageBox::Save, this);
@@ -241,7 +241,7 @@ bool VEditTab::saveFile()
     if (!QFile(filePath).exists()) {
         qWarning() << filePath << "being written has been removed";
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"), tr("Fail to save note."),
-                            QString("%1 being written has been removed.").arg(filePath),
+                            tr("%1 being written has been removed.").arg(filePath),
                             QMessageBox::Ok, QMessageBox::Ok, this);
         return false;
     }
@@ -249,7 +249,7 @@ bool VEditTab::saveFile()
     ret = m_file->save();
     if (!ret) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"), tr("Fail to save note."),
-                            QString("Fail to write to disk when saving a note. Please try it again."),
+                            tr("Fail to write to disk when saving a note. Please try it again."),
                             QMessageBox::Ok, QMessageBox::Ok, this);
         m_textEditor->setModified(true);
     }

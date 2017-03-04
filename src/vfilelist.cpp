@@ -173,22 +173,22 @@ void VFileList::newFile()
     if (!m_directory) {
         return;
     }
-    QString info = QString("Create a note under %1.").arg(m_directory->getName());
-    QString text("&Note name:");
+    QString info = tr("Create a note in %1.").arg(m_directory->getName());
+    QString text(tr("Note &name:"));
     QString defaultText("new_note");
     do {
-        VNewFileDialog dialog(QString("Create Note"), info, text, defaultText, this);
+        VNewFileDialog dialog(tr("Create Note"), info, text, defaultText, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
             if (m_directory->findFile(name)) {
-                info = "Name already exists. Please choose another name.";
+                info = tr("Name already exists. Please choose another name.");
                 defaultText = name;
                 continue;
             }
             VFile *file = m_directory->createFile(name);
             if (!file) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    QString("Fail to create note %1.").arg(name), "",
+                                    tr("Fail to create note %1.").arg(name), "",
                                     QMessageBox::Ok, QMessageBox::Ok, this);
                 return;
             }
@@ -245,7 +245,8 @@ void VFileList::deleteFile(VFile *p_file)
     VDirectory *dir = p_file->getDirectory();
     QString fileName = p_file->getName();
     int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                       QString("Are you sure to delete note %1?").arg(fileName), tr("This may be unrecoverable!"),
+                       tr("Are you sure to delete note %1?").arg(fileName),
+                       tr("This may be unrecoverable!"),
                        QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Ok, this);
     if (ret == QMessageBox::Ok) {
         editArea->closeFile(p_file, true);
@@ -430,8 +431,8 @@ bool VFileList::copyFile(VDirectory *p_destDir, const QString &p_destName, VFile
     if (docType != newDocType) {
         if (editArea->isFileOpened(p_file)) {
             int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                          QString("The renaming will change the note type."),
-                                          QString("You should close the note %1 before continue.").arg(p_file->getName()),
+                                          tr("The renaming will change the note type."),
+                                          tr("You should close the note %1 before continue.").arg(p_file->getName()),
                                           QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Ok, this);
             if (QMessageBox::Ok == ret) {
                 if (!editArea->closeFile(p_file, false)) {

@@ -213,8 +213,8 @@ void VNotebookSelector::deleteNotebook()
     QString curPath = notebook->getPath();
 
     int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                  QString("Are you sure to delete notebook %1?").arg(curName),
-                                  QString("This will delete any files in this notebook (%1).").arg(curPath),
+                                  tr("Are you sure to delete notebook %1?").arg(curName),
+                                  tr("This will delete any files in this notebook (%1).").arg(curPath),
                                   QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Ok, this);
     if (ret == QMessageBox::Ok) {
         m_editArea->closeFile(notebook, true);

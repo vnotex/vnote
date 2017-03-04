@@ -6,7 +6,7 @@
     <message>
         <location filename="../dialog/vdirinfodialog.cpp" line="21"/>
         <source>Directory &amp;name:</source>
-        <translation>目录名 (&amp;V):</translation>
+        <translation>目录名 (&amp;N):</translation>
     </message>
 </context>
 <context>
@@ -15,6 +15,11 @@
         <location filename="../vdirectory.cpp" line="524"/>
         <source>Warning</source>
         <translation>警告</translation>
+    </message>
+    <message>
+        <location filename="../vdirectory.cpp" line="525"/>
+        <source>Fail to copy image %1.</source>
+        <translation>复制图片失败: %1。</translation>
     </message>
     <message>
         <location filename="../vdirectory.cpp" line="526"/>
@@ -106,14 +111,61 @@
         <translation>警告</translation>
     </message>
     <message>
+        <location filename="../vdirectorytree.cpp" line="94"/>
+        <source>Fail to open notebook %1.</source>
+        <translation>打开笔记本失败: %1。</translation>
+    </message>
+    <message>
+        <location filename="../vdirectorytree.cpp" line="137"/>
+        <source>Fail to open directory %1.</source>
+        <translation>打开目录失败: %1。</translation>
+    </message>
+    <message>
+        <location filename="../vdirectorytree.cpp" line="298"/>
+        <source>Create sub-directory under %1.</source>
+        <translation>在目录 %1 中新建一个子目录。</translation>
+    </message>
+    <message>
+        <location filename="../vdirectorytree.cpp" line="299"/>
+        <location filename="../vdirectorytree.cpp" line="331"/>
+        <source>Directory &amp;name:</source>
+        <translation>目录名 (&amp;N):</translation>
+    </message>
+    <message>
         <location filename="../vdirectorytree.cpp" line="303"/>
         <source>Create Directory</source>
         <translation>新建目录</translation>
     </message>
     <message>
+        <location filename="../vdirectorytree.cpp" line="307"/>
+        <source>Name already exists under %1. Please choose another name.</source>
+        <translation>该目录名已存在于目录 %1 中。请选择另一个名字。</translation>
+    </message>
+    <message>
+        <location filename="../vdirectorytree.cpp" line="314"/>
+        <location filename="../vdirectorytree.cpp" line="346"/>
+        <source>Fail to create directory %1.</source>
+        <translation>新建目录失败: %1。</translation>
+    </message>
+    <message>
+        <location filename="../vdirectorytree.cpp" line="330"/>
+        <source>Create root directory in notebook %1.</source>
+        <translation>在笔记本 %1 中新建根目录。</translation>
+    </message>
+    <message>
         <location filename="../vdirectorytree.cpp" line="335"/>
         <source>Create Root Directory</source>
         <translation>新建根目录</translation>
+    </message>
+    <message>
+        <location filename="../vdirectorytree.cpp" line="339"/>
+        <source>Name already exists in notebook %1. Please choose another name.</source>
+        <translation>该目录名已存在于笔记本 %1 中。请选择另一个名字。</translation>
+    </message>
+    <message>
+        <location filename="../vdirectorytree.cpp" line="365"/>
+        <source>Are you sure to delete directory %1?</source>
+        <translation>确认删除目录: %1？</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="366"/>
@@ -125,6 +177,21 @@
         <source>Directory Information</source>
         <translation>目录信息</translation>
     </message>
+    <message>
+        <location filename="../vdirectorytree.cpp" line="413"/>
+        <source>Fail to rename directory %1.</source>
+        <translation>重命名目录失败: %1。</translation>
+    </message>
+    <message>
+        <location filename="../vdirectorytree.cpp" line="555"/>
+        <source>Fail to copy directory %1.</source>
+        <translation>复制目录失败: %1。</translation>
+    </message>
+    <message>
+        <location filename="../vdirectorytree.cpp" line="556"/>
+        <source>Please check if there alread exists a directory with the same name.</source>
+        <translation>请检查目标文件夹中是否已经存在同名文件夹。</translation>
+    </message>
 </context>
 <context>
     <name>VEditTab</name>
@@ -132,6 +199,11 @@
         <location filename="../vedittab.cpp" line="208"/>
         <source>Information</source>
         <translation>信息</translation>
+    </message>
+    <message>
+        <location filename="../vedittab.cpp" line="209"/>
+        <source>Note %1 has been modified.</source>
+        <translation>笔记 %1 已被更改。</translation>
     </message>
     <message>
         <location filename="../vedittab.cpp" line="210"/>
@@ -149,6 +221,16 @@
         <location filename="../vedittab.cpp" line="251"/>
         <source>Fail to save note.</source>
         <translation>保存笔记失败。</translation>
+    </message>
+    <message>
+        <location filename="../vedittab.cpp" line="244"/>
+        <source>%1 being written has been removed.</source>
+        <translation>要写入的文件已被删除: %1。</translation>
+    </message>
+    <message>
+        <location filename="../vedittab.cpp" line="252"/>
+        <source>Fail to write to disk when saving a note. Please try it again.</source>
+        <translation>保存笔记时，写入文件失败。请稍后再试。</translation>
     </message>
 </context>
 <context>
@@ -280,16 +362,56 @@
         <translation>笔记信息</translation>
     </message>
     <message>
+        <location filename="../vfilelist.cpp" line="176"/>
+        <source>Create a note in %1.</source>
+        <translation>在目录 %1 中新建一个笔记。</translation>
+    </message>
+    <message>
+        <location filename="../vfilelist.cpp" line="177"/>
+        <source>Note &amp;name:</source>
+        <translation>笔记名 (&amp;N):</translation>
+    </message>
+    <message>
+        <location filename="../vfilelist.cpp" line="180"/>
+        <source>Create Note</source>
+        <translation>新建笔记</translation>
+    </message>
+    <message>
+        <location filename="../vfilelist.cpp" line="184"/>
+        <source>Name already exists. Please choose another name.</source>
+        <translation>该笔记本名已存在。请选择另一个名字。</translation>
+    </message>
+    <message>
         <location filename="../vfilelist.cpp" line="190"/>
         <location filename="../vfilelist.cpp" line="247"/>
-        <location filename="../vfilelist.cpp" line="432"/>
+        <location filename="../vfilelist.cpp" line="433"/>
         <source>Warning</source>
         <translation>警告</translation>
     </message>
     <message>
+        <location filename="../vfilelist.cpp" line="191"/>
+        <source>Fail to create note %1.</source>
+        <translation>新建笔记失败: %1。</translation>
+    </message>
+    <message>
         <location filename="../vfilelist.cpp" line="248"/>
+        <source>Are you sure to delete note %1?</source>
+        <translation>确认删除笔记: %1？</translation>
+    </message>
+    <message>
+        <location filename="../vfilelist.cpp" line="249"/>
         <source>This may be unrecoverable!</source>
         <translation>该操作不可撤消！</translation>
+    </message>
+    <message>
+        <location filename="../vfilelist.cpp" line="434"/>
+        <source>The renaming will change the note type.</source>
+        <translation>重命名会更改笔记类型。</translation>
+    </message>
+    <message>
+        <location filename="../vfilelist.cpp" line="435"/>
+        <source>You should close the note %1 before continue.</source>
+        <translation>请在继续前先关闭笔记: %1。</translation>
     </message>
 </context>
 <context>
@@ -721,6 +843,11 @@
         <translation>导入文件</translation>
     </message>
     <message>
+        <location filename="../vmainwindow.cpp" line="543"/>
+        <source>Imported notes: %1 succeed, %2 failed.</source>
+        <translation>已导入笔记: %1 成功， %2 失败。</translation>
+    </message>
+    <message>
         <location filename="../vmainwindow.cpp" line="629"/>
         <source>Use system&apos;s background color configuration for Markdown rendering</source>
         <translation>使用系统的背景色设置对Markdown进行渲染</translation>
@@ -962,6 +1089,16 @@ Visit https://github.com/tamlok/vnote.git for more information.</source>
         <translation>警告</translation>
     </message>
     <message>
+        <location filename="../vnotebookselector.cpp" line="216"/>
+        <source>Are you sure to delete notebook %1?</source>
+        <translation>确认删除笔记本: %1？</translation>
+    </message>
+    <message>
+        <location filename="../vnotebookselector.cpp" line="217"/>
+        <source>This will delete any files in this notebook (%1).</source>
+        <translation>该操作会删除该笔记本中的所有文件 (%1)。</translation>
+    </message>
+    <message>
         <location filename="../vnotebookselector.cpp" line="264"/>
         <source>Notebook Information</source>
         <translation>笔记本信息</translation>
@@ -984,6 +1121,16 @@ Visit https://github.com/tamlok/vnote.git for more information.</source>
         <location filename="../dialog/vsettingsdialog.cpp" line="59"/>
         <source>Warning</source>
         <translation>警告</translation>
+    </message>
+    <message>
+        <location filename="../dialog/vsettingsdialog.cpp" line="41"/>
+        <source>Fail to load configuration.</source>
+        <translation>读取配置失败。</translation>
+    </message>
+    <message>
+        <location filename="../dialog/vsettingsdialog.cpp" line="60"/>
+        <source>Fail to save configuration. Please try it again.</source>
+        <translation>保存配置失败。请稍后再试。</translation>
     </message>
 </context>
 </TS>
