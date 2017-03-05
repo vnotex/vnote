@@ -116,3 +116,40 @@ else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../peg-
 else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../peg-highlight/release/peg-highlight.lib
 else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../peg-highlight/debug/peg-highlight.lib
 else:unix: PRE_TARGETDEPS += $$OUT_PWD/../peg-highlight/libpeg-highlight.a
+
+## INSTALLS
+unix:!macx {
+    isEmpty(PREFIX): PREFIX = /usr
+    DATADIR = $${PREFIX}/share
+
+    # install desktop file
+    desktop.path = $${DATADIR}/applications
+    desktop.files += vnote.desktop
+
+    # install icons
+    icon16.path = $${DATADIR}/icons/hicolor/16x16/apps
+    icon16.files = resources/icons/16x16/vnote.png
+
+    icon32.path = $${DATADIR}/icons/hicolor/32x32/apps
+    icon32.files = resources/icons/32x32/vnote.png
+
+    icon48.path = $${DATADIR}/icons/hicolor/48x48/apps
+    icon48.files = resources/icons/48x48/vnote.png
+
+    icon64.path = $${DATADIR}/icons/hicolor/64x64/apps
+    icon64.files = resources/icons/64x64/vnote.png
+
+    icon128.path = $${DATADIR}/icons/hicolor/128x128/apps
+    icon128.files = resources/icons/128x128/vnote.png
+
+    icon256.path = $${DATADIR}/icons/hicolor/256x256/apps
+    icon256.files = resources/icons/256x256/vnote.png
+
+    iconsvg.path = $${DATADIR}/icons/hicolor/scalable/apps
+    iconsvg.files = resources/icons/vnote.svg
+
+    target.path = $${PREFIX}/bin
+
+    INSTALLS += target desktop icon16 icon32 icon48 icon64 icon128 icon256 iconsvg
+    message("VNote will be installed in prefix $${PREFIX}")
+}
