@@ -163,7 +163,24 @@ VNote还支持其他很多的功能，比如：
 
 ***
 # Downloads (下载)
-[Github Release](https://github.com/tamlok/vnote/releases)
+You could download stable tagged releases or latest rolling build.
+
+VNote提供定期释出的稳定版本，以及总是保持最新的滚(wen)动(ding)构建版本。
+
+## Windows
+![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/tamlok/vnote?svg=true)
+
+- Tagged releases: [Github Release](https://github.com/tamlok/vnote/releases)
+- Rolling build: [AppVeyor Artifacts](https://ci.appveyor.com/project/tamlok/vnote/build/artifacts)
+
+
+- 稳定版本: [Github Release](https://github.com/tamlok/vnote/releases)
+- 滚动构建版本: [AppVeyor Artifacts](https://ci.appveyor.com/project/tamlok/vnote/build/artifacts)
+
+
+## Linux
+
+## MacOS
 
 ***
 # Build & Development (构建与开发)
@@ -178,6 +195,19 @@ git submodule update --init
 Download [Qt 5.7.0](http://info.qt.io/download-qt-for-application-development) and open `VNote.pro` as a project.
 
 下载[Qt 5.7.0](http://info.qt.io/download-qt-for-application-development)，导入`VNote.pro`创建一个工程。
+
+### Linux Command Line (Linux命令行)
+If you prefer command line on Linux, you could follow these steps.
+
+```
+cd vnote.git
+mkdir build
+cd build
+# May need to use the qmake in your downloaded Qt.
+qmake ../VNote.pro
+make
+sudo make install
+```
 
 ***
 # Dependencies (依赖)
