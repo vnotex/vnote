@@ -6,6 +6,27 @@
 ![VNote](screenshots/vnote.png)
 
 ***
+# Downloads (下载)
+You could download stable tagged releases or latest rolling build.
+
+VNote提供定期释出的稳定版本，以及总是保持最新的滚(wen)动(ding)构建版本。
+
+## Windows
+![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/tamlok/vnote?svg=true)
+
+- Tagged releases: [Github Release](https://github.com/tamlok/vnote/releases)
+- Rolling build: [AppVeyor Artifacts](https://ci.appveyor.com/project/tamlok/vnote/build/artifacts)
+
+
+- 稳定版本: [Github Release](https://github.com/tamlok/vnote/releases)
+- 滚动构建版本: [AppVeyor Artifacts](https://ci.appveyor.com/project/tamlok/vnote/build/artifacts)
+
+
+## Linux
+
+## MacOS
+
+***
 # Description (简介)
 **VNote** is a Qt-based, free and open source note-taking application, focusing on Markdown. VNote is designed to provide comfortable edit experience.
 
@@ -160,27 +181,6 @@ VNote还支持其他很多的功能，比如：
 - 强大的页内查找；
 
 ![VNote Find](screenshots/vnote_009.png)
-
-***
-# Downloads (下载)
-You could download stable tagged releases or latest rolling build.
-
-VNote提供定期释出的稳定版本，以及总是保持最新的滚(wen)动(ding)构建版本。
-
-## Windows
-![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/tamlok/vnote?svg=true)
-
-- Tagged releases: [Github Release](https://github.com/tamlok/vnote/releases)
-- Rolling build: [AppVeyor Artifacts](https://ci.appveyor.com/project/tamlok/vnote/build/artifacts)
-
-
-- 稳定版本: [Github Release](https://github.com/tamlok/vnote/releases)
-- 滚动构建版本: [AppVeyor Artifacts](https://ci.appveyor.com/project/tamlok/vnote/build/artifacts)
-
-
-## Linux
-
-## MacOS
 
 ***
 # Build & Development (构建与开发)
