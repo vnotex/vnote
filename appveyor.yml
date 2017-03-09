@@ -38,7 +38,8 @@ after_build:
     - copy "%APPVEYOR_BUILD_FOLDER%\build\src\release\VNote.exe" "distrib\VNote\VNote.exe"
     - copy "%APPVEYOR_BUILD_FOLDER%\README.md" "distrib\VNote\README.md"
     - copy "%APPVEYOR_BUILD_FOLDER%\LICENSE" "distrib\VNote\LICENSE.txt"
-    - echo %APPVEYOR_REPO_COMMIT% > "distrib\VNote\version.txt"
+    - echo %APPVEYOR_BUILD_VERSION% > "distrib\VNote\version.txt"
+    - echo %APPVEYOR_REPO_COMMIT% >> "distrib\VNote\version.txt"
     - cd distrib
     - 7z a vnote_win_x86_64_portable_%APPVEYOR_BUILD_VERSION%.zip VNote
 

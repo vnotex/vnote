@@ -23,6 +23,9 @@ VNote提供定期释出的稳定版本，以及总是保持最新的滚(wen)动(
 
 
 ## Linux
+[![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
+
+**NOT** ready yet! Please help yourself to compile and build it from sources.
 
 ## MacOS
 
