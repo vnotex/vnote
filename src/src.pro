@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui webenginewidgets webchannel network
+QT       += core gui webenginewidgets webchannel network svg
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -12,6 +12,7 @@ TARGET = VNote
 TEMPLATE = app
 
 RC_ICONS = resources/icons/vnote.ico
+ICON = resources/icons/vnote.icns
 
 TRANSLATIONS += translations/vnote_zh_CN.ts
 
@@ -96,6 +97,11 @@ HEADERS  += vmainwindow.h \
 RESOURCES += \
     vnote.qrc \
     translations.qrc
+
+macx {
+    LIBS += -L/usr/local/lib
+    INCLUDEPATH += /usr/local/include
+}
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../hoedown/release/ -lhoedown
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../hoedown/debug/ -lhoedown
