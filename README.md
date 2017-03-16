@@ -14,13 +14,8 @@ VNote提供定期释出的稳定版本，以及总是保持最新的滚(wen)动(
 ## Windows
 ![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/tamlok/vnote?svg=true)
 
-- Tagged releases: [Github Release](https://github.com/tamlok/vnote/releases)
-- Rolling build: [AppVeyor Artifacts](https://ci.appveyor.com/project/tamlok/vnote/build/artifacts)
-
-
-- 稳定版本: [Github Release](https://github.com/tamlok/vnote/releases)
-- 滚动构建版本: [AppVeyor Artifacts](https://ci.appveyor.com/project/tamlok/vnote/build/artifacts)
-
+- Tagged releases (稳定版本): [Github Release](https://github.com/tamlok/vnote/releases)
+- Rolling build (滚动构建版本): [Bintray](https://bintray.com/tamlok/vnote/vnote/view/files)
 
 ## Linux
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
@@ -28,6 +23,7 @@ VNote提供定期释出的稳定版本，以及总是保持最新的滚(wen)动(
 **NOT** ready yet! Please help yourself to compile and build it from sources.
 
 ## MacOS
+[![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
 
 ***
 # Description (简介)

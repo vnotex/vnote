@@ -7,11 +7,14 @@ branches:
         - master
 
 environment:
+    COMPILER: msvc
+    VSVER: 14
+
     matrix:
         - QT: C:\Qt\5.7\msvc2015_64
           PLATFORM: amd64
-          COMPILER: msvc
-          VSVER: 14
+        - QT: C:\Qt\5.7\msvc2015
+          PLATFORM: x86
 
 clone_depth: 1
 
@@ -23,9 +26,11 @@ install:
 # scripts that run before build
 before_build:
     - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %PLATFORM%
+    # After calling vcvarsall.bat, %PLATFORM% will be X64 or x86
     - mkdir build
     - cd build
-    - qmake -r -spec win32-msvc2015 CONFIG+=x86_64 CONFIG-=debug CONFIG+=release ../VNote.pro
+    - if "%PLATFORM%" EQU "X64" (qmake -r -spec win32-msvc2015 CONFIG+=x86_64 CONFIG-=debug CONFIG+=release ../VNote.pro)
+    - if "%PLATFORM%" EQU "x86" (qmake -r -spec win32-msvc2015 CONFIG+=Win32 CONFIG-=debug CONFIG+=release ../VNote.pro)
 
 # custom build scripts
 build_script:
@@ -41,8 +46,20 @@ after_build:
     - echo %APPVEYOR_BUILD_VERSION% > "distrib\VNote\version.txt"
     - echo %APPVEYOR_REPO_COMMIT% >> "distrib\VNote\version.txt"
     - cd distrib
-    - 7z a vnote_win_x86_64_portable_%APPVEYOR_BUILD_VERSION%.zip VNote
+    - 7z a vnote_win_%PLATFORM%_portable_%APPVEYOR_BUILD_VERSION%.zip VNote
 
 artifacts:
-    - path: build\distrib\vnote_win_x86_64_portable_%APPVEYOR_BUILD_VERSION%.zip
+    - path: build\distrib\vnote_win_%PLATFORM%_portable_%APPVEYOR_BUILD_VERSION%.zip
       name: portable
+
+deploy:
+    - provider: BinTray
+      username: tamlok
+      api_key:
+          secure: YJqzsVDlC2NYH2RgzbUMtjZWbSXOdWUiiENOIqImo31hOfeiB0MiVGmBLmKPAHEg
+      subject: tamlok
+      repo: vnote
+      package: vnote
+      version: 1.0
+      publish: true
+      override: true
