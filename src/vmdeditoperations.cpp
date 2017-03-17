@@ -657,7 +657,7 @@ bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
     case Qt::Key_L:
     {
         if (modifiers == Qt::NoModifier) {
-            QTextCursor::MoveOperation op;
+            QTextCursor::MoveOperation op = QTextCursor::Left;
             switch (p_event->key()) {
             case Qt::Key_H:
                 op = QTextCursor::Left;
