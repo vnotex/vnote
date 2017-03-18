@@ -315,11 +315,12 @@ void VMainWindow::initFileMenu()
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
 
     // Import notes from files.
-    QAction *importNoteAct = new QAction(QIcon(":/resources/icons/import_note.svg"),
-                                         tr("&Import Notes From Files"), this);
-    importNoteAct->setStatusTip(tr("Import notes from files into current directory"));
-    connect(importNoteAct, &QAction::triggered,
+    m_importNoteAct = new QAction(QIcon(":/resources/icons/import_note.svg"),
+                                        tr("&Import Notes From Files"), this);
+    m_importNoteAct->setStatusTip(tr("Import notes from files into current directory"));
+    connect(m_importNoteAct, &QAction::triggered,
             this, &VMainWindow::importNoteFromFile);
+    m_importNoteAct->setEnabled(false);
 
     // Settings.
     QAction *settingsAct = new QAction(QIcon(":/resources/icons/settings.svg"),
@@ -328,7 +329,7 @@ void VMainWindow::initFileMenu()
     connect(settingsAct, &QAction::triggered,
             this, &VMainWindow::viewSettings);
 
-    fileMenu->addAction(importNoteAct);
+    fileMenu->addAction(m_importNoteAct);
     fileMenu->addSeparator();
     fileMenu->addAction(settingsAct);
 }
@@ -532,18 +533,18 @@ void VMainWindow::importNoteFromFile()
     // Update lastPath
     lastPath = QFileInfo(files[0]).path();
 
-    QStringList failedFiles;
+    int failedFiles = 0;
     for (int i = 0; i < files.size(); ++i) {
         bool ret = fileList->importFile(files[i]);
         if (!ret) {
-            failedFiles.append(files[i]);
+            ++failedFiles;
         }
     }
     QMessageBox msgBox(QMessageBox::Information, tr("Import Notes From File"),
                        tr("Imported notes: %1 succeed, %2 failed.")
-                       .arg(files.size() - failedFiles.size()).arg(failedFiles.size()),
+                       .arg(files.size() - failedFiles).arg(failedFiles),
                        QMessageBox::Ok, this);
-    if (!failedFiles.isEmpty()) {
+    if (failedFiles > 0) {
         msgBox.setInformativeText(tr("Fail to import files maybe due to name conflicts."));
     }
     msgBox.exec();
@@ -874,6 +875,7 @@ const QVector<QPair<QString, QString> >& VMainWindow::getPalette() const
 void VMainWindow::handleCurrentDirectoryChanged(const VDirectory *p_dir)
 {
     newNoteAct->setEnabled(p_dir);
+    m_importNoteAct->setEnabled(p_dir);
 }
 
 void VMainWindow::handleCurrentNotebookChanged(const VNotebook *p_notebook)

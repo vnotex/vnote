@@ -125,6 +125,7 @@ private:
     QAction *saveExitAct;
     QAction *discardExitAct;
     QAction *expandViewAct;
+    QAction *m_importNoteAct;
 
     QAction *m_insertImageAct;
     QAction *m_findReplaceAct;
