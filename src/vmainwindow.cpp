@@ -18,7 +18,7 @@ extern VConfigManager vconfig;
 VNote *g_vnote;
 
 VMainWindow::VMainWindow(QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent), m_onePanel(false)
 {
     setWindowIcon(QIcon(":/resources/icons/vnote.ico"));
     vnote = new VNote(this);
@@ -758,12 +758,14 @@ void VMainWindow::onePanelView()
 {
     changeSplitterView(1);
     expandViewAct->setChecked(false);
+    m_onePanel = true;
 }
 
 void VMainWindow::twoPanelView()
 {
     changeSplitterView(2);
     expandViewAct->setChecked(false);
+    m_onePanel = false;
 }
 
 void VMainWindow::expandPanelView(bool p_checked)
@@ -772,7 +774,11 @@ void VMainWindow::expandPanelView(bool p_checked)
     if (p_checked) {
         nrSplits = 0;
     } else {
-        nrSplits = 2;
+        if (m_onePanel) {
+            nrSplits = 1;
+        } else {
+            nrSplits = 2;
+        }
     }
     changeSplitterView(nrSplits);
 }
@@ -913,7 +919,7 @@ void VMainWindow::insertImage()
     m_curTab->insertImage();
 }
 
-void VMainWindow::locateFile(VFile *p_file) const
+void VMainWindow::locateFile(VFile *p_file)
 {
     if (!p_file) {
         return;
@@ -932,6 +938,9 @@ void VMainWindow::locateFile(VFile *p_file) const
             fileList->locateFile(p_file);
         }
     }
+
+    // Open the directory and file panels after location.
+    changeSplitterView(2);
 }
 
 void VMainWindow::handleFindDialogTextChanged(const QString &p_text, uint /* p_options */)

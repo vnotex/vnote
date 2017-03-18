@@ -36,7 +36,7 @@ class VMainWindow : public QMainWindow
 public:
     VMainWindow(QWidget *parent = 0);
     const QVector<QPair<QString, QString> > &getPalette() const;
-    void locateFile(VFile *p_file) const;
+    void locateFile(VFile *p_file);
 
 private slots:
     void importNoteFromFile();
@@ -111,6 +111,9 @@ private:
     VOutline *outline;
     VAvatar *m_avatar;
     VFindReplaceDialog *m_findReplaceDialog;
+
+    // Whether it is one panel or two panles.
+    bool m_onePanel;
 
     // Actions
     QAction *newRootDirAct;
