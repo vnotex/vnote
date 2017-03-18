@@ -5,6 +5,40 @@
 
 ![VNote](screenshots/vnote.png)
 
+
+<!-- vim-markdown-toc GFM -->
+* [Downloads (下载)](#downloads-下载)
+  * [Windows](#windows)
+  * [Linux](#linux)
+  * [MacOS](#macos)
+* [Description (简介)](#description-简介)
+* [Support (支持)](#support-支持)
+* [Why VNote (开发VNote的动机)](#why-vnote-开发vnote的动机)
+  * [Markdown Editor & Note-Taking (Markdown编辑器与笔记管理)](#markdown-editor--note-taking-markdown编辑器与笔记管理)
+  * [Pleasant Markdown Experience (舒适的Markdown体验)](#pleasant-markdown-experience-舒适的markdown体验)
+* [Features (功能)](#features-功能)
+  * [Notebook-Based Notes Management (基于笔记本的管理)](#notebook-based-notes-management-基于笔记本的管理)
+  * [Simple Notes Management (直观的笔记管理)](#simple-notes-management-直观的笔记管理)
+  * [Minimum Gap Between Edit and View (最小化编辑与阅读的鸿沟)](#minimum-gap-between-edit-and-view-最小化编辑与阅读的鸿沟)
+    * [Syntax Highlight (语法高亮)](#syntax-highlight-语法高亮)
+    * [Live Image Preview (实时图片预览)](#live-image-preview-实时图片预览)
+    * [Pleasant Image Experience (良好的图片体验)](#pleasant-image-experience-良好的图片体验)
+    * [Interactive Outline Viewer for Edit and View Mode (编辑和阅读时交互式大纲视图)](#interactive-outline-viewer-for-edit-and-view-mode-编辑和阅读时交互式大纲视图)
+    * [Edit and View Synchronization (同步编辑与阅读模式)](#edit-and-view-synchronization-同步编辑与阅读模式)
+  * [Powerful Shortcuts (强大的快捷键)](#powerful-shortcuts-强大的快捷键)
+  * [Window Split (窗口分割)](#window-split-窗口分割)
+  * [Highly Configurable (高度可定制)](#highly-configurable-高度可定制)
+  * [Others (其他)](#others-其他)
+* [Build & Development (构建与开发)](#build--development-构建与开发)
+  * [Clone & Init (克隆代码仓库)](#clone--init-克隆代码仓库)
+  * [Download Qt & Have Fun (下载Qt)](#download-qt--have-fun-下载qt)
+    * [Linux Command Line (Linux命令行)](#linux-command-line-linux命令行)
+  * [MacOS](#macos-1)
+* [Dependencies (依赖)](#dependencies-依赖)
+* [License (代码许可)](#license-代码许可)
+
+<!-- vim-markdown-toc -->
+
 # Downloads (下载)
 You could download stable tagged releases or latest rolling build.
 
