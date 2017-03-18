@@ -5,11 +5,12 @@
 
 ![VNote](screenshots/vnote.png)
 
-***
 # Downloads (下载)
 You could download stable tagged releases or latest rolling build.
 
 VNote提供定期释出的稳定版本，以及总是保持最新的滚(wen)动(ding)构建版本。
+
+对于稳定版本，为国内用户提供网盘下载：[Yunpan](http://pan.baidu.com/s/1jI5HROq)。
 
 ## Windows
 ![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/tamlok/vnote?svg=true)
@@ -25,25 +26,25 @@ VNote提供定期释出的稳定版本，以及总是保持最新的滚(wen)动(
 ## MacOS
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
 
-***
+- Tagged releases (稳定版本): [Github Release](https://github.com/tamlok/vnote/releases)
+- Rolling build (滚动构建版本): [Bintray](https://bintray.com/tamlok/vnote/vnote/view/files)
+
 # Description (简介)
 **VNote** is a Qt-based, free and open source note-taking application, focusing on Markdown. VNote is designed to provide comfortable edit experience.
 
-Utilizing Qt, VNote could run on **Linux**, **Windows** and MacOS (not tested yet). Android support will be on the road soon.
+Utilizing Qt, VNote could run on **Linux**, **Windows** and **MacOS**. Android support will be on the road soon.
 
 **VNote**是一个基于Qt框架的、免费的开源笔记软件。VNote专注于Markdown的编辑与阅读，以提供舒适的编辑体验为设计目标。
 
-基于Qt框架，VNote能够在主流操作系统上运行，包括 **Linux**, **Windows** 以及MacOS（未测试）。Android客户端目前也在开发计划内，敬请期待。
+基于Qt框架，VNote能够在主流操作系统上运行，包括 **Linux**, **Windows** 以及 **MacOS**。Android客户端目前也在开发计划内，敬请期待。
 
 ![VNote](screenshots/vnote_001.png)
 
-***
 # Support (支持)
 - [Github Issues](https://github.com/tamlok/vnote/issues)
 - Email: tamlokveer at gmail.com
 - QQ群: **487756074** (VNote使用和开发)
 
-***
 # Why VNote (开发VNote的动机)
 ## Markdown Editor & Note-Taking (Markdown编辑器与笔记管理)
 VNote tries to be a Markdown editor with notes management, or a note-taking application with pleasant Markdown support.
@@ -67,7 +68,6 @@ VNote尝试尽量减小Markdown与生俱来的编辑和阅读之间的割裂感�
 
 另外，VNote也借鉴了Vim和Shell来提供很多非常方便高效的快捷键。VNote目前没有提供真正的Vim模式，这是因为和编写代码不一样，在编辑笔记的时候用户一般都是顺序编写的。
 
-***
 # Features (功能)
 ## Notebook-Based Notes Management (基于笔记本的管理)
 VNote uses **notebooks** to hold your notes. Like OneNote, a notebook can be hosted on any location in your system. A notebook is designed to represent one account. For example, you could have one notebook hosted on local file system and another notebook hosted on an OwnCloud server. This is really useful when notes require different levels of security.
@@ -181,7 +181,6 @@ VNote还支持其他很多的功能，比如：
 
 ![VNote Find](screenshots/vnote_009.png)
 
-***
 # Build & Development (构建与开发)
 ## Clone & Init (克隆代码仓库)
 ```
@@ -208,7 +207,6 @@ make
 sudo make install
 ```
 
-***
 # Dependencies (依赖)
 - [Qt 5.7](http://qt-project.org) (L-GPL v3)
 - [PEG Markdown Highlight](http://hasseg.org/peg-markdown-highlight/) (MIT License)
@@ -217,7 +215,6 @@ sudo make install
 - [Highlight.js](https://github.com/isagalaev/highlight.js/) (BSD License)
 - [Ionicons 2.0.1](https://github.com/driftyco/ionicons/) (MIT License)
 
-***
 # License (代码许可)
 VNote is licensed under the [MIT license](http://opensource.org/licenses/MIT).
 
