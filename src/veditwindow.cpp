@@ -17,12 +17,13 @@ VEditWindow::VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent)
     initTabActions();
     setupCornerWidget();
 
+    // Explicit speficy in macOS.
+    setUsesScrollButtons(true);
     setTabsClosable(true);
     setMovable(true);
     setContextMenuPolicy(Qt::CustomContextMenu);
 
     QTabBar *bar = tabBar();
-    bar->installEventFilter(this);
     bar->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(bar, &QTabBar::customContextMenuRequested,
             this, &VEditWindow::tabbarContextMenuRequested);
@@ -592,36 +593,6 @@ void VEditWindow::updateNotebookInfo(const VNotebook *p_notebook)
         if (p_notebook->containsFile(file)) {
             noticeStatus(i);
         }
-    }
-}
-
-bool VEditWindow::eventFilter(QObject *watched, QEvent *event)
-{
-    if (event->type() == QEvent::Resize) {
-        setLeftCornerWidgetVisible(scrollerVisible());
-    }
-    return QTabWidget::eventFilter(watched, event);
-}
-
-bool VEditWindow::scrollerVisible() const
-{
-    QTabBar *bar = tabBar();
-    int barWidth = rect().width() - leftBtn->width() - rightBtn->width();
-    int nrTab = count();
-    int tabsWidth = 0;
-    for (int i = 0; i < nrTab; ++i) {
-        tabsWidth += bar->tabRect(i).width();
-    }
-    return tabsWidth > barWidth;
-}
-
-void VEditWindow::setLeftCornerWidgetVisible(bool p_visible)
-{
-    if (p_visible) {
-        setCornerWidget(leftBtn, Qt::TopLeftCorner);
-        leftBtn->setVisible(true);
-    } else {
-        setCornerWidget(NULL, Qt::TopLeftCorner);
     }
 }
 

@@ -49,7 +49,6 @@ public:
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
-    bool eventFilter(QObject *watched, QEvent *event) Q_DECL_OVERRIDE;
 
 signals:
     void tabStatusChanged(const VFile *p_file, const VEditTab *p_editTab, bool p_editMode);
@@ -91,9 +90,6 @@ private:
     inline QString generateTooltip(const VFile *p_file) const;
     inline QString generateTabText(const QString &p_name, bool p_modified) const;
     bool canRemoveSplit();
-    // If the scroller of the tabBar() is visible
-    bool scrollerVisible() const;
-    void setLeftCornerWidgetVisible(bool p_visible);
 
     VNote *vnote;
     VEditArea *m_editArea;
