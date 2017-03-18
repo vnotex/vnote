@@ -49,7 +49,7 @@ after_build:
     - 7z a vnote_win_%PLATFORM%_portable_%APPVEYOR_BUILD_VERSION%.zip VNote
 
 artifacts:
-    - path: build\distrib\vnote_win_%PLATFORM%_portable_%APPVEYOR_BUILD_VERSION%.zip
+    - path: build\distrib\VNote_%APPVEYOR_BUILD_VERSION%_win_%PLATFORM%_portable.zip
       name: portable
 
 deploy:
