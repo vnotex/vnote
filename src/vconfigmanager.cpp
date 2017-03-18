@@ -35,7 +35,11 @@ void VConfigManager::initialize()
     userSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, orgName, appName);
     defaultSettings = new QSettings(defaultConfigFilePath, QSettings::IniFormat);
 
-    baseEditFont.setPointSize(11);
+    m_editorFontSize = getConfigFromSettings("global", "editor_font_size").toInt();
+    if (m_editorFontSize <= 0) {
+        m_editorFontSize = 12;
+    }
+    baseEditFont.setPointSize(m_editorFontSize);
     baseEditPalette = QTextEdit().palette();
 
     welcomePagePath = getConfigFromSettings("global", "welcome_page_path").toString();

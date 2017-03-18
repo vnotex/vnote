@@ -130,6 +130,7 @@ private:
     // Update baseEditPalette according to curBackgroundColor
     void updatePaletteColor();
 
+    int m_editorFontSize;
     QFont baseEditFont;
     QPalette baseEditPalette;
     QFont mdEditFont;
