@@ -197,6 +197,8 @@ Download [Qt 5.7.0](http://info.qt.io/download-qt-for-application-development) a
 ### Linux Command Line (Linux命令行)
 If you prefer command line on Linux, you could follow these steps.
 
+在Linux命令行下，你可以执行以下命令来编译和安装：
+
 ```
 cd vnote.git
 mkdir build
@@ -206,6 +208,68 @@ qmake ../VNote.pro
 make
 sudo make install
 ```
+
+## MacOS
+If you prefer command line on macOS, you could follow these steps.
+
+1. Install Xcode and Homebrew;
+2. Install Qt5.7 via Homebrew:
+
+    ```
+    brew install qt@5.7
+    ```
+3. In the project directory, create `build_macos.sh` like this:
+
+    ```sh
+    QTDIR="/usr/local/opt/qt@5.7"
+    PATH="$QTDIR/bin:$PATH"
+    LDFLAGS=-L$QTDIR/lib
+    CPPFLAGS=-I$QTDIR/include
+
+    mkdir -p build
+    cd build
+    qmake -v
+    qmake -config release ../VNote.pro
+    make -j2
+    ```
+4. Make `build_macos.sh` executable and run it:
+
+    ```sh
+    chmod +x build_macos.sh
+    ./build_macos.sh
+    ```
+5. Now you got the bundle `path/to/project/build/src/VNote.app`. Enjoy yourself!
+
+
+在macOS下，你可以执行以下命令来编译：
+
+1. 安装Xcode和Homebrew：
+2. 通过Homebrew安装Qt5.7：
+
+    ```
+    brew install qt@5.7
+    ```
+3. 在VNote源码根目录下，新建一个文件`build_macos.sh`：
+
+    ```sh
+    QTDIR="/usr/local/opt/qt@5.7"
+    PATH="$QTDIR/bin:$PATH"
+    LDFLAGS=-L$QTDIR/lib
+    CPPFLAGS=-I$QTDIR/include
+
+    mkdir -p build
+    cd build
+    qmake -v
+    qmake -config release ../VNote.pro
+    make -j2
+    ```
+4. 修改`build_macos.sh`的执行权限，并执行：
+
+    ```sh
+    chmod +x build_macos.sh
+    ./build_macos.sh
+    ```
+5. 此时得到VNote的Bundle `path/to/project/build/src/VNote.app`，打开即可。
 
 # Dependencies (依赖)
 - [Qt 5.7](http://qt-project.org) (L-GPL v3)
