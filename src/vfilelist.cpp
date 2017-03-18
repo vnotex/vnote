@@ -174,8 +174,9 @@ void VFileList::newFile()
         return;
     }
     QString info = tr("Create a note in %1.").arg(m_directory->getName());
+    info = info + "\n" + tr("Note with name ending with \".md\" will be treated as Markdown type.");
     QString text(tr("Note &name:"));
-    QString defaultText("new_note");
+    QString defaultText("new_note.md");
     do {
         VNewFileDialog dialog(tr("Create Note"), info, text, defaultText, this);
         if (dialog.exec() == QDialog::Accepted) {

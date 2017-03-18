@@ -19,7 +19,8 @@ void VNewFileDialog::setupUI()
 
     nameLabel = new QLabel(name);
     nameEdit = new QLineEdit(defaultName);
-    nameEdit->selectAll();
+    int dotIndex = defaultName.lastIndexOf('.');
+    nameEdit->setSelection(0, (dotIndex == -1) ? defaultName.size() : dotIndex);
     nameLabel->setBuddy(nameEdit);
 
     // Ok is the default button.

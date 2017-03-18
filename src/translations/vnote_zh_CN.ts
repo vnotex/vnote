@@ -364,63 +364,68 @@
     <message>
         <location filename="../vfilelist.cpp" line="176"/>
         <source>Create a note in %1.</source>
-        <translation>在目录 %1 中新建一个笔记。</translation>
+        <translation>在目录 %1 中新建笔记。</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="177"/>
+        <source>Note with name ending with &quot;.md&quot; will be treated as Markdown type.</source>
+        <translation>名字以&quot;.md&quot;结尾的笔记会被作为Markdown类型处理。</translation>
+    </message>
+    <message>
+        <location filename="../vfilelist.cpp" line="178"/>
         <source>Note &amp;name:</source>
         <translation>笔记名 (&amp;N):</translation>
     </message>
     <message>
-        <location filename="../vfilelist.cpp" line="180"/>
+        <location filename="../vfilelist.cpp" line="181"/>
         <source>Create Note</source>
         <translation>新建笔记</translation>
     </message>
     <message>
-        <location filename="../vfilelist.cpp" line="184"/>
+        <location filename="../vfilelist.cpp" line="185"/>
         <source>Name already exists. Please choose another name.</source>
         <translation>该笔记本名已存在。请选择另一个名字。</translation>
     </message>
     <message>
-        <location filename="../vfilelist.cpp" line="190"/>
-        <location filename="../vfilelist.cpp" line="247"/>
-        <location filename="../vfilelist.cpp" line="414"/>
-        <location filename="../vfilelist.cpp" line="438"/>
+        <location filename="../vfilelist.cpp" line="191"/>
+        <location filename="../vfilelist.cpp" line="248"/>
+        <location filename="../vfilelist.cpp" line="415"/>
+        <location filename="../vfilelist.cpp" line="439"/>
         <source>Warning</source>
         <translation>警告</translation>
     </message>
     <message>
-        <location filename="../vfilelist.cpp" line="191"/>
+        <location filename="../vfilelist.cpp" line="192"/>
         <source>Fail to create note %1.</source>
         <translation>新建笔记失败: %1。</translation>
     </message>
     <message>
-        <location filename="../vfilelist.cpp" line="248"/>
+        <location filename="../vfilelist.cpp" line="249"/>
         <source>Are you sure to delete note %1?</source>
         <translation>确认删除笔记: %1？</translation>
     </message>
     <message>
-        <location filename="../vfilelist.cpp" line="249"/>
+        <location filename="../vfilelist.cpp" line="250"/>
         <source>This may be unrecoverable!</source>
         <translation>该操作不可撤消！</translation>
     </message>
     <message>
-        <location filename="../vfilelist.cpp" line="415"/>
+        <location filename="../vfilelist.cpp" line="416"/>
         <source>Fail to copy note %1.</source>
         <translation>复制笔记失败: %1。</translation>
     </message>
     <message>
-        <location filename="../vfilelist.cpp" line="416"/>
+        <location filename="../vfilelist.cpp" line="417"/>
         <source>Please check if there already exists a file with the same name in the target directory.</source>
         <translation>请检查目标文件夹中是否存在同名文件。</translation>
     </message>
     <message>
-        <location filename="../vfilelist.cpp" line="439"/>
+        <location filename="../vfilelist.cpp" line="440"/>
         <source>The renaming will change the note type.</source>
         <translation>重命名会更改笔记类型。</translation>
     </message>
     <message>
-        <location filename="../vfilelist.cpp" line="440"/>
+        <location filename="../vfilelist.cpp" line="441"/>
         <source>You should close the note %1 before continue.</source>
         <translation>请在继续前先关闭笔记: %1。</translation>
     </message>
