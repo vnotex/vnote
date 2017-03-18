@@ -429,7 +429,7 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
         }
     }
 
-    menu.exec(mapToGlobal(p_pos));
+    menu.exec(bar->mapToGlobal(p_pos));
 }
 
 void VEditWindow::tabListJump(QAction *action)
