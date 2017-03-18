@@ -96,7 +96,7 @@ void VNotebookSelector::insertAddNotebookItem()
 {
     QListWidgetItem *item = new QListWidgetItem();
     item->setIcon(QIcon(":/resources/icons/create_notebook.svg"));
-    item->setText("Add Notebook");
+    item->setText(tr("Add Notebook"));
     QFont font;
     font.setItalic(true);
     item->setData(Qt::FontRole, font);
@@ -355,4 +355,14 @@ bool VNotebookSelector::locateNotebook(const VNotebook *p_notebook)
         }
     }
     return false;
+}
+
+void VNotebookSelector::showPopup()
+{
+    if (count() <= c_notebookStartIdx) {
+        // No normal notebook items. Just add notebook.
+        newNotebook();
+        return;
+    }
+    QComboBox::showPopup();
 }

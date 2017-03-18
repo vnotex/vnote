@@ -21,6 +21,7 @@ public:
     inline void setEditArea(VEditArea *p_editArea);
     // Select notebook @p_notebook.
     bool locateNotebook(const VNotebook *p_notebook);
+    void showPopup() Q_DECL_OVERRIDE;
 
 signals:
     void curNotebookChanged(VNotebook *p_notebook);
