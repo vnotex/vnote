@@ -46,7 +46,7 @@ after_build:
     - echo %APPVEYOR_BUILD_VERSION% > "distrib\VNote\version.txt"
     - echo %APPVEYOR_REPO_COMMIT% >> "distrib\VNote\version.txt"
     - cd distrib
-    - 7z a vnote_win_%PLATFORM%_portable_%APPVEYOR_BUILD_VERSION%.zip VNote
+    - 7z a VNote_%APPVEYOR_BUILD_VERSION%_win_%PLATFORM%_portable.zip VNote
 
 artifacts:
     - path: build\distrib\VNote_%APPVEYOR_BUILD_VERSION%_win_%PLATFORM%_portable.zip
