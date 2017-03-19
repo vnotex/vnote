@@ -16,15 +16,14 @@ class VMdEditOperations : public VEditOperations
 public:
     VMdEditOperations(VEdit *p_editor, VFile *p_file);
     bool insertImageFromMimeData(const QMimeData *source) Q_DECL_OVERRIDE;
-    bool insertURLFromMimeData(const QMimeData *source) Q_DECL_OVERRIDE;
     bool insertImage() Q_DECL_OVERRIDE;
     bool handleKeyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
+    bool insertImageFromURL(const QUrl &p_imageUrl) Q_DECL_OVERRIDE;
 
 private slots:
     void pendingTimerTimeout();
 
 private:
-    bool insertImageFromURL(const QUrl &imageUrl);
     void insertImageFromPath(const QString &title, const QString &path, const QString &oriImagePath);
     void insertImageFromQImage(const QString &title, const QString &path, const QImage &image);
     void setKeyState(KeyState p_state);

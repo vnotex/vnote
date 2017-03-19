@@ -6,6 +6,7 @@
 #include "vconfigmanager.h"
 #include "vtoc.h"
 #include "utils/vutils.h"
+#include "dialog/vselectdialog.h"
 
 extern VConfigManager vconfig;
 extern VNote *g_vnote;
@@ -106,18 +107,62 @@ bool VMdEdit::canInsertFromMimeData(const QMimeData *source) const
 
 void VMdEdit::insertFromMimeData(const QMimeData *source)
 {
+    VSelectDialog dialog(tr("Insert From Clipboard"), this);
+    dialog.addSelection(tr("Insert As Image"), 0);
+    dialog.addSelection(tr("Insert As Text"), 1);
+
     if (source->hasImage()) {
         // Image data in the clipboard
-        bool ret = m_editOps->insertImageFromMimeData(source);
-        if (ret) {
-            return;
+        if (source->hasText()) {
+            if (dialog.exec() == QDialog::Accepted) {
+                if (dialog.getSelection() == 1) {
+                    // Insert as text.
+                    Q_ASSERT(source->hasText() && source->hasImage());
+                    VEdit::insertFromMimeData(source);
+                    return;
+                }
+            } else {
+                return;
+            }
         }
+        m_editOps->insertImageFromMimeData(source);
+        return;
     } else if (source->hasUrls()) {
-        // Paste an image file
-        bool ret = m_editOps->insertURLFromMimeData(source);
-        if (ret) {
-            return;
+        QList<QUrl> urls = source->urls();
+        if (urls.size() == 1 && VUtils::isImageURL(urls[0])) {
+            if (dialog.exec() == QDialog::Accepted) {
+                // FIXME: After calling dialog.exec(), source->hasUrl() returns false.
+                if (dialog.getSelection() == 0) {
+                    // Insert as image.
+                    m_editOps->insertImageFromURL(urls[0]);
+                    return;
+                }
+                QMimeData newSource;
+                newSource.setUrls(urls);
+                VEdit::insertFromMimeData(&newSource);
+                return;
+            } else {
+                return;
+            }
         }
+    } else if (source->hasText()) {
+        QString text = source->text();
+        if (VUtils::isImageURLText(text)) {
+            // The text is a URL to an image.
+            if (dialog.exec() == QDialog::Accepted) {
+                if (dialog.getSelection() == 0) {
+                    // Insert as image.
+                    QUrl url(text);
+                    if (url.isValid()) {
+                        m_editOps->insertImageFromURL(QUrl(text));
+                    }
+                    return;
+                }
+            } else {
+                return;
+            }
+        }
+        Q_ASSERT(source->hasText());
     }
     VEdit::insertFromMimeData(source);
 }

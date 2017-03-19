@@ -9,6 +9,8 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QDateTime>
+#include <QFileInfo>
+#include <QImageReader>
 
 const QVector<QPair<QString, QString>> VUtils::c_availableLanguages = {QPair<QString, QString>("en_US", "Englisth(US)"),
                                                                        QPair<QString, QString>("zh_CN", "Chinese")};
@@ -320,4 +322,21 @@ bool VUtils::isValidLanguage(const QString &p_lang)
         }
     }
     return false;
+}
+
+bool VUtils::isImageURL(const QUrl &p_url)
+{
+    QString urlStr;
+    if (p_url.isLocalFile()) {
+        urlStr = p_url.toLocalFile();
+    } else {
+        urlStr = p_url.toString();
+    }
+    return isImageURLText(urlStr);
+}
+
+bool VUtils::isImageURLText(const QString &p_url)
+{
+    QFileInfo info(p_url);
+    return QImageReader::supportedImageFormats().contains(info.suffix().toLower().toLatin1());
 }

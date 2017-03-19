@@ -6,6 +6,7 @@
 #include <QVector>
 #include <QPair>
 #include <QMessageBox>
+#include <QUrl>
 #include "vconfigmanager.h"
 #include "vconstants.h"
 
@@ -37,6 +38,8 @@ public:
                            QMessageBox::StandardButton p_defaultBtn, QWidget *p_parent);
     static const QVector<QPair<QString, QString> > &getAvailableLanguages();
     static bool isValidLanguage(const QString &p_lang);
+    static bool isImageURL(const QUrl &p_url);
+    static bool isImageURLText(const QString &p_url);
 
 private:
     // <value, name>

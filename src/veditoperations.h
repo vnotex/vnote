@@ -20,8 +20,8 @@ public:
     VEditOperations(VEdit *p_editor, VFile *p_file);
     virtual ~VEditOperations();
     virtual bool insertImageFromMimeData(const QMimeData *source) = 0;
-    virtual bool insertURLFromMimeData(const QMimeData *source) = 0;
     virtual bool insertImage() = 0;
+    virtual bool insertImageFromURL(const QUrl &p_imageUrl) = 0;
     // Return true if @p_event has been handled and no need to be further
     // processed.
     virtual bool handleKeyPressEvent(QKeyEvent *p_event) = 0;

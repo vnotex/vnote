@@ -31,6 +31,10 @@ void VNote::initPalette(QPalette palette)
                                              palette.background().color().name()));
     m_palette.append(QPair<QString, QString>("hover-color", "#42A5F5"));
     m_palette.append(QPair<QString, QString>("base-color", "#BDBDBD"));
+    m_palette.append(QPair<QString, QString>("focus-color", "#15AE67"));
+    m_palette.append(QPair<QString, QString>("logo-base", "#D6EACE"));
+    m_palette.append(QPair<QString, QString>("logo-max", "#15AE67"));
+    m_palette.append(QPair<QString, QString>("logo-min", "#75C5B5"));
 
     // Material Design Colors
     m_palette.append(QPair<QString, QString>("Teal0", "#E0F2F1"));

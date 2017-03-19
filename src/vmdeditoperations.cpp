@@ -14,6 +14,7 @@
 #include <QClipboard>
 #include "vmdeditoperations.h"
 #include "dialog/vinsertimagedialog.h"
+#include "dialog/vselectdialog.h"
 #include "utils/vutils.h"
 #include "vedit.h"
 #include "vdownloader.h"
@@ -139,29 +140,6 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
             insertImageFromQImage(dialog.getImageTitleInput(), m_file->retriveImagePath(),
                                 dialog.getImage());
         }
-    }
-    return true;
-}
-
-bool VMdEditOperations::insertURLFromMimeData(const QMimeData *source)
-{
-    QList<QUrl> urls = source->urls();
-    if (urls.size() != 1) {
-        return false;
-    }
-    QUrl url = urls.at(0);
-    QString urlStr;
-    if (url.isLocalFile()) {
-        urlStr = url.toLocalFile();
-    } else {
-        urlStr = url.toString();
-    }
-    QFileInfo info(urlStr);
-    if (QImageReader::supportedImageFormats().contains(info.suffix().toLower().toLatin1())) {
-        insertImageFromURL(url);
-    } else {
-        // urlStr will contain extra %0A. Let the base method handle.
-        return false;
     }
     return true;
 }

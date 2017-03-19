@@ -13,6 +13,10 @@ QPushButton[CornerBtn="true"]::hover {
     background-color: @hover-color;
 }
 
+QPushButton[CornerBtn="true"]::focus {
+    background-color: @focus-color;
+}
+
 QPushButton[FlatBtn="true"] {
     padding: 4px;
     margin: 0px;
@@ -24,6 +28,26 @@ QPushButton[FlatBtn="true"]::hover {
     background-color: @hover-color;
 }
 
+QPushButton[FlatBtn="true"]::focus {
+    background-color: @focus-color;
+}
+
+QPushButton[SelectionBtn="true"] {
+    padding: 4px 10px 4px 10px;
+    border: none;
+    background-color: transparent;
+    font-size: 18px;
+    text-align: left;
+}
+
+QPushButton[SelectionBtn="true"]::hover {
+    background-color: @hover-color;
+}
+
+QPushButton[SelectionBtn="true"]::focus {
+    background-color: @focus-color;
+}
+
 QPushButton[TitleBtn="true"] {
     padding: 4px;
     margin: 0px;
@@ -33,6 +57,10 @@ QPushButton[TitleBtn="true"] {
 
 QPushButton[TitleBtn="true"]::hover {
     background-color: @hover-color;
+}
+
+QPushButton[TitleBtn="true"]::focus {
+    background-color: @focus-color;
 }
 
 QToolBar {
