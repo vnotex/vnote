@@ -60,7 +60,7 @@ VNotebook *VNotebook::createNotebook(const QString &p_name, const QString &p_pat
     return nb;
 }
 
-void VNotebook::deleteNotebook(VNotebook *p_notebook)
+void VNotebook::deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles)
 {
     if (!p_notebook) {
         return;
@@ -70,9 +70,11 @@ void VNotebook::deleteNotebook(VNotebook *p_notebook)
     p_notebook->close();
     delete p_notebook;
 
-    QDir dir(path);
-    if (!dir.removeRecursively()) {
-        qWarning() << "fail to delete" << path;
+    if (p_deleteFiles) {
+        QDir dir(path);
+        if (!dir.removeRecursively()) {
+            qWarning() << "fail to delete" << path;
+        }
     }
 }
 

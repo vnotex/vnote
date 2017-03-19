@@ -30,8 +30,6 @@ signals:
 
 public slots:
     bool newNotebook();
-    void deleteNotebook();
-    void editNotebookInfo();
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) Q_DECL_OVERRIDE;
@@ -40,6 +38,8 @@ private slots:
     void handleCurIndexChanged(int p_index);
     void handleItemActivated(int p_index);
     void requestPopupListContextMenu(QPoint p_pos);
+    void deleteNotebook();
+    void editNotebookInfo();
 
 private:
     void initActions();
@@ -49,7 +49,7 @@ private:
     int indexOfNotebook(const VNotebook *p_notebook);
     // if @p_import is true, we will use the existing config file.
     void createNotebook(const QString &p_name, const QString &p_path, bool p_import);
-    void deleteNotebook(VNotebook *p_notebook);
+    void deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles);
     void addNotebookItem(const QString &p_name);
     // @p_index is the index of m_notebooks, NOT of QComboBox.
     void removeNotebookItem(int p_index);

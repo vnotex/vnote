@@ -2,6 +2,34 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN">
 <context>
+    <name>VDeleteNotebookDialog</name>
+    <message>
+        <location filename="../dialog/vdeletenotebookdialog.cpp" line="13"/>
+        <source>Are you sure to delete notebook: %1 ?</source>
+        <translation>确认删除笔记本: %1 ?</translation>
+    </message>
+    <message>
+        <location filename="../dialog/vdeletenotebookdialog.cpp" line="16"/>
+        <source>Do not delete files from disk.</source>
+        <translation>不要从磁盘中删除文件。</translation>
+    </message>
+    <message>
+        <location filename="../dialog/vdeletenotebookdialog.cpp" line="18"/>
+        <source>When checked, VNote just removes the notebook instead of deleting files from disk</source>
+        <translation>启用时，VNote只会移除该笔记本，不会从磁盘中删除文件</translation>
+    </message>
+    <message>
+        <location filename="../dialog/vdeletenotebookdialog.cpp" line="102"/>
+        <source>VNote won&apos;t delete files under this directory: %1 .</source>
+        <translation>VNote不会删除该目录下的文件: %1 。</translation>
+    </message>
+    <message>
+        <location filename="../dialog/vdeletenotebookdialog.cpp" line="104"/>
+        <source>This will delete any files under this directory: %1 !</source>
+        <translation>该操作会删除该目录下的所有文件: %1 ！</translation>
+    </message>
+</context>
+<context>
     <name>VDirInfoDialog</name>
     <message>
         <location filename="../dialog/vdirinfodialog.cpp" line="21"/>
@@ -1065,58 +1093,48 @@ Visit https://github.com/tamlok/vnote.git for more information.</source>
 <context>
     <name>VNotebookSelector</name>
     <message>
-        <location filename="../vnotebookselector.cpp" line="48"/>
+        <location filename="../vnotebookselector.cpp" line="49"/>
         <source>&amp;Delete</source>
         <translation>删除 (&amp;D)</translation>
     </message>
     <message>
-        <location filename="../vnotebookselector.cpp" line="49"/>
+        <location filename="../vnotebookselector.cpp" line="50"/>
         <source>Delete current notebook</source>
         <translation>删除当前笔记本</translation>
     </message>
     <message>
-        <location filename="../vnotebookselector.cpp" line="54"/>
+        <location filename="../vnotebookselector.cpp" line="55"/>
         <source>&amp;Info</source>
         <translation>信息 (&amp;I)</translation>
     </message>
     <message>
-        <location filename="../vnotebookselector.cpp" line="55"/>
+        <location filename="../vnotebookselector.cpp" line="56"/>
         <source>View and edit current notebook&apos;s information</source>
         <translation>查看并编辑当前笔记本的信息</translation>
     </message>
     <message>
-        <location filename="../vnotebookselector.cpp" line="103"/>
+        <location filename="../vnotebookselector.cpp" line="104"/>
         <source>Create or import a notebook</source>
         <translation>新建或导入一个笔记本</translation>
     </message>
     <message>
-        <location filename="../vnotebookselector.cpp" line="99"/>
-        <location filename="../vnotebookselector.cpp" line="161"/>
+        <location filename="../vnotebookselector.cpp" line="214"/>
+        <source>Delete Notebook</source>
+        <translation>删除笔记本</translation>
+    </message>
+    <message>
+        <location filename="../vnotebookselector.cpp" line="100"/>
+        <location filename="../vnotebookselector.cpp" line="162"/>
         <source>Add Notebook</source>
         <translation>添加笔记本</translation>
     </message>
     <message>
-        <location filename="../vnotebookselector.cpp" line="167"/>
+        <location filename="../vnotebookselector.cpp" line="168"/>
         <source>Name already exists. Please choose another name.</source>
         <translation>该笔记本名已存在。请选择另一个名字。</translation>
     </message>
     <message>
-        <location filename="../vnotebookselector.cpp" line="215"/>
-        <source>Warning</source>
-        <translation>警告</translation>
-    </message>
-    <message>
-        <location filename="../vnotebookselector.cpp" line="216"/>
-        <source>Are you sure to delete notebook %1?</source>
-        <translation>确认删除笔记本: %1？</translation>
-    </message>
-    <message>
-        <location filename="../vnotebookselector.cpp" line="217"/>
-        <source>This will delete any files in this notebook (%1).</source>
-        <translation>该操作会删除该笔记本中的所有文件 (%1)。</translation>
-    </message>
-    <message>
-        <location filename="../vnotebookselector.cpp" line="264"/>
+        <location filename="../vnotebookselector.cpp" line="261"/>
         <source>Notebook Information</source>
         <translation>笔记本信息</translation>
     </message>

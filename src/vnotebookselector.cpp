@@ -8,6 +8,7 @@
 #include "vconfigmanager.h"
 #include "dialog/vnewnotebookdialog.h"
 #include "dialog/vnotebookinfodialog.h"
+#include "dialog/vdeletenotebookdialog.h"
 #include "vnotebook.h"
 #include "vdirectory.h"
 #include "utils/vutils.h"
@@ -209,20 +210,16 @@ void VNotebookSelector::deleteNotebook()
 
     VNotebook *notebook = getNotebookFromComboIndex(index);
     Q_ASSERT(notebook);
-    QString curName = notebook->getName();
-    QString curPath = notebook->getPath();
 
-    int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                  tr("Are you sure to delete notebook %1?").arg(curName),
-                                  tr("This will delete any files in this notebook (%1).").arg(curPath),
-                                  QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Ok, this);
-    if (ret == QMessageBox::Ok) {
+    VDeleteNotebookDialog dialog(tr("Delete Notebook"), notebook->getName(), notebook->getPath(), this);
+    if (dialog.exec() == QDialog::Accepted) {
+        bool deleteFiles = dialog.getDeleteFiles();
         m_editArea->closeFile(notebook, true);
-        deleteNotebook(notebook);
+        deleteNotebook(notebook, deleteFiles);
     }
 }
 
-void VNotebookSelector::deleteNotebook(VNotebook *p_notebook)
+void VNotebookSelector::deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles)
 {
     int idx = indexOfNotebook(p_notebook);
 
@@ -231,7 +228,7 @@ void VNotebookSelector::deleteNotebook(VNotebook *p_notebook)
 
     removeNotebookItem(idx);
 
-    VNotebook::deleteNotebook(p_notebook);
+    VNotebook::deleteNotebook(p_notebook, p_deleteFiles);
 }
 
 int VNotebookSelector::indexOfNotebook(const VNotebook *p_notebook)
