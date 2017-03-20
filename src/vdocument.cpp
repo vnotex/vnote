@@ -1,29 +1,15 @@
 #include "vdocument.h"
+#include "vfile.h"
 #include <QDebug>
 
-VDocument::VDocument(QObject *parent) : QObject(parent)
+VDocument::VDocument(const VFile *v_file, QObject *p_parent)
+    : QObject(p_parent), m_file(v_file)
 {
-
 }
 
-VDocument::VDocument(const QString &text, QObject *parent)
-    : QObject(parent)
+void VDocument::updateText()
 {
-    m_text = text;
-}
-
-void VDocument::setText(const QString &text)
-{
-    if (text == m_text) {
-        return;
-    }
-    m_text = text;
-    emit textChanged(m_text);
-}
-
-QString VDocument::getText()
-{
-    return m_text;
+    emit textChanged(m_file->getContent());
 }
 
 void VDocument::setToc(const QString &toc)

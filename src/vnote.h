@@ -25,12 +25,10 @@ public:
 
     void initTemplate();
 
-    // Used by Marked
-    static QString templateHtml;
-
-    // Used by other markdown converter
-    static QString preTemplateHtml;
-    static QString postTemplateHtml;
+    static QString s_markdownTemplate;
+    static const QString c_hoedownJsFile;
+    static const QString c_markedJsFile;
+    static const QString c_markedExtraFile;
 
     inline const QVector<QPair<QString, QString> > &getPalette() const;
     void initPalette(QPalette palette);

@@ -25,7 +25,7 @@ public:
     inline VDirectory *getDirectory();
     inline const VDirectory *getDirectory() const;
     inline DocType getDocType() const;
-    inline QString &getContent();
+    inline const QString &getContent() const;
     inline void setContent(const QString &p_content);
     inline VNotebook *getNotebook();
     inline QString getNotebookName() const;
@@ -78,7 +78,7 @@ inline DocType VFile::getDocType() const
     return m_docType;
 }
 
-inline QString &VFile::getContent()
+inline const QString &VFile::getContent() const
 {
     return m_content;
 }

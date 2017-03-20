@@ -43,9 +43,6 @@ void VConfigManager::initialize()
     baseEditPalette = QTextEdit().palette();
 
     welcomePagePath = getConfigFromSettings("global", "welcome_page_path").toString();
-    templatePath = getConfigFromSettings("global", "template_path").toString();
-    preTemplatePath = getConfigFromSettings("global", "pre_template_path").toString();
-    postTemplatePath = getConfigFromSettings("global", "post_template_path").toString();
     templateCssUrl = getConfigFromSettings("global", "template_css_url").toString();
     curNotebookIndex = getConfigFromSettings("global", "current_notebook").toInt();
 

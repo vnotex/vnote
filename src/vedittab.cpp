@@ -21,7 +21,7 @@
 extern VConfigManager vconfig;
 
 VEditTab::VEditTab(VFile *p_file, OpenFileMode p_mode, QWidget *p_parent)
-    : QStackedWidget(p_parent), m_file(p_file), isEditMode(false),
+    : QStackedWidget(p_parent), m_file(p_file), isEditMode(false), document(p_file, this),
       mdConverterType(vconfig.getMdConverterType()), m_fileModified(false),
       m_editArea(NULL)
 {
@@ -109,7 +109,7 @@ void VEditTab::showFileReadMode()
         break;
     case DocType::Markdown:
         if (mdConverterType == MarkdownConverterType::Marked) {
-            document.setText(m_file->getContent());
+            document.updateText();
             updateTocFromHtml(document.getToc());
         } else {
             previewByConverter();
@@ -140,7 +140,7 @@ void VEditTab::scrollPreviewToHeader(int p_outlineIndex)
 void VEditTab::previewByConverter()
 {
     VMarkdownConverter mdConverter;
-    QString &content = m_file->getContent();
+    const QString &content = m_file->getContent();
     QString html = mdConverter.generateHtml(content, vconfig.getMarkdownExtensions());
     QRegularExpression tocExp("<p>\\[TOC\\]<\\/p>", QRegularExpression::CaseInsensitiveOption);
     QString toc = mdConverter.generateToc(content, vconfig.getMarkdownExtensions());
@@ -259,6 +259,9 @@ bool VEditTab::saveFile()
 
 void VEditTab::setupMarkdownPreview()
 {
+    const QString jsHolder("JS_PLACE_HOLDER");
+    const QString extraHolder("<!-- EXTRA_PLACE_HOLDER -->");
+
     webPreviewer = new QWebEngineView(this);
     VPreviewPage *page = new VPreviewPage(this);
     webPreviewer->setPage(page);
@@ -273,14 +276,26 @@ void VEditTab::setupMarkdownPreview()
             this, &VEditTab::handleWebKeyPressed);
     page->setWebChannel(channel);
 
-    if (mdConverterType == MarkdownConverterType::Marked) {
-        webPreviewer->setHtml(VNote::templateHtml,
-                              QUrl::fromLocalFile(m_file->retriveBasePath() + QDir::separator()));
-    } else {
-        webPreviewer->setHtml(VNote::preTemplateHtml + VNote::postTemplateHtml,
-                              QUrl::fromLocalFile(m_file->retriveBasePath() + QDir::separator()));
-    }
+    QString jsFile, extraFile;
+    switch (mdConverterType) {
+    case MarkdownConverterType::Marked:
+        jsFile = "qrc" + VNote::c_markedJsFile;
+        extraFile = "<script src=\"qrc" + VNote::c_markedExtraFile + "\"></script>";
+        break;
 
+    case MarkdownConverterType::Hoedown:
+        jsFile = "qrc" + VNote::c_hoedownJsFile;
+        break;
+
+    default:
+        Q_ASSERT(false);
+    }
+    QString htmlTemplate = VNote::s_markdownTemplate;
+    htmlTemplate.replace(jsHolder, jsFile);
+    if (!extraFile.isEmpty()) {
+        htmlTemplate.replace(extraHolder, extraFile);
+    }
+    webPreviewer->setHtml(htmlTemplate, QUrl::fromLocalFile(m_file->retriveBasePath() + QDir::separator()));
     addWidget(webPreviewer);
 }
 

@@ -51,8 +51,6 @@ public:
 
     inline QString getWelcomePagePath() const;
 
-    inline QString getTemplatePath() const;
-
     inline QString getTemplateCssUrl() const;
 
     inline QFont getBaseEditFont() const;
@@ -67,9 +65,6 @@ public:
     inline hoedown_extensions getMarkdownExtensions() const;
     inline MarkdownConverterType getMdConverterType() const;
     inline void setMarkdownConverterType(MarkdownConverterType type);
-
-    inline QString getPreTemplatePath() const;
-    inline QString getPostTemplatePath() const;
 
     inline int getTabStopWidth() const;
     inline void setTabStopWidth(int tabStopWidth);
@@ -137,9 +132,6 @@ private:
     QPalette mdEditPalette;
     QVector<HighlightingStyle> mdHighlightingStyles;
     QString welcomePagePath;
-    QString templatePath;
-    QString preTemplatePath;
-    QString postTemplatePath;
     QString templateCssUrl;
     int curNotebookIndex;
 
@@ -212,11 +204,6 @@ inline QString VConfigManager::getWelcomePagePath() const
     return welcomePagePath;
 }
 
-inline QString VConfigManager::getTemplatePath() const
-{
-    return templatePath;
-}
-
 inline QString VConfigManager::getTemplateCssUrl() const
 {
     return templateCssUrl;
@@ -264,16 +251,6 @@ inline hoedown_extensions VConfigManager::getMarkdownExtensions() const
 inline MarkdownConverterType VConfigManager::getMdConverterType() const
 {
     return mdConverterType;
-}
-
-inline QString VConfigManager::getPreTemplatePath() const
-{
-    return preTemplatePath;
-}
-
-inline QString VConfigManager::getPostTemplatePath() const
-{
-    return postTemplatePath;
 }
 
 inline void VConfigManager::setMarkdownConverterType(MarkdownConverterType type)

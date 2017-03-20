@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QString>
 
+class VFile;
+
 class VDocument : public QObject
 {
     Q_OBJECT
@@ -12,10 +14,7 @@ class VDocument : public QObject
     Q_PROPERTY(QString html MEMBER m_html NOTIFY htmlChanged)
 
 public:
-    explicit VDocument(QObject *parent = 0);
-    VDocument(const QString &text, QObject *parent = 0);
-    void setText(const QString &text);
-    QString getText();
+    VDocument(const VFile *p_file, QObject *p_parent = 0);
     QString getToc();
     void scrollToAnchor(const QString &anchor);
     void setHtml(const QString &html);
@@ -26,6 +25,7 @@ public slots:
     void setHeader(const QString &anchor);
     void setLog(const QString &p_log);
     void keyPressEvent(int p_key);
+    void updateText();
 
 signals:
     void textChanged(const QString &text);
@@ -37,10 +37,16 @@ signals:
     void keyPressed(int p_key);
 
 private:
-    QString m_text;
     QString m_toc;
     QString m_header;
+
+    // m_text does NOT contain actual content.
+    QString m_text;
+
+    // When using Hoedown, m_html will contain the html content.
     QString m_html;
+
+    const VFile *m_file;
 };
 
 #endif // VDOCUMENT_H

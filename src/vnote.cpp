@@ -10,9 +10,10 @@
 
 extern VConfigManager vconfig;
 
-QString VNote::templateHtml;
-QString VNote::preTemplateHtml;
-QString VNote::postTemplateHtml;
+QString VNote::s_markdownTemplate;
+const QString VNote::c_hoedownJsFile = ":/resources/hoedown.js";
+const QString VNote::c_markedJsFile = ":/resources/marked.js";
+const QString VNote::c_markedExtraFile = ":/utils/marked/marked.min.js";
 
 VNote::VNote(QObject *parent)
     : QObject(parent), m_mainWindow(dynamic_cast<VMainWindow *>(parent))
@@ -83,14 +84,15 @@ QString VNote::getColorFromPalette(const QString &p_name) const
 
 void VNote::initTemplate()
 {
-    if (templateHtml.isEmpty() || preTemplateHtml.isEmpty()
-        || postTemplateHtml.isEmpty()) {
+    if (s_markdownTemplate.isEmpty()) {
         updateTemplate();
     }
 }
 
 void VNote::updateTemplate()
 {
+    const QString c_markdownTemplatePath(":/resources/markdown_template.html");
+
     // Get background color
     QString rgb;
     const QString &curRenderBg = vconfig.getCurRenderBackgroundColor();
@@ -109,19 +111,12 @@ void VNote::updateTemplate()
     }
     QString styleHolder("<!-- BACKGROUND_PLACE_HOLDER -->");
     QString cssHolder("CSS_PLACE_HOLDER");
-    templateHtml = VUtils::readFileFromDisk(vconfig.getTemplatePath());
-    templateHtml.replace(cssHolder, vconfig.getTemplateCssUrl());
-    if (!cssStyle.isEmpty()) {
-        templateHtml.replace(styleHolder, cssStyle);
-    }
 
-    preTemplateHtml = VUtils::readFileFromDisk(vconfig.getPreTemplatePath());
-    preTemplateHtml.replace(cssHolder, vconfig.getTemplateCssUrl());
+    s_markdownTemplate = VUtils::readFileFromDisk(c_markdownTemplatePath);
+    s_markdownTemplate.replace(cssHolder, vconfig.getTemplateCssUrl());
     if (!cssStyle.isEmpty()) {
-        preTemplateHtml.replace(styleHolder, cssStyle);
+        s_markdownTemplate.replace(styleHolder, cssStyle);
     }
-
-    postTemplateHtml = VUtils::readFileFromDisk(vconfig.getPostTemplatePath());
 }
 
 const QVector<VNotebook *> &VNote::getNotebooks() const

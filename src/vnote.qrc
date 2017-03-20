@@ -2,11 +2,8 @@
     <qresource prefix="/">
         <file>resources/welcome.html</file>
         <file>resources/qwebchannel.js</file>
-        <file>resources/template.html</file>
         <file>resources/markdown.css</file>
         <file>utils/marked/marked.min.js</file>
-        <file>resources/post_template.html</file>
-        <file>resources/pre_template.html</file>
         <file>utils/highlightjs/highlight.pack.js</file>
         <file>utils/highlightjs/styles/androidstudio.css</file>
         <file>utils/highlightjs/styles/atom-one-dark.css</file>
@@ -85,5 +82,9 @@
         <file>resources/icons/find_replace.svg</file>
         <file>resources/icons/search_wrap.svg</file>
         <file>resources/icons/settings.svg</file>
+        <file>resources/markdown_template.html</file>
+        <file>resources/markdown_template.js</file>
+        <file>resources/hoedown.js</file>
+        <file>resources/marked.js</file>
     </qresource>
 </RCC>

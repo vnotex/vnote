@@ -85,7 +85,7 @@ void VMdEdit::saveFile()
 
 void VMdEdit::reloadFile()
 {
-    QString &content = m_file->getContent();
+    const QString &content = m_file->getContent();
     Q_ASSERT(content.indexOf(QChar::ObjectReplacementCharacter) == -1);
     setPlainText(content);
     setModified(false);
