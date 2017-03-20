@@ -86,5 +86,8 @@
         <file>resources/markdown_template.js</file>
         <file>resources/hoedown.js</file>
         <file>resources/marked.js</file>
+        <file>resources/markdown-it.js</file>
+        <file>utils/markdown-it/markdown-it.min.js</file>
+        <file>utils/markdown-it/markdown-it-headinganchor.js</file>
     </qresource>
 </RCC>

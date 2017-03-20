@@ -16,7 +16,8 @@ class QString;
 enum MarkdownConverterType
 {
     Hoedown = 0,
-    Marked
+    Marked,
+    MarkdownIt
 };
 
 struct VColor

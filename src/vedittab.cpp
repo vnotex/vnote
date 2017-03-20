@@ -108,11 +108,11 @@ void VEditTab::showFileReadMode()
         m_textEditor->setReadOnly(true);
         break;
     case DocType::Markdown:
-        if (mdConverterType == MarkdownConverterType::Marked) {
+        if (mdConverterType == MarkdownConverterType::Hoedown) {
+            previewByConverter();
+        } else {
             document.updateText();
             updateTocFromHtml(document.getToc());
-        } else {
-            previewByConverter();
         }
         setCurrentWidget(webPreviewer);
         clearSearchedWordHighlight();
@@ -285,6 +285,12 @@ void VEditTab::setupMarkdownPreview()
 
     case MarkdownConverterType::Hoedown:
         jsFile = "qrc" + VNote::c_hoedownJsFile;
+        break;
+
+    case MarkdownConverterType::MarkdownIt:
+        jsFile = "qrc" + VNote::c_markdownitJsFile;
+        extraFile = "<script src=\"qrc" + VNote::c_markdownitExtraFile + "\"></script>\n" +
+                    "<script src=\"qrc" + VNote::c_markdownitTocExtraFile + "\"></script>";
         break;
 
     default:

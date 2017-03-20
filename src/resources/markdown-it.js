@@ -1,30 +1,79 @@
 var placeholder = document.getElementById('placeholder');
-var renderer = new marked.Renderer();
-var toc = []; // Table of contents as a list
 var nameCounter = 0;
+var toc = []; // Table of Content as a list
 
-renderer.heading = function(text, level) {
-    // Use number to avoid issues with Chinese
-    var escapedText = 'toc_' + nameCounter++;
-    toc.push({
-        level: level,
-        anchor: escapedText,
-        title: text
-    });
-    return '<h' + level + ' id="' + escapedText + '">' + text + '</h' + level + '>';
-};
+var getHeadingLevel = function(h) {
+    var level = 1;
+    switch (h) {
+    case 'h1':
+        break;
 
-// Highlight.js to highlight code block
-marked.setOptions({
-    highlight: function(code) {
-        return hljs.highlightAuto(code).value;
+    case 'h2':
+        level += 1;
+        break;
+
+    case 'h3':
+        level += 2;
+        break;
+
+    case 'h4':
+        level += 3;
+        break;
+
+    case 'h5':
+        level += 4;
+        break;
+
+    case 'h6':
+        level += 5;
+        break;
+
+    default:
+        level += 6;
+        break;
+    }
+    return level;
+}
+
+var mdit = window.markdownit({
+    html: true,
+    linkify: true,
+    typographer: true,
+    highlight: function(str, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+            return hljs.highlight(lang, str).value;
+        } else {
+            return hljs.highlightAuto(str).value;
+        }
+        return '';
     }
 });
+
+mdit = mdit.use(window.markdownitHeadingAnchor, {
+    anchorClass: 'vnote-anchor',
+    addHeadingID: true,
+    addHeadingAnchor: true,
+    slugify: function(md, s) {
+        return 'toc_' + nameCounter++;
+    },
+    headingHook: function(openToken, inlineToken, anchor) {
+        toc.push({
+            level: getHeadingLevel(openToken.tag),
+            anchor: anchor,
+            title: inlineToken.content
+        });
+    }
+});
+
+var mdHasTocSection = function(markdown) {
+    var n = markdown.search(/(\n|^)\[toc\]/i);
+    return n != -1;
+};
 
 var markdownToHtml = function(markdown, needToc) {
     toc = [];
     nameCounter = 0;
-    var html = marked(markdown, { renderer: renderer });
+    var html = mdit.render(markdown);
     if (needToc) {
         return html.replace(/<p>\[TOC\]<\/p>/ig, '<div class="vnote-toc"></div>');
     } else {
@@ -111,15 +160,10 @@ var handleToc = function(needToc) {
     }
 };
 
-var mdHasTocSection = function(markdown) {
-    var n = markdown.search(/(\n|^)\[toc\]/i);
-    return n != -1;
-};
-
 var updateText = function(text) {
     var needToc = mdHasTocSection(text);
     var html = markdownToHtml(text, needToc);
     placeholder.innerHTML = html;
     handleToc(needToc);
-};
+}
 

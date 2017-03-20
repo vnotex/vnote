@@ -14,6 +14,9 @@ QString VNote::s_markdownTemplate;
 const QString VNote::c_hoedownJsFile = ":/resources/hoedown.js";
 const QString VNote::c_markedJsFile = ":/resources/marked.js";
 const QString VNote::c_markedExtraFile = ":/utils/marked/marked.min.js";
+const QString VNote::c_markdownitJsFile = ":/resources/markdown-it.js";
+const QString VNote::c_markdownitExtraFile = ":/utils/markdown-it/markdown-it.min.js";
+const QString VNote::c_markdownitTocExtraFile = ":/utils/markdown-it/markdown-it-headinganchor.js";
 
 VNote::VNote(QObject *parent)
     : QObject(parent), m_mainWindow(dynamic_cast<VMainWindow *>(parent))

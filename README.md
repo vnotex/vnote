@@ -312,6 +312,8 @@ If you prefer command line on macOS, you could follow these steps.
 - [Marked](https://github.com/chjj/marked) (MIT License)
 - [Highlight.js](https://github.com/isagalaev/highlight.js/) (BSD License)
 - [Ionicons 2.0.1](https://github.com/driftyco/ionicons/) (MIT License)
+- [markdown-it 8.3.1](https://github.com/markdown-it/markdown-it) (MIT License)
+- [markdown-it-headinganchor 1.3.0](https://github.com/adam-p/markdown-it-headinganchor) (MIT License)
 
 # License (代码许可)
 VNote is licensed under the [MIT license](http://opensource.org/licenses/MIT).

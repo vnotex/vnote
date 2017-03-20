@@ -290,16 +290,34 @@ void VMainWindow::initMarkdownMenu()
     hoedownAct->setStatusTip(tr("Use Hoedown to convert Markdown to HTML (re-open current tabs to make it work)"));
     hoedownAct->setCheckable(true);
     hoedownAct->setData(int(MarkdownConverterType::Hoedown));
+
+    QAction *markdownitAct = new QAction(tr("Markdown-it"), converterAct);
+    markdownitAct->setStatusTip(tr("Use Markdown-it to convert Markdown to HTML (re-open current tabs to make it work)"));
+    markdownitAct->setCheckable(true);
+    markdownitAct->setData(int(MarkdownConverterType::MarkdownIt));
+
     connect(converterAct, &QActionGroup::triggered,
             this, &VMainWindow::changeMarkdownConverter);
-
     converterMenu->addAction(hoedownAct);
     converterMenu->addAction(markedAct);
+    converterMenu->addAction(markdownitAct);
+
     MarkdownConverterType converterType = vconfig.getMdConverterType();
-    if (converterType == MarkdownConverterType::Marked) {
+    switch (converterType) {
+    case MarkdownConverterType::Marked:
         markedAct->setChecked(true);
-    } else if (converterType == MarkdownConverterType::Hoedown) {
+        break;
+
+    case MarkdownConverterType::Hoedown:
         hoedownAct->setChecked(true);
+        break;
+
+    case MarkdownConverterType::MarkdownIt:
+        markdownitAct->setChecked(true);
+        break;
+
+    default:
+        Q_ASSERT(false);
     }
 
     initRenderBackgroundMenu(markdownMenu);

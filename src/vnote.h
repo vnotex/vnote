@@ -26,9 +26,18 @@ public:
     void initTemplate();
 
     static QString s_markdownTemplate;
+
+    // Hoedown
     static const QString c_hoedownJsFile;
+
+    // Marked
     static const QString c_markedJsFile;
     static const QString c_markedExtraFile;
+
+    // Markdown-it
+    static const QString c_markdownitJsFile;
+    static const QString c_markdownitExtraFile;
+    static const QString c_markdownitTocExtraFile;
 
     inline const QVector<QPair<QString, QString> > &getPalette() const;
     void initPalette(QPalette palette);
