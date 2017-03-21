@@ -280,7 +280,7 @@ void VEditTab::setupMarkdownPreview()
     switch (mdConverterType) {
     case MarkdownConverterType::Marked:
         jsFile = "qrc" + VNote::c_markedJsFile;
-        extraFile = "<script src=\"qrc" + VNote::c_markedExtraFile + "\"></script>";
+        extraFile = "<script src=\"qrc" + VNote::c_markedExtraFile + "\"></script>\n";
         break;
 
     case MarkdownConverterType::Hoedown:
@@ -291,12 +291,19 @@ void VEditTab::setupMarkdownPreview()
         jsFile = "qrc" + VNote::c_markdownitJsFile;
         extraFile = "<script src=\"qrc" + VNote::c_markdownitExtraFile + "\"></script>\n" +
                     "<script src=\"qrc" + VNote::c_markdownitAnchorExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_markdownitTaskListExtraFile + "\"></script>";
+                    "<script src=\"qrc" + VNote::c_markdownitTaskListExtraFile + "\"></script>\n";
         break;
 
     default:
         Q_ASSERT(false);
     }
+
+    if (vconfig.getEnableMermaid()) {
+        extraFile += "<link rel=\"stylesheet\" type=\"text/css\" href=\"qrc" + VNote::c_mermaidCssFile +
+                     "\"/>\n" + "<script src=\"qrc" + VNote::c_mermaidApiJsFile + "\"></script>\n" +
+                     "<script>var VEnableMermaid = true;</script>\n";
+    }
+
     QString htmlTemplate = VNote::s_markdownTemplate;
     htmlTemplate.replace(jsHolder, jsFile);
     if (!extraFile.isEmpty()) {

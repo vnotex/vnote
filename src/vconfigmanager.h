@@ -116,6 +116,9 @@ public:
     inline QString getLanguage() const;
     inline void setLanguage(const QString &p_language);
 
+    inline bool getEnableMermaid() const;
+    inline void setEnableMermaid(bool p_enabled);
+
 private:
     void updateMarkdownEditStyle();
     QVariant getConfigFromSettings(const QString &section, const QString &key);
@@ -173,6 +176,9 @@ private:
 
     // Language
     QString m_language;
+
+    // Enable Mermaid.
+    bool m_enableMermaid;
 
     // The name of the config file in each directory
     static const QString dirConfigFileName;
@@ -489,6 +495,20 @@ inline void VConfigManager::setLanguage(const QString &p_language)
     m_language = p_language;
     setConfigToSettings("global", "language",
                         m_language);
+}
+
+inline bool VConfigManager::getEnableMermaid() const
+{
+    return m_enableMermaid;
+}
+
+inline void VConfigManager::setEnableMermaid(bool p_enabled)
+{
+    if (m_enableMermaid == p_enabled) {
+        return;
+    }
+    m_enableMermaid = p_enabled;
+    setConfigToSettings("global", "enable_mermaid", m_enableMermaid);
 }
 
 #endif // VCONFIGMANAGER_H

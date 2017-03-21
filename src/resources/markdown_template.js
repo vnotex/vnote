@@ -15,6 +15,15 @@ new QWebChannel(qt.webChannelTransport,
         content.requestScrollToAnchor.connect(scrollToAnchor);
     });
 
+var VMermaidDivClass = 'mermaid-diagram';
+if (typeof VEnableMermaid == 'undefined') {
+    VEnableMermaid = false;
+} else if (VEnableMermaid) {
+    mermaidAPI.initialize({
+        startOnLoad: false
+    });
+}
+
 var scrollToAnchor = function(anchor) {
     var anc = document.getElementById(anchor);
     if (anc != null) {
@@ -121,4 +130,28 @@ document.onkeydown = function(e) {
         return;
     }
     e.preventDefault();
+}
+
+// @className, the class name of the mermaid code block, such as 'lang-mermaid'.
+var renderMermaid = function(className) {
+    if (!VEnableMermaid) {
+        return;
+    }
+    var codes = document.getElementsByTagName('code');
+    var mermaidIdx = 0;
+    for (var i = 0; i < codes.length; ++i) {
+        var code = codes[i];
+        if (code.classList.contains(className)) {
+            // Mermaid code block.
+            var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx++, code.innerText, function(){});
+            var graphDiv = document.createElement('div');
+            graphDiv.classList.add(VMermaidDivClass);
+            graphDiv.innerHTML = graph;
+            var preNode = code.parentNode;
+            preNode.classList.add(VMermaidDivClass);
+            preNode.replaceChild(graphDiv, code);
+            // replaceChild() will decrease codes.length.
+            --i;
+        }
+    }
 }

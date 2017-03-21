@@ -121,5 +121,6 @@ var updateText = function(text) {
     var html = markdownToHtml(text, needToc);
     placeholder.innerHTML = html;
     handleToc(needToc);
+    renderMermaid('lang-mermaid');
 };
 

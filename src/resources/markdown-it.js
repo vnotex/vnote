@@ -39,6 +39,7 @@ var mdit = window.markdownit({
     html: true,
     linkify: true,
     typographer: true,
+    langPrefix: 'lang-',
     highlight: function(str, lang) {
         if (lang && hljs.getLanguage(lang)) {
             return hljs.highlight(lang, str).value;
@@ -167,5 +168,6 @@ var updateText = function(text) {
     var html = markdownToHtml(text, needToc);
     placeholder.innerHTML = html;
     handleToc(needToc);
+    renderMermaid('lang-mermaid');
 }
 

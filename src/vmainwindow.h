@@ -61,6 +61,7 @@ private slots:
     void insertImage();
     void handleFindDialogTextChanged(const QString &p_text, uint p_options);
     void openFindDialog();
+    void enableMermaid(bool p_checked);
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;

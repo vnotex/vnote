@@ -315,6 +315,7 @@ If you prefer command line on macOS, you could follow these steps.
 - [markdown-it 8.3.1](https://github.com/markdown-it/markdown-it) (MIT License)
 - [markdown-it-headinganchor 1.3.0](https://github.com/adam-p/markdown-it-headinganchor) (MIT License)
 - [markdown-it-task-lists 1.4.0](https://github.com/revin/markdown-it-task-lists) (ISC License)
+- [mermaid 7.0.0](https://github.com/knsv/mermaid) (MIT License)
 
 # License (代码许可)
 VNote is licensed under the [MIT license](http://opensource.org/licenses/MIT).

@@ -18,6 +18,10 @@ const QString VNote::c_markdownitJsFile = ":/resources/markdown-it.js";
 const QString VNote::c_markdownitExtraFile = ":/utils/markdown-it/markdown-it.min.js";
 const QString VNote::c_markdownitAnchorExtraFile = ":/utils/markdown-it/markdown-it-headinganchor.js";
 const QString VNote::c_markdownitTaskListExtraFile = ":/utils/markdown-it/markdown-it-task-lists.min.js";
+const QString VNote::c_mermaidApiJsFile = ":/utils/mermaid/mermaidAPI.min.js";
+const QString VNote::c_mermaidCssFile = ":/utils/mermaid/mermaid.css";
+const QString VNote::c_mermaidDarkCssFile = ":/utils/mermaid/mermaid.dark.css";
+const QString VNote::c_mermaidForestCssFile = ":/utils/mermaid/mermaid.forest.css";
 
 VNote::VNote(QObject *parent)
     : QObject(parent), m_mainWindow(dynamic_cast<VMainWindow *>(parent))

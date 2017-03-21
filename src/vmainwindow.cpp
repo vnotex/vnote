@@ -321,6 +321,15 @@ void VMainWindow::initMarkdownMenu()
     }
 
     initRenderBackgroundMenu(markdownMenu);
+
+    QAction *mermaidAct = new QAction(tr("&Mermaid Diagram"), this);
+    mermaidAct->setStatusTip(tr("Enable Mermaid for graph and diagram"));
+    mermaidAct->setCheckable(true);
+    connect(mermaidAct, &QAction::triggered,
+            this, &VMainWindow::enableMermaid);
+    markdownMenu->addAction(mermaidAct);
+
+    mermaidAct->setChecked(vconfig.getEnableMermaid());
 }
 
 void VMainWindow::initViewMenu()
@@ -588,6 +597,11 @@ void VMainWindow::aboutMessage()
 void VMainWindow::changeExpandTab(bool checked)
 {
     vconfig.setIsExpandTab(checked);
+}
+
+void VMainWindow::enableMermaid(bool p_checked)
+{
+    vconfig.setEnableMermaid(p_checked);
 }
 
 void VMainWindow::changeHighlightCursorLine(bool p_checked)

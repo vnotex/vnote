@@ -90,5 +90,9 @@
         <file>utils/markdown-it/markdown-it.min.js</file>
         <file>utils/markdown-it/markdown-it-headinganchor.js</file>
         <file>utils/markdown-it/markdown-it-task-lists.min.js</file>
+        <file>utils/mermaid/mermaid.css</file>
+        <file>utils/mermaid/mermaid.dark.css</file>
+        <file>utils/mermaid/mermaid.forest.css</file>
+        <file>utils/mermaid/mermaidAPI.min.js</file>
     </qresource>
 </RCC>

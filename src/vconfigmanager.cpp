@@ -82,6 +82,8 @@ void VConfigManager::initialize()
                                                     "find_incremental_search").toBool();
 
     m_language = getConfigFromSettings("global", "language").toString();
+
+    m_enableMermaid = getConfigFromSettings("global", "enable_mermaid").toBool();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()
