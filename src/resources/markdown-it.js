@@ -65,6 +65,8 @@ mdit = mdit.use(window.markdownitHeadingAnchor, {
     }
 });
 
+mdit = mdit.use(window.markdownitTaskLists);
+
 var mdHasTocSection = function(markdown) {
     var n = markdown.search(/(\n|^)\[toc\]/i);
     return n != -1;

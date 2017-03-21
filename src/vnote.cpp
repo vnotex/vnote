@@ -16,7 +16,8 @@ const QString VNote::c_markedJsFile = ":/resources/marked.js";
 const QString VNote::c_markedExtraFile = ":/utils/marked/marked.min.js";
 const QString VNote::c_markdownitJsFile = ":/resources/markdown-it.js";
 const QString VNote::c_markdownitExtraFile = ":/utils/markdown-it/markdown-it.min.js";
-const QString VNote::c_markdownitTocExtraFile = ":/utils/markdown-it/markdown-it-headinganchor.js";
+const QString VNote::c_markdownitAnchorExtraFile = ":/utils/markdown-it/markdown-it-headinganchor.js";
+const QString VNote::c_markdownitTaskListExtraFile = ":/utils/markdown-it/markdown-it-task-lists.min.js";
 
 VNote::VNote(QObject *parent)
     : QObject(parent), m_mainWindow(dynamic_cast<VMainWindow *>(parent))

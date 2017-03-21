@@ -89,5 +89,6 @@
         <file>resources/markdown-it.js</file>
         <file>utils/markdown-it/markdown-it.min.js</file>
         <file>utils/markdown-it/markdown-it-headinganchor.js</file>
+        <file>utils/markdown-it/markdown-it-task-lists.min.js</file>
     </qresource>
 </RCC>

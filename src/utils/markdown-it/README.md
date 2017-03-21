@@ -7,3 +7,7 @@ Vitaly Puzrin
 v1.3.0
 Adam Pritchard
 Modified by Le Tan
+
+# [markdown-it-task-lists](https://github.com/revin/markdown-it-task-lists)
+v1.4.0
+Revin Guillen

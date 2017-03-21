@@ -37,7 +37,8 @@ public:
     // Markdown-it
     static const QString c_markdownitJsFile;
     static const QString c_markdownitExtraFile;
-    static const QString c_markdownitTocExtraFile;
+    static const QString c_markdownitAnchorExtraFile;
+    static const QString c_markdownitTaskListExtraFile;
 
     inline const QVector<QPair<QString, QString> > &getPalette() const;
     void initPalette(QPalette palette);
