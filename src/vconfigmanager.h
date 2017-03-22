@@ -43,6 +43,7 @@ public:
     // Constants
     static const QString orgName;
     static const QString appName;
+    static const QString c_version;
 
     inline QFont getMdEditFont() const;
 

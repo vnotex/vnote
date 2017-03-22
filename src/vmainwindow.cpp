@@ -589,9 +589,12 @@ void VMainWindow::changeMarkdownConverter(QAction *action)
 
 void VMainWindow::aboutMessage()
 {
-    QMessageBox::about(this, tr("About VNote"),
-                       tr("VNote is a Vim-inspired note taking application for Markdown.\n"
-                          "Visit https://github.com/tamlok/vnote.git for more information."));
+    QString info = tr("v%1").arg(VConfigManager::c_version);
+    info += "\n\n";
+    info += tr("VNote is a Vim-inspired note-taking application for Markdown.");
+    info += "\n";
+    info += tr("Visit https://github.com/tamlok/vnote.git for more information.");
+    QMessageBox::about(this, tr("About VNote"), info);
 }
 
 void VMainWindow::changeExpandTab(bool checked)

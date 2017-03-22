@@ -1,6 +1,6 @@
 image: Visual Studio 2015
 
-version: 1.0.{build}
+version: 1.1.{build}
 
 branches:
     only:
@@ -60,6 +60,6 @@ deploy:
       subject: tamlok
       repo: vnote
       package: vnote
-      version: 1.0
+      version: 1.1
       publish: true
       override: true
