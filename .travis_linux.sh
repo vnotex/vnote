@@ -1,7 +1,6 @@
 #!/bin/bash
 project_dir=$(pwd)
 qt_install_dir=/opt
-version="${version}.${TRAVIS_BUILD_NUMBER}"
 
 cd ${qt_install_dir}
 sudo wget https://github.com/adolby/qt-more-builds/releases/download/5.7/qt-opensource-5.7.0-linux-x86_64.7z
@@ -54,6 +53,6 @@ echo "${TRAVIS_COMMIT}" >> version
 
 # Package portable executable
 cd ..
-tar -czvf VNote_${version}_linux_x86_64_portable.tar.gz VNote
+tar -czvf VNote_linux_x86_64_portable_${version}.tar.gz VNote
 
 exit 0

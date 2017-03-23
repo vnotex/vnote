@@ -1,6 +1,5 @@
 #!/bin/bash
 project_dir=$(pwd)
-version="${version}.${TRAVIS_BUILD_NUMBER}"
 
 brew update > /dev/null
 brew install qt@5.7
@@ -44,7 +43,7 @@ ln -s /Applications ./Applications
 
 cd ..
 hdiutil create -srcfolder ./VNote -format UDBZ ./VNote.dmg
-mv VNote.dmg VNote_${version}_mac_X64.dmg
+mv VNote.dmg VNote_mac_X64_${version}.dmg
 cd ..
 
 exit 0

@@ -17,14 +17,15 @@
 
     "version": {
         "name": "1.1",
-        "desc": "VNote v1.1",
+        "desc": "VNote Releases",
         "released": "2017-03-22",
         "vcs_tag": "1.1",
         "gpgSign": false
     },
 
     "files":
-        [{"includePattern": "build/distrib/(VNote_.*\\.dmg)", "uploadPattern": "$1"}],
+        [{"includePattern": "build/distrib/(VNote_.*\\.dmg)", "uploadPattern": "$1",
+          "matrixParams": {"override": 1 }}],
 
     "publish": true
 }
