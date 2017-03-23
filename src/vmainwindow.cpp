@@ -977,7 +977,7 @@ void VMainWindow::locateFile(VFile *p_file)
     }
 
     // Open the directory and file panels after location.
-    changeSplitterView(2);
+    twoPanelView();
 }
 
 void VMainWindow::handleFindDialogTextChanged(const QString &p_text, uint /* p_options */)
