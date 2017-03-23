@@ -330,6 +330,15 @@ void VMainWindow::initMarkdownMenu()
     markdownMenu->addAction(mermaidAct);
 
     mermaidAct->setChecked(vconfig.getEnableMermaid());
+
+    QAction *mathjaxAct = new QAction(tr("Math&jax"), this);
+    mathjaxAct->setStatusTip(tr("Enable Mathjax for math support in Markdown"));
+    mathjaxAct->setCheckable(true);
+    connect(mathjaxAct, &QAction::triggered,
+            this, &VMainWindow::enableMathjax);
+    markdownMenu->addAction(mathjaxAct);
+
+    mathjaxAct->setChecked(vconfig.getEnableMathjax());
 }
 
 void VMainWindow::initViewMenu()
@@ -605,6 +614,11 @@ void VMainWindow::changeExpandTab(bool checked)
 void VMainWindow::enableMermaid(bool p_checked)
 {
     vconfig.setEnableMermaid(p_checked);
+}
+
+void VMainWindow::enableMathjax(bool p_checked)
+{
+    vconfig.setEnableMathjax(p_checked);
 }
 
 void VMainWindow::changeHighlightCursorLine(bool p_checked)

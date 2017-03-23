@@ -46,6 +46,9 @@ public:
     static const QString c_mermaidDarkCssFile;
     static const QString c_mermaidForestCssFile;
 
+    // Mathjax
+    static const QString c_mathjaxJsFile;
+
     inline const QVector<QPair<QString, QString> > &getPalette() const;
     void initPalette(QPalette palette);
     QString getColorFromPalette(const QString &p_name) const;

@@ -49,7 +49,7 @@ void VConfigManager::initialize()
 
     markdownExtensions = hoedown_extensions(HOEDOWN_EXT_TABLES | HOEDOWN_EXT_FENCED_CODE |
                                             HOEDOWN_EXT_HIGHLIGHT | HOEDOWN_EXT_AUTOLINK |
-                                            HOEDOWN_EXT_QUOTE | HOEDOWN_EXT_MATH);
+                                            HOEDOWN_EXT_QUOTE | HOEDOWN_EXT_MATH | HOEDOWN_EXT_MATH_EXPLICIT);
     mdConverterType = (MarkdownConverterType)getConfigFromSettings("global", "markdown_converter").toInt();
 
     tabStopWidth = getConfigFromSettings("global", "tab_stop_width").toInt();
@@ -85,6 +85,8 @@ void VConfigManager::initialize()
     m_language = getConfigFromSettings("global", "language").toString();
 
     m_enableMermaid = getConfigFromSettings("global", "enable_mermaid").toBool();
+
+    m_enableMathjax = getConfigFromSettings("global", "enable_mathjax").toBool();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

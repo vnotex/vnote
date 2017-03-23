@@ -304,6 +304,17 @@ void VEditTab::setupMarkdownPreview()
                      "<script>var VEnableMermaid = true;</script>\n";
     }
 
+    if (vconfig.getEnableMathjax()) {
+        extraFile += "<script type=\"text/x-mathjax-config\">"
+                     "MathJax.Hub.Config({\n"
+                     "                    tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']]},\n"
+                     "                    showProcessingMessages: false,\n"
+                     "                    messageStyle: \"none\"});\n"
+                     "</script>\n"
+                     "<script type=\"text/javascript\" async src=\"" + VNote::c_mathjaxJsFile + "\"></script>\n" +
+                     "<script>var VEnableMathjax = true;</script>\n";
+    }
+
     QString htmlTemplate = VNote::s_markdownTemplate;
     htmlTemplate.replace(jsHolder, jsFile);
     if (!extraFile.isEmpty()) {

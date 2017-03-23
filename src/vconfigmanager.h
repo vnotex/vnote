@@ -120,6 +120,9 @@ public:
     inline bool getEnableMermaid() const;
     inline void setEnableMermaid(bool p_enabled);
 
+    inline bool getEnableMathjax() const;
+    inline void setEnableMathjax(bool p_enabled);
+
 private:
     void updateMarkdownEditStyle();
     QVariant getConfigFromSettings(const QString &section, const QString &key);
@@ -180,6 +183,9 @@ private:
 
     // Enable Mermaid.
     bool m_enableMermaid;
+
+    // Enable Mathjax.
+    bool m_enableMathjax;
 
     // The name of the config file in each directory
     static const QString dirConfigFileName;
@@ -510,6 +516,20 @@ inline void VConfigManager::setEnableMermaid(bool p_enabled)
     }
     m_enableMermaid = p_enabled;
     setConfigToSettings("global", "enable_mermaid", m_enableMermaid);
+}
+
+inline bool VConfigManager::getEnableMathjax() const
+{
+    return m_enableMathjax;
+}
+
+inline void VConfigManager::setEnableMathjax(bool p_enabled)
+{
+    if (m_enableMathjax == p_enabled) {
+        return;
+    }
+    m_enableMathjax = p_enabled;
+    setConfigToSettings("global", "enable_mathjax", m_enableMathjax);
 }
 
 #endif // VCONFIGMANAGER_H

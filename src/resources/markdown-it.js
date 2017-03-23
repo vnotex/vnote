@@ -169,5 +169,8 @@ var updateText = function(text) {
     placeholder.innerHTML = html;
     handleToc(needToc);
     renderMermaid('lang-mermaid');
+    if (VEnableMathjax) {
+        MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder]);
+    }
 }
 

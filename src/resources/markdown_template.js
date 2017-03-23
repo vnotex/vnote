@@ -24,6 +24,10 @@ if (typeof VEnableMermaid == 'undefined') {
     });
 }
 
+if (typeof VEnableMathjax == 'undefined') {
+    VEnableMathjax = false;
+}
+
 var scrollToAnchor = function(anchor) {
     var anc = document.getElementById(anchor);
     if (anc != null) {

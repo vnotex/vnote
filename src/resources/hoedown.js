@@ -23,5 +23,9 @@ var updateHtml = function(html) {
             }
         }
     }
+
+    if (VEnableMathjax && (typeof MathJax != 'undefined')) {
+        MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder]);
+    }
 }
 

@@ -22,6 +22,7 @@ const QString VNote::c_mermaidApiJsFile = ":/utils/mermaid/mermaidAPI.min.js";
 const QString VNote::c_mermaidCssFile = ":/utils/mermaid/mermaid.css";
 const QString VNote::c_mermaidDarkCssFile = ":/utils/mermaid/mermaid.dark.css";
 const QString VNote::c_mermaidForestCssFile = ":/utils/mermaid/mermaid.forest.css";
+const QString VNote::c_mathjaxJsFile = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML";
 
 VNote::VNote(QObject *parent)
     : QObject(parent), m_mainWindow(dynamic_cast<VMainWindow *>(parent))
