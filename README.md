@@ -40,17 +40,13 @@
 <!-- vim-markdown-toc -->
 
 # Downloads (下载)
-You could download stable tagged releases or latest rolling build.
-
-VNote提供定期释出的稳定版本，以及总是保持最新的滚(wen)动(ding)构建版本。
-
-对于稳定版本，为国内用户提供网盘下载：[Yunpan](http://pan.baidu.com/s/1jI5HROq)。
+国内用户可以尝试网盘下载：[Yunpan](http://pan.baidu.com/s/1jI5HROq)。
 
 ## Windows
 ![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/tamlok/vnote?svg=true)
 
-- Tagged releases (稳定版本): [Github Release](https://github.com/tamlok/vnote/releases)
-- Rolling build (滚动构建版本): [Bintray](https://bintray.com/tamlok/vnote/vnote/view/files)
+- [Github Releases](https://github.com/tamlok/vnote/releases)
+- [Latest Builds](https://bintray.com/tamlok/vnote/vnote/view/files)
 
 ## Linux
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
@@ -60,8 +56,8 @@ VNote提供定期释出的稳定版本，以及总是保持最新的滚(wen)动(
 ## MacOS
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
 
-- Tagged releases (稳定版本): [Github Release](https://github.com/tamlok/vnote/releases)
-- Rolling build (滚动构建版本): [Bintray](https://bintray.com/tamlok/vnote/vnote/view/files)
+- [Github Releases](https://github.com/tamlok/vnote/releases)
+- [Latest Builds](https://bintray.com/tamlok/vnote/vnote/view/files)
 
 # Description (简介)
 **VNote** is a Qt-based, free and open source note-taking application, focusing on Markdown. VNote is designed to provide comfortable edit experience.
