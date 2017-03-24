@@ -208,7 +208,6 @@ void VMainWindow::initFileToolBar()
     discardExitAct = new QAction(QIcon(":/resources/icons/discard_exit.svg"),
                                  tr("Discard Changes And Exit"), this);
     discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
-    discardExitAct->setShortcut(QKeySequence("Ctrl+Q"));
     connect(discardExitAct, &QAction::triggered,
             editArea, &VEditArea::readFile);
 
@@ -262,7 +261,7 @@ void VMainWindow::initHelpMenu()
 {
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
 
-    QAction *aboutAct = new QAction(tr("&About"), this);
+    QAction *aboutAct = new QAction(tr("&About VNote"), this);
     aboutAct->setStatusTip(tr("View information about VNote"));
     connect(aboutAct, &QAction::triggered,
             this, &VMainWindow::aboutMessage);
@@ -365,9 +364,18 @@ void VMainWindow::initFileMenu()
     connect(settingsAct, &QAction::triggered,
             this, &VMainWindow::viewSettings);
 
+    // Exit.
+    QAction *exitAct = new QAction(tr("Exit"), this);
+    exitAct->setStatusTip(tr("Exit VNote"));
+    exitAct->setShortcut(QKeySequence("Ctrl+Q"));
+    connect(exitAct, &QAction::triggered,
+            this, &VMainWindow::close);
+
     fileMenu->addAction(m_importNoteAct);
     fileMenu->addSeparator();
     fileMenu->addAction(settingsAct);
+    fileMenu->addSeparator();
+    fileMenu->addAction(exitAct);
 }
 
 void VMainWindow::initEditMenu()
