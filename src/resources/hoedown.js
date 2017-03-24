@@ -9,7 +9,12 @@ var updateHtml = function(html) {
         if (code.parentElement.tagName.toLowerCase() == 'pre') {
             if (VEnableMermaid && code.classList.contains('language-mermaid')) {
                 // Mermaid code block.
-                var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx++, code.innerText, function(){});
+                try {
+                    var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx++, code.innerText, function(){});
+                } catch (err) {
+                    content.setLog("err: " + err);
+                    continue;
+                }
                 var graphDiv = document.createElement('div');
                 graphDiv.classList.add(VMermaidDivClass);
                 graphDiv.innerHTML = graph;
@@ -24,8 +29,12 @@ var updateHtml = function(html) {
         }
     }
 
-    if (VEnableMathjax && (typeof MathJax != 'undefined')) {
-        MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder]);
+    if (VEnableMathjax) {
+        try {
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder]);
+        } catch (err) {
+            content.setLog("err: " + err);
+        }
     }
 }
 

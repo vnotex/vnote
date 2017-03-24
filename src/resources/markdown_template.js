@@ -147,7 +147,12 @@ var renderMermaid = function(className) {
         var code = codes[i];
         if (code.classList.contains(className)) {
             // Mermaid code block.
-            var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx++, code.innerText, function(){});
+            try {
+                var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx++, code.innerText, function(){});
+            } catch (err) {
+                content.setLog("err: " + err);
+                continue;
+            }
             var graphDiv = document.createElement('div');
             graphDiv.classList.add(VMermaidDivClass);
             graphDiv.innerHTML = graph;

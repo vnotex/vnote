@@ -170,7 +170,11 @@ var updateText = function(text) {
     handleToc(needToc);
     renderMermaid('lang-mermaid');
     if (VEnableMathjax) {
-        MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder]);
+        try {
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder]);
+        } catch (err) {
+            content.setLog("err: " + err);
+        }
     }
 }
 
