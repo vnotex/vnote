@@ -17,7 +17,9 @@ public:
     void setAvatarPixmap(const QString &p_avatarPixmap);
     void setAvatarText(const QString &p_avatarText);
     void setColor(const QString &p_baseColor, const QString &p_fgColor, const QString &p_bgColor);
+    void updateBaseColor(const QString &p_baseColor);
     QSize sizeHint() const Q_DECL_OVERRIDE;
+    QString getBaseColor() const;
 
 protected:
     void paintEvent(QPaintEvent *event) Q_DECL_OVERRIDE;

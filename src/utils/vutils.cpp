@@ -11,6 +11,7 @@
 #include <QDateTime>
 #include <QFileInfo>
 #include <QImageReader>
+#include <QKeyEvent>
 
 const QVector<QPair<QString, QString>> VUtils::c_availableLanguages = {QPair<QString, QString>("en_US", "Englisth(US)"),
                                                                        QPair<QString, QString>("zh_CN", "Chinese")};
@@ -340,3 +341,4 @@ bool VUtils::isImageURLText(const QString &p_url)
     QFileInfo info(p_url);
     return QImageReader::supportedImageFormats().contains(info.suffix().toLower().toLatin1());
 }
+

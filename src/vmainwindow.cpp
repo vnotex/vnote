@@ -12,6 +12,7 @@
 #include "vavatar.h"
 #include "dialog/vfindreplacedialog.h"
 #include "dialog/vsettingsdialog.h"
+#include "vcaptain.h"
 
 extern VConfigManager vconfig;
 
@@ -37,6 +38,17 @@ VMainWindow::VMainWindow(QWidget *parent)
     setContextMenuPolicy(Qt::NoContextMenu);
 
     notebookSelector->update();
+
+    initCaptain();
+}
+
+void VMainWindow::initCaptain()
+{
+    // VCaptain should be visible to accpet key focus. But VCaptain
+    // may hide other widgets.
+    m_captain = new VCaptain(this);
+    connect(m_captain, &VCaptain::captainModeChanged,
+            this, &VMainWindow::handleCaptainModeChanged);
 }
 
 void VMainWindow::setupUI()
@@ -156,10 +168,10 @@ void VMainWindow::initViewToolBar()
     panelMenu->addAction(twoPanelViewAct);
 
     expandViewAct = new QAction(QIcon(":/resources/icons/expand.svg"),
-                                         tr("Expand"), this);
+                                tr("Expand"), this);
     expandViewAct->setStatusTip(tr("Expand the edit area"));
     expandViewAct->setCheckable(true);
-    expandViewAct->setShortcut(QKeySequence("Ctrl+E"));
+    expandViewAct->setShortcut(QKeySequence("Ctrl+T"));
     expandViewAct->setMenu(panelMenu);
     connect(expandViewAct, &QAction::triggered,
             this, &VMainWindow::expandPanelView);
@@ -826,6 +838,15 @@ void VMainWindow::twoPanelView()
     m_onePanel = false;
 }
 
+void VMainWindow::toggleOnePanelView()
+{
+    if (m_onePanel) {
+        twoPanelView();
+    } else {
+        onePanelView();
+    }
+}
+
 void VMainWindow::expandPanelView(bool p_checked)
 {
     int nrSplits = 0;
@@ -948,9 +969,11 @@ void VMainWindow::resizeEvent(QResizeEvent *event)
 
 void VMainWindow::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_Escape
-        || (event->key() == Qt::Key_BracketLeft
-            && event->modifiers() == Qt::ControlModifier)) {
+    int key = event->key();
+    Qt::KeyboardModifiers modifiers = event->modifiers();
+    if (key == Qt::Key_Escape
+        || (key == Qt::Key_BracketLeft
+            && modifiers == Qt::ControlModifier)) {
         m_findReplaceDialog->closeDialog();
         event->accept();
         return;
@@ -1002,6 +1025,13 @@ void VMainWindow::locateFile(VFile *p_file)
     twoPanelView();
 }
 
+void VMainWindow::locateCurrentFile()
+{
+    if (m_curFile) {
+        locateFile(m_curFile);
+    }
+}
+
 void VMainWindow::handleFindDialogTextChanged(const QString &p_text, uint /* p_options */)
 {
     bool enabled = true;
@@ -1025,3 +1055,23 @@ void VMainWindow::viewSettings()
     VSettingsDialog settingsDialog(this);
     settingsDialog.exec();
 }
+
+void VMainWindow::handleCaptainModeChanged(bool p_enabled)
+{
+    static QString normalBaseColor = m_avatar->getBaseColor();
+    static QString captainModeColor = vnote->getColorFromPalette("Purple5");
+
+    if (p_enabled) {
+        m_avatar->updateBaseColor(captainModeColor);
+    } else {
+        m_avatar->updateBaseColor(normalBaseColor);
+    }
+}
+
+void VMainWindow::closeCurrentFile()
+{
+    if (m_curFile) {
+        editArea->closeFile(m_curFile, false);
+    }
+}
+

@@ -246,9 +246,10 @@ void VFileList::deleteFile(VFile *p_file)
     VDirectory *dir = p_file->getDirectory();
     QString fileName = p_file->getName();
     int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                       tr("Are you sure to delete note %1?").arg(fileName),
-                       tr("This may be unrecoverable!"),
-                       QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Ok, this);
+                                  tr("Are you sure to delete note %1?").arg(fileName),
+                                  tr("This may be unrecoverable!"),
+                                  QMessageBox::Ok | QMessageBox::Cancel,
+                                  QMessageBox::Ok, this);
     if (ret == QMessageBox::Ok) {
         editArea->closeFile(p_file, true);
 
@@ -467,6 +468,11 @@ void VFileList::keyPressEvent(QKeyEvent *event)
         }
     }
     QWidget::keyPressEvent(event);
+}
+
+void VFileList::focusInEvent(QFocusEvent * /* p_event */)
+{
+    fileList->setFocus();
 }
 
 bool VFileList::locateFile(const VFile *p_file)

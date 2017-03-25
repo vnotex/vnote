@@ -28,7 +28,6 @@ VEditWindow::VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent)
     connect(bar, &QTabBar::customContextMenuRequested,
             this, &VEditWindow::tabbarContextMenuRequested);
 
-
     connect(this, &VEditWindow::tabCloseRequested,
             this, &VEditWindow::handleTabCloseRequest);
     connect(this, &VEditWindow::tabBarClicked,
@@ -416,17 +415,13 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
     menu.addAction(m_locateAct);
 
     int totalWin = m_editArea->windowCount();
-    int idx = m_editArea->windowIndex(this);
     if (totalWin > 1) {
         menu.addSeparator();
-        if (idx > 0) {
-            m_moveLeftAct->setData(tab);
-            menu.addAction(m_moveLeftAct);
-        }
-        if (idx < totalWin - 1) {
-            m_moveRightAct->setData(tab);
-            menu.addAction(m_moveRightAct);
-        }
+        m_moveLeftAct->setData(tab);
+        menu.addAction(m_moveLeftAct);
+
+        m_moveRightAct->setData(tab);
+        menu.addAction(m_moveRightAct);
     }
 
     menu.exec(bar->mapToGlobal(p_pos));
@@ -615,18 +610,41 @@ void VEditWindow::handleLocateAct()
 
 void VEditWindow::handleMoveLeftAct()
 {
-    int tab = m_locateAct->data().toInt();
+    int tab = m_moveLeftAct->data().toInt();
     Q_ASSERT(tab != -1);
-    VEditTab *editor = getTab(tab);
+    moveTabOneSplit(tab, false);
+}
+
+void VEditWindow::handleMoveRightAct()
+{
+    int tab = m_moveRightAct->data().toInt();
+    Q_ASSERT(tab != -1);
+    moveTabOneSplit(tab, true);
+}
+
+void VEditWindow::moveTabOneSplit(int p_tabIdx, bool p_right)
+{
+    Q_ASSERT(p_tabIdx > -1 && p_tabIdx < count());
+    int totalWin = m_editArea->windowCount();
+    if (totalWin < 2) {
+        return;
+    }
+    int idx = m_editArea->windowIndex(this);
+    int newIdx = p_right ? idx + 1 : idx - 1;
+    if (newIdx >= totalWin) {
+        newIdx = 0;
+    } else if (newIdx < 0) {
+        newIdx = totalWin - 1;
+    }
+    VEditTab *editor = getTab(p_tabIdx);
     // Remove it from current window. This won't close the split even if it is
     // the only tab.
-    removeTab(tab);
+    removeTab(p_tabIdx);
 
     // Disconnect all the signals.
     disconnect(editor, 0, this, 0);
 
-    int idx = m_editArea->windowIndex(this);
-    m_editArea->moveTab(editor, idx, idx - 1);
+    m_editArea->moveTab(editor, idx, newIdx);
 
     // If there is no tab, remove current split.
     if (count() == 0) {
@@ -634,25 +652,13 @@ void VEditWindow::handleMoveLeftAct()
     }
 }
 
-void VEditWindow::handleMoveRightAct()
+void VEditWindow::moveCurrentTabOneSplit(bool p_right)
 {
-    int tab = m_locateAct->data().toInt();
-    Q_ASSERT(tab != -1);
-    VEditTab *editor = getTab(tab);
-    // Remove it from current window. This won't close the split even if it is
-    // the only tab.
-    removeTab(tab);
-
-    // Disconnect all the signals.
-    disconnect(editor, 0, this, 0);
-
-    int idx = m_editArea->windowIndex(this);
-    m_editArea->moveTab(editor, idx, idx + 1);
-
-    // If there is no tab, remove current split.
-    if (count() == 0) {
-        emit requestRemoveSplit(this);
+    int idx = currentIndex();
+    if (idx == -1) {
+        return;
     }
+    moveTabOneSplit(idx, p_right);
 }
 
 bool VEditWindow::addEditTab(QWidget *p_widget)
@@ -696,4 +702,29 @@ void VEditWindow::clearSearchedWordHighlight()
     for (int i = 0; i < nrTab; ++i) {
         getTab(i)->clearSearchedWordHighlight();
     }
+}
+
+void VEditWindow::focusNextTab(bool p_right)
+{
+    focusWindow();
+    if (count() < 2) {
+        return;
+    }
+    int idx = currentIndex();
+    idx = p_right ? idx + 1 : idx - 1;
+    if (idx < 0) {
+        idx = count() - 1;
+    } else if (idx >= count()) {
+        idx = 0;
+    }
+    setCurrentIndex(idx);
+}
+
+bool VEditWindow::showOpenedFileList()
+{
+    if (count() == 0) {
+        return false;
+    }
+    leftBtn->showMenu();
+    return true;
 }

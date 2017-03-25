@@ -28,15 +28,19 @@ class VOutline;
 class VNotebookSelector;
 class VAvatar;
 class VFindReplaceDialog;
+class VCaptain;
 
 class VMainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
+    friend class VCaptain;
+
     VMainWindow(QWidget *parent = 0);
     const QVector<QPair<QString, QString> > &getPalette() const;
     void locateFile(VFile *p_file);
+    void locateCurrentFile();
 
 private slots:
     void importNoteFromFile();
@@ -63,6 +67,7 @@ private slots:
     void openFindDialog();
     void enableMermaid(bool p_checked);
     void enableMathjax(bool p_checked);
+    void handleCaptainModeChanged(bool p_enabled);
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -97,9 +102,15 @@ private:
     void restoreStateAndGeometry();
     void repositionAvatar();
 
+    void initCaptain();
+    void toggleOnePanelView();
+    void closeCurrentFile();
+
     VNote *vnote;
     QPointer<VFile> m_curFile;
     QPointer<VEditTab> m_curTab;
+
+    VCaptain *m_captain;
 
     QLabel *notebookLabel;
     QLabel *directoryLabel;

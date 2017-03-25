@@ -167,20 +167,16 @@ void VEditArea::setCurrentTab(int windowIndex, int tabIndex, bool setFocus)
 void VEditArea::setCurrentWindow(int windowIndex, bool setFocus)
 {
     int nrWin = splitter->count();
-    if (curWindowIndex == windowIndex) {
-        goto out;
-    }
     curWindowIndex = windowIndex;
-    if (curWindowIndex > -1 && setFocus) {
-        getWindow(curWindowIndex)->focusWindow();
-    }
 
-out:
     for (int i = 0; i < nrWin; ++i) {
         getWindow(i)->setCurrentWindow(false);
     }
     if (curWindowIndex > -1) {
         getWindow(curWindowIndex)->setCurrentWindow(true);
+        if (setFocus) {
+            getWindow(curWindowIndex)->focusWindow();
+        }
     }
     // Update status
     updateWindowStatus();
@@ -323,6 +319,13 @@ void VEditArea::handleSplitWindowRequest(VEditWindow *curWindow)
     setCurrentWindow(idx, true);
 }
 
+void VEditArea::splitCurrentWindow()
+{
+    if (curWindowIndex > -1) {
+        handleSplitWindowRequest(getWindow(curWindowIndex));
+    }
+}
+
 void VEditArea::handleRemoveSplitRequest(VEditWindow *curWindow)
 {
     if (!curWindow || splitter->count() <= 1) {
@@ -337,6 +340,13 @@ void VEditArea::handleRemoveSplitRequest(VEditWindow *curWindow)
         idx = splitter->count() - 1;
     }
     setCurrentWindow(idx, true);
+}
+
+void VEditArea::removeCurrentWindow()
+{
+    if (curWindowIndex > -1) {
+        handleRemoveSplitRequest(getWindow(curWindowIndex));
+    }
 }
 
 void VEditArea::mousePressEvent(QMouseEvent *event)
@@ -524,4 +534,39 @@ QString VEditArea::getSelectedText()
     } else {
         return QString();
     }
+}
+
+int VEditArea::focusNextWindow(int p_biaIdx)
+{
+    if (p_biaIdx == 0) {
+        return curWindowIndex;
+    }
+    int newIdx = curWindowIndex + p_biaIdx;
+    if (newIdx < 0) {
+        newIdx = 0;
+    } else if (newIdx >= splitter->count()) {
+        newIdx = splitter->count() - 1;
+    }
+    if (newIdx >= 0 && newIdx < splitter->count()) {
+        setCurrentWindow(newIdx, true);
+    } else {
+        newIdx = -1;
+    }
+    return newIdx;
+}
+
+void VEditArea::moveCurrentTabOneSplit(bool p_right)
+{
+    if (splitter->count() < 2) {
+        return;
+    }
+    getWindow(curWindowIndex)->moveCurrentTabOneSplit(p_right);
+}
+
+VEditWindow *VEditArea::getCurrentWindow() const
+{
+    if (curWindowIndex < 0) {
+        return NULL;
+    }
+    return getWindow(curWindowIndex);
 }

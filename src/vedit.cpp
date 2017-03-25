@@ -500,3 +500,4 @@ void VEdit::clearSearchedWordHighlight()
     selects.clear();
     highlightExtraSelections();
 }
+

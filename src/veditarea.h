@@ -42,6 +42,13 @@ public:
     inline VFindReplaceDialog *getFindReplaceDialog() const;
     // Return selected text of current edit tab.
     QString getSelectedText();
+    void splitCurrentWindow();
+    void removeCurrentWindow();
+    // Focus next window (curWindowIndex + p_biaIdx).
+    // Return the new current window index, otherwise, return -1.
+    int focusNextWindow(int p_biaIdx);
+    void moveCurrentTabOneSplit(bool p_right);
+    VEditWindow *getCurrentWindow() const;
 
 signals:
     void curTabStatusChanged(const VFile *p_file, const VEditTab *p_editTab, bool p_editMode);

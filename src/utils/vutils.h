@@ -10,6 +10,8 @@
 #include "vconfigmanager.h"
 #include "vconstants.h"
 
+class QKeyEvent;
+
 class VUtils
 {
 public:

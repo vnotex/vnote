@@ -41,7 +41,7 @@ void VNote::initPalette(QPalette palette)
                                              palette.background().color().name()));
     m_palette.append(QPair<QString, QString>("hover-color", "#42A5F5"));
     m_palette.append(QPair<QString, QString>("base-color", "#BDBDBD"));
-    m_palette.append(QPair<QString, QString>("focus-color", "#15AE67"));
+    m_palette.append(QPair<QString, QString>("focus-color", "#75C5B5"));
     m_palette.append(QPair<QString, QString>("logo-base", "#D6EACE"));
     m_palette.append(QPair<QString, QString>("logo-max", "#15AE67"));
     m_palette.append(QPair<QString, QString>("logo-min", "#75C5B5"));
@@ -79,6 +79,28 @@ void VNote::initPalette(QPalette palette)
     m_palette.append(QPair<QString, QString>("Green7", "#388E3C"));
     m_palette.append(QPair<QString, QString>("Green8", "#2E7D32"));
     m_palette.append(QPair<QString, QString>("Green9", "#1B5E20"));
+
+    m_palette.append(QPair<QString, QString>("DeepPurple0", "#EDE7F6"));
+    m_palette.append(QPair<QString, QString>("DeepPurple1", "#D1C4E9"));
+    m_palette.append(QPair<QString, QString>("DeepPurple2", "#B39DDB"));
+    m_palette.append(QPair<QString, QString>("DeepPurple3", "#9575CD"));
+    m_palette.append(QPair<QString, QString>("DeepPurple4", "#7E57C2"));
+    m_palette.append(QPair<QString, QString>("DeepPurple5", "#673AB7"));
+    m_palette.append(QPair<QString, QString>("DeepPurple6", "#5E35B1"));
+    m_palette.append(QPair<QString, QString>("DeepPurple7", "#512DA8"));
+    m_palette.append(QPair<QString, QString>("DeepPurple8", "#4527A0"));
+    m_palette.append(QPair<QString, QString>("DeepPurple9", "#311B92"));
+
+    m_palette.append(QPair<QString, QString>("Purple0", "#F3E5F5"));
+    m_palette.append(QPair<QString, QString>("Purple1", "#E1BEE7"));
+    m_palette.append(QPair<QString, QString>("Purple2", "#CE93D8"));
+    m_palette.append(QPair<QString, QString>("Purple3", "#BA68C8"));
+    m_palette.append(QPair<QString, QString>("Purple4", "#AB47BC"));
+    m_palette.append(QPair<QString, QString>("Purple5", "#9C27B0"));
+    m_palette.append(QPair<QString, QString>("Purple6", "#8E24AA"));
+    m_palette.append(QPair<QString, QString>("Purple7", "#7B1FA2"));
+    m_palette.append(QPair<QString, QString>("Purple8", "#6A1B9A"));
+    m_palette.append(QPair<QString, QString>("Purple9", "#4A148C"));
 }
 
 QString VNote::getColorFromPalette(const QString &p_name) const

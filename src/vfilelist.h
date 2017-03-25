@@ -17,6 +17,7 @@ class VNote;
 class QListWidget;
 class QPushButton;
 class VEditArea;
+class QFocusEvent;
 
 class VFileList : public QWidget
 {
@@ -52,6 +53,7 @@ public slots:
 
 protected:
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
+    void focusInEvent(QFocusEvent *p_event) Q_DECL_OVERRIDE;
 
 private:
     void setupUI();

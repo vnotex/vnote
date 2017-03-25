@@ -105,3 +105,13 @@ void VAvatar::setColor(const QString &p_baseColor, const QString &p_fgColor, con
     m_bgColor.setNamedColor(p_bgColor);
 }
 
+void VAvatar::updateBaseColor(const QString &p_baseColor)
+{
+    m_baseColor.setNamedColor(p_baseColor);
+    update();
+}
+
+QString VAvatar::getBaseColor() const
+{
+    return m_baseColor.name();
+}

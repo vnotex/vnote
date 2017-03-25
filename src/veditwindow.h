@@ -46,6 +46,10 @@ public:
     // Set whether it is the current window.
     void setCurrentWindow(bool p_current);
     void clearSearchedWordHighlight();
+    void moveCurrentTabOneSplit(bool p_right);
+    void focusNextTab(bool p_right);
+    // Return true if the file list is shown.
+    bool showOpenedFileList();
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
@@ -90,6 +94,7 @@ private:
     inline QString generateTooltip(const VFile *p_file) const;
     inline QString generateTabText(const QString &p_name, bool p_modified) const;
     bool canRemoveSplit();
+    void moveTabOneSplit(int p_tabIdx, bool p_right);
 
     VNote *vnote;
     VEditArea *m_editArea;
