@@ -415,6 +415,7 @@ void VDirectoryTree::editDirectoryInfo()
                 return;
             }
             curItem->setText(0, name);
+            curItem->setToolTip(0, name);
             emit directoryUpdated(curDir);
         }
         break;
