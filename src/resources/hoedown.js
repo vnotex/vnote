@@ -9,10 +9,14 @@ var updateHtml = function(html) {
         if (code.parentElement.tagName.toLowerCase() == 'pre') {
             if (VEnableMermaid && code.classList.contains('language-mermaid')) {
                 // Mermaid code block.
+                mermaidParserErr = false;
                 try {
                     var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx++, code.innerText, function(){});
                 } catch (err) {
                     content.setLog("err: " + err);
+                    continue;
+                }
+                if (mermaidParserErr) {
                     continue;
                 }
                 var graphDiv = document.createElement('div');
@@ -29,12 +33,13 @@ var updateHtml = function(html) {
         }
     }
 
-    if (VEnableMathjax) {
+    // MathJax may be not loaded for now.
+    if (VEnableMathjax && (typeof MathJax != "undefined")) {
         try {
             MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder]);
         } catch (err) {
             content.setLog("err: " + err);
         }
     }
-}
+};
 

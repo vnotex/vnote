@@ -56,7 +56,7 @@ window.onscroll = function() {
     if (curHeader != null) {
         content.setHeader(curHeader);
     }
-}
+};
 
 document.onkeydown = function(e) {
     e = e || window.event;
@@ -134,7 +134,14 @@ document.onkeydown = function(e) {
         return;
     }
     e.preventDefault();
-}
+};
+
+var mermaidParserErr = false;
+
+mermaidAPI.parseError = function(err, hash) {
+    content.setLog("err: " + err);
+    mermaidParserErr = true;
+};
 
 // @className, the class name of the mermaid code block, such as 'lang-mermaid'.
 var renderMermaid = function(className) {
@@ -147,10 +154,14 @@ var renderMermaid = function(className) {
         var code = codes[i];
         if (code.classList.contains(className)) {
             // Mermaid code block.
+            mermaidParserErr = false;
             try {
                 var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx++, code.innerText, function(){});
             } catch (err) {
                 content.setLog("err: " + err);
+                continue;
+            }
+            if (mermaidParserErr) {
                 continue;
             }
             var graphDiv = document.createElement('div');
@@ -163,4 +174,4 @@ var renderMermaid = function(className) {
             --i;
         }
     }
-}
+};

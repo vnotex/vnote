@@ -176,5 +176,5 @@ var updateText = function(text) {
             content.setLog("err: " + err);
         }
     }
-}
+};
 
