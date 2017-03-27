@@ -2,7 +2,7 @@
 # Created by Le Tan (tamlokveer@gmail.com)
 
 editor
-font-family: Microsoft YaHei, WenQuanYi Micro Hei, Droid Sans, SimSun, Georgia, Palatino, Arial, serif
+font-family: Microsoft YaHei, WenQuanYi Micro Hei, Dengxian, Liberation Sans, Fangsong, NSimSun, Kaiti, Droid Sans, SimSun, Arial, Georgia, Palatino, serif
 
 H1
 foreground: 111111
