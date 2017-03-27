@@ -36,7 +36,7 @@ QPushButton[SelectionBtn="true"] {
     padding: 4px 10px 4px 10px;
     border: none;
     background-color: transparent;
-    font-size: 18px;
+    font-size: 15pt;
     text-align: left;
 }
 
@@ -97,7 +97,7 @@ QDockWidget::close-button:hover, QDockWidget::float-button:hover {
 QComboBox#NotebookSelector {
     border: none;
     background-color: @base-background;
-    font-size: 15px;
+    font-size: 13pt;
     padding-top: 3px;
     padding-bottom: 3px;
     icon-size: 30px;
@@ -120,7 +120,7 @@ QComboBox#NotebookSelector::down-arrow {
 QComboBox#NotebookSelector QListWidget {
     border: 1px solid grey;
     background-color: @base-background;
-    font-size: 15px;
+    font-size: 13pt;
 }
 
 QComboBox#NotebookSelector QListWidget::item {
