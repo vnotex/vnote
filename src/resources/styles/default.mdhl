@@ -2,7 +2,9 @@
 # Created by Le Tan (tamlokveer@gmail.com)
 
 editor
-font-family: Microsoft YaHei, WenQuanYi Micro Hei, Dengxian, Liberation Sans, Fangsong, NSimSun, Kaiti, Droid Sans, SimSun, Arial, Georgia, Palatino, serif
+# QTextEdit just choose the first available font, so specify the Chinese fonts first
+# Do not use "" to quote the name
+font-family: Hiragino Sans GB, 冬青黑体, STXihei, 华文细黑, Microsoft YaHei, 微软雅黑, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Helvetica, sans-serif, Tahoma, Arial, Verdana, Geneva, Georgia, Times New Roman
 
 H1
 foreground: 111111
@@ -65,7 +67,7 @@ foreground: b58900
 
 CODE
 foreground: af5f00
-font-family: Consolas, Monaco, Andale Mono, monospace
+font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
 
 EMPH
 font-style: italic
@@ -81,7 +83,7 @@ foreground: 93a1a1
 
 VERBATIM
 foreground: 551A8B
-font-family: Consolas, Monaco, Andale Mono, monospace
+font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
 
 BLOCKQUOTE
 foreground: 00af00

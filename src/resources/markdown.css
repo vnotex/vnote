@@ -1,6 +1,6 @@
 body{
     margin: 0 auto;
-    font-family: Microsoft YaHei, WenQuanYi Micro Hei, Dengxian, Liberation Sans, Fangsong, NSimSun, Kaiti, Droid Sans, SimSun, Arial, Georgia, Palatino, serif;
+    font-family: Helvetica, sans-serif, Tahoma, Arial, Verdana, Geneva, Georgia, Palatino, "Times New Roman", "Hiragino Sans GB", "冬青黑体", STXihei, "华文细黑", "Microsoft YaHei", "微软雅黑", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体";
     color: #444444;
     line-height: 1;
     padding: 30px;
@@ -67,7 +67,7 @@ pre {
     overflow: auto;
 }
 code {
-    font-family: Consolas, Monaco, Andale Mono, Monospace;
+    font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New;
     line-height: 1.5;
     font-size: 14px;
     color: #4527A0;
