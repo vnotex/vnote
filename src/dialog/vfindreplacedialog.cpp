@@ -32,9 +32,6 @@ void VFindReplaceDialog::setupUI()
     m_findPrevBtn = new QPushButton(tr("Find &Previous"));
     m_findPrevBtn->setProperty("FlatBtn", true);
 
-    setTabOrder(m_findEdit, m_findNextBtn);
-    setTabOrder(m_findNextBtn, m_findPrevBtn);
-
     // Replace
     QLabel *replaceLabel = new QLabel(tr("&Replace with:"));
     m_replaceEdit = new QLineEdit();
@@ -49,12 +46,6 @@ void VFindReplaceDialog::setupUI()
     m_advancedBtn = new QPushButton(tr("&Advanced >>"));
     m_advancedBtn->setProperty("FlatBtn", true);
     m_advancedBtn->setCheckable(true);
-
-    setTabOrder(m_findPrevBtn, m_replaceEdit);
-    setTabOrder(m_replaceEdit, m_replaceBtn);
-    setTabOrder(m_replaceBtn, m_replaceFindBtn);
-    setTabOrder(m_replaceFindBtn, m_replaceAllBtn);
-    setTabOrder(m_replaceAllBtn, m_advancedBtn);
 
     // Options
     m_caseSensitiveCheck = new QCheckBox(tr("&Case sensitive"), this);
@@ -103,6 +94,19 @@ void VFindReplaceDialog::setupUI()
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
     setLayout(mainLayout);
+
+    setTabOrder(m_findEdit, m_findNextBtn);
+    setTabOrder(m_findNextBtn, m_findPrevBtn);
+    setTabOrder(m_findPrevBtn, m_replaceEdit);
+    setTabOrder(m_replaceEdit, m_replaceBtn);
+    setTabOrder(m_replaceBtn, m_replaceFindBtn);
+    setTabOrder(m_replaceFindBtn, m_replaceAllBtn);
+    setTabOrder(m_replaceAllBtn, m_advancedBtn);
+    setTabOrder(m_advancedBtn, m_caseSensitiveCheck);
+    setTabOrder(m_caseSensitiveCheck, m_wholeWordOnlyCheck);
+    setTabOrder(m_wholeWordOnlyCheck, m_regularExpressionCheck);
+    setTabOrder(m_regularExpressionCheck, m_incrementalSearchCheck);
+    setTabOrder(m_incrementalSearchCheck, m_closeBtn);
 
     m_caseSensitiveCheck->hide();
     m_wholeWordOnlyCheck->hide();
@@ -198,12 +202,6 @@ void VFindReplaceDialog::advancedBtnToggled(bool p_checked)
     m_wholeWordOnlyCheck->setVisible(p_checked);
     m_regularExpressionCheck->setVisible(p_checked);
     m_incrementalSearchCheck->setVisible(p_checked);
-
-    setTabOrder(m_advancedBtn, m_caseSensitiveCheck);
-    setTabOrder(m_caseSensitiveCheck, m_wholeWordOnlyCheck);
-    setTabOrder(m_wholeWordOnlyCheck, m_regularExpressionCheck);
-    setTabOrder(m_regularExpressionCheck, m_incrementalSearchCheck);
-    setTabOrder(m_incrementalSearchCheck, m_closeBtn);
 }
 
 void VFindReplaceDialog::optionBoxToggled(int p_state)
