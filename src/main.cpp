@@ -70,13 +70,13 @@ int main(int argc, char *argv[])
         QTextCodec::setCodecForLocale(codec);
     }
     VMainWindow w;
-    w.show();
-
     QString style = VUtils::readFileFromDisk(":/resources/vnote.qss");
     if (!style.isEmpty()) {
         VUtils::processStyle(style, w.getPalette());
         app.setStyleSheet(style);
     }
+
+    w.show();
 
     return app.exec();
 }
