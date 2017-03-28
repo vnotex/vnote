@@ -42,6 +42,7 @@ public:
     static bool isValidLanguage(const QString &p_lang);
     static bool isImageURL(const QUrl &p_url);
     static bool isImageURLText(const QString &p_url);
+    static qreal calculateScaleFactor();
 
 private:
     // <value, name>

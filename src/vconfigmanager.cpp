@@ -87,6 +87,13 @@ void VConfigManager::initialize()
     m_enableMermaid = getConfigFromSettings("global", "enable_mermaid").toBool();
 
     m_enableMathjax = getConfigFromSettings("global", "enable_mathjax").toBool();
+
+    m_webZoomFactor = getConfigFromSettings("global", "web_zoom_factor").toReal();
+    if (m_webZoomFactor < 0) {
+        // Calculate the zoom factor based on DPI.
+        m_webZoomFactor = VUtils::calculateScaleFactor();
+        qDebug() << "set WebZoomFactor to" << m_webZoomFactor;
+    }
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

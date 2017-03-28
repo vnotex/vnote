@@ -12,6 +12,7 @@
 #include <QFileInfo>
 #include <QImageReader>
 #include <QKeyEvent>
+#include <QScreen>
 
 const QVector<QPair<QString, QString>> VUtils::c_availableLanguages = {QPair<QString, QString>("en_US", "Englisth(US)"),
                                                                        QPair<QString, QString>("zh_CN", "Chinese")};
@@ -342,3 +343,13 @@ bool VUtils::isImageURLText(const QString &p_url)
     return QImageReader::supportedImageFormats().contains(info.suffix().toLower().toLatin1());
 }
 
+qreal VUtils::calculateScaleFactor()
+{
+    // const qreal refHeight = 1152;
+    // const qreal refWidth = 2048;
+    const qreal refDpi = 96;
+
+    qreal dpi = QGuiApplication::primaryScreen()->logicalDotsPerInch();
+    qreal factor = dpi / refDpi;
+    return factor < 1 ? 1 : factor;
+}

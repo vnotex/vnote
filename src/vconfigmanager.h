@@ -123,6 +123,9 @@ public:
     inline bool getEnableMathjax() const;
     inline void setEnableMathjax(bool p_enabled);
 
+    inline qreal getWebZoomFactor() const;
+    inline void setWebZoomFactor(qreal p_factor);
+
 private:
     void updateMarkdownEditStyle();
     QVariant getConfigFromSettings(const QString &section, const QString &key);
@@ -186,6 +189,9 @@ private:
 
     // Enable Mathjax.
     bool m_enableMathjax;
+
+    // Zoom factor of the QWebEngineView.
+    qreal m_webZoomFactor;
 
     // The name of the config file in each directory
     static const QString dirConfigFileName;
@@ -532,4 +538,17 @@ inline void VConfigManager::setEnableMathjax(bool p_enabled)
     setConfigToSettings("global", "enable_mathjax", m_enableMathjax);
 }
 
+inline qreal VConfigManager::getWebZoomFactor() const
+{
+    return m_webZoomFactor;
+}
+
+inline void VConfigManager::setWebZoomFactor(qreal p_factor)
+{
+    if (m_webZoomFactor == p_factor) {
+        return;
+    }
+    m_webZoomFactor = p_factor;
+    setConfigToSettings("global", "web_zoom_factor", m_webZoomFactor);
+}
 #endif // VCONFIGMANAGER_H

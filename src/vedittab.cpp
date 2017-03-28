@@ -265,6 +265,7 @@ void VEditTab::setupMarkdownPreview()
     webPreviewer = new QWebEngineView(this);
     VPreviewPage *page = new VPreviewPage(this);
     webPreviewer->setPage(page);
+    webPreviewer->setZoomFactor(vconfig.getWebZoomFactor());
 
     QWebChannel *channel = new QWebChannel(this);
     channel->registerObject(QStringLiteral("content"), &document);
