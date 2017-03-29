@@ -6,7 +6,6 @@
 #include <QVector>
 #include <QSettings>
 #include "vnotebook.h"
-
 #include "hgmarkdownhighlighter.h"
 #include "vmarkdownconverter.h"
 
@@ -124,7 +123,8 @@ public:
     inline void setEnableMathjax(bool p_enabled);
 
     inline qreal getWebZoomFactor() const;
-    inline void setWebZoomFactor(qreal p_factor);
+    void setWebZoomFactor(qreal p_factor);
+    inline bool isCustomWebZoomFactor();
 
 private:
     void updateMarkdownEditStyle();
@@ -543,12 +543,11 @@ inline qreal VConfigManager::getWebZoomFactor() const
     return m_webZoomFactor;
 }
 
-inline void VConfigManager::setWebZoomFactor(qreal p_factor)
+inline bool VConfigManager::isCustomWebZoomFactor()
 {
-    if (m_webZoomFactor == p_factor) {
-        return;
-    }
-    m_webZoomFactor = p_factor;
-    setConfigToSettings("global", "web_zoom_factor", m_webZoomFactor);
+    qreal factorFromIni = getConfigFromSettings("global", "web_zoom_factor").toReal();
+    // -1 indicates let system automatically calculate the factor.
+    return factorFromIni > 0;
 }
+
 #endif // VCONFIGMANAGER_H

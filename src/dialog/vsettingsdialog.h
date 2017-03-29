@@ -8,6 +8,9 @@
 class QDialogButtonBox;
 class QTabWidget;
 class QComboBox;
+class QGroupBox;
+class QDoubleSpinBox;
+class QCheckBox;
 
 class VGeneralTab : public QWidget
 {
@@ -17,19 +20,37 @@ public:
     bool loadConfiguration();
     bool saveConfiguration();
 
-private slots:
-    void handleIndexChange(int p_index);
-
 private:
     bool loadLanguage();
     bool saveLanguage();
 
     // Language
     QComboBox *m_langCombo;
-    // Whether language changes.
-    bool m_langChanged;
 
     static const QVector<QString> c_availableLangs;
+};
+
+class VReadEditTab : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit VReadEditTab(QWidget *p_parent = 0);
+    bool loadConfiguration();
+    bool saveConfiguration();
+
+    QGroupBox *m_readBox;
+    QGroupBox *m_editBox;
+
+    // Web zoom factor.
+    QCheckBox *m_customWebZoom;
+    QDoubleSpinBox *m_webZoomFactorSpin;
+
+private slots:
+    void customWebZoomChanged(int p_state);
+
+private:
+    bool loadWebZoomFactor();
+    bool saveWebZoomFactor();
 };
 
 class VSettingsDialog : public QDialog

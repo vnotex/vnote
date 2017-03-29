@@ -89,7 +89,7 @@ void VConfigManager::initialize()
     m_enableMathjax = getConfigFromSettings("global", "enable_mathjax").toBool();
 
     m_webZoomFactor = getConfigFromSettings("global", "web_zoom_factor").toReal();
-    if (m_webZoomFactor < 0) {
+    if (!isCustomWebZoomFactor()) {
         // Calculate the zoom factor based on DPI.
         m_webZoomFactor = VUtils::calculateScaleFactor();
         qDebug() << "set WebZoomFactor to" << m_webZoomFactor;
@@ -264,3 +264,23 @@ void VConfigManager::updatePaletteColor()
     // Update markdown editor palette
     updateMarkdownEditStyle();
 }
+
+void VConfigManager::setWebZoomFactor(qreal p_factor)
+{
+    if (isCustomWebZoomFactor()) {
+        if (VUtils::realEqual(m_webZoomFactor, p_factor)) {
+            return;
+        } else if (VUtils::realEqual(p_factor, -1)) {
+            m_webZoomFactor = VUtils::calculateScaleFactor();
+            setConfigToSettings("global", "web_zoom_factor", -1);
+            return;
+        }
+    } else {
+        if (VUtils::realEqual(p_factor, -1)) {
+            return;
+        }
+    }
+    m_webZoomFactor = p_factor;
+    setConfigToSettings("global", "web_zoom_factor", m_webZoomFactor);
+}
+

@@ -353,3 +353,9 @@ qreal VUtils::calculateScaleFactor()
     qreal factor = dpi / refDpi;
     return factor < 1 ? 1 : factor;
 }
+
+bool VUtils::realEqual(qreal p_a, qreal p_b)
+{
+    return abs(p_a - p_b) < 1e-8;
+}
+

@@ -43,6 +43,7 @@ public:
     static bool isImageURL(const QUrl &p_url);
     static bool isImageURLText(const QString &p_url);
     static qreal calculateScaleFactor();
+    static bool realEqual(qreal p_a, qreal p_b);
 
 private:
     // <value, name>
