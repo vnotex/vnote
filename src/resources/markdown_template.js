@@ -137,10 +137,18 @@ document.onkeydown = function(e) {
 };
 
 var mermaidParserErr = false;
+var mermaidIdx = 0;
 
 mermaidAPI.parseError = function(err, hash) {
     content.setLog("err: " + err);
     mermaidParserErr = true;
+
+    // Clean the container element, or mermaidAPI won't render the graph with
+    // the same id.
+    var errGraph = document.getElementById('mermaid-diagram-' + mermaidIdx);
+    var parentNode = errGraph.parentElement;
+    parentNode.outerHTML = '';
+    delete parentNode;
 };
 
 // @className, the class name of the mermaid code block, such as 'lang-mermaid'.
@@ -149,19 +157,21 @@ var renderMermaid = function(className) {
         return;
     }
     var codes = document.getElementsByTagName('code');
-    var mermaidIdx = 0;
+    mermaidIdx = 0;
     for (var i = 0; i < codes.length; ++i) {
         var code = codes[i];
         if (code.classList.contains(className)) {
             // Mermaid code block.
             mermaidParserErr = false;
+            mermaidIdx++;
             try {
-                var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx++, code.innerText, function(){});
+                // Do not increment mermaidIdx here.
+                var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx, code.innerText, function(){});
             } catch (err) {
                 content.setLog("err: " + err);
                 continue;
             }
-            if (mermaidParserErr) {
+            if (mermaidParserErr || typeof graph == "undefined") {
                 continue;
             }
             var graphDiv = document.createElement('div');
