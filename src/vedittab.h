@@ -51,6 +51,9 @@ public:
     QString getSelectedText() const;
     void clearSearchedWordHighlight();
 
+protected:
+    void wheelEvent(QWheelEvent *p_event) Q_DECL_OVERRIDE;
+
 signals:
     void getFocused();
     void outlineChanged(const VToc &toc);
@@ -65,7 +68,7 @@ private slots:
     void updateTocFromHeaders(const QVector<VHeader> &headers);
     void handleTextChanged();
     void noticeStatusChanged();
-    void handleWebKeyPressed(int p_key);
+    void handleWebKeyPressed(int p_key, bool p_ctrl, bool p_shift);
 
 private:
     void setupUI();
@@ -83,6 +86,7 @@ private:
     // Check if @tableOfContent is outdated (such as renaming the file).
     // Return true if we need to update toc.
     bool checkToc();
+    void zoomWebPage(bool p_zoomIn, qreal p_step = 0.25);
 
     QPointer<VFile> m_file;
     bool isEditMode;

@@ -2,10 +2,9 @@
 #include <QtWidgets>
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
+#include "vconstants.h"
 
 extern VConfigManager vconfig;
-static const qreal c_webZoomFactorMax = 5;
-static const qreal c_webZoomFactorMin = 0.25;
 
 VSettingsDialog::VSettingsDialog(QWidget *p_parent)
     : QDialog(p_parent)

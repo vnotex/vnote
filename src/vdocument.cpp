@@ -55,7 +55,7 @@ void VDocument::setLog(const QString &p_log)
     emit logChanged(p_log);
 }
 
-void VDocument::keyPressEvent(int p_key)
+void VDocument::keyPressEvent(int p_key, bool p_ctrl, bool p_shift)
 {
-    emit keyPressed(p_key);
+    emit keyPressed(p_key, p_ctrl, p_shift);
 }

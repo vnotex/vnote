@@ -24,7 +24,7 @@ public slots:
     void setToc(const QString &toc);
     void setHeader(const QString &anchor);
     void setLog(const QString &p_log);
-    void keyPressEvent(int p_key);
+    void keyPressEvent(int p_key, bool p_ctrl, bool p_shift);
     void updateText();
 
 signals:
@@ -34,7 +34,7 @@ signals:
     void headerChanged(const QString &anchor);
     void htmlChanged(const QString &html);
     void logChanged(const QString &p_log);
-    void keyPressed(int p_key);
+    void keyPressed(int p_key, bool p_ctrl, bool p_shift);
 
 private:
     QString m_toc;

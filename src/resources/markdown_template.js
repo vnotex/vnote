@@ -35,6 +35,14 @@ var scrollToAnchor = function(anchor) {
     }
 };
 
+window.onwheel = function(e) {
+    e = e || window.event;
+    var ctrl = !!e.ctrlKey;
+    if (ctrl) {
+        e.preventDefault();
+    }
+}
+
 window.onscroll = function() {
     var scrollTop = document.documentElement.scrollTop || document.body.scrollTop || window.pageYOffset;
     var eles = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
@@ -129,7 +137,7 @@ document.onkeydown = function(e) {
         return;
 
     default:
-        content.keyPressEvent(key);
+        content.keyPressEvent(key, ctrl, shift);
         keyState = 0;
         return;
     }

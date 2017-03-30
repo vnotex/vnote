@@ -17,6 +17,7 @@
 #include "vmdedit.h"
 #include "dialog/vfindreplacedialog.h"
 #include "veditarea.h"
+#include "vconstants.h"
 
 extern VConfigManager vconfig;
 
@@ -592,12 +593,37 @@ bool VEditTab::checkToc()
     return ret;
 }
 
-void VEditTab::handleWebKeyPressed(int p_key)
+void VEditTab::handleWebKeyPressed(int p_key, bool p_ctrl, bool /* p_shift */)
 {
+    Q_ASSERT(webPreviewer);
     switch (p_key) {
     // Esc
     case 27:
         m_editArea->getFindReplaceDialog()->closeDialog();
+        break;
+
+    // Dash
+    case 189:
+        if (p_ctrl) {
+            // Zoom out.
+            zoomWebPage(false);
+        }
+        break;
+
+    // Equal
+    case 187:
+        if (p_ctrl) {
+            // Zoom in.
+            zoomWebPage(true);
+        }
+        break;
+
+    // 0
+    case 48:
+        if (p_ctrl) {
+            // Recover zoom.
+            webPreviewer->setZoomFactor(1);
+        }
         break;
 
     default:
@@ -605,3 +631,29 @@ void VEditTab::handleWebKeyPressed(int p_key)
     }
 }
 
+void VEditTab::wheelEvent(QWheelEvent *p_event)
+{
+    if (!isEditMode && webPreviewer) {
+        QPoint angle = p_event->angleDelta();
+        Qt::KeyboardModifiers modifiers = p_event->modifiers();
+        if (!angle.isNull() && (angle.y() != 0) && (modifiers & Qt::ControlModifier)) {
+            zoomWebPage(angle.y() > 0);
+            p_event->accept();
+            return;
+        }
+    }
+    p_event->ignore();
+}
+
+void VEditTab::zoomWebPage(bool p_zoomIn, qreal p_step)
+{
+    Q_ASSERT(webPreviewer);
+    qreal curFactor = webPreviewer->zoomFactor();
+    qreal newFactor = p_zoomIn ? curFactor + p_step : curFactor - p_step;
+    if (newFactor < c_webZoomFactorMin) {
+        newFactor = c_webZoomFactorMin;
+    } else if (newFactor > c_webZoomFactorMax) {
+        newFactor = c_webZoomFactorMax;
+    }
+    webPreviewer->setZoomFactor(newFactor);
+}
