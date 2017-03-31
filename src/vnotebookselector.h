@@ -61,6 +61,7 @@ private:
     int indexOfListItem(const QListWidgetItem *p_item);
     // @p_index is the idnex of QComboBox.
     inline VNotebook *getNotebookFromComboIndex(int p_index);
+    void resizeListWidgetToContent();
 
     VNote *m_vnote;
     QVector<VNotebook *> &m_notebooks;

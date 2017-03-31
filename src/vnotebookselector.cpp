@@ -4,6 +4,8 @@
 #include <QListWidget>
 #include <QAction>
 #include <QMenu>
+#include <QGuiApplication>
+#include <QScreen>
 #include "vnotebook.h"
 #include "vconfigmanager.h"
 #include "dialog/vnewnotebookdialog.h"
@@ -361,5 +363,26 @@ void VNotebookSelector::showPopup()
         newNotebook();
         return;
     }
+    resizeListWidgetToContent();
     QComboBox::showPopup();
+}
+
+void VNotebookSelector::resizeListWidgetToContent()
+{
+    static QRect screenRect = QGuiApplication::primaryScreen()->geometry();
+    static int maxMinWidth = screenRect.width() < 400 ? screenRect.width() : screenRect.width() / 2;
+    static int maxMinHeight = screenRect.height() < 400 ? screenRect.height() : screenRect.height() / 2;
+
+    int minWidth = 0;
+    int minHeight = 0;
+    if (m_listWidget->count() > 0) {
+        // Width
+        minWidth = m_listWidget->sizeHintForColumn(0);
+        minWidth = qMin(minWidth, maxMinWidth);
+
+        // Height
+        minHeight = m_listWidget->sizeHintForRow(0) * m_listWidget->count() + 10;
+        minHeight = qMin(minHeight, maxMinHeight);
+    }
+    m_listWidget->setMinimumSize(minWidth, minHeight);
 }
