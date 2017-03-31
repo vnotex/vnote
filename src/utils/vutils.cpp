@@ -13,6 +13,7 @@
 #include <QImageReader>
 #include <QKeyEvent>
 #include <QScreen>
+#include <cmath>
 
 const QVector<QPair<QString, QString>> VUtils::c_availableLanguages = {QPair<QString, QString>("en_US", "Englisth(US)"),
                                                                        QPair<QString, QString>("zh_CN", "Chinese")};
@@ -356,6 +357,6 @@ qreal VUtils::calculateScaleFactor()
 
 bool VUtils::realEqual(qreal p_a, qreal p_b)
 {
-    return abs(p_a - p_b) < 1e-8;
+    return std::abs(p_a - p_b) < 1e-8;
 }
 

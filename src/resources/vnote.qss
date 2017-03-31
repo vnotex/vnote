@@ -80,6 +80,11 @@ QMenuBar::item:selected {
 }
 
 /* DockWidget */
+QDockWidget {
+    titlebar-close-icon: url(:/resources/icons/close.svg);
+    titlebar-normal-icon: url(:/resources/icons/float.svg);
+}
+
 QDockWidget::Title {
     background: @base-color;
 }
@@ -90,6 +95,10 @@ QDockWidget::close-button, QDockWidget::float-button {
 
 QDockWidget::close-button:hover, QDockWidget::float-button:hover {
     background-color: @hover-color;
+}
+
+QDockWidget::close-button:focus, QDockWidget::float-button:focus {
+    background-color: @focus-color;
 }
 /* End DockWidget */
 
@@ -189,3 +198,16 @@ QWidget[NotebookPanel="true"] {
     padding-left: 3px;
 }
 
+QTabBar::close-button {
+    image: url(:/resources/icons/close_grey.svg);
+}
+
+QTabBar::close-button:hover {
+    image: url(:/resources/icons/close.svg);
+    background-color: @hover-color;
+}
+
+QTabBar::close-button:focus {
+    image: url(:/resources/icons/close.svg);
+    background-color: @focus-color;
+}

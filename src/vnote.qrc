@@ -94,5 +94,8 @@
         <file>utils/mermaid/mermaid.dark.css</file>
         <file>utils/mermaid/mermaid.forest.css</file>
         <file>utils/mermaid/mermaidAPI.min.js</file>
+        <file>resources/icons/close_red.svg</file>
+        <file>resources/icons/close_grey.svg</file>
+        <file>resources/icons/float.svg</file>
     </qresource>
 </RCC>
