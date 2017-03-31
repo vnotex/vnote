@@ -80,9 +80,6 @@ private:
     QVector<QString> m_initImages;
     QVector<VHeader> m_headers;
     bool m_previewImage;
-
-    static const QString c_cursorLineColor;
-    static const QString c_cursorLineColorVim;
 };
 
 #endif // VMDEDIT_H

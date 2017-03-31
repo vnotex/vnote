@@ -227,6 +227,9 @@ bool VConfigManager::deleteDirectoryConfig(const QString &path)
 
 void VConfigManager::updateMarkdownEditStyle()
 {
+    static const QString defaultCurrentLineBackground = "#C5CAE9";
+    static const QString defaultCurrentLineVimBackground = "#A5D6A7";
+
     // Read style file .mdhl
     QString file(":/resources/styles/default.mdhl");
 
@@ -240,7 +243,25 @@ void VConfigManager::updateMarkdownEditStyle()
     mdHighlightingStyles = parser.fetchMarkdownStyles(baseEditFont);
     mdEditPalette = baseEditPalette;
     mdEditFont = baseEditFont;
-    parser.fetchMarkdownEditorStyles(mdEditPalette, mdEditFont);
+    QMap<QString, QMap<QString, QString>> styles;
+    parser.fetchMarkdownEditorStyles(mdEditPalette, mdEditFont, styles);
+
+    m_editorCurrentLineBackground = defaultCurrentLineBackground;
+    m_editorCurrentLineVimBackground = defaultCurrentLineVimBackground;
+    auto editorCurrentLineIt = styles.find("editor-current-line");
+    if (editorCurrentLineIt != styles.end()) {
+        auto backgroundIt = editorCurrentLineIt->find("background");
+        if (backgroundIt != editorCurrentLineIt->end()) {
+            m_editorCurrentLineBackground = *backgroundIt;
+        }
+
+        auto vimBackgroundIt = editorCurrentLineIt->find("vim-background");
+        if (vimBackgroundIt != editorCurrentLineIt->end()) {
+            m_editorCurrentLineVimBackground = "#" + *vimBackgroundIt;
+        }
+    }
+
+    qDebug() << "editor-current-line:" << m_editorCurrentLineBackground << m_editorCurrentLineVimBackground;
 }
 
 void VConfigManager::updatePaletteColor()

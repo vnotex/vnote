@@ -130,8 +130,10 @@ QVector<HighlightingStyle> VStyleParser::fetchMarkdownStyles(const QFont &baseFo
     return styles;
 }
 
-void VStyleParser::fetchMarkdownEditorStyles(QPalette &palette, QFont &font) const
+void VStyleParser::fetchMarkdownEditorStyles(QPalette &palette, QFont &font,
+                                             QMap<QString, QMap<QString, QString>> &styles) const
 {
+    QString ruleKey;
     // editor
     pmh_style_attribute *editorStyles = markdownStyles->editor_styles;
     while (editorStyles) {
@@ -164,8 +166,29 @@ void VStyleParser::fetchMarkdownEditorStyles(QPalette &palette, QFont &font) con
 
     // editor-current-line
     pmh_style_attribute *curLineStyles = markdownStyles->editor_current_line_styles;
-    if (curLineStyles) {
-        qWarning() << "editor-current-line style is not supported";
+    ruleKey = "editor-current-line";
+    while (curLineStyles) {
+        switch (curLineStyles->type) {
+        case pmh_attr_type_background_color:
+        {
+            QString attrName(curLineStyles->name);
+            QString value = QColorFromPmhAttr(curLineStyles->value->argb_color).name();
+            styles[ruleKey][attrName] = value;
+            break;
+        }
+
+        case pmh_attr_type_other:
+        {
+            QString attrName(curLineStyles->name);
+            QString value(curLineStyles->value->string);
+            styles[ruleKey][attrName] = value;
+            break;
+        }
+
+        default:
+            qWarning() << "unimplemented current line attr type:" << curLineStyles->type;
+        }
+        curLineStyles = curLineStyles->next;
     }
 
     // editor-selection

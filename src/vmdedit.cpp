@@ -13,15 +13,10 @@ extern VNote *g_vnote;
 
 enum ImageProperty { ImagePath = 1 };
 
-const QString VMdEdit::c_cursorLineColor = "Indigo1";
-const QString VMdEdit::c_cursorLineColorVim = "Green2";
-
 VMdEdit::VMdEdit(VFile *p_file, QWidget *p_parent)
     : VEdit(p_file, p_parent), m_mdHighlighter(NULL), m_previewImage(true)
 {
     Q_ASSERT(p_file->getDocType() == DocType::Markdown);
-
-    m_cursorLineColor = QColor(g_vnote->getColorFromPalette(c_cursorLineColor));
 
     setAcceptRichText(false);
     m_mdHighlighter = new HGMarkdownHighlighter(vconfig.getMdHighlightingStyles(),
@@ -50,6 +45,7 @@ void VMdEdit::updateFontAndPalette()
 {
     setFont(vconfig.getMdEditFont());
     setPalette(vconfig.getMdEditPalette());
+    m_cursorLineColor = vconfig.getEditorCurrentLineBackground();
 }
 
 void VMdEdit::beginEdit()
@@ -548,9 +544,9 @@ void VMdEdit::handleEditStateChanged(KeyState p_state)
 {
     qDebug() << "edit state" << (int)p_state;
     if (p_state == KeyState::Normal) {
-        m_cursorLineColor = QColor(g_vnote->getColorFromPalette(c_cursorLineColor));
+        m_cursorLineColor = vconfig.getEditorCurrentLineBackground();
     } else {
-        m_cursorLineColor = QColor(g_vnote->getColorFromPalette(c_cursorLineColorVim));
+        m_cursorLineColor = vconfig.getEditorCurrentLineVimBackground();
     }
     highlightCurrentLine();
 }

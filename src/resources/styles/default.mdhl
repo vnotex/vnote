@@ -6,6 +6,14 @@ editor
 # Do not use "" to quote the name
 font-family: Hiragino Sans GB, 冬青黑体, STXihei, 华文细黑, Microsoft YaHei, 微软雅黑, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Helvetica, sans-serif, Tahoma, Arial, Verdana, Geneva, Georgia, Times New Roman
 
+editor-selection
+foreground: eeeeee
+background: 005fff
+
+editor-current-line
+background: c5cae9
+vim-background: a5d6a7
+
 H1
 foreground: 111111
 font-style: bold

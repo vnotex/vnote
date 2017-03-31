@@ -126,6 +126,9 @@ public:
     void setWebZoomFactor(qreal p_factor);
     inline bool isCustomWebZoomFactor();
 
+    inline QString getEditorCurrentLineBackground() const;
+    inline QString getEditorCurrentLineVimBackground() const;
+
 private:
     void updateMarkdownEditStyle();
     QVariant getConfigFromSettings(const QString &section, const QString &key);
@@ -192,6 +195,11 @@ private:
 
     // Zoom factor of the QWebEngineView.
     qreal m_webZoomFactor;
+
+    // Current line background color in editor.
+    QString m_editorCurrentLineBackground;
+    // Current line background color in editor in Vim mode.
+    QString m_editorCurrentLineVimBackground;
 
     // The name of the config file in each directory
     static const QString dirConfigFileName;
@@ -550,4 +558,13 @@ inline bool VConfigManager::isCustomWebZoomFactor()
     return factorFromIni > 0;
 }
 
+inline QString VConfigManager::getEditorCurrentLineBackground() const
+{
+    return m_editorCurrentLineBackground;
+}
+
+inline QString VConfigManager::getEditorCurrentLineVimBackground() const
+{
+    return m_editorCurrentLineVimBackground;
+}
 #endif // VCONFIGMANAGER_H
