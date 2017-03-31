@@ -5,7 +5,9 @@
  * pmh_parser.h
  */
 
+#ifdef Q_CC_GNU
 #pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
 
 /** \file
 * \brief Parser public interface.
