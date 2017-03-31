@@ -13,7 +13,7 @@ cd ${project_dir}
 mkdir build
 cd build
 qmake -v
-qmake -config release ../VNote.pro
+qmake CONFIG-=debug CONFIG+=release ../VNote.pro
 make -j2
 
 git clone https://github.com/aurelien-rainone/macdeployqtfix.git

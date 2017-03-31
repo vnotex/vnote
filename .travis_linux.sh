@@ -11,7 +11,7 @@ cd ${project_dir}
 mkdir build
 cd build
 qmake -v
-qmake -config release -spec linux-g++-64 ../VNote.pro
+qmake CONFIG-=debug CONFIG+=release -spec linux-g++-64 ../VNote.pro
 make
 
 mkdir -p distrib/VNote
