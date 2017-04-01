@@ -60,7 +60,6 @@ p, ul, ol {
 }
 pre {
     padding: 0px 24px;
-    white-space: pre-wrap;
     background-color: #f8f8f8;
     border-radius: 3px;
     border: 1px solid #cccccc;
@@ -77,7 +76,6 @@ pre code {
    padding: 0;
    border: none;
    background: transparent;
-   white-space: pre-wrap;
    overflow: auto;
    color: #444444;
 }
