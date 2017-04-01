@@ -57,6 +57,8 @@ void VConfigManager::initialize()
     m_highlightCursorLine = getConfigFromSettings("global", "highlight_cursor_line").toBool();
     m_highlightSelectedWord = getConfigFromSettings("global", "highlight_selected_word").toBool();
     m_highlightSearchedWord = getConfigFromSettings("global", "highlight_searched_word").toBool();
+    m_autoIndent = getConfigFromSettings("global", "auto_indent").toBool();
+    m_autoList = getConfigFromSettings("global", "auto_list").toBool();
 
     readPredefinedColorsFromSettings();
     curBackgroundColor = getConfigFromSettings("global", "current_background_color").toString();

@@ -81,6 +81,12 @@ public:
     inline bool getHighlightSearchedWord() const;
     inline void setHighlightSearchedWord(bool p_searchedWord);
 
+    inline bool getAutoIndent() const;
+    inline void setAutoIndent(bool p_autoIndent);
+
+    inline bool getAutoList() const;
+    inline void setAutoList(bool p_autoList);
+
     inline const QVector<VColor> &getPredefinedColors() const;
 
     inline const QString &getCurBackgroundColor() const;
@@ -166,6 +172,12 @@ private:
 
     // Highlight searched word.
     bool m_highlightSearchedWord;
+
+    // Auto Indent.
+    bool m_autoIndent;
+
+    // Auto List.
+    bool m_autoList;
 
     // App defined color
     QVector<VColor> predefinedColors;
@@ -360,6 +372,36 @@ inline void VConfigManager::setHighlightSearchedWord(bool p_searchedWord)
     m_highlightSearchedWord = p_searchedWord;
     setConfigToSettings("global", "highlight_searched_word",
                         m_highlightSearchedWord);
+}
+
+inline bool VConfigManager::getAutoIndent() const
+{
+    return m_autoIndent;
+}
+
+inline void VConfigManager::setAutoIndent(bool p_autoIndent)
+{
+    if (m_autoIndent == p_autoIndent) {
+        return;
+    }
+    m_autoIndent = p_autoIndent;
+    setConfigToSettings("global", "auto_indent",
+                        m_autoIndent);
+}
+
+inline bool VConfigManager::getAutoList() const
+{
+    return m_autoList;
+}
+
+inline void VConfigManager::setAutoList(bool p_autoList)
+{
+    if (m_autoList == p_autoList) {
+        return;
+    }
+    m_autoList = p_autoList;
+    setConfigToSettings("global", "auto_list",
+                        m_autoList);
 }
 
 inline const QVector<VColor>& VConfigManager::getPredefinedColors() const

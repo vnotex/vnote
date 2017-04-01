@@ -20,6 +20,9 @@
 #include "vdownloader.h"
 #include "vfile.h"
 #include "vmdedit.h"
+#include "vconfigmanager.h"
+
+extern VConfigManager vconfig;
 
 const QString VMdEditOperations::c_defaultImageTitle = "image";
 
@@ -178,7 +181,25 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
             return true;
         }
     } else {
+        int modifiers = p_event->modifiers();
         switch (p_event->key()) {
+        case Qt::Key_1:
+        case Qt::Key_2:
+        case Qt::Key_3:
+        case Qt::Key_4:
+        case Qt::Key_5:
+        case Qt::Key_6:
+        {
+            if (modifiers == (Qt::ControlModifier | Qt::AltModifier)) {
+                // Ctrl + Alt + <N>: insert title at level <N>.
+                if (insertTitle(p_event->key() - Qt::Key_0)) {
+                    p_event->accept();
+                    return true;
+                }
+            }
+            break;
+        }
+
         case Qt::Key_Tab:
         {
             if (handleKeyTab(p_event)) {
@@ -262,6 +283,14 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         case Qt::Key_Escape:
         {
             if (handleKeyEsc(p_event)) {
+                return true;
+            }
+            break;
+        }
+
+        case Qt::Key_Return:
+        {
+            if (handleKeyReturn(p_event)) {
                 return true;
             }
             break;
@@ -610,6 +639,73 @@ bool VMdEditOperations::handleKeyEsc(QKeyEvent *p_event)
         p_event->accept();
     }
     return accept;
+}
+
+bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
+{
+    if (p_event->modifiers() & Qt::ControlModifier) {
+        return false;
+    }
+
+    bool ret = false;
+    if (vconfig.getAutoIndent()) {
+        ret = true;
+        // Indent the new line as previous line.
+        insertNewBlockWithIndent();
+
+        // Continue the list from previous line.
+        if (vconfig.getAutoList()) {
+            insertListMarkAsPreviousLine();
+        }
+    }
+    return ret;
+}
+
+void VMdEditOperations::insertNewBlockWithIndent()
+{
+    QTextCursor cursor = m_editor->textCursor();
+
+    cursor.beginEditBlock();
+    cursor.removeSelectedText();
+    QTextBlock block = cursor.block();
+    QString text = block.text();
+    QRegExp regExp("(^\\s*)");
+    regExp.indexIn(text);
+    Q_ASSERT(regExp.captureCount() == 1);
+    QString leadingSpaces = regExp.capturedTexts()[1];
+    cursor.insertBlock();
+    cursor.insertText(leadingSpaces);
+    cursor.endEditBlock();
+    m_editor->setTextCursor(cursor);
+}
+
+void VMdEditOperations::insertListMarkAsPreviousLine()
+{
+    QTextCursor cursor = m_editor->textCursor();
+    QTextBlock block = cursor.block();
+    QTextBlock preBlock = block.previous();
+    QString text = preBlock.text();
+    QRegExp regExp("^\\s*(-|\\d+\\.)\\s");
+    int regIdx = regExp.indexIn(text);
+    if (regIdx != -1) {
+        Q_ASSERT(regExp.captureCount() == 1);
+        cursor.beginEditBlock();
+        QString markText = regExp.capturedTexts()[1];
+        if (markText == "-") {
+            // Insert - in front.
+            cursor.insertText("- ");
+        } else {
+            // markText is like "123.".
+            Q_ASSERT(markText.endsWith('.'));
+            bool ok = false;
+            int num = markText.left(markText.size() - 1).toInt(&ok, 10);
+            Q_ASSERT(ok);
+            num++;
+            cursor.insertText(QString::number(num, 10) + ". ");
+        }
+        cursor.endEditBlock();
+        m_editor->setTextCursor(cursor);
+    }
 }
 
 bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
@@ -1004,3 +1100,37 @@ void VMdEditOperations::setKeyState(KeyState p_state)
     m_keyState = p_state;
     emit keyStateChanged(m_keyState);
 }
+
+bool VMdEditOperations::insertTitle(int p_level)
+{
+    Q_ASSERT(p_level > 0 && p_level < 7);
+    QTextDocument *doc = m_editor->document();
+    QString titleMark(p_level, '#');
+    QTextCursor cursor = m_editor->textCursor();
+    if (cursor.hasSelection()) {
+        // Insert title # in front of the selected lines.
+        int start = cursor.selectionStart();
+        int end = cursor.selectionEnd();
+        int startBlock = doc->findBlock(start).blockNumber();
+        int endBlock = doc->findBlock(end).blockNumber();
+        cursor.beginEditBlock();
+        cursor.clearSelection();
+        for (int i = startBlock; i <= endBlock; ++i) {
+            QTextBlock block = doc->findBlockByNumber(i);
+            cursor.setPosition(block.position(), QTextCursor::MoveAnchor);
+            cursor.insertText(titleMark + " ");
+        }
+        cursor.movePosition(QTextCursor::EndOfBlock);
+        cursor.endEditBlock();
+    } else {
+        // Insert title # in front of current block.
+        cursor.beginEditBlock();
+        cursor.movePosition(QTextCursor::StartOfBlock);
+        cursor.insertText(titleMark + " ");
+        cursor.movePosition(QTextCursor::EndOfBlock);
+        cursor.endEditBlock();
+    }
+    m_editor->setTextCursor(cursor);
+    return true;
+}
+

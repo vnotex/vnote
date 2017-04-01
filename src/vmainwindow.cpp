@@ -467,6 +467,20 @@ void VMainWindow::initEditMenu()
     connect(tabStopWidthAct, &QActionGroup::triggered,
             this, &VMainWindow::setTabStopWidth);
 
+    // Auto Indent.
+    m_autoIndentAct = new QAction(tr("Auto Indent"), this);
+    m_autoIndentAct->setStatusTip(tr("Indent automatically when inserting a new line"));
+    m_autoIndentAct->setCheckable(true);
+    connect(m_autoIndentAct, &QAction::triggered,
+            this, &VMainWindow::changeAutoIndent);
+
+    // Auto List.
+    QAction *autoListAct = new QAction(tr("Auto List"), this);
+    autoListAct->setStatusTip(tr("Continue the list automatically when inserting a new line"));
+    autoListAct->setCheckable(true);
+    connect(autoListAct, &QAction::triggered,
+            this, &VMainWindow::changeAutoList);
+
     // Highlight current cursor line.
     QAction *cursorLineAct = new QAction(tr("Highlight Cursor Line"), this);
     cursorLineAct->setStatusTip(tr("Highlight current cursor line"));
@@ -494,11 +508,7 @@ void VMainWindow::initEditMenu()
     findReplaceMenu->addAction(m_replaceAllAct);
     findReplaceMenu->addSeparator();
     findReplaceMenu->addAction(searchedWordAct);
-    if (vconfig.getHighlightSearchedWord()) {
-        searchedWordAct->setChecked(true);
-    } else {
-        searchedWordAct->setChecked(false);
-    }
+    searchedWordAct->setChecked(vconfig.getHighlightSearchedWord());
 
     editMenu->addSeparator();
     m_findReplaceAct->setEnabled(false);
@@ -532,21 +542,26 @@ void VMainWindow::initEditMenu()
     default:
         qWarning() << "unsupported tab stop width" << tabStopWidth <<  "in config";
     }
-    initEditorBackgroundMenu(editMenu);
-    editMenu->addSeparator();
-    editMenu->addAction(cursorLineAct);
-    if (vconfig.getHighlightCursorLine()) {
-        cursorLineAct->setChecked(true);
-    } else {
-        cursorLineAct->setChecked(false);
+
+    editMenu->addAction(m_autoIndentAct);
+    m_autoIndentAct->setChecked(vconfig.getAutoIndent());
+
+    editMenu->addAction(autoListAct);
+    if (vconfig.getAutoList()) {
+        // Let the trigger handler to trigger m_autoIndentAct, too.
+        autoListAct->trigger();
     }
+    Q_ASSERT(!(autoListAct->isChecked() && !m_autoIndentAct->isChecked()));
+
+    editMenu->addSeparator();
+
+    initEditorBackgroundMenu(editMenu);
+
+    editMenu->addAction(cursorLineAct);
+    cursorLineAct->setChecked(vconfig.getHighlightCursorLine());
 
     editMenu->addAction(selectedWordAct);
-    if (vconfig.getHighlightSelectedWord()) {
-        selectedWordAct->setChecked(true);
-    } else {
-        selectedWordAct->setChecked(false);
-    }
+    selectedWordAct->setChecked(vconfig.getHighlightSelectedWord());
 }
 
 void VMainWindow::initDockWindows()
@@ -1072,6 +1087,24 @@ void VMainWindow::closeCurrentFile()
 {
     if (m_curFile) {
         editArea->closeFile(m_curFile, false);
+    }
+}
+
+void VMainWindow::changeAutoIndent(bool p_checked)
+{
+    vconfig.setAutoIndent(p_checked);
+}
+
+void VMainWindow::changeAutoList(bool p_checked)
+{
+    vconfig.setAutoList(p_checked);
+    if (p_checked) {
+        if (!m_autoIndentAct->isChecked()) {
+            m_autoIndentAct->trigger();
+        }
+        m_autoIndentAct->setEnabled(false);
+    } else {
+        m_autoIndentAct->setEnabled(true);
     }
 }
 

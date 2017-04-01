@@ -68,6 +68,8 @@ private slots:
     void enableMermaid(bool p_checked);
     void enableMathjax(bool p_checked);
     void handleCaptainModeChanged(bool p_enabled);
+    void changeAutoIndent(bool p_checked);
+    void changeAutoList(bool p_checked);
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -147,6 +149,8 @@ private:
     QAction *m_replaceAct;
     QAction *m_replaceFindAct;
     QAction *m_replaceAllAct;
+
+    QAction *m_autoIndentAct;
 
     // Menus
     QMenu *viewMenu;

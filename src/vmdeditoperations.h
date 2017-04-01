@@ -39,11 +39,15 @@ private:
     bool handleKeyU(QKeyEvent *p_event);
     bool handleKeyW(QKeyEvent *p_event);
     bool handleKeyEsc(QKeyEvent *p_event);
+    bool handleKeyReturn(QKeyEvent *p_event);
     bool handleKeyPressVim(QKeyEvent *p_event);
     bool handleKeyBracketLeft(QKeyEvent *p_event);
     bool shouldTriggerVimMode(QKeyEvent *p_event);
     int keySeqToNumber(const QList<QString> &p_seq);
     bool suffixNumAllowed(const QList<QString> &p_seq);
+    bool insertTitle(int p_level);
+    void insertNewBlockWithIndent();
+    void insertListMarkAsPreviousLine();
 
     QTimer *m_pendingTimer;
 
