@@ -12,6 +12,10 @@
 
 class QKeyEvent;
 
+#if !defined(V_ASSERT)
+    #define V_ASSERT(cond) ((!(cond)) ? qt_assert(#cond, __FILE__, __LINE__) : qt_noop())
+#endif
+
 class VUtils
 {
 public:

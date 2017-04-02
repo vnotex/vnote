@@ -671,7 +671,7 @@ void VMdEditOperations::insertNewBlockWithIndent()
     QString text = block.text();
     QRegExp regExp("(^\\s*)");
     regExp.indexIn(text);
-    Q_ASSERT(regExp.captureCount() == 1);
+    V_ASSERT(regExp.captureCount() == 1);
     QString leadingSpaces = regExp.capturedTexts()[1];
     cursor.insertBlock();
     cursor.insertText(leadingSpaces);
@@ -688,7 +688,7 @@ void VMdEditOperations::insertListMarkAsPreviousLine()
     QRegExp regExp("^\\s*(-|\\d+\\.)\\s");
     int regIdx = regExp.indexIn(text);
     if (regIdx != -1) {
-        Q_ASSERT(regExp.captureCount() == 1);
+        V_ASSERT(regExp.captureCount() == 1);
         cursor.beginEditBlock();
         QString markText = regExp.capturedTexts()[1];
         if (markText == "-") {
@@ -696,10 +696,10 @@ void VMdEditOperations::insertListMarkAsPreviousLine()
             cursor.insertText("- ");
         } else {
             // markText is like "123.".
-            Q_ASSERT(markText.endsWith('.'));
+            V_ASSERT(markText.endsWith('.'));
             bool ok = false;
             int num = markText.left(markText.size() - 1).toInt(&ok, 10);
-            Q_ASSERT(ok);
+            V_ASSERT(ok);
             num++;
             cursor.insertText(QString::number(num, 10) + ". ");
         }
