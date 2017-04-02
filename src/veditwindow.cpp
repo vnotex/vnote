@@ -61,6 +61,19 @@ void VEditWindow::initTabActions()
 
 void VEditWindow::setupCornerWidget()
 {
+    // Left corner button
+    tabListAct = new QActionGroup(this);
+    connect(tabListAct, &QActionGroup::triggered,
+            this, &VEditWindow::tabListJump);
+    leftBtn = new QPushButton(QIcon(":/resources/icons/corner_tablist.svg"),
+                              "", this);
+    leftBtn->setProperty("CornerBtn", true);
+    QMenu *leftMenu = new QMenu(this);
+    leftBtn->setMenu(leftMenu);
+    setCornerWidget(leftBtn, Qt::TopLeftCorner);
+    connect(leftMenu, &QMenu::aboutToShow,
+            this, &VEditWindow::updateTabListMenu);
+
     // Right corner button
     // Actions
     splitAct = new QAction(QIcon(":/resources/icons/split_window.svg"),
@@ -85,19 +98,6 @@ void VEditWindow::setupCornerWidget()
     setCornerWidget(rightBtn, Qt::TopRightCorner);
     connect(rightMenu, &QMenu::aboutToShow,
             this, &VEditWindow::updateSplitMenu);
-
-    // Left corner button
-    tabListAct = new QActionGroup(this);
-    connect(tabListAct, &QActionGroup::triggered,
-            this, &VEditWindow::tabListJump);
-    leftBtn = new QPushButton(QIcon(":/resources/icons/corner_tablist.svg"),
-                              "", this);
-    leftBtn->setProperty("CornerBtn", true);
-    QMenu *leftMenu = new QMenu(this);
-    leftBtn->setMenu(leftMenu);
-    setCornerWidget(leftBtn, Qt::TopLeftCorner);
-    connect(leftMenu, &QMenu::aboutToShow,
-            this, &VEditWindow::updateTabListMenu);
 }
 
 void VEditWindow::splitWindow()

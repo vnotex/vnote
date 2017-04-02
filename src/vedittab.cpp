@@ -423,7 +423,7 @@ void VEditTab::parseTocLi(QXmlStreamReader &xml, QVector<VHeader> &headers, int 
             }
         } else if (xml.name() == "ul") {
             // Such as header 3 under header 1 directly
-            VHeader header(level, "[Empty]", "#", -1);
+            VHeader header(level, "[EMPTY]", "#", -1);
             headers.append(header);
             parseTocUl(xml, headers, level + 1);
         } else {

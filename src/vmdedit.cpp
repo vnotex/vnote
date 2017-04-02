@@ -243,13 +243,21 @@ void VMdEdit::generateEditOutline()
     // Assume that each block contains only one line
     // Only support # syntax for now
     QRegExp headerReg("(#{1,6})\\s*(\\S.*)");  // Need to trim the spaces
+    int lastLevel = 0;
     for (QTextBlock block = doc->begin(); block != doc->end(); block = block.next()) {
         Q_ASSERT(block.lineCount() == 1);
         if ((block.userState() == HighlightBlockState::Normal) &&
             headerReg.exactMatch(block.text())) {
-            VHeader header(headerReg.cap(1).length(),
-                           headerReg.cap(2).trimmed(), "", block.firstLineNumber());
+            int level = headerReg.cap(1).length();
+            VHeader header(level, headerReg.cap(2).trimmed(),
+                           "", block.firstLineNumber());
+            while (level > lastLevel + 1) {
+                // Insert empty level.
+                m_headers.append(VHeader(++lastLevel, "[EMPTY]",
+                                         "", block.firstLineNumber()));
+            }
             m_headers.append(header);
+            lastLevel = level;
         }
     }
 
