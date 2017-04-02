@@ -12,7 +12,8 @@
 extern VConfigManager vconfig;
 
 VEditWindow::VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent)
-    : QTabWidget(parent), vnote(vnote), m_editArea(editArea)
+    : QTabWidget(parent), vnote(vnote), m_editArea(editArea),
+      m_curTabWidget(NULL), m_lastTabWidget(NULL)
 {
     initTabActions();
     setupCornerWidget();
@@ -399,9 +400,16 @@ void VEditWindow::handleTabbarClicked(int p_index)
     }
 }
 
-void VEditWindow::handleCurrentIndexChanged(int /* p_index */)
+void VEditWindow::handleCurrentIndexChanged(int p_index)
 {
     focusWindow();
+
+    QWidget *wid = widget(p_index);
+    if (wid && (wid == m_curTabWidget)) {
+        return;
+    }
+    m_lastTabWidget = m_curTabWidget;
+    m_curTabWidget = wid;
 }
 
 void VEditWindow::mousePressEvent(QMouseEvent *event)
@@ -745,4 +753,27 @@ bool VEditWindow::showOpenedFileList()
     }
     leftBtn->showMenu();
     return true;
+}
+
+bool VEditWindow::activateTab(int p_sequence)
+{
+    const int base = 1;
+    if (p_sequence < base || p_sequence >= (base + count())) {
+        return false;
+    }
+    setCurrentIndex(p_sequence - base);
+    return true;
+}
+
+bool VEditWindow::alternateTab()
+{
+    if (m_lastTabWidget) {
+        if (-1 != indexOf(m_lastTabWidget)) {
+            setCurrentWidget(m_lastTabWidget);
+            return true;
+        } else {
+            m_lastTabWidget = NULL;
+        }
+    }
+    return false;
 }

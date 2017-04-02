@@ -50,6 +50,9 @@ public:
     void focusNextTab(bool p_right);
     // Return true if the file list is shown.
     bool showOpenedFileList();
+    bool activateTab(int p_sequence);
+    // Switch to previous activated tab.
+    bool alternateTab();
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
@@ -102,6 +105,11 @@ private:
 
     VNote *vnote;
     VEditArea *m_editArea;
+
+    // These two members are only used for alternateTab().
+    QWidget *m_curTabWidget;
+    QWidget *m_lastTabWidget;
+
     // Button in the right corner
     QPushButton *rightBtn;
     // Button in the left corner

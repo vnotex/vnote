@@ -108,6 +108,39 @@ bool VCaptain::handleKeyPress(int p_key, Qt::KeyboardModifiers p_modifiers)
 
     // In Captain mode, Ctrl key won't make a difference.
     switch (p_key) {
+    case Qt::Key_1:
+    case Qt::Key_2:
+    case Qt::Key_3:
+    case Qt::Key_4:
+    case Qt::Key_5:
+    case Qt::Key_6:
+    case Qt::Key_7:
+    case Qt::Key_8:
+    case Qt::Key_9:
+    {
+        // Switch to tab <i>.
+        VEditWindow *win = m_mainWindow->editArea->getCurrentWindow();
+        if (win) {
+            int sequence = p_key - Qt::Key_0;
+            if (win->activateTab(sequence)) {
+                m_widgetBeforeCaptain = NULL;
+            }
+        }
+        break;
+    }
+
+    case Qt::Key_0:
+    {
+        // Alternate the tab.
+        VEditWindow *win = m_mainWindow->editArea->getCurrentWindow();
+        if (win) {
+            if (win->alternateTab()) {
+                m_widgetBeforeCaptain = NULL;
+            }
+        }
+        break;
+    }
+
     case Qt::Key_D:
         // Locate current tab.
         m_mainWindow->locateCurrentFile();
