@@ -319,16 +319,34 @@ void VEditWindow::noticeTabStatus(int p_index)
         return;
     }
 
+    updateTabInfo(p_index);
+    updateAllTabsSequence();
+
+    VEditTab *editor = getTab(p_index);
+    const VFile *file = editor->getFile();
+    bool editMode = editor->getIsEditMode();
+    emit tabStatusChanged(file, editor, editMode);
+}
+
+void VEditWindow::updateTabInfo(int p_index)
+{
     VEditTab *editor = getTab(p_index);
     const VFile *file = editor->getFile();
     bool editMode = editor->getIsEditMode();
 
-    // Update tab text
-    setTabText(p_index, generateTabText(file->getName(), file->isModified()));
+    setTabText(p_index, generateTabText(p_index, file->getName(), file->isModified()));
     setTabToolTip(p_index, generateTooltip(file));
     setTabIcon(p_index, editMode ? QIcon(":/resources/icons/editing.svg") :
                QIcon(":/resources/icons/reading.svg"));
-    emit tabStatusChanged(file, editor, editMode);
+}
+
+void VEditWindow::updateAllTabsSequence()
+{
+    for (int i = 0; i < count(); ++i) {
+        VEditTab *editor = getTab(i);
+        const VFile *file = editor->getFile();
+        setTabText(i, generateTabText(i, file->getName(), file->isModified()));
+    }
 }
 
 // Be requested to report current status
