@@ -52,6 +52,7 @@ void VNote::initPalette(QPalette palette)
     m_palette.append(QPair<QString, QString>("Teal2", "#80CBC4"));
     m_palette.append(QPair<QString, QString>("Teal3", "#4DB6AC"));
     m_palette.append(QPair<QString, QString>("Teal4", "#26A69A"));
+    m_palette.append(QPair<QString, QString>("Teal5", "#009688"));
 
     m_palette.append(QPair<QString, QString>("Indigo0", "#E8EAF6"));
     m_palette.append(QPair<QString, QString>("Indigo1", "#C5CAE9"));

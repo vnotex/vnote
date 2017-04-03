@@ -56,7 +56,8 @@ SOURCES += main.cpp\
     dialog/vsettingsdialog.cpp \
     dialog/vdeletenotebookdialog.cpp \
     dialog/vselectdialog.cpp \
-    vcaptain.cpp
+    vcaptain.cpp \
+    vopenedlistmenu.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -98,7 +99,8 @@ HEADERS  += vmainwindow.h \
     dialog/vsettingsdialog.h \
     dialog/vdeletenotebookdialog.h \
     dialog/vselectdialog.h \
-    vcaptain.h
+    vcaptain.h \
+    vopenedlistmenu.h
 
 RESOURCES += \
     vnote.qrc \

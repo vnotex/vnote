@@ -9,6 +9,7 @@
 #include "vnotebook.h"
 #include "vedittab.h"
 #include "vtoc.h"
+#include "vconstants.h"
 
 class VNote;
 class QPushButton;
@@ -53,6 +54,7 @@ public:
     bool activateTab(int p_sequence);
     // Switch to previous activated tab.
     bool alternateTab();
+    VEditTab *getTab(int tabIndex) const;
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
@@ -73,11 +75,10 @@ private slots:
     void handleTabbarClicked(int p_index);
     void handleCurrentIndexChanged(int p_index);
     void contextMenuRequested(QPoint pos);
-    void tabListJump(QAction *action);
+    void tabListJump(VFile *p_file);
     void handleOutlineChanged(const VToc &p_toc);
     void handleCurHeaderChanged(const VAnchor &p_anchor);
     void handleTabStatusChanged();
-    void updateTabListMenu();
     void updateSplitMenu();
     void tabbarContextMenuRequested(QPoint p_pos);
     void handleLocateAct();
@@ -91,7 +92,6 @@ private:
     int insertEditTab(int p_index, VFile *p_file, QWidget *p_page);
     int appendEditTab(VFile *p_file, QWidget *p_page);
     int openFileInTab(VFile *p_file, OpenFileMode p_mode);
-    inline VEditTab *getTab(int tabIndex) const;
     void noticeTabStatus(int p_index);
     void noticeStatus(int index);
     inline QString generateTooltip(const VFile *p_file) const;
@@ -118,17 +118,11 @@ private:
     // Actions
     QAction *splitAct;
     QAction *removeSplitAct;
-    QActionGroup *tabListAct;
     // Locate current note in the directory and file list
     QAction *m_locateAct;
     QAction *m_moveLeftAct;
     QAction *m_moveRightAct;
 };
-
-inline VEditTab* VEditWindow::getTab(int tabIndex) const
-{
-    return dynamic_cast<VEditTab *>(widget(tabIndex));
-}
 
 inline QString VEditWindow::generateTooltip(const VFile *p_file) const
 {
@@ -142,9 +136,7 @@ inline QString VEditWindow::generateTooltip(const VFile *p_file) const
 inline QString VEditWindow::generateTabText(int p_index, const QString &p_name,
                                             bool p_modified) const
 {
-    // Based on 1.
-    const int base = 1;
-    QString seq = QString::number(p_index + base, 10);
+    QString seq = QString::number(p_index + c_tabSequenceBase, 10);
     return seq + ". " + (p_modified ? (p_name + "*") : p_name);
 }
 

@@ -8,6 +8,7 @@
 #include "vfile.h"
 #include "vmainwindow.h"
 #include "veditarea.h"
+#include "vopenedlistmenu.h"
 
 extern VConfigManager vconfig;
 
@@ -63,17 +64,14 @@ void VEditWindow::initTabActions()
 void VEditWindow::setupCornerWidget()
 {
     // Left corner button
-    tabListAct = new QActionGroup(this);
-    connect(tabListAct, &QActionGroup::triggered,
-            this, &VEditWindow::tabListJump);
     leftBtn = new QPushButton(QIcon(":/resources/icons/corner_tablist.svg"),
                               "", this);
     leftBtn->setProperty("CornerBtn", true);
-    QMenu *leftMenu = new QMenu(this);
+    VOpenedListMenu *leftMenu = new VOpenedListMenu(this);
+    connect(leftMenu, &VOpenedListMenu::fileTriggered,
+            this, &VEditWindow::tabListJump);
     leftBtn->setMenu(leftMenu);
     setCornerWidget(leftBtn, Qt::TopLeftCorner);
-    connect(leftMenu, &QMenu::aboutToShow,
-            this, &VEditWindow::updateTabListMenu);
 
     // Right corner button
     // Actions
@@ -453,47 +451,16 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
     menu.exec(bar->mapToGlobal(p_pos));
 }
 
-void VEditWindow::tabListJump(QAction *action)
+void VEditWindow::tabListJump(VFile *p_file)
 {
-    if (!action) {
+    if (!p_file) {
         return;
     }
 
-    QPointer<VFile> file = action->data().value<QPointer<VFile>>();
-    int idx = findTabByFile(file);
+    int idx = findTabByFile(p_file);
     Q_ASSERT(idx >= 0);
     setCurrentIndex(idx);
     noticeStatus(idx);
-}
-
-void VEditWindow::updateTabListMenu()
-{
-    // Re-generate the tab list menu
-    QMenu *menu = leftBtn->menu();
-    QList<QAction *> actions = menu->actions();
-    int nrActions = actions.size();
-    for (int i = 0; i < nrActions; ++i) {
-        QAction *tmpAct = actions.at(i);
-        menu->removeAction(tmpAct);
-        tabListAct->removeAction(tmpAct);
-        delete tmpAct;
-    }
-
-    int curTab = currentIndex();
-    int nrTab = count();
-    for (int i = 0; i < nrTab; ++i) {
-        VEditTab *editor = getTab(i);
-        QPointer<VFile> file = editor->getFile();
-        QAction *action = new QAction(tabIcon(i), tabText(i), tabListAct);
-        action->setStatusTip(generateTooltip(file));
-        action->setData(QVariant::fromValue(file));
-        if (i == curTab) {
-            QFont font;
-            font.setBold(true);
-            action->setFont(font);
-        }
-        menu->addAction(action);
-    }
 }
 
 void VEditWindow::updateSplitMenu()
@@ -757,11 +724,10 @@ bool VEditWindow::showOpenedFileList()
 
 bool VEditWindow::activateTab(int p_sequence)
 {
-    const int base = 1;
-    if (p_sequence < base || p_sequence >= (base + count())) {
+    if (p_sequence < c_tabSequenceBase || p_sequence >= (c_tabSequenceBase + count())) {
         return false;
     }
-    setCurrentIndex(p_sequence - base);
+    setCurrentIndex(p_sequence - c_tabSequenceBase);
     return true;
 }
 
@@ -777,3 +743,9 @@ bool VEditWindow::alternateTab()
     }
     return false;
 }
+
+VEditTab* VEditWindow::getTab(int tabIndex) const
+{
+    return dynamic_cast<VEditTab *>(widget(tabIndex));
+}
+
