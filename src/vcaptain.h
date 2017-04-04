@@ -69,6 +69,9 @@ private:
     };
     QList<NaviModeTarget> m_targets;
     QChar m_nextMajorKey;
+    // Ignore focus change to avoid exiting Captain mode while handling key
+    // press.
+    bool m_ignoreFocusChange;
 };
 
 #endif // VCAPTAIN_H

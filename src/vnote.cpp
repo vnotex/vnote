@@ -174,9 +174,14 @@ QVector<VNotebook *> &VNote::getNotebooks()
 
 const QString &VNote::getNavigationLabelStyle() const
 {
-    static const QString stylesheet = QString("color: %1;"
-                                              "font-size: %2;"
-                                              "font: bold;").arg(getColorFromPalette("Red5"))
-                                                            .arg("18pt");
+    static const QString stylesheet = QString("background-color: %1;"
+                                              "color: %2;"
+                                              "font-size: %3;"
+                                              "font: bold;"
+                                              "font-family: Monospace;"
+                                              "border-radius: 3px;")
+                                              .arg(getColorFromPalette("logo-base"))
+                                              .arg(getColorFromPalette("logo-max"))
+                                              .arg("18pt");
     return stylesheet;
 }

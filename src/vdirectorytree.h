@@ -5,13 +5,17 @@
 #include <QJsonObject>
 #include <QPointer>
 #include <QVector>
+#include <QMap>
+#include <QList>
 #include "vdirectory.h"
 #include "vnotebook.h"
+#include "vnavigationmode.h"
 
 class VNote;
 class VEditArea;
+class QLabel;
 
-class VDirectoryTree : public QTreeWidget
+class VDirectoryTree : public QTreeWidget, public VNavigationMode
 {
     Q_OBJECT
 public:
@@ -19,6 +23,12 @@ public:
     inline void setEditArea(VEditArea *p_editArea);
     bool locateDirectory(const VDirectory *p_directory);
     inline const VNotebook *currentNotebook() const;
+
+    // Implementations for VNavigationMode.
+    void registerNavigation(QChar p_majorKey);
+    void showNavigation();
+    void hideNavigation();
+    bool handleKeyNavigation(int p_key, bool &p_succeed);
 
 signals:
     void currentDirectoryChanged(VDirectory *p_directory);
@@ -65,6 +75,8 @@ private:
     QTreeWidgetItem *expandToVDirectory(const VDirectory *p_directory);
     // Expand the tree under @p_item according to VDirectory.isOpened().
     void expandItemTree(QTreeWidgetItem *p_item);
+    QList<QTreeWidgetItem *> getVisibleItems() const;
+    QList<QTreeWidgetItem *> getVisibleChildItems(const QTreeWidgetItem *p_item) const;
 
     VNote *vnote;
     QPointer<VNotebook> m_notebook;
@@ -80,6 +92,11 @@ private:
     QAction *copyAct;
     QAction *cutAct;
     QAction *pasteAct;
+
+    // Navigation Mode.
+    // Map second key to QTreeWidgetItem.
+    QMap<QChar, QTreeWidgetItem *> m_keyMap;
+    QVector<QLabel *> m_naviLabels;
 };
 
 inline QPointer<VDirectory> VDirectoryTree::getVDirectory(QTreeWidgetItem *p_item)

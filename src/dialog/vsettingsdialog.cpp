@@ -92,7 +92,7 @@ VGeneralTab::VGeneralTab(QWidget *p_parent)
     m_langCombo = new QComboBox(this);
     m_langCombo->addItem(tr("System"), "System");
     auto langs = VUtils::getAvailableLanguages();
-    for (auto lang : langs) {
+    for (auto const &lang : langs) {
         m_langCombo->addItem(lang.second, lang.first);
     }
     langLabel->setBuddy(m_langCombo);

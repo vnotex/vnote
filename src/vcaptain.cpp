@@ -15,7 +15,7 @@ const int c_pendingTime = 3 * 1000;
 
 VCaptain::VCaptain(VMainWindow *p_parent)
     : QWidget(p_parent), m_mainWindow(p_parent), m_mode(VCaptain::Normal),
-      m_widgetBeforeCaptain(NULL), m_nextMajorKey('a')
+      m_widgetBeforeCaptain(NULL), m_nextMajorKey('a'), m_ignoreFocusChange(false)
 {
     m_pendingTimer = new QTimer(this);
     m_pendingTimer->setSingleShot(true);
@@ -62,7 +62,7 @@ void VCaptain::registerNavigationTarget(VNavigationMode *p_target)
 // In pending mode, if user click other widgets, we need to exit Captain mode.
 void VCaptain::handleFocusChanged(QWidget *p_old, QWidget * /* p_now */)
 {
-    if (p_old == this) {
+    if (!m_ignoreFocusChange && p_old == this) {
         exitCaptainMode();
     }
 }
@@ -124,8 +124,12 @@ bool VCaptain::handleKeyPress(int p_key, Qt::KeyboardModifiers p_modifiers)
         goto exit;
     }
 
+    m_ignoreFocusChange = true;
+
     if (m_mode == VCaptainMode::Navigation) {
-        return handleKeyPressNavigationMode(p_key, p_modifiers);
+        ret = handleKeyPressNavigationMode(p_key, p_modifiers);
+        m_ignoreFocusChange = false;
+        return ret;
     }
 
     // In Captain mode, Ctrl key won't make a difference.
@@ -303,24 +307,35 @@ bool VCaptain::handleKeyPressNavigationMode(int p_key,
                                             Qt::KeyboardModifiers /* p_modifiers */)
 {
     Q_ASSERT(m_mode == VCaptainMode::Navigation);
-    for (auto target : m_targets) {
+    bool hasConsumed = false;
+    bool pending = false;
+    for (auto &target : m_targets) {
+        if (hasConsumed) {
+            target.m_available = false;
+            target.m_target->hideNavigation();
+            continue;
+        }
         if (target.m_available) {
             bool succeed = false;
             bool consumed = target.m_target->handleKeyNavigation(p_key, succeed);
             if (consumed) {
+                hasConsumed = true;
                 if (succeed) {
                     // Exit.
                     m_widgetBeforeCaptain = NULL;
-                    break;
                 } else {
                     // Consumed but not succeed. Need more keys.
-                    return true;
+                    pending = true;
                 }
             } else {
                 // Do not ask this target any more.
                 target.m_available = false;
+                target.m_target->hideNavigation();
             }
         }
+    }
+    if (pending) {
+        return true;
     }
     exitCaptainMode();
     restoreFocus();
@@ -332,7 +347,7 @@ void VCaptain::triggerNavigationMode()
     m_pendingTimer->stop();
     m_mode = VCaptainMode::Navigation;
 
-    for (auto target : m_targets) {
+    for (auto &target : m_targets) {
         target.m_available = true;
         target.m_target->showNavigation();
     }
@@ -342,7 +357,7 @@ void VCaptain::exitNavigationMode()
 {
     m_mode = VCaptainMode::Normal;
 
-    for (auto target : m_targets) {
+    for (auto &target : m_targets) {
         target.m_available = true;
         target.m_target->hideNavigation();
     }
@@ -383,6 +398,7 @@ void VCaptain::exitCaptainMode()
     }
     m_mode = VCaptain::Normal;
     m_pendingTimer->stop();
+    m_ignoreFocusChange = false;
 
     emit captainModeChanged(false);
 }

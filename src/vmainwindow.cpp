@@ -51,6 +51,7 @@ void VMainWindow::initCaptain()
             this, &VMainWindow::handleCaptainModeChanged);
 
     m_captain->registerNavigationTarget(notebookSelector);
+    m_captain->registerNavigationTarget(directoryTree);
 }
 
 void VMainWindow::setupUI()

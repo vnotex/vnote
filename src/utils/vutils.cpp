@@ -319,7 +319,7 @@ const QVector<QPair<QString, QString>>& VUtils::getAvailableLanguages()
 
 bool VUtils::isValidLanguage(const QString &p_lang)
 {
-    for (auto lang : c_availableLanguages) {
+    for (auto const &lang : c_availableLanguages) {
         if (lang.first == p_lang) {
             return true;
         }

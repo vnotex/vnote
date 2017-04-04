@@ -8,6 +8,8 @@
 #include "utils/vutils.h"
 #include "veditarea.h"
 
+extern VNote *g_vnote;
+
 VDirectoryTree::VDirectoryTree(VNote *vnote, QWidget *parent)
     : QTreeWidget(parent), vnote(vnote), m_editArea(NULL)
 {
@@ -664,4 +666,100 @@ void VDirectoryTree::expandItemTree(QTreeWidgetItem *p_item)
         Q_ASSERT(nrChild > 0);
         expandItem(p_item);
     }
+}
+
+void VDirectoryTree::registerNavigation(QChar p_majorKey)
+{
+    m_majorKey = p_majorKey;
+    V_ASSERT(m_keyMap.empty());
+    V_ASSERT(m_naviLabels.empty());
+}
+
+void VDirectoryTree::showNavigation()
+{
+    // Clean up.
+    m_keyMap.clear();
+    for (auto label : m_naviLabels) {
+        delete label;
+    }
+    m_naviLabels.clear();
+
+    // Generate labels for visible items.
+    auto items = getVisibleItems();
+    for (int i = 0; i < 26 && i < items.size(); ++i) {
+        QChar key('a' + i);
+        m_keyMap[key] = items[i];
+
+        qDebug() << key << items[i];
+        QLabel *label = new QLabel(QString(m_majorKey) + key, this);
+        label->setStyleSheet(g_vnote->getNavigationLabelStyle());
+        label->move(visualItemRect(items[i]).topLeft());
+        label->show();
+        m_naviLabels.append(label);
+    }
+}
+
+void VDirectoryTree::hideNavigation()
+{
+    m_keyMap.clear();
+    for (auto label : m_naviLabels) {
+        delete label;
+    }
+    m_naviLabels.clear();
+}
+
+bool VDirectoryTree::handleKeyNavigation(int p_key, bool &p_succeed)
+{
+    static bool secondKey = false;
+    bool ret = false;
+    p_succeed = false;
+    QChar keyChar = VUtils::keyToChar(p_key);
+    if (secondKey && !keyChar.isNull()) {
+        secondKey = false;
+        auto it = m_keyMap.find(keyChar);
+        if (it != m_keyMap.end()) {
+            setCurrentItem(it.value());
+            setFocus();
+            p_succeed = true;
+            ret = true;
+        }
+    } else if (keyChar == m_majorKey) {
+        // Major key pressed.
+        // Need second key.
+        secondKey = true;
+        ret = true;
+    }
+    return ret;
+}
+
+QList<QTreeWidgetItem *> VDirectoryTree::getVisibleItems() const
+{
+    QList<QTreeWidgetItem *> items;
+    for (int i = 0; i < topLevelItemCount(); ++i) {
+        QTreeWidgetItem *item = topLevelItem(i);
+        if (!item->isHidden()) {
+            items.append(item);
+            if (item->isExpanded()) {
+                items.append(getVisibleChildItems(item));
+            }
+        }
+    }
+    return items;
+}
+
+QList<QTreeWidgetItem *> VDirectoryTree::getVisibleChildItems(const QTreeWidgetItem *p_item) const
+{
+    QList<QTreeWidgetItem *> items;
+    if (p_item && !p_item->isHidden() && p_item->isExpanded()) {
+        for (int i = 0; i < p_item->childCount(); ++i) {
+            QTreeWidgetItem *child = p_item->child(i);
+            if (!child->isHidden()) {
+                items.append(child);
+                if (child->isExpanded()) {
+                    items.append(getVisibleChildItems(child));
+                }
+            }
+        }
+    }
+    return items;
 }
