@@ -39,6 +39,7 @@ VNotebookSelector::VNotebookSelector(VNote *vnote, QWidget *p_parent)
     setView(m_listWidget);
 
     m_listWidget->viewport()->installEventFilter(this);
+    m_listWidget->installEventFilter(this);
 
     initActions();
 
@@ -327,7 +328,12 @@ void VNotebookSelector::requestPopupListContextMenu(QPoint p_pos)
 
 bool VNotebookSelector::eventFilter(QObject *watched, QEvent *event)
 {
-    if (event->type() == QEvent::MouseButtonRelease) {
+    QEvent::Type type = event->type();
+    if (type == QEvent::KeyPress && watched == m_listWidget) {
+        if (handlePopupKeyPress(static_cast<QKeyEvent *>(event))) {
+            return true;
+        }
+    } else if (type == QEvent::MouseButtonRelease) {
         if (static_cast<QMouseEvent *>(event)->button() == Qt::RightButton) {
             return true;
         }
@@ -426,4 +432,50 @@ bool VNotebookSelector::handleKeyNavigation(int p_key, bool &p_succeed)
         ret = true;
     }
     return ret;
+}
+
+bool VNotebookSelector::handlePopupKeyPress(QKeyEvent *p_event)
+{
+    int key = p_event->key();
+    int modifiers = p_event->modifiers();
+    switch (key) {
+    case Qt::Key_BracketLeft:
+    {
+        if (modifiers == Qt::ControlModifier) {
+            p_event->accept();
+            hidePopup();
+            return true;
+        }
+        break;
+    }
+
+    case Qt::Key_J:
+    {
+        if (modifiers == Qt::ControlModifier) {
+            p_event->accept();
+            QKeyEvent *downEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Down,
+                                                 Qt::NoModifier);
+            QCoreApplication::postEvent(m_listWidget, downEvent);
+            return true;
+        }
+        break;
+    }
+
+    case Qt::Key_K:
+    {
+        if (modifiers == Qt::ControlModifier) {
+            p_event->accept();
+            QKeyEvent *upEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Up,
+                                               Qt::NoModifier);
+            QCoreApplication::postEvent(m_listWidget, upEvent);
+            return true;
+        }
+        break;
+    }
+
+    default:
+        break;
+    }
+
+    return false;
 }

@@ -70,6 +70,7 @@ private:
     // @p_index is the idnex of QComboBox.
     inline VNotebook *getNotebookFromComboIndex(int p_index);
     void resizeListWidgetToContent();
+    bool handlePopupKeyPress(QKeyEvent *p_event);
 
     VNote *m_vnote;
     QVector<VNotebook *> &m_notebooks;
