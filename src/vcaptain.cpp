@@ -8,13 +8,14 @@
 #include "veditarea.h"
 #include "vedittab.h"
 #include "vfilelist.h"
+#include "vnavigationmode.h"
 
 // 3s pending time after the leader keys.
 const int c_pendingTime = 3 * 1000;
 
 VCaptain::VCaptain(VMainWindow *p_parent)
     : QWidget(p_parent), m_mainWindow(p_parent), m_mode(VCaptain::Normal),
-      m_widgetBeforeCaptain(NULL)
+      m_widgetBeforeCaptain(NULL), m_nextMajorKey('a')
 {
     m_pendingTimer = new QTimer(this);
     m_pendingTimer->setSingleShot(true);
@@ -38,6 +39,26 @@ VCaptain::VCaptain(VMainWindow *p_parent)
     resize(1, 1);
 }
 
+QChar VCaptain::getNextMajorKey()
+{
+    QChar ret = m_nextMajorKey;
+    if (m_nextMajorKey == 'z') {
+        m_nextMajorKey = QChar();
+    } else if (!m_nextMajorKey.isNull()) {
+        m_nextMajorKey = QChar(m_nextMajorKey.toLatin1() + 1);
+    }
+    return ret;
+}
+
+void VCaptain::registerNavigationTarget(VNavigationMode *p_target)
+{
+    QChar key = getNextMajorKey();
+    if (!key.isNull()) {
+        p_target->registerNavigation(key);
+        m_targets.append(NaviModeTarget(p_target, true));
+    }
+}
+
 // In pending mode, if user click other widgets, we need to exit Captain mode.
 void VCaptain::handleFocusChanged(QWidget *p_old, QWidget * /* p_now */)
 {
@@ -55,7 +76,7 @@ void VCaptain::pendingTimerTimeout()
 
 void VCaptain::trigger()
 {
-    if (m_mode == VCaptain::Pending) {
+    if (m_mode != VCaptain::Normal) {
         return;
     }
     qDebug() << "trigger Captain mode";
@@ -73,7 +94,6 @@ void VCaptain::keyPressEvent(QKeyEvent *p_event)
 {
     int key = p_event->key();
     Qt::KeyboardModifiers modifiers = p_event->modifiers();
-    qDebug() << "VCaptain key pressed" << key << modifiers;
 
     if (m_mode == VCaptain::Normal) {
         // Should not in focus while in Normal mode.
@@ -83,7 +103,6 @@ void VCaptain::keyPressEvent(QKeyEvent *p_event)
     }
 
     if (key == Qt::Key_Control || key == Qt::Key_Shift) {
-        qDebug() << "VCaptain ignore key event";
         QWidget::keyPressEvent(p_event);
         return;
     }
@@ -97,13 +116,16 @@ void VCaptain::keyPressEvent(QKeyEvent *p_event)
 
 bool VCaptain::handleKeyPress(int p_key, Qt::KeyboardModifiers p_modifiers)
 {
-    qDebug() << "handleKeyPress" << p_key << p_modifiers;
     bool ret = true;
 
     if (p_key == Qt::Key_Escape
         || (p_key == Qt::Key_BracketLeft
             && p_modifiers == Qt::ControlModifier)) {
         goto exit;
+    }
+
+    if (m_mode == VCaptainMode::Navigation) {
+        return handleKeyPressNavigationMode(p_key, p_modifiers);
     }
 
     // In Captain mode, Ctrl key won't make a difference.
@@ -248,8 +270,12 @@ bool VCaptain::handleKeyPress(int p_key, Qt::KeyboardModifiers p_modifiers)
         m_mainWindow->editArea->splitCurrentWindow();
         // Do not restore focus.
         m_widgetBeforeCaptain = NULL;
-
         break;
+
+    case Qt::Key_W:
+        // Enter navigation mode.
+        triggerNavigationMode();
+        return ret;
 
     case Qt::Key_X:
     {
@@ -273,9 +299,58 @@ exit:
     return ret;
 }
 
+bool VCaptain::handleKeyPressNavigationMode(int p_key,
+                                            Qt::KeyboardModifiers /* p_modifiers */)
+{
+    Q_ASSERT(m_mode == VCaptainMode::Navigation);
+    for (auto target : m_targets) {
+        if (target.m_available) {
+            bool succeed = false;
+            bool consumed = target.m_target->handleKeyNavigation(p_key, succeed);
+            if (consumed) {
+                if (succeed) {
+                    // Exit.
+                    m_widgetBeforeCaptain = NULL;
+                    break;
+                } else {
+                    // Consumed but not succeed. Need more keys.
+                    return true;
+                }
+            } else {
+                // Do not ask this target any more.
+                target.m_available = false;
+            }
+        }
+    }
+    exitCaptainMode();
+    restoreFocus();
+    return true;
+}
+
+void VCaptain::triggerNavigationMode()
+{
+    m_pendingTimer->stop();
+    m_mode = VCaptainMode::Navigation;
+
+    for (auto target : m_targets) {
+        target.m_available = true;
+        target.m_target->showNavigation();
+    }
+}
+
+void VCaptain::exitNavigationMode()
+{
+    m_mode = VCaptainMode::Normal;
+
+    for (auto target : m_targets) {
+        target.m_available = true;
+        target.m_target->hideNavigation();
+    }
+}
+
 bool VCaptain::eventFilter(QObject *p_obj, QEvent *p_event)
 {
-    if (m_mode == VCaptain::Pending && p_event->type() == QEvent::Shortcut) {
+    if (m_mode != VCaptain::Normal && p_event->type() == QEvent::Shortcut) {
         qDebug() << "filter" << p_event;
         QShortcutEvent *keyEve = dynamic_cast<QShortcutEvent *>(p_event);
         Q_ASSERT(keyEve);
@@ -303,6 +378,9 @@ void VCaptain::restoreFocus()
 
 void VCaptain::exitCaptainMode()
 {
+    if (m_mode == VCaptainMode::Navigation) {
+        exitNavigationMode();
+    }
     m_mode = VCaptain::Normal;
     m_pendingTimer->stop();
 

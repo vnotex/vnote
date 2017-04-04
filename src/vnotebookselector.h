@@ -4,6 +4,7 @@
 #include <QComboBox>
 #include <QVector>
 #include <QString>
+#include "vnavigationmode.h"
 
 class VNotebook;
 class VNote;
@@ -11,8 +12,9 @@ class VEditArea;
 class QListWidget;
 class QAction;
 class QListWidgetItem;
+class QLabel;
 
-class VNotebookSelector : public QComboBox
+class VNotebookSelector : public QComboBox, public VNavigationMode
 {
     Q_OBJECT
 public:
@@ -22,6 +24,12 @@ public:
     // Select notebook @p_notebook.
     bool locateNotebook(const VNotebook *p_notebook);
     void showPopup() Q_DECL_OVERRIDE;
+
+    // Implementations for VNavigationMode.
+    void registerNavigation(QChar p_majorKey);
+    void showNavigation();
+    void hideNavigation();
+    bool handleKeyNavigation(int p_key, bool &p_succeed);
 
 signals:
     void curNotebookChanged(VNotebook *p_notebook);
@@ -76,6 +84,8 @@ private:
     // We will add several special action item in the combobox. This is the start index
     // of the real notebook items related to m_notebooks.
     static const int c_notebookStartIdx;
+
+    QLabel *m_naviLabel;
 };
 
 inline void VNotebookSelector::setEditArea(VEditArea *p_editArea)

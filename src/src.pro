@@ -100,7 +100,8 @@ HEADERS  += vmainwindow.h \
     dialog/vdeletenotebookdialog.h \
     dialog/vselectdialog.h \
     vcaptain.h \
-    vopenedlistmenu.h
+    vopenedlistmenu.h \
+    vnavigationmode.h
 
 RESOURCES += \
     vnote.qrc \

@@ -49,6 +49,8 @@ void VMainWindow::initCaptain()
     m_captain = new VCaptain(this);
     connect(m_captain, &VCaptain::captainModeChanged,
             this, &VMainWindow::handleCaptainModeChanged);
+
+    m_captain->registerNavigationTarget(notebookSelector);
 }
 
 void VMainWindow::setupUI()

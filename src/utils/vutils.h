@@ -48,6 +48,7 @@ public:
     static bool isImageURLText(const QString &p_url);
     static qreal calculateScaleFactor();
     static bool realEqual(qreal p_a, qreal p_b);
+    static QChar keyToChar(int p_key);
 
 private:
     // <value, name>

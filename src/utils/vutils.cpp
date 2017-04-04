@@ -360,3 +360,10 @@ bool VUtils::realEqual(qreal p_a, qreal p_b)
     return std::abs(p_a - p_b) < 1e-8;
 }
 
+QChar VUtils::keyToChar(int p_key)
+{
+    if (p_key >= Qt::Key_A && p_key <= Qt::Key_Z) {
+        return QChar('a' + p_key - Qt::Key_A);
+    }
+    return QChar();
+}

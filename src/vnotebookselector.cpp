@@ -6,6 +6,7 @@
 #include <QMenu>
 #include <QGuiApplication>
 #include <QScreen>
+#include <QLabel>
 #include "vnotebook.h"
 #include "vconfigmanager.h"
 #include "dialog/vnewnotebookdialog.h"
@@ -19,12 +20,14 @@
 #include "vnofocusitemdelegate.h"
 
 extern VConfigManager vconfig;
+extern VNote *g_vnote;
 
 const int VNotebookSelector::c_notebookStartIdx = 1;
 
 VNotebookSelector::VNotebookSelector(VNote *vnote, QWidget *p_parent)
-    : QComboBox(p_parent), m_vnote(vnote), m_notebooks(m_vnote->getNotebooks()),
-      m_editArea(NULL), m_lastValidIndex(-1)
+    : QComboBox(p_parent), VNavigationMode(),
+      m_vnote(vnote), m_notebooks(m_vnote->getNotebooks()),
+      m_editArea(NULL), m_lastValidIndex(-1), m_naviLabel(NULL)
 {
     m_listWidget = new QListWidget(this);
     m_listWidget->setItemDelegate(new VNoFocusItemDelegate(this));
@@ -385,4 +388,42 @@ void VNotebookSelector::resizeListWidgetToContent()
         minHeight = qMin(minHeight, maxMinHeight);
     }
     m_listWidget->setMinimumSize(minWidth, minHeight);
+}
+
+void VNotebookSelector::registerNavigation(QChar p_majorKey)
+{
+    Q_ASSERT(!m_naviLabel);
+    qDebug() << "VNotebookSelector register for navigation key" << p_majorKey;
+    m_majorKey = p_majorKey;
+
+    m_naviLabel = new QLabel(m_majorKey, this);
+    m_naviLabel->setStyleSheet(g_vnote->getNavigationLabelStyle());
+    m_naviLabel->hide();
+}
+
+void VNotebookSelector::showNavigation()
+{
+    qDebug() << "VNotebookSelector show navigation";
+    m_naviLabel->show();
+}
+
+void VNotebookSelector::hideNavigation()
+{
+    qDebug() << "VNotebookSelector hide navigation";
+    m_naviLabel->hide();
+}
+
+bool VNotebookSelector::handleKeyNavigation(int p_key, bool &p_succeed)
+{
+    qDebug() << "VNotebookSelector handle key navigation" << p_key;
+    bool ret = false;
+    p_succeed = false;
+    QChar keyChar = VUtils::keyToChar(p_key);
+    if (keyChar == m_majorKey) {
+        // Hit.
+        p_succeed = true;
+        showPopup();
+        ret = true;
+    }
+    return ret;
 }

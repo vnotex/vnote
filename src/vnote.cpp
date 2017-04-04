@@ -102,6 +102,17 @@ void VNote::initPalette(QPalette palette)
     m_palette.append(QPair<QString, QString>("Purple7", "#7B1FA2"));
     m_palette.append(QPair<QString, QString>("Purple8", "#6A1B9A"));
     m_palette.append(QPair<QString, QString>("Purple9", "#4A148C"));
+
+    m_palette.append(QPair<QString, QString>("Red0", "#FFEBEE"));
+    m_palette.append(QPair<QString, QString>("Red1", "#FFCDD2"));
+    m_palette.append(QPair<QString, QString>("Red2", "#EF9A9A"));
+    m_palette.append(QPair<QString, QString>("Red3", "#E57373"));
+    m_palette.append(QPair<QString, QString>("Red4", "#EF5350"));
+    m_palette.append(QPair<QString, QString>("Red5", "#F44336"));
+    m_palette.append(QPair<QString, QString>("Red6", "#E53935"));
+    m_palette.append(QPair<QString, QString>("Red7", "#D32F2F"));
+    m_palette.append(QPair<QString, QString>("Red8", "#C62828"));
+    m_palette.append(QPair<QString, QString>("Red9", "#B71C1C"));
 }
 
 QString VNote::getColorFromPalette(const QString &p_name) const
@@ -159,4 +170,13 @@ const QVector<VNotebook *> &VNote::getNotebooks() const
 QVector<VNotebook *> &VNote::getNotebooks()
 {
     return m_notebooks;
+}
+
+const QString &VNote::getNavigationLabelStyle() const
+{
+    static const QString stylesheet = QString("color: %1;"
+                                              "font-size: %2;"
+                                              "font: bold;").arg(getColorFromPalette("Red5"))
+                                                            .arg("18pt");
+    return stylesheet;
 }
