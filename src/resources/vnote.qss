@@ -112,6 +112,10 @@ QComboBox#NotebookSelector {
     icon-size: 30px;
 }
 
+QComboBox#NotebookSelector::focus {
+    background-color: @focus-color;
+}
+
 QComboBox#NotebookSelector::drop-down {
     subcontrol-origin: padding;
     subcontrol-position: top right;

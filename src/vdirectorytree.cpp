@@ -74,6 +74,7 @@ void VDirectoryTree::initActions()
 
 void VDirectoryTree::setNotebook(VNotebook *p_notebook)
 {
+    setFocus();
     if (m_notebook == p_notebook) {
         return;
     }
@@ -512,12 +513,47 @@ void VDirectoryTree::mousePressEvent(QMouseEvent *event)
 
 void VDirectoryTree::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_Return) {
+    int key = event->key();
+    int modifiers = event->modifiers();
+
+    switch (key) {
+    case Qt::Key_Return:
+    {
         QTreeWidgetItem *item = currentItem();
         if (item) {
             item->setExpanded(!item->isExpanded());
         }
+        break;
     }
+
+    case Qt::Key_J:
+    {
+        if (modifiers == Qt::ControlModifier) {
+            event->accept();
+            QKeyEvent *downEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Down,
+                                                 Qt::NoModifier);
+            QCoreApplication::postEvent(this, downEvent);
+            return;
+        }
+        break;
+    }
+
+    case Qt::Key_K:
+    {
+        if (modifiers == Qt::ControlModifier) {
+            event->accept();
+            QKeyEvent *upEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Up,
+                                               Qt::NoModifier);
+            QCoreApplication::postEvent(this, upEvent);
+            return;
+        }
+        break;
+    }
+
+    default:
+        break;
+    }
+
     QTreeWidget::keyPressEvent(event);
 }
 
