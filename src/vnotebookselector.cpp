@@ -403,7 +403,7 @@ void VNotebookSelector::registerNavigation(QChar p_majorKey)
     m_majorKey = p_majorKey;
 
     m_naviLabel = new QLabel(m_majorKey, this);
-    m_naviLabel->setStyleSheet(g_vnote->getNavigationLabelStyle());
+    m_naviLabel->setStyleSheet(g_vnote->getNavigationLabelStyle(m_majorKey));
     m_naviLabel->hide();
 }
 

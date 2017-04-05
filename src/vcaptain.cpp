@@ -251,7 +251,9 @@ bool VCaptain::handleKeyPress(int p_key, Qt::KeyboardModifiers p_modifiers)
 
     case Qt::Key_Q:
         // Discard changes and exit edit mode.
-        m_mainWindow->discardExitAct->trigger();
+        if (m_mainWindow->m_curFile) {
+            m_mainWindow->discardExitAct->trigger();
+        }
         break;
 
     case Qt::Key_R:

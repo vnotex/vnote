@@ -3,6 +3,8 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QDir>
+#include <QFont>
+#include <QFontMetrics>
 #include "vnote.h"
 #include "utils/vutils.h"
 #include "vconfigmanager.h"
@@ -172,16 +174,27 @@ QVector<VNotebook *> &VNote::getNotebooks()
     return m_notebooks;
 }
 
-const QString &VNote::getNavigationLabelStyle() const
+QString VNote::getNavigationLabelStyle(const QString &p_str) const
 {
-    static const QString stylesheet = QString("background-color: %1;"
-                                              "color: %2;"
-                                              "font-size: %3;"
-                                              "font: bold;"
-                                              "font-family: Monospace;"
-                                              "border-radius: 3px;")
-                                              .arg(getColorFromPalette("logo-base"))
-                                              .arg(getColorFromPalette("logo-max"))
-                                              .arg("18pt");
+    int fontPt = 15;
+    QString fontFamily("Monospace");
+    QFont font(fontFamily, fontPt);
+    font.setBold(true);
+    QFontMetrics fm(font);
+    int pxWidth = fm.width(p_str);
+
+    QString stylesheet = QString("background-color: %1;"
+                                 "color: %2;"
+                                 "font-size: %3pt;"
+                                 "font: bold;"
+                                 "font-family: %4;"
+                                 "border-radius: 3px;"
+                                 "min-width: %5px;"
+                                 "max-width: %5px;")
+                                 .arg(getColorFromPalette("logo-base"))
+                                 .arg(getColorFromPalette("logo-max"))
+                                 .arg(fontPt)
+                                 .arg(fontFamily)
+                                 .arg(pxWidth);
     return stylesheet;
 }

@@ -9,6 +9,8 @@
 #include "utils/vutils.h"
 #include "vfile.h"
 
+extern VNote *g_vnote;
+
 VFileList::VFileList(QWidget *parent)
     : QWidget(parent)
 {
@@ -461,11 +463,45 @@ bool VFileList::copyFile(VDirectory *p_destDir, const QString &p_destName, VFile
 
 void VFileList::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_Return) {
+    int key = event->key();
+    int modifiers = event->modifiers();
+    switch (key) {
+    case Qt::Key_Return:
+    {
         QListWidgetItem *item = fileList->currentItem();
         if (item) {
             handleItemClicked(item);
         }
+        break;
+    }
+
+
+    case Qt::Key_J:
+    {
+        if (modifiers == Qt::ControlModifier) {
+            event->accept();
+            QKeyEvent *downEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Down,
+                                                 Qt::NoModifier);
+            QCoreApplication::postEvent(fileList, downEvent);
+            return;
+        }
+        break;
+    }
+
+    case Qt::Key_K:
+    {
+        if (modifiers == Qt::ControlModifier) {
+            event->accept();
+            QKeyEvent *upEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Up,
+                                               Qt::NoModifier);
+            QCoreApplication::postEvent(fileList, upEvent);
+            return;
+        }
+        break;
+    }
+
+    default:
+        break;
     }
     QWidget::keyPressEvent(event);
 }
@@ -512,3 +548,80 @@ bool VFileList::identicalListWithDirectory() const
     }
     return true;
 }
+
+void VFileList::registerNavigation(QChar p_majorKey)
+{
+    m_majorKey = p_majorKey;
+    V_ASSERT(m_keyMap.empty());
+    V_ASSERT(m_naviLabels.empty());
+}
+
+void VFileList::showNavigation()
+{
+    // Clean up.
+    m_keyMap.clear();
+    for (auto label : m_naviLabels) {
+        delete label;
+    }
+    m_naviLabels.clear();
+
+    // Generate labels for visible items.
+    auto items = getVisibleItems();
+    for (int i = 0; i < 26 && i < items.size(); ++i) {
+        QChar key('a' + i);
+        m_keyMap[key] = items[i];
+
+        QString str = QString(m_majorKey) + key;
+        QLabel *label = new QLabel(str, this);
+        label->setStyleSheet(g_vnote->getNavigationLabelStyle(str));
+        label->move(fileList->visualItemRect(items[i]).topLeft());
+        label->show();
+        m_naviLabels.append(label);
+    }
+}
+
+void VFileList::hideNavigation()
+{
+    m_keyMap.clear();
+    for (auto label : m_naviLabels) {
+        delete label;
+    }
+    m_naviLabels.clear();
+}
+
+bool VFileList::handleKeyNavigation(int p_key, bool &p_succeed)
+{
+    static bool secondKey = false;
+    bool ret = false;
+    p_succeed = false;
+    QChar keyChar = VUtils::keyToChar(p_key);
+    if (secondKey && !keyChar.isNull()) {
+        secondKey = false;
+        auto it = m_keyMap.find(keyChar);
+        if (it != m_keyMap.end()) {
+            fileList->setCurrentItem(it.value());
+            fileList->setFocus();
+            p_succeed = true;
+            ret = true;
+        }
+    } else if (keyChar == m_majorKey) {
+        // Major key pressed.
+        // Need second key.
+        secondKey = true;
+        ret = true;
+    }
+    return ret;
+}
+
+QList<QListWidgetItem *> VFileList::getVisibleItems() const
+{
+    QList<QListWidgetItem *> items;
+    for (int i = 0; i < fileList->count(); ++i) {
+        QListWidgetItem *item = fileList->item(i);
+        if (!item->isHidden()) {
+            items.append(item);
+        }
+    }
+    return items;
+}
+

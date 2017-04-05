@@ -7,10 +7,12 @@
 #include <QDir>
 #include <QPointer>
 #include <QListWidgetItem>
+#include <QMap>
 #include "vnotebook.h"
 #include "vconstants.h"
 #include "vdirectory.h"
 #include "vfile.h"
+#include "vnavigationmode.h"
 
 class QAction;
 class VNote;
@@ -18,8 +20,9 @@ class QListWidget;
 class QPushButton;
 class VEditArea;
 class QFocusEvent;
+class QLabel;
 
-class VFileList : public QWidget
+class VFileList : public QWidget, public VNavigationMode
 {
     Q_OBJECT
 public:
@@ -30,6 +33,12 @@ public:
     void deleteFile(VFile *p_file);
     bool locateFile(const VFile *p_file);
     inline const VDirectory *currentDirectory() const;
+
+    // Implementations for VNavigationMode.
+    void registerNavigation(QChar p_majorKey);
+    void showNavigation();
+    void hideNavigation();
+    bool handleKeyNavigation(int p_key, bool &p_succeed);
 
 signals:
     void fileClicked(VFile *p_file, OpenFileMode mode = OpenFileMode::Read);
@@ -70,6 +79,7 @@ private:
     inline QPointer<VFile> getVFile(QListWidgetItem *p_item) const;
     // Check if the list items match exactly the contents of the directory.
     bool identicalListWithDirectory() const;
+    QList<QListWidgetItem *> getVisibleItems() const;
 
     VEditArea *editArea;
     QListWidget *fileList;
@@ -83,6 +93,11 @@ private:
     QAction *copyAct;
     QAction *cutAct;
     QAction *pasteAct;
+
+    // Navigation Mode.
+    // Map second key to QListWidgetItem.
+    QMap<QChar, QListWidgetItem *> m_keyMap;
+    QVector<QLabel *> m_naviLabels;
 };
 
 inline void VFileList::setEditArea(VEditArea *editArea)

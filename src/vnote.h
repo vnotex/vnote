@@ -54,7 +54,7 @@ public:
     QString getColorFromPalette(const QString &p_name) const;
     inline VMainWindow *getMainWindow() const;
 
-    const QString &getNavigationLabelStyle() const;
+    QString getNavigationLabelStyle(const QString &p_str) const;
 
 public slots:
     void updateTemplate();

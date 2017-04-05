@@ -726,9 +726,9 @@ void VDirectoryTree::showNavigation()
         QChar key('a' + i);
         m_keyMap[key] = items[i];
 
-        qDebug() << key << items[i];
-        QLabel *label = new QLabel(QString(m_majorKey) + key, this);
-        label->setStyleSheet(g_vnote->getNavigationLabelStyle());
+        QString str = QString(m_majorKey) + key;
+        QLabel *label = new QLabel(str, this);
+        label->setStyleSheet(g_vnote->getNavigationLabelStyle(str));
         label->move(visualItemRect(items[i]).topLeft());
         label->show();
         m_naviLabels.append(label);

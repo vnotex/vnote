@@ -52,6 +52,7 @@ void VMainWindow::initCaptain()
 
     m_captain->registerNavigationTarget(notebookSelector);
     m_captain->registerNavigationTarget(directoryTree);
+    m_captain->registerNavigationTarget(fileList);
 }
 
 void VMainWindow::setupUI()
@@ -250,6 +251,7 @@ void VMainWindow::initFileToolBar()
     deleteNoteAct->setEnabled(false);
     editNoteAct->setVisible(false);
     saveExitAct->setVisible(false);
+    discardExitAct->setVisible(false);
     saveNoteAct->setVisible(false);
 
     fileToolBar->addAction(newRootDirAct);
@@ -785,6 +787,7 @@ void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
     if (p_file) {
         if (p_editMode) {
             editNoteAct->setVisible(false);
+            discardExitAct->setVisible(true);
             saveExitAct->setVisible(true);
             saveNoteAct->setVisible(true);
             deleteNoteAct->setEnabled(true);
@@ -792,6 +795,7 @@ void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
             m_insertImageAct->setEnabled(true);
         } else {
             editNoteAct->setVisible(true);
+            discardExitAct->setVisible(false);
             saveExitAct->setVisible(false);
             saveNoteAct->setVisible(false);
             deleteNoteAct->setEnabled(true);
@@ -806,6 +810,7 @@ void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
         m_findReplaceAct->setEnabled(true);
     } else {
         editNoteAct->setVisible(false);
+        discardExitAct->setVisible(false);
         saveExitAct->setVisible(false);
         saveNoteAct->setVisible(false);
         deleteNoteAct->setEnabled(false);
