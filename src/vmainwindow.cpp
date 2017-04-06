@@ -53,6 +53,8 @@ void VMainWindow::initCaptain()
     m_captain->registerNavigationTarget(notebookSelector);
     m_captain->registerNavigationTarget(directoryTree);
     m_captain->registerNavigationTarget(fileList);
+    m_captain->registerNavigationTarget(editArea);
+    m_captain->registerNavigationTarget(outline);
 }
 
 void VMainWindow::setupUI()

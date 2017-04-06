@@ -11,7 +11,8 @@
 extern VNote *g_vnote;
 
 VDirectoryTree::VDirectoryTree(VNote *vnote, QWidget *parent)
-    : QTreeWidget(parent), vnote(vnote), m_editArea(NULL)
+    : QTreeWidget(parent), VNavigationMode(),
+      vnote(vnote), m_editArea(NULL)
 {
     setColumnCount(1);
     setHeaderHidden(true);
@@ -720,6 +721,10 @@ void VDirectoryTree::showNavigation()
     }
     m_naviLabels.clear();
 
+    if (!isVisible()) {
+        return;
+    }
+
     // Generate labels for visible items.
     auto items = getVisibleItems();
     for (int i = 0; i < 26 && i < items.size(); ++i) {
@@ -752,17 +757,21 @@ bool VDirectoryTree::handleKeyNavigation(int p_key, bool &p_succeed)
     QChar keyChar = VUtils::keyToChar(p_key);
     if (secondKey && !keyChar.isNull()) {
         secondKey = false;
+        p_succeed = true;
+        ret = true;
         auto it = m_keyMap.find(keyChar);
         if (it != m_keyMap.end()) {
             setCurrentItem(it.value());
             setFocus();
-            p_succeed = true;
-            ret = true;
         }
     } else if (keyChar == m_majorKey) {
         // Major key pressed.
-        // Need second key.
-        secondKey = true;
+        // Need second key if m_keyMap is not empty.
+        if (m_keyMap.isEmpty()) {
+            p_succeed = true;
+        } else {
+            secondKey = true;
+        }
         ret = true;
     }
     return ret;

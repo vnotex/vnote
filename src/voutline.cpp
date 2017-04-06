@@ -3,11 +3,17 @@
 #include <QString>
 #include <QJsonObject>
 #include <QKeyEvent>
+#include <QLabel>
+#include <QCoreApplication>
 #include "voutline.h"
 #include "vtoc.h"
+#include "utils/vutils.h"
+#include "vnote.h"
+
+extern VNote *g_vnote;
 
 VOutline::VOutline(QWidget *parent)
-    : QTreeWidget(parent)
+    : QTreeWidget(parent), VNavigationMode()
 {
     setColumnCount(1);
     setHeaderHidden(true);
@@ -178,11 +184,150 @@ bool VOutline::selectLineNumberOne(QTreeWidgetItem *item, int lineNumber)
 
 void VOutline::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_Return) {
+    int key = event->key();
+    int modifiers = event->modifiers();
+
+    switch (key) {
+    case Qt::Key_Return:
+    {
         QTreeWidgetItem *item = currentItem();
         if (item) {
             item->setExpanded(!item->isExpanded());
         }
+        break;
     }
+
+    case Qt::Key_J:
+    {
+        if (modifiers == Qt::ControlModifier) {
+            event->accept();
+            QKeyEvent *downEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Down,
+                                                 Qt::NoModifier);
+            QCoreApplication::postEvent(this, downEvent);
+            return;
+        }
+        break;
+    }
+
+    case Qt::Key_K:
+    {
+        if (modifiers == Qt::ControlModifier) {
+            event->accept();
+            QKeyEvent *upEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Up,
+                                               Qt::NoModifier);
+            QCoreApplication::postEvent(this, upEvent);
+            return;
+        }
+        break;
+    }
+
+    default:
+        break;
+    }
+
     QTreeWidget::keyPressEvent(event);
+}
+
+void VOutline::registerNavigation(QChar p_majorKey)
+{
+    m_majorKey = p_majorKey;
+    V_ASSERT(m_keyMap.empty());
+    V_ASSERT(m_naviLabels.empty());
+}
+
+void VOutline::showNavigation()
+{
+    // Clean up.
+    m_keyMap.clear();
+    for (auto label : m_naviLabels) {
+        delete label;
+    }
+    m_naviLabels.clear();
+
+    if (!isVisible()) {
+        return;
+    }
+
+    // Generate labels for visible items.
+    auto items = getVisibleItems();
+    for (int i = 0; i < 26 && i < items.size(); ++i) {
+        QChar key('a' + i);
+        m_keyMap[key] = items[i];
+
+        QString str = QString(m_majorKey) + key;
+        QLabel *label = new QLabel(str, this);
+        label->setStyleSheet(g_vnote->getNavigationLabelStyle(str));
+        label->move(visualItemRect(items[i]).topLeft());
+        label->show();
+        m_naviLabels.append(label);
+    }
+}
+
+void VOutline::hideNavigation()
+{
+    m_keyMap.clear();
+    for (auto label : m_naviLabels) {
+        delete label;
+    }
+    m_naviLabels.clear();
+}
+
+bool VOutline::handleKeyNavigation(int p_key, bool &p_succeed)
+{
+    static bool secondKey = false;
+    bool ret = false;
+    p_succeed = false;
+    QChar keyChar = VUtils::keyToChar(p_key);
+    if (secondKey && !keyChar.isNull()) {
+        secondKey = false;
+        p_succeed = true;
+        ret = true;
+        auto it = m_keyMap.find(keyChar);
+        if (it != m_keyMap.end()) {
+            setCurrentItem(it.value());
+            setFocus();
+        }
+    } else if (keyChar == m_majorKey) {
+        // Major key pressed.
+        // Need second key if m_keyMap is not empty.
+        if (m_keyMap.isEmpty()) {
+            p_succeed = true;
+        } else {
+            secondKey = true;
+        }
+        ret = true;
+    }
+    return ret;
+}
+
+QList<QTreeWidgetItem *> VOutline::getVisibleItems() const
+{
+    QList<QTreeWidgetItem *> items;
+    for (int i = 0; i < topLevelItemCount(); ++i) {
+        QTreeWidgetItem *item = topLevelItem(i);
+        if (!item->isHidden()) {
+            items.append(item);
+            if (item->isExpanded()) {
+                items.append(getVisibleChildItems(item));
+            }
+        }
+    }
+    return items;
+}
+
+QList<QTreeWidgetItem *> VOutline::getVisibleChildItems(const QTreeWidgetItem *p_item) const
+{
+    QList<QTreeWidgetItem *> items;
+    if (p_item && !p_item->isHidden() && p_item->isExpanded()) {
+        for (int i = 0; i < p_item->childCount(); ++i) {
+            QTreeWidgetItem *child = p_item->child(i);
+            if (!child->isHidden()) {
+                items.append(child);
+                if (child->isExpanded()) {
+                    items.append(getVisibleChildItems(child));
+                }
+            }
+        }
+    }
+    return items;
 }

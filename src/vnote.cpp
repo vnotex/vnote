@@ -5,6 +5,8 @@
 #include <QDir>
 #include <QFont>
 #include <QFontMetrics>
+#include <QStringList>
+#include <QFontDatabase>
 #include "vnote.h"
 #include "utils/vutils.h"
 #include "vconfigmanager.h"
@@ -176,25 +178,56 @@ QVector<VNotebook *> &VNote::getNotebooks()
 
 QString VNote::getNavigationLabelStyle(const QString &p_str) const
 {
+    static int lastLen = -1;
+    static int pxWidth = 24;
     int fontPt = 15;
-    QString fontFamily("Monospace");
-    QFont font(fontFamily, fontPt);
-    font.setBold(true);
-    QFontMetrics fm(font);
-    int pxWidth = fm.width(p_str);
+    QString fontFamily = getMonospacedFont();
 
-    QString stylesheet = QString("background-color: %1;"
-                                 "color: %2;"
-                                 "font-size: %3pt;"
-                                 "font: bold;"
-                                 "font-family: %4;"
-                                 "border-radius: 3px;"
-                                 "min-width: %5px;"
-                                 "max-width: %5px;")
-                                 .arg(getColorFromPalette("logo-base"))
-                                 .arg(getColorFromPalette("logo-max"))
-                                 .arg(fontPt)
-                                 .arg(fontFamily)
-                                 .arg(pxWidth);
-    return stylesheet;
+    if (p_str.size() != lastLen) {
+        QFont font(fontFamily, fontPt);
+        font.setBold(true);
+        QFontMetrics fm(font);
+        pxWidth = fm.width(p_str);
+        lastLen = p_str.size();
+    }
+
+    return QString("background-color: %1;"
+                   "color: %2;"
+                   "font-size: %3pt;"
+                   "font: bold;"
+                   "font-family: %4;"
+                   "border-radius: 3px;"
+                   "min-width: %5px;"
+                   "max-width: %5px;")
+                   .arg(getColorFromPalette("logo-base"))
+                   .arg(getColorFromPalette("logo-max"))
+                   .arg(fontPt)
+                   .arg(fontFamily)
+                   .arg(pxWidth);
+}
+
+const QString &VNote::getMonospacedFont() const
+{
+    static QString font;
+    if (font.isNull()) {
+        QStringList candidates;
+        candidates << "Consolas" << "Monaco" << "Andale Mono" << "Monospace" << "Courier New";
+        QStringList availFamilies = QFontDatabase().families();
+
+        for (int i = 0; i < candidates.size(); ++i) {
+            QString family = candidates[i].trimmed().toLower();
+            for (int j = 0; j < availFamilies.size(); ++j) {
+                QString availFamily = availFamilies[j];
+                availFamily.remove(QRegExp("\\[.*\\]"));
+                if (family == availFamily.trimmed().toLower()) {
+                    font = availFamily;
+                    return font;
+                }
+            }
+        }
+
+        // Fallback to current font.
+        font = QFont().family();
+    }
+    return font;
 }

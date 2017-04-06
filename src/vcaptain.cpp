@@ -281,6 +281,7 @@ bool VCaptain::handleKeyPress(int p_key, Qt::KeyboardModifiers p_modifiers)
     case Qt::Key_W:
         // Enter navigation mode.
         triggerNavigationMode();
+        m_ignoreFocusChange = false;
         return ret;
 
     case Qt::Key_X:

@@ -399,37 +399,41 @@ void VNotebookSelector::resizeListWidgetToContent()
 void VNotebookSelector::registerNavigation(QChar p_majorKey)
 {
     Q_ASSERT(!m_naviLabel);
-    qDebug() << "VNotebookSelector register for navigation key" << p_majorKey;
     m_majorKey = p_majorKey;
-
-    m_naviLabel = new QLabel(m_majorKey, this);
-    m_naviLabel->setStyleSheet(g_vnote->getNavigationLabelStyle(m_majorKey));
-    m_naviLabel->hide();
 }
 
 void VNotebookSelector::showNavigation()
 {
-    qDebug() << "VNotebookSelector show navigation";
+    if (!isVisible()) {
+        return;
+    }
+
+    V_ASSERT(!m_naviLabel);
+    m_naviLabel = new QLabel(m_majorKey, this);
+    m_naviLabel->setStyleSheet(g_vnote->getNavigationLabelStyle(m_majorKey));
     m_naviLabel->show();
 }
 
 void VNotebookSelector::hideNavigation()
 {
-    qDebug() << "VNotebookSelector hide navigation";
-    m_naviLabel->hide();
+    if (m_naviLabel) {
+        delete m_naviLabel;
+        m_naviLabel = NULL;
+    }
 }
 
 bool VNotebookSelector::handleKeyNavigation(int p_key, bool &p_succeed)
 {
-    qDebug() << "VNotebookSelector handle key navigation" << p_key;
     bool ret = false;
     p_succeed = false;
     QChar keyChar = VUtils::keyToChar(p_key);
     if (keyChar == m_majorKey) {
         // Hit.
         p_succeed = true;
-        showPopup();
         ret = true;
+        if (m_naviLabel) {
+            showPopup();
+        }
     }
     return ret;
 }

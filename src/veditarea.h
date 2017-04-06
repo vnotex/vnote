@@ -13,13 +13,14 @@
 #include "vnotebook.h"
 #include "veditwindow.h"
 #include "vtoc.h"
+#include "vnavigationmode.h"
 
 class VNote;
 class VFile;
 class VDirectory;
 class VFindReplaceDialog;
 
-class VEditArea : public QWidget
+class VEditArea : public QWidget, public VNavigationMode
 {
     Q_OBJECT
 public:
@@ -49,6 +50,12 @@ public:
     int focusNextWindow(int p_biaIdx);
     void moveCurrentTabOneSplit(bool p_right);
     VEditWindow *getCurrentWindow() const;
+
+    // Implementations for VNavigationMode.
+    void registerNavigation(QChar p_majorKey);
+    void showNavigation();
+    void hideNavigation();
+    bool handleKeyNavigation(int p_key, bool &p_succeed);
 
 signals:
     void curTabStatusChanged(const VFile *p_file, const VEditTab *p_editTab, bool p_editMode);
@@ -101,6 +108,11 @@ private:
     // Splitter holding multiple split windows
     QSplitter *splitter;
     VFindReplaceDialog *m_findReplace;
+
+    // Navigation Mode.
+    // Map second key to VEditWindow.
+    QMap<QChar, VEditWindow *> m_keyMap;
+    QVector<QLabel *> m_naviLabels;
 };
 
 inline VEditWindow* VEditArea::getWindow(int windowIndex) const

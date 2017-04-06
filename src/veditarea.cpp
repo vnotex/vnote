@@ -6,11 +6,14 @@
 #include "vconfigmanager.h"
 #include "vfile.h"
 #include "dialog/vfindreplacedialog.h"
+#include "utils/vutils.h"
 
 extern VConfigManager vconfig;
+extern VNote *g_vnote;
 
 VEditArea::VEditArea(VNote *vnote, QWidget *parent)
-    : QWidget(parent), vnote(vnote), curWindowIndex(-1)
+    : QWidget(parent), VNavigationMode(),
+      vnote(vnote), curWindowIndex(-1)
 {
     setupUI();
 
@@ -570,3 +573,74 @@ VEditWindow *VEditArea::getCurrentWindow() const
     }
     return getWindow(curWindowIndex);
 }
+
+void VEditArea::registerNavigation(QChar p_majorKey)
+{
+    m_majorKey = p_majorKey;
+    V_ASSERT(m_keyMap.empty());
+    V_ASSERT(m_naviLabels.empty());
+}
+
+void VEditArea::showNavigation()
+{
+    // Clean up.
+    m_keyMap.clear();
+    for (auto label : m_naviLabels) {
+        delete label;
+    }
+    m_naviLabels.clear();
+
+    if (!isVisible()) {
+        return;
+    }
+
+    // Generate labels for VEditWindow.
+    for (int i = 0; i < 26 && i < splitter->count(); ++i) {
+        QChar key('a' + i);
+        m_keyMap[key] = getWindow(i);
+
+        QString str = QString(m_majorKey) + key;
+        QLabel *label = new QLabel(str, this);
+        label->setStyleSheet(g_vnote->getNavigationLabelStyle(str));
+        label->move(getWindow(i)->geometry().topLeft());
+        label->show();
+        m_naviLabels.append(label);
+    }
+}
+
+void VEditArea::hideNavigation()
+{
+    m_keyMap.clear();
+    for (auto label : m_naviLabels) {
+        delete label;
+    }
+    m_naviLabels.clear();
+}
+
+bool VEditArea::handleKeyNavigation(int p_key, bool &p_succeed)
+{
+    static bool secondKey = false;
+    bool ret = false;
+    p_succeed = false;
+    QChar keyChar = VUtils::keyToChar(p_key);
+    if (secondKey && !keyChar.isNull()) {
+        secondKey = false;
+        p_succeed = true;
+        ret = true;
+        auto it = m_keyMap.find(keyChar);
+        if (it != m_keyMap.end()) {
+            setCurrentWindow(splitter->indexOf(it.value()), true);
+        }
+    } else if (keyChar == m_majorKey) {
+        // Major key pressed.
+        // Need second key if m_keyMap is not empty.
+        if (m_keyMap.isEmpty()) {
+            p_succeed = true;
+        } else {
+            secondKey = true;
+        }
+        ret = true;
+    }
+    return ret;
+}
+

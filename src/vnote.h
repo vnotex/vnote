@@ -60,6 +60,8 @@ public slots:
     void updateTemplate();
 
 private:
+    const QString &getMonospacedFont() const;
+
     // Maintain all the notebooks. Other holder should use QPointer.
     QVector<VNotebook *> m_notebooks;
     QVector<QPair<QString, QString> > m_palette;
