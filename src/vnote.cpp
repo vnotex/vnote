@@ -11,6 +11,7 @@
 #include "utils/vutils.h"
 #include "vconfigmanager.h"
 #include "vmainwindow.h"
+#include "vorphanfile.h"
 
 extern VConfigManager vconfig;
 
@@ -27,6 +28,8 @@ const QString VNote::c_mermaidCssFile = ":/utils/mermaid/mermaid.css";
 const QString VNote::c_mermaidDarkCssFile = ":/utils/mermaid/mermaid.dark.css";
 const QString VNote::c_mermaidForestCssFile = ":/utils/mermaid/mermaid.forest.css";
 const QString VNote::c_mathjaxJsFile = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML";
+const QString VNote::c_shortcutsDocFile_en = ":/resources/docs/shortcuts_en.md";
+const QString VNote::c_shortcutsDocFile_zh = ":/resources/docs/shortcuts_zh.md";
 
 VNote::VNote(QObject *parent)
     : QObject(parent), m_mainWindow(dynamic_cast<VMainWindow *>(parent))
@@ -230,4 +233,26 @@ const QString &VNote::getMonospacedFont() const
         font = QFont().family();
     }
     return font;
+}
+
+VFile *VNote::getOrphanFile(const QString &p_path)
+{
+    if (p_path.isEmpty()) {
+        return NULL;
+    }
+
+    // See if the file has already been opened before.
+    for (auto const &file : m_externalFiles) {
+        if (file->getType() == FileType::Orphan && file->retrivePath() == p_path) {
+            qDebug() << "find a VFile for path" << p_path;
+            return file;
+        }
+    }
+
+    // TODO: Clean up unopened file here.
+
+    // Create a VOrphanFile for p_path.
+    VOrphanFile *file = new VOrphanFile(p_path, this);
+    m_externalFiles.append(file);
+    return file;
 }

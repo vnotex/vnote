@@ -295,6 +295,14 @@ bool VCaptain::handleKeyPress(int p_key, Qt::KeyboardModifiers p_modifiers)
         break;
     }
 
+    case Qt::Key_Question:
+    {
+        // Display shortcuts doc.
+        m_mainWindow->shortcutHelp();
+        m_widgetBeforeCaptain = NULL;
+        break;
+    }
+
     default:
         // Not implemented yet. Just exit Captain mode.
         break;

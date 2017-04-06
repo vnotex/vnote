@@ -45,10 +45,7 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     vconfig.initialize();
 
-    QString locale = vconfig.getLanguage();
-    if (locale == "System" || !VUtils::isValidLanguage(locale)) {
-        locale = QLocale::system().name();
-    }
+    QString locale = VUtils::getLocale();
     qDebug() << "use locale" << locale;
 
     // load translation for Qt

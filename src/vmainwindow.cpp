@@ -279,16 +279,24 @@ void VMainWindow::initMenuBar()
 void VMainWindow::initHelpMenu()
 {
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
+    helpMenu->setToolTipsVisible(true);
+
+    QAction *shortcutAct = new QAction(tr("&Shortcuts Help"), this);
+    shortcutAct->setToolTip(tr("View information about shortcut keys"));
+    connect(shortcutAct, &QAction::triggered,
+            this, &VMainWindow::shortcutHelp);
 
     QAction *aboutAct = new QAction(tr("&About VNote"), this);
-    aboutAct->setStatusTip(tr("View information about VNote"));
+    aboutAct->setToolTip(tr("View information about VNote"));
     connect(aboutAct, &QAction::triggered,
             this, &VMainWindow::aboutMessage);
+
     QAction *aboutQtAct = new QAction(tr("About &Qt"), this);
-    aboutQtAct->setStatusTip(tr("View information about Qt"));
+    aboutQtAct->setToolTip(tr("View information about Qt"));
     connect(aboutQtAct, &QAction::triggered,
             qApp, &QApplication::aboutQt);
 
+    helpMenu->addAction(shortcutAct);
     helpMenu->addAction(aboutQtAct);
     helpMenu->addAction(aboutAct);
 }
@@ -786,46 +794,23 @@ void VMainWindow::setRenderBackgroundColor(QAction *action)
 void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
                                                        bool p_editMode)
 {
-    if (p_file) {
-        if (p_editMode) {
-            editNoteAct->setVisible(false);
-            discardExitAct->setVisible(true);
-            saveExitAct->setVisible(true);
-            saveNoteAct->setVisible(true);
-            deleteNoteAct->setEnabled(true);
+    editNoteAct->setVisible(p_file && p_file->isModifiable() && !p_editMode);
+    discardExitAct->setVisible(p_file && p_editMode);
+    saveExitAct->setVisible(p_file && p_editMode);
+    saveNoteAct->setVisible(p_file && p_editMode);
+    deleteNoteAct->setEnabled(p_file && p_file->isModifiable());
+    noteInfoAct->setEnabled(p_file && p_file->getType() == FileType::Normal);
 
-            m_insertImageAct->setEnabled(true);
-        } else {
-            editNoteAct->setVisible(true);
-            discardExitAct->setVisible(false);
-            saveExitAct->setVisible(false);
-            saveNoteAct->setVisible(false);
-            deleteNoteAct->setEnabled(true);
+    m_insertImageAct->setEnabled(p_file && p_editMode);
+    // Find/Replace
+    m_findReplaceAct->setEnabled(p_file);
+    m_findNextAct->setEnabled(p_file);
+    m_findPreviousAct->setEnabled(p_file);
+    m_replaceAct->setEnabled(p_file && p_editMode);
+    m_replaceFindAct->setEnabled(p_file && p_editMode);
+    m_replaceAllAct->setEnabled(p_file && p_editMode);
 
-            m_insertImageAct->setEnabled(false);
-            m_replaceAct->setEnabled(false);
-            m_replaceFindAct->setEnabled(false);
-            m_replaceAllAct->setEnabled(false);
-        }
-        noteInfoAct->setEnabled(true);
-
-        m_findReplaceAct->setEnabled(true);
-    } else {
-        editNoteAct->setVisible(false);
-        discardExitAct->setVisible(false);
-        saveExitAct->setVisible(false);
-        saveNoteAct->setVisible(false);
-        deleteNoteAct->setEnabled(false);
-        noteInfoAct->setEnabled(false);
-
-        m_insertImageAct->setEnabled(false);
-        // Find/Replace
-        m_findReplaceAct->setEnabled(false);
-        m_findNextAct->setEnabled(false);
-        m_findPreviousAct->setEnabled(false);
-        m_replaceAct->setEnabled(false);
-        m_replaceFindAct->setEnabled(false);
-        m_replaceAllAct->setEnabled(false);
+    if (!p_file) {
         m_findReplaceDialog->closeDialog();
     }
 }
@@ -840,8 +825,12 @@ void VMainWindow::handleCurTabStatusChanged(const VFile *p_file, const VEditTab 
     QString title;
     if (p_file) {
         title = QString("[%1] %2").arg(p_file->getNotebookName()).arg(p_file->retrivePath());
-        if (p_file->isModified()) {
-            title.append('*');
+        if (p_file->isModifiable()) {
+            if (p_file->isModified()) {
+                title.append('*');
+            }
+        } else {
+            title.append('#');
         }
     }
     updateWindowTitle(title);
@@ -924,13 +913,17 @@ void VMainWindow::updateWindowTitle(const QString &str)
 
 void VMainWindow::curEditFileInfo()
 {
-    Q_ASSERT(m_curFile);
+    if (!m_curFile || m_curFile->getType() != FileType::Normal) {
+        return;
+    }
     fileList->fileInfo(m_curFile);
 }
 
 void VMainWindow::deleteCurNote()
 {
-    Q_ASSERT(m_curFile);
+    if (!m_curFile || !m_curFile->isModifiable()) {
+        return;
+    }
     fileList->deleteFile(m_curFile);
 }
 
@@ -1028,7 +1021,7 @@ void VMainWindow::insertImage()
 
 void VMainWindow::locateFile(VFile *p_file)
 {
-    if (!p_file) {
+    if (!p_file || p_file->getType() != FileType::Normal) {
         return;
     }
     qDebug() << "locate file" << p_file->retrivePath();
@@ -1118,3 +1111,13 @@ void VMainWindow::changeAutoList(bool p_checked)
     }
 }
 
+void VMainWindow::shortcutHelp()
+{
+    QString locale = VUtils::getLocale();
+    QString docName = VNote::c_shortcutsDocFile_en;
+    if (locale == "zh_CN") {
+        docName = VNote::c_shortcutsDocFile_zh;
+    }
+    VFile *file = vnote->getOrphanFile(docName);
+    editArea->openFile(file, OpenFileMode::Read);
+}

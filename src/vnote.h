@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QVector>
+#include <QList>
 #include <QSettings>
 #include <QFont>
 #include <QObject>
@@ -13,6 +14,7 @@
 #include "vconstants.h"
 
 class VMainWindow;
+class VFile;
 
 class VNote : public QObject
 {
@@ -49,12 +51,18 @@ public:
     // Mathjax
     static const QString c_mathjaxJsFile;
 
+    static const QString c_shortcutsDocFile_en;
+    static const QString c_shortcutsDocFile_zh;
+
     inline const QVector<QPair<QString, QString> > &getPalette() const;
     void initPalette(QPalette palette);
     QString getColorFromPalette(const QString &p_name) const;
     inline VMainWindow *getMainWindow() const;
 
     QString getNavigationLabelStyle(const QString &p_str) const;
+
+    // Given the path of an external file, create a VFile struct.
+    VFile *getOrphanFile(const QString &p_path);
 
 public slots:
     void updateTemplate();
@@ -66,6 +74,10 @@ private:
     QVector<VNotebook *> m_notebooks;
     QVector<QPair<QString, QString> > m_palette;
     VMainWindow *m_mainWindow;
+
+    // Hold all external file: Orphan File.
+    // Need to clean up periodly.
+    QList<VFile *> m_externalFiles;
 };
 
 inline const QVector<QPair<QString, QString> >& VNote::getPalette() const

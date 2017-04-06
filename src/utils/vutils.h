@@ -49,6 +49,7 @@ public:
     static qreal calculateScaleFactor();
     static bool realEqual(qreal p_a, qreal p_b);
     static QChar keyToChar(int p_key);
+    static QString getLocale();
 
 private:
     // <value, name>

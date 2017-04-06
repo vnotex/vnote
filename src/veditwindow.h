@@ -96,7 +96,7 @@ private:
     void noticeStatus(int index);
     inline QString generateTooltip(const VFile *p_file) const;
     inline QString generateTabText(int p_index, const QString &p_name,
-                                   bool p_modified) const;
+                                   bool p_modified, bool p_modifiable) const;
     bool canRemoveSplit();
     void moveTabOneSplit(int p_tabIdx, bool p_right);
     void updateTabInfo(int p_idx);
@@ -134,10 +134,10 @@ inline QString VEditWindow::generateTooltip(const VFile *p_file) const
 }
 
 inline QString VEditWindow::generateTabText(int p_index, const QString &p_name,
-                                            bool p_modified) const
+                                            bool p_modified, bool p_modifiable) const
 {
     QString seq = QString::number(p_index + c_tabSequenceBase, 10);
-    return seq + ". " + (p_modified ? (p_name + "*") : p_name);
+    return seq + ". " + p_name + (p_modifiable ? (p_modified ? "*" : "") : "#");
 }
 
 #endif // VEDITWINDOW_H

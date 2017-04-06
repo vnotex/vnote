@@ -5,9 +5,15 @@
 #include <QTextEdit>
 #include "utils/vutils.h"
 
-VFile::VFile(const QString &p_name, QObject *p_parent)
+VFile::VFile(const QString &p_name, QObject *p_parent,
+             FileType p_type, bool p_modifiable)
     : QObject(p_parent), m_name(p_name), m_opened(false), m_modified(false),
-      m_docType(VUtils::isMarkdown(p_name) ? DocType::Markdown : DocType::Html)
+      m_docType(VUtils::isMarkdown(p_name) ? DocType::Markdown : DocType::Html),
+      m_type(p_type), m_modifiable(p_modifiable)
+{
+}
+
+VFile::~VFile()
 {
 }
 
@@ -111,4 +117,88 @@ void VFile::setName(const QString &p_name)
     if (newType != m_docType) {
         qWarning() << "setName() change the DocType. A convertion should be followed";
     }
+}
+
+const QString &VFile::getName() const
+{
+    return m_name;
+}
+
+VDirectory *VFile::getDirectory()
+{
+    Q_ASSERT(parent());
+    return (VDirectory *)parent();
+}
+
+const VDirectory *VFile::getDirectory() const
+{
+    Q_ASSERT(parent());
+    return (const VDirectory *)parent();
+}
+
+DocType VFile::getDocType() const
+{
+    return m_docType;
+}
+
+const QString &VFile::getContent() const
+{
+    return m_content;
+}
+
+QString VFile::getNotebookName() const
+{
+    return getDirectory()->getNotebookName();
+}
+
+VNotebook *VFile::getNotebook()
+{
+    return getDirectory()->getNotebook();
+}
+
+QString VFile::retrivePath() const
+{
+    QString dirPath = getDirectory()->retrivePath();
+    return QDir(dirPath).filePath(m_name);
+}
+
+QString VFile::retriveRelativePath() const
+{
+    QString dirRelativePath = getDirectory()->retriveRelativePath();
+    return QDir(dirRelativePath).filePath(m_name);
+}
+
+QString VFile::retriveBasePath() const
+{
+    return getDirectory()->retrivePath();
+}
+
+QString VFile::retriveImagePath() const
+{
+    return QDir(retriveBasePath()).filePath("images");
+}
+
+void VFile::setContent(const QString &p_content)
+{
+    m_content = p_content;
+}
+
+bool VFile::isModified() const
+{
+    return m_modified;
+}
+
+bool VFile::isModifiable() const
+{
+    return m_modifiable;
+}
+
+bool VFile::isOpened() const
+{
+    return m_opened;
+}
+
+FileType VFile::getType() const
+{
+    return m_type;
 }

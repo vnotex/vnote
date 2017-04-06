@@ -333,7 +333,8 @@ void VEditWindow::updateTabInfo(int p_index)
     const VFile *file = editor->getFile();
     bool editMode = editor->getIsEditMode();
 
-    setTabText(p_index, generateTabText(p_index, file->getName(), file->isModified()));
+    setTabText(p_index, generateTabText(p_index, file->getName(),
+                                        file->isModified(), file->isModifiable()));
     setTabToolTip(p_index, generateTooltip(file));
     setTabIcon(p_index, editMode ? QIcon(":/resources/icons/editing.svg") :
                QIcon(":/resources/icons/reading.svg"));
@@ -344,7 +345,8 @@ void VEditWindow::updateAllTabsSequence()
     for (int i = 0; i < count(); ++i) {
         VEditTab *editor = getTab(i);
         const VFile *file = editor->getFile();
-        setTabText(i, generateTabText(i, file->getName(), file->isModified()));
+        setTabText(i, generateTabText(i, file->getName(),
+                                      file->isModified(), file->isModifiable()));
     }
 }
 
@@ -436,7 +438,11 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
         return;
     }
     m_locateAct->setData(tab);
-    menu.addAction(m_locateAct);
+    VEditTab *editor = getTab(tab);
+    QPointer<VFile> file = editor->getFile();
+    if (file->getType() == FileType::Normal) {
+        menu.addAction(m_locateAct);
+    }
 
     int totalWin = m_editArea->windowCount();
     if (totalWin > 1) {
@@ -448,7 +454,9 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
         menu.addAction(m_moveRightAct);
     }
 
-    menu.exec(bar->mapToGlobal(p_pos));
+    if (!menu.actions().isEmpty()) {
+        menu.exec(bar->mapToGlobal(p_pos));
+    }
 }
 
 void VEditWindow::tabListJump(VFile *p_file)
@@ -598,7 +606,9 @@ void VEditWindow::handleLocateAct()
     int tab = m_locateAct->data().toInt();
     VEditTab *editor = getTab(tab);
     QPointer<VFile> file = editor->getFile();
-    vnote->getMainWindow()->locateFile(file);
+    if (file->getType() == FileType::Normal) {
+        vnote->getMainWindow()->locateFile(file);
+    }
 }
 
 void VEditWindow::handleMoveLeftAct()

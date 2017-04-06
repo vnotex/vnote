@@ -14,6 +14,11 @@
 #include <QKeyEvent>
 #include <QScreen>
 #include <cmath>
+#include <QLocale>
+
+#include "vconfigmanager.h"
+
+extern VConfigManager vconfig;
 
 const QVector<QPair<QString, QString>> VUtils::c_availableLanguages = {QPair<QString, QString>("en_US", "Englisth(US)"),
                                                                        QPair<QString, QString>("zh_CN", "Chinese")};
@@ -366,4 +371,13 @@ QChar VUtils::keyToChar(int p_key)
         return QChar('a' + p_key - Qt::Key_A);
     }
     return QChar();
+}
+
+QString VUtils::getLocale()
+{
+    QString locale = vconfig.getLanguage();
+    if (locale == "System" || !isValidLanguage(locale)) {
+        locale = QLocale::system().name();
+    }
+    return locale;
 }

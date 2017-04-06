@@ -97,5 +97,7 @@
         <file>resources/icons/close_red.svg</file>
         <file>resources/icons/close_grey.svg</file>
         <file>resources/icons/float.svg</file>
+        <file>resources/docs/shortcuts_en.md</file>
+        <file>resources/docs/shortcuts_zh.md</file>
     </qresource>
 </RCC>

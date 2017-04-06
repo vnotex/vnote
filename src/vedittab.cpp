@@ -56,18 +56,21 @@ void VEditTab::setupUI()
 {
     switch (m_file->getDocType()) {
     case DocType::Markdown:
-        m_textEditor = new VMdEdit(m_file, this);
-        connect(dynamic_cast<VMdEdit *>(m_textEditor), &VMdEdit::headersChanged,
-                this, &VEditTab::updateTocFromHeaders);
-        connect(dynamic_cast<VMdEdit *>(m_textEditor), &VMdEdit::statusChanged,
-                this, &VEditTab::noticeStatusChanged);
-        connect(m_textEditor, SIGNAL(curHeaderChanged(int, int)),
-                this, SLOT(updateCurHeader(int, int)));
-        connect(m_textEditor, &VEdit::textChanged,
-                this, &VEditTab::handleTextChanged);
-        m_textEditor->reloadFile();
-        addWidget(m_textEditor);
-
+        if (m_file->isModifiable()) {
+            m_textEditor = new VMdEdit(m_file, this);
+            connect(dynamic_cast<VMdEdit *>(m_textEditor), &VMdEdit::headersChanged,
+                    this, &VEditTab::updateTocFromHeaders);
+            connect(dynamic_cast<VMdEdit *>(m_textEditor), &VMdEdit::statusChanged,
+                    this, &VEditTab::noticeStatusChanged);
+            connect(m_textEditor, SIGNAL(curHeaderChanged(int, int)),
+                    this, SLOT(updateCurHeader(int, int)));
+            connect(m_textEditor, &VEdit::textChanged,
+                    this, &VEditTab::handleTextChanged);
+            m_textEditor->reloadFile();
+            addWidget(m_textEditor);
+        } else {
+            m_textEditor = NULL;
+        }
         setupMarkdownPreview();
         break;
 
@@ -87,6 +90,7 @@ void VEditTab::setupUI()
 
 void VEditTab::handleTextChanged()
 {
+    Q_ASSERT(m_file->isModifiable());
     if (m_fileModified) {
         return;
     }
@@ -148,7 +152,6 @@ void VEditTab::previewByConverter()
     processHoedownToc(toc);
     html.replace(tocExp, toc);
     document.setHtml(html);
-    // Hoedown will add '\n' while Marked does not
     updateTocFromHtml(toc);
 }
 
@@ -163,6 +166,9 @@ void VEditTab::processHoedownToc(QString &p_toc)
 
 void VEditTab::showFileEditMode()
 {
+    if (!m_file->isModifiable()) {
+        return;
+    }
     isEditMode = true;
 
     // beginEdit() may change curHeader.
@@ -191,7 +197,7 @@ bool VEditTab::closeFile(bool p_forced)
 
 void VEditTab::editFile()
 {
-    if (isEditMode) {
+    if (isEditMode || !m_file->isModifiable()) {
         return;
     }
 
@@ -204,7 +210,7 @@ void VEditTab::readFile()
         return;
     }
 
-    if (m_textEditor->isModified()) {
+    if (m_textEditor && m_textEditor->isModified()) {
         // Prompt to save the changes
         int ret = VUtils::showMessage(QMessageBox::Information, tr("Information"),
                                       tr("Note %1 has been modified.").arg(m_file->getName()),
@@ -226,16 +232,21 @@ void VEditTab::readFile()
             return;
         }
     }
-    m_textEditor->endEdit();
+
+    if (m_textEditor) {
+        m_textEditor->endEdit();
+    }
+
     showFileReadMode();
 }
 
 bool VEditTab::saveFile()
 {
-    bool ret;
     if (!isEditMode || !m_textEditor->isModified()) {
         return true;
     }
+
+    bool ret;
     // Make sure the file already exists. Temporary deal with cases when user delete or move
     // a file.
     QString filePath = m_file->retrivePath();
@@ -580,7 +591,9 @@ void VEditTab::clearSearchedWordHighlight()
     if (webPreviewer) {
         webPreviewer->findText("");
     }
-    m_textEditor->clearSearchedWordHighlight();
+    if (m_textEditor) {
+        m_textEditor->clearSearchedWordHighlight();
+    }
 }
 
 bool VEditTab::checkToc()

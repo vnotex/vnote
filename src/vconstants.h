@@ -1,7 +1,12 @@
 #ifndef VCONSTANTS_H
 #define VCONSTANTS_H
 
+// Html: rich text file;
+// Markdown: Markdown text file;
 enum class DocType { Html, Markdown };
+
+enum class FileType { Normal, Orphan };
+
 enum class ClipboardOpType { Invalid, CopyFile, CopyDir };
 enum class OpenFileMode {Read = 0, Edit};
 

@@ -47,6 +47,7 @@ private slots:
     void viewSettings();
     void changeMarkdownConverter(QAction *action);
     void aboutMessage();
+    void shortcutHelp();
     void changeExpandTab(bool checked);
     void setTabStopWidth(QAction *action);
     void setEditorBackgroundColor(QAction *action);

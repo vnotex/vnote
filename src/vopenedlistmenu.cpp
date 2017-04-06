@@ -83,7 +83,13 @@ void VOpenedListMenu::updateOpenedList()
         if (curNotebook != notebook || file->getDirectory() != directory) {
             notebook = curNotebook;
             directory = file->getDirectory();
-            QString text = QString("[%1] %2").arg(notebook).arg(directory->getName());
+            QString dirName;
+            if (!directory) {
+                dirName = file->retriveBasePath();
+            } else {
+                dirName = directory->getName();
+            }
+            QString text = QString("[%1] %2").arg(notebook).arg(dirName);
             QAction *sepAct = addSection(text);
             sepAct->setFont(sepFont);
         }

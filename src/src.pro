@@ -57,7 +57,8 @@ SOURCES += main.cpp\
     dialog/vdeletenotebookdialog.cpp \
     dialog/vselectdialog.cpp \
     vcaptain.cpp \
-    vopenedlistmenu.cpp
+    vopenedlistmenu.cpp \
+    vorphanfile.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -101,7 +102,8 @@ HEADERS  += vmainwindow.h \
     dialog/vselectdialog.h \
     vcaptain.h \
     vopenedlistmenu.h \
-    vnavigationmode.h
+    vnavigationmode.h \
+    vorphanfile.h
 
 RESOURCES += \
     vnote.qrc \
