@@ -36,7 +36,9 @@ VOpenedListMenu::VOpenedListMenu(VEditWindow *p_editWin)
 {
     // Force to display separator text on Windows and macOS.
     setStyle(QStyleFactory::create("Fusion"));
-    setStyleSheet("::separator { color: #009688; height: 15px; padding-top: 5px; }");
+    int separatorHeight = 20 * VUtils::calculateScaleFactor();
+    QString style = QString("::separator { color: #009688; height: %1px; padding-top: 3px; }").arg(separatorHeight);
+    setStyleSheet(style);
 
     setToolTipsVisible(true);
 
