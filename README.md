@@ -90,13 +90,13 @@ VNote设计为带有笔记管理功能的Markdown编辑器，或者有良好Mark
 当然，目前也有很多非常强大的专注于Markdown的编辑器。但是，大多数都不会提供笔记管理功能（作为一个编辑器，也没有必要提供），或者只是提供一个简单的文件系统浏览器。其中，CuteMarked就是一个流行的Markdown编辑器之一，VNote在实现的过程中也在很多地方参考借鉴了该软件。
 
 ## Pleasant Markdown Experience (舒适的Markdown体验)
-VNote tries to minimize the gap between the edit and view of Markdown. Instead of using two panels to edit and preview simultaneously, VNote utilizes syntax highlight to help keeping track of the content. VNote also preview images in place when editing. It is said that you won't want to exit the edit mode when using VNote.
+VNote tries to minimize the gap between the edit and view of Markdown. Instead of using two panels to edit and preview simultaneously, VNote utilizes syntax highlight to help keeping track of the content. VNote also previews images in place when editing. It is said that you won't want to exit the edit mode when using VNote.
 
-VNote also learns a lot from Vim and Shell to provide many convenient and efficient shortcuts. VNote does not provide a pure Vim mode because it is likely that users will edit sequentially when writting notes, which is different from coding.
+VNote also learns a lot from Vim and Shell to provide many convenient and efficient shortcuts.
 
 VNote尝试尽量减小Markdown与生俱来的编辑和阅读之间的割裂感。目前很多编辑器通过左右两栏来同时编辑和预览Markdown，但是编辑和阅读还是割裂明显。VNote利用准确有意义的语法高亮来帮助用户追踪、辨认笔记内容，使得Markdown在编辑的时候也能和阅读一样提供良好的视觉、排版效果。同时，VNote支持编辑时原地预览图片，进一步减小割裂感。使用VNote后，你一定会更想留在编辑模式。
 
-另外，VNote也借鉴了Vim和Shell来提供很多非常方便高效的快捷键。VNote目前没有提供真正的Vim模式，这是因为和编写代码不一样，在编辑笔记的时候用户一般都是顺序编写的。
+另外，VNote也借鉴了Vim和Shell来提供很多非常方便高效的快捷键。
 
 # Features (功能)
 ## Notebook-Based Notes Management (基于笔记本的管理)
@@ -115,7 +115,7 @@ VNote支持一个笔记本中包含无限层级的文件夹。VNote支持在笔�
 ![VNote Directory and File Panel](screenshots/vnote_002.png)
 
 ## Simple Notes Management (直观的笔记管理)
-All your notes are managed by a plaintext configuration files and stored as plaintext files. You could access your notes without VNote. You could use external file synchronization services to synchronize your notes and import them on another machine.
+All your notes are managed by some plaintext configuration files and stored as plaintext files. You could access your notes without VNote. You could use external file synchronization services to synchronize your notes and import them on another machine.
 
 VNote supports both Markdown (suffix `md`) and rich text notes.
 
@@ -129,7 +129,7 @@ VNote tries to provide the best-effort *WYSIWYG* for Markdown by utilizing prope
 通过使用有意义的语法高亮和其他一些功能，VNote尽可能为Markdown提供 *所见即所得* 的体验。
 
 ### Syntax Highlight (语法高亮)
-VNote supports accurate syntax highlight for Markdown. Tuning the style of the highlight, VNote enable you to keep track of your document easily.
+VNote supports accurate syntax highlight for Markdown. Tuning the style of the highlight, VNote enables you to keep track of your document easily.
 
 VNote支持精确的Markdown语法高亮。通过精心调试的高亮样式，VNote使得你能够轻松跟踪和阅读你的文档。
 
@@ -170,16 +170,14 @@ VNote supports many pleasant shortcuts which facilitate your editing.
 
 Some Examples:
 
-- `Ctrl+W` to enter edit mode; `Ctrl+R` to save and enter read mode; `Ctrl+E` to maximize edit area;
-- `Ctrl+D` to enter a simple Vim mode temporarily (such as `hjkl` to move the cursor);
-- `Ctrl+B`, `Ctrl+I`, `Ctrl+O` to insert bold, italic and inline-code texts.
+- `Ctrl+W` to enter edit mode; `Ctrl+R` to save and enter read mode; `Ctrl+T` to maximize edit area;
+- `Ctrl+B`, `Ctrl+I`, `Ctrl+O` to insert bold, italic and inline-code text.
 
 VNote提供很多快捷键，从而提供一个愉悦的编辑体验。
 
 一些例子：
 
-- `Ctrl+W` 进入编辑模式；`Ctrl+R` 保存并进入阅读模式；`Ctrl+E` 最大化编辑区；
-- `Ctrl+D` 进入暂时Vim模式（比如支持`hjkl`移动光标）；
+- `Ctrl+W` 进入编辑模式；`Ctrl+R` 保存并进入阅读模式；`Ctrl+T` 最大化编辑区；
 - `Ctrl+B`, `Ctrl+I`, `Ctrl+O` 插入粗体、斜体和行内代码。
 
 ## Window Split (窗口分割)
@@ -197,11 +195,11 @@ VNote中，几乎一切都是可以定制的，例如背景颜色、字体以及
 ![VNote Highly Configurable](screenshots/vnote_008.png)
 
 ## Others (其他)
-VNote also support many other features, like:
+VNote also supports many other features, like:
 
 - Highlight current cursor line;
 - Highlight selected text;
-- Powerful search within note;
+- Powerful search within the note;
 
 VNote还支持其他很多的功能，比如：
 
@@ -259,7 +257,7 @@ If you prefer command line on macOS, you could follow these steps.
     mkdir -p build
     cd build
     qmake -v
-    qmake -config release ../VNote.pro
+    qmake CONFIG-=debug CONFIG+=release ../VNote.pro
     make -j2
     ```
 4. Make `build_macos.sh` executable and run it:
@@ -290,7 +288,7 @@ If you prefer command line on macOS, you could follow these steps.
     mkdir -p build
     cd build
     qmake -v
-    qmake -config release ../VNote.pro
+    qmake CONFIG-=debug CONFIG+=release ../VNote.pro
     make -j2
     ```
 4. 修改`build_macos.sh`的执行权限，并执行：
