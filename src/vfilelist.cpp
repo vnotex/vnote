@@ -44,37 +44,37 @@ void VFileList::initActions()
 {
     newFileAct = new QAction(QIcon(":/resources/icons/create_note.svg"),
                              tr("&New Note"), this);
-    newFileAct->setStatusTip(tr("Create a note in current directory"));
+    newFileAct->setToolTip(tr("Create a note in current directory"));
     connect(newFileAct, SIGNAL(triggered(bool)),
             this, SLOT(newFile()));
 
     deleteFileAct = new QAction(QIcon(":/resources/icons/delete_note.svg"),
                                 tr("&Delete"), this);
-    deleteFileAct->setStatusTip(tr("Delete selected note"));
+    deleteFileAct->setToolTip(tr("Delete selected note"));
     connect(deleteFileAct, SIGNAL(triggered(bool)),
             this, SLOT(deleteFile()));
 
     fileInfoAct = new QAction(QIcon(":/resources/icons/note_info.svg"),
                               tr("&Info"), this);
-    fileInfoAct->setStatusTip(tr("View and edit current note's information"));
+    fileInfoAct->setToolTip(tr("View and edit current note's information"));
     connect(fileInfoAct, SIGNAL(triggered(bool)),
             this, SLOT(fileInfo()));
 
     copyAct = new QAction(QIcon(":/resources/icons/copy.svg"),
                           tr("&Copy"), this);
-    copyAct->setStatusTip(tr("Copy selected notes"));
+    copyAct->setToolTip(tr("Copy selected notes"));
     connect(copyAct, &QAction::triggered,
             this, &VFileList::copySelectedFiles);
 
     cutAct = new QAction(QIcon(":/resources/icons/cut.svg"),
                           tr("C&ut"), this);
-    cutAct->setStatusTip(tr("Cut selected notes"));
+    cutAct->setToolTip(tr("Cut selected notes"));
     connect(cutAct, &QAction::triggered,
             this, &VFileList::cutSelectedFiles);
 
     pasteAct = new QAction(QIcon(":/resources/icons/paste.svg"),
                           tr("&Paste"), this);
-    pasteAct->setStatusTip(tr("Paste notes in current directory"));
+    pasteAct->setToolTip(tr("Paste notes in current directory"));
     connect(pasteAct, &QAction::triggered,
             this, &VFileList::pasteFilesInCurDir);
 }
@@ -269,6 +269,7 @@ void VFileList::contextMenuRequested(QPoint pos)
 {
     QListWidgetItem *item = fileList->itemAt(pos);
     QMenu menu(this);
+    menu.setToolTipsVisible(true);
 
     if (!m_directory) {
         return;

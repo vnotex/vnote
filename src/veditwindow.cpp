@@ -44,19 +44,19 @@ void VEditWindow::initTabActions()
 {
     m_locateAct = new QAction(QIcon(":/resources/icons/locate_note.svg"),
                               tr("Locate To Directory"), this);
-    m_locateAct->setStatusTip(tr("Locate the directory of current note"));
+    m_locateAct->setToolTip(tr("Locate the directory of current note"));
     connect(m_locateAct, &QAction::triggered,
             this, &VEditWindow::handleLocateAct);
 
     m_moveLeftAct = new QAction(QIcon(":/resources/icons/move_tab_left.svg"),
                                 tr("Move One Split Left"), this);
-    m_moveLeftAct->setStatusTip(tr("Move current tab to the split on the left"));
+    m_moveLeftAct->setToolTip(tr("Move current tab to the split on the left"));
     connect(m_moveLeftAct, &QAction::triggered,
             this, &VEditWindow::handleMoveLeftAct);
 
     m_moveRightAct = new QAction(QIcon(":/resources/icons/move_tab_right.svg"),
                                  tr("Move One Split Right"), this);
-    m_moveRightAct->setStatusTip(tr("Move current tab to the split on the right"));
+    m_moveRightAct->setToolTip(tr("Move current tab to the split on the right"));
     connect(m_moveRightAct, &QAction::triggered,
             this, &VEditWindow::handleMoveRightAct);
 }
@@ -68,6 +68,7 @@ void VEditWindow::setupCornerWidget()
                               "", this);
     leftBtn->setProperty("CornerBtn", true);
     VOpenedListMenu *leftMenu = new VOpenedListMenu(this);
+    leftMenu->setToolTipsVisible(true);
     connect(leftMenu, &VOpenedListMenu::fileTriggered,
             this, &VEditWindow::tabListJump);
     leftBtn->setMenu(leftMenu);
@@ -77,13 +78,13 @@ void VEditWindow::setupCornerWidget()
     // Actions
     splitAct = new QAction(QIcon(":/resources/icons/split_window.svg"),
                            tr("Split"), this);
-    splitAct->setStatusTip(tr("Split current window vertically"));
+    splitAct->setToolTip(tr("Split current window vertically"));
     connect(splitAct, &QAction::triggered,
             this, &VEditWindow::splitWindow);
 
     removeSplitAct = new QAction(QIcon(":/resources/icons/remove_split.svg"),
                                  tr("Remove split"), this);
-    removeSplitAct->setStatusTip(tr("Remove current split window"));
+    removeSplitAct->setToolTip(tr("Remove current split window"));
     connect(removeSplitAct, &QAction::triggered,
             this, &VEditWindow::removeSplit);
 
@@ -91,6 +92,7 @@ void VEditWindow::setupCornerWidget()
                                "", this);
     rightBtn->setProperty("CornerBtn", true);
     QMenu *rightMenu = new QMenu(this);
+    rightMenu->setToolTipsVisible(true);
     rightMenu->addAction(splitAct);
     rightMenu->addAction(removeSplitAct);
     rightBtn->setMenu(rightMenu);
@@ -421,6 +423,7 @@ void VEditWindow::mousePressEvent(QMouseEvent *event)
 void VEditWindow::contextMenuRequested(QPoint pos)
 {
     QMenu menu(this);
+    menu.setToolTipsVisible(true);
 
     if (canRemoveSplit()) {
         menu.addAction(removeSplitAct);
@@ -431,6 +434,7 @@ void VEditWindow::contextMenuRequested(QPoint pos)
 void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
 {
     QMenu menu(this);
+    menu.setToolTipsVisible(true);
 
     QTabBar *bar = tabBar();
     int tab = bar->tabAt(p_pos);

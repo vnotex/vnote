@@ -33,42 +33,42 @@ void VDirectoryTree::initActions()
 {
     newRootDirAct = new QAction(QIcon(":/resources/icons/create_rootdir.svg"),
                                 tr("New &Root Directory"), this);
-    newRootDirAct->setStatusTip(tr("Create a new root directory in current notebook"));
+    newRootDirAct->setToolTip(tr("Create a new root directory in current notebook"));
     connect(newRootDirAct, &QAction::triggered,
             this, &VDirectoryTree::newRootDirectory);
 
     newSubDirAct = new QAction(tr("&New Sub-Directory"), this);
-    newSubDirAct->setStatusTip(tr("Create a new sub-directory"));
+    newSubDirAct->setToolTip(tr("Create a new sub-directory"));
     connect(newSubDirAct, &QAction::triggered,
             this, &VDirectoryTree::newSubDirectory);
 
     deleteDirAct = new QAction(QIcon(":/resources/icons/delete_dir.svg"),
                                tr("&Delete"), this);
-    deleteDirAct->setStatusTip(tr("Delete selected directory"));
+    deleteDirAct->setToolTip(tr("Delete selected directory"));
     connect(deleteDirAct, &QAction::triggered,
             this, &VDirectoryTree::deleteDirectory);
 
     dirInfoAct = new QAction(QIcon(":/resources/icons/dir_info.svg"),
                              tr("&Info"), this);
-    dirInfoAct->setStatusTip(tr("View and edit current directory's information"));
+    dirInfoAct->setToolTip(tr("View and edit current directory's information"));
     connect(dirInfoAct, &QAction::triggered,
             this, &VDirectoryTree::editDirectoryInfo);
 
     copyAct = new QAction(QIcon(":/resources/icons/copy.svg"),
                           tr("&Copy"), this);
-    copyAct->setStatusTip(tr("Copy selected directories"));
+    copyAct->setToolTip(tr("Copy selected directories"));
     connect(copyAct, &QAction::triggered,
             this, &VDirectoryTree::copySelectedDirectories);
 
     cutAct = new QAction(QIcon(":/resources/icons/cut.svg"),
                           tr("C&ut"), this);
-    cutAct->setStatusTip(tr("Cut selected directories"));
+    cutAct->setToolTip(tr("Cut selected directories"));
     connect(cutAct, &QAction::triggered,
             this, &VDirectoryTree::cutSelectedDirectories);
 
     pasteAct = new QAction(QIcon(":/resources/icons/paste.svg"),
                           tr("&Paste"), this);
-    pasteAct->setStatusTip(tr("Paste directories under this directory"));
+    pasteAct->setToolTip(tr("Paste directories under this directory"));
     connect(pasteAct, &QAction::triggered,
             this, &VDirectoryTree::pasteDirectoriesInCurDir);
 }
@@ -252,6 +252,7 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
     }
 
     QMenu menu(this);
+    menu.setToolTipsVisible(true);
 
     if (!item) {
         // Context menu on the free space of the QTreeWidget

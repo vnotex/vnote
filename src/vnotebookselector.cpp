@@ -53,13 +53,13 @@ void VNotebookSelector::initActions()
 {
     m_deleteNotebookAct = new QAction(QIcon(":/resources/icons/delete_notebook.svg"),
                                       tr("&Delete"), this);
-    m_deleteNotebookAct->setStatusTip(tr("Delete current notebook"));
+    m_deleteNotebookAct->setToolTip(tr("Delete current notebook"));
     connect(m_deleteNotebookAct, SIGNAL(triggered(bool)),
             this, SLOT(deleteNotebook()));
 
     m_notebookInfoAct = new QAction(QIcon(":/resources/icons/notebook_info.svg"),
                                     tr("&Info"), this);
-    m_notebookInfoAct->setStatusTip(tr("View and edit current notebook's information"));
+    m_notebookInfoAct->setToolTip(tr("View and edit current notebook's information"));
     connect(m_notebookInfoAct, SIGNAL(triggered(bool)),
             this, SLOT(editNotebookInfo()));
 }
@@ -320,6 +320,7 @@ void VNotebookSelector::requestPopupListContextMenu(QPoint p_pos)
     item->setSelected(true);
 
     QMenu menu(this);
+    menu.setToolTipsVisible(true);
     menu.addAction(m_deleteNotebookAct);
     menu.addAction(m_notebookInfoAct);
 

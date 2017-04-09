@@ -304,21 +304,23 @@ void VMainWindow::initHelpMenu()
 void VMainWindow::initMarkdownMenu()
 {
     QMenu *markdownMenu = menuBar()->addMenu(tr("&Markdown"));
+    markdownMenu->setToolTipsVisible(true);
     QMenu *converterMenu = markdownMenu->addMenu(tr("&Converter"));
+    converterMenu->setToolTipsVisible(true);
 
     QActionGroup *converterAct = new QActionGroup(this);
     QAction *markedAct = new QAction(tr("Marked"), converterAct);
-    markedAct->setStatusTip(tr("Use Marked to convert Markdown to HTML (re-open current tabs to make it work)"));
+    markedAct->setToolTip(tr("Use Marked to convert Markdown to HTML (re-open current tabs to make it work)"));
     markedAct->setCheckable(true);
     markedAct->setData(int(MarkdownConverterType::Marked));
 
     QAction *hoedownAct = new QAction(tr("Hoedown"), converterAct);
-    hoedownAct->setStatusTip(tr("Use Hoedown to convert Markdown to HTML (re-open current tabs to make it work)"));
+    hoedownAct->setToolTip(tr("Use Hoedown to convert Markdown to HTML (re-open current tabs to make it work)"));
     hoedownAct->setCheckable(true);
     hoedownAct->setData(int(MarkdownConverterType::Hoedown));
 
     QAction *markdownitAct = new QAction(tr("Markdown-it"), converterAct);
-    markdownitAct->setStatusTip(tr("Use Markdown-it to convert Markdown to HTML (re-open current tabs to make it work)"));
+    markdownitAct->setToolTip(tr("Use Markdown-it to convert Markdown to HTML (re-open current tabs to make it work)"));
     markdownitAct->setCheckable(true);
     markdownitAct->setData(int(MarkdownConverterType::MarkdownIt));
 
@@ -349,7 +351,7 @@ void VMainWindow::initMarkdownMenu()
     initRenderBackgroundMenu(markdownMenu);
 
     QAction *mermaidAct = new QAction(tr("&Mermaid Diagram"), this);
-    mermaidAct->setStatusTip(tr("Enable Mermaid for graph and diagram"));
+    mermaidAct->setToolTip(tr("Enable Mermaid for graph and diagram"));
     mermaidAct->setCheckable(true);
     connect(mermaidAct, &QAction::triggered,
             this, &VMainWindow::enableMermaid);
@@ -358,7 +360,7 @@ void VMainWindow::initMarkdownMenu()
     mermaidAct->setChecked(vconfig.getEnableMermaid());
 
     QAction *mathjaxAct = new QAction(tr("Math&jax"), this);
-    mathjaxAct->setStatusTip(tr("Enable Mathjax for math support in Markdown"));
+    mathjaxAct->setToolTip(tr("Enable Mathjax for math support in Markdown"));
     mathjaxAct->setCheckable(true);
     connect(mathjaxAct, &QAction::triggered,
             this, &VMainWindow::enableMathjax);
@@ -375,11 +377,12 @@ void VMainWindow::initViewMenu()
 void VMainWindow::initFileMenu()
 {
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
+    fileMenu->setToolTipsVisible(true);
 
     // Import notes from files.
     m_importNoteAct = new QAction(QIcon(":/resources/icons/import_note.svg"),
                                         tr("&Import Notes From Files"), this);
-    m_importNoteAct->setStatusTip(tr("Import notes from files into current directory"));
+    m_importNoteAct->setToolTip(tr("Import notes from files into current directory"));
     connect(m_importNoteAct, &QAction::triggered,
             this, &VMainWindow::importNoteFromFile);
     m_importNoteAct->setEnabled(false);
@@ -387,13 +390,13 @@ void VMainWindow::initFileMenu()
     // Settings.
     QAction *settingsAct = new QAction(QIcon(":/resources/icons/settings.svg"),
                                        tr("Settings"), this);
-    settingsAct->setStatusTip(tr("View and change settings for VNote"));
+    settingsAct->setToolTip(tr("View and change settings for VNote"));
     connect(settingsAct, &QAction::triggered,
             this, &VMainWindow::viewSettings);
 
     // Exit.
     QAction *exitAct = new QAction(tr("Exit"), this);
-    exitAct->setStatusTip(tr("Exit VNote"));
+    exitAct->setToolTip(tr("Exit VNote"));
     exitAct->setShortcut(QKeySequence("Ctrl+Q"));
     connect(exitAct, &QAction::triggered,
             this, &VMainWindow::close);
@@ -408,59 +411,60 @@ void VMainWindow::initFileMenu()
 void VMainWindow::initEditMenu()
 {
     QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
+    editMenu->setToolTipsVisible(true);
 
     // Insert image.
     m_insertImageAct = new QAction(QIcon(":/resources/icons/insert_image.svg"),
                                    tr("Insert &Image"), this);
-    m_insertImageAct->setStatusTip(tr("Insert an image from file into current note"));
+    m_insertImageAct->setToolTip(tr("Insert an image from file into current note"));
     connect(m_insertImageAct, &QAction::triggered,
             this, &VMainWindow::insertImage);
 
     // Find/Replace.
     m_findReplaceAct = new QAction(QIcon(":/resources/icons/find_replace.svg"),
                                    tr("Find/Replace"), this);
-    m_findReplaceAct->setStatusTip(tr("Open Find/Replace dialog to search in current note"));
+    m_findReplaceAct->setToolTip(tr("Open Find/Replace dialog to search in current note"));
     m_findReplaceAct->setShortcut(QKeySequence::Find);
     connect(m_findReplaceAct, &QAction::triggered,
             this, &VMainWindow::openFindDialog);
 
     m_findNextAct = new QAction(tr("Find Next"), this);
-    m_findNextAct->setStatusTip(tr("Find next occurence"));
+    m_findNextAct->setToolTip(tr("Find next occurence"));
     m_findNextAct->setShortcut(QKeySequence::FindNext);
     connect(m_findNextAct, SIGNAL(triggered(bool)),
             m_findReplaceDialog, SLOT(findNext()));
 
     m_findPreviousAct = new QAction(tr("Find Previous"), this);
-    m_findPreviousAct->setStatusTip(tr("Find previous occurence"));
+    m_findPreviousAct->setToolTip(tr("Find previous occurence"));
     m_findPreviousAct->setShortcut(QKeySequence::FindPrevious);
     connect(m_findPreviousAct, SIGNAL(triggered(bool)),
             m_findReplaceDialog, SLOT(findPrevious()));
 
     m_replaceAct = new QAction(tr("Replace"), this);
-    m_replaceAct->setStatusTip(tr("Replace current occurence"));
+    m_replaceAct->setToolTip(tr("Replace current occurence"));
     m_replaceAct->setShortcut(QKeySequence::Replace);
     connect(m_replaceAct, SIGNAL(triggered(bool)),
             m_findReplaceDialog, SLOT(replace()));
 
     m_replaceFindAct = new QAction(tr("Replace && Find"), this);
-    m_replaceFindAct->setStatusTip(tr("Replace current occurence and find the next one"));
+    m_replaceFindAct->setToolTip(tr("Replace current occurence and find the next one"));
     connect(m_replaceFindAct, SIGNAL(triggered(bool)),
             m_findReplaceDialog, SLOT(replaceFind()));
 
     m_replaceAllAct = new QAction(tr("Replace All"), this);
-    m_replaceAllAct->setStatusTip(tr("Replace all occurences in current note"));
+    m_replaceAllAct->setToolTip(tr("Replace all occurences in current note"));
     connect(m_replaceAllAct, SIGNAL(triggered(bool)),
             m_findReplaceDialog, SLOT(replaceAll()));
 
     QAction *searchedWordAct = new QAction(tr("Highlight Searched Pattern"), this);
-    searchedWordAct->setStatusTip(tr("Highlight all occurences of searched pattern"));
+    searchedWordAct->setToolTip(tr("Highlight all occurences of searched pattern"));
     searchedWordAct->setCheckable(true);
     connect(searchedWordAct, &QAction::triggered,
             this, &VMainWindow::changeHighlightSearchedWord);
 
     // Expand Tab into spaces.
     QAction *expandTabAct = new QAction(tr("&Expand Tab"), this);
-    expandTabAct->setStatusTip(tr("Expand entered Tab to spaces"));
+    expandTabAct->setToolTip(tr("Expand entered Tab to spaces"));
     expandTabAct->setCheckable(true);
     connect(expandTabAct, &QAction::triggered,
             this, &VMainWindow::changeExpandTab);
@@ -468,15 +472,15 @@ void VMainWindow::initEditMenu()
     // Tab stop width.
     QActionGroup *tabStopWidthAct = new QActionGroup(this);
     QAction *twoSpaceTabAct = new QAction(tr("2 Spaces"), tabStopWidthAct);
-    twoSpaceTabAct->setStatusTip(tr("Expand Tab to 2 spaces"));
+    twoSpaceTabAct->setToolTip(tr("Expand Tab to 2 spaces"));
     twoSpaceTabAct->setCheckable(true);
     twoSpaceTabAct->setData(2);
     QAction *fourSpaceTabAct = new QAction(tr("4 Spaces"), tabStopWidthAct);
-    fourSpaceTabAct->setStatusTip(tr("Expand Tab to 4 spaces"));
+    fourSpaceTabAct->setToolTip(tr("Expand Tab to 4 spaces"));
     fourSpaceTabAct->setCheckable(true);
     fourSpaceTabAct->setData(4);
     QAction *eightSpaceTabAct = new QAction(tr("8 Spaces"), tabStopWidthAct);
-    eightSpaceTabAct->setStatusTip(tr("Expand Tab to 8 spaces"));
+    eightSpaceTabAct->setToolTip(tr("Expand Tab to 8 spaces"));
     eightSpaceTabAct->setCheckable(true);
     eightSpaceTabAct->setData(8);
     connect(tabStopWidthAct, &QActionGroup::triggered,
@@ -484,28 +488,28 @@ void VMainWindow::initEditMenu()
 
     // Auto Indent.
     m_autoIndentAct = new QAction(tr("Auto Indent"), this);
-    m_autoIndentAct->setStatusTip(tr("Indent automatically when inserting a new line"));
+    m_autoIndentAct->setToolTip(tr("Indent automatically when inserting a new line"));
     m_autoIndentAct->setCheckable(true);
     connect(m_autoIndentAct, &QAction::triggered,
             this, &VMainWindow::changeAutoIndent);
 
     // Auto List.
     QAction *autoListAct = new QAction(tr("Auto List"), this);
-    autoListAct->setStatusTip(tr("Continue the list automatically when inserting a new line"));
+    autoListAct->setToolTip(tr("Continue the list automatically when inserting a new line"));
     autoListAct->setCheckable(true);
     connect(autoListAct, &QAction::triggered,
             this, &VMainWindow::changeAutoList);
 
     // Highlight current cursor line.
     QAction *cursorLineAct = new QAction(tr("Highlight Cursor Line"), this);
-    cursorLineAct->setStatusTip(tr("Highlight current cursor line"));
+    cursorLineAct->setToolTip(tr("Highlight current cursor line"));
     cursorLineAct->setCheckable(true);
     connect(cursorLineAct, &QAction::triggered,
             this, &VMainWindow::changeHighlightCursorLine);
 
     // Highlight selected word.
     QAction *selectedWordAct = new QAction(tr("Highlight Selected Words"), this);
-    selectedWordAct->setStatusTip(tr("Highlight all occurences of selected words"));
+    selectedWordAct->setToolTip(tr("Highlight all occurences of selected words"));
     selectedWordAct->setCheckable(true);
     connect(selectedWordAct, &QAction::triggered,
             this, &VMainWindow::changeHighlightSelectedWord);
@@ -515,6 +519,7 @@ void VMainWindow::initEditMenu()
     m_insertImageAct->setEnabled(false);
 
     QMenu *findReplaceMenu = editMenu->addMenu(tr("Find/Replace"));
+    findReplaceMenu->setToolTipsVisible(true);
     findReplaceMenu->addAction(m_findReplaceAct);
     findReplaceMenu->addAction(m_findNextAct);
     findReplaceMenu->addAction(m_findPreviousAct);
@@ -525,7 +530,6 @@ void VMainWindow::initEditMenu()
     findReplaceMenu->addAction(searchedWordAct);
     searchedWordAct->setChecked(vconfig.getHighlightSearchedWord());
 
-    editMenu->addSeparator();
     m_findReplaceAct->setEnabled(false);
     m_findNextAct->setEnabled(false);
     m_findPreviousAct->setEnabled(false);
@@ -533,13 +537,16 @@ void VMainWindow::initEditMenu()
     m_replaceFindAct->setEnabled(false);
     m_replaceAllAct->setEnabled(false);
 
+    editMenu->addSeparator();
     editMenu->addAction(expandTabAct);
     if (vconfig.getIsExpandTab()) {
         expandTabAct->setChecked(true);
     } else {
         expandTabAct->setChecked(false);
     }
+
     QMenu *tabStopWidthMenu = editMenu->addMenu(tr("Tab Stop Width"));
+    tabStopWidthMenu->setToolTipsVisible(true);
     tabStopWidthMenu->addAction(twoSpaceTabAct);
     tabStopWidthMenu->addAction(fourSpaceTabAct);
     tabStopWidthMenu->addAction(eightSpaceTabAct);
@@ -724,9 +731,10 @@ void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
             this, &VMainWindow::setRenderBackgroundColor);
 
     QMenu *renderBgMenu = menu->addMenu(tr("&Rendering Background"));
+    renderBgMenu->setToolTipsVisible(true);
     const QString &curBgColor = vconfig.getCurRenderBackgroundColor();
     QAction *tmpAct = new QAction(tr("System"), renderBackgroundAct);
-    tmpAct->setStatusTip(tr("Use system's background color configuration for Markdown rendering"));
+    tmpAct->setToolTip(tr("Use system's background color configuration for Markdown rendering"));
     tmpAct->setCheckable(true);
     tmpAct->setData("System");
     if (curBgColor == "System") {
@@ -737,7 +745,7 @@ void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
     const QVector<VColor> &bgColors = vconfig.getPredefinedColors();
     for (int i = 0; i < bgColors.size(); ++i) {
         tmpAct = new QAction(bgColors[i].name, renderBackgroundAct);
-        tmpAct->setStatusTip(tr("Set as the background color for Markdown rendering"));
+        tmpAct->setToolTip(tr("Set as the background color for Markdown rendering"));
         tmpAct->setCheckable(true);
         tmpAct->setData(bgColors[i].name);
         tmpAct->setIcon(QIcon(predefinedColorPixmaps[i]));
@@ -753,6 +761,7 @@ void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
 {
     QMenu *backgroundColorMenu = menu->addMenu(tr("&Background Color"));
 
+    backgroundColorMenu->setToolTipsVisible(true);
     QActionGroup *backgroundColorAct = new QActionGroup(this);
     connect(backgroundColorAct, &QActionGroup::triggered,
             this, &VMainWindow::setEditorBackgroundColor);
@@ -760,7 +769,7 @@ void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
     // System background color
     const QString &curBgColor = vconfig.getCurBackgroundColor();
     QAction *tmpAct = new QAction(tr("System"), backgroundColorAct);
-    tmpAct->setStatusTip(tr("Use system's background color configuration for editor"));
+    tmpAct->setToolTip(tr("Use system's background color configuration for editor"));
     tmpAct->setCheckable(true);
     tmpAct->setData("System");
     if (curBgColor == "System") {
@@ -770,7 +779,7 @@ void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
     const QVector<VColor> &bgColors = vconfig.getPredefinedColors();
     for (int i = 0; i < bgColors.size(); ++i) {
         tmpAct = new QAction(bgColors[i].name, backgroundColorAct);
-        tmpAct->setStatusTip(tr("Set as the background color for editor"));
+        tmpAct->setToolTip(tr("Set as the background color for editor"));
         tmpAct->setCheckable(true);
         tmpAct->setData(bgColors[i].name);
         tmpAct->setIcon(QIcon(predefinedColorPixmaps[i]));
