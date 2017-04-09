@@ -147,17 +147,19 @@ document.onkeydown = function(e) {
 var mermaidParserErr = false;
 var mermaidIdx = 0;
 
-mermaidAPI.parseError = function(err, hash) {
-    content.setLog("err: " + err);
-    mermaidParserErr = true;
+if (VEnableMermaid) {
+    mermaidAPI.parseError = function(err, hash) {
+        content.setLog("err: " + err);
+        mermaidParserErr = true;
 
-    // Clean the container element, or mermaidAPI won't render the graph with
-    // the same id.
-    var errGraph = document.getElementById('mermaid-diagram-' + mermaidIdx);
-    var parentNode = errGraph.parentElement;
-    parentNode.outerHTML = '';
-    delete parentNode;
-};
+        // Clean the container element, or mermaidAPI won't render the graph with
+        // the same id.
+        var errGraph = document.getElementById('mermaid-diagram-' + mermaidIdx);
+        var parentNode = errGraph.parentElement;
+        parentNode.outerHTML = '';
+        delete parentNode;
+    };
+}
 
 // @className, the class name of the mermaid code block, such as 'lang-mermaid'.
 var renderMermaid = function(className) {
