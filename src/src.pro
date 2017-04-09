@@ -109,6 +109,14 @@ RESOURCES += \
     vnote.qrc \
     translations.qrc
 
+OTHER_FILES += \
+    utils/highlightjs/highlight.pack.js \
+    utils/markdown-it/markdown-it-headinganchor.js \
+    utils/markdown-it/markdown-it-task-lists.min.js \
+    utils/markdown-it/markdown-it.min.js \
+    utils/marked/marked.min.js \
+    utils/mermaid/mermaidAPI.min.js
+
 macx {
     LIBS += -L/usr/local/lib
     INCLUDEPATH += /usr/local/include
