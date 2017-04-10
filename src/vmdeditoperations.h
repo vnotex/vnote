@@ -5,6 +5,7 @@
 #include <QString>
 #include <QUrl>
 #include <QImage>
+#include <QTextBlock>
 #include "veditoperations.h"
 
 class QTimer;
@@ -46,10 +47,17 @@ private:
     int keySeqToNumber(const QList<QString> &p_seq);
     bool suffixNumAllowed(const QList<QString> &p_seq);
     bool insertTitle(int p_level);
-    void insertNewBlockWithIndent();
-    void insertListMarkAsPreviousLine();
+    bool insertNewBlockWithIndent();
+    bool insertListMarkAsPreviousLine();
+    void deleteIndentAndListMark();
+    bool isListBlock(const QTextBlock &p_block);
+    // If the start of @p_block to postition @p_posInBlock are spaces.
+    bool isSpaceToBlockStart(const QTextBlock &p_block, int p_posInBlock);
 
     QTimer *m_pendingTimer;
+    // The cursor position after auto indent or auto list.
+    // It will be -1 if last key press do not trigger the auto indent or auto list.
+    int m_autoIndentPos;
 
     static const QString c_defaultImageTitle;
 };

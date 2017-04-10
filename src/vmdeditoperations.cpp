@@ -27,7 +27,7 @@ extern VConfigManager vconfig;
 const QString VMdEditOperations::c_defaultImageTitle = "image";
 
 VMdEditOperations::VMdEditOperations(VEdit *p_editor, VFile *p_file)
-    : VEditOperations(p_editor, p_file)
+    : VEditOperations(p_editor, p_file), m_autoIndentPos(-1)
 {
     m_pendingTimer = new QTimer(this);
     m_pendingTimer->setSingleShot(true);
@@ -176,13 +176,17 @@ bool VMdEditOperations::shouldTriggerVimMode(QKeyEvent *p_event)
 
 bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
 {
+    bool ret = false;
+    int key = p_event->key();
+    int modifiers = p_event->modifiers();
+
     if (shouldTriggerVimMode(p_event)) {
         if (handleKeyPressVim(p_event)) {
-            return true;
+            ret = true;
+            goto exit;
         }
     } else {
-        int modifiers = p_event->modifiers();
-        switch (p_event->key()) {
+        switch (key) {
         case Qt::Key_1:
         case Qt::Key_2:
         case Qt::Key_3:
@@ -192,9 +196,10 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         {
             if (modifiers == (Qt::ControlModifier | Qt::AltModifier)) {
                 // Ctrl + Alt + <N>: insert title at level <N>.
-                if (insertTitle(p_event->key() - Qt::Key_0)) {
+                if (insertTitle(key - Qt::Key_0)) {
                     p_event->accept();
-                    return true;
+                    ret = true;
+                    goto exit;
                 }
             }
             break;
@@ -203,7 +208,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         case Qt::Key_Tab:
         {
             if (handleKeyTab(p_event)) {
-                return true;
+                ret = true;
+                goto exit;
             }
             break;
         }
@@ -211,7 +217,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         case Qt::Key_Backtab:
         {
             if (handleKeyBackTab(p_event)) {
-                return true;
+                ret = true;
+                goto exit;
             }
             break;
         }
@@ -219,7 +226,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         case Qt::Key_B:
         {
             if (handleKeyB(p_event)) {
-                return true;
+                ret = true;
+                goto exit;
             }
             break;
         }
@@ -227,7 +235,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         case Qt::Key_D:
         {
             if (handleKeyD(p_event)) {
-                return true;
+                ret = true;
+                goto exit;
             }
             break;
         }
@@ -235,7 +244,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         case Qt::Key_H:
         {
             if (handleKeyH(p_event)) {
-                return true;
+                ret = true;
+                goto exit;
             }
             break;
         }
@@ -243,7 +253,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         case Qt::Key_I:
         {
             if (handleKeyI(p_event)) {
-                return true;
+                ret = true;
+                goto exit;
             }
             break;
         }
@@ -251,7 +262,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         case Qt::Key_O:
         {
             if (handleKeyO(p_event)) {
-                return true;
+                ret = true;
+                goto exit;
             }
             break;
         }
@@ -259,7 +271,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         case Qt::Key_U:
         {
             if (handleKeyU(p_event)) {
-                return true;
+                ret = true;
+                goto exit;
             }
             break;
         }
@@ -267,7 +280,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         case Qt::Key_W:
         {
             if (handleKeyW(p_event)) {
-                return true;
+                ret = true;
+                goto exit;
             }
             break;
         }
@@ -275,7 +289,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         case Qt::Key_BracketLeft:
         {
             if (handleKeyBracketLeft(p_event)) {
-                return true;
+                ret = true;
+                goto exit;
             }
             break;
         }
@@ -283,7 +298,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         case Qt::Key_Escape:
         {
             if (handleKeyEsc(p_event)) {
-                return true;
+                ret = true;
+                goto exit;
             }
             break;
         }
@@ -291,7 +307,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         case Qt::Key_Return:
         {
             if (handleKeyReturn(p_event)) {
-                return true;
+                ret = true;
+                goto exit;
             }
             break;
         }
@@ -301,7 +318,13 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         }
     }
 
-    return false;
+exit:
+    // Qt::Key_Return, Qt::Key_Tab and Qt::Key_Backtab will handle m_autoIndentPos.
+    if (key != Qt::Key_Return && key != Qt::Key_Tab && key != Qt::Key_Backtab &&
+        key != Qt::Key_Shift) {
+        m_autoIndentPos = -1;
+    }
+    return ret;
 }
 
 // Let Ctrl+[ behave exactly like ESC.
@@ -342,8 +365,9 @@ bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)
 
     if (p_event->modifiers() == Qt::NoModifier) {
         QTextCursor cursor = m_editor->textCursor();
-        cursor.beginEditBlock();
         if (cursor.hasSelection()) {
+            m_autoIndentPos = -1;
+            cursor.beginEditBlock();
             // Indent each selected line.
             QTextBlock block = doc->findBlock(cursor.selectionStart());
             QTextBlock endBlock = doc->findBlock(cursor.selectionEnd());
@@ -358,12 +382,23 @@ bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)
                 }
                 block = block.next();
             }
+            cursor.endEditBlock();
         } else {
-            // Just insert "tab".
-            insertTextAtCurPos(text);
+            // If it is a Tab key following auto list, increase the indent level.
+            QTextBlock block = cursor.block();
+            if (m_autoIndentPos == cursor.position() && isListBlock(block)) {
+                QTextCursor blockCursor(block);
+                blockCursor.insertText(text);
+                // Change m_autoIndentPos to let it can be repeated.
+                m_autoIndentPos = m_editor->textCursor().position();
+            } else {
+                // Just insert "tab".
+                insertTextAtCurPos(text);
+                m_autoIndentPos = -1;
+            }
         }
-        cursor.endEditBlock();
     } else {
+        m_autoIndentPos = -1;
         return false;
     }
     p_event->accept();
@@ -373,12 +408,19 @@ bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)
 bool VMdEditOperations::handleKeyBackTab(QKeyEvent *p_event)
 {
     if (p_event->modifiers() != Qt::ShiftModifier) {
+        m_autoIndentPos = -1;
         return false;
     }
     QTextDocument *doc = m_editor->document();
     QTextCursor cursor = m_editor->textCursor();
     QTextBlock block = doc->findBlock(cursor.selectionStart());
     QTextBlock endBlock = doc->findBlock(cursor.selectionEnd());
+
+    bool continueAutoIndent = false;
+    if (cursor.position() == m_autoIndentPos && isListBlock(block) &&
+        !cursor.hasSelection()) {
+        continueAutoIndent = true;
+    }
     int endBlockNum = endBlock.blockNumber();
     cursor.beginEditBlock();
     for (; block.isValid() && block.blockNumber() <= endBlockNum;
@@ -411,6 +453,12 @@ bool VMdEditOperations::handleKeyBackTab(QKeyEvent *p_event)
         }
     }
     cursor.endEditBlock();
+
+    if (continueAutoIndent) {
+        m_autoIndentPos = m_editor->textCursor().position();
+    } else {
+        m_autoIndentPos = -1;
+    }
     p_event->accept();
     return true;
 }
@@ -644,26 +692,57 @@ bool VMdEditOperations::handleKeyEsc(QKeyEvent *p_event)
 bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
 {
     if (p_event->modifiers() & Qt::ControlModifier) {
+        m_autoIndentPos = -1;
         return false;
     }
 
-    bool ret = false;
+    // See if we need to cancel auto indent.
+    if (m_autoIndentPos > -1) {
+        // Cancel the auto indent/list if the pos is the same and cursor is at
+        // the end of a block.
+        bool cancelAutoIndent = false;
+        QTextCursor cursor = m_editor->textCursor();
+        QTextBlock block = cursor.block();
+        if (cursor.position() == m_autoIndentPos && !cursor.hasSelection()) {
+            if (isListBlock(block)) {
+                if (cursor.atBlockEnd()) {
+                    cancelAutoIndent = true;
+                }
+            } else if (isSpaceToBlockStart(block, cursor.positionInBlock())) {
+                cancelAutoIndent = true;
+            }
+        }
+        if (cancelAutoIndent) {
+            m_autoIndentPos = -1;
+            deleteIndentAndListMark();
+            return true;
+        }
+    }
+
+    bool handled = false;
+    m_autoIndentPos = -1;
     if (vconfig.getAutoIndent()) {
-        ret = true;
+        handled = true;
+
+        bool textInserted = false;
         // Indent the new line as previous line.
-        insertNewBlockWithIndent();
+        textInserted = insertNewBlockWithIndent();
 
         // Continue the list from previous line.
         if (vconfig.getAutoList()) {
-            insertListMarkAsPreviousLine();
+            textInserted = insertListMarkAsPreviousLine() || textInserted;
+        }
+        if (textInserted) {
+            m_autoIndentPos = m_editor->textCursor().position();
         }
     }
-    return ret;
+    return handled;
 }
 
-void VMdEditOperations::insertNewBlockWithIndent()
+bool VMdEditOperations::insertNewBlockWithIndent()
 {
     QTextCursor cursor = m_editor->textCursor();
+    bool ret = false;
 
     cursor.beginEditBlock();
     cursor.removeSelectedText();
@@ -674,13 +753,18 @@ void VMdEditOperations::insertNewBlockWithIndent()
     V_ASSERT(regExp.captureCount() == 1);
     QString leadingSpaces = regExp.capturedTexts()[1];
     cursor.insertBlock();
-    cursor.insertText(leadingSpaces);
+    if (!leadingSpaces.isEmpty()) {
+        cursor.insertText(leadingSpaces);
+        ret = true;
+    }
     cursor.endEditBlock();
     m_editor->setTextCursor(cursor);
+    return ret;
 }
 
-void VMdEditOperations::insertListMarkAsPreviousLine()
+bool VMdEditOperations::insertListMarkAsPreviousLine()
 {
+    bool ret = false;
     QTextCursor cursor = m_editor->textCursor();
     QTextBlock block = cursor.block();
     QTextBlock preBlock = block.previous();
@@ -688,6 +772,7 @@ void VMdEditOperations::insertListMarkAsPreviousLine()
     QRegExp regExp("^\\s*(-|\\d+\\.)\\s");
     int regIdx = regExp.indexIn(text);
     if (regIdx != -1) {
+        ret = true;
         V_ASSERT(regExp.captureCount() == 1);
         cursor.beginEditBlock();
         QString markText = regExp.capturedTexts()[1];
@@ -706,6 +791,34 @@ void VMdEditOperations::insertListMarkAsPreviousLine()
         cursor.endEditBlock();
         m_editor->setTextCursor(cursor);
     }
+    return ret;
+}
+
+bool VMdEditOperations::isListBlock(const QTextBlock &p_block)
+{
+    QString text = p_block.text();
+    QRegExp regExp("^\\s*(-|\\d+\\.)\\s");
+    int regIdx = regExp.indexIn(text);
+    return regIdx != -1;
+}
+
+bool VMdEditOperations::isSpaceToBlockStart(const QTextBlock &p_block, int p_posInBlock)
+{
+    if (p_posInBlock <= 0) {
+        return true;
+    }
+    QString text = p_block.text();
+    V_ASSERT(text.size() >= p_posInBlock);
+    return text.left(p_posInBlock).trimmed().isEmpty();
+}
+
+void VMdEditOperations::deleteIndentAndListMark()
+{
+    QTextCursor cursor = m_editor->textCursor();
+    V_ASSERT(!cursor.hasSelection());
+    cursor.movePosition(QTextCursor::StartOfBlock, QTextCursor::KeepAnchor);
+    cursor.removeSelectedText();
+    m_editor->setTextCursor(cursor);
 }
 
 bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
