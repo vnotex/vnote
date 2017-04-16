@@ -1,6 +1,7 @@
 #include <QtWidgets>
 #include "vmdedit.h"
 #include "hgmarkdownhighlighter.h"
+#include "vcodeblockhighlighthelper.h"
 #include "vmdeditoperations.h"
 #include "vnote.h"
 #include "vconfigmanager.h"
@@ -13,18 +14,24 @@ extern VNote *g_vnote;
 
 enum ImageProperty { ImagePath = 1 };
 
-VMdEdit::VMdEdit(VFile *p_file, QWidget *p_parent)
+VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
+                 QWidget *p_parent)
     : VEdit(p_file, p_parent), m_mdHighlighter(NULL), m_previewImage(true)
 {
     Q_ASSERT(p_file->getDocType() == DocType::Markdown);
 
     setAcceptRichText(false);
     m_mdHighlighter = new HGMarkdownHighlighter(vconfig.getMdHighlightingStyles(),
+                                                vconfig.getCodeBlockStyles(),
                                                 500, document());
     connect(m_mdHighlighter, &HGMarkdownHighlighter::highlightCompleted,
             this, &VMdEdit::generateEditOutline);
     connect(m_mdHighlighter, &HGMarkdownHighlighter::imageBlocksUpdated,
             this, &VMdEdit::updateImageBlocks);
+
+    m_cbHighlighter = new VCodeBlockHighlightHelper(m_mdHighlighter, p_vdoc,
+                                                    p_type);
+
     m_editOps = new VMdEditOperations(this, m_file);
     connect(m_editOps, &VEditOperations::keyStateChanged,
             this, &VMdEdit::handleEditStateChanged);

@@ -71,6 +71,7 @@ private slots:
     void handleCaptainModeChanged(bool p_enabled);
     void changeAutoIndent(bool p_checked);
     void changeAutoList(bool p_checked);
+    void enableCodeBlockHighlight(bool p_checked);
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;

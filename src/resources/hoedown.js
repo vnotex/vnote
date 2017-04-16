@@ -1,5 +1,12 @@
 var placeholder = document.getElementById('placeholder');
 
+// Use Marked to highlight code blocks.
+marked.setOptions({
+    highlight: function(code) {
+        return hljs.highlightAuto(code).value;
+    }
+});
+
 var updateHtml = function(html) {
     placeholder.innerHTML = html;
     var codes = document.getElementsByTagName('code');
@@ -44,4 +51,9 @@ var updateHtml = function(html) {
         }
     }
 };
+
+var highlightText = function(text, id, timeStamp) {
+    var html = marked(text);
+    content.highlightTextCB(html, id, timeStamp);
+}
 

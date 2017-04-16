@@ -58,7 +58,8 @@ SOURCES += main.cpp\
     dialog/vselectdialog.cpp \
     vcaptain.cpp \
     vopenedlistmenu.cpp \
-    vorphanfile.cpp
+    vorphanfile.cpp \
+    vcodeblockhighlighthelper.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -103,7 +104,8 @@ HEADERS  += vmainwindow.h \
     vcaptain.h \
     vopenedlistmenu.h \
     vnavigationmode.h \
-    vorphanfile.h
+    vorphanfile.h \
+    vcodeblockhighlighthelper.h
 
 RESOURCES += \
     vnote.qrc \

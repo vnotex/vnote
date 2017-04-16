@@ -90,8 +90,43 @@ COMMENT
 foreground: 93a1a1
 
 VERBATIM
-foreground: 551A8B
+foreground: 551a8b
 font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
+# Codeblock sylte from HighlightJS (bold, italic, underlined, color)
+# The last occurence of the same attribute takes effect
+hljs-comment: 888888
+hljs-keyword: bold
+hljs-attribute: bold
+hljs-selector-tag: bold
+hljs-meta-keyword: bold
+hljs-doctag: bold
+hljs-name: bold
+hljs-type: 880000
+hljs-string: 880000
+hljs-number: 880000
+hljs-selector-id: 880000
+hljs-selector-class: 880000
+hljs-quote: 880000
+hljs-template-tag: 880000
+hljs-deletion: 880000
+hljs-title: bold, 880000
+hljs-section: bold, 880000
+hljs-regexp: bc6060
+hljs-symbol: bc6060
+hljs-variable: bc6060
+hljs-template-variable: bc6060
+hljs-link: bc6060
+hljs-selector-attr: bc6060
+hljs-selector-pseudo: bc6060
+hljs-literal: 78a960
+hljs-built_in: 397300
+hljs-bullet: 397300
+hljs-code: 397300
+hljs-addition: 397300
+hljs-meta: 1f7199
+hljs-meta-string: 4d99bf
+hljs-emphasis: italic
+hljs-strong: bold
 
 BLOCKQUOTE
 foreground: 00af00

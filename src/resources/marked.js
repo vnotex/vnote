@@ -131,3 +131,8 @@ var updateText = function(text) {
     }
 };
 
+var highlightText = function(text, id, timeStamp) {
+    var html = marked(text);
+    content.highlightTextCB(html, id, timeStamp);
+}
+

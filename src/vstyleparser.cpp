@@ -130,6 +130,58 @@ QVector<HighlightingStyle> VStyleParser::fetchMarkdownStyles(const QFont &baseFo
     return styles;
 }
 
+QMap<QString, QTextCharFormat> VStyleParser::fetchCodeBlockStyles(const QFont & p_baseFont) const
+{
+    QMap<QString, QTextCharFormat> styles;
+
+    pmh_style_attribute *attrs = markdownStyles->element_styles[pmh_VERBATIM];
+
+    // First set up the base format.
+    QTextCharFormat baseFormat = QTextCharFormatFromAttrs(attrs, p_baseFont);
+
+    while (attrs) {
+        switch (attrs->type) {
+        case pmh_attr_type_other:
+        {
+            QString attrName(attrs->name);
+            QString attrValue(attrs->value->string);
+            QTextCharFormat format;
+            format.setFontFamily(baseFormat.fontFamily());
+
+            QStringList items = attrValue.split(',', QString::SkipEmptyParts);
+            for (auto const &item : items) {
+                QString val = item.trimmed().toLower();
+                if (val == "bold") {
+                    format.setFontWeight(QFont::Bold);
+                } else if (val == "italic") {
+                    format.setFontItalic(true);
+                } else if (val == "underlined") {
+                    format.setFontUnderline(true);
+                } else {
+                    // Treat it as the color RGB value string without '#'.
+                    QColor color("#" + val);
+                    if (color.isValid()) {
+                        format.setForeground(QBrush(color));
+                    }
+                }
+            }
+
+            if (format.isValid()) {
+                styles[attrName] = format;
+            }
+            break;
+        }
+
+        default:
+            // We just only handle custom attribute here.
+            break;
+        }
+        attrs = attrs->next;
+    }
+
+    return styles;
+}
+
 void VStyleParser::fetchMarkdownEditorStyles(QPalette &palette, QFont &font,
                                              QMap<QString, QMap<QString, QString>> &styles) const
 {

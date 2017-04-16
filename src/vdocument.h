@@ -18,6 +18,9 @@ public:
     QString getToc();
     void scrollToAnchor(const QString &anchor);
     void setHtml(const QString &html);
+    // Request to highlight a segment text.
+    // Use p_id to identify the result.
+    void highlightTextAsync(const QString &p_text, int p_id, int p_timeStamp);
 
 public slots:
     // Will be called in the HTML side
@@ -26,6 +29,8 @@ public slots:
     void setLog(const QString &p_log);
     void keyPressEvent(int p_key, bool p_ctrl, bool p_shift);
     void updateText();
+    void highlightTextCB(const QString &p_html, int p_id, int p_timeStamp);
+    void noticeReadyToHighlightText();
 
 signals:
     void textChanged(const QString &text);
@@ -35,6 +40,9 @@ signals:
     void htmlChanged(const QString &html);
     void logChanged(const QString &p_log);
     void keyPressed(int p_key, bool p_ctrl, bool p_shift);
+    void requestHighlightText(const QString &p_text, int p_id, int p_timeStamp);
+    void textHighlighted(const QString &p_html, int p_id, int p_timeStamp);
+    void readyToHighlightText();
 
 private:
     QString m_toc;

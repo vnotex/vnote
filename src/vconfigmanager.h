@@ -50,6 +50,8 @@ public:
 
     inline QVector<HighlightingStyle> getMdHighlightingStyles() const;
 
+    inline QMap<QString, QTextCharFormat> getCodeBlockStyles() const;
+
     inline QString getWelcomePagePath() const;
 
     inline QString getTemplateCssUrl() const;
@@ -135,6 +137,9 @@ public:
     inline QString getEditorCurrentLineBackground() const;
     inline QString getEditorCurrentLineVimBackground() const;
 
+    inline bool getEnableCodeBlockHighlight() const;
+    inline void setEnableCodeBlockHighlight(bool p_enabled);
+
 private:
     void updateMarkdownEditStyle();
     QVariant getConfigFromSettings(const QString &section, const QString &key);
@@ -151,6 +156,7 @@ private:
     QFont mdEditFont;
     QPalette mdEditPalette;
     QVector<HighlightingStyle> mdHighlightingStyles;
+    QMap<QString, QTextCharFormat> m_codeBlockStyles;
     QString welcomePagePath;
     QString templateCssUrl;
     int curNotebookIndex;
@@ -213,6 +219,9 @@ private:
     // Current line background color in editor in Vim mode.
     QString m_editorCurrentLineVimBackground;
 
+    // Enable colde block syntax highlight.
+    bool m_enableCodeBlockHighlight;
+
     // The name of the config file in each directory
     static const QString dirConfigFileName;
     // The name of the default configuration file
@@ -237,6 +246,11 @@ inline QPalette VConfigManager::getMdEditPalette() const
 inline QVector<HighlightingStyle> VConfigManager::getMdHighlightingStyles() const
 {
     return mdHighlightingStyles;
+}
+
+inline QMap<QString, QTextCharFormat> VConfigManager::getCodeBlockStyles() const
+{
+    return m_codeBlockStyles;
 }
 
 inline QString VConfigManager::getWelcomePagePath() const
@@ -609,4 +623,20 @@ inline QString VConfigManager::getEditorCurrentLineVimBackground() const
 {
     return m_editorCurrentLineVimBackground;
 }
+
+inline bool VConfigManager::getEnableCodeBlockHighlight() const
+{
+    return m_enableCodeBlockHighlight;
+}
+
+inline void VConfigManager::setEnableCodeBlockHighlight(bool p_enabled)
+{
+    if (m_enableCodeBlockHighlight == p_enabled) {
+        return;
+    }
+    m_enableCodeBlockHighlight = p_enabled;
+    setConfigToSettings("global", "enable_code_block_highlight",
+                        m_enableCodeBlockHighlight);
+}
+
 #endif // VCONFIGMANAGER_H

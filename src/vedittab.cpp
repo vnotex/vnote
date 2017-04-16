@@ -57,7 +57,7 @@ void VEditTab::setupUI()
     switch (m_file->getDocType()) {
     case DocType::Markdown:
         if (m_file->isModifiable()) {
-            m_textEditor = new VMdEdit(m_file, this);
+            m_textEditor = new VMdEdit(m_file, &document, mdConverterType, this);
             connect(dynamic_cast<VMdEdit *>(m_textEditor), &VMdEdit::headersChanged,
                     this, &VEditTab::updateTocFromHeaders);
             connect(dynamic_cast<VMdEdit *>(m_textEditor), &VMdEdit::statusChanged,
@@ -105,7 +105,6 @@ void VEditTab::noticeStatusChanged()
 
 void VEditTab::showFileReadMode()
 {
-    qDebug() << "read" << m_file->getName();
     isEditMode = false;
     int outlineIndex = curHeader.m_outlineIndex;
     switch (m_file->getDocType()) {
@@ -298,6 +297,8 @@ void VEditTab::setupMarkdownPreview()
 
     case MarkdownConverterType::Hoedown:
         jsFile = "qrc" + VNote::c_hoedownJsFile;
+        // Use Marked to highlight code blocks.
+        extraFile = "<script src=\"qrc" + VNote::c_markedExtraFile + "\"></script>\n";
         break;
 
     case MarkdownConverterType::MarkdownIt:

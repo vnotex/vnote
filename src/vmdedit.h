@@ -8,14 +8,18 @@
 #include <QClipboard>
 #include "vtoc.h"
 #include "veditoperations.h"
+#include "vconfigmanager.h"
 
 class HGMarkdownHighlighter;
+class VCodeBlockHighlightHelper;
+class VDocument;
 
 class VMdEdit : public VEdit
 {
     Q_OBJECT
 public:
-    VMdEdit(VFile *p_file, QWidget *p_parent = 0);
+    VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
+            QWidget *p_parent = 0);
     void beginEdit() Q_DECL_OVERRIDE;
     void endEdit() Q_DECL_OVERRIDE;
     void saveFile() Q_DECL_OVERRIDE;
@@ -76,6 +80,7 @@ private:
     QString selectedImage();
 
     HGMarkdownHighlighter *m_mdHighlighter;
+    VCodeBlockHighlightHelper *m_cbHighlighter;
     QVector<QString> m_insertedImages;
     QVector<QString> m_initImages;
     QVector<VHeader> m_headers;

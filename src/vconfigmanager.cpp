@@ -96,6 +96,9 @@ void VConfigManager::initialize()
         m_webZoomFactor = VUtils::calculateScaleFactor();
         qDebug() << "set WebZoomFactor to" << m_webZoomFactor;
     }
+
+    m_enableCodeBlockHighlight = getConfigFromSettings("global",
+                                                       "enable_code_block_highlight").toBool();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()
@@ -243,6 +246,7 @@ void VConfigManager::updateMarkdownEditStyle()
     VStyleParser parser;
     parser.parseMarkdownStyle(styleStr);
     mdHighlightingStyles = parser.fetchMarkdownStyles(baseEditFont);
+    m_codeBlockStyles = parser.fetchCodeBlockStyles(baseEditFont);
     mdEditPalette = baseEditPalette;
     mdEditFont = baseEditFont;
     QMap<QString, QMap<QString, QString>> styles;

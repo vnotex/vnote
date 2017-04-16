@@ -1,20 +1,6 @@
 var content;
 var keyState = 0;
 
-new QWebChannel(qt.webChannelTransport,
-    function(channel) {
-        content = channel.objects.content;
-        if (typeof updateHtml == "function") {
-            updateHtml(content.html);
-            content.htmlChanged.connect(updateHtml);
-        }
-        if (typeof updateText == "function") {
-            content.textChanged.connect(updateText);
-            content.updateText();
-        }
-        content.requestScrollToAnchor.connect(scrollToAnchor);
-    });
-
 var VMermaidDivClass = 'mermaid-diagram';
 if (typeof VEnableMermaid == 'undefined') {
     VEnableMermaid = false;
@@ -27,6 +13,25 @@ if (typeof VEnableMermaid == 'undefined') {
 if (typeof VEnableMathjax == 'undefined') {
     VEnableMathjax = false;
 }
+
+new QWebChannel(qt.webChannelTransport,
+    function(channel) {
+        content = channel.objects.content;
+        if (typeof updateHtml == "function") {
+            updateHtml(content.html);
+            content.htmlChanged.connect(updateHtml);
+        }
+        if (typeof updateText == "function") {
+            content.textChanged.connect(updateText);
+            content.updateText();
+        }
+        content.requestScrollToAnchor.connect(scrollToAnchor);
+
+        if (typeof highlightText == "function") {
+            content.requestHighlightText.connect(highlightText);
+            content.noticeReadyToHighlightText();
+        }
+    });
 
 var scrollToAnchor = function(anchor) {
     var anc = document.getElementById(anchor);

@@ -367,6 +367,16 @@ void VMainWindow::initMarkdownMenu()
     markdownMenu->addAction(mathjaxAct);
 
     mathjaxAct->setChecked(vconfig.getEnableMathjax());
+
+    markdownMenu->addSeparator();
+
+    QAction *codeBlockAct = new QAction(tr("Highlight Code Blocks In Edit Mode"), this);
+    codeBlockAct->setToolTip(tr("Enable syntax highlight within code blocks in edit mode"));
+    codeBlockAct->setCheckable(true);
+    connect(codeBlockAct, &QAction::triggered,
+            this, &VMainWindow::enableCodeBlockHighlight);
+    markdownMenu->addAction(codeBlockAct);
+    codeBlockAct->setChecked(vconfig.getEnableCodeBlockHighlight());
 }
 
 void VMainWindow::initViewMenu()
@@ -1118,6 +1128,11 @@ void VMainWindow::changeAutoList(bool p_checked)
     } else {
         m_autoIndentAct->setEnabled(true);
     }
+}
+
+void VMainWindow::enableCodeBlockHighlight(bool p_checked)
+{
+    vconfig.setEnableCodeBlockHighlight(p_checked);
 }
 
 void VMainWindow::shortcutHelp()
