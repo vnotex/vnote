@@ -334,7 +334,25 @@ void VEditTab::setupMarkdownPreview()
     if (!extraFile.isEmpty()) {
         htmlTemplate.replace(extraHolder, extraFile);
     }
-    webPreviewer->setHtml(htmlTemplate, QUrl::fromLocalFile(m_file->retriveBasePath() + QDir::separator()));
+
+    // Need to judge the path: Url, local file, resource file.
+    QUrl baseUrl;
+    QString basePath = m_file->retriveBasePath();
+    QFileInfo pathInfo(basePath);
+    if (pathInfo.exists()) {
+        if (pathInfo.isNativePath()) {
+            // Local file.
+            baseUrl = QUrl::fromLocalFile(basePath + QDir::separator());
+        } else {
+            // Resource file.
+            baseUrl = QUrl("qrc" + basePath + QDir::separator());
+        }
+    } else {
+        // Url.
+        baseUrl = QUrl(basePath + QDir::separator());
+    }
+
+    webPreviewer->setHtml(htmlTemplate, baseUrl);
     addWidget(webPreviewer);
 }
 
