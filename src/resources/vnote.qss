@@ -87,6 +87,7 @@ QDockWidget {
 
 QDockWidget::Title {
     background: @base-color;
+    text-align: center left;
 }
 
 QDockWidget::close-button, QDockWidget::float-button {
