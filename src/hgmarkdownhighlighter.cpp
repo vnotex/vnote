@@ -414,6 +414,12 @@ void HGMarkdownHighlighter::setCodeBlockHighlights(const QList<HLUnitPos> &p_uni
         int end = unit.m_position + unit.m_length;
         int startBlockNum = document->findBlock(pos).blockNumber();
         int endBlockNum = document->findBlock(end).blockNumber();
+
+        // Text has been changed. Abandon the obsolete parsed result.
+        if (startBlockNum == -1 || endBlockNum >= highlights.size()) {
+            goto exit;
+        }
+
         for (int i = startBlockNum; i <= endBlockNum; ++i)
         {
             QTextBlock block = document->findBlockByNumber(i);
