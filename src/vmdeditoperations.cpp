@@ -374,12 +374,15 @@ bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)
             int endBlockNum = endBlock.blockNumber();
             while (true) {
                 Q_ASSERT(block.isValid());
-                QTextCursor blockCursor(block);
-                blockCursor.insertText(text);
+                if (!block.text().isEmpty()) {
+                    QTextCursor blockCursor(block);
+                    blockCursor.insertText(text);
+                }
 
                 if (block.blockNumber() == endBlockNum) {
                     break;
                 }
+
                 block = block.next();
             }
             cursor.endEditBlock();
