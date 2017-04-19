@@ -134,6 +134,7 @@ QComboBox#NotebookSelector QListWidget {
     border: 1px solid grey;
     background-color: @base-background;
     font-size: 13pt;
+    icon-size: 30px;
 }
 
 QComboBox#NotebookSelector QListWidget::item {
