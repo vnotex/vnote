@@ -1,6 +1,5 @@
 #include <QtWidgets>
 #include <QWebChannel>
-#include <QWebEngineView>
 #include <QFileInfo>
 #include <QXmlStreamReader>
 #include "vedittab.h"
@@ -18,11 +17,13 @@
 #include "dialog/vfindreplacedialog.h"
 #include "veditarea.h"
 #include "vconstants.h"
+#include "vwebview.h"
 
 extern VConfigManager vconfig;
 
 VEditTab::VEditTab(VFile *p_file, OpenFileMode p_mode, QWidget *p_parent)
-    : QStackedWidget(p_parent), m_file(p_file), isEditMode(false), document(p_file, this),
+    : QStackedWidget(p_parent), m_file(p_file), isEditMode(false),
+      webPreviewer(NULL), document(p_file, this),
       mdConverterType(vconfig.getMdConverterType()), m_fileModified(false),
       m_editArea(NULL)
 {
@@ -273,7 +274,10 @@ void VEditTab::setupMarkdownPreview()
     const QString jsHolder("JS_PLACE_HOLDER");
     const QString extraHolder("<!-- EXTRA_PLACE_HOLDER -->");
 
-    webPreviewer = new QWebEngineView(this);
+    webPreviewer = new VWebView(m_file, this);
+    connect(webPreviewer, &VWebView::editNote,
+            this, &VEditTab::editFile);
+
     VPreviewPage *page = new VPreviewPage(this);
     webPreviewer->setPage(page);
     webPreviewer->setZoomFactor(vconfig.getWebZoomFactor());

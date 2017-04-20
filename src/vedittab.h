@@ -12,7 +12,7 @@
 #include "vtoc.h"
 #include "vfile.h"
 
-class QWebEngineView;
+class VWebView;
 class VNote;
 class QXmlStreamReader;
 class VEditArea;
@@ -25,8 +25,6 @@ public:
     ~VEditTab();
     void init(VEditArea *p_editArea);
     bool closeFile(bool p_forced);
-    // Enter edit mode
-    void editFile();
     // Enter read mode
     void readFile();
     // Save file
@@ -50,6 +48,10 @@ public:
                         const QString &p_replaceText);
     QString getSelectedText() const;
     void clearSearchedWordHighlight();
+
+public slots:
+    // Enter edit mode
+    void editFile();
 
 protected:
     void wheelEvent(QWheelEvent *p_event) Q_DECL_OVERRIDE;
@@ -91,7 +93,7 @@ private:
     QPointer<VFile> m_file;
     bool isEditMode;
     VEdit *m_textEditor;
-    QWebEngineView *webPreviewer;
+    VWebView *webPreviewer;
     VDocument document;
     MarkdownConverterType mdConverterType;
     VToc tableOfContent;

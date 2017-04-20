@@ -59,7 +59,8 @@ SOURCES += main.cpp\
     vcaptain.cpp \
     vopenedlistmenu.cpp \
     vorphanfile.cpp \
-    vcodeblockhighlighthelper.cpp
+    vcodeblockhighlighthelper.cpp \
+    vwebview.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -105,7 +106,8 @@ HEADERS  += vmainwindow.h \
     vopenedlistmenu.h \
     vnavigationmode.h \
     vorphanfile.h \
-    vcodeblockhighlighthelper.h
+    vcodeblockhighlighthelper.h \
+    vwebview.h
 
 RESOURCES += \
     vnote.qrc \
