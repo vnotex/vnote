@@ -51,7 +51,7 @@ Backspace. Delete a character backward.
 Delete all the characters from current cursor to the first space backward.
 - `Ctrl+U`  
 Delete all the characters from current cursor to the beginning of current line.
-- `Ctrl+Alt+<Num>`  
+- `Ctrl+<Num>`  
 Insert title at level `<Num>`. `<Num>` should be 1 to 6. Currently selected text will be changed to title if exist.
 - `Tab`/`Shift+Tab`  
 Increase or decrease the indentation. If any text is selected, the indentation will operate on all these selected lines.

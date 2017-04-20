@@ -194,8 +194,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         case Qt::Key_5:
         case Qt::Key_6:
         {
-            if (modifiers == (Qt::ControlModifier | Qt::AltModifier)) {
-                // Ctrl + Alt + <N>: insert title at level <N>.
+            if (modifiers == Qt::ControlModifier) {
+                // Ctrl + <N>: insert title at level <N>.
                 if (insertTitle(key - Qt::Key_0)) {
                     p_event->accept();
                     ret = true;
