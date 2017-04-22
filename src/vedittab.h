@@ -71,6 +71,8 @@ private slots:
     void handleTextChanged();
     void noticeStatusChanged();
     void handleWebKeyPressed(int p_key, bool p_ctrl, bool p_shift);
+    void saveAndRead();
+    void discardAndRead();
 
 private:
     void setupUI();

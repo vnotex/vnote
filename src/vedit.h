@@ -49,10 +49,18 @@ public:
     void setReadOnly(bool p_ro);
     void clearSearchedWordHighlight();
 
+signals:
+    void saveAndRead();
+    void discardAndRead();
+    void editNote();
+
 private slots:
     void labelTimerTimeout();
     void triggerHighlightSelectedWord();
     void highlightSelectedWord();
+    void handleSaveExitAct();
+    void handleDiscardExitAct();
+    void handleEditAct();
 
 protected slots:
     virtual void highlightCurrentLine();
@@ -63,6 +71,7 @@ protected:
     QColor m_cursorLineColor;
 
     virtual void updateFontAndPalette();
+    virtual void contextMenuEvent(QContextMenuEvent *p_event) Q_DECL_OVERRIDE;
 
 private:
     QLabel *m_wrapLabel;

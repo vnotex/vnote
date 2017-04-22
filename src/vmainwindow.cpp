@@ -224,7 +224,7 @@ void VMainWindow::initFileToolBar()
             editArea, &VEditArea::editFile);
 
     discardExitAct = new QAction(QIcon(":/resources/icons/discard_exit.svg"),
-                                 tr("Discard Changes And Exit"), this);
+                                 tr("Discard Changes And Read"), this);
     discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
     connect(discardExitAct, &QAction::triggered,
             editArea, &VEditArea::readFile);
@@ -233,7 +233,7 @@ void VMainWindow::initFileToolBar()
     exitEditMenu->addAction(discardExitAct);
 
     saveExitAct = new QAction(QIcon(":/resources/icons/save_exit.svg"),
-                              tr("Save Changes And Exit"), this);
+                              tr("Save Changes And Read"), this);
     saveExitAct->setStatusTip(tr("Save changes and exit edit mode"));
     saveExitAct->setMenu(exitEditMenu);
     saveExitAct->setShortcut(QKeySequence("Ctrl+R"));

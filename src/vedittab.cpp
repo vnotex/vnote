@@ -67,6 +67,10 @@ void VEditTab::setupUI()
                     this, SLOT(updateCurHeader(int, int)));
             connect(m_textEditor, &VEdit::textChanged,
                     this, &VEditTab::handleTextChanged);
+            connect(m_textEditor, &VEdit::saveAndRead,
+                    this, &VEditTab::saveAndRead);
+            connect(m_textEditor, &VEdit::discardAndRead,
+                    this, &VEditTab::discardAndRead);
             m_textEditor->reloadFile();
             addWidget(m_textEditor);
         } else {
@@ -79,6 +83,12 @@ void VEditTab::setupUI()
         m_textEditor = new VEdit(m_file, this);
         connect(m_textEditor, &VEdit::textChanged,
                 this, &VEditTab::handleTextChanged);
+        connect(m_textEditor, &VEdit::saveAndRead,
+                this, &VEditTab::saveAndRead);
+        connect(m_textEditor, &VEdit::discardAndRead,
+                this, &VEditTab::discardAndRead);
+        connect(m_textEditor, &VEdit::editNote,
+                this, &VEditTab::editFile);
         m_textEditor->reloadFile();
         addWidget(m_textEditor);
         webPreviewer = NULL;
@@ -267,6 +277,17 @@ bool VEditTab::saveFile()
     }
     noticeStatusChanged();
     return ret;
+}
+
+void VEditTab::saveAndRead()
+{
+    saveFile();
+    readFile();
+}
+
+void VEditTab::discardAndRead()
+{
+    readFile();
 }
 
 void VEditTab::setupMarkdownPreview()

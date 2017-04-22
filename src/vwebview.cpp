@@ -17,20 +17,24 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
 {
     QMenu *menu = page()->createStandardContextMenu();
     menu->setToolTipsVisible(true);
+
     const QList<QAction *> actions = menu->actions();
 
-    QAction *editAction = new QAction(QIcon(":/resources/icons/edit_note.svg"),
-                                     tr("&Edit"), this);
-    editAction->setToolTip(tr("Edit current note"));
-    connect(editAction, &QAction::triggered,
-            this, &VWebView::handleEditAction);
-    if (!m_file->isModifiable()) {
-        editAction->setEnabled(false);
+    if (!hasSelection() && m_file->isModifiable()) {
+        QAction *editAct= new QAction(QIcon(":/resources/icons/edit_note.svg"),
+                                          tr("&Edit"), this);
+        editAct->setToolTip(tr("Edit current note"));
+        connect(editAct, &QAction::triggered,
+                this, &VWebView::handleEditAction);
+        menu->insertAction(actions.isEmpty() ? NULL : actions[0], editAct);
+        // actions does not contain editAction.
+        if (!actions.isEmpty()) {
+            menu->insertSeparator(actions[0]);
+        }
     }
-    menu->insertAction(actions.isEmpty() ? NULL : actions[0], editAction);
 
-    connect(menu, &QMenu::aboutToHide, menu, &QObject::deleteLater);
-    menu->popup(p_event->globalPos());
+    menu->exec(p_event->globalPos());
+    delete menu;
 }
 
 void VWebView::handleEditAction()

@@ -8,6 +8,7 @@
 #include "utils/vutils.h"
 #include "veditoperations.h"
 #include "dialog/vfindreplacedialog.h"
+#include "vedittab.h"
 
 extern VConfigManager vconfig;
 extern VNote *g_vnote;
@@ -501,3 +502,62 @@ void VEdit::clearSearchedWordHighlight()
     highlightExtraSelections();
 }
 
+void VEdit::contextMenuEvent(QContextMenuEvent *p_event)
+{
+    QMenu *menu = createStandardContextMenu();
+    menu->setToolTipsVisible(true);
+
+    const QList<QAction *> actions = menu->actions();
+
+    VEditTab *editTab = dynamic_cast<VEditTab *>(parent());
+    V_ASSERT(editTab);
+    if (editTab->getIsEditMode()) {
+        QAction *saveExitAct = new QAction(QIcon(":/resources/icons/save_exit.svg"),
+                                           tr("&Save Changes And Read"), this);
+        saveExitAct->setToolTip(tr("Save changes and exit edit mode"));
+        connect(saveExitAct, &QAction::triggered,
+                this, &VEdit::handleSaveExitAct);
+
+        QAction *discardExitAct = new QAction(QIcon(":/resources/icons/discard_exit.svg"),
+                                              tr("&Discard Changes And Read"), this);
+        discardExitAct->setToolTip(tr("Discard changes and exit edit mode"));
+        connect(discardExitAct, &QAction::triggered,
+                this, &VEdit::handleDiscardExitAct);
+
+        menu->insertAction(actions.isEmpty() ? NULL : actions[0], discardExitAct);
+        menu->insertAction(discardExitAct, saveExitAct);
+        if (!actions.isEmpty()) {
+            menu->insertSeparator(actions[0]);
+        }
+    } else if (m_file->isModifiable()) {
+        // HTML.
+        QAction *editAct= new QAction(QIcon(":/resources/icons/edit_note.svg"),
+                                      tr("&Edit"), this);
+        editAct->setToolTip(tr("Edit current note"));
+        connect(editAct, &QAction::triggered,
+                this, &VEdit::handleEditAct);
+        menu->insertAction(actions.isEmpty() ? NULL : actions[0], editAct);
+        // actions does not contain editAction.
+        if (!actions.isEmpty()) {
+            menu->insertSeparator(actions[0]);
+        }
+    }
+
+    menu->exec(p_event->globalPos());
+    delete menu;
+}
+
+void VEdit::handleSaveExitAct()
+{
+    emit saveAndRead();
+}
+
+void VEdit::handleDiscardExitAct()
+{
+    emit discardAndRead();
+}
+
+void VEdit::handleEditAct()
+{
+    emit editNote();
+}
