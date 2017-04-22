@@ -2,7 +2,6 @@
     <qresource prefix="/">
         <file>resources/welcome.html</file>
         <file>resources/qwebchannel.js</file>
-        <file>resources/markdown.css</file>
         <file>utils/marked/marked.min.js</file>
         <file>utils/highlightjs/highlight.pack.js</file>
         <file>utils/highlightjs/styles/androidstudio.css</file>
@@ -99,5 +98,6 @@
         <file>resources/icons/float.svg</file>
         <file>resources/docs/shortcuts_en.md</file>
         <file>resources/docs/shortcuts_zh.md</file>
+        <file>resources/styles/default.css</file>
     </qresource>
 </RCC>

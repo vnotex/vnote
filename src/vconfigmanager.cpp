@@ -10,11 +10,13 @@
 #include "utils/vutils.h"
 #include "vstyleparser.h"
 
-const QString VConfigManager::orgName = QString("tamlok");
+const QString VConfigManager::orgName = QString("vnote");
 const QString VConfigManager::appName = QString("vnote");
 const QString VConfigManager::c_version = QString("1.2");
 const QString VConfigManager::dirConfigFileName = QString(".vnote.json");
 const QString VConfigManager::defaultConfigFilePath = QString(":/resources/vnote.ini");
+const QString VConfigManager::c_styleConfigFolder = QString("styles");
+const QString VConfigManager::c_defaultCssFile = QString(":/resources/styles/default.css");
 
 VConfigManager::VConfigManager()
     : userSettings(NULL), defaultSettings(NULL)
@@ -31,10 +33,23 @@ VConfigManager::~VConfigManager()
     }
 }
 
+void VConfigManager::migrateIniFile()
+{
+    const QString originalFolder = "tamlok";
+    const QString newFolder = orgName;
+    QString configFolder = getConfigFolder();
+    QDir dir(configFolder);
+    dir.cdUp();
+    dir.rename(originalFolder, newFolder);
+}
+
 void VConfigManager::initialize()
 {
-    userSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, orgName, appName);
+    userSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope,
+                                 orgName, appName);
     defaultSettings = new QSettings(defaultConfigFilePath, QSettings::IniFormat);
+
+    migrateIniFile();
 
     m_editorFontSize = getConfigFromSettings("global", "editor_font_size").toInt();
     if (m_editorFontSize <= 0) {
@@ -44,7 +59,7 @@ void VConfigManager::initialize()
     baseEditPalette = QTextEdit().palette();
 
     welcomePagePath = getConfigFromSettings("global", "welcome_page_path").toString();
-    templateCssUrl = getConfigFromSettings("global", "template_css_url").toString();
+    m_templateCss = getConfigFromSettings("global", "template_css").toString();
     curNotebookIndex = getConfigFromSettings("global", "current_notebook").toInt();
 
     markdownExtensions = hoedown_extensions(HOEDOWN_EXT_TABLES | HOEDOWN_EXT_FENCED_CODE |
@@ -311,3 +326,84 @@ void VConfigManager::setWebZoomFactor(qreal p_factor)
     setConfigToSettings("global", "web_zoom_factor", m_webZoomFactor);
 }
 
+QString VConfigManager::getConfigFolder() const
+{
+    V_ASSERT(userSettings);
+
+    QString iniPath = userSettings->fileName();
+    return VUtils::basePathFromPath(iniPath);
+}
+
+QString VConfigManager::getStyleConfigFolder() const
+{
+    return getConfigFolder() + QDir::separator() + c_styleConfigFolder;
+}
+
+QVector<QString> VConfigManager::getCssStyles() const
+{
+    QVector<QString> res;
+    QDir dir(getStyleConfigFolder());
+    if (!dir.exists()) {
+        // Output pre-defined css styles to this folder.
+        outputDefaultCssStyle();
+    }
+
+    // Get all the .css files in the folder.
+    dir.setFilter(QDir::Files | QDir::NoSymLinks);
+    dir.setNameFilters(QStringList("*.css"));
+    QStringList files = dir.entryList();
+    res.reserve(files.size());
+    for (auto const &item : files) {
+        res.push_back(item.left(item.size() - 4));
+    }
+    return res;
+}
+
+bool VConfigManager::outputDefaultCssStyle() const
+{
+    // Make sure the styles folder exists.
+    QDir dir(getConfigFolder());
+    if (!dir.exists(c_styleConfigFolder)) {
+        if (!dir.mkdir(c_styleConfigFolder)) {
+            return false;
+        }
+    }
+    return VUtils::copyFile(c_defaultCssFile,
+                            getStyleConfigFolder() + QDir::separator() + "default.css",
+                            false);
+}
+
+QString VConfigManager::getTemplateCssUrl()
+{
+    QString cssPath = getStyleConfigFolder() + QDir::separator() + m_templateCss + ".css";
+    if (!QFile::exists(cssPath)) {
+        // Specified css not exists.
+        if (m_templateCss == "default") {
+            bool ret = outputDefaultCssStyle();
+            if (!ret) {
+                // Use embedded file.
+                cssPath = "qrc" + c_defaultCssFile;
+            }
+        } else {
+            setTemplateCss("default");
+            return getTemplateCssUrl();
+        }
+    }
+
+    qDebug() << "use template css:" << cssPath;
+    return cssPath;
+}
+
+const QString &VConfigManager::getTemplateCss() const
+{
+    return m_templateCss;
+}
+
+void VConfigManager::setTemplateCss(const QString &p_css)
+{
+    if (m_templateCss == p_css) {
+        return;
+    }
+    m_templateCss = p_css;
+    setConfigToSettings("global", "template_css", m_templateCss);
+}

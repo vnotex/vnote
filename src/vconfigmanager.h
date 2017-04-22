@@ -54,7 +54,10 @@ public:
 
     inline QString getWelcomePagePath() const;
 
-    inline QString getTemplateCssUrl() const;
+    QString getTemplateCssUrl();
+
+    const QString &getTemplateCss() const;
+    void setTemplateCss(const QString &p_css);
 
     inline QFont getBaseEditFont() const;
     inline QPalette getBaseEditPalette() const;
@@ -140,6 +143,15 @@ public:
     inline bool getEnableCodeBlockHighlight() const;
     inline void setEnableCodeBlockHighlight(bool p_enabled);
 
+    // Get the folder the ini file exists.
+    QString getConfigFolder() const;
+
+    // Get the folder c_styleConfigFolder in the config folder.
+    QString getStyleConfigFolder() const;
+
+    // Read all available css files in c_styleConfigFolder.
+    QVector<QString> getCssStyles() const;
+
 private:
     void updateMarkdownEditStyle();
     QVariant getConfigFromSettings(const QString &section, const QString &key);
@@ -150,6 +162,12 @@ private:
     // Update baseEditPalette according to curBackgroundColor
     void updatePaletteColor();
 
+    // Migrate ini file from tamlok/vnote.ini to vnote/vnote.ini.
+    // This is for the change of org name.
+    void migrateIniFile();
+
+    bool outputDefaultCssStyle() const;
+
     int m_editorFontSize;
     QFont baseEditFont;
     QPalette baseEditPalette;
@@ -158,7 +176,7 @@ private:
     QVector<HighlightingStyle> mdHighlightingStyles;
     QMap<QString, QTextCharFormat> m_codeBlockStyles;
     QString welcomePagePath;
-    QString templateCssUrl;
+    QString m_templateCss;
     int curNotebookIndex;
 
     // Markdown Converter
@@ -230,6 +248,9 @@ private:
     QSettings *userSettings;
     // Qsettings for @defaultConfigFileName
     QSettings *defaultSettings;
+    // The folder name of style files.
+    static const QString c_styleConfigFolder;
+    static const QString c_defaultCssFile;
 };
 
 
@@ -256,11 +277,6 @@ inline QMap<QString, QTextCharFormat> VConfigManager::getCodeBlockStyles() const
 inline QString VConfigManager::getWelcomePagePath() const
 {
     return welcomePagePath;
-}
-
-inline QString VConfigManager::getTemplateCssUrl() const
-{
-    return templateCssUrl;
 }
 
 inline QFont VConfigManager::getBaseEditFont() const

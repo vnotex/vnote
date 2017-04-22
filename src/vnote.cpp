@@ -157,7 +157,7 @@ void VNote::updateTemplate()
     }
     QString cssStyle;
     if (!rgb.isEmpty()) {
-        cssStyle = "body { background-color: #" + rgb + "; }";
+        cssStyle = "body { background-color: #" + rgb + " !important; }";
     }
     QString styleHolder("<!-- BACKGROUND_PLACE_HOLDER -->");
     QString cssHolder("CSS_PLACE_HOLDER");

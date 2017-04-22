@@ -348,7 +348,11 @@ void VMainWindow::initMarkdownMenu()
         Q_ASSERT(false);
     }
 
+    initRenderStyleMenu(markdownMenu);
+
     initRenderBackgroundMenu(markdownMenu);
+
+    markdownMenu->addSeparator();
 
     QAction *mermaidAct = new QAction(tr("&Mermaid Diagram"), this);
     mermaidAct->setToolTip(tr("Enable Mermaid for graph and diagram"));
@@ -359,8 +363,8 @@ void VMainWindow::initMarkdownMenu()
 
     mermaidAct->setChecked(vconfig.getEnableMermaid());
 
-    QAction *mathjaxAct = new QAction(tr("Math&jax"), this);
-    mathjaxAct->setToolTip(tr("Enable Mathjax for math support in Markdown"));
+    QAction *mathjaxAct = new QAction(tr("Math&Jax"), this);
+    mathjaxAct->setToolTip(tr("Enable MathJax for math support in Markdown"));
     mathjaxAct->setCheckable(true);
     connect(mathjaxAct, &QAction::triggered,
             this, &VMainWindow::enableMathjax);
@@ -767,6 +771,37 @@ void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
     }
 }
 
+void VMainWindow::initRenderStyleMenu(QMenu *p_menu)
+{
+    QMenu *styleMenu = p_menu->addMenu(tr("Rendering &Style"));
+    styleMenu->setToolTipsVisible(true);
+
+    QActionGroup *styleAct = new QActionGroup(this);
+    connect(styleAct, &QActionGroup::triggered,
+            this, &VMainWindow::setRenderStyle);
+
+    bool foundCurrentCss = false;
+    QVector<QString> styles = vconfig.getCssStyles();
+    for (auto const &style : styles) {
+        QAction *act = new QAction(style, styleAct);
+        act->setToolTip(tr("Set as the CSS style for Markdown rendering"));
+        act->setCheckable(true);
+        act->setData(style);
+
+        if (vconfig.getTemplateCss() == style) {
+            act->setChecked(true);
+            foundCurrentCss = true;
+        }
+    }
+
+    if (!foundCurrentCss && styles.isEmpty()) {
+        delete styleAct;
+        return;
+    }
+
+    styleMenu->addActions(styleAct->actions());
+}
+
 void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
 {
     QMenu *backgroundColorMenu = menu->addMenu(tr("&Background Color"));
@@ -807,6 +842,15 @@ void VMainWindow::setRenderBackgroundColor(QAction *action)
         return;
     }
     vconfig.setCurRenderBackgroundColor(action->data().toString());
+    vnote->updateTemplate();
+}
+
+void VMainWindow::setRenderStyle(QAction *p_action)
+{
+    if (!p_action) {
+        return;
+    }
+    vconfig.setTemplateCss(p_action->data().toString());
     vnote->updateTemplate();
 }
 
