@@ -56,8 +56,13 @@ public:
 
     QString getTemplateCssUrl();
 
+    QString getEditorStyleUrl();
+
     const QString &getTemplateCss() const;
     void setTemplateCss(const QString &p_css);
+
+    const QString &getEditorStyle() const;
+    void setEditorStyle(const QString &p_style);
 
     inline QFont getBaseEditFont() const;
     inline QPalette getBaseEditPalette() const;
@@ -152,21 +157,26 @@ public:
     // Read all available css files in c_styleConfigFolder.
     QVector<QString> getCssStyles() const;
 
+    // Read all available mdhl files in c_styleConfigFolder.
+    QVector<QString> getEditorStyles() const;
+
 private:
-    void updateMarkdownEditStyle();
     QVariant getConfigFromSettings(const QString &section, const QString &key);
     void setConfigToSettings(const QString &section, const QString &key, const QVariant &value);
     void readNotebookFromSettings(QVector<VNotebook *> &p_notebooks, QObject *parent);
     void writeNotebookToSettings(const QVector<VNotebook *> &p_notebooks);
     void readPredefinedColorsFromSettings();
-    // Update baseEditPalette according to curBackgroundColor
-    void updatePaletteColor();
+    // 1. Update styles common in HTML and Markdown;
+    // 2. Update styles for Markdown.
+    void updateEditStyle();
+    void updateMarkdownEditStyle();
 
     // Migrate ini file from tamlok/vnote.ini to vnote/vnote.ini.
     // This is for the change of org name.
     void migrateIniFile();
 
     bool outputDefaultCssStyle() const;
+    bool outputDefaultEditorStyle() const;
 
     int m_editorFontSize;
     QFont baseEditFont;
@@ -177,6 +187,7 @@ private:
     QMap<QString, QTextCharFormat> m_codeBlockStyles;
     QString welcomePagePath;
     QString m_templateCss;
+    QString m_editorStyle;
     int curNotebookIndex;
 
     // Markdown Converter
@@ -251,6 +262,11 @@ private:
     // The folder name of style files.
     static const QString c_styleConfigFolder;
     static const QString c_defaultCssFile;
+
+    // MDHL files for editor styles.
+    static const QString c_defaultMdhlFile;
+    static const QString c_solarizedDarkMdhlFile;
+    static const QString c_solarizedLightMdhlFile;
 };
 
 
@@ -452,7 +468,7 @@ inline void VConfigManager::setCurBackgroundColor(const QString &colorName)
     curBackgroundColor = colorName;
     setConfigToSettings("global", "current_background_color",
                         curBackgroundColor);
-    updatePaletteColor();
+    updateEditStyle();
 }
 
 inline const QString& VConfigManager::getCurRenderBackgroundColor() const

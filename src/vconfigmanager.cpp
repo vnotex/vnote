@@ -17,6 +17,9 @@ const QString VConfigManager::dirConfigFileName = QString(".vnote.json");
 const QString VConfigManager::defaultConfigFilePath = QString(":/resources/vnote.ini");
 const QString VConfigManager::c_styleConfigFolder = QString("styles");
 const QString VConfigManager::c_defaultCssFile = QString(":/resources/styles/default.css");
+const QString VConfigManager::c_defaultMdhlFile = QString(":/resources/styles/default.mdhl");
+const QString VConfigManager::c_solarizedDarkMdhlFile = QString(":/resources/styles/solarized-dark.mdhl");
+const QString VConfigManager::c_solarizedLightMdhlFile = QString(":/resources/styles/solarized-light.mdhl");
 
 VConfigManager::VConfigManager()
     : userSettings(NULL), defaultSettings(NULL)
@@ -58,6 +61,8 @@ void VConfigManager::initialize()
     baseEditFont.setPointSize(m_editorFontSize);
     baseEditPalette = QTextEdit().palette();
 
+    m_editorStyle = getConfigFromSettings("global", "editor_style").toString();
+
     welcomePagePath = getConfigFromSettings("global", "welcome_page_path").toString();
     m_templateCss = getConfigFromSettings("global", "template_css").toString();
     curNotebookIndex = getConfigFromSettings("global", "current_notebook").toInt();
@@ -78,7 +83,7 @@ void VConfigManager::initialize()
     readPredefinedColorsFromSettings();
     curBackgroundColor = getConfigFromSettings("global", "current_background_color").toString();
 
-    updatePaletteColor();
+    updateEditStyle();
 
     curRenderBackgroundColor = getConfigFromSettings("global",
                                                      "current_render_background_color").toString();
@@ -87,8 +92,6 @@ void VConfigManager::initialize()
     m_mainWindowGeometry = getConfigFromSettings("session", "main_window_geometry").toByteArray();
     m_mainWindowState = getConfigFromSettings("session", "main_window_state").toByteArray();
     m_mainSplitterState = getConfigFromSettings("session", "main_splitter_state").toByteArray();
-
-    updateMarkdownEditStyle();
 
     m_findCaseSensitive = getConfigFromSettings("global",
                                                 "find_case_sensitive").toBool();
@@ -251,7 +254,7 @@ void VConfigManager::updateMarkdownEditStyle()
     static const QString defaultCurrentLineVimBackground = "#A5D6A7";
 
     // Read style file .mdhl
-    QString file(":/resources/styles/default.mdhl");
+    QString file(getEditorStyleUrl());
 
     QString styleStr = VUtils::readFileFromDisk(file);
     if (styleStr.isEmpty()) {
@@ -281,20 +284,20 @@ void VConfigManager::updateMarkdownEditStyle()
             m_editorCurrentLineVimBackground = "#" + *vimBackgroundIt;
         }
     }
-
-    qDebug() << "editor-current-line:" << m_editorCurrentLineBackground << m_editorCurrentLineVimBackground;
 }
 
-void VConfigManager::updatePaletteColor()
+void VConfigManager::updateEditStyle()
 {
     static const QColor defaultColor = baseEditPalette.color(QPalette::Base);
     QColor newColor = defaultColor;
+    bool force = false;
     if (curBackgroundColor != "System") {
         for (int i = 0; i < predefinedColors.size(); ++i) {
             if (predefinedColors[i].name == curBackgroundColor) {
                 QString rgb = predefinedColors[i].rgb;
                 if (!rgb.isEmpty()) {
                     newColor = QColor(VUtils::QRgbFromString(rgb));
+                    force = true;
                 }
                 break;
             }
@@ -305,6 +308,10 @@ void VConfigManager::updatePaletteColor()
 
     // Update markdown editor palette
     updateMarkdownEditStyle();
+
+    if (force) {
+        mdEditPalette.setColor(QPalette::Base, newColor);
+    }
 }
 
 void VConfigManager::setWebZoomFactor(qreal p_factor)
@@ -356,6 +363,28 @@ QVector<QString> VConfigManager::getCssStyles() const
     for (auto const &item : files) {
         res.push_back(item.left(item.size() - 4));
     }
+
+    return res;
+}
+
+QVector<QString> VConfigManager::getEditorStyles() const
+{
+    QVector<QString> res;
+    QDir dir(getStyleConfigFolder());
+    if (!dir.exists()) {
+        // Output pre-defined mdhl styles to this folder.
+        outputDefaultEditorStyle();
+    }
+
+    // Get all the .mdhl files in the folder.
+    dir.setFilter(QDir::Files | QDir::NoSymLinks);
+    dir.setNameFilters(QStringList("*.mdhl"));
+    QStringList files = dir.entryList();
+    res.reserve(files.size());
+    for (auto const &item : files) {
+        res.push_back(item.left(item.size() - 5));
+    }
+
     return res;
 }
 
@@ -368,9 +397,42 @@ bool VConfigManager::outputDefaultCssStyle() const
             return false;
         }
     }
+
+    QFileInfo finfo(c_defaultMdhlFile);
     return VUtils::copyFile(c_defaultCssFile,
-                            getStyleConfigFolder() + QDir::separator() + "default.css",
+                            getStyleConfigFolder() + QDir::separator() + finfo.fileName(),
                             false);
+}
+
+bool VConfigManager::outputDefaultEditorStyle() const
+{
+    // Make sure the styles folder exists.
+    QDir dir(getConfigFolder());
+    if (!dir.exists(c_styleConfigFolder)) {
+        if (!dir.mkdir(c_styleConfigFolder)) {
+            return false;
+        }
+    }
+
+    QString srcPath = c_defaultMdhlFile;
+    QString destPath = getStyleConfigFolder() + QDir::separator() + QFileInfo(srcPath).fileName();
+    if (!VUtils::copyFile(srcPath, destPath, false)) {
+        return false;
+    }
+
+    srcPath = c_solarizedDarkMdhlFile;
+    destPath = getStyleConfigFolder() + QDir::separator() + QFileInfo(srcPath).fileName();
+    if (!VUtils::copyFile(srcPath, destPath, false)) {
+        return false;
+    }
+
+    srcPath = c_solarizedLightMdhlFile;
+    destPath = getStyleConfigFolder() + QDir::separator() + QFileInfo(srcPath).fileName();
+    if (!VUtils::copyFile(srcPath, destPath, false)) {
+        return false;
+    }
+
+    return true;
 }
 
 QString VConfigManager::getTemplateCssUrl()
@@ -394,6 +456,28 @@ QString VConfigManager::getTemplateCssUrl()
     return cssPath;
 }
 
+QString VConfigManager::getEditorStyleUrl()
+{
+    QString mdhlPath = getStyleConfigFolder() + QDir::separator() + m_editorStyle + ".mdhl";
+    if (!QFile::exists(mdhlPath)) {
+        // Specified mdhl file not exists.
+        if (m_editorStyle == "default") {
+            bool ret = outputDefaultEditorStyle();
+            if (!ret) {
+                // Use embedded file.
+                mdhlPath = c_defaultMdhlFile;
+            }
+        } else {
+            setEditorStyle("default");
+            return getEditorStyleUrl();
+        }
+    }
+
+    qDebug() << "use editor style:" << mdhlPath;
+    return mdhlPath;
+
+}
+
 const QString &VConfigManager::getTemplateCss() const
 {
     return m_templateCss;
@@ -406,4 +490,19 @@ void VConfigManager::setTemplateCss(const QString &p_css)
     }
     m_templateCss = p_css;
     setConfigToSettings("global", "template_css", m_templateCss);
+}
+
+const QString &VConfigManager::getEditorStyle() const
+{
+    return m_editorStyle;
+}
+
+void VConfigManager::setEditorStyle(const QString &p_style)
+{
+    if (m_editorStyle == p_style) {
+        return;
+    }
+    m_editorStyle = p_style;
+    setConfigToSettings("global", "editor_style", m_editorStyle);
+    updateEditStyle();
 }

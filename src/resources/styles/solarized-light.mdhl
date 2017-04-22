@@ -8,6 +8,10 @@ foreground: 586e75 # base01
 background: fdf6e3 # base3
 caret: 000000
 
+editor-current-line
+background: c5cae9
+vim-background: a5d6a7
+
 H1
 foreground: 6c71c4 # violet
 font-style: bold
@@ -71,6 +75,42 @@ foreground: 93a1a1 # base1
 
 VERBATIM
 foreground: 859900 # green
+font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
+# Codeblock sylte from HighlightJS (bold, italic, underlined, color)
+# The last occurence of the same attribute takes effect
+hljs-comment: 888888
+hljs-keyword: bold
+hljs-attribute: bold
+hljs-selector-tag: bold
+hljs-meta-keyword: bold
+hljs-doctag: bold
+hljs-name: bold
+hljs-type: 880000
+hljs-string: 880000
+hljs-number: 880000
+hljs-selector-id: 880000
+hljs-selector-class: 880000
+hljs-quote: 880000
+hljs-template-tag: 880000
+hljs-deletion: 880000
+hljs-title: bold, 880000
+hljs-section: bold, 880000
+hljs-regexp: bc6060
+hljs-symbol: bc6060
+hljs-variable: bc6060
+hljs-template-variable: bc6060
+hljs-link: bc6060
+hljs-selector-attr: bc6060
+hljs-selector-pseudo: bc6060
+hljs-literal: 78a960
+hljs-built_in: 397300
+hljs-bullet: 397300
+hljs-code: 397300
+hljs-addition: 397300
+hljs-meta: 1f7199
+hljs-meta-string: 4d99bf
+hljs-emphasis: italic
+hljs-strong: bold
 
 BLOCKQUOTE
 foreground: d33682 # magenta

@@ -53,6 +53,7 @@ private slots:
     void setEditorBackgroundColor(QAction *action);
     void setRenderBackgroundColor(QAction *action);
     void setRenderStyle(QAction *p_action);
+    void setEditorStyle(QAction *p_action);
     void changeHighlightCursorLine(bool p_checked);
     void changeHighlightSelectedWord(bool p_checked);
     void changeHighlightSearchedWord(bool p_checked);
@@ -100,6 +101,7 @@ private:
     void initRenderBackgroundMenu(QMenu *menu);
     void initRenderStyleMenu(QMenu *p_menu);
     void initEditorBackgroundMenu(QMenu *menu);
+    void initEditorStyleMenu(QMenu *p_emnu);
     void changeSplitterView(int nrPanel);
     void updateWindowTitle(const QString &str);
     void updateActionStateFromTabStatusChange(const VFile *p_file,

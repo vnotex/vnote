@@ -591,6 +591,8 @@ void VMainWindow::initEditMenu()
 
     editMenu->addSeparator();
 
+    initEditorStyleMenu(editMenu);
+
     initEditorBackgroundMenu(editMenu);
 
     editMenu->addAction(cursorLineAct);
@@ -805,8 +807,8 @@ void VMainWindow::initRenderStyleMenu(QMenu *p_menu)
 void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
 {
     QMenu *backgroundColorMenu = menu->addMenu(tr("&Background Color"));
-
     backgroundColorMenu->setToolTipsVisible(true);
+
     QActionGroup *backgroundColorAct = new QActionGroup(this);
     connect(backgroundColorAct, &QActionGroup::triggered,
             this, &VMainWindow::setEditorBackgroundColor);
@@ -836,6 +838,37 @@ void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
     }
 }
 
+void VMainWindow::initEditorStyleMenu(QMenu *p_menu)
+{
+    QMenu *styleMenu = p_menu->addMenu(tr("Editor &Style"));
+    styleMenu->setToolTipsVisible(true);
+
+    QActionGroup *styleAct = new QActionGroup(this);
+    connect(styleAct, &QActionGroup::triggered,
+            this, &VMainWindow::setEditorStyle);
+
+    bool found = false;
+    QVector<QString> styles = vconfig.getEditorStyles();
+    for (auto const &style : styles) {
+        QAction *act = new QAction(style, styleAct);
+        act->setToolTip(tr("Set as the editor style"));
+        act->setCheckable(true);
+        act->setData(style);
+
+        if (vconfig.getEditorStyle() == style) {
+            act->setChecked(true);
+            found = true;
+        }
+    }
+
+    if (!found && styles.isEmpty()) {
+        delete styleAct;
+        return;
+    }
+
+    styleMenu->addActions(styleAct->actions());
+}
+
 void VMainWindow::setRenderBackgroundColor(QAction *action)
 {
     if (!action) {
@@ -850,8 +883,18 @@ void VMainWindow::setRenderStyle(QAction *p_action)
     if (!p_action) {
         return;
     }
+
     vconfig.setTemplateCss(p_action->data().toString());
     vnote->updateTemplate();
+}
+
+void VMainWindow::setEditorStyle(QAction *p_action)
+{
+    if (!p_action) {
+        return;
+    }
+
+    vconfig.setEditorStyle(p_action->data().toString());
 }
 
 void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
