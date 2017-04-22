@@ -24,7 +24,6 @@
     * [Live Image Preview (实时图片预览)](#live-image-preview-实时图片预览)
     * [Pleasant Image Experience (良好的图片体验)](#pleasant-image-experience-良好的图片体验)
     * [Interactive Outline Viewer for Edit and View Mode (编辑和阅读时交互式大纲视图)](#interactive-outline-viewer-for-edit-and-view-mode-编辑和阅读时交互式大纲视图)
-    * [Edit and View Synchronization (同步编辑与阅读模式)](#edit-and-view-synchronization-同步编辑与阅读模式)
   * [Powerful Shortcuts (强大的快捷键)](#powerful-shortcuts-强大的快捷键)
   * [Window Split (窗口分割)](#window-split-窗口分割)
   * [Highly Configurable (高度可定制)](#highly-configurable-高度可定制)
@@ -131,7 +130,11 @@ VNote tries to provide the best-effort *WYSIWYG* for Markdown by utilizing prope
 ### Syntax Highlight (语法高亮)
 VNote supports accurate syntax highlight for Markdown. Tuning the style of the highlight, VNote enables you to keep track of your document easily.
 
+VNote also supports **syntax highlight for fenced code blocks** in Markdown, which is **superior** than almost all current Markdown editors.
+
 VNote支持精确的Markdown语法高亮。通过精心调试的高亮样式，VNote使得你能够轻松跟踪和阅读你的文档。
+
+VNote还支持Markdown中代码块的语法高亮。目前的Markdown编辑器中绝大部分都尚不支持该特性。
 
 ![VNote Syntax Highlight](screenshots/vnote_003.png)
 
@@ -160,25 +163,24 @@ VNote为编辑和预览模式都提供了一个用户友好的大纲视图。该
 
 ![VNote Outline Viewer](screenshots/vnote_006.png)
 
-### Edit and View Synchronization (同步编辑与阅读模式)
-Lose where you are while alternating between edit and view mode? VNote will locate to the same section after toggling edit or view mode to help keep track of where you are.
-
-切换编辑或阅读模式后，经常找不到原来的位置？在切换编辑或阅读模式后，VNote会定位到同一个小节下面，帮助你快速定位到原来所在的位置。
-
 ## Powerful Shortcuts (强大的快捷键)
-VNote supports many pleasant shortcuts which facilitate your editing.
+VNote supports many pleasant and powerful shortcuts which facilitate your editing, including **Captain Mode** and **Navigation Mode** which enable you to work without the mouse.
 
 Some Examples:
 
 - `Ctrl+W` to enter edit mode; `Ctrl+R` to save and enter read mode; `Ctrl+T` to maximize edit area;
 - `Ctrl+B`, `Ctrl+I`, `Ctrl+O` to insert bold, italic and inline-code text.
 
-VNote提供很多快捷键，从而提供一个愉悦的编辑体验。
+Please refer to the help menu for more details.
+
+VNote提供很多快捷键，从而提供一个愉悦的编辑体验。其中包括 **舰长模式** 和 **导航模式**，它们能让你完全摆脱鼠标。
 
 一些例子：
 
 - `Ctrl+W` 进入编辑模式；`Ctrl+R` 保存并进入阅读模式；`Ctrl+T` 最大化编辑区；
 - `Ctrl+B`, `Ctrl+I`, `Ctrl+O` 插入粗体、斜体和行内代码。
+
+更多细节请参考帮助文档。
 
 ## Window Split (窗口分割)
 VNote supports infinite horizontal window split, facilitating notes management and writing.
@@ -192,20 +194,20 @@ In VNote, almost everything is configurable, such as background color, font, and
 
 VNote中，几乎一切都是可以定制的，例如背景颜色、字体以及Markdown样式等。VNote使用一个纯文本文件来记录你的所有配置，因此通过拷贝该文件就能够很快地在另一台电脑上初始化一个新的VNote。
 
-![VNote Highly Configurable](screenshots/vnote_008.png)
-
 ## Others (其他)
 VNote also supports many other features, like:
 
 - Highlight current cursor line;
 - Highlight selected text;
 - Powerful search within the note;
+- Auto indent and auto list;
 
 VNote还支持其他很多的功能，比如：
 
 - 高亮当前行；
 - 高亮所选择的文本；
 - 强大的页内查找；
+- 自动缩进和自动列表；
 
 ![VNote Find](screenshots/vnote_009.png)
 
