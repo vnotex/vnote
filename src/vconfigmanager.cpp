@@ -44,6 +44,7 @@ void VConfigManager::migrateIniFile()
     QDir dir(configFolder);
     dir.cdUp();
     dir.rename(originalFolder, newFolder);
+    userSettings->sync();
 }
 
 void VConfigManager::initialize()
@@ -398,7 +399,7 @@ bool VConfigManager::outputDefaultCssStyle() const
         }
     }
 
-    QFileInfo finfo(c_defaultMdhlFile);
+    QFileInfo finfo(c_defaultCssFile);
     return VUtils::copyFile(c_defaultCssFile,
                             getStyleConfigFolder() + QDir::separator() + finfo.fileName(),
                             false);
