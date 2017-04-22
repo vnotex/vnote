@@ -99,5 +99,6 @@
         <file>resources/docs/shortcuts_en.md</file>
         <file>resources/docs/shortcuts_zh.md</file>
         <file>resources/styles/default.css</file>
+        <file>resources/icons/add_style.svg</file>
     </qresource>
 </RCC>

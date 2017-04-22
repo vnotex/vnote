@@ -773,35 +773,54 @@ void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
     }
 }
 
-void VMainWindow::initRenderStyleMenu(QMenu *p_menu)
+void VMainWindow::updateRenderStyleMenu()
 {
-    QMenu *styleMenu = p_menu->addMenu(tr("Rendering &Style"));
-    styleMenu->setToolTipsVisible(true);
+    QMenu *menu = dynamic_cast<QMenu *>(sender());
+    V_ASSERT(menu);
 
-    QActionGroup *styleAct = new QActionGroup(this);
-    connect(styleAct, &QActionGroup::triggered,
-            this, &VMainWindow::setRenderStyle);
+    QList<QAction *> actions = menu->actions();
+    // Remove all other actions except the first one.
+    for (int i = 1; i < actions.size(); ++i) {
+        menu->removeAction(actions[i]);
+        m_renderStyleActs->removeAction(actions[i]);
+        delete actions[i];
+    }
 
-    bool foundCurrentCss = false;
+    // Update the menu actions with styles.
     QVector<QString> styles = vconfig.getCssStyles();
     for (auto const &style : styles) {
-        QAction *act = new QAction(style, styleAct);
+        QAction *act = new QAction(style, m_renderStyleActs);
         act->setToolTip(tr("Set as the CSS style for Markdown rendering"));
         act->setCheckable(true);
         act->setData(style);
 
+        // Add it to the menu.
+        menu->addAction(act);
+
         if (vconfig.getTemplateCss() == style) {
             act->setChecked(true);
-            foundCurrentCss = true;
         }
     }
+}
 
-    if (!foundCurrentCss && styles.isEmpty()) {
-        delete styleAct;
-        return;
-    }
+void VMainWindow::initRenderStyleMenu(QMenu *p_menu)
+{
+    QMenu *styleMenu = p_menu->addMenu(tr("Rendering &Style"));
+    styleMenu->setToolTipsVisible(true);
+    connect(styleMenu, &QMenu::aboutToShow,
+            this, &VMainWindow::updateRenderStyleMenu);
 
-    styleMenu->addActions(styleAct->actions());
+    m_renderStyleActs = new QActionGroup(this);
+    connect(m_renderStyleActs, &QActionGroup::triggered,
+            this, &VMainWindow::setRenderStyle);
+
+    QAction *addAct = new QAction(QIcon(":/resources/icons/add_style.svg"),
+                                  tr("&Add Style"), m_renderStyleActs);
+    addAct->setToolTip(tr("Open the folder to add your custom CSS style files"));
+    addAct->setCheckable(true);
+    addAct->setData("AddStyle");
+
+    styleMenu->addAction(addAct);
 }
 
 void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
@@ -838,35 +857,54 @@ void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
     }
 }
 
-void VMainWindow::initEditorStyleMenu(QMenu *p_menu)
+void VMainWindow::updateEditorStyleMenu()
 {
-    QMenu *styleMenu = p_menu->addMenu(tr("Editor &Style"));
-    styleMenu->setToolTipsVisible(true);
+    QMenu *menu = dynamic_cast<QMenu *>(sender());
+    V_ASSERT(menu);
 
-    QActionGroup *styleAct = new QActionGroup(this);
-    connect(styleAct, &QActionGroup::triggered,
-            this, &VMainWindow::setEditorStyle);
+    QList<QAction *> actions = menu->actions();
+    // Remove all other actions except the first one.
+    for (int i = 1; i < actions.size(); ++i) {
+        menu->removeAction(actions[i]);
+        m_editorStyleActs->removeAction(actions[i]);
+        delete actions[i];
+    }
 
-    bool found = false;
+    // Update the menu actions with styles.
     QVector<QString> styles = vconfig.getEditorStyles();
     for (auto const &style : styles) {
-        QAction *act = new QAction(style, styleAct);
+        QAction *act = new QAction(style, m_editorStyleActs);
         act->setToolTip(tr("Set as the editor style"));
         act->setCheckable(true);
         act->setData(style);
 
+        // Add it to the menu.
+        menu->addAction(act);
+
         if (vconfig.getEditorStyle() == style) {
             act->setChecked(true);
-            found = true;
         }
     }
+}
 
-    if (!found && styles.isEmpty()) {
-        delete styleAct;
-        return;
-    }
+void VMainWindow::initEditorStyleMenu(QMenu *p_menu)
+{
+    QMenu *styleMenu = p_menu->addMenu(tr("Editor &Style"));
+    styleMenu->setToolTipsVisible(true);
+    connect(styleMenu, &QMenu::aboutToShow,
+            this, &VMainWindow::updateEditorStyleMenu);
 
-    styleMenu->addActions(styleAct->actions());
+    m_editorStyleActs = new QActionGroup(this);
+    connect(m_editorStyleActs, &QActionGroup::triggered,
+            this, &VMainWindow::setEditorStyle);
+
+    QAction *addAct = new QAction(QIcon(":/resources/icons/add_style.svg"),
+                                  tr("&Add Style"), m_editorStyleActs);
+    addAct->setToolTip(tr("Open the folder to add your custom MDHL style files"));
+    addAct->setCheckable(true);
+    addAct->setData("AddStyle");
+
+    styleMenu->addAction(addAct);
 }
 
 void VMainWindow::setRenderBackgroundColor(QAction *action)
@@ -884,8 +922,15 @@ void VMainWindow::setRenderStyle(QAction *p_action)
         return;
     }
 
-    vconfig.setTemplateCss(p_action->data().toString());
-    vnote->updateTemplate();
+    QString data = p_action->data().toString();
+    if (data == "AddStyle") {
+        // Add custom style.
+        QUrl url = QUrl::fromLocalFile(vconfig.getStyleConfigFolder());
+        QDesktopServices::openUrl(url);
+    } else {
+        vconfig.setTemplateCss(data);
+        vnote->updateTemplate();
+    }
 }
 
 void VMainWindow::setEditorStyle(QAction *p_action)
@@ -894,7 +939,14 @@ void VMainWindow::setEditorStyle(QAction *p_action)
         return;
     }
 
-    vconfig.setEditorStyle(p_action->data().toString());
+    QString data = p_action->data().toString();
+    if (data == "AddStyle") {
+        // Add custom style.
+        QUrl url = QUrl::fromLocalFile(vconfig.getStyleConfigFolder());
+        QDesktopServices::openUrl(url);
+    } else {
+        vconfig.setEditorStyle(data);
+    }
 }
 
 void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,

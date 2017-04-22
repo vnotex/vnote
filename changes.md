@@ -1,4 +1,10 @@
 # Changes History
+## v1.3
+- Support code block syntax highlight in edit mode;
+- A more pleasant AutoIndent and AutoList;
+- `Ctrl+<Num>` instead of `Ctrl+Alt+<Num>` to insert title;
+- Support custom Markdown CSS styles and editor styles;
+
 ## v1.2
 - Support **MathJax**.
 - Fix a crash on macOS.

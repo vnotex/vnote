@@ -54,6 +54,8 @@ private slots:
     void setRenderBackgroundColor(QAction *action);
     void setRenderStyle(QAction *p_action);
     void setEditorStyle(QAction *p_action);
+    void updateRenderStyleMenu();
+    void updateEditorStyleMenu();
     void changeHighlightCursorLine(bool p_checked);
     void changeHighlightSelectedWord(bool p_checked);
     void changeHighlightSearchedWord(bool p_checked);
@@ -157,6 +159,9 @@ private:
     QAction *m_replaceAllAct;
 
     QAction *m_autoIndentAct;
+
+    QActionGroup *m_renderStyleActs;
+    QActionGroup *m_editorStyleActs;
 
     // Menus
     QMenu *viewMenu;

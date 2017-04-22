@@ -970,12 +970,28 @@
         <translation>使用该背景色对Markdown进行渲染</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="843"/>
+        <location filename="../vmainwindow.cpp" line="818"/>
+        <location filename="../vmainwindow.cpp" line="902"/>
+        <source>&amp;Add Style</source>
+        <translation>添加样式 (&amp;A)</translation>
+    </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="819"/>
+        <source>Open the folder to add your custom CSS style files</source>
+        <translation>打开样式文件夹以添加自定义CSS样式文件</translation>
+    </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="892"/>
         <source>Editor &amp;Style</source>
         <translation>编辑器样式 (&amp;S)</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="854"/>
+        <location filename="../vmainwindow.cpp" line="903"/>
+        <source>Open the folder to add your custom MDHL style files</source>
+        <translation>打开样式文件夹以添加自定义MDHL样式文件</translation>
+    </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="877"/>
         <source>Set as the editor style</source>
         <translation>使用该样式设置编辑器</translation>
     </message>
@@ -1131,32 +1147,32 @@
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="752"/>
-        <location filename="../vmainwindow.cpp" line="818"/>
+        <location filename="../vmainwindow.cpp" line="837"/>
         <source>System</source>
         <translation>默认</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="778"/>
+        <location filename="../vmainwindow.cpp" line="808"/>
         <source>Rendering &amp;Style</source>
         <translation>渲染样式 (&amp;S)</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="789"/>
+        <location filename="../vmainwindow.cpp" line="793"/>
         <source>Set as the CSS style for Markdown rendering</source>
         <translation>使用该CSS样式对Markdown进行渲染</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="809"/>
+        <location filename="../vmainwindow.cpp" line="828"/>
         <source>&amp;Background Color</source>
         <translation>背景颜色 (&amp;B)</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="819"/>
+        <location filename="../vmainwindow.cpp" line="838"/>
         <source>Use system&apos;s background color configuration for editor</source>
         <translation>为编辑器使用系统的背景色设置</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="829"/>
+        <location filename="../vmainwindow.cpp" line="848"/>
         <source>Set as the background color for editor</source>
         <translation>使用该背景色设置编辑器</translation>
     </message>
