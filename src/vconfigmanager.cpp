@@ -436,10 +436,15 @@ bool VConfigManager::outputDefaultEditorStyle() const
     return true;
 }
 
+// The URL will be used in the Web page.
 QString VConfigManager::getTemplateCssUrl()
 {
-    QString cssPath = getStyleConfigFolder() + QDir::separator() + m_templateCss + ".css";
-    if (!QFile::exists(cssPath)) {
+    QString cssPath = getStyleConfigFolder() +
+                      QDir::separator() +
+                      m_templateCss + ".css";
+    QUrl cssUrl = QUrl::fromLocalFile(cssPath);
+    cssPath = cssUrl.toString();
+    if (!QFile::exists(cssUrl.toLocalFile())) {
         // Specified css not exists.
         if (m_templateCss == "default") {
             bool ret = outputDefaultCssStyle();

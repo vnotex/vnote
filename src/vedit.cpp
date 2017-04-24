@@ -509,37 +509,39 @@ void VEdit::contextMenuEvent(QContextMenuEvent *p_event)
 
     const QList<QAction *> actions = menu->actions();
 
-    VEditTab *editTab = dynamic_cast<VEditTab *>(parent());
-    V_ASSERT(editTab);
-    if (editTab->getIsEditMode()) {
-        QAction *saveExitAct = new QAction(QIcon(":/resources/icons/save_exit.svg"),
-                                           tr("&Save Changes And Read"), this);
-        saveExitAct->setToolTip(tr("Save changes and exit edit mode"));
-        connect(saveExitAct, &QAction::triggered,
-                this, &VEdit::handleSaveExitAct);
+    if (!textCursor().hasSelection()) {
+        VEditTab *editTab = dynamic_cast<VEditTab *>(parent());
+        V_ASSERT(editTab);
+        if (editTab->getIsEditMode()) {
+            QAction *saveExitAct = new QAction(QIcon(":/resources/icons/save_exit.svg"),
+                                               tr("&Save Changes And Read"), this);
+            saveExitAct->setToolTip(tr("Save changes and exit edit mode"));
+            connect(saveExitAct, &QAction::triggered,
+                    this, &VEdit::handleSaveExitAct);
 
-        QAction *discardExitAct = new QAction(QIcon(":/resources/icons/discard_exit.svg"),
-                                              tr("&Discard Changes And Read"), this);
-        discardExitAct->setToolTip(tr("Discard changes and exit edit mode"));
-        connect(discardExitAct, &QAction::triggered,
-                this, &VEdit::handleDiscardExitAct);
+            QAction *discardExitAct = new QAction(QIcon(":/resources/icons/discard_exit.svg"),
+                                                  tr("&Discard Changes And Read"), this);
+            discardExitAct->setToolTip(tr("Discard changes and exit edit mode"));
+            connect(discardExitAct, &QAction::triggered,
+                    this, &VEdit::handleDiscardExitAct);
 
-        menu->insertAction(actions.isEmpty() ? NULL : actions[0], discardExitAct);
-        menu->insertAction(discardExitAct, saveExitAct);
-        if (!actions.isEmpty()) {
-            menu->insertSeparator(actions[0]);
-        }
-    } else if (m_file->isModifiable()) {
-        // HTML.
-        QAction *editAct= new QAction(QIcon(":/resources/icons/edit_note.svg"),
-                                      tr("&Edit"), this);
-        editAct->setToolTip(tr("Edit current note"));
-        connect(editAct, &QAction::triggered,
-                this, &VEdit::handleEditAct);
-        menu->insertAction(actions.isEmpty() ? NULL : actions[0], editAct);
-        // actions does not contain editAction.
-        if (!actions.isEmpty()) {
-            menu->insertSeparator(actions[0]);
+            menu->insertAction(actions.isEmpty() ? NULL : actions[0], discardExitAct);
+            menu->insertAction(discardExitAct, saveExitAct);
+            if (!actions.isEmpty()) {
+                menu->insertSeparator(actions[0]);
+            }
+        } else if (m_file->isModifiable()) {
+            // HTML.
+            QAction *editAct= new QAction(QIcon(":/resources/icons/edit_note.svg"),
+                                          tr("&Edit"), this);
+            editAct->setToolTip(tr("Edit current note"));
+            connect(editAct, &QAction::triggered,
+                    this, &VEdit::handleEditAct);
+            menu->insertAction(actions.isEmpty() ? NULL : actions[0], editAct);
+            // actions does not contain editAction.
+            if (!actions.isEmpty()) {
+                menu->insertSeparator(actions[0]);
+            }
         }
     }
 

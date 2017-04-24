@@ -35,10 +35,10 @@ public:
     inline const VDirectory *currentDirectory() const;
 
     // Implementations for VNavigationMode.
-    void registerNavigation(QChar p_majorKey);
-    void showNavigation();
-    void hideNavigation();
-    bool handleKeyNavigation(int p_key, bool &p_succeed);
+    void registerNavigation(QChar p_majorKey) Q_DECL_OVERRIDE;
+    void showNavigation() Q_DECL_OVERRIDE;
+    void hideNavigation() Q_DECL_OVERRIDE;
+    bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE;
 
 signals:
     void fileClicked(VFile *p_file, OpenFileMode mode = OpenFileMode::Read);
