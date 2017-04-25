@@ -178,6 +178,10 @@ private:
     bool outputDefaultCssStyle() const;
     bool outputDefaultEditorStyle() const;
 
+    // See if the old c_obsoleteDirConfigFile exists. If so, rename it to
+    // the new one; if not, use the c_dirConfigFile.
+    static QString fetchDirConfigFilePath(const QString &p_path);
+
     int m_editorFontSize;
     QFont baseEditFont;
     QPalette baseEditPalette;
@@ -251,8 +255,13 @@ private:
     // Enable colde block syntax highlight.
     bool m_enableCodeBlockHighlight;
 
-    // The name of the config file in each directory
-    static const QString dirConfigFileName;
+    // The name of the config file in each directory, obsolete.
+    // Use c_dirConfigFile instead.
+    static const QString c_obsoleteDirConfigFile;
+
+    // The name of the config file in each directory.
+    static const QString c_dirConfigFile;
+
     // The name of the default configuration file
     static const QString defaultConfigFilePath;
     // QSettings for the user configuration

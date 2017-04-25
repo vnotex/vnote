@@ -13,7 +13,8 @@
 const QString VConfigManager::orgName = QString("vnote");
 const QString VConfigManager::appName = QString("vnote");
 const QString VConfigManager::c_version = QString("1.3");
-const QString VConfigManager::dirConfigFileName = QString(".vnote.json");
+const QString VConfigManager::c_obsoleteDirConfigFile = QString(".vnote.json");
+const QString VConfigManager::c_dirConfigFile = QString("_vnote.json");
 const QString VConfigManager::defaultConfigFilePath = QString(":/resources/vnote.ini");
 const QString VConfigManager::c_styleConfigFolder = QString("styles");
 const QString VConfigManager::c_defaultCssFile = QString(":/resources/styles/default.css");
@@ -195,11 +196,27 @@ void VConfigManager::setConfigToSettings(const QString &section, const QString &
     qDebug() << "set user config:" << fullKey << value.toString();
 }
 
+QString VConfigManager::fetchDirConfigFilePath(const QString &p_path)
+{
+    QDir dir(p_path);
+    QString fileName = c_dirConfigFile;
+
+    if (dir.exists(c_obsoleteDirConfigFile)) {
+        V_ASSERT(!dir.exists(c_dirConfigFile));
+        if (!dir.rename(c_obsoleteDirConfigFile, c_dirConfigFile)) {
+            fileName = c_obsoleteDirConfigFile;
+        }
+        qDebug() << "rename old directory config file:" << fileName;
+    }
+
+    qDebug() << "use directory config file:" << fileName;
+    return dir.filePath(fileName);
+}
+
 QJsonObject VConfigManager::readDirectoryConfig(const QString &path)
 {
-    QString configFile = QDir(path).filePath(dirConfigFileName);
+    QString configFile = fetchDirConfigFilePath(path);
 
-    qDebug() << "read config file:" << configFile;
     QFile config(configFile);
     if (!config.open(QIODevice::ReadOnly)) {
         qWarning() << "fail to read directory configuration file:"
@@ -213,16 +230,15 @@ QJsonObject VConfigManager::readDirectoryConfig(const QString &path)
 
 bool VConfigManager::directoryConfigExist(const QString &path)
 {
-     QString configFile = QDir(path).filePath(dirConfigFileName);
+     QString configFile = fetchDirConfigFilePath(path);
      QFile config(configFile);
      return config.exists();
 }
 
 bool VConfigManager::writeDirectoryConfig(const QString &path, const QJsonObject &configJson)
 {
-    QString configFile = QDir(path).filePath(dirConfigFileName);
+    QString configFile = fetchDirConfigFilePath(path);
 
-    qDebug() << "write config file:" << configFile;
     QFile config(configFile);
     if (!config.open(QIODevice::WriteOnly)) {
         qWarning() << "fail to open directory configuration file for write:"
@@ -237,7 +253,7 @@ bool VConfigManager::writeDirectoryConfig(const QString &path, const QJsonObject
 
 bool VConfigManager::deleteDirectoryConfig(const QString &path)
 {
-    QString configFile = QDir(path).filePath(dirConfigFileName);
+    QString configFile = fetchDirConfigFilePath(path);
 
     QFile config(configFile);
     if (!config.remove()) {
@@ -245,6 +261,7 @@ bool VConfigManager::deleteDirectoryConfig(const QString &path)
                    << configFile;
         return false;
     }
+
     qDebug() << "delete config file:" << configFile;
     return true;
 }
