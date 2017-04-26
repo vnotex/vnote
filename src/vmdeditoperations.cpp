@@ -389,9 +389,15 @@ bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)
         } else {
             // If it is a Tab key following auto list, increase the indent level.
             QTextBlock block = cursor.block();
-            if (m_autoIndentPos == cursor.position() && isListBlock(block)) {
+            int seq = -1;
+            if (m_autoIndentPos == cursor.position() && isListBlock(block, &seq)) {
                 QTextCursor blockCursor(block);
+                blockCursor.beginEditBlock();
                 blockCursor.insertText(text);
+                if (seq != -1) {
+                    changeListBlockSeqNumber(block, 1);
+                }
+                blockCursor.endEditBlock();
                 // Change m_autoIndentPos to let it can be repeated.
                 m_autoIndentPos = m_editor->textCursor().position();
             } else {
@@ -420,12 +426,17 @@ bool VMdEditOperations::handleKeyBackTab(QKeyEvent *p_event)
     QTextBlock endBlock = doc->findBlock(cursor.selectionEnd());
 
     bool continueAutoIndent = false;
-    if (cursor.position() == m_autoIndentPos && isListBlock(block) &&
+    int seq = -1;
+    if (cursor.position() == m_autoIndentPos && isListBlock(block, &seq) &&
         !cursor.hasSelection()) {
         continueAutoIndent = true;
     }
     int endBlockNum = endBlock.blockNumber();
     cursor.beginEditBlock();
+    if (continueAutoIndent && seq != -1) {
+        changeListBlockSeqNumber(block, 1);
+    }
+
     for (; block.isValid() && block.blockNumber() <= endBlockNum;
          block = block.next()) {
         QTextCursor blockCursor(block);
@@ -797,12 +808,67 @@ bool VMdEditOperations::insertListMarkAsPreviousLine()
     return ret;
 }
 
-bool VMdEditOperations::isListBlock(const QTextBlock &p_block)
+bool VMdEditOperations::isListBlock(const QTextBlock &p_block, int *p_seq)
 {
     QString text = p_block.text();
     QRegExp regExp("^\\s*(-|\\d+\\.)\\s");
+
+    if (p_seq) {
+        *p_seq = -1;
+    }
+
     int regIdx = regExp.indexIn(text);
-    return regIdx != -1;
+    if (regIdx == -1) {
+        return false;
+    }
+
+    V_ASSERT(regExp.captureCount() == 1);
+    QString markText = regExp.capturedTexts()[1];
+    if (markText != "-") {
+        V_ASSERT(markText.endsWith('.'));
+        bool ok = false;
+        int num = markText.left(markText.size() - 1).toInt(&ok, 10);
+        V_ASSERT(ok);
+        if (p_seq) {
+            *p_seq = num;
+        }
+    }
+
+    return true;
+}
+
+void VMdEditOperations::changeListBlockSeqNumber(QTextBlock &p_block, int p_seq)
+{
+    QString text = p_block.text();
+    QRegExp regExp("^(\\s*)(\\d+)\\.\\s");
+
+    int idx = regExp.indexIn(text);
+    if (idx == -1 || regExp.captureCount() != 2) {
+        return;
+    }
+
+    int oriSeq = -1;
+    bool ok = false;
+    oriSeq = regExp.capturedTexts()[2].toInt(&ok);
+    if (ok && oriSeq == p_seq) {
+        return;
+    }
+
+    QTextCursor cursor(p_block);
+    bool ret = cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor,
+                                   regExp.capturedTexts()[1].size());
+    if (!ret) {
+        return;
+    }
+
+    ret = cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor,
+                              regExp.capturedTexts()[2].size());
+    if (!ret) {
+        return;
+    }
+
+    cursor.removeSelectedText();
+    cursor.insertText(QString::number(p_seq));
 }
 
 bool VMdEditOperations::isSpaceToBlockStart(const QTextBlock &p_block, int p_posInBlock)
