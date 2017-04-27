@@ -8,7 +8,9 @@
 #include "veditarea.h"
 #include "utils/vutils.h"
 #include "vfile.h"
+#include "vconfigmanager.h"
 
+extern VConfigManager vconfig;
 extern VNote *g_vnote;
 
 VFileList::VFileList(QWidget *parent)
@@ -175,8 +177,9 @@ void VFileList::newFile()
     if (!m_directory) {
         return;
     }
-    QString info = tr("Create a note in %1.").arg(m_directory->getName());
-    info = info + "\n" + tr("Note with name ending with \".md\" will be treated as Markdown type.");
+    QString info = tr("Create a note in <span style=\"%1\">%2</span>.")
+                     .arg(vconfig.c_dataTextStyle).arg(m_directory->getName());
+    info = info + "<br>" + tr("Note with name ending with \".md\" will be treated as Markdown type.");
     QString text(tr("Note &name:"));
     QString defaultText("new_note.md");
     do {
@@ -191,7 +194,8 @@ void VFileList::newFile()
             VFile *file = m_directory->createFile(name);
             if (!file) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    tr("Fail to create note %1.").arg(name), "",
+                                    tr("Fail to create note <span style=\"%1\">%2</span>.")
+                                      .arg(vconfig.c_dataTextStyle).arg(name), "",
                                     QMessageBox::Ok, QMessageBox::Ok, this);
                 return;
             }
@@ -248,10 +252,13 @@ void VFileList::deleteFile(VFile *p_file)
     VDirectory *dir = p_file->getDirectory();
     QString fileName = p_file->getName();
     int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                  tr("Are you sure to delete note %1?").arg(fileName),
-                                  tr("This may be unrecoverable!"),
+                                  tr("Are you sure to delete note <span style=\"%1\">%2</span>?")
+                                    .arg(vconfig.c_dataTextStyle).arg(fileName),
+                                  tr("<span style=\"%1\">WARNING</span>: The files (including images) "
+                                     "deleted may be UNRECOVERABLE!")
+                                    .arg(vconfig.c_warningTextStyle),
                                   QMessageBox::Ok | QMessageBox::Cancel,
-                                  QMessageBox::Ok, this);
+                                  QMessageBox::Ok, this, MessageBoxType::Danger);
     if (ret == QMessageBox::Ok) {
         editArea->closeFile(p_file, true);
 
@@ -417,7 +424,8 @@ void VFileList::pasteFiles(VDirectory *p_destDir)
             nrPasted++;
         } else {
             VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                tr("Fail to copy note %1.").arg(srcFile->getName()),
+                                tr("Fail to copy note <span style=\"%1\">%2</span>.")
+                                  .arg(vconfig.c_dataTextStyle).arg(srcFile->getName()),
                                 tr("Please check if there already exists a file with the same name in the target directory."),
                                 QMessageBox::Ok, QMessageBox::Ok, this);
         }
@@ -442,7 +450,8 @@ bool VFileList::copyFile(VDirectory *p_destDir, const QString &p_destName, VFile
         if (editArea->isFileOpened(p_file)) {
             int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                           tr("The renaming will change the note type."),
-                                          tr("You should close the note %1 before continue.").arg(p_file->getName()),
+                                          tr("You should close the note <span style=\"%1\">%2</span> before continue.")
+                                            .arg(vconfig.c_dataTextStyle).arg(p_file->getName()),
                                           QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Ok, this);
             if (QMessageBox::Ok == ret) {
                 if (!editArea->closeFile(p_file, false)) {

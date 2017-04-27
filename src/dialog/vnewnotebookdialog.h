@@ -23,6 +23,7 @@ public:
 private slots:
     void enableOkButton();
     void handleBrowseBtnClicked();
+    void handlePathChanged(const QString &p_text);
 
 protected:
     void showEvent(QShowEvent *event) Q_DECL_OVERRIDE;
@@ -37,6 +38,7 @@ private:
     QCheckBox *importCheck;
     QPushButton *browseBtn;
     QDialogButtonBox *m_btnBox;
+    QLabel *m_warnLabel;
 
     QString title;
     QString info;

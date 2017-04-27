@@ -7,7 +7,9 @@
 #include "vdirectory.h"
 #include "utils/vutils.h"
 #include "veditarea.h"
+#include "vconfigmanager.h"
 
+extern VConfigManager vconfig;
 extern VNote *g_vnote;
 
 VDirectoryTree::VDirectoryTree(VNote *vnote, QWidget *parent)
@@ -95,7 +97,8 @@ void VDirectoryTree::setNotebook(VNotebook *p_notebook)
     }
     if (!m_notebook->open()) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                            tr("Fail to open notebook %1.").arg(m_notebook->getName()), "",
+                            tr("Fail to open notebook <span style=\"%1\">%2</span>.")
+                              .arg(vconfig.c_dataTextStyle).arg(m_notebook->getName()), "",
                             QMessageBox::Ok, QMessageBox::Ok, this);
         clear();
         return;
@@ -138,7 +141,8 @@ void VDirectoryTree::updateDirectoryTreeOne(QTreeWidgetItem *p_parent, int depth
     VDirectory *dir = getVDirectory(p_parent);
     if (!dir->open()) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                            tr("Fail to open directory %1.").arg(dir->getName()), "",
+                            tr("Fail to open directory <span style=\"%1\">%2</span>.")
+                              .arg(vconfig.c_dataTextStyle).arg(dir->getName()), "",
                             QMessageBox::Ok, QMessageBox::Ok, this);
         return;
     }
@@ -300,7 +304,8 @@ void VDirectoryTree::newSubDirectory()
     }
     VDirectory *curDir = getVDirectory(curItem);
 
-    QString info = tr("Create sub-directory under %1.").arg(curDir->getName());
+    QString info = tr("Create sub-directory under <span style=\"%1\">%2</span>.")
+                     .arg(vconfig.c_dataTextStyle).arg(curDir->getName());
     QString text(tr("Directory &name:"));
     QString defaultText("new_directory");
 
@@ -309,14 +314,16 @@ void VDirectoryTree::newSubDirectory()
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
             if (curDir->findSubDirectory(name)) {
-                info = tr("Name already exists under %1. Please choose another name.").arg(curDir->getName());
+                info = tr("Name already exists under <span style=\"%1\">%2</span>. Please choose another name.")
+                         .arg(vconfig.c_dataTextStyle).arg(curDir->getName());
                 defaultText = name;
                 continue;
             }
             VDirectory *subDir = curDir->createSubDirectory(name);
             if (!subDir) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    tr("Fail to create directory %1.").arg(name), "",
+                                    tr("Fail to create directory <span style=\"%1\">%2</span>.")
+                                      .arg(vconfig.c_dataTextStyle).arg(name), "",
                                     QMessageBox::Ok, QMessageBox::Ok, this);
                 return;
             }
@@ -332,7 +339,8 @@ void VDirectoryTree::newRootDirectory()
     if (!m_notebook) {
         return;
     }
-    QString info = tr("Create root directory in notebook %1.").arg(m_notebook->getName());
+    QString info = tr("Create root directory in notebook <span style=\"%1\">%2</span>.")
+                     .arg(vconfig.c_dataTextStyle).arg(m_notebook->getName());
     QString text(tr("Directory &name:"));
     QString defaultText("new_directory");
     VDirectory *rootDir = m_notebook->getRootDir();
@@ -341,14 +349,16 @@ void VDirectoryTree::newRootDirectory()
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
             if (rootDir->findSubDirectory(name)) {
-                info = tr("Name already exists in notebook %1. Please choose another name.").arg(m_notebook->getName());
+                info = tr("Name already exists in notebook <span style=\"%1\">%2</span>. Please choose another name.")
+                         .arg(vconfig.c_dataTextStyle).arg(m_notebook->getName());
                 defaultText = name;
                 continue;
             }
             VDirectory *subDir = rootDir->createSubDirectory(name);
             if (!subDir) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    tr("Fail to create directory %1.").arg(name), "",
+                                    tr("Fail to create directory <span style=\"%1\">%2</span>.")
+                                      .arg(vconfig.c_dataTextStyle).arg(name), "",
                                     QMessageBox::Ok, QMessageBox::Ok, this);
                 return;
             }
@@ -367,9 +377,15 @@ void VDirectoryTree::deleteDirectory()
     }
     VDirectory *curDir = getVDirectory(curItem);
     int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                  tr("Are you sure to delete directory %1?").arg(curDir->getName()),
-                                  tr("This will delete any files under this directory."), QMessageBox::Ok | QMessageBox::Cancel,
-                                  QMessageBox::Ok, this);
+                                  tr("Are you sure to delete directory <span style=\"%1\">%2</span>?")
+                                    .arg(vconfig.c_dataTextStyle).arg(curDir->getName()),
+                                  tr("<span style=\"%1\">WARNING</span>: "
+                                     "VNote will delete the whole directory (<b>ANY</b> files) "
+                                     "<span style=\"%2\">%3</span>."
+                                     "<br>It may be UNRECOVERABLE!")
+                                    .arg(vconfig.c_warningTextStyle).arg(vconfig.c_dataTextStyle).arg(curDir->retrivePath()),
+                                  QMessageBox::Ok | QMessageBox::Cancel,
+                                  QMessageBox::Ok, this, MessageBoxType::Danger);
     if (ret == QMessageBox::Ok) {
         m_editArea->closeFile(curDir, true);
         VDirectory *parentDir = curDir->getParentDirectory();
@@ -415,7 +431,8 @@ void VDirectoryTree::editDirectoryInfo()
             }
             if (!curDir->rename(name)) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    tr("Fail to rename directory %1.").arg(curName), "",
+                                    tr("Fail to rename directory <span style=\"%1\">%2</span>.")
+                                      .arg(vconfig.c_dataTextStyle).arg(curName), "",
                                     QMessageBox::Ok, QMessageBox::Ok, this);
                 return;
             }
@@ -593,7 +610,8 @@ bool VDirectoryTree::copyDirectory(VDirectory *p_destDir, const QString &p_destN
         emit directoryUpdated(destDir);
     } else {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                            tr("Fail to copy directory %1.").arg(srcName),
+                            tr("Fail to copy directory <span style=\"%1\">%2</span>.")
+                              .arg(vconfig.c_dataTextStyle).arg(srcName),
                             tr("Please check if there already exists a directory with the same name."),
                             QMessageBox::Ok, QMessageBox::Ok, this);
     }

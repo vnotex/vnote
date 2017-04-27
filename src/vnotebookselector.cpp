@@ -160,7 +160,10 @@ void VNotebookSelector::update()
 
 bool VNotebookSelector::newNotebook()
 {
-    QString info;
+    QString info(tr("Please type the name of the notebook and "
+                    "choose an existing directory as Root Folder of the notebook.\n"
+                    "The root folder should be used EXCLUSIVELY by VNote and "
+                    "it is recommended to be EMPTY."));
     QString defaultName("new_notebook");
     QString defaultPath;
 

@@ -634,7 +634,7 @@ void VMainWindow::importNoteFromFile()
 {
     static QString lastPath = QDir::homePath();
     QStringList files = QFileDialog::getOpenFileNames(this,
-                                                      tr("Select Files(HTML or Markdown) To Import"),
+                                                      tr("Select Files (HTML or Markdown) To Import"),
                                                       lastPath);
     if (files.isEmpty()) {
         return;

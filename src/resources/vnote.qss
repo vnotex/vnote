@@ -63,6 +63,18 @@ QPushButton[TitleBtn="true"]::focus {
     background-color: @focus-color;
 }
 
+QPushButton[DangerBtn="true"] {
+    color: #fff;
+    border-color: #d43f3a;
+    background-color: #d9534f;
+}
+
+QPushButton[DangerBtn="true"]::hover {
+    color: #fff;
+    border-color: #ac2925;
+    background-color: #c9302c;
+}
+
 QToolBar {
     border: none;
 }

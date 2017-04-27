@@ -16,6 +16,12 @@ class QKeyEvent;
     #define V_ASSERT(cond) ((!(cond)) ? qt_assert(#cond, __FILE__, __LINE__) : qt_noop())
 #endif
 
+enum class MessageBoxType
+{
+    Normal = 0,
+    Danger = 1
+};
+
 class VUtils
 {
 public:
@@ -41,7 +47,8 @@ public:
     static bool copyDirectory(const QString &p_srcDirPath, const QString &p_destDirPath, bool p_isCut);
     static int showMessage(QMessageBox::Icon p_icon, const QString &p_title, const QString &p_text,
                            const QString &p_infoText, QMessageBox::StandardButtons p_buttons,
-                           QMessageBox::StandardButton p_defaultBtn, QWidget *p_parent);
+                           QMessageBox::StandardButton p_defaultBtn, QWidget *p_parent,
+                           MessageBoxType p_type = MessageBoxType::Normal);
     static const QVector<QPair<QString, QString> > &getAvailableLanguages();
     static bool isValidLanguage(const QString &p_lang);
     static bool isImageURL(const QUrl &p_url);

@@ -21,6 +21,10 @@ const QString VConfigManager::c_defaultCssFile = QString(":/resources/styles/def
 const QString VConfigManager::c_defaultMdhlFile = QString(":/resources/styles/default.mdhl");
 const QString VConfigManager::c_solarizedDarkMdhlFile = QString(":/resources/styles/solarized-dark.mdhl");
 const QString VConfigManager::c_solarizedLightMdhlFile = QString(":/resources/styles/solarized-light.mdhl");
+const QString VConfigManager::c_warningTextStyle = QString("color: red; font: bold");
+const QString VConfigManager::c_dataTextStyle = QString("font: bold");
+const QString VConfigManager::c_dangerBtnStyle = QString("QPushButton {color: #fff; border-color: #d43f3a; background-color: #d9534f;}"
+                                                         "QPushButton::hover {color: #fff; border-color: #ac2925; background-color: #c9302c;}");
 
 VConfigManager::VConfigManager()
     : userSettings(NULL), defaultSettings(NULL)

@@ -44,6 +44,15 @@ public:
     static const QString appName;
     static const QString c_version;
 
+    // CSS style for Warning texts.
+    static const QString c_warningTextStyle;
+
+    // CSS style for data in label.
+    static const QString c_dataTextStyle;
+
+    // QStylesheet for danger button. Should keep identical with DangerBtn in QSS.
+    static const QString c_dangerBtnStyle;
+
     inline QFont getMdEditFont() const;
 
     inline QPalette getMdEditPalette() const;
