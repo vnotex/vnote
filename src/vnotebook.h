@@ -28,7 +28,7 @@ public:
 
     static VNotebook *createNotebook(const QString &p_name, const QString &p_path, bool p_import,
                                      QObject *p_parent = 0);
-    static void deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles);
+    static bool deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles);
 
 signals:
     void contentChanged();

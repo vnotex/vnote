@@ -7,6 +7,8 @@
 #include <QGuiApplication>
 #include <QScreen>
 #include <QLabel>
+#include <QDesktopServices>
+#include <QUrl>
 #include "vnotebook.h"
 #include "vconfigmanager.h"
 #include "dialog/vnewnotebookdialog.h"
@@ -230,6 +232,8 @@ void VNotebookSelector::deleteNotebook()
 
 void VNotebookSelector::deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles)
 {
+    V_ASSERT(p_notebook);
+
     int idx = indexOfNotebook(p_notebook);
 
     m_notebooks.remove(idx);
@@ -237,7 +241,24 @@ void VNotebookSelector::deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles
 
     removeNotebookItem(idx);
 
-    VNotebook::deleteNotebook(p_notebook, p_deleteFiles);
+    QString name(p_notebook->getName());
+    QString path(p_notebook->getPath());
+    bool ret = VNotebook::deleteNotebook(p_notebook, p_deleteFiles);
+    if (!ret) {
+        // Notebook could not be deleted completely.
+        int cho = VUtils::showMessage(QMessageBox::Information, tr("Delete Notebook Folder From Disk"),
+                                      tr("Fail to delete the root folder of notebook "
+                                         "<span style=\"%1\">%2</span> from disk. You may open "
+                                         "the directory and check it manually.")
+                                        .arg(vconfig.c_dataTextStyle).arg(name), "",
+                                      QMessageBox::Open | QMessageBox::Ok,
+                                      QMessageBox::Ok, this);
+        if (cho == QMessageBox::Open) {
+            // Open the notebook location.
+            QUrl url = QUrl::fromLocalFile(path);
+            QDesktopServices::openUrl(url);
+        }
+    }
 }
 
 int VNotebookSelector::indexOfNotebook(const VNotebook *p_notebook)

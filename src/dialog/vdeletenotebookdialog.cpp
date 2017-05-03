@@ -111,7 +111,8 @@ void VDeleteNotebookDialog::notDeleteCheckChanged(int p_state)
                                   .arg(vconfig.c_dataTextStyle).arg(m_path));
     } else {
         m_warningLabel->setText(tr("<span style=\"%1\">WARNING</span>: "
-                                   "VNote will delete <b>ANY</b> files under directory <span style=\"%2\">%3</span>! "
+                                   "VNote may delete <b>ANY</b> files under directory <span style=\"%2\">%3</span>! "
+                                   "VNote will try to delete all the root directories within this notebook one by one. "
                                    "It may be UNRECOVERABLE!")
                                   .arg(vconfig.c_warningTextStyle).arg(vconfig.c_dataTextStyle).arg(m_path));
     }

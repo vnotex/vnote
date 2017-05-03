@@ -60,22 +60,48 @@ VNotebook *VNotebook::createNotebook(const QString &p_name, const QString &p_pat
     return nb;
 }
 
-void VNotebook::deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles)
+bool VNotebook::deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles)
 {
-    if (!p_notebook) {
-        return;
-    }
-    QString path = p_notebook->getPath();
+    bool ret = true;
 
+    if (!p_notebook) {
+        return true;
+    }
+
+    if (p_deleteFiles) {
+        if (!p_notebook->open()) {
+            qWarning() << "fail to open notebook" << p_notebook->getName()
+                       << "to delete";
+            ret = false;
+            goto exit;
+        }
+
+        VDirectory *rootDir = p_notebook->getRootDir();
+        QVector<VDirectory *> subdirs = rootDir->getSubDirs();
+        for (auto dir : subdirs) {
+            rootDir->deleteSubDirectory(dir);
+        }
+
+        // Delete the config file.
+        if (!VConfigManager::deleteDirectoryConfig(p_notebook->getPath())) {
+            ret = false;
+            goto exit;
+        }
+
+        // If it is now an empty directory, delete it.
+        QDir dir(p_notebook->getPath());
+        dir.cdUp();
+        if (!dir.rmdir(rootDir->getName())) {
+            qWarning() << "fail to delete notebook root directory" << rootDir->getName();
+            ret = false;
+        }
+    }
+
+exit:
     p_notebook->close();
     delete p_notebook;
 
-    if (p_deleteFiles) {
-        QDir dir(path);
-        if (!dir.removeRecursively()) {
-            qWarning() << "fail to delete" << path;
-        }
-    }
+    return ret;
 }
 
 void VNotebook::rename(const QString &p_name)
