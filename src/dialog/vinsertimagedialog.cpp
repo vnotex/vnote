@@ -65,6 +65,8 @@ void VInsertImageDialog::setupUI()
     setLayout(mainLayout);
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     setWindowTitle(title);
+
+    imageTitleEdit->setFocus();
 }
 
 void VInsertImageDialog::enableOkButton()

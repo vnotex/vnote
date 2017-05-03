@@ -137,11 +137,13 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
     }
     if (dialog.exec() == QDialog::Accepted) {
         if (isLocal) {
-            insertImageFromPath(dialog.getImageTitleInput(), m_file->retriveImagePath(),
+            insertImageFromPath(dialog.getImageTitleInput(),
+                                m_file->retriveImagePath(),
                                 imagePath);
         } else {
-            insertImageFromQImage(dialog.getImageTitleInput(), m_file->retriveImagePath(),
-                                dialog.getImage());
+            insertImageFromQImage(dialog.getImageTitleInput(),
+                                  m_file->retriveImagePath(),
+                                  dialog.getImage());
         }
     }
     return true;
