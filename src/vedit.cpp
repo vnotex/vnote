@@ -563,3 +563,9 @@ void VEdit::handleEditAct()
 {
     emit editNote();
 }
+
+VFile *VEdit::getFile() const
+{
+    return m_file;
+}
+

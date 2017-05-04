@@ -157,6 +157,9 @@ public:
     inline bool getEnableCodeBlockHighlight() const;
     inline void setEnableCodeBlockHighlight(bool p_enabled);
 
+    inline bool getEnablePreviewImages() const;
+    inline void setEnablePreviewImages(bool p_enabled);
+
     // Get the folder the ini file exists.
     QString getConfigFolder() const;
 
@@ -263,6 +266,9 @@ private:
 
     // Enable colde block syntax highlight.
     bool m_enableCodeBlockHighlight;
+
+    // Preview images in edit mode.
+    bool m_enablePreviewImages;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -687,6 +693,22 @@ inline void VConfigManager::setEnableCodeBlockHighlight(bool p_enabled)
     m_enableCodeBlockHighlight = p_enabled;
     setConfigToSettings("global", "enable_code_block_highlight",
                         m_enableCodeBlockHighlight);
+}
+
+inline bool VConfigManager::getEnablePreviewImages() const
+{
+    return m_enablePreviewImages;
+}
+
+inline void VConfigManager::setEnablePreviewImages(bool p_enabled)
+{
+    if (m_enablePreviewImages == p_enabled) {
+        return;
+    }
+
+    m_enablePreviewImages = p_enabled;
+    setConfigToSettings("global", "enable_preview_images",
+                        m_enablePreviewImages);
 }
 
 #endif // VCONFIGMANAGER_H

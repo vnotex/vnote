@@ -151,39 +151,8 @@ void HGMarkdownHighlighter::initBlockHighlightFromResult(int nrBlocks)
         }
     }
 
-    updateImageBlocks();
-
     pmh_free_elements(result);
     result = NULL;
-}
-
-void HGMarkdownHighlighter::updateImageBlocks()
-{
-    imageBlocks.clear();
-    for (int i = 0; i < highlightingStyles.size(); i++)
-    {
-        const HighlightingStyle &style = highlightingStyles[i];
-        if (style.type != pmh_IMAGE) {
-            continue;
-        }
-        pmh_element *elem_cursor = result[style.type];
-        while (elem_cursor != NULL)
-        {
-            if (elem_cursor->end <= elem_cursor->pos) {
-                elem_cursor = elem_cursor->next;
-                continue;
-            }
-
-            int startBlock = document->findBlock(elem_cursor->pos).blockNumber();
-            int endBlock = document->findBlock(elem_cursor->end).blockNumber();
-            for (int i = startBlock; i <= endBlock; ++i) {
-                imageBlocks.insert(i);
-            }
-
-            elem_cursor = elem_cursor->next;
-        }
-    }
-    emit imageBlocksUpdated(imageBlocks);
 }
 
 void HGMarkdownHighlighter::initBlockHighlihgtOne(unsigned long pos, unsigned long end, int styleIndex)

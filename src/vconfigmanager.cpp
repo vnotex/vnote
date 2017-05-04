@@ -123,6 +123,9 @@ void VConfigManager::initialize()
 
     m_enableCodeBlockHighlight = getConfigFromSettings("global",
                                                        "enable_code_block_highlight").toBool();
+
+    m_enablePreviewImages = getConfigFromSettings("global",
+                                                  "enable_preview_images").toBool();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

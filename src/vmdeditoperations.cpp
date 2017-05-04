@@ -131,8 +131,8 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
     } else {
         // Download it to a QImage
         VDownloader *downloader = new VDownloader(&dialog);
-        QObject::connect(downloader, &VDownloader::downloadFinished,
-                         &dialog, &VInsertImageDialog::imageDownloaded);
+        connect(downloader, &VDownloader::downloadFinished,
+                &dialog, &VInsertImageDialog::imageDownloaded);
         downloader->download(imageUrl.toString());
     }
     if (dialog.exec() == QDialog::Accepted) {

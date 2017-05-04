@@ -6,6 +6,7 @@
 #include <QString>
 #include <QColor>
 #include <QClipboard>
+#include <QImage>
 #include "vtoc.h"
 #include "veditoperations.h"
 #include "vconfigmanager.h"
@@ -13,6 +14,7 @@
 class HGMarkdownHighlighter;
 class VCodeBlockHighlightHelper;
 class VDocument;
+class VImagePreviewer;
 
 class VMdEdit : public VEdit
 {
@@ -41,8 +43,6 @@ signals:
 private slots:
     void generateEditOutline();
     void updateCurHeader();
-    // Update block list containing image links.
-    void updateImageBlocks(QSet<int> p_imageBlocks);
     void handleEditStateChanged(KeyState p_state);
     void handleSelectionChanged();
     void handleClipboardChanged(QClipboard::Mode p_mode);
@@ -59,32 +59,16 @@ private:
     // p_text[p_index] is QChar::ObjectReplacementCharacter. Remove the line containing it.
     // Returns the index of previous line's '\n'.
     int removeObjectReplacementLine(QString &p_text, int p_index) const;
-    void previewImageOfBlock(int p_block);
-    bool isImagePreviewBlock(int p_block);
-    bool isImagePreviewBlock(QTextBlock p_block);
-    // p_block is a image preview block. We need to update it with image.
-    void updateImagePreviewBlock(int p_block, const QString &p_image);
-    // Insert a block after @p_block to preview image @p_image.
-    void insertImagePreviewBlock(int p_block, const QString &p_image);
-    // Clean up un-referenced image preview block.
-    void clearOrphanImagePreviewBlock();
-    void removeBlock(QTextBlock p_block);
-    bool isOrphanImagePreviewBlock(QTextBlock p_block);
-    // Block that has the QChar::ObjectReplacementCharacter as well as some non-space characters.
-    void clearCorruptedImagePreviewBlock(QTextBlock p_block);
-    // Returns the image relative path (image/xxx.png) only when
-    // there is one and only one image link.
-    QString fetchImageToPreview(const QString &p_text);
-    void clearAllImagePreviewBlocks();
-    // There is a QChar::ObjectReplacementCharacter in the selection. Find out the image path.
-    QString selectedImage();
+    // There is a QChar::ObjectReplacementCharacter in the selection.
+    // Get the QImage.
+    QImage selectedImage();
 
     HGMarkdownHighlighter *m_mdHighlighter;
     VCodeBlockHighlightHelper *m_cbHighlighter;
+    VImagePreviewer *m_imagePreviewer;
     QVector<QString> m_insertedImages;
     QVector<QString> m_initImages;
     QVector<VHeader> m_headers;
-    bool m_previewImage;
 };
 
 #endif // VMDEDIT_H

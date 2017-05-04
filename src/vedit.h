@@ -48,6 +48,7 @@ public:
                         const QString &p_replaceText);
     void setReadOnly(bool p_ro);
     void clearSearchedWordHighlight();
+    VFile *getFile() const;
 
 signals:
     void saveAndRead();

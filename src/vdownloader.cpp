@@ -11,13 +11,14 @@ void VDownloader::handleDownloadFinished(QNetworkReply *reply)
 {
     data = reply->readAll();
     reply->deleteLater();
-    emit downloadFinished(data);
+    qDebug() << "VDownloader receive" << reply->url().toString();
+    emit downloadFinished(data, reply->url().toString());
 }
 
-void VDownloader::download(QUrl url)
+void VDownloader::download(const QUrl &p_url)
 {
-    Q_ASSERT(url.isValid());
-    QNetworkRequest request(url);
+    Q_ASSERT(p_url.isValid());
+    QNetworkRequest request(p_url);
     webCtrl.get(request);
-    qDebug() << "VDownloader get" << url.toString();
+    qDebug() << "VDownloader get" << p_url.toString();
 }

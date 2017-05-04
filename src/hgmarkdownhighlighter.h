@@ -91,7 +91,6 @@ public:
 
 signals:
     void highlightCompleted();
-    void imageBlocksUpdated(QSet<int> p_blocks);
     void codeBlocksUpdated(const QList<VCodeBlock> &p_codeBlocks);
 
 protected:
@@ -124,8 +123,6 @@ private:
 
     int m_numOfCodeBlockHighlightsToRecv;
 
-    // Block numbers containing image link(s).
-    QSet<int> imageBlocks;
     QAtomicInt parsing;
     QTimer *timer;
     int waitInterval;
@@ -144,7 +141,7 @@ private:
     void initBlockHighlightFromResult(int nrBlocks);
     void initBlockHighlihgtOne(unsigned long pos, unsigned long end,
                                int styleIndex);
-    void updateImageBlocks();
+
     // Return true if there are fenced code blocks and it will call rehighlight() later.
     // Return false if there is none.
     bool updateCodeBlocks();
