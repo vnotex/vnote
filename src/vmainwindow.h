@@ -76,6 +76,7 @@ private slots:
     void changeAutoIndent(bool p_checked);
     void changeAutoList(bool p_checked);
     void enableCodeBlockHighlight(bool p_checked);
+    void enableImagePreview(bool p_checked);
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;

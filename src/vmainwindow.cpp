@@ -381,6 +381,15 @@ void VMainWindow::initMarkdownMenu()
             this, &VMainWindow::enableCodeBlockHighlight);
     markdownMenu->addAction(codeBlockAct);
     codeBlockAct->setChecked(vconfig.getEnableCodeBlockHighlight());
+
+    QAction *previewImageAct = new QAction(tr("Preview Images In Edit Mode"), this);
+    previewImageAct->setToolTip(tr("Enable image preview in edit mode"));
+    previewImageAct->setCheckable(true);
+    connect(previewImageAct, &QAction::triggered,
+            this, &VMainWindow::enableImagePreview);
+    // TODO: add the action to the menu after handling the UNDO history well.
+    // markdownMenu->addAction(previewImageAct);
+    previewImageAct->setChecked(vconfig.getEnablePreviewImages());
 }
 
 void VMainWindow::initViewMenu()
@@ -1272,6 +1281,11 @@ void VMainWindow::changeAutoList(bool p_checked)
 void VMainWindow::enableCodeBlockHighlight(bool p_checked)
 {
     vconfig.setEnableCodeBlockHighlight(p_checked);
+}
+
+void VMainWindow::enableImagePreview(bool p_checked)
+{
+    vconfig.setEnablePreviewImages(p_checked);
 }
 
 void VMainWindow::shortcutHelp()
