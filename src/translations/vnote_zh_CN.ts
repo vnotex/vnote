@@ -694,7 +694,7 @@
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="220"/>
-        <location filename="../vmainwindow.cpp" line="436"/>
+        <location filename="../vmainwindow.cpp" line="444"/>
         <source>&amp;Edit</source>
         <translation>编辑 (&amp;E)</translation>
     </message>
@@ -789,229 +789,239 @@
         <translation>编辑模式中启用图片预览</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="397"/>
+        <location filename="../vmainwindow.cpp" line="394"/>
+        <source>Constrain The Width Of Previewed Images</source>
+        <translation>限制预览图片宽度</translation>
+    </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="395"/>
+        <source>Constrain the width of previewed images to the edit window in edit mode</source>
+        <translation>编辑模式中根据编辑窗口大小限制预览图片的宽度</translation>
+    </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="405"/>
         <source>&amp;View</source>
         <translation>查看 (&amp;V)</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="402"/>
+        <location filename="../vmainwindow.cpp" line="410"/>
         <source>&amp;File</source>
         <translation>文件 (&amp;F)</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="407"/>
+        <location filename="../vmainwindow.cpp" line="415"/>
         <source>&amp;Import Notes From Files</source>
         <translation>导入文件 (&amp;I)</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="408"/>
+        <location filename="../vmainwindow.cpp" line="416"/>
         <source>Import notes from files into current directory</source>
         <translation>从文件中导入笔记到当前目录</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="415"/>
+        <location filename="../vmainwindow.cpp" line="423"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="416"/>
+        <location filename="../vmainwindow.cpp" line="424"/>
         <source>View and change settings for VNote</source>
         <translation>查看并更改VNote的配置</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="421"/>
+        <location filename="../vmainwindow.cpp" line="429"/>
         <source>Exit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="422"/>
+        <location filename="../vmainwindow.cpp" line="430"/>
         <source>Exit VNote</source>
         <translation>退出VNote</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="441"/>
+        <location filename="../vmainwindow.cpp" line="449"/>
         <source>Insert &amp;Image</source>
         <translation>插入图片 (&amp;I)</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="448"/>
-        <location filename="../vmainwindow.cpp" line="544"/>
+        <location filename="../vmainwindow.cpp" line="456"/>
+        <location filename="../vmainwindow.cpp" line="552"/>
         <source>Find/Replace</source>
         <translation>查找/替换</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="449"/>
+        <location filename="../vmainwindow.cpp" line="457"/>
         <source>Open Find/Replace dialog to search in current note</source>
         <translation>打开查找/替换对话框以在当前笔记中查找</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="454"/>
+        <location filename="../vmainwindow.cpp" line="462"/>
         <source>Find Next</source>
         <translation>查找下一个</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="455"/>
+        <location filename="../vmainwindow.cpp" line="463"/>
         <source>Find next occurence</source>
         <translation>查找下一处出现</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="460"/>
+        <location filename="../vmainwindow.cpp" line="468"/>
         <source>Find Previous</source>
         <translation>查找上一个</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="461"/>
+        <location filename="../vmainwindow.cpp" line="469"/>
         <source>Find previous occurence</source>
         <translation>查找上一处出现</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="466"/>
+        <location filename="../vmainwindow.cpp" line="474"/>
         <source>Replace</source>
         <translation>替换</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="467"/>
+        <location filename="../vmainwindow.cpp" line="475"/>
         <source>Replace current occurence</source>
         <translation>替换当前出现</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="472"/>
+        <location filename="../vmainwindow.cpp" line="480"/>
         <source>Replace &amp;&amp; Find</source>
         <translation>替换并查找</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="473"/>
+        <location filename="../vmainwindow.cpp" line="481"/>
         <source>Replace current occurence and find the next one</source>
         <translation>替换当前出现并查找下一个</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="477"/>
+        <location filename="../vmainwindow.cpp" line="485"/>
         <source>Replace All</source>
         <translation>全部替换</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="478"/>
+        <location filename="../vmainwindow.cpp" line="486"/>
         <source>Replace all occurences in current note</source>
         <translation>替换当前笔记中的所有出现</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="482"/>
+        <location filename="../vmainwindow.cpp" line="490"/>
         <source>Highlight Searched Pattern</source>
         <translation>高亮查找模式</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="483"/>
+        <location filename="../vmainwindow.cpp" line="491"/>
         <source>Highlight all occurences of searched pattern</source>
         <translation>高亮查找模式的所有出现</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="489"/>
+        <location filename="../vmainwindow.cpp" line="497"/>
         <source>&amp;Expand Tab</source>
         <translation>扩展Tab (&amp;E)</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="490"/>
+        <location filename="../vmainwindow.cpp" line="498"/>
         <source>Expand entered Tab to spaces</source>
         <translation>将输入的Tab扩展为空格</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="498"/>
+        <location filename="../vmainwindow.cpp" line="506"/>
         <source>Expand Tab to 2 spaces</source>
         <translation>扩展Tab为2个空格</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="502"/>
+        <location filename="../vmainwindow.cpp" line="510"/>
         <source>Expand Tab to 4 spaces</source>
         <translation>扩展Tab为4个空格</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="506"/>
+        <location filename="../vmainwindow.cpp" line="514"/>
         <source>Expand Tab to 8 spaces</source>
         <translation>扩展Tab为8个空格</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="513"/>
+        <location filename="../vmainwindow.cpp" line="521"/>
         <source>Auto Indent</source>
         <translation>自动缩进</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="514"/>
+        <location filename="../vmainwindow.cpp" line="522"/>
         <source>Indent automatically when inserting a new line</source>
         <translation>插入新行时自动缩进</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="520"/>
+        <location filename="../vmainwindow.cpp" line="528"/>
         <source>Auto List</source>
         <translation>自动列表</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="521"/>
+        <location filename="../vmainwindow.cpp" line="529"/>
         <source>Continue the list automatically when inserting a new line</source>
         <translation>插入新行时自动继续列表</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="534"/>
+        <location filename="../vmainwindow.cpp" line="542"/>
         <source>Highlight Selected Words</source>
         <translation>高亮选定字词</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="535"/>
+        <location filename="../vmainwindow.cpp" line="543"/>
         <source>Highlight all occurences of selected words</source>
         <translation>高亮选定字词的所有出现</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="646"/>
+        <location filename="../vmainwindow.cpp" line="654"/>
         <source>Select Files (HTML or Markdown) To Import</source>
         <translation>选择需要导入的文件（HTML或Markdown）</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="661"/>
+        <location filename="../vmainwindow.cpp" line="669"/>
         <source>Import Notes From File</source>
         <translation>导入文件</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="662"/>
+        <location filename="../vmainwindow.cpp" line="670"/>
         <source>Imported notes: %1 succeed, %2 failed.</source>
         <translation>已导入笔记: %1 成功， %2 失败。</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="762"/>
+        <location filename="../vmainwindow.cpp" line="770"/>
         <source>Use system&apos;s background color configuration for Markdown rendering</source>
         <translation>使用系统的背景色设置对Markdown进行渲染</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="773"/>
+        <location filename="../vmainwindow.cpp" line="781"/>
         <source>Set as the background color for Markdown rendering</source>
         <translation>使用该背景色对Markdown进行渲染</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="827"/>
-        <location filename="../vmainwindow.cpp" line="911"/>
+        <location filename="../vmainwindow.cpp" line="835"/>
+        <location filename="../vmainwindow.cpp" line="919"/>
         <source>&amp;Add Style</source>
         <translation>添加样式 (&amp;A)</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="828"/>
+        <location filename="../vmainwindow.cpp" line="836"/>
         <source>Open the folder to add your custom CSS style files</source>
         <translation>打开样式文件夹以添加自定义CSS样式文件</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="901"/>
+        <location filename="../vmainwindow.cpp" line="909"/>
         <source>Editor &amp;Style</source>
         <translation>编辑器样式 (&amp;S)</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="912"/>
+        <location filename="../vmainwindow.cpp" line="920"/>
         <source>Open the folder to add your custom MDHL style files</source>
         <translation>打开样式文件夹以添加自定义MDHL样式文件</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="886"/>
+        <location filename="../vmainwindow.cpp" line="894"/>
         <source>Set as the editor style</source>
         <translation>使用该样式设置编辑器</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="497"/>
+        <location filename="../vmainwindow.cpp" line="505"/>
         <source>2 Spaces</source>
         <translation>2个空格</translation>
     </message>
@@ -1086,103 +1096,103 @@
         <translation>编辑模式中启用代码块语法高亮</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="442"/>
+        <location filename="../vmainwindow.cpp" line="450"/>
         <source>Insert an image from file into current note</source>
         <translation>从文件中插入图片到当前笔记</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="501"/>
+        <location filename="../vmainwindow.cpp" line="509"/>
         <source>4 Spaces</source>
         <translation>4个空格</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="505"/>
+        <location filename="../vmainwindow.cpp" line="513"/>
         <source>8 Spaces</source>
         <translation>8个空格</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="527"/>
+        <location filename="../vmainwindow.cpp" line="535"/>
         <source>Highlight Cursor Line</source>
         <translation>高亮光标所在行</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="528"/>
+        <location filename="../vmainwindow.cpp" line="536"/>
         <source>Highlight current cursor line</source>
         <translation>高亮当前光标所在行</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="571"/>
+        <location filename="../vmainwindow.cpp" line="579"/>
         <source>Tab Stop Width</source>
         <translation>Tab Stop宽度</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="616"/>
+        <location filename="../vmainwindow.cpp" line="624"/>
         <source>Tools</source>
         <translation>工具</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="627"/>
+        <location filename="../vmainwindow.cpp" line="635"/>
         <source>Outline</source>
         <translation>大纲</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="666"/>
+        <location filename="../vmainwindow.cpp" line="674"/>
         <source>Fail to import files maybe due to name conflicts.</source>
         <translation>导入文件失败 (可能是因为名字冲突)。</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="683"/>
+        <location filename="../vmainwindow.cpp" line="691"/>
         <source>v%1</source>
         <translation>v %1</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="685"/>
+        <location filename="../vmainwindow.cpp" line="693"/>
         <source>VNote is a Vim-inspired note-taking application for Markdown.</source>
         <translation>VNote是一个受Vim启发而开发的专注于Markdown的笔记软件。</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="687"/>
+        <location filename="../vmainwindow.cpp" line="695"/>
         <source>Visit https://github.com/tamlok/vnote.git for more information.</source>
         <translation>更多信息请访问 https://github.com/tamlok/vnote.git。</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="688"/>
+        <location filename="../vmainwindow.cpp" line="696"/>
         <source>About VNote</source>
         <translation>关于VNote</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="758"/>
+        <location filename="../vmainwindow.cpp" line="766"/>
         <source>&amp;Rendering Background</source>
         <translation>渲染背景 (&amp;R)</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="761"/>
-        <location filename="../vmainwindow.cpp" line="846"/>
+        <location filename="../vmainwindow.cpp" line="769"/>
+        <location filename="../vmainwindow.cpp" line="854"/>
         <source>System</source>
         <translation>默认</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="817"/>
+        <location filename="../vmainwindow.cpp" line="825"/>
         <source>Rendering &amp;Style</source>
         <translation>渲染样式 (&amp;S)</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="802"/>
+        <location filename="../vmainwindow.cpp" line="810"/>
         <source>Set as the CSS style for Markdown rendering</source>
         <translation>使用该CSS样式对Markdown进行渲染</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="837"/>
+        <location filename="../vmainwindow.cpp" line="845"/>
         <source>&amp;Background Color</source>
         <translation>背景颜色 (&amp;B)</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="847"/>
+        <location filename="../vmainwindow.cpp" line="855"/>
         <source>Use system&apos;s background color configuration for editor</source>
         <translation>为编辑器使用系统的背景色设置</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="857"/>
+        <location filename="../vmainwindow.cpp" line="865"/>
         <source>Set as the background color for editor</source>
         <translation>使用该背景色设置编辑器</translation>
     </message>

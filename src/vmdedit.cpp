@@ -387,3 +387,10 @@ QImage VMdEdit::selectedImage()
     }
     return image;
 }
+
+void VMdEdit::resizeEvent(QResizeEvent *p_event)
+{
+    m_imagePreviewer->update();
+
+    VEdit::resizeEvent(p_event);
+}

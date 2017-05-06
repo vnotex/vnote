@@ -30,12 +30,25 @@ public:
     // Then re-preview all the blocks.
     void refresh();
 
+    void update();
+
 private slots:
     void timerTimeout();
     void handleContentChange(int p_position, int p_charsRemoved, int p_charsAdded);
     void imageDownloaded(const QByteArray &p_data, const QString &p_url);
 
 private:
+    struct ImageInfo
+    {
+        ImageInfo(const QString &p_name, int p_width)
+            : m_name(p_name), m_width(p_width)
+        {
+        }
+
+        QString m_name;
+        int m_width;
+    };
+
     void previewImages();
     bool isValidImagePreviewBlock(QTextBlock &p_block);
 
@@ -77,6 +90,9 @@ private:
 
     QString imagePathToCacheResourceName(const QString &p_imagePath);
 
+    // Return true if and only if there is update.
+    bool updateImageWidth(QTextImageFormat &p_format);
+
     VMdEdit *m_edit;
     QTextDocument *m_document;
     VFile *m_file;
@@ -85,11 +101,17 @@ private:
     bool m_isPreviewing;
     bool m_requestCearBlocks;
     bool m_requestRefreshBlocks;
+    bool m_updatePending;
 
     // Map from image full path to QUrl identifier in the QTextDocument's cache.
-    QHash<QString, QString> m_imageCache;;
+    QHash<QString, ImageInfo> m_imageCache;;
 
     VDownloader *m_downloader;
+
+    // The preview width.
+    int m_imageWidth;
+
+    static const int c_minImageWidth;
 };
 
 #endif // VIMAGEPREVIEWER_H

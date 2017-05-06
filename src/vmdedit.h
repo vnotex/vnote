@@ -52,6 +52,7 @@ protected:
     bool canInsertFromMimeData(const QMimeData *source) const Q_DECL_OVERRIDE;
     void insertFromMimeData(const QMimeData *source) Q_DECL_OVERRIDE;
     void updateFontAndPalette() Q_DECL_OVERRIDE;
+    void resizeEvent(QResizeEvent *p_event) Q_DECL_OVERRIDE;
 
 private:
     void initInitImages();

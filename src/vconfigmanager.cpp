@@ -126,6 +126,9 @@ void VConfigManager::initialize()
 
     m_enablePreviewImages = getConfigFromSettings("global",
                                                   "enable_preview_images").toBool();
+
+    m_enablePreviewImageConstraint = getConfigFromSettings("global",
+                                                           "enable_preview_image_constraint").toBool();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

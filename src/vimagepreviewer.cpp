@@ -15,10 +15,13 @@ extern VConfigManager vconfig;
 
 enum ImageProperty { ImagePath = 1 };
 
+const int VImagePreviewer::c_minImageWidth = 100;
+
 VImagePreviewer::VImagePreviewer(VMdEdit *p_edit, int p_timeToPreview)
     : QObject(p_edit), m_edit(p_edit), m_document(p_edit->document()),
       m_file(p_edit->getFile()), m_enablePreview(true), m_isPreviewing(false),
-      m_requestCearBlocks(false), m_requestRefreshBlocks(false)
+      m_requestCearBlocks(false), m_requestRefreshBlocks(false),
+      m_updatePending(false), m_imageWidth(c_minImageWidth)
 {
     m_timer = new QTimer(this);
     m_timer->setSingleShot(true);
@@ -49,6 +52,11 @@ void VImagePreviewer::timerTimeout()
         return;
     }
 
+    if (m_isPreviewing) {
+        m_updatePending = true;
+        return;
+    }
+
     previewImages();
 }
 
@@ -69,6 +77,9 @@ void VImagePreviewer::previewImages()
     if (m_isPreviewing) {
         return;
     }
+
+    // Get the width of the m_edit.
+    m_imageWidth = qMax(m_edit->size().width() - 50, c_minImageWidth);
 
     m_isPreviewing = true;
     QTextBlock block = m_document->begin();
@@ -99,6 +110,12 @@ void VImagePreviewer::previewImages()
     if (m_requestRefreshBlocks) {
         m_requestRefreshBlocks = false;
         refresh();
+    }
+
+    if (m_updatePending) {
+        m_updatePending = false;
+        m_timer->stop();
+        m_timer->start();
     }
 
     emit m_edit->statusChanged();
@@ -224,6 +241,9 @@ QTextBlock VImagePreviewer::insertImagePreviewBlock(QTextBlock &p_block,
     QTextImageFormat imgFormat;
     imgFormat.setName(imageName);
     imgFormat.setProperty(ImagePath, p_imagePath);
+
+    updateImageWidth(imgFormat);
+
     cursor.insertImage(imgFormat);
     cursor.endEditBlock();
 
@@ -240,13 +260,18 @@ void VImagePreviewer::updateImagePreviewBlock(QTextBlock &p_block,
     QTextImageFormat format = fetchFormatFromPreviewBlock(p_block);
     V_ASSERT(format.isValid());
     QString curPath = format.property(ImagePath).toString();
+    QString imageName;
 
     if (curPath == p_imagePath) {
+        if (updateImageWidth(format)) {
+            goto update;
+        }
+
         return;
     }
 
     // Update it with the new image.
-    QString imageName = imageCacheResourceName(p_imagePath);
+    imageName = imageCacheResourceName(p_imagePath);
     if (imageName.isEmpty()) {
         // Delete current preview block.
         removeBlock(p_block);
@@ -255,6 +280,10 @@ void VImagePreviewer::updateImagePreviewBlock(QTextBlock &p_block,
 
     format.setName(imageName);
     format.setProperty(ImagePath, p_imagePath);
+
+    updateImageWidth(format);
+
+update:
     updateFormatInPreviewBlock(p_block, format);
 }
 
@@ -391,7 +420,10 @@ QTextImageFormat VImagePreviewer::fetchFormatFromPreviewBlock(QTextBlock &p_bloc
 void VImagePreviewer::updateFormatInPreviewBlock(QTextBlock &p_block,
                                                  const QTextImageFormat &p_format)
 {
+    bool modified = m_edit->isModified();
+
     QTextCursor cursor(p_block);
+    cursor.beginEditBlock();
     int shift = p_block.text().indexOf(QChar::ObjectReplacementCharacter);
     if (shift > 0) {
         cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, shift);
@@ -403,6 +435,9 @@ void VImagePreviewer::updateFormatInPreviewBlock(QTextBlock &p_block,
     V_ASSERT(cursor.charFormat().toImageFormat().isValid());
 
     cursor.setCharFormat(p_format);
+    cursor.endEditBlock();
+
+    m_edit->setModified(modified);
 }
 
 QString VImagePreviewer::imageCacheResourceName(const QString &p_imagePath)
@@ -411,7 +446,7 @@ QString VImagePreviewer::imageCacheResourceName(const QString &p_imagePath)
 
     auto it = m_imageCache.find(p_imagePath);
     if (it != m_imageCache.end()) {
-        return it.value();
+        return it.value().m_name;
     }
 
     // Add it to the resource cache even if it may exist there.
@@ -431,7 +466,7 @@ QString VImagePreviewer::imageCacheResourceName(const QString &p_imagePath)
 
     QString name(imagePathToCacheResourceName(p_imagePath));
     m_document->addResource(QTextDocument::ImageResource, name, image);
-    m_imageCache.insert(p_imagePath, name);
+    m_imageCache.insert(p_imagePath, ImageInfo(name, image.width()));
 
     return name;
 }
@@ -454,7 +489,7 @@ void VImagePreviewer::imageDownloaded(const QByteArray &p_data, const QString &p
         m_timer->stop();
         QString name(imagePathToCacheResourceName(p_url));
         m_document->addResource(QTextDocument::ImageResource, name, image);
-        m_imageCache.insert(p_url, name);
+        m_imageCache.insert(p_url, ImageInfo(name, image.width()));
 
         qDebug() << "downloaded image cache insert" << p_url << name;
 
@@ -487,5 +522,31 @@ QImage VImagePreviewer::fetchCachedImageFromPreviewBlock(QTextBlock &p_block)
         return QImage();
     }
 
-    return m_document->resource(QTextDocument::ImageResource, it.value()).value<QImage>();
+    return m_document->resource(QTextDocument::ImageResource, it.value().m_name).value<QImage>();
+}
+
+bool VImagePreviewer::updateImageWidth(QTextImageFormat &p_format)
+{
+    QString path = p_format.property(ImagePath).toString();
+    auto it = m_imageCache.find(path);
+
+    if (it != m_imageCache.end()) {
+        int newWidth = it.value().m_width;
+        if (vconfig.getEnablePreviewImageConstraint()) {
+            newWidth = qMin(m_imageWidth, it.value().m_width);
+        }
+
+        if (newWidth != p_format.width()) {
+            p_format.setWidth(newWidth);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void VImagePreviewer::update()
+{
+    m_timer->stop();
+    m_timer->start();
 }

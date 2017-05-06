@@ -390,6 +390,14 @@ void VMainWindow::initMarkdownMenu()
     // TODO: add the action to the menu after handling the UNDO history well.
     // markdownMenu->addAction(previewImageAct);
     previewImageAct->setChecked(vconfig.getEnablePreviewImages());
+
+    QAction *previewWidthAct = new QAction(tr("Constrain The Width Of Previewed Images"), this);
+    previewWidthAct->setToolTip(tr("Constrain the width of previewed images to the edit window in edit mode"));
+    previewWidthAct->setCheckable(true);
+    connect(previewWidthAct, &QAction::triggered,
+            this, &VMainWindow::enableImagePreviewConstraint);
+    markdownMenu->addAction(previewWidthAct);
+    previewWidthAct->setChecked(vconfig.getEnablePreviewImageConstraint());
 }
 
 void VMainWindow::initViewMenu()
@@ -1286,6 +1294,11 @@ void VMainWindow::enableCodeBlockHighlight(bool p_checked)
 void VMainWindow::enableImagePreview(bool p_checked)
 {
     vconfig.setEnablePreviewImages(p_checked);
+}
+
+void VMainWindow::enableImagePreviewConstraint(bool p_checked)
+{
+    vconfig.setEnablePreviewImageConstraint(p_checked);
 }
 
 void VMainWindow::shortcutHelp()
