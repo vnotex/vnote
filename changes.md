@@ -1,4 +1,12 @@
 # Changes History
+## v1.4
+- Use `_vnote.json` as the config file;
+- More user friendly messages;
+- Delete notebook by deleting root directories one by one;
+- Refactor image preview logics to support previewing all images in edit mode;
+- Support constraining the width of previewed images to the edit window;
+- bugfix;
+
 ## v1.3
 - Support code block syntax highlight in edit mode;
 - A more pleasant AutoIndent and AutoList;
