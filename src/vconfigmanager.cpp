@@ -7,6 +7,7 @@
 #include <QJsonDocument>
 #include <QtDebug>
 #include <QTextEdit>
+#include <QStandardPaths>
 #include "utils/vutils.h"
 #include "vstyleparser.h"
 
@@ -274,6 +275,21 @@ bool VConfigManager::deleteDirectoryConfig(const QString &path)
 
     qDebug() << "delete config file:" << configFile;
     return true;
+}
+
+QString VConfigManager::getLogFilePath()
+{
+    static QString logPath;
+
+    if (logPath.isEmpty()) {
+        QString location = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+        V_ASSERT(!location.isEmpty());
+        QDir dir(location);
+        dir.mkdir("VNote");
+        logPath = dir.filePath("VNote/vnote.log");
+    }
+
+    return logPath;
 }
 
 void VConfigManager::updateMarkdownEditStyle()

@@ -5,37 +5,87 @@
 #include <QLibraryInfo>
 #include <QFile>
 #include <QTextCodec>
+#include <QFileInfo>
 #include "utils/vutils.h"
 #include "vsingleinstanceguard.h"
 #include "vconfigmanager.h"
 
 VConfigManager vconfig;
+static QFile g_logFile;
 
 void VLogger(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
     QByteArray localMsg = msg.toUtf8();
+    QString header;
+
     switch (type) {
     case QtDebugMsg:
-        fprintf(stderr, "Debug:%s (%s:%u)\n", localMsg.constData(), context.file, context.line);
+        header = "Debug:";
         break;
+
     case QtInfoMsg:
-        fprintf(stderr, "Info:%s (%s:%u)\n", localMsg.constData(), context.file, context.line);
+        header = "Info:";
         break;
+
     case QtWarningMsg:
-        fprintf(stderr, "Warning:%s (%s:%u)\n", localMsg.constData(), context.file, context.line);
+        header = "Warning:";
         break;
+
     case QtCriticalMsg:
-        fprintf(stderr, "Critical:%s (%s:%u)\n", localMsg.constData(), context.file, context.line);
+        header = "Critical:";
         break;
+
     case QtFatalMsg:
-        fprintf(stderr, "Fatal:%s (%s:%u)\n", localMsg.constData(), context.file, context.line);
+        header = "Fatal:";
+    }
+
+#if defined(QT_NO_DEBUG)
+    QTextStream stream(&g_logFile);
+    stream << header << localMsg << "\n";
+    g_logFile.flush();
+
+    if (type == QtFatalMsg) {
+        g_logFile.close();
         abort();
     }
+
+#else
+    std::string fileStr = QFileInfo(context.file).fileName().toStdString();
+    const char *file = fileStr.c_str();
+
+    switch (type) {
+    case QtDebugMsg:
+        fprintf(stderr, "%s(%s:%u) %s\n",
+                header.toStdString().c_str(), file, context.line, localMsg.constData());
+        break;
+    case QtInfoMsg:
+        fprintf(stderr, "%s(%s:%u) %s\n",
+                header.toStdString().c_str(), file, context.line, localMsg.constData());
+        break;
+    case QtWarningMsg:
+        fprintf(stderr, "%s(%s:%u) %s\n",
+                header.toStdString().c_str(), file, context.line, localMsg.constData());
+        break;
+    case QtCriticalMsg:
+        fprintf(stderr, "%s(%s:%u) %s\n",
+                header.toStdString().c_str(), file, context.line, localMsg.constData());
+        break;
+    case QtFatalMsg:
+        fprintf(stderr, "%s(%s:%u) %s\n",
+                header.toStdString().c_str(), file, context.line, localMsg.constData());
+        abort();
+    }
+#endif
 }
 
 int main(int argc, char *argv[])
 {
-    //qInstallMessageHandler(VLogger);
+#if defined(QT_NO_DEBUG)
+    g_logFile.setFileName(VConfigManager::getLogFilePath());
+    g_logFile.open(QIODevice::WriteOnly);
+#endif
+
+    qInstallMessageHandler(VLogger);
 
     VSingleInstanceGuard guard;
     if (!guard.tryRun()) {

@@ -39,6 +39,8 @@ public:
     static bool directoryConfigExist(const QString &path);
     static bool deleteDirectoryConfig(const QString &path);
 
+    static QString getLogFilePath();
+
     // Constants
     static const QString orgName;
     static const QString appName;
