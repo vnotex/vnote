@@ -39,6 +39,8 @@ build_script:
 # scripts that run after build
 after_build:
     - set vnote_version=1.4
+    # Clone OpenSSL DLLs
+    - git clone https://github.com/tamlok/openssl-utils.git openssl-utils.git
     - mkdir distrib\VNote
     - windeployqt.exe --dir .\distrib\VNote %APPVEYOR_BUILD_FOLDER%\build\src\release\VNote.exe
     - copy "%APPVEYOR_BUILD_FOLDER%\build\src\release\VNote.exe" "distrib\VNote\VNote.exe"
@@ -46,6 +48,9 @@ after_build:
     - copy "%APPVEYOR_BUILD_FOLDER%\LICENSE" "distrib\VNote\LICENSE.txt"
     - echo %vnote_version% > "distrib\VNote\version.txt"
     - echo %APPVEYOR_REPO_COMMIT% >> "distrib\VNote\version.txt"
+    # Copy OpenSSL DLLs
+    - if "%PLATFORM%" EQU "X64" (xcopy "openssl-utils.git\win64\*.dll" "distrib\VNote")
+    - if "%PLATFORM%" EQU "x86" (xcopy "openssl-utils.git\win32\*.dll" "distrib\VNote")
     - cd distrib
     - 7z a VNote_win_%PLATFORM%_portable_%vnote_version%.zip VNote
 
