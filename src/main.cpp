@@ -40,9 +40,10 @@ void VLogger(QtMsgType type, const QMessageLogContext &context, const QString &m
     }
 
 #if defined(QT_NO_DEBUG)
+    Q_UNUSED(context);
+
     QTextStream stream(&g_logFile);
     stream << header << localMsg << "\n";
-    g_logFile.flush();
 
     if (type == QtFatalMsg) {
         g_logFile.close();
@@ -75,6 +76,8 @@ void VLogger(QtMsgType type, const QMessageLogContext &context, const QString &m
                 header.toStdString().c_str(), file, context.line, localMsg.constData());
         abort();
     }
+
+    fflush(stderr);
 #endif
 }
 
@@ -90,6 +93,11 @@ int main(int argc, char *argv[])
     VSingleInstanceGuard guard;
     if (!guard.tryRun()) {
         return 0;
+    }
+
+    QTextCodec *codec = QTextCodec::codecForName("UTF8");
+    if (codec) {
+        QTextCodec::setCodecForLocale(codec);
     }
 
     QApplication app(argc, argv);
@@ -112,10 +120,6 @@ int main(int argc, char *argv[])
         app.installTranslator(&translator);
     }
 
-    QTextCodec *codec = QTextCodec::codecForName("UTF8");
-    if (codec) {
-        QTextCodec::setCodecForLocale(codec);
-    }
     VMainWindow w;
     QString style = VUtils::readFileFromDisk(":/resources/vnote.qss");
     if (!style.isEmpty()) {

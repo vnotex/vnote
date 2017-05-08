@@ -272,11 +272,13 @@ QString VStyleParser::filterAvailableFontFamily(const QString &familyList) const
 
     qDebug() << "family:" << familyList;
     for (int i = 0; i < families.size(); ++i) {
-        QString family = families[i].trimmed().toLower();
+        QString family = families[i].trimmed();
         for (int j = 0; j < availFamilies.size(); ++j) {
             QString availFamily = availFamilies[j];
             availFamily.remove(QRegExp("\\[.*\\]"));
-            if (family == availFamily.trimmed().toLower()) {
+            availFamily = availFamily.trimmed();
+            if (family == availFamily
+                || family.toLower() == availFamily.toLower()) {
                 qDebug() << "matched family:" << availFamilies[j];
                 return availFamilies[j];
             }
