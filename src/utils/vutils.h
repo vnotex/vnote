@@ -58,6 +58,14 @@ public:
     static QChar keyToChar(int p_key);
     static QString getLocale();
 
+    // Regular expression for image link.
+    // ![image title]( http://github.com/tamlok/vnote.jpg "alt text" )
+    // Captured texts (need to be trimmed):
+    // 1. Image Alt Text (Title);
+    // 2. Image URL;
+    // 3. Image Optional Title with double quotes;
+    static const QString c_imageLinkRegExp;
+
 private:
     // <value, name>
     static const QVector<QPair<QString, QString>> c_availableLanguages;

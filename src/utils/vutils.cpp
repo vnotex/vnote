@@ -24,6 +24,8 @@ extern VConfigManager vconfig;
 const QVector<QPair<QString, QString>> VUtils::c_availableLanguages = {QPair<QString, QString>("en_US", "Englisth(US)"),
                                                                        QPair<QString, QString>("zh_CN", "Chinese")};
 
+const QString VUtils::c_imageLinkRegExp = QString("\\!\\[([^\\]]*)\\]\\(([^\\)\"]+)\\s*(\".*\")?\\s*\\)");
+
 VUtils::VUtils()
 {
 }

@@ -10,6 +10,7 @@
 #include "utils/vutils.h"
 #include "vfile.h"
 #include "vdownloader.h"
+#include "hgmarkdownhighlighter.h"
 
 extern VConfigManager vconfig;
 
@@ -72,6 +73,11 @@ void VImagePreviewer::handleContentChange(int /* p_position */,
     m_timer->start();
 }
 
+bool VImagePreviewer::isNormalBlock(const QTextBlock &p_block)
+{
+    return p_block.userState() == HighlightBlockState::Normal;
+}
+
 void VImagePreviewer::previewImages()
 {
     if (m_isPreviewing) {
@@ -86,7 +92,7 @@ void VImagePreviewer::previewImages()
     while (block.isValid() && m_enablePreview) {
         if (isImagePreviewBlock(block)) {
             // Image preview block. Check if it is parentless.
-            if (!isValidImagePreviewBlock(block)) {
+            if (!isValidImagePreviewBlock(block) || !isNormalBlock(block)) {
                 QTextBlock nblock = block.next();
                 removeBlock(block);
                 block = nblock;
@@ -96,7 +102,11 @@ void VImagePreviewer::previewImages()
         } else {
             clearCorruptedImagePreviewBlock(block);
 
-            block = previewImageOfOneBlock(block);
+            if (isNormalBlock(block)) {
+                block = previewImageOfOneBlock(block);
+            } else {
+                block = block.next();
+            }
         }
     }
 
@@ -158,7 +168,8 @@ bool VImagePreviewer::isValidImagePreviewBlock(QTextBlock &p_block)
 
 QString VImagePreviewer::fetchImageUrlToPreview(const QString &p_text)
 {
-    QRegExp regExp("\\!\\[[^\\]]*\\]\\(([^\\)]+)\\)");
+    QRegExp regExp(VUtils::c_imageLinkRegExp);
+
     int index = regExp.indexIn(p_text);
     if (index == -1) {
         return QString();
@@ -169,7 +180,7 @@ QString VImagePreviewer::fetchImageUrlToPreview(const QString &p_text)
         return QString();
     }
 
-    return regExp.capturedTexts()[1];
+    return regExp.capturedTexts()[2].trimmed();
 }
 
 QString VImagePreviewer::fetchImagePathToPreview(const QString &p_text)

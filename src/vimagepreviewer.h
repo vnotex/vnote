@@ -93,6 +93,9 @@ private:
     // Return true if and only if there is update.
     bool updateImageWidth(QTextImageFormat &p_format);
 
+    // Whether it is a normal block or not.
+    bool isNormalBlock(const QTextBlock &p_block);
+
     VMdEdit *m_edit;
     QTextDocument *m_document;
     VFile *m_file;
