@@ -195,7 +195,7 @@ QString VImagePreviewer::fetchImagePathToPreview(const QString &p_text)
     if (info.exists()) {
         if (info.isNativePath()) {
             // Local file.
-            imagePath = info.absoluteFilePath();
+            imagePath = QDir::cleanPath(info.absoluteFilePath());
         } else {
             imagePath = imageUrl;
         }

@@ -90,7 +90,7 @@ void VMdEdit::saveFile()
 void VMdEdit::reloadFile()
 {
     const QString &content = m_file->getContent();
-    Q_ASSERT(content.indexOf(QChar::ObjectReplacementCharacter) == -1);
+    V_ASSERT(content.indexOf(QChar::ObjectReplacementCharacter) == -1);
     setPlainText(content);
     setModified(false);
 }
@@ -171,61 +171,74 @@ void VMdEdit::insertFromMimeData(const QMimeData *source)
     VEdit::insertFromMimeData(source);
 }
 
-void VMdEdit::imageInserted(const QString &p_name)
+void VMdEdit::imageInserted(const QString &p_path)
 {
-    m_insertedImages.append(p_name);
+    ImageLink link;
+    link.m_path = p_path;
+    link.m_type = ImageLink::LocalRelativeInternal;
+
+    m_insertedImages.append(link);
 }
 
 void VMdEdit::initInitImages()
 {
-    m_initImages = VUtils::imagesFromMarkdownFile(m_file->retrivePath());
+    m_initImages = VUtils::fetchImagesFromMarkdownFile(m_file,
+                                                       ImageLink::LocalRelativeInternal);
 }
 
 void VMdEdit::clearUnusedImages()
 {
-    QVector<QString> images = VUtils::imagesFromMarkdownFile(m_file->retrivePath());
+    QVector<ImageLink> images = VUtils::fetchImagesFromMarkdownFile(m_file,
+                                                                    ImageLink::LocalRelativeInternal);
 
     if (!m_insertedImages.isEmpty()) {
-        QVector<QString> imageNames(images.size());
-        for (int i = 0; i < imageNames.size(); ++i) {
-            imageNames[i] = VUtils::fileNameFromPath(images[i]);
-        }
-
-        QDir dir = QDir(m_file->retriveImagePath());
         for (int i = 0; i < m_insertedImages.size(); ++i) {
-            QString name = m_insertedImages[i];
+            const ImageLink &link = m_insertedImages[i];
+
+            V_ASSERT(link.m_type == ImageLink::LocalRelativeInternal);
+
             int j;
-            for (j = 0; j < imageNames.size(); ++j) {
-                if (name == imageNames[j]) {
+            for (j = 0; j < images.size(); ++j) {
+                if (link.m_path == images[j].m_path) {
                     break;
                 }
             }
 
-            // Delete it
-            if (j == imageNames.size()) {
-                QString imagePath = dir.filePath(name);
-                QFile(imagePath).remove();
-                qDebug() << "delete inserted image" << imagePath;
+            // This inserted image is no longer in the file.
+            if (j == images.size()) {
+                if (!QFile(link.m_path).remove()) {
+                    qWarning() << "fail to delete unused inserted image" << link.m_path;
+                } else {
+                    qDebug() << "delete unused inserted image" << link.m_path;
+                }
             }
         }
+
         m_insertedImages.clear();
     }
 
     for (int i = 0; i < m_initImages.size(); ++i) {
-        QString imagePath = m_initImages[i];
+        const ImageLink &link = m_initImages[i];
+
+        V_ASSERT(link.m_type == ImageLink::LocalRelativeInternal);
+
         int j;
         for (j = 0; j < images.size(); ++j) {
-            if (imagePath == images[j]) {
+            if (link.m_path == images[j].m_path) {
                 break;
             }
         }
 
-        // Delete it
+        // Original local relative image is no longer in the file.
         if (j == images.size()) {
-            QFile(imagePath).remove();
-            qDebug() << "delete existing image" << imagePath;
+            if (!QFile(link.m_path).remove()) {
+                qWarning() << "fail to delete unused original image" << link.m_path;
+            } else {
+                qDebug() << "delete unused original image" << link.m_path;
+            }
         }
     }
+
     m_initImages.clear();
 }
 

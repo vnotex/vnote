@@ -10,6 +10,7 @@
 #include "vtoc.h"
 #include "veditoperations.h"
 #include "vconfigmanager.h"
+#include "utils/vutils.h"
 
 class HGMarkdownHighlighter;
 class VCodeBlockHighlightHelper;
@@ -27,8 +28,9 @@ public:
     void saveFile() Q_DECL_OVERRIDE;
     void reloadFile() Q_DECL_OVERRIDE;
 
-    // An image has been inserted.
-    void imageInserted(const QString &p_name);
+    // An image has been inserted. The image is relative.
+    // @p_path is the absolute path of the inserted image.
+    void imageInserted(const QString &p_path);
 
     // Scroll to m_headers[p_headerIndex].
     void scrollToHeader(int p_headerIndex);
@@ -67,8 +69,13 @@ private:
     HGMarkdownHighlighter *m_mdHighlighter;
     VCodeBlockHighlightHelper *m_cbHighlighter;
     VImagePreviewer *m_imagePreviewer;
-    QVector<QString> m_insertedImages;
-    QVector<QString> m_initImages;
+
+    // Image links inserted while editing.
+    QVector<ImageLink> m_insertedImages;
+
+    // Image links right at the beginning of the edit.
+    QVector<ImageLink> m_initImages;
+
     QVector<VHeader> m_headers;
 };
 

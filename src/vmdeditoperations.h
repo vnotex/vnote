@@ -26,7 +26,12 @@ private slots:
 
 private:
     void insertImageFromPath(const QString &title, const QString &path, const QString &oriImagePath);
+
+    // @title: title of the inserted image;
+    // @path: the image folder path to insert the image in;
+    // @image: the image to be inserted;
     void insertImageFromQImage(const QString &title, const QString &path, const QImage &image);
+
     void setKeyState(KeyState p_state);
 
     // Key press handlers.

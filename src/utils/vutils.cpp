@@ -17,14 +17,14 @@
 #include <QLocale>
 #include <QPushButton>
 
-#include "vconfigmanager.h"
+#include "vfile.h"
 
 extern VConfigManager vconfig;
 
 const QVector<QPair<QString, QString>> VUtils::c_availableLanguages = {QPair<QString, QString>("en_US", "Englisth(US)"),
                                                                        QPair<QString, QString>("zh_CN", "Chinese")};
 
-const QString VUtils::c_imageLinkRegExp = QString("\\!\\[([^\\]]*)\\]\\(([^\\)\"]+)\\s*(\".*\")?\\s*\\)");
+const QString VUtils::c_imageLinkRegExp = QString("\\!\\[([^\\]]*)\\]\\(([^\\)\"]+)\\s*(\"(\\\\.|[^\"\\)])*\")?\\s*\\)");
 
 VUtils::VUtils()
 {
@@ -113,71 +113,120 @@ void VUtils::processStyle(QString &style, const QVector<QPair<QString, QString> 
     }
 }
 
-bool VUtils::isMarkdown(const QString &name)
+bool VUtils::isMarkdown(const QString &p_fileName)
 {
     const QVector<QString> mdPostfix({"md", "markdown", "mkd"});
 
-    QStringList list = name.split('.', QString::SkipEmptyParts);
-    if (list.isEmpty()) {
-        return false;
-    }
-    const QString &postfix = list.last();
+    QFileInfo info(p_fileName);
+    QString suffix = info.suffix();
+
     for (int i = 0; i < mdPostfix.size(); ++i) {
-        if (postfix == mdPostfix[i]) {
+        if (suffix == mdPostfix[i]) {
             return true;
         }
     }
+
     return false;
 }
 
-QString VUtils::fileNameFromPath(const QString &path)
+QString VUtils::fileNameFromPath(const QString &p_path)
 {
-    if (path.isEmpty()) {
-        return path;
+    if (p_path.isEmpty()) {
+        return p_path;
     }
-    return QFileInfo(QDir::cleanPath(path)).fileName();
+
+    return QFileInfo(QDir::cleanPath(p_path)).fileName();
 }
 
-QString VUtils::basePathFromPath(const QString &path)
+QString VUtils::basePathFromPath(const QString &p_path)
 {
-    return QFileInfo(path).path();
+    if (p_path.isEmpty()) {
+        return p_path;
+    }
+
+    return QFileInfo(QDir::cleanPath(p_path)).path();
 }
 
-// Collect image links like ![](images/xx.jpg)
-QVector<QString> VUtils::imagesFromMarkdownFile(const QString &filePath)
+QVector<ImageLink> VUtils::fetchImagesFromMarkdownFile(VFile *p_file,
+                                                       ImageLink::ImageLinkType p_type)
 {
-    Q_ASSERT(isMarkdown(filePath));
-    QVector<QString> images;
-    if (filePath.isEmpty()) {
+    V_ASSERT(p_file->getDocType() == DocType::Markdown);
+    QVector<ImageLink> images;
+
+    bool isOpened = p_file->isOpened();
+    if (!isOpened && !p_file->open()) {
         return images;
     }
-    QString basePath = basePathFromPath(filePath);
-    QString text = readFileFromDisk(filePath);
-    QRegExp regExp("\\!\\[[^\\]]*\\]\\((images/[^/\\)]+)\\)");
-    int pos = 0;
 
+    const QString &text = p_file->getContent();
+    if (text.isEmpty()) {
+        if (!isOpened) {
+            p_file->close();
+        }
+
+        return images;
+    }
+
+    QRegExp regExp(c_imageLinkRegExp);
+    QString basePath = p_file->retriveBasePath();
+    int pos = 0;
     while (pos < text.size() && (pos = regExp.indexIn(text, pos)) != -1) {
-        Q_ASSERT(regExp.captureCount() == 1);
-        qDebug() << regExp.capturedTexts()[0] << regExp.capturedTexts()[1];
-        images.append(QDir(basePath).filePath(regExp.capturedTexts()[1]));
+        QString imageUrl = regExp.capturedTexts()[2].trimmed();
+
+        ImageLink link;
+        QFileInfo info(basePath, imageUrl);
+        if (info.exists()) {
+            if (info.isNativePath()) {
+                // Local file.
+                link.m_path = QDir::cleanPath(info.absoluteFilePath());
+
+                if (QDir::isRelativePath(imageUrl)) {
+                    link.m_type = p_file->isInternalImageFolder(VUtils::basePathFromPath(link.m_path)) ?
+                                  ImageLink::LocalRelativeInternal : ImageLink::LocalRelativeExternal;
+                } else {
+                    link.m_type = ImageLink::LocalAbsolute;
+                }
+            } else {
+                link.m_type = ImageLink::Resource;
+                link.m_path = imageUrl;
+            }
+        } else {
+            QUrl url(imageUrl);
+            link.m_path = url.toString();
+            link.m_type = ImageLink::Remote;
+        }
+
+        if (link.m_type & p_type) {
+            images.push_back(link);
+            qDebug() << "fetch one image:" << link.m_type << link.m_path;
+        }
+
         pos += regExp.matchedLength();
     }
+
+    if (!isOpened) {
+        p_file->close();
+    }
+
     return images;
 }
 
-void VUtils::makeDirectory(const QString &path)
+bool VUtils::makePath(const QString &p_path)
 {
-    if (path.isEmpty()) {
-        return;
+    if (p_path.isEmpty()) {
+        return true;
     }
 
-    // mkdir will return false if it already exists
-    QString basePath = basePathFromPath(path);
-    QString dirName = directoryNameFromPath(path);
-    QDir dir(basePath);
-    if (dir.mkdir(dirName)) {
-        qDebug() << "mkdir" << path;
+    bool ret = true;
+    QDir dir;
+    if (dir.mkpath(p_path)) {
+        qDebug() << "make path" << p_path;
+    } else {
+        qWarning() << "fail to make path" << p_path;
+        ret = false;
     }
+
+    return ret;
 }
 
 ClipboardOpType VUtils::opTypeInClipboard()

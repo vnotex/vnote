@@ -45,9 +45,9 @@ void VFile::close()
 
 void VFile::deleteDiskFile()
 {
-    Q_ASSERT(parent());
+    V_ASSERT(parent());
 
-    // Delete local images in ./images if it is Markdown
+    // Delete local images if it is Markdown.
     if (m_docType == DocType::Markdown) {
         deleteLocalImages();
     }
@@ -97,17 +97,19 @@ void VFile::setModified(bool p_modified)
 
 void VFile::deleteLocalImages()
 {
-    Q_ASSERT(m_docType == DocType::Markdown);
-    QString filePath = retrivePath();
-    QVector<QString> images = VUtils::imagesFromMarkdownFile(filePath);
+    V_ASSERT(m_docType == DocType::Markdown);
+
+    QVector<ImageLink> images = VUtils::fetchImagesFromMarkdownFile(this,
+                                                                    ImageLink::LocalRelativeInternal);
     int deleted = 0;
     for (int i = 0; i < images.size(); ++i) {
-        QFile file(images[i]);
+        QFile file(images[i].m_path);
         if (file.remove()) {
             ++deleted;
         }
     }
-    qDebug() << "delete" << deleted << "images for" << filePath;
+
+    qDebug() << "delete" << deleted << "images for" << retrivePath();
 }
 
 void VFile::setName(const QString &p_name)
@@ -151,6 +153,11 @@ QString VFile::getNotebookName() const
     return getDirectory()->getNotebookName();
 }
 
+const VNotebook *VFile::getNotebook() const
+{
+    return getDirectory()->getNotebook();
+}
+
 VNotebook *VFile::getNotebook()
 {
     return getDirectory()->getNotebook();
@@ -175,7 +182,7 @@ QString VFile::retriveBasePath() const
 
 QString VFile::retriveImagePath() const
 {
-    return QDir(retriveBasePath()).filePath("images");
+    return QDir(retriveBasePath()).filePath(getNotebook()->getImageFolder());
 }
 
 void VFile::setContent(const QString &p_content)
@@ -201,4 +208,9 @@ bool VFile::isOpened() const
 FileType VFile::getType() const
 {
     return m_type;
+}
+
+bool VFile::isInternalImageFolder(const QString &p_path) const
+{
+    return VUtils::basePathFromPath(p_path) == getDirectory()->retrivePath();
 }

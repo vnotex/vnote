@@ -38,10 +38,12 @@ public:
     VDirectory *addSubDirectory(const QString &p_name, int p_index);
     void deleteFile(VFile *p_file);
     bool rename(const QString &p_name);
+
     // Copy @p_srcFile to @p_destDir, setting new name to @p_destName.
     // @p_cut: copy or cut. Returns the dest VFile.
     static VFile *copyFile(VDirectory *p_destDir, const QString &p_destName,
                            VFile *p_srcFile, bool p_cut);
+
     static VDirectory *copyDirectory(VDirectory *p_destDir, const QString &p_destName,
                                      VDirectory *p_srcDir, bool p_cut);
 

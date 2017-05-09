@@ -55,49 +55,80 @@ void VMdEditOperations::insertImageFromQImage(const QString &title, const QStrin
                                               const QImage &image)
 {
     QString fileName = VUtils::generateImageFileName(path, title);
-    qDebug() << "insert image" << path << title << fileName;
     QString filePath = QDir(path).filePath(fileName);
-    Q_ASSERT(!QFile(filePath).exists());
-    VUtils::makeDirectory(path);
-    bool ret = image.save(filePath);
+    V_ASSERT(!QFile(filePath).exists());
+
+    QString errStr;
+    bool ret = VUtils::makePath(path);
     if (!ret) {
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Fail to save image %1.").arg(filePath),
-                           QMessageBox::Ok, (QWidget *)m_editor);
-        msgBox.exec();
+        errStr = tr("Fail to create image folder <span style=\"%1\">%2</span>.")
+                   .arg(vconfig.c_dataTextStyle).arg(path);
+    } else {
+        ret = image.save(filePath);
+        if (!ret) {
+            errStr = tr("Fail to save image <span style=\"%1\">%2</span>.")
+                       .arg(vconfig.c_dataTextStyle).arg(filePath);
+        }
+    }
+
+    if (!ret) {
+        VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                            tr("Fail to insert image <span style=\"%1\">%2</span>.").arg(vconfig.c_dataTextStyle).arg(title),
+                            errStr,
+                            QMessageBox::Ok,
+                            QMessageBox::Ok,
+                            (QWidget *)m_editor);
         return;
     }
 
-    QString md = QString("![%1](images/%2)").arg(title).arg(fileName);
+    QString md = QString("![%1](%2/%3)").arg(title).arg(VUtils::directoryNameFromPath(path)).arg(fileName);
     insertTextAtCurPos(md);
+
+    qDebug() << "insert image" << title << filePath;
 
     VMdEdit *mdEditor = dynamic_cast<VMdEdit *>(m_editor);
     Q_ASSERT(mdEditor);
-    mdEditor->imageInserted(fileName);
+    mdEditor->imageInserted(filePath);
 }
 
 void VMdEditOperations::insertImageFromPath(const QString &title,
                                             const QString &path, const QString &oriImagePath)
 {
     QString fileName = VUtils::generateImageFileName(path, title, QFileInfo(oriImagePath).suffix());
-    qDebug() << "insert image" << path << title << fileName << oriImagePath;
     QString filePath = QDir(path).filePath(fileName);
-    Q_ASSERT(!QFile(filePath).exists());
-    VUtils::makeDirectory(path);
-    bool ret = QFile::copy(oriImagePath, filePath);
+    V_ASSERT(!QFile(filePath).exists());
+
+    QString errStr;
+    bool ret = VUtils::makePath(path);
     if (!ret) {
-        qWarning() << "fail to copy" << oriImagePath << "to" << filePath;
-        QMessageBox msgBox(QMessageBox::Warning, tr("Warning"), tr("Fail to save image %1.").arg(filePath),
-                           QMessageBox::Ok, (QWidget *)m_editor);
-        msgBox.exec();
+        errStr = tr("Fail to create image folder <span style=\"%1\">%2</span>.")
+                   .arg(vconfig.c_dataTextStyle).arg(path);
+    } else {
+        ret = QFile::copy(oriImagePath, filePath);
+        if (!ret) {
+            errStr = tr("Fail to copy image <span style=\"%1\">%2</span>.")
+                       .arg(vconfig.c_dataTextStyle).arg(filePath);
+        }
+    }
+
+    if (!ret) {
+        VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                            tr("Fail to insert image <span style=\"%1\">%2</span>.").arg(vconfig.c_dataTextStyle).arg(title),
+                            errStr,
+                            QMessageBox::Ok,
+                            QMessageBox::Ok,
+                            (QWidget *)m_editor);
         return;
     }
 
-    QString md = QString("![%1](images/%2)").arg(title).arg(fileName);
+    QString md = QString("![%1](%2/%3)").arg(title).arg(VUtils::directoryNameFromPath(path)).arg(fileName);
     insertTextAtCurPos(md);
+
+    qDebug() << "insert image" << title << filePath;
 
     VMdEdit *mdEditor = dynamic_cast<VMdEdit *>(m_editor);
     Q_ASSERT(mdEditor);
-    mdEditor->imageInserted(fileName);
+    mdEditor->imageInserted(filePath);
 }
 
 bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)

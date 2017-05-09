@@ -6,9 +6,12 @@
 #include "vconfigmanager.h"
 #include "vfile.h"
 
+const QString VNotebook::c_defaultImageFolder = "_v_images";
+
 VNotebook::VNotebook(const QString &name, const QString &path, QObject *parent)
-    : QObject(parent), m_name(name), m_path(path)
+    : QObject(parent), m_name(name), m_imageFolder(c_defaultImageFolder)
 {
+    m_path = QDir::cleanPath(path);
     m_rootDir = new VDirectory(this, VUtils::directoryNameFromPath(path));
 }
 
@@ -115,4 +118,9 @@ void VNotebook::rename(const QString &p_name)
 bool VNotebook::containsFile(const VFile *p_file) const
 {
     return m_rootDir->containsFile(p_file);
+}
+
+const QString &VNotebook::getImageFolder() const
+{
+    return m_imageFolder;
 }

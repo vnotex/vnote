@@ -30,12 +30,22 @@ public:
                                      QObject *p_parent = 0);
     static bool deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles);
 
+    const QString &getImageFolder() const;
+
 signals:
     void contentChanged();
 
 private:
     QString m_name;
     QString m_path;
+
+    // Folder name to store images.
+    // VNote will store images in this folder within the same directory of the note.
+    QString m_imageFolder;
+
+    // Default folder name to store images of all the notes within this notebook.
+    static const QString c_defaultImageFolder;
+
     // Parent is NULL for root directory
     VDirectory *m_rootDir;
 };

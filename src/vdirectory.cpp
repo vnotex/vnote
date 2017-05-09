@@ -7,6 +7,8 @@
 #include "vfile.h"
 #include "utils/vutils.h"
 
+extern VConfigManager vconfig;
+
 VDirectory::VDirectory(VNotebook *p_notebook,
                        const QString &p_name, QObject *p_parent)
     : QObject(p_parent), m_notebook(p_notebook), m_name(p_name), m_opened(false),
@@ -472,9 +474,10 @@ VFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
     DocType docType = p_srcFile->getDocType();
     DocType newDocType = VUtils::isMarkdown(destPath) ? DocType::Markdown : DocType::Html;
 
-    QVector<QString> images;
+    QVector<ImageLink> images;
     if (docType == DocType::Markdown) {
-        images = VUtils::imagesFromMarkdownFile(srcPath);
+        images = VUtils::fetchImagesFromMarkdownFile(p_srcFile,
+                                                     ImageLink::LocalRelativeInternal);
     }
 
     // Copy the file
@@ -505,35 +508,71 @@ VFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
         destFile->convert(docType, newDocType);
     }
 
-    // We need to copy images when it is still markdown
+    // We need to copy internal images when it is still markdown.
     if (!images.isEmpty()) {
         if (newDocType == DocType::Markdown) {
-            QString dirPath = destFile->retriveImagePath();
-            VUtils::makeDirectory(dirPath);
+            QString parentPath = destFile->retriveBasePath();
             int nrPasted = 0;
             for (int i = 0; i < images.size(); ++i) {
-                if (!QFile(images[i]).exists()) {
+                const ImageLink &link = images[i];
+                if (!QFileInfo::exists(link.m_path)) {
                     continue;
                 }
 
-                QString destImagePath = QDir(dirPath).filePath(VUtils::fileNameFromPath(images[i]));
-                // Copy or Cut the images accordingly.
-                if (VUtils::copyFile(images[i], destImagePath, p_cut)) {
-                    nrPasted++;
+                QString errStr;
+                bool ret = true;
+
+                QString imageFolder = VUtils::directoryNameFromPath(VUtils::basePathFromPath(link.m_path));
+                QString destImagePath = QDir(parentPath).filePath(imageFolder);
+                ret = VUtils::makePath(destImagePath);
+                if (!ret) {
+                    errStr = tr("Fail to create image folder <span style=\"%1\">%2</span>.")
+                               .arg(vconfig.c_dataTextStyle).arg(destImagePath);
                 } else {
+                    destImagePath = QDir(destImagePath).filePath(VUtils::fileNameFromPath(link.m_path));
+
+                    // Copy or Cut the images accordingly.
+                    if (destImagePath == link.m_path) {
+                        ret = false;
+                    } else {
+                        ret = VUtils::copyFile(link.m_path, destImagePath, p_cut);
+                    }
+
+                    if (ret) {
+                        qDebug() << (p_cut ? "Cut" : "Copy") << "image"
+                                 << link.m_path << "->" << destImagePath;
+
+                        nrPasted++;
+                    } else {
+                        errStr = tr("Please check if there already exists a file <span style=\"%1\">%2</span> "
+                                    "and then manually copy it and modify the note accordingly.")
+                                   .arg(vconfig.c_dataTextStyle).arg(destImagePath);
+                    }
+                }
+
+                if (!ret) {
                     VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                        tr("Fail to copy image %1.").arg(images[i]),
-                                        tr("Please check if there already exists a file with the same name and then manually copy it."),
-                                        QMessageBox::Ok, QMessageBox::Ok, NULL);
+                                        tr("Fail to copy image <span style=\"%1\">%2</span> while "
+                                           "%5 note <span style=\"%3\">%4</span>.")
+                                          .arg(vconfig.c_dataTextStyle).arg(link.m_path)
+                                          .arg(vconfig.c_dataTextStyle).arg(srcPath)
+                                          .arg(p_cut ? tr("moving") : tr("copying")),
+                                        errStr, QMessageBox::Ok, QMessageBox::Ok, NULL);
                 }
             }
-            qDebug() << "pasted" << nrPasted << "images sucessfully";
+
+            qDebug() << "pasted" << nrPasted << "images";
         } else {
-            // Delete the images
+            // Delete the images.
+            int deleted = 0;
             for (int i = 0; i < images.size(); ++i) {
-                QFile file(images[i]);
-                file.remove();
+                QFile file(images[i].m_path);
+                if (file.remove()) {
+                    ++deleted;
+                }
             }
+
+            qDebug() << "delete" << deleted << "images since it is not Markdown any more for" << srcPath;
         }
     }
 
