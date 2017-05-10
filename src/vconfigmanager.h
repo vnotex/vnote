@@ -165,6 +165,9 @@ public:
     inline bool getEnablePreviewImageConstraint() const;
     inline void setEnablePreviewImageConstraint(bool p_enabled);
 
+    inline bool getEnableImageConstraint() const;
+    inline void setEnableImageConstraint(bool p_enabled);
+
     // Get the folder the ini file exists.
     QString getConfigFolder() const;
 
@@ -277,6 +280,9 @@ private:
 
     // Constrain the width of image preview in edit mode.
     bool m_enablePreviewImageConstraint;
+
+    // Constrain the width of image in read mode.
+    bool m_enableImageConstraint;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -733,6 +739,22 @@ inline void VConfigManager::setEnablePreviewImageConstraint(bool p_enabled)
     m_enablePreviewImageConstraint = p_enabled;
     setConfigToSettings("global", "enable_preview_image_constraint",
                         m_enablePreviewImageConstraint);
+}
+
+inline bool VConfigManager::getEnableImageConstraint() const
+{
+    return m_enableImageConstraint;
+}
+
+inline void VConfigManager::setEnableImageConstraint(bool p_enabled)
+{
+    if (m_enableImageConstraint == p_enabled) {
+        return;
+    }
+
+    m_enableImageConstraint = p_enabled;
+    setConfigToSettings("global", "enable_image_constraint",
+                        m_enableImageConstraint);
 }
 
 #endif // VCONFIGMANAGER_H

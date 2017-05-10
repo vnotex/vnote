@@ -157,8 +157,14 @@ void VNote::updateTemplate()
     }
     QString cssStyle;
     if (!rgb.isEmpty()) {
-        cssStyle = "body { background-color: #" + rgb + " !important; }";
+        cssStyle += "body { background-color: #" + rgb + " !important; }\n";
     }
+
+    if (vconfig.getEnableImageConstraint()) {
+        // Constain the image width.
+        cssStyle += "img { max-width: 100% !important; height: auto !important; }\n";
+    }
+
     QString styleHolder("<!-- BACKGROUND_PLACE_HOLDER -->");
     QString cssHolder("CSS_PLACE_HOLDER");
 

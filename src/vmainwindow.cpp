@@ -352,6 +352,14 @@ void VMainWindow::initMarkdownMenu()
 
     initRenderBackgroundMenu(markdownMenu);
 
+    QAction *constrainImageAct = new QAction(tr("Constrain The Width of Images in Read Mode"), this);
+    constrainImageAct->setToolTip(tr("Constrain the width of images to the window in read mode (re-open current tabs to make it work)"));
+    constrainImageAct->setCheckable(true);
+    connect(constrainImageAct, &QAction::triggered,
+            this, &VMainWindow::enableImageConstraint);
+    markdownMenu->addAction(constrainImageAct);
+    constrainImageAct->setChecked(vconfig.getEnableImageConstraint());
+
     markdownMenu->addSeparator();
 
     QAction *mermaidAct = new QAction(tr("&Mermaid Diagram"), this);
@@ -1299,6 +1307,13 @@ void VMainWindow::enableImagePreview(bool p_checked)
 void VMainWindow::enableImagePreviewConstraint(bool p_checked)
 {
     vconfig.setEnablePreviewImageConstraint(p_checked);
+}
+
+void VMainWindow::enableImageConstraint(bool p_checked)
+{
+    vconfig.setEnableImageConstraint(p_checked);
+
+    vnote->updateTemplate();
 }
 
 void VMainWindow::shortcutHelp()
