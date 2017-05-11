@@ -1,9 +1,13 @@
 var placeholder = document.getElementById('placeholder');
 
-// Use Marked to highlight code blocks.
+// Use Marked to highlight code blocks in edit mode.
 marked.setOptions({
-    highlight: function(code) {
-        return hljs.highlightAuto(code).value;
+    highlight: function(code, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+            return hljs.highlight(lang, code).value;
+        } else {
+            return hljs.highlightAuto(code).value;
+        }
     }
 });
 

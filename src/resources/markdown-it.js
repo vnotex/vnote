@@ -46,7 +46,6 @@ var mdit = window.markdownit({
         } else {
             return hljs.highlightAuto(str).value;
         }
-        return '';
     }
 });
 
