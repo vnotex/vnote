@@ -101,9 +101,10 @@ blockquote cite:before {
 blockquote p {
     color: #666;
 }
+
 hr {
     text-align: left;
-    margin: 0 auto 0 0;
+    margin: 1em 0;
     color: #999;
 }
 
