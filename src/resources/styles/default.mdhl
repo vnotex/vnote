@@ -94,13 +94,13 @@ foreground: 551a8b
 font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
 # Codeblock sylte from HighlightJS (bold, italic, underlined, color)
 # The last occurence of the same attribute takes effect
-hljs-comment: 888888
-hljs-keyword: bold
-hljs-attribute: bold
-hljs-selector-tag: bold
-hljs-meta-keyword: bold
-hljs-doctag: bold
-hljs-name: bold
+hljs-comment: 6c6c6c
+hljs-keyword: 0000ee
+hljs-attribute: 0000ee
+hljs-selector-tag: 0000ee
+hljs-meta-keyword: 0000ee
+hljs-doctag: 0000ee
+hljs-name: 0000ee
 hljs-type: 880000
 hljs-string: 880000
 hljs-number: 880000
@@ -118,11 +118,11 @@ hljs-template-variable: bc6060
 hljs-link: bc6060
 hljs-selector-attr: bc6060
 hljs-selector-pseudo: bc6060
-hljs-literal: 78a960
-hljs-built_in: 397300
-hljs-bullet: 397300
-hljs-code: 397300
-hljs-addition: 397300
+hljs-literal: af00d7
+hljs-built_in: 008700
+hljs-bullet: 008700
+hljs-code: 008700
+hljs-addition: 008700
 hljs-meta: 1f7199
 hljs-meta-string: 4d99bf
 hljs-emphasis: italic
