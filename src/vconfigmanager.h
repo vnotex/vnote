@@ -168,6 +168,9 @@ public:
     inline bool getEnableImageConstraint() const;
     inline void setEnableImageConstraint(bool p_enabled);
 
+    inline bool getEnableImageCaption() const;
+    inline void setEnableImageCaption(bool p_enabled);
+
     // Get the folder the ini file exists.
     QString getConfigFolder() const;
 
@@ -283,6 +286,9 @@ private:
 
     // Constrain the width of image in read mode.
     bool m_enableImageConstraint;
+
+    // Center image and add the alt text as caption.
+    bool m_enableImageCaption;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -755,6 +761,21 @@ inline void VConfigManager::setEnableImageConstraint(bool p_enabled)
     m_enableImageConstraint = p_enabled;
     setConfigToSettings("global", "enable_image_constraint",
                         m_enableImageConstraint);
+}
+
+inline bool VConfigManager::getEnableImageCaption() const
+{
+    return m_enableImageCaption;
+}
+
+inline void VConfigManager::setEnableImageCaption(bool p_enabled)
+{
+    if (m_enableImageCaption == p_enabled) {
+        return;
+    }
+    m_enableImageCaption = p_enabled;
+    setConfigToSettings("global", "enable_image_caption",
+                        m_enableImageCaption);
 }
 
 #endif // VCONFIGMANAGER_H

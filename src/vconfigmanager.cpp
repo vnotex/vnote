@@ -133,6 +133,9 @@ void VConfigManager::initialize()
 
     m_enableImageConstraint = getConfigFromSettings("global",
                                                     "enable_image_constraint").toBool();
+
+    m_enableImageCaption = getConfigFromSettings("global",
+                                                 "enable_image_caption").toBool();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

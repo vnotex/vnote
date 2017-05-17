@@ -13,6 +13,9 @@ marked.setOptions({
 
 var updateHtml = function(html) {
     placeholder.innerHTML = html;
+
+    insertImageCaption();
+
     var codes = document.getElementsByTagName('code');
     mermaidIdx = 0;
     for (var i = 0; i < codes.length; ++i) {

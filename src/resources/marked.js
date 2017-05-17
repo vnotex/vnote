@@ -125,6 +125,7 @@ var updateText = function(text) {
     var html = markdownToHtml(text, needToc);
     placeholder.innerHTML = html;
     handleToc(needToc);
+    insertImageCaption();
     renderMermaid('lang-mermaid');
     if (VEnableMathjax) {
         try {

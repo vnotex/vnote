@@ -356,6 +356,10 @@ void VEditTab::setupMarkdownPreview()
                      "<script>var VEnableMathjax = true;</script>\n";
     }
 
+    if (vconfig.getEnableImageCaption()) {
+        extraFile += "<script>var VEnableImageCaption = true;</script>\n";
+    }
+
     QString htmlTemplate = VNote::s_markdownTemplate;
     htmlTemplate.replace(jsHolder, jsFile);
     if (!extraFile.isEmpty()) {

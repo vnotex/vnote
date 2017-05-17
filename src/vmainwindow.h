@@ -79,6 +79,7 @@ private slots:
     void enableImagePreview(bool p_checked);
     void enableImagePreviewConstraint(bool p_checked);
     void enableImageConstraint(bool p_checked);
+    void enableImageCaption(bool p_checked);
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;

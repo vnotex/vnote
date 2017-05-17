@@ -14,6 +14,14 @@ if (typeof VEnableMathjax == 'undefined') {
     VEnableMathjax = false;
 }
 
+// Add a caption (using alt text) under the image.
+var VImageCenterClass = 'img-center';
+var VImageCaptionClass = 'img-caption';
+var VImagePackageClass = 'img-package';
+if (typeof VEnableImageCaption == 'undefined') {
+    VEnableImageCaption = false;
+}
+
 new QWebChannel(qt.webChannelTransport,
     function(channel) {
         content = channel.objects.content;
@@ -200,3 +208,40 @@ var renderMermaid = function(className) {
         }
     }
 };
+
+var isImageBlock = function(img) {
+    var pn = img.parentNode;
+    return (pn.children.length == 1) && (pn.innerText == '');
+}
+
+// Center the image block and insert the alt text as caption.
+var insertImageCaption = function() {
+    if (!VEnableImageCaption) {
+        return;
+    }
+
+    var imgs = document.getElementsByTagName('img');
+    for (var i = 0; i < imgs.length; ++i) {
+        var img = imgs[i];
+
+        if (!isImageBlock(img)) {
+            continue;
+        }
+
+        // Make the parent img-package.
+        img.parentNode.classList.add(VImagePackageClass);
+
+        // Make it center.
+        img.classList.add(VImageCenterClass);
+
+        if (img.alt == '') {
+            continue;
+        }
+
+        // Add caption.
+        var captionDiv = document.createElement('div');
+        captionDiv.classList.add(VImageCaptionClass);
+        captionDiv.innerText = img.alt;
+        img.insertAdjacentElement('afterend', captionDiv);
+    }
+}

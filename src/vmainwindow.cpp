@@ -352,13 +352,21 @@ void VMainWindow::initMarkdownMenu()
 
     initRenderBackgroundMenu(markdownMenu);
 
-    QAction *constrainImageAct = new QAction(tr("Constrain The Width of Images in Read Mode"), this);
+    QAction *constrainImageAct = new QAction(tr("Constrain The Width of Images"), this);
     constrainImageAct->setToolTip(tr("Constrain the width of images to the window in read mode (re-open current tabs to make it work)"));
     constrainImageAct->setCheckable(true);
     connect(constrainImageAct, &QAction::triggered,
             this, &VMainWindow::enableImageConstraint);
     markdownMenu->addAction(constrainImageAct);
     constrainImageAct->setChecked(vconfig.getEnableImageConstraint());
+
+    QAction *imageCaptionAct = new QAction(tr("Enable Image Caption"), this);
+    imageCaptionAct->setToolTip(tr("Center the images and display the alt text as caption (re-open current tabs to make it work)"));
+    imageCaptionAct->setCheckable(true);
+    connect(imageCaptionAct, &QAction::triggered,
+            this, &VMainWindow::enableImageCaption);
+    markdownMenu->addAction(imageCaptionAct);
+    imageCaptionAct->setChecked(vconfig.getEnableImageCaption());
 
     markdownMenu->addSeparator();
 
@@ -1314,6 +1322,11 @@ void VMainWindow::enableImageConstraint(bool p_checked)
     vconfig.setEnableImageConstraint(p_checked);
 
     vnote->updateTemplate();
+}
+
+void VMainWindow::enableImageCaption(bool p_checked)
+{
+    vconfig.setEnableImageCaption(p_checked);
 }
 
 void VMainWindow::shortcutHelp()
