@@ -42,6 +42,11 @@ public:
     static const QString c_markdownitAnchorExtraFile;
     static const QString c_markdownitTaskListExtraFile;
 
+    // Showdown
+    static const QString c_showdownJsFile;
+    static const QString c_showdownExtraFile;
+    static const QString c_showdownAnchorExtraFile;
+
     // Mermaid
     static const QString c_mermaidApiJsFile;
     static const QString c_mermaidCssFile;

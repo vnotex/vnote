@@ -335,6 +335,13 @@ void VEditTab::setupMarkdownPreview()
                     "<script src=\"qrc" + VNote::c_markdownitTaskListExtraFile + "\"></script>\n";
         break;
 
+    case MarkdownConverterType::Showdown:
+        jsFile = "qrc" + VNote::c_showdownJsFile;
+        extraFile = "<script src=\"qrc" + VNote::c_showdownExtraFile + "\"></script>\n" +
+                    "<script src=\"qrc" + VNote::c_showdownAnchorExtraFile + "\"></script>\n";
+
+        break;
+
     default:
         Q_ASSERT(false);
     }

@@ -16,7 +16,8 @@ enum MarkdownConverterType
 {
     Hoedown = 0,
     Marked,
-    MarkdownIt
+    MarkdownIt,
+    Showdown
 };
 
 struct VColor

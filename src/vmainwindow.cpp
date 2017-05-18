@@ -324,11 +324,17 @@ void VMainWindow::initMarkdownMenu()
     markdownitAct->setCheckable(true);
     markdownitAct->setData(int(MarkdownConverterType::MarkdownIt));
 
+    QAction *showdownAct = new QAction(tr("Showdown"), converterAct);
+    showdownAct->setToolTip(tr("Use Showdown to convert Markdown to HTML (re-open current tabs to make it work)"));
+    showdownAct->setCheckable(true);
+    showdownAct->setData(int(MarkdownConverterType::Showdown));
+
     connect(converterAct, &QActionGroup::triggered,
             this, &VMainWindow::changeMarkdownConverter);
     converterMenu->addAction(hoedownAct);
     converterMenu->addAction(markedAct);
     converterMenu->addAction(markdownitAct);
+    converterMenu->addAction(showdownAct);
 
     MarkdownConverterType converterType = vconfig.getMdConverterType();
     switch (converterType) {
@@ -342,6 +348,10 @@ void VMainWindow::initMarkdownMenu()
 
     case MarkdownConverterType::MarkdownIt:
         markdownitAct->setChecked(true);
+        break;
+
+    case MarkdownConverterType::Showdown:
+        showdownAct->setChecked(true);
         break;
 
     default:
@@ -697,8 +707,11 @@ void VMainWindow::changeMarkdownConverter(QAction *action)
     if (!action) {
         return;
     }
+
     MarkdownConverterType type = (MarkdownConverterType)action->data().toInt();
+
     qDebug() << "switch to converter" << type;
+
     vconfig.setMarkdownConverterType(type);
 }
 

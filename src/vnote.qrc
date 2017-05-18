@@ -101,5 +101,8 @@
         <file>resources/styles/default.css</file>
         <file>resources/icons/add_style.svg</file>
         <file>utils/highlightjs/styles/vnote.css</file>
+        <file>utils/showdown/showdown.min.js</file>
+        <file>resources/showdown.js</file>
+        <file>utils/showdown/showdown-headinganchor.js</file>
     </qresource>
 </RCC>

@@ -16,6 +16,7 @@
 extern VConfigManager vconfig;
 
 QString VNote::s_markdownTemplate;
+
 const QString VNote::c_hoedownJsFile = ":/resources/hoedown.js";
 const QString VNote::c_markedJsFile = ":/resources/marked.js";
 const QString VNote::c_markedExtraFile = ":/utils/marked/marked.min.js";
@@ -23,6 +24,10 @@ const QString VNote::c_markdownitJsFile = ":/resources/markdown-it.js";
 const QString VNote::c_markdownitExtraFile = ":/utils/markdown-it/markdown-it.min.js";
 const QString VNote::c_markdownitAnchorExtraFile = ":/utils/markdown-it/markdown-it-headinganchor.js";
 const QString VNote::c_markdownitTaskListExtraFile = ":/utils/markdown-it/markdown-it-task-lists.min.js";
+const QString VNote::c_showdownJsFile = ":/resources/showdown.js";
+const QString VNote::c_showdownExtraFile = ":/utils/showdown/showdown.min.js";
+const QString VNote::c_showdownAnchorExtraFile = ":/utils/showdown/showdown-headinganchor.js";
+
 const QString VNote::c_mermaidApiJsFile = ":/utils/mermaid/mermaidAPI.min.js";
 const QString VNote::c_mermaidCssFile = ":/utils/mermaid/mermaid.css";
 const QString VNote::c_mermaidDarkCssFile = ":/utils/mermaid/mermaid.dark.css";
