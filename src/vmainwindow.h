@@ -80,6 +80,7 @@ private slots:
     void enableImagePreviewConstraint(bool p_checked);
     void enableImageConstraint(bool p_checked);
     void enableImageCaption(bool p_checked);
+    void printNote();
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -153,6 +154,7 @@ private:
     QAction *discardExitAct;
     QAction *expandViewAct;
     QAction *m_importNoteAct;
+    QAction *m_printAct;
 
     QAction *m_insertImageAct;
     QAction *m_findReplaceAct;

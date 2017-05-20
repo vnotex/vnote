@@ -104,5 +104,6 @@
         <file>utils/showdown/showdown.min.js</file>
         <file>resources/showdown.js</file>
         <file>utils/showdown/showdown-headinganchor.js</file>
+        <file>resources/icons/print.svg</file>
     </qresource>
 </RCC>

@@ -727,3 +727,9 @@ void VEditTab::zoomWebPage(bool p_zoomIn, qreal p_step)
     }
     webPreviewer->setZoomFactor(newFactor);
 }
+
+VWebView *VEditTab::getWebViewer() const
+{
+    return webPreviewer;
+}
+

@@ -49,6 +49,8 @@ public:
     QString getSelectedText() const;
     void clearSearchedWordHighlight();
 
+    VWebView *getWebViewer() const;
+
 public slots:
     // Enter edit mode
     void editFile();

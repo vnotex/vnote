@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui webenginewidgets webchannel network svg
+QT       += core gui webenginewidgets webchannel network svg printsupport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 

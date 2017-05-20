@@ -1,5 +1,8 @@
 #include <QtWidgets>
 #include <QList>
+#include <QPrinter>
+#include <QPrintDialog>
+#include <QPainter>
 #include "vmainwindow.h"
 #include "vdirectorytree.h"
 #include "vnote.h"
@@ -13,6 +16,8 @@
 #include "dialog/vfindreplacedialog.h"
 #include "dialog/vsettingsdialog.h"
 #include "vcaptain.h"
+#include "vedittab.h"
+#include "vwebview.h"
 
 extern VConfigManager vconfig;
 
@@ -438,30 +443,42 @@ void VMainWindow::initFileMenu()
 
     // Import notes from files.
     m_importNoteAct = new QAction(QIcon(":/resources/icons/import_note.svg"),
-                                        tr("&Import Notes From Files"), this);
+                                  tr("&Import Notes From Files"), this);
     m_importNoteAct->setToolTip(tr("Import notes from files into current directory"));
     connect(m_importNoteAct, &QAction::triggered,
             this, &VMainWindow::importNoteFromFile);
     m_importNoteAct->setEnabled(false);
 
+    fileMenu->addAction(m_importNoteAct);
+
+    fileMenu->addSeparator();
+
+    // Print.
+    m_printAct = new QAction(QIcon(":/resources/icons/print.svg"),
+                             tr("&Print"), this);
+    m_printAct->setToolTip(tr("Print current note"));
+    connect(m_printAct, &QAction::triggered,
+            this, &VMainWindow::printNote);
+    m_printAct->setEnabled(false);
+
     // Settings.
     QAction *settingsAct = new QAction(QIcon(":/resources/icons/settings.svg"),
-                                       tr("Settings"), this);
+                                       tr("&Settings"), this);
     settingsAct->setToolTip(tr("View and change settings for VNote"));
     connect(settingsAct, &QAction::triggered,
             this, &VMainWindow::viewSettings);
 
+    fileMenu->addAction(settingsAct);
+
+    fileMenu->addSeparator();
+
     // Exit.
-    QAction *exitAct = new QAction(tr("Exit"), this);
+    QAction *exitAct = new QAction(tr("&Exit"), this);
     exitAct->setToolTip(tr("Exit VNote"));
     exitAct->setShortcut(QKeySequence("Ctrl+Q"));
     connect(exitAct, &QAction::triggered,
             this, &VMainWindow::close);
 
-    fileMenu->addAction(m_importNoteAct);
-    fileMenu->addSeparator();
-    fileMenu->addAction(settingsAct);
-    fileMenu->addSeparator();
     fileMenu->addAction(exitAct);
 }
 
@@ -998,6 +1015,8 @@ void VMainWindow::setEditorStyle(QAction *p_action)
 void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
                                                        bool p_editMode)
 {
+    m_printAct->setEnabled(p_file && p_file->getDocType() == DocType::Markdown);
+
     editNoteAct->setVisible(p_file && p_file->isModifiable() && !p_editMode);
     discardExitAct->setVisible(p_file && p_editMode);
     saveExitAct->setVisible(p_file && p_editMode);
@@ -1352,3 +1371,25 @@ void VMainWindow::shortcutHelp()
     VFile *file = vnote->getOrphanFile(docName);
     editArea->openFile(file, OpenFileMode::Read);
 }
+
+void VMainWindow::printNote()
+{
+    QPrinter printer;
+    QPrintDialog dialog(&printer, this);
+    dialog.setWindowTitle(tr("Print Note"));
+
+    V_ASSERT(m_curTab);
+
+    VWebView *webView = m_curTab->getWebViewer();
+
+    V_ASSERT(webView);
+
+    if (webView->hasSelection()) {
+        dialog.addEnabledOption(QAbstractPrintDialog::PrintSelection);
+    }
+
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+}
+
