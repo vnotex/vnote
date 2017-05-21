@@ -18,6 +18,7 @@
 #include "vcaptain.h"
 #include "vedittab.h"
 #include "vwebview.h"
+#include "vexporter.h"
 
 extern VConfigManager vconfig;
 
@@ -450,6 +451,18 @@ void VMainWindow::initFileMenu()
     m_importNoteAct->setEnabled(false);
 
     fileMenu->addAction(m_importNoteAct);
+
+    fileMenu->addSeparator();
+
+    // Export as PDF.
+    m_exportAsPDFAct = new QAction(QIcon(":/resources/icons/export_pdf.svg"),
+                                tr("Export As &PDF"), this);
+    m_exportAsPDFAct->setToolTip(tr("Export current note as PDF file"));
+    connect(m_exportAsPDFAct, &QAction::triggered,
+            this, &VMainWindow::exportAsPDF);
+    m_exportAsPDFAct->setEnabled(false);
+
+    fileMenu->addAction(m_exportAsPDFAct);
 
     fileMenu->addSeparator();
 
@@ -1016,6 +1029,7 @@ void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
                                                        bool p_editMode)
 {
     m_printAct->setEnabled(p_file && p_file->getDocType() == DocType::Markdown);
+    m_exportAsPDFAct->setEnabled(p_file && p_file->getDocType() == DocType::Markdown);
 
     editNoteAct->setVisible(p_file && p_file->isModifiable() && !p_editMode);
     discardExitAct->setVisible(p_file && p_editMode);
@@ -1391,5 +1405,15 @@ void VMainWindow::printNote()
     if (dialog.exec() != QDialog::Accepted) {
         return;
     }
+}
+
+void VMainWindow::exportAsPDF()
+{
+    V_ASSERT(m_curTab);
+    V_ASSERT(m_curFile);
+
+    VExporter exporter(m_curTab->getMarkdownConverterType(), this);
+    exporter.exportNote(m_curFile, ExportType::PDF);
+    exporter.exec();
 }
 

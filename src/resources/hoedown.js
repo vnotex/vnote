@@ -49,13 +49,18 @@ var updateHtml = function(html) {
         }
     }
 
+    // If you add new logics after handling MathJax, please pay attention to
+    // finishLoading logic.
     // MathJax may be not loaded for now.
     if (VEnableMathjax && (typeof MathJax != "undefined")) {
         try {
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder]);
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder, finishLoading]);
         } catch (err) {
             content.setLog("err: " + err);
+            finishLoading();
         }
+    } else {
+        finishLoading();
     }
 };
 

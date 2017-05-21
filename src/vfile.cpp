@@ -3,6 +3,7 @@
 #include <QDir>
 #include <QDebug>
 #include <QTextEdit>
+#include <QFileInfo>
 #include "utils/vutils.h"
 
 VFile::VFile(const QString &p_name, QObject *p_parent,
@@ -213,4 +214,26 @@ FileType VFile::getType() const
 bool VFile::isInternalImageFolder(const QString &p_path) const
 {
     return VUtils::basePathFromPath(p_path) == getDirectory()->retrivePath();
+}
+
+QUrl VFile::getBaseUrl() const
+{
+    // Need to judge the path: Url, local file, resource file.
+    QUrl baseUrl;
+    QString basePath = retriveBasePath();
+    QFileInfo pathInfo(basePath);
+    if (pathInfo.exists()) {
+        if (pathInfo.isNativePath()) {
+            // Local file.
+            baseUrl = QUrl::fromLocalFile(basePath + QDir::separator());
+        } else {
+            // Resource file.
+            baseUrl = QUrl("qrc" + basePath + QDir::separator());
+        }
+    } else {
+        // Url.
+        baseUrl = QUrl(basePath + QDir::separator());
+    }
+
+    return baseUrl;
 }

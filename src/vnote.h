@@ -28,6 +28,7 @@ public:
     void initTemplate();
 
     static QString s_markdownTemplate;
+    static QString s_markdownTemplatePDF;
 
     // Hoedown
     static const QString c_hoedownJsFile;

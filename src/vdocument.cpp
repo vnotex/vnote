@@ -9,7 +9,9 @@ VDocument::VDocument(const VFile *v_file, QObject *p_parent)
 
 void VDocument::updateText()
 {
-    emit textChanged(m_file->getContent());
+    if (m_file) {
+        emit textChanged(m_file->getContent());
+    }
 }
 
 void VDocument::setToc(const QString &toc)
@@ -73,4 +75,15 @@ void VDocument::highlightTextCB(const QString &p_html, int p_id, int p_timeStamp
 void VDocument::noticeReadyToHighlightText()
 {
     emit readyToHighlightText();
+}
+
+void VDocument::setFile(const VFile *p_file)
+{
+    m_file = p_file;
+}
+
+void VDocument::finishLoading()
+{
+    qDebug() << "Web side finished loading";
+    emit loadFinished();
 }

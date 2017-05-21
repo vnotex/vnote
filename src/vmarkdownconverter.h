@@ -14,10 +14,13 @@ public:
     VMarkdownConverter();
     ~VMarkdownConverter();
 
-    QString generateHtml(const QString &markdown, hoedown_extensions options);
+    QString generateHtml(const QString &markdown, hoedown_extensions options, QString &toc);
+
     QString generateToc(const QString &markdown, hoedown_extensions options);
 
 private:
+    QString generateHtml(const QString &markdown, hoedown_extensions options);
+
     // VMarkdownDocument *generateDocument(const QString &markdown);
     hoedown_html_flags hoedownHtmlFlags;
     int nestingLevel;

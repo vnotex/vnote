@@ -92,6 +92,8 @@ public:
     static QChar keyToChar(int p_key);
     static QString getLocale();
 
+    static void sleepWait(int p_milliseconds);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
     // Captured texts (need to be trimmed):

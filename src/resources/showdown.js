@@ -151,12 +151,18 @@ var updateText = function(text) {
     insertImageCaption();
     highlightCodeBlocks(document, VEnableMermaid);
     renderMermaid('language-mermaid');
+
+    // If you add new logics after handling MathJax, please pay attention to
+    // finishLoading logic.
     if (VEnableMathjax) {
         try {
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder]);
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder, finishLoading]);
         } catch (err) {
             content.setLog("err: " + err);
+            finishLoading();
         }
+    } else {
+        finishLoading();
     }
 };
 

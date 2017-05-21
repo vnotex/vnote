@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QUrl>
 #include "vdirectory.h"
 #include "vconstants.h"
 
@@ -39,6 +40,9 @@ public:
     bool isModifiable() const;
     bool isOpened() const;
     FileType getType() const;
+
+    // Return the base URL for this file when loaded in VWebView.
+    QUrl getBaseUrl() const;
 
     // Whether the directory @p_path is an internal image folder of this file.
     // It is true only when the folder is in the same directory as the parent

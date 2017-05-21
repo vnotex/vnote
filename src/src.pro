@@ -61,7 +61,8 @@ SOURCES += main.cpp\
     vorphanfile.cpp \
     vcodeblockhighlighthelper.cpp \
     vwebview.cpp \
-    vimagepreviewer.cpp
+    vimagepreviewer.cpp \
+    vexporter.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -109,7 +110,8 @@ HEADERS  += vmainwindow.h \
     vorphanfile.h \
     vcodeblockhighlighthelper.h \
     vwebview.h \
-    vimagepreviewer.h
+    vimagepreviewer.h \
+    vexporter.h
 
 RESOURCES += \
     vnote.qrc \

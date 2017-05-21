@@ -14,4 +14,8 @@ static const qreal c_webZoomFactorMax = 5;
 static const qreal c_webZoomFactorMin = 0.25;
 
 static const int c_tabSequenceBase = 1;
+
+// HTML and JS.
+static const QString c_htmlJSHolder = "JS_PLACE_HOLDER";
+static const QString c_htmlExtraHolder = "<!-- EXTRA_PLACE_HOLDER -->";
 #endif

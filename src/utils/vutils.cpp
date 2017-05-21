@@ -16,6 +16,7 @@
 #include <cmath>
 #include <QLocale>
 #include <QPushButton>
+#include <QElapsedTimer>
 
 #include "vfile.h"
 
@@ -440,4 +441,17 @@ QString VUtils::getLocale()
         locale = QLocale::system().name();
     }
     return locale;
+}
+
+void VUtils::sleepWait(int p_milliseconds)
+{
+    if (p_milliseconds <= 0) {
+        return;
+    }
+
+    QElapsedTimer t;
+    t.start();
+    while (t.elapsed() < p_milliseconds) {
+        QCoreApplication::processEvents();
+    }
 }

@@ -16,6 +16,7 @@
 extern VConfigManager vconfig;
 
 QString VNote::s_markdownTemplate;
+QString VNote::s_markdownTemplatePDF;
 
 const QString VNote::c_hoedownJsFile = ":/resources/hoedown.js";
 const QString VNote::c_markedJsFile = ":/resources/marked.js";
@@ -170,14 +171,22 @@ void VNote::updateTemplate()
         cssStyle += "img { max-width: 100% !important; height: auto !important; }\n";
     }
 
-    QString styleHolder("<!-- BACKGROUND_PLACE_HOLDER -->");
-    QString cssHolder("CSS_PLACE_HOLDER");
+    const QString styleHolder("<!-- BACKGROUND_PLACE_HOLDER -->");
+    const QString cssHolder("CSS_PLACE_HOLDER");
 
     s_markdownTemplate = VUtils::readFileFromDisk(c_markdownTemplatePath);
     s_markdownTemplate.replace(cssHolder, vconfig.getTemplateCssUrl());
+
+    s_markdownTemplatePDF = s_markdownTemplate;
+
     if (!cssStyle.isEmpty()) {
         s_markdownTemplate.replace(styleHolder, cssStyle);
     }
+
+    // Shoudl not display scrollbar in PDF.
+    cssStyle += "pre code { white-space: pre-wrap !important; "
+                           "word-break: break-all !important; }\n";
+    s_markdownTemplatePDF.replace(styleHolder, cssStyle);
 }
 
 const QVector<VNotebook *> &VNote::getNotebooks() const

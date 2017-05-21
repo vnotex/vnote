@@ -94,7 +94,7 @@ void VInsertImageDialog::handleBrowseBtnClicked()
     static QString lastPath = QDir::homePath();
     QString filePath = QFileDialog::getOpenFileName(this, tr("Select The Image To Be Inserted"),
                                                     lastPath, tr("Images (*.png *.xpm *.jpg *.bmp *.gif)"));
-    if (filePath.isNull() || filePath.isEmpty()) {
+    if (filePath.isEmpty()) {
         return;
     }
 

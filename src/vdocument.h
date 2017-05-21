@@ -14,6 +14,7 @@ class VDocument : public QObject
     Q_PROPERTY(QString html MEMBER m_html NOTIFY htmlChanged)
 
 public:
+    // @p_file could be NULL.
     VDocument(const VFile *p_file, QObject *p_parent = 0);
     QString getToc();
     void scrollToAnchor(const QString &anchor);
@@ -21,6 +22,8 @@ public:
     // Request to highlight a segment text.
     // Use p_id to identify the result.
     void highlightTextAsync(const QString &p_text, int p_id, int p_timeStamp);
+
+    void setFile(const VFile *p_file);
 
 public slots:
     // Will be called in the HTML side
@@ -31,6 +34,9 @@ public slots:
     void updateText();
     void highlightTextCB(const QString &p_html, int p_id, int p_timeStamp);
     void noticeReadyToHighlightText();
+
+    // Page is finished loading.
+    void finishLoading();
 
 signals:
     void textChanged(const QString &text);
@@ -43,6 +49,7 @@ signals:
     void requestHighlightText(const QString &p_text, int p_id, int p_timeStamp);
     void textHighlighted(const QString &p_html, int p_id, int p_timeStamp);
     void readyToHighlightText();
+    void loadFinished();
 
 private:
     QString m_toc;

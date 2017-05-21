@@ -9,6 +9,7 @@ class VWebView : public QWebEngineView
 {
     Q_OBJECT
 public:
+    // @p_file could be NULL.
     explicit VWebView(VFile *p_file, QWidget *p_parent = Q_NULLPTR);
 
 signals:

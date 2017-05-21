@@ -245,3 +245,9 @@ var insertImageCaption = function() {
         img.insertAdjacentElement('afterend', captionDiv);
     }
 }
+
+// The renderer specific code should call this function once thay have finished
+// loading the page.
+var finishLoading = function() {
+    content.finishLoading();
+};

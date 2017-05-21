@@ -81,6 +81,7 @@ private slots:
     void enableImageConstraint(bool p_checked);
     void enableImageCaption(bool p_checked);
     void printNote();
+    void exportAsPDF();
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -155,6 +156,7 @@ private:
     QAction *expandViewAct;
     QAction *m_importNoteAct;
     QAction *m_printAct;
+    QAction *m_exportAsPDFAct;
 
     QAction *m_insertImageAct;
     QAction *m_findReplaceAct;

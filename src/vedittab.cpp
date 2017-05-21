@@ -155,23 +155,12 @@ void VEditTab::scrollPreviewToHeader(int p_outlineIndex)
 void VEditTab::previewByConverter()
 {
     VMarkdownConverter mdConverter;
-    const QString &content = m_file->getContent();
-    QString html = mdConverter.generateHtml(content, vconfig.getMarkdownExtensions());
-    QRegularExpression tocExp("<p>\\[TOC\\]<\\/p>", QRegularExpression::CaseInsensitiveOption);
-    QString toc = mdConverter.generateToc(content, vconfig.getMarkdownExtensions());
-    processHoedownToc(toc);
-    html.replace(tocExp, toc);
+    QString toc;
+    QString html = mdConverter.generateHtml(m_file->getContent(),
+                                            vconfig.getMarkdownExtensions(),
+                                            toc);
     document.setHtml(html);
     updateTocFromHtml(toc);
-}
-
-void VEditTab::processHoedownToc(QString &p_toc)
-{
-    // Hoedown will add '\n'.
-    p_toc.replace("\n", "");
-    // Hoedown will translate `_` in title to `<em>`.
-    p_toc.replace("<em>", "_");
-    p_toc.replace("</em>", "_");
 }
 
 void VEditTab::showFileEditMode()
@@ -294,8 +283,8 @@ void VEditTab::discardAndRead()
 
 void VEditTab::setupMarkdownPreview()
 {
-    const QString jsHolder("JS_PLACE_HOLDER");
-    const QString extraHolder("<!-- EXTRA_PLACE_HOLDER -->");
+    const QString &jsHolder = c_htmlJSHolder;
+    const QString &extraHolder = c_htmlExtraHolder;
 
     webPreviewer = new VWebView(m_file, this);
     connect(webPreviewer, &VWebView::editNote,
@@ -373,24 +362,7 @@ void VEditTab::setupMarkdownPreview()
         htmlTemplate.replace(extraHolder, extraFile);
     }
 
-    // Need to judge the path: Url, local file, resource file.
-    QUrl baseUrl;
-    QString basePath = m_file->retriveBasePath();
-    QFileInfo pathInfo(basePath);
-    if (pathInfo.exists()) {
-        if (pathInfo.isNativePath()) {
-            // Local file.
-            baseUrl = QUrl::fromLocalFile(basePath + QDir::separator());
-        } else {
-            // Resource file.
-            baseUrl = QUrl("qrc" + basePath + QDir::separator());
-        }
-    } else {
-        // Url.
-        baseUrl = QUrl(basePath + QDir::separator());
-    }
-
-    webPreviewer->setHtml(htmlTemplate, baseUrl);
+    webPreviewer->setHtml(htmlTemplate, m_file->getBaseUrl());
     addWidget(webPreviewer);
 }
 
@@ -733,3 +705,7 @@ VWebView *VEditTab::getWebViewer() const
     return webPreviewer;
 }
 
+MarkdownConverterType VEditTab::getMarkdownConverterType() const
+{
+    return mdConverterType;
+}

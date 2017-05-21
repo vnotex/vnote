@@ -20,7 +20,7 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
 
     const QList<QAction *> actions = menu->actions();
 
-    if (!hasSelection() && m_file->isModifiable()) {
+    if (!hasSelection() && m_file && m_file->isModifiable()) {
         QAction *editAct= new QAction(QIcon(":/resources/icons/edit_note.svg"),
                                           tr("&Edit"), this);
         editAct->setToolTip(tr("Edit current note"));
