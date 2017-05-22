@@ -741,6 +741,17 @@ bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
     if (p_event->modifiers() & Qt::ControlModifier) {
         m_autoIndentPos = -1;
         return false;
+    } else if (p_event->modifiers() & Qt::ShiftModifier) {
+        // Insert two spaces and a new line.
+        m_autoIndentPos = -1;
+
+        QTextCursor cursor = m_editor->textCursor();
+        cursor.beginEditBlock();
+        cursor.removeSelectedText();
+        cursor.insertText("  ");
+        cursor.endEditBlock();
+
+        // Let remaining logics handle inserting the new block.
     }
 
     // See if we need to cancel auto indent.
@@ -783,6 +794,7 @@ bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
             m_autoIndentPos = m_editor->textCursor().position();
         }
     }
+
     return handled;
 }
 
