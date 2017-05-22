@@ -7,6 +7,7 @@
 #include <QVector>
 #include <QMap>
 #include <QList>
+#include <QHash>
 #include "vdirectory.h"
 #include "vnotebook.h"
 #include "vnavigationmode.h"
@@ -77,11 +78,14 @@ private:
     void expandItemTree(QTreeWidgetItem *p_item);
     QList<QTreeWidgetItem *> getVisibleItems() const;
     QList<QTreeWidgetItem *> getVisibleChildItems(const QTreeWidgetItem *p_item) const;
+    bool restoreCurrentItem();
 
     VNote *vnote;
     QPointer<VNotebook> m_notebook;
     QVector<QPointer<VDirectory> > m_copiedDirs;
     VEditArea *m_editArea;
+
+    QHash<VNotebook *, VDirectory *> m_notebookCurrentDirMap;
 
     // Actions
     QAction *newRootDirAct;

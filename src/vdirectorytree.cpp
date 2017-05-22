@@ -129,7 +129,26 @@ void VDirectoryTree::updateDirectoryTree()
 
         updateDirectoryTreeOne(item, 1);
     }
-    setCurrentItem(topLevelItem(0));
+
+    if (!restoreCurrentItem()) {
+        setCurrentItem(topLevelItem(0));
+    }
+}
+
+bool VDirectoryTree::restoreCurrentItem()
+{
+    qDebug() << m_notebook << m_notebookCurrentDirMap;
+    auto it = m_notebookCurrentDirMap.find(m_notebook);
+    if (it != m_notebookCurrentDirMap.end()) {
+        bool rootDirectory;
+        QTreeWidgetItem *item = findVDirectory(it.value(), rootDirectory);
+        if (item) {
+            setCurrentItem(item);
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void VDirectoryTree::updateDirectoryTreeOne(QTreeWidgetItem *p_parent, int depth)
@@ -401,7 +420,10 @@ void VDirectoryTree::currentDirectoryItemChanged(QTreeWidgetItem *currentItem)
         emit currentDirectoryChanged(NULL);
         return;
     }
-    emit currentDirectoryChanged(getVDirectory(currentItem));
+
+    QPointer<VDirectory> dir = getVDirectory(currentItem);
+    m_notebookCurrentDirMap[m_notebook] = dir;
+    emit currentDirectoryChanged(dir);
 }
 
 void VDirectoryTree::editDirectoryInfo()
