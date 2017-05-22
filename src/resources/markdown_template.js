@@ -212,7 +212,62 @@ var renderMermaid = function(className) {
 var isImageBlock = function(img) {
     var pn = img.parentNode;
     return (pn.children.length == 1) && (pn.innerText == '');
-}
+};
+
+var isImageWithBr = function(img) {
+    var sibling = img.nextSibling;
+    while (sibling) {
+        if (sibling.nodeType == 8) {
+            // Comment node.
+            // Just continue.
+            sibling = sibling.nextSibling;
+            continue;
+        } else if (sibling.nodeType == 1) {
+            if (sibling.tagName == 'BR') {
+                break;
+            }
+        }
+
+        return false;
+    }
+
+    sibling = img.previousSibling;
+    while (sibling) {
+        if (sibling.nodeType == 8) {
+            // Comment node.
+            sibling = sibling.previousSibling;
+            continue;
+        } else if (sibling.nodeType == 1) {
+            // Element node.
+            if (sibling.tagName == 'BR') {
+                break;
+            }
+        } else if (sibling.nodeType == 3) {
+            // Text node.
+            if (sibling.nodeValue == '\n') {
+                var tmp = sibling.previousSibling;
+                if (tmp && tmp.tagName == 'BR') {
+                    break;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    return true;
+};
+
+var getImageType = function(img) {
+    var type = -1;
+    if (isImageBlock(img)) {
+        type = 0;
+    } else if (isImageWithBr(img)) {
+        type = 1;
+    }
+
+    return type;
+};
 
 // Center the image block and insert the alt text as caption.
 var insertImageCaption = function() {
@@ -224,8 +279,15 @@ var insertImageCaption = function() {
     for (var i = 0; i < imgs.length; ++i) {
         var img = imgs[i];
 
-        if (!isImageBlock(img)) {
+        var type = getImageType(img);
+
+        if (type == -1) {
             continue;
+        } else if (type == 1) {
+            // Insert a div as the parent of the img.
+            var imgPack = document.createElement('div');
+            img.insertAdjacentElement('afterend', imgPack);
+            imgPack.appendChild(img);
         }
 
         // Make the parent img-package.
