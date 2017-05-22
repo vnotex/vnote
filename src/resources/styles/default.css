@@ -5,45 +5,59 @@ body {
     line-height: 1;
     padding: 30px;
 }
-h1, h2, h3, h4 {
-    color: #111111;
-    font-weight: 400;
-}
-h1, h2, h3, h4, h5, p {
+
+h1, h2, h3, h4, h5, h6 {
+    color: #222222;
+    font-weight: bold;
     margin-bottom: 24px;
     padding: 0;
 }
+
+p {
+    margin-bottom: 24px;
+    padding: 0;
+}
+
 h1 {
-    font-size: 48px;
-}
-h2 {
     font-size: 36px;
-    /* The bottom margin is small. It's designed to be used with gray meta text
-     * below a post title. */
-    margin: 24px 0 6px;
 }
+
+h2 {
+    font-size: 30px;
+}
+
 h3 {
-    font-size: 24px;
+    font-size: 26px;
 }
+
 h4 {
-    font-size: 21px;
+    font-size: 22px;
 }
+
 h5 {
+    font-size: 20px;
+}
+
+h6 {
     font-size: 18px;
 }
+
 a {
     color: #0099ff;
     margin: 0;
     padding: 0;
     vertical-align: baseline;
 }
+
 a:hover {
     text-decoration: none;
     color: #ff6600;
 }
+
 a:visited {
     color: purple;
 }
+
 ul, ol {
     padding: 0;
     padding-left: 24px;

@@ -100,13 +100,11 @@ void VOutline::handleCurItemChanged(QTreeWidgetItem *p_curItem, QTreeWidgetItem 
         return;
     }
     curHeader = tmp;
-    qDebug() << "current header changed" << tmp.anchor << tmp.lineNumber;
     emit outlineItemActivated(curHeader);
 }
 
 void VOutline::updateCurHeader(const VAnchor &anchor)
 {
-    qDebug() << "update current header" << anchor.anchor << anchor.lineNumber;
     if (anchor == curHeader) {
         return;
     }
