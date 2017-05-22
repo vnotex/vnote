@@ -61,6 +61,10 @@ void VConfigManager::initialize()
 
     migrateIniFile();
 
+    // Override the default css styles on start up.
+    outputDefaultCssStyle();
+    outputDefaultEditorStyle();
+
     m_editorFontSize = getConfigFromSettings("global", "editor_font_size").toInt();
     if (m_editorFontSize <= 0) {
         m_editorFontSize = 12;
@@ -448,10 +452,23 @@ bool VConfigManager::outputDefaultCssStyle() const
         }
     }
 
-    QFileInfo finfo(c_defaultCssFile);
-    return VUtils::copyFile(c_defaultCssFile,
-                            getStyleConfigFolder() + QDir::separator() + finfo.fileName(),
-                            false);
+    QString srcPath = c_defaultCssFile;
+    QString destPath = getStyleConfigFolder() + QDir::separator() + QFileInfo(srcPath).fileName();
+
+    if (QFileInfo::exists(destPath)) {
+        QString bakPath = destPath + ".bak";
+        // We only keep one bak file.
+        if (!QFileInfo::exists(bakPath)) {
+            QFile::rename(destPath, bakPath);
+        } else {
+            // Just delete the default style.
+            QFile file(destPath);
+            file.setPermissions(QFile::ReadUser | QFile::WriteUser);
+            file.remove();
+        }
+    }
+
+    return VUtils::copyFile(srcPath, destPath, false);
 }
 
 bool VConfigManager::outputDefaultEditorStyle() const
@@ -464,22 +481,41 @@ bool VConfigManager::outputDefaultEditorStyle() const
         }
     }
 
+    // Always override the deafult style.
     QString srcPath = c_defaultMdhlFile;
     QString destPath = getStyleConfigFolder() + QDir::separator() + QFileInfo(srcPath).fileName();
+
+    if (QFileInfo::exists(destPath)) {
+        QString bakPath = destPath + ".bak";
+        // We only keep one bak file.
+        if (!QFileInfo::exists(bakPath)) {
+            QFile::rename(destPath, bakPath);
+        } else {
+            // Just delete the default style.
+            QFile file(destPath);
+            file.setPermissions(QFile::ReadUser | QFile::WriteUser);
+            file.remove();
+        }
+    }
+
     if (!VUtils::copyFile(srcPath, destPath, false)) {
         return false;
     }
 
     srcPath = c_solarizedDarkMdhlFile;
     destPath = getStyleConfigFolder() + QDir::separator() + QFileInfo(srcPath).fileName();
-    if (!VUtils::copyFile(srcPath, destPath, false)) {
-        return false;
+    if (!QFileInfo::exists(destPath)) {
+        if (!VUtils::copyFile(srcPath, destPath, false)) {
+            return false;
+        }
     }
 
     srcPath = c_solarizedLightMdhlFile;
     destPath = getStyleConfigFolder() + QDir::separator() + QFileInfo(srcPath).fileName();
-    if (!VUtils::copyFile(srcPath, destPath, false)) {
-        return false;
+    if (!QFileInfo::exists(destPath)) {
+        if (!VUtils::copyFile(srcPath, destPath, false)) {
+            return false;
+        }
     }
 
     return true;
