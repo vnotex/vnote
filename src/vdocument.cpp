@@ -82,8 +82,8 @@ void VDocument::setFile(const VFile *p_file)
     m_file = p_file;
 }
 
-void VDocument::finishLoading()
+void VDocument::finishLogics()
 {
-    qDebug() << "Web side finished loading";
-    emit loadFinished();
+    qDebug() << "Web side finished logics";
+    emit logicsFinished();
 }

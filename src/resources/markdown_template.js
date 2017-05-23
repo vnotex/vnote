@@ -309,7 +309,7 @@ var insertImageCaption = function() {
 }
 
 // The renderer specific code should call this function once thay have finished
-// loading the page.
-var finishLoading = function() {
-    content.finishLoading();
+// markdown-specifi handle logics, such as Mermaid, MathJax.
+var finishLogics = function() {
+    content.finishLogics();
 };

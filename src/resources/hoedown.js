@@ -54,13 +54,13 @@ var updateHtml = function(html) {
     // MathJax may be not loaded for now.
     if (VEnableMathjax && (typeof MathJax != "undefined")) {
         try {
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder, finishLoading]);
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder, finishLogics]);
         } catch (err) {
             content.setLog("err: " + err);
-            finishLoading();
+            finishLogics();
         }
     } else {
-        finishLoading();
+        finishLogics();
     }
 };
 

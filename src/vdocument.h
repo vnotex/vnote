@@ -35,8 +35,9 @@ public slots:
     void highlightTextCB(const QString &p_html, int p_id, int p_timeStamp);
     void noticeReadyToHighlightText();
 
-    // Page is finished loading.
-    void finishLoading();
+    // Web-side handle logics (MathJax etc.) is finished.
+    // But the page may not finish loading, such as images.
+    void finishLogics();
 
 signals:
     void textChanged(const QString &text);
@@ -49,7 +50,7 @@ signals:
     void requestHighlightText(const QString &p_text, int p_id, int p_timeStamp);
     void textHighlighted(const QString &p_html, int p_id, int p_timeStamp);
     void readyToHighlightText();
-    void loadFinished();
+    void logicsFinished();
 
 private:
     QString m_toc;

@@ -29,7 +29,7 @@ QString VExporter::s_defaultPathDir = QDir::homePath();
 VExporter::VExporter(MarkdownConverterType p_mdType, QWidget *p_parent)
     : QDialog(p_parent), m_document(NULL, this), m_mdType(p_mdType),
       m_file(NULL), m_type(ExportType::PDF), m_source(ExportSource::Invalid),
-      m_webReady(false), m_state(ExportState::Idle),
+      m_noteState(NoteState::NotReady), m_state(ExportState::Idle),
       m_pageLayout(QPageLayout(QPageSize(QPageSize::A4), QPageLayout::Portrait, QMarginsF(0.0, 0.0, 0.0, 0.0)))
 {
     setupUI();
@@ -190,12 +190,15 @@ void VExporter::setupMarkdownViewer()
     VPreviewPage *page = new VPreviewPage(this);
     m_webViewer->setPage(page);
 
+    connect(page, &VPreviewPage::loadFinished,
+            this, &VExporter::handleLoadFinished);
+
     QWebChannel *channel = new QWebChannel(this);
     channel->registerObject(QStringLiteral("content"), &m_document);
     page->setWebChannel(channel);
 
-    connect(&m_document, &VDocument::loadFinished,
-            this, &VExporter::readyToExport);
+    connect(&m_document, &VDocument::logicsFinished,
+            this, &VExporter::handleLogicsFinished);
 
     QString jsFile, extraFile;
     switch (m_mdType) {
@@ -273,10 +276,37 @@ void VExporter::updateWebViewer(VFile *p_file)
     m_webViewer->setHtml(m_htmlTemplate, p_file->getBaseUrl());
 }
 
-void VExporter::readyToExport()
+void VExporter::handleLogicsFinished()
 {
-    Q_ASSERT(!m_webReady);
-    m_webReady = true;
+    Q_ASSERT(!(m_noteState & NoteState::WebLogicsReady));
+    m_noteState = NoteState(m_noteState | NoteState::WebLogicsReady);
+}
+
+void VExporter::handleLoadFinished(bool p_ok)
+{
+    qDebug() << "Web load finished" << p_ok;
+
+    Q_ASSERT(!(m_noteState & NoteState::WebLoadFinished));
+    m_noteState = NoteState(m_noteState | NoteState::WebLoadFinished);
+
+    if (!p_ok) {
+        m_noteState = NoteState(m_noteState | NoteState::Failed);
+    }
+}
+
+void VExporter::clearNoteState()
+{
+    m_noteState = NoteState::NotReady;
+}
+
+bool VExporter::isNoteStateReady() const
+{
+    return m_noteState == NoteState::Ready;
+}
+
+bool VExporter::isNoteStateFailed() const
+{
+    return m_noteState & NoteState::Failed;
 }
 
 void VExporter::startExport()
@@ -292,7 +322,7 @@ void VExporter::startExport()
             goto exit;
         }
 
-        m_webReady = false;
+        clearNoteState();
         updateWebViewer(m_file);
 
         // Update progress info.
@@ -303,13 +333,13 @@ void VExporter::startExport()
         m_proLabel->show();
         m_proBar->show();
 
-        while (!m_webReady) {
+        while (!isNoteStateReady()) {
             VUtils::sleepWait(100);
             if (m_proBar->value() < 70) {
                 m_proBar->setValue(m_proBar->value() + 1);
             }
 
-            if (m_state == ExportState::Cancelled) {
+            if (m_state == ExportState::Cancelled || isNoteStateFailed()) {
                 goto exit;
             }
         }
@@ -327,7 +357,7 @@ void VExporter::startExport()
 
         m_proBar->setValue(100);
 
-        m_webReady = false;
+        clearNoteState();
 
         if (!isOpened) {
             m_file->close();

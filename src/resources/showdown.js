@@ -156,13 +156,13 @@ var updateText = function(text) {
     // finishLoading logic.
     if (VEnableMathjax) {
         try {
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder, finishLoading]);
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder, finishLogics]);
         } catch (err) {
             content.setLog("err: " + err);
-            finishLoading();
+            finishLogics();
         }
     } else {
-        finishLoading();
+        finishLogics();
     }
 };
 

@@ -21,21 +21,6 @@ enum class ExportType
     HTML
 };
 
-enum class ExportSource
-{
-    Note = 0,
-    Directory,
-    Notebook,
-    Invalid
-};
-
-enum class ExportState
-{
-    Idle = 0,
-    Cancelled,
-    Busy
-};
-
 class VExporter : public QDialog
 {
     Q_OBJECT
@@ -49,8 +34,34 @@ private slots:
     void handleLayoutBtnClicked();
     void startExport();
     void cancelExport();
+    void handleLogicsFinished();
+    void handleLoadFinished(bool p_ok);
 
 private:
+    enum class ExportSource
+    {
+        Note = 0,
+        Directory,
+        Notebook,
+        Invalid
+    };
+
+    enum class ExportState
+    {
+        Idle = 0,
+        Cancelled,
+        Busy
+    };
+
+    enum NoteState
+    {
+        NotReady = 0,
+        WebLogicsReady = 0x1,
+        WebLoadFinished = 0x2,
+        Ready = 0x3,
+        Failed = 0x4
+    };
+
     void setupUI();
 
     // Init m_webViewer, m_document, and m_htmlTemplate.
@@ -64,11 +75,13 @@ private:
 
     void updateWebViewer(VFile *p_file);
 
-    void readyToExport();
-
     void enableUserInput(bool p_enabled);
 
     void exportToPDF(VWebView *p_webViewer, const QString &p_filePath, const QPageLayout &p_layout);
+
+    void clearNoteState();
+    bool isNoteStateReady() const;
+    bool isNoteStateFailed() const;
 
     VWebView *m_webViewer;
     VDocument m_document;
@@ -77,7 +90,7 @@ private:
     VFile *m_file;
     ExportType m_type;
     ExportSource m_source;
-    bool m_webReady;
+    NoteState m_noteState;
 
     ExportState m_state;
 
