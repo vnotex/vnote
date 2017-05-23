@@ -5,7 +5,6 @@
 #include <QPageLayout>
 #include <QString>
 #include "vconfigmanager.h"
-#include "vdocument.h"
 
 class VWebView;
 class VFile;
@@ -36,6 +35,7 @@ private slots:
     void cancelExport();
     void handleLogicsFinished();
     void handleLoadFinished(bool p_ok);
+    void openTargetPath() const;
 
 private:
     enum class ExportSource
@@ -50,7 +50,9 @@ private:
     {
         Idle = 0,
         Cancelled,
-        Busy
+        Busy,
+        Failed,
+        Successful
     };
 
     enum NoteState
@@ -64,8 +66,7 @@ private:
 
     void setupUI();
 
-    // Init m_webViewer, m_document, and m_htmlTemplate.
-    void setupMarkdownViewer();
+    void initMarkdownTemplate();
 
     void updatePageLayoutLabel();
 
@@ -73,18 +74,21 @@ private:
 
     QString getFilePath() const;
 
-    void updateWebViewer(VFile *p_file);
+    void initWebViewer(VFile *p_file);
+
+    void clearWebViewer();
 
     void enableUserInput(bool p_enabled);
 
-    void exportToPDF(VWebView *p_webViewer, const QString &p_filePath, const QPageLayout &p_layout);
+    bool exportToPDF(VWebView *p_webViewer, const QString &p_filePath, const QPageLayout &p_layout);
 
     void clearNoteState();
     bool isNoteStateReady() const;
     bool isNoteStateFailed() const;
 
+    // Will be allocated and free for each conversion.
     VWebView *m_webViewer;
-    VDocument m_document;
+
     MarkdownConverterType m_mdType;
     QString m_htmlTemplate;
     VFile *m_file;
@@ -100,6 +104,7 @@ private:
     QLabel *m_layoutLabel;
     QPushButton *m_layoutBtn;
     QDialogButtonBox *m_btnBox;
+    QPushButton *m_openBtn;
 
     // Progress label and bar.
     QLabel *m_proLabel;

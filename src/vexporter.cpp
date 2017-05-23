@@ -21,24 +21,86 @@
 #include "vconstants.h"
 #include "vnote.h"
 #include "vmarkdownconverter.h"
+#include "vdocument.h"
 
 extern VConfigManager vconfig;
 
 QString VExporter::s_defaultPathDir = QDir::homePath();
 
 VExporter::VExporter(MarkdownConverterType p_mdType, QWidget *p_parent)
-    : QDialog(p_parent), m_document(NULL, this), m_mdType(p_mdType),
+    : QDialog(p_parent), m_webViewer(NULL), m_mdType(p_mdType),
       m_file(NULL), m_type(ExportType::PDF), m_source(ExportSource::Invalid),
       m_noteState(NoteState::NotReady), m_state(ExportState::Idle),
       m_pageLayout(QPageLayout(QPageSize(QPageSize::A4), QPageLayout::Portrait, QMarginsF(0.0, 0.0, 0.0, 0.0)))
 {
+    initMarkdownTemplate();
+
     setupUI();
+}
+
+void VExporter::initMarkdownTemplate()
+{
+    QString jsFile, extraFile;
+    switch (m_mdType) {
+    case MarkdownConverterType::Marked:
+        jsFile = "qrc" + VNote::c_markedJsFile;
+        extraFile = "<script src=\"qrc" + VNote::c_markedExtraFile + "\"></script>\n";
+        break;
+
+    case MarkdownConverterType::Hoedown:
+        jsFile = "qrc" + VNote::c_hoedownJsFile;
+        // Use Marked to highlight code blocks.
+        extraFile = "<script src=\"qrc" + VNote::c_markedExtraFile + "\"></script>\n";
+        break;
+
+    case MarkdownConverterType::MarkdownIt:
+        jsFile = "qrc" + VNote::c_markdownitJsFile;
+        extraFile = "<script src=\"qrc" + VNote::c_markdownitExtraFile + "\"></script>\n" +
+                    "<script src=\"qrc" + VNote::c_markdownitAnchorExtraFile + "\"></script>\n" +
+                    "<script src=\"qrc" + VNote::c_markdownitTaskListExtraFile + "\"></script>\n";
+        break;
+
+    case MarkdownConverterType::Showdown:
+        jsFile = "qrc" + VNote::c_showdownJsFile;
+        extraFile = "<script src=\"qrc" + VNote::c_showdownExtraFile + "\"></script>\n" +
+                    "<script src=\"qrc" + VNote::c_showdownAnchorExtraFile + "\"></script>\n";
+
+        break;
+
+    default:
+        Q_ASSERT(false);
+    }
+
+    if (vconfig.getEnableMermaid()) {
+        extraFile += "<link rel=\"stylesheet\" type=\"text/css\" href=\"qrc" + VNote::c_mermaidCssFile +
+                     "\"/>\n" + "<script src=\"qrc" + VNote::c_mermaidApiJsFile + "\"></script>\n" +
+                     "<script>var VEnableMermaid = true;</script>\n";
+    }
+
+    if (vconfig.getEnableMathjax()) {
+        extraFile += "<script type=\"text/x-mathjax-config\">"
+                     "MathJax.Hub.Config({\n"
+                     "                    tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']]},\n"
+                     "                    showProcessingMessages: false,\n"
+                     "                    messageStyle: \"none\"});\n"
+                     "</script>\n"
+                     "<script type=\"text/javascript\" async src=\"" + VNote::c_mathjaxJsFile + "\"></script>\n" +
+                     "<script>var VEnableMathjax = true;</script>\n";
+    }
+
+    if (vconfig.getEnableImageCaption()) {
+        extraFile += "<script>var VEnableImageCaption = true;</script>\n";
+    }
+
+    m_htmlTemplate = VNote::s_markdownTemplatePDF;
+    m_htmlTemplate.replace(c_htmlJSHolder, jsFile);
+    if (!extraFile.isEmpty()) {
+        m_htmlTemplate.replace(c_htmlExtraHolder, extraFile);
+    }
 }
 
 void VExporter::setupUI()
 {
-    setupMarkdownViewer();
-
     m_infoLabel = new QLabel();
     m_infoLabel->setWordWrap(true);
 
@@ -68,27 +130,25 @@ void VExporter::setupUI()
 
     // Ok is the default button.
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    m_openBtn = m_btnBox->addButton(tr("Open File Location"), QDialogButtonBox::ActionRole);
     connect(m_btnBox, &QDialogButtonBox::accepted, this, &VExporter::startExport);
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &VExporter::cancelExport);
+    connect(m_openBtn, &QPushButton::clicked, this, &VExporter::openTargetPath);
 
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
     m_pathEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
 
     QGridLayout *mainLayout = new QGridLayout();
-    mainLayout->addWidget(m_webViewer, 0, 0, 1, 3);
-    mainLayout->addWidget(m_infoLabel, 1, 0, 1, 3);
-    mainLayout->addWidget(pathLabel, 2, 0);
-    mainLayout->addWidget(m_pathEdit, 2, 1);
-    mainLayout->addWidget(m_browseBtn, 2, 2);
-    mainLayout->addWidget(layoutLabel, 3, 0);
-    mainLayout->addWidget(m_layoutLabel, 3, 1);
-    mainLayout->addWidget(m_layoutBtn, 3, 2);
-    mainLayout->addWidget(m_proLabel, 4, 1, 1, 2);
-    mainLayout->addWidget(m_proBar, 5, 1, 1, 2);
-    mainLayout->addWidget(m_btnBox, 6, 1, 1, 2);
-
-    // Only use VWebView to do the conversion.
-    m_webViewer->hide();
+    mainLayout->addWidget(m_infoLabel, 0, 0, 1, 3);
+    mainLayout->addWidget(pathLabel, 1, 0);
+    mainLayout->addWidget(m_pathEdit, 1, 1);
+    mainLayout->addWidget(m_browseBtn, 1, 2);
+    mainLayout->addWidget(layoutLabel, 2, 0);
+    mainLayout->addWidget(m_layoutLabel, 2, 1);
+    mainLayout->addWidget(m_layoutBtn, 2, 2);
+    mainLayout->addWidget(m_proLabel, 3, 1, 1, 2);
+    mainLayout->addWidget(m_proBar, 4, 1, 1, 2);
+    mainLayout->addWidget(m_btnBox, 5, 1, 1, 2);
 
     m_proLabel->hide();
     m_proBar->hide();
@@ -96,6 +156,8 @@ void VExporter::setupUI()
     setLayout(mainLayout);
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     setWindowTitle(tr("Export Note"));
+
+    m_openBtn->hide();
 
     updatePageLayoutLabel();
 }
@@ -124,6 +186,8 @@ void VExporter::handleBrowseBtnClicked()
 
     setFilePath(path);
     s_defaultPathDir = VUtils::basePathFromPath(path);
+
+    m_openBtn->hide();
 }
 
 void VExporter::handleLayoutBtnClicked()
@@ -184,84 +248,27 @@ void VExporter::exportNote(VFile *p_file, ExportType p_type)
                                                 "." + exportTypeStr(p_type).toLower()));
 }
 
-void VExporter::setupMarkdownViewer()
+void VExporter::initWebViewer(VFile *p_file)
 {
-    m_webViewer = new VWebView(NULL, this);
-    VPreviewPage *page = new VPreviewPage(this);
+    V_ASSERT(!m_webViewer);
+
+    m_webViewer = new VWebView(p_file, this);
+    m_webViewer->hide();
+    VPreviewPage *page = new VPreviewPage(m_webViewer);
     m_webViewer->setPage(page);
 
     connect(page, &VPreviewPage::loadFinished,
             this, &VExporter::handleLoadFinished);
 
-    QWebChannel *channel = new QWebChannel(this);
-    channel->registerObject(QStringLiteral("content"), &m_document);
-    page->setWebChannel(channel);
-
-    connect(&m_document, &VDocument::logicsFinished,
+    VDocument *document = new VDocument(p_file, m_webViewer);
+    connect(document, &VDocument::logicsFinished,
             this, &VExporter::handleLogicsFinished);
 
-    QString jsFile, extraFile;
-    switch (m_mdType) {
-    case MarkdownConverterType::Marked:
-        jsFile = "qrc" + VNote::c_markedJsFile;
-        extraFile = "<script src=\"qrc" + VNote::c_markedExtraFile + "\"></script>\n";
-        break;
+    QWebChannel *channel = new QWebChannel(m_webViewer);
+    channel->registerObject(QStringLiteral("content"), document);
+    page->setWebChannel(channel);
 
-    case MarkdownConverterType::Hoedown:
-        jsFile = "qrc" + VNote::c_hoedownJsFile;
-        // Use Marked to highlight code blocks.
-        extraFile = "<script src=\"qrc" + VNote::c_markedExtraFile + "\"></script>\n";
-        break;
-
-    case MarkdownConverterType::MarkdownIt:
-        jsFile = "qrc" + VNote::c_markdownitJsFile;
-        extraFile = "<script src=\"qrc" + VNote::c_markdownitExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_markdownitAnchorExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_markdownitTaskListExtraFile + "\"></script>\n";
-        break;
-
-    case MarkdownConverterType::Showdown:
-        jsFile = "qrc" + VNote::c_showdownJsFile;
-        extraFile = "<script src=\"qrc" + VNote::c_showdownExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_showdownAnchorExtraFile + "\"></script>\n";
-
-        break;
-
-    default:
-        Q_ASSERT(false);
-    }
-
-    if (vconfig.getEnableMermaid()) {
-        extraFile += "<link rel=\"stylesheet\" type=\"text/css\" href=\"qrc" + VNote::c_mermaidCssFile +
-                     "\"/>\n" + "<script src=\"qrc" + VNote::c_mermaidApiJsFile + "\"></script>\n" +
-                     "<script>var VEnableMermaid = true;</script>\n";
-    }
-
-    if (vconfig.getEnableMathjax()) {
-        extraFile += "<script type=\"text/x-mathjax-config\">"
-                     "MathJax.Hub.Config({\n"
-                     "                    tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']]},\n"
-                     "                    showProcessingMessages: false,\n"
-                     "                    messageStyle: \"none\"});\n"
-                     "</script>\n"
-                     "<script type=\"text/javascript\" async src=\"" + VNote::c_mathjaxJsFile + "\"></script>\n" +
-                     "<script>var VEnableMathjax = true;</script>\n";
-    }
-
-    if (vconfig.getEnableImageCaption()) {
-        extraFile += "<script>var VEnableImageCaption = true;</script>\n";
-    }
-
-    m_htmlTemplate = VNote::s_markdownTemplatePDF;
-    m_htmlTemplate.replace(c_htmlJSHolder, jsFile);
-    if (!extraFile.isEmpty()) {
-        m_htmlTemplate.replace(c_htmlExtraHolder, extraFile);
-    }
-}
-
-void VExporter::updateWebViewer(VFile *p_file)
-{
-    m_document.setFile(p_file);
+    qDebug() << "VPreviewPage" << page->parent() << "QWebChannel" << channel->parent();
 
     // Need to generate HTML using Hoedown.
     if (m_mdType == MarkdownConverterType::Hoedown) {
@@ -270,10 +277,18 @@ void VExporter::updateWebViewer(VFile *p_file)
         QString html = mdConverter.generateHtml(p_file->getContent(),
                                                 vconfig.getMarkdownExtensions(),
                                                 toc);
-        m_document.setHtml(html);
+        document->setHtml(html);
     }
 
     m_webViewer->setHtml(m_htmlTemplate, p_file->getBaseUrl());
+}
+
+void VExporter::clearWebViewer()
+{
+    if (m_webViewer) {
+        delete m_webViewer;
+        m_webViewer = NULL;
+    }
 }
 
 void VExporter::handleLogicsFinished()
@@ -311,9 +326,12 @@ bool VExporter::isNoteStateFailed() const
 
 void VExporter::startExport()
 {
+    int exportedNum = 0;
     enableUserInput(false);
     V_ASSERT(m_state == ExportState::Idle);
     m_state = ExportState::Busy;
+
+    m_openBtn->hide();
 
     if (m_source == ExportSource::Note) {
         V_ASSERT(m_file);
@@ -323,10 +341,11 @@ void VExporter::startExport()
         }
 
         clearNoteState();
-        updateWebViewer(m_file);
+        initWebViewer(m_file);
 
         // Update progress info.
         m_proLabel->setText(tr("Exporting %1").arg(m_file->getName()));
+        m_proBar->setEnabled(true);
         m_proBar->setMinimum(0);
         m_proBar->setMaximum(100);
         m_proBar->reset();
@@ -339,7 +358,12 @@ void VExporter::startExport()
                 m_proBar->setValue(m_proBar->value() + 1);
             }
 
-            if (m_state == ExportState::Cancelled || isNoteStateFailed()) {
+            if (m_state == ExportState::Cancelled) {
+                goto exit;
+            }
+
+            if (isNoteStateFailed()) {
+                m_state = ExportState::Failed;
                 goto exit;
             }
         }
@@ -353,28 +377,37 @@ void VExporter::startExport()
 
         m_proBar->setValue(80);
 
-        exportToPDF(m_webViewer, getFilePath(), m_pageLayout);
-
-        m_proBar->setValue(100);
+        bool exportRet = exportToPDF(m_webViewer, getFilePath(), m_pageLayout);
 
         clearNoteState();
 
         if (!isOpened) {
             m_file->close();
         }
+
+        if (exportRet) {
+            m_proBar->setValue(100);
+            m_state = ExportState::Successful;
+            exportedNum++;
+        } else {
+            m_proBar->setEnabled(false);
+            m_state = ExportState::Failed;
+        }
     }
 
 exit:
+    clearWebViewer();
+
     m_proLabel->setText("");
-    m_proBar->reset();
     m_proLabel->hide();
-    m_proBar->hide();
     enableUserInput(true);
 
     if (m_state == ExportState::Cancelled) {
         reject();
-    } else {
-        accept();
+    }
+
+    if (exportedNum) {
+        m_openBtn->show();
     }
 
     m_state = ExportState::Idle;
@@ -389,7 +422,7 @@ void VExporter::cancelExport()
     }
 }
 
-void VExporter::exportToPDF(VWebView *p_webViewer, const QString &p_filePath,
+bool VExporter::exportToPDF(VWebView *p_webViewer, const QString &p_filePath,
                             const QPageLayout &p_layout)
 {
     int pdfPrinted = 0;
@@ -422,7 +455,7 @@ void VExporter::exportToPDF(VWebView *p_webViewer, const QString &p_filePath,
         }
     }
 
-    qDebug() << "export to PDF" << p_filePath << "state" << pdfPrinted;
+    return pdfPrinted == 1;
 }
 
 void VExporter::enableUserInput(bool p_enabled)
@@ -431,4 +464,10 @@ void VExporter::enableUserInput(bool p_enabled)
     m_pathEdit->setEnabled(p_enabled);
     m_browseBtn->setEnabled(p_enabled);
     m_layoutBtn->setEnabled(p_enabled);
+}
+
+void VExporter::openTargetPath() const
+{
+    QUrl url = QUrl::fromLocalFile(VUtils::basePathFromPath(getFilePath()));
+    QDesktopServices::openUrl(url);
 }

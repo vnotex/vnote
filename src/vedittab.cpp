@@ -290,11 +290,11 @@ void VEditTab::setupMarkdownPreview()
     connect(webPreviewer, &VWebView::editNote,
             this, &VEditTab::editFile);
 
-    VPreviewPage *page = new VPreviewPage(this);
+    VPreviewPage *page = new VPreviewPage(webPreviewer);
     webPreviewer->setPage(page);
     webPreviewer->setZoomFactor(vconfig.getWebZoomFactor());
 
-    QWebChannel *channel = new QWebChannel(this);
+    QWebChannel *channel = new QWebChannel(webPreviewer);
     channel->registerObject(QStringLiteral("content"), &document);
     connect(&document, &VDocument::tocChanged,
             this, &VEditTab::updateTocFromHtml);
