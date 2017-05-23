@@ -51,6 +51,7 @@ private slots:
     void copySelectedDirectories(bool p_cut = false);
     void cutSelectedDirectories();
     void pasteDirectoriesInCurDir();
+    void openDirectoryLocation() const;
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
@@ -66,7 +67,7 @@ private:
     // Find the corresponding item of @p_dir;
     // Return's NULL if no item is found and it is the root directory if @p_widget is true.
     QTreeWidgetItem *findVDirectory(const VDirectory *p_dir, bool &p_widget);
-    inline QPointer<VDirectory> getVDirectory(QTreeWidgetItem *p_item);
+    inline QPointer<VDirectory> getVDirectory(QTreeWidgetItem *p_item) const;
     void copyDirectoryInfoToClipboard(const QJsonArray &p_dirs, bool p_cut);
     void pasteDirectories(VDirectory *p_destDir);
     bool copyDirectory(VDirectory *p_destDir, const QString &p_destName,
@@ -96,6 +97,7 @@ private:
     QAction *copyAct;
     QAction *cutAct;
     QAction *pasteAct;
+    QAction *m_openLocationAct;
 
     // Navigation Mode.
     // Map second key to QTreeWidgetItem.
@@ -103,7 +105,7 @@ private:
     QVector<QLabel *> m_naviLabels;
 };
 
-inline QPointer<VDirectory> VDirectoryTree::getVDirectory(QTreeWidgetItem *p_item)
+inline QPointer<VDirectory> VDirectoryTree::getVDirectory(QTreeWidgetItem *p_item) const
 {
     Q_ASSERT(p_item);
     return p_item->data(0, Qt::UserRole).value<VDirectory *>();

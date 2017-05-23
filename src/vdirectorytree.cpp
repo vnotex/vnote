@@ -73,6 +73,11 @@ void VDirectoryTree::initActions()
     pasteAct->setToolTip(tr("Paste directories under this directory"));
     connect(pasteAct, &QAction::triggered,
             this, &VDirectoryTree::pasteDirectoriesInCurDir);
+
+    m_openLocationAct = new QAction(tr("&Open Directory Location"), this);
+    m_openLocationAct->setToolTip(tr("Open the folder containing this directory in operating system"));
+    connect(m_openLocationAct, &QAction::triggered,
+            this, &VDirectoryTree::openDirectoryLocation);
 }
 
 void VDirectoryTree::setNotebook(VNotebook *p_notebook)
@@ -306,6 +311,7 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
 
     if (item) {
         menu.addSeparator();
+        menu.addAction(m_openLocationAct);
         menu.addAction(dirInfoAct);
     }
 
@@ -464,6 +470,14 @@ void VDirectoryTree::editDirectoryInfo()
         }
         break;
     } while (true);
+}
+
+void VDirectoryTree::openDirectoryLocation() const
+{
+    QTreeWidgetItem *curItem = currentItem();
+    V_ASSERT(curItem);
+    QUrl url = QUrl::fromLocalFile(getVDirectory(curItem)->retriveBasePath());
+    QDesktopServices::openUrl(url);
 }
 
 void VDirectoryTree::copySelectedDirectories(bool p_cut)

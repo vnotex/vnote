@@ -72,6 +72,11 @@ void VDirectory::close()
     m_opened = false;
 }
 
+QString VDirectory::retriveBasePath() const
+{
+    return VUtils::basePathFromPath(retrivePath());
+}
+
 QString VDirectory::retrivePath(const VDirectory *p_dir) const
 {
     if (!p_dir) {

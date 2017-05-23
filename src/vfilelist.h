@@ -49,6 +49,7 @@ private slots:
     void contextMenuRequested(QPoint pos);
     void handleItemClicked(QListWidgetItem *currentItem);
     void fileInfo();
+    void openFileLocation() const;
     // m_copiedFiles will keep the files's VFile.
     void copySelectedFiles(bool p_isCut = false);
     void cutSelectedFiles();
@@ -93,6 +94,7 @@ private:
     QAction *copyAct;
     QAction *cutAct;
     QAction *pasteAct;
+    QAction *m_openLocationAct;
 
     // Navigation Mode.
     // Map second key to QListWidgetItem.

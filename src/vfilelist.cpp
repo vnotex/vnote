@@ -1,5 +1,6 @@
 #include <QtDebug>
 #include <QtWidgets>
+#include <QUrl>
 #include "vfilelist.h"
 #include "vconfigmanager.h"
 #include "dialog/vnewfiledialog.h"
@@ -79,6 +80,11 @@ void VFileList::initActions()
     pasteAct->setToolTip(tr("Paste notes in current directory"));
     connect(pasteAct, &QAction::triggered,
             this, &VFileList::pasteFilesInCurDir);
+
+    m_openLocationAct = new QAction(tr("&Open Note Location"), this);
+    m_openLocationAct->setToolTip(tr("Open the folder containing this note in operating system"));
+    connect(m_openLocationAct, &QAction::triggered,
+            this, &VFileList::openFileLocation);
 }
 
 void VFileList::setDirectory(VDirectory *p_directory)
@@ -112,8 +118,16 @@ void VFileList::updateFileList()
 void VFileList::fileInfo()
 {
     QListWidgetItem *curItem = fileList->currentItem();
-    Q_ASSERT(curItem);
+    V_ASSERT(curItem);
     fileInfo(getVFile(curItem));
+}
+
+void VFileList::openFileLocation() const
+{
+    QListWidgetItem *curItem = fileList->currentItem();
+    V_ASSERT(curItem);
+    QUrl url = QUrl::fromLocalFile(getVFile(curItem)->retriveBasePath());
+    QDesktopServices::openUrl(url);
 }
 
 void VFileList::fileInfo(VFile *p_file)
@@ -297,10 +311,15 @@ void VFileList::contextMenuRequested(QPoint pos)
         menu.addAction(pasteAct);
     }
 
-    if (item && fileList->selectedItems().size() == 1) {
+    if (item) {
         menu.addSeparator();
-        menu.addAction(fileInfoAct);
+        menu.addAction(m_openLocationAct);
+
+        if (fileList->selectedItems().size() == 1) {
+            menu.addAction(fileInfoAct);
+        }
     }
+
     menu.exec(fileList->mapToGlobal(pos));
 }
 

@@ -57,6 +57,7 @@ public:
     inline const VNotebook *getNotebook() const;
     inline const QVector<VFile *> &getFiles() const;
     inline QString retrivePath() const;
+    QString retriveBasePath() const;
     inline QString retriveRelativePath() const;
     inline QString getNotebookName() const;
     inline bool isExpanded() const;
