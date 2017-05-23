@@ -90,6 +90,9 @@ private slots:
     void handleReplaceAll(const QString &p_text, uint p_options,
                           const QString &p_replaceText);
     void handleFindDialogClosed();
+    void handleEditWindowStatusChanged(const VFile *p_file,
+                                       const VEditTab *p_editTab,
+                                       bool p_editMode);
 
 private:
     void setupUI();

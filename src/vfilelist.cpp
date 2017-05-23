@@ -201,7 +201,7 @@ void VFileList::newFile()
             }
             QVector<QListWidgetItem *> items = updateFileListAdded();
             Q_ASSERT(items.size() == 1);
-            fileList->setCurrentItem(items[0]);
+            fileList->setCurrentItem(items[0], QItemSelectionModel::ClearAndSelect);
             // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
             fileList->update();
 
@@ -529,7 +529,7 @@ bool VFileList::locateFile(const VFile *p_file)
         }
         QListWidgetItem *item = findItem(p_file);
         if (item) {
-            fileList->setCurrentItem(item);
+            fileList->setCurrentItem(item, QItemSelectionModel::ClearAndSelect);
         }
     }
     return false;
@@ -615,7 +615,7 @@ bool VFileList::handleKeyNavigation(int p_key, bool &p_succeed)
         ret = true;
         auto it = m_keyMap.find(keyChar);
         if (it != m_keyMap.end()) {
-            fileList->setCurrentItem(it.value());
+            fileList->setCurrentItem(it.value(), QItemSelectionModel::ClearAndSelect);
             fileList->setFocus();
         }
     } else if (keyChar == m_majorKey) {

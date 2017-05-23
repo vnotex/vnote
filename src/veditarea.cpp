@@ -68,7 +68,7 @@ void VEditArea::insertSplitWindow(int idx)
     VEditWindow *win = new VEditWindow(vnote, this);
     splitter->insertWidget(idx, win);
     connect(win, &VEditWindow::tabStatusChanged,
-            this, &VEditArea::curTabStatusChanged);
+            this, &VEditArea::handleEditWindowStatusChanged);
     connect(win, &VEditWindow::requestSplitWindow,
             this, &VEditArea::handleSplitWindowRequest);
     connect(win, &VEditWindow::requestRemoveSplit,
@@ -79,6 +79,15 @@ void VEditArea::insertSplitWindow(int idx)
             this, &VEditArea::handleOutlineChanged);
     connect(win, &VEditWindow::curHeaderChanged,
             this, &VEditArea::handleCurHeaderChanged);
+}
+
+void VEditArea::handleEditWindowStatusChanged(const VFile *p_file,
+                                              const VEditTab *p_editTab,
+                                              bool p_editMode)
+{
+    if (splitter->widget(curWindowIndex) == sender()) {
+        emit curTabStatusChanged(p_file, p_editTab, p_editMode);
+    }
 }
 
 void VEditArea::removeSplitWindow(VEditWindow *win)
@@ -194,6 +203,7 @@ void VEditArea::updateWindowStatus()
         emit curHeaderChanged(VAnchor());
         return;
     }
+
     VEditWindow *win = getWindow(curWindowIndex);
     win->requestUpdateTabStatus();
     win->requestUpdateOutline();

@@ -550,7 +550,14 @@ void VEditWindow::noticeStatus(int index)
 
 void VEditWindow::handleTabStatusChanged()
 {
-    noticeTabStatus(currentIndex());
+    int idx = indexOf(dynamic_cast<QWidget *>(sender()));
+    if (idx == currentIndex()) {
+        noticeTabStatus(idx);
+    } else {
+        // Only update the tab status. Do no propagate upwards.
+        updateTabInfo(idx);
+        updateAllTabsSequence();
+    }
 }
 
 void VEditWindow::updateFileInfo(const VFile *p_file)
