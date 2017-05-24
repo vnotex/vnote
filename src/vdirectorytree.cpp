@@ -34,48 +34,48 @@ VDirectoryTree::VDirectoryTree(VNote *vnote, QWidget *parent)
 void VDirectoryTree::initActions()
 {
     newRootDirAct = new QAction(QIcon(":/resources/icons/create_rootdir.svg"),
-                                tr("New &Root Directory"), this);
-    newRootDirAct->setToolTip(tr("Create a new root directory in current notebook"));
+                                tr("New &Root Folder"), this);
+    newRootDirAct->setToolTip(tr("Create a new root folder in current notebook"));
     connect(newRootDirAct, &QAction::triggered,
             this, &VDirectoryTree::newRootDirectory);
 
-    newSubDirAct = new QAction(tr("&New Sub-Directory"), this);
-    newSubDirAct->setToolTip(tr("Create a new sub-directory"));
+    newSubDirAct = new QAction(tr("&New Subfolder"), this);
+    newSubDirAct->setToolTip(tr("Create a new subfolder"));
     connect(newSubDirAct, &QAction::triggered,
             this, &VDirectoryTree::newSubDirectory);
 
     deleteDirAct = new QAction(QIcon(":/resources/icons/delete_dir.svg"),
                                tr("&Delete"), this);
-    deleteDirAct->setToolTip(tr("Delete selected directory"));
+    deleteDirAct->setToolTip(tr("Delete selected folder"));
     connect(deleteDirAct, &QAction::triggered,
             this, &VDirectoryTree::deleteDirectory);
 
     dirInfoAct = new QAction(QIcon(":/resources/icons/dir_info.svg"),
                              tr("&Info"), this);
-    dirInfoAct->setToolTip(tr("View and edit current directory's information"));
+    dirInfoAct->setToolTip(tr("View and edit current folder's information"));
     connect(dirInfoAct, &QAction::triggered,
             this, &VDirectoryTree::editDirectoryInfo);
 
     copyAct = new QAction(QIcon(":/resources/icons/copy.svg"),
                           tr("&Copy"), this);
-    copyAct->setToolTip(tr("Copy selected directories"));
+    copyAct->setToolTip(tr("Copy selected folders"));
     connect(copyAct, &QAction::triggered,
             this, &VDirectoryTree::copySelectedDirectories);
 
     cutAct = new QAction(QIcon(":/resources/icons/cut.svg"),
                           tr("C&ut"), this);
-    cutAct->setToolTip(tr("Cut selected directories"));
+    cutAct->setToolTip(tr("Cut selected folders"));
     connect(cutAct, &QAction::triggered,
             this, &VDirectoryTree::cutSelectedDirectories);
 
     pasteAct = new QAction(QIcon(":/resources/icons/paste.svg"),
                           tr("&Paste"), this);
-    pasteAct->setToolTip(tr("Paste directories under this directory"));
+    pasteAct->setToolTip(tr("Paste folders in this folder"));
     connect(pasteAct, &QAction::triggered,
             this, &VDirectoryTree::pasteDirectoriesInCurDir);
 
-    m_openLocationAct = new QAction(tr("&Open Directory Location"), this);
-    m_openLocationAct->setToolTip(tr("Open the folder containing this directory in operating system"));
+    m_openLocationAct = new QAction(tr("&Open Folder Location"), this);
+    m_openLocationAct->setToolTip(tr("Open the folder containing this folder in operating system"));
     connect(m_openLocationAct, &QAction::triggered,
             this, &VDirectoryTree::openDirectoryLocation);
 }
@@ -164,7 +164,7 @@ void VDirectoryTree::updateDirectoryTreeOne(QTreeWidgetItem *p_parent, int depth
     VDirectory *dir = getVDirectory(p_parent);
     if (!dir->open()) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                            tr("Fail to open directory <span style=\"%1\">%2</span>.")
+                            tr("Fail to open folder <span style=\"%1\">%2</span>.")
                               .arg(vconfig.c_dataTextStyle).arg(dir->getName()), "",
                             QMessageBox::Ok, QMessageBox::Ok, this);
         return;
@@ -328,17 +328,17 @@ void VDirectoryTree::newSubDirectory()
     }
     VDirectory *curDir = getVDirectory(curItem);
 
-    QString info = tr("Create sub-directory under <span style=\"%1\">%2</span>.")
+    QString info = tr("Create a subfolder in <span style=\"%1\">%2</span>.")
                      .arg(vconfig.c_dataTextStyle).arg(curDir->getName());
-    QString text(tr("Directory &name:"));
-    QString defaultText("new_directory");
+    QString text(tr("Folder &name:"));
+    QString defaultText("new_folder");
 
     do {
-        VNewDirDialog dialog(tr("Create Directory"), info, text, defaultText, this);
+        VNewDirDialog dialog(tr("Create Folder"), info, text, defaultText, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
             if (curDir->findSubDirectory(name)) {
-                info = tr("Name already exists under <span style=\"%1\">%2</span>. Please choose another name.")
+                info = tr("Name already exists in <span style=\"%1\">%2</span>. Please choose another name.")
                          .arg(vconfig.c_dataTextStyle).arg(curDir->getName());
                 defaultText = name;
                 continue;
@@ -346,7 +346,7 @@ void VDirectoryTree::newSubDirectory()
             VDirectory *subDir = curDir->createSubDirectory(name);
             if (!subDir) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    tr("Fail to create directory <span style=\"%1\">%2</span>.")
+                                    tr("Fail to create folder <span style=\"%1\">%2</span>.")
                                       .arg(vconfig.c_dataTextStyle).arg(name), "",
                                     QMessageBox::Ok, QMessageBox::Ok, this);
                 return;
@@ -363,13 +363,13 @@ void VDirectoryTree::newRootDirectory()
     if (!m_notebook) {
         return;
     }
-    QString info = tr("Create root directory in notebook <span style=\"%1\">%2</span>.")
+    QString info = tr("Create a root folder in notebook <span style=\"%1\">%2</span>.")
                      .arg(vconfig.c_dataTextStyle).arg(m_notebook->getName());
-    QString text(tr("Directory &name:"));
-    QString defaultText("new_directory");
+    QString text(tr("Folder &name:"));
+    QString defaultText("new_folder");
     VDirectory *rootDir = m_notebook->getRootDir();
     do {
-        VNewDirDialog dialog(tr("Create Root Directory"), info, text, defaultText, this);
+        VNewDirDialog dialog(tr("Create Root Folder"), info, text, defaultText, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
             if (rootDir->findSubDirectory(name)) {
@@ -381,7 +381,7 @@ void VDirectoryTree::newRootDirectory()
             VDirectory *subDir = rootDir->createSubDirectory(name);
             if (!subDir) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    tr("Fail to create directory <span style=\"%1\">%2</span>.")
+                                    tr("Fail to create folder <span style=\"%1\">%2</span>.")
                                       .arg(vconfig.c_dataTextStyle).arg(name), "",
                                     QMessageBox::Ok, QMessageBox::Ok, this);
                 return;
@@ -401,7 +401,7 @@ void VDirectoryTree::deleteDirectory()
     }
     VDirectory *curDir = getVDirectory(curItem);
     int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                  tr("Are you sure to delete directory <span style=\"%1\">%2</span>?")
+                                  tr("Are you sure to delete folder <span style=\"%1\">%2</span>?")
                                     .arg(vconfig.c_dataTextStyle).arg(curDir->getName()),
                                   tr("<span style=\"%1\">WARNING</span>: "
                                      "VNote will delete the whole directory (<b>ANY</b> files) "
@@ -445,7 +445,7 @@ void VDirectoryTree::editDirectoryInfo()
     QString defaultName = curName;
 
     do {
-        VDirInfoDialog dialog(tr("Directory Information"), info, defaultName, this);
+        VDirInfoDialog dialog(tr("Folder Information"), info, defaultName, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
             if (name == curName) {
@@ -458,7 +458,7 @@ void VDirectoryTree::editDirectoryInfo()
             }
             if (!curDir->rename(name)) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    tr("Fail to rename directory <span style=\"%1\">%2</span>.")
+                                    tr("Fail to rename folder <span style=\"%1\">%2</span>.")
                                       .arg(vconfig.c_dataTextStyle).arg(curName), "",
                                     QMessageBox::Ok, QMessageBox::Ok, this);
                 return;
@@ -645,9 +645,9 @@ bool VDirectoryTree::copyDirectory(VDirectory *p_destDir, const QString &p_destN
         emit directoryUpdated(destDir);
     } else {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                            tr("Fail to copy directory <span style=\"%1\">%2</span>.")
+                            tr("Fail to copy folder <span style=\"%1\">%2</span>.")
                               .arg(vconfig.c_dataTextStyle).arg(srcName),
-                            tr("Please check if there already exists a directory with the same name."),
+                            tr("Please check if there already exists a folder with the same name."),
                             QMessageBox::Ok, QMessageBox::Ok, this);
     }
 
@@ -693,7 +693,7 @@ QTreeWidgetItem *VDirectoryTree::findVDirectory(const VDirectory *p_dir, bool &p
 bool VDirectoryTree::locateDirectory(const VDirectory *p_directory)
 {
     if (p_directory) {
-        qDebug() << "locate directory" << p_directory->retrivePath()
+        qDebug() << "locate folder" << p_directory->retrivePath()
                  << "in" << m_notebook->getName();
         if (p_directory->getNotebook() != m_notebook) {
             return false;

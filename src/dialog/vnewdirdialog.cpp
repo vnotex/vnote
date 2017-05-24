@@ -15,6 +15,7 @@ void VNewDirDialog::setupUI()
     QLabel *infoLabel = NULL;
     if (!info.isEmpty()) {
         infoLabel = new QLabel(info);
+        infoLabel->setWordWrap(true);
     }
 
     nameLabel = new QLabel(name);

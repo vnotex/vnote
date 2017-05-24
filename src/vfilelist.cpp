@@ -47,7 +47,7 @@ void VFileList::initActions()
 {
     newFileAct = new QAction(QIcon(":/resources/icons/create_note.svg"),
                              tr("&New Note"), this);
-    newFileAct->setToolTip(tr("Create a note in current directory"));
+    newFileAct->setToolTip(tr("Create a note in current folder"));
     connect(newFileAct, SIGNAL(triggered(bool)),
             this, SLOT(newFile()));
 
@@ -77,7 +77,7 @@ void VFileList::initActions()
 
     pasteAct = new QAction(QIcon(":/resources/icons/paste.svg"),
                           tr("&Paste"), this);
-    pasteAct->setToolTip(tr("Paste notes in current directory"));
+    pasteAct->setToolTip(tr("Paste notes in current folder"));
     connect(pasteAct, &QAction::triggered,
             this, &VFileList::pasteFilesInCurDir);
 
@@ -98,7 +98,7 @@ void VFileList::setDirectory(VDirectory *p_directory)
         return;
     }
 
-    qDebug() << "filelist set directory" << m_directory->getName();
+    qDebug() << "filelist set folder" << m_directory->getName();
     updateFileList();
 }
 
@@ -445,7 +445,7 @@ void VFileList::pasteFiles(VDirectory *p_destDir)
             VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                 tr("Fail to copy note <span style=\"%1\">%2</span>.")
                                   .arg(vconfig.c_dataTextStyle).arg(srcFile->getName()),
-                                tr("Please check if there already exists a file with the same name in the target directory."),
+                                tr("Please check if there already exists a file with the same name in the target folder."),
                                 QMessageBox::Ok, QMessageBox::Ok, this);
         }
     }

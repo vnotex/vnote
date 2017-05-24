@@ -18,7 +18,7 @@ void VDirInfoDialog::setupUI()
     if (!info.isEmpty()) {
         infoLabel = new QLabel(info);
     }
-    nameLabel = new QLabel(tr("Directory &name:"));
+    nameLabel = new QLabel(tr("Folder &name:"));
     nameEdit = new QLineEdit(defaultName);
     nameEdit->selectAll();
     nameLabel->setBuddy(nameEdit);

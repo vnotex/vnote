@@ -114,10 +114,10 @@ void VMainWindow::setupUI()
 
 QWidget *VMainWindow::setupDirectoryPanel()
 {
-    notebookLabel = new QLabel(tr("Notebook"));
+    notebookLabel = new QLabel(tr("Notebooks"));
     notebookLabel->setProperty("TitleLabel", true);
     notebookLabel->setProperty("NotebookPanel", true);
-    directoryLabel = new QLabel(tr("Directory"));
+    directoryLabel = new QLabel(tr("Folders"));
     directoryLabel->setProperty("TitleLabel", true);
     directoryLabel->setProperty("NotebookPanel", true);
 
@@ -165,13 +165,13 @@ void VMainWindow::initViewToolBar()
 
     QAction *onePanelViewAct = new QAction(QIcon(":/resources/icons/one_panel.svg"),
                                            tr("&Single Panel"), this);
-    onePanelViewAct->setStatusTip(tr("Display only the note list panel"));
+    onePanelViewAct->setStatusTip(tr("Display only the notes list panel"));
     connect(onePanelViewAct, &QAction::triggered,
             this, &VMainWindow::onePanelView);
 
     QAction *twoPanelViewAct = new QAction(QIcon(":/resources/icons/two_panels.svg"),
                                            tr("&Two Panels"), this);
-    twoPanelViewAct->setStatusTip(tr("Display both the directory and note list panel"));
+    twoPanelViewAct->setStatusTip(tr("Display both the folders and notes list panel"));
     connect(twoPanelViewAct, &QAction::triggered,
             this, &VMainWindow::twoPanelView);
 
@@ -198,14 +198,14 @@ void VMainWindow::initFileToolBar()
     fileToolBar->setMovable(false);
 
     newRootDirAct = new QAction(QIcon(":/resources/icons/create_rootdir_tb.svg"),
-                                tr("New &Root Directory"), this);
-    newRootDirAct->setStatusTip(tr("Create a root directory in current notebook"));
+                                tr("New &Root Folder"), this);
+    newRootDirAct->setStatusTip(tr("Create a root folder in current notebook"));
     connect(newRootDirAct, &QAction::triggered,
             directoryTree, &VDirectoryTree::newRootDirectory);
 
     newNoteAct = new QAction(QIcon(":/resources/icons/create_note_tb.svg"),
                              tr("New &Note"), this);
-    newNoteAct->setStatusTip(tr("Create a note in current directory"));
+    newNoteAct->setStatusTip(tr("Create a note in current folder"));
     newNoteAct->setShortcut(QKeySequence::New);
     connect(newNoteAct, &QAction::triggered,
             fileList, &VFileList::newFile);
@@ -445,7 +445,7 @@ void VMainWindow::initFileMenu()
     // Import notes from files.
     m_importNoteAct = new QAction(QIcon(":/resources/icons/import_note.svg"),
                                   tr("&Import Notes From Files"), this);
-    m_importNoteAct->setToolTip(tr("Import notes from files into current directory"));
+    m_importNoteAct->setToolTip(tr("Import notes from external files into current folder"));
     connect(m_importNoteAct, &QAction::triggered,
             this, &VMainWindow::importNoteFromFile);
     m_importNoteAct->setEnabled(false);
