@@ -1,4 +1,16 @@
 # Changes History
+## v1.5
+- Support logging in release mode;
+- Fix Chinese font matching in mdhl;
+- Fix VimagePreviewer to support optional title;
+- Refactor local image folder logics;
+- Support custom local image folder for both notebook scope and global scope;
+- Support constraining the width of images in read mode;
+- Fix and refine default style;
+- Centering the images and display the alt text as caption in read mode;
+- Support exporting a single note as PDF file;
+- Add "Open File Location" menu item in folder tree and note list;
+
 ## v1.4
 - Use `_vnote.json` as the config file;
 - More user friendly messages;
