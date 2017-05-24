@@ -103,6 +103,10 @@ public:
     // 4. Unused;
     static const QString c_imageLinkRegExp;
 
+    // Regular expression for file/directory name.
+    // Forbidden char: \/:*?"<>|
+    static const QString c_fileNameRegExp;
+
 private:
     // <value, name>
     static const QVector<QPair<QString, QString>> c_availableLanguages;

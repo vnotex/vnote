@@ -23,7 +23,7 @@ enum MarkdownConverterType
 struct VColor
 {
     QString name;
-    QString rgb; // 'FFFFFF', ithout '#'
+    QString rgb; // 'FFFFFF', without '#'
 };
 
 class VConfigManager
@@ -33,9 +33,10 @@ public:
     ~VConfigManager();
     void initialize();
 
-    // Static helper functions
-    // Read config from the directory config json file into a QJsonObject
+    // Read config from the directory config json file into a QJsonObject.
+    // @path is the directory containing the config json file.
     static QJsonObject readDirectoryConfig(const QString &path);
+
     static bool writeDirectoryConfig(const QString &path, const QJsonObject &configJson);
     static bool directoryConfigExist(const QString &path);
     static bool deleteDirectoryConfig(const QString &path);
@@ -172,6 +173,13 @@ public:
     inline bool getEnableImageCaption() const;
     inline void setEnableImageCaption(bool p_enabled);
 
+    inline const QString &getImageFolder() const;
+
+    // Empty string to reset the default folder.
+    inline void setImageFolder(const QString &p_folder);
+
+    inline bool isCustomImageFolder() const;
+
     // Get the folder the ini file exists.
     QString getConfigFolder() const;
 
@@ -185,14 +193,23 @@ public:
     QVector<QString> getEditorStyles() const;
 
 private:
-    QVariant getConfigFromSettings(const QString &section, const QString &key);
+    QVariant getConfigFromSettings(const QString &section, const QString &key) const;
     void setConfigToSettings(const QString &section, const QString &key, const QVariant &value);
+
+    // Get default config from vnote.ini.
+    QVariant getDefaultConfig(const QString &p_section, const QString &p_key) const;
+
+    // Reset user config to default config and return the default config value.
+    QVariant resetDefaultConfig(const QString &p_section, const QString &p_key);
+
     void readNotebookFromSettings(QVector<VNotebook *> &p_notebooks, QObject *parent);
     void writeNotebookToSettings(const QVector<VNotebook *> &p_notebooks);
     void readPredefinedColorsFromSettings();
+
     // 1. Update styles common in HTML and Markdown;
     // 2. Update styles for Markdown.
     void updateEditStyle();
+
     void updateMarkdownEditStyle();
 
     // Migrate ini file from tamlok/vnote.ini to vnote/vnote.ini.
@@ -290,6 +307,10 @@ private:
 
     // Center image and add the alt text as caption.
     bool m_enableImageCaption;
+
+    // Global default folder name to store images of all the notes.
+    // Each notebook can specify its custom folder.
+    QString m_imageFolder;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -777,6 +798,32 @@ inline void VConfigManager::setEnableImageCaption(bool p_enabled)
     m_enableImageCaption = p_enabled;
     setConfigToSettings("global", "enable_image_caption",
                         m_enableImageCaption);
+}
+
+inline const QString &VConfigManager::getImageFolder() const
+{
+    return m_imageFolder;
+}
+
+inline void VConfigManager::setImageFolder(const QString &p_folder)
+{
+    if (p_folder.isEmpty()) {
+        // Reset the default folder.
+        m_imageFolder = resetDefaultConfig("global", "image_folder").toString();
+        return;
+    }
+
+    if (m_imageFolder == p_folder) {
+        return;
+    }
+
+    m_imageFolder = p_folder;
+    setConfigToSettings("global", "image_folder", m_imageFolder);
+}
+
+inline bool VConfigManager::isCustomImageFolder() const
+{
+    return m_imageFolder != getDefaultConfig("global", "image_folder").toString();
 }
 
 #endif // VCONFIGMANAGER_H

@@ -19,17 +19,20 @@ public:
     QString getNameInput() const;
     QString getPathInput() const;
     bool getImportCheck() const;
+    QString getImageFolder() const;
 
 private slots:
     void enableOkButton();
     void handleBrowseBtnClicked();
     void handlePathChanged(const QString &p_text);
+    void importCheckChanged(int p_state);
 
 protected:
     void showEvent(QShowEvent *event) Q_DECL_OVERRIDE;
 
 private:
     void setupUI();
+    void checkRootFolder(const QString &p_path);
 
     QLabel *infoLabel;
     QLabel *nameLabel;
@@ -37,8 +40,9 @@ private:
     QLineEdit *pathEdit;
     QCheckBox *importCheck;
     QPushButton *browseBtn;
-    QDialogButtonBox *m_btnBox;
     QLabel *m_warnLabel;
+    QLineEdit *m_imageFolderEdit;
+    QDialogButtonBox *m_btnBox;
 
     QString title;
     QString info;

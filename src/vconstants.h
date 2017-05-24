@@ -18,4 +18,13 @@ static const int c_tabSequenceBase = 1;
 // HTML and JS.
 static const QString c_htmlJSHolder = "JS_PLACE_HOLDER";
 static const QString c_htmlExtraHolder = "<!-- EXTRA_PLACE_HOLDER -->";
+
+// Directory Config file items.
+namespace DirConfig
+{
+    static const QString c_version = "version";
+    static const QString c_subDirectories = "sub_directories";
+    static const QString c_files = "files";
+    static const QString c_imageFolder = "image_folder";
+}
 #endif

@@ -1,5 +1,6 @@
 #include "vsettingsdialog.h"
 #include <QtWidgets>
+#include <QRegExp>
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
 #include "vconstants.h"
@@ -12,6 +13,7 @@ VSettingsDialog::VSettingsDialog(QWidget *p_parent)
     m_tabs = new QTabWidget;
     m_tabs->addTab(new VGeneralTab(), tr("General"));
     m_tabs->addTab(new VReadEditTab(), tr("Read/Edit"));
+    m_tabs->addTab(new VNoteManagementTab(), tr("Note Management"));
 
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(m_btnBox, &QDialogButtonBox::accepted, this, &VSettingsDialog::saveConfiguration);
@@ -47,6 +49,15 @@ void VSettingsDialog::loadConfiguration()
         }
     }
 
+    // Note Management Tab.
+    {
+        VNoteManagementTab *noteManagementTab = dynamic_cast<VNoteManagementTab *>(m_tabs->widget(2));
+        Q_ASSERT(noteManagementTab);
+        if (!noteManagementTab->loadConfiguration()) {
+            goto err;
+        }
+    }
+
     return;
 err:
     VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
@@ -71,6 +82,15 @@ void VSettingsDialog::saveConfiguration()
         VReadEditTab *readEditTab = dynamic_cast<VReadEditTab *>(m_tabs->widget(1));
         Q_ASSERT(readEditTab);
         if (!readEditTab->saveConfiguration()) {
+            goto err;
+        }
+    }
+
+    // Note Management Tab.
+    {
+        VNoteManagementTab *noteManagementTab = dynamic_cast<VNoteManagementTab *>(m_tabs->widget(2));
+        Q_ASSERT(noteManagementTab);
+        if (!noteManagementTab->saveConfiguration()) {
             goto err;
         }
     }
@@ -231,9 +251,81 @@ bool VReadEditTab::saveWebZoomFactor()
 
 void VReadEditTab::customWebZoomChanged(int p_state)
 {
-    if (p_state == Qt::Unchecked) {
-        m_webZoomFactorSpin->setEnabled(false);
+    m_webZoomFactorSpin->setEnabled(p_state == Qt::Checked);
+}
+
+VNoteManagementTab::VNoteManagementTab(QWidget *p_parent)
+    : QWidget(p_parent)
+{
+    // Image folder.
+    m_customImageFolder = new QCheckBox(tr("Custom image folder"), this);
+    m_customImageFolder->setToolTip(tr("Set the global name of the image folder to store images "
+                                       "of notes (restart VNote to make it work)"));
+    connect(m_customImageFolder, &QCheckBox::stateChanged,
+            this, &VNoteManagementTab::customImageFolderChanged);
+
+    m_imageFolderEdit = new QLineEdit(this);
+    m_imageFolderEdit->setPlaceholderText(tr("Name of the image folder"));
+    QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp), this);
+    m_imageFolderEdit->setValidator(validator);
+
+    QHBoxLayout *imageFolderLayout = new QHBoxLayout();
+    imageFolderLayout->addWidget(m_customImageFolder);
+    imageFolderLayout->addWidget(m_imageFolderEdit);
+
+    QFormLayout *mainLayout = new QFormLayout();
+    mainLayout->addRow(imageFolderLayout);
+
+    setLayout(mainLayout);
+}
+
+bool VNoteManagementTab::loadConfiguration()
+{
+    if (!loadImageFolder()) {
+        return false;
+    }
+
+    return true;
+}
+
+bool VNoteManagementTab::saveConfiguration()
+{
+    if (!saveImageFolder()) {
+        return false;
+    }
+
+    return true;
+}
+
+bool VNoteManagementTab::loadImageFolder()
+{
+    bool isCustom = vconfig.isCustomImageFolder();
+
+    m_customImageFolder->setChecked(isCustom);
+    m_imageFolderEdit->setText(vconfig.getImageFolder());
+    m_imageFolderEdit->setEnabled(isCustom);
+
+    return true;
+}
+
+bool VNoteManagementTab::saveImageFolder()
+{
+    if (m_customImageFolder->isChecked()) {
+        vconfig.setImageFolder(m_imageFolderEdit->text());
     } else {
-        m_webZoomFactorSpin->setEnabled(true);
+        vconfig.setImageFolder("");
+    }
+
+    return true;
+}
+
+void VNoteManagementTab::customImageFolderChanged(int p_state)
+{
+    if (p_state == Qt::Checked) {
+        m_imageFolderEdit->setEnabled(true);
+        m_imageFolderEdit->selectAll();
+        m_imageFolderEdit->setFocus();
+    } else {
+        m_imageFolderEdit->setEnabled(false);
     }
 }

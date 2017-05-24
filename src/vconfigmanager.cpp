@@ -140,6 +140,9 @@ void VConfigManager::initialize()
 
     m_enableImageCaption = getConfigFromSettings("global",
                                                  "enable_image_caption").toBool();
+
+    m_imageFolder = getConfigFromSettings("global",
+                                          "image_folder").toString();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()
@@ -167,6 +170,7 @@ void VConfigManager::readNotebookFromSettings(QVector<VNotebook *> &p_notebooks,
         QString name = userSettings->value("name").toString();
         QString path = userSettings->value("path").toString();
         VNotebook *notebook = new VNotebook(name, path, parent);
+        notebook->readConfig();
         p_notebooks.append(notebook);
     }
     userSettings->endArray();
@@ -193,7 +197,7 @@ void VConfigManager::writeNotebookToSettings(const QVector<VNotebook *> &p_noteb
              << "notebook items in [notebooks] section";
 }
 
-QVariant VConfigManager::getConfigFromSettings(const QString &section, const QString &key)
+QVariant VConfigManager::getConfigFromSettings(const QString &section, const QString &key) const
 {
     QString fullKey = section + "/" + key;
     // First, look up the user-scoped config file
@@ -204,9 +208,7 @@ QVariant VConfigManager::getConfigFromSettings(const QString &section, const QSt
     }
 
     // Second, look up the default config file
-    value = defaultSettings->value(fullKey);
-    qDebug() << "default config:" << fullKey << value.toString();
-    return value;
+    return getDefaultConfig(section, key);
 }
 
 void VConfigManager::setConfigToSettings(const QString &section, const QString &key, const QVariant &value)
@@ -215,6 +217,24 @@ void VConfigManager::setConfigToSettings(const QString &section, const QString &
     QString fullKey = section + "/" + key;
     userSettings->setValue(fullKey, value);
     qDebug() << "set user config:" << fullKey << value.toString();
+}
+
+QVariant VConfigManager::getDefaultConfig(const QString &p_section, const QString &p_key) const
+{
+    QString fullKey = p_section + "/" + p_key;
+
+    QVariant value = defaultSettings->value(fullKey);
+    qDebug() << "default config:" << fullKey << value.toString();
+
+    return value;
+}
+
+QVariant VConfigManager::resetDefaultConfig(const QString &p_section, const QString &p_key)
+{
+    QVariant defaultValue = getDefaultConfig(p_section, p_key);
+    setConfigToSettings(p_section, p_key, defaultValue);
+
+    return defaultValue;
 }
 
 QString VConfigManager::fetchDirConfigFilePath(const QString &p_path)
@@ -230,8 +250,9 @@ QString VConfigManager::fetchDirConfigFilePath(const QString &p_path)
         qDebug() << "rename old directory config file:" << fileName;
     }
 
-    qDebug() << "use directory config file:" << fileName;
-    return dir.filePath(fileName);
+    QString filePath = QDir::cleanPath(dir.filePath(fileName));
+    qDebug() << "use directory config file:" << filePath;
+    return filePath;
 }
 
 QJsonObject VConfigManager::readDirectoryConfig(const QString &path)
@@ -251,9 +272,7 @@ QJsonObject VConfigManager::readDirectoryConfig(const QString &path)
 
 bool VConfigManager::directoryConfigExist(const QString &path)
 {
-     QString configFile = fetchDirConfigFilePath(path);
-     QFile config(configFile);
-     return config.exists();
+     return QFileInfo::exists(fetchDirConfigFilePath(path));
 }
 
 bool VConfigManager::writeDirectoryConfig(const QString &path, const QJsonObject &configJson)

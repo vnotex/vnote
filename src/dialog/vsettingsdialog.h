@@ -11,6 +11,7 @@ class QComboBox;
 class QGroupBox;
 class QDoubleSpinBox;
 class QCheckBox;
+class QLineEdit;
 
 class VGeneralTab : public QWidget
 {
@@ -51,6 +52,26 @@ private slots:
 private:
     bool loadWebZoomFactor();
     bool saveWebZoomFactor();
+};
+
+class VNoteManagementTab : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit VNoteManagementTab(QWidget *p_parent = 0);
+    bool loadConfiguration();
+    bool saveConfiguration();
+
+    // Image folder.
+    QCheckBox *m_customImageFolder;
+    QLineEdit *m_imageFolderEdit;
+
+private slots:
+    void customImageFolderChanged(int p_state);
+
+private:
+    bool loadImageFolder();
+    bool saveImageFolder();
 };
 
 class VSettingsDialog : public QDialog

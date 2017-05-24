@@ -27,6 +27,8 @@ const QVector<QPair<QString, QString>> VUtils::c_availableLanguages = {QPair<QSt
 
 const QString VUtils::c_imageLinkRegExp = QString("\\!\\[([^\\]]*)\\]\\(([^\\)\"]+)\\s*(\"(\\\\.|[^\"\\)])*\")?\\s*\\)");
 
+const QString VUtils::c_fileNameRegExp = QString("[^\\\\/:\\*\\?\"<>\\|]*");
+
 VUtils::VUtils()
 {
 }

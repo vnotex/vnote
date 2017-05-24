@@ -455,8 +455,7 @@ void VMainWindow::initFileMenu()
     fileMenu->addSeparator();
 
     // Export as PDF.
-    m_exportAsPDFAct = new QAction(QIcon(":/resources/icons/export_pdf.svg"),
-                                tr("Export As &PDF"), this);
+    m_exportAsPDFAct = new QAction(tr("Export As &PDF"), this);
     m_exportAsPDFAct->setToolTip(tr("Export current note as PDF file"));
     connect(m_exportAsPDFAct, &QAction::triggered,
             this, &VMainWindow::exportAsPDF);

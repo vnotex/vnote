@@ -163,7 +163,7 @@ void VNotebookSelector::update()
 bool VNotebookSelector::newNotebook()
 {
     QString info(tr("Please type the name of the notebook and "
-                    "choose an existing directory as Root Folder of the notebook."));
+                    "choose an existing folder as Root Folder of the notebook."));
     info += "\n";
     info += tr("The root folder should be used EXCLUSIVELY by VNote and "
                "it is recommended to be EMPTY.");
@@ -171,23 +171,25 @@ bool VNotebookSelector::newNotebook()
     QString defaultName("new_notebook");
     QString defaultPath;
 
+    VNewNotebookDialog dialog(tr("Add Notebook"), info, defaultName,
+                              defaultPath, this);
     do {
-        VNewNotebookDialog dialog(tr("Add Notebook"), info, defaultName,
-                                  defaultPath, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
             QString path = dialog.getPathInput();
             if (findNotebook(name)) {
-                info = tr("Name already exists. Please choose another name.");
-                defaultName = name;
-                defaultPath = path;
+                VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                                    tr("Name already exists. Please choose another name."), "",
+                                    QMessageBox::Ok, QMessageBox::Ok, this);
                 continue;
             }
-            createNotebook(name, path, dialog.getImportCheck());
+
+            createNotebook(name, path, dialog.getImportCheck(), dialog.getImageFolder());
             return true;
         }
         break;
     } while (true);
+
     return false;
 }
 
@@ -201,9 +203,13 @@ VNotebook *VNotebookSelector::findNotebook(const QString &p_name)
     return NULL;
 }
 
-void VNotebookSelector::createNotebook(const QString &p_name, const QString &p_path, bool p_import)
+void VNotebookSelector::createNotebook(const QString &p_name,
+                                       const QString &p_path,
+                                       bool p_import,
+                                       const QString &p_imageFolder)
 {
-    VNotebook *nb = VNotebook::createNotebook(p_name, p_path, p_import, m_vnote);
+    VNotebook *nb = VNotebook::createNotebook(p_name, p_path, p_import,
+                                              p_imageFolder, m_vnote);
     m_notebooks.append(nb);
     vconfig.setNotebooks(m_notebooks);
 
@@ -251,7 +257,7 @@ void VNotebookSelector::deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles
         int cho = VUtils::showMessage(QMessageBox::Information, tr("Delete Notebook Folder From Disk"),
                                       tr("Fail to delete the root folder of notebook "
                                          "<span style=\"%1\">%2</span> from disk. You may open "
-                                         "the directory and check it manually.")
+                                         "the folder and check it manually.")
                                         .arg(vconfig.c_dataTextStyle).arg(name), "",
                                       QMessageBox::Open | QMessageBox::Ok,
                                       QMessageBox::Ok, this);
@@ -285,27 +291,37 @@ void VNotebookSelector::editNotebookInfo()
     int index = indexOfListItem(item);
 
     VNotebook *notebook = getNotebookFromComboIndex(index);
-    QString info;
     QString curName = notebook->getName();
-    QString defaultPath = notebook->getPath();
-    QString defaultName(curName);
+
+    VNotebookInfoDialog dialog(tr("Notebook Information"), "", notebook, this);
     do {
-        VNotebookInfoDialog dialog(tr("Notebook Information"), info, defaultName,
-                                   defaultPath, this);
         if (dialog.exec() == QDialog::Accepted) {
-            QString name = dialog.getNameInput();
-            if (name == curName) {
-                return;
+            bool updated = false;
+            QString name = dialog.getName();
+            if (name != curName) {
+                if (findNotebook(name)) {
+                    VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                                        tr("Name already exists. Please choose another name."), "",
+                                        QMessageBox::Ok, QMessageBox::Ok, this);
+                    continue;
+                }
+
+                updated = true;
+                notebook->rename(name);
+                updateComboBoxItem(index, name);
+                vconfig.setNotebooks(m_notebooks);
             }
-            if (findNotebook(name)) {
-                info = "Name already exists. Please choose another name.";
-                defaultName = name;
-                continue;
+
+            QString imageFolder = dialog.getImageFolder();
+            if (imageFolder != notebook->getImageFolderConfig()) {
+                updated = true;
+                notebook->setImageFolder(imageFolder);
+                notebook->writeConfig();
             }
-            notebook->rename(name);
-            updateComboBoxItem(index, name);
-            vconfig.setNotebooks(m_notebooks);
-            emit notebookUpdated(notebook);
+
+            if (updated) {
+                emit notebookUpdated(notebook);
+            }
         }
         break;
     } while (true);

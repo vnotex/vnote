@@ -65,7 +65,15 @@ public:
     void reorderFiles(int p_first, int p_last, int p_destStart);
     bool reorderFilesInConfig(int p_first, int p_last, int p_destStart);
 
-    static QJsonObject createDirectoryJson();
+    // Serialize current instance to json.
+    QJsonObject toConfigJson() const;
+
+    // Read configurations (excluding "sub_directories" and "files" section)
+    // from config file.
+    bool readConfig();
+
+    // Write current instance to config file.
+    bool writeToConfig() const;
 
 private:
     // Get the path of @p_dir recursively

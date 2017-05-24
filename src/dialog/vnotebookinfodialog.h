@@ -7,31 +7,34 @@ class QLabel;
 class QLineEdit;
 class QDialogButtonBox;
 class QString;
+class VNotebook;
 
 class VNotebookInfoDialog : public QDialog
 {
     Q_OBJECT
 public:
-    VNotebookInfoDialog(const QString &title, const QString &info, const QString &defaultName,
-                        const QString &defaultPath, QWidget *parent = 0);
-    QString getNameInput() const;
+    VNotebookInfoDialog(const QString &p_title, const QString &p_info,
+                        const VNotebook *p_notebook, QWidget *p_parent = 0);
+
+    QString getName() const;
+    QString getImageFolder() const;
 
 private slots:
     void enableOkButton();
 
+protected:
+    void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
+
 private:
-    void setupUI();
+    void setupUI(const QString &p_title, const QString &p_info);
 
-    QLabel *infoLabel;
-    QLabel *nameLabel;
-    QLineEdit *nameEdit;
-    QLineEdit *pathEdit;
+    const VNotebook *m_notebook;
+
+    QLabel *m_infoLabel;
+    QLineEdit *m_nameEdit;
+    QLineEdit *m_pathEdit;
+    QLineEdit *m_imageFolderEdit;
     QDialogButtonBox *m_btnBox;
-
-    QString title;
-    QString info;
-    QString defaultName;
-    QString defaultPath;
 };
 
 #endif // VNOTEBOOKINFODIALOG_H

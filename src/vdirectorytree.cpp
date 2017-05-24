@@ -142,7 +142,6 @@ void VDirectoryTree::updateDirectoryTree()
 
 bool VDirectoryTree::restoreCurrentItem()
 {
-    qDebug() << m_notebook << m_notebookCurrentDirMap;
     auto it = m_notebookCurrentDirMap.find(m_notebook);
     if (it != m_notebookCurrentDirMap.end()) {
         bool rootDirectory;

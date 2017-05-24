@@ -105,13 +105,34 @@ QString VDirectory::retriveRelativePath(const VDirectory *p_dir) const
     }
 }
 
-QJsonObject VDirectory::createDirectoryJson()
+QJsonObject VDirectory::toConfigJson() const
 {
     QJsonObject dirJson;
-    dirJson["version"] = "1";
-    dirJson["sub_directories"] = QJsonArray();
-    dirJson["files"] = QJsonArray();
+    dirJson[DirConfig::c_version] = "1";
+
+    QJsonArray subDirs;
+    for (int i = 0; i < m_subDirs.size(); ++i) {
+        subDirs.append(m_subDirs[i]->getName());
+    }
+    dirJson[DirConfig::c_subDirectories] = subDirs;
+
+    QJsonArray files;
+    for (int i = 0; i < m_files.size(); ++i) {
+        files.append(m_files[i]->getName());
+    }
+    dirJson[DirConfig::c_files] = files;
+
     return dirJson;
+}
+
+bool VDirectory::readConfig()
+{
+    return true;
+}
+
+bool VDirectory::writeToConfig() const
+{
+    return VConfigManager::writeDirectoryConfig(retrivePath(), toConfigJson());
 }
 
 VDirectory *VDirectory::createSubDirectory(const QString &p_name)
@@ -128,19 +149,21 @@ VDirectory *VDirectory::createSubDirectory(const QString &p_name)
         return NULL;
     }
 
-    QJsonObject subJson = createDirectoryJson();
-    if (!VConfigManager::writeDirectoryConfig(QDir::cleanPath(QDir(path).filePath(p_name)), subJson)) {
+    VDirectory *ret = new VDirectory(m_notebook, p_name, this);
+    if (!VConfigManager::writeDirectoryConfig(QDir::cleanPath(QDir(path).filePath(p_name)),
+                                              ret->toConfigJson())) {
         dir.rmdir(p_name);
+        delete ret;
         return NULL;
     }
 
     if (!createSubDirectoryInConfig(p_name)) {
         VConfigManager::deleteDirectoryConfig(QDir(path).filePath(p_name));
         dir.rmdir(p_name);
+        delete ret;
         return NULL;
     }
 
-    VDirectory *ret = new VDirectory(m_notebook, p_name, this);
     m_subDirs.append(ret);
     return ret;
 }

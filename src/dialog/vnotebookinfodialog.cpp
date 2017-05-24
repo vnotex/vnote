@@ -1,37 +1,55 @@
 #include <QtWidgets>
 #include "vnotebookinfodialog.h"
+#include "vnotebook.h"
+#include "utils/vutils.h"
+#include "vconfigmanager.h"
 
-VNotebookInfoDialog::VNotebookInfoDialog(const QString &title, const QString &info,
-                                         const QString &defaultName, const QString &defaultPath,
-                                         QWidget *parent)
-    : QDialog(parent), infoLabel(NULL), title(title), info(info), defaultName(defaultName),
-      defaultPath(defaultPath)
+extern VConfigManager vconfig;
+
+VNotebookInfoDialog::VNotebookInfoDialog(const QString &p_title, const QString &p_info,
+                                         const VNotebook *p_notebook, QWidget *p_parent)
+    : QDialog(p_parent), m_notebook(p_notebook), m_infoLabel(NULL)
 {
-    setupUI();
+    setupUI(p_title, p_info);
 
-    connect(nameEdit, &QLineEdit::textChanged, this, &VNotebookInfoDialog::enableOkButton);
+    connect(m_nameEdit, &QLineEdit::textChanged,
+            this, &VNotebookInfoDialog::enableOkButton);
 
     enableOkButton();
 }
 
-void VNotebookInfoDialog::setupUI()
+void VNotebookInfoDialog::setupUI(const QString &p_title, const QString &p_info)
 {
-    if (!info.isEmpty()) {
-        infoLabel = new QLabel(info);
+    if (!p_info.isEmpty()) {
+        m_infoLabel = new QLabel(p_info);
     }
-    nameLabel = new QLabel(tr("Notebook &name:"));
-    nameEdit = new QLineEdit(defaultName);
-    nameEdit->selectAll();
-    nameLabel->setBuddy(nameEdit);
 
-    QLabel *pathLabel = new QLabel(tr("Notebook &path:"));
-    pathEdit = new QLineEdit(defaultPath);
-    pathLabel->setBuddy(pathEdit);
-    pathEdit->setReadOnly(true);
+    QLabel *nameLabel = new QLabel(tr("Notebook &name:"));
+    m_nameEdit = new QLineEdit(m_notebook->getName());
+    m_nameEdit->selectAll();
+    nameLabel->setBuddy(m_nameEdit);
+
+    QLabel *pathLabel = new QLabel(tr("Notebook &root folder:"));
+    m_pathEdit = new QLineEdit(m_notebook->getPath());
+    pathLabel->setBuddy(m_pathEdit);
+    m_pathEdit->setReadOnly(true);
+
+    QLabel *imageFolderLabel = new QLabel(tr("&Image folder:"));
+    m_imageFolderEdit = new QLineEdit(m_notebook->getImageFolderConfig());
+    m_imageFolderEdit->setPlaceholderText(tr("Use global configuration (%1)")
+                                            .arg(vconfig.getImageFolder()));
+    imageFolderLabel->setBuddy(m_imageFolderEdit);
+    QString imageFolderTip = tr("Set the name of the folder for all the notes of this notebook to store images "
+                                "(empty to use global configuration)");
+    m_imageFolderEdit->setToolTip(imageFolderTip);
+    imageFolderLabel->setToolTip(imageFolderTip);
+    QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp), m_imageFolderEdit);
+    m_imageFolderEdit->setValidator(validator);
 
     QFormLayout *topLayout = new QFormLayout();
-    topLayout->addRow(nameLabel, nameEdit);
-    topLayout->addRow(pathLabel, pathEdit);
+    topLayout->addRow(nameLabel, m_nameEdit);
+    topLayout->addRow(pathLabel, m_pathEdit);
+    topLayout->addRow(imageFolderLabel, m_imageFolderEdit);
 
     // Ok is the default button.
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -39,26 +57,38 @@ void VNotebookInfoDialog::setupUI()
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
-    pathEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
+    m_pathEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
-    if (infoLabel) {
-        mainLayout->addWidget(infoLabel);
+    if (m_infoLabel) {
+        mainLayout->addWidget(m_infoLabel);
     }
     mainLayout->addLayout(topLayout);
     mainLayout->addWidget(m_btnBox);
     setLayout(mainLayout);
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
-    setWindowTitle(title);
+    setWindowTitle(p_title);
 }
 
 void VNotebookInfoDialog::enableOkButton()
 {
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
-    okBtn->setEnabled(!nameEdit->text().isEmpty());
+    okBtn->setEnabled(!m_nameEdit->text().isEmpty());
 }
 
-QString VNotebookInfoDialog::getNameInput() const
+QString VNotebookInfoDialog::getName() const
 {
-    return nameEdit->text();
+    return m_nameEdit->text();
 }
+
+QString VNotebookInfoDialog::getImageFolder() const
+{
+    return m_imageFolderEdit->text();
+}
+
+void VNotebookInfoDialog::showEvent(QShowEvent *p_event)
+{
+    m_nameEdit->setFocus();
+    QDialog::showEvent(p_event);
+}
+
