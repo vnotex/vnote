@@ -157,6 +157,7 @@ public:
 
     inline QString getEditorCurrentLineBackground() const;
     inline QString getEditorCurrentLineVimBackground() const;
+    inline QString getEditorTrailingSpaceBackground() const;
 
     inline bool getEnableCodeBlockHighlight() const;
     inline void setEnableCodeBlockHighlight(bool p_enabled);
@@ -174,11 +175,12 @@ public:
     inline void setEnableImageCaption(bool p_enabled);
 
     inline const QString &getImageFolder() const;
-
     // Empty string to reset the default folder.
     inline void setImageFolder(const QString &p_folder);
-
     inline bool isCustomImageFolder() const;
+
+    inline bool getEnableTrailingSpaceHighlight() const;
+    inline void setEnableTrailingSapceHighlight(bool p_enabled);
 
     // Get the folder the ini file exists.
     QString getConfigFolder() const;
@@ -290,8 +292,12 @@ private:
 
     // Current line background color in editor.
     QString m_editorCurrentLineBackground;
+
     // Current line background color in editor in Vim mode.
     QString m_editorCurrentLineVimBackground;
+
+    // Trailing space background color in editor.
+    QString m_editorTrailingSpaceBackground;
 
     // Enable colde block syntax highlight.
     bool m_enableCodeBlockHighlight;
@@ -311,6 +317,9 @@ private:
     // Global default folder name to store images of all the notes.
     // Each notebook can specify its custom folder.
     QString m_imageFolder;
+
+    // Enable trailing-space highlight.
+    bool m_enableTrailingSpaceHighlight;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -722,6 +731,11 @@ inline QString VConfigManager::getEditorCurrentLineVimBackground() const
     return m_editorCurrentLineVimBackground;
 }
 
+inline QString VConfigManager::getEditorTrailingSpaceBackground() const
+{
+    return m_editorTrailingSpaceBackground;
+}
+
 inline bool VConfigManager::getEnableCodeBlockHighlight() const
 {
     return m_enableCodeBlockHighlight;
@@ -824,6 +838,22 @@ inline void VConfigManager::setImageFolder(const QString &p_folder)
 inline bool VConfigManager::isCustomImageFolder() const
 {
     return m_imageFolder != getDefaultConfig("global", "image_folder").toString();
+}
+
+inline bool VConfigManager::getEnableTrailingSpaceHighlight() const
+{
+    return m_enableTrailingSpaceHighlight;
+}
+
+inline void VConfigManager::setEnableTrailingSapceHighlight(bool p_enabled)
+{
+    if (m_enableTrailingSpaceHighlight == p_enabled) {
+        return;
+    }
+
+    m_enableTrailingSpaceHighlight = p_enabled;
+    setConfigToSettings("global", "enable_trailing_space_highlight",
+                        m_enableTrailingSpaceHighlight);
 }
 
 #endif // VCONFIGMANAGER_H

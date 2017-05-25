@@ -17,12 +17,13 @@ VEdit::VEdit(VFile *p_file, QWidget *p_parent)
     : QTextEdit(p_parent), m_file(p_file), m_editOps(NULL)
 {
     const int labelTimerInterval = 500;
-    const int selectedWordTimerInterval = 500;
+    const int extraSelectionHighlightTimer = 500;
     const int labelSize = 64;
 
     m_cursorLineColor = QColor(g_vnote->getColorFromPalette("Indigo1"));
     m_selectedWordColor = QColor("Yellow");
     m_searchedWordColor = QColor(g_vnote->getColorFromPalette("Green4"));
+    m_trailingSpaceColor = QColor(vconfig.getEditorTrailingSpaceBackground());
 
     QPixmap wrapPixmap(":/resources/icons/search_wrap.svg");
     m_wrapLabel = new QLabel(this);
@@ -34,11 +35,11 @@ VEdit::VEdit(VFile *p_file, QWidget *p_parent)
     connect(m_labelTimer, &QTimer::timeout,
             this, &VEdit::labelTimerTimeout);
 
-    m_selectedWordTimer = new QTimer(this);
-    m_selectedWordTimer->setSingleShot(true);
-    m_selectedWordTimer->setInterval(selectedWordTimerInterval);
-    connect(m_selectedWordTimer, &QTimer::timeout,
-            this, &VEdit::highlightSelectedWord);
+    m_highlightTimer = new QTimer(this);
+    m_highlightTimer->setSingleShot(true);
+    m_highlightTimer->setInterval(extraSelectionHighlightTimer);
+    connect(m_highlightTimer, &QTimer::timeout,
+            this, &VEdit::doHighlightExtraSelections);
 
     connect(document(), &QTextDocument::modificationChanged,
             (VFile *)m_file, &VFile::setModified);
@@ -47,9 +48,10 @@ VEdit::VEdit(VFile *p_file, QWidget *p_parent)
     updateFontAndPalette();
 
     connect(this, &VEdit::cursorPositionChanged,
-            this, &VEdit::highlightCurrentLine);
+            this, &VEdit::handleCursorPositionChanged);
+
     connect(this, &VEdit::selectionChanged,
-            this, &VEdit::triggerHighlightSelectedWord);
+            this, &VEdit::highlightSelectedWord);
 }
 
 VEdit::~VEdit()
@@ -374,7 +376,17 @@ void VEdit::updateFontAndPalette()
     setPalette(vconfig.getBaseEditPalette());
 }
 
-void VEdit::highlightExtraSelections()
+void VEdit::highlightExtraSelections(bool p_now)
+{
+    m_highlightTimer->stop();
+    if (p_now) {
+        doHighlightExtraSelections();
+    } else {
+        m_highlightTimer->start();
+    }
+}
+
+void VEdit::doHighlightExtraSelections()
 {
     int nrExtra = m_extraSelections.size();
     Q_ASSERT(nrExtra == (int)SelectionId::MaxSelection);
@@ -382,6 +394,7 @@ void VEdit::highlightExtraSelections()
     for (int i = 0; i < nrExtra; ++i) {
         extraSelects.append(m_extraSelections[i]);
     }
+
     setExtraSelections(extraSelects);
 }
 
@@ -390,23 +403,24 @@ void VEdit::highlightCurrentLine()
     QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::CurrentLine];
     if (vconfig.getHighlightCursorLine() && !isReadOnly()) {
         // Need to highlight current line.
-        selects.clear();
-
         QTextEdit::ExtraSelection select;
         select.format.setBackground(m_cursorLineColor);
         select.format.setProperty(QTextFormat::FullWidthSelection, true);
         select.cursor = textCursor();
         select.cursor.clearSelection();
+
+        selects.clear();
         selects.append(select);
     } else {
         // Need to clear current line highlight.
         if (selects.isEmpty()) {
             return;
         }
+
         selects.clear();
     }
 
-    highlightExtraSelections();
+    highlightExtraSelections(true);
 }
 
 void VEdit::setReadOnly(bool p_ro)
@@ -417,18 +431,65 @@ void VEdit::setReadOnly(bool p_ro)
 
 void VEdit::highlightSelectedWord()
 {
-    QString text;
-    if (vconfig.getHighlightSelectedWord()) {
-        text = textCursor().selectedText().trimmed();
-        if (wordInSearchedSelection(text)) {
-            qDebug() << "select searched word, just skip";
-            text = "";
+    QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::SelectedWord];
+    if (!vconfig.getHighlightSelectedWord()) {
+        if (!selects.isEmpty()) {
+            selects.clear();
+            highlightExtraSelections(true);
         }
+
+        return;
     }
+
+    QString text = textCursor().selectedText().trimmed();
+    if (text.isEmpty() || wordInSearchedSelection(text)) {
+        selects.clear();
+        highlightExtraSelections(true);
+        return;
+    }
+
     QTextCharFormat format;
     format.setBackground(m_selectedWordColor);
     highlightTextAll(text, FindOption::CaseSensitive, SelectionId::SelectedWord,
                      format);
+}
+
+// Do not highlight trailing spaces with current cursor right behind.
+static void trailingSpaceFilter(VEdit *p_editor, QList<QTextEdit::ExtraSelection> &p_result)
+{
+    QTextCursor cursor = p_editor->textCursor();
+    if (!cursor.atBlockEnd()) {
+        return;
+    }
+
+    int cursorPos = cursor.position();
+    for (auto it = p_result.begin(); it != p_result.end(); ++it) {
+        if (it->cursor.selectionEnd() == cursorPos) {
+            p_result.erase(it);
+
+            // There will be only one.
+            return;
+        }
+    }
+}
+
+void VEdit::highlightTrailingSpace()
+{
+    if (!vconfig.getEnableTrailingSpaceHighlight()) {
+        QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::TrailingSapce];
+        if (!selects.isEmpty()) {
+            selects.clear();
+            highlightExtraSelections(true);
+        }
+        return;
+    }
+
+    QTextCharFormat format;
+    format.setBackground(m_trailingSpaceColor);
+    QString text("\\s+$");
+    highlightTextAll(text, FindOption::RegularExpression,
+                     SelectionId::TrailingSapce, format,
+                     trailingSpaceFilter);
 }
 
 bool VEdit::wordInSearchedSelection(const QString &p_text)
@@ -444,24 +505,9 @@ bool VEdit::wordInSearchedSelection(const QString &p_text)
     return false;
 }
 
-void VEdit::triggerHighlightSelectedWord()
-{
-    QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::SelectedWord];
-    if (!vconfig.getHighlightSelectedWord() && selects.isEmpty()) {
-        return;
-    }
-    m_selectedWordTimer->stop();
-    QString text = textCursor().selectedText().trimmed();
-    if (text.isEmpty()) {
-        // Clear previous selection right now.
-        highlightSelectedWord();
-    } else {
-        m_selectedWordTimer->start();
-    }
-}
-
 void VEdit::highlightTextAll(const QString &p_text, uint p_options,
-                             SelectionId p_id, QTextCharFormat p_format)
+                             SelectionId p_id, QTextCharFormat p_format,
+                             void (*p_filter)(VEdit *, QList<QTextEdit::ExtraSelection> &))
 {
     QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)p_id];
     if (!p_text.isEmpty()) {
@@ -474,32 +520,42 @@ void VEdit::highlightTextAll(const QString &p_text, uint p_options,
             select.cursor = occurs[i];
             selects.append(select);
         }
-        qDebug() << "highlight" << selects.size() << "occurences of" << p_text;
     } else {
         if (selects.isEmpty()) {
             return;
         }
         selects.clear();
     }
+
+    if (p_filter) {
+        p_filter(this, selects);
+    }
+
     highlightExtraSelections();
 }
 
 void VEdit::highlightSearchedWord(const QString &p_text, uint p_options)
 {
+    QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::SearchedKeyword];
+    if (!vconfig.getHighlightSearchedWord() || p_text.isEmpty()) {
+        if (!selects.isEmpty()) {
+            selects.clear();
+            highlightExtraSelections(true);
+        }
+
+        return;
+    }
+
     QTextCharFormat format;
     format.setBackground(m_searchedWordColor);
-    QString text;
-    if (vconfig.getHighlightSearchedWord()) {
-        text = p_text;
-    }
-    highlightTextAll(text, p_options, SelectionId::SearchedKeyword, format);
+    highlightTextAll(p_text, p_options, SelectionId::SearchedKeyword, format);
 }
 
 void VEdit::clearSearchedWordHighlight()
 {
     QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::SearchedKeyword];
     selects.clear();
-    highlightExtraSelections();
+    highlightExtraSelections(true);
 }
 
 void VEdit::contextMenuEvent(QContextMenuEvent *p_event)
@@ -567,5 +623,31 @@ void VEdit::handleEditAct()
 VFile *VEdit::getFile() const
 {
     return m_file;
+}
+
+void VEdit::handleCursorPositionChanged()
+{
+    static QTextCursor lastCursor;
+
+    QTextCursor cursor = textCursor();
+    if (lastCursor.isNull() || cursor.blockNumber() != lastCursor.blockNumber()) {
+        highlightCurrentLine();
+        highlightTrailingSpace();
+    } else {
+        // Judge whether we have trailing space at current line.
+        QString text = cursor.block().text();
+        if (text.rbegin()->isSpace()) {
+            highlightTrailingSpace();
+        }
+
+        // Handle word-wrap in one block.
+        // Highlight current line if in different visual line.
+        if ((lastCursor.positionInBlock() - lastCursor.columnNumber()) !=
+            (cursor.positionInBlock() - cursor.columnNumber())) {
+            highlightCurrentLine();
+        }
+    }
+
+    lastCursor = cursor;
 }
 

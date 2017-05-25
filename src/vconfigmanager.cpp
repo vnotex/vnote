@@ -143,6 +143,9 @@ void VConfigManager::initialize()
 
     m_imageFolder = getConfigFromSettings("global",
                                           "image_folder").toString();
+
+    m_enableTrailingSpaceHighlight = getConfigFromSettings("global",
+                                                           "enable_trailing_space_highlight").toBool();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()
@@ -325,6 +328,7 @@ void VConfigManager::updateMarkdownEditStyle()
 {
     static const QString defaultCurrentLineBackground = "#C5CAE9";
     static const QString defaultCurrentLineVimBackground = "#A5D6A7";
+    static const QString defaultTrailingSpaceBackground = "#FFEBEE";
 
     // Read style file .mdhl
     QString file(getEditorStyleUrl());
@@ -349,6 +353,7 @@ void VConfigManager::updateMarkdownEditStyle()
     if (editorCurrentLineIt != styles.end()) {
         auto backgroundIt = editorCurrentLineIt->find("background");
         if (backgroundIt != editorCurrentLineIt->end()) {
+            // Do not need to add "#" here, since this is a built-in attribute.
             m_editorCurrentLineBackground = *backgroundIt;
         }
 
@@ -357,6 +362,19 @@ void VConfigManager::updateMarkdownEditStyle()
             m_editorCurrentLineVimBackground = "#" + *vimBackgroundIt;
         }
     }
+
+    m_editorTrailingSpaceBackground = defaultTrailingSpaceBackground;
+    auto editorIt = styles.find("editor");
+    if (editorIt != styles.end()) {
+        auto trailingIt = editorIt->find("trailing-space");
+        if (trailingIt != editorIt->end()) {
+            m_editorTrailingSpaceBackground = "#" + *trailingIt;
+        }
+    }
+
+    qDebug() << "editor-current-line" << m_editorCurrentLineBackground;
+    qDebug() << "editor-current-line-vim" << m_editorCurrentLineVimBackground;
+    qDebug() << "editor-trailing-space" << m_editorTrailingSpaceBackground;
 }
 
 void VConfigManager::updateEditStyle()

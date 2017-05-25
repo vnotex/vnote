@@ -186,8 +186,10 @@ void VStyleParser::fetchMarkdownEditorStyles(QPalette &palette, QFont &font,
                                              QMap<QString, QMap<QString, QString>> &styles) const
 {
     QString ruleKey;
+
     // editor
     pmh_style_attribute *editorStyles = markdownStyles->editor_styles;
+    ruleKey = "editor";
     while (editorStyles) {
         switch (editorStyles->type) {
         case pmh_attr_type_foreground_color:
@@ -210,6 +212,16 @@ void VStyleParser::fetchMarkdownEditorStyles(QPalette &palette, QFont &font,
             break;
         }
 
+        // Get custom styles:
+        //     trailing-space.
+        case pmh_attr_type_other:
+        {
+            QString attrName(editorStyles->name);
+            QString value(editorStyles->value->string);
+            styles[ruleKey][attrName] = value;
+            break;
+        }
+
         default:
                 qWarning() << "unimplemented editor attr type:" << editorStyles->type;
         }
@@ -229,6 +241,8 @@ void VStyleParser::fetchMarkdownEditorStyles(QPalette &palette, QFont &font,
             break;
         }
 
+        // Get custom styles:
+        //     vim-background.
         case pmh_attr_type_other:
         {
             QString attrName(curLineStyles->name);

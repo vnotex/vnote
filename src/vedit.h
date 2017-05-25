@@ -19,6 +19,7 @@ enum class SelectionId {
     CurrentLine = 0,
     SelectedWord,
     SearchedKeyword,
+    TrailingSapce,
     MaxSelection
 };
 
@@ -57,11 +58,12 @@ signals:
 
 private slots:
     void labelTimerTimeout();
-    void triggerHighlightSelectedWord();
     void highlightSelectedWord();
     void handleSaveExitAct();
     void handleDiscardExitAct();
     void handleEditAct();
+    void highlightTrailingSpace();
+    void handleCursorPositionChanged();
 
 protected slots:
     virtual void highlightCurrentLine();
@@ -77,19 +79,35 @@ protected:
 private:
     QLabel *m_wrapLabel;
     QTimer *m_labelTimer;
-    // highlightExtraSelections() will highlight these selections.
+
+    // doHighlightExtraSelections() will highlight these selections.
     // Selections are indexed by SelectionId.
     QVector<QList<QTextEdit::ExtraSelection> > m_extraSelections;
-    QTimer *m_selectedWordTimer;
+
     QColor m_selectedWordColor;
     QColor m_searchedWordColor;
+    QColor m_trailingSpaceColor;
+
+    // Timer for extra selections highlight.
+    QTimer *m_highlightTimer;
 
     void showWrapLabel();
-    void highlightExtraSelections();
+
+    // Trigger the timer to request highlight.
+    // If @p_now is true, stop the timer and highlight immediately.
+    void highlightExtraSelections(bool p_now = false);
+
+    // Do the real work to highlight extra selections.
+    void doHighlightExtraSelections();
+
     // Find all the occurences of @p_text.
     QList<QTextCursor> findTextAll(const QString &p_text, uint p_options);
+
+    // @p_fileter: a function to filter out highlight results.
     void highlightTextAll(const QString &p_text, uint p_options,
-                          SelectionId p_id, QTextCharFormat p_format);
+                          SelectionId p_id, QTextCharFormat p_format,
+                          void (*p_filter)(VEdit *, QList<QTextEdit::ExtraSelection> &) = NULL);
+
     void highlightSearchedWord(const QString &p_text, uint p_options);
     bool wordInSearchedSelection(const QString &p_text);
 };

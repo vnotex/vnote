@@ -600,6 +600,13 @@ void VMainWindow::initEditMenu()
     connect(selectedWordAct, &QAction::triggered,
             this, &VMainWindow::changeHighlightSelectedWord);
 
+    // Highlight trailing space.
+    QAction *trailingSapceAct = new QAction(tr("Highlight Trailing Sapces"), this);
+    trailingSapceAct->setToolTip(tr("Highlight all the spaces at the end of a line"));
+    trailingSapceAct->setCheckable(true);
+    connect(trailingSapceAct, &QAction::triggered,
+            this, &VMainWindow::changeHighlightTrailingSapce);
+
     editMenu->addAction(m_insertImageAct);
     editMenu->addSeparator();
     m_insertImageAct->setEnabled(false);
@@ -672,6 +679,9 @@ void VMainWindow::initEditMenu()
 
     editMenu->addAction(selectedWordAct);
     selectedWordAct->setChecked(vconfig.getHighlightSelectedWord());
+
+    editMenu->addAction(trailingSapceAct);
+    trailingSapceAct->setChecked(vconfig.getEnableTrailingSpaceHighlight());
 }
 
 void VMainWindow::initDockWindows()
@@ -782,6 +792,11 @@ void VMainWindow::changeHighlightSelectedWord(bool p_checked)
 void VMainWindow::changeHighlightSearchedWord(bool p_checked)
 {
     vconfig.setHighlightSearchedWord(p_checked);
+}
+
+void VMainWindow::changeHighlightTrailingSapce(bool p_checked)
+{
+    vconfig.setEnableTrailingSapceHighlight(p_checked);
 }
 
 void VMainWindow::setTabStopWidth(QAction *action)
