@@ -35,12 +35,12 @@ void VDirectoryTree::initActions()
 {
     newRootDirAct = new QAction(QIcon(":/resources/icons/create_rootdir.svg"),
                                 tr("New &Root Folder"), this);
-    newRootDirAct->setToolTip(tr("Create a new root folder in current notebook"));
+    newRootDirAct->setToolTip(tr("Create a root folder in current notebook"));
     connect(newRootDirAct, &QAction::triggered,
             this, &VDirectoryTree::newRootDirectory);
 
     newSubDirAct = new QAction(tr("&New Subfolder"), this);
-    newSubDirAct->setToolTip(tr("Create a new subfolder"));
+    newSubDirAct->setToolTip(tr("Create a subfolder"));
     connect(newSubDirAct, &QAction::triggered,
             this, &VDirectoryTree::newSubDirectory);
 

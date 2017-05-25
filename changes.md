@@ -1,29 +1,30 @@
 # Changes History
 ## v1.5
-- Support logging in release mode;
-- Fix Chinese font matching in mdhl;
-- Fix VimagePreviewer to support optional title;
-- Refactor local image folder logics;
-- Support custom local image folder for both notebook scope and global scope;
-- Support constraining the width of images in read mode;
-- Fix and refine default style;
-- Centering the images and display the alt text as caption in read mode;
-- Support exporting a single note as PDF file;
-- Add "Open File Location" menu item in folder tree and note list;
+- Support logging in release mode.
+- Fix Chinese font matching in mdhl.
+- Fix VimagePreviewer to support optional title.
+- Refactor local image folder logics.
+- Support custom local image folder for both notebook scope and global scope.
+- Support constraining the width of images in read mode.
+- Fix and refine default style.
+- Centering the images and display the alt text as caption in read mode.
+- Support exporting a single note as PDF file.
+- Add "Open File Location" menu item in folder tree and note list.
+- Support highlighting trailing space.
 
 ## v1.4
-- Use `_vnote.json` as the config file;
-- More user friendly messages;
-- Delete notebook by deleting root directories one by one;
-- Refactor image preview logics to support previewing all images in edit mode;
-- Support constraining the width of previewed images to the edit window;
-- bugfix;
+- Use `_vnote.json` as the config file.
+- More user friendly messages.
+- Delete notebook by deleting root directories one by one.
+- Refactor image preview logics to support previewing all images in edit mode.
+- Support constraining the width of previewed images to the edit window.
+- bugfix.
 
 ## v1.3
-- Support code block syntax highlight in edit mode;
-- A more pleasant AutoIndent and AutoList;
-- `Ctrl+<Num>` instead of `Ctrl+Alt+<Num>` to insert title;
-- Support custom Markdown CSS styles and editor styles;
+- Support code block syntax highlight in edit mode.
+- A more pleasant AutoIndent and AutoList.
+- `Ctrl+<Num>` instead of `Ctrl+Alt+<Num>` to insert title.
+- Support custom Markdown CSS styles and editor styles.
 
 ## v1.2
 - Support **MathJax**.

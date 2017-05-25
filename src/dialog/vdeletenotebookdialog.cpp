@@ -107,12 +107,12 @@ QPixmap VDeleteNotebookDialog::standardIcon(QMessageBox::Icon p_icon)
 void VDeleteNotebookDialog::notDeleteCheckChanged(int p_state)
 {
     if (p_state) {
-        m_warningLabel->setText(tr("VNote won't delete files under directory <span style=\"%1\">%2</span>.")
+        m_warningLabel->setText(tr("VNote won't delete files in directory <span style=\"%1\">%2</span>.")
                                   .arg(vconfig.c_dataTextStyle).arg(m_path));
     } else {
         m_warningLabel->setText(tr("<span style=\"%1\">WARNING</span>: "
-                                   "VNote may delete <b>ANY</b> files under directory <span style=\"%2\">%3</span>! "
-                                   "VNote will try to delete all the root directories within this notebook one by one. "
+                                   "VNote may delete <b>ANY</b> files in directory <span style=\"%2\">%3</span>! "
+                                   "VNote will try to delete all the root folders within this notebook one by one. "
                                    "It may be UNRECOVERABLE!")
                                   .arg(vconfig.c_warningTextStyle).arg(vconfig.c_dataTextStyle).arg(m_path));
     }
