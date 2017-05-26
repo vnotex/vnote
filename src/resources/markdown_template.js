@@ -313,3 +313,16 @@ var insertImageCaption = function() {
 var finishLogics = function() {
     content.finishLogics();
 };
+
+// Escape @text to Html.
+var escapeHtml = function(text) {
+  var map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+
+  return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+};

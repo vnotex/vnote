@@ -43,8 +43,8 @@ VEditWindow::VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent)
 void VEditWindow::initTabActions()
 {
     m_locateAct = new QAction(QIcon(":/resources/icons/locate_note.svg"),
-                              tr("Locate To Directory"), this);
-    m_locateAct->setToolTip(tr("Locate the directory of current note"));
+                              tr("Locate To Folder"), this);
+    m_locateAct->setToolTip(tr("Locate the folder of current note"));
     connect(m_locateAct, &QAction::triggered,
             this, &VEditWindow::handleLocateAct);
 

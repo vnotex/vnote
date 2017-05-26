@@ -60,7 +60,7 @@ mdit = mdit.use(window.markdownitHeadingAnchor, {
         toc.push({
             level: getHeadingLevel(openToken.tag),
             anchor: anchor,
-            title: inlineToken.content
+            title: escapeHtml(inlineToken.content)
         });
     }
 });
