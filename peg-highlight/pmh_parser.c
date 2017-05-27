@@ -216,7 +216,7 @@ pmh_element_type pmh_element_type_from_name(char *name)
         if (i_name == NULL)
             continue;
         if (strcmp(i_name, name) == 0)
-            return i;
+			return (pmh_element_type)i;
     }
     
     return pmh_NO_TYPE;
@@ -563,10 +563,11 @@ static pmh_element *ll_mergesort(pmh_element *list,
                                  int (*compare)(const pmh_element*,
                                                 const pmh_element*))
 {
+	pmh_element *out_head;
     if (!list)
         return NULL;
     
-    pmh_element *out_head = list;
+	out_head = list;
     
     /* Merge widths of doubling size until done */
     int merge_width = 1;
@@ -598,13 +599,14 @@ static pmh_element *ll_mergesort(pmh_element *list,
             
             /* Merge l & r */
             while (lsize > 0 || (rsize > 0 && r))
-            {
+			{
+				pmh_element *e;
                 bool get_from_left = false;
                 if (lsize == 0)             get_from_left = false;
                 else if (rsize == 0 || !r)  get_from_left = true;
                 else if (compare(l,r) <= 0) get_from_left = true;
                 
-                pmh_element *e;
+                
                 if (get_from_left) {
                     e = l; l = l->next; lsize--;
                 } else {
@@ -658,10 +660,10 @@ static bool extension(parser_data *p_data, int ext)
 /* return reference pmh_realelement for a given label */
 static pmh_realelement *get_reference(parser_data *p_data, char *label)
 {
+	pmh_realelement *cursor = p_data->references;
     if (!label)
         return NULL;
     
-    pmh_realelement *cursor = p_data->references;
     while (cursor != NULL)
     {
         if (cursor->label && strcmp(label, cursor->label) == 0)
@@ -752,10 +754,11 @@ p_data->current_elem elements. Return the (list of) elements with real offsets.
 */
 static pmh_realelement *fix_offsets(parser_data *p_data, pmh_realelement *elem)
 {
+	pmh_realelement *new_head = NULL;
     if (elem->type == pmh_EXTRA_TEXT)
         return mk_etext(p_data, elem->text);
     
-    pmh_realelement *new_head = copy_element(p_data, elem);
+     new_head = copy_element(p_data, elem);
     
     pmh_realelement *tail = new_head;
     pmh_realelement *prev = NULL;
