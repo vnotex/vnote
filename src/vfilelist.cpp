@@ -462,9 +462,10 @@ bool VFileList::copyFile(VDirectory *p_destDir, const QString &p_destName, VFile
     if (srcPath == destPath) {
         return true;
     }
+
     // If change the file type, we need to close it first
     DocType docType = p_file->getDocType();
-    DocType newDocType = VUtils::isMarkdown(destPath) ? DocType::Markdown : DocType::Html;
+    DocType newDocType = VUtils::docTypeFromName(destPath);
     if (docType != newDocType) {
         if (editArea->isFileOpened(p_file)) {
             int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),

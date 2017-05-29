@@ -53,7 +53,6 @@ public:
     static QString generateCopiedFileName(const QString &p_dirPath, const QString &p_fileName);
     static QString generateCopiedDirName(const QString &p_parentDirPath, const QString &p_dirName);
     static void processStyle(QString &style, const QVector<QPair<QString, QString> > &varMap);
-    static bool isMarkdown(const QString &p_fileName);
 
     // Return the last directory name of @p_path.
     static inline QString directoryNameFromPath(const QString& p_path);
@@ -93,6 +92,9 @@ public:
     static QString getLocale();
 
     static void sleepWait(int p_milliseconds);
+
+    // Return the DocType according to suffix.
+    static DocType docTypeFromName(const QString &p_name);
 
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )

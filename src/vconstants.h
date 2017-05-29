@@ -3,8 +3,12 @@
 
 // Html: rich text file;
 // Markdown: Markdown text file;
-enum class DocType { Html, Markdown };
+// List: Infinite list file like WorkFlowy;
+// Container: a composite file containing multiple files;
+enum class DocType { Html, Markdown, List, Container, Invalid };
 
+// Normal: note file managed by VNote;
+// Orphan: external file;
 enum class FileType { Normal, Orphan };
 
 enum class ClipboardOpType { Invalid, CopyFile, CopyDir };

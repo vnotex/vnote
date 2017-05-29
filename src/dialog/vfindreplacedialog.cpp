@@ -294,9 +294,10 @@ void VFindReplaceDialog::updateState(DocType p_docType, bool p_editMode)
     if (p_editMode || p_docType == DocType::Html) {
         m_wholeWordOnlyCheck->setEnabled(true);
         m_regularExpressionCheck->setEnabled(true);
-    } else {
+    } else if (p_docType == DocType::Markdown) {
         m_wholeWordOnlyCheck->setEnabled(false);
         m_regularExpressionCheck->setEnabled(false);
     }
+
     m_replaceAvailable = p_editMode;
 }

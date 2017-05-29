@@ -116,22 +116,6 @@ void VUtils::processStyle(QString &style, const QVector<QPair<QString, QString> 
     }
 }
 
-bool VUtils::isMarkdown(const QString &p_fileName)
-{
-    const QVector<QString> mdPostfix({"md", "markdown", "mkd"});
-
-    QFileInfo info(p_fileName);
-    QString suffix = info.suffix();
-
-    for (int i = 0; i < mdPostfix.size(); ++i) {
-        if (suffix == mdPostfix[i]) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 QString VUtils::fileNameFromPath(const QString &p_path)
 {
     if (p_path.isEmpty()) {
@@ -456,4 +440,24 @@ void VUtils::sleepWait(int p_milliseconds)
     while (t.elapsed() < p_milliseconds) {
         QCoreApplication::processEvents();
     }
+}
+
+DocType VUtils::docTypeFromName(const QString &p_name)
+{
+    static QMap<int, QVector<QString>> suffixes;
+
+    if (suffixes.isEmpty()) {
+        suffixes[(int)DocType::Markdown] = {"md", "markdown", "mkd"};
+        suffixes[(int)DocType::List] = {"ls", "list"};
+        suffixes[(int)DocType::Container] = {"co", "container", "con"};
+    }
+
+    QString suf = QFileInfo(p_name).suffix().toLower();
+    for (auto it = suffixes.begin(); it != suffixes.end(); ++it) {
+        if (it.value().contains(suf)) {
+            return DocType(it.key());
+        }
+    }
+
+    return DocType::Html;
 }

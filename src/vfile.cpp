@@ -9,7 +9,7 @@
 VFile::VFile(const QString &p_name, QObject *p_parent,
              FileType p_type, bool p_modifiable)
     : QObject(p_parent), m_name(p_name), m_opened(false), m_modified(false),
-      m_docType(VUtils::isMarkdown(p_name) ? DocType::Markdown : DocType::Html),
+      m_docType(VUtils::docTypeFromName(p_name)),
       m_type(p_type), m_modifiable(p_modifiable)
 {
 }
@@ -25,7 +25,6 @@ bool VFile::open()
         return true;
     }
     Q_ASSERT(m_content.isEmpty());
-    Q_ASSERT(m_docType == (VUtils::isMarkdown(m_name) ? DocType::Markdown : DocType::Html));
     QString path = retrivePath();
     qDebug() << "path" << path;
     m_content = VUtils::readFileFromDisk(path);
@@ -116,7 +115,7 @@ void VFile::deleteLocalImages()
 void VFile::setName(const QString &p_name)
 {
     m_name = p_name;
-    DocType newType = VUtils::isMarkdown(p_name) ? DocType::Markdown : DocType::Html;
+    DocType newType = VUtils::docTypeFromName(p_name);
     if (newType != m_docType) {
         qWarning() << "setName() change the DocType. A convertion should be followed";
     }

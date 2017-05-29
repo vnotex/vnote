@@ -18,7 +18,6 @@ bool VOrphanFile::open()
         return true;
     }
     Q_ASSERT(m_content.isEmpty());
-    Q_ASSERT(m_docType == (VUtils::isMarkdown(m_name) ? DocType::Markdown : DocType::Html));
     Q_ASSERT(QFileInfo::exists(m_path));
     m_content = VUtils::readFileFromDisk(m_path);
     m_modified = false;

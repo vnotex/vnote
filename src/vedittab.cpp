@@ -93,6 +93,7 @@ void VEditTab::setupUI()
         addWidget(m_textEditor);
         webPreviewer = NULL;
         break;
+
     default:
         qWarning() << "unknown doc type" << int(m_file->getDocType());
         Q_ASSERT(false);
@@ -122,6 +123,7 @@ void VEditTab::showFileReadMode()
     case DocType::Html:
         m_textEditor->setReadOnly(true);
         break;
+
     case DocType::Markdown:
         if (mdConverterType == MarkdownConverterType::Hoedown) {
             previewByConverter();
@@ -133,6 +135,7 @@ void VEditTab::showFileReadMode()
         clearSearchedWordHighlight();
         scrollPreviewToHeader(outlineIndex);
         break;
+
     default:
         qWarning() << "unknown doc type" << int(m_file->getDocType());
         Q_ASSERT(false);

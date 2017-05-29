@@ -490,7 +490,7 @@ VFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
 
     VDirectory *srcDir = p_srcFile->getDirectory();
     DocType docType = p_srcFile->getDocType();
-    DocType newDocType = VUtils::isMarkdown(destPath) ? DocType::Markdown : DocType::Html;
+    DocType newDocType = VUtils::docTypeFromName(destPath);
 
     QVector<ImageLink> images;
     if (docType == DocType::Markdown) {

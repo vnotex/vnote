@@ -17,7 +17,7 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
                  QWidget *p_parent)
     : VEdit(p_file, p_parent), m_mdHighlighter(NULL)
 {
-    Q_ASSERT(p_file->getDocType() == DocType::Markdown);
+    V_ASSERT(p_file->getDocType() == DocType::Markdown);
 
     setAcceptRichText(false);
     m_mdHighlighter = new HGMarkdownHighlighter(vconfig.getMdHighlightingStyles(),
