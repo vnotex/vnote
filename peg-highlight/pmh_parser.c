@@ -601,7 +601,7 @@ static pmh_element *ll_mergesort(pmh_element *list,
             /* Merge l & r */
             while (lsize > 0 || (rsize > 0 && r))
 			{
-				pmh_element *e;
+				pmh_element *e = NULL;
                 bool get_from_left = false;
                 if (lsize == 0)             get_from_left = false;
                 else if (rsize == 0 || !r)  get_from_left = true;
@@ -661,9 +661,11 @@ static bool extension(parser_data *p_data, int ext)
 /* return reference pmh_realelement for a given label */
 static pmh_realelement *get_reference(parser_data *p_data, char *label)
 {
-	pmh_realelement *cursor = p_data->references;
+	pmh_realelement *cursor = NULL;
     if (!label)
         return NULL;
+
+	cursor = p_data->references;
     
     while (cursor != NULL)
     {
@@ -759,7 +761,7 @@ static pmh_realelement *fix_offsets(parser_data *p_data, pmh_realelement *elem)
     if (elem->type == pmh_EXTRA_TEXT)
         return mk_etext(p_data, elem->text);
     
-     new_head = copy_element(p_data, elem);
+    new_head = copy_element(p_data, elem);
     
     pmh_realelement *tail = new_head;
     pmh_realelement *prev = NULL;
