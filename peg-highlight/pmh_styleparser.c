@@ -81,12 +81,13 @@ static void free_raw_attributes(raw_attribute *list)
 {
     raw_attribute *cur = list;
     while (cur != NULL)
-    {
+	{
+		raw_attribute *pattr = NULL;
         if (cur->name != NULL) free(cur->name);
         if (cur->value != NULL) free(cur->value);
-        raw_attribute *this = cur;
+        pattr = cur;
         cur = cur->next;
-        free(this);
+		free(pattr);
     }
 }
 
@@ -94,9 +95,10 @@ static void free_raw_attributes(raw_attribute *list)
 static void report_error(style_parser_data *p_data,
                          int line_number, char *str, ...)
 {
+	va_list argptr;
     if (p_data->error_callback == NULL)
         return;
-    va_list argptr;
+    
     va_start(argptr, str);
     char *errmsg;
     our_vasprintf(&errmsg, str, argptr);
@@ -255,9 +257,9 @@ static void free_style_attributes(pmh_style_attribute *list)
                 free(cur->value->string);
             free(cur->value);
         }
-        pmh_style_attribute *this = cur;
+		pmh_style_attribute *pattr = cur;
         cur = cur->next;
-        free(this);
+		free(pattr);
     }
 }
 
@@ -355,10 +357,10 @@ static void free_multi_value(multi_value *val)
     multi_value *cur = val;
     while (cur != NULL)
     {
-        multi_value *this = cur;
+        multi_value *pvalue = cur;
         multi_value *next_cur = cur->next;
-        free(this->value);
-        free(this);
+		free(pvalue->value);
+		free(pvalue);
         cur = next_cur;
     }
 }
@@ -560,10 +562,10 @@ static void free_blocks(block *val)
     block *cur = val;
     while (cur != NULL)
     {
-        block *this = cur;
-        block *next = this->next;
-        free_multi_value(this->lines);
-        free(this);
+        block *pblock = cur;
+		block *next = pblock->next;
+		free_multi_value(pblock->lines);
+		free(pblock);
         cur = next;
     }
 }
@@ -798,7 +800,10 @@ static void _sty_parse(style_parser_data *p_data)
     
     block *block_cur = blocks;
     while (block_cur != NULL)
-    {
+	{
+		raw_attribute *attributes_head = NULL;
+		raw_attribute *attributes_tail = NULL;
+	
         pmhsp_PRINTF("Block:\n");
         multi_value *header_line = block_cur->lines;
         if (header_line == NULL) {
@@ -816,9 +821,6 @@ static void _sty_parse(style_parser_data *p_data)
             report_error(p_data, header_line->line_number,
                          "No style attributes defined for style rule '%s'",
                          style_rule_name);
-        
-        raw_attribute *attributes_head = NULL;
-        raw_attribute *attributes_tail = NULL;
         
         while (attr_line_cur != NULL)
         {
