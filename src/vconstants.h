@@ -26,5 +26,6 @@ namespace DirConfig
     static const QString c_subDirectories = "sub_directories";
     static const QString c_files = "files";
     static const QString c_imageFolder = "image_folder";
+    static const QString c_name = "name";
 }
 #endif

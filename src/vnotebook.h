@@ -51,6 +51,9 @@ public:
     // to root directory config file.
     bool writeConfig() const;
 
+    // Return only the info of notebook part in json.
+    QJsonObject toConfigJsonNotebook() const;
+
 signals:
     void contentChanged();
 

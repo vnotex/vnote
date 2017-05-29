@@ -19,28 +19,41 @@ public:
     bool open();
     void close();
     VDirectory *createSubDirectory(const QString &p_name);
+
+    // Returns the VDirectory with the name @p_name directly in this directory.
     VDirectory *findSubDirectory(const QString &p_name);
-    // Returns the VFile with the name @p_name.
+
+    // Returns the VFile with the name @p_name directly in this directory.
     VFile *findFile(const QString &p_name);
+
     // If current dir or its sub-dir contains @p_file.
     bool containsFile(const VFile *p_file) const;
+
     VFile *createFile(const QString &p_name);
+
     void deleteSubDirectory(VDirectory *p_subDir);
+
     // Remove the file in the config and m_files without deleting it in the disk.
-    int removeFile(VFile *p_file);
+    // It won't change the parent of @p_file to enable it find its path.
+    bool removeFile(VFile *p_file);
+
     // Remove the directory in the config and m_subDirs without deleting it in the disk.
-    int removeSubDirectory(VDirectory *p_dir);
+    // It won't change the parent of @p_dir to enable it find its path.
+    bool removeSubDirectory(VDirectory *p_dir);
+
     // Add the file in the config and m_files. If @p_index is -1, add it at the end.
     // Return the VFile if succeed.
-    VFile *addFile(VFile *p_file, int p_index);
     VFile *addFile(const QString &p_name, int p_index);
-    VDirectory *addSubDirectory(VDirectory *p_dir, int p_index);
-    VDirectory *addSubDirectory(const QString &p_name, int p_index);
+
+    // Delete @p_file both from disk and config, as well as its local images.
     void deleteFile(VFile *p_file);
+
+    // Rename current directory to @p_name.
     bool rename(const QString &p_name);
 
     // Copy @p_srcFile to @p_destDir, setting new name to @p_destName.
-    // @p_cut: copy or cut. Returns the dest VFile.
+    // @p_cut: copy or cut.
+    // Returns the dest VFile.
     static VFile *copyFile(VDirectory *p_destDir, const QString &p_destName,
                            VFile *p_srcFile, bool p_cut);
 
@@ -63,9 +76,9 @@ public:
     inline bool isExpanded() const;
     void setExpanded(bool p_expanded);
     void reorderFiles(int p_first, int p_last, int p_destStart);
-    bool reorderFilesInConfig(int p_first, int p_last, int p_destStart);
 
     // Serialize current instance to json.
+    // Not including sections belonging to notebook.
     QJsonObject toConfigJson() const;
 
     // Read configurations (excluding "sub_directories" and "files" section)
@@ -73,6 +86,8 @@ public:
     bool readConfig();
 
     // Write current instance to config file.
+    // If it is root directory, this will include sections belonging to
+    // notebook.
     bool writeToConfig() const;
 
 private:
@@ -80,8 +95,23 @@ private:
     QString retrivePath(const VDirectory *p_dir) const;
     // Get teh relative path of @p_dir recursively related to the notebook path
     QString retriveRelativePath(const VDirectory *p_dir) const;
-    bool createFileInConfig(const QString &p_name, int p_index = -1);
-    bool createSubDirectoryInConfig(const QString &p_name, int p_index = -1);
+
+    // Write @p_json to config.
+    bool writeToConfig(const QJsonObject &p_json) const;
+
+    // Add notebook part config to @p_json.
+    // Should only be called with root directory.
+    void addNotebookConfig(QJsonObject &p_json) const;
+
+    // Add the file in the config and m_files. If @p_index is -1, add it at the end.
+    bool addFile(VFile *p_file, int p_index);
+
+    // Add the directory in the config and m_subDirs. If @p_index is -1, add it at the end.
+    // Return the VDirectory if succeed.
+    VDirectory *addSubDirectory(const QString &p_name, int p_index);
+
+    // Add the directory in the config and m_subDirs. If @p_index is -1, add it at the end.
+    bool addSubDirectory(VDirectory *p_dir, int p_index);
 
     QPointer<VNotebook> m_notebook;
     QString m_name;

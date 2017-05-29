@@ -37,12 +37,26 @@ bool VNotebook::readConfig()
     return true;
 }
 
-QJsonObject VNotebook::toConfigJson() const
+QJsonObject VNotebook::toConfigJsonNotebook() const
 {
-    QJsonObject json = m_rootDir->toConfigJson();
+    QJsonObject json;
 
     // [image_folder] section.
     json[DirConfig::c_imageFolder] = m_imageFolder;
+
+    return json;
+}
+
+QJsonObject VNotebook::toConfigJson() const
+{
+    QJsonObject json = m_rootDir->toConfigJson();
+    QJsonObject nbJson = toConfigJsonNotebook();
+
+    // Merge nbJson to json.
+    for (auto it = nbJson.begin(); it != nbJson.end(); ++it) {
+        V_ASSERT(!json.contains(it.key()));
+        json[it.key()] = it.value();
+    }
 
     return json;
 }
@@ -142,7 +156,7 @@ bool VNotebook::deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles)
         QDir dir(p_notebook->getPath());
         dir.cdUp();
         if (!dir.rmdir(rootDir->getName())) {
-            qWarning() << "fail to delete notebook root directory" << rootDir->getName();
+            qWarning() << "fail to delete notebook root folder" << rootDir->getName();
             ret = false;
         }
     }
