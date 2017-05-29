@@ -129,6 +129,7 @@ macx {
     LIBS += -L/usr/local/lib
     INCLUDEPATH += /usr/local/include
 }
+
 windows {
     DEFINES *= Q_COMPILER_INITIALIZER_LISTS
 }

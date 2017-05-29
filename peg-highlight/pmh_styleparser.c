@@ -803,6 +803,7 @@ static void _sty_parse(style_parser_data *p_data)
 	{
 		raw_attribute *attributes_head = NULL;
 		raw_attribute *attributes_tail = NULL;
+	
         pmhsp_PRINTF("Block:\n");
         multi_value *header_line = block_cur->lines;
         if (header_line == NULL) {
@@ -820,8 +821,6 @@ static void _sty_parse(style_parser_data *p_data)
             report_error(p_data, header_line->line_number,
                          "No style attributes defined for style rule '%s'",
                          style_rule_name);
-        
-        
         
         while (attr_line_cur != NULL)
         {

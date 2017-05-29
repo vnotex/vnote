@@ -216,7 +216,7 @@ pmh_element_type pmh_element_type_from_name(char *name)
         if (i_name == NULL)
             continue;
         if (strcmp(i_name, name) == 0)
-			return (pmh_element_type)i;
+            return i;
     }
     
     return pmh_NO_TYPE;
@@ -563,7 +563,8 @@ static pmh_element *ll_mergesort(pmh_element *list,
                                  int (*compare)(const pmh_element*,
                                                 const pmh_element*))
 {
-	pmh_element *out_head;
+	pmh_element *out_head = NULL;
+	
     if (!list)
         return NULL;
     
