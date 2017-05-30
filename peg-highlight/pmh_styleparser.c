@@ -82,12 +82,12 @@ static void free_raw_attributes(raw_attribute *list)
     raw_attribute *cur = list;
     while (cur != NULL)
 	{
-		raw_attribute *pattr = NULL;
+        raw_attribute *pattr = NULL;
         if (cur->name != NULL) free(cur->name);
         if (cur->value != NULL) free(cur->value);
         pattr = cur;
         cur = cur->next;
-		free(pattr);
+        free(pattr);
     }
 }
 
@@ -95,7 +95,7 @@ static void free_raw_attributes(raw_attribute *list)
 static void report_error(style_parser_data *p_data,
                          int line_number, char *str, ...)
 {
-	va_list argptr;
+    va_list argptr;
     if (p_data->error_callback == NULL)
         return;
     
@@ -257,9 +257,9 @@ static void free_style_attributes(pmh_style_attribute *list)
                 free(cur->value->string);
             free(cur->value);
         }
-		pmh_style_attribute *pattr = cur;
+        pmh_style_attribute *pattr = cur;
         cur = cur->next;
-		free(pattr);
+        free(pattr);
     }
 }
 
@@ -359,8 +359,8 @@ static void free_multi_value(multi_value *val)
     {
         multi_value *pvalue = cur;
         multi_value *next_cur = cur->next;
-		free(pvalue->value);
-		free(pvalue);
+        free(pvalue->value);
+        free(pvalue);
         cur = next_cur;
     }
 }
@@ -563,9 +563,9 @@ static void free_blocks(block *val)
     while (cur != NULL)
     {
         block *pblock = cur;
-		block *next = pblock->next;
-		free_multi_value(pblock->lines);
-		free(pblock);
+        block *next = pblock->next;
+        free_multi_value(pblock->lines);
+        free(pblock);
         cur = next;
     }
 }
@@ -801,8 +801,8 @@ static void _sty_parse(style_parser_data *p_data)
     block *block_cur = blocks;
     while (block_cur != NULL)
 	{
-		raw_attribute *attributes_head = NULL;
-		raw_attribute *attributes_tail = NULL;
+        raw_attribute *attributes_head = NULL;
+        raw_attribute *attributes_tail = NULL;
 	
         pmhsp_PRINTF("Block:\n");
         multi_value *header_line = block_cur->lines;
