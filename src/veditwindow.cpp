@@ -9,6 +9,8 @@
 #include "vmainwindow.h"
 #include "veditarea.h"
 #include "vopenedlistmenu.h"
+#include "vmdtab.h"
+#include "vhtmltab.h"
 
 extern VConfigManager vconfig;
 
@@ -144,6 +146,7 @@ int VEditWindow::openFile(VFile *p_file, OpenFileMode p_mode)
         goto out;
     }
     idx = openFileInTab(p_file, p_mode);
+
 out:
     setCurrentIndex(idx);
     focusWindow();
@@ -242,8 +245,21 @@ bool VEditWindow::closeAllFiles(bool p_forced)
 
 int VEditWindow::openFileInTab(VFile *p_file, OpenFileMode p_mode)
 {
-    VEditTab *editor = new VEditTab(p_file, p_mode);
-    editor->init(m_editArea);
+    VEditTab *editor = NULL;
+    switch (p_file->getDocType()) {
+    case DocType::Markdown:
+        editor = new VMdTab(p_file, m_editArea, p_mode, this);
+        break;
+
+    case DocType::Html:
+        editor = new VHtmlTab(p_file, m_editArea, p_mode, this);
+        break;
+
+    default:
+        V_ASSERT(false);
+        break;
+    }
+
     connect(editor, &VEditTab::getFocused,
             this, &VEditWindow::getFocused);
     connect(editor, &VEditTab::outlineChanged,
@@ -325,7 +341,7 @@ void VEditWindow::noticeTabStatus(int p_index)
 
     VEditTab *editor = getTab(p_index);
     const VFile *file = editor->getFile();
-    bool editMode = editor->getIsEditMode();
+    bool editMode = editor->isEditMode();
     emit tabStatusChanged(file, editor, editMode);
 }
 
@@ -333,7 +349,7 @@ void VEditWindow::updateTabInfo(int p_index)
 {
     VEditTab *editor = getTab(p_index);
     const VFile *file = editor->getFile();
-    bool editMode = editor->getIsEditMode();
+    bool editMode = editor->isEditMode();
 
     setTabText(p_index, generateTabText(p_index, file->getName(),
                                         file->isModified(), file->isModifiable()));

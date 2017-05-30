@@ -568,7 +568,7 @@ void VEdit::contextMenuEvent(QContextMenuEvent *p_event)
     if (!textCursor().hasSelection()) {
         VEditTab *editTab = dynamic_cast<VEditTab *>(parent());
         V_ASSERT(editTab);
-        if (editTab->getIsEditMode()) {
+        if (editTab->isEditMode()) {
             QAction *saveExitAct = new QAction(QIcon(":/resources/icons/save_exit.svg"),
                                                tr("&Save Changes And Read"), this);
             saveExitAct->setToolTip(tr("Save changes and exit edit mode"));

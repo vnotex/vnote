@@ -19,6 +19,7 @@ class VNote;
 class VFile;
 class VDirectory;
 class VFindReplaceDialog;
+class QLabel;
 
 class VEditArea : public QWidget, public VNavigationMode
 {

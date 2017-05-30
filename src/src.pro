@@ -62,7 +62,9 @@ SOURCES += main.cpp\
     vcodeblockhighlighthelper.cpp \
     vwebview.cpp \
     vimagepreviewer.cpp \
-    vexporter.cpp
+    vexporter.cpp \
+    vmdtab.cpp \
+    vhtmltab.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -111,7 +113,9 @@ HEADERS  += vmainwindow.h \
     vcodeblockhighlighthelper.h \
     vwebview.h \
     vimagepreviewer.h \
-    vexporter.h
+    vexporter.h \
+    vmdtab.h \
+    vhtmltab.h
 
 RESOURCES += \
     vnote.qrc \

@@ -19,6 +19,7 @@
 #include "vedittab.h"
 #include "vwebview.h"
 #include "vexporter.h"
+#include "vmdtab.h"
 
 extern VConfigManager vconfig;
 
@@ -1408,16 +1409,19 @@ void VMainWindow::printNote()
 
     V_ASSERT(m_curTab);
 
-    VWebView *webView = m_curTab->getWebViewer();
+    if (m_curFile->getDocType() == DocType::Markdown) {
+        VMdTab *mdTab = dynamic_cast<VMdTab *>((VEditTab *)m_curTab);
+        VWebView *webView = mdTab->getWebViewer();
 
-    V_ASSERT(webView);
+        V_ASSERT(webView);
 
-    if (webView->hasSelection()) {
-        dialog.addEnabledOption(QAbstractPrintDialog::PrintSelection);
-    }
+        if (webView->hasSelection()) {
+            dialog.addEnabledOption(QAbstractPrintDialog::PrintSelection);
+        }
 
-    if (dialog.exec() != QDialog::Accepted) {
-        return;
+        if (dialog.exec() != QDialog::Accepted) {
+            return;
+        }
     }
 }
 
@@ -1426,8 +1430,11 @@ void VMainWindow::exportAsPDF()
     V_ASSERT(m_curTab);
     V_ASSERT(m_curFile);
 
-    VExporter exporter(m_curTab->getMarkdownConverterType(), this);
-    exporter.exportNote(m_curFile, ExportType::PDF);
-    exporter.exec();
+    if (m_curFile->getDocType() == DocType::Markdown) {
+        VMdTab *mdTab = dynamic_cast<VMdTab *>((VEditTab *)m_curTab);
+        VExporter exporter(mdTab->getMarkdownConverterType(), this);
+        exporter.exportNote(m_curFile, ExportType::PDF);
+        exporter.exec();
+    }
 }
 
