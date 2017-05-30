@@ -607,7 +607,6 @@ static pmh_element *ll_mergesort(pmh_element *list,
                 else if (rsize == 0 || !r)  get_from_left = true;
                 else if (compare(l,r) <= 0) get_from_left = true;
                 
-                
                 if (get_from_left) {
                     e = l; l = l->next; lsize--;
                 } else {

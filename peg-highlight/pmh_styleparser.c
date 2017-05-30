@@ -81,7 +81,7 @@ static void free_raw_attributes(raw_attribute *list)
 {
     raw_attribute *cur = list;
     while (cur != NULL)
-	{
+    {
         raw_attribute *pattr = NULL;
         if (cur->name != NULL) free(cur->name);
         if (cur->value != NULL) free(cur->value);
@@ -800,7 +800,7 @@ static void _sty_parse(style_parser_data *p_data)
     
     block *block_cur = blocks;
     while (block_cur != NULL)
-	{
+    {
         raw_attribute *attributes_head = NULL;
         raw_attribute *attributes_tail = NULL;
 	
