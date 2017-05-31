@@ -36,9 +36,13 @@ private slots:
     void handleCurItemChanged(QTreeWidgetItem *p_curItem, QTreeWidgetItem *p_preItem);
 
 private:
-    void updateTreeFromOutline(const VToc &toc);
+    // Update tree according to outline.
+    void updateTreeFromOutline();
+
+    // @index: the index in @headers.
     void updateTreeByLevel(const QVector<VHeader> &headers, int &index, QTreeWidgetItem *parent,
                            QTreeWidgetItem *last, int level);
+
     void expandTree();
     void selectAnchor(const QString &anchor);
     bool selectAnchorOne(QTreeWidgetItem *item, const QString &anchor);
@@ -46,6 +50,15 @@ private:
     bool selectLineNumberOne(QTreeWidgetItem *item, int lineNumber);
     QList<QTreeWidgetItem *> getVisibleItems() const;
     QList<QTreeWidgetItem *> getVisibleChildItems(const QTreeWidgetItem *p_item) const;
+
+    // Fill the info of @p_item.
+    void fillItem(QTreeWidgetItem *p_item, const VHeader &p_header);
+
+    // Check if @p_toc is valid.
+    void checkOutline(const VToc &p_toc) const;
+
+    // Return NULL if no corresponding header in outline.
+    const VHeader *getHeaderFromItem(QTreeWidgetItem *p_item) const;
 
     VToc outline;
     VAnchor curHeader;

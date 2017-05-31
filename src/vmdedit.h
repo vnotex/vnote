@@ -32,19 +32,27 @@ public:
     // @p_path is the absolute path of the inserted image.
     void imageInserted(const QString &p_path);
 
-    // Scroll to m_headers[p_headerIndex].
-    void scrollToHeader(int p_headerIndex);
+    void scrollToHeader(const VAnchor &p_anchor);
+
     // Like toPlainText(), but remove special blocks containing images.
     QString toPlainTextWithoutImg() const;
 
+    const QVector<VHeader> &getHeaders() const;
+
 signals:
     void headersChanged(const QVector<VHeader> &headers);
-    void curHeaderChanged(int p_lineNumber, int p_outlineIndex);
+
+    // Signal when current header change.
+    void curHeaderChanged(VAnchor p_anchor);
+
     void statusChanged();
 
 private slots:
     void generateEditOutline();
+
+    // When there is no header in current cursor, will signal an invalid header.
     void updateCurHeader();
+
     void handleEditStateChanged(KeyState p_state);
     void handleSelectionChanged();
     void handleClipboardChanged(QClipboard::Mode p_mode);

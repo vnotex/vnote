@@ -50,8 +50,8 @@ void VMdTab::setupUI()
                 this, &VMdTab::updateTocFromHeaders);
         connect(dynamic_cast<VMdEdit *>(m_editor), &VMdEdit::statusChanged,
                 this, &VMdTab::noticeStatusChanged);
-        connect(m_editor, SIGNAL(curHeaderChanged(int, int)),
-                this, SLOT(updateCurHeader(int, int)));
+        connect(m_editor, SIGNAL(curHeaderChanged(VAnchor)),
+                this, SLOT(updateCurHeader(VAnchor)));
         connect(m_editor, &VEdit::textChanged,
                 this, &VMdTab::handleTextChanged);
         connect(m_editor, &VEdit::saveAndRead,
@@ -91,6 +91,7 @@ void VMdTab::showFileReadMode()
     m_isEditMode = false;
 
     int outlineIndex = m_curHeader.m_outlineIndex;
+
     if (m_mdConType == MarkdownConverterType::Hoedown) {
         viewWebByConverter();
     } else {
@@ -100,6 +101,7 @@ void VMdTab::showFileReadMode()
 
     m_stacks->setCurrentWidget(m_webViewer);
     clearSearchedWordHighlight();
+
     scrollWebViewToHeader(outlineIndex);
 
     noticeStatusChanged();
@@ -107,14 +109,20 @@ void VMdTab::showFileReadMode()
 
 void VMdTab::scrollWebViewToHeader(int p_outlineIndex)
 {
-    V_ASSERT(p_outlineIndex >= 0);
+    QString anchor;
 
-    if (p_outlineIndex < m_toc.headers.size()) {
-        QString anchor = m_toc.headers[p_outlineIndex].anchor;
-        if (!anchor.isEmpty()) {
-            m_document->scrollToAnchor(anchor.mid(1));
-        }
+    m_curHeader = VAnchor(m_file, anchor, -1, p_outlineIndex);
+
+    if (p_outlineIndex < m_toc.headers.size() && p_outlineIndex >= 0) {
+        QString tmp = m_toc.headers[p_outlineIndex].anchor;
+        V_ASSERT(!tmp.isEmpty());
+        m_curHeader.anchor = tmp;
+        anchor = tmp.mid(1);
     }
+
+    m_document->scrollToAnchor(anchor);
+
+    emit curHeaderChanged(m_curHeader);
 }
 
 void VMdTab::viewWebByConverter()
@@ -136,14 +144,28 @@ void VMdTab::showFileEditMode()
 
     m_isEditMode = true;
 
+    VMdEdit *mdEdit = dynamic_cast<VMdEdit *>(m_editor);
+    V_ASSERT(mdEdit);
+
     // beginEdit() may change m_curHeader.
     int outlineIndex = m_curHeader.m_outlineIndex;
+    int lineNumber = -1;
+    auto headers = mdEdit->getHeaders();
+    if (outlineIndex < 0 || outlineIndex >= headers.size()) {
+        lineNumber = -1;
+        outlineIndex = -1;
+    } else {
+        lineNumber = headers[outlineIndex].lineNumber;
+    }
 
-    m_editor->beginEdit();
-    m_stacks->setCurrentWidget(m_editor);
+    VAnchor anchor(m_file, "", lineNumber, outlineIndex);
 
-    dynamic_cast<VMdEdit *>(m_editor)->scrollToHeader(outlineIndex);
-    m_editor->setFocus();
+    mdEdit->beginEdit();
+    m_stacks->setCurrentWidget(mdEdit);
+
+    mdEdit->scrollToHeader(anchor);
+
+    mdEdit->setFocus();
 
     noticeStatusChanged();
 }
@@ -368,7 +390,7 @@ static void parseTocLi(QXmlStreamReader &p_xml, QVector<VHeader> &p_headers, int
                     return;
                 }
 
-                VHeader header(p_level, name, anchor, -1);
+                VHeader header(p_level, name, anchor, -1, p_headers.size());
                 p_headers.append(header);
             } else {
                 // Error
@@ -376,7 +398,7 @@ static void parseTocLi(QXmlStreamReader &p_xml, QVector<VHeader> &p_headers, int
             }
         } else if (p_xml.name() == "ul") {
             // Such as header 3 under header 1 directly
-            VHeader header(p_level, "[EMPTY]", "#", -1);
+            VHeader header(p_level, c_emptyHeaderName, "#", -1, p_headers.size());
             p_headers.append(header);
             parseTocUl(p_xml, p_headers, p_level + 1);
         } else {
@@ -478,10 +500,9 @@ void VMdTab::scrollToAnchor(const VAnchor &p_anchor)
     }
 
     m_curHeader = p_anchor;
+
     if (m_isEditMode) {
-        if (p_anchor.lineNumber > -1) {
-            m_editor->scrollToLine(p_anchor.lineNumber);
-        }
+        dynamic_cast<VMdEdit *>(m_editor)->scrollToHeader(p_anchor);
     } else {
         if (!p_anchor.anchor.isEmpty()) {
             m_document->scrollToAnchor(p_anchor.anchor.mid(1));
@@ -500,26 +521,31 @@ void VMdTab::updateCurHeader(const QString &p_anchor)
         const QVector<VHeader> &headers = m_toc.headers;
         for (int i = 0; i < headers.size(); ++i) {
             if (headers[i].anchor == m_curHeader.anchor) {
-                m_curHeader.m_outlineIndex = i;
+                V_ASSERT(headers[i].index == i);
+                m_curHeader.m_outlineIndex = headers[i].index;
                 break;
             }
         }
-
-        emit curHeaderChanged(m_curHeader);
     }
+
+    emit curHeaderChanged(m_curHeader);
 }
 
-void VMdTab::updateCurHeader(int p_lineNumber, int p_outlineIndex)
+void VMdTab::updateCurHeader(VAnchor p_anchor)
 {
-    if (!m_isEditMode || m_curHeader.lineNumber == p_lineNumber) {
-        return;
+    if (m_isEditMode) {
+        if (!p_anchor.anchor.isEmpty() || p_anchor.lineNumber == m_curHeader.lineNumber) {
+            return;
+        }
+    } else {
+        if (p_anchor.lineNumber != -1 || p_anchor.anchor == m_curHeader.anchor) {
+            return;
+        }
     }
 
-    m_curHeader = VAnchor(m_file, "", p_lineNumber);
-    m_curHeader.m_outlineIndex = p_outlineIndex;
-    if (p_lineNumber > -1) {
-        emit curHeaderChanged(m_curHeader);
-    }
+    m_curHeader = p_anchor;
+
+    emit curHeaderChanged(m_curHeader);
 }
 
 void VMdTab::insertImage()

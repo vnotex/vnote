@@ -244,56 +244,87 @@ void VMdEdit::clearUnusedImages()
 
 void VMdEdit::updateCurHeader()
 {
-    int curHeader = 0;
-    QTextCursor cursor(this->textCursor());
-    int curLine = cursor.block().firstLineNumber();
+    if (m_headers.isEmpty()) {
+        return;
+    }
+
+    int curLine = textCursor().block().firstLineNumber();
     int i = 0;
     for (i = m_headers.size() - 1; i >= 0; --i) {
-        if (m_headers[i].lineNumber <= curLine) {
-            curHeader = m_headers[i].lineNumber;
-            break;
+        if (!m_headers[i].isEmpty()) {
+            if (m_headers[i].lineNumber <= curLine) {
+                break;
+            }
         }
     }
-    emit curHeaderChanged(curHeader, i == -1 ? 0 : i);
+
+    if (i == -1) {
+        emit curHeaderChanged(VAnchor(m_file, "", -1, -1));
+        return;
+    }
+
+    V_ASSERT(m_headers[i].index == i);
+
+    emit curHeaderChanged(VAnchor(m_file, "", m_headers[i].lineNumber, m_headers[i].index));
 }
 
 void VMdEdit::generateEditOutline()
 {
     QTextDocument *doc = document();
+
     m_headers.clear();
+
+    QVector<VHeader> headers;
+
     // Assume that each block contains only one line
     // Only support # syntax for now
     QRegExp headerReg("(#{1,6})\\s*(\\S.*)");  // Need to trim the spaces
-    int lastLevel = 0;
+    int baseLevel = -1;
     for (QTextBlock block = doc->begin(); block != doc->end(); block = block.next()) {
-        Q_ASSERT(block.lineCount() == 1);
+        V_ASSERT(block.lineCount() == 1);
         if ((block.userState() == HighlightBlockState::Normal) &&
             headerReg.exactMatch(block.text())) {
             int level = headerReg.cap(1).length();
             VHeader header(level, headerReg.cap(2).trimmed(),
-                           "", block.firstLineNumber());
-            while (level > lastLevel + 1) {
-                // Insert empty level.
-                m_headers.append(VHeader(++lastLevel, "[EMPTY]",
-                                         "", block.firstLineNumber()));
+                           "", block.firstLineNumber(), headers.size());
+            headers.append(header);
+
+            if (baseLevel == -1) {
+                baseLevel = level;
+            } else if (baseLevel > level) {
+                baseLevel = level;
             }
-            m_headers.append(header);
-            lastLevel = level;
         }
     }
 
+    int curLevel = baseLevel - 1;
+    for (auto & item : headers) {
+        while (item.level > curLevel + 1) {
+            curLevel += 1;
+
+            // Insert empty level which is an invalid header.
+            m_headers.append(VHeader(curLevel, c_emptyHeaderName, "", -1, m_headers.size()));
+        }
+
+        item.index = m_headers.size();
+        m_headers.append(item);
+        curLevel = item.level;
+    }
+
     emit headersChanged(m_headers);
+
     updateCurHeader();
 }
 
-void VMdEdit::scrollToHeader(int p_headerIndex)
+void VMdEdit::scrollToHeader(const VAnchor &p_anchor)
 {
-    Q_ASSERT(p_headerIndex >= 0);
-    if (p_headerIndex < m_headers.size()) {
-        int line = m_headers[p_headerIndex].lineNumber;
-        qDebug() << "scroll editor to" << p_headerIndex << "line" << line;
-        scrollToLine(line);
+    if (p_anchor.lineNumber == -1
+        || p_anchor.m_outlineIndex < 0
+        || p_anchor.m_outlineIndex >= m_headers.size()) {
+        return;
     }
+
+    scrollToLine(p_anchor.lineNumber);
 }
 
 QString VMdEdit::toPlainTextWithoutImg() const
@@ -406,4 +437,9 @@ void VMdEdit::resizeEvent(QResizeEvent *p_event)
     m_imagePreviewer->update();
 
     VEdit::resizeEvent(p_event);
+}
+
+const QVector<VHeader> &VMdEdit::getHeaders() const
+{
+    return m_headers;
 }

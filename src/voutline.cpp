@@ -1,7 +1,6 @@
 #include <QDebug>
 #include <QVector>
 #include <QString>
-#include <QJsonObject>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QCoreApplication>
@@ -9,8 +8,10 @@
 #include "vtoc.h"
 #include "utils/vutils.h"
 #include "vnote.h"
+#include "vconfigmanager.h"
 
 extern VNote *g_vnote;
+extern VConfigManager vconfig;
 
 VOutline::VOutline(QWidget *parent)
     : QTreeWidget(parent), VNavigationMode()
@@ -23,23 +24,38 @@ VOutline::VOutline(QWidget *parent)
             this, &VOutline::handleCurItemChanged);
 }
 
+void VOutline::checkOutline(const VToc &p_toc) const
+{
+    const QVector<VHeader> &headers = p_toc.headers;
+
+    for (int i = 0; i < headers.size(); ++i) {
+        V_ASSERT(headers[i].index == i);
+    }
+}
+
 void VOutline::updateOutline(const VToc &toc)
 {
     // Clear current header
     curHeader = VAnchor();
+
+    checkOutline(toc);
+
     outline = toc;
-    updateTreeFromOutline(outline);
+
+    updateTreeFromOutline();
+
     expandTree();
 }
 
-void VOutline::updateTreeFromOutline(const VToc &toc)
+void VOutline::updateTreeFromOutline()
 {
     clear();
 
-    if (!toc.valid) {
+    if (!outline.valid) {
         return;
     }
-    const QVector<VHeader> &headers = toc.headers;
+
+    const QVector<VHeader> &headers = outline.headers;
     int idx = 0;
     updateTreeByLevel(headers, idx, NULL, NULL, 1);
 }
@@ -56,13 +72,8 @@ void VOutline::updateTreeByLevel(const QVector<VHeader> &headers, int &index,
             } else {
                 item = new QTreeWidgetItem(this);
             }
-            QJsonObject itemJson;
-            itemJson["anchor"] = header.anchor;
-            itemJson["line_number"] = header.lineNumber;
-            itemJson["outline_index"] = index;
-            item->setData(0, Qt::UserRole, itemJson);
-            item->setText(0, header.name);
-            item->setToolTip(0, header.name);
+
+            fillItem(item, header);
 
             last = item;
             ++index;
@@ -71,6 +82,17 @@ void VOutline::updateTreeByLevel(const QVector<VHeader> &headers, int &index,
         } else {
             updateTreeByLevel(headers, index, last, NULL, level + 1);
         }
+    }
+}
+
+void VOutline::fillItem(QTreeWidgetItem *p_item, const VHeader &p_header)
+{
+    p_item->setData(0, Qt::UserRole, p_header.index);
+    p_item->setText(0, p_header.name);
+    p_item->setToolTip(0, p_header.name);
+
+    if (p_header.isEmpty()) {
+        p_item->setForeground(0, QColor("grey"));
     }
 }
 
@@ -87,20 +109,22 @@ void VOutline::handleCurItemChanged(QTreeWidgetItem *p_curItem, QTreeWidgetItem 
     if (!p_curItem) {
         return;
     }
-    QJsonObject itemJson = p_curItem->data(0, Qt::UserRole).toJsonObject();
-    QString anchor = itemJson["anchor"].toString();
-    int lineNumber = itemJson["line_number"].toInt();
-    int outlineIndex = itemJson["outline_index"].toInt();
-    VAnchor tmp;
-    tmp.m_file = outline.m_file;
-    tmp.anchor = anchor;
-    tmp.lineNumber = lineNumber;
-    tmp.m_outlineIndex = outlineIndex;
+
+    const VHeader *header = getHeaderFromItem(p_curItem);
+    if (!header) {
+        return;
+    }
+
+    VAnchor tmp(outline.m_file, header->anchor, header->lineNumber, header->index);
     if (tmp == curHeader) {
         return;
     }
+
     curHeader = tmp;
-    emit outlineItemActivated(curHeader);
+
+    if (!header->isEmpty()) {
+        emit outlineItemActivated(curHeader);
+    }
 }
 
 void VOutline::updateCurHeader(const VAnchor &anchor)
@@ -108,17 +132,24 @@ void VOutline::updateCurHeader(const VAnchor &anchor)
     if (anchor == curHeader) {
         return;
     }
+
     curHeader = anchor;
     if (outline.type == VHeaderType::Anchor) {
         selectAnchor(anchor.anchor);
     } else {
-        // Select by lineNumber
+        // Select by lineNumber.
         selectLineNumber(anchor.lineNumber);
     }
 }
 
 void VOutline::selectAnchor(const QString &anchor)
 {
+    setCurrentItem(NULL);
+
+    if (anchor.isEmpty()) {
+        return;
+    }
+
     int nrTop = topLevelItemCount();
     for (int i = 0; i < nrTop; ++i) {
         if (selectAnchorOne(topLevelItem(i), anchor)) {
@@ -132,9 +163,13 @@ bool VOutline::selectAnchorOne(QTreeWidgetItem *item, const QString &anchor)
     if (!item) {
         return false;
     }
-    QJsonObject itemJson = item->data(0, Qt::UserRole).toJsonObject();
-    QString itemAnchor = itemJson["anchor"].toString();
-    if (itemAnchor == anchor) {
+
+    const VHeader *header = getHeaderFromItem(item);
+    if (!header) {
+        return false;
+    }
+
+    if (header->anchor == anchor) {
         setCurrentItem(item);
         return true;
     }
@@ -150,6 +185,12 @@ bool VOutline::selectAnchorOne(QTreeWidgetItem *item, const QString &anchor)
 
 void VOutline::selectLineNumber(int lineNumber)
 {
+    setCurrentItem(NULL);
+
+    if (lineNumber == -1) {
+        return;
+    }
+
     int nrTop = topLevelItemCount();
     for (int i = 0; i < nrTop; ++i) {
         if (selectLineNumberOne(topLevelItem(i), lineNumber)) {
@@ -163,9 +204,13 @@ bool VOutline::selectLineNumberOne(QTreeWidgetItem *item, int lineNumber)
     if (!item) {
         return false;
     }
-    QJsonObject itemJson = item->data(0, Qt::UserRole).toJsonObject();
-    int itemLineNum = itemJson["line_number"].toInt();
-    if (itemLineNum == lineNumber) {
+
+    const VHeader *header = getHeaderFromItem(item);
+    if (!header) {
+        return false;
+    }
+
+    if (header->lineNumber == lineNumber) {
         // Select this item
         setCurrentItem(item);
         return true;
@@ -328,4 +373,19 @@ QList<QTreeWidgetItem *> VOutline::getVisibleChildItems(const QTreeWidgetItem *p
         }
     }
     return items;
+}
+
+const VHeader *VOutline::getHeaderFromItem(QTreeWidgetItem *p_item) const
+{
+    const VHeader *header = NULL;
+
+    int index = p_item->data(0, Qt::UserRole).toInt();
+    if (index < 0 || index >= outline.headers.size()) {
+        return header;
+    }
+
+    header = &(outline.headers[index]);
+    Q_ASSERT(header->index == index);
+
+    return header;
 }

@@ -195,7 +195,7 @@ void VHtmlTab::discardAndRead()
     readFile();
 }
 
-void VHtmlTab::scrollToAnchor(const VAnchor &p_anchor)
+void VHtmlTab::scrollToAnchor(const VAnchor & /* p_anchor */)
 {
 }
 
@@ -240,7 +240,7 @@ void VHtmlTab::clearSearchedWordHighlight()
     m_editor->clearSearchedWordHighlight();
 }
 
-void VHtmlTab::zoom(bool p_zoomIn, qreal p_step)
+void VHtmlTab::zoom(bool /* p_zoomIn */, qreal /* p_step */)
 {
 }
 

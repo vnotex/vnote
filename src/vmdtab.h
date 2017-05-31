@@ -76,7 +76,7 @@ private slots:
     void updateCurHeader(const QString &p_anchor);
 
     // Editor requests to update current header.
-    void updateCurHeader(int p_lineNumber, int p_outlineIndex);
+    void updateCurHeader(VAnchor p_anchor);
 
     // Handle key press event in Web view.
     void handleWebKeyPressed(int p_key, bool p_ctrl, bool p_shift);

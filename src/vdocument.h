@@ -27,8 +27,16 @@ public:
 
 public slots:
     // Will be called in the HTML side
-    void setToc(const QString &toc);
+
+    // @toc: the HTML of the TOC.
+    // @baseLevel: the base level of @toc, starting from 1. It is the top level
+    // in the @toc.
+    void setToc(const QString &toc, int baseLevel);
+
+    // When the Web view has been scrolled, it will signal current header anchor.
+    // Empty @anchor to indicate an invalid header.
     void setHeader(const QString &anchor);
+
     void setLog(const QString &p_log);
     void keyPressEvent(int p_key, bool p_ctrl, bool p_shift);
     void updateText();

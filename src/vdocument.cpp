@@ -14,7 +14,7 @@ void VDocument::updateText()
     }
 }
 
-void VDocument::setToc(const QString &toc)
+void VDocument::setToc(const QString &toc, int /* baseLevel */)
 {
     if (toc == m_toc) {
         return;
@@ -30,6 +30,8 @@ QString VDocument::getToc()
 
 void VDocument::scrollToAnchor(const QString &anchor)
 {
+    m_header = anchor;
+
     emit requestScrollToAnchor(anchor);
 }
 
@@ -38,6 +40,7 @@ void VDocument::setHeader(const QString &anchor)
     if (anchor == m_header) {
         return;
     }
+
     m_header = anchor;
     emit headerChanged(m_header);
 }

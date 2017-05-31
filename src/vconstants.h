@@ -32,4 +32,6 @@ namespace DirConfig
     static const QString c_imageFolder = "image_folder";
     static const QString c_name = "name";
 }
+
+static const QString c_emptyHeaderName = "[EMPTY]";
 #endif
