@@ -451,7 +451,7 @@ void VMdTab::updateTocFromHtml(const QString &p_tocHtml)
         return;
     }
 
-    m_toc.filePath = m_file->retrivePath();
+    m_toc.m_file = m_file;
     m_toc.valid = true;
 
     emit outlineChanged(m_toc);
@@ -465,7 +465,7 @@ void VMdTab::updateTocFromHeaders(const QVector<VHeader> &p_headers)
 
     m_toc.type = VHeaderType::LineNumber;
     m_toc.headers = p_headers;
-    m_toc.filePath = m_file->retrivePath();
+    m_toc.m_file = m_file;
     m_toc.valid = true;
 
     emit outlineChanged(m_toc);
@@ -495,7 +495,7 @@ void VMdTab::updateCurHeader(const QString &p_anchor)
         return;
     }
 
-    m_curHeader = VAnchor(m_file->retrivePath(), "#" + p_anchor, -1);
+    m_curHeader = VAnchor(m_file, "#" + p_anchor, -1);
     if (!p_anchor.isEmpty()) {
         const QVector<VHeader> &headers = m_toc.headers;
         for (int i = 0; i < headers.size(); ++i) {
@@ -515,7 +515,7 @@ void VMdTab::updateCurHeader(int p_lineNumber, int p_outlineIndex)
         return;
     }
 
-    m_curHeader = VAnchor(m_file->retrivePath(), "", p_lineNumber);
+    m_curHeader = VAnchor(m_file, "", p_lineNumber);
     m_curHeader.m_outlineIndex = p_outlineIndex;
     if (p_lineNumber > -1) {
         emit curHeaderChanged(m_curHeader);

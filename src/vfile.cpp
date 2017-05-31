@@ -236,3 +236,41 @@ QUrl VFile::getBaseUrl() const
 
     return baseUrl;
 }
+
+bool VFile::rename(const QString &p_name)
+{
+    if (m_name == p_name) {
+        return true;
+    }
+
+    QString oldName = m_name;
+
+    VDirectory *dir = getDirectory();
+    V_ASSERT(dir);
+    // Rename it in disk.
+    QDir diskDir(dir->retrivePath());
+    if (!diskDir.rename(m_name, p_name)) {
+        qWarning() << "fail to rename note" << m_name << "to" << p_name << "in disk";
+        return false;
+    }
+
+    m_name = p_name;
+
+    // Update parent directory's config file.
+    if (!dir->writeToConfig()) {
+        m_name = oldName;
+        diskDir.rename(p_name, m_name);
+        return false;
+    }
+
+    // Handle DocType change.
+    DocType newType = VUtils::docTypeFromName(m_name);
+    if (m_docType != newType) {
+        convert(m_docType, newType);
+        m_docType = newType;
+    }
+
+    qDebug() << "note renamed from" << oldName << "to" << m_name;
+
+    return true;
+}

@@ -151,29 +151,55 @@ void VFileList::fileInfo(VFile *p_file)
                 defaultName = name;
                 continue;
             }
-            copyFile(dir, name, p_file, true);
+
+            if (!promptForDocTypeChange(p_file, QDir(p_file->retriveBasePath()).filePath(name))) {
+                return;
+            }
+
+            if (!p_file->rename(name)) {
+                VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                                    tr("Fail to rename note <span style=\"%1\">%2</span>.")
+                                      .arg(vconfig.c_dataTextStyle).arg(curName), "",
+                                    QMessageBox::Ok, QMessageBox::Ok, this);
+                return;
+            }
+
+            QListWidgetItem *item = findItem(p_file);
+            if (item) {
+                fillItem(item, p_file);
+            }
+
+            emit fileUpdated(p_file);
         }
         break;
     } while (true);
 }
 
+void VFileList::fillItem(QListWidgetItem *p_item, const VFile *p_file)
+{
+    unsigned long long ptr = (long long)p_file;
+    p_item->setData(Qt::UserRole, ptr);
+    p_item->setToolTip(p_file->getName());
+    p_item->setText(p_file->getName());
+
+    V_ASSERT(sizeof(p_file) <= sizeof(ptr));
+}
+
 QListWidgetItem* VFileList::insertFileListItem(VFile *file, bool atFront)
 {
-    Q_ASSERT(file);
-    QString fileName = file->getName();
-    QListWidgetItem *item = new QListWidgetItem(fileName);
-    unsigned long long ptr = (long long)file;
-    item->setData(Qt::UserRole, ptr);
-    item->setToolTip(fileName);
-    Q_ASSERT(sizeof(file) <= sizeof(ptr));
+    V_ASSERT(file);
+    QListWidgetItem *item = new QListWidgetItem();
+    fillItem(item, file);
+
     if (atFront) {
         fileList->insertItem(0, item);
     } else {
         fileList->addItem(item);
     }
+
     // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
     fileList->update();
-    qDebug() << "VFileList adds" << fileName;
+    qDebug() << "VFileList adds" << file->getName();
     return item;
 }
 
@@ -464,8 +490,23 @@ bool VFileList::copyFile(VDirectory *p_destDir, const QString &p_destName, VFile
     }
 
     // If change the file type, we need to close it first
+    if (!promptForDocTypeChange(p_file, destPath)) {
+        return false;
+    }
+
+    VFile *destFile = VDirectory::copyFile(p_destDir, p_destName, p_file, p_cut);
+    updateFileList();
+    if (destFile) {
+        emit fileUpdated(destFile);
+    }
+    return destFile != NULL;
+}
+
+bool VFileList::promptForDocTypeChange(const VFile *p_file, const QString &p_newFilePath)
+{
     DocType docType = p_file->getDocType();
-    DocType newDocType = VUtils::docTypeFromName(destPath);
+    DocType newDocType = VUtils::docTypeFromName(p_newFilePath);
+
     if (docType != newDocType) {
         if (editArea->isFileOpened(p_file)) {
             int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
@@ -483,12 +524,7 @@ bool VFileList::copyFile(VDirectory *p_destDir, const QString &p_destName, VFile
         }
     }
 
-    VFile *destFile = VDirectory::copyFile(p_destDir, p_destName, p_file, p_cut);
-    updateFileList();
-    if (destFile) {
-        emit fileUpdated(destFile);
-    }
-    return destFile != NULL;
+    return true;
 }
 
 void VFileList::keyPressEvent(QKeyEvent *event)

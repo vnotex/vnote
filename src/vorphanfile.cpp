@@ -2,6 +2,7 @@
 #include <QDebug>
 #include <QTextEdit>
 #include <QFileInfo>
+#include <QDir>
 #include "utils/vutils.h"
 
 VOrphanFile::VOrphanFile(const QString &p_path, QObject *p_parent)
@@ -90,4 +91,17 @@ void VOrphanFile::setContent(const QString & /* p_content */)
 bool VOrphanFile::isInternalImageFolder(const QString &p_path) const
 {
     return VUtils::basePathFromPath(p_path) == VUtils::basePathFromPath(m_path);
+}
+
+bool VOrphanFile::rename(const QString &p_name)
+{
+    QDir dir(retriveBasePath());
+    if (!dir.rename(m_name, p_name)) {
+        qWarning() << "fail to rename note" << m_name << "to" << p_name << "in disk";
+        return false;
+    }
+
+    m_name = p_name;
+    m_path = dir.filePath(m_name);
+    return true;
 }

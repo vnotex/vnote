@@ -19,6 +19,9 @@ public:
     QString getNotebookName() const Q_DECL_OVERRIDE;
     VNotebook *getNotebook() Q_DECL_OVERRIDE;
 
+    // Rename file.
+    bool rename(const QString &p_name) Q_DECL_OVERRIDE;
+
 private:
     bool save() Q_DECL_OVERRIDE;
     void convert(DocType p_curType, DocType p_targetType) Q_DECL_OVERRIDE;

@@ -49,6 +49,9 @@ public:
     // directory of this file.
     virtual bool isInternalImageFolder(const QString &p_path) const;
 
+    // Rename the file.
+    virtual bool rename(const QString &p_name);
+
 public slots:
     void setModified(bool p_modified);
 

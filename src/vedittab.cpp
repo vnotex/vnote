@@ -6,8 +6,8 @@ VEditTab::VEditTab(VFile *p_file, VEditArea *p_editArea, QWidget *p_parent)
     : QWidget(p_parent), m_file(p_file), m_isEditMode(false),
       m_modified(false), m_editArea(p_editArea)
 {
-    m_toc.filePath = m_file->retrivePath();
-    m_curHeader.filePath = m_file->retrivePath();
+    m_toc.m_file = m_file;
+    m_curHeader.m_file = m_file;
 
     connect(qApp, &QApplication::focusChanged,
             this, &VEditTab::handleFocusChanged);

@@ -71,7 +71,10 @@ private:
     QListWidgetItem *insertFileListItem(VFile *file, bool atFront = false);
     void removeFileListItem(QListWidgetItem *item);
     void initActions();
+
+    // Return the corresponding QListWidgetItem of @p_file.
     QListWidgetItem *findItem(const VFile *p_file);
+
     void copyFileInfoToClipboard(const QJsonArray &p_files, bool p_isCut);
     void pasteFiles(VDirectory *p_destDir);
     bool copyFile(VDirectory *p_destDir, const QString &p_destName, VFile *p_file, bool p_cut);
@@ -81,6 +84,16 @@ private:
     // Check if the list items match exactly the contents of the directory.
     bool identicalListWithDirectory() const;
     QList<QListWidgetItem *> getVisibleItems() const;
+
+    // @p_file: the file to be renamed or copied.
+    // @p_newFilePath: the new file path of @p_file.
+    // Check if the rename/copy will change the DocType. If yes, then ask
+    // user for confirmation.
+    // Return true if we can continue.
+    bool promptForDocTypeChange(const VFile *p_file, const QString &p_newFilePath);
+
+    // Fill the info of @p_item according to @p_file.
+    void fillItem(QListWidgetItem *p_item, const VFile *p_file);
 
     VEditArea *editArea;
     QListWidget *fileList;

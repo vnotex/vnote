@@ -4,6 +4,8 @@
 #include <QString>
 #include <QVector>
 
+class VFile;
+
 enum VHeaderType
 {
     Anchor = 0,
@@ -24,16 +26,16 @@ struct VHeader
 struct VAnchor
 {
     VAnchor() : lineNumber(-1), m_outlineIndex(0) {}
-    VAnchor(const QString filePath, const QString &anchor, int lineNumber)
-        : filePath(filePath), anchor(anchor), lineNumber(lineNumber), m_outlineIndex(0) {}
-    QString filePath;
+    VAnchor(const VFile *file, const QString &anchor, int lineNumber)
+        : m_file(file), anchor(anchor), lineNumber(lineNumber), m_outlineIndex(0) {}
+    const VFile *m_file;
     QString anchor;
     int lineNumber;
     // Index of this anchor in VToc outline.
     int m_outlineIndex;
 
     bool operator==(const VAnchor &p_anchor) const {
-        return (p_anchor.filePath == filePath
+        return (p_anchor.m_file == m_file
                 && p_anchor.anchor == anchor
                 && p_anchor.lineNumber == lineNumber);
     }
@@ -46,7 +48,7 @@ public:
 
     QVector<VHeader> headers;
     int type;
-    QString filePath;
+    const VFile *m_file;
     bool valid;
 };
 

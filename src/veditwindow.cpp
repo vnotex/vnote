@@ -516,7 +516,7 @@ void VEditWindow::handleOutlineChanged(const VToc &p_toc)
         return;
     }
     const VFile *file = getTab(idx)->getFile();
-    if (p_toc.filePath == file->retrivePath()) {
+    if (p_toc.m_file == file) {
         emit outlineChanged(p_toc);
     }
 }
@@ -530,7 +530,7 @@ void VEditWindow::handleCurHeaderChanged(const VAnchor &p_anchor)
         return;
     }
     const VFile *file = getTab(idx)->getFile();
-    if (p_anchor.filePath == file->retrivePath()) {
+    if (p_anchor.m_file == file) {
         emit curHeaderChanged(p_anchor);
     }
 }
@@ -543,7 +543,7 @@ void VEditWindow::scrollCurTab(const VAnchor &p_anchor)
         return;
     }
     const VFile *file = getTab(idx)->getFile();
-    if (file->retrivePath() == p_anchor.filePath) {
+    if (file == p_anchor.m_file) {
         getTab(idx)->scrollToAnchor(p_anchor);
     }
 }

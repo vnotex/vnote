@@ -92,7 +92,7 @@ void VOutline::handleCurItemChanged(QTreeWidgetItem *p_curItem, QTreeWidgetItem 
     int lineNumber = itemJson["line_number"].toInt();
     int outlineIndex = itemJson["outline_index"].toInt();
     VAnchor tmp;
-    tmp.filePath = outline.filePath;
+    tmp.m_file = outline.m_file;
     tmp.anchor = anchor;
     tmp.lineNumber = lineNumber;
     tmp.m_outlineIndex = outlineIndex;
