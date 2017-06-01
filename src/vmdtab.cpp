@@ -490,6 +490,10 @@ void VMdTab::updateTocFromHeaders(const QVector<VHeader> &p_headers)
     m_toc.m_file = m_file;
     m_toc.valid = true;
 
+    // Clear current header.
+    m_curHeader = VAnchor(m_file, "", -1, -1);
+    emit curHeaderChanged(m_curHeader);
+
     emit outlineChanged(m_toc);
 }
 

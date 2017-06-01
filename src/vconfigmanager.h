@@ -5,6 +5,7 @@
 #include <QPalette>
 #include <QVector>
 #include <QSettings>
+#include <QHash>
 #include "vnotebook.h"
 #include "hgmarkdownhighlighter.h"
 #include "vmarkdownconverter.h"
@@ -63,7 +64,7 @@ public:
 
     inline QVector<HighlightingStyle> getMdHighlightingStyles() const;
 
-    inline QMap<QString, QTextCharFormat> getCodeBlockStyles() const;
+    inline QHash<QString, QTextCharFormat> getCodeBlockStyles() const;
 
     inline QString getWelcomePagePath() const;
 
@@ -231,7 +232,7 @@ private:
     QFont mdEditFont;
     QPalette mdEditPalette;
     QVector<HighlightingStyle> mdHighlightingStyles;
-    QMap<QString, QTextCharFormat> m_codeBlockStyles;
+    QHash<QString, QTextCharFormat> m_codeBlockStyles;
     QString welcomePagePath;
     QString m_templateCss;
     QString m_editorStyle;
@@ -360,7 +361,7 @@ inline QVector<HighlightingStyle> VConfigManager::getMdHighlightingStyles() cons
     return mdHighlightingStyles;
 }
 
-inline QMap<QString, QTextCharFormat> VConfigManager::getCodeBlockStyles() const
+inline QHash<QString, QTextCharFormat> VConfigManager::getCodeBlockStyles() const
 {
     return m_codeBlockStyles;
 }

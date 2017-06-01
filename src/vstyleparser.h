@@ -4,7 +4,7 @@
 #include <QPalette>
 #include <QVector>
 #include <QString>
-#include <QMap>
+#include <QHash>
 #include "hgmarkdownhighlighter.h"
 
 extern "C" {
@@ -26,7 +26,7 @@ public:
     // @styles: [rule] -> ([attr] -> value).
     void fetchMarkdownEditorStyles(QPalette &palette, QFont &font,
                                    QMap<QString, QMap<QString, QString>> &styles) const;
-    QMap<QString, QTextCharFormat> fetchCodeBlockStyles(const QFont &p_baseFont) const;
+    QHash<QString, QTextCharFormat> fetchCodeBlockStyles(const QFont &p_baseFont) const;
 
 private:
     QColor QColorFromPmhAttr(pmh_attr_argb_color *attr) const;

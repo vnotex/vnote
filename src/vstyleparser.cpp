@@ -130,9 +130,9 @@ QVector<HighlightingStyle> VStyleParser::fetchMarkdownStyles(const QFont &baseFo
     return styles;
 }
 
-QMap<QString, QTextCharFormat> VStyleParser::fetchCodeBlockStyles(const QFont & p_baseFont) const
+QHash<QString, QTextCharFormat> VStyleParser::fetchCodeBlockStyles(const QFont & p_baseFont) const
 {
-    QMap<QString, QTextCharFormat> styles;
+    QHash<QString, QTextCharFormat> styles;
 
     pmh_style_attribute *attrs = markdownStyles->element_styles[pmh_VERBATIM];
 

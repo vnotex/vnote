@@ -7,7 +7,7 @@
 #include <QSet>
 #include <QList>
 #include <QString>
-#include <QMap>
+#include <QHash>
 
 extern "C" {
 #include <pmh_parser.h>
@@ -26,7 +26,12 @@ struct HighlightingStyle
 enum HighlightBlockState
 {
     Normal = 0,
-    CodeBlock = 1,
+
+    // A fenced code block.
+    CodeBlock,
+
+    // This block is inside a HTML comment region.
+    Comment
 };
 
 // One continuous region for a certain markdown highlight style
@@ -76,13 +81,33 @@ struct HLUnitPos
     QString m_style;
 };
 
+// HTML comment.
+struct VCommentRegion
+{
+    VCommentRegion() : m_startPos(0), m_endPos(0) {}
+
+    VCommentRegion(int p_start, int p_end) : m_startPos(p_start), m_endPos(p_end) {}
+
+    // The start position of the region in document.
+    int m_startPos;
+
+    // The end position of the region in document.
+    int m_endPos;
+
+    // Whether this region contains @p_pos.
+    bool contains(int p_pos) const
+    {
+        return m_startPos <= p_pos && m_endPos >= p_pos;
+    }
+};
+
 class HGMarkdownHighlighter : public QSyntaxHighlighter
 {
     Q_OBJECT
 
 public:
     HGMarkdownHighlighter(const QVector<HighlightingStyle> &styles,
-                          const QMap<QString, QTextCharFormat> &codeBlockStyles,
+                          const QHash<QString, QTextCharFormat> &codeBlockStyles,
                           int waitInterval,
                           QTextDocument *parent = 0);
     ~HGMarkdownHighlighter();
@@ -112,7 +137,7 @@ private:
 
     QTextDocument *document;
     QVector<HighlightingStyle> highlightingStyles;
-    QMap<QString, QTextCharFormat> m_codeBlockStyles;
+    QHash<QString, QTextCharFormat> m_codeBlockStyles;
     QVector<QVector<HLUnit> > blockHighlights;
 
     // Use another member to store the codeblocks highlights, because the highlight
@@ -122,6 +147,12 @@ private:
     QVector<QVector<HLUnitStyle> > m_codeBlockHighlights;
 
     int m_numOfCodeBlockHighlightsToRecv;
+
+    // All HTML comment regions.
+    QVector<VCommentRegion> m_commentRegions;
+
+    // Timer to signal highlightCompleted().
+    QTimer *m_completeTimer;
 
     QAtomicInt parsing;
     QTimer *timer;
@@ -145,6 +176,15 @@ private:
     // Return true if there are fenced code blocks and it will call rehighlight() later.
     // Return false if there is none.
     bool updateCodeBlocks();
+
+    // Fetch all the HTML comment regions from parsing result.
+    void initHtmlCommentRegionsFromResult();
+
+    // Whether @p_block is totally inside a HTML comment.
+    bool isBlockInsideCommentRegion(const QTextBlock &p_block) const;
+
+    // Highlights have been changed. Try to signal highlightCompleted().
+    void highlightChanged();
 };
 
 #endif

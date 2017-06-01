@@ -24,7 +24,7 @@ void HGMarkdownHighlighter::resizeBuffer(int newCap)
 
 // Will be freeed by parent automatically
 HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &styles,
-                                             const QMap<QString, QTextCharFormat> &codeBlockStyles,
+                                             const QHash<QString, QTextCharFormat> &codeBlockStyles,
                                              int waitInterval,
                                              QTextDocument *parent)
     : QSyntaxHighlighter(parent), highlightingStyles(styles),
@@ -47,10 +47,19 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
 
     resizeBuffer(initCapacity);
     document = parent;
+
     timer = new QTimer(this);
     timer->setSingleShot(true);
     timer->setInterval(this->waitInterval);
     connect(timer, &QTimer::timeout, this, &HGMarkdownHighlighter::timerTimeout);
+
+    static const int completeWaitTime = 500;
+    m_completeTimer = new QTimer(this);
+    m_completeTimer->setSingleShot(true);
+    m_completeTimer->setInterval(completeWaitTime);
+    connect(m_completeTimer, &QTimer::timeout,
+            this, &HGMarkdownHighlighter::highlightCompleted);
+
     connect(document, &QTextDocument::contentsChange,
             this, &HGMarkdownHighlighter::handleContentChange);
 }
@@ -82,6 +91,12 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
 
     // We use PEG Markdown Highlight as the main highlighter.
     // We can use other highlighting methods to complement it.
+
+    // If it is a block inside HTML comment, just skip it.
+    if (isBlockInsideCommentRegion(currentBlock())) {
+        setCurrentBlockState(HighlightBlockState::Comment);
+        goto exit;
+    }
 
     // PEG Markdown Highlight does not handle the ``` code block correctly.
     setCurrentBlockState(HighlightBlockState::Normal);
@@ -123,6 +138,9 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
             }
         }
     }
+
+exit:
+    highlightChanged();
 }
 
 void HGMarkdownHighlighter::initBlockHighlightFromResult(int nrBlocks)
@@ -142,6 +160,8 @@ void HGMarkdownHighlighter::initBlockHighlightFromResult(int nrBlocks)
         pmh_element *elem_cursor = result[style.type];
         while (elem_cursor != NULL)
         {
+            // elem_cursor->pos and elem_cursor->end is the start
+            // and end position of the element in document.
             if (elem_cursor->end <= elem_cursor->pos) {
                 elem_cursor = elem_cursor->next;
                 continue;
@@ -150,9 +170,29 @@ void HGMarkdownHighlighter::initBlockHighlightFromResult(int nrBlocks)
             elem_cursor = elem_cursor->next;
         }
     }
+}
 
-    pmh_free_elements(result);
-    result = NULL;
+void HGMarkdownHighlighter::initHtmlCommentRegionsFromResult()
+{
+    m_commentRegions.clear();
+
+    if (!result) {
+        return;
+    }
+
+    pmh_element *elem = result[pmh_COMMENT];
+    while (elem != NULL) {
+        if (elem->end <= elem->pos) {
+            elem = elem->next;
+            continue;
+        }
+
+        m_commentRegions.push_back(VCommentRegion(elem->pos, elem->end));
+
+        elem = elem->next;
+    }
+
+    qDebug() << "highlighter:" << m_commentRegions.size() << "HTML comment regions";
 }
 
 void HGMarkdownHighlighter::initBlockHighlihgtOne(unsigned long pos, unsigned long end, int styleIndex)
@@ -249,7 +289,16 @@ void HGMarkdownHighlighter::parse()
         qWarning() << "HighlightingStyles is not set";
         return;
     }
+
     initBlockHighlightFromResult(nrBlocks);
+
+    initHtmlCommentRegionsFromResult();
+
+    if (result) {
+        pmh_free_elements(result);
+        result = NULL;
+    }
+
     parsing.store(0);
 }
 
@@ -294,7 +343,8 @@ void HGMarkdownHighlighter::timerTimeout()
     if (!updateCodeBlocks()) {
         rehighlight();
     }
-    emit highlightCompleted();
+
+    highlightChanged();
 }
 
 void HGMarkdownHighlighter::updateHighlight()
@@ -331,7 +381,11 @@ bool HGMarkdownHighlighter::updateCodeBlocks()
                 // End block.
                 inBlock = false;
                 item.m_endBlock = block.blockNumber();
-                codeBlocks.append(item);
+
+                // See if it is a code block inside HTML comment.
+                if (!isBlockInsideCommentRegion(block)) {
+                    codeBlocks.append(item);
+                }
             }
         } else {
             int idx = codeBlockStartExp.indexIn(text);
@@ -426,4 +480,28 @@ exit:
     if (m_numOfCodeBlockHighlightsToRecv <= 0) {
         rehighlight();
     }
+}
+
+bool HGMarkdownHighlighter::isBlockInsideCommentRegion(const QTextBlock &p_block) const
+{
+    if (!p_block.isValid()) {
+        return false;
+    }
+
+    int start = p_block.position();
+    int end = start + p_block.length();
+
+    for (auto const & reg : m_commentRegions) {
+        if (reg.contains(start) && reg.contains(end)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void HGMarkdownHighlighter::highlightChanged()
+{
+    m_completeTimer->stop();
+    m_completeTimer->start();
 }
