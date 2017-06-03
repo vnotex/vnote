@@ -13,6 +13,10 @@
 // 3s pending time after the leader keys.
 const int c_pendingTime = 3 * 1000;
 
+#if defined(QT_NO_DEBUG)
+extern QFile g_logFile;
+#endif
+
 VCaptain::VCaptain(VMainWindow *p_parent)
     : QWidget(p_parent), m_mainWindow(p_parent), m_mode(VCaptain::Normal),
       m_widgetBeforeCaptain(NULL), m_nextMajorKey('a'), m_ignoreFocusChange(false)
@@ -302,6 +306,15 @@ bool VCaptain::handleKeyPress(int p_key, Qt::KeyboardModifiers p_modifiers)
         m_widgetBeforeCaptain = NULL;
         break;
     }
+
+#if defined(QT_NO_DEBUG)
+    case Qt::Key_Comma:
+    {
+        // Flush g_logFile.
+        g_logFile.flush();
+        break;
+    }
+#endif
 
     default:
         // Not implemented yet. Just exit Captain mode.

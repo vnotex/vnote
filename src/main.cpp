@@ -11,7 +11,10 @@
 #include "vconfigmanager.h"
 
 VConfigManager vconfig;
-static QFile g_logFile;
+
+#if defined(QT_NO_DEBUG)
+QFile g_logFile;
+#endif
 
 void VLogger(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {

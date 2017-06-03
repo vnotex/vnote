@@ -25,6 +25,10 @@ extern VConfigManager vconfig;
 
 VNote *g_vnote;
 
+#if defined(QT_NO_DEBUG)
+extern QFile g_logFile;
+#endif
+
 VMainWindow::VMainWindow(QWidget *parent)
     : QMainWindow(parent), m_onePanel(false)
 {
@@ -288,6 +292,16 @@ void VMainWindow::initHelpMenu()
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
     helpMenu->setToolTipsVisible(true);
 
+#if defined(QT_NO_DEBUG)
+    QAction *logAct = new QAction(tr("View &Log"), this);
+    logAct->setToolTip(tr("View VNote's debug log (%1)").arg(vconfig.getLogFilePath()));
+    connect(logAct, &QAction::triggered,
+            this, [](){
+                QUrl url = QUrl::fromLocalFile(vconfig.getLogFilePath());
+                QDesktopServices::openUrl(url);
+            });
+#endif
+
     QAction *shortcutAct = new QAction(tr("&Shortcuts Help"), this);
     shortcutAct->setToolTip(tr("View information about shortcut keys"));
     connect(shortcutAct, &QAction::triggered,
@@ -302,6 +316,10 @@ void VMainWindow::initHelpMenu()
     aboutQtAct->setToolTip(tr("View information about Qt"));
     connect(aboutQtAct, &QAction::triggered,
             qApp, &QApplication::aboutQt);
+
+#if defined(QT_NO_DEBUG)
+    helpMenu->addAction(logAct);
+#endif
 
     helpMenu->addAction(shortcutAct);
     helpMenu->addAction(aboutQtAct);
