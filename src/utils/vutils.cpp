@@ -22,8 +22,7 @@
 
 extern VConfigManager vconfig;
 
-const QVector<QPair<QString, QString>> VUtils::c_availableLanguages = {QPair<QString, QString>("en_US", "Englisth(US)"),
-                                                                       QPair<QString, QString>("zh_CN", "Chinese")};
+QVector<QPair<QString, QString>> VUtils::s_availableLanguages;
 
 const QString VUtils::c_imageLinkRegExp = QString("\\!\\[([^\\]]*)\\]\\(([^\\)\"]+)\\s*(\"(\\\\.|[^\"\\)])*\")?\\s*\\)");
 
@@ -35,6 +34,16 @@ const QString VUtils::c_fencedCodeBlockEndRegExp = QString("^(\\s*)```$");
 
 VUtils::VUtils()
 {
+}
+
+void VUtils::initAvailableLanguage()
+{
+    if (!s_availableLanguages.isEmpty()) {
+        return;
+    }
+
+    s_availableLanguages.append(QPair<QString, QString>("en_US", "English (US)"));
+    s_availableLanguages.append(QPair<QString, QString>("zh_CN", "Chinese"));
 }
 
 QString VUtils::readFileFromDisk(const QString &filePath)
@@ -370,16 +379,21 @@ QString VUtils::generateCopiedDirName(const QString &p_parentDirPath, const QStr
 
 const QVector<QPair<QString, QString>>& VUtils::getAvailableLanguages()
 {
-    return c_availableLanguages;
+    if (s_availableLanguages.isEmpty()) {
+        initAvailableLanguage();
+    }
+
+    return s_availableLanguages;
 }
 
 bool VUtils::isValidLanguage(const QString &p_lang)
 {
-    for (auto const &lang : c_availableLanguages) {
+    for (auto const &lang : getAvailableLanguages()) {
         if (lang.first == p_lang) {
             return true;
         }
     }
+
     return false;
 }
 

@@ -114,8 +114,10 @@ public:
     static const QString c_fencedCodeBlockEndRegExp;
 
 private:
+    static void initAvailableLanguage();
+
     // <value, name>
-    static const QVector<QPair<QString, QString>> c_availableLanguages;
+    static QVector<QPair<QString, QString>> s_availableLanguages;
 };
 
 inline QString VUtils::directoryNameFromPath(const QString &p_path)

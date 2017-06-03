@@ -134,10 +134,6 @@ macx {
     INCLUDEPATH += /usr/local/include
 }
 
-windows {
-    DEFINES *= Q_COMPILER_INITIALIZER_LISTS
-}
-
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../hoedown/release/ -lhoedown
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../hoedown/debug/ -lhoedown
 else:unix: LIBS += -L$$OUT_PWD/../hoedown/ -lhoedown
