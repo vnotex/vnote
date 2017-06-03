@@ -26,6 +26,19 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
     connect(m_mdHighlighter, &HGMarkdownHighlighter::highlightCompleted,
             this, &VMdEdit::generateEditOutline);
 
+    // After highlight, the cursor may trun into non-visible. We should make it visible
+    // in this case.
+    connect(m_mdHighlighter, &HGMarkdownHighlighter::highlightCompleted,
+            this, [this]() {
+        QRect rect = this->cursorRect();
+        QRect viewRect = this->rect();
+        if ((rect.y() < viewRect.height()
+             && rect.y() + rect.height() > viewRect.height())
+            || (rect.y() < 0 && rect.y() + rect.height() > 0)) {
+            this->ensureCursorVisible();
+        }
+    });
+
     m_cbHighlighter = new VCodeBlockHighlightHelper(m_mdHighlighter, p_vdoc,
                                                     p_type);
 
