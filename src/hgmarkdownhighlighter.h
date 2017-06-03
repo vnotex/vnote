@@ -28,7 +28,9 @@ enum HighlightBlockState
     Normal = 0,
 
     // A fenced code block.
+    CodeBlockStart,
     CodeBlock,
+    CodeBlockEnd,
 
     // This block is inside a HTML comment region.
     Comment

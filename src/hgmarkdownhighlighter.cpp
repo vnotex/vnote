@@ -4,6 +4,7 @@
 #include <algorithm>
 #include "hgmarkdownhighlighter.h"
 #include "vconfigmanager.h"
+#include "utils/vutils.h"
 
 extern VConfigManager vconfig;
 
@@ -31,8 +32,9 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
       m_codeBlockStyles(codeBlockStyles), m_numOfCodeBlockHighlightsToRecv(0),
       parsing(0), waitInterval(waitInterval), content(NULL), capacity(0), result(NULL)
 {
-    codeBlockStartExp = QRegExp("^\\s*```(\\S*)");
-    codeBlockEndExp = QRegExp("^\\s*```$");
+    codeBlockStartExp = QRegExp(VUtils::c_fencedCodeBlockStartRegExp);
+    codeBlockEndExp = QRegExp(VUtils::c_fencedCodeBlockEndRegExp);
+
     codeBlockFormat.setForeground(QBrush(Qt::darkYellow));
     for (int index = 0; index < styles.size(); ++index) {
         const pmh_element_type &eleType = styles[index].type;
@@ -223,34 +225,48 @@ void HGMarkdownHighlighter::initBlockHighlihgtOne(unsigned long pos, unsigned lo
 
 void HGMarkdownHighlighter::highlightCodeBlock(const QString &text)
 {
-    int nextIndex = 0;
-    int startIndex = 0;
-    if (previousBlockState() != HighlightBlockState::CodeBlock) {
-        startIndex = codeBlockStartExp.indexIn(text);
-        if (startIndex >= 0) {
-            nextIndex = startIndex + codeBlockStartExp.matchedLength();
+    static int startLeadingSpaces = -1;
+    int length = 0;
+    int index = -1;
+    int preState = previousBlockState();
+    int state = HighlightBlockState::Normal;
+
+    if (preState != HighlightBlockState::CodeBlock
+        && preState != HighlightBlockState::CodeBlockStart) {
+        // Need to find a new code block start.
+        index = codeBlockStartExp.indexIn(text);
+        if (index >= 0) {
+            // Start a new code block.
+            length = text.length();
+            state = HighlightBlockState::CodeBlockStart;
+
+            // The leading spaces of code block start and end must be identical.
+            startLeadingSpaces = codeBlockStartExp.capturedTexts()[1].size();
         } else {
-            nextIndex = -1;
+            // A normal block.
+            startLeadingSpaces = -1;
+            return;
+        }
+    } else {
+        // Need to find a code block end.
+        index = codeBlockEndExp.indexIn(text);
+
+        // The closing ``` should have the same indentation as the open ```.
+        if (index >= 0
+            && startLeadingSpaces == codeBlockEndExp.capturedTexts()[1].size()) {
+            // End of code block.
+            length = text.length();
+            state = HighlightBlockState::CodeBlockEnd;
+        } else {
+            // Within code block.
+            index = 0;
+            length = text.length();
+            state = HighlightBlockState::CodeBlock;
         }
     }
 
-    while (nextIndex >= 0) {
-        int endIndex = codeBlockEndExp.indexIn(text, nextIndex);
-        int codeBlockLength;
-        if (endIndex == -1) {
-            setCurrentBlockState(HighlightBlockState::CodeBlock);
-            codeBlockLength = text.length() - startIndex;
-        } else {
-            codeBlockLength = endIndex - startIndex + codeBlockEndExp.matchedLength();
-        }
-        setFormat(startIndex, codeBlockLength, codeBlockFormat);
-        startIndex = codeBlockStartExp.indexIn(text, startIndex + codeBlockLength);
-        if (startIndex >= 0) {
-            nextIndex = startIndex + codeBlockStartExp.matchedLength();
-        } else {
-            nextIndex = -1;
-        }
-    }
+    setCurrentBlockState(state);
+    setFormat(index, length, codeBlockFormat);
 }
 
 void HGMarkdownHighlighter::highlightLinkWithSpacesInURL(const QString &p_text)
@@ -369,6 +385,7 @@ bool HGMarkdownHighlighter::updateCodeBlocks()
 
     VCodeBlock item;
     bool inBlock = false;
+    int startLeadingSpaces = -1;
 
     // Only handle complete codeblocks.
     QTextBlock block = document->firstBlock();
@@ -377,13 +394,14 @@ bool HGMarkdownHighlighter::updateCodeBlocks()
         if (inBlock) {
             item.m_text = item.m_text + "\n" + text;
             int idx = codeBlockEndExp.indexIn(text);
-            if (idx >= 0) {
+            if (idx >= 0 && codeBlockEndExp.capturedTexts()[1].size() == startLeadingSpaces) {
                 // End block.
                 inBlock = false;
                 item.m_endBlock = block.blockNumber();
 
                 // See if it is a code block inside HTML comment.
                 if (!isBlockInsideCommentRegion(block)) {
+                    qDebug() << "add one code block in lang" << item.m_lang;
                     codeBlocks.append(item);
                 }
             }
@@ -395,11 +413,14 @@ bool HGMarkdownHighlighter::updateCodeBlocks()
                 item.m_startBlock = block.blockNumber();
                 item.m_startPos = block.position();
                 item.m_text = text;
-                if (codeBlockStartExp.captureCount() == 1) {
-                    item.m_lang = codeBlockStartExp.capturedTexts()[1];
+                if (codeBlockStartExp.captureCount() == 2) {
+                    item.m_lang = codeBlockStartExp.capturedTexts()[2];
                 }
+
+                startLeadingSpaces = codeBlockStartExp.capturedTexts()[1].size();
             }
         }
+
         block = block.next();
     }
 

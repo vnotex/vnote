@@ -109,6 +109,10 @@ public:
     // Forbidden char: \/:*?"<>|
     static const QString c_fileNameRegExp;
 
+    // Regular expression for fenced code block.
+    static const QString c_fencedCodeBlockStartRegExp;
+    static const QString c_fencedCodeBlockEndRegExp;
+
 private:
     // <value, name>
     static const QVector<QPair<QString, QString>> c_availableLanguages;
