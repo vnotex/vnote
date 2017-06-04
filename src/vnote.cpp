@@ -19,12 +19,18 @@ QString VNote::s_markdownTemplate;
 QString VNote::s_markdownTemplatePDF;
 
 const QString VNote::c_hoedownJsFile = ":/resources/hoedown.js";
+
 const QString VNote::c_markedJsFile = ":/resources/marked.js";
 const QString VNote::c_markedExtraFile = ":/utils/marked/marked.min.js";
+
 const QString VNote::c_markdownitJsFile = ":/resources/markdown-it.js";
 const QString VNote::c_markdownitExtraFile = ":/utils/markdown-it/markdown-it.min.js";
 const QString VNote::c_markdownitAnchorExtraFile = ":/utils/markdown-it/markdown-it-headinganchor.js";
 const QString VNote::c_markdownitTaskListExtraFile = ":/utils/markdown-it/markdown-it-task-lists.min.js";
+const QString VNote::c_markdownitSubExtraFile = ":/utils/markdown-it/markdown-it-sub.min.js";
+const QString VNote::c_markdownitSupExtraFile = ":/utils/markdown-it/markdown-it-sup.min.js";
+const QString VNote::c_markdownitFootnoteExtraFile = ":/utils/markdown-it/markdown-it-footnote.min.js";
+
 const QString VNote::c_showdownJsFile = ":/resources/showdown.js";
 const QString VNote::c_showdownExtraFile = ":/utils/showdown/showdown.min.js";
 const QString VNote::c_showdownAnchorExtraFile = ":/utils/showdown/showdown-headinganchor.js";
@@ -33,7 +39,9 @@ const QString VNote::c_mermaidApiJsFile = ":/utils/mermaid/mermaidAPI.min.js";
 const QString VNote::c_mermaidCssFile = ":/utils/mermaid/mermaid.css";
 const QString VNote::c_mermaidDarkCssFile = ":/utils/mermaid/mermaid.dark.css";
 const QString VNote::c_mermaidForestCssFile = ":/utils/mermaid/mermaid.forest.css";
+
 const QString VNote::c_mathjaxJsFile = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML";
+
 const QString VNote::c_shortcutsDocFile_en = ":/resources/docs/shortcuts_en.md";
 const QString VNote::c_shortcutsDocFile_zh = ":/resources/docs/shortcuts_zh.md";
 

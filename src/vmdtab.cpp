@@ -300,7 +300,10 @@ QString VMdTab::fillHtmlTemplate() const
         jsFile = "qrc" + VNote::c_markdownitJsFile;
         extraFile = "<script src=\"qrc" + VNote::c_markdownitExtraFile + "\"></script>\n" +
                     "<script src=\"qrc" + VNote::c_markdownitAnchorExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_markdownitTaskListExtraFile + "\"></script>\n";
+                    "<script src=\"qrc" + VNote::c_markdownitTaskListExtraFile + "\"></script>\n" +
+                    "<script src=\"qrc" + VNote::c_markdownitSubExtraFile + "\"></script>\n" +
+                    "<script src=\"qrc" + VNote::c_markdownitSupExtraFile + "\"></script>\n" +
+                    "<script src=\"qrc" + VNote::c_markdownitFootnoteExtraFile + "\"></script>\n";
         break;
 
     case MarkdownConverterType::Showdown:

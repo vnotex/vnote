@@ -105,5 +105,8 @@
         <file>resources/showdown.js</file>
         <file>utils/showdown/showdown-headinganchor.js</file>
         <file>resources/icons/print.svg</file>
+        <file>utils/markdown-it/markdown-it-sub.min.js</file>
+        <file>utils/markdown-it/markdown-it-sup.min.js</file>
+        <file>utils/markdown-it/markdown-it-footnote.min.js</file>
     </qresource>
 </RCC>
