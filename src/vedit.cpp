@@ -13,6 +13,27 @@
 extern VConfigManager vconfig;
 extern VNote *g_vnote;
 
+void VEditConfig::init(const QFontMetrics &p_metric)
+{
+    if (vconfig.getTabStopWidth() > 0) {
+        m_tabStopWidth = vconfig.getTabStopWidth() * p_metric.width(' ');
+    } else {
+        m_tabStopWidth = 0;
+    }
+
+    m_expandTab = vconfig.getIsExpandTab();
+
+    if (m_expandTab && (vconfig.getTabStopWidth() > 0)) {
+        m_tabSpaces = QString(vconfig.getTabStopWidth(), ' ');
+    } else {
+        m_tabSpaces = "\t";
+    }
+
+    m_enableVimMode = vconfig.getEnableVimMode();
+
+    m_cursorLineBg = QColor(vconfig.getEditorCurrentLineBg());
+}
+
 VEdit::VEdit(VFile *p_file, QWidget *p_parent)
     : QTextEdit(p_parent), m_file(p_file), m_editOps(NULL)
 {
@@ -20,7 +41,6 @@ VEdit::VEdit(VFile *p_file, QWidget *p_parent)
     const int extraSelectionHighlightTimer = 500;
     const int labelSize = 64;
 
-    m_cursorLineColor = QColor(g_vnote->getColorFromPalette("Indigo1"));
     m_selectedWordColor = QColor("Yellow");
     m_searchedWordColor = QColor(g_vnote->getColorFromPalette("Green4"));
     m_trailingSpaceColor = QColor(vconfig.getEditorTrailingSpaceBackground());
@@ -45,7 +65,10 @@ VEdit::VEdit(VFile *p_file, QWidget *p_parent)
             (VFile *)m_file, &VFile::setModified);
 
     m_extraSelections.resize((int)SelectionId::MaxSelection);
+
     updateFontAndPalette();
+
+    updateConfig();
 
     connect(this, &VEdit::cursorPositionChanged,
             this, &VEdit::handleCursorPositionChanged);
@@ -62,9 +85,22 @@ VEdit::~VEdit()
     }
 }
 
+void VEdit::updateConfig()
+{
+    m_config.init(QFontMetrics(font()));
+
+    if (m_config.m_tabStopWidth > 0) {
+        setTabStopWidth(m_config.m_tabStopWidth);
+    }
+
+    emit configUpdated();
+}
+
 void VEdit::beginEdit()
 {
     updateFontAndPalette();
+
+    updateConfig();
 
     setReadOnly(false);
     setModified(false);
@@ -404,7 +440,7 @@ void VEdit::highlightCurrentLine()
     if (vconfig.getHighlightCursorLine() && !isReadOnly()) {
         // Need to highlight current line.
         QTextEdit::ExtraSelection select;
-        select.format.setBackground(m_cursorLineColor);
+        select.format.setBackground(m_config.m_cursorLineBg);
         select.format.setProperty(QTextFormat::FullWidthSelection, true);
         select.cursor = textCursor();
         select.cursor.clearSelection();
@@ -651,3 +687,7 @@ void VEdit::handleCursorPositionChanged()
     lastCursor = cursor;
 }
 
+VEditConfig &VEdit::getConfig()
+{
+    return m_config;
+}

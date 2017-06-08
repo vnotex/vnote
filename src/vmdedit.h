@@ -53,7 +53,6 @@ private slots:
     // When there is no header in current cursor, will signal an invalid header.
     void updateCurHeader();
 
-    void handleEditStateChanged(KeyState p_state);
     void handleSelectionChanged();
     void handleClipboardChanged(QClipboard::Mode p_mode);
 

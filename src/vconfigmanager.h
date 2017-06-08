@@ -156,9 +156,13 @@ public:
     void setWebZoomFactor(qreal p_factor);
     inline bool isCustomWebZoomFactor();
 
-    inline QString getEditorCurrentLineBackground() const;
-    inline QString getEditorCurrentLineVimBackground() const;
+    inline const QString &getEditorCurrentLineBg() const;
     inline QString getEditorTrailingSpaceBackground() const;
+
+    inline const QString &getEditorVimNormalBg() const;
+    inline const QString &getEditorVimInsertBg() const;
+    inline const QString &getEditorVimVisualBg() const;
+    inline const QString &getEditorVimReplaceBg() const;
 
     inline bool getEnableCodeBlockHighlight() const;
     inline void setEnableCodeBlockHighlight(bool p_enabled);
@@ -182,6 +186,9 @@ public:
 
     inline bool getEnableTrailingSpaceHighlight() const;
     inline void setEnableTrailingSapceHighlight(bool p_enabled);
+
+    inline bool getEnableVimMode() const;
+    inline void setEnableVimMode(bool p_enabled);
 
     // Get the folder the ini file exists.
     QString getConfigFolder() const;
@@ -292,13 +299,22 @@ private:
     qreal m_webZoomFactor;
 
     // Current line background color in editor.
-    QString m_editorCurrentLineBackground;
+    QString m_editorCurrentLineBg;
 
-    // Current line background color in editor in Vim mode.
-    QString m_editorCurrentLineVimBackground;
+    // Current line background color in editor in Vim normal mode.
+    QString m_editorVimNormalBg;
+
+    // Current line background color in editor in Vim insert mode.
+    QString m_editorVimInsertBg;
+
+    // Current line background color in editor in Vim visual mode.
+    QString m_editorVimVisualBg;
+
+    // Current line background color in editor in Vim replace mode.
+    QString m_editorVimReplaceBg;
 
     // Trailing space background color in editor.
-    QString m_editorTrailingSpaceBackground;
+    QString m_editorTrailingSpaceBg;
 
     // Enable colde block syntax highlight.
     bool m_enableCodeBlockHighlight;
@@ -321,6 +337,9 @@ private:
 
     // Enable trailing-space highlight.
     bool m_enableTrailingSpaceHighlight;
+
+    // Enable Vim mode.
+    bool m_enableVimMode;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -722,19 +741,34 @@ inline bool VConfigManager::isCustomWebZoomFactor()
     return factorFromIni > 0;
 }
 
-inline QString VConfigManager::getEditorCurrentLineBackground() const
+inline const QString &VConfigManager::getEditorCurrentLineBg() const
 {
-    return m_editorCurrentLineBackground;
-}
-
-inline QString VConfigManager::getEditorCurrentLineVimBackground() const
-{
-    return m_editorCurrentLineVimBackground;
+    return m_editorCurrentLineBg;
 }
 
 inline QString VConfigManager::getEditorTrailingSpaceBackground() const
 {
-    return m_editorTrailingSpaceBackground;
+    return m_editorTrailingSpaceBg;
+}
+
+inline const QString &VConfigManager::getEditorVimNormalBg() const
+{
+    return m_editorVimNormalBg;
+}
+
+inline const QString &VConfigManager::getEditorVimInsertBg() const
+{
+    return m_editorVimInsertBg;
+}
+
+inline const QString &VConfigManager::getEditorVimVisualBg() const
+{
+    return m_editorVimVisualBg;
+}
+
+inline const QString &VConfigManager::getEditorVimReplaceBg() const
+{
+    return m_editorVimReplaceBg;
 }
 
 inline bool VConfigManager::getEnableCodeBlockHighlight() const
@@ -855,6 +889,22 @@ inline void VConfigManager::setEnableTrailingSapceHighlight(bool p_enabled)
     m_enableTrailingSpaceHighlight = p_enabled;
     setConfigToSettings("global", "enable_trailing_space_highlight",
                         m_enableTrailingSpaceHighlight);
+}
+
+inline bool VConfigManager::getEnableVimMode() const
+{
+    return m_enableVimMode;
+}
+
+inline void VConfigManager::setEnableVimMode(bool p_enabled)
+{
+    if (m_enableVimMode == p_enabled) {
+        return;
+    }
+
+    m_enableVimMode = p_enabled;
+    setConfigToSettings("global", "enable_vim_mode",
+                        m_enableVimMode);
 }
 
 #endif // VCONFIGMANAGER_H

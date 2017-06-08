@@ -146,6 +146,9 @@ void VConfigManager::initialize()
 
     m_enableTrailingSpaceHighlight = getConfigFromSettings("global",
                                                            "enable_trailing_space_highlight").toBool();
+
+    m_enableVimMode = getConfigFromSettings("global",
+                                            "enable_vim_mode").toBool();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()
@@ -347,34 +350,48 @@ void VConfigManager::updateMarkdownEditStyle()
     QMap<QString, QMap<QString, QString>> styles;
     parser.fetchMarkdownEditorStyles(mdEditPalette, mdEditFont, styles);
 
-    m_editorCurrentLineBackground = defaultCurrentLineBackground;
-    m_editorCurrentLineVimBackground = defaultCurrentLineVimBackground;
+    m_editorCurrentLineBg = defaultCurrentLineBackground;
+    m_editorVimInsertBg = defaultCurrentLineBackground;
+    m_editorVimNormalBg = defaultCurrentLineVimBackground;
+    m_editorVimVisualBg = m_editorVimNormalBg;
+    m_editorVimReplaceBg = m_editorVimNormalBg;
     auto editorCurrentLineIt = styles.find("editor-current-line");
     if (editorCurrentLineIt != styles.end()) {
         auto backgroundIt = editorCurrentLineIt->find("background");
         if (backgroundIt != editorCurrentLineIt->end()) {
             // Do not need to add "#" here, since this is a built-in attribute.
-            m_editorCurrentLineBackground = *backgroundIt;
+            m_editorCurrentLineBg = *backgroundIt;
         }
 
-        auto vimBackgroundIt = editorCurrentLineIt->find("vim-background");
-        if (vimBackgroundIt != editorCurrentLineIt->end()) {
-            m_editorCurrentLineVimBackground = "#" + *vimBackgroundIt;
+        auto vimBgIt = editorCurrentLineIt->find("vim-insert-background");
+        if (vimBgIt != editorCurrentLineIt->end()) {
+            m_editorVimInsertBg = "#" + *vimBgIt;
+        }
+
+        vimBgIt = editorCurrentLineIt->find("vim-normal-background");
+        if (vimBgIt != editorCurrentLineIt->end()) {
+            m_editorVimNormalBg = "#" + *vimBgIt;
+        }
+
+        vimBgIt = editorCurrentLineIt->find("vim-visual-background");
+        if (vimBgIt != editorCurrentLineIt->end()) {
+            m_editorVimVisualBg = "#" + *vimBgIt;
+        }
+
+        vimBgIt = editorCurrentLineIt->find("vim-replace-background");
+        if (vimBgIt != editorCurrentLineIt->end()) {
+            m_editorVimReplaceBg = "#" + *vimBgIt;
         }
     }
 
-    m_editorTrailingSpaceBackground = defaultTrailingSpaceBackground;
+    m_editorTrailingSpaceBg = defaultTrailingSpaceBackground;
     auto editorIt = styles.find("editor");
     if (editorIt != styles.end()) {
         auto trailingIt = editorIt->find("trailing-space");
         if (trailingIt != editorIt->end()) {
-            m_editorTrailingSpaceBackground = "#" + *trailingIt;
+            m_editorTrailingSpaceBg = "#" + *trailingIt;
         }
     }
-
-    qDebug() << "editor-current-line" << m_editorCurrentLineBackground;
-    qDebug() << "editor-current-line-vim" << m_editorCurrentLineVimBackground;
-    qDebug() << "editor-trailing-space" << m_editorTrailingSpaceBackground;
 }
 
 void VConfigManager::updateEditStyle()

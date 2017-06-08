@@ -45,8 +45,6 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
     m_imagePreviewer = new VImagePreviewer(this, 500);
 
     m_editOps = new VMdEditOperations(this, m_file);
-    connect(m_editOps, &VEditOperations::keyStateChanged,
-            this, &VMdEdit::handleEditStateChanged);
 
     connect(this, &VMdEdit::cursorPositionChanged,
             this, &VMdEdit::updateCurHeader);
@@ -56,21 +54,22 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
     connect(QApplication::clipboard(), &QClipboard::changed,
             this, &VMdEdit::handleClipboardChanged);
 
-    m_editOps->updateTabSettings();
     updateFontAndPalette();
+
+    updateConfig();
 }
 
 void VMdEdit::updateFontAndPalette()
 {
     setFont(vconfig.getMdEditFont());
     setPalette(vconfig.getMdEditPalette());
-    m_cursorLineColor = vconfig.getEditorCurrentLineBackground();
 }
 
 void VMdEdit::beginEdit()
 {
-    m_editOps->updateTabSettings();
     updateFontAndPalette();
+
+    updateConfig();
 
     Q_ASSERT(m_file->getContent() == toPlainTextWithoutImg());
 
@@ -364,17 +363,6 @@ int VMdEdit::removeObjectReplacementLine(QString &p_text, int p_index) const
     // Remove [\n....?]
     p_text.remove(prevLineIdx, p_index - prevLineIdx + 1);
     return prevLineIdx - 1;
-}
-
-void VMdEdit::handleEditStateChanged(KeyState p_state)
-{
-    qDebug() << "edit state" << (int)p_state;
-    if (p_state == KeyState::Normal) {
-        m_cursorLineColor = vconfig.getEditorCurrentLineBackground();
-    } else {
-        m_cursorLineColor = vconfig.getEditorCurrentLineVimBackground();
-    }
-    highlightCurrentLine();
 }
 
 void VMdEdit::handleSelectionChanged()

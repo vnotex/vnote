@@ -21,9 +21,6 @@ public:
     bool handleKeyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
     bool insertImageFromURL(const QUrl &p_imageUrl) Q_DECL_OVERRIDE;
 
-private slots:
-    void pendingTimerTimeout();
-
 private:
     void insertImageFromPath(const QString &title, const QString &path, const QString &oriImagePath);
 
@@ -32,13 +29,10 @@ private:
     // @image: the image to be inserted;
     void insertImageFromQImage(const QString &title, const QString &path, const QImage &image);
 
-    void setKeyState(KeyState p_state);
-
     // Key press handlers.
     bool handleKeyTab(QKeyEvent *p_event);
     bool handleKeyBackTab(QKeyEvent *p_event);
     bool handleKeyB(QKeyEvent *p_event);
-    bool handleKeyD(QKeyEvent *p_event);
     bool handleKeyH(QKeyEvent *p_event);
     bool handleKeyI(QKeyEvent *p_event);
     bool handleKeyO(QKeyEvent *p_event);
@@ -46,11 +40,7 @@ private:
     bool handleKeyW(QKeyEvent *p_event);
     bool handleKeyEsc(QKeyEvent *p_event);
     bool handleKeyReturn(QKeyEvent *p_event);
-    bool handleKeyPressVim(QKeyEvent *p_event);
     bool handleKeyBracketLeft(QKeyEvent *p_event);
-    bool shouldTriggerVimMode(QKeyEvent *p_event);
-    int keySeqToNumber(const QList<QString> &p_seq);
-    bool suffixNumAllowed(const QList<QString> &p_seq);
     bool insertTitle(int p_level);
     bool insertNewBlockWithIndent();
     bool insertListMarkAsPreviousLine();
@@ -67,7 +57,6 @@ private:
     // Change the sequence number of a list block.
     void changeListBlockSeqNumber(QTextBlock &p_block, int p_seq);
 
-    QTimer *m_pendingTimer;
     // The cursor position after auto indent or auto list.
     // It will be -1 if last key press do not trigger the auto indent or auto list.
     int m_autoIndentPos;

@@ -7,6 +7,7 @@
 #include <QVector>
 #include <QList>
 #include <QColor>
+#include <QFontMetrics>
 #include "vconstants.h"
 #include "vtoc.h"
 #include "vfile.h"
@@ -21,6 +22,27 @@ enum class SelectionId {
     SearchedKeyword,
     TrailingSapce,
     MaxSelection
+};
+
+class VEditConfig {
+public:
+    VEditConfig() : m_tabStopWidth(0), m_tabSpaces("\t"),
+                    m_enableVimMode(false) {}
+
+    void init(const QFontMetrics &p_metric);
+
+    // Width in pixels.
+    int m_tabStopWidth;
+
+    bool m_expandTab;
+
+    // The literal string for Tab. It is spaces if Tab is expanded.
+    QString m_tabSpaces;
+
+    bool m_enableVimMode;
+
+    // The background color of cursor line.
+    QColor m_cursorLineBg;
 };
 
 class VEdit : public QTextEdit
@@ -51,10 +73,18 @@ public:
     void clearSearchedWordHighlight();
     VFile *getFile() const;
 
+    VEditConfig &getConfig();
+
 signals:
     void saveAndRead();
     void discardAndRead();
     void editNote();
+
+    // Emit when m_config has been updated.
+    void configUpdated();
+
+public slots:
+    virtual void highlightCurrentLine();
 
 private slots:
     void labelTimerTimeout();
@@ -65,16 +95,17 @@ private slots:
     void highlightTrailingSpace();
     void handleCursorPositionChanged();
 
-protected slots:
-    virtual void highlightCurrentLine();
-
 protected:
     QPointer<VFile> m_file;
     VEditOperations *m_editOps;
-    QColor m_cursorLineColor;
+
+    VEditConfig m_config;
 
     virtual void updateFontAndPalette();
     virtual void contextMenuEvent(QContextMenuEvent *p_event) Q_DECL_OVERRIDE;
+
+    // Update m_config according to VConfigManager.
+    void updateConfig();
 
 private:
     QLabel *m_wrapLabel;

@@ -6,12 +6,12 @@
 #include <QObject>
 #include <QList>
 #include "vfile.h"
+#include "utils/vvim.h"
 
 class VEdit;
+class VEditConfig;
 class QMimeData;
 class QKeyEvent;
-
-enum class KeyState { Normal = 0, Vim, VimVisual};
 
 class VEditOperations: public QObject
 {
@@ -22,25 +22,29 @@ public:
     virtual bool insertImageFromMimeData(const QMimeData *source) = 0;
     virtual bool insertImage() = 0;
     virtual bool insertImageFromURL(const QUrl &p_imageUrl) = 0;
+
     // Return true if @p_event has been handled and no need to be further
     // processed.
     virtual bool handleKeyPressEvent(QKeyEvent *p_event) = 0;
-    void updateTabSettings();
 
-signals:
-    void keyStateChanged(KeyState p_state);
+protected slots:
+    // Handle the update of VEditConfig of the editor.
+    virtual void handleEditConfigUpdated();
+
+    // Vim mode changed.
+    void handleVimModeChanged(VimMode p_mode);
+
+private:
+    // Update m_editConfig->m_cursorLineBg.
+    void updateCursorLineBg();
 
 protected:
     void insertTextAtCurPos(const QString &p_text);
 
     VEdit *m_editor;
     QPointer<VFile> m_file;
-    bool m_expandTab;
-    QString m_tabSpaces;
-    KeyState m_keyState;
-    // Seconds for pending mode.
-    int m_pendingTime;
-    QList<QString> m_pendingKey;
+    VEditConfig *m_editConfig;
+    VVim *m_vim;
 };
 
 #endif // VEDITOPERATIONS_H

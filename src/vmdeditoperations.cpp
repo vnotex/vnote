@@ -21,6 +21,7 @@
 #include "vfile.h"
 #include "vmdedit.h"
 #include "vconfigmanager.h"
+#include "utils/vvim.h"
 
 extern VConfigManager vconfig;
 
@@ -29,10 +30,6 @@ const QString VMdEditOperations::c_defaultImageTitle = "image";
 VMdEditOperations::VMdEditOperations(VEdit *p_editor, VFile *p_file)
     : VEditOperations(p_editor, p_file), m_autoIndentPos(-1)
 {
-    m_pendingTimer = new QTimer(this);
-    m_pendingTimer->setSingleShot(true);
-    m_pendingTimer->setInterval(m_pendingTime * 1000);  // milliseconds
-    connect(m_pendingTimer, &QTimer::timeout, this, &VMdEditOperations::pendingTimerTimeout);
 }
 
 bool VMdEditOperations::insertImageFromMimeData(const QMimeData *source)
@@ -193,162 +190,137 @@ bool VMdEditOperations::insertImage()
     return true;
 }
 
-// Will modify m_pendingKey.
-bool VMdEditOperations::shouldTriggerVimMode(QKeyEvent *p_event)
-{
-    int modifiers = p_event->modifiers();
-    int key = p_event->key();
-    if (key == Qt::Key_Escape ||
-        (key == Qt::Key_BracketLeft && modifiers == Qt::ControlModifier)) {
-        return false;
-    } else if (m_keyState == KeyState::Vim || m_keyState == KeyState::VimVisual) {
-        return true;
-    }
-    return false;
-}
-
 bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
 {
+    if (m_editConfig->m_enableVimMode && m_vim->handleKeyPressEvent(p_event)) {
+        m_autoIndentPos = -1;
+        return true;
+    }
+
     bool ret = false;
     int key = p_event->key();
     int modifiers = p_event->modifiers();
 
-    if (shouldTriggerVimMode(p_event)) {
-        if (handleKeyPressVim(p_event)) {
+    switch (key) {
+    case Qt::Key_1:
+    case Qt::Key_2:
+    case Qt::Key_3:
+    case Qt::Key_4:
+    case Qt::Key_5:
+    case Qt::Key_6:
+    {
+        if (modifiers == Qt::ControlModifier) {
+            // Ctrl + <N>: insert title at level <N>.
+            if (insertTitle(key - Qt::Key_0)) {
+                p_event->accept();
+                ret = true;
+                goto exit;
+            }
+        }
+        break;
+    }
+
+    case Qt::Key_Tab:
+    {
+        if (handleKeyTab(p_event)) {
             ret = true;
             goto exit;
         }
-    } else {
-        switch (key) {
-        case Qt::Key_1:
-        case Qt::Key_2:
-        case Qt::Key_3:
-        case Qt::Key_4:
-        case Qt::Key_5:
-        case Qt::Key_6:
-        {
-            if (modifiers == Qt::ControlModifier) {
-                // Ctrl + <N>: insert title at level <N>.
-                if (insertTitle(key - Qt::Key_0)) {
-                    p_event->accept();
-                    ret = true;
-                    goto exit;
-                }
-            }
-            break;
-        }
+        break;
+    }
 
-        case Qt::Key_Tab:
-        {
-            if (handleKeyTab(p_event)) {
-                ret = true;
-                goto exit;
-            }
-            break;
+    case Qt::Key_Backtab:
+    {
+        if (handleKeyBackTab(p_event)) {
+            ret = true;
+            goto exit;
         }
+        break;
+    }
 
-        case Qt::Key_Backtab:
-        {
-            if (handleKeyBackTab(p_event)) {
-                ret = true;
-                goto exit;
-            }
-            break;
+    case Qt::Key_B:
+    {
+        if (handleKeyB(p_event)) {
+            ret = true;
+            goto exit;
         }
+        break;
+    }
 
-        case Qt::Key_B:
-        {
-            if (handleKeyB(p_event)) {
-                ret = true;
-                goto exit;
-            }
-            break;
+    case Qt::Key_H:
+    {
+        if (handleKeyH(p_event)) {
+            ret = true;
+            goto exit;
         }
+        break;
+    }
 
-        case Qt::Key_D:
-        {
-            if (handleKeyD(p_event)) {
-                ret = true;
-                goto exit;
-            }
-            break;
+    case Qt::Key_I:
+    {
+        if (handleKeyI(p_event)) {
+            ret = true;
+            goto exit;
         }
+        break;
+    }
 
-        case Qt::Key_H:
-        {
-            if (handleKeyH(p_event)) {
-                ret = true;
-                goto exit;
-            }
-            break;
+    case Qt::Key_O:
+    {
+        if (handleKeyO(p_event)) {
+            ret = true;
+            goto exit;
         }
+        break;
+    }
 
-        case Qt::Key_I:
-        {
-            if (handleKeyI(p_event)) {
-                ret = true;
-                goto exit;
-            }
-            break;
+    case Qt::Key_U:
+    {
+        if (handleKeyU(p_event)) {
+            ret = true;
+            goto exit;
         }
+        break;
+    }
 
-        case Qt::Key_O:
-        {
-            if (handleKeyO(p_event)) {
-                ret = true;
-                goto exit;
-            }
-            break;
+    case Qt::Key_W:
+    {
+        if (handleKeyW(p_event)) {
+            ret = true;
+            goto exit;
         }
+        break;
+    }
 
-        case Qt::Key_U:
-        {
-            if (handleKeyU(p_event)) {
-                ret = true;
-                goto exit;
-            }
-            break;
+    case Qt::Key_BracketLeft:
+    {
+        if (handleKeyBracketLeft(p_event)) {
+            ret = true;
+            goto exit;
         }
+        break;
+    }
 
-        case Qt::Key_W:
-        {
-            if (handleKeyW(p_event)) {
-                ret = true;
-                goto exit;
-            }
-            break;
+    case Qt::Key_Escape:
+    {
+        if (handleKeyEsc(p_event)) {
+            ret = true;
+            goto exit;
         }
+        break;
+    }
 
-        case Qt::Key_BracketLeft:
-        {
-            if (handleKeyBracketLeft(p_event)) {
-                ret = true;
-                goto exit;
-            }
-            break;
+    case Qt::Key_Return:
+    {
+        if (handleKeyReturn(p_event)) {
+            ret = true;
+            goto exit;
         }
+        break;
+    }
 
-        case Qt::Key_Escape:
-        {
-            if (handleKeyEsc(p_event)) {
-                ret = true;
-                goto exit;
-            }
-            break;
-        }
-
-        case Qt::Key_Return:
-        {
-            if (handleKeyReturn(p_event)) {
-                ret = true;
-                goto exit;
-            }
-            break;
-        }
-
-        default:
-            break;
-        }
+    default:
+        break;
     }
 
 exit:
@@ -357,44 +329,32 @@ exit:
         key != Qt::Key_Shift) {
         m_autoIndentPos = -1;
     }
+
     return ret;
 }
 
 // Let Ctrl+[ behave exactly like ESC.
 bool VMdEditOperations::handleKeyBracketLeft(QKeyEvent *p_event)
 {
-    // 1. If it is not in Normal state, just go back to Normal state;
-    // 2. If it is already Normal state, try to clear selection;
-    // 3. Otherwise, ignore this event and let parent handles it.
-    bool accept = false;
+    // 1. If there is any selection, clear it.
+    // 2. Otherwise, ignore this event and let parent handles it.
     if (p_event->modifiers() == Qt::ControlModifier) {
-        if (m_keyState != KeyState::Normal) {
-            m_pendingTimer->stop();
-            setKeyState(KeyState::Normal);
-            m_pendingKey.clear();
-            accept = true;
-        } else {
-            QTextCursor cursor = m_editor->textCursor();
-            if (cursor.hasSelection()) {
-                cursor.clearSelection();
-                m_editor->setTextCursor(cursor);
-                accept = true;
-            }
+        QTextCursor cursor = m_editor->textCursor();
+        if (cursor.hasSelection()) {
+            cursor.clearSelection();
+            m_editor->setTextCursor(cursor);
+            p_event->accept();
+            return true;
         }
     }
-    if (accept) {
-        p_event->accept();
-    }
-    return accept;
+
+    return false;
 }
 
 bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)
 {
     QTextDocument *doc = m_editor->document();
-    QString text("\t");
-    if (m_expandTab) {
-        text = m_tabSpaces;
-    }
+    QString text(m_editConfig->m_tabSpaces);
 
     if (p_event->modifiers() == Qt::NoModifier) {
         QTextCursor cursor = m_editor->textCursor();
@@ -483,8 +443,8 @@ bool VMdEditOperations::handleKeyBackTab(QKeyEvent *p_event)
             continue;
         } else {
             // Spaces.
-            if (m_expandTab) {
-                int width = m_tabSpaces.size();
+            if (m_editConfig->m_expandTab) {
+                int width = m_editConfig->m_tabSpaces.size();
                 for (int i = 0; i < width; ++i) {
                     if (text[i] == ' ') {
                         blockCursor.deleteChar();
@@ -549,20 +509,6 @@ bool VMdEditOperations::handleKeyB(QKeyEvent *p_event)
             m_editor->setTextCursor(cursor);
         }
 
-        p_event->accept();
-        return true;
-    }
-    return false;
-}
-
-bool VMdEditOperations::handleKeyD(QKeyEvent *p_event)
-{
-    if (p_event->modifiers() == Qt::ControlModifier) {
-        // Ctrl+D, enter Vim-pending mode.
-        // Will accept the key stroke in m_pendingTime as Vim normal command.
-        setKeyState(KeyState::Vim);
-        m_pendingTimer->stop();
-        m_pendingTimer->start();
         p_event->accept();
         return true;
     }
@@ -713,27 +659,17 @@ bool VMdEditOperations::handleKeyW(QKeyEvent *p_event)
 
 bool VMdEditOperations::handleKeyEsc(QKeyEvent *p_event)
 {
-    // 1. If it is not in Normal state, just go back to Normal state;
-    // 2. If it is already Normal state, try to clear selection;
-    // 3. Otherwise, ignore this event and let parent handles it.
-    bool accept = false;
-    if (m_keyState != KeyState::Normal) {
-        m_pendingTimer->stop();
-        setKeyState(KeyState::Normal);
-        m_pendingKey.clear();
-        accept = true;
-    } else {
-        QTextCursor cursor = m_editor->textCursor();
-        if (cursor.hasSelection()) {
-            cursor.clearSelection();
-            m_editor->setTextCursor(cursor);
-            accept = true;
-        }
-    }
-    if (accept) {
+    // 1. If there is any selection, clear it.
+    // 2. Otherwise, ignore this event and let parent handles it.
+    QTextCursor cursor = m_editor->textCursor();
+    if (cursor.hasSelection()) {
+        cursor.clearSelection();
+        m_editor->setTextCursor(cursor);
         p_event->accept();
+        return true;
     }
-    return accept;
+
+    return false;
 }
 
 bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
@@ -933,399 +869,6 @@ void VMdEditOperations::deleteIndentAndListMark()
     cursor.movePosition(QTextCursor::StartOfBlock, QTextCursor::KeepAnchor);
     cursor.removeSelectedText();
     m_editor->setTextCursor(cursor);
-}
-
-bool VMdEditOperations::handleKeyPressVim(QKeyEvent *p_event)
-{
-    int modifiers = p_event->modifiers();
-    bool visualMode = m_keyState == KeyState::VimVisual;
-    QTextCursor::MoveMode mode = visualMode ? QTextCursor::KeepAnchor
-                                              : QTextCursor::MoveAnchor;
-
-    switch (p_event->key()) {
-    // Ctrl and Shift may be sent out first.
-    case Qt::Key_Control:
-        // Fall through.
-    case Qt::Key_Shift:
-    {
-        goto pending;
-        break;
-    }
-
-    case Qt::Key_H:
-    case Qt::Key_J:
-    case Qt::Key_K:
-    case Qt::Key_L:
-    {
-        if (modifiers == Qt::NoModifier) {
-            QTextCursor::MoveOperation op = QTextCursor::Left;
-            switch (p_event->key()) {
-            case Qt::Key_H:
-                op = QTextCursor::Left;
-                break;
-            case Qt::Key_J:
-                op = QTextCursor::Down;
-                break;
-            case Qt::Key_K:
-                op = QTextCursor::Up;
-                break;
-            case Qt::Key_L:
-                op = QTextCursor::Right;
-            }
-            // Move cursor <repeat> characters left/Down/Up/Right.
-            int repeat = keySeqToNumber(m_pendingKey);
-            m_pendingKey.clear();
-            QTextCursor cursor = m_editor->textCursor();
-            cursor.movePosition(op, mode, repeat == 0 ? 1 : repeat);
-            m_editor->setTextCursor(cursor);
-            goto pending;
-        }
-        break;
-    }
-
-    case Qt::Key_1:
-    case Qt::Key_2:
-    case Qt::Key_3:
-    case Qt::Key_4:
-    case Qt::Key_5:
-    case Qt::Key_6:
-    case Qt::Key_7:
-    case Qt::Key_8:
-    case Qt::Key_9:
-    {
-        if (modifiers == Qt::NoModifier) {
-            if (!suffixNumAllowed(m_pendingKey)) {
-                break;
-            }
-            int num = p_event->key() - Qt::Key_0;
-            m_pendingKey.append(QString::number(num));
-            goto pending;
-        }
-        break;
-    }
-
-    case Qt::Key_X:
-    {
-        // Delete characters.
-        if (modifiers == Qt::NoModifier) {
-            int repeat = keySeqToNumber(m_pendingKey);
-            m_pendingKey.clear();
-            QTextCursor cursor = m_editor->textCursor();
-            if (repeat == 0) {
-                repeat = 1;
-            }
-            cursor.beginEditBlock();
-            if (cursor.hasSelection()) {
-                QClipboard *clipboard = QApplication::clipboard();
-                clipboard->setText(cursor.selectedText());
-                cursor.removeSelectedText();
-            } else {
-                for (int i = 0; i < repeat; ++i) {
-                    cursor.deleteChar();
-                }
-            }
-            cursor.endEditBlock();
-            m_editor->setTextCursor(cursor);
-            goto pending;
-        }
-        break;
-    }
-
-    case Qt::Key_W:
-    {
-        if (modifiers == Qt::NoModifier) {
-            // Move to the start of the next word.
-            // Slightly different from the Vim behavior.
-            int repeat = keySeqToNumber(m_pendingKey);
-            m_pendingKey.clear();
-            QTextCursor cursor = m_editor->textCursor();
-            if (repeat == 0) {
-                repeat = 1;
-            }
-            cursor.movePosition(QTextCursor::NextWord, mode, repeat);
-            m_editor->setTextCursor(cursor);
-            goto pending;
-        }
-        break;
-    }
-
-    case Qt::Key_E:
-    {
-        if (modifiers == Qt::NoModifier) {
-            // Move to the end of the next word.
-            // Slightly different from the Vim behavior.
-            int repeat = keySeqToNumber(m_pendingKey);
-            m_pendingKey.clear();
-            QTextCursor cursor = m_editor->textCursor();
-            if (repeat == 0) {
-                repeat = 1;
-            }
-            cursor.beginEditBlock();
-            int pos = cursor.position();
-            // First move to the end of current word.
-            cursor.movePosition(QTextCursor::EndOfWord, mode);
-            if (cursor.position() != pos) {
-                // We did move.
-                repeat--;
-            }
-            if (repeat) {
-                cursor.movePosition(QTextCursor::NextWord, mode, repeat);
-                cursor.movePosition(QTextCursor::EndOfWord, mode);
-            }
-            cursor.endEditBlock();
-            m_editor->setTextCursor(cursor);
-            goto pending;
-        }
-        break;
-    }
-
-    case Qt::Key_B:
-    {
-        if (modifiers == Qt::NoModifier) {
-            // Move to the start of the previous word.
-            // Slightly different from the Vim behavior.
-            int repeat = keySeqToNumber(m_pendingKey);
-            m_pendingKey.clear();
-            QTextCursor cursor = m_editor->textCursor();
-            if (repeat == 0) {
-                repeat = 1;
-            }
-            cursor.beginEditBlock();
-            int pos = cursor.position();
-            // First move to the start of current word.
-            cursor.movePosition(QTextCursor::StartOfWord, mode);
-            if (cursor.position() != pos) {
-                // We did move.
-                repeat--;
-            }
-            if (repeat) {
-                cursor.movePosition(QTextCursor::PreviousWord, mode, repeat);
-            }
-            cursor.endEditBlock();
-            m_editor->setTextCursor(cursor);
-            goto pending;
-        }
-        break;
-    }
-
-    case Qt::Key_0:
-    {
-        if (modifiers == Qt::NoModifier) {
-            if (keySeqToNumber(m_pendingKey) == 0) {
-                QTextCursor cursor = m_editor->textCursor();
-                cursor.movePosition(QTextCursor::StartOfLine, mode);
-                m_editor->setTextCursor(cursor);
-            } else {
-                m_pendingKey.append("0");
-            }
-            goto pending;
-        }
-        break;
-    }
-
-    case Qt::Key_Dollar:
-    {
-        if (modifiers == Qt::ShiftModifier) {
-            if (m_pendingKey.isEmpty()) {
-                // Go to end of line.
-                QTextCursor cursor = m_editor->textCursor();
-                cursor.movePosition(QTextCursor::EndOfLine, mode);
-                m_editor->setTextCursor(cursor);
-                goto pending;
-            }
-        }
-        break;
-    }
-
-    case Qt::Key_AsciiCircum:
-    {
-        if (modifiers == Qt::ShiftModifier) {
-            if (m_pendingKey.isEmpty()) {
-                // Go to first non-space character of current line.
-                QTextCursor cursor = m_editor->textCursor();
-                QTextBlock block = cursor.block();
-                QString text = block.text();
-                cursor.beginEditBlock();
-                if (text.trimmed().isEmpty()) {
-                    cursor.movePosition(QTextCursor::StartOfLine, mode);
-                } else {
-                    cursor.movePosition(QTextCursor::StartOfLine, mode);
-                    int pos = cursor.positionInBlock();
-                    while (pos < text.size() && text[pos].isSpace()) {
-                        cursor.movePosition(QTextCursor::NextWord, mode);
-                        pos = cursor.positionInBlock();
-                    }
-                }
-                cursor.endEditBlock();
-                m_editor->setTextCursor(cursor);
-                goto pending;
-            }
-        }
-        break;
-    }
-
-    case Qt::Key_G:
-    {
-        if (modifiers == Qt::NoModifier) {
-            // g, pending or go to first line.
-            if (m_pendingKey.isEmpty()) {
-                m_pendingKey.append("g");
-                goto pending;
-            } else if (m_pendingKey.size() == 1 && m_pendingKey.at(0) == "g") {
-                m_pendingKey.clear();
-                QTextCursor cursor = m_editor->textCursor();
-                cursor.movePosition(QTextCursor::Start, mode);
-                m_editor->setTextCursor(cursor);
-                goto pending;
-            }
-        } else if (modifiers == Qt::ShiftModifier) {
-            // G, go to a certain line or the end of document.
-            int lineNum = keySeqToNumber(m_pendingKey);
-            m_pendingKey.clear();
-            QTextCursor cursor = m_editor->textCursor();
-            if (lineNum == 0) {
-                cursor.movePosition(QTextCursor::End, mode);
-            } else {
-                QTextDocument *doc = m_editor->document();
-                QTextBlock block = doc->findBlockByNumber(lineNum - 1);
-                if (block.isValid()) {
-                    cursor.setPosition(block.position(), mode);
-                } else {
-                    // Go beyond the document.
-                    cursor.movePosition(QTextCursor::End, mode);
-                }
-            }
-            m_editor->setTextCursor(cursor);
-            goto pending;
-        }
-        break;
-    }
-
-    case Qt::Key_V:
-    {
-        if (modifiers == Qt::NoModifier) {
-            // V to enter visual mode.
-            if (m_pendingKey.isEmpty() && m_keyState != KeyState::VimVisual) {
-                setKeyState(KeyState::VimVisual);
-                goto pending;
-            }
-        }
-        break;
-    }
-
-    case Qt::Key_Y:
-    {
-        if (modifiers == Qt::NoModifier) {
-            if (m_pendingKey.isEmpty()) {
-                QTextCursor cursor = m_editor->textCursor();
-                if (cursor.hasSelection()) {
-                    QString text = cursor.selectedText();
-                    QClipboard *clipboard = QApplication::clipboard();
-                    clipboard->setText(text);
-                }
-                goto pending;
-            }
-        }
-        break;
-    }
-
-    case Qt::Key_D:
-    {
-        if (modifiers == Qt::NoModifier) {
-            // d, pending or delete current line.
-            QTextCursor cursor = m_editor->textCursor();
-            if (m_pendingKey.isEmpty()) {
-                if (cursor.hasSelection()) {
-                    cursor.deleteChar();
-                    m_editor->setTextCursor(cursor);
-                } else {
-                    m_pendingKey.append("d");
-                }
-                goto pending;
-            } else if (m_pendingKey.size() == 1 && m_pendingKey.at(0) == "d") {
-                m_pendingKey.clear();
-                cursor.select(QTextCursor::BlockUnderCursor);
-                cursor.removeSelectedText();
-                m_editor->setTextCursor(cursor);
-                goto pending;
-            }
-        }
-        break;
-    }
-
-    default:
-        // Unknown key. End Vim mode.
-        break;
-    }
-
-    m_pendingTimer->stop();
-    if (m_keyState == KeyState::VimVisual) {
-        // Clear the visual selection.
-        QTextCursor cursor = m_editor->textCursor();
-        cursor.clearSelection();
-        m_editor->setTextCursor(cursor);
-    }
-    setKeyState(KeyState::Normal);
-    m_pendingKey.clear();
-    p_event->accept();
-    return true;
-
-pending:
-    // When pending in Ctrl+Alt, we just want to clear m_pendingKey.
-    if (m_pendingTimer->isActive()) {
-        m_pendingTimer->stop();
-        m_pendingTimer->start();
-    }
-    p_event->accept();
-    return true;
-}
-
-int VMdEditOperations::keySeqToNumber(const QList<QString> &p_seq)
-{
-    int num = 0;
-    for (int i = 0; i < p_seq.size(); ++i) {
-        QString tmp = p_seq.at(i);
-        bool ok;
-        int tmpInt = tmp.toInt(&ok);
-        if (!ok) {
-            return 0;
-        }
-        num = num * 10 + tmpInt;
-    }
-    return num;
-}
-
-void VMdEditOperations::pendingTimerTimeout()
-{
-    qDebug() << "key pending timer timeout";
-    if (m_keyState == KeyState::VimVisual) {
-        m_pendingTimer->start();
-        return;
-    }
-    setKeyState(KeyState::Normal);
-    m_pendingKey.clear();
-}
-
-bool VMdEditOperations::suffixNumAllowed(const QList<QString> &p_seq)
-{
-    if (!p_seq.isEmpty()) {
-        QString firstEle = p_seq.at(0);
-        if (firstEle[0].isDigit()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-    return true;
-}
-
-void VMdEditOperations::setKeyState(KeyState p_state)
-{
-    if (m_keyState == p_state) {
-        return;
-    }
-    m_keyState = p_state;
-    emit keyStateChanged(m_keyState);
 }
 
 bool VMdEditOperations::insertTitle(int p_level)

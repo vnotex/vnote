@@ -605,6 +605,13 @@ void VMainWindow::initEditMenu()
     connect(autoListAct, &QAction::triggered,
             this, &VMainWindow::changeAutoList);
 
+    // Vim Mode.
+    QAction *vimAct = new QAction(tr("Vim Mode"), this);
+    vimAct->setToolTip(tr("Enable Vim mode for editing (re-enter edit mode to make it work)"));
+    vimAct->setCheckable(true);
+    connect(vimAct, &QAction::triggered,
+            this, &VMainWindow::changeVimMode);
+
     // Highlight current cursor line.
     QAction *cursorLineAct = new QAction(tr("Highlight Cursor Line"), this);
     cursorLineAct->setToolTip(tr("Highlight current cursor line"));
@@ -686,6 +693,9 @@ void VMainWindow::initEditMenu()
         autoListAct->trigger();
     }
     Q_ASSERT(!(autoListAct->isChecked() && !m_autoIndentAct->isChecked()));
+
+    editMenu->addAction(vimAct);
+    vimAct->setChecked(vconfig.getEnableVimMode());
 
     editMenu->addSeparator();
 
@@ -1379,6 +1389,11 @@ void VMainWindow::changeAutoList(bool p_checked)
     } else {
         m_autoIndentAct->setEnabled(true);
     }
+}
+
+void VMainWindow::changeVimMode(bool p_checked)
+{
+    vconfig.setEnableVimMode(p_checked);
 }
 
 void VMainWindow::enableCodeBlockHighlight(bool p_checked)
