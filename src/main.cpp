@@ -106,6 +106,12 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     vconfig.initialize();
 
+#if defined(Q_OS_MACOS)
+    // Do not show icons in menu on macOS since there is something wrong with
+    // the icon path on macOS.
+    app.setAttribute(Qt::AA_DontShowIconsInMenus);
+#endif
+
     QString locale = VUtils::getLocale();
     qDebug() << "use locale" << locale;
 
