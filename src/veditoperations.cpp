@@ -65,6 +65,9 @@ void VEditOperations::updateCursorLineBg()
 
 void VEditOperations::handleEditConfigUpdated()
 {
+    // Reset to Normal mode.
+    m_vim->setMode(VimMode::Normal);
+
     updateCursorLineBg();
 }
 

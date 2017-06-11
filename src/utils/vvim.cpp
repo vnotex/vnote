@@ -595,6 +595,7 @@ VimMode VVim::getMode() const
 void VVim::setMode(VimMode p_mode)
 {
     if (m_mode != p_mode) {
+        clearSelection();
         m_mode = p_mode;
         resetState();
 
