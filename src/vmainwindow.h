@@ -124,6 +124,11 @@ private:
     void toggleOnePanelView();
     void closeCurrentFile();
 
+    // Wrapper to create a QAction.
+    QAction *newAction(const QIcon &p_icon,
+                       const QString &p_text,
+                       QObject *p_parent = nullptr);
+
     VNote *vnote;
     QPointer<VFile> m_curFile;
     QPointer<VEditTab> m_curTab;

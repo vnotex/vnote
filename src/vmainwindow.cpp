@@ -462,8 +462,8 @@ void VMainWindow::initFileMenu()
     fileMenu->setToolTipsVisible(true);
 
     // Import notes from files.
-    m_importNoteAct = new QAction(QIcon(":/resources/icons/import_note.svg"),
-                                  tr("&Import Notes From Files"), this);
+    m_importNoteAct = newAction(QIcon(":/resources/icons/import_note.svg"),
+                                tr("&Import Notes From Files"), this);
     m_importNoteAct->setToolTip(tr("Import notes from external files into current folder"));
     connect(m_importNoteAct, &QAction::triggered,
             this, &VMainWindow::importNoteFromFile);
@@ -493,8 +493,8 @@ void VMainWindow::initFileMenu()
     m_printAct->setEnabled(false);
 
     // Settings.
-    QAction *settingsAct = new QAction(QIcon(":/resources/icons/settings.svg"),
-                                       tr("&Settings"), this);
+    QAction *settingsAct = newAction(QIcon(":/resources/icons/settings.svg"),
+                                     tr("&Settings"), this);
     settingsAct->setToolTip(tr("View and change settings for VNote"));
     connect(settingsAct, &QAction::triggered,
             this, &VMainWindow::viewSettings);
@@ -519,15 +519,15 @@ void VMainWindow::initEditMenu()
     editMenu->setToolTipsVisible(true);
 
     // Insert image.
-    m_insertImageAct = new QAction(QIcon(":/resources/icons/insert_image.svg"),
-                                   tr("Insert &Image"), this);
+    m_insertImageAct = newAction(QIcon(":/resources/icons/insert_image.svg"),
+                                 tr("Insert &Image"), this);
     m_insertImageAct->setToolTip(tr("Insert an image from file into current note"));
     connect(m_insertImageAct, &QAction::triggered,
             this, &VMainWindow::insertImage);
 
     // Find/Replace.
-    m_findReplaceAct = new QAction(QIcon(":/resources/icons/find_replace.svg"),
-                                   tr("Find/Replace"), this);
+    m_findReplaceAct = newAction(QIcon(":/resources/icons/find_replace.svg"),
+                                 tr("Find/Replace"), this);
     m_findReplaceAct->setToolTip(tr("Open Find/Replace dialog to search in current note"));
     m_findReplaceAct->setShortcut(QKeySequence::Find);
     connect(m_findReplaceAct, &QAction::triggered,
@@ -883,7 +883,11 @@ void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
         tmpAct->setToolTip(tr("Set as the background color for Markdown rendering"));
         tmpAct->setCheckable(true);
         tmpAct->setData(bgColors[i].name);
+
+#if !defined(Q_OS_MACOS)
         tmpAct->setIcon(QIcon(predefinedColorPixmaps[i]));
+#endif
+
         if (curBgColor == bgColors[i].name) {
             tmpAct->setChecked(true);
         }
@@ -933,8 +937,8 @@ void VMainWindow::initRenderStyleMenu(QMenu *p_menu)
     connect(m_renderStyleActs, &QActionGroup::triggered,
             this, &VMainWindow::setRenderStyle);
 
-    QAction *addAct = new QAction(QIcon(":/resources/icons/add_style.svg"),
-                                  tr("&Add Style"), m_renderStyleActs);
+    QAction *addAct = newAction(QIcon(":/resources/icons/add_style.svg"),
+                                tr("&Add Style"), m_renderStyleActs);
     addAct->setToolTip(tr("Open the folder to add your custom CSS style files"));
     addAct->setCheckable(true);
     addAct->setData("AddStyle");
@@ -967,7 +971,9 @@ void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
         tmpAct->setToolTip(tr("Set as the background color for editor"));
         tmpAct->setCheckable(true);
         tmpAct->setData(bgColors[i].name);
+#if !defined(Q_OS_MACOS)
         tmpAct->setIcon(QIcon(predefinedColorPixmaps[i]));
+#endif
         if (curBgColor == bgColors[i].name) {
             tmpAct->setChecked(true);
         }
@@ -1017,8 +1023,8 @@ void VMainWindow::initEditorStyleMenu(QMenu *p_menu)
     connect(m_editorStyleActs, &QActionGroup::triggered,
             this, &VMainWindow::setEditorStyle);
 
-    QAction *addAct = new QAction(QIcon(":/resources/icons/add_style.svg"),
-                                  tr("&Add Style"), m_editorStyleActs);
+    QAction *addAct = newAction(QIcon(":/resources/icons/add_style.svg"),
+                                tr("&Add Style"), m_editorStyleActs);
     addAct->setToolTip(tr("Open the folder to add your custom MDHL style files"));
     addAct->setCheckable(true);
     addAct->setData("AddStyle");
@@ -1471,3 +1477,14 @@ void VMainWindow::exportAsPDF()
     }
 }
 
+QAction *VMainWindow::newAction(const QIcon &p_icon,
+                                const QString &p_text,
+                                QObject *p_parent)
+{
+#if defined(Q_OS_MACOS)
+    Q_UNUSED(p_icon);
+    return new QAction(p_text, p_parent);
+#else
+    return new QAction(p_icon, p_text, p_parent);
+#endif
+}
