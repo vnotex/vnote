@@ -71,7 +71,7 @@ protected:
     void wheelEvent(QWheelEvent *p_event) Q_DECL_OVERRIDE;
 
     // Called when VEditTab get focus. Should focus the proper child widget.
-    virtual void focusChild() {}
+    virtual void focusChild() = 0;
 
     // Called to zoom in/out content.
     virtual void zoom(bool p_zoomIn, qreal p_step = 0.25) = 0;

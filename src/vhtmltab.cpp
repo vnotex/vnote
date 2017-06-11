@@ -244,3 +244,7 @@ void VHtmlTab::zoom(bool /* p_zoomIn */, qreal /* p_step */)
 {
 }
 
+void VHtmlTab::focusChild()
+{
+    m_editor->setFocus();
+}

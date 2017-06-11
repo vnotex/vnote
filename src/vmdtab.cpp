@@ -704,3 +704,8 @@ MarkdownConverterType VMdTab::getMarkdownConverterType() const
 {
     return m_mdConType;
 }
+
+void VMdTab::focusChild()
+{
+    m_stacks->currentWidget()->setFocus();
+}

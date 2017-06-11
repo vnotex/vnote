@@ -76,6 +76,9 @@ private:
     // Called to zoom in/out content.
     void zoom(bool p_zoomIn, qreal p_step = 0.25) Q_DECL_OVERRIDE;
 
+    // Focus the proper child widget.
+    void focusChild() Q_DECL_OVERRIDE;
+
     VEdit *m_editor;
 };
 #endif // VHTMLTAB_H

@@ -120,6 +120,9 @@ private:
     // Zoom Web View.
     void zoomWebPage(bool p_zoomIn, qreal p_step = 0.25);
 
+    // Focus the proper child widget.
+    void focusChild() Q_DECL_OVERRIDE;
+
     VEdit *m_editor;
     VWebView *m_webViewer;
     VDocument *m_document;
