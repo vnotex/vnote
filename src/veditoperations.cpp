@@ -70,7 +70,8 @@ void VEditOperations::handleEditConfigUpdated()
 
 void VEditOperations::handleVimModeChanged(VimMode p_mode)
 {
-    Q_UNUSED(p_mode);
+    // Only highlight current visual line in Insert mode.
+    m_editConfig->m_highlightWholeBlock = (p_mode != VimMode::Insert);
 
     updateCursorLineBg();
 }

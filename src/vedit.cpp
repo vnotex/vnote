@@ -32,6 +32,8 @@ void VEditConfig::init(const QFontMetrics &p_metric)
     m_enableVimMode = vconfig.getEnableVimMode();
 
     m_cursorLineBg = QColor(vconfig.getEditorCurrentLineBg());
+
+    m_highlightWholeBlock = m_enableVimMode;
 }
 
 VEdit::VEdit(VFile *p_file, QWidget *p_parent)
@@ -439,14 +441,32 @@ void VEdit::highlightCurrentLine()
     QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::CurrentLine];
     if (vconfig.getHighlightCursorLine() && !isReadOnly()) {
         // Need to highlight current line.
+        selects.clear();
+
+        // A long block maybe splited into multiple visual lines.
         QTextEdit::ExtraSelection select;
         select.format.setBackground(m_config.m_cursorLineBg);
         select.format.setProperty(QTextFormat::FullWidthSelection, true);
-        select.cursor = textCursor();
-        select.cursor.clearSelection();
 
-        selects.clear();
-        selects.append(select);
+        QTextCursor cursor = textCursor();
+        if (m_config.m_highlightWholeBlock) {
+            cursor.movePosition(QTextCursor::StartOfBlock, QTextCursor::MoveAnchor, 1);
+            QTextBlock block = cursor.block();
+            int blockEnd = block.position() + block.length();
+            int pos = -1;
+            while (cursor.position() < blockEnd && pos != cursor.position()) {
+                QTextEdit::ExtraSelection newSelect = select;
+                newSelect.cursor = cursor;
+                selects.append(newSelect);
+
+                pos = cursor.position();
+                cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, 1);
+            }
+        } else {
+            cursor.clearSelection();
+            select.cursor = cursor;
+            selects.append(select);
+        }
     } else {
         // Need to clear current line highlight.
         if (selects.isEmpty()) {

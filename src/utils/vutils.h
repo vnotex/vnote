@@ -96,6 +96,9 @@ public:
     // Return the DocType according to suffix.
     static DocType docTypeFromName(const QString &p_name);
 
+    // Generate HTML template.
+    static QString generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exportPdf);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
     // Captured texts (need to be trimmed):

@@ -278,75 +278,6 @@ void VMdTab::discardAndRead()
     readFile();
 }
 
-QString VMdTab::fillHtmlTemplate() const
-{
-    const QString &jsHolder = c_htmlJSHolder;
-    const QString &extraHolder = c_htmlExtraHolder;
-
-    QString jsFile, extraFile;
-    switch (m_mdConType) {
-    case MarkdownConverterType::Marked:
-        jsFile = "qrc" + VNote::c_markedJsFile;
-        extraFile = "<script src=\"qrc" + VNote::c_markedExtraFile + "\"></script>\n";
-        break;
-
-    case MarkdownConverterType::Hoedown:
-        jsFile = "qrc" + VNote::c_hoedownJsFile;
-        // Use Marked to highlight code blocks.
-        extraFile = "<script src=\"qrc" + VNote::c_markedExtraFile + "\"></script>\n";
-        break;
-
-    case MarkdownConverterType::MarkdownIt:
-        jsFile = "qrc" + VNote::c_markdownitJsFile;
-        extraFile = "<script src=\"qrc" + VNote::c_markdownitExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_markdownitAnchorExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_markdownitTaskListExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_markdownitSubExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_markdownitSupExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_markdownitFootnoteExtraFile + "\"></script>\n";
-        break;
-
-    case MarkdownConverterType::Showdown:
-        jsFile = "qrc" + VNote::c_showdownJsFile;
-        extraFile = "<script src=\"qrc" + VNote::c_showdownExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_showdownAnchorExtraFile + "\"></script>\n";
-
-        break;
-
-    default:
-        Q_ASSERT(false);
-    }
-
-    if (vconfig.getEnableMermaid()) {
-        extraFile += "<link rel=\"stylesheet\" type=\"text/css\" href=\"qrc" + VNote::c_mermaidCssFile +
-                     "\"/>\n" + "<script src=\"qrc" + VNote::c_mermaidApiJsFile + "\"></script>\n" +
-                     "<script>var VEnableMermaid = true;</script>\n";
-    }
-
-    if (vconfig.getEnableMathjax()) {
-        extraFile += "<script type=\"text/x-mathjax-config\">"
-                     "MathJax.Hub.Config({\n"
-                     "                    tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']]},\n"
-                     "                    showProcessingMessages: false,\n"
-                     "                    messageStyle: \"none\"});\n"
-                     "</script>\n"
-                     "<script type=\"text/javascript\" async src=\"" + VNote::c_mathjaxJsFile + "\"></script>\n" +
-                     "<script>var VEnableMathjax = true;</script>\n";
-    }
-
-    if (vconfig.getEnableImageCaption()) {
-        extraFile += "<script>var VEnableImageCaption = true;</script>\n";
-    }
-
-    QString htmlTemplate = VNote::s_markdownTemplate;
-    htmlTemplate.replace(jsHolder, jsFile);
-    if (!extraFile.isEmpty()) {
-        htmlTemplate.replace(extraHolder, extraFile);
-    }
-
-    return htmlTemplate;
-}
-
 void VMdTab::setupMarkdownViewer()
 {
     m_webViewer = new VWebView(m_file, this);
@@ -369,7 +300,8 @@ void VMdTab::setupMarkdownViewer()
             this, &VMdTab::handleWebKeyPressed);
     page->setWebChannel(channel);
 
-    m_webViewer->setHtml(fillHtmlTemplate(), m_file->getBaseUrl());
+    m_webViewer->setHtml(VUtils::generateHtmlTemplate(m_mdConType, false),
+                         m_file->getBaseUrl());
 
     m_stacks->addWidget(m_webViewer);
 }

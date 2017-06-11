@@ -97,9 +97,6 @@ private:
     // Show the file content in edit mode.
     void showFileEditMode();
 
-    // Generate HTML template for Web view.
-    QString fillHtmlTemplate() const;
-
     // Setup Markdown viewer.
     void setupMarkdownViewer();
 

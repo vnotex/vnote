@@ -26,8 +26,11 @@ enum class SelectionId {
 
 class VEditConfig {
 public:
-    VEditConfig() : m_tabStopWidth(0), m_tabSpaces("\t"),
-                    m_enableVimMode(false) {}
+    VEditConfig() : m_tabStopWidth(0),
+                    m_tabSpaces("\t"),
+                    m_enableVimMode(false),
+                    m_highlightWholeBlock(false)
+    {}
 
     void init(const QFontMetrics &p_metric);
 
@@ -43,6 +46,9 @@ public:
 
     // The background color of cursor line.
     QColor m_cursorLineBg;
+
+    // Whether highlight a visual line or a whole block.
+    bool m_highlightWholeBlock;
 };
 
 class VEdit : public QTextEdit

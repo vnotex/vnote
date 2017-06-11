@@ -19,6 +19,7 @@
 #include <QElapsedTimer>
 
 #include "vfile.h"
+#include "vnote.h"
 
 extern VConfigManager vconfig;
 
@@ -478,4 +479,76 @@ DocType VUtils::docTypeFromName(const QString &p_name)
     }
 
     return DocType::Html;
+}
+
+QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exportPdf)
+{
+    QString jsFile, extraFile;
+    switch (p_conType) {
+    case MarkdownConverterType::Marked:
+        jsFile = "qrc" + VNote::c_markedJsFile;
+        extraFile = "<script src=\"qrc" + VNote::c_markedExtraFile + "\"></script>\n";
+        break;
+
+    case MarkdownConverterType::Hoedown:
+        jsFile = "qrc" + VNote::c_hoedownJsFile;
+        // Use Marked to highlight code blocks.
+        extraFile = "<script src=\"qrc" + VNote::c_markedExtraFile + "\"></script>\n";
+        break;
+
+    case MarkdownConverterType::MarkdownIt:
+        jsFile = "qrc" + VNote::c_markdownitJsFile;
+        extraFile = "<script src=\"qrc" + VNote::c_markdownitExtraFile + "\"></script>\n" +
+                    "<script src=\"qrc" + VNote::c_markdownitAnchorExtraFile + "\"></script>\n" +
+                    "<script src=\"qrc" + VNote::c_markdownitTaskListExtraFile + "\"></script>\n" +
+                    "<script src=\"qrc" + VNote::c_markdownitSubExtraFile + "\"></script>\n" +
+                    "<script src=\"qrc" + VNote::c_markdownitSupExtraFile + "\"></script>\n" +
+                    "<script src=\"qrc" + VNote::c_markdownitFootnoteExtraFile + "\"></script>\n";
+        break;
+
+    case MarkdownConverterType::Showdown:
+        jsFile = "qrc" + VNote::c_showdownJsFile;
+        extraFile = "<script src=\"qrc" + VNote::c_showdownExtraFile + "\"></script>\n" +
+                    "<script src=\"qrc" + VNote::c_showdownAnchorExtraFile + "\"></script>\n";
+
+        break;
+
+    default:
+        Q_ASSERT(false);
+    }
+
+    if (vconfig.getEnableMermaid()) {
+        extraFile += "<link rel=\"stylesheet\" type=\"text/css\" href=\"qrc" + VNote::c_mermaidCssFile +
+                     "\"/>\n" + "<script src=\"qrc" + VNote::c_mermaidApiJsFile + "\"></script>\n" +
+                     "<script>var VEnableMermaid = true;</script>\n";
+    }
+
+    if (vconfig.getEnableMathjax()) {
+        extraFile += "<script type=\"text/x-mathjax-config\">"
+                     "MathJax.Hub.Config({\n"
+                     "                    tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']]},\n"
+                     "                    showProcessingMessages: false,\n"
+                     "                    messageStyle: \"none\"});\n"
+                     "</script>\n"
+                     "<script type=\"text/javascript\" async src=\"" + VNote::c_mathjaxJsFile + "\"></script>\n" +
+                     "<script>var VEnableMathjax = true;</script>\n";
+    }
+
+    if (vconfig.getEnableImageCaption()) {
+        extraFile += "<script>var VEnableImageCaption = true;</script>\n";
+    }
+
+    QString htmlTemplate;
+    if (p_exportPdf) {
+        htmlTemplate = VNote::s_markdownTemplatePDF;
+    } else {
+        htmlTemplate = VNote::s_markdownTemplate;
+    }
+
+    htmlTemplate.replace(c_htmlJSHolder, jsFile);
+    if (!extraFile.isEmpty()) {
+        htmlTemplate.replace(c_htmlExtraHolder, extraFile);
+    }
+
+    return htmlTemplate;
 }

@@ -40,63 +40,7 @@ VExporter::VExporter(MarkdownConverterType p_mdType, QWidget *p_parent)
 
 void VExporter::initMarkdownTemplate()
 {
-    QString jsFile, extraFile;
-    switch (m_mdType) {
-    case MarkdownConverterType::Marked:
-        jsFile = "qrc" + VNote::c_markedJsFile;
-        extraFile = "<script src=\"qrc" + VNote::c_markedExtraFile + "\"></script>\n";
-        break;
-
-    case MarkdownConverterType::Hoedown:
-        jsFile = "qrc" + VNote::c_hoedownJsFile;
-        // Use Marked to highlight code blocks.
-        extraFile = "<script src=\"qrc" + VNote::c_markedExtraFile + "\"></script>\n";
-        break;
-
-    case MarkdownConverterType::MarkdownIt:
-        jsFile = "qrc" + VNote::c_markdownitJsFile;
-        extraFile = "<script src=\"qrc" + VNote::c_markdownitExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_markdownitAnchorExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_markdownitTaskListExtraFile + "\"></script>\n";
-        break;
-
-    case MarkdownConverterType::Showdown:
-        jsFile = "qrc" + VNote::c_showdownJsFile;
-        extraFile = "<script src=\"qrc" + VNote::c_showdownExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_showdownAnchorExtraFile + "\"></script>\n";
-
-        break;
-
-    default:
-        Q_ASSERT(false);
-    }
-
-    if (vconfig.getEnableMermaid()) {
-        extraFile += "<link rel=\"stylesheet\" type=\"text/css\" href=\"qrc" + VNote::c_mermaidCssFile +
-                     "\"/>\n" + "<script src=\"qrc" + VNote::c_mermaidApiJsFile + "\"></script>\n" +
-                     "<script>var VEnableMermaid = true;</script>\n";
-    }
-
-    if (vconfig.getEnableMathjax()) {
-        extraFile += "<script type=\"text/x-mathjax-config\">"
-                     "MathJax.Hub.Config({\n"
-                     "                    tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']]},\n"
-                     "                    showProcessingMessages: false,\n"
-                     "                    messageStyle: \"none\"});\n"
-                     "</script>\n"
-                     "<script type=\"text/javascript\" async src=\"" + VNote::c_mathjaxJsFile + "\"></script>\n" +
-                     "<script>var VEnableMathjax = true;</script>\n";
-    }
-
-    if (vconfig.getEnableImageCaption()) {
-        extraFile += "<script>var VEnableImageCaption = true;</script>\n";
-    }
-
-    m_htmlTemplate = VNote::s_markdownTemplatePDF;
-    m_htmlTemplate.replace(c_htmlJSHolder, jsFile);
-    if (!extraFile.isEmpty()) {
-        m_htmlTemplate.replace(c_htmlExtraHolder, extraFile);
-    }
+    m_htmlTemplate = VUtils::generateHtmlTemplate(m_mdType, true);
 }
 
 void VExporter::setupUI()
@@ -268,8 +212,6 @@ void VExporter::initWebViewer(VFile *p_file)
     channel->registerObject(QStringLiteral("content"), document);
     page->setWebChannel(channel);
 
-    qDebug() << "VPreviewPage" << page->parent() << "QWebChannel" << channel->parent();
-
     // Need to generate HTML using Hoedown.
     if (m_mdType == MarkdownConverterType::Hoedown) {
         VMarkdownConverter mdConverter;
@@ -299,8 +241,6 @@ void VExporter::handleLogicsFinished()
 
 void VExporter::handleLoadFinished(bool p_ok)
 {
-    qDebug() << "Web load finished" << p_ok;
-
     Q_ASSERT(!(m_noteState & NoteState::WebLoadFinished));
     m_noteState = NoteState(m_noteState | NoteState::WebLoadFinished);
 
