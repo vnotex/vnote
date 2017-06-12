@@ -711,3 +711,73 @@ VEditConfig &VEdit::getConfig()
 {
     return m_config;
 }
+
+void VEdit::mousePressEvent(QMouseEvent *p_event)
+{
+    if (p_event->button() == Qt::LeftButton
+        && p_event->modifiers() == Qt::ControlModifier
+        && !textCursor().hasSelection()) {
+        m_oriMouseX = p_event->x();
+        m_oriMouseY = p_event->y();
+        m_readyToScroll = true;
+        m_mouseMoveScrolled = false;
+        p_event->accept();
+        return;
+    }
+
+    m_readyToScroll = false;
+    m_mouseMoveScrolled = false;
+
+    QTextEdit::mousePressEvent(p_event);
+}
+
+void VEdit::mouseReleaseEvent(QMouseEvent *p_event)
+{
+    if (m_mouseMoveScrolled || m_readyToScroll) {
+        viewport()->setCursor(Qt::IBeamCursor);
+        m_readyToScroll = false;
+        m_mouseMoveScrolled = false;
+        p_event->accept();
+        return;
+    }
+
+    m_readyToScroll = false;
+    m_mouseMoveScrolled = false;
+
+    QTextEdit::mouseReleaseEvent(p_event);
+}
+
+void VEdit::mouseMoveEvent(QMouseEvent *p_event)
+{
+    const int threshold = 5;
+
+    if (m_readyToScroll) {
+        int deltaX = p_event->x() - m_oriMouseX;
+        int deltaY = p_event->y() - m_oriMouseY;
+
+        if (qAbs(deltaX) >= threshold || qAbs(deltaY) >= threshold) {
+            m_oriMouseX = p_event->x();
+            m_oriMouseY = p_event->y();
+
+            if (!m_mouseMoveScrolled) {
+                m_mouseMoveScrolled = true;
+                viewport()->setCursor(Qt::SizeAllCursor);
+            }
+
+            QScrollBar *verBar = verticalScrollBar();
+            QScrollBar *horBar = horizontalScrollBar();
+            if (verBar->isVisible()) {
+                verBar->setValue(verBar->value() - deltaY);
+            }
+
+            if (horBar->isVisible()) {
+                horBar->setValue(horBar->value() - deltaX);
+            }
+        }
+
+        p_event->accept();
+        return;
+    }
+
+    QTextEdit::mouseMoveEvent(p_event);
+}

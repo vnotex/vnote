@@ -449,3 +449,62 @@ var handleToc = function(needToc) {
     }
 };
 
+// Implement mouse drag with Ctrl and left button pressed to scroll.
+var vds_oriMouseClientX = 0;
+var vds_oriMouseClientY = 0;
+var vds_readyToScroll = false;
+var vds_scrolled = false;
+
+window.onmousedown = function(e) {
+    e = e || window.event;
+    // Left button and Ctrl key.
+    if (e.buttons == 1
+        && e.ctrlKey
+        && window.getSelection().rangeCount == 0) {
+        vds_oriMouseClientX = e.clientX;
+        vds_oriMouseClientY = e.clientY;
+        vds_readyToScroll = true;
+        vds_scrolled = false;
+        e.preventDefault();
+    } else {
+        vds_readyToScroll = false;
+        vds_scrolled = false;
+    }
+};
+
+window.onmouseup = function(e) {
+    e = e || window.event;
+    if (vds_scrolled || vds_readyToScroll) {
+        // Have been scrolled, restore the cursor style.
+        document.body.style.cursor = "auto";
+        e.preventDefault();
+    }
+
+    vds_readyToScroll = false;
+    vds_scrolled = false;
+};
+
+window.onmousemove = function(e) {
+    e = e || window.event;
+    if (vds_readyToScroll) {
+        deltaX = e.clientX - vds_oriMouseClientX;
+        deltaY = e.clientY - vds_oriMouseClientY;
+
+        var threshold = 5;
+        if (Math.abs(deltaX) >= threshold || Math.abs(deltaY) >= threshold) {
+            vds_oriMouseClientX = e.clientX;
+            vds_oriMouseClientY = e.clientY;
+
+            if (!vds_scrolled) {
+                vds_scrolled = true;
+                document.body.style.cursor = "all-scroll";
+            }
+
+            var scrollX = -deltaX;
+            var scrollY = -deltaY;
+            window.scrollBy(scrollX, scrollY);
+        }
+
+        e.preventDefault();
+    }
+};

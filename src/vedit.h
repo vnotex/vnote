@@ -110,6 +110,11 @@ protected:
     virtual void updateFontAndPalette();
     virtual void contextMenuEvent(QContextMenuEvent *p_event) Q_DECL_OVERRIDE;
 
+    // Used to implement dragging mouse with Ctrl and left button pressed to scroll.
+    virtual void mousePressEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
+    virtual void mouseReleaseEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
+    virtual void mouseMoveEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
+
     // Update m_config according to VConfigManager.
     void updateConfig();
 
@@ -127,6 +132,11 @@ private:
 
     // Timer for extra selections highlight.
     QTimer *m_highlightTimer;
+
+    bool m_readyToScroll;
+    bool m_mouseMoveScrolled;
+    int m_oriMouseX;
+    int m_oriMouseY;
 
     void showWrapLabel();
 
