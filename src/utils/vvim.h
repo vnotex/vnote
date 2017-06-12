@@ -88,10 +88,6 @@ private:
         UnIndent,
         ToUpper,
         ToLower,
-        DeleteToClipboard,
-        CopyToClipboard,
-        PasteFromClipboard,
-        ChangeToClipboard,
         Invalid
     };
 
@@ -114,6 +110,14 @@ private:
         LineJump,
         StartOfDocument,
         EndOfDocument,
+        WordForward,
+        WORDForward,
+        ForwardEndOfWord,
+        ForwardEndOfWORD,
+        WordBackward,
+        WORDBackward,
+        BackwardEndOfWord,
+        BackwardEndOfWORD,
         Invalid
     };
 

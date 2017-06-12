@@ -49,6 +49,113 @@ static void moveCursorFirstNonSpaceCharacter(QTextCursor &p_cursor,
     p_cursor.setPosition(block.position() + idx, p_mode);
 }
 
+// Find the start and end of the WORD @p_cursor locates in (within a single block).
+// @p_start and @p_end will be the global position of the start and end of the WORD.
+// @p_start will equals to @p_end if @p_cursor is a space.
+static void findCurrentWORD(const QTextCursor &p_cursor, int &p_start, int &p_end)
+{
+    QTextBlock block = p_cursor.block();
+    QString text = block.text();
+    int pib = p_cursor.positionInBlock();
+
+    // Find the start.
+    p_start = p_end = -1;
+    for (int i = pib - 1; i >= 0; --i) {
+        if (text[i].isSpace()) {
+            ++i;
+            p_start = i;
+            break;
+        }
+    }
+
+    if (p_start == -1) {
+        p_start = 0;
+    }
+
+    // Find the end.
+    for (int i = pib; i < text.size(); ++i) {
+        if (text[i].isSpace()) {
+            p_end = i;
+            break;
+        }
+    }
+
+    if (p_end == -1) {
+        p_end = block.length() - 1;
+    }
+
+    p_start += block.position();
+    p_end += block.position();
+}
+
+// Move @p_cursor to skip spaces if current cursor is placed at a space
+// (may move across blocks). It will stop by the empty block on the way.
+// Forward: wwwwsssss|wwww
+// Backward: wwww|ssssswwww
+static void moveCursorAcrossSpaces(QTextCursor &p_cursor,
+                                   QTextCursor::MoveMode p_mode,
+                                   bool p_forward)
+{
+    while (true) {
+        QTextBlock block = p_cursor.block();
+        QString text = block.text();
+        int pib = p_cursor.positionInBlock();
+
+        if (p_forward) {
+            for (; pib < text.size(); ++pib) {
+                if (!text[pib].isSpace()) {
+                    break;
+                }
+            }
+
+            if (pib == text.size()) {
+                // Move to next block.
+                p_cursor.movePosition(QTextCursor::Down, p_mode, 1);
+                if (block.blockNumber() == p_cursor.block().blockNumber()) {
+                    // Already at the last block.
+                    p_cursor.movePosition(QTextCursor::EndOfBlock, p_mode, 1);
+                    break;
+                } else {
+                    p_cursor.movePosition(QTextCursor::StartOfBlock, p_mode, 1);
+                    if (p_cursor.block().length() <= 1) {
+                        break;
+                    }
+                }
+            } else {
+                // Found non-space character.
+                p_cursor.setPosition(block.position() + pib, p_mode);
+                break;
+            }
+        } else {
+            int idx = pib - 1;
+            for (; idx >= 0; --idx) {
+                if (!text[idx].isSpace()) {
+                    break;
+                }
+            }
+
+            if (idx == -1) {
+                // Move to previous block.
+                p_cursor.movePosition(QTextCursor::Up, p_mode, 1);
+                if (block.blockNumber() == p_cursor.block().blockNumber()) {
+                    // Already at the first block.
+                    p_cursor.movePosition(QTextCursor::StartOfBlock, p_mode, 1);
+                    break;
+                } else {
+                    p_cursor.movePosition(QTextCursor::EndOfBlock, p_mode, 1);
+                    if (p_cursor.block().length() <= 1) {
+                        break;
+                    }
+                }
+            } else {
+                // Found non-space character.
+                p_cursor.setPosition(block.position() + idx + 1, p_mode);
+                break;
+            }
+        }
+    }
+}
+
 bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
 {
     bool ret = false;
@@ -389,6 +496,28 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
         if (modifiers == Qt::ControlModifier) {
             // Ctrl+B, page up, fall through.
             modifiers = Qt::NoModifier;
+        } else if (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier) {
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (!m_keys.isEmpty()) {
+                // Not a valid sequence.
+                break;
+            }
+
+            // b, go to the start of previous or current word.
+            Movement mm = Movement::WordBackward;
+            if (modifiers == Qt::ShiftModifier) {
+                // B, go to the start of previous or current WORD.
+                mm = Movement::WORDBackward;
+            }
+
+            if (m_tokens.isEmpty()) {
+                // Move.
+                m_tokens.append(Token(Action::Move));
+            }
+
+            m_tokens.append(Token(mm));
+            processCommand(m_tokens);
+            break;
         } else {
             break;
         }
@@ -551,6 +680,73 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             }
 
             Movement mm = Movement::FirstCharacter;
+            if (m_tokens.isEmpty()) {
+                // Move.
+                m_tokens.append(Token(Action::Move));
+            }
+
+            m_tokens.append(Token(mm));
+            processCommand(m_tokens);
+        }
+
+        break;
+    }
+
+    case Qt::Key_W:
+    {
+        if (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier) {
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (!m_keys.isEmpty()) {
+                // Not a valid sequence.
+                break;
+            }
+
+            // w, go to the start of next word.
+            Movement mm = Movement::WordForward;
+            if (modifiers == Qt::ShiftModifier) {
+                // W, go to the start of next WORD.
+                mm = Movement::WORDForward;
+            }
+
+            if (m_tokens.isEmpty()) {
+                // Move.
+                m_tokens.append(Token(Action::Move));
+            }
+
+            m_tokens.append(Token(mm));
+            processCommand(m_tokens);
+        }
+
+        break;
+    }
+
+    case Qt::Key_E:
+    {
+        // e, E, ge, gE.
+        if (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier) {
+            tryGetRepeatToken(m_keys, m_tokens);
+            Movement mm = Movement::Invalid;
+            if (!m_keys.isEmpty()) {
+                if (m_keys.size() == 1 && m_keys.at(0) == Key(Qt::Key_G)) {
+                    // ge, gE.
+                    if (modifiers == Qt::NoModifier) {
+                        mm = Movement::BackwardEndOfWord;
+                    } else {
+                        mm = Movement::BackwardEndOfWORD;
+                    }
+                } else {
+                    // Not a valid sequence.
+                    break;
+                }
+            } else {
+                // e, E.
+                if (modifiers == Qt::NoModifier) {
+                    mm = Movement::ForwardEndOfWord;
+                } else {
+                    mm = Movement::ForwardEndOfWORD;
+                }
+            }
+
             if (m_tokens.isEmpty()) {
                 // Move.
                 m_tokens.append(Token(Action::Move));
@@ -943,6 +1139,172 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
         V_ASSERT(repeat == -1);
         cursor.movePosition(QTextCursor::End, moveMode, 1);
         moveCursorFirstNonSpaceCharacter(cursor, moveMode);
+        hasMoved = true;
+        break;
+    }
+
+    case Movement::WordForward:
+    {
+        // Go to the start of next word.
+        if (repeat == -1) {
+            repeat = 1;
+        }
+
+        cursor.movePosition(QTextCursor::NextWord, moveMode, repeat);
+        hasMoved = true;
+        break;
+    }
+
+    case Movement::WORDForward:
+    {
+        // Go to the start of next WORD.
+        if (repeat == -1) {
+            repeat = 1;
+        }
+
+        for (int i = 0; i < repeat; ++i) {
+            int start, end;
+            // [start, end] is current WORD.
+            findCurrentWORD(cursor, start, end);
+
+            // Move cursor to end of current WORD.
+            cursor.setPosition(end, moveMode);
+
+            // Skip spaces.
+            moveCursorAcrossSpaces(cursor, moveMode, true);
+        }
+
+        hasMoved = true;
+        break;
+    }
+
+    case Movement::ForwardEndOfWord:
+    {
+        // Go to the end of current word or next word.
+        if (repeat == -1) {
+            repeat = 1;
+        }
+
+        int pos = cursor.position();
+        // First move to the end of current word.
+        cursor.movePosition(QTextCursor::EndOfWord, moveMode, 1);
+        if (pos != cursor.position()) {
+            // We did move.
+            repeat -= 1;
+        }
+
+        if (repeat) {
+            cursor.movePosition(QTextCursor::NextWord, moveMode, repeat);
+            cursor.movePosition(QTextCursor::EndOfWord, moveMode);
+        }
+
+        hasMoved = true;
+        break;
+    }
+
+    case Movement::ForwardEndOfWORD:
+    {
+        // Go to the end of current WORD or next WORD.
+        if (repeat == -1) {
+            repeat = 1;
+        }
+
+        for (int i = 0; i < repeat; ++i) {
+            // Skip spaces.
+            moveCursorAcrossSpaces(cursor, moveMode, true);
+
+            int start, end;
+            // [start, end] is current WORD.
+            findCurrentWORD(cursor, start, end);
+
+            // Move cursor to the end of current WORD.
+            cursor.setPosition(end, moveMode);
+        }
+
+        hasMoved = true;
+        break;
+    }
+
+    case Movement::WordBackward:
+    {
+        // Go to the start of previous word or current word.
+        if (repeat == -1) {
+            repeat = 1;
+        }
+
+        int pos = cursor.position();
+        // first move to the start of current word.
+        cursor.movePosition(QTextCursor::StartOfWord, moveMode, 1);
+        if (pos != cursor.position()) {
+            // We did move.
+            repeat -= 1;
+        }
+
+        if (repeat) {
+            cursor.movePosition(QTextCursor::PreviousWord, moveMode, repeat);
+        }
+
+        hasMoved = true;
+        break;
+    }
+
+    case Movement::WORDBackward:
+    {
+        // Go to the start of previous WORD or current WORD.
+        if (repeat == -1) {
+            repeat = 1;
+        }
+
+        for (int i = 0; i < repeat; ++i) {
+            // Skip Spaces.
+            moveCursorAcrossSpaces(cursor, moveMode, false);
+
+            int start, end;
+            // [start, end] is current WORD.
+            findCurrentWORD(cursor, start, end);
+
+            // Move cursor to the start of current WORD.
+            cursor.setPosition(start, moveMode);
+        }
+
+        hasMoved = true;
+        break;
+    }
+
+    case Movement::BackwardEndOfWord:
+    {
+        // Go to the end of previous word.
+        if (repeat == -1) {
+            repeat = 1;
+        }
+
+        int pib = cursor.positionInBlock();
+        if (!(pib > 0 && cursor.block().text()[pib -1].isSpace())) {
+            ++repeat;
+        }
+
+        cursor.movePosition(QTextCursor::PreviousWord, moveMode, repeat);
+        cursor.movePosition(QTextCursor::EndOfWord, moveMode, 1);
+        hasMoved = true;
+        break;
+    }
+
+    case Movement::BackwardEndOfWORD:
+    {
+        // Go to the end of previous WORD.
+        if (repeat == -1) {
+            repeat = 1;
+        }
+
+        for (int i = 0; i < repeat; ++i) {
+            int start, end;
+            findCurrentWORD(cursor, start, end);
+
+            cursor.setPosition(start, moveMode);
+
+            moveCursorAcrossSpaces(cursor, moveMode, false);
+        }
+
         hasMoved = true;
         break;
     }
