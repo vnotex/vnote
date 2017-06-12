@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QString>
 #include <QTextCursor>
+#include <QHash>
 #include "vutils.h"
 
 class VEdit;
@@ -68,6 +69,23 @@ private:
         {
             V_ASSERT(isDigit());
             return m_key - Qt::Key_0;
+        }
+
+        bool isAlphabet() const
+        {
+            return m_key >= Qt::Key_A
+                   && m_key <= Qt::Key_Z
+                   && (m_modifiers == Qt::NoModifier || m_modifiers == Qt::ShiftModifier);
+        }
+
+        QChar toAlphabet() const
+        {
+            V_ASSERT(isAlphabet());
+            if (m_modifiers == Qt::NoModifier) {
+                return QChar('a' + (m_key - Qt::Key_A));
+            } else {
+                return QChar('A' + (m_key - Qt::Key_A));
+            }
         }
 
         bool operator==(const Key &p_key) const
@@ -205,6 +223,32 @@ private:
         };
     };
 
+    struct Register
+    {
+        Register(QChar p_name, const QString &p_value)
+            : m_name(p_name), m_value(p_value), m_append(false)
+        {
+        }
+
+        Register(QChar p_name)
+            : m_name(p_name), m_append(false)
+        {
+        }
+
+        Register()
+            : m_append(false)
+        {
+        }
+
+        QChar m_name;
+        QString m_value;
+
+        // This is not info of Register itself, but a hint to the handling logics
+        // whether we need to append the content to this register.
+        // Only valid for a-z registers.
+        bool m_append;
+    };
+
     // Reset all key state info.
     void resetState();
 
@@ -234,14 +278,46 @@ private:
     // of @p_cursor.
     void expandSelectionInVisualLineMode(QTextCursor &p_cursor);
 
+    // Init m_registers.
+    // Currently supported registers:
+    // a-z, A-Z (append to a-z), ", +, _
+    void initRegisters();
+
+    // Check m_keys to see if we are expecting a register name.
+    bool expectingRegisterName() const;
+
+    // Return the corresponding register name of @p_key.
+    // If @p_key is not a valid register name, return a NULL QChar.
+    QChar keyToRegisterName(const Key &p_key) const;
+
+    // Check if @m_tokens contains an action token.
+    bool hasActionToken() const;
+
+    // Try to insert a Action::Move action at the front if there is no any action
+    // token.
+    void tryInsertMoveAction();
+
     VEdit *m_editor;
     const VEditConfig *m_editConfig;
     VimMode m_mode;
+
+    // A valid command token should follow the rule:
+    // Action, Repeat, Movement.
+    // Action, Repeat, Range.
     QList<Key> m_keys;
     QList<Token> m_tokens;
 
     // Whether reset the position in block when moving cursor.
     bool m_resetPositionInBlock;
+
+    QHash<QChar, Register> m_registers;
+
+    // Currently used register.
+    QChar m_register;
+
+    static const QChar c_unnamedRegister;
+    static const QChar c_blackHoleRegister;
+    static const QChar c_selectionRegister;
 };
 
 #endif // VVIM_H

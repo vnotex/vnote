@@ -7,10 +7,14 @@
 #include <QDebug>
 #include "vedit.h"
 
+const QChar VVim::c_unnamedRegister = QChar('"');
+const QChar VVim::c_blackHoleRegister = QChar('_');
+const QChar VVim::c_selectionRegister = QChar('+');
+
 VVim::VVim(VEdit *p_editor)
     : QObject(p_editor), m_editor(p_editor),
       m_editConfig(&p_editor->getConfig()), m_mode(VimMode::Normal),
-      m_resetPositionInBlock(true)
+      m_resetPositionInBlock(true), m_register(c_unnamedRegister)
 {
     connect(m_editor, &VEdit::copyAvailable,
             this, &VVim::selectionToVisualMode);
@@ -179,17 +183,30 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
         goto exit;
     }
 
-    // We will add key to m_keys. If all m_keys can combined to a token, add
-    // a new token to m_tokens, clear m_keys and try to process m_tokens.
-    switch (key) {
     // Ctrl and Shift may be sent out first.
-    case Qt::Key_Control:
-        // Fall through.
-    case Qt::Key_Shift:
-    {
+    if (key == Qt::Key_Control || key == Qt::Key_Shift) {
         goto accept;
     }
 
+    if (expectingRegisterName()) {
+        // Expecting a register name.
+        QChar reg = keyToRegisterName(keyInfo);
+        if (!reg.isNull()) {
+            resetState();
+            m_register = reg;
+            m_registers[reg].m_append = (modifiers == Qt::ShiftModifier);
+
+            qDebug() << "use register" << reg << m_registers[reg].m_append;
+
+            goto accept;
+        }
+
+        goto clear_accept;
+    }
+
+    // We will add key to m_keys. If all m_keys can combined to a token, add
+    // a new token to m_tokens, clear m_keys and try to process m_tokens.
+    switch (key) {
     case Qt::Key_0:
     {
         if (modifiers == Qt::NoModifier) {
@@ -202,10 +219,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
                 goto accept;
             } else {
                 // StartOfLine.
-                if (m_tokens.isEmpty()) {
-                    // Move.
-                    m_tokens.append(Token(Action::Move));
-                }
+                tryInsertMoveAction();
 
                 m_tokens.append(Token(Movement::StartOfLine));
 
@@ -300,10 +314,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             }
 
             V_ASSERT(mm != Movement::Invalid);
-            if (m_tokens.isEmpty()) {
-                // Move.
-                m_tokens.append(Token(Action::Move));
-            }
+            tryInsertMoveAction();
 
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
@@ -435,10 +446,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             tryGetRepeatToken(m_keys, m_tokens);
 
             if (m_keys.isEmpty()) {
-                if (m_tokens.isEmpty()) {
-                    // Move.
-                    m_tokens.append(Token(Action::Move));
-                }
+                tryInsertMoveAction();
 
                 m_tokens.append(Token(Movement::EndOfLine));
                 processCommand(m_tokens);
@@ -478,10 +486,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
         }
 
         if (mm != Movement::Invalid) {
-            if (m_tokens.isEmpty()) {
-                // Move.
-                m_tokens.append(Token(Action::Move));
-            }
+            tryInsertMoveAction();
 
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
@@ -510,11 +515,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
                 mm = Movement::WORDBackward;
             }
 
-            if (m_tokens.isEmpty()) {
-                // Move.
-                m_tokens.append(Token(Action::Move));
-            }
-
+            tryInsertMoveAction();
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
             break;
@@ -533,11 +534,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             }
 
             Movement mm = Movement::PageUp;
-            if (m_tokens.isEmpty()) {
-                // Move.
-                m_tokens.append(Token(Action::Move));
-            }
-
+            tryInsertMoveAction();
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
             resetPositionInBlock = false;
@@ -557,11 +554,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             }
 
             Movement mm = Movement::HalfPageUp;
-            if (m_tokens.isEmpty()) {
-                // Move.
-                m_tokens.append(Token(Action::Move));
-            }
-
+            tryInsertMoveAction();
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
             resetPositionInBlock = false;
@@ -581,11 +574,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             }
 
             Movement mm = Movement::PageDown;
-            if (m_tokens.isEmpty()) {
-                // Move.
-                m_tokens.append(Token(Action::Move));
-            }
-
+            tryInsertMoveAction();
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
             resetPositionInBlock = false;
@@ -605,14 +594,12 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             }
 
             Movement mm = Movement::HalfPageDown;
-            if (m_tokens.isEmpty()) {
-                // Move.
-                m_tokens.append(Token(Action::Move));
-            }
-
+            tryInsertMoveAction();
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
             resetPositionInBlock = false;
+        } else if (modifiers == Qt::NoModifier) {
+            // d, delete action.
         }
 
         break;
@@ -680,11 +667,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             }
 
             Movement mm = Movement::FirstCharacter;
-            if (m_tokens.isEmpty()) {
-                // Move.
-                m_tokens.append(Token(Action::Move));
-            }
-
+            tryInsertMoveAction();
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
         }
@@ -708,11 +691,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
                 mm = Movement::WORDForward;
             }
 
-            if (m_tokens.isEmpty()) {
-                // Move.
-                m_tokens.append(Token(Action::Move));
-            }
-
+            tryInsertMoveAction();
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
         }
@@ -747,13 +726,25 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
                 }
             }
 
-            if (m_tokens.isEmpty()) {
-                // Move.
-                m_tokens.append(Token(Action::Move));
-            }
-
+            tryInsertMoveAction();
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
+        }
+
+        break;
+    }
+
+    case Qt::Key_QuoteDbl:
+    {
+        if (modifiers == Qt::ShiftModifier) {
+            // Specify a register.
+            if (!m_keys.isEmpty() || !m_tokens.isEmpty()) {
+                // Invalid sequence.
+                break;
+            }
+
+            m_keys.append(keyInfo);
+            goto accept;
         }
 
         break;
@@ -764,8 +755,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
     }
 
 clear_accept:
-    m_keys.clear();
-    m_tokens.clear();
+    resetState();
 
 accept:
     p_event->accept();
@@ -780,6 +770,7 @@ void VVim::resetState()
 {
     m_keys.clear();
     m_tokens.clear();
+    m_register = c_unnamedRegister;
     m_resetPositionInBlock = true;
 }
 
@@ -846,11 +837,6 @@ bool VVim::tryGetRepeatToken(QList<Key> &p_keys, QList<Token> &p_tokens)
     if (!p_keys.isEmpty()) {
         int repeat = numberFromKeySequence(p_keys);
         if (repeat != -1) {
-            if (p_tokens.isEmpty()) {
-                // Move.
-                p_tokens.append(Token(Action::Move));
-            }
-
             p_tokens.append(Token(repeat));
             p_keys.clear();
 
@@ -1369,5 +1355,76 @@ void VVim::expandSelectionInVisualLineMode(QTextCursor &p_cursor)
                              QTextCursor::MoveAnchor);
         p_cursor.setPosition(curBlock.position(),
                              QTextCursor::KeepAnchor);
+    }
+}
+
+void VVim::initRegisters()
+{
+    m_registers.clear();
+    for (char ch = 'a'; ch > 'z'; ++ch) {
+        m_registers[QChar(ch)] = Register(QChar(ch));
+    }
+
+    m_registers[c_unnamedRegister] = Register(c_unnamedRegister);
+    m_registers[c_blackHoleRegister] = Register(c_blackHoleRegister);
+    m_registers[c_selectionRegister] = Register(c_selectionRegister);
+}
+
+bool VVim::expectingRegisterName() const
+{
+    return m_keys.size() == 1
+           && m_keys.at(0) == Key(Qt::Key_QuoteDbl, Qt::ShiftModifier);
+}
+
+QChar VVim::keyToRegisterName(const Key &p_key) const
+{
+    if (p_key.isAlphabet()) {
+        return p_key.toAlphabet().toLower();
+    }
+
+    switch (p_key.m_key) {
+    case Qt::Key_QuoteDbl:
+        if (p_key.m_modifiers == Qt::ShiftModifier) {
+            return c_unnamedRegister;
+        }
+
+        break;
+
+    case Qt::Key_Plus:
+        if (p_key.m_modifiers == Qt::ShiftModifier) {
+            return c_selectionRegister;
+        }
+
+        break;
+
+    case Qt::Key_Underscore:
+        if (p_key.m_modifiers == Qt::ShiftModifier) {
+            return c_blackHoleRegister;
+        }
+
+        break;
+
+    default:
+        break;
+    }
+
+    return QChar();
+}
+
+bool VVim::hasActionToken() const
+{
+    for (auto const &token : m_tokens) {
+        if (token.isAction()) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void VVim::tryInsertMoveAction()
+{
+    if (!hasActionToken()) {
+        m_tokens.prepend(Token(Action::Move));
     }
 }
