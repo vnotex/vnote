@@ -42,8 +42,6 @@ struct ImageLink
 class VUtils
 {
 public:
-    VUtils();
-
     static QString readFileFromDisk(const QString &filePath);
     static bool writeFileToDisk(const QString &filePath, const QString &text);
     // Transform FFFFFF string to QRgb
@@ -117,6 +115,8 @@ public:
     static const QString c_fencedCodeBlockEndRegExp;
 
 private:
+    VUtils();
+
     static void initAvailableLanguage();
 
     // <value, name>

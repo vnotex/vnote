@@ -8,6 +8,7 @@
 #include "vmdedit.h"
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
+#include "utils/veditutils.h"
 #include "vfile.h"
 #include "vdownloader.h"
 #include "hgmarkdownhighlighter.h"
@@ -302,9 +303,7 @@ void VImagePreviewer::removeBlock(QTextBlock &p_block)
 {
     bool modified = m_edit->isModified();
 
-    QTextCursor cursor(p_block);
-    cursor.select(QTextCursor::BlockUnderCursor);
-    cursor.removeSelectedText();
+    VEditUtils::removeBlock(p_block);
 
     m_edit->setModified(modified);
 }

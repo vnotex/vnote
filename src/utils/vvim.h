@@ -240,6 +240,23 @@ private:
         {
         }
 
+        // Register a-z.
+        bool isNamedRegister() const
+        {
+            char ch = m_name.toLatin1();
+            return ch >= 'a' && ch <= 'z';
+        }
+
+        bool isUnnamedRegister() const
+        {
+            return m_name == c_unnamedRegister;
+        }
+
+        bool isBlackHoleRegister() const
+        {
+            return m_name == c_blackHoleRegister;
+        }
+
         QChar m_name;
         QString m_value;
 
@@ -267,6 +284,9 @@ private:
     // @p_tokens is the arguments of the Action::Move action.
     void processMoveAction(QList<Token> &p_tokens);
 
+    // @p_tokens is the arguments of the Action::Delete action.
+    void processDeleteAction(QList<Token> &p_tokens);
+
     // Clear selection if there is any.
     // Returns true if there is selection.
     bool clearSelection();
@@ -274,9 +294,9 @@ private:
     // Get the block count of one page step in vertical scroll bar.
     int blockCountOfPageStep() const;
 
-    // Expand selection in the VisualLiine mode which will change the position
+    // Expand selection to whole lines which will change the position
     // of @p_cursor.
-    void expandSelectionInVisualLineMode(QTextCursor &p_cursor);
+    void expandSelectionToWholeLines(QTextCursor &p_cursor);
 
     // Init m_registers.
     // Currently supported registers:
@@ -293,9 +313,36 @@ private:
     // Check if @m_tokens contains an action token.
     bool hasActionToken() const;
 
-    // Try to insert a Action::Move action at the front if there is no any action
+    // Try to add an Action::Move action at the front if there is no any action
     // token.
-    void tryInsertMoveAction();
+    void tryAddMoveAction();
+
+    // Add an Action token in front of m_tokens.
+    void addActionToken(Action p_action);
+
+    // Get the action token from m_tokens.
+    const Token *getActionToken() const;
+
+    // Add an Range token at the end of m_tokens.
+    void addRangeToken(Range p_range);
+
+    // Add an Movement token at the end of m_tokens.
+    void addMovementToken(Movement p_movement);
+
+    // Delete selected text if there is any.
+    // @p_clearEmptyBlock: whether to remove the empty block after deletion.
+    void deleteSelectedText(bool p_clearEmptyBlock);
+
+    void deleteSelectedText(QTextCursor &p_cursor, bool p_clearEmptyBlock);
+
+    // Save @p_text to the Register pointed by m_register.
+    void saveToRegister(const QString &p_text);
+
+    // Move @p_cursor according to @p_moveMode and @p_movement.
+    // Return true if it has moved @p_cursor.
+    bool processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
+                         QTextCursor::MoveMode &p_moveMode,
+                         Movement p_movement, int p_repeat);
 
     VEdit *m_editor;
     const VEditConfig *m_editConfig;

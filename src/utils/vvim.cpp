@@ -6,6 +6,7 @@
 #include <QScrollBar>
 #include <QDebug>
 #include "vedit.h"
+#include "utils/veditutils.h"
 
 const QChar VVim::c_unnamedRegister = QChar('"');
 const QChar VVim::c_blackHoleRegister = QChar('_');
@@ -219,7 +220,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
                 goto accept;
             } else {
                 // StartOfLine.
-                tryInsertMoveAction();
+                tryAddMoveAction();
 
                 m_tokens.append(Token(Movement::StartOfLine));
 
@@ -314,7 +315,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             }
 
             V_ASSERT(mm != Movement::Invalid);
-            tryInsertMoveAction();
+            tryAddMoveAction();
 
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
@@ -446,7 +447,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             tryGetRepeatToken(m_keys, m_tokens);
 
             if (m_keys.isEmpty()) {
-                tryInsertMoveAction();
+                tryAddMoveAction();
 
                 m_tokens.append(Token(Movement::EndOfLine));
                 processCommand(m_tokens);
@@ -486,7 +487,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
         }
 
         if (mm != Movement::Invalid) {
-            tryInsertMoveAction();
+            tryAddMoveAction();
 
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
@@ -515,7 +516,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
                 mm = Movement::WORDBackward;
             }
 
-            tryInsertMoveAction();
+            tryAddMoveAction();
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
             break;
@@ -534,7 +535,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             }
 
             Movement mm = Movement::PageUp;
-            tryInsertMoveAction();
+            tryAddMoveAction();
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
             resetPositionInBlock = false;
@@ -554,7 +555,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             }
 
             Movement mm = Movement::HalfPageUp;
-            tryInsertMoveAction();
+            tryAddMoveAction();
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
             resetPositionInBlock = false;
@@ -574,7 +575,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             }
 
             Movement mm = Movement::PageDown;
-            tryInsertMoveAction();
+            tryAddMoveAction();
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
             resetPositionInBlock = false;
@@ -594,12 +595,44 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             }
 
             Movement mm = Movement::HalfPageDown;
-            tryInsertMoveAction();
+            tryAddMoveAction();
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
             resetPositionInBlock = false;
         } else if (modifiers == Qt::NoModifier) {
             // d, delete action.
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (hasActionToken()) {
+                // This is another d, something like dd.
+                if (getActionToken()->m_action == Action::Delete) {
+                    addRangeToken(Range::Line);
+                    processCommand(m_tokens);
+                    break;
+                } else {
+                    // An invalid sequence.
+                    break;
+                }
+            } else {
+                // The first d, an Action.
+                if (m_mode == VimMode::Visual || m_mode == VimMode::VisualLine) {
+                    deleteSelectedText(m_mode == VimMode::VisualLine);
+                    setMode(VimMode::Normal);
+                    break;
+                }
+
+                addActionToken(Action::Delete);
+                goto accept;
+            }
+        } else if (modifiers == Qt::ShiftModifier) {
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (!hasActionToken() && m_mode == VimMode::Normal) {
+                // D, same as d$.
+                addActionToken(Action::Delete);
+                addMovementToken(Movement::EndOfLine);
+                processCommand(m_tokens);
+            }
+
+            break;
         }
 
         break;
@@ -648,7 +681,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
 
             if (m_mode == VimMode::VisualLine) {
                 QTextCursor cursor = m_editor->textCursor();
-                expandSelectionInVisualLineMode(cursor);
+                expandSelectionToWholeLines(cursor);
                 m_editor->setTextCursor(cursor);
             }
         }
@@ -667,7 +700,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             }
 
             Movement mm = Movement::FirstCharacter;
-            tryInsertMoveAction();
+            tryAddMoveAction();
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
         }
@@ -691,7 +724,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
                 mm = Movement::WORDForward;
             }
 
-            tryInsertMoveAction();
+            tryAddMoveAction();
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
         }
@@ -726,7 +759,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
                 }
             }
 
-            tryInsertMoveAction();
+            tryAddMoveAction();
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
         }
@@ -745,6 +778,28 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
 
             m_keys.append(keyInfo);
             goto accept;
+        }
+
+        break;
+    }
+
+    case Qt::Key_X:
+    {
+        if (modifiers == Qt::ShiftModifier || modifiers == Qt::NoModifier) {
+            // x, or X to delete one char.
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (!m_keys.isEmpty()) {
+                break;
+            }
+
+            if (!hasActionToken()) {
+                addActionToken(Action::Delete);
+                addMovementToken(modifiers == Qt::ShiftModifier ? Movement::Left
+                                                                : Movement::Right);
+                processCommand(m_tokens);
+            }
+
+            break;
         }
 
         break;
@@ -798,7 +853,6 @@ void VVim::processCommand(QList<Token> &p_tokens)
 
     V_ASSERT(p_tokens.at(0).isAction());
 
-    qDebug() << "process tokens of size" << p_tokens.size();
     for (int i = 0; i < p_tokens.size(); ++i) {
         qDebug() << "token" << i << p_tokens[i].toString();
     }
@@ -807,6 +861,10 @@ void VVim::processCommand(QList<Token> &p_tokens)
     switch (act.m_action) {
     case Action::Move:
         processMoveAction(p_tokens);
+        break;
+
+    case Action::Delete:
+        processDeleteAction(p_tokens);
         break;
 
     default:
@@ -864,34 +922,68 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
     }
 
     if (!mvToken.isMovement() || !p_tokens.isEmpty()) {
-        p_tokens.clear();
         return;
     }
 
     QTextCursor cursor = m_editor->textCursor();
-    QTextDocument *doc = m_editor->document();
     if (m_resetPositionInBlock) {
         positionInBlock = cursor.positionInBlock();
     }
 
-    bool hasMoved = false;
     QTextCursor::MoveMode moveMode = (m_mode == VimMode::Visual
                                       || m_mode == VimMode::VisualLine)
                                      ? QTextCursor::KeepAnchor
                                      : QTextCursor::MoveAnchor;
-    switch (mvToken.m_movement) {
-    case Movement::Left:
-    {
-        if (repeat == -1) {
-            repeat = 1;
+    bool hasMoved = processMovement(cursor, m_editor->document(),
+                                    moveMode, mvToken.m_movement, repeat);
+
+    if (hasMoved) {
+        // Maintain positionInBlock.
+        switch (mvToken.m_movement) {
+        case Movement::Left:
+        case Movement::Right:
+            positionInBlock = cursor.positionInBlock();
+            break;
+
+        case Movement::Up:
+        case Movement::Down:
+        case Movement::PageUp:
+        case Movement::PageDown:
+        case Movement::HalfPageUp:
+        case Movement::HalfPageDown:
+            setCursorPositionInBlock(cursor, positionInBlock, moveMode);
+            break;
+
+        default:
+            break;
         }
 
-        int pib = cursor.positionInBlock();
-        repeat = qMin(pib, repeat);
+        if (m_mode == VimMode::VisualLine) {
+            expandSelectionToWholeLines(cursor);
+        }
 
-        if (repeat > 0) {
-            cursor.movePosition(QTextCursor::Left, moveMode, repeat);
-            positionInBlock = cursor.positionInBlock();
+        m_editor->setTextCursor(cursor);
+    }
+}
+
+bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
+                           QTextCursor::MoveMode &p_moveMode,
+                           Movement p_movement, int p_repeat)
+{
+    bool hasMoved = false;
+
+    switch (p_movement) {
+    case Movement::Left:
+    {
+        if (p_repeat == -1) {
+            p_repeat = 1;
+        }
+
+        int pib = p_cursor.positionInBlock();
+        p_repeat = qMin(pib, p_repeat);
+
+        if (p_repeat > 0) {
+            p_cursor.movePosition(QTextCursor::Left, p_moveMode, p_repeat);
             hasMoved = true;
         }
 
@@ -900,19 +992,18 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
 
     case Movement::Right:
     {
-        if (repeat == -1) {
-            repeat = 1;
+        if (p_repeat == -1) {
+            p_repeat = 1;
         }
 
-        int pib = cursor.positionInBlock();
-        int length = cursor.block().length();
-        if (length - pib <= repeat) {
-            repeat = length - pib - 1;
+        int pib = p_cursor.positionInBlock();
+        int length = p_cursor.block().length();
+        if (length - pib <= p_repeat) {
+            p_repeat = length - pib - 1;
         }
 
-        if (repeat > 0) {
-            cursor.movePosition(QTextCursor::Right, moveMode, repeat);
-            positionInBlock = cursor.positionInBlock();
+        if (p_repeat > 0) {
+            p_cursor.movePosition(QTextCursor::Right, p_moveMode, p_repeat);
             hasMoved = true;
         }
 
@@ -921,18 +1012,14 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
 
     case Movement::Up:
     {
-        if (repeat == -1) {
-            repeat = 1;
+        if (p_repeat == -1) {
+            p_repeat = 1;
         }
 
-        repeat = qMin(cursor.block().blockNumber(), repeat);
+        p_repeat = qMin(p_cursor.block().blockNumber(), p_repeat);
 
-        if (repeat > 0) {
-            cursor.movePosition(QTextCursor::PreviousBlock, moveMode, repeat);
-            if (positionInBlock > 0) {
-                setCursorPositionInBlock(cursor, positionInBlock, moveMode);
-            }
-
+        if (p_repeat > 0) {
+            p_cursor.movePosition(QTextCursor::PreviousBlock, p_moveMode, p_repeat);
             hasMoved = true;
         }
 
@@ -941,19 +1028,15 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
 
     case Movement::Down:
     {
-        if (repeat == -1) {
-            repeat = 1;
+        if (p_repeat == -1) {
+            p_repeat = 1;
         }
 
-        int blockCount = m_editor->document()->blockCount();
-        repeat = qMin(blockCount - 1 - cursor.block().blockNumber(), repeat);
+        int blockCount = p_doc->blockCount();
+        p_repeat = qMin(blockCount - 1 - p_cursor.block().blockNumber(), p_repeat);
 
-        if (repeat > 0) {
-            cursor.movePosition(QTextCursor::NextBlock, moveMode, repeat);
-            if (positionInBlock > 0) {
-                setCursorPositionInBlock(cursor, positionInBlock, moveMode);
-            }
-
+        if (p_repeat > 0) {
+            p_cursor.movePosition(QTextCursor::NextBlock, p_moveMode, p_repeat);
             hasMoved = true;
         }
 
@@ -962,38 +1045,36 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
 
     case Movement::VisualUp:
     {
-        if (repeat == -1) {
-            repeat = 1;
+        if (p_repeat == -1) {
+            p_repeat = 1;
         }
 
-        cursor.movePosition(QTextCursor::Up, moveMode, repeat);
+        p_cursor.movePosition(QTextCursor::Up, p_moveMode, p_repeat);
         hasMoved = true;
         break;
     }
 
     case Movement::VisualDown:
     {
-        if (repeat == -1) {
-            repeat = 1;
+        if (p_repeat == -1) {
+            p_repeat = 1;
         }
 
-        cursor.movePosition(QTextCursor::Down, moveMode, repeat);
+        p_cursor.movePosition(QTextCursor::Down, p_moveMode, p_repeat);
         hasMoved = true;
         break;
     }
 
     case Movement::PageUp:
     {
-        if (repeat == -1) {
-            repeat = 1;
+        if (p_repeat == -1) {
+            p_repeat = 1;
         }
 
-        int blockStep = blockCountOfPageStep() * repeat;
-        int block = cursor.block().blockNumber();
+        int blockStep = blockCountOfPageStep() * p_repeat;
+        int block = p_cursor.block().blockNumber();
         block = qMax(0, block - blockStep);
-        cursor.setPosition(doc->findBlockByNumber(block).position(), moveMode);
-
-        setCursorPositionInBlock(cursor, positionInBlock, moveMode);
+        p_cursor.setPosition(p_doc->findBlockByNumber(block).position(), p_moveMode);
         hasMoved = true;
 
         break;
@@ -1001,16 +1082,14 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
 
     case Movement::PageDown:
     {
-        if (repeat == -1) {
-            repeat = 1;
+        if (p_repeat == -1) {
+            p_repeat = 1;
         }
 
-        int blockStep = blockCountOfPageStep() * repeat;
-        int block = cursor.block().blockNumber();
-        block = qMin(block + blockStep, doc->blockCount() - 1);
-        cursor.setPosition(doc->findBlockByNumber(block).position(), moveMode);
-
-        setCursorPositionInBlock(cursor, positionInBlock, moveMode);
+        int blockStep = blockCountOfPageStep() * p_repeat;
+        int block = p_cursor.block().blockNumber();
+        block = qMin(block + blockStep, p_doc->blockCount() - 1);
+        p_cursor.setPosition(p_doc->findBlockByNumber(block).position(), p_moveMode);
         hasMoved = true;
 
         break;
@@ -1018,18 +1097,16 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
 
     case Movement::HalfPageUp:
     {
-        if (repeat == -1) {
-            repeat = 1;
+        if (p_repeat == -1) {
+            p_repeat = 1;
         }
 
         int blockStep = blockCountOfPageStep();
         int halfBlockStep = qMax(blockStep / 2, 1);
-        blockStep = repeat * halfBlockStep;
-        int block = cursor.block().blockNumber();
+        blockStep = p_repeat * halfBlockStep;
+        int block = p_cursor.block().blockNumber();
         block = qMax(0, block - blockStep);
-        cursor.setPosition(doc->findBlockByNumber(block).position(), moveMode);
-
-        setCursorPositionInBlock(cursor, positionInBlock, moveMode);
+        p_cursor.setPosition(p_doc->findBlockByNumber(block).position(), p_moveMode);
         hasMoved = true;
 
         break;
@@ -1037,18 +1114,16 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
 
     case Movement::HalfPageDown:
     {
-        if (repeat == -1) {
-            repeat = 1;
+        if (p_repeat == -1) {
+            p_repeat = 1;
         }
 
         int blockStep = blockCountOfPageStep();
         int halfBlockStep = qMax(blockStep / 2, 1);
-        blockStep = repeat * halfBlockStep;
-        int block = cursor.block().blockNumber();
-        block = qMin(block + blockStep, doc->blockCount() - 1);
-        cursor.setPosition(doc->findBlockByNumber(block).position(), moveMode);
-
-        setCursorPositionInBlock(cursor, positionInBlock, moveMode);
+        blockStep = p_repeat * halfBlockStep;
+        int block = p_cursor.block().blockNumber();
+        block = qMin(block + blockStep, p_doc->blockCount() - 1);
+        p_cursor.setPosition(p_doc->findBlockByNumber(block).position(), p_moveMode);
         hasMoved = true;
 
         break;
@@ -1056,55 +1131,58 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
 
     case Movement::StartOfLine:
     {
-        Q_ASSERT(repeat == -1);
+        Q_ASSERT(p_repeat == -1);
 
         // Start of the Line (block).
-        cursor.movePosition(QTextCursor::StartOfBlock, moveMode, 1);
-        hasMoved = true;
+        if (!p_cursor.atBlockStart()) {
+            p_cursor.movePosition(QTextCursor::StartOfBlock, p_moveMode, 1);
+            hasMoved = true;
+        }
+
         break;
     }
 
     case Movement::EndOfLine:
     {
         // End of line (block).
-        if (repeat == -1) {
-            repeat = 1;
-        } else if (repeat > 1) {
-            // Move down (repeat-1) blocks.
-            cursor.movePosition(QTextCursor::NextBlock, moveMode, repeat - 1);
+        if (p_repeat == -1) {
+            p_repeat = 1;
+        } else if (p_repeat > 1) {
+            // Move down (p_repeat-1) blocks.
+            p_cursor.movePosition(QTextCursor::NextBlock, p_moveMode, p_repeat - 1);
         }
 
         // Move to the end of block.
-        cursor.movePosition(QTextCursor::EndOfBlock, moveMode, 1);
+        p_cursor.movePosition(QTextCursor::EndOfBlock, p_moveMode, 1);
         hasMoved = true;
         break;
     }
 
     case Movement::FirstCharacter:
     {
-        // repeat is not considered in this command.
+        // p_repeat is not considered in this command.
         // If all the block is space, just move to the end of block; otherwise,
         // move to the first non-space character.
-        moveCursorFirstNonSpaceCharacter(cursor, moveMode);
+        moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
         hasMoved = true;
         break;
     }
 
     case Movement::LineJump:
     {
-        // Jump to the first non-space character of @repeat line (block).
-        V_ASSERT(repeat > 0);
+        // Jump to the first non-space character of @p_repeat line (block).
+        V_ASSERT(p_repeat > 0);
 
-        // @repeat starts from 1 while block number starts from 0.
-        QTextBlock block = doc->findBlockByNumber(repeat - 1);
+        // @p_repeat starts from 1 while block number starts from 0.
+        QTextBlock block = p_doc->findBlockByNumber(p_repeat - 1);
         if (block.isValid()) {
-            cursor.setPosition(block.position(), moveMode);
+            p_cursor.setPosition(block.position(), p_moveMode);
         } else {
             // Go beyond the document.
-            cursor.movePosition(QTextCursor::End, moveMode, 1);
+            p_cursor.movePosition(QTextCursor::End, p_moveMode, 1);
         }
 
-        moveCursorFirstNonSpaceCharacter(cursor, moveMode);
+        moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
         hasMoved = true;
         break;
     }
@@ -1112,9 +1190,9 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
     case Movement::StartOfDocument:
     {
         // Jump to the first non-space character of the start of the document.
-        V_ASSERT(repeat == -1);
-        cursor.movePosition(QTextCursor::Start, moveMode, 1);
-        moveCursorFirstNonSpaceCharacter(cursor, moveMode);
+        V_ASSERT(p_repeat == -1);
+        p_cursor.movePosition(QTextCursor::Start, p_moveMode, 1);
+        moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
         hasMoved = true;
         break;
     }
@@ -1122,9 +1200,9 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
     case Movement::EndOfDocument:
     {
         // Jump to the first non-space character of the end of the document.
-        V_ASSERT(repeat == -1);
-        cursor.movePosition(QTextCursor::End, moveMode, 1);
-        moveCursorFirstNonSpaceCharacter(cursor, moveMode);
+        V_ASSERT(p_repeat == -1);
+        p_cursor.movePosition(QTextCursor::End, p_moveMode, 1);
+        moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
         hasMoved = true;
         break;
     }
@@ -1132,11 +1210,11 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
     case Movement::WordForward:
     {
         // Go to the start of next word.
-        if (repeat == -1) {
-            repeat = 1;
+        if (p_repeat == -1) {
+            p_repeat = 1;
         }
 
-        cursor.movePosition(QTextCursor::NextWord, moveMode, repeat);
+        p_cursor.movePosition(QTextCursor::NextWord, p_moveMode, p_repeat);
         hasMoved = true;
         break;
     }
@@ -1144,20 +1222,20 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
     case Movement::WORDForward:
     {
         // Go to the start of next WORD.
-        if (repeat == -1) {
-            repeat = 1;
+        if (p_repeat == -1) {
+            p_repeat = 1;
         }
 
-        for (int i = 0; i < repeat; ++i) {
+        for (int i = 0; i < p_repeat; ++i) {
             int start, end;
             // [start, end] is current WORD.
-            findCurrentWORD(cursor, start, end);
+            findCurrentWORD(p_cursor, start, end);
 
             // Move cursor to end of current WORD.
-            cursor.setPosition(end, moveMode);
+            p_cursor.setPosition(end, p_moveMode);
 
             // Skip spaces.
-            moveCursorAcrossSpaces(cursor, moveMode, true);
+            moveCursorAcrossSpaces(p_cursor, p_moveMode, true);
         }
 
         hasMoved = true;
@@ -1167,21 +1245,21 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
     case Movement::ForwardEndOfWord:
     {
         // Go to the end of current word or next word.
-        if (repeat == -1) {
-            repeat = 1;
+        if (p_repeat == -1) {
+            p_repeat = 1;
         }
 
-        int pos = cursor.position();
+        int pos = p_cursor.position();
         // First move to the end of current word.
-        cursor.movePosition(QTextCursor::EndOfWord, moveMode, 1);
-        if (pos != cursor.position()) {
+        p_cursor.movePosition(QTextCursor::EndOfWord, p_moveMode, 1);
+        if (pos != p_cursor.position()) {
             // We did move.
-            repeat -= 1;
+            p_repeat -= 1;
         }
 
-        if (repeat) {
-            cursor.movePosition(QTextCursor::NextWord, moveMode, repeat);
-            cursor.movePosition(QTextCursor::EndOfWord, moveMode);
+        if (p_repeat) {
+            p_cursor.movePosition(QTextCursor::NextWord, p_moveMode, p_repeat);
+            p_cursor.movePosition(QTextCursor::EndOfWord, p_moveMode);
         }
 
         hasMoved = true;
@@ -1191,20 +1269,20 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
     case Movement::ForwardEndOfWORD:
     {
         // Go to the end of current WORD or next WORD.
-        if (repeat == -1) {
-            repeat = 1;
+        if (p_repeat == -1) {
+            p_repeat = 1;
         }
 
-        for (int i = 0; i < repeat; ++i) {
+        for (int i = 0; i < p_repeat; ++i) {
             // Skip spaces.
-            moveCursorAcrossSpaces(cursor, moveMode, true);
+            moveCursorAcrossSpaces(p_cursor, p_moveMode, true);
 
             int start, end;
             // [start, end] is current WORD.
-            findCurrentWORD(cursor, start, end);
+            findCurrentWORD(p_cursor, start, end);
 
             // Move cursor to the end of current WORD.
-            cursor.setPosition(end, moveMode);
+            p_cursor.setPosition(end, p_moveMode);
         }
 
         hasMoved = true;
@@ -1214,20 +1292,20 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
     case Movement::WordBackward:
     {
         // Go to the start of previous word or current word.
-        if (repeat == -1) {
-            repeat = 1;
+        if (p_repeat == -1) {
+            p_repeat = 1;
         }
 
-        int pos = cursor.position();
+        int pos = p_cursor.position();
         // first move to the start of current word.
-        cursor.movePosition(QTextCursor::StartOfWord, moveMode, 1);
-        if (pos != cursor.position()) {
+        p_cursor.movePosition(QTextCursor::StartOfWord, p_moveMode, 1);
+        if (pos != p_cursor.position()) {
             // We did move.
-            repeat -= 1;
+            p_repeat -= 1;
         }
 
-        if (repeat) {
-            cursor.movePosition(QTextCursor::PreviousWord, moveMode, repeat);
+        if (p_repeat) {
+            p_cursor.movePosition(QTextCursor::PreviousWord, p_moveMode, p_repeat);
         }
 
         hasMoved = true;
@@ -1237,20 +1315,20 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
     case Movement::WORDBackward:
     {
         // Go to the start of previous WORD or current WORD.
-        if (repeat == -1) {
-            repeat = 1;
+        if (p_repeat == -1) {
+            p_repeat = 1;
         }
 
-        for (int i = 0; i < repeat; ++i) {
+        for (int i = 0; i < p_repeat; ++i) {
             // Skip Spaces.
-            moveCursorAcrossSpaces(cursor, moveMode, false);
+            moveCursorAcrossSpaces(p_cursor, p_moveMode, false);
 
             int start, end;
             // [start, end] is current WORD.
-            findCurrentWORD(cursor, start, end);
+            findCurrentWORD(p_cursor, start, end);
 
             // Move cursor to the start of current WORD.
-            cursor.setPosition(start, moveMode);
+            p_cursor.setPosition(start, p_moveMode);
         }
 
         hasMoved = true;
@@ -1260,17 +1338,17 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
     case Movement::BackwardEndOfWord:
     {
         // Go to the end of previous word.
-        if (repeat == -1) {
-            repeat = 1;
+        if (p_repeat == -1) {
+            p_repeat = 1;
         }
 
-        int pib = cursor.positionInBlock();
-        if (!(pib > 0 && cursor.block().text()[pib -1].isSpace())) {
-            ++repeat;
+        int pib = p_cursor.positionInBlock();
+        if (!(pib > 0 && p_cursor.block().text()[pib -1].isSpace())) {
+            ++p_repeat;
         }
 
-        cursor.movePosition(QTextCursor::PreviousWord, moveMode, repeat);
-        cursor.movePosition(QTextCursor::EndOfWord, moveMode, 1);
+        p_cursor.movePosition(QTextCursor::PreviousWord, p_moveMode, p_repeat);
+        p_cursor.movePosition(QTextCursor::EndOfWord, p_moveMode, 1);
         hasMoved = true;
         break;
     }
@@ -1278,17 +1356,17 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
     case Movement::BackwardEndOfWORD:
     {
         // Go to the end of previous WORD.
-        if (repeat == -1) {
-            repeat = 1;
+        if (p_repeat == -1) {
+            p_repeat = 1;
         }
 
-        for (int i = 0; i < repeat; ++i) {
+        for (int i = 0; i < p_repeat; ++i) {
             int start, end;
-            findCurrentWORD(cursor, start, end);
+            findCurrentWORD(p_cursor, start, end);
 
-            cursor.setPosition(start, moveMode);
+            p_cursor.setPosition(start, p_moveMode);
 
-            moveCursorAcrossSpaces(cursor, moveMode, false);
+            moveCursorAcrossSpaces(p_cursor, p_moveMode, false);
         }
 
         hasMoved = true;
@@ -1299,8 +1377,238 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
         break;
     }
 
+    return hasMoved;
+}
+
+void VVim::processDeleteAction(QList<Token> &p_tokens)
+{
+    Token to = p_tokens.takeFirst();
+    int repeat = -1;
+    if (to.isRepeat()) {
+        repeat = to.m_repeat;
+        to = p_tokens.takeFirst();
+    }
+
+    if ((!to.isMovement() && !to.isRange()) || !p_tokens.isEmpty()) {
+        return;
+    }
+
+    QTextCursor cursor = m_editor->textCursor();
+    QTextDocument *doc = m_editor->document();
+    bool hasMoved = false;
+    QTextCursor::MoveMode moveMode = QTextCursor::KeepAnchor;
+
+    if (to.isRange()) {
+        switch (to.m_range) {
+        case Range::Line:
+        {
+            // dd, Delete current line.
+            if (repeat == -1) {
+                repeat = 1;
+            }
+
+            QString deletedText;
+
+            cursor.beginEditBlock();
+            for (int i = 0; i < repeat; ++i) {
+                QString tmp;
+                int blockNum = cursor.block().blockNumber();
+                VEditUtils::removeBlock(cursor, &tmp);
+                deletedText += tmp;
+                if (blockNum > cursor.block().blockNumber()) {
+                    // The last block.
+                    break;
+                }
+            }
+
+            cursor.endEditBlock();
+
+            saveToRegister(deletedText);
+
+            hasMoved = true;
+
+            break;
+        }
+
+        case Range::Word:
+            break;
+
+        default:
+            return;
+        }
+
+        goto exit;
+    }
+
+    V_ASSERT(to.isMovement());
+
+    // Filter out not supported movement for DELETE action.
+    switch (to.m_movement) {
+    case Movement::PageUp:
+    case Movement::PageDown:
+    case Movement::HalfPageUp:
+    case Movement::HalfPageDown:
+        return;
+
+    default:
+        break;
+    }
+
+    cursor.beginEditBlock();
+    hasMoved = processMovement(cursor, doc, moveMode, to.m_movement, repeat);
+    if (repeat == -1) {
+        repeat = 1;
+    }
+
     if (hasMoved) {
-        expandSelectionInVisualLineMode(cursor);
+        bool clearEmptyBlock = false;
+        switch (to.m_movement) {
+        case Movement::Left:
+        {
+            qDebug() << "delete backward" << repeat << "chars";
+            break;
+        }
+
+        case Movement::Right:
+        {
+            qDebug() << "delete forward" << repeat << "chars";
+            break;
+        }
+
+        case Movement::Up:
+        {
+            expandSelectionToWholeLines(cursor);
+            clearEmptyBlock = true;
+            qDebug() << "delete up" << repeat << "lines";
+            break;
+        }
+
+        case Movement::Down:
+        {
+            expandSelectionToWholeLines(cursor);
+            clearEmptyBlock = true;
+            qDebug() << "delete down" << repeat << "lines";
+            break;
+        }
+
+        case Movement::VisualUp:
+        {
+            qDebug() << "delete visual up" << repeat << "lines";
+            break;
+        }
+
+        case Movement::VisualDown:
+        {
+            qDebug() << "delete visual down" << repeat << "lines";
+            break;
+        }
+
+        case Movement::StartOfLine:
+        {
+            qDebug() << "delete till start of line";
+            break;
+        }
+
+        case Movement::EndOfLine:
+        {
+            // End of line (block).
+            if (repeat > 1) {
+                clearEmptyBlock = true;
+            }
+
+            qDebug() << "delete till end of" << repeat << "line";
+            break;
+        }
+
+        case Movement::FirstCharacter:
+        {
+            qDebug() << "delete till first non-space character";
+            break;
+        }
+
+        case Movement::LineJump:
+        {
+            expandSelectionToWholeLines(cursor);
+            clearEmptyBlock = true;
+            qDebug() << "delete till line" << repeat;
+            break;
+        }
+
+        case Movement::StartOfDocument:
+        {
+            expandSelectionToWholeLines(cursor);
+            clearEmptyBlock = true;
+            qDebug() << "delete till start of document";
+            break;
+        }
+
+        case Movement::EndOfDocument:
+        {
+            expandSelectionToWholeLines(cursor);
+            clearEmptyBlock = true;
+            qDebug() << "delete till end of document";
+            break;
+        }
+
+        case Movement::WordForward:
+        {
+            qDebug() << "delete" << repeat << "words forward";
+            break;
+        }
+
+        case Movement::WORDForward:
+        {
+            qDebug() << "delete" << repeat << "WORDs forward";
+            break;
+        }
+
+        case Movement::ForwardEndOfWord:
+        {
+            qDebug() << "delete" << repeat << "end of words forward";
+            break;
+        }
+
+        case Movement::ForwardEndOfWORD:
+        {
+            qDebug() << "delete" << repeat << "end of WORDs forward";
+            break;
+        }
+
+        case Movement::WordBackward:
+        {
+            qDebug() << "delete" << repeat << "words backward";
+            break;
+        }
+
+        case Movement::WORDBackward:
+        {
+            qDebug() << "delete" << repeat << "WORDs backward";
+            break;
+        }
+
+        case Movement::BackwardEndOfWord:
+        {
+            qDebug() << "delete" << repeat << "end of words backward";
+            break;
+        }
+
+        case Movement::BackwardEndOfWORD:
+        {
+            qDebug() << "delete" << repeat << "end of WORDs backward";
+            break;
+        }
+
+        default:
+            break;
+        }
+
+        deleteSelectedText(cursor, clearEmptyBlock);
+    }
+
+    cursor.endEditBlock();
+
+exit:
+    if (hasMoved) {
         m_editor->setTextCursor(cursor);
     }
 }
@@ -1334,12 +1642,8 @@ void VVim::selectionToVisualMode(bool p_hasText)
     }
 }
 
-void VVim::expandSelectionInVisualLineMode(QTextCursor &p_cursor)
+void VVim::expandSelectionToWholeLines(QTextCursor &p_cursor)
 {
-    if (m_mode != VimMode::VisualLine) {
-        return;
-    }
-
     QTextDocument *doc = m_editor->document();
     int curPos = p_cursor.position();
     int anchorPos = p_cursor.anchor();
@@ -1422,9 +1726,81 @@ bool VVim::hasActionToken() const
     return false;
 }
 
-void VVim::tryInsertMoveAction()
+void VVim::tryAddMoveAction()
 {
     if (!hasActionToken()) {
-        m_tokens.prepend(Token(Action::Move));
+        addActionToken(Action::Move);
+    }
+}
+
+void VVim::addActionToken(Action p_action)
+{
+    V_ASSERT(!hasActionToken());
+    m_tokens.prepend(Token(p_action));
+}
+
+const VVim::Token *VVim::getActionToken() const
+{
+    V_ASSERT(hasActionToken());
+
+    for (auto const &token : m_tokens) {
+        if (token.isAction()) {
+            return &token;
+        }
+    }
+
+    return NULL;
+}
+
+void VVim::addRangeToken(Range p_range)
+{
+    m_tokens.append(Token(p_range));
+}
+
+void VVim::addMovementToken(Movement p_movement)
+{
+    m_tokens.append(Token(p_movement));
+}
+
+void VVim::deleteSelectedText(bool p_clearEmptyBlock)
+{
+    QTextCursor cursor = m_editor->textCursor();
+    if (cursor.hasSelection()) {
+        cursor.beginEditBlock();
+        deleteSelectedText(cursor, p_clearEmptyBlock);
+        cursor.endEditBlock();
+        m_editor->setTextCursor(cursor);
+    }
+}
+
+void VVim::deleteSelectedText(QTextCursor &p_cursor, bool p_clearEmptyBlock)
+{
+    if (p_cursor.hasSelection()) {
+        QString deletedText = p_cursor.selectedText();
+        p_cursor.removeSelectedText();
+        if (p_clearEmptyBlock && p_cursor.block().length() == 1) {
+            deletedText += "\n";
+            VEditUtils::removeBlock(p_cursor);
+        }
+
+        saveToRegister(deletedText);
+    }
+}
+
+void VVim::saveToRegister(const QString &p_text)
+{
+    qDebug() << QString("save text(%1) to register(%2)").arg(p_text).arg(m_register);
+
+    Register &reg = m_registers[m_register];
+    if (reg.isNamedRegister() && reg.m_append) {
+        // Append to current register.
+        reg.m_value += p_text;
+    } else {
+        reg.m_value = p_text;
+    }
+
+    if (!reg.isBlackHoleRegister() && !reg.isUnnamedRegister()) {
+        // Save it to unnamed register.
+        m_registers[c_unnamedRegister].m_value = reg.m_value;
     }
 }

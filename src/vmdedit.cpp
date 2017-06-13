@@ -31,9 +31,14 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
     connect(m_mdHighlighter, &HGMarkdownHighlighter::highlightCompleted,
             this, [this]() {
         QRect rect = this->cursorRect();
-        QRect viewRect = this->rect();
-        if ((rect.y() < viewRect.height()
-             && rect.y() + rect.height() > viewRect.height())
+        int height = this->rect().height();
+        QScrollBar *sbar = this->horizontalScrollBar();
+        if (sbar && sbar->isVisible()) {
+            height -= sbar->height();
+        }
+
+        if ((rect.y() < height
+             && rect.y() + rect.height() > height)
             || (rect.y() < 0 && rect.y() + rect.height() > 0)) {
             this->ensureCursorVisible();
         }

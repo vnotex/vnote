@@ -65,7 +65,8 @@ SOURCES += main.cpp\
     vexporter.cpp \
     vmdtab.cpp \
     vhtmltab.cpp \
-    utils/vvim.cpp
+    utils/vvim.cpp \
+    utils/veditutils.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -117,7 +118,8 @@ HEADERS  += vmainwindow.h \
     vexporter.h \
     vmdtab.h \
     vhtmltab.h \
-    utils/vvim.h
+    utils/vvim.h \
+    utils/veditutils.h
 
 RESOURCES += \
     vnote.qrc \
