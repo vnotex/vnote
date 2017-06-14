@@ -42,8 +42,6 @@ private:
     bool handleKeyReturn(QKeyEvent *p_event);
     bool handleKeyBracketLeft(QKeyEvent *p_event);
     bool insertTitle(int p_level);
-    bool insertNewBlockWithIndent();
-    bool insertListMarkAsPreviousLine();
     void deleteIndentAndListMark();
 
     // Check if @p_block is a auto list block.

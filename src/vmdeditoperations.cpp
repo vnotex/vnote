@@ -22,6 +22,7 @@
 #include "vmdedit.h"
 #include "vconfigmanager.h"
 #include "utils/vvim.h"
+#include "utils/veditutils.h"
 
 extern VConfigManager vconfig;
 
@@ -718,75 +719,27 @@ bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
     if (vconfig.getAutoIndent()) {
         handled = true;
 
+        QTextCursor cursor = m_editor->textCursor();
         bool textInserted = false;
+        cursor.beginEditBlock();
+        cursor.removeSelectedText();
+
         // Indent the new line as previous line.
-        textInserted = insertNewBlockWithIndent();
+        textInserted = VEditUtils::insertBlockWithIndent(cursor);
 
         // Continue the list from previous line.
         if (vconfig.getAutoList()) {
-            textInserted = insertListMarkAsPreviousLine() || textInserted;
+            textInserted = VEditUtils::insertListMarkAsPreviousBlock(cursor) || textInserted;
         }
+
+        cursor.endEditBlock();
+        m_editor->setTextCursor(cursor);
         if (textInserted) {
             m_autoIndentPos = m_editor->textCursor().position();
         }
     }
 
     return handled;
-}
-
-bool VMdEditOperations::insertNewBlockWithIndent()
-{
-    QTextCursor cursor = m_editor->textCursor();
-    bool ret = false;
-
-    cursor.beginEditBlock();
-    cursor.removeSelectedText();
-    QTextBlock block = cursor.block();
-    QString text = block.text();
-    QRegExp regExp("(^\\s*)");
-    regExp.indexIn(text);
-    V_ASSERT(regExp.captureCount() == 1);
-    QString leadingSpaces = regExp.capturedTexts()[1];
-    cursor.insertBlock();
-    if (!leadingSpaces.isEmpty()) {
-        cursor.insertText(leadingSpaces);
-        ret = true;
-    }
-    cursor.endEditBlock();
-    m_editor->setTextCursor(cursor);
-    return ret;
-}
-
-bool VMdEditOperations::insertListMarkAsPreviousLine()
-{
-    bool ret = false;
-    QTextCursor cursor = m_editor->textCursor();
-    QTextBlock block = cursor.block();
-    QTextBlock preBlock = block.previous();
-    QString text = preBlock.text();
-    QRegExp regExp("^\\s*(-|\\d+\\.)\\s");
-    int regIdx = regExp.indexIn(text);
-    if (regIdx != -1) {
-        ret = true;
-        V_ASSERT(regExp.captureCount() == 1);
-        cursor.beginEditBlock();
-        QString markText = regExp.capturedTexts()[1];
-        if (markText == "-") {
-            // Insert - in front.
-            cursor.insertText("- ");
-        } else {
-            // markText is like "123.".
-            V_ASSERT(markText.endsWith('.'));
-            bool ok = false;
-            int num = markText.left(markText.size() - 1).toInt(&ok, 10);
-            V_ASSERT(ok);
-            num++;
-            cursor.insertText(QString::number(num, 10) + ". ");
-        }
-        cursor.endEditBlock();
-        m_editor->setTextCursor(cursor);
-    }
-    return ret;
 }
 
 bool VMdEditOperations::isListBlock(const QTextBlock &p_block, int *p_seq)

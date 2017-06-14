@@ -5,8 +5,11 @@
 #include <QString>
 #include <QScrollBar>
 #include <QDebug>
+#include "vconfigmanager.h"
 #include "vedit.h"
 #include "utils/veditutils.h"
+
+extern VConfigManager vconfig;
 
 const QChar VVim::c_unnamedRegister = QChar('"');
 const QChar VVim::c_blackHoleRegister = QChar('_');
@@ -33,25 +36,6 @@ static void setCursorPositionInBlock(QTextCursor &p_cursor, int p_positionInBloc
     } else {
         p_cursor.movePosition(QTextCursor::EndOfBlock, p_mode, 1);
     }
-}
-
-// Move @p_cursor to the first non-space character of current block.
-// Need to setTextCursor() after calling this.
-static void moveCursorFirstNonSpaceCharacter(QTextCursor &p_cursor,
-                                             QTextCursor::MoveMode p_mode)
-{
-    QTextBlock block = p_cursor.block();
-    QString text = block.text();
-    int idx = 0;
-    for (; idx < text.size(); ++idx) {
-        if (text[idx].isSpace()) {
-            continue;
-        } else {
-            break;
-        }
-    }
-
-    p_cursor.setPosition(block.position() + idx, p_mode);
 }
 
 // Find the start and end of the WORD @p_cursor locates in (within a single block).
@@ -336,7 +320,7 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             QTextCursor cursor = m_editor->textCursor();
             if (m_mode == VimMode::Normal) {
                 // Insert at the first non-space character.
-                moveCursorFirstNonSpaceCharacter(cursor, QTextCursor::MoveAnchor);
+                VEditUtils::moveCursorFirstNonSpaceCharacter(cursor, QTextCursor::MoveAnchor);
             } else if (m_mode == VimMode::Visual || m_mode == VimMode::VisualLine) {
                 // Insert at the start of line.
                 cursor.movePosition(QTextCursor::StartOfBlock,
@@ -391,31 +375,39 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
 
     case Qt::Key_O:
     {
-        if (modifiers == Qt::NoModifier) {
-            // Insert a new block under current block and enter insert mode.
+        if (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier) {
+            // Insert a new block under/above current block and enter insert mode.
+            bool insertAbove = modifiers == Qt::ShiftModifier;
             if (m_mode == VimMode::Normal) {
                 QTextCursor cursor = m_editor->textCursor();
-                cursor.movePosition(QTextCursor::EndOfBlock,
+                cursor.beginEditBlock();
+                cursor.movePosition(insertAbove ? QTextCursor::StartOfBlock
+                                                : QTextCursor::EndOfBlock,
                                     QTextCursor::MoveAnchor,
                                     1);
+
                 cursor.insertBlock();
+
+                if (insertAbove) {
+                    cursor.movePosition(QTextCursor::PreviousBlock,
+                                        QTextCursor::MoveAnchor,
+                                        1);
+                }
+
+                if (vconfig.getAutoIndent()) {
+                    VEditUtils::indentBlockAsPreviousBlock(cursor);
+                    if (vconfig.getAutoList()) {
+                        VEditUtils::insertListMarkAsPreviousBlock(cursor);
+                    }
+                }
+
+                cursor.endEditBlock();
                 m_editor->setTextCursor(cursor);
+
                 setMode(VimMode::Insert);
             }
-        } else if (modifiers == Qt::ShiftModifier) {
-            // Insert a new block above current block and enter insert mode.
-            if (m_mode == VimMode::Normal) {
-                QTextCursor cursor = m_editor->textCursor();
-                cursor.movePosition(QTextCursor::StartOfBlock,
-                                    QTextCursor::MoveAnchor,
-                                    1);
-                cursor.insertBlock();
-                cursor.movePosition(QTextCursor::PreviousBlock,
-                                    QTextCursor::MoveAnchor,
-                                    1);
-                m_editor->setTextCursor(cursor);
-                setMode(VimMode::Insert);
-            }
+
+            break;
         }
 
         break;
@@ -1163,7 +1155,7 @@ bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
         // p_repeat is not considered in this command.
         // If all the block is space, just move to the end of block; otherwise,
         // move to the first non-space character.
-        moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
+        VEditUtils::moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
         hasMoved = true;
         break;
     }
@@ -1182,7 +1174,7 @@ bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
             p_cursor.movePosition(QTextCursor::End, p_moveMode, 1);
         }
 
-        moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
+        VEditUtils::moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
         hasMoved = true;
         break;
     }
@@ -1192,7 +1184,7 @@ bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
         // Jump to the first non-space character of the start of the document.
         V_ASSERT(p_repeat == -1);
         p_cursor.movePosition(QTextCursor::Start, p_moveMode, 1);
-        moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
+        VEditUtils::moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
         hasMoved = true;
         break;
     }
@@ -1202,7 +1194,7 @@ bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
         // Jump to the first non-space character of the end of the document.
         V_ASSERT(p_repeat == -1);
         p_cursor.movePosition(QTextCursor::End, p_moveMode, 1);
-        moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
+        VEditUtils::moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
         hasMoved = true;
         break;
     }
