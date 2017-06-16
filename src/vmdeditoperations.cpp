@@ -363,23 +363,9 @@ bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)
             m_autoIndentPos = -1;
             cursor.beginEditBlock();
             // Indent each selected line.
-            QTextBlock block = doc->findBlock(cursor.selectionStart());
-            QTextBlock endBlock = doc->findBlock(cursor.selectionEnd());
-            int endBlockNum = endBlock.blockNumber();
-            while (true) {
-                Q_ASSERT(block.isValid());
-                if (!block.text().isEmpty()) {
-                    QTextCursor blockCursor(block);
-                    blockCursor.insertText(text);
-                }
-
-                if (block.blockNumber() == endBlockNum) {
-                    break;
-                }
-
-                block = block.next();
-            }
+            VEditUtils::indentSelectedBlocks(doc, cursor, text, true);
             cursor.endEditBlock();
+            m_editor->setTextCursor(cursor);
         } else {
             // If it is a Tab key following auto list, increase the indent level.
             QTextBlock block = cursor.block();
@@ -417,49 +403,19 @@ bool VMdEditOperations::handleKeyBackTab(QKeyEvent *p_event)
     QTextDocument *doc = m_editor->document();
     QTextCursor cursor = m_editor->textCursor();
     QTextBlock block = doc->findBlock(cursor.selectionStart());
-    QTextBlock endBlock = doc->findBlock(cursor.selectionEnd());
-
     bool continueAutoIndent = false;
     int seq = -1;
     if (cursor.position() == m_autoIndentPos && isListBlock(block, &seq) &&
         !cursor.hasSelection()) {
         continueAutoIndent = true;
     }
-    int endBlockNum = endBlock.blockNumber();
+
     cursor.beginEditBlock();
     if (continueAutoIndent && seq != -1) {
         changeListBlockSeqNumber(block, 1);
     }
 
-    for (; block.isValid() && block.blockNumber() <= endBlockNum;
-         block = block.next()) {
-        QTextCursor blockCursor(block);
-        QString text = block.text();
-        if (text.isEmpty()) {
-            continue;
-        } else if (text[0] == '\t') {
-            blockCursor.deleteChar();
-            continue;
-        } else if (text[0] != ' ') {
-            continue;
-        } else {
-            // Spaces.
-            if (m_editConfig->m_expandTab) {
-                int width = m_editConfig->m_tabSpaces.size();
-                for (int i = 0; i < width; ++i) {
-                    if (text[i] == ' ') {
-                        blockCursor.deleteChar();
-                    } else {
-                        break;
-                    }
-                }
-                continue;
-            } else {
-                blockCursor.deleteChar();
-                continue;
-            }
-        }
-    }
+    VEditUtils::indentSelectedBlocks(doc, cursor, m_editConfig->m_tabSpaces, false);
     cursor.endEditBlock();
 
     if (continueAutoIndent) {

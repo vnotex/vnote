@@ -5,6 +5,7 @@
 #include <QString>
 #include <QTextCursor>
 #include <QHash>
+#include <QDebug>
 #include "vutils.h"
 
 class VEdit;
@@ -101,6 +102,7 @@ private:
         Delete,
         Copy,
         Paste,
+        PasteBefore,
         Change,
         Indent,
         UnIndent,
@@ -143,7 +145,22 @@ private:
     enum class Range
     {
         Line = 0,
-        Word,
+        WordInner,
+        WordAround,
+        WORDInner,
+        WORDAround,
+        QuoteInner,
+        QuoteAround,
+        DoubleQuoteInner,
+        DoubleQuoteAround,
+        ParenthesisInner,
+        ParenthesisAround,
+        BracketInner,
+        BracketAround,
+        AngleBracketInner,
+        AngleBracketAround,
+        BraceInner,
+        BraceAround,
         Invalid
     };
 
@@ -257,6 +274,26 @@ private:
             return m_name == c_blackHoleRegister;
         }
 
+        bool isSelectionRegister() const
+        {
+            return m_name == c_selectionRegister;
+        }
+
+        bool isBlock() const
+        {
+            return m_value.endsWith('\n');
+        }
+
+        // @p_value is the content to update.
+        // If @p_value ends with \n, then it is a block.
+        // When @p_value is a block, we need to add \n at the end if necessary.
+        // If @m_append is true and @p_value is a block, we need to add \n between
+        // them if necessary.
+        void update(const QString &p_value);
+
+        // Read the value of this register.
+        const QString &read();
+
         QChar m_name;
         QString m_value;
 
@@ -286,6 +323,21 @@ private:
 
     // @p_tokens is the arguments of the Action::Delete action.
     void processDeleteAction(QList<Token> &p_tokens);
+
+    // @p_tokens is the arguments of the Action::Copy action.
+    void processCopyAction(QList<Token> &p_tokens);
+
+    // @p_tokens is the arguments of the Action::Paste and Action::PasteBefore action.
+    void processPasteAction(QList<Token> &p_tokens, bool p_pasteBefore);
+
+    // @p_tokens is the arguments of the Action::Change action.
+    void processChangeAction(QList<Token> &p_tokens);
+
+    // @p_tokens is the arguments of the Action::Indent and Action::UnIndent action.
+    void processIndentAction(QList<Token> &p_tokens, bool p_isIndent);
+
+    // @p_tokens is the arguments of the Action::ToLower and Action::ToUpper action.
+    void processToLowerAction(QList<Token> &p_tokens, bool p_toLower);
 
     // Clear selection if there is any.
     // Returns true if there is selection.
@@ -331,18 +383,43 @@ private:
 
     // Delete selected text if there is any.
     // @p_clearEmptyBlock: whether to remove the empty block after deletion.
-    void deleteSelectedText(bool p_clearEmptyBlock);
-
     void deleteSelectedText(QTextCursor &p_cursor, bool p_clearEmptyBlock);
 
-    // Save @p_text to the Register pointed by m_register.
+    // Copy selected text if there is any.
+    // Will clear selection.
+    // @p_addNewLine: whether to add a new line \n to the selection.
+    void copySelectedText(bool p_addNewLine);
+
+    void copySelectedText(QTextCursor &p_cursor, bool p_addNewLine);
+
+    // Convert the case of selected text if there is any.
+    // Will clear selection.
+    // @p_toLower: to lower or upper.
+    void convertCaseOfSelectedText(QTextCursor &p_cursor, bool p_toLower);
+
+    // Save @p_text to the Register pointed by m_regName.
+    // Remove QChar::ObjectReplacementCharacter before saving.
     void saveToRegister(const QString &p_text);
 
     // Move @p_cursor according to @p_moveMode and @p_movement.
     // Return true if it has moved @p_cursor.
     bool processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
-                         QTextCursor::MoveMode &p_moveMode,
+                         QTextCursor::MoveMode p_moveMode,
                          Movement p_movement, int p_repeat);
+
+    // Move @p_cursor according to @p_moveMode and @p_range.
+    // Return true if it has moved @p_cursor.
+    bool selectRange(QTextCursor &p_cursor, const QTextDocument *p_doc,
+                     Range p_range, int p_repeat);
+
+    // Check if there is an Action token with Delete/Copy/Change action.
+    bool hasActionTokenValidForTextObject() const;
+
+    // Check if m_keys only contains @p_key.
+    bool checkPendingKey(const Key &p_key) const;
+
+    // Check if m_tokens only contains action token @p_action.
+    bool checkActionToken(Action p_action) const;
 
     VEdit *m_editor;
     const VEditConfig *m_editConfig;
@@ -351,6 +428,7 @@ private:
     // A valid command token should follow the rule:
     // Action, Repeat, Movement.
     // Action, Repeat, Range.
+    // Action, Repeat.
     QList<Key> m_keys;
     QList<Token> m_tokens;
 
@@ -360,7 +438,7 @@ private:
     QHash<QChar, Register> m_registers;
 
     // Currently used register.
-    QChar m_register;
+    QChar m_regName;
 
     static const QChar c_unnamedRegister;
     static const QChar c_blackHoleRegister;

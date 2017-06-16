@@ -4,6 +4,8 @@
 #include <QTextBlock>
 #include <QTextCursor>
 
+class QTextDocument;
+
 // Utils for text edit.
 class VEditUtils
 {
@@ -35,6 +37,31 @@ public:
     // Returns true if list mark has been inserted.
     // Need to call setTextCursor() to make it take effect.
     static bool insertListMarkAsPreviousBlock(QTextCursor &p_cursor);
+
+    // Remove ObjectReplaceCharacter in p_text.
+    // If the ObjectReplaceCharacter is in a block with only other spaces, remove the
+    // whole block.
+    static void removeObjectReplacementCharacter(QString &p_text);
+
+    // p_cursor.selectedText() will use U+2029 (QChar::ParagraphSeparator)
+    // instead of \n for a new line.
+    // This function will translate it to \n.
+    static QString selectedText(const QTextCursor &p_cursor);
+
+    // Indent selected blocks. If no selection, indent current block.
+    // @p_isIndent: whether it is indentation or unindentation.
+    static void indentSelectedBlocks(const QTextDocument *p_doc,
+                                     const QTextCursor &p_cursor,
+                                     const QString &p_indentationText,
+                                     bool p_isIndent);
+
+    // Indent current block.
+    // Skip empty block.
+    static void indentBlock(QTextCursor &p_cursor,
+                            const QString &p_indentationText);
+
+    static void unindentBlock(QTextCursor &p_cursor,
+                              const QString &p_indentationText);
 
 private:
     VEditUtils() {}

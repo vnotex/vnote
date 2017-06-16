@@ -19,7 +19,7 @@ void VEditUtils::removeBlock(QTextCursor &p_cursor, QString *p_text)
 
     p_cursor.select(QTextCursor::BlockUnderCursor);
     if (p_text) {
-        *p_text = p_cursor.selectedText() + "\n";
+        *p_text = selectedText(p_cursor) + "\n";
     }
 
     p_cursor.deleteChar();
@@ -133,3 +133,80 @@ void VEditUtils::moveCursorFirstNonSpaceCharacter(QTextCursor &p_cursor,
     p_cursor.setPosition(block.position() + idx, p_mode);
 }
 
+void VEditUtils::removeObjectReplacementCharacter(QString &p_text)
+{
+    QRegExp orcBlockExp(QString("[\\n|^][ |\\t]*\\xfffc[ |\\t]*(?=\\n)"));
+    p_text.remove(orcBlockExp);
+    p_text.remove(QChar::ObjectReplacementCharacter);
+}
+
+QString VEditUtils::selectedText(const QTextCursor &p_cursor)
+{
+    QString text = p_cursor.selectedText();
+    text.replace(QChar::ParagraphSeparator, '\n');
+    return text;
+}
+
+// Use another QTextCursor to remain the selection.
+void VEditUtils::indentSelectedBlocks(const QTextDocument *p_doc,
+                                      const QTextCursor &p_cursor,
+                                      const QString &p_indentationText,
+                                      bool p_isIndent)
+{
+    int nrBlocks = 1;
+    int start = p_cursor.selectionStart();
+    int end = p_cursor.selectionEnd();
+
+    QTextBlock sBlock = p_doc->findBlock(start);
+    if (start != end) {
+        QTextBlock eBlock = p_doc->findBlock(end);
+        nrBlocks = eBlock.blockNumber() - sBlock.blockNumber() + 1;
+    }
+
+    QTextCursor bCursor(sBlock);
+    bCursor.beginEditBlock();
+    for (int i = 0; i < nrBlocks; ++i) {
+        if (p_isIndent) {
+            indentBlock(bCursor, p_indentationText);
+        } else {
+            unindentBlock(bCursor, p_indentationText);
+        }
+
+        bCursor.movePosition(QTextCursor::NextBlock);
+    }
+    bCursor.endEditBlock();
+}
+
+void VEditUtils::indentBlock(QTextCursor &p_cursor,
+                             const QString &p_indentationText)
+{
+    QTextBlock block = p_cursor.block();
+    if (block.length() > 1) {
+        p_cursor.movePosition(QTextCursor::StartOfBlock);
+        p_cursor.insertText(p_indentationText);
+    }
+}
+
+void VEditUtils::unindentBlock(QTextCursor &p_cursor,
+                               const QString &p_indentationText)
+{
+    QTextBlock block = p_cursor.block();
+    QString text = block.text();
+    if (text.isEmpty()) {
+        return;
+    }
+
+    p_cursor.movePosition(QTextCursor::StartOfBlock);
+    if (text[0] == '\t') {
+        p_cursor.deleteChar();
+    } else if (text[0].isSpace()) {
+        int width = p_indentationText.size();
+        for (int i = 0; i < width; ++i) {
+            if (text[i] == ' ') {
+                p_cursor.deleteChar();
+            } else {
+                break;
+            }
+        }
+    }
+}
