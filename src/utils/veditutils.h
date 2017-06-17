@@ -63,6 +63,14 @@ public:
     static void unindentBlock(QTextCursor &p_cursor,
                               const QString &p_indentationText);
 
+    // Find a char within a block.
+    // Returns true if target is found.
+    static bool findTargetWithinBlock(QTextCursor &p_cursor,
+                                      QTextCursor::MoveMode p_mode,
+                                      QChar p_target,
+                                      bool p_forward,
+                                      bool p_inclusive);
+
 private:
     VEditUtils() {}
 };

@@ -210,3 +210,44 @@ void VEditUtils::unindentBlock(QTextCursor &p_cursor,
         }
     }
 }
+
+bool VEditUtils::findTargetWithinBlock(QTextCursor &p_cursor,
+                                       QTextCursor::MoveMode p_mode,
+                                       QChar p_target,
+                                       bool p_forward,
+                                       bool p_inclusive)
+{
+    qDebug() << "find target" << p_target << p_forward << p_inclusive;
+    QTextBlock block = p_cursor.block();
+    QString text = block.text();
+    int pib = p_cursor.positionInBlock();
+    int delta = p_forward ? 1 : -1;
+    int idx = pib + delta;
+
+repeat:
+    for (; idx < text.size() && idx >= 0; idx += delta) {
+        if (text[idx] == p_target) {
+            break;
+        }
+    }
+
+    if (idx < 0 || idx >= text.size()) {
+        return false;
+    }
+
+    if ((p_forward && p_inclusive && p_mode == QTextCursor::KeepAnchor)
+        || (!p_forward && !p_inclusive)) {
+        ++idx;
+    } else if (p_forward && !p_inclusive && p_mode == QTextCursor::MoveAnchor) {
+        --idx;
+    }
+
+    if (idx == pib) {
+        // We need to skip current match.
+        idx = pib + delta * 2;
+        goto repeat;
+    }
+
+    p_cursor.setPosition(block.position() + idx, p_mode);
+    return true;
+}

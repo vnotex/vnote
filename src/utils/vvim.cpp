@@ -308,6 +308,34 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
         goto clear_accept;
     }
 
+    if (expectingCharacterTarget()) {
+        // Expecting a target character for f/F/t/T.
+        Movement mm = Movement::Invalid;
+        const Key &aKey = m_keys.first();
+        if (aKey.m_key == Qt::Key_F) {
+            if (aKey.m_modifiers == Qt::NoModifier) {
+                mm = Movement::FindForward;
+            } else {
+                mm = Movement::FindBackward;
+            }
+        } else {
+            if (aKey.m_modifiers == Qt::NoModifier) {
+                mm = Movement::TillForward;
+            } else {
+                mm = Movement::TillBackward;
+            }
+        }
+
+        V_ASSERT(mm != Movement::Invalid);
+
+        tryAddMoveAction();
+        addMovementToken(mm, keyInfo);
+        m_lastFindToken = m_tokens.last();
+        processCommand(m_tokens);
+
+        goto clear_accept;
+    }
+
     // We will add key to m_keys. If all m_keys can combined to a token, add
     // a new token to m_tokens, clear m_keys and try to process m_tokens.
     switch (key) {
@@ -1164,6 +1192,82 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
         break;
     }
 
+    case Qt::Key_F:
+    {
+        if (m_mode == VimMode::VisualLine) {
+            break;
+        }
+
+        if (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier) {
+            // f/F, find forward/backward within a block.
+            tryGetRepeatToken(m_keys, m_tokens);
+
+            if (m_keys.isEmpty()) {
+                m_keys.append(keyInfo);
+                goto accept;
+            }
+
+            break;
+        }
+
+        break;
+    }
+
+    case Qt::Key_T:
+    {
+        if (m_mode == VimMode::VisualLine) {
+            break;
+        }
+
+        if (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier) {
+            // t/T, find till forward/backward within a block.
+            tryGetRepeatToken(m_keys, m_tokens);
+
+            if (m_keys.isEmpty()) {
+                m_keys.append(keyInfo);
+                goto accept;
+            }
+
+            break;
+        }
+
+        break;
+    }
+
+    case Qt::Key_Comma:
+    {
+        if (m_mode == VimMode::VisualLine) {
+            break;
+        }
+
+        // ,, repeat last find target movement, but reversely.
+        tryGetRepeatToken(m_keys, m_tokens);
+
+        if (m_keys.isEmpty()) {
+            repeatLastFindMovement(true);
+            break;
+        }
+
+        break;
+    }
+
+    case Qt::Key_Semicolon:
+    {
+        if (m_mode == VimMode::VisualLine) {
+            break;
+        }
+
+        // ;, repeat last find target movement.
+        tryGetRepeatToken(m_keys, m_tokens);
+
+        if (m_keys.isEmpty()) {
+            repeatLastFindMovement(false);
+            break;
+        }
+
+        break;
+    }
+
     default:
         break;
     }
@@ -1327,7 +1431,7 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
                                      ? QTextCursor::KeepAnchor
                                      : QTextCursor::MoveAnchor;
     bool hasMoved = processMovement(cursor, m_editor->document(),
-                                    moveMode, mvToken.m_movement, repeat);
+                                    moveMode, mvToken, repeat);
 
     if (hasMoved) {
         // Maintain positionInBlock.
@@ -1358,13 +1462,80 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
     }
 }
 
+#define ADDKEY(x, y) case (x): {ch = (y); break;}
+
+// Returns NULL QChar if invalid.
+static QChar keyToChar(int p_key, int p_modifiers)
+{
+    if (p_modifiers == Qt::ControlModifier) {
+        return QChar();
+    }
+
+    if (p_key >= Qt::Key_0 && p_key <= Qt::Key_9) {
+        return QChar('0' + (p_key - Qt::Key_0));
+    } else if (p_key >= Qt::Key_A && p_key <= Qt::Key_Z) {
+        if (p_modifiers == Qt::ShiftModifier) {
+            return QChar('A' + (p_key - Qt::Key_A));
+        } else {
+            return QChar('a' + (p_key - Qt::Key_A));
+        }
+    }
+
+    QChar ch;
+    switch (p_key) {
+    ADDKEY(Qt::Key_Tab, '\t');
+    ADDKEY(Qt::Key_Space, ' ');
+    ADDKEY(Qt::Key_Exclam, '!');
+    ADDKEY(Qt::Key_QuoteDbl, '"');
+    ADDKEY(Qt::Key_NumberSign, '#');
+    ADDKEY(Qt::Key_Dollar, '$');
+    ADDKEY(Qt::Key_Percent, '%');
+    ADDKEY(Qt::Key_Ampersand, '&');
+    ADDKEY(Qt::Key_Apostrophe, '\'');
+    ADDKEY(Qt::Key_ParenLeft, '(');
+    ADDKEY(Qt::Key_ParenRight, ')');
+    ADDKEY(Qt::Key_Asterisk, '*');
+    ADDKEY(Qt::Key_Plus, '+');
+    ADDKEY(Qt::Key_Comma, ',');
+    ADDKEY(Qt::Key_Minus, '-');
+    ADDKEY(Qt::Key_Period, '.');
+    ADDKEY(Qt::Key_Slash, '/');
+    ADDKEY(Qt::Key_Colon, ':');
+    ADDKEY(Qt::Key_Semicolon, ';');
+    ADDKEY(Qt::Key_Less, '<');
+    ADDKEY(Qt::Key_Equal, '=');
+    ADDKEY(Qt::Key_Greater, '>');
+    ADDKEY(Qt::Key_Question, '?');
+    ADDKEY(Qt::Key_At, '@');
+    ADDKEY(Qt::Key_BracketLeft, '[');
+    ADDKEY(Qt::Key_Backslash, '\\');
+    ADDKEY(Qt::Key_BracketRight, ']');
+    ADDKEY(Qt::Key_AsciiCircum, '^');
+    ADDKEY(Qt::Key_Underscore, '_');
+    ADDKEY(Qt::Key_QuoteLeft, '`');
+    ADDKEY(Qt::Key_BraceLeft, '{');
+    ADDKEY(Qt::Key_Bar, '|');
+    ADDKEY(Qt::Key_BraceRight, '}');
+    ADDKEY(Qt::Key_AsciiTilde, '~');
+
+    default:
+        break;
+    }
+
+    return ch;
+}
+
 bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
                            QTextCursor::MoveMode p_moveMode,
-                           Movement p_movement, int p_repeat)
+                           const Token &p_token, int p_repeat)
 {
-    bool hasMoved = false;
+    V_ASSERT(p_token.isMovement());
 
-    switch (p_movement) {
+    bool hasMoved = false;
+    bool inclusive = true;
+    bool forward = true;
+
+    switch (p_token.m_movement) {
     case Movement::Left:
     {
         if (p_repeat == -1) {
@@ -1765,6 +1936,29 @@ bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
         break;
     }
 
+    case Movement::TillBackward:
+        forward = false;
+        // Fall through.
+    case Movement::TillForward:
+        inclusive = false;
+        goto handle_target;
+
+    case Movement::FindBackward:
+        forward = false;
+        // Fall through.
+    case Movement::FindForward:
+    {
+handle_target:
+        const Key &key = p_token.m_key;
+        QChar target = keyToChar(key.m_key, key.m_modifiers);
+        if (!target.isNull()) {
+            hasMoved = VEditUtils::findTargetWithinBlock(p_cursor, p_moveMode,
+                                                         target, forward, inclusive);
+        }
+
+        break;
+    }
+
     default:
         break;
     }
@@ -1979,7 +2173,7 @@ void VVim::processDeleteAction(QList<Token> &p_tokens)
     }
 
     cursor.beginEditBlock();
-    hasMoved = processMovement(cursor, doc, moveMode, to.m_movement, repeat);
+    hasMoved = processMovement(cursor, doc, moveMode, to, repeat);
     if (repeat == -1) {
         repeat = 1;
     }
@@ -2235,7 +2429,7 @@ void VVim::processCopyAction(QList<Token> &p_tokens)
     }
 
     cursor.beginEditBlock();
-    changed = processMovement(cursor, doc, moveMode, to.m_movement, repeat);
+    changed = processMovement(cursor, doc, moveMode, to, repeat);
     if (repeat == -1) {
         repeat = 1;
     }
@@ -2545,7 +2739,7 @@ void VVim::processChangeAction(QList<Token> &p_tokens)
     }
 
     cursor.beginEditBlock();
-    hasMoved = processMovement(cursor, doc, moveMode, to.m_movement, repeat);
+    hasMoved = processMovement(cursor, doc, moveMode, to, repeat);
     if (repeat == -1) {
         repeat = 1;
     }
@@ -2793,7 +2987,7 @@ void VVim::processIndentAction(QList<Token> &p_tokens, bool p_isIndent)
     processMovement(cursor,
                     doc,
                     QTextCursor::KeepAnchor,
-                    to.m_movement,
+                    to,
                     repeat);
     VEditUtils::indentSelectedBlocks(doc,
                                      cursor,
@@ -2852,7 +3046,7 @@ void VVim::processToLowerAction(QList<Token> &p_tokens, bool p_toLower)
     changed = processMovement(cursor,
                               doc,
                               moveMode,
-                              to.m_movement,
+                              to,
                               repeat);
     if (repeat == -1) {
         repeat = 1;
@@ -3051,6 +3245,19 @@ bool VVim::expectingRegisterName() const
            && m_keys.at(0) == Key(Qt::Key_QuoteDbl, Qt::ShiftModifier);
 }
 
+bool VVim::expectingCharacterTarget() const
+{
+    if (m_keys.size() != 1) {
+        return false;
+    }
+
+    const Key &key = m_keys.first();
+    return (key == Key(Qt::Key_F, Qt::NoModifier)
+            || key == Key(Qt::Key_F, Qt::ShiftModifier)
+            || key == Key(Qt::Key_T, Qt::NoModifier)
+            || key == Key(Qt::Key_T, Qt::ShiftModifier));
+}
+
 QChar VVim::keyToRegisterName(const Key &p_key) const
 {
     if (p_key.isAlphabet()) {
@@ -3162,6 +3369,11 @@ void VVim::addRangeToken(Range p_range)
 void VVim::addMovementToken(Movement p_movement)
 {
     m_tokens.append(Token(p_movement));
+}
+
+void VVim::addMovementToken(Movement p_movement, Key p_key)
+{
+    m_tokens.append(Token(p_movement, p_key));
 }
 
 void VVim::deleteSelectedText(QTextCursor &p_cursor, bool p_clearEmptyBlock)
@@ -3302,4 +3514,45 @@ const QString &VVim::Register::read()
     }
 
     return m_value;
+}
+
+void VVim::repeatLastFindMovement(bool p_reverse)
+{
+    if (!m_lastFindToken.isValid()) {
+        return;
+    }
+
+    V_ASSERT(m_lastFindToken.isMovement());
+
+    Movement mm = m_lastFindToken.m_movement;
+    Key key = m_lastFindToken.m_key;
+
+    V_ASSERT(key.isValid());
+
+    if (p_reverse) {
+        switch (mm) {
+        case Movement::FindForward:
+            mm = Movement::FindBackward;
+            break;
+
+        case Movement::FindBackward:
+            mm = Movement::FindForward;
+            break;
+
+        case Movement::TillForward:
+            mm = Movement::TillBackward;
+            break;
+
+        case Movement::TillBackward:
+            mm = Movement::TillForward;
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    tryAddMoveAction();
+    addMovementToken(mm, key);
+    processCommand(m_tokens);
 }

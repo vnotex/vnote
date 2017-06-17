@@ -56,6 +56,8 @@ private:
         {
         }
 
+        Key() : m_key(-1), m_modifiers(Qt::NoModifier) {}
+
         int m_key;
         int m_modifiers;
 
@@ -87,6 +89,11 @@ private:
             } else {
                 return QChar('A' + (m_key - Qt::Key_A));
             }
+        }
+
+        bool isValid() const
+        {
+            return m_key > -1 && m_modifiers > -1;
         }
 
         bool operator==(const Key &p_key) const
@@ -138,6 +145,10 @@ private:
         WORDBackward,
         BackwardEndOfWord,
         BackwardEndOfWORD,
+        FindForward,
+        FindBackward,
+        TillForward,
+        TillBackward,
         Invalid
     };
 
@@ -177,6 +188,9 @@ private:
         Token(Movement p_movement)
             : m_type(TokenType::Movement), m_movement(p_movement) {}
 
+        Token(Movement p_movement, Key p_key)
+            : m_type(TokenType::Movement), m_movement(p_movement), m_key(p_key) {}
+
         Token(Range p_range)
             : m_type(TokenType::Range), m_range(p_range) {}
 
@@ -200,6 +214,11 @@ private:
         bool isRange() const
         {
             return m_type == TokenType::Range;
+        }
+
+        bool isValid() const
+        {
+            return m_type != TokenType::Invalid;
         }
 
         QString toString() const
@@ -235,9 +254,12 @@ private:
         {
             Action m_action;
             int m_repeat;
-            Movement m_movement;
             Range m_range;
+            Movement m_movement;
         };
+
+        // Used in some Movement.
+        Key m_key;
     };
 
     struct Register
@@ -358,6 +380,9 @@ private:
     // Check m_keys to see if we are expecting a register name.
     bool expectingRegisterName() const;
 
+    // Check m_keys to see if we are expecting a target for f/t/F/T command.
+    bool expectingCharacterTarget() const;
+
     // Return the corresponding register name of @p_key.
     // If @p_key is not a valid register name, return a NULL QChar.
     QChar keyToRegisterName(const Key &p_key) const;
@@ -381,6 +406,9 @@ private:
     // Add an Movement token at the end of m_tokens.
     void addMovementToken(Movement p_movement);
 
+    // Add an Movement token at the end of m_tokens.
+    void addMovementToken(Movement p_movement, Key p_key);
+
     // Delete selected text if there is any.
     // @p_clearEmptyBlock: whether to remove the empty block after deletion.
     void deleteSelectedText(QTextCursor &p_cursor, bool p_clearEmptyBlock);
@@ -401,11 +429,11 @@ private:
     // Remove QChar::ObjectReplacementCharacter before saving.
     void saveToRegister(const QString &p_text);
 
-    // Move @p_cursor according to @p_moveMode and @p_movement.
+    // Move @p_cursor according to @p_moveMode and @p_token.
     // Return true if it has moved @p_cursor.
     bool processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
                          QTextCursor::MoveMode p_moveMode,
-                         Movement p_movement, int p_repeat);
+                         const Token &p_token, int p_repeat);
 
     // Move @p_cursor according to @p_moveMode and @p_range.
     // Return true if it has moved @p_cursor.
@@ -420,6 +448,9 @@ private:
 
     // Check if m_tokens only contains action token @p_action.
     bool checkActionToken(Action p_action) const;
+
+    // Repeat m_lastFindToken.
+    void repeatLastFindMovement(bool p_reverse);
 
     VEdit *m_editor;
     const VEditConfig *m_editConfig;
@@ -439,6 +470,9 @@ private:
 
     // Currently used register.
     QChar m_regName;
+
+    // Last f/F/t/T Token.
+    Token m_lastFindToken;
 
     static const QChar c_unnamedRegister;
     static const QChar c_blackHoleRegister;
