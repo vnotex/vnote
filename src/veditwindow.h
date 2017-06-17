@@ -68,6 +68,9 @@ signals:
     void outlineChanged(const VToc &toc);
     void curHeaderChanged(const VAnchor &anchor);
 
+    // Emit when want to show message in status bar.
+    void statusMessage(const QString &p_msg);
+
 private slots:
     bool handleTabCloseRequest(int index);
     void splitWindow();
@@ -84,6 +87,9 @@ private slots:
     void handleLocateAct();
     void handleMoveLeftAct();
     void handleMoveRightAct();
+
+    // Handle the statusMessage signal of VEditTab.
+    void handleTabStatusMessage(const QString &p_msg);
 
 private:
     void initTabActions();

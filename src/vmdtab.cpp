@@ -58,6 +58,8 @@ void VMdTab::setupUI()
                 this, &VMdTab::saveAndRead);
         connect(m_editor, &VEdit::discardAndRead,
                 this, &VMdTab::discardAndRead);
+        connect(m_editor, &VEdit::statusMessage,
+                this, &VEditTab::statusMessage);
 
         m_editor->reloadFile();
         m_stacks->addWidget(m_editor);

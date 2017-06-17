@@ -93,6 +93,9 @@ signals:
 
     void statusChanged();
 
+    // Emit when want to show message in status bar.
+    void statusMessage(const QString &p_msg);
+
 private slots:
     // Called when app focus changed.
     void handleFocusChanged(QWidget *p_old, QWidget *p_now);

@@ -268,6 +268,8 @@ int VEditWindow::openFileInTab(VFile *p_file, OpenFileMode p_mode)
             this, &VEditWindow::handleCurHeaderChanged);
     connect(editor, &VEditTab::statusChanged,
             this, &VEditWindow::handleTabStatusChanged);
+    connect(editor, &VEditTab::statusMessage,
+            this, &VEditWindow::handleTabStatusMessage);
 
     int idx = appendEditTab(p_file, editor);
     return idx;
@@ -573,6 +575,14 @@ void VEditWindow::handleTabStatusChanged()
         // Only update the tab status. Do no propagate upwards.
         updateTabInfo(idx);
         updateAllTabsSequence();
+    }
+}
+
+void VEditWindow::handleTabStatusMessage(const QString &p_msg)
+{
+    int idx = indexOf(dynamic_cast<QWidget *>(sender()));
+    if (idx == currentIndex()) {
+        emit statusMessage(p_msg);
     }
 }
 

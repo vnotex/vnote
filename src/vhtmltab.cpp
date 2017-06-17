@@ -39,6 +39,8 @@ void VHtmlTab::setupUI()
             this, &VHtmlTab::discardAndRead);
     connect(m_editor, &VEdit::editNote,
             this, &VHtmlTab::editFile);
+    connect(m_editor, &VEdit::statusMessage,
+            this, &VEditTab::statusMessage);
     m_editor->reloadFile();
 
     QVBoxLayout *mainLayout = new QVBoxLayout();

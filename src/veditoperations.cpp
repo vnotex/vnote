@@ -18,6 +18,8 @@ VEditOperations::VEditOperations(VEdit *p_editor, VFile *p_file)
             this, &VEditOperations::handleEditConfigUpdated);
     connect(m_vim, &VVim::modeChanged,
             this, &VEditOperations::handleVimModeChanged);
+    connect(m_vim, &VVim::vimMessage,
+            this, &VEditOperations::statusMessage);
 }
 
 void VEditOperations::insertTextAtCurPos(const QString &p_text)

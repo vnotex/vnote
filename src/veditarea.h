@@ -63,6 +63,9 @@ signals:
     void outlineChanged(const VToc &toc);
     void curHeaderChanged(const VAnchor &anchor);
 
+    // Emit when want to show message in status bar.
+    void statusMessage(const QString &p_msg);
+
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
 
@@ -94,6 +97,9 @@ private slots:
     void handleEditWindowStatusChanged(const VFile *p_file,
                                        const VEditTab *p_editTab,
                                        bool p_editMode);
+
+    // Handle the statusMessage signal of VEditWindow.
+    void handleWindowStatusMessage(const QString &p_msg);
 
 private:
     void setupUI();

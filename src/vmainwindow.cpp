@@ -109,6 +109,8 @@ void VMainWindow::setupUI()
             editArea, &VEditArea::handleFileUpdated);
     connect(editArea, &VEditArea::curTabStatusChanged,
             this, &VMainWindow::handleCurTabStatusChanged);
+    connect(editArea, &VEditArea::statusMessage,
+            this, &VMainWindow::showStatusMessage);
     connect(m_findReplaceDialog, &VFindReplaceDialog::findTextChanged,
             this, &VMainWindow::handleFindDialogTextChanged);
 
@@ -1487,4 +1489,10 @@ QAction *VMainWindow::newAction(const QIcon &p_icon,
 #else
     return new QAction(p_icon, p_text, p_parent);
 #endif
+}
+
+void VMainWindow::showStatusMessage(const QString &p_msg)
+{
+    const int timeout = 3000;
+    statusBar()->showMessage(p_msg, timeout);
 }

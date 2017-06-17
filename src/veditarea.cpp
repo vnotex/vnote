@@ -79,6 +79,8 @@ void VEditArea::insertSplitWindow(int idx)
             this, &VEditArea::handleOutlineChanged);
     connect(win, &VEditWindow::curHeaderChanged,
             this, &VEditArea::handleCurHeaderChanged);
+    connect(win, &VEditWindow::statusMessage,
+            this, &VEditArea::handleWindowStatusMessage);
 }
 
 void VEditArea::handleEditWindowStatusChanged(const VFile *p_file,
@@ -87,6 +89,13 @@ void VEditArea::handleEditWindowStatusChanged(const VFile *p_file,
 {
     if (splitter->widget(curWindowIndex) == sender()) {
         emit curTabStatusChanged(p_file, p_editTab, p_editMode);
+    }
+}
+
+void VEditArea::handleWindowStatusMessage(const QString &p_msg)
+{
+    if (splitter->widget(curWindowIndex) == sender()) {
+        emit statusMessage(p_msg);
     }
 }
 

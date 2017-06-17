@@ -51,6 +51,9 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
 
     m_editOps = new VMdEditOperations(this, m_file);
 
+    connect(m_editOps, &VEditOperations::statusMessage,
+            this, &VEdit::statusMessage);
+
     connect(this, &VMdEdit::cursorPositionChanged,
             this, &VMdEdit::updateCurHeader);
 

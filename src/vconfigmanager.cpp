@@ -330,7 +330,10 @@ QString VConfigManager::getLogFilePath()
 void VConfigManager::updateMarkdownEditStyle()
 {
     static const QString defaultCurrentLineBackground = "#C5CAE9";
-    static const QString defaultCurrentLineVimBackground = "#A5D6A7";
+    static const QString defaultVimNormalBg = "#A5D6A7";
+    static const QString defaultVimInsertBg = "#E1BEE7";
+    static const QString defaultVimVisualBg = "#90CAF9";
+    static const QString defaultVimReplaceBg = "#F8BBD0";
     static const QString defaultTrailingSpaceBackground = "#FFEBEE";
 
     // Read style file .mdhl
@@ -351,10 +354,10 @@ void VConfigManager::updateMarkdownEditStyle()
     parser.fetchMarkdownEditorStyles(mdEditPalette, mdEditFont, styles);
 
     m_editorCurrentLineBg = defaultCurrentLineBackground;
-    m_editorVimInsertBg = defaultCurrentLineBackground;
-    m_editorVimNormalBg = defaultCurrentLineVimBackground;
-    m_editorVimVisualBg = m_editorVimNormalBg;
-    m_editorVimReplaceBg = m_editorVimNormalBg;
+    m_editorVimInsertBg = defaultVimInsertBg;
+    m_editorVimNormalBg = defaultVimNormalBg;
+    m_editorVimVisualBg = defaultVimVisualBg;
+    m_editorVimReplaceBg = defaultVimReplaceBg;
     auto editorCurrentLineIt = styles.find("editor-current-line");
     if (editorCurrentLineIt != styles.end()) {
         auto backgroundIt = editorCurrentLineIt->find("background");

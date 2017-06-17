@@ -14,10 +14,10 @@ background: 005fff
 
 editor-current-line
 background: c5cae9
-vim-insert-background: c5cae9
+vim-insert-background: e1bee7
 vim-normal-background: a5d6a7
-vim-visual-background: a5d6a7
-vim-replace-background: a5d6a7
+vim-visual-background: 90caf9
+vim-replace-background: f8bbd0
 
 H1
 foreground: 111111

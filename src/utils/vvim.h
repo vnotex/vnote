@@ -42,6 +42,9 @@ signals:
     // Emit when current mode has been changed.
     void modeChanged(VimMode p_mode);
 
+    // Emit when VVim want to display some messages.
+    void vimMessage(const QString &p_msg);
+
 private slots:
     // When user use mouse to select texts in Normal mode, we should change to
     // Visual mode.
@@ -451,6 +454,8 @@ private:
 
     // Repeat m_lastFindToken.
     void repeatLastFindMovement(bool p_reverse);
+
+    void message(const QString &p_str);
 
     VEdit *m_editor;
     const VEditConfig *m_editConfig;

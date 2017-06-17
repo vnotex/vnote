@@ -27,6 +27,10 @@ public:
     // processed.
     virtual bool handleKeyPressEvent(QKeyEvent *p_event) = 0;
 
+signals:
+    // Want to display a template message in status bar.
+    void statusMessage(const QString &p_msg);
+
 protected slots:
     // Handle the update of VEditConfig of the editor.
     virtual void handleEditConfigUpdated();

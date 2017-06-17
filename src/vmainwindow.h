@@ -85,6 +85,9 @@ private slots:
     void printNote();
     void exportAsPDF();
 
+    // Show a temporary message in status bar.
+    void showStatusMessage(const QString &p_msg);
+
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
     void resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;

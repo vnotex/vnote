@@ -251,3 +251,16 @@ repeat:
     p_cursor.setPosition(block.position() + idx, p_mode);
     return true;
 }
+
+int VEditUtils::selectedBlockCount(const QTextCursor &p_cursor)
+{
+    if (!p_cursor.hasSelection()) {
+        return 0;
+    }
+
+    QTextDocument *doc = p_cursor.document();
+    int sbNum = doc->findBlock(p_cursor.selectionStart()).blockNumber();
+    int ebNum = doc->findBlock(p_cursor.selectionEnd()).blockNumber();
+
+    return ebNum - sbNum + 1;
+}

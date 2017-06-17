@@ -2119,6 +2119,9 @@ void VVim::processDeleteAction(QList<Token> &p_tokens)
                     VEditUtils::removeBlock(cursor);
                 }
 
+                message(tr("%1 fewer %2").arg(repeat).arg(repeat > 1 ? tr("lines")
+                                                                     : tr("line")));
+
                 qDebug() << "delete" << repeat << "lines";
                 break;
             }
@@ -2181,18 +2184,6 @@ void VVim::processDeleteAction(QList<Token> &p_tokens)
     if (hasMoved) {
         bool clearEmptyBlock = false;
         switch (to.m_movement) {
-        case Movement::Left:
-        {
-            qDebug() << "delete backward" << repeat << "chars";
-            break;
-        }
-
-        case Movement::Right:
-        {
-            qDebug() << "delete forward" << repeat << "chars";
-            break;
-        }
-
         case Movement::Up:
         {
             expandSelectionToWholeLines(cursor);
@@ -2209,24 +2200,6 @@ void VVim::processDeleteAction(QList<Token> &p_tokens)
             break;
         }
 
-        case Movement::VisualUp:
-        {
-            qDebug() << "delete visual up" << repeat << "lines";
-            break;
-        }
-
-        case Movement::VisualDown:
-        {
-            qDebug() << "delete visual down" << repeat << "lines";
-            break;
-        }
-
-        case Movement::StartOfLine:
-        {
-            qDebug() << "delete till start of line";
-            break;
-        }
-
         case Movement::EndOfLine:
         {
             // End of line (block).
@@ -2235,12 +2208,6 @@ void VVim::processDeleteAction(QList<Token> &p_tokens)
             }
 
             qDebug() << "delete till end of" << repeat << "line";
-            break;
-        }
-
-        case Movement::FirstCharacter:
-        {
-            qDebug() << "delete till first non-space character";
             break;
         }
 
@@ -2268,56 +2235,14 @@ void VVim::processDeleteAction(QList<Token> &p_tokens)
             break;
         }
 
-        case Movement::WordForward:
-        {
-            qDebug() << "delete" << repeat << "words forward";
-            break;
-        }
-
-        case Movement::WORDForward:
-        {
-            qDebug() << "delete" << repeat << "WORDs forward";
-            break;
-        }
-
-        case Movement::ForwardEndOfWord:
-        {
-            qDebug() << "delete" << repeat << "end of words forward";
-            break;
-        }
-
-        case Movement::ForwardEndOfWORD:
-        {
-            qDebug() << "delete" << repeat << "end of WORDs forward";
-            break;
-        }
-
-        case Movement::WordBackward:
-        {
-            qDebug() << "delete" << repeat << "words backward";
-            break;
-        }
-
-        case Movement::WORDBackward:
-        {
-            qDebug() << "delete" << repeat << "WORDs backward";
-            break;
-        }
-
-        case Movement::BackwardEndOfWord:
-        {
-            qDebug() << "delete" << repeat << "end of words backward";
-            break;
-        }
-
-        case Movement::BackwardEndOfWORD:
-        {
-            qDebug() << "delete" << repeat << "end of WORDs backward";
-            break;
-        }
-
         default:
             break;
+        }
+
+        if (clearEmptyBlock) {
+            int nrBlock = VEditUtils::selectedBlockCount(cursor);
+            message(tr("%1 fewer %2").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
+                                                                   : tr("line")));
         }
 
         deleteSelectedText(cursor, clearEmptyBlock);
@@ -2359,7 +2284,7 @@ void VVim::processCopyAction(QList<Token> &p_tokens)
             switch (to.m_range) {
             case Range::Line:
             {
-                // yy, delete current line.
+                // yy, copy current line.
                 if (repeat == -1) {
                     repeat = 1;
                 }
@@ -2369,6 +2294,9 @@ void VVim::processCopyAction(QList<Token> &p_tokens)
                 } else {
                     saveToRegister("\n");
                 }
+
+                message(tr("%1 %2 yanked").arg(repeat).arg(repeat > 1 ? tr("lines")
+                                                                      : tr("line")));
 
                 qDebug() << "copy" << repeat << "lines";
                 break;
@@ -2437,18 +2365,6 @@ void VVim::processCopyAction(QList<Token> &p_tokens)
     if (changed) {
         bool addNewLine = false;
         switch (to.m_movement) {
-        case Movement::Left:
-        {
-            qDebug() << "copy backward" << repeat << "chars";
-            break;
-        }
-
-        case Movement::Right:
-        {
-            qDebug() << "copy forward" << repeat << "chars";
-            break;
-        }
-
         case Movement::Up:
         {
             expandSelectionToWholeLines(cursor);
@@ -2465,35 +2381,11 @@ void VVim::processCopyAction(QList<Token> &p_tokens)
             break;
         }
 
-        case Movement::VisualUp:
-        {
-            qDebug() << "copy visual up" << repeat << "lines";
-            break;
-        }
-
-        case Movement::VisualDown:
-        {
-            qDebug() << "copy visual down" << repeat << "lines";
-            break;
-        }
-
-        case Movement::StartOfLine:
-        {
-            qDebug() << "copy till start of line";
-            break;
-        }
-
         case Movement::EndOfLine:
         {
             // End of line (block).
             // Do not need to add new line even if repeat > 1.
             qDebug() << "copy till end of" << repeat << "line";
-            break;
-        }
-
-        case Movement::FirstCharacter:
-        {
-            qDebug() << "copy till first non-space character";
             break;
         }
 
@@ -2521,56 +2413,14 @@ void VVim::processCopyAction(QList<Token> &p_tokens)
             break;
         }
 
-        case Movement::WordForward:
-        {
-            qDebug() << "copy" << repeat << "words forward";
-            break;
-        }
-
-        case Movement::WORDForward:
-        {
-            qDebug() << "copy" << repeat << "WORDs forward";
-            break;
-        }
-
-        case Movement::ForwardEndOfWord:
-        {
-            qDebug() << "copy" << repeat << "end of words forward";
-            break;
-        }
-
-        case Movement::ForwardEndOfWORD:
-        {
-            qDebug() << "copy" << repeat << "end of WORDs forward";
-            break;
-        }
-
-        case Movement::WordBackward:
-        {
-            qDebug() << "copy" << repeat << "words backward";
-            break;
-        }
-
-        case Movement::WORDBackward:
-        {
-            qDebug() << "copy" << repeat << "WORDs backward";
-            break;
-        }
-
-        case Movement::BackwardEndOfWord:
-        {
-            qDebug() << "copy" << repeat << "end of words backward";
-            break;
-        }
-
-        case Movement::BackwardEndOfWORD:
-        {
-            qDebug() << "copy" << repeat << "end of WORDs backward";
-            break;
-        }
-
         default:
             break;
+        }
+
+        if (addNewLine) {
+            int nrBlock = VEditUtils::selectedBlockCount(cursor);
+            message(tr("%1 %2 yanked").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
+                                                                    : tr("line")));
         }
 
         copySelectedText(cursor, addNewLine);
@@ -2626,6 +2476,12 @@ void VVim::processPasteAction(QList<Token> &p_tokens, bool p_pasteBefore)
 
         // inserBlock() already insert a new line, so eliminate one here.
         cursor.insertText(text.left(text.size() - 1));
+
+        int nrBlock = text.count('\n');
+        if (nrBlock > 0) {
+            message(tr("%1 more %2").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
+                                                                  : tr("line")));
+        }
     } else {
         if (!p_pasteBefore && !cursor.atBlockEnd()) {
             // Insert behind current cursor.
@@ -2944,6 +2800,15 @@ void VVim::processIndentAction(QList<Token> &p_tokens, bool p_isIndent)
                                              cursor,
                                              m_editConfig->m_tabSpaces,
                                              p_isIndent);
+
+            if (p_isIndent) {
+                message(tr("%1 %2 >ed 1 time").arg(repeat).arg(repeat > 1 ? tr("lines")
+                                                                          : tr("line")));
+            } else {
+                message(tr("%1 %2 <ed 1 time").arg(repeat).arg(repeat > 1 ? tr("lines")
+                                                                          : tr("line")));
+            }
+
             break;
         }
 
@@ -2989,6 +2854,16 @@ void VVim::processIndentAction(QList<Token> &p_tokens, bool p_isIndent)
                     QTextCursor::KeepAnchor,
                     to,
                     repeat);
+
+    int nrBlock = VEditUtils::selectedBlockCount(cursor);
+    if (p_isIndent) {
+        message(tr("%1 %2 >ed 1 time").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
+                                                                    : tr("line")));
+    } else {
+        message(tr("%1 %2 <ed 1 time").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
+                                                                    : tr("line")));
+    }
+
     VEditUtils::indentSelectedBlocks(doc,
                                      cursor,
                                      m_editConfig->m_tabSpaces,
@@ -3021,6 +2896,12 @@ void VVim::processToLowerAction(QList<Token> &p_tokens, bool p_toLower)
         if (changed) {
             oriPos = cursor.selectionStart();
             convertCaseOfSelectedText(cursor, p_toLower);
+
+            if (to.m_range == Range::Line) {
+                message(tr("%1 %2 changed").arg(repeat == -1 ? 1 : repeat)
+                                           .arg(repeat > 1 ? tr("lines") : tr("line")));
+            }
+
             cursor.setPosition(oriPos);
         }
 
@@ -3054,115 +2935,52 @@ void VVim::processToLowerAction(QList<Token> &p_tokens, bool p_toLower)
 
     if (changed) {
         oriPos = cursor.selectionStart();
+        bool isBlock = false;
 
         switch (to.m_movement) {
-        case Movement::Left:
-        {
-            break;
-        }
-
-        case Movement::Right:
-        {
-            break;
-        }
-
         case Movement::Up:
         {
+            isBlock = true;
             expandSelectionToWholeLines(cursor);
             break;
         }
 
         case Movement::Down:
         {
+            isBlock = true;
             expandSelectionToWholeLines(cursor);
-            break;
-        }
-
-        case Movement::VisualUp:
-        {
-            break;
-        }
-
-        case Movement::VisualDown:
-        {
-            break;
-        }
-
-        case Movement::StartOfLine:
-        {
-            break;
-        }
-
-        case Movement::EndOfLine:
-        {
-            break;
-        }
-
-        case Movement::FirstCharacter:
-        {
             break;
         }
 
         case Movement::LineJump:
         {
+            isBlock = true;
             expandSelectionToWholeLines(cursor);
             break;
         }
 
         case Movement::StartOfDocument:
         {
+            isBlock = true;
             expandSelectionToWholeLines(cursor);
             break;
         }
 
         case Movement::EndOfDocument:
         {
+            isBlock = true;
             expandSelectionToWholeLines(cursor);
-            break;
-        }
-
-        case Movement::WordForward:
-        {
-            break;
-        }
-
-        case Movement::WORDForward:
-        {
-            break;
-        }
-
-        case Movement::ForwardEndOfWord:
-        {
-            break;
-        }
-
-        case Movement::ForwardEndOfWORD:
-        {
-            break;
-        }
-
-        case Movement::WordBackward:
-        {
-            break;
-        }
-
-        case Movement::WORDBackward:
-        {
-            break;
-        }
-
-        case Movement::BackwardEndOfWord:
-        {
-            break;
-        }
-
-        case Movement::BackwardEndOfWORD:
-        {
             break;
         }
 
         default:
             break;
+        }
+
+        if (isBlock) {
+            int nrBlock = VEditUtils::selectedBlockCount(cursor);
+            message(tr("%1 %2 changed").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
+                                                                     : tr("line")));
         }
 
         convertCaseOfSelectedText(cursor, p_toLower);
@@ -3555,4 +3373,10 @@ void VVim::repeatLastFindMovement(bool p_reverse)
     tryAddMoveAction();
     addMovementToken(mm, key);
     processCommand(m_tokens);
+}
+
+void VVim::message(const QString &p_msg)
+{
+    qDebug() << "vim msg:" << p_msg;
+    emit vimMessage(p_msg);
 }

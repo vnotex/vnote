@@ -89,6 +89,9 @@ signals:
     // Emit when m_config has been updated.
     void configUpdated();
 
+    // Emit when want to show message in status bar.
+    void statusMessage(const QString &p_msg);
+
 public slots:
     virtual void highlightCurrentLine();
 

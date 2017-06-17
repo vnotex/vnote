@@ -71,6 +71,9 @@ public:
                                       bool p_forward,
                                       bool p_inclusive);
 
+    // Get the count of blocks selected.
+    static int selectedBlockCount(const QTextCursor &p_cursor);
+
 private:
     VEditUtils() {}
 };
