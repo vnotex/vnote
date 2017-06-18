@@ -270,6 +270,8 @@ int VEditWindow::openFileInTab(VFile *p_file, OpenFileMode p_mode)
             this, &VEditWindow::handleTabStatusChanged);
     connect(editor, &VEditTab::statusMessage,
             this, &VEditWindow::handleTabStatusMessage);
+    connect(editor, &VEditTab::vimStatusUpdated,
+            this, &VEditWindow::handleTabVimStatusUpdated);
 
     int idx = appendEditTab(p_file, editor);
     return idx;
@@ -583,6 +585,14 @@ void VEditWindow::handleTabStatusMessage(const QString &p_msg)
     int idx = indexOf(dynamic_cast<QWidget *>(sender()));
     if (idx == currentIndex()) {
         emit statusMessage(p_msg);
+    }
+}
+
+void VEditWindow::handleTabVimStatusUpdated(const VVim *p_vim)
+{
+    int idx = indexOf(dynamic_cast<QWidget *>(sender()));
+    if (idx == currentIndex()) {
+        emit vimStatusUpdated(p_vim);
     }
 }
 

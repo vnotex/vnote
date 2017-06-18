@@ -55,6 +55,8 @@ public:
 
     MarkdownConverterType getMarkdownConverterType() const;
 
+    void requestUpdateVimStatus() Q_DECL_OVERRIDE;
+
 public slots:
     // Enter edit mode.
     void editFile() Q_DECL_OVERRIDE;

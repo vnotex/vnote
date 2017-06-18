@@ -290,12 +290,16 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
         goto accept;
     }
 
+    m_pendingKeys.append(keyInfo);
+
     if (expectingRegisterName()) {
         // Expecting a register name.
         QChar reg = keyToRegisterName(keyInfo);
         if (!reg.isNull()) {
-            resetState();
-            m_regName = reg;
+            // We should keep m_pendingKeys.
+            m_keys.clear();
+            m_tokens.clear();
+            setRegister(reg);
             if (m_registers[reg].isNamedRegister()) {
                 m_registers[reg].m_append = (modifiers == Qt::ShiftModifier);
             } else {
@@ -1281,6 +1285,7 @@ accept:
 
 exit:
     m_resetPositionInBlock = resetPositionInBlock;
+    emit vimStatusUpdated(this);
     return ret;
 }
 
@@ -1288,7 +1293,8 @@ void VVim::resetState()
 {
     m_keys.clear();
     m_tokens.clear();
-    m_regName = c_unnamedRegister;
+    m_pendingKeys.clear();
+    setRegister(c_unnamedRegister);
     m_resetPositionInBlock = true;
 }
 
@@ -1305,6 +1311,7 @@ void VVim::setMode(VimMode p_mode)
         resetState();
 
         emit modeChanged(m_mode);
+        emit vimStatusUpdated(this);
     }
 }
 
@@ -3379,4 +3386,29 @@ void VVim::message(const QString &p_msg)
 {
     qDebug() << "vim msg:" << p_msg;
     emit vimMessage(p_msg);
+}
+
+const QMap<QChar, VVim::Register> &VVim::getRegisters() const
+{
+    return m_registers;
+}
+
+QChar VVim::getCurrentRegisterName() const
+{
+    return m_regName;
+}
+
+QString VVim::getPendingKeys() const
+{
+    QString str;
+    for (auto const & key : m_pendingKeys) {
+        str.append(keyToChar(key.m_key, key.m_modifiers));
+    }
+
+    return str;
+}
+
+void VVim::setRegister(QChar p_reg)
+{
+    m_regName = p_reg;
 }

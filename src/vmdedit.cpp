@@ -53,6 +53,8 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
 
     connect(m_editOps, &VEditOperations::statusMessage,
             this, &VEdit::statusMessage);
+    connect(m_editOps, &VEditOperations::vimStatusUpdated,
+            this, &VEdit::vimStatusUpdated);
 
     connect(this, &VMdEdit::cursorPositionChanged,
             this, &VMdEdit::updateCurHeader);

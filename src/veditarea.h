@@ -20,6 +20,7 @@ class VFile;
 class VDirectory;
 class VFindReplaceDialog;
 class QLabel;
+class VVim;
 
 class VEditArea : public QWidget, public VNavigationMode
 {
@@ -66,6 +67,9 @@ signals:
     // Emit when want to show message in status bar.
     void statusMessage(const QString &p_msg);
 
+    // Emit when Vim status updated.
+    void vimStatusUpdated(const VVim *p_vim);
+
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
 
@@ -100,6 +104,9 @@ private slots:
 
     // Handle the statusMessage signal of VEditWindow.
     void handleWindowStatusMessage(const QString &p_msg);
+
+    // Handle the vimStatusUpdated signal of VEditWindow.
+    void handleWindowVimStatusUpdated(const VVim *p_vim);
 
 private:
     void setupUI();

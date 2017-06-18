@@ -29,6 +29,7 @@ class VNotebookSelector;
 class VAvatar;
 class VFindReplaceDialog;
 class VCaptain;
+class VVimIndicator;
 
 class VMainWindow : public QMainWindow
 {
@@ -88,6 +89,9 @@ private slots:
     // Show a temporary message in status bar.
     void showStatusMessage(const QString &p_msg);
 
+    // Handle Vim status updated.
+    void handleVimStatusUpdated(const VVim *p_vim);
+
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
     void resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
@@ -127,6 +131,9 @@ private:
     void toggleOnePanelView();
     void closeCurrentFile();
 
+    // Update status bar information according to m_curTab and m_curFile.
+    void updateStatusInfo(bool p_editMode);
+
     // Wrapper to create a QAction.
     QAction *newAction(const QIcon &p_icon,
                        const QString &p_text,
@@ -150,6 +157,7 @@ private:
     VOutline *outline;
     VAvatar *m_avatar;
     VFindReplaceDialog *m_findReplaceDialog;
+    VVimIndicator *m_vimIndicator;
 
     // Whether it is one panel or two panles.
     bool m_onePanel;

@@ -781,3 +781,12 @@ void VEdit::mouseMoveEvent(QMouseEvent *p_event)
 
     QTextEdit::mouseMoveEvent(p_event);
 }
+
+void VEdit::requestUpdateVimStatus()
+{
+    if (m_editOps) {
+        m_editOps->requestUpdateVimStatus();
+    } else {
+        emit vimStatusUpdated(NULL);
+    }
+}

@@ -20,6 +20,8 @@ VEditOperations::VEditOperations(VEdit *p_editor, VFile *p_file)
             this, &VEditOperations::handleVimModeChanged);
     connect(m_vim, &VVim::vimMessage,
             this, &VEditOperations::statusMessage);
+    connect(m_vim, &VVim::vimStatusUpdated,
+            this, &VEditOperations::vimStatusUpdated);
 }
 
 void VEditOperations::insertTextAtCurPos(const QString &p_text)
@@ -79,4 +81,13 @@ void VEditOperations::handleVimModeChanged(VimMode p_mode)
     m_editConfig->m_highlightWholeBlock = (p_mode != VimMode::Insert);
 
     updateCursorLineBg();
+}
+
+void VEditOperations::requestUpdateVimStatus()
+{
+    if (m_editConfig->m_enableVimMode) {
+        emit vimStatusUpdated(m_vim);
+    } else {
+        emit vimStatusUpdated(NULL);
+    }
 }

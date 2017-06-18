@@ -15,6 +15,7 @@
 class VEditOperations;
 class QLabel;
 class QTimer;
+class VVim;
 
 enum class SelectionId {
     CurrentLine = 0,
@@ -81,6 +82,9 @@ public:
 
     VEditConfig &getConfig();
 
+    // Request to update Vim status.
+    void requestUpdateVimStatus();
+
 signals:
     void saveAndRead();
     void discardAndRead();
@@ -91,6 +95,9 @@ signals:
 
     // Emit when want to show message in status bar.
     void statusMessage(const QString &p_msg);
+
+    // Emit when Vim status updated.
+    void vimStatusUpdated(const VVim *p_vim);
 
 public slots:
     virtual void highlightCurrentLine();

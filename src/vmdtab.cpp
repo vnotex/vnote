@@ -60,6 +60,8 @@ void VMdTab::setupUI()
                 this, &VMdTab::discardAndRead);
         connect(m_editor, &VEdit::statusMessage,
                 this, &VEditTab::statusMessage);
+        connect(m_editor, &VEdit::vimStatusUpdated,
+                this, &VEditTab::vimStatusUpdated);
 
         m_editor->reloadFile();
         m_stacks->addWidget(m_editor);
@@ -642,4 +644,13 @@ MarkdownConverterType VMdTab::getMarkdownConverterType() const
 void VMdTab::focusChild()
 {
     m_stacks->currentWidget()->setFocus();
+}
+
+void VMdTab::requestUpdateVimStatus()
+{
+    if (m_editor) {
+        m_editor->requestUpdateVimStatus();
+    } else {
+        emit vimStatusUpdated(NULL);
+    }
 }

@@ -41,6 +41,9 @@ void VHtmlTab::setupUI()
             this, &VHtmlTab::editFile);
     connect(m_editor, &VEdit::statusMessage,
             this, &VEditTab::statusMessage);
+    connect(m_editor, &VEdit::vimStatusUpdated,
+            this, &VEditTab::vimStatusUpdated);
+
     m_editor->reloadFile();
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
@@ -249,4 +252,9 @@ void VHtmlTab::zoom(bool /* p_zoomIn */, qreal /* p_step */)
 void VHtmlTab::focusChild()
 {
     m_editor->setFocus();
+}
+
+void VHtmlTab::requestUpdateVimStatus()
+{
+    m_editor->requestUpdateVimStatus();
 }

@@ -71,6 +71,9 @@ signals:
     // Emit when want to show message in status bar.
     void statusMessage(const QString &p_msg);
 
+    // Emit when Vim mode status changed.
+    void vimStatusUpdated(const VVim *p_vim);
+
 private slots:
     bool handleTabCloseRequest(int index);
     void splitWindow();
@@ -90,6 +93,9 @@ private slots:
 
     // Handle the statusMessage signal of VEditTab.
     void handleTabStatusMessage(const QString &p_msg);
+
+    // Handle the vimStatusUpdated() signal of VEditTab.
+    void handleTabVimStatusUpdated(const VVim *p_vim);
 
 private:
     void initTabActions();

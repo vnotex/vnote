@@ -6,6 +6,7 @@
 #include <QPointer>
 #include "vtoc.h"
 #include "vfile.h"
+#include "utils/vvim.h"
 
 class VEditArea;
 
@@ -63,6 +64,9 @@ public:
 
     virtual void clearSearchedWordHighlight() = 0;
 
+    // Request current tab to propogate its status about Vim.
+    virtual void requestUpdateVimStatus() = 0;
+
 public slots:
     // Enter edit mode
     virtual void editFile() = 0;
@@ -95,6 +99,8 @@ signals:
 
     // Emit when want to show message in status bar.
     void statusMessage(const QString &p_msg);
+
+    void vimStatusUpdated(const VVim *p_vim);
 
 private slots:
     // Called when app focus changed.

@@ -27,9 +27,15 @@ public:
     // processed.
     virtual bool handleKeyPressEvent(QKeyEvent *p_event) = 0;
 
+    // Request to propogate Vim status.
+    void requestUpdateVimStatus();
+
 signals:
     // Want to display a template message in status bar.
     void statusMessage(const QString &p_msg);
+
+    // Propogate Vim status.
+    void vimStatusUpdated(const VVim *p_vim);
 
 protected slots:
     // Handle the update of VEditConfig of the editor.

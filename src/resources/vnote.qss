@@ -17,6 +17,22 @@ QPushButton[CornerBtn="true"]::focus {
     background-color: @focus-color;
 }
 
+QPushButton[StatusBtn="true"] {
+    font: bold;
+    padding: 0px 2px 0px 2px;
+    margin: 0px;
+    border: none;
+    background-color: transparent;
+}
+
+QPushButton[StatusBtn="true"]::hover {
+    background-color: @hover-color;
+}
+
+QPushButton[StatusBtn="true"]::focus {
+    background-color: @focus-color;
+}
+
 QPushButton[FlatBtn="true"] {
     padding: 4px;
     margin: 0px;

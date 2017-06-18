@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QString>
 #include <QTextCursor>
-#include <QHash>
+#include <QMap>
 #include <QDebug>
 #include "vutils.h"
 
@@ -28,6 +28,69 @@ class VVim : public QObject
 public:
     explicit VVim(VEdit *p_editor);
 
+    struct Register
+    {
+        Register(QChar p_name, const QString &p_value)
+            : m_name(p_name), m_value(p_value), m_append(false)
+        {
+        }
+
+        Register(QChar p_name)
+            : m_name(p_name), m_append(false)
+        {
+        }
+
+        Register()
+            : m_append(false)
+        {
+        }
+
+        // Register a-z.
+        bool isNamedRegister() const
+        {
+            char ch = m_name.toLatin1();
+            return ch >= 'a' && ch <= 'z';
+        }
+
+        bool isUnnamedRegister() const
+        {
+            return m_name == c_unnamedRegister;
+        }
+
+        bool isBlackHoleRegister() const
+        {
+            return m_name == c_blackHoleRegister;
+        }
+
+        bool isSelectionRegister() const
+        {
+            return m_name == c_selectionRegister;
+        }
+
+        bool isBlock() const
+        {
+            return m_value.endsWith('\n');
+        }
+
+        // @p_value is the content to update.
+        // If @p_value ends with \n, then it is a block.
+        // When @p_value is a block, we need to add \n at the end if necessary.
+        // If @m_append is true and @p_value is a block, we need to add \n between
+        // them if necessary.
+        void update(const QString &p_value);
+
+        // Read the value of this register.
+        const QString &read();
+
+        QChar m_name;
+        QString m_value;
+
+        // This is not info of Register itself, but a hint to the handling logics
+        // whether we need to append the content to this register.
+        // Only valid for a-z registers.
+        bool m_append;
+    };
+
     // Handle key press event.
     // Returns true if the event is consumed and need no more handling.
     bool handleKeyPressEvent(QKeyEvent *p_event);
@@ -38,12 +101,27 @@ public:
     // Set current mode.
     void setMode(VimMode p_mode);
 
+    // Set current register.
+    void setRegister(QChar p_reg);
+
+    // Get m_registers.
+    const QMap<QChar, Register> &getRegisters() const;
+
+    QChar getCurrentRegisterName() const;
+
+    // Get pending keys.
+    // Turn m_pendingKeys to a string.
+    QString getPendingKeys() const;
+
 signals:
     // Emit when current mode has been changed.
     void modeChanged(VimMode p_mode);
 
     // Emit when VVim want to display some messages.
     void vimMessage(const QString &p_msg);
+
+    // Emit when current status updated.
+    void vimStatusUpdated(const VVim *p_vim);
 
 private slots:
     // When user use mouse to select texts in Normal mode, we should change to
@@ -265,69 +343,6 @@ private:
         Key m_key;
     };
 
-    struct Register
-    {
-        Register(QChar p_name, const QString &p_value)
-            : m_name(p_name), m_value(p_value), m_append(false)
-        {
-        }
-
-        Register(QChar p_name)
-            : m_name(p_name), m_append(false)
-        {
-        }
-
-        Register()
-            : m_append(false)
-        {
-        }
-
-        // Register a-z.
-        bool isNamedRegister() const
-        {
-            char ch = m_name.toLatin1();
-            return ch >= 'a' && ch <= 'z';
-        }
-
-        bool isUnnamedRegister() const
-        {
-            return m_name == c_unnamedRegister;
-        }
-
-        bool isBlackHoleRegister() const
-        {
-            return m_name == c_blackHoleRegister;
-        }
-
-        bool isSelectionRegister() const
-        {
-            return m_name == c_selectionRegister;
-        }
-
-        bool isBlock() const
-        {
-            return m_value.endsWith('\n');
-        }
-
-        // @p_value is the content to update.
-        // If @p_value ends with \n, then it is a block.
-        // When @p_value is a block, we need to add \n at the end if necessary.
-        // If @m_append is true and @p_value is a block, we need to add \n between
-        // them if necessary.
-        void update(const QString &p_value);
-
-        // Read the value of this register.
-        const QString &read();
-
-        QChar m_name;
-        QString m_value;
-
-        // This is not info of Register itself, but a hint to the handling logics
-        // whether we need to append the content to this register.
-        // Only valid for a-z registers.
-        bool m_append;
-    };
-
     // Reset all key state info.
     void resetState();
 
@@ -468,10 +483,13 @@ private:
     QList<Key> m_keys;
     QList<Token> m_tokens;
 
+    // Keys for status indication.
+    QList<Key> m_pendingKeys;
+
     // Whether reset the position in block when moving cursor.
     bool m_resetPositionInBlock;
 
-    QHash<QChar, Register> m_registers;
+    QMap<QChar, Register> m_registers;
 
     // Currently used register.
     QChar m_regName;

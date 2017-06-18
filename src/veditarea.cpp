@@ -81,6 +81,8 @@ void VEditArea::insertSplitWindow(int idx)
             this, &VEditArea::handleCurHeaderChanged);
     connect(win, &VEditWindow::statusMessage,
             this, &VEditArea::handleWindowStatusMessage);
+    connect(win, &VEditWindow::vimStatusUpdated,
+            this, &VEditArea::handleWindowVimStatusUpdated);
 }
 
 void VEditArea::handleEditWindowStatusChanged(const VFile *p_file,
@@ -96,6 +98,13 @@ void VEditArea::handleWindowStatusMessage(const QString &p_msg)
 {
     if (splitter->widget(curWindowIndex) == sender()) {
         emit statusMessage(p_msg);
+    }
+}
+
+void VEditArea::handleWindowVimStatusUpdated(const VVim *p_vim)
+{
+    if (splitter->widget(curWindowIndex) == sender()) {
+        emit vimStatusUpdated(p_vim);
     }
 }
 

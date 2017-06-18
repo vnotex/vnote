@@ -20,6 +20,7 @@
 #include "vwebview.h"
 #include "vexporter.h"
 #include "vmdtab.h"
+#include "vvimindicator.h"
 
 extern VConfigManager vconfig;
 
@@ -111,12 +112,17 @@ void VMainWindow::setupUI()
             this, &VMainWindow::handleCurTabStatusChanged);
     connect(editArea, &VEditArea::statusMessage,
             this, &VMainWindow::showStatusMessage);
+    connect(editArea, &VEditArea::vimStatusUpdated,
+            this, &VMainWindow::handleVimStatusUpdated);
     connect(m_findReplaceDialog, &VFindReplaceDialog::findTextChanged,
             this, &VMainWindow::handleFindDialogTextChanged);
 
     setCentralWidget(mainSplitter);
+
     // Create and show the status bar
-    statusBar();
+    m_vimIndicator = new VVimIndicator(this);
+    m_vimIndicator->hide();
+    statusBar()->addPermanentWidget(m_vimIndicator);
 }
 
 QWidget *VMainWindow::setupDirectoryPanel()
@@ -1121,9 +1127,12 @@ void VMainWindow::handleCurTabStatusChanged(const VFile *p_file, const VEditTab 
             title.append('#');
         }
     }
+
     updateWindowTitle(title);
     m_curFile = const_cast<VFile *>(p_file);
     m_curTab = const_cast<VEditTab *>(p_editTab);
+
+    updateStatusInfo(p_editMode);
 }
 
 void VMainWindow::onePanelView()
@@ -1495,4 +1504,23 @@ void VMainWindow::showStatusMessage(const QString &p_msg)
 {
     const int timeout = 3000;
     statusBar()->showMessage(p_msg, timeout);
+}
+
+void VMainWindow::updateStatusInfo(bool p_editMode)
+{
+    if (!p_editMode || !m_curTab) {
+        m_vimIndicator->hide();
+    } else {
+        m_curTab->requestUpdateVimStatus();
+    }
+}
+
+void VMainWindow::handleVimStatusUpdated(const VVim *p_vim)
+{
+    if (!p_vim || !m_curTab) {
+        m_vimIndicator->hide();
+    } else {
+        m_vimIndicator->update(p_vim);
+        m_vimIndicator->show();
+    }
 }
