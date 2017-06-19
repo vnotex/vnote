@@ -99,7 +99,7 @@ public:
     VimMode getMode() const;
 
     // Set current mode.
-    void setMode(VimMode p_mode);
+    void setMode(VimMode p_mode, bool p_clearSelection = true);
 
     // Set current register.
     void setRegister(QChar p_reg);
@@ -146,7 +146,7 @@ private:
         {
             return m_key >= Qt::Key_0
                    && m_key <= Qt::Key_9
-                   && m_modifiers == Qt::NoModifier;
+                   && (m_modifiers == Qt::NoModifier || m_modifiers == Qt::KeypadModifier);
         }
 
         int toDigit() const
@@ -348,6 +348,9 @@ private:
         Key m_key;
     };
 
+    // Returns true if the event is consumed and need no more handling.
+    bool handleKeyPressEvent(int key, int modifiers);
+
     // Reset all key state info.
     void resetState();
 
@@ -416,12 +419,21 @@ private:
     // Check m_keys to see if we are expecting a target for f/t/F/T command.
     bool expectingCharacterTarget() const;
 
+    // Check if we are in command line mode.
+    bool expectingCommandLineInput() const;
+
+    // Check if we are in a leader sequence.
+    bool expectingLeaderSequence() const;
+
     // Return the corresponding register name of @p_key.
     // If @p_key is not a valid register name, return a NULL QChar.
     QChar keyToRegisterName(const Key &p_key) const;
 
     // Check if @m_tokens contains an action token.
     bool hasActionToken() const;
+
+    // Check if @m_tokens contains a repeat token.
+    bool hasRepeatToken() const;
 
     // Try to add an Action::Move action at the front if there is no any action
     // token.
@@ -432,6 +444,9 @@ private:
 
     // Get the action token from m_tokens.
     const Token *getActionToken() const;
+
+    // Get the repeat token from m_tokens.
+    Token *getRepeatToken();
 
     // Add an Range token at the end of m_tokens.
     void addRangeToken(Range p_range);
@@ -487,6 +502,32 @@ private:
 
     void message(const QString &p_str);
 
+    // Check if m_mode equals to p_mode.
+    bool checkMode(VimMode p_mode);
+
+    // In command line mode, read input @p_key and process it.
+    // Returns true if a command has been completed, otherwise returns false.
+    bool processCommandLine(const Key &p_key);
+
+    // Execute command specified by @p_keys.
+    // @p_keys does not contain the leading colon.
+    // Following commands are supported:
+    // :w, :wq, :q, :q!, :x
+    void executeCommand(const QList<Key> &p_keys);
+
+    // Check if m_keys has non-digit key.
+    bool hasNonDigitPendingKeys();
+
+    // Reading a leader sequence, read input @p_key and process it.
+    // Returns true if a sequence has been replayed or it is being read,
+    // otherwise returns false.
+    // Following sequences are supported:
+    // y: "+y
+    // d: "+d
+    // p: "+p
+    // P: "+P
+    bool processLeaderSequence(const Key &p_key);
+
     VEdit *m_editor;
     const VEditConfig *m_editConfig;
     VimMode m_mode;
@@ -511,6 +552,17 @@ private:
 
     // Last f/F/t/T Token.
     Token m_lastFindToken;
+
+    // Whether in command line mode.
+    bool m_cmdMode;
+
+    // The leader key, which is Key_Space by default.
+    Key m_leaderKey;
+
+    // Whether we are parsing a leader sequence.
+    // We will map a leader sequence to another actual sequence. When replaying
+    // this actual sequence, m_leaderSequence will be true.
+    bool m_replayLeaderSequence;
 
     static const QChar c_unnamedRegister;
     static const QChar c_blackHoleRegister;

@@ -311,6 +311,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         break;
     }
 
+    case Qt::Key_Enter:
+        // Fall through.
     case Qt::Key_Return:
     {
         if (handleKeyReturn(p_event)) {
@@ -326,8 +328,12 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
 
 exit:
     // Qt::Key_Return, Qt::Key_Tab and Qt::Key_Backtab will handle m_autoIndentPos.
-    if (key != Qt::Key_Return && key != Qt::Key_Tab && key != Qt::Key_Backtab &&
-        key != Qt::Key_Shift) {
+    if (key != Qt::Key_Return
+        && key != Qt::Key_Enter
+        && key != Qt::Key_Tab
+        && key != Qt::Key_Backtab
+        && key != Qt::Key_Shift
+        && key != Qt::Key_Control) {
         m_autoIndentPos = -1;
     }
 

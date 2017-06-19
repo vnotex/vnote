@@ -86,9 +86,17 @@ public:
     void requestUpdateVimStatus();
 
 signals:
+    // Request VEditTab to save and exit edit mode.
     void saveAndRead();
+
+    // Request VEditTab to discard and exit edit mode.
     void discardAndRead();
+
+    // Request VEditTab to edit current note.
     void editNote();
+
+    // Request VEditTab to save this file.
+    void saveNote();
 
     // Emit when m_config has been updated.
     void configUpdated();

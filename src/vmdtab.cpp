@@ -58,6 +58,8 @@ void VMdTab::setupUI()
                 this, &VMdTab::saveAndRead);
         connect(m_editor, &VEdit::discardAndRead,
                 this, &VMdTab::discardAndRead);
+        connect(m_editor, &VEdit::saveNote,
+                this, &VMdTab::saveFile);
         connect(m_editor, &VEdit::statusMessage,
                 this, &VEditTab::statusMessage);
         connect(m_editor, &VEdit::vimStatusUpdated,

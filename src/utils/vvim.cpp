@@ -18,10 +18,74 @@ const QChar VVim::c_unnamedRegister = QChar('"');
 const QChar VVim::c_blackHoleRegister = QChar('_');
 const QChar VVim::c_selectionRegister = QChar('+');
 
+#define ADDKEY(x, y) case (x): {ch = (y); break;}
+
+// Returns NULL QChar if invalid.
+static QChar keyToChar(int p_key, int p_modifiers)
+{
+    if (p_modifiers == Qt::ControlModifier) {
+        return QChar();
+    }
+
+    if (p_key >= Qt::Key_0 && p_key <= Qt::Key_9) {
+        return QChar('0' + (p_key - Qt::Key_0));
+    } else if (p_key >= Qt::Key_A && p_key <= Qt::Key_Z) {
+        if (p_modifiers == Qt::ShiftModifier) {
+            return QChar('A' + (p_key - Qt::Key_A));
+        } else {
+            return QChar('a' + (p_key - Qt::Key_A));
+        }
+    }
+
+    QChar ch;
+    switch (p_key) {
+    ADDKEY(Qt::Key_Tab, '\t');
+    ADDKEY(Qt::Key_Space, ' ');
+    ADDKEY(Qt::Key_Exclam, '!');
+    ADDKEY(Qt::Key_QuoteDbl, '"');
+    ADDKEY(Qt::Key_NumberSign, '#');
+    ADDKEY(Qt::Key_Dollar, '$');
+    ADDKEY(Qt::Key_Percent, '%');
+    ADDKEY(Qt::Key_Ampersand, '&');
+    ADDKEY(Qt::Key_Apostrophe, '\'');
+    ADDKEY(Qt::Key_ParenLeft, '(');
+    ADDKEY(Qt::Key_ParenRight, ')');
+    ADDKEY(Qt::Key_Asterisk, '*');
+    ADDKEY(Qt::Key_Plus, '+');
+    ADDKEY(Qt::Key_Comma, ',');
+    ADDKEY(Qt::Key_Minus, '-');
+    ADDKEY(Qt::Key_Period, '.');
+    ADDKEY(Qt::Key_Slash, '/');
+    ADDKEY(Qt::Key_Colon, ':');
+    ADDKEY(Qt::Key_Semicolon, ';');
+    ADDKEY(Qt::Key_Less, '<');
+    ADDKEY(Qt::Key_Equal, '=');
+    ADDKEY(Qt::Key_Greater, '>');
+    ADDKEY(Qt::Key_Question, '?');
+    ADDKEY(Qt::Key_At, '@');
+    ADDKEY(Qt::Key_BracketLeft, '[');
+    ADDKEY(Qt::Key_Backslash, '\\');
+    ADDKEY(Qt::Key_BracketRight, ']');
+    ADDKEY(Qt::Key_AsciiCircum, '^');
+    ADDKEY(Qt::Key_Underscore, '_');
+    ADDKEY(Qt::Key_QuoteLeft, '`');
+    ADDKEY(Qt::Key_BraceLeft, '{');
+    ADDKEY(Qt::Key_Bar, '|');
+    ADDKEY(Qt::Key_BraceRight, '}');
+    ADDKEY(Qt::Key_AsciiTilde, '~');
+
+    default:
+        break;
+    }
+
+    return ch;
+}
+
 VVim::VVim(VEdit *p_editor)
     : QObject(p_editor), m_editor(p_editor),
       m_editConfig(&p_editor->getConfig()), m_mode(VimMode::Normal),
-      m_resetPositionInBlock(true), m_regName(c_unnamedRegister)
+      m_resetPositionInBlock(true), m_regName(c_unnamedRegister),
+      m_cmdMode(false), m_leaderKey(Key(Qt::Key_Space)), m_replayLeaderSequence(false)
 {
     initRegisters();
 
@@ -203,7 +267,7 @@ static void moveCursorAcrossSpaces(QTextCursor &p_cursor,
 
 // Expand the selection of @p_cursor to contain additional spaces at the two ends
 // within a block.
-void expandSelectionAcrossSpacesWithinBlock(QTextCursor &p_cursor)
+static void expandSelectionAcrossSpacesWithinBlock(QTextCursor &p_cursor)
 {
     QTextBlock block = p_cursor.block();
     QString text = block.text();
@@ -261,11 +325,34 @@ static void insertChangeBlockAfterDeletion(QTextCursor &p_cursor, int p_deletion
     }
 }
 
+// Given the percentage of the text, return the corresponding block number.
+// Notice that the block number is based on 0.
+// Returns -1 if it is not valid.
+static int percentageToBlockNumber(const QTextDocument *p_doc, int p_percent)
+{
+    if (p_percent > 100 || p_percent <= 0) {
+        return -1;
+    }
+
+    int nrBlock = p_doc->blockCount();
+    int num = nrBlock * (p_percent * 1.0 / 100) - 1;
+
+    return num >= 0 ? num : 0;
+}
+
 bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
 {
+    bool ret = handleKeyPressEvent(p_event->key(), p_event->modifiers());
+    if (ret) {
+        p_event->accept();
+    }
+
+    return ret;
+}
+
+bool VVim::handleKeyPressEvent(int key, int modifiers)
+{
     bool ret = false;
-    int modifiers = p_event->modifiers();
-    int key = p_event->key();
     bool resetPositionInBlock = true;
     Key keyInfo(key, modifiers);
     bool unindent = false;
@@ -290,15 +377,35 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
         goto accept;
     }
 
+    if (m_replayLeaderSequence) {
+        qDebug() << "replaying sequence" << keyToChar(key, modifiers);
+    }
+
+    if (expectingCommandLineInput()) {
+        // All input will be treated as command line input.
+        // [Enter] to execute the command and exit command line mode.
+        if (processCommandLine(keyInfo)) {
+            goto clear_accept;
+        } else {
+            goto accept;
+        }
+    }
+
     m_pendingKeys.append(keyInfo);
+
+    if (expectingLeaderSequence()) {
+        if (processLeaderSequence(keyInfo)) {
+            goto accept;
+        } else {
+            goto clear_accept;
+        }
+    }
 
     if (expectingRegisterName()) {
         // Expecting a register name.
         QChar reg = keyToRegisterName(keyInfo);
         if (!reg.isNull()) {
-            // We should keep m_pendingKeys.
             m_keys.clear();
-            m_tokens.clear();
             setRegister(reg);
             if (m_registers[reg].isNamedRegister()) {
                 m_registers[reg].m_append = (modifiers == Qt::ShiftModifier);
@@ -340,12 +447,30 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
         goto clear_accept;
     }
 
+    // Check leader key here. If leader key conflicts with other keys, it will
+    // overwrite it.
+    // Leader sequence is just like an action.
+    if (keyInfo == m_leaderKey
+        && !hasActionToken()
+        && !hasNonDigitPendingKeys()
+        && !m_replayLeaderSequence) {
+        tryGetRepeatToken(m_keys, m_tokens);
+
+        Q_ASSERT(m_keys.isEmpty());
+
+        m_pendingKeys.pop_back();
+        m_pendingKeys.append(Key(Qt::Key_Backslash));
+        m_keys.append(Key(Qt::Key_Backslash));
+        goto accept;
+    }
+
     // We will add key to m_keys. If all m_keys can combined to a token, add
     // a new token to m_tokens, clear m_keys and try to process m_tokens.
     switch (key) {
     case Qt::Key_0:
     {
-        if (modifiers == Qt::NoModifier) {
+        if (modifiers == Qt::NoModifier
+            || modifiers == Qt::KeypadModifier) {
             if (!m_keys.isEmpty()) {
                 // Repeat.
                 V_ASSERT(m_keys.last().isDigit());
@@ -376,7 +501,8 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
     case Qt::Key_8:
     case Qt::Key_9:
     {
-        if (modifiers == Qt::NoModifier) {
+        if (modifiers == Qt::NoModifier
+            || modifiers == Qt::KeypadModifier) {
             if (!m_keys.isEmpty() && numberFromKeySequence(m_keys) == -1) {
                 // Invalid sequence.
                 break;
@@ -475,8 +601,13 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             }
 
             // Enter Insert mode.
-            if (m_mode == VimMode::Normal) {
-                setMode(VimMode::Insert);
+            // Different from Vim:
+            // We enter Insert mode even in Visual and VisualLine mode. We
+            // also keep the selection after the mode change.
+            if (checkMode(VimMode::Normal)
+                || checkMode(VimMode::Visual)
+                || checkMode(VimMode::VisualLine)) {
+                setMode(VimMode::Insert, false);
             }
         } else if (modifiers == Qt::ShiftModifier) {
             QTextCursor cursor = m_editor->textCursor();
@@ -1045,7 +1176,8 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
     {
         if (modifiers == Qt::ShiftModifier) {
             // Specify a register.
-            if (!m_keys.isEmpty() || !m_tokens.isEmpty()) {
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (!m_keys.isEmpty() || hasActionToken()) {
                 // Invalid sequence.
                 break;
             }
@@ -1355,6 +1487,54 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
         break;
     }
 
+    case Qt::Key_Colon:
+    {
+        if (modifiers == Qt::ShiftModifier) {
+            if (m_keys.isEmpty()
+                && m_tokens.isEmpty()
+                && checkMode(VimMode::Normal)) {
+                // :, enter command line mode.
+                // For simplicity, we do not use a standalone mode for this mode.
+                // Just let it be in Normal mode and use another variable to
+                // specify this.
+                m_cmdMode = true;
+                goto accept;
+            }
+
+            break;
+        }
+
+        break;
+    }
+
+    case Qt::Key_Percent:
+    {
+        if (modifiers == Qt::ShiftModifier) {
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (m_keys.isEmpty() && hasRepeatToken()) {
+                // xx%, jump to a certain line (percentage of the documents).
+                // Change the repeat from percentage to line number.
+                Token *token = getRepeatToken();
+                int bn = percentageToBlockNumber(m_editor->document(), token->m_repeat);
+                if (bn == -1) {
+                    break;
+                } else {
+                    // Repeat of LineJump is based on 1.
+                    token->m_repeat = bn + 1;
+                }
+
+                tryAddMoveAction();
+                addMovementToken(Movement::LineJump);
+                processCommand(m_tokens);
+                break;
+            }
+
+            break;
+        }
+
+        break;
+    }
+
     default:
         break;
     }
@@ -1363,7 +1543,6 @@ clear_accept:
     resetState();
 
 accept:
-    p_event->accept();
     ret = true;
 
 exit:
@@ -1379,6 +1558,7 @@ void VVim::resetState()
     m_pendingKeys.clear();
     setRegister(c_unnamedRegister);
     m_resetPositionInBlock = true;
+    m_cmdMode = false;
 }
 
 VimMode VVim::getMode() const
@@ -1386,10 +1566,13 @@ VimMode VVim::getMode() const
     return m_mode;
 }
 
-void VVim::setMode(VimMode p_mode)
+void VVim::setMode(VimMode p_mode, bool p_clearSelection)
 {
     if (m_mode != p_mode) {
-        clearSelection();
+        if (p_clearSelection) {
+            clearSelection();
+        }
+
         m_mode = p_mode;
         resetState();
 
@@ -1570,69 +1753,6 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
 
         m_editor->setTextCursor(cursor);
     }
-}
-
-#define ADDKEY(x, y) case (x): {ch = (y); break;}
-
-// Returns NULL QChar if invalid.
-static QChar keyToChar(int p_key, int p_modifiers)
-{
-    if (p_modifiers == Qt::ControlModifier) {
-        return QChar();
-    }
-
-    if (p_key >= Qt::Key_0 && p_key <= Qt::Key_9) {
-        return QChar('0' + (p_key - Qt::Key_0));
-    } else if (p_key >= Qt::Key_A && p_key <= Qt::Key_Z) {
-        if (p_modifiers == Qt::ShiftModifier) {
-            return QChar('A' + (p_key - Qt::Key_A));
-        } else {
-            return QChar('a' + (p_key - Qt::Key_A));
-        }
-    }
-
-    QChar ch;
-    switch (p_key) {
-    ADDKEY(Qt::Key_Tab, '\t');
-    ADDKEY(Qt::Key_Space, ' ');
-    ADDKEY(Qt::Key_Exclam, '!');
-    ADDKEY(Qt::Key_QuoteDbl, '"');
-    ADDKEY(Qt::Key_NumberSign, '#');
-    ADDKEY(Qt::Key_Dollar, '$');
-    ADDKEY(Qt::Key_Percent, '%');
-    ADDKEY(Qt::Key_Ampersand, '&');
-    ADDKEY(Qt::Key_Apostrophe, '\'');
-    ADDKEY(Qt::Key_ParenLeft, '(');
-    ADDKEY(Qt::Key_ParenRight, ')');
-    ADDKEY(Qt::Key_Asterisk, '*');
-    ADDKEY(Qt::Key_Plus, '+');
-    ADDKEY(Qt::Key_Comma, ',');
-    ADDKEY(Qt::Key_Minus, '-');
-    ADDKEY(Qt::Key_Period, '.');
-    ADDKEY(Qt::Key_Slash, '/');
-    ADDKEY(Qt::Key_Colon, ':');
-    ADDKEY(Qt::Key_Semicolon, ';');
-    ADDKEY(Qt::Key_Less, '<');
-    ADDKEY(Qt::Key_Equal, '=');
-    ADDKEY(Qt::Key_Greater, '>');
-    ADDKEY(Qt::Key_Question, '?');
-    ADDKEY(Qt::Key_At, '@');
-    ADDKEY(Qt::Key_BracketLeft, '[');
-    ADDKEY(Qt::Key_Backslash, '\\');
-    ADDKEY(Qt::Key_BracketRight, ']');
-    ADDKEY(Qt::Key_AsciiCircum, '^');
-    ADDKEY(Qt::Key_Underscore, '_');
-    ADDKEY(Qt::Key_QuoteLeft, '`');
-    ADDKEY(Qt::Key_BraceLeft, '{');
-    ADDKEY(Qt::Key_Bar, '|');
-    ADDKEY(Qt::Key_BraceRight, '}');
-    ADDKEY(Qt::Key_AsciiTilde, '~');
-
-    default:
-        break;
-    }
-
-    return ch;
 }
 
 bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
@@ -3247,6 +3367,20 @@ bool VVim::expectingCharacterTarget() const
             || key == Key(Qt::Key_T, Qt::ShiftModifier));
 }
 
+bool VVim::expectingCommandLineInput() const
+{
+    return m_cmdMode;
+}
+
+bool VVim::expectingLeaderSequence() const
+{
+    if (m_replayLeaderSequence || m_keys.isEmpty()) {
+        return false;
+    }
+
+    return m_keys.first() == Key(Qt::Key_Backslash);
+}
+
 QChar VVim::keyToRegisterName(const Key &p_key) const
 {
     if (p_key.isAlphabet()) {
@@ -3301,6 +3435,24 @@ bool VVim::hasActionToken() const
     return has;
 }
 
+bool VVim::hasRepeatToken() const
+{
+    // There will be only one repeat token.
+    bool has = false;
+    if (m_tokens.isEmpty()) {
+        return false;
+    }
+
+    for (int i = 0; i < m_tokens.size(); ++i) {
+        if (m_tokens.at(i).isRepeat()) {
+            V_ASSERT(!has);
+            has = true;
+        }
+    }
+
+    return has;
+}
+
 bool VVim::hasActionTokenValidForTextObject() const
 {
     if (hasActionToken()) {
@@ -3348,6 +3500,19 @@ const VVim::Token *VVim::getActionToken() const
 {
     V_ASSERT(hasActionToken());
     return &m_tokens.first();
+}
+
+VVim::Token *VVim::getRepeatToken()
+{
+    V_ASSERT(hasRepeatToken());
+
+    for (auto & token : m_tokens) {
+        if (token.isRepeat()) {
+            return &token;
+        }
+    }
+
+    return NULL;
 }
 
 void VVim::addRangeToken(Range p_range)
@@ -3575,4 +3740,193 @@ QString VVim::getPendingKeys() const
 void VVim::setRegister(QChar p_reg)
 {
     m_regName = p_reg;
+}
+
+bool VVim::checkMode(VimMode p_mode)
+{
+    return m_mode == p_mode;
+}
+
+bool VVim::processCommandLine(const Key &p_key)
+{
+    Q_ASSERT(m_cmdMode);
+
+    if (p_key == Key(Qt::Key_Return)
+        || p_key == Key(Qt::Key_Enter, Qt::KeypadModifier)) {
+        // Enter, try to execute the command and exit cmd line mode.
+        executeCommand(m_keys);
+        m_cmdMode = false;
+        return true;
+    }
+
+    if (p_key.m_key == Qt::Key_Escape
+        || (p_key.m_key == Qt::Key_BracketLeft && p_key.m_modifiers == Qt::ControlModifier)) {
+        // Go back to Normal mode.
+        m_keys.clear();
+        m_pendingKeys.clear();
+        m_cmdMode = false;
+
+        setMode(VimMode::Normal);
+        return true;
+    }
+
+    switch (p_key.m_key) {
+    case Qt::Key_Backspace:
+        // Delete one char backward.
+        if (m_keys.isEmpty()) {
+            // Exit command line mode.
+            Q_ASSERT(m_pendingKeys.size() == 1);
+            m_pendingKeys.pop_back();
+            m_cmdMode = false;
+            return true;
+        } else {
+            m_keys.pop_back();
+            m_pendingKeys.pop_back();
+        }
+
+        break;
+
+    case Qt::Key_U:
+    {
+        if (p_key.m_modifiers == Qt::ControlModifier) {
+            // Ctrl+U, delete all input keys.
+            while (!m_keys.isEmpty()) {
+                m_keys.pop_back();
+                m_pendingKeys.pop_back();
+            }
+        } else {
+            // Just pend this key.
+            m_pendingKeys.append(p_key);
+            m_keys.append(p_key);
+        }
+
+        break;
+    }
+
+    default:
+        // Just pend this key.
+        m_pendingKeys.append(p_key);
+        m_keys.append(p_key);
+    }
+
+    return false;
+}
+
+void VVim::executeCommand(const QList<Key> &p_keys)
+{
+    bool validCommand = true;
+    QString msg;
+
+    if (p_keys.isEmpty()) {
+        return;
+    } if (p_keys.size() == 1) {
+        const Key &key0 = p_keys.first();
+        if (key0 == Key(Qt::Key_W)) {
+            // :w, save current file.
+            emit m_editor->saveNote();
+            msg = tr("Note has been saved");
+        } else if (key0 == Key(Qt::Key_Q)) {
+            // :q, quit edit mode.
+            emit m_editor->discardAndRead();
+            msg = tr("Quit");
+        } else if (key0 == Key(Qt::Key_X)) {
+            // :x, save if there is any change and quit edit mode.
+            emit m_editor->saveAndRead();
+            msg = tr("Quit with note having been saved");
+        } else {
+            validCommand = false;
+        }
+    } else if (p_keys.size() == 2) {
+        const Key &key0 = p_keys.first();
+        const Key &key1 = p_keys.at(1);
+        if (key0 == Key(Qt::Key_W) && key1 == Key(Qt::Key_Q)) {
+            // :wq, save change and quit edit mode.
+            // We treat it same as :x.
+            emit m_editor->saveAndRead();
+            msg = tr("Quit with note having been saved");
+        } else if (key0 == Key(Qt::Key_Q) && key1 == Key(Qt::Key_Exclam, Qt::ShiftModifier)) {
+            // :q!, discard change and quit edit mode.
+            emit m_editor->discardAndRead();
+            msg = tr("Quit");
+        } else {
+            validCommand = false;
+        }
+    } else {
+        validCommand = false;
+    }
+
+    if (!validCommand) {
+        QString str;
+        for (auto const & key : p_keys) {
+            str.append(keyToChar(key.m_key, key.m_modifiers));
+        }
+
+        message(tr("Not an editor command: %1").arg(str));
+    } else {
+        message(msg);
+    }
+}
+
+bool VVim::hasNonDigitPendingKeys()
+{
+    for (auto const &key : m_keys) {
+        if (!key.isDigit()) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool VVim::processLeaderSequence(const Key &p_key)
+{
+    // Different from Vim:
+    // If it is not a valid sequence, we just do nothing here.
+    V_ASSERT(checkPendingKey(Key(Qt::Key_Backslash)));
+    bool validSequence = true;
+    QList<Key> replaySeq;
+
+    if (p_key == Key(Qt::Key_Y)) {
+        // <leader>y, "+y
+        replaySeq.append(Key(Qt::Key_QuoteDbl, Qt::ShiftModifier));
+        replaySeq.append(Key(Qt::Key_Plus, Qt::ShiftModifier));
+        replaySeq.append(Key(Qt::Key_Y));
+    } else if (p_key == Key(Qt::Key_D)) {
+        // <leader>d, "+d
+        replaySeq.append(Key(Qt::Key_QuoteDbl, Qt::ShiftModifier));
+        replaySeq.append(Key(Qt::Key_Plus, Qt::ShiftModifier));
+        replaySeq.append(Key(Qt::Key_D));
+    } else if (p_key == Key(Qt::Key_P)) {
+        // <leader>p, "+p
+        replaySeq.append(Key(Qt::Key_QuoteDbl, Qt::ShiftModifier));
+        replaySeq.append(Key(Qt::Key_Plus, Qt::ShiftModifier));
+        replaySeq.append(Key(Qt::Key_P));
+    } else if (p_key == Key(Qt::Key_P, Qt::ShiftModifier)) {
+        // <leader>P, "+P
+        replaySeq.append(Key(Qt::Key_QuoteDbl, Qt::ShiftModifier));
+        replaySeq.append(Key(Qt::Key_Plus, Qt::ShiftModifier));
+        replaySeq.append(Key(Qt::Key_P, Qt::ShiftModifier));
+    } else {
+        validSequence = false;
+    }
+
+    if (!replaySeq.isEmpty()) {
+        // Replay the sequence.
+        m_replayLeaderSequence = true;
+        m_keys.clear();
+        for (int i = 0; i < 2; ++i) {
+            m_pendingKeys.pop_back();
+        }
+
+        for (auto const &key : replaySeq) {
+            bool ret = handleKeyPressEvent(key.m_key, key.m_modifiers);
+            if (!ret) {
+                break;
+            }
+        }
+
+        m_replayLeaderSequence = false;
+    }
+
+    return validSequence;
 }
