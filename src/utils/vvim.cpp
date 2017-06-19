@@ -670,7 +670,13 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
         } else if (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier) {
             tryGetRepeatToken(m_keys, m_tokens);
             if (!m_keys.isEmpty()) {
-                // Not a valid sequence.
+                if (modifiers == Qt::NoModifier && checkPendingKey(Key(Qt::Key_Z))) {
+                    // zb, redraw to make a certain line the bottom of window.
+                    addActionToken(Action::RedrawAtBottom);
+                    processCommand(m_tokens);
+                    break;
+                }
+
                 break;
             }
 
@@ -711,9 +717,11 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
 
     case Qt::Key_U:
     {
+        tryGetRepeatToken(m_keys, m_tokens);
+        bool toLower = modifiers == Qt::NoModifier;
+
         if (modifiers == Qt::ControlModifier) {
             // Ctrl+U, HalfPageUp.
-            tryGetRepeatToken(m_keys, m_tokens);
             if (!m_keys.isEmpty()) {
                 // Not a valid sequence.
                 break;
@@ -724,12 +732,34 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             m_tokens.append(Token(mm));
             processCommand(m_tokens);
             resetPositionInBlock = false;
-        } else if (m_keys.isEmpty() && m_tokens.isEmpty() && modifiers == Qt::NoModifier) {
+        } else if (m_keys.isEmpty() && !hasActionToken()) {
+            if (m_mode == VimMode::Visual || m_mode == VimMode::VisualLine) {
+                // u/U for tolower and toupper selected text.
+                QTextCursor cursor = m_editor->textCursor();
+                cursor.beginEditBlock();
+                // Different from Vim:
+                // If there is no selection in Visual mode, we do nothing.
+                if (m_mode == VimMode::VisualLine) {
+                    int nrBlock = VEditUtils::selectedBlockCount(cursor);
+                    message(tr("%1 %2 changed").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
+                                                                             : tr("line")));
+                }
+
+                convertCaseOfSelectedText(cursor, toLower);
+                cursor.endEditBlock();
+                m_editor->setTextCursor(cursor);
+
+                setMode(VimMode::Normal);
+                break;
+            }
+
             // u, Undo.
+            if (modifiers == Qt::NoModifier) {
+                addActionToken(Action::Undo);
+                processCommand(m_tokens);
+            }
             break;
         } else {
-            bool toLower = modifiers == Qt::NoModifier;
-            tryGetRepeatToken(m_keys, m_tokens);
             if (hasActionToken()) {
                 // guu/gUU.
                 if ((toLower && checkActionToken(Action::ToLower))
@@ -748,6 +778,12 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
                     cursor.beginEditBlock();
                     // Different from Vim:
                     // If there is no selection in Visual mode, we do nothing.
+                    if (m_mode == VimMode::VisualLine) {
+                        int nrBlock = VEditUtils::selectedBlockCount(cursor);
+                        message(tr("%1 %2 changed").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
+                                                                                 : tr("line")));
+                    }
+
                     convertCaseOfSelectedText(cursor, toLower);
                     cursor.endEditBlock();
                     m_editor->setTextCursor(cursor);
@@ -1230,6 +1266,11 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
             if (m_keys.isEmpty()) {
                 m_keys.append(keyInfo);
                 goto accept;
+            } else if (modifiers == Qt::NoModifier && checkPendingKey(Key(Qt::Key_Z))) {
+                // zt, redraw to make a certain line the top of window.
+                addActionToken(Action::RedrawAtTop);
+                processCommand(m_tokens);
+                break;
             }
 
             break;
@@ -1266,6 +1307,48 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
 
         if (m_keys.isEmpty()) {
             repeatLastFindMovement(false);
+            break;
+        }
+
+        break;
+    }
+
+    case Qt::Key_R:
+    {
+        if (m_mode == VimMode::VisualLine) {
+            break;
+        }
+
+        if (modifiers == Qt::ControlModifier) {
+            // Redo.
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (!m_keys.isEmpty() || hasActionToken()) {
+                break;
+            }
+
+            addActionToken(Action::Redo);
+            processCommand(m_tokens);
+            break;
+        }
+
+        break;
+    }
+
+    case Qt::Key_Z:
+    {
+        if (modifiers == Qt::NoModifier) {
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (m_keys.isEmpty() && !hasActionToken()) {
+                // First z, pend it.
+                m_keys.append(keyInfo);
+                goto accept;
+            } else if (checkPendingKey(keyInfo)) {
+                // zz, redraw to make a certain line the center of the window.
+                addActionToken(Action::RedrawAtCenter);
+                processCommand(m_tokens);
+                break;
+            }
+
             break;
         }
 
@@ -1367,6 +1450,26 @@ void VVim::processCommand(QList<Token> &p_tokens)
 
     case Action::ToUpper:
         processToLowerAction(p_tokens, false);
+        break;
+
+    case Action::Undo:
+        processUndoAction(p_tokens);
+        break;
+
+    case Action::Redo:
+        processRedoAction(p_tokens);
+        break;
+
+    case Action::RedrawAtTop:
+        processRedrawLineAction(p_tokens, 0);
+        break;
+
+    case Action::RedrawAtCenter:
+        processRedrawLineAction(p_tokens, 1);
+        break;
+
+    case Action::RedrawAtBottom:
+        processRedrawLineAction(p_tokens, 2);
         break;
 
     default:
@@ -3001,6 +3104,67 @@ exit:
     if (changed) {
         m_editor->setTextCursor(cursor);
     }
+}
+
+void VVim::processUndoAction(QList<Token> &p_tokens)
+{
+    int repeat = 1;
+    if (!p_tokens.isEmpty()) {
+        Token to = p_tokens.takeFirst();
+        if (!p_tokens.isEmpty() || !to.isRepeat()) {
+            p_tokens.clear();
+            return;
+        }
+
+        repeat = to.m_repeat;
+    }
+
+    QTextDocument *doc = m_editor->document();
+    int i = 0;
+    for (i = 0; i < repeat && doc->isUndoAvailable(); ++i) {
+        doc->undo();
+    }
+
+    message(tr("Undo %1 %2").arg(i).arg(i > 1 ? tr("changes") : tr("change")));
+}
+
+void VVim::processRedoAction(QList<Token> &p_tokens)
+{
+    int repeat = 1;
+    if (!p_tokens.isEmpty()) {
+        Token to = p_tokens.takeFirst();
+        if (!p_tokens.isEmpty() || !to.isRepeat()) {
+            p_tokens.clear();
+            return;
+        }
+
+        repeat = to.m_repeat;
+    }
+
+    QTextDocument *doc = m_editor->document();
+    int i = 0;
+    for (i = 0; i < repeat && doc->isRedoAvailable(); ++i) {
+        doc->redo();
+    }
+
+    message(tr("Redo %1 %2").arg(i).arg(i > 1 ? tr("changes") : tr("change")));
+}
+
+void VVim::processRedrawLineAction(QList<Token> &p_tokens, int p_dest)
+{
+    QTextCursor cursor = m_editor->textCursor();
+    int repeat = cursor.block().blockNumber();
+    if (!p_tokens.isEmpty()) {
+        Token to = p_tokens.takeFirst();
+        if (!p_tokens.isEmpty() || !to.isRepeat()) {
+            p_tokens.clear();
+            return;
+        }
+
+        repeat = to.m_repeat - 1;
+    }
+
+    VEditUtils::scrollBlockInPage(m_editor, repeat, p_dest);
 }
 
 bool VVim::clearSelection()

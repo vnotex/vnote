@@ -196,6 +196,11 @@ private:
         UnIndent,
         ToUpper,
         ToLower,
+        Undo,
+        Redo,
+        RedrawAtTop,
+        RedrawAtCenter,
+        RedrawAtBottom,
         Invalid
     };
 
@@ -378,6 +383,16 @@ private:
 
     // @p_tokens is the arguments of the Action::ToLower and Action::ToUpper action.
     void processToLowerAction(QList<Token> &p_tokens, bool p_toLower);
+
+    // @p_tokens is the arguments of the Action::Undo action.
+    void processUndoAction(QList<Token> &p_tokens);
+
+    // @p_tokens is the arguments of the Action::Redo action.
+    void processRedoAction(QList<Token> &p_tokens);
+
+    // @p_tokens is the arguments of the Action::RedrawAtBottom/RedrawAtCenter/RedrawAtTop action.
+    // @p_dest: 0 for top, 1 for center, 2 for bottom.
+    void processRedrawLineAction(QList<Token> &p_tokens, int p_dest);
 
     // Clear selection if there is any.
     // Returns true if there is selection.

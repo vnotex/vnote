@@ -5,6 +5,7 @@
 #include <QTextCursor>
 
 class QTextDocument;
+class QTextEdit;
 
 // Utils for text edit.
 class VEditUtils
@@ -73,6 +74,13 @@ public:
 
     // Get the count of blocks selected.
     static int selectedBlockCount(const QTextCursor &p_cursor);
+
+    // Scroll block @p_blockNum into the visual window.
+    // @p_dest is the position of the window: 0 for top, 1 for center, 2 for bottom.
+    // @p_blockNum is based on 0.
+    static void scrollBlockInPage(QTextEdit *p_edit,
+                                  int p_blockNum,
+                                  int p_dest);
 
 private:
     VEditUtils() {}

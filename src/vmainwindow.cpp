@@ -196,7 +196,6 @@ void VMainWindow::initViewToolBar()
                                 tr("Expand"), this);
     expandViewAct->setStatusTip(tr("Expand the edit area"));
     expandViewAct->setCheckable(true);
-    expandViewAct->setShortcut(QKeySequence("Ctrl+T"));
     expandViewAct->setMenu(panelMenu);
     connect(expandViewAct, &QAction::triggered,
             this, &VMainWindow::expandPanelView);
@@ -255,7 +254,7 @@ void VMainWindow::initFileToolBar()
                               tr("Save Changes And Read"), this);
     saveExitAct->setStatusTip(tr("Save changes and exit edit mode"));
     saveExitAct->setMenu(exitEditMenu);
-    saveExitAct->setShortcut(QKeySequence("Ctrl+R"));
+    saveExitAct->setShortcut(QKeySequence("Ctrl+T"));
     connect(saveExitAct, &QAction::triggered,
             editArea, &VEditArea::saveAndReadFile);
 
