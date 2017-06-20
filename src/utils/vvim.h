@@ -201,6 +201,8 @@ private:
         RedrawAtTop,
         RedrawAtCenter,
         RedrawAtBottom,
+        JumpPreviousLocation,
+        JumpNextLocation,
         Invalid
     };
 
@@ -348,6 +350,68 @@ private:
         Key m_key;
     };
 
+    // Struct for a location.
+    struct Location
+    {
+        Location() : m_blockNumber(-1), m_positionInBlock(0)
+        {
+        }
+
+        Location(int p_blockNumber, int p_positionInBlock)
+            : m_blockNumber(p_blockNumber), m_positionInBlock(p_positionInBlock)
+        {
+        }
+
+        bool isValid() const
+        {
+            return m_blockNumber > -1;
+        }
+
+        // Block number of the location, based on 0.
+        int m_blockNumber;
+
+        // Position in block, based on 0.
+        int m_positionInBlock;
+    };
+
+    // Stack for all the jump locations.
+    // When we execute a jump action, we push current location to the stack and
+    // remove older location with the same block number.
+    // Ctrl+O is also a jum action. If m_pointer points to the top of the stack,
+    // Ctrl+O will insert a location to the stack.
+    class LocationStack
+    {
+    public:
+        LocationStack(int p_maximum = 100);
+
+        // Add @p_cursor's location to stack.
+        // Need to delete all older locations with the same block number.
+        void addLocation(const QTextCursor &p_cursor);
+
+        // Go up through the stack. Need to add current location if we are at
+        // the top of the stack currently.
+        const Location &previousLocation(const QTextCursor &p_cursor);
+
+        // Go down through the stack.
+        const Location &nextLocation();
+
+        bool hasPrevious() const;
+
+        bool hasNext() const;
+
+    private:
+        // A stack containing locations.
+        QList<Location> m_locations;
+
+        // Pointer to current element in the stack.
+        // If we are not in the history of the locations, it points to the next
+        // element to the top element.
+        int m_pointer;
+
+        // Maximum number of locations in stack.
+        const int c_maximumLocations;
+    };
+
     // Returns true if the event is consumed and need no more handling.
     bool handleKeyPressEvent(int key, int modifiers);
 
@@ -396,6 +460,9 @@ private:
     // @p_tokens is the arguments of the Action::RedrawAtBottom/RedrawAtCenter/RedrawAtTop action.
     // @p_dest: 0 for top, 1 for center, 2 for bottom.
     void processRedrawLineAction(QList<Token> &p_tokens, int p_dest);
+
+    // Action::JumpPreviousLocation and Action::JumpNextLocation action.
+    void processJumpLocationAction(QList<Token> &p_tokens, bool p_next);
 
     // Clear selection if there is any.
     // Returns true if there is selection.
@@ -563,6 +630,8 @@ private:
     // We will map a leader sequence to another actual sequence. When replaying
     // this actual sequence, m_leaderSequence will be true.
     bool m_replayLeaderSequence;
+
+    LocationStack m_locations;
 
     static const QChar c_unnamedRegister;
     static const QChar c_blackHoleRegister;

@@ -623,6 +623,21 @@ bool VVim::handleKeyPressEvent(int key, int modifiers)
 
             m_editor->setTextCursor(cursor);
             setMode(VimMode::Insert);
+        } else if (modifiers == Qt::ControlModifier) {
+            // Ctrl+I, jump to next location.
+            if (!m_tokens.isEmpty()) {
+                break;
+            }
+
+            tryGetRepeatToken(m_keys, m_tokens);
+
+            if (!m_keys.isEmpty()) {
+                break;
+            }
+
+            addActionToken(Action::JumpNextLocation);
+            processCommand(m_tokens);
+            break;
         }
 
         break;
@@ -711,6 +726,21 @@ bool VVim::handleKeyPressEvent(int key, int modifiers)
                 setMode(VimMode::Insert);
             }
 
+            break;
+        } else if (modifiers == Qt::ControlModifier) {
+            // Ctrl+O, jump to previous location.
+            if (!m_tokens.isEmpty()) {
+                break;
+            }
+
+            tryGetRepeatToken(m_keys, m_tokens);
+
+            if (!m_keys.isEmpty()) {
+                break;
+            }
+
+            addActionToken(Action::JumpPreviousLocation);
+            processCommand(m_tokens);
             break;
         }
 
@@ -1655,6 +1685,14 @@ void VVim::processCommand(QList<Token> &p_tokens)
         processRedrawLineAction(p_tokens, 2);
         break;
 
+    case Action::JumpPreviousLocation:
+        processJumpLocationAction(p_tokens, false);
+        break;
+
+    case Action::JumpNextLocation:
+        processJumpLocationAction(p_tokens, true);
+        break;
+
     default:
         p_tokens.clear();
         break;
@@ -1966,6 +2004,9 @@ bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
         // Jump to the first non-space character of @p_repeat line (block).
         V_ASSERT(p_repeat > 0);
 
+        // Record current location.
+        m_locations.addLocation(p_cursor);
+
         // @p_repeat starts from 1 while block number starts from 0.
         QTextBlock block = p_doc->findBlockByNumber(p_repeat - 1);
         if (block.isValid()) {
@@ -1984,6 +2025,10 @@ bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
     {
         // Jump to the first non-space character of the start of the document.
         V_ASSERT(p_repeat == -1);
+
+        // Record current location.
+        m_locations.addLocation(p_cursor);
+
         p_cursor.movePosition(QTextCursor::Start, p_moveMode, 1);
         VEditUtils::moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
         hasMoved = true;
@@ -1994,6 +2039,10 @@ bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
     {
         // Jump to the first non-space character of the end of the document.
         V_ASSERT(p_repeat == -1);
+
+        // Record current location.
+        m_locations.addLocation(p_cursor);
+
         p_cursor.movePosition(QTextCursor::End, p_moveMode, 1);
         VEditUtils::moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
         hasMoved = true;
@@ -3287,6 +3336,51 @@ void VVim::processRedrawLineAction(QList<Token> &p_tokens, int p_dest)
     VEditUtils::scrollBlockInPage(m_editor, repeat, p_dest);
 }
 
+void VVim::processJumpLocationAction(QList<Token> &p_tokens, bool p_next)
+{
+    int repeat = 1;
+    if (!p_tokens.isEmpty()) {
+        Token to = p_tokens.takeFirst();
+        if (!p_tokens.isEmpty() || !to.isRepeat()) {
+            p_tokens.clear();
+            return;
+        }
+
+        repeat = to.m_repeat;
+    }
+
+    QTextCursor cursor = m_editor->textCursor();
+    Location loc;
+    if (p_next) {
+        while (m_locations.hasNext() && repeat > 0) {
+            --repeat;
+            loc = m_locations.nextLocation();
+        }
+    } else {
+        while (m_locations.hasPrevious() && repeat > 0) {
+            --repeat;
+            loc = m_locations.previousLocation(cursor);
+        }
+    }
+
+    if (loc.isValid()) {
+        QTextDocument *doc = m_editor->document();
+        if (loc.m_blockNumber >= doc->blockCount()) {
+            message(tr("Mark has invalid line number"));
+            return;
+        }
+
+        QTextBlock block = doc->findBlockByNumber(loc.m_blockNumber);
+        int pib = loc.m_positionInBlock;
+        if (pib >= block.length()) {
+            pib = block.length() - 1;
+        }
+
+        cursor.setPosition(block.position() + pib);
+        m_editor->setTextCursor(cursor);
+    }
+}
+
 bool VVim::clearSelection()
 {
     QTextCursor cursor = m_editor->textCursor();
@@ -3929,4 +4023,82 @@ bool VVim::processLeaderSequence(const Key &p_key)
     }
 
     return validSequence;
+}
+
+VVim::LocationStack::LocationStack(int p_maximum)
+    : c_maximumLocations(p_maximum < 10 ? 10 : p_maximum), m_pointer(0)
+{
+}
+
+bool VVim::LocationStack::hasPrevious() const
+{
+    return m_pointer > 0;
+}
+
+bool VVim::LocationStack::hasNext() const
+{
+    return m_pointer < m_locations.size() - 1;
+}
+
+void VVim::LocationStack::addLocation(const QTextCursor &p_cursor)
+{
+    int blockNumber = p_cursor.block().blockNumber();
+    int pib = p_cursor.positionInBlock();
+
+    // Remove older location with the same block number.
+    for (auto it = m_locations.begin(); it != m_locations.end();) {
+        if (it->m_blockNumber == blockNumber) {
+            it = m_locations.erase(it);
+            break;
+        } else {
+            ++it;
+        }
+    }
+
+    if (m_locations.size() >= c_maximumLocations) {
+        m_locations.removeFirst();
+    }
+
+    m_locations.append(Location(blockNumber, pib));
+
+    m_pointer = m_locations.size();
+
+    qDebug() << QString("add location (%1,%2), pointer=%3")
+                       .arg(blockNumber).arg(pib).arg(m_pointer);
+}
+
+const VVim::Location &VVim::LocationStack::previousLocation(const QTextCursor &p_cursor)
+{
+    V_ASSERT(hasPrevious());
+    if (m_pointer == m_locations.size()) {
+        // Add current location to the stack.
+        addLocation(p_cursor);
+
+        m_pointer = m_locations.size() - 1;
+    }
+
+    // Jump to previous location.
+    if (m_pointer > 0) {
+        --m_pointer;
+    }
+
+    qDebug() << QString("previous location (%1,%2), pointer=%3, size=%4")
+                       .arg(m_locations.at(m_pointer).m_blockNumber)
+                       .arg(m_locations.at(m_pointer).m_positionInBlock)
+                       .arg(m_pointer).arg(m_locations.size());
+
+    return m_locations.at(m_pointer);
+}
+
+const VVim::Location &VVim::LocationStack::nextLocation()
+{
+    V_ASSERT(hasNext());
+    ++m_pointer;
+
+    qDebug() << QString("next location (%1,%2), pointer=%3, size=%4")
+                       .arg(m_locations.at(m_pointer).m_blockNumber)
+                       .arg(m_locations.at(m_pointer).m_positionInBlock)
+                       .arg(m_pointer).arg(m_locations.size());
+
+    return m_locations.at(m_pointer);
 }
