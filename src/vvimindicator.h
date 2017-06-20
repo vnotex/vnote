@@ -20,6 +20,8 @@ public slots:
 private slots:
     void updateRegistersTree(QWidget *p_widget);
 
+    void updateMarksTree(QWidget *p_widget);
+
 private:
     void setupUI();
 
@@ -30,6 +32,9 @@ private:
 
     // Indicate the registers.
     VButtonWithWidget *m_regBtn;
+
+    // Indicate the marks.
+    VButtonWithWidget *m_markBtn;
 
     // Indicate the pending keys.
     QLabel *m_keyLabel;

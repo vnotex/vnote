@@ -419,6 +419,33 @@ bool VVim::handleKeyPressEvent(int key, int modifiers)
         goto clear_accept;
     }
 
+    if (expectingMarkName()) {
+        // Expecting a mark name to create a mark.
+        if (keyInfo.isAlphabet() && modifiers == Qt::NoModifier) {
+            m_keys.clear();
+            m_marks.setMark(keyToChar(key, modifiers), m_editor->textCursor());
+        }
+
+        goto clear_accept;
+    }
+
+    if (expectingMarkTarget()) {
+        // Expecting a mark name as the target.
+        Movement mm = Movement::Invalid;
+        const Key &aKey = m_keys.first();
+        if (aKey == Key(Qt::Key_Apostrophe)) {
+            mm = Movement::MarkJumpLine;
+        } else {
+            Q_ASSERT(aKey == Key(Qt::Key_QuoteLeft));
+            mm = Movement::MarkJump;
+        }
+
+        tryAddMoveAction();
+        addMovementToken(mm, keyInfo);
+        processCommand(m_tokens);
+        goto clear_accept;
+    }
+
     if (expectingCharacterTarget()) {
         // Expecting a target character for f/F/t/T.
         Movement mm = Movement::Invalid;
@@ -436,8 +463,6 @@ bool VVim::handleKeyPressEvent(int key, int modifiers)
                 mm = Movement::TillBackward;
             }
         }
-
-        V_ASSERT(mm != Movement::Invalid);
 
         tryAddMoveAction();
         addMovementToken(mm, keyInfo);
@@ -625,7 +650,8 @@ bool VVim::handleKeyPressEvent(int key, int modifiers)
             setMode(VimMode::Insert);
         } else if (modifiers == Qt::ControlModifier) {
             // Ctrl+I, jump to next location.
-            if (!m_tokens.isEmpty()) {
+            if (!m_tokens.isEmpty()
+                || !checkMode(VimMode::Normal)) {
                 break;
             }
 
@@ -729,7 +755,8 @@ bool VVim::handleKeyPressEvent(int key, int modifiers)
             break;
         } else if (modifiers == Qt::ControlModifier) {
             // Ctrl+O, jump to previous location.
-            if (!m_tokens.isEmpty()) {
+            if (!m_tokens.isEmpty()
+                || !checkMode(VimMode::Normal)) {
                 break;
             }
 
@@ -1565,6 +1592,52 @@ bool VVim::handleKeyPressEvent(int key, int modifiers)
         break;
     }
 
+    case Qt::Key_M:
+    {
+        if (modifiers == Qt::NoModifier) {
+            if (m_keys.isEmpty() && m_tokens.isEmpty()) {
+                // m, creating a mark.
+                // We can create marks in Visual mode, too.
+                m_keys.append(keyInfo);
+                goto accept;
+            }
+        }
+
+        break;
+    }
+
+    case Qt::Key_Apostrophe:
+    {
+        if (modifiers == Qt::NoModifier) {
+            // ', jump to the start of line of a mark.
+            // Repeat is useless.
+            tryGetRepeatToken(m_keys, m_tokens);
+
+            if (m_keys.isEmpty()) {
+                m_keys.append(keyInfo);
+                goto accept;
+            }
+        }
+
+        break;
+    }
+
+    case Qt::Key_QuoteLeft:
+    {
+        if (modifiers == Qt::NoModifier) {
+            // `, jump to a mark.
+            // Repeat is useless.
+            tryGetRepeatToken(m_keys, m_tokens);
+
+            if (m_keys.isEmpty()) {
+                m_keys.append(keyInfo);
+                goto accept;
+            }
+        }
+
+        break;
+    }
+
     default:
         break;
     }
@@ -2233,6 +2306,40 @@ handle_target:
         if (!target.isNull()) {
             hasMoved = VEditUtils::findTargetWithinBlock(p_cursor, p_moveMode,
                                                          target, forward, inclusive);
+        }
+
+        break;
+    }
+
+    case Movement::MarkJump:
+        // Fall through.
+    case Movement::MarkJumpLine:
+    {
+        // repeat is useless here.
+        const Key &key = p_token.m_key;
+        QChar target = keyToChar(key.m_key, key.m_modifiers);
+        Location loc = m_marks.getMarkLocation(target);
+        if (loc.isValid()) {
+            if (loc.m_blockNumber >= p_doc->blockCount()) {
+                // Invalid block number.
+                message(tr("Mark not set"));
+                m_marks.clearMark(target);
+                break;
+            }
+
+            // Different from Vim:
+            // We just use the block number for mark, so if we delete the line
+            // where the mark locates, we could not detect if it is set or not.
+            QTextBlock block = p_doc->findBlockByNumber(loc.m_blockNumber);
+            p_cursor.setPosition(block.position(), p_moveMode);
+            if (p_token.m_movement == Movement::MarkJump) {
+                setCursorPositionInBlock(p_cursor, loc.m_positionInBlock, p_moveMode);
+            } else {
+                // Jump to the first non-space character.
+                VEditUtils::moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
+            }
+
+            hasMoved = true;
         }
 
         break;
@@ -3475,6 +3582,17 @@ bool VVim::expectingLeaderSequence() const
     return m_keys.first() == Key(Qt::Key_Backslash);
 }
 
+bool VVim::expectingMarkName() const
+{
+    return checkPendingKey(Key(Qt::Key_M)) && m_tokens.isEmpty();
+}
+
+bool VVim::expectingMarkTarget() const
+{
+    return checkPendingKey(Key(Qt::Key_Apostrophe))
+           || checkPendingKey(Key(Qt::Key_QuoteLeft));
+}
+
 QChar VVim::keyToRegisterName(const Key &p_key) const
 {
     if (p_key.isAlphabet()) {
@@ -3816,6 +3934,11 @@ const QMap<QChar, VVim::Register> &VVim::getRegisters() const
     return m_registers;
 }
 
+const VVim::Marks &VVim::getMarks() const
+{
+    return m_marks;
+}
+
 QChar VVim::getCurrentRegisterName() const
 {
     return m_regName;
@@ -4026,7 +4149,7 @@ bool VVim::processLeaderSequence(const Key &p_key)
 }
 
 VVim::LocationStack::LocationStack(int p_maximum)
-    : c_maximumLocations(p_maximum < 10 ? 10 : p_maximum), m_pointer(0)
+    : m_pointer(0), c_maximumLocations(p_maximum < 10 ? 10 : p_maximum)
 {
 }
 
@@ -4101,4 +4224,70 @@ const VVim::Location &VVim::LocationStack::nextLocation()
                        .arg(m_pointer).arg(m_locations.size());
 
     return m_locations.at(m_pointer);
+}
+
+VVim::Marks::Marks()
+{
+    for (char ch = 'a'; ch <= 'z'; ++ch) {
+        m_marks[QChar(ch)] = Mark();
+    }
+}
+
+void VVim::Marks::setMark(QChar p_name, const QTextCursor &p_cursor)
+{
+    auto it = m_marks.find(p_name);
+    if (it == m_marks.end()) {
+        return;
+    }
+
+    it->m_location.m_blockNumber = p_cursor.block().blockNumber();
+    it->m_location.m_positionInBlock = p_cursor.positionInBlock();
+    it->m_text = p_cursor.block().text().trimmed();
+    it->m_name = p_name;
+
+    m_lastUsedMark = p_name;
+
+    qDebug() << QString("set mark %1 to (%2,%3)")
+                       .arg(p_name)
+                       .arg(it->m_location.m_blockNumber)
+                       .arg(it->m_location.m_positionInBlock);
+}
+
+void VVim::Marks::clearMark(QChar p_name)
+{
+    auto it = m_marks.find(p_name);
+    if (it == m_marks.end()) {
+        return;
+    }
+
+    it->m_location = Location();
+    it->m_text.clear();
+
+    if (m_lastUsedMark == p_name) {
+        m_lastUsedMark = QChar();
+    }
+}
+
+VVim::Location VVim::Marks::getMarkLocation(QChar p_name)
+{
+    auto it = m_marks.find(p_name);
+    if (it == m_marks.end()) {
+        return Location();
+    }
+
+    if (it->m_location.isValid()) {
+        m_lastUsedMark = p_name;
+    }
+
+    return it->m_location;
+}
+
+const QMap<QChar, VVim::Mark> &VVim::Marks::getMarks() const
+{
+    return m_marks;
+}
+
+QChar VVim::Marks::getLastUsedMark() const
+{
+    return m_lastUsedMark;
 }

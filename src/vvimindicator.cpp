@@ -31,13 +31,27 @@ void VVimIndicator::setupUI()
     QTreeWidget *regTree = new QTreeWidget(this);
     regTree->setColumnCount(2);
     regTree->header()->setStretchLastSection(true);
-    regTree->header()->setProperty("RegisterTree", true);
     QStringList headers;
     headers << tr("Register") << tr("Value");
     regTree->setHeaderLabels(headers);
     m_regBtn->setPopupWidget(regTree);
     connect(m_regBtn, &VButtonWithWidget::popupWidgetAboutToShow,
             this, &VVimIndicator::updateRegistersTree);
+
+    m_markBtn = new VButtonWithWidget(QIcon(":/resources/icons/arrow_dropup.svg"),
+                                      "[]",
+                                      this);
+    m_markBtn->setProperty("StatusBtn", true);
+    m_markBtn->setFocusPolicy(Qt::NoFocus);
+    QTreeWidget *markTree = new QTreeWidget(this);
+    markTree->setColumnCount(4);
+    markTree->header()->setStretchLastSection(true);
+    headers.clear();
+    headers << tr("Mark") << tr("Line") << tr("Column") << tr("Text");
+    markTree->setHeaderLabels(headers);
+    m_markBtn->setPopupWidget(markTree);
+    connect(m_markBtn, &VButtonWithWidget::popupWidgetAboutToShow,
+            this, &VVimIndicator::updateMarksTree);
 
     m_keyLabel = new QLabel(this);
     QFontMetrics metric(font());
@@ -46,6 +60,7 @@ void VVimIndicator::setupUI()
     QHBoxLayout *mainLayout = new QHBoxLayout(this);
     mainLayout->addWidget(m_modeLabel);
     mainLayout->addWidget(m_regBtn);
+    mainLayout->addWidget(m_markBtn);
     mainLayout->addWidget(m_keyLabel);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
@@ -148,6 +163,7 @@ void VVimIndicator::update(const VVim *p_vim)
 
     VimMode mode = p_vim->getMode();
     QChar curRegName = p_vim->getCurrentRegisterName();
+    QChar lastUsedMark = p_vim->getMarks().getLastUsedMark();
 
     QString style = QString("QLabel { padding: 0px 2px 0px 2px; font: bold; background-color: %1; }")
                            .arg(modeBackgroundColor(mode));
@@ -155,6 +171,10 @@ void VVimIndicator::update(const VVim *p_vim)
     m_modeLabel->setText(modeToString(mode));
 
     m_regBtn->setText(curRegName);
+
+    QString markText = QString("[%1]")
+                              .arg(lastUsedMark.isNull() ? QChar(' ') : lastUsedMark);
+    m_markBtn->setText(markText);
 
     QString keyText = QString("<span style=\"font-weight:bold;\">%1</span>")
                              .arg(p_vim->getPendingKeys());
@@ -171,4 +191,38 @@ void VVimIndicator::updateRegistersTree(QWidget *p_widget)
 
     const QMap<QChar, VVim::Register> &regs = m_vim->getRegisters();
     fillTreeItemsWithRegisters(regTree, regs);
+}
+
+static void fillTreeItemsWithMarks(QTreeWidget *p_tree,
+                                   const QMap<QChar, VVim::Mark> &p_marks)
+{
+    p_tree->clear();
+    for (auto const &mark : p_marks) {
+        if (!mark.m_location.isValid()) {
+            continue;
+        }
+
+        QStringList itemStr;
+        itemStr << mark.m_name << QString::number(mark.m_location.m_blockNumber + 1)
+                << QString::number(mark.m_location.m_positionInBlock) << mark.m_text;
+        QTreeWidgetItem *item = new QTreeWidgetItem(p_tree, itemStr);
+        item->setFlags(item->flags() | Qt::ItemIsSelectable | Qt::ItemIsEditable);
+    }
+
+    p_tree->resizeColumnToContents(0);
+    p_tree->resizeColumnToContents(1);
+    p_tree->resizeColumnToContents(2);
+    p_tree->resizeColumnToContents(3);
+}
+
+void VVimIndicator::updateMarksTree(QWidget *p_widget)
+{
+    QTreeWidget *markTree = dynamic_cast<QTreeWidget *>(p_widget);
+    if (!m_vim) {
+        markTree->clear();
+        return;
+    }
+
+    const QMap<QChar, VVim::Mark> &marks = m_vim->getMarks().getMarks();
+    fillTreeItemsWithMarks(markTree, marks);
 }

@@ -28,6 +28,30 @@ class VVim : public QObject
 public:
     explicit VVim(VEdit *p_editor);
 
+    // Struct for a location.
+    struct Location
+    {
+        Location() : m_blockNumber(-1), m_positionInBlock(0)
+        {
+        }
+
+        Location(int p_blockNumber, int p_positionInBlock)
+            : m_blockNumber(p_blockNumber), m_positionInBlock(p_positionInBlock)
+        {
+        }
+
+        bool isValid() const
+        {
+            return m_blockNumber > -1;
+        }
+
+        // Block number of the location, based on 0.
+        int m_blockNumber;
+
+        // Position in block, based on 0.
+        int m_positionInBlock;
+    };
+
     struct Register
     {
         Register(QChar p_name, const QString &p_value)
@@ -91,6 +115,37 @@ public:
         bool m_append;
     };
 
+    struct Mark
+    {
+        QChar m_name;
+        Location m_location;
+        QString m_text;
+    };
+
+    // We only support simple local marks a-z.
+    class Marks
+    {
+    public:
+        Marks();
+
+        // Set mark @p_name to point to @p_cursor.
+        void setMark(QChar p_name, const QTextCursor &p_cursor);
+
+        void clearMark(QChar p_name);
+
+        // Return the location of mark @p_name.
+        Location getMarkLocation(QChar p_name);
+
+        const QMap<QChar, VVim::Mark> &getMarks() const;
+
+        QChar getLastUsedMark() const;
+
+    private:
+        QMap<QChar, Mark> m_marks;
+
+        QChar m_lastUsedMark;
+    };
+
     // Handle key press event.
     // Returns true if the event is consumed and need no more handling.
     bool handleKeyPressEvent(QKeyEvent *p_event);
@@ -112,6 +167,9 @@ public:
     // Get pending keys.
     // Turn m_pendingKeys to a string.
     QString getPendingKeys() const;
+
+    // Get m_marks.
+    const VVim::Marks &getMarks() const;
 
 signals:
     // Emit when current mode has been changed.
@@ -237,6 +295,8 @@ private:
         FindBackward,
         TillForward,
         TillBackward,
+        MarkJump,
+        MarkJumpLine,
         Invalid
     };
 
@@ -348,30 +408,6 @@ private:
 
         // Used in some Movement.
         Key m_key;
-    };
-
-    // Struct for a location.
-    struct Location
-    {
-        Location() : m_blockNumber(-1), m_positionInBlock(0)
-        {
-        }
-
-        Location(int p_blockNumber, int p_positionInBlock)
-            : m_blockNumber(p_blockNumber), m_positionInBlock(p_positionInBlock)
-        {
-        }
-
-        bool isValid() const
-        {
-            return m_blockNumber > -1;
-        }
-
-        // Block number of the location, based on 0.
-        int m_blockNumber;
-
-        // Position in block, based on 0.
-        int m_positionInBlock;
     };
 
     // Stack for all the jump locations.
@@ -491,6 +527,12 @@ private:
 
     // Check if we are in a leader sequence.
     bool expectingLeaderSequence() const;
+
+    // Check m_keys to see if we are expecting a mark name to create a mark.
+    bool expectingMarkName() const;
+
+    // Check m_keys to see if we are expecting a mark name as the target.
+    bool expectingMarkTarget() const;
 
     // Return the corresponding register name of @p_key.
     // If @p_key is not a valid register name, return a NULL QChar.
@@ -632,6 +674,8 @@ private:
     bool m_replayLeaderSequence;
 
     LocationStack m_locations;
+
+    Marks m_marks;
 
     static const QChar c_unnamedRegister;
     static const QChar c_blackHoleRegister;
