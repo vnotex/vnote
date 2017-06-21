@@ -107,6 +107,9 @@ VNotebook *VNotebook::createNotebook(const QString &p_name, const QString &p_pat
                                      QObject *p_parent)
 {
     VNotebook *nb = new VNotebook(p_name, p_path, p_parent);
+
+    // If @p_imageFolder is empty, it will report global configured folder as
+    // its image folder.
     nb->setImageFolder(p_imageFolder);
 
     // Check if there alread exists a config file.
@@ -115,6 +118,8 @@ VNotebook *VNotebook::createNotebook(const QString &p_name, const QString &p_pat
         nb->readConfig();
         return nb;
     }
+
+    VUtils::makePath(p_path);
 
     if (!nb->writeToConfig()) {
         delete nb;

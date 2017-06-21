@@ -44,6 +44,9 @@ public:
 
     static QString getLogFilePath();
 
+    // Get the path of the folder used to store default notebook.
+    static QString getVnoteNotebookFolderPath();
+
     // Constants
     static const QString orgName;
     static const QString appName;
@@ -362,6 +365,9 @@ private:
     static const QString c_defaultMdhlFile;
     static const QString c_solarizedDarkMdhlFile;
     static const QString c_solarizedLightMdhlFile;
+
+    // The folder name to store all notebooks if user does not specify one.
+    static const QString c_vnoteNotebookFolderName;
 };
 
 

@@ -168,39 +168,22 @@ bool VNotebookSelector::newNotebook()
     info += tr("The root folder should be used EXCLUSIVELY by VNote and "
                "it is recommended to be EMPTY.");
 
-    QString defaultName("new_notebook");
+    QString defaultName;
     QString defaultPath;
 
+    // Use empty default name and path to let the dialog to auto generate a name
+    // under the default VNote notebook folder.
     VNewNotebookDialog dialog(tr("Add Notebook"), info, defaultName,
-                              defaultPath, this);
-    do {
-        if (dialog.exec() == QDialog::Accepted) {
-            QString name = dialog.getNameInput();
-            QString path = dialog.getPathInput();
-            if (findNotebook(name)) {
-                VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    tr("Name already exists. Please choose another name."), "",
-                                    QMessageBox::Ok, QMessageBox::Ok, this);
-                continue;
-            }
-
-            createNotebook(name, path, dialog.getImportCheck(), dialog.getImageFolder());
-            return true;
-        }
-        break;
-    } while (true);
+                              defaultPath, m_notebooks, this);
+    if (dialog.exec() == QDialog::Accepted) {
+        createNotebook(dialog.getNameInput(),
+                       dialog.getPathInput(),
+                       dialog.isImportExistingNotebook(),
+                       dialog.getImageFolder());
+        return true;
+    }
 
     return false;
-}
-
-VNotebook *VNotebookSelector::findNotebook(const QString &p_name)
-{
-    for (int i = 0; i < m_notebooks.size(); ++i) {
-        if (m_notebooks[i]->getName() == p_name) {
-            return m_notebooks[i];
-        }
-    }
-    return NULL;
 }
 
 void VNotebookSelector::createNotebook(const QString &p_name,
@@ -210,6 +193,15 @@ void VNotebookSelector::createNotebook(const QString &p_name,
 {
     VNotebook *nb = VNotebook::createNotebook(p_name, p_path, p_import,
                                               p_imageFolder, m_vnote);
+    if (!nb) {
+        VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                            tr("Fail to create notebook "
+                               "<span style=\"%1\">%2</span> in <span style=\"%1\">%3</span>.")
+                            .arg(vconfig.c_dataTextStyle).arg(p_name).arg(p_path), "",
+                            QMessageBox::Ok, QMessageBox::Ok, this);
+        return;
+    }
+
     m_notebooks.append(nb);
     vconfig.setNotebooks(m_notebooks);
 
@@ -293,38 +285,29 @@ void VNotebookSelector::editNotebookInfo()
     VNotebook *notebook = getNotebookFromComboIndex(index);
     QString curName = notebook->getName();
 
-    VNotebookInfoDialog dialog(tr("Notebook Information"), "", notebook, this);
-    do {
-        if (dialog.exec() == QDialog::Accepted) {
-            bool updated = false;
-            QString name = dialog.getName();
-            if (name != curName) {
-                if (findNotebook(name)) {
-                    VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                        tr("Name already exists. Please choose another name."), "",
-                                        QMessageBox::Ok, QMessageBox::Ok, this);
-                    continue;
-                }
-
-                updated = true;
-                notebook->rename(name);
-                updateComboBoxItem(index, name);
-                vconfig.setNotebooks(m_notebooks);
-            }
-
-            QString imageFolder = dialog.getImageFolder();
-            if (imageFolder != notebook->getImageFolderConfig()) {
-                updated = true;
-                notebook->setImageFolder(imageFolder);
-                notebook->writeConfig();
-            }
-
-            if (updated) {
-                emit notebookUpdated(notebook);
-            }
+    VNotebookInfoDialog dialog(tr("Notebook Information"), "", notebook,
+                               m_notebooks, this);
+    if (dialog.exec() == QDialog::Accepted) {
+        bool updated = false;
+        QString name = dialog.getName();
+        if (name != curName) {
+            updated = true;
+            notebook->rename(name);
+            updateComboBoxItem(index, name);
+            vconfig.setNotebooks(m_notebooks);
         }
-        break;
-    } while (true);
+
+        QString imageFolder = dialog.getImageFolder();
+        if (imageFolder != notebook->getImageFolderConfig()) {
+            updated = true;
+            notebook->setImageFolder(imageFolder);
+            notebook->writeConfig();
+        }
+
+        if (updated) {
+            emit notebookUpdated(notebook);
+        }
+    }
 }
 
 void VNotebookSelector::addNotebookItem(const QString &p_name)

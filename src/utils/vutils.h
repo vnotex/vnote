@@ -97,6 +97,15 @@ public:
     // Generate HTML template.
     static QString generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exportPdf);
 
+    // Get an available file name in @p_directory with base @p_baseFileName.
+    // If there already exists a file named @p_baseFileName, try to add sequence
+    // suffix to the name, such as _001.
+    static QString getFileNameWithSequence(const QString &p_directory,
+                                           const QString &p_baseFileName);
+
+    // Try to check if @p_path is legal.
+    static bool checkPathLegal(const QString &p_path);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
     // Captured texts (need to be trimmed):

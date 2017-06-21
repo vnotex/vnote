@@ -17,6 +17,9 @@
 #include <QLocale>
 #include <QPushButton>
 #include <QElapsedTimer>
+#include <QValidator>
+#include <QRegExpValidator>
+#include <QRegExp>
 
 #include "vfile.h"
 #include "vnote.h"
@@ -551,4 +554,64 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exp
     }
 
     return htmlTemplate;
+}
+
+QString VUtils::getFileNameWithSequence(const QString &p_directory,
+                                        const QString &p_baseFileName)
+{
+    QDir dir(p_directory);
+    if (!dir.exists() || !dir.exists(p_baseFileName)) {
+        return p_baseFileName;
+    }
+
+    // Append a sequence.
+    QFileInfo fi(p_baseFileName);
+    QString baseName = fi.baseName();
+    QString suffix = fi.completeSuffix();
+    int seq = 1;
+    QString fileName;
+    do {
+        fileName = QString("%1_%2").arg(baseName).arg(QString::number(seq++), 3, '0');
+        if (!suffix.isEmpty()) {
+            fileName = fileName + "." + suffix;
+        }
+    } while (dir.exists(fileName));
+
+    return fileName;
+}
+
+bool VUtils::checkPathLegal(const QString &p_path)
+{
+    // Ensure every part of the p_path is a valid file name until we come to
+    // an existing parent directory.
+    if (p_path.isEmpty()) {
+        return false;
+    }
+
+    if (QFileInfo::exists(p_path)) {
+        return true;
+    }
+
+    bool ret = false;
+    int pos;
+    QString basePath = basePathFromPath(p_path);
+    QString fileName = fileNameFromPath(p_path);
+    QValidator *validator = new QRegExpValidator(QRegExp(c_fileNameRegExp));
+    while (!fileName.isEmpty()) {
+        QValidator::State validFile = validator->validate(fileName, pos);
+        if (validFile != QValidator::Acceptable) {
+            break;
+        }
+
+        if (QFileInfo::exists(basePath)) {
+            ret = true;
+            break;
+        }
+
+        fileName = fileNameFromPath(basePath);
+        basePath = basePathFromPath(basePath);
+    }
+
+    delete validator;
+    return ret;
 }

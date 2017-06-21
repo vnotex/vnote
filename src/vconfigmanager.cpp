@@ -26,6 +26,7 @@ const QString VConfigManager::c_warningTextStyle = QString("color: red; font: bo
 const QString VConfigManager::c_dataTextStyle = QString("font: bold");
 const QString VConfigManager::c_dangerBtnStyle = QString("QPushButton {color: #fff; border-color: #d43f3a; background-color: #d9534f;}"
                                                          "QPushButton::hover {color: #fff; border-color: #ac2925; background-color: #c9302c;}");
+const QString VConfigManager::c_vnoteNotebookFolderName = QString("vnote_notebooks");
 
 VConfigManager::VConfigManager()
     : userSettings(NULL), defaultSettings(NULL)
@@ -653,4 +654,9 @@ void VConfigManager::setEditorStyle(const QString &p_style)
     m_editorStyle = p_style;
     setConfigToSettings("global", "editor_style", m_editorStyle);
     updateEditStyle();
+}
+
+QString VConfigManager::getVnoteNotebookFolderPath()
+{
+    return QDir::home().filePath(c_vnoteNotebookFolderName);
 }

@@ -6,16 +6,20 @@
 
 extern VConfigManager vconfig;
 
-VNotebookInfoDialog::VNotebookInfoDialog(const QString &p_title, const QString &p_info,
-                                         const VNotebook *p_notebook, QWidget *p_parent)
-    : QDialog(p_parent), m_notebook(p_notebook), m_infoLabel(NULL)
+VNotebookInfoDialog::VNotebookInfoDialog(const QString &p_title,
+                                         const QString &p_info,
+                                         const VNotebook *p_notebook,
+                                         const QVector<VNotebook *> &p_notebooks,
+                                         QWidget *p_parent)
+    : QDialog(p_parent), m_notebook(p_notebook), m_infoLabel(NULL),
+      m_notebooks(p_notebooks)
 {
     setupUI(p_title, p_info);
 
     connect(m_nameEdit, &QLineEdit::textChanged,
-            this, &VNotebookInfoDialog::enableOkButton);
+            this, &VNotebookInfoDialog::handleInputChanged);
 
-    enableOkButton();
+    handleInputChanged();
 }
 
 void VNotebookInfoDialog::setupUI(const QString &p_title, const QString &p_info)
@@ -46,10 +50,16 @@ void VNotebookInfoDialog::setupUI(const QString &p_title, const QString &p_info)
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp), m_imageFolderEdit);
     m_imageFolderEdit->setValidator(validator);
 
+    // Warning label.
+    m_warnLabel = new QLabel();
+    m_warnLabel->setWordWrap(true);
+    m_warnLabel->hide();
+
     QFormLayout *topLayout = new QFormLayout();
     topLayout->addRow(nameLabel, m_nameEdit);
     topLayout->addRow(pathLabel, m_pathEdit);
     topLayout->addRow(imageFolderLabel, m_imageFolderEdit);
+    topLayout->addRow(m_warnLabel);
 
     // Ok is the default button.
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -63,17 +73,44 @@ void VNotebookInfoDialog::setupUI(const QString &p_title, const QString &p_info)
     if (m_infoLabel) {
         mainLayout->addWidget(m_infoLabel);
     }
+
     mainLayout->addLayout(topLayout);
     mainLayout->addWidget(m_btnBox);
+
     setLayout(mainLayout);
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     setWindowTitle(p_title);
 }
 
-void VNotebookInfoDialog::enableOkButton()
+void VNotebookInfoDialog::handleInputChanged()
 {
+    QString name = m_nameEdit->text();
+    bool nameOk = !name.isEmpty();
+    bool showWarnLabel = false;
+
+    if (nameOk && name != m_notebook->getName()) {
+        // Check if the name conflicts with existing notebook name.
+        int idx = -1;
+        for (idx = 0; idx < m_notebooks.size(); ++idx) {
+            if (m_notebooks[idx]->getName() == name) {
+                break;
+            }
+        }
+
+        if (idx < m_notebooks.size()) {
+            nameOk = false;
+            showWarnLabel = true;
+            QString nameConflictText = tr("<span style=\"%1\">WARNING</span>: Name already exists. "
+                                          "Please choose another name.")
+                                          .arg(vconfig.c_warningTextStyle);
+            m_warnLabel->setText(nameConflictText);
+        }
+    }
+
+    m_warnLabel->setVisible(showWarnLabel);
+
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
-    okBtn->setEnabled(!m_nameEdit->text().isEmpty());
+    okBtn->setEnabled(nameOk);
 }
 
 QString VNotebookInfoDialog::getName() const

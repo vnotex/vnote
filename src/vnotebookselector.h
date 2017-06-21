@@ -52,7 +52,7 @@ private slots:
 private:
     void initActions();
     void updateComboBox();
-    VNotebook *findNotebook(const QString &p_name);
+
     // Return the index of @p_notebook in m_noteboks.
     int indexOfNotebook(const VNotebook *p_notebook);
 
