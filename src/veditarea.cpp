@@ -67,8 +67,8 @@ void VEditArea::insertSplitWindow(int idx)
 {
     VEditWindow *win = new VEditWindow(vnote, this);
     splitter->insertWidget(idx, win);
-    connect(win, &VEditWindow::tabStatusChanged,
-            this, &VEditArea::handleEditWindowStatusChanged);
+    connect(win, &VEditWindow::tabStatusUpdated,
+            this, &VEditArea::handleWindowTabStatusUpdated);
     connect(win, &VEditWindow::requestSplitWindow,
             this, &VEditArea::handleSplitWindowRequest);
     connect(win, &VEditWindow::requestRemoveSplit,
@@ -85,12 +85,10 @@ void VEditArea::insertSplitWindow(int idx)
             this, &VEditArea::handleWindowVimStatusUpdated);
 }
 
-void VEditArea::handleEditWindowStatusChanged(const VFile *p_file,
-                                              const VEditTab *p_editTab,
-                                              bool p_editMode)
+void VEditArea::handleWindowTabStatusUpdated(const VEditTabInfo &p_info)
 {
     if (splitter->widget(curWindowIndex) == sender()) {
-        emit curTabStatusChanged(p_file, p_editTab, p_editMode);
+        emit tabStatusUpdated(p_info);
     }
 }
 
@@ -216,14 +214,15 @@ void VEditArea::updateWindowStatus()
 {
     if (curWindowIndex == -1) {
         Q_ASSERT(splitter->count() == 0);
-        emit curTabStatusChanged(NULL, NULL, false);
+
+        emit tabStatusUpdated(VEditTabInfo());
         emit outlineChanged(VToc());
         emit curHeaderChanged(VAnchor());
         return;
     }
 
     VEditWindow *win = getWindow(curWindowIndex);
-    win->requestUpdateTabStatus();
+    win->updateTabStatus();
     win->requestUpdateOutline();
     win->requestUpdateCurHeader();
 }

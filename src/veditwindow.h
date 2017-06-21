@@ -32,7 +32,6 @@ public:
     void readFile();
     void saveAndReadFile();
     bool closeAllFiles(bool p_forced);
-    void requestUpdateTabStatus();
     void requestUpdateOutline();
     void requestUpdateCurHeader();
     // Focus to current tab's editor
@@ -56,11 +55,18 @@ public:
     bool alternateTab();
     VEditTab *getTab(int tabIndex) const;
 
+    // Ask tab @p_index to update its status and propogate.
+    // The status here means tab status, outline, current header.
+    // If @p_index is -1, it is current tab.
+    void updateTabStatus(int p_index = -1);
+
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
 
 signals:
-    void tabStatusChanged(const VFile *p_file, const VEditTab *p_editTab, bool p_editMode);
+    // Status of current VEditTab has update.
+    void tabStatusUpdated(const VEditTabInfo &p_info);
+
     void requestSplitWindow(VEditWindow *curWindow);
     void requestRemoveSplit(VEditWindow *curWindow);
     // This widget or its children get the focus
@@ -84,7 +90,6 @@ private slots:
     void tabListJump(VFile *p_file);
     void handleOutlineChanged(const VToc &p_toc);
     void handleCurHeaderChanged(const VAnchor &p_anchor);
-    void handleTabStatusChanged();
     void updateSplitMenu();
     void tabbarContextMenuRequested(QPoint p_pos);
     void handleLocateAct();
@@ -97,6 +102,9 @@ private slots:
     // Handle the vimStatusUpdated() signal of VEditTab.
     void handleTabVimStatusUpdated(const VVim *p_vim);
 
+    // Handle the statusUpdated signal of VEditTab.
+    void handleTabStatusUpdated(const VEditTabInfo &p_info);
+
 private:
     void initTabActions();
     void setupCornerWidget();
@@ -104,8 +112,6 @@ private:
     int insertEditTab(int p_index, VFile *p_file, QWidget *p_page);
     int appendEditTab(VFile *p_file, QWidget *p_page);
     int openFileInTab(VFile *p_file, OpenFileMode p_mode);
-    void noticeTabStatus(int p_index);
-    void noticeStatus(int index);
     inline QString generateTooltip(const VFile *p_file) const;
     inline QString generateTabText(int p_index, const QString &p_name,
                                    bool p_modified, bool p_modifiable) const;

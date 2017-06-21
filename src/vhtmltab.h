@@ -56,9 +56,6 @@ private slots:
     // Handle text changed in m_editor.
     void handleTextChanged();
 
-    // Emit statusChanged() signal to notify that status of this tab has changed.
-    void noticeStatusChanged();
-
     // m_editor requests to save changes and enter read mode.
     void saveAndRead();
 

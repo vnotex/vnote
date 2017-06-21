@@ -30,6 +30,7 @@ class VAvatar;
 class VFindReplaceDialog;
 class VCaptain;
 class VVimIndicator;
+class VTabIndicator;
 
 class VMainWindow : public QMainWindow
 {
@@ -61,7 +62,6 @@ private slots:
     void changeHighlightSelectedWord(bool p_checked);
     void changeHighlightSearchedWord(bool p_checked);
     void changeHighlightTrailingSapce(bool p_checked);
-    void handleCurTabStatusChanged(const VFile *p_file, const VEditTab *p_editTab, bool p_editMode);
     void onePanelView();
     void twoPanelView();
     void expandPanelView(bool p_checked);
@@ -91,6 +91,9 @@ private slots:
 
     // Handle Vim status updated.
     void handleVimStatusUpdated(const VVim *p_vim);
+
+    // Handle the status update of the current tab of VEditArea.
+    void handleAreaTabStatusUpdated(const VEditTabInfo &p_info);
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -131,8 +134,8 @@ private:
     void toggleOnePanelView();
     void closeCurrentFile();
 
-    // Update status bar information according to m_curTab and m_curFile.
-    void updateStatusInfo(bool p_editMode);
+    // Update status bar information.
+    void updateStatusInfo(const VEditTabInfo &p_info);
 
     // Wrapper to create a QAction.
     QAction *newAction(const QIcon &p_icon,
@@ -158,6 +161,7 @@ private:
     VAvatar *m_avatar;
     VFindReplaceDialog *m_findReplaceDialog;
     VVimIndicator *m_vimIndicator;
+    VTabIndicator *m_tabIndicator;
 
     // Whether it is one panel or two panles.
     bool m_onePanel;

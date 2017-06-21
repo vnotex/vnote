@@ -60,7 +60,9 @@ public:
     bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE;
 
 signals:
-    void curTabStatusChanged(const VFile *p_file, const VEditTab *p_editTab, bool p_editMode);
+    // Emit when current window's tab status updated.
+    void tabStatusUpdated(const VEditTabInfo &p_info);
+
     void outlineChanged(const VToc &toc);
     void curHeaderChanged(const VAnchor &anchor);
 
@@ -98,9 +100,9 @@ private slots:
     void handleReplaceAll(const QString &p_text, uint p_options,
                           const QString &p_replaceText);
     void handleFindDialogClosed();
-    void handleEditWindowStatusChanged(const VFile *p_file,
-                                       const VEditTab *p_editTab,
-                                       bool p_editMode);
+
+    // Hanle the status update of current tab within a VEditWindow.
+    void handleWindowTabStatusUpdated(const VEditTabInfo &p_info);
 
     // Handle the statusMessage signal of VEditWindow.
     void handleWindowStatusMessage(const QString &p_msg);
@@ -117,6 +119,8 @@ private:
     inline VEditWindow *getWindow(int windowIndex) const;
     void insertSplitWindow(int idx);
     void removeSplitWindow(VEditWindow *win);
+
+    // Update status of current window.
     void updateWindowStatus();
 
     VNote *vnote;

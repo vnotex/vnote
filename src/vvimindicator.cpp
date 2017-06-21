@@ -13,8 +13,8 @@
 
 extern VConfigManager vconfig;
 
-VVimIndicator::VVimIndicator(QWidget *parent)
-    : QWidget(parent), m_vim(NULL)
+VVimIndicator::VVimIndicator(QWidget *p_parent)
+    : QWidget(p_parent), m_vim(NULL)
 {
     setupUI();
 }
@@ -26,6 +26,7 @@ void VVimIndicator::setupUI()
     m_regBtn = new VButtonWithWidget(QIcon(":/resources/icons/arrow_dropup.svg"),
                                      "\"",
                                      this);
+    m_regBtn->setToolTip(tr("Registers"));
     m_regBtn->setProperty("StatusBtn", true);
     m_regBtn->setFocusPolicy(Qt::NoFocus);
     QTreeWidget *regTree = new QTreeWidget(this);
@@ -41,6 +42,7 @@ void VVimIndicator::setupUI()
     m_markBtn = new VButtonWithWidget(QIcon(":/resources/icons/arrow_dropup.svg"),
                                       "[]",
                                       this);
+    m_markBtn->setToolTip(tr("Marks"));
     m_markBtn->setProperty("StatusBtn", true);
     m_markBtn->setFocusPolicy(Qt::NoFocus);
     QTreeWidget *markTree = new QTreeWidget(this);
@@ -154,16 +156,18 @@ static void fillTreeItemsWithRegisters(QTreeWidget *p_tree,
 
 void VVimIndicator::update(const VVim *p_vim)
 {
-    if (!p_vim) {
-        m_vim = p_vim;
-        return;
-    }
-
     m_vim = p_vim;
 
-    VimMode mode = p_vim->getMode();
-    QChar curRegName = p_vim->getCurrentRegisterName();
-    QChar lastUsedMark = p_vim->getMarks().getLastUsedMark();
+    VimMode mode = VimMode::Normal;
+    QChar curRegName(' ');
+    QChar lastUsedMark;
+    QString pendingKeys;
+    if (p_vim) {
+        mode = p_vim->getMode();
+        curRegName = p_vim->getCurrentRegisterName();
+        lastUsedMark = p_vim->getMarks().getLastUsedMark();
+        pendingKeys = p_vim->getPendingKeys();
+    }
 
     QString style = QString("QLabel { padding: 0px 2px 0px 2px; font: bold; background-color: %1; }")
                            .arg(modeBackgroundColor(mode));
@@ -176,8 +180,8 @@ void VVimIndicator::update(const VVim *p_vim)
                               .arg(lastUsedMark.isNull() ? QChar(' ') : lastUsedMark);
     m_markBtn->setText(markText);
 
-    QString keyText = QString("<span style=\"font-weight:bold;\">%1</span>")
-                             .arg(p_vim->getPendingKeys());
+    QString keyText = QString("<span style=\"font-weight:bold; color: %1;\">%2</span>")
+                             .arg("#15AE67").arg(pendingKeys);
     m_keyLabel->setText(keyText);
 }
 

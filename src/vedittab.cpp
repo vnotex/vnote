@@ -77,3 +77,18 @@ void VEditTab::wheelEvent(QWheelEvent *p_event)
 
     p_event->ignore();
 }
+
+void VEditTab::updateStatus()
+{
+    m_modified = m_file->isModified();
+
+    emit statusUpdated(createEditTabInfo());
+}
+
+VEditTabInfo VEditTab::createEditTabInfo()
+{
+    VEditTabInfo info;
+    info.m_editTab = this;
+
+    return info;
+}

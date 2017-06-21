@@ -7,6 +7,7 @@
 #include "vtoc.h"
 #include "vfile.h"
 #include "utils/vvim.h"
+#include "vedittabinfo.h"
 
 class VEditArea;
 
@@ -71,6 +72,9 @@ public slots:
     // Enter edit mode
     virtual void editFile() = 0;
 
+    // Update status of current tab. Emit statusUpdated().
+    virtual void updateStatus();
+
 protected:
     void wheelEvent(QWheelEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -79,6 +83,9 @@ protected:
 
     // Called to zoom in/out content.
     virtual void zoom(bool p_zoomIn, qreal p_step = 0.25) = 0;
+
+    // Create a filled VEditTabInfo.
+    virtual VEditTabInfo createEditTabInfo();
 
     // File related to this tab.
     QPointer<VFile> m_file;
@@ -95,7 +102,8 @@ signals:
 
     void curHeaderChanged(const VAnchor &p_anchor);
 
-    void statusChanged();
+    // The status of current tab has updates.
+    void statusUpdated(const VEditTabInfo &p_info);
 
     // Emit when want to show message in status bar.
     void statusMessage(const QString &p_msg);

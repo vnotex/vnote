@@ -68,7 +68,8 @@ SOURCES += main.cpp\
     utils/vvim.cpp \
     utils/veditutils.cpp \
     vvimindicator.cpp \
-    vbuttonwithwidget.cpp
+    vbuttonwithwidget.cpp \
+    vtabindicator.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -123,7 +124,9 @@ HEADERS  += vmainwindow.h \
     utils/vvim.h \
     utils/veditutils.h \
     vvimindicator.h \
-    vbuttonwithwidget.h
+    vbuttonwithwidget.h \
+    vedittabinfo.h \
+    vtabindicator.h
 
 RESOURCES += \
     vnote.qrc \

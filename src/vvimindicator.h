@@ -12,9 +12,9 @@ class VVimIndicator : public QWidget
     Q_OBJECT
 
 public:
-    explicit VVimIndicator(QWidget *parent = 0);
+    explicit VVimIndicator(QWidget *p_parent = 0);
 
-public slots:
+    // Update indicator according to @p_vim.
     void update(const VVim *p_vim);
 
 private slots:

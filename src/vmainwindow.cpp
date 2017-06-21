@@ -21,6 +21,7 @@
 #include "vexporter.h"
 #include "vmdtab.h"
 #include "vvimindicator.h"
+#include "vtabindicator.h"
 
 extern VConfigManager vconfig;
 
@@ -108,8 +109,8 @@ void VMainWindow::setupUI()
             editArea, &VEditArea::openFile);
     connect(fileList, &VFileList::fileUpdated,
             editArea, &VEditArea::handleFileUpdated);
-    connect(editArea, &VEditArea::curTabStatusChanged,
-            this, &VMainWindow::handleCurTabStatusChanged);
+    connect(editArea, &VEditArea::tabStatusUpdated,
+            this, &VMainWindow::handleAreaTabStatusUpdated);
     connect(editArea, &VEditArea::statusMessage,
             this, &VMainWindow::showStatusMessage);
     connect(editArea, &VEditArea::vimStatusUpdated,
@@ -119,10 +120,15 @@ void VMainWindow::setupUI()
 
     setCentralWidget(mainSplitter);
 
-    // Create and show the status bar
     m_vimIndicator = new VVimIndicator(this);
     m_vimIndicator->hide();
+
+    m_tabIndicator = new VTabIndicator(this);
+    m_tabIndicator->hide();
+
+    // Create and show the status bar
     statusBar()->addPermanentWidget(m_vimIndicator);
+    statusBar()->addPermanentWidget(m_tabIndicator);
 }
 
 QWidget *VMainWindow::setupDirectoryPanel()
@@ -1108,18 +1114,26 @@ void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
     }
 }
 
-void VMainWindow::handleCurTabStatusChanged(const VFile *p_file, const VEditTab *p_editTab, bool p_editMode)
+void VMainWindow::handleAreaTabStatusUpdated(const VEditTabInfo &p_info)
 {
-    updateActionStateFromTabStatusChange(p_file, p_editMode);
-    if (p_file) {
-        m_findReplaceDialog->updateState(p_file->getDocType(), p_editMode);
+    bool editMode = false;
+    m_curTab = p_info.m_editTab;
+    if (m_curTab) {
+        m_curFile = m_curTab->getFile();
+        editMode = m_curTab->isEditMode();
+    } else {
+        m_curFile = NULL;
     }
 
+    updateActionStateFromTabStatusChange(m_curFile, editMode);
+
     QString title;
-    if (p_file) {
-        title = QString("[%1] %2").arg(p_file->getNotebookName()).arg(p_file->retrivePath());
-        if (p_file->isModifiable()) {
-            if (p_file->isModified()) {
+    if (m_curFile) {
+        m_findReplaceDialog->updateState(m_curFile->getDocType(), editMode);
+
+        title = QString("[%1] %2").arg(m_curFile->getNotebookName()).arg(m_curFile->retrivePath());
+        if (m_curFile->isModifiable()) {
+            if (m_curFile->isModified()) {
                 title.append('*');
             }
         } else {
@@ -1128,10 +1142,7 @@ void VMainWindow::handleCurTabStatusChanged(const VFile *p_file, const VEditTab 
     }
 
     updateWindowTitle(title);
-    m_curFile = const_cast<VFile *>(p_file);
-    m_curTab = const_cast<VEditTab *>(p_editTab);
-
-    updateStatusInfo(p_editMode);
+    updateStatusInfo(p_info);
 }
 
 void VMainWindow::onePanelView()
@@ -1505,12 +1516,20 @@ void VMainWindow::showStatusMessage(const QString &p_msg)
     statusBar()->showMessage(p_msg, timeout);
 }
 
-void VMainWindow::updateStatusInfo(bool p_editMode)
+void VMainWindow::updateStatusInfo(const VEditTabInfo &p_info)
 {
-    if (!p_editMode || !m_curTab) {
-        m_vimIndicator->hide();
+    if (m_curTab) {
+        m_tabIndicator->update(p_info);
+        m_tabIndicator->show();
+
+        if (m_curTab->isEditMode()) {
+            m_curTab->requestUpdateVimStatus();
+        } else {
+            m_vimIndicator->hide();
+        }
     } else {
-        m_curTab->requestUpdateVimStatus();
+        m_tabIndicator->hide();
+        m_vimIndicator->hide();
     }
 }
 

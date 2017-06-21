@@ -65,9 +65,6 @@ private slots:
     // Handle text changed in m_editor.
     void handleTextChanged();
 
-    // Emit statusChanged() signal to notify that status of this tab has changed.
-    void noticeStatusChanged();
-
     // Update m_toc according to @p_tocHtml for read mode.
     void updateTocFromHtml(const QString &p_tocHtml);
 
@@ -121,6 +118,9 @@ private:
 
     // Focus the proper child widget.
     void focusChild() Q_DECL_OVERRIDE;
+
+    // Create a filled VEditTabInfo.
+    VEditTabInfo createEditTabInfo() Q_DECL_OVERRIDE;
 
     VEdit *m_editor;
     VWebView *m_webViewer;

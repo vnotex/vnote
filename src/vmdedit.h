@@ -45,6 +45,8 @@ signals:
     // Signal when current header change.
     void curHeaderChanged(VAnchor p_anchor);
 
+    // Signal when the status of VMdEdit changed.
+    // Will be emitted by VImagePreviewer for now.
     void statusChanged();
 
 private slots:

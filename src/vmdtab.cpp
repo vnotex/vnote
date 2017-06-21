@@ -49,11 +49,13 @@ void VMdTab::setupUI()
         connect(dynamic_cast<VMdEdit *>(m_editor), &VMdEdit::headersChanged,
                 this, &VMdTab::updateTocFromHeaders);
         connect(dynamic_cast<VMdEdit *>(m_editor), &VMdEdit::statusChanged,
-                this, &VMdTab::noticeStatusChanged);
+                this, &VMdTab::updateStatus);
         connect(m_editor, SIGNAL(curHeaderChanged(VAnchor)),
                 this, SLOT(updateCurHeader(VAnchor)));
         connect(m_editor, &VEdit::textChanged,
                 this, &VMdTab::handleTextChanged);
+        connect(m_editor, &VEdit::cursorPositionChanged,
+                this, &VMdTab::updateStatus);
         connect(m_editor, &VEdit::saveAndRead,
                 this, &VMdTab::saveAndRead);
         connect(m_editor, &VEdit::discardAndRead,
@@ -82,14 +84,7 @@ void VMdTab::handleTextChanged()
         return;
     }
 
-    noticeStatusChanged();
-}
-
-void VMdTab::noticeStatusChanged()
-{
-    m_modified = m_file->isModified();
-
-    emit statusChanged();
+    updateStatus();
 }
 
 void VMdTab::showFileReadMode()
@@ -110,7 +105,7 @@ void VMdTab::showFileReadMode()
 
     scrollWebViewToHeader(outlineIndex);
 
-    noticeStatusChanged();
+    updateStatus();
 }
 
 void VMdTab::scrollWebViewToHeader(int p_outlineIndex)
@@ -173,7 +168,7 @@ void VMdTab::showFileEditMode()
 
     mdEdit->setFocus();
 
-    noticeStatusChanged();
+    updateStatus();
 }
 
 bool VMdTab::closeFile(bool p_forced)
@@ -268,7 +263,7 @@ bool VMdTab::saveFile()
         m_editor->setModified(true);
     }
 
-    noticeStatusChanged();
+    updateStatus();
 
     return ret;
 }
@@ -655,4 +650,18 @@ void VMdTab::requestUpdateVimStatus()
     } else {
         emit vimStatusUpdated(NULL);
     }
+}
+
+VEditTabInfo VMdTab::createEditTabInfo()
+{
+    VEditTabInfo info = VEditTab::createEditTabInfo();
+
+    if (m_editor) {
+        QTextCursor cursor = m_editor->textCursor();
+        info.m_cursorBlockNumber = cursor.block().blockNumber();
+        info.m_cursorPositionInBlock = cursor.positionInBlock();
+        info.m_blockCount = m_editor->document()->blockCount();
+    }
+
+    return info;
 }

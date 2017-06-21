@@ -166,7 +166,7 @@ bool VEditWindow::closeFile(const VFile *p_file, bool p_forced)
     Q_ASSERT(editor);
     if (!p_forced) {
         setCurrentIndex(idx);
-        noticeStatus(idx);
+        updateTabStatus(idx);
     }
     // Even p_forced is true we need to delete unused images.
     bool ok = editor->closeFile(p_forced);
@@ -226,7 +226,7 @@ bool VEditWindow::closeAllFiles(bool p_forced)
 
         if (!p_forced) {
             setCurrentIndex(0);
-            noticeStatus(0);
+            updateTabStatus(0);
         }
         // Even p_forced is true we need to delete unused images.
         bool ok = editor->closeFile(p_forced);
@@ -266,8 +266,8 @@ int VEditWindow::openFileInTab(VFile *p_file, OpenFileMode p_mode)
             this, &VEditWindow::handleOutlineChanged);
     connect(editor, &VEditTab::curHeaderChanged,
             this, &VEditWindow::handleCurHeaderChanged);
-    connect(editor, &VEditTab::statusChanged,
-            this, &VEditWindow::handleTabStatusChanged);
+    connect(editor, &VEditTab::statusUpdated,
+            this, &VEditWindow::handleTabStatusUpdated);
     connect(editor, &VEditTab::statusMessage,
             this, &VEditWindow::handleTabStatusMessage);
     connect(editor, &VEditTab::vimStatusUpdated,
@@ -333,20 +333,23 @@ void VEditWindow::saveFile()
     editor->saveFile();
 }
 
-void VEditWindow::noticeTabStatus(int p_index)
+void VEditWindow::updateTabStatus(int p_index)
 {
     if (p_index == -1) {
-        emit tabStatusChanged(NULL, NULL, false);
+        p_index = currentIndex();
+    }
+
+    if (p_index == -1) {
+        emit tabStatusUpdated(VEditTabInfo());
+        emit outlineChanged(VToc());
+        emit curHeaderChanged(VAnchor());
         return;
     }
 
-    updateTabInfo(p_index);
-    updateAllTabsSequence();
-
-    VEditTab *editor = getTab(p_index);
-    const VFile *file = editor->getFile();
-    bool editMode = editor->isEditMode();
-    emit tabStatusChanged(file, editor, editMode);
+    VEditTab *tab = getTab(p_index);
+    tab->updateStatus();
+    tab->requestUpdateOutline();
+    tab->requestUpdateCurHeader();
 }
 
 void VEditWindow::updateTabInfo(int p_index)
@@ -370,12 +373,6 @@ void VEditWindow::updateAllTabsSequence()
         setTabText(i, generateTabText(i, file->getName(),
                                       file->isModified(), file->isModifiable()));
     }
-}
-
-// Be requested to report current status
-void VEditWindow::requestUpdateTabStatus()
-{
-    noticeTabStatus(currentIndex());
 }
 
 // Be requested to report current outline
@@ -492,7 +489,7 @@ void VEditWindow::tabListJump(VFile *p_file)
     int idx = findTabByFile(p_file);
     Q_ASSERT(idx >= 0);
     setCurrentIndex(idx);
-    noticeStatus(idx);
+    updateTabStatus(idx);
 }
 
 void VEditWindow::updateSplitMenu()
@@ -552,31 +549,16 @@ void VEditWindow::scrollCurTab(const VAnchor &p_anchor)
     }
 }
 
-// Update tab status, outline and current header.
-void VEditWindow::noticeStatus(int index)
-{
-    qDebug() << "tab" << index;
-    noticeTabStatus(index);
-
-    if (index == -1) {
-        emit outlineChanged(VToc());
-        emit curHeaderChanged(VAnchor());
-    } else {
-        VEditTab *tab = getTab(index);
-        tab->requestUpdateOutline();
-        tab->requestUpdateCurHeader();
-    }
-}
-
-void VEditWindow::handleTabStatusChanged()
+void VEditWindow::handleTabStatusUpdated(const VEditTabInfo &p_info)
 {
     int idx = indexOf(dynamic_cast<QWidget *>(sender()));
+
+    updateTabInfo(idx);
+    updateAllTabsSequence();
+
     if (idx == currentIndex()) {
-        noticeTabStatus(idx);
-    } else {
-        // Only update the tab status. Do no propagate upwards.
-        updateTabInfo(idx);
-        updateAllTabsSequence();
+        // Current tab. Propogate its status.
+        emit tabStatusUpdated(p_info);
     }
 }
 
@@ -603,7 +585,7 @@ void VEditWindow::updateFileInfo(const VFile *p_file)
     }
     int idx = findTabByFile(p_file);
     if (idx > -1) {
-        noticeStatus(idx);
+        updateTabStatus(idx);
     }
 }
 
@@ -618,7 +600,7 @@ void VEditWindow::updateDirectoryInfo(const VDirectory *p_dir)
         VEditTab *editor = getTab(i);
         QPointer<VFile> file = editor->getFile();
         if (p_dir->containsFile(file)) {
-            noticeStatus(i);
+            updateTabStatus(i);
         }
     }
 }
@@ -634,7 +616,7 @@ void VEditWindow::updateNotebookInfo(const VNotebook *p_notebook)
         VEditTab *editor = getTab(i);
         QPointer<VFile> file = editor->getFile();
         if (p_notebook->containsFile(file)) {
-            noticeStatus(i);
+            updateTabStatus(i);
         }
     }
 }
@@ -727,11 +709,11 @@ bool VEditWindow::addEditTab(QWidget *p_widget)
             this, &VEditWindow::handleOutlineChanged);
     connect(editor, &VEditTab::curHeaderChanged,
             this, &VEditWindow::handleCurHeaderChanged);
-    connect(editor, &VEditTab::statusChanged,
-            this, &VEditWindow::handleTabStatusChanged);
+    connect(editor, &VEditTab::statusUpdated,
+            this, &VEditWindow::handleTabStatusUpdated);
     int idx = appendEditTab(editor->getFile(), editor);
     setCurrentIndex(idx);
-    noticeTabStatus(idx);
+    updateTabStatus(idx);
     return true;
 }
 

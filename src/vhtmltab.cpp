@@ -48,6 +48,7 @@ void VHtmlTab::setupUI()
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addWidget(m_editor);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
     setLayout(mainLayout);
 }
 
@@ -59,14 +60,7 @@ void VHtmlTab::handleTextChanged()
         return;
     }
 
-    noticeStatusChanged();
-}
-
-void VHtmlTab::noticeStatusChanged()
-{
-    m_modified = m_file->isModified();
-
-    emit statusChanged();
+    updateStatus();
 }
 
 void VHtmlTab::showFileReadMode()
@@ -75,7 +69,7 @@ void VHtmlTab::showFileReadMode()
 
     m_editor->setReadOnly(true);
 
-    noticeStatusChanged();
+    updateStatus();
 }
 
 void VHtmlTab::showFileEditMode()
@@ -89,7 +83,7 @@ void VHtmlTab::showFileEditMode()
     m_editor->beginEdit();
     m_editor->setFocus();
 
-    noticeStatusChanged();
+    updateStatus();
 }
 
 bool VHtmlTab::closeFile(bool p_forced)
@@ -184,7 +178,7 @@ bool VHtmlTab::saveFile()
         m_editor->setModified(true);
     }
 
-    noticeStatusChanged();
+    updateStatus();
 
     return ret;
 }
