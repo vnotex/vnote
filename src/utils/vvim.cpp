@@ -340,9 +340,9 @@ static int percentageToBlockNumber(const QTextDocument *p_doc, int p_percent)
     return num >= 0 ? num : 0;
 }
 
-bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
+bool VVim::handleKeyPressEvent(QKeyEvent *p_event, bool *p_autoIndented)
 {
-    bool ret = handleKeyPressEvent(p_event->key(), p_event->modifiers());
+    bool ret = handleKeyPressEvent(p_event->key(), p_event->modifiers(), p_autoIndented);
     if (ret) {
         p_event->accept();
     }
@@ -350,12 +350,16 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event)
     return ret;
 }
 
-bool VVim::handleKeyPressEvent(int key, int modifiers)
+bool VVim::handleKeyPressEvent(int key, int modifiers, bool *p_autoIndented)
 {
     bool ret = false;
     bool resetPositionInBlock = true;
     Key keyInfo(key, modifiers);
     bool unindent = false;
+
+    if (p_autoIndented) {
+        *p_autoIndented = false;
+    }
 
     // Handle Insert mode key press.
     if (VimMode::Insert == m_mode) {
@@ -739,15 +743,21 @@ bool VVim::handleKeyPressEvent(int key, int modifiers)
                                         1);
                 }
 
+                bool textInserted = false;
                 if (vconfig.getAutoIndent()) {
-                    VEditUtils::indentBlockAsPreviousBlock(cursor);
+                    textInserted = VEditUtils::indentBlockAsPreviousBlock(cursor);
                     if (vconfig.getAutoList()) {
-                        VEditUtils::insertListMarkAsPreviousBlock(cursor);
+                        textInserted = VEditUtils::insertListMarkAsPreviousBlock(cursor)
+                                       || textInserted;
                     }
                 }
 
                 cursor.endEditBlock();
                 m_editor->setTextCursor(cursor);
+
+                if (p_autoIndented && textInserted) {
+                    *p_autoIndented = true;
+                }
 
                 setMode(VimMode::Insert);
             }

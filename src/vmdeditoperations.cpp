@@ -193,8 +193,15 @@ bool VMdEditOperations::insertImage()
 
 bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
 {
-    if (m_editConfig->m_enableVimMode && m_vim->handleKeyPressEvent(p_event)) {
-        m_autoIndentPos = -1;
+    bool autoIndentedVim = false;
+    if (m_editConfig->m_enableVimMode
+        && m_vim->handleKeyPressEvent(p_event, &autoIndentedVim)) {
+        if (autoIndentedVim) {
+            m_autoIndentPos = m_editor->textCursor().position();
+        } else {
+            m_autoIndentPos = -1;
+        }
+
         return true;
     }
 

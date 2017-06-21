@@ -148,7 +148,7 @@ public:
 
     // Handle key press event.
     // Returns true if the event is consumed and need no more handling.
-    bool handleKeyPressEvent(QKeyEvent *p_event);
+    bool handleKeyPressEvent(QKeyEvent *p_event, bool *p_autoIndented = NULL);
 
     // Return current mode.
     VimMode getMode() const;
@@ -449,7 +449,7 @@ private:
     };
 
     // Returns true if the event is consumed and need no more handling.
-    bool handleKeyPressEvent(int key, int modifiers);
+    bool handleKeyPressEvent(int key, int modifiers, bool *p_autoIndented = NULL);
 
     // Reset all key state info.
     void resetState();
