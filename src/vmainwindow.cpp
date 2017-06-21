@@ -560,7 +560,6 @@ void VMainWindow::initEditMenu()
 
     m_replaceAct = new QAction(tr("Replace"), this);
     m_replaceAct->setToolTip(tr("Replace current occurence"));
-    m_replaceAct->setShortcut(QKeySequence::Replace);
     connect(m_replaceAct, SIGNAL(triggered(bool)),
             m_findReplaceDialog, SLOT(replace()));
 
