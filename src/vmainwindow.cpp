@@ -22,6 +22,7 @@
 #include "vmdtab.h"
 #include "vvimindicator.h"
 #include "vtabindicator.h"
+#include "dialog/vupdater.h"
 
 extern VConfigManager vconfig;
 
@@ -320,6 +321,30 @@ void VMainWindow::initHelpMenu()
     connect(shortcutAct, &QAction::triggered,
             this, &VMainWindow::shortcutHelp);
 
+    QAction *updateAct = new QAction(tr("Check For &Updates"), this);
+    updateAct->setToolTip(tr("Check for updates of VNote"));
+    connect(updateAct, &QAction::triggered,
+            this, [this]() {
+                VUpdater updater(this);
+                updater.exec();
+            });
+
+    QAction *starAct = new QAction(tr("Star VNote on &Github"), this);
+    starAct->setToolTip(tr("Give a star to VNote on Github project"));
+    connect(starAct, &QAction::triggered,
+            this, [this]() {
+                QString url("https://github.com/tamlok/vnote");
+                QDesktopServices::openUrl(url);
+            });
+
+    QAction *feedbackAct = new QAction(tr("&Feedback"), this);
+    feedbackAct->setToolTip(tr("Open an issue on Github"));
+    connect(feedbackAct, &QAction::triggered,
+            this, [this]() {
+                QString url("https://github.com/tamlok/vnote/issues");
+                QDesktopServices::openUrl(url);
+            });
+
     QAction *aboutAct = new QAction(tr("&About VNote"), this);
     aboutAct->setToolTip(tr("View information about VNote"));
     connect(aboutAct, &QAction::triggered,
@@ -335,6 +360,9 @@ void VMainWindow::initHelpMenu()
 #endif
 
     helpMenu->addAction(shortcutAct);
+    helpMenu->addAction(updateAct);
+    helpMenu->addAction(starAct);
+    helpMenu->addAction(feedbackAct);
     helpMenu->addAction(aboutQtAct);
     helpMenu->addAction(aboutAct);
 }
@@ -797,11 +825,11 @@ void VMainWindow::changeMarkdownConverter(QAction *action)
 
 void VMainWindow::aboutMessage()
 {
-    QString info = tr("v%1").arg(VConfigManager::c_version);
-    info += "\n\n";
+    QString info = tr("<span style=\"font-weight: bold;\">v%1</span>").arg(VConfigManager::c_version);
+    info += "<br/><br/>";
     info += tr("VNote is a Vim-inspired note-taking application for Markdown.");
-    info += "\n";
-    info += tr("Visit https://github.com/tamlok/vnote.git for more information.");
+    info += "<br/>";
+    info += tr("Please visit <a href=\"https://github.com/tamlok/vnote.git\">Github</a> for more information.");
     QMessageBox::about(this, tr("About VNote"), info);
 }
 

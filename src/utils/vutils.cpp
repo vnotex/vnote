@@ -469,9 +469,17 @@ DocType VUtils::docTypeFromName(const QString &p_name)
     static QMap<int, QVector<QString>> suffixes;
 
     if (suffixes.isEmpty()) {
-        suffixes[(int)DocType::Markdown] = {"md", "markdown", "mkd"};
-        suffixes[(int)DocType::List] = {"ls", "list"};
-        suffixes[(int)DocType::Container] = {"co", "container", "con"};
+        QVector<QString> md;
+        md << "md" << "markdown" << "mkd";
+        suffixes[(int)DocType::Markdown] = md;
+
+        QVector<QString> list;
+        list << "ls" << "list";
+        suffixes[(int)DocType::List] = list;
+
+        QVector<QString> container;
+        container << "co" << "container" << "con";
+        suffixes[(int)DocType::Container] = container;
     }
 
     QString suf = QFileInfo(p_name).suffix().toLower();
