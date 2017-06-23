@@ -194,6 +194,12 @@ void VNote::updateTemplate()
     // Shoudl not display scrollbar in PDF.
     cssStyle += "pre code { white-space: pre-wrap !important; "
                            "word-break: break-all !important; }\n";
+    if (!vconfig.getEnableImageConstraint()) {
+        // Constain the image width by force in PDF, otherwise, the PDF will
+        // be cut off.
+        cssStyle += "img { max-width: 100% !important; height: auto !important; }\n";
+    }
+
     s_markdownTemplatePDF.replace(styleHolder, cssStyle);
 }
 
