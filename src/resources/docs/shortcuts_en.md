@@ -3,7 +3,7 @@
 2. On macOS, `Ctrl` corresponds to `Command`;
 
 ## Normal Shortcuts
-- `Ctrl+T`  
+- `Ctrl+E E`  
 Toggle expanding the edit area.
 - `Ctrl+N`  
 Create a note in current directory.
@@ -13,6 +13,8 @@ Find/Replace in current note.
 Quit VNote.
 - `Ctrl+J`/`Ctrl+K`  
 VNote supports `Ctrl+J` and `Ctrl+K` for navigation in the notebooks list, directories list, notes list, opened notes list, and outline list.
+- `Ctrl+Left Mouse`  
+Scroll in all directions.
 
 ### Read Mode
 - `Ctrl+W`  
@@ -35,7 +37,7 @@ Recover the page zoom factor to 100%.
 ### Edit Mode
 - `Ctrl+S`  
 Save current changes.
-- `Ctrl+R`  
+- `Ctrl+T`  
 Save current changes and exit edit mode.
 
 #### Text Editing
@@ -112,3 +114,21 @@ Display shortcuts documentation.
 
 ## Navigation Mode
 Within the Captain MOde, `W` will turn VNote into **Navigation Mode**. In this mode, VNote will display at most two characters on some major widgets, and then pressing corresponding characters will jump to that widget.
+
+## Vim Mode
+VNote supports a simple but useful Vim mode, including **Normal**, **Insert**, **Visual**, and **VisualLine** modes.
+
+VNote supports following features of Vim:
+
+- `d`, `c`, `y`, `p`, `<`, `>`, `gu`, `gU` actions;
+- Marks `a-z`;
+- Registers `"`, `_`, `+`, `a-z`(`A-Z`);
+- Jump locations list (`Ctrl+O` and `Ctrl+I`);
+- Leader key
+    - Currently `<leader>y/d/p` equals to `"+y/d/p`, which will access the system's clipboard.
+- `zz`, `zb`, `zt`;
+- `u` and `Ctrl+R` for undo and redo;
+
+For now, VNote does **NOT** support the macro and repeat(`.`) features of Vim.
+
+Enjoy Vim on VNote!
