@@ -1,4 +1,18 @@
 # Changes History
+## v1.6
+- Support simple but powerful **Vim mode**.
+- Change the shortcut of ExitAndRead from `Ctrl+R` to `Ctrl+T`.
+- Add a edit status indicator in the status bar.
+- Dragging mouse with Ctrl and left button pressed to scroll in read and edit mode.
+- Refine highlighting cursor line.
+- Support subscript, superscript and footnote in markdown-it renderer.
+- Refactor outline logics to not show extra [EMPTY] headers.
+- Handle HTML comments correctly.
+- Provide a default root folder when adding notebooks.
+- Support check for updates.
+- Redraw app icons.
+- Many minor bug fixes.
+
 ## v1.5
 - Support logging in release mode.
 - Fix Chinese font matching in mdhl.

@@ -45,7 +45,7 @@
 ![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/tamlok/vnote?svg=true)
 
 - [Github Releases](https://github.com/tamlok/vnote/releases)
-- [Latest Builds](https://bintray.com/tamlok/vnote/vnote/view/files)
+- Latest Builds: [ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
 
 ## Linux
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
@@ -56,7 +56,7 @@
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
 
 - [Github Releases](https://github.com/tamlok/vnote/releases)
-- [Latest Builds](https://bintray.com/tamlok/vnote/vnote/view/files)
+- Latest Builds: [ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
 
 # Description (简介)
 **VNote** is a Qt-based, free and open source note-taking application, focusing on Markdown. VNote is designed to provide comfortable edit experience.
