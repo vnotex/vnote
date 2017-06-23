@@ -155,7 +155,7 @@ document.onkeydown = function(e) {
         keyState = 0;
         if (ctrl) {
             var clientHeight = document.documentElement.clientHeight;
-            window.scrollBy(0, -clientHeight);
+            window.scrollBy(0, -clientHeight / 2);
             break;
         }
         return;
@@ -164,7 +164,7 @@ document.onkeydown = function(e) {
         keyState = 0;
         if (ctrl) {
             var clientHeight = document.documentElement.clientHeight;
-            window.scrollBy(0, clientHeight);
+            window.scrollBy(0, clientHeight / 2);
             break;
         }
         return;
