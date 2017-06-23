@@ -3,14 +3,15 @@
  <!-- Created with SVG-edit - http://svg-edit.googlecode.com/ -->
  <title>vnote</title>
  <g>
+  <title>Layer 3</title>
+  <rect stroke="#000000" id="svg_11" fill="#d6eace" stroke-width="5" stroke-dasharray="null" stroke-linejoin="null" stroke-linecap="null" x="-0.242409" y="-0.033089" width="704.290516" height="704.010575" stroke-opacity="0" rx="40" ry="40"/>
+ </g>
+ <g>
   <title>Layer 1</title>
-  <rect stroke="#000000" ry="40" rx="40" stroke-opacity="0" id="svg_11" height="704.510604" width="704.290516" y="-0.083155" x="-0.246548" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="5" fill="#d6eace"/>
-  <path transform="rotate(90 421.7581481933593,520.1660156250001) " stroke="#000000" stroke-opacity="0" id="svg_16" d="m281.05692,660.46829l0,-280.60453l281.40245,280.60453l-281.40245,0z" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="null" fill="#15ae67"/>
-  <path transform="rotate(-90 421.7887878417969,238.8740081787109) " id="svg_17" stroke="#000000" stroke-opacity="0" d="m281.08756,379.17628l0,-280.60453l281.40245,280.60453l-281.40245,0z" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="null" fill="#15ae67"/>
-  <path stroke="#000000" transform="rotate(45 281.79150390625006,520.113037109375) " id="svg_18" stroke-opacity="0" d="m182.33522,619.21682l0,-198.20758l198.91257,198.20758l-198.91257,0z" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="null" fill="#15ae67"/>
-  <path stroke="#000000" transform="rotate(90 492.17449951171875,168.43408203125006) " id="svg_19" stroke-opacity="0" d="m422.02674,238.38294l0,-139.89771l140.29552,139.89771l-140.29552,0z" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="null" fill="#75c5b5"/>
-  <path stroke="#000000" transform="rotate(45 212.3482208251953,170.57028198242185) " stroke-opacity="0" id="svg_21" d="m113.18218,170.57029l99.16604,-100.31204l99.16604,100.31204l-99.16604,100.31204l-99.16604,-100.31204z" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="null" fill="#15ae67"/>
-  <path transform="rotate(90 211.3333587646484,311.00537109375006) " id="svg_23" stroke="#000000" stroke-opacity="0" d="m141.1856,380.95421l0,-139.8977l140.29551,139.8977l-140.29551,0z" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="null" fill="#15ae67"/>
-  <path stroke-opacity="0" id="svg_39" d="m282.42881,239.57986l-141.06249,141.17188l0,139.21875l140.0625,-140.0625l0.99999,-140.32813z" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="null" stroke="#000000" fill="#15ae67"/>
+  <path id="svg_7" d="m160.375009,100.656259l-0.250009,389.843741l129.9375,129.9375l260.15625,-260.4375l0,-259.875l-260.15625,259.875l0,-259.59375l-129.687491,0.250009z" stroke-opacity="0" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="null" stroke="#000000" fill="#15ae67"/>
+ </g>
+ <g>
+  <title>Layer 2</title>
+  <path id="svg_8" d="m550.43365,100.304726l-130.205135,-0.003944l0,130.042969" stroke-opacity="0" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="null" stroke="#000000" fill="#75c5b5"/>
  </g>
 </svg>

@@ -18,7 +18,7 @@ VUpdater::VUpdater(QWidget *p_parent)
 
 void VUpdater::setupUI()
 {
-    QImage img(":/resources/icons/vnote.svg");
+    QImage img(":/resources/icons/vnote_update.svg");
     QSize imgSize(128, 128);
     QLabel *imgLabel = new QLabel();
     imgLabel->setPixmap(QPixmap::fromImage(img.scaled(imgSize)));

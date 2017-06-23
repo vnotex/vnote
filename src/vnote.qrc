@@ -108,5 +108,6 @@
         <file>utils/markdown-it/markdown-it-sup.min.js</file>
         <file>utils/markdown-it/markdown-it-footnote.min.js</file>
         <file>resources/icons/arrow_dropup.svg</file>
+        <file>resources/icons/vnote_update.svg</file>
     </qresource>
 </RCC>
