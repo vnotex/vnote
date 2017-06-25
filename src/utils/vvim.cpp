@@ -23,7 +23,8 @@ const QChar VVim::c_selectionRegister = QChar('+');
 // Returns NULL QChar if invalid.
 static QChar keyToChar(int p_key, int p_modifiers)
 {
-    if (p_modifiers == Qt::ControlModifier) {
+    if (p_modifiers != Qt::NoModifier
+        && p_modifiers != Qt::ShiftModifier) {
         return QChar();
     }
 
@@ -340,6 +341,16 @@ static int percentageToBlockNumber(const QTextDocument *p_doc, int p_percent)
     return num >= 0 ? num : 0;
 }
 
+// See if @p_modifiers is Control which is different on macOs and Windows.
+static bool isControlModifier(int p_modifiers)
+{
+#if defined(Q_OS_MACOS)
+    return p_modifiers == Qt::MetaModifier;
+#else
+    return p_modifiers == Qt::ControlModifier;
+#endif
+}
+
 bool VVim::handleKeyPressEvent(QKeyEvent *p_event, bool *p_autoIndented)
 {
     bool ret = handleKeyPressEvent(p_event->key(), p_event->modifiers(), p_autoIndented);
@@ -364,7 +375,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, bool *p_autoIndented)
     // Handle Insert mode key press.
     if (VimMode::Insert == m_mode) {
         if (key == Qt::Key_Escape
-            || (key == Qt::Key_BracketLeft && modifiers == Qt::ControlModifier)) {
+            || (key == Qt::Key_BracketLeft && isControlModifier(modifiers))) {
             // Clear selection and enter Normal mode.
             clearSelection();
 
@@ -377,7 +388,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, bool *p_autoIndented)
     }
 
     // Ctrl and Shift may be sent out first.
-    if (key == Qt::Key_Control || key == Qt::Key_Shift) {
+    if (key == Qt::Key_Control || key == Qt::Key_Shift || key == Qt::Key_Meta) {
         goto accept;
     }
 
@@ -652,7 +663,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, bool *p_autoIndented)
 
             m_editor->setTextCursor(cursor);
             setMode(VimMode::Insert);
-        } else if (modifiers == Qt::ControlModifier) {
+        } else if (isControlModifier(modifiers)) {
             // Ctrl+I, jump to next location.
             if (!m_tokens.isEmpty()
                 || !checkMode(VimMode::Normal)) {
@@ -763,7 +774,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, bool *p_autoIndented)
             }
 
             break;
-        } else if (modifiers == Qt::ControlModifier) {
+        } else if (isControlModifier(modifiers)) {
             // Ctrl+O, jump to previous location.
             if (!m_tokens.isEmpty()
                 || !checkMode(VimMode::Normal)) {
@@ -862,7 +873,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, bool *p_autoIndented)
     // Should be kept together with Qt::Key_PageUp.
     case Qt::Key_B:
     {
-        if (modifiers == Qt::ControlModifier) {
+        if (isControlModifier(modifiers)) {
             // Ctrl+B, page up, fall through.
             modifiers = Qt::NoModifier;
         } else if (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier) {
@@ -918,7 +929,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, bool *p_autoIndented)
         tryGetRepeatToken(m_keys, m_tokens);
         bool toLower = modifiers == Qt::NoModifier;
 
-        if (modifiers == Qt::ControlModifier) {
+        if (isControlModifier(modifiers)) {
             // Ctrl+U, HalfPageUp.
             if (!m_keys.isEmpty()) {
                 // Not a valid sequence.
@@ -1023,7 +1034,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, bool *p_autoIndented)
 
     case Qt::Key_D:
     {
-        if (modifiers == Qt::ControlModifier) {
+        if (isControlModifier(modifiers)) {
             // Ctrl+D, HalfPageDown.
             tryGetRepeatToken(m_keys, m_tokens);
             if (!m_keys.isEmpty()) {
@@ -1090,7 +1101,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, bool *p_autoIndented)
     // Should be kept together with Qt::Key_Escape.
     case Qt::Key_BracketLeft:
     {
-        if (modifiers == Qt::ControlModifier) {
+        if (isControlModifier(modifiers)) {
             // fallthrough.
         } else {
             break;
@@ -1518,7 +1529,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, bool *p_autoIndented)
             break;
         }
 
-        if (modifiers == Qt::ControlModifier) {
+        if (isControlModifier(modifiers)) {
             // Redo.
             tryGetRepeatToken(m_keys, m_tokens);
             if (!m_keys.isEmpty() || hasActionToken()) {
@@ -3987,7 +3998,7 @@ bool VVim::processCommandLine(const Key &p_key)
     }
 
     if (p_key.m_key == Qt::Key_Escape
-        || (p_key.m_key == Qt::Key_BracketLeft && p_key.m_modifiers == Qt::ControlModifier)) {
+        || (p_key.m_key == Qt::Key_BracketLeft && isControlModifier(p_key.m_modifiers))) {
         // Go back to Normal mode.
         m_keys.clear();
         m_pendingKeys.clear();
@@ -4015,7 +4026,7 @@ bool VVim::processCommandLine(const Key &p_key)
 
     case Qt::Key_U:
     {
-        if (p_key.m_modifiers == Qt::ControlModifier) {
+        if (isControlModifier(p_key.m_modifiers)) {
             // Ctrl+U, delete all input keys.
             while (!m_keys.isEmpty()) {
                 m_keys.pop_back();
