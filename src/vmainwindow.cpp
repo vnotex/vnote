@@ -924,7 +924,7 @@ void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
         tmpAct->setCheckable(true);
         tmpAct->setData(bgColors[i].name);
 
-#if !defined(Q_OS_MACOS)
+#if !defined(Q_OS_MACOS) && !defined(Q_OS_MAC)
         tmpAct->setIcon(QIcon(predefinedColorPixmaps[i]));
 #endif
 
@@ -1011,7 +1011,7 @@ void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
         tmpAct->setToolTip(tr("Set as the background color for editor"));
         tmpAct->setCheckable(true);
         tmpAct->setData(bgColors[i].name);
-#if !defined(Q_OS_MACOS)
+#if !defined(Q_OS_MACOS) && !defined(Q_OS_MAC)
         tmpAct->setIcon(QIcon(predefinedColorPixmaps[i]));
 #endif
         if (curBgColor == bgColors[i].name) {
@@ -1529,7 +1529,7 @@ QAction *VMainWindow::newAction(const QIcon &p_icon,
                                 const QString &p_text,
                                 QObject *p_parent)
 {
-#if defined(Q_OS_MACOS)
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
     Q_UNUSED(p_icon);
     return new QAction(p_text, p_parent);
 #else

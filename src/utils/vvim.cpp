@@ -344,7 +344,7 @@ static int percentageToBlockNumber(const QTextDocument *p_doc, int p_percent)
 // See if @p_modifiers is Control which is different on macOs and Windows.
 static bool isControlModifier(int p_modifiers)
 {
-#if defined(Q_OS_MACOS)
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
     return p_modifiers == Qt::MetaModifier;
 #else
     return p_modifiers == Qt::ControlModifier;
