@@ -171,7 +171,9 @@ void VNewNotebookDialog::handleInputChanged()
         if (QFileInfo::exists(path)) {
             QDir dir(path);
             QStringList files = dir.entryList(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::Hidden);
-            if (!files.isEmpty()) {
+            if (files.isEmpty()) {
+                pathOk = true;
+            } else {
                 // Folder is not empty.
                 configExist = VConfigManager::directoryConfigExist(path);
                 showWarnLabel = true;
