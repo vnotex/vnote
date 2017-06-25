@@ -347,11 +347,13 @@ void VMainWindow::initHelpMenu()
 
     QAction *aboutAct = new QAction(tr("&About VNote"), this);
     aboutAct->setToolTip(tr("View information about VNote"));
+    aboutAct->setMenuRole(QAction::AboutRole);
     connect(aboutAct, &QAction::triggered,
             this, &VMainWindow::aboutMessage);
 
     QAction *aboutQtAct = new QAction(tr("About &Qt"), this);
     aboutQtAct->setToolTip(tr("View information about Qt"));
+    aboutQtAct->setMenuRole(QAction::AboutQtRole);
     connect(aboutQtAct, &QAction::triggered,
             qApp, &QApplication::aboutQt);
 
@@ -537,6 +539,7 @@ void VMainWindow::initFileMenu()
     QAction *settingsAct = newAction(QIcon(":/resources/icons/settings.svg"),
                                      tr("&Settings"), this);
     settingsAct->setToolTip(tr("View and change settings for VNote"));
+    settingsAct->setMenuRole(QAction::PreferencesRole);
     connect(settingsAct, &QAction::triggered,
             this, &VMainWindow::viewSettings);
 
@@ -548,6 +551,7 @@ void VMainWindow::initFileMenu()
     QAction *exitAct = new QAction(tr("&Exit"), this);
     exitAct->setToolTip(tr("Exit VNote"));
     exitAct->setShortcut(QKeySequence("Ctrl+Q"));
+    exitAct->setMenuRole(QAction::QuitRole);
     connect(exitAct, &QAction::triggered,
             this, &VMainWindow::close);
 
