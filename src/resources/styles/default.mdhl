@@ -14,8 +14,8 @@ background: 005fff
 
 editor-current-line
 background: c5cae9
-vim-insert-background: e1bee7
-vim-normal-background: a5d6a7
+vim-insert-background: cdc0b0
+vim-normal-background: b0bec5
 vim-visual-background: 90caf9
 vim-replace-background: f8bbd0
 

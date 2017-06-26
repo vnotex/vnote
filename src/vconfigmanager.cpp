@@ -331,8 +331,8 @@ QString VConfigManager::getLogFilePath()
 void VConfigManager::updateMarkdownEditStyle()
 {
     static const QString defaultCurrentLineBackground = "#C5CAE9";
-    static const QString defaultVimNormalBg = "#A5D6A7";
-    static const QString defaultVimInsertBg = "#E1BEE7";
+    static const QString defaultVimNormalBg = "#B0BEC5";
+    static const QString defaultVimInsertBg = "#CDC0B0";
     static const QString defaultVimVisualBg = "#90CAF9";
     static const QString defaultVimReplaceBg = "#F8BBD0";
     static const QString defaultTrailingSpaceBackground = "#FFEBEE";
