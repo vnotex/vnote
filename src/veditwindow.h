@@ -67,7 +67,9 @@ signals:
     // Status of current VEditTab has update.
     void tabStatusUpdated(const VEditTabInfo &p_info);
 
-    void requestSplitWindow(VEditWindow *curWindow);
+    // Requst VEditArea to split this window.
+    void requestSplitWindow(VEditWindow *p_window, bool p_right = true);
+
     void requestRemoveSplit(VEditWindow *curWindow);
     // This widget or its children get the focus
     void getFocused();
@@ -81,8 +83,12 @@ signals:
     void vimStatusUpdated(const VVim *p_vim);
 
 private slots:
-    bool handleTabCloseRequest(int index);
-    void splitWindow();
+    // Close tab @p_index.
+    bool closeTab(int p_index);
+
+    // Split this window on the right/left.
+    void splitWindow(bool p_right = true);
+
     void removeSplit();
     void handleTabbarClicked(int p_index);
     void handleCurrentIndexChanged(int p_index);
@@ -116,7 +122,13 @@ private:
     inline QString generateTabText(int p_index, const QString &p_name,
                                    bool p_modified, bool p_modifiable) const;
     bool canRemoveSplit();
+
+    // Move tab at @p_tabIdx one split window.
+    // @p_right: move right or left.
+    // If there is only one split window, it will request to split current window
+    // and move the tab to the new split.
     void moveTabOneSplit(int p_tabIdx, bool p_right);
+
     void updateTabInfo(int p_idx);
     // Update the sequence number of all the tabs.
     void updateAllTabsSequence();
@@ -140,6 +152,15 @@ private:
     QAction *m_locateAct;
     QAction *m_moveLeftAct;
     QAction *m_moveRightAct;
+
+    // Close current tab action in tab menu.
+    QAction *m_closeTabAct;
+
+    // Close other tabs action in tab menu.
+    QAction *m_closeOthersAct;
+
+    // Close tabs to the right in tab menu.
+    QAction *m_closeRightAct;
 };
 
 inline QString VEditWindow::generateTooltip(const VFile *p_file) const

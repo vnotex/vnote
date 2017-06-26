@@ -87,7 +87,10 @@ public slots:
     void handleNotebookUpdated(const VNotebook *p_notebook);
 
 private slots:
-    void handleSplitWindowRequest(VEditWindow *curWindow);
+    // Split @curWindow via inserting a new window around it.
+    // @p_right: insert the new window on the right side.
+    void splitWindow(VEditWindow *p_window, bool p_right = true);
+
     void handleRemoveSplitRequest(VEditWindow *curWindow);
     void handleWindowFocused();
     void handleOutlineChanged(const VToc &toc);

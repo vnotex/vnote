@@ -33,7 +33,7 @@ VEditWindow::VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent)
             this, &VEditWindow::tabbarContextMenuRequested);
 
     connect(this, &VEditWindow::tabCloseRequested,
-            this, &VEditWindow::handleTabCloseRequest);
+            this, &VEditWindow::closeTab);
     connect(this, &VEditWindow::tabBarClicked,
             this, &VEditWindow::handleTabbarClicked);
     connect(this, &VEditWindow::currentChanged,
@@ -61,6 +61,55 @@ void VEditWindow::initTabActions()
     m_moveRightAct->setToolTip(tr("Move current tab to the split on the right"));
     connect(m_moveRightAct, &QAction::triggered,
             this, &VEditWindow::handleMoveRightAct);
+
+    m_closeTabAct = new QAction(tr("Close Tab"), this);
+    m_closeTabAct->setToolTip(tr("Close current note tab"));
+    connect(m_closeTabAct, &QAction::triggered,
+            this, [this](){
+                int tab = this->m_closeTabAct->data().toInt();
+                Q_ASSERT(tab != -1);
+                closeTab(tab);
+            });
+
+    m_closeOthersAct = new QAction(tr("Close Other Tabs"), this);
+    m_closeOthersAct->setToolTip(tr("Close all other note tabs"));
+    connect(m_closeOthersAct, &QAction::triggered,
+            this, [this](){
+                int tab = this->m_closeTabAct->data().toInt();
+                Q_ASSERT(tab != -1);
+
+                for (int i = tab - 1; i >= 0; --i) {
+                    this->setCurrentIndex(i);
+                    this->updateTabStatus(i);
+                    if (this->closeTab(i)) {
+                        --tab;
+                    }
+                }
+
+                for (int i = tab + 1; i < this->count();) {
+                    this->setCurrentIndex(i);
+                    this->updateTabStatus(i);
+                    if (!this->closeTab(i)) {
+                        ++i;
+                    }
+                }
+            });
+
+    m_closeRightAct = new QAction(tr("Close Tabs To The Right"), this);
+    m_closeRightAct->setToolTip(tr("Close all the note tabs to the right of current tab"));
+    connect(m_closeRightAct, &QAction::triggered,
+            this, [this](){
+                int tab = this->m_closeTabAct->data().toInt();
+                Q_ASSERT(tab != -1);
+
+                for (int i = tab + 1; i < this->count();) {
+                    this->setCurrentIndex(i);
+                    this->updateTabStatus(i);
+                    if (!this->closeTab(i)) {
+                        ++i;
+                    }
+                }
+            });
 }
 
 void VEditWindow::setupCornerWidget()
@@ -103,9 +152,9 @@ void VEditWindow::setupCornerWidget()
             this, &VEditWindow::updateSplitMenu);
 }
 
-void VEditWindow::splitWindow()
+void VEditWindow::splitWindow(bool p_right)
 {
-    emit requestSplitWindow(this);
+    emit requestSplitWindow(this, p_right);
 }
 
 void VEditWindow::removeSplit()
@@ -288,13 +337,13 @@ int VEditWindow::findTabByFile(const VFile *p_file) const
     return -1;
 }
 
-bool VEditWindow::handleTabCloseRequest(int index)
+bool VEditWindow::closeTab(int p_index)
 {
-    VEditTab *editor = getTab(index);
+    VEditTab *editor = getTab(p_index);
     Q_ASSERT(editor);
     bool ok = editor->closeFile(false);
     if (ok) {
-        removeEditTab(index);
+        removeEditTab(p_index);
     }
 
     // User clicks the close button. We should make this window
@@ -458,21 +507,40 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
     if (tab == -1) {
         return;
     }
+
     m_locateAct->setData(tab);
     VEditTab *editor = getTab(tab);
     QPointer<VFile> file = editor->getFile();
     if (file->getType() == FileType::Normal) {
+        // Locate to folder.
         menu.addAction(m_locateAct);
     }
 
     int totalWin = m_editArea->windowCount();
-    if (totalWin > 1) {
+    // When there is only one tab and one split window, there is no need to
+    // display these two actions.
+    if (totalWin > 1 || count() > 1) {
         menu.addSeparator();
         m_moveLeftAct->setData(tab);
+        // Move one split left.
         menu.addAction(m_moveLeftAct);
 
         m_moveRightAct->setData(tab);
+        // Move one split right.
         menu.addAction(m_moveRightAct);
+    }
+
+    // Close tab, or other tabs, or tabs to the right.
+    menu.addSeparator();
+    m_closeTabAct->setData(tab);
+    menu.addAction(m_closeTabAct);
+    if (count() > 1) {
+        m_closeOthersAct->setData(tab);
+        menu.addAction(m_closeOthersAct);
+        if (tab < count() - 1) {
+            m_closeRightAct->setData(tab);
+            menu.addAction(m_closeRightAct);
+        }
     }
 
     if (!menu.actions().isEmpty()) {
@@ -657,10 +725,19 @@ void VEditWindow::handleMoveRightAct()
 void VEditWindow::moveTabOneSplit(int p_tabIdx, bool p_right)
 {
     Q_ASSERT(p_tabIdx > -1 && p_tabIdx < count());
-    int totalWin = m_editArea->windowCount();
-    if (totalWin < 2) {
-        return;
+    // Add split window if needed.
+    if (m_editArea->windowCount() < 2) {
+        // Request VEditArea to split window.
+        splitWindow(p_right);
+
+        // Though the signal and slot will behave like a function call. We wait
+        // here until the window split finished.
+        while (m_editArea->windowCount() < 2) {
+            VUtils::sleepWait(100);
+        }
     }
+
+    int totalWin = m_editArea->windowCount();
     int idx = m_editArea->windowIndex(this);
     int newIdx = p_right ? idx + 1 : idx - 1;
     if (newIdx >= totalWin) {

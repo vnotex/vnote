@@ -70,7 +70,7 @@ void VEditArea::insertSplitWindow(int idx)
     connect(win, &VEditWindow::tabStatusUpdated,
             this, &VEditArea::handleWindowTabStatusUpdated);
     connect(win, &VEditWindow::requestSplitWindow,
-            this, &VEditArea::handleSplitWindowRequest);
+            this, &VEditArea::splitWindow);
     connect(win, &VEditWindow::requestRemoveSplit,
             this, &VEditArea::handleRemoveSplitRequest);
     connect(win, &VEditWindow::getFocused,
@@ -338,21 +338,31 @@ void VEditArea::saveAndReadFile()
     win->saveAndReadFile();
 }
 
-void VEditArea::handleSplitWindowRequest(VEditWindow *curWindow)
+void VEditArea::splitWindow(VEditWindow *p_window, bool p_right)
 {
-    if (!curWindow) {
+    if (!p_window) {
         return;
     }
-    int idx = splitter->indexOf(curWindow);
-    qDebug() << "window" << idx << "requests split itself";
-    insertSplitWindow(++idx);
+
+    int idx = splitter->indexOf(p_window);
+    Q_ASSERT(idx > -1);
+    if (p_right) {
+        ++idx;
+    } else {
+        --idx;
+        if (idx < 0) {
+            idx = 0;
+        }
+    }
+
+    insertSplitWindow(idx);
     setCurrentWindow(idx, true);
 }
 
 void VEditArea::splitCurrentWindow()
 {
     if (curWindowIndex > -1) {
-        handleSplitWindowRequest(getWindow(curWindowIndex));
+        splitWindow(getWindow(curWindowIndex));
     }
 }
 
