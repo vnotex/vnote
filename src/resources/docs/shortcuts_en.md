@@ -1,6 +1,6 @@
 # VNote Shortcuts
 1. All the keys without special notice are **case insensitive**;
-2. On macOS, `Ctrl` corresponds to `Command`;
+2. On macOS, `Ctrl` corresponds to `Command` except in Vim mode.
 
 ## Normal Shortcuts
 - `Ctrl+E E`  
@@ -115,7 +115,7 @@ Display shortcuts documentation.
 ## Navigation Mode
 Within the Captain MOde, `W` will turn VNote into **Navigation Mode**. In this mode, VNote will display at most two characters on some major widgets, and then pressing corresponding characters will jump to that widget.
 
-## Vim Mode
+# Vim Mode
 VNote supports a simple but useful Vim mode, including **Normal**, **Insert**, **Visual**, and **VisualLine** modes.
 
 VNote supports following features of Vim:
@@ -124,7 +124,7 @@ VNote supports following features of Vim:
 - Marks `a-z`;
 - Registers `"`, `_`, `+`, `a-z`(`A-Z`);
 - Jump locations list (`Ctrl+O` and `Ctrl+I`);
-- Leader key
+- Leader key (`Space`)
     - Currently `<leader>y/d/p` equals to `"+y/d/p`, which will access the system's clipboard.
 - `zz`, `zb`, `zt`;
 - `u` and `Ctrl+R` for undo and redo;

@@ -26,6 +26,7 @@ public:
                                                  QTextCursor::MoveMode p_mode);
     // Indent current block as previous block.
     // Return true if some changes have been made.
+    // @p_cursor will be placed at the position after inserting leading spaces.
     static bool indentBlockAsPreviousBlock(QTextCursor &p_cursor);
 
     // Insert a new block at current position with the same indentation as

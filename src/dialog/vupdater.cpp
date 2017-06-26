@@ -99,27 +99,34 @@ void VUpdater::checkUpdates()
 }
 
 // Return if @p_latestVersion is newer than p_curVersion.
-// They are both in format xx.xx
+// They are both in format xx.xx.xx.xx
 bool isNewerVersion(const QString &p_curVersion, const QString &p_latestVersion)
 {
     QStringList curList = p_curVersion.split('.', QString::SkipEmptyParts);
     QStringList latestList = p_latestVersion.split('.', QString::SkipEmptyParts);
 
-    if (curList.size() != 2 || latestList.size() != 2) {
-        return false;
+    int i = 0;
+    for (; i < curList.size() && i < latestList.size(); ++i) {
+        int a = curList[i].toInt();
+        int b = latestList[i].toInt();
+
+        if (a > b) {
+            return false;
+        } else if (a < b) {
+            return true;
+        }
     }
 
-    int a = curList[0].toInt();
-    int b = curList[1].toInt();
-    int c = latestList[0].toInt();
-    int d = latestList[1].toInt();
 
-    if (a > c) {
+    if (i < curList.size()) {
+        // 1.2.1 vs 1.2
         return false;
-    } else if (a < c) {
+    } else if (i < latestList.size()) {
+        // 1.2 vs 1.2.1
         return true;
     } else {
-        return d > b;
+        // 1.2 vs 1.2
+        return false;
     }
 }
 

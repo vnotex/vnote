@@ -113,8 +113,6 @@ bool VEditUtils::indentBlockAsPreviousBlock(QTextCursor &p_cursor)
         changed = true;
     }
 
-    p_cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::MoveAnchor);
-
     return changed;
 }
 
