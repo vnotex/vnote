@@ -65,13 +65,14 @@ public:
     static void unindentBlock(QTextCursor &p_cursor,
                               const QString &p_indentationText);
 
-    // Find a char within a block.
+    // Find @p_repeat th occurence a char within a block.
     // Returns true if target is found.
     static bool findTargetWithinBlock(QTextCursor &p_cursor,
                                       QTextCursor::MoveMode p_mode,
                                       QChar p_target,
                                       bool p_forward,
-                                      bool p_inclusive);
+                                      bool p_inclusive,
+                                      int p_repeat);
 
     // Get the count of blocks selected.
     static int selectedBlockCount(const QTextCursor &p_cursor);

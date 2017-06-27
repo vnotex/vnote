@@ -1206,7 +1206,17 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, bool *p_autoIndented)
                 mm = Movement::WORDForward;
             }
 
-            tryAddMoveAction();
+            if (checkActionToken(Action::Change)) {
+                // In Change action, cw equals to ce.
+                if (shift) {
+                    mm = Movement::ForwardEndOfWORD;
+                } else {
+                    mm = Movement::ForwardEndOfWord;
+                }
+            } else {
+                tryAddMoveAction();
+            }
+
             addMovementToken(mm);
             processCommand(m_tokens);
             break;
@@ -2322,11 +2332,19 @@ bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
     case Movement::FindForward:
     {
 handle_target:
+        if (p_repeat == -1) {
+            p_repeat = 1;
+        }
+
         const Key &key = p_token.m_key;
         QChar target = keyToChar(key.m_key, key.m_modifiers);
         if (!target.isNull()) {
-            hasMoved = VEditUtils::findTargetWithinBlock(p_cursor, p_moveMode,
-                                                         target, forward, inclusive);
+            hasMoved = VEditUtils::findTargetWithinBlock(p_cursor,
+                                                         p_moveMode,
+                                                         target,
+                                                         forward,
+                                                         inclusive,
+                                                         p_repeat);
         }
 
         break;

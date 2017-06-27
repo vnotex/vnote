@@ -215,37 +215,39 @@ bool VEditUtils::findTargetWithinBlock(QTextCursor &p_cursor,
                                        QTextCursor::MoveMode p_mode,
                                        QChar p_target,
                                        bool p_forward,
-                                       bool p_inclusive)
+                                       bool p_inclusive,
+                                       int p_repeat)
 {
-    qDebug() << "find target" << p_target << p_forward << p_inclusive;
+    if (p_repeat < 1) {
+        return false;
+    }
+
     QTextBlock block = p_cursor.block();
     QString text = block.text();
     int pib = p_cursor.positionInBlock();
     int delta = p_forward ? 1 : -1;
-    int idx = pib + delta;
 
-repeat:
+    // The index to start searching.
+    int idx = pib + (p_inclusive ? delta : 2 * delta);
+
     for (; idx < text.size() && idx >= 0; idx += delta) {
         if (text[idx] == p_target) {
-            break;
+            if (--p_repeat == 0) {
+                break;
+            }
         }
     }
 
-    if (idx < 0 || idx >= text.size()) {
+    if (idx < 0 || idx >= text.size() || p_repeat > 0) {
         return false;
     }
 
+    // text[idx] is the target character.
     if ((p_forward && p_inclusive && p_mode == QTextCursor::KeepAnchor)
         || (!p_forward && !p_inclusive)) {
         ++idx;
     } else if (p_forward && !p_inclusive && p_mode == QTextCursor::MoveAnchor) {
         --idx;
-    }
-
-    if (idx == pib) {
-        // We need to skip current match.
-        idx = pib + delta * 2;
-        goto repeat;
     }
 
     p_cursor.setPosition(block.position() + idx, p_mode);
