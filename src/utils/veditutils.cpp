@@ -352,3 +352,51 @@ void VEditUtils::scrollBlockInPage(QTextEdit *p_edit,
 
     p_edit->ensureCursorVisible();
 }
+
+bool VEditUtils::isListBlock(const QTextBlock &p_block, int *p_seq)
+{
+    QString text = p_block.text();
+    QRegExp regExp("^\\s*(-|\\d+\\.)\\s");
+
+    if (p_seq) {
+        *p_seq = -1;
+    }
+
+    int regIdx = regExp.indexIn(text);
+    if (regIdx == -1) {
+        return false;
+    }
+
+    V_ASSERT(regExp.captureCount() == 1);
+    QString markText = regExp.capturedTexts()[1];
+    if (markText != "-") {
+        V_ASSERT(markText.endsWith('.'));
+        bool ok = false;
+        int num = markText.left(markText.size() - 1).toInt(&ok, 10);
+        V_ASSERT(ok);
+        if (p_seq) {
+            *p_seq = num;
+        }
+    }
+
+    return true;
+}
+
+bool VEditUtils::isSpaceToBlockStart(const QTextBlock &p_block, int p_posInBlock)
+{
+    if (p_posInBlock <= 0) {
+        return true;
+    }
+
+    QString text = p_block.text();
+    V_ASSERT(text.size() >= p_posInBlock);
+    return text.left(p_posInBlock).trimmed().isEmpty();
+}
+
+void VEditUtils::deleteIndentAndListMark(QTextCursor &p_cursor)
+{
+    V_ASSERT(!p_cursor.hasSelection());
+    p_cursor.movePosition(QTextCursor::StartOfBlock, QTextCursor::KeepAnchor);
+    p_cursor.removeSelectedText();
+}
+

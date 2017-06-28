@@ -351,9 +351,9 @@ static bool isControlModifier(int p_modifiers)
 #endif
 }
 
-bool VVim::handleKeyPressEvent(QKeyEvent *p_event, bool *p_autoIndented)
+bool VVim::handleKeyPressEvent(QKeyEvent *p_event, int *p_autoIndentPos)
 {
-    bool ret = handleKeyPressEvent(p_event->key(), p_event->modifiers(), p_autoIndented);
+    bool ret = handleKeyPressEvent(p_event->key(), p_event->modifiers(), p_autoIndentPos);
     if (ret) {
         p_event->accept();
     }
@@ -361,23 +361,47 @@ bool VVim::handleKeyPressEvent(QKeyEvent *p_event, bool *p_autoIndented)
     return ret;
 }
 
-bool VVim::handleKeyPressEvent(int key, int modifiers, bool *p_autoIndented)
+bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 {
     bool ret = false;
     bool resetPositionInBlock = true;
     Key keyInfo(key, modifiers);
     bool unindent = false;
-
-    if (p_autoIndented) {
-        *p_autoIndented = false;
-    }
+    int autoIndentPos = -1;
 
     // Handle Insert mode key press.
     if (VimMode::Insert == m_mode) {
         if (key == Qt::Key_Escape
             || (key == Qt::Key_BracketLeft && isControlModifier(modifiers))) {
+            // See if we need to cancel auto indent.
+            bool cancelAutoIndent = false;
+            if (p_autoIndentPos && *p_autoIndentPos > -1) {
+                // Cancel the auto indent/list if the pos is the same and cursor is at
+                // the end of a block.
+                QTextCursor cursor = m_editor->textCursor();
+                QTextBlock block = cursor.block();
+                if (cursor.position() == *p_autoIndentPos && !cursor.hasSelection()) {
+                    if (VEditUtils::isListBlock(block)) {
+                        if (cursor.atBlockEnd()) {
+                            cancelAutoIndent = true;
+                        }
+                    } else if (VEditUtils::isSpaceToBlockStart(block,
+                                                               cursor.positionInBlock())) {
+                        cancelAutoIndent = true;
+                    }
+                }
+
+                if (cancelAutoIndent) {
+                    autoIndentPos = -1;
+                    VEditUtils::deleteIndentAndListMark(cursor);
+                    m_editor->setTextCursor(cursor);
+                }
+            }
+
             // Clear selection and enter Normal mode.
-            clearSelection();
+            if (!cancelAutoIndent) {
+                clearSelection();
+            }
 
             setMode(VimMode::Normal);
             goto clear_accept;
@@ -766,8 +790,8 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, bool *p_autoIndented)
                 cursor.endEditBlock();
                 m_editor->setTextCursor(cursor);
 
-                if (p_autoIndented && textInserted) {
-                    *p_autoIndented = true;
+                if (textInserted) {
+                    autoIndentPos = cursor.position();
                 }
 
                 setMode(VimMode::Insert);
@@ -1678,6 +1702,11 @@ clear_accept:
 
 accept:
     ret = true;
+
+    // Only alter the autoIndentPos when the key is handled by Vim.
+    if (p_autoIndentPos) {
+        *p_autoIndentPos = autoIndentPos;
+    }
 
 exit:
     m_resetPositionInBlock = resetPositionInBlock;

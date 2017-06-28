@@ -147,8 +147,9 @@ public:
     };
 
     // Handle key press event.
+    // @p_autoIndentPos: the cursor position of last auto indent.
     // Returns true if the event is consumed and need no more handling.
-    bool handleKeyPressEvent(QKeyEvent *p_event, bool *p_autoIndented = NULL);
+    bool handleKeyPressEvent(QKeyEvent *p_event, int *p_autoIndentPos = NULL);
 
     // Return current mode.
     VimMode getMode() const;
@@ -449,7 +450,7 @@ private:
     };
 
     // Returns true if the event is consumed and need no more handling.
-    bool handleKeyPressEvent(int key, int modifiers, bool *p_autoIndented = NULL);
+    bool handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos = NULL);
 
     // Reset all key state info.
     void resetState();

@@ -42,15 +42,6 @@ private:
     bool handleKeyReturn(QKeyEvent *p_event);
     bool handleKeyBracketLeft(QKeyEvent *p_event);
     bool insertTitle(int p_level);
-    void deleteIndentAndListMark();
-
-    // Check if @p_block is a auto list block.
-    // @p_seq will be the seq number of the ordered list, or -1.
-    // Returns true if it is an auto list block.
-    bool isListBlock(const QTextBlock &p_block, int *p_seq = NULL);
-
-    // If the start of @p_block to postition @p_posInBlock are spaces.
-    bool isSpaceToBlockStart(const QTextBlock &p_block, int p_posInBlock);
 
     // Change the sequence number of a list block.
     void changeListBlockSeqNumber(QTextBlock &p_block, int p_seq);

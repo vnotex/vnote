@@ -193,15 +193,8 @@ bool VMdEditOperations::insertImage()
 
 bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
 {
-    bool autoIndentedVim = false;
     if (m_editConfig->m_enableVimMode
-        && m_vim->handleKeyPressEvent(p_event, &autoIndentedVim)) {
-        if (autoIndentedVim) {
-            m_autoIndentPos = m_editor->textCursor().position();
-        } else {
-            m_autoIndentPos = -1;
-        }
-
+        && m_vim->handleKeyPressEvent(p_event, &m_autoIndentPos)) {
         return true;
     }
 
@@ -383,7 +376,8 @@ bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)
             // If it is a Tab key following auto list, increase the indent level.
             QTextBlock block = cursor.block();
             int seq = -1;
-            if (m_autoIndentPos == cursor.position() && isListBlock(block, &seq)) {
+            if (m_autoIndentPos == cursor.position()
+                && VEditUtils::isListBlock(block, &seq)) {
                 QTextCursor blockCursor(block);
                 blockCursor.beginEditBlock();
                 blockCursor.insertText(text);
@@ -418,7 +412,8 @@ bool VMdEditOperations::handleKeyBackTab(QKeyEvent *p_event)
     QTextBlock block = doc->findBlock(cursor.selectionStart());
     bool continueAutoIndent = false;
     int seq = -1;
-    if (cursor.position() == m_autoIndentPos && isListBlock(block, &seq) &&
+    if (cursor.position() == m_autoIndentPos
+        && VEditUtils::isListBlock(block, &seq) &&
         !cursor.hasSelection()) {
         continueAutoIndent = true;
     }
@@ -668,17 +663,19 @@ bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
         QTextCursor cursor = m_editor->textCursor();
         QTextBlock block = cursor.block();
         if (cursor.position() == m_autoIndentPos && !cursor.hasSelection()) {
-            if (isListBlock(block)) {
+            if (VEditUtils::isListBlock(block)) {
                 if (cursor.atBlockEnd()) {
                     cancelAutoIndent = true;
                 }
-            } else if (isSpaceToBlockStart(block, cursor.positionInBlock())) {
+            } else if (VEditUtils::isSpaceToBlockStart(block,
+                                                       cursor.positionInBlock())) {
                 cancelAutoIndent = true;
             }
         }
         if (cancelAutoIndent) {
             m_autoIndentPos = -1;
-            deleteIndentAndListMark();
+            VEditUtils::deleteIndentAndListMark(cursor);
+            m_editor->setTextCursor(cursor);
             return true;
         }
     }
@@ -709,35 +706,6 @@ bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
     }
 
     return handled;
-}
-
-bool VMdEditOperations::isListBlock(const QTextBlock &p_block, int *p_seq)
-{
-    QString text = p_block.text();
-    QRegExp regExp("^\\s*(-|\\d+\\.)\\s");
-
-    if (p_seq) {
-        *p_seq = -1;
-    }
-
-    int regIdx = regExp.indexIn(text);
-    if (regIdx == -1) {
-        return false;
-    }
-
-    V_ASSERT(regExp.captureCount() == 1);
-    QString markText = regExp.capturedTexts()[1];
-    if (markText != "-") {
-        V_ASSERT(markText.endsWith('.'));
-        bool ok = false;
-        int num = markText.left(markText.size() - 1).toInt(&ok, 10);
-        V_ASSERT(ok);
-        if (p_seq) {
-            *p_seq = num;
-        }
-    }
-
-    return true;
 }
 
 void VMdEditOperations::changeListBlockSeqNumber(QTextBlock &p_block, int p_seq)
@@ -772,25 +740,6 @@ void VMdEditOperations::changeListBlockSeqNumber(QTextBlock &p_block, int p_seq)
 
     cursor.removeSelectedText();
     cursor.insertText(QString::number(p_seq));
-}
-
-bool VMdEditOperations::isSpaceToBlockStart(const QTextBlock &p_block, int p_posInBlock)
-{
-    if (p_posInBlock <= 0) {
-        return true;
-    }
-    QString text = p_block.text();
-    V_ASSERT(text.size() >= p_posInBlock);
-    return text.left(p_posInBlock).trimmed().isEmpty();
-}
-
-void VMdEditOperations::deleteIndentAndListMark()
-{
-    QTextCursor cursor = m_editor->textCursor();
-    V_ASSERT(!cursor.hasSelection());
-    cursor.movePosition(QTextCursor::StartOfBlock, QTextCursor::KeepAnchor);
-    cursor.removeSelectedText();
-    m_editor->setTextCursor(cursor);
 }
 
 bool VMdEditOperations::insertTitle(int p_level)

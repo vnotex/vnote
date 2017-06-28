@@ -84,6 +84,18 @@ public:
                                   int p_blockNum,
                                   int p_dest);
 
+    // Check if @p_block is a auto list block.
+    // @p_seq will be the seq number of the ordered list, or -1.
+    // Returns true if it is an auto list block.
+    static bool isListBlock(const QTextBlock &p_block, int *p_seq = NULL);
+
+    // If the start of @p_block to postition @p_posInBlock are spaces.
+    static bool isSpaceToBlockStart(const QTextBlock &p_block, int p_posInBlock);
+
+    // @p_cursor is positioned right after auto indetn and auto list.
+    // Need to call setTextCursor() to make it take effect.
+    static void deleteIndentAndListMark(QTextCursor &p_cursor);
+
 private:
     VEditUtils() {}
 };
