@@ -655,6 +655,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         if (modifiers == Qt::NoModifier) {
             if (hasActionTokenValidForTextObject()) {
                 // Inner text object.
+                tryGetRepeatToken(m_keys, m_tokens);
                 if (!m_keys.isEmpty()) {
                     // Invalid sequence;
                     break;
@@ -713,6 +714,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         if (modifiers == Qt::NoModifier) {
             if (hasActionTokenValidForTextObject()) {
                 // Around text object.
+                tryGetRepeatToken(m_keys, m_tokens);
                 if (!m_keys.isEmpty()) {
                     // Invalid sequence;
                     break;
@@ -1122,15 +1124,51 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         break;
     }
 
+    case Qt::Key_BracketRight:
+    {
+        if (modifiers == Qt::NoModifier) {
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (checkPendingKey(Key(Qt::Key_I))
+                || checkPendingKey(Key(Qt::Key_A))) {
+                // BracketInner/BracketAround.
+                Range range = Range::BracketInner;
+                if (checkPendingKey(Key(Qt::Key_A))) {
+                    range = Range::BracketAround;
+                }
+
+                addRangeToken(range);
+                processCommand(m_tokens);
+                break;
+            }
+        }
+
+        break;
+    }
+
     // Should be kept together with Qt::Key_Escape.
     case Qt::Key_BracketLeft:
     {
         if (isControlModifier(modifiers)) {
             // fallthrough.
+        } else if (modifiers == Qt::NoModifier) {
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (checkPendingKey(Key(Qt::Key_I))
+                || checkPendingKey(Key(Qt::Key_A))) {
+                // BracketInner/BracketAround.
+                Range range = Range::BracketInner;
+                if (checkPendingKey(Key(Qt::Key_A))) {
+                    range = Range::BracketAround;
+                }
+
+                addRangeToken(range);
+                processCommand(m_tokens);
+                break;
+            }
+
+            break;
         } else {
             break;
         }
-
     }
 
     case Qt::Key_Escape:
@@ -1197,7 +1235,8 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         if (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier) {
             bool shift = modifiers == Qt::ShiftModifier;
             tryGetRepeatToken(m_keys, m_tokens);
-            if (checkPendingKey(Key(Qt::Key_I)) || checkPendingKey(Key(Qt::Key_A))) {
+            if (checkPendingKey(Key(Qt::Key_I))
+                || checkPendingKey(Key(Qt::Key_A))) {
                 // WordInner/WORDInner/WordAournd/WORDAround.
                 bool around = checkPendingKey(Key(Qt::Key_A));
                 Range range = Range::Invalid;
@@ -1287,13 +1326,24 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
     case Qt::Key_QuoteDbl:
     {
         if (modifiers == Qt::ShiftModifier) {
-            // Specify a register.
             tryGetRepeatToken(m_keys, m_tokens);
-            if (!m_keys.isEmpty() || hasActionToken()) {
+            if (checkPendingKey(Key(Qt::Key_I))
+                || checkPendingKey(Key(Qt::Key_A))) {
+                // DoubleQuoteInner/DoubleQuoteAround.
+                Range range = Range::DoubleQuoteInner;
+                if (checkPendingKey(Key(Qt::Key_A))) {
+                    range = Range::DoubleQuoteAround;
+                }
+
+                addRangeToken(range);
+                processCommand(m_tokens);
+                break;
+            } else if (!m_keys.isEmpty() || hasActionToken()) {
                 // Invalid sequence.
                 break;
             }
 
+            // ", specify a register.
             m_keys.append(keyInfo);
             goto accept;
         }
@@ -1452,8 +1502,16 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                     addRangeToken(Range::Line);
                     processCommand(m_tokens);
                     break;
-                } else {
-                    // An invalid sequence.
+                } else if (checkPendingKey(Key(Qt::Key_I))
+                           || checkPendingKey(Key(Qt::Key_A))) {
+                    // AngleBracketInner/AngleBracketAround.
+                    Range range = Range::AngleBracketInner;
+                    if (checkPendingKey(Key(Qt::Key_A))) {
+                        range = Range::AngleBracketAround;
+                    }
+
+                    addRangeToken(range);
+                    processCommand(m_tokens);
                     break;
                 }
             } else {
@@ -1464,7 +1522,8 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                                                      cursor,
                                                      m_editConfig->m_tabSpaces,
                                                      !unindent);
-                    setMode(VimMode::Normal);
+                    // Different from Vim:
+                    // Do not exit Visual mode after indentation/unindentation.
                     break;
                 }
 
@@ -1664,10 +1723,22 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
     case Qt::Key_Apostrophe:
     {
         if (modifiers == Qt::NoModifier) {
-            // ', jump to the start of line of a mark.
-            // Repeat is useless.
             tryGetRepeatToken(m_keys, m_tokens);
+            if (checkPendingKey(Key(Qt::Key_I))
+                || checkPendingKey(Key(Qt::Key_A))) {
+                // QuoteInner/QuoteAround.
+                Range range = Range::QuoteInner;
+                if (checkPendingKey(Key(Qt::Key_A))) {
+                    range = Range::QuoteAround;
+                }
 
+                addRangeToken(range);
+                processCommand(m_tokens);
+                break;
+            }
+
+            // ', jump to the start of line of a mark.
+            // Repeat is useless in this case.
             if (m_keys.isEmpty()) {
                 m_keys.append(keyInfo);
                 goto accept;
@@ -1680,13 +1751,90 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
     case Qt::Key_QuoteLeft:
     {
         if (modifiers == Qt::NoModifier) {
-            // `, jump to a mark.
-            // Repeat is useless.
             tryGetRepeatToken(m_keys, m_tokens);
+            if (checkPendingKey(Key(Qt::Key_I))
+                || checkPendingKey(Key(Qt::Key_A))) {
+                // BackQuoteInner/BackQuoteAround.
+                Range range = Range::BackQuoteInner;
+                if (checkPendingKey(Key(Qt::Key_A))) {
+                    range = Range::BackQuoteAround;
+                }
 
+                addRangeToken(range);
+                processCommand(m_tokens);
+                break;
+            }
+
+            // `, jump to a mark.
+            // Repeat is useless in this case.
             if (m_keys.isEmpty()) {
                 m_keys.append(keyInfo);
                 goto accept;
+            }
+        }
+
+        break;
+    }
+
+    case Qt::Key_ParenLeft:
+        // Fall through.
+    case Qt::Key_ParenRight:
+    {
+        if (modifiers == Qt::ShiftModifier) {
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (checkPendingKey(Key(Qt::Key_I))
+                || checkPendingKey(Key(Qt::Key_A))) {
+                // ParenthesisInner/ParenthesisAround.
+                Range range = Range::ParenthesisInner;
+                if (checkPendingKey(Key(Qt::Key_A))) {
+                    range = Range::ParenthesisAround;
+                }
+
+                addRangeToken(range);
+                processCommand(m_tokens);
+                break;
+            }
+        }
+
+        break;
+    }
+
+    case Qt::Key_BraceLeft:
+    {
+        if (modifiers == Qt::ShiftModifier) {
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (checkPendingKey(Key(Qt::Key_I))
+                || checkPendingKey(Key(Qt::Key_A))) {
+                // BraceInner/BraceAround.
+                Range range = Range::BraceInner;
+                if (checkPendingKey(Key(Qt::Key_A))) {
+                    range = Range::BraceAround;
+                }
+
+                addRangeToken(range);
+                processCommand(m_tokens);
+                break;
+            }
+        }
+
+        break;
+    }
+
+    case Qt::Key_BraceRight:
+    {
+        if (modifiers == Qt::ShiftModifier) {
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (checkPendingKey(Key(Qt::Key_I))
+                || checkPendingKey(Key(Qt::Key_A))) {
+                // BraceInner/BraceAround.
+                Range range = Range::BraceInner;
+                if (checkPendingKey(Key(Qt::Key_A))) {
+                    range = Range::BraceAround;
+                }
+
+                addRangeToken(range);
+                processCommand(m_tokens);
+                break;
             }
         }
 
@@ -2426,6 +2574,10 @@ bool VVim::selectRange(QTextCursor &p_cursor, const QTextDocument *p_doc,
     bool hasMoved = false;
     QTextCursor::MoveMode moveMode = QTextCursor::KeepAnchor;
     bool around = false;
+    QChar opening;
+    QChar closing;
+    bool crossBlock = false;
+    bool multipleTargets = false;
 
     Q_UNUSED(p_doc);
 
@@ -2528,6 +2680,163 @@ bool VVim::selectRange(QTextCursor &p_cursor, const QTextDocument *p_doc,
         break;
     }
 
+    case Range::ParenthesisAround:
+    {
+        around = true;
+        opening = '(';
+        closing = ')';
+        crossBlock = true;
+        multipleTargets = true;
+        goto handlePairTarget;
+    }
+
+    case Range::ParenthesisInner:
+    {
+        around = false;
+        opening = '(';
+        closing = ')';
+        crossBlock = true;
+        multipleTargets = true;
+        goto handlePairTarget;
+    }
+
+    case Range::BracketAround:
+    {
+        around = true;
+        opening = '[';
+        closing = ']';
+        crossBlock = true;
+        multipleTargets = true;
+        goto handlePairTarget;
+    }
+
+    case Range::BracketInner:
+    {
+        around = false;
+        opening = '[';
+        closing = ']';
+        crossBlock = true;
+        multipleTargets = true;
+        goto handlePairTarget;
+    }
+
+    case Range::AngleBracketAround:
+    {
+        around = true;
+        opening = '<';
+        closing = '>';
+        crossBlock = true;
+        multipleTargets = true;
+        goto handlePairTarget;
+    }
+
+    case Range::AngleBracketInner:
+    {
+        around = false;
+        opening = '<';
+        closing = '>';
+        crossBlock = true;
+        multipleTargets = true;
+        goto handlePairTarget;
+    }
+
+    case Range::BraceAround:
+    {
+        around = true;
+        opening = '{';
+        closing = '}';
+        crossBlock = true;
+        multipleTargets = true;
+        goto handlePairTarget;
+    }
+
+    case Range::BraceInner:
+    {
+        around = false;
+        opening = '{';
+        closing = '}';
+        crossBlock = true;
+        multipleTargets = true;
+        goto handlePairTarget;
+    }
+
+    case Range::DoubleQuoteAround:
+    {
+        around = true;
+        opening = '"';
+        closing = '"';
+        crossBlock = false;
+        multipleTargets = false;
+        goto handlePairTarget;
+    }
+
+    case Range::DoubleQuoteInner:
+    {
+        around = false;
+        opening = '"';
+        closing = '"';
+        crossBlock = false;
+        multipleTargets = false;
+        goto handlePairTarget;
+    }
+
+    case Range::BackQuoteAround:
+    {
+        around = true;
+        opening = '`';
+        closing = '`';
+        crossBlock = false;
+        multipleTargets = false;
+        goto handlePairTarget;
+    }
+
+    case Range::BackQuoteInner:
+    {
+        around = false;
+        opening = '`';
+        closing = '`';
+        crossBlock = false;
+        multipleTargets = false;
+        goto handlePairTarget;
+    }
+
+    case Range::QuoteAround:
+    {
+        around = true;
+        opening = '\'';
+        closing = '\'';
+        crossBlock = false;
+        multipleTargets = false;
+        goto handlePairTarget;
+    }
+
+    case Range::QuoteInner:
+    {
+        around = false;
+        opening = '\'';
+        closing = '\'';
+        crossBlock = false;
+        multipleTargets = false;
+
+handlePairTarget:
+
+        if (p_repeat == -1) {
+            p_repeat = 1;
+        } else if (p_repeat > 1 && !multipleTargets) {
+            // According to the behavior of Vim.
+            p_repeat = 1;
+            around = true;
+        }
+
+        hasMoved = VEditUtils::selectPairTargetAround(p_cursor,
+                                                      opening,
+                                                      closing,
+                                                      around,
+                                                      crossBlock,
+                                                      p_repeat);
+        break;
+    }
+
     default:
         break;
     }
@@ -2557,8 +2866,10 @@ void VVim::processDeleteAction(QList<Token> &p_tokens)
     if (to.isRange()) {
         cursor.beginEditBlock();
         hasMoved = selectRange(cursor, doc, to.m_range, repeat);
-        bool around = false;
         if (hasMoved) {
+            // Whether the range may cross blocks.
+            bool mayCrossBlock = false;
+
             switch (to.m_range) {
             case Range::Line:
             {
@@ -2575,34 +2886,69 @@ void VVim::processDeleteAction(QList<Token> &p_tokens)
 
                 message(tr("%1 fewer %2").arg(repeat).arg(repeat > 1 ? tr("lines")
                                                                      : tr("line")));
-
-                qDebug() << "delete" << repeat << "lines";
                 break;
             }
+
+            case Range::ParenthesisInner:
+                // Fall through.
+            case Range::ParenthesisAround:
+                // Fall through.
+            case Range::BracketInner:
+                // Fall through.
+            case Range::BracketAround:
+                // Fall through.
+            case Range::AngleBracketInner:
+                // Fall through.
+            case Range::AngleBracketAround:
+                // Fall through.
+            case Range::BraceInner:
+                // Fall through.
+            case Range::BraceAround:
+                // Fall through.
+                mayCrossBlock = true;
 
             case Range::WordAround:
-                around = true;
                 // Fall through.
             case Range::WordInner:
-            {
-                if (cursor.hasSelection()) {
-                    deleteSelectedText(cursor, false);
-                }
-
-                qDebug() << "delete" << (around ? "around" : "inner") << "word";
-                break;
-            }
-
+                // Fall through.
             case Range::WORDAround:
-                around = true;
                 // Fall through.
             case Range::WORDInner:
+                // Fall through.
+            case Range::QuoteInner:
+                // Fall through.
+            case Range::QuoteAround:
+                // Fall through.
+            case Range::DoubleQuoteInner:
+                // Fall through.
+            case Range::DoubleQuoteAround:
+                // Fall through.
+            case Range::BackQuoteInner:
+                // Fall through.
+            case Range::BackQuoteAround:
             {
                 if (cursor.hasSelection()) {
-                    deleteSelectedText(cursor, false);
+                    bool clearEmptyBlock = false;
+                    if (mayCrossBlock
+                        && VEditUtils::selectedBlockCount(cursor) > 1) {
+                        clearEmptyBlock = true;
+                    }
+
+                    int blockCount = 0;
+                    if (clearEmptyBlock) {
+                        blockCount = doc->blockCount();
+                    }
+
+                    deleteSelectedText(cursor, clearEmptyBlock);
+
+                    if (clearEmptyBlock) {
+                        int nrBlock = blockCount - doc->blockCount();
+                        Q_ASSERT(nrBlock > 0);
+                        message(tr("%1 fewer %2").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
+                                                                               : tr("line")));
+                    }
                 }
 
-                qDebug() << "delete" << (around ? "around" : "inner") << "WORD";
                 break;
             }
 
@@ -2733,8 +3079,10 @@ void VVim::processCopyAction(QList<Token> &p_tokens)
     if (to.isRange()) {
         cursor.beginEditBlock();
         changed = selectRange(cursor, doc, to.m_range, repeat);
-        bool around = false;
         if (changed) {
+            // Whether the range may cross blocks.
+            bool mayCrossBlock = false;
+
             switch (to.m_range) {
             case Range::Line:
             {
@@ -2751,34 +3099,63 @@ void VVim::processCopyAction(QList<Token> &p_tokens)
 
                 message(tr("%1 %2 yanked").arg(repeat).arg(repeat > 1 ? tr("lines")
                                                                       : tr("line")));
-
-                qDebug() << "copy" << repeat << "lines";
                 break;
             }
+
+            case Range::ParenthesisInner:
+                // Fall through.
+            case Range::ParenthesisAround:
+                // Fall through.
+            case Range::BracketInner:
+                // Fall through.
+            case Range::BracketAround:
+                // Fall through.
+            case Range::AngleBracketInner:
+                // Fall through.
+            case Range::AngleBracketAround:
+                // Fall through.
+            case Range::BraceInner:
+                // Fall through.
+            case Range::BraceAround:
+                // Fall through.
+                mayCrossBlock = true;
 
             case Range::WordAround:
-                around = true;
                 // Fall through.
             case Range::WordInner:
-            {
-                if (cursor.hasSelection()) {
-                    copySelectedText(cursor, false);
-                }
-
-                qDebug() << "copy" << (around ? "around" : "inner") << "word";
-                break;
-            }
-
+                // Fall through.
             case Range::WORDAround:
-                around = true;
                 // Fall through.
             case Range::WORDInner:
+                // Fall through.
+            case Range::QuoteInner:
+                // Fall through.
+            case Range::QuoteAround:
+                // Fall through.
+            case Range::DoubleQuoteInner:
+                // Fall through.
+            case Range::DoubleQuoteAround:
+                // Fall through.
+            case Range::BackQuoteInner:
+                // Fall through.
+            case Range::BackQuoteAround:
             {
                 if (cursor.hasSelection()) {
+                    bool multipleBlocks = false;
+                    int nrBlock = VEditUtils::selectedBlockCount(cursor);
+                    if (mayCrossBlock && nrBlock > 1) {
+                        multipleBlocks = true;
+                    }
+
+                    // No need to add new line even crossing multiple blocks.
                     copySelectedText(cursor, false);
+
+                    if (multipleBlocks) {
+                        message(tr("%1 %2 yanked").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
+                                                                                : tr("line")));
+                    }
                 }
 
-                qDebug() << "copy" << (around ? "around" : "inner") << "WORD";
                 break;
             }
 
@@ -2798,7 +3175,7 @@ void VVim::processCopyAction(QList<Token> &p_tokens)
 
     V_ASSERT(to.isMovement());
 
-    // Filter out not supported movement for DELETE action.
+    // Filter out not supported movement for Copy action.
     switch (to.m_movement) {
     case Movement::PageUp:
     case Movement::PageDown:
@@ -2973,17 +3350,13 @@ void VVim::processChangeAction(QList<Token> &p_tokens)
     if (to.isRange()) {
         cursor.beginEditBlock();
         hasMoved = selectRange(cursor, doc, to.m_range, repeat);
-        bool around = false;
         if (hasMoved) {
             int pos = cursor.selectionStart();
+
             switch (to.m_range) {
             case Range::Line:
             {
                 // cc, change current line.
-                if (repeat == -1) {
-                    repeat = 1;
-                }
-
                 if (cursor.hasSelection()) {
                     deleteSelectedText(cursor, true);
                     insertChangeBlockAfterDeletion(cursor, pos);
@@ -2991,37 +3364,49 @@ void VVim::processChangeAction(QList<Token> &p_tokens)
                     saveToRegister("\n");
                 }
 
-                qDebug() << "change" << repeat << "lines";
                 break;
             }
 
+            case Range::ParenthesisInner:
+                // Fall through.
+            case Range::ParenthesisAround:
+                // Fall through.
+            case Range::BracketInner:
+                // Fall through.
+            case Range::BracketAround:
+                // Fall through.
+            case Range::AngleBracketInner:
+                // Fall through.
+            case Range::AngleBracketAround:
+                // Fall through.
+            case Range::BraceInner:
+                // Fall through.
+            case Range::BraceAround:
+                // Fall through.
             case Range::WordAround:
-                around = true;
                 // Fall through.
             case Range::WordInner:
-            {
-                if (cursor.hasSelection()) {
-                    deleteSelectedText(cursor, false);
-                } else {
-                    saveToRegister("\n");
-                }
-
-                qDebug() << "delete" << (around ? "around" : "inner") << "word";
-                break;
-            }
-
+                // Fall through.
             case Range::WORDAround:
-                around = true;
                 // Fall through.
             case Range::WORDInner:
+                // Fall through.
+            case Range::QuoteInner:
+                // Fall through.
+            case Range::QuoteAround:
+                // Fall through.
+            case Range::DoubleQuoteInner:
+                // Fall through.
+            case Range::DoubleQuoteAround:
+                // Fall through.
+            case Range::BackQuoteInner:
+                // Fall through.
+            case Range::BackQuoteAround:
             {
                 if (cursor.hasSelection()) {
                     deleteSelectedText(cursor, false);
-                } else {
-                    saveToRegister("\n");
                 }
 
-                qDebug() << "delete" << (around ? "around" : "inner") << "WORD";
                 break;
             }
 
@@ -3241,49 +3626,88 @@ void VVim::processIndentAction(QList<Token> &p_tokens, bool p_isIndent)
     QTextDocument *doc = m_editor->document();
 
     if (to.isRange()) {
-        selectRange(cursor, doc, to.m_range, repeat);
-        switch (to.m_range) {
-        case Range::Line:
-        {
-            // >>/<<, indent/unindent current line.
-            if (repeat == -1) {
-                repeat = 1;
+        bool changed = selectRange(cursor, doc, to.m_range, repeat);
+        if (changed) {
+            switch (to.m_range) {
+            case Range::Line:
+            {
+                // >>/<<, indent/unindent current line.
+                if (repeat == -1) {
+                    repeat = 1;
+                }
+
+                VEditUtils::indentSelectedBlocks(doc,
+                                                 cursor,
+                                                 m_editConfig->m_tabSpaces,
+                                                 p_isIndent);
+
+                if (p_isIndent) {
+                    message(tr("%1 %2 >ed 1 time").arg(repeat).arg(repeat > 1 ? tr("lines")
+                                                                              : tr("line")));
+                } else {
+                    message(tr("%1 %2 <ed 1 time").arg(repeat).arg(repeat > 1 ? tr("lines")
+                                                                              : tr("line")));
+                }
+
+                break;
             }
 
-            VEditUtils::indentSelectedBlocks(doc,
-                                             cursor,
-                                             m_editConfig->m_tabSpaces,
-                                             p_isIndent);
+            case Range::ParenthesisInner:
+                // Fall through.
+            case Range::ParenthesisAround:
+                // Fall through.
+            case Range::BracketInner:
+                // Fall through.
+            case Range::BracketAround:
+                // Fall through.
+            case Range::AngleBracketInner:
+                // Fall through.
+            case Range::AngleBracketAround:
+                // Fall through.
+            case Range::BraceInner:
+                // Fall through.
+            case Range::BraceAround:
+                // Fall through.
+            case Range::WordAround:
+                // Fall through.
+            case Range::WordInner:
+                // Fall through.
+            case Range::WORDAround:
+                // Fall through.
+            case Range::WORDInner:
+                // Fall through.
+            case Range::QuoteInner:
+                // Fall through.
+            case Range::QuoteAround:
+                // Fall through.
+            case Range::DoubleQuoteInner:
+                // Fall through.
+            case Range::DoubleQuoteAround:
+                // Fall through.
+            case Range::BackQuoteInner:
+                // Fall through.
+            case Range::BackQuoteAround:
+            {
+                int nrBlock = VEditUtils::selectedBlockCount(cursor);
+                VEditUtils::indentSelectedBlocks(doc,
+                                                 cursor,
+                                                 m_editConfig->m_tabSpaces,
+                                                 p_isIndent);
 
-            if (p_isIndent) {
-                message(tr("%1 %2 >ed 1 time").arg(repeat).arg(repeat > 1 ? tr("lines")
-                                                                          : tr("line")));
-            } else {
-                message(tr("%1 %2 <ed 1 time").arg(repeat).arg(repeat > 1 ? tr("lines")
-                                                                          : tr("line")));
+                if (p_isIndent) {
+                    message(tr("%1 %2 >ed 1 time").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
+                                                                                : tr("line")));
+                } else {
+                    message(tr("%1 %2 <ed 1 time").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
+                                                                                : tr("line")));
+                }
+
+                break;
             }
 
-            break;
-        }
-
-        case Range::WordAround:
-            // Fall through.
-        case Range::WordInner:
-            // Fall through.
-        case Range::WORDAround:
-            // Fall through.
-        case Range::WORDInner:
-        {
-            cursor.clearSelection();
-            VEditUtils::indentSelectedBlocks(doc,
-                                             cursor,
-                                             m_editConfig->m_tabSpaces,
-                                             p_isIndent);
-            break;
-        }
-
-        default:
-            return;
+            default:
+                return;
+            }
         }
 
         return;
@@ -3349,12 +3773,11 @@ void VVim::processToLowerAction(QList<Token> &p_tokens, bool p_toLower)
         changed = selectRange(cursor, doc, to.m_range, repeat);
         if (changed) {
             oriPos = cursor.selectionStart();
-            convertCaseOfSelectedText(cursor, p_toLower);
+            int nrBlock = VEditUtils::selectedBlockCount(cursor);
+            message(tr("%1 %2 changed").arg(nrBlock)
+                                       .arg(nrBlock > 1 ? tr("lines") : tr("line")));
 
-            if (to.m_range == Range::Line) {
-                message(tr("%1 %2 changed").arg(repeat == -1 ? 1 : repeat)
-                                           .arg(repeat > 1 ? tr("lines") : tr("line")));
-            }
+            convertCaseOfSelectedText(cursor, p_toLower);
 
             cursor.setPosition(oriPos);
         }
@@ -3389,40 +3812,34 @@ void VVim::processToLowerAction(QList<Token> &p_tokens, bool p_toLower)
 
     if (changed) {
         oriPos = cursor.selectionStart();
-        bool isBlock = false;
 
         switch (to.m_movement) {
         case Movement::Up:
         {
-            isBlock = true;
             expandSelectionToWholeLines(cursor);
             break;
         }
 
         case Movement::Down:
         {
-            isBlock = true;
             expandSelectionToWholeLines(cursor);
             break;
         }
 
         case Movement::LineJump:
         {
-            isBlock = true;
             expandSelectionToWholeLines(cursor);
             break;
         }
 
         case Movement::StartOfDocument:
         {
-            isBlock = true;
             expandSelectionToWholeLines(cursor);
             break;
         }
 
         case Movement::EndOfDocument:
         {
-            isBlock = true;
             expandSelectionToWholeLines(cursor);
             break;
         }
@@ -3431,11 +3848,9 @@ void VVim::processToLowerAction(QList<Token> &p_tokens, bool p_toLower)
             break;
         }
 
-        if (isBlock) {
-            int nrBlock = VEditUtils::selectedBlockCount(cursor);
-            message(tr("%1 %2 changed").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
-                                                                     : tr("line")));
-        }
+        int nrBlock = VEditUtils::selectedBlockCount(cursor);
+        message(tr("%1 %2 changed").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
+                                                                 : tr("line")));
 
         convertCaseOfSelectedText(cursor, p_toLower);
 
@@ -3741,7 +4156,9 @@ bool VVim::hasActionTokenValidForTextObject() const
             || act == Action::Copy
             || act == Action::Change
             || act == Action::ToLower
-            || act == Action::ToUpper) {
+            || act == Action::ToUpper
+            || act == Action::Indent
+            || act == Action::UnIndent) {
             return true;
         }
     }

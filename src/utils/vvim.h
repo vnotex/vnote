@@ -313,6 +313,8 @@ private:
         QuoteAround,
         DoubleQuoteInner,
         DoubleQuoteAround,
+        BackQuoteInner,
+        BackQuoteAround,
         ParenthesisInner,
         ParenthesisAround,
         BracketInner,

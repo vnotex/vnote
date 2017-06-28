@@ -74,6 +74,17 @@ public:
                                       bool p_inclusive,
                                       int p_repeat);
 
+    // Find a pair target (@p_opening, @p_closing) containing current cursor and
+    // select the range between them.
+    // Need to call setTextCursor() to make it take effect.
+    // Returns true if target is found.
+    static bool selectPairTargetAround(QTextCursor &p_cursor,
+                                       QChar p_opening,
+                                       QChar p_closing,
+                                       bool p_inclusive,
+                                       bool p_crossBlock,
+                                       int p_repeat);
+
     // Get the count of blocks selected.
     static int selectedBlockCount(const QTextCursor &p_cursor);
 

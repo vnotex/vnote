@@ -400,3 +400,172 @@ void VEditUtils::deleteIndentAndListMark(QTextCursor &p_cursor)
     p_cursor.removeSelectedText();
 }
 
+
+bool VEditUtils::selectPairTargetAround(QTextCursor &p_cursor,
+                                        QChar p_opening,
+                                        QChar p_closing,
+                                        bool p_inclusive,
+                                        bool p_crossBlock,
+                                        int p_repeat)
+{
+    Q_ASSERT(p_repeat >= 1);
+
+    QTextDocument *doc = p_cursor.document();
+    int pos = p_cursor.position();
+
+    // Search range [start, end].
+    int start = 0;
+    int end = doc->characterCount() - 1;
+    if (!p_crossBlock) {
+        QTextBlock block = p_cursor.block();
+        start = block.position();
+        end = block.position() + block.length() - 1;
+    }
+
+    if (start == end || pos > end) {
+        return false;
+    }
+
+    Q_ASSERT(!doc->characterAt(pos).isNull());
+
+    bool found = false;
+
+    // The number of un-paired symbols before we meet a target.
+    // For example, when we are searching the `(`, nrPair is the number of
+    // the un-paired `)` currently.
+    int nrPair = 0;
+
+    // The absolute position of the found target.
+    // vnote|(vnote|)vnote
+    int opening = pos;
+    int closing = pos;
+
+round:
+    // "abc|"def", after `di"`, becomes "|"def"
+    // So we need to try closing first.
+    QChar ch = doc->characterAt(closing);
+    Q_ASSERT(!ch.isNull());
+    if (ch == p_closing) {
+        // Try to find the opening.
+        nrPair = 1;
+        int i = opening;
+        if (opening == closing) {
+            --i;
+        }
+
+        for (; i >= start; --i) {
+            ch = doc->characterAt(i);
+            Q_ASSERT(!ch.isNull());
+            if (ch == p_opening) {
+                if (--nrPair == 0) {
+                    break;
+                }
+            } else if (ch == p_closing) {
+                ++nrPair;
+            }
+        }
+
+        if (i >= start) {
+            // Found the opening. Done.
+            opening = i;
+            found = true;
+        }
+    }
+
+    ch = doc->characterAt(opening);
+    Q_ASSERT(!ch.isNull());
+    if (!found && ch == p_opening) {
+        // Try to find the closing.
+        nrPair = 1;
+        int j = closing;
+        if (opening == closing) {
+            ++j;
+        }
+
+        for (; j <= end; ++j) {
+            ch = doc->characterAt(j);
+            Q_ASSERT(!ch.isNull());
+            if (ch == p_closing) {
+                if (--nrPair == 0) {
+                    break;
+                }
+            } else if (ch == p_opening) {
+                ++nrPair;
+            }
+        }
+
+        if (j <= end) {
+            // Foudnd the closing. Done.
+            closing = j;
+            found = true;
+        }
+    }
+
+    if (!found
+        && doc->characterAt(opening) != p_opening
+        && doc->characterAt(closing) != p_closing) {
+        // Need to find both the opening and closing.
+        int i = opening - 1;
+        int j = closing + 1;
+        // Pretend that we have found one.
+        nrPair = 1;
+        for (; i >= start; --i) {
+            ch = doc->characterAt(i);
+            Q_ASSERT(!ch.isNull());
+            if (ch == p_opening) {
+                if (--nrPair == 0) {
+                    break;
+                }
+            } else if (ch == p_closing) {
+                ++nrPair;
+            }
+        }
+
+        if (i >= start) {
+            opening = i;
+            // Continue to find the closing.
+            nrPair = 1;
+            for (; j <= end; ++j) {
+                ch = doc->characterAt(j);
+                Q_ASSERT(!ch.isNull());
+                if (ch == p_closing) {
+                    if (--nrPair == 0) {
+                        break;
+                    }
+                } else if (ch == p_opening) {
+                    ++nrPair;
+                }
+            }
+
+            if (j <= end) {
+                closing = j;
+                found = true;
+            }
+        }
+    }
+
+    if (!found) {
+        return false;
+    } else if (--p_repeat) {
+        // Need to find more.
+        found = false;
+        --opening;
+        ++closing;
+
+        if (opening < start && closing > end) {
+            return false;
+        }
+
+        goto round;
+    }
+
+    if (p_inclusive) {
+        ++closing;
+    } else {
+        ++opening;
+    }
+
+    p_cursor.setPosition(opening, QTextCursor::MoveAnchor);
+    p_cursor.setPosition(closing, QTextCursor::KeepAnchor);
+    return true;
+}
