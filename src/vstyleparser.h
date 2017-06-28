@@ -23,9 +23,12 @@ public:
 
     void parseMarkdownStyle(const QString &styleStr);
     QVector<HighlightingStyle> fetchMarkdownStyles(const QFont &baseFont) const;
+
+    // Fetch style sections: editor, editor-selection, editor-current-line.
     // @styles: [rule] -> ([attr] -> value).
     void fetchMarkdownEditorStyles(QPalette &palette, QFont &font,
                                    QMap<QString, QMap<QString, QString>> &styles) const;
+
     QHash<QString, QTextCharFormat> fetchCodeBlockStyles(const QFont &p_baseFont) const;
 
 private:

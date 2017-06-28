@@ -66,12 +66,7 @@ void VConfigManager::initialize()
     outputDefaultCssStyle();
     outputDefaultEditorStyle();
 
-    m_editorFontSize = getConfigFromSettings("global", "editor_font_size").toInt();
-    if (m_editorFontSize <= 0) {
-        m_editorFontSize = 12;
-    }
-    baseEditFont.setPointSize(m_editorFontSize);
-    baseEditPalette = QTextEdit().palette();
+    m_defaultEditPalette = QTextEdit().palette();
 
     m_editorStyle = getConfigFromSettings("global", "editor_style").toString();
 
@@ -345,14 +340,17 @@ void VConfigManager::updateMarkdownEditStyle()
         return;
     }
 
-    VStyleParser parser;
-    parser.parseMarkdownStyle(styleStr);
-    mdHighlightingStyles = parser.fetchMarkdownStyles(baseEditFont);
-    m_codeBlockStyles = parser.fetchCodeBlockStyles(baseEditFont);
     mdEditPalette = baseEditPalette;
     mdEditFont = baseEditFont;
+
+    VStyleParser parser;
+    parser.parseMarkdownStyle(styleStr);
+
     QMap<QString, QMap<QString, QString>> styles;
     parser.fetchMarkdownEditorStyles(mdEditPalette, mdEditFont, styles);
+
+    mdHighlightingStyles = parser.fetchMarkdownStyles(mdEditFont);
+    m_codeBlockStyles = parser.fetchCodeBlockStyles(mdEditFont);
 
     m_editorCurrentLineBg = defaultCurrentLineBackground;
     m_editorVimInsertBg = defaultVimInsertBg;
@@ -400,7 +398,11 @@ void VConfigManager::updateMarkdownEditStyle()
 
 void VConfigManager::updateEditStyle()
 {
-    static const QColor defaultColor = baseEditPalette.color(QPalette::Base);
+    // Reset font and palette.
+    baseEditFont = mdEditFont = m_defaultEditFont;
+    baseEditPalette = mdEditPalette = m_defaultEditPalette;
+
+    static const QColor defaultColor = m_defaultEditPalette.color(QPalette::Base);
     QColor newColor = defaultColor;
     bool force = false;
     if (curBackgroundColor != "System") {
@@ -411,6 +413,7 @@ void VConfigManager::updateEditStyle()
                     newColor = QColor(VUtils::QRgbFromString(rgb));
                     force = true;
                 }
+
                 break;
             }
         }
@@ -420,6 +423,11 @@ void VConfigManager::updateEditStyle()
 
     // Update markdown editor palette
     updateMarkdownEditStyle();
+
+    // Base editor will use the same font size as the markdown editor by now.
+    if (mdEditFont.pointSize() > -1) {
+        baseEditFont.setPointSize(mdEditFont.pointSize());
+    }
 
     if (force) {
         mdEditPalette.setColor(QPalette::Base, newColor);

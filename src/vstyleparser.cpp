@@ -187,6 +187,12 @@ void VStyleParser::fetchMarkdownEditorStyles(QPalette &palette, QFont &font,
 {
     QString ruleKey;
 
+    int basePointSize = font.pointSize();
+    if (basePointSize == -1) {
+        // The size is specified in pixel. Use 11 pt by default.
+        basePointSize = 11;
+    }
+
     // editor
     pmh_style_attribute *editorStyles = markdownStyles->editor_styles;
     ruleKey = "editor";
@@ -209,6 +215,21 @@ void VStyleParser::fetchMarkdownEditorStyles(QPalette &palette, QFont &font,
             if (!finalFamily.isEmpty()) {
                 font.setFamily(finalFamily);
             }
+            break;
+        }
+
+        case pmh_attr_type_font_size_pt:
+        {
+            pmh_attr_font_size *fontSize = editorStyles->value->font_size;
+            int ptSize = fontSize->size_pt;
+            if (fontSize->is_relative) {
+                ptSize += basePointSize;
+            }
+
+            if (ptSize > 0) {
+                font.setPointSize(ptSize);
+            }
+
             break;
         }
 

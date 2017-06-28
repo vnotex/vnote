@@ -236,13 +236,21 @@ private:
     // the new one; if not, use the c_dirConfigFile.
     static QString fetchDirConfigFilePath(const QString &p_path);
 
-    int m_editorFontSize;
+    // Default font and palette.
+    QFont m_defaultEditFont;
+    QPalette m_defaultEditPalette;
+
+    // Font and palette used for non-markdown editor.
     QFont baseEditFont;
     QPalette baseEditPalette;
+
+    // Font and palette used for markdown editor.
     QFont mdEditFont;
     QPalette mdEditPalette;
+
     QVector<HighlightingStyle> mdHighlightingStyles;
     QHash<QString, QTextCharFormat> m_codeBlockStyles;
+
     QString welcomePagePath;
     QString m_templateCss;
     QString m_editorStyle;

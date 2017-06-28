@@ -46,7 +46,12 @@ void VLogger(QtMsgType type, const QMessageLogContext &context, const QString &m
     Q_UNUSED(context);
 
     QTextStream stream(&g_logFile);
+
+#if defined(Q_OS_WIN)
+    stream << header << localMsg << "\r\n";
+#else
     stream << header << localMsg << "\n";
+#endif
 
     if (type == QtFatalMsg) {
         g_logFile.close();

@@ -1,16 +1,20 @@
 # Styles using 'Solarized' color scheme
 # by Ethan Schoonover: http://ethanschoonover.com/solarized
-# 
+#
 # (light background version)
 
 editor
 foreground: 586e75 # base01
 background: fdf6e3 # base3
 caret: 000000
+font-size: 12
 
 editor-current-line
 background: c5cae9
-vim-background: a5d6a7
+vim-insert-background: a5d6a7
+vim-normal-background: a5d6a7
+vim-visual-background: a5d6a7
+vim-replace-background: a5d6a7
 
 H1
 foreground: 6c71c4 # violet
