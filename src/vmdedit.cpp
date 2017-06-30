@@ -264,10 +264,10 @@ void VMdEdit::clearUnusedImages()
     m_initImages.clear();
 }
 
-void VMdEdit::updateCurHeader()
+int VMdEdit::currentCursorHeader() const
 {
     if (m_headers.isEmpty()) {
-        return;
+        return -1;
     }
 
     int curLine = textCursor().block().firstLineNumber();
@@ -281,13 +281,26 @@ void VMdEdit::updateCurHeader()
     }
 
     if (i == -1) {
+        return -1;
+    } else {
+        Q_ASSERT(m_headers[i].index == i);
+        return i;
+    }
+}
+
+void VMdEdit::updateCurHeader()
+{
+    if (m_headers.isEmpty()) {
+        return;
+    }
+
+    int idx = currentCursorHeader();
+    if (idx == -1) {
         emit curHeaderChanged(VAnchor(m_file, "", -1, -1));
         return;
     }
 
-    V_ASSERT(m_headers[i].index == i);
-
-    emit curHeaderChanged(VAnchor(m_file, "", m_headers[i].lineNumber, m_headers[i].index));
+    emit curHeaderChanged(VAnchor(m_file, "", m_headers[idx].lineNumber, m_headers[idx].index));
 }
 
 void VMdEdit::generateEditOutline()
@@ -453,4 +466,92 @@ void VMdEdit::resizeEvent(QResizeEvent *p_event)
 const QVector<VHeader> &VMdEdit::getHeaders() const
 {
     return m_headers;
+}
+
+bool VMdEdit::jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat)
+{
+    if (m_headers.isEmpty()) {
+        return false;
+    }
+
+    QTextCursor cursor = textCursor();
+    int cursorLine = cursor.block().firstLineNumber();
+    int targetIdx = -1;
+    // -1: skip level check.
+    int targetLevel = 0;
+    int idx = currentCursorHeader();
+    if (idx == -1) {
+        // Cursor locates at the beginning, before any headers.
+        if (p_relativeLevel < 0 || !p_forward) {
+            return false;
+        }
+    }
+
+    int delta = 1;
+    if (!p_forward) {
+        delta = -1;
+    }
+
+    bool firstHeader = true;
+    for (targetIdx = idx == -1 ? 0 : idx;
+         targetIdx >= 0 && targetIdx < m_headers.size();
+         targetIdx += delta) {
+        const VHeader &header = m_headers[targetIdx];
+        if (header.isEmpty()) {
+            continue;
+        }
+
+        if (targetLevel == 0) {
+            // The target level has not been init yet.
+            Q_ASSERT(firstHeader);
+            targetLevel = header.level;
+            if (p_relativeLevel < 0) {
+                targetLevel += p_relativeLevel;
+                if (targetLevel < 1) {
+                    // Invalid level.
+                    return false;
+                }
+            } else if (p_relativeLevel > 0) {
+                targetLevel = -1;
+            }
+        }
+
+        if (targetLevel == -1 || header.level == targetLevel) {
+            if (firstHeader
+                && (cursorLine == header.lineNumber
+                    || p_forward)
+                && idx != -1) {
+                // This header is not counted for the repeat.
+                firstHeader = false;
+                continue;
+            }
+
+            if (--p_repeat == 0) {
+                // Found.
+                break;
+            }
+        } else if (header.level < targetLevel) {
+            // Stop by higher level.
+            return false;
+        }
+
+        firstHeader = false;
+    }
+
+    if (targetIdx < 0 || targetIdx >= m_headers.size()) {
+        return false;
+    }
+
+    // Jump to target header.
+    int line = m_headers[targetIdx].lineNumber;
+    if (line > -1) {
+        QTextBlock block = document()->findBlockByLineNumber(line);
+        if (block.isValid()) {
+            cursor.setPosition(block.position());
+            setTextCursor(cursor);
+            return true;
+        }
+    }
+
+    return false;
 }

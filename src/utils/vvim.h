@@ -662,6 +662,10 @@ private:
     // P: "+P
     bool processLeaderSequence(const Key &p_key);
 
+    // Jump across titles.
+    // [[, ]], [], ][, [{, ]}.
+    void processTitleJump(const QList<Token> &p_tokens, bool p_forward, int p_relativeLevel);
+
     VEdit *m_editor;
     const VEditConfig *m_editConfig;
     VimMode m_mode;

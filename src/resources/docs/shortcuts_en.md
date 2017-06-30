@@ -57,6 +57,8 @@ Delete all the characters from current cursor to the beginning of current line.
 Insert title at level `<Num>`. `<Num>` should be 1 to 6. Currently selected text will be changed to title if exist.
 - `Tab`/`Shift+Tab`  
 Increase or decrease the indentation. If any text is selected, the indentation will operate on all these selected lines.
+- `Shift+Enter`  
+Insert two spaces followed by a new line, namely a soft linebreak in Markdown.
 - `Shift+Left`, `Shift+Right`, `Shift+Up`, `Shift+Down`  
 Expand the selection one character left or right, or one line up or down.
 - `Ctrl+Shift+Left`, `Ctrl+Shift+Right`  
@@ -132,6 +134,13 @@ VNote supports following features of Vim:
 - `u` and `Ctrl+R` for undo and redo;
 - Text objects `i/a`: word, WORD, `''`, `""`, `` ` ` ``, `()`, `[]`, `<>`, and `{}`;
 - Command line `:w`, `:wq`, `:x`, `:q`, and `:q!`;
+- Jump between titles
+    - `[[`: jump to previous title;
+    - `]]`: jump to next title;
+    - `[]`: jump to previous title at the same level;
+    - `][`: jump to next title at the same level;
+    - `[{`: jump to previous title at a higher level;
+    - `]}`: jump to next title at a higher level;
 
 For now, VNote does **NOT** support the macro and repeat(`.`) features of Vim.
 

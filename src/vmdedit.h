@@ -39,6 +39,9 @@ public:
 
     const QVector<VHeader> &getHeaders() const;
 
+public slots:
+    bool jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat) Q_DECL_OVERRIDE;
+
 signals:
     void headersChanged(const QVector<VHeader> &headers);
 
@@ -68,12 +71,17 @@ protected:
 private:
     void initInitImages();
     void clearUnusedImages();
+
     // p_text[p_index] is QChar::ObjectReplacementCharacter. Remove the line containing it.
     // Returns the index of previous line's '\n'.
     int removeObjectReplacementLine(QString &p_text, int p_index) const;
+
     // There is a QChar::ObjectReplacementCharacter in the selection.
     // Get the QImage.
     QImage selectedImage();
+
+    // Return the header index in m_headers where current cursor locates.
+    int currentCursorHeader() const;
 
     HGMarkdownHighlighter *m_mdHighlighter;
     VCodeBlockHighlightHelper *m_cbHighlighter;

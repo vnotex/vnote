@@ -110,6 +110,14 @@ signals:
 public slots:
     virtual void highlightCurrentLine();
 
+    // Jump to a title.
+    // @p_forward: jump forward or backward.
+    // @p_relativeLevel: 0 for the same level as current header;
+    //                   negative value for upper level;
+    //                   positive value is ignored.
+    // Returns true if the jump succeeded.
+    virtual bool jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat);
+
 private slots:
     void labelTimerTimeout();
     void highlightSelectedWord();

@@ -790,3 +790,11 @@ void VEdit::requestUpdateVimStatus()
         emit vimStatusUpdated(NULL);
     }
 }
+
+bool VEdit::jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat)
+{
+    Q_UNUSED(p_forward);
+    Q_UNUSED(p_relativeLevel);
+    Q_UNUSED(p_repeat);
+    return false;
+}

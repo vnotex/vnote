@@ -1173,7 +1173,22 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 addRangeToken(range);
                 processCommand(m_tokens);
                 break;
+            } else if (hasActionToken() || !checkMode(VimMode::Normal)) {
+                // Invalid sequence.
+                break;
+            } else if (m_keys.isEmpty()) {
+                // First ], pend it.
+                m_keys.append(keyInfo);
+                goto accept;
+            } else if (checkPendingKey(keyInfo)) {
+                // ]], goto next title, regardless of level.
+                processTitleJump(m_tokens, true, 1);
+            } else if (checkPendingKey(Key(Qt::Key_BracketLeft))) {
+                // [], goto previous title at the same level.
+                processTitleJump(m_tokens, false, 0);
             }
+
+            break;
         }
 
         break;
@@ -1197,6 +1212,19 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 addRangeToken(range);
                 processCommand(m_tokens);
                 break;
+            } else if (hasActionToken() || !checkMode(VimMode::Normal)) {
+                // Invalid sequence.
+                break;
+            } else if (m_keys.isEmpty()) {
+                // First [, pend it.
+                m_keys.append(keyInfo);
+                goto accept;
+            } else if (checkPendingKey(keyInfo)) {
+                // [[, goto previous title, regardless of level.
+                processTitleJump(m_tokens, false, 1);
+            } else if (checkPendingKey(Key(Qt::Key_BracketRight))) {
+                // ][, goto next title at the same level.
+                processTitleJump(m_tokens, true, 0);
             }
 
             break;
@@ -1855,7 +1883,15 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 addRangeToken(range);
                 processCommand(m_tokens);
                 break;
+            } else if (hasActionToken() || !checkMode(VimMode::Normal)) {
+                // Invalid sequence.
+                break;
+            } else if (checkPendingKey(Key(Qt::Key_BracketLeft))) {
+                // [{, goto previous title at one higher level.
+                processTitleJump(m_tokens, false, -1);
             }
+
+            break;
         }
 
         break;
@@ -1876,7 +1912,15 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 addRangeToken(range);
                 processCommand(m_tokens);
                 break;
+            } else if (hasActionToken() || !checkMode(VimMode::Normal)) {
+                // Invalid sequence.
+                break;
+            } else if (checkPendingKey(Key(Qt::Key_BracketRight))) {
+                // ]}, goto next title at one higher level.
+                processTitleJump(m_tokens, true, -1);
             }
+
+            break;
         }
 
         break;
@@ -4880,4 +4924,25 @@ const QMap<QChar, VVim::Mark> &VVim::Marks::getMarks() const
 QChar VVim::Marks::getLastUsedMark() const
 {
     return m_lastUsedMark;
+}
+
+void VVim::processTitleJump(const QList<Token> &p_tokens, bool p_forward, int p_relativeLevel)
+{
+    int repeat = 1;
+    if (p_tokens.size() == 1) {
+        Token to = p_tokens.first();
+        if (to.isRepeat()) {
+            repeat = to.m_repeat;
+        } else {
+            return;
+        }
+    } else if (!p_tokens.isEmpty()) {
+        return;
+    }
+
+    QTextCursor cursor = m_editor->textCursor();
+    if (m_editor->jumpTitle(p_forward, p_relativeLevel, repeat)) {
+        // Record current location.
+        m_locations.addLocation(cursor);
+    }
 }
