@@ -457,6 +457,16 @@ void VMainWindow::initMarkdownMenu()
 
     mermaidAct->setChecked(vconfig.getEnableMermaid());
 
+    QAction *flowchartAct = new QAction(tr("&Flowchart.js"), this);
+    flowchartAct->setToolTip(tr("Enable Flowchart.js for flowchart diagram"));
+    flowchartAct->setCheckable(true);
+    connect(flowchartAct, &QAction::triggered,
+            this, [this](bool p_enabled){
+                vconfig.setEnableFlowchart(p_enabled);
+            });
+    markdownMenu->addAction(flowchartAct);
+    flowchartAct->setChecked(vconfig.getEnableFlowchart());
+
     QAction *mathjaxAct = new QAction(tr("Math&Jax"), this);
     mathjaxAct->setToolTip(tr("Enable MathJax for math support in Markdown"));
     mathjaxAct->setCheckable(true);

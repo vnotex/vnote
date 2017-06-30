@@ -113,6 +113,8 @@ void VConfigManager::initialize()
 
     m_enableMermaid = getConfigFromSettings("global", "enable_mermaid").toBool();
 
+    m_enableFlowchart = getConfigFromSettings("global", "enable_flowchart").toBool();
+
     m_enableMathjax = getConfigFromSettings("global", "enable_mathjax").toBool();
 
     m_webZoomFactor = getConfigFromSettings("global", "web_zoom_factor").toReal();

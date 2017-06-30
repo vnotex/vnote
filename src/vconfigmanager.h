@@ -152,6 +152,9 @@ public:
     inline bool getEnableMermaid() const;
     inline void setEnableMermaid(bool p_enabled);
 
+    inline bool getEnableFlowchart() const;
+    inline void setEnableFlowchart(bool p_enabled);
+
     inline bool getEnableMathjax() const;
     inline void setEnableMathjax(bool p_enabled);
 
@@ -302,6 +305,9 @@ private:
 
     // Enable Mermaid.
     bool m_enableMermaid;
+
+    // Enable flowchart.js.
+    bool m_enableFlowchart;
 
     // Enable Mathjax.
     bool m_enableMathjax;
@@ -727,6 +733,21 @@ inline void VConfigManager::setEnableMermaid(bool p_enabled)
     }
     m_enableMermaid = p_enabled;
     setConfigToSettings("global", "enable_mermaid", m_enableMermaid);
+}
+
+inline bool VConfigManager::getEnableFlowchart() const
+{
+    return m_enableFlowchart;
+}
+
+inline void VConfigManager::setEnableFlowchart(bool p_enabled)
+{
+    if (m_enableFlowchart == p_enabled) {
+        return;
+    }
+
+    m_enableFlowchart = p_enabled;
+    setConfigToSettings("global", "enable_flowchart", m_enableFlowchart);
 }
 
 inline bool VConfigManager::getEnableMathjax() const

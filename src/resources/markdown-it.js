@@ -93,6 +93,7 @@ var updateText = function(text) {
     handleToc(needToc);
     insertImageCaption();
     renderMermaid('lang-mermaid');
+    renderFlowchart('lang-flowchart');
 
     // If you add new logics after handling MathJax, please pay attention to
     // finishLoading logic.

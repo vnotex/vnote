@@ -529,9 +529,15 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exp
     }
 
     if (vconfig.getEnableMermaid()) {
-        extraFile += "<link rel=\"stylesheet\" type=\"text/css\" href=\"qrc" + VNote::c_mermaidCssFile +
-                     "\"/>\n" + "<script src=\"qrc" + VNote::c_mermaidApiJsFile + "\"></script>\n" +
+        extraFile += "<link rel=\"stylesheet\" type=\"text/css\" href=\"qrc" + VNote::c_mermaidCssFile + "\"/>\n" +
+                     "<script src=\"qrc" + VNote::c_mermaidApiJsFile + "\"></script>\n" +
                      "<script>var VEnableMermaid = true;</script>\n";
+    }
+
+    if (vconfig.getEnableFlowchart()) {
+        extraFile += "<script src=\"qrc" + VNote::c_raphaelJsFile + "\"></script>\n" +
+                     "<script src=\"qrc" + VNote::c_flowchartJsFile + "\"></script>\n" +
+                     "<script>var VEnableFlowchart = true;</script>\n";
     }
 
     if (vconfig.getEnableMathjax()) {

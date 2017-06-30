@@ -23,29 +23,21 @@ var updateHtml = function(html) {
         if (code.parentElement.tagName.toLowerCase() == 'pre') {
             if (VEnableMermaid && code.classList.contains('language-mermaid')) {
                 // Mermaid code block.
-                mermaidParserErr = false;
-                mermaidIdx++;
-                try {
-                    // Do not increment mermaidIdx here.
-                    var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx, code.innerText, function(){});
-                } catch (err) {
-                    content.setLog("err: " + err);
+                if (renderMermaidOne(code)) {
+                    // replaceChild() will decrease codes.length.
+                    --i;
                     continue;
                 }
-                if (mermaidParserErr || typeof graph == "undefined") {
+            } else if (VEnableFlowchart && code.classList.contains('language-flowchart')) {
+                // Flowchart code block.
+                if (renderFlowchartOne(code)) {
+                    // replaceChild() will decrease codes.length.
+                    --i;
                     continue;
                 }
-                var graphDiv = document.createElement('div');
-                graphDiv.classList.add(VMermaidDivClass);
-                graphDiv.innerHTML = graph;
-                var preNode = code.parentNode;
-                preNode.classList.add(VMermaidDivClass);
-                preNode.replaceChild(graphDiv, code);
-                // replaceChild() will decrease codes.length.
-                --i;
-            } else {
-                hljs.highlightBlock(code);
             }
+
+            hljs.highlightBlock(code);
         }
     }
 

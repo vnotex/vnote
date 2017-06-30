@@ -109,5 +109,7 @@
         <file>utils/markdown-it/markdown-it-footnote.min.js</file>
         <file>resources/icons/arrow_dropup.svg</file>
         <file>resources/icons/vnote_update.svg</file>
+        <file>utils/flowchart.js/flowchart.min.js</file>
+        <file>utils/flowchart.js/raphael.min.js</file>
     </qresource>
 </RCC>

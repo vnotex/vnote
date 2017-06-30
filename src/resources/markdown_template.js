@@ -2,12 +2,17 @@ var content;
 var keyState = 0;
 
 var VMermaidDivClass = 'mermaid-diagram';
+var VFlowchartDivClass = 'flowchart-diagram';
 if (typeof VEnableMermaid == 'undefined') {
     VEnableMermaid = false;
 } else if (VEnableMermaid) {
     mermaidAPI.initialize({
         startOnLoad: false
     });
+}
+
+if (typeof VEnableFlowchart == 'undefined') {
+    VEnableFlowchart = false;
 }
 
 if (typeof VEnableMathjax == 'undefined') {
@@ -199,34 +204,102 @@ var renderMermaid = function(className) {
     if (!VEnableMermaid) {
         return;
     }
+
     var codes = document.getElementsByTagName('code');
     mermaidIdx = 0;
     for (var i = 0; i < codes.length; ++i) {
         var code = codes[i];
         if (code.classList.contains(className)) {
-            // Mermaid code block.
-            mermaidParserErr = false;
-            mermaidIdx++;
-            try {
-                // Do not increment mermaidIdx here.
-                var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx, code.innerText, function(){});
-            } catch (err) {
-                content.setLog("err: " + err);
-                continue;
+            if (renderMermaidOne(code)) {
+                // replaceChild() will decrease codes.length.
+                --i;
             }
-            if (mermaidParserErr || typeof graph == "undefined") {
-                continue;
-            }
-            var graphDiv = document.createElement('div');
-            graphDiv.classList.add(VMermaidDivClass);
-            graphDiv.innerHTML = graph;
-            var preNode = code.parentNode;
-            preNode.classList.add(VMermaidDivClass);
-            preNode.replaceChild(graphDiv, code);
-            // replaceChild() will decrease codes.length.
-            --i;
         }
     }
+};
+
+// Render @code as Mermaid graph.
+// Returns true if succeeded.
+var renderMermaidOne = function(code) {
+    // Mermaid code block.
+    mermaidParserErr = false;
+    mermaidIdx++;
+    try {
+        // Do not increment mermaidIdx here.
+        var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx, code.innerText, function(){});
+    } catch (err) {
+        content.setLog("err: " + err);
+        return false;
+    }
+
+    if (mermaidParserErr || typeof graph == "undefined") {
+        return false;
+    }
+
+    var graphDiv = document.createElement('div');
+    graphDiv.classList.add(VMermaidDivClass);
+    graphDiv.innerHTML = graph;
+    var preNode = code.parentNode;
+    preNode.classList.add(VMermaidDivClass);
+    preNode.replaceChild(graphDiv, code);
+    return true;
+};
+
+var flowchartIdx = 0;
+
+// @className, the class name of the flowchart code block, such as 'lang-flowchart'.
+var renderFlowchart = function(className) {
+    if (!VEnableFlowchart) {
+        return;
+    }
+
+    var codes = document.getElementsByTagName('code');
+    flowchartIdx = 0;
+    for (var i = 0; i < codes.length; ++i) {
+        var code = codes[i];
+        if (code.classList.contains(className)) {
+            if (renderFlowchartOne(code, flowchartIdx)) {
+                // replaceChild() will decrease codes.length.
+                --i;
+            }
+        }
+    }
+};
+
+// Render @code as Flowchart.js graph.
+// Returns true if succeeded.
+var renderFlowchartOne = function(code) {
+    // Flowchart code block.
+    flowchartIdx++;
+    try {
+        var graph = flowchart.parse(code.innerText);
+    } catch (err) {
+        content.setLog("err: " + err);
+        return false;
+    }
+
+    if (typeof graph == "undefined") {
+        return false;
+    }
+
+    var graphDiv = document.createElement('div');
+    graphDiv.id = 'flowchart-diagram-' + flowchartIdx;
+    graphDiv.classList.add(VFlowchartDivClass);
+    var preNode = code.parentNode;
+    preNode.replaceChild(graphDiv, code);
+
+    // Draw on it after adding it to page.
+    try {
+        graph.drawSVG(graphDiv.id);
+    } catch (err) {
+        content.setLog("err: " + err);
+        preNode.replaceChild(code, graphDiv);
+        delete graphDiv;
+        return false;
+    }
+
+    preNode.classList.add(VMermaidDivClass);
+    return true;
 };
 
 var isImageBlock = function(img) {

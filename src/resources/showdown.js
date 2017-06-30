@@ -49,13 +49,16 @@ var mdHasTocSection = function(markdown) {
     return n != -1;
 };
 
-var highlightCodeBlocks = function(doc, enableMermaid) {
+var highlightCodeBlocks = function(doc, enableMermaid, enableFlowchart) {
     var codes = doc.getElementsByTagName('code');
     for (var i = 0; i < codes.length; ++i) {
         var code = codes[i];
         if (code.parentElement.tagName.toLowerCase() == 'pre') {
             if (enableMermaid && code.classList.contains('language-mermaid')) {
                 // Mermaid code block.
+                continue;
+            } if (enableFlowchart && code.classList.contains('language-flowchart')) {
+                // Flowchart code block.
                 continue;
             } else {
                 hljs.highlightBlock(code);
@@ -70,8 +73,9 @@ var updateText = function(text) {
     placeholder.innerHTML = html;
     handleToc(needToc);
     insertImageCaption();
-    highlightCodeBlocks(document, VEnableMermaid);
+    highlightCodeBlocks(document, VEnableMermaid, VEnableFlowchart);
     renderMermaid('language-mermaid');
+    renderFlowchart('language-flowchart');
 
     // If you add new logics after handling MathJax, please pay attention to
     // finishLoading logic.
@@ -92,7 +96,7 @@ var highlightText = function(text, id, timeStamp) {
 
     var parser = new DOMParser();
     var htmlDoc = parser.parseFromString("<div id=\"showdown-container\">" + html + "</div>", 'text/html');
-    highlightCodeBlocks(htmlDoc, false);
+    highlightCodeBlocks(htmlDoc, false, false);
 
     html = htmlDoc.getElementById('showdown-container').innerHTML;
 

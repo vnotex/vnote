@@ -161,6 +161,14 @@ pre.mermaid-diagram {
     overflow-y: hidden;
 }
 
+div.flowchart-diagram {
+    overflow-y: hidden;
+}
+
+pre.flowchart-diagram {
+    overflow-y: hidden;
+}
+
 .img-package {
     text-align: center;
 }

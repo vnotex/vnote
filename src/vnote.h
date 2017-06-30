@@ -57,6 +57,10 @@ public:
     static const QString c_mermaidDarkCssFile;
     static const QString c_mermaidForestCssFile;
 
+    // flowchart.js
+    static const QString c_flowchartJsFile;
+    static const QString c_raphaelJsFile;
+
     // Mathjax
     static const QString c_mathjaxJsFile;
 
