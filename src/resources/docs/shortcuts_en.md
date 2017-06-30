@@ -120,14 +120,18 @@ VNote supports a simple but useful Vim mode, including **Normal**, **Insert**, *
 
 VNote supports following features of Vim:
 
-- `d`, `c`, `y`, `p`, `<`, `>`, `gu`, `gU` actions;
+- `r`, `s`, `i`, `I`, `a`, `A`, `o`, and `O`;
+- Actions `d`, `c`, `y`, `p`, `<`, `>`, `gu`, and `gU`;
+- Movements `h/j/k/l`, `gj/gk`, `Ctrl+U`, `Ctrl+D`, `gg`, `G`, `0`, `^`, and `$`;
 - Marks `a-z`;
 - Registers `"`, `_`, `+`, `a-z`(`A-Z`);
 - Jump locations list (`Ctrl+O` and `Ctrl+I`);
 - Leader key (`Space`)
-    - Currently `<leader>y/d/p` equals to `"+y/d/p`, which will access the system's clipboard.
+    - Currently `<leader>y/d/p` equals to `"+y/d/p`, which will access the system's clipboard;
 - `zz`, `zb`, `zt`;
 - `u` and `Ctrl+R` for undo and redo;
+- Text objects `i/a`: word, WORD, `''`, `""`, `` ` ` ``, `()`, `[]`, `<>`, and `{}`;
+- Command line `:w`, `:wq`, `:x`, `:q`, and `:q!`;
 
 For now, VNote does **NOT** support the macro and repeat(`.`) features of Vim.
 

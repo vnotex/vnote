@@ -262,6 +262,7 @@ private:
         RedrawAtBottom,
         JumpPreviousLocation,
         JumpNextLocation,
+        Replace,
         Invalid
     };
 
@@ -326,7 +327,7 @@ private:
         Invalid
     };
 
-    enum class TokenType { Action = 0, Repeat, Movement, Range, Invalid };
+    enum class TokenType { Action = 0, Repeat, Movement, Range, Key, Invalid };
 
     struct Token
     {
@@ -344,6 +345,9 @@ private:
 
         Token(Range p_range)
             : m_type(TokenType::Range), m_range(p_range) {}
+
+        Token(Key p_key)
+            : m_type(TokenType::Key), m_key(p_key) {}
 
         Token() : m_type(TokenType::Invalid) {}
 
@@ -365,6 +369,11 @@ private:
         bool isRange() const
         {
             return m_type == TokenType::Range;
+        }
+
+        bool isKey() const
+        {
+            return m_type == TokenType::Key;
         }
 
         bool isValid() const
@@ -392,6 +401,10 @@ private:
                 str = QString("range %1").arg((int)m_range);
                 break;
 
+            case TokenType::Key:
+                str = QString("key %1 %2").arg(m_key.m_key).arg(m_key.m_modifiers);
+                break;
+
             default:
                 str = "invalid";
             }
@@ -409,7 +422,7 @@ private:
             Movement m_movement;
         };
 
-        // Used in some Movement.
+        // Used in some Movement and Key Token.
         Key m_key;
     };
 
@@ -503,6 +516,9 @@ private:
     // Action::JumpPreviousLocation and Action::JumpNextLocation action.
     void processJumpLocationAction(QList<Token> &p_tokens, bool p_next);
 
+    // Action::Replace.
+    void processReplaceAction(QList<Token> &p_tokens);
+
     // Clear selection if there is any.
     // Returns true if there is selection.
     bool clearSelection();
@@ -524,6 +540,9 @@ private:
 
     // Check m_keys to see if we are expecting a target for f/t/F/T command.
     bool expectingCharacterTarget() const;
+
+    // Check m_keys to see if we are expecting a character to replace with.
+    bool expectingReplaceCharacter() const;
 
     // Check if we are in command line mode.
     bool expectingCommandLineInput() const;
@@ -560,14 +579,17 @@ private:
     // Get the repeat token from m_tokens.
     Token *getRepeatToken();
 
-    // Add an Range token at the end of m_tokens.
+    // Add a Range token at the end of m_tokens.
     void addRangeToken(Range p_range);
 
-    // Add an Movement token at the end of m_tokens.
+    // Add a Movement token at the end of m_tokens.
     void addMovementToken(Movement p_movement);
 
-    // Add an Movement token at the end of m_tokens.
+    // Add a Movement token at the end of m_tokens.
     void addMovementToken(Movement p_movement, Key p_key);
+
+    // Add a Key token at the end of m_tokens.
+    void addKeyToken(Key p_key);
 
     // Delete selected text if there is any.
     // @p_clearEmptyBlock: whether to remove the empty block after deletion.

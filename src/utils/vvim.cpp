@@ -351,6 +351,31 @@ static bool isControlModifier(int p_modifiers)
 #endif
 }
 
+// Replace each of the character of selected text with @p_char.
+// Returns true if replacement has taken place.
+// Need to setTextCursor() after calling this.
+static bool replaceSelectedTextWithCharacter(QTextCursor &p_cursor, QChar p_char)
+{
+    if (!p_cursor.hasSelection()) {
+        return false;
+    }
+
+    int start = p_cursor.selectionStart();
+    int end = p_cursor.selectionEnd();
+    p_cursor.setPosition(start, QTextCursor::MoveAnchor);
+    while (p_cursor.position() < end) {
+        if (p_cursor.atBlockEnd()) {
+            p_cursor.movePosition(QTextCursor::NextCharacter);
+        } else {
+            p_cursor.deleteChar();
+            // insertText() will move the cursor right after the inserted text.
+            p_cursor.insertText(p_char);
+        }
+    }
+
+    return true;
+}
+
 bool VVim::handleKeyPressEvent(QKeyEvent *p_event, int *p_autoIndentPos)
 {
     bool ret = handleKeyPressEvent(p_event->key(), p_event->modifiers(), p_autoIndentPos);
@@ -506,6 +531,15 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         tryAddMoveAction();
         addMovementToken(mm, keyInfo);
         m_lastFindToken = m_tokens.last();
+        processCommand(m_tokens);
+
+        goto clear_accept;
+    }
+
+    if (expectingReplaceCharacter()) {
+        // Expecting a character to replace with for r.
+        addActionToken(Action::Replace);
+        addKeyToken(keyInfo);
         processCommand(m_tokens);
 
         goto clear_accept;
@@ -1632,6 +1666,13 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             addActionToken(Action::Redo);
             processCommand(m_tokens);
             break;
+        } else if (modifiers == Qt::NoModifier) {
+            // r, replace.
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (m_keys.isEmpty() && !hasActionToken()) {
+                m_keys.append(keyInfo);
+                goto accept;
+            }
         }
 
         break;
@@ -1972,6 +2013,10 @@ void VVim::processCommand(QList<Token> &p_tokens)
 
     case Action::JumpNextLocation:
         processJumpLocationAction(p_tokens, true);
+        break;
+
+    case Action::Replace:
+        processReplaceAction(p_tokens);
         break;
 
     default:
@@ -3971,6 +4016,55 @@ void VVim::processJumpLocationAction(QList<Token> &p_tokens, bool p_next)
     }
 }
 
+void VVim::processReplaceAction(QList<Token> &p_tokens)
+{
+    int repeat = 1;
+    QChar replaceChar;
+    Q_ASSERT(!p_tokens.isEmpty());
+    Token to = p_tokens.takeFirst();
+    if (to.isRepeat()) {
+        repeat = to.m_repeat;
+        Q_ASSERT(!p_tokens.isEmpty());
+        to = p_tokens.takeFirst();
+    }
+
+    Q_ASSERT(to.isKey() && p_tokens.isEmpty());
+    replaceChar = keyToChar(to.m_key.m_key, to.m_key.m_modifiers);
+    if (replaceChar.isNull()) {
+        return;
+    }
+
+    if (!(checkMode(VimMode::Normal)
+          || checkMode(VimMode::Visual)
+          || checkMode(VimMode::VisualLine))) {
+        return;
+    }
+
+    // Replace the next repeat characters with replaceChar until the end of line.
+    // If repeat is greater than the number of left characters in current line,
+    // do nothing.
+    // In visual mode, repeat is ignored.
+    QTextCursor cursor = m_editor->textCursor();
+    cursor.beginEditBlock();
+    if (checkMode(VimMode::Normal)) {
+        // Select the characters to be replaced.
+        cursor.clearSelection();
+        int pib = cursor.positionInBlock();
+        int nrChar = cursor.block().length() - 1 - pib;
+        if (repeat <= nrChar) {
+            cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, repeat);
+        }
+    }
+
+    bool changed = replaceSelectedTextWithCharacter(cursor, replaceChar);
+    cursor.endEditBlock();
+
+    if (changed) {
+        m_editor->setTextCursor(cursor);
+        setMode(VimMode::Normal);
+    }
+}
+
 bool VVim::clearSelection()
 {
     QTextCursor cursor = m_editor->textCursor();
@@ -4049,6 +4143,12 @@ bool VVim::expectingCharacterTarget() const
             || key == Key(Qt::Key_F, Qt::ShiftModifier)
             || key == Key(Qt::Key_T, Qt::NoModifier)
             || key == Key(Qt::Key_T, Qt::ShiftModifier));
+}
+
+bool VVim::expectingReplaceCharacter() const
+{
+    return m_keys.size() == 1
+           && m_keys.first() == Key(Qt::Key_R, Qt::NoModifier);
 }
 
 bool VVim::expectingCommandLineInput() const
@@ -4225,6 +4325,11 @@ void VVim::addMovementToken(Movement p_movement)
 void VVim::addMovementToken(Movement p_movement, Key p_key)
 {
     m_tokens.append(Token(p_movement, p_key));
+}
+
+void VVim::addKeyToken(Key p_key)
+{
+    m_tokens.append(Token(p_key));
 }
 
 void VVim::deleteSelectedText(QTextCursor &p_cursor, bool p_clearEmptyBlock)
