@@ -130,8 +130,12 @@ private:
     void moveTabOneSplit(int p_tabIdx, bool p_right);
 
     void updateTabInfo(int p_idx);
+
     // Update the sequence number of all the tabs.
     void updateAllTabsSequence();
+
+    // Connect the signals of VEditTab to this VEditWindow.
+    void connectEditTab(const VEditTab *p_tab);
 
     VNote *vnote;
     VEditArea *m_editArea;

@@ -131,7 +131,9 @@ void VEditWindow::setupCornerWidget()
                            tr("Split"), this);
     splitAct->setToolTip(tr("Split current window vertically"));
     connect(splitAct, &QAction::triggered,
-            this, &VEditWindow::splitWindow);
+            this, [this](){
+                splitWindow(true);
+            });
 
     removeSplitAct = new QAction(QIcon(":/resources/icons/remove_split.svg"),
                                  tr("Remove split"), this);
@@ -309,18 +311,8 @@ int VEditWindow::openFileInTab(VFile *p_file, OpenFileMode p_mode)
         break;
     }
 
-    connect(editor, &VEditTab::getFocused,
-            this, &VEditWindow::getFocused);
-    connect(editor, &VEditTab::outlineChanged,
-            this, &VEditWindow::handleOutlineChanged);
-    connect(editor, &VEditTab::curHeaderChanged,
-            this, &VEditWindow::handleCurHeaderChanged);
-    connect(editor, &VEditTab::statusUpdated,
-            this, &VEditWindow::handleTabStatusUpdated);
-    connect(editor, &VEditTab::statusMessage,
-            this, &VEditWindow::handleTabStatusMessage);
-    connect(editor, &VEditTab::vimStatusUpdated,
-            this, &VEditWindow::handleTabVimStatusUpdated);
+    // Connect the signals.
+    connectEditTab(editor);
 
     int idx = appendEditTab(p_file, editor);
     return idx;
@@ -775,23 +767,35 @@ bool VEditWindow::addEditTab(QWidget *p_widget)
     if (!p_widget) {
         return false;
     }
+
     VEditTab *editor = dynamic_cast<VEditTab *>(p_widget);
     if (!editor) {
         return false;
     }
+
     // Connect the signals.
-    connect(editor, &VEditTab::getFocused,
-            this, &VEditWindow::getFocused);
-    connect(editor, &VEditTab::outlineChanged,
-            this, &VEditWindow::handleOutlineChanged);
-    connect(editor, &VEditTab::curHeaderChanged,
-            this, &VEditWindow::handleCurHeaderChanged);
-    connect(editor, &VEditTab::statusUpdated,
-            this, &VEditWindow::handleTabStatusUpdated);
+    connectEditTab(editor);
+
     int idx = appendEditTab(editor->getFile(), editor);
     setCurrentIndex(idx);
     updateTabStatus(idx);
     return true;
+}
+
+void VEditWindow::connectEditTab(const VEditTab *p_tab)
+{
+    connect(p_tab, &VEditTab::getFocused,
+            this, &VEditWindow::getFocused);
+    connect(p_tab, &VEditTab::outlineChanged,
+            this, &VEditWindow::handleOutlineChanged);
+    connect(p_tab, &VEditTab::curHeaderChanged,
+            this, &VEditWindow::handleCurHeaderChanged);
+    connect(p_tab, &VEditTab::statusUpdated,
+            this, &VEditWindow::handleTabStatusUpdated);
+    connect(p_tab, &VEditTab::statusMessage,
+            this, &VEditWindow::handleTabStatusMessage);
+    connect(p_tab, &VEditTab::vimStatusUpdated,
+            this, &VEditWindow::handleTabVimStatusUpdated);
 }
 
 void VEditWindow::setCurrentWindow(bool p_current)
