@@ -35,6 +35,9 @@ public:
 
     void init(const QFontMetrics &p_metric);
 
+    // Only update those configs which could be updated online.
+    void update(const QFontMetrics &p_metric);
+
     // Width in pixels.
     int m_tabStopWidth;
 
@@ -84,6 +87,10 @@ public:
 
     // Request to update Vim status.
     void requestUpdateVimStatus();
+
+    QVariant inputMethodQuery(Qt::InputMethodQuery p_query) const Q_DECL_OVERRIDE;
+
+    void setInputMethodEnabled(bool p_enabled);
 
 signals:
     // Request VEditTab to save and exit edit mode.
@@ -163,6 +170,9 @@ private:
     bool m_mouseMoveScrolled;
     int m_oriMouseX;
     int m_oriMouseY;
+
+    // Whether enable input method.
+    bool m_enableInputMethod;
 
     void showWrapLabel();
 

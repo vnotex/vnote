@@ -147,6 +147,9 @@ void VConfigManager::initialize()
 
     m_enableVimMode = getConfigFromSettings("global",
                                             "enable_vim_mode").toBool();
+
+    m_enableSmartImInVimMode = getConfigFromSettings("global",
+                                                     "enable_smart_im_in_vim_mode").toBool();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

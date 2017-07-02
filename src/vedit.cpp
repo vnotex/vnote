@@ -15,6 +15,15 @@ extern VNote *g_vnote;
 
 void VEditConfig::init(const QFontMetrics &p_metric)
 {
+    update(p_metric);
+
+    m_enableVimMode = vconfig.getEnableVimMode();
+
+    m_highlightWholeBlock = m_enableVimMode;
+}
+
+void VEditConfig::update(const QFontMetrics &p_metric)
+{
     if (vconfig.getTabStopWidth() > 0) {
         m_tabStopWidth = vconfig.getTabStopWidth() * p_metric.width(' ');
     } else {
@@ -29,15 +38,12 @@ void VEditConfig::init(const QFontMetrics &p_metric)
         m_tabSpaces = "\t";
     }
 
-    m_enableVimMode = vconfig.getEnableVimMode();
-
     m_cursorLineBg = QColor(vconfig.getEditorCurrentLineBg());
-
-    m_highlightWholeBlock = m_enableVimMode;
 }
 
 VEdit::VEdit(VFile *p_file, QWidget *p_parent)
-    : QTextEdit(p_parent), m_file(p_file), m_editOps(NULL)
+    : QTextEdit(p_parent), m_file(p_file),
+      m_editOps(NULL), m_enableInputMethod(true)
 {
     const int labelTimerInterval = 500;
     const int extraSelectionHighlightTimer = 500;
@@ -70,6 +76,7 @@ VEdit::VEdit(VFile *p_file, QWidget *p_parent)
 
     updateFontAndPalette();
 
+    m_config.init(QFontMetrics(font()));
     updateConfig();
 
     connect(this, &VEdit::cursorPositionChanged,
@@ -89,7 +96,7 @@ VEdit::~VEdit()
 
 void VEdit::updateConfig()
 {
-    m_config.init(QFontMetrics(font()));
+    m_config.update(QFontMetrics(font()));
 
     if (m_config.m_tabStopWidth > 0) {
         setTabStopWidth(m_config.m_tabStopWidth);
@@ -797,4 +804,25 @@ bool VEdit::jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat)
     Q_UNUSED(p_relativeLevel);
     Q_UNUSED(p_repeat);
     return false;
+}
+
+QVariant VEdit::inputMethodQuery(Qt::InputMethodQuery p_query) const
+{
+    if (p_query == Qt::ImEnabled) {
+        return m_enableInputMethod;
+    }
+
+    return QTextEdit::inputMethodQuery(p_query);
+}
+
+void VEdit::setInputMethodEnabled(bool p_enabled)
+{
+    if (m_enableInputMethod != p_enabled) {
+        m_enableInputMethod = p_enabled;
+
+        QInputMethod *im = QGuiApplication::inputMethod();
+        im->reset();
+        // Ask input method to query current state, which will call inputMethodQuery().
+        im->update(Qt::ImEnabled);
+    }
 }

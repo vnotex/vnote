@@ -661,10 +661,19 @@ void VMainWindow::initEditMenu()
 
     // Vim Mode.
     QAction *vimAct = new QAction(tr("Vim Mode"), this);
-    vimAct->setToolTip(tr("Enable Vim mode for editing (re-enter edit mode to make it work)"));
+    vimAct->setToolTip(tr("Enable Vim mode for editing (re-open current tabs to make it work)"));
     vimAct->setCheckable(true);
     connect(vimAct, &QAction::triggered,
             this, &VMainWindow::changeVimMode);
+
+    // Smart input method in Vim mode.
+    QAction *smartImAct = new QAction(tr("Smart Input Method In Vim Mode"), this);
+    smartImAct->setToolTip(tr("Disable input method when leaving Insert mode in Vim mode"));
+    smartImAct->setCheckable(true);
+    connect(smartImAct, &QAction::triggered,
+            this, [this](bool p_checked){
+                vconfig.setEnableSmartImInVimMode(p_checked);
+            });
 
     // Highlight current cursor line.
     QAction *cursorLineAct = new QAction(tr("Highlight Cursor Line"), this);
@@ -750,6 +759,9 @@ void VMainWindow::initEditMenu()
 
     editMenu->addAction(vimAct);
     vimAct->setChecked(vconfig.getEnableVimMode());
+
+    editMenu->addAction(smartImAct);
+    smartImAct->setChecked(vconfig.getEnableSmartImInVimMode());
 
     editMenu->addSeparator();
 

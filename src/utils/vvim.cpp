@@ -84,10 +84,14 @@ static QChar keyToChar(int p_key, int p_modifiers)
 
 VVim::VVim(VEdit *p_editor)
     : QObject(p_editor), m_editor(p_editor),
-      m_editConfig(&p_editor->getConfig()), m_mode(VimMode::Normal),
+      m_editConfig(&p_editor->getConfig()), m_mode(VimMode::Invalid),
       m_resetPositionInBlock(true), m_regName(c_unnamedRegister),
       m_cmdMode(false), m_leaderKey(Key(Qt::Key_Space)), m_replayLeaderSequence(false)
 {
+    Q_ASSERT(m_editConfig->m_enableVimMode);
+
+    setMode(VimMode::Normal);
+
     initRegisters();
 
     connect(m_editor, &VEdit::copyAvailable,
@@ -1967,6 +1971,12 @@ void VVim::setMode(VimMode p_mode, bool p_clearSelection)
     if (m_mode != p_mode) {
         if (p_clearSelection) {
             clearSelection();
+        }
+
+        if (p_mode == VimMode::Insert) {
+            m_editor->setInputMethodEnabled(true);
+        } else if (vconfig.getEnableSmartImInVimMode()) {
+            m_editor->setInputMethodEnabled(false);
         }
 
         m_mode = p_mode;

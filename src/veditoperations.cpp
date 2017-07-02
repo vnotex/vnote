@@ -10,18 +10,21 @@ extern VConfigManager vconfig;
 
 VEditOperations::VEditOperations(VEdit *p_editor, VFile *p_file)
     : QObject(p_editor), m_editor(p_editor), m_file(p_file),
-      m_editConfig(&p_editor->getConfig())
+      m_editConfig(&p_editor->getConfig()), m_vim(NULL)
 {
-    m_vim = new VVim(m_editor);
-
     connect(m_editor, &VEdit::configUpdated,
             this, &VEditOperations::handleEditConfigUpdated);
-    connect(m_vim, &VVim::modeChanged,
-            this, &VEditOperations::handleVimModeChanged);
-    connect(m_vim, &VVim::vimMessage,
-            this, &VEditOperations::statusMessage);
-    connect(m_vim, &VVim::vimStatusUpdated,
-            this, &VEditOperations::vimStatusUpdated);
+
+    if (m_editConfig->m_enableVimMode) {
+        m_vim = new VVim(m_editor);
+
+        connect(m_vim, &VVim::modeChanged,
+                this, &VEditOperations::handleVimModeChanged);
+        connect(m_vim, &VVim::vimMessage,
+                this, &VEditOperations::statusMessage);
+        connect(m_vim, &VVim::vimStatusUpdated,
+                this, &VEditOperations::vimStatusUpdated);
+    }
 }
 
 void VEditOperations::insertTextAtCurPos(const QString &p_text)
@@ -70,7 +73,9 @@ void VEditOperations::updateCursorLineBg()
 void VEditOperations::handleEditConfigUpdated()
 {
     // Reset to Normal mode.
-    m_vim->setMode(VimMode::Normal);
+    if (m_vim) {
+        m_vim->setMode(VimMode::Normal);
+    }
 
     updateCursorLineBg();
 }
@@ -85,9 +90,5 @@ void VEditOperations::handleVimModeChanged(VimMode p_mode)
 
 void VEditOperations::requestUpdateVimStatus()
 {
-    if (m_editConfig->m_enableVimMode) {
-        emit vimStatusUpdated(m_vim);
-    } else {
-        emit vimStatusUpdated(NULL);
-    }
+    emit vimStatusUpdated(m_vim);
 }

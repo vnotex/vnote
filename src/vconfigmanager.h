@@ -196,6 +196,9 @@ public:
     inline bool getEnableVimMode() const;
     inline void setEnableVimMode(bool p_enabled);
 
+    inline bool getEnableSmartImInVimMode() const;
+    inline void setEnableSmartImInVimMode(bool p_enabled);
+
     // Get the folder the ini file exists.
     QString getConfigFolder() const;
 
@@ -357,6 +360,9 @@ private:
 
     // Enable Vim mode.
     bool m_enableVimMode;
+
+    // Enable smart input method in Vim mode.
+    bool m_enableSmartImInVimMode;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -940,6 +946,22 @@ inline void VConfigManager::setEnableVimMode(bool p_enabled)
     m_enableVimMode = p_enabled;
     setConfigToSettings("global", "enable_vim_mode",
                         m_enableVimMode);
+}
+
+inline bool VConfigManager::getEnableSmartImInVimMode() const
+{
+    return m_enableSmartImInVimMode;
+}
+
+inline void VConfigManager::setEnableSmartImInVimMode(bool p_enabled)
+{
+    if (m_enableSmartImInVimMode == p_enabled) {
+        return;
+    }
+
+    m_enableSmartImInVimMode = p_enabled;
+    setConfigToSettings("global", "enable_smart_im_in_vim_mode",
+                        m_enableSmartImInVimMode);
 }
 
 #endif // VCONFIGMANAGER_H
