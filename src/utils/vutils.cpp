@@ -105,7 +105,13 @@ QString VUtils::generateImageFileName(const QString &path, const QString &title,
     Q_ASSERT(!title.isEmpty());
     QRegExp regExp("\\W");
     QString baseName(title.toLower());
+
+    // Remove non-character chars.
     baseName.remove(regExp);
+
+    // Constrain the length of the name.
+    baseName.truncate(10);
+
     baseName.prepend('_');
 
     // Add current time and random number to make the name be most likely unique
@@ -116,11 +122,12 @@ QString VUtils::generateImageFileName(const QString &path, const QString &title,
     QString filePath = QDir(path).filePath(imageName);
     int index = 1;
 
-    while (QFile(filePath).exists()) {
+    while (QFileInfo::exists(filePath)) {
         imageName = QString("%1_%2.%3").arg(baseName).arg(index++)
                                        .arg(format.toLower());
         filePath = QDir(path).filePath(imageName);
     }
+
     return imageName;
 }
 
