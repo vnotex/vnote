@@ -85,13 +85,13 @@ foreground: 005fff
 font-style: underlined
 
 IMAGE
-foreground: d33682
+foreground: 616161
 
 REFERENCE
 foreground: b58900
 
 CODE
-foreground: af5f00
+foreground: 551a8b
 font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
 
 EMPH
