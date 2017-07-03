@@ -57,6 +57,9 @@ public:
 
     void requestUpdateVimStatus() Q_DECL_OVERRIDE;
 
+    // Insert decoration markers or decorate selected text.
+    void decorateText(TextDecoration p_decoration) Q_DECL_OVERRIDE;
+
 public slots:
     // Enter edit mode.
     void editFile() Q_DECL_OVERRIDE;

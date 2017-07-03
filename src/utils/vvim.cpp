@@ -4241,8 +4241,8 @@ int VVim::blockCountOfPageStep() const
 void VVim::selectionToVisualMode(bool p_hasText)
 {
     if (p_hasText && m_mode == VimMode::Normal) {
-        // Enter visual mode.
-        setMode(VimMode::Visual);
+        // Enter visual mode without clearing the selection.
+        setMode(VimMode::Visual, false);
     }
 }
 

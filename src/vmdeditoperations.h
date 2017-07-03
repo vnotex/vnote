@@ -21,6 +21,10 @@ public:
     bool handleKeyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
     bool insertImageFromURL(const QUrl &p_imageUrl) Q_DECL_OVERRIDE;
 
+    // Insert decoration markers or decorate selected text.
+    // If it is Vim Normal mode, change to Insert mode first.
+    void decorateText(TextDecoration p_decoration) Q_DECL_OVERRIDE;
+
 private:
     void insertImageFromPath(const QString &title, const QString &path, const QString &oriImagePath);
 
@@ -32,10 +36,7 @@ private:
     // Key press handlers.
     bool handleKeyTab(QKeyEvent *p_event);
     bool handleKeyBackTab(QKeyEvent *p_event);
-    bool handleKeyB(QKeyEvent *p_event);
     bool handleKeyH(QKeyEvent *p_event);
-    bool handleKeyI(QKeyEvent *p_event);
-    bool handleKeyO(QKeyEvent *p_event);
     bool handleKeyU(QKeyEvent *p_event);
     bool handleKeyW(QKeyEvent *p_event);
     bool handleKeyEsc(QKeyEvent *p_event);
@@ -45,6 +46,15 @@ private:
 
     // Change the sequence number of a list block.
     void changeListBlockSeqNumber(QTextBlock &p_block, int p_seq);
+
+    // Insert bold marker or set selected text bold.
+    void decorateBold();
+
+    // Insert italic marker or set selected text italic.
+    void decorateItalic();
+
+    // Insert inline-code marker or set selected text inline-coded.
+    void decorateInlineCode();
 
     // The cursor position after auto indent or auto list.
     // It will be -1 if last key press do not trigger the auto indent or auto list.

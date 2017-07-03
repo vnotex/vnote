@@ -241,10 +241,12 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
 
     case Qt::Key_B:
     {
-        if (handleKeyB(p_event)) {
+        if (modifiers == Qt::ControlModifier) {
+            decorateBold();
+            p_event->accept();
             ret = true;
-            goto exit;
         }
+
         break;
     }
 
@@ -259,19 +261,23 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
 
     case Qt::Key_I:
     {
-        if (handleKeyI(p_event)) {
+        if (modifiers == Qt::ControlModifier) {
+            decorateItalic();
+            p_event->accept();
             ret = true;
-            goto exit;
         }
+
         break;
     }
 
     case Qt::Key_O:
     {
-        if (handleKeyO(p_event)) {
+        if (modifiers == Qt::ControlModifier) {
+            decorateInlineCode();
+            p_event->accept();
             ret = true;
-            goto exit;
         }
+
         break;
     }
 
@@ -435,51 +441,6 @@ bool VMdEditOperations::handleKeyBackTab(QKeyEvent *p_event)
     return true;
 }
 
-bool VMdEditOperations::handleKeyB(QKeyEvent *p_event)
-{
-    if (p_event->modifiers() == Qt::ControlModifier) {
-        // Ctrl+B, Bold.
-        QTextCursor cursor = m_editor->textCursor();
-        if (cursor.hasSelection()) {
-            // Insert ** around the selected text.
-            int start = cursor.selectionStart();
-            int end = cursor.selectionEnd();
-            cursor.beginEditBlock();
-            cursor.clearSelection();
-            cursor.setPosition(start, QTextCursor::MoveAnchor);
-            cursor.insertText("**");
-            cursor.setPosition(end + 2, QTextCursor::MoveAnchor);
-            cursor.insertText("**");
-            cursor.endEditBlock();
-            m_editor->setTextCursor(cursor);
-        } else {
-            // Insert **** and place cursor in the middle.
-            // Or if there are two * after current cursor, just skip them.
-            cursor.beginEditBlock();
-            int pos = cursor.positionInBlock();
-            bool hasStars = false;
-            QString text = cursor.block().text();
-            if (pos <= text.size() - 2) {
-                if (text[pos] == '*' && text[pos + 1] == '*') {
-                    hasStars = true;
-                }
-            }
-            if (hasStars) {
-                cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 2);
-            } else {
-                cursor.insertText("****");
-                cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 2);
-            }
-            cursor.endEditBlock();
-            m_editor->setTextCursor(cursor);
-        }
-
-        p_event->accept();
-        return true;
-    }
-    return false;
-}
-
 bool VMdEditOperations::handleKeyH(QKeyEvent *p_event)
 {
     if (p_event->modifiers() == Qt::ControlModifier) {
@@ -487,95 +448,6 @@ bool VMdEditOperations::handleKeyH(QKeyEvent *p_event)
         QTextCursor cursor = m_editor->textCursor();
         cursor.deletePreviousChar();
 
-        p_event->accept();
-        return true;
-    }
-    return false;
-}
-
-bool VMdEditOperations::handleKeyI(QKeyEvent *p_event)
-{
-    if (p_event->modifiers() == Qt::ControlModifier) {
-        // Ctrl+I, Italic.
-        QTextCursor cursor = m_editor->textCursor();
-        if (cursor.hasSelection()) {
-            // Insert * around the selected text.
-            int start = cursor.selectionStart();
-            int end = cursor.selectionEnd();
-            cursor.beginEditBlock();
-            cursor.clearSelection();
-            cursor.setPosition(start, QTextCursor::MoveAnchor);
-            cursor.insertText("*");
-            cursor.setPosition(end + 1, QTextCursor::MoveAnchor);
-            cursor.insertText("*");
-            cursor.endEditBlock();
-            m_editor->setTextCursor(cursor);
-        } else {
-            // Insert ** and place cursor in the middle.
-            // Or if there are one * after current cursor, just skip it.
-            cursor.beginEditBlock();
-            int pos = cursor.positionInBlock();
-            bool hasStar = false;
-            QString text = cursor.block().text();
-            if (pos <= text.size() - 1) {
-                if (text[pos] == '*') {
-                    hasStar = true;
-                }
-            }
-            if (hasStar) {
-                cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 1);
-            } else {
-                cursor.insertText("**");
-                cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 1);
-            }
-            cursor.endEditBlock();
-            m_editor->setTextCursor(cursor);
-        }
-
-        p_event->accept();
-        return true;
-    }
-    return false;
-}
-
-bool VMdEditOperations::handleKeyO(QKeyEvent *p_event)
-{
-    if (p_event->modifiers() == Qt::ControlModifier) {
-        // Ctrl+O, inline codeblock.
-        QTextCursor cursor = m_editor->textCursor();
-        if (cursor.hasSelection()) {
-            // Insert ` around the selected text.
-            int start = cursor.selectionStart();
-            int end = cursor.selectionEnd();
-            cursor.beginEditBlock();
-            cursor.clearSelection();
-            cursor.setPosition(start, QTextCursor::MoveAnchor);
-            cursor.insertText("`");
-            cursor.setPosition(end + 1, QTextCursor::MoveAnchor);
-            cursor.insertText("`");
-            cursor.endEditBlock();
-            m_editor->setTextCursor(cursor);
-        } else {
-            // Insert `` and place cursor in the middle.
-            // Or if there are one ` after current cursor, just skip it.
-            cursor.beginEditBlock();
-            int pos = cursor.positionInBlock();
-            bool hasBackquote = false;
-            QString text = cursor.block().text();
-            if (pos <= text.size() - 1) {
-                if (text[pos] == '`') {
-                    hasBackquote = true;
-                }
-            }
-            if (hasBackquote) {
-                cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 1);
-            } else {
-                cursor.insertText("``");
-                cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 1);
-            }
-            cursor.endEditBlock();
-            m_editor->setTextCursor(cursor);
-        }
         p_event->accept();
         return true;
     }
@@ -775,3 +647,140 @@ bool VMdEditOperations::insertTitle(int p_level)
     return true;
 }
 
+void VMdEditOperations::decorateText(TextDecoration p_decoration)
+{
+    if (p_decoration == TextDecoration::None) {
+        return;
+    }
+
+    m_vim->setMode(VimMode::Insert, false);
+
+    switch (p_decoration) {
+    case TextDecoration::Bold:
+        decorateBold();
+        break;
+
+    case TextDecoration::Italic:
+        decorateItalic();
+        break;
+
+    case TextDecoration::InlineCode:
+        decorateInlineCode();
+        break;
+
+    default:
+        qDebug() << "decoration" << (int)p_decoration << "is not implemented yet";
+        break;
+    }
+}
+
+void VMdEditOperations::decorateBold()
+{
+    QTextCursor cursor = m_editor->textCursor();
+    cursor.beginEditBlock();
+    if (cursor.hasSelection()) {
+        // Insert ** around the selected text.
+        int start = cursor.selectionStart();
+        int end = cursor.selectionEnd();
+        cursor.clearSelection();
+        cursor.setPosition(start, QTextCursor::MoveAnchor);
+        cursor.insertText("**");
+        cursor.setPosition(end + 2, QTextCursor::MoveAnchor);
+        cursor.insertText("**");
+    } else {
+        // Insert **** and place cursor in the middle.
+        // Or if there are two * after current cursor, just skip them.
+        int pos = cursor.positionInBlock();
+        bool hasStars = false;
+        QString text = cursor.block().text();
+        if (pos <= text.size() - 2) {
+            if (text[pos] == '*' && text[pos + 1] == '*') {
+                hasStars = true;
+            }
+        }
+
+        if (hasStars) {
+            cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 2);
+        } else {
+            cursor.insertText("****");
+            cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 2);
+        }
+    }
+
+    cursor.endEditBlock();
+    m_editor->setTextCursor(cursor);
+}
+
+void VMdEditOperations::decorateItalic()
+{
+    QTextCursor cursor = m_editor->textCursor();
+    cursor.beginEditBlock();
+    if (cursor.hasSelection()) {
+        // Insert * around the selected text.
+        int start = cursor.selectionStart();
+        int end = cursor.selectionEnd();
+        cursor.clearSelection();
+        cursor.setPosition(start, QTextCursor::MoveAnchor);
+        cursor.insertText("*");
+        cursor.setPosition(end + 1, QTextCursor::MoveAnchor);
+        cursor.insertText("*");
+    } else {
+        // Insert ** and place cursor in the middle.
+        // Or if there are one * after current cursor, just skip it.
+        int pos = cursor.positionInBlock();
+        bool hasStar = false;
+        QString text = cursor.block().text();
+        if (pos <= text.size() - 1) {
+            if (text[pos] == '*') {
+                hasStar = true;
+            }
+        }
+
+        if (hasStar) {
+            cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 1);
+        } else {
+            cursor.insertText("**");
+            cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 1);
+        }
+    }
+
+    cursor.endEditBlock();
+    m_editor->setTextCursor(cursor);
+}
+
+void VMdEditOperations::decorateInlineCode()
+{
+    QTextCursor cursor = m_editor->textCursor();
+    cursor.beginEditBlock();
+    if (cursor.hasSelection()) {
+        // Insert ` around the selected text.
+        int start = cursor.selectionStart();
+        int end = cursor.selectionEnd();
+        cursor.clearSelection();
+        cursor.setPosition(start, QTextCursor::MoveAnchor);
+        cursor.insertText("`");
+        cursor.setPosition(end + 1, QTextCursor::MoveAnchor);
+        cursor.insertText("`");
+    } else {
+        // Insert `` and place cursor in the middle.
+        // Or if there are one ` after current cursor, just skip it.
+        int pos = cursor.positionInBlock();
+        bool hasBackquote = false;
+        QString text = cursor.block().text();
+        if (pos <= text.size() - 1) {
+            if (text[pos] == '`') {
+                hasBackquote = true;
+            }
+        }
+
+        if (hasBackquote) {
+            cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 1);
+        } else {
+            cursor.insertText("``");
+            cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 1);
+        }
+    }
+
+    cursor.endEditBlock();
+    m_editor->setTextCursor(cursor);
+}

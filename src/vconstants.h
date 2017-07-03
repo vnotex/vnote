@@ -34,4 +34,11 @@ namespace DirConfig
 }
 
 static const QString c_emptyHeaderName = "[EMPTY]";
+
+enum class TextDecoration { None,
+                            Bold,
+                            Italic,
+                            Underline,
+                            Strikethrough,
+                            InlineCode };
 #endif

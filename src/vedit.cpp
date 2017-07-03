@@ -826,3 +826,10 @@ void VEdit::setInputMethodEnabled(bool p_enabled)
         im->update(Qt::ImEnabled);
     }
 }
+
+void VEdit::decorateText(TextDecoration p_decoration)
+{
+    if (m_editOps) {
+        m_editOps->decorateText(p_decoration);
+    }
+}

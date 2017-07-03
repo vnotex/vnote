@@ -108,6 +108,9 @@ private:
     void initFileToolBar();
     void initViewToolBar();
 
+    // Init the Edit toolbar.
+    void initEditToolBar();
+
     void initMenuBar();
     void initFileMenu();
     void initEditMenu();
@@ -195,6 +198,9 @@ private:
 
     // Menus
     QMenu *viewMenu;
+
+    // Edit Toolbar.
+    QToolBar *m_editToolBar;
 
     QVector<QPixmap> predefinedColorPixmaps;
 };

@@ -30,6 +30,9 @@ public:
     // Request to propogate Vim status.
     void requestUpdateVimStatus();
 
+    // Insert decoration markers or decorate selected text.
+    virtual void decorateText(TextDecoration p_decoration) {Q_UNUSED(p_decoration);};
+
 signals:
     // Want to display a template message in status bar.
     void statusMessage(const QString &p_msg);

@@ -92,6 +92,9 @@ public:
 
     void setInputMethodEnabled(bool p_enabled);
 
+    // Insert decoration markers or decorate selected text.
+    void decorateText(TextDecoration p_decoration);
+
 signals:
     // Request VEditTab to save and exit edit mode.
     void saveAndRead();

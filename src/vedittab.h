@@ -68,6 +68,9 @@ public:
     // Request current tab to propogate its status about Vim.
     virtual void requestUpdateVimStatus() = 0;
 
+    // Insert decoration markers or decorate selected text.
+    virtual void decorateText(TextDecoration p_decoration) {Q_UNUSED(p_decoration);};
+
 public slots:
     // Enter edit mode
     virtual void editFile() = 0;

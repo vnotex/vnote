@@ -175,6 +175,7 @@ void VMainWindow::initToolBar()
 {
     initFileToolBar();
     initViewToolBar();
+    initEditToolBar();
 }
 
 void VMainWindow::initViewToolBar()
@@ -208,6 +209,90 @@ void VMainWindow::initViewToolBar()
             this, &VMainWindow::expandPanelView);
 
     viewToolBar->addAction(expandViewAct);
+}
+
+static void setActionsVisible(QWidget *p_widget, bool p_visible)
+{
+    Q_ASSERT(p_widget);
+    QList<QAction *> actions = p_widget->actions();
+    for (auto const & act : actions) {
+        act->setVisible(p_visible);
+    }
+}
+
+void VMainWindow::initEditToolBar()
+{
+    m_editToolBar = addToolBar(tr("Edit Toolbar"));
+    m_editToolBar->setObjectName("EditToolBar");
+    m_editToolBar->setMovable(false);
+
+    m_editToolBar->addSeparator();
+
+    QAction *boldAct = new QAction(QIcon(":/resources/icons/bold.svg"),
+                                   tr("Bold"), this);
+    boldAct->setStatusTip(tr("Insert bold text or change selected text to bold"));
+    connect(boldAct, &QAction::triggered,
+            this, [this](){
+                if (m_curTab) {
+                    m_curTab->decorateText(TextDecoration::Bold);
+                }
+            });
+
+    m_editToolBar->addAction(boldAct);
+
+    QAction *italicAct = new QAction(QIcon(":/resources/icons/italic.svg"),
+                                     tr("Italic"), this);
+    italicAct->setStatusTip(tr("Insert italic text or change selected text to italic"));
+    connect(italicAct, &QAction::triggered,
+            this, [this](){
+                if (m_curTab) {
+                    m_curTab->decorateText(TextDecoration::Italic);
+                }
+            });
+
+    m_editToolBar->addAction(italicAct);
+
+    QAction *underlineAct = new QAction(QIcon(":/resources/icons/underline.svg"),
+                                        tr("Underline"), this);
+    underlineAct->setStatusTip(tr("Insert underlined text or change selected text to underlined"));
+    connect(underlineAct, &QAction::triggered,
+            this, [this](){
+                if (m_curTab) {
+                    m_curTab->decorateText(TextDecoration::Underline);
+                }
+            });
+
+    m_editToolBar->addAction(underlineAct);
+
+    QAction *strikethroughAct = new QAction(QIcon(":/resources/icons/strikethrough.svg"),
+                                            tr("Strikethrough"), this);
+    strikethroughAct->setStatusTip(tr("Insert strikethrough text or change selected text to strikethroughed"));
+    connect(strikethroughAct, &QAction::triggered,
+            this, [this](){
+                if (m_curTab) {
+                    m_curTab->decorateText(TextDecoration::Strikethrough);
+                }
+            });
+
+    m_editToolBar->addAction(strikethroughAct);
+
+    QAction *inlineCodeAct = new QAction(QIcon(":/resources/icons/inline_code.svg"),
+                                         tr("Inline Code"), this);
+    inlineCodeAct->setStatusTip(tr("Insert inline-code text or change selected text to inline-coded"));
+    connect(inlineCodeAct, &QAction::triggered,
+            this, [this](){
+                if (m_curTab) {
+                    m_curTab->decorateText(TextDecoration::InlineCode);
+                }
+            });
+
+    m_editToolBar->addAction(inlineCodeAct);
+
+    QAction *toggleAct = m_editToolBar->toggleViewAction();
+    toggleAct->setToolTip(tr("Toggle the edit toolbar"));
+    viewMenu->addAction(toggleAct);
+
+    setActionsVisible(m_editToolBar, false);
 }
 
 void VMainWindow::initFileToolBar()
@@ -507,6 +592,7 @@ void VMainWindow::initMarkdownMenu()
 void VMainWindow::initViewMenu()
 {
     viewMenu = menuBar()->addMenu(tr("&View"));
+    viewMenu->setToolTipsVisible(true);
 }
 
 void VMainWindow::initFileMenu()
@@ -795,7 +881,10 @@ void VMainWindow::initDockWindows()
     toolBox->addItem(outline, QIcon(":/resources/icons/outline.svg"), tr("Outline"));
     toolDock->setWidget(toolBox);
     addDockWidget(Qt::RightDockWidgetArea, toolDock);
-    viewMenu->addAction(toolDock->toggleViewAction());
+
+    QAction *toggleAct = toolDock->toggleViewAction();
+    toggleAct->setToolTip(tr("Toggle the tools dock widget"));
+    viewMenu->addAction(toggleAct);
 }
 
 void VMainWindow::initAvatar()
@@ -1154,6 +1243,9 @@ void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
     noteInfoAct->setEnabled(p_file && p_file->getType() == FileType::Normal);
 
     m_insertImageAct->setEnabled(p_file && p_editMode);
+
+    setActionsVisible(m_editToolBar, p_file && p_editMode);
+
     // Find/Replace
     m_findReplaceAct->setEnabled(p_file);
     m_findNextAct->setEnabled(p_file);

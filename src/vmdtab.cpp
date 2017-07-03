@@ -665,3 +665,10 @@ VEditTabInfo VMdTab::createEditTabInfo()
 
     return info;
 }
+
+void VMdTab::decorateText(TextDecoration p_decoration)
+{
+    if (m_editor) {
+        m_editor->decorateText(p_decoration);
+    }
+}

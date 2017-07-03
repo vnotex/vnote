@@ -111,5 +111,10 @@
         <file>resources/icons/vnote_update.svg</file>
         <file>utils/flowchart.js/flowchart.min.js</file>
         <file>utils/flowchart.js/raphael.min.js</file>
+        <file>resources/icons/bold.svg</file>
+        <file>resources/icons/italic.svg</file>
+        <file>resources/icons/underline.svg</file>
+        <file>resources/icons/strikethrough.svg</file>
+        <file>resources/icons/inline_code.svg</file>
     </qresource>
 </RCC>
