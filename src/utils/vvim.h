@@ -255,6 +255,7 @@ private:
         UnIndent,
         ToUpper,
         ToLower,
+        ReverseCase,
         Undo,
         Redo,
         RedrawAtTop,
@@ -518,6 +519,9 @@ private:
 
     // Action::Replace.
     void processReplaceAction(QList<Token> &p_tokens);
+
+    // Action::ReverseCase.
+    void processReverseCaseAction(QList<Token> &p_tokens);
 
     // Clear selection if there is any.
     // Returns true if there is selection.

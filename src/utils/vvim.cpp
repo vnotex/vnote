@@ -380,6 +380,46 @@ static bool replaceSelectedTextWithCharacter(QTextCursor &p_cursor, QChar p_char
     return true;
 }
 
+// Reverse the case of selected text.
+// Returns true if the reverse has taken place.
+// Need to setTextCursor() after calling this.
+static bool reverseSelectedTextCase(QTextCursor &p_cursor)
+{
+    if (!p_cursor.hasSelection()) {
+        return false;
+    }
+
+    QTextDocument *doc = p_cursor.document();
+    int start = p_cursor.selectionStart();
+    int end = p_cursor.selectionEnd();
+    p_cursor.setPosition(start, QTextCursor::MoveAnchor);
+    while (p_cursor.position() < end) {
+        if (p_cursor.atBlockEnd()) {
+            p_cursor.movePosition(QTextCursor::NextCharacter);
+        } else {
+            QChar ch = doc->characterAt(p_cursor.position());
+            bool changed = false;
+            if (ch.isLower()) {
+                ch = ch.toUpper();
+                changed = true;
+            } else if (ch.isUpper()) {
+                ch = ch.toLower();
+                changed = true;
+            }
+
+            if (changed) {
+                p_cursor.deleteChar();
+                // insertText() will move the cursor right after the inserted text.
+                p_cursor.insertText(ch);
+            } else {
+                p_cursor.movePosition(QTextCursor::NextCharacter);
+            }
+        }
+    }
+
+    return true;
+}
+
 bool VVim::handleKeyPressEvent(QKeyEvent *p_event, int *p_autoIndentPos)
 {
     bool ret = handleKeyPressEvent(p_event->key(), p_event->modifiers(), p_autoIndentPos);
@@ -1930,6 +1970,24 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         break;
     }
 
+    case Qt::Key_AsciiTilde:
+    {
+        if (modifiers == Qt::ShiftModifier) {
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (hasActionToken() || !m_keys.isEmpty()) {
+                break;
+            }
+
+            // Reverse the case.
+            addActionToken(Action::ReverseCase);
+            processCommand(m_tokens);
+
+            break;
+        }
+
+        break;
+    }
+
     default:
         break;
     }
@@ -1994,10 +2052,6 @@ void VVim::processCommand(QList<Token> &p_tokens)
     }
 
     V_ASSERT(p_tokens.at(0).isAction());
-
-    for (int i = 0; i < p_tokens.size(); ++i) {
-        qDebug() << "token" << i << p_tokens[i].toString();
-    }
 
     Token act = p_tokens.takeFirst();
     switch (act.m_action) {
@@ -2071,6 +2125,10 @@ void VVim::processCommand(QList<Token> &p_tokens)
 
     case Action::Replace:
         processReplaceAction(p_tokens);
+        break;
+
+    case Action::ReverseCase:
+        processReverseCaseAction(p_tokens);
         break;
 
     default:
@@ -4111,6 +4169,46 @@ void VVim::processReplaceAction(QList<Token> &p_tokens)
     }
 
     bool changed = replaceSelectedTextWithCharacter(cursor, replaceChar);
+    cursor.endEditBlock();
+
+    if (changed) {
+        m_editor->setTextCursor(cursor);
+        setMode(VimMode::Normal);
+    }
+}
+
+void VVim::processReverseCaseAction(QList<Token> &p_tokens)
+{
+    int repeat = 1;
+    if (!p_tokens.isEmpty()) {
+        Token to = p_tokens.takeFirst();
+        Q_ASSERT(to.isRepeat() && p_tokens.isEmpty());
+        repeat = to.m_repeat;
+    }
+
+    if (!(checkMode(VimMode::Normal)
+          || checkMode(VimMode::Visual)
+          || checkMode(VimMode::VisualLine))) {
+        return;
+    }
+
+    // Reverse the next repeat characters' case until the end of line.
+    // If repeat is greater than the number of left characters in current line,
+    // just change the actual number of left characters.
+    // In visual mode, repeat is ignored and reverse the selected text.
+    QTextCursor cursor = m_editor->textCursor();
+    cursor.beginEditBlock();
+    if (checkMode(VimMode::Normal)) {
+        // Select the characters to be replaced.
+        cursor.clearSelection();
+        int pib = cursor.positionInBlock();
+        int nrChar = cursor.block().length() - 1 - pib;
+        cursor.movePosition(QTextCursor::Right,
+                            QTextCursor::KeepAnchor,
+                            repeat > nrChar ? nrChar : repeat);
+    }
+
+    bool changed = reverseSelectedTextCase(cursor);
     cursor.endEditBlock();
 
     if (changed) {
