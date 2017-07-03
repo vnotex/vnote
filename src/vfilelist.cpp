@@ -485,7 +485,7 @@ bool VFileList::copyFile(VDirectory *p_destDir, const QString &p_destName, VFile
 {
     QString srcPath = QDir::cleanPath(p_file->retrivePath());
     QString destPath = QDir::cleanPath(QDir(p_destDir->retrivePath()).filePath(p_destName));
-    if (srcPath == destPath) {
+    if (VUtils::equalPath(srcPath, destPath)) {
         return true;
     }
 

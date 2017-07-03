@@ -484,7 +484,7 @@ VFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
 {
     QString srcPath = QDir::cleanPath(p_srcFile->retrivePath());
     QString destPath = QDir::cleanPath(QDir(p_destDir->retrivePath()).filePath(p_destName));
-    if (srcPath == destPath) {
+    if (VUtils::equalPath(srcPath, destPath)) {
         return p_srcFile;
     }
 
@@ -554,7 +554,7 @@ VFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
                     destImagePath = QDir(destImagePath).filePath(VUtils::fileNameFromPath(link.m_path));
 
                     // Copy or Cut the images accordingly.
-                    if (destImagePath == link.m_path) {
+                    if (VUtils::equalPath(destImagePath, link.m_path)) {
                         ret = false;
                     } else {
                         ret = VUtils::copyFile(link.m_path, destImagePath, p_cut);
@@ -607,7 +607,7 @@ VDirectory *VDirectory::copyDirectory(VDirectory *p_destDir, const QString &p_de
 {
     QString srcPath = QDir::cleanPath(p_srcDir->retrivePath());
     QString destPath = QDir::cleanPath(QDir(p_destDir->retrivePath()).filePath(p_destName));
-    if (srcPath == destPath) {
+    if (VUtils::equalPath(srcPath, destPath)) {
         return p_srcDir;
     }
 

@@ -90,7 +90,8 @@ void VOrphanFile::setContent(const QString & /* p_content */)
 
 bool VOrphanFile::isInternalImageFolder(const QString &p_path) const
 {
-    return VUtils::basePathFromPath(p_path) == VUtils::basePathFromPath(m_path);
+    return VUtils::equalPath(VUtils::basePathFromPath(p_path),
+                             VUtils::basePathFromPath(m_path));
 }
 
 bool VOrphanFile::rename(const QString &p_name)

@@ -619,7 +619,7 @@ bool VDirectoryTree::copyDirectory(VDirectory *p_destDir, const QString &p_destN
     QString srcName = p_srcDir->getName();
     QString srcPath = QDir::cleanPath(p_srcDir->retrivePath());
     QString destPath = QDir::cleanPath(QDir(p_destDir->retrivePath()).filePath(p_destName));
-    if (srcPath == destPath) {
+    if (VUtils::equalPath(srcPath, destPath)) {
         return true;
     }
 

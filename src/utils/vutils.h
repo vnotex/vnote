@@ -106,6 +106,9 @@ public:
     // Try to check if @p_path is legal.
     static bool checkPathLegal(const QString &p_path);
 
+    // Returns true if @p_patha and @p_pathb points to the same file/directory.
+    static bool equalPath(const QString &p_patha, const QString &p_pathb);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
     // Captured texts (need to be trimmed):

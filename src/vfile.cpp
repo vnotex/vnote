@@ -212,7 +212,8 @@ FileType VFile::getType() const
 
 bool VFile::isInternalImageFolder(const QString &p_path) const
 {
-    return VUtils::basePathFromPath(p_path) == getDirectory()->retrivePath();
+    return VUtils::equalPath(VUtils::basePathFromPath(p_path),
+                             getDirectory()->retrivePath());
 }
 
 QUrl VFile::getBaseUrl() const

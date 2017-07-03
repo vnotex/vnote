@@ -221,7 +221,7 @@ void VMdEdit::clearUnusedImages()
 
             int j;
             for (j = 0; j < images.size(); ++j) {
-                if (link.m_path == images[j].m_path) {
+                if (VUtils::equalPath(link.m_path, images[j].m_path)) {
                     break;
                 }
             }
@@ -246,7 +246,7 @@ void VMdEdit::clearUnusedImages()
 
         int j;
         for (j = 0; j < images.size(); ++j) {
-            if (link.m_path == images[j].m_path) {
+            if (VUtils::equalPath(link.m_path, images[j].m_path)) {
                 break;
             }
         }

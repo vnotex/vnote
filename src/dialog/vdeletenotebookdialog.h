@@ -16,10 +16,12 @@ class VDeleteNotebookDialog : public QDialog
 public:
     VDeleteNotebookDialog(const QString &p_title, const QString &p_name, const QString &p_path,
                           QWidget *p_parent = 0);
+
+    // Whether delete files from disk.
     bool getDeleteFiles() const;
 
 private slots:
-    void notDeleteCheckChanged(int p_state);
+    void deleteCheckChanged(int p_state);
 
 private:
     void setupUI(const QString &p_title, const QString &p_name);
@@ -27,7 +29,7 @@ private:
 
     QString m_path;
     QLabel *m_warningLabel;
-    QCheckBox *m_notDeleteCheck;
+    QCheckBox *m_deleteCheck;
     QDialogButtonBox *m_btnBox;
 };
 

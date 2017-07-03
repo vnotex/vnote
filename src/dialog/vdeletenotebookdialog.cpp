@@ -18,12 +18,13 @@ void VDeleteNotebookDialog::setupUI(const QString &p_title, const QString &p_nam
     m_warningLabel = new QLabel();
     m_warningLabel->setWordWrap(true);
 
-    m_notDeleteCheck = new QCheckBox(tr("Do not delete files from disk."), this);
-    m_notDeleteCheck->setChecked(true);
-    m_notDeleteCheck->setToolTip(tr("When checked, VNote just removes the notebook instead of deleting files from disk"));
-    connect(m_notDeleteCheck, &QCheckBox::stateChanged, this, &VDeleteNotebookDialog::notDeleteCheckChanged);
+    m_deleteCheck = new QCheckBox(tr("Delete files from disk"), this);
+    m_deleteCheck->setChecked(false);
+    m_deleteCheck->setToolTip(tr("When checked, VNote will delete all the files within this notebook from disk"));
+    connect(m_deleteCheck, &QCheckBox::stateChanged,
+            this, &VDeleteNotebookDialog::deleteCheckChanged);
 
-    notDeleteCheckChanged(true);
+    deleteCheckChanged(false);
 
     // Ok is the default button.
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -49,7 +50,7 @@ void VDeleteNotebookDialog::setupUI(const QString &p_title, const QString &p_nam
 
     QVBoxLayout *infoLayout = new QVBoxLayout();
     infoLayout->addWidget(infoLabel);
-    infoLayout->addWidget(m_notDeleteCheck);
+    infoLayout->addWidget(m_deleteCheck);
     infoLayout->addWidget(m_warningLabel);
 
     QHBoxLayout *topLayout = new QHBoxLayout();
@@ -67,7 +68,7 @@ void VDeleteNotebookDialog::setupUI(const QString &p_title, const QString &p_nam
 
 bool VDeleteNotebookDialog::getDeleteFiles() const
 {
-    return !m_notDeleteCheck->isChecked();
+    return m_deleteCheck->isChecked();
 }
 
 QPixmap VDeleteNotebookDialog::standardIcon(QMessageBox::Icon p_icon)
@@ -104,9 +105,9 @@ QPixmap VDeleteNotebookDialog::standardIcon(QMessageBox::Icon p_icon)
     return QPixmap();
 }
 
-void VDeleteNotebookDialog::notDeleteCheckChanged(int p_state)
+void VDeleteNotebookDialog::deleteCheckChanged(int p_state)
 {
-    if (p_state) {
+    if (!p_state) {
         m_warningLabel->setText(tr("VNote won't delete files in directory <span style=\"%1\">%2</span>.")
                                   .arg(vconfig.c_dataTextStyle).arg(m_path));
     } else {

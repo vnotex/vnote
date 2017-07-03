@@ -96,7 +96,9 @@ QString VNewNotebookDialog::getNameInput() const
 
 QString VNewNotebookDialog::getPathInput() const
 {
-    return QDir::cleanPath(pathEdit->text());
+    // absoluteFilePath() to convert the drive to upper case.
+    // cleanPath() to remove duplicate separator, '.', and '..'.
+    return QDir::cleanPath(QFileInfo(pathEdit->text()).absoluteFilePath());
 }
 
 QString VNewNotebookDialog::getImageFolder() const
@@ -205,9 +207,8 @@ void VNewNotebookDialog::handleInputChanged()
     if (pathOk) {
         // Check if this path has been in VNote.
         int idx = -1;
-        path = QDir::cleanPath(path);
         for (idx = 0; idx < m_notebooks.size(); ++idx) {
-            if (QDir::cleanPath(m_notebooks[idx]->getPath()) == path) {
+            if (VUtils::equalPath(m_notebooks[idx]->getPath(), path)) {
                 break;
             }
         }
@@ -261,7 +262,8 @@ bool VNewNotebookDialog::autoComplete()
 
     QString vnoteFolder = vconfig.getVnoteNotebookFolderPath();
     QString pathText = pathEdit->text();
-    if (!pathText.isEmpty() && vnoteFolder != VUtils::basePathFromPath(pathText)) {
+    if (!pathText.isEmpty()
+        && !VUtils::equalPath(vnoteFolder, VUtils::basePathFromPath(pathText))) {
         return false;
     }
 

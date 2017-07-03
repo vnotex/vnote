@@ -610,6 +610,13 @@ bool VUtils::checkPathLegal(const QString &p_path)
     }
 
     if (QFileInfo::exists(p_path)) {
+#if defined(Q_OS_WIN)
+            // On Windows, "/" and ":" will also make exists() return true.
+            if (p_path.startsWith('/') || p_path == ":") {
+                return false;
+            }
+#endif
+
         return true;
     }
 
@@ -626,6 +633,14 @@ bool VUtils::checkPathLegal(const QString &p_path)
 
         if (QFileInfo::exists(basePath)) {
             ret = true;
+
+#if defined(Q_OS_WIN)
+            // On Windows, "/" and ":" will also make exists() return true.
+            if (basePath.startsWith('/') || basePath == ":") {
+                ret = false;
+            }
+#endif
+
             break;
         }
 
@@ -635,4 +650,17 @@ bool VUtils::checkPathLegal(const QString &p_path)
 
     delete validator;
     return ret;
+}
+
+bool VUtils::equalPath(const QString &p_patha, const QString &p_pathb)
+{
+    QString a = QDir::cleanPath(p_patha);
+    QString b = QDir::cleanPath(p_pathb);
+
+#if defined(Q_OS_WIN)
+    a = a.toLower();
+    b = b.toLower();
+#endif
+
+    return a == b;
 }
