@@ -21,8 +21,15 @@ protected:
 private slots:
     void handleEditAction();
 
+    // Copy the clicked image.
+    // Used to replace the default CopyImageToClipboard action.
+    void copyImage();
+
 private:
     VFile *m_file;
+
+    // Whether this view has hooked the Copy Image Url action.
+    bool m_actionHooked;
 };
 
 #endif // VWEBVIEW_H
