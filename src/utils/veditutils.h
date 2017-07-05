@@ -65,14 +65,27 @@ public:
     static void unindentBlock(QTextCursor &p_cursor,
                               const QString &p_indentationText);
 
-    // Find @p_repeat th occurence a char within a block.
+    // Find @p_repeat th occurence of a char within a block.
     // Returns true if target is found.
+    // Please pay attention to the one-step-forward/backward in KeepAnchor mode
+    // and exclusive case.
     static bool findTargetWithinBlock(QTextCursor &p_cursor,
                                       QTextCursor::MoveMode p_mode,
                                       QChar p_target,
                                       bool p_forward,
                                       bool p_inclusive,
                                       int p_repeat);
+
+    // Find th first occurence of a char in @p_targets within a block.
+    // Returns the index of the found char in @p_targets if found.
+    // Returns -1 if none of the @p_targets is found.
+    // Please pay attention to the one-step-forward/backward in KeepAnchor mode
+    // and exclusive case.
+    static int findTargetsWithinBlock(QTextCursor &p_cursor,
+                                      QTextCursor::MoveMode p_mode,
+                                      const QList<QChar> &p_targets,
+                                      bool p_forward,
+                                      bool p_inclusive);
 
     // Find a pair target (@p_opening, @p_closing) containing current cursor and
     // select the range between them.

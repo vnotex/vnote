@@ -485,6 +485,13 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         goto accept;
     }
 
+    // Ctrl+Tab and Ctrl+Shift+BackTab to alternate tabs.
+    if ((key == Qt::Key_Tab && modifiers == Qt::ControlModifier)
+        || (key == Qt::Key_Backtab && modifiers == (Qt::ShiftModifier | Qt::ControlModifier))) {
+        // Let it be handled outside VVim.
+        goto exit;
+    }
+
     if (m_replayLeaderSequence) {
         qDebug() << "replaying sequence" << keyToChar(key, modifiers);
     }
@@ -1794,23 +1801,31 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
     case Qt::Key_Percent:
     {
         if (modifiers == Qt::ShiftModifier) {
-            tryGetRepeatToken(m_keys, m_tokens);
-            if (m_keys.isEmpty() && hasRepeatToken()) {
-                // xx%, jump to a certain line (percentage of the documents).
-                // Change the repeat from percentage to line number.
-                Token *token = getRepeatToken();
-                int bn = percentageToBlockNumber(m_editor->document(), token->m_repeat);
-                if (bn == -1) {
-                    break;
-                } else {
-                    // Repeat of LineJump is based on 1.
-                    token->m_repeat = bn + 1;
-                }
-
+            if (m_keys.isEmpty()) {
+                // %, FindPair movement.
                 tryAddMoveAction();
-                addMovementToken(Movement::LineJump);
+                addMovementToken(Movement::FindPair);
                 processCommand(m_tokens);
                 break;
+            } else {
+                tryGetRepeatToken(m_keys, m_tokens);
+                if (m_keys.isEmpty() && hasRepeatToken()) {
+                    // xx%, jump to a certain line (percentage of the documents).
+                    // Change the repeat from percentage to line number.
+                    Token *token = getRepeatToken();
+                    int bn = percentageToBlockNumber(m_editor->document(), token->m_repeat);
+                    if (bn == -1) {
+                        break;
+                    } else {
+                        // Repeat of LineJump is based on 1.
+                        token->m_repeat = bn + 1;
+                    }
+
+                    tryAddMoveAction();
+                    addMovementToken(Movement::LineJump);
+                    processCommand(m_tokens);
+                    break;
+                }
             }
 
             break;
@@ -2199,8 +2214,7 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
                                       || m_mode == VimMode::VisualLine)
                                      ? QTextCursor::KeepAnchor
                                      : QTextCursor::MoveAnchor;
-    bool hasMoved = processMovement(cursor, m_editor->document(),
-                                    moveMode, mvToken, repeat);
+    bool hasMoved = processMovement(cursor, moveMode, mvToken, repeat);
 
     if (hasMoved) {
         // Maintain positionInBlock.
@@ -2231,15 +2245,17 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
     }
 }
 
-bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
+bool VVim::processMovement(QTextCursor &p_cursor,
                            QTextCursor::MoveMode p_moveMode,
-                           const Token &p_token, int p_repeat)
+                           const Token &p_token,
+                           int p_repeat)
 {
     V_ASSERT(p_token.isMovement());
 
     bool hasMoved = false;
     bool inclusive = true;
     bool forward = true;
+    QTextDocument *doc = p_cursor.document();
 
     switch (p_token.m_movement) {
     case Movement::Left:
@@ -2301,7 +2317,7 @@ bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
             p_repeat = 1;
         }
 
-        int blockCount = p_doc->blockCount();
+        int blockCount = doc->blockCount();
         p_repeat = qMin(blockCount - 1 - p_cursor.block().blockNumber(), p_repeat);
 
         if (p_repeat > 0) {
@@ -2343,7 +2359,7 @@ bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
         int blockStep = blockCountOfPageStep() * p_repeat;
         int block = p_cursor.block().blockNumber();
         block = qMax(0, block - blockStep);
-        p_cursor.setPosition(p_doc->findBlockByNumber(block).position(), p_moveMode);
+        p_cursor.setPosition(doc->findBlockByNumber(block).position(), p_moveMode);
         hasMoved = true;
 
         break;
@@ -2357,8 +2373,8 @@ bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
 
         int blockStep = blockCountOfPageStep() * p_repeat;
         int block = p_cursor.block().blockNumber();
-        block = qMin(block + blockStep, p_doc->blockCount() - 1);
-        p_cursor.setPosition(p_doc->findBlockByNumber(block).position(), p_moveMode);
+        block = qMin(block + blockStep, doc->blockCount() - 1);
+        p_cursor.setPosition(doc->findBlockByNumber(block).position(), p_moveMode);
         hasMoved = true;
 
         break;
@@ -2375,7 +2391,7 @@ bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
         blockStep = p_repeat * halfBlockStep;
         int block = p_cursor.block().blockNumber();
         block = qMax(0, block - blockStep);
-        p_cursor.setPosition(p_doc->findBlockByNumber(block).position(), p_moveMode);
+        p_cursor.setPosition(doc->findBlockByNumber(block).position(), p_moveMode);
         hasMoved = true;
 
         break;
@@ -2391,8 +2407,8 @@ bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
         int halfBlockStep = qMax(blockStep / 2, 1);
         blockStep = p_repeat * halfBlockStep;
         int block = p_cursor.block().blockNumber();
-        block = qMin(block + blockStep, p_doc->blockCount() - 1);
-        p_cursor.setPosition(p_doc->findBlockByNumber(block).position(), p_moveMode);
+        block = qMin(block + blockStep, doc->blockCount() - 1);
+        p_cursor.setPosition(doc->findBlockByNumber(block).position(), p_moveMode);
         hasMoved = true;
 
         break;
@@ -2446,7 +2462,7 @@ bool VVim::processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
         m_locations.addLocation(p_cursor);
 
         // @p_repeat starts from 1 while block number starts from 0.
-        QTextBlock block = p_doc->findBlockByNumber(p_repeat - 1);
+        QTextBlock block = doc->findBlockByNumber(p_repeat - 1);
         if (block.isValid()) {
             p_cursor.setPosition(block.position(), p_moveMode);
         } else {
@@ -2693,7 +2709,7 @@ handle_target:
         QChar target = keyToChar(key.m_key, key.m_modifiers);
         Location loc = m_marks.getMarkLocation(target);
         if (loc.isValid()) {
-            if (loc.m_blockNumber >= p_doc->blockCount()) {
+            if (loc.m_blockNumber >= doc->blockCount()) {
                 // Invalid block number.
                 message(tr("Mark not set"));
                 m_marks.clearMark(target);
@@ -2703,7 +2719,7 @@ handle_target:
             // Different from Vim:
             // We just use the block number for mark, so if we delete the line
             // where the mark locates, we could not detect if it is set or not.
-            QTextBlock block = p_doc->findBlockByNumber(loc.m_blockNumber);
+            QTextBlock block = doc->findBlockByNumber(loc.m_blockNumber);
             p_cursor.setPosition(block.position(), p_moveMode);
             if (p_token.m_movement == Movement::MarkJump) {
                 setCursorPositionInBlock(p_cursor, loc.m_positionInBlock, p_moveMode);
@@ -2713,6 +2729,80 @@ handle_target:
             }
 
             hasMoved = true;
+        }
+
+        break;
+    }
+
+    case Movement::FindPair:
+    {
+        Q_ASSERT(p_repeat == -1);
+        int anchor = p_cursor.anchor();
+        int position = p_cursor.position();
+        QList<QPair<QChar, QChar>> pairs;
+        pairs.append(QPair<QChar, QChar>('(', ')'));
+        pairs.append(QPair<QChar, QChar>('[', ']'));
+        pairs.append(QPair<QChar, QChar>('{', '}'));
+
+        // Find forward for a pair (), [], and {}.
+        QList<QChar> targets;
+        for (auto const & pair : pairs) {
+            targets.append(pair.first);
+            targets.append(pair.second);
+        }
+
+        // First check if current char hits the targets.
+        QChar ch = doc->characterAt(position);
+        int idx = targets.indexOf(ch);
+        if (idx == -1) {
+            // Use MoveAnchor to avoid the one-step-forward.
+            idx = VEditUtils::findTargetsWithinBlock(p_cursor,
+                                                     QTextCursor::MoveAnchor,
+                                                     targets,
+                                                     true,
+                                                     true);
+        }
+
+        if (idx == -1) {
+            break;
+        }
+
+        idx /= 2;
+        int pairPosition = p_cursor.position();
+        bool ret = VEditUtils::selectPairTargetAround(p_cursor,
+                                                      pairs.at(idx).first,
+                                                      pairs.at(idx).second,
+                                                      true,
+                                                      true,
+                                                      1);
+
+        if (ret) {
+            // Found matched pair.
+            int first = p_cursor.position();
+            int second = p_cursor.anchor();
+            if (first > second) {
+                int tmp = first;
+                first = second;
+                second = tmp;
+            }
+
+            --second;
+
+            int target = first;
+            if (first == pairPosition) {
+                target = second;
+            }
+
+            p_cursor.setPosition(anchor);
+            p_cursor.setPosition(target, p_moveMode);
+            hasMoved = true;
+            break;
+        } else {
+            // Restore the cursor position.
+            p_cursor.setPosition(anchor);
+            if (anchor != position) {
+                p_cursor.setPosition(position, QTextCursor::KeepAnchor);
+            }
         }
 
         break;
@@ -3133,7 +3223,7 @@ void VVim::processDeleteAction(QList<Token> &p_tokens)
     }
 
     cursor.beginEditBlock();
-    hasMoved = processMovement(cursor, doc, moveMode, to, repeat);
+    hasMoved = processMovement(cursor, moveMode, to, repeat);
     if (repeat == -1) {
         repeat = 1;
     }
@@ -3345,7 +3435,7 @@ void VVim::processCopyAction(QList<Token> &p_tokens)
     }
 
     cursor.beginEditBlock();
-    changed = processMovement(cursor, doc, moveMode, to, repeat);
+    changed = processMovement(cursor, moveMode, to, repeat);
     if (repeat == -1) {
         repeat = 1;
     }
@@ -3591,7 +3681,7 @@ void VVim::processChangeAction(QList<Token> &p_tokens)
     }
 
     cursor.beginEditBlock();
-    hasMoved = processMovement(cursor, doc, moveMode, to, repeat);
+    hasMoved = processMovement(cursor, moveMode, to, repeat);
     if (repeat == -1) {
         repeat = 1;
     }
@@ -3885,7 +3975,6 @@ void VVim::processIndentAction(QList<Token> &p_tokens, bool p_isIndent)
     }
 
     processMovement(cursor,
-                    doc,
                     QTextCursor::KeepAnchor,
                     to,
                     repeat);
@@ -3959,7 +4048,6 @@ void VVim::processToLowerAction(QList<Token> &p_tokens, bool p_toLower)
 
     cursor.beginEditBlock();
     changed = processMovement(cursor,
-                              doc,
                               moveMode,
                               to,
                               repeat);
@@ -4667,8 +4755,10 @@ void VVim::repeatLastFindMovement(bool p_reverse)
 
 void VVim::message(const QString &p_msg)
 {
-    qDebug() << "vim msg:" << p_msg;
-    emit vimMessage(p_msg);
+    if (!p_msg.isEmpty()) {
+        qDebug() << "vim msg:" << p_msg;
+        emit vimMessage(p_msg);
+    }
 }
 
 const QMap<QChar, VVim::Register> &VVim::getRegisters() const
@@ -4713,7 +4803,7 @@ bool VVim::processCommandLine(const Key &p_key)
     if (p_key == Key(Qt::Key_Return)
         || p_key == Key(Qt::Key_Enter, Qt::KeypadModifier)) {
         // Enter, try to execute the command and exit cmd line mode.
-        executeCommand(m_keys);
+        executeCommand();
         m_cmdMode = false;
         return true;
     }
@@ -4771,15 +4861,15 @@ bool VVim::processCommandLine(const Key &p_key)
     return false;
 }
 
-void VVim::executeCommand(const QList<Key> &p_keys)
+void VVim::executeCommand()
 {
     bool validCommand = true;
     QString msg;
 
-    if (p_keys.isEmpty()) {
+    if (m_keys.isEmpty()) {
         return;
-    } if (p_keys.size() == 1) {
-        const Key &key0 = p_keys.first();
+    } if (m_keys.size() == 1) {
+        const Key &key0 = m_keys.first();
         if (key0 == Key(Qt::Key_W)) {
             // :w, save current file.
             emit m_editor->saveNote();
@@ -4795,9 +4885,9 @@ void VVim::executeCommand(const QList<Key> &p_keys)
         } else {
             validCommand = false;
         }
-    } else if (p_keys.size() == 2) {
-        const Key &key0 = p_keys.first();
-        const Key &key1 = p_keys.at(1);
+    } else if (m_keys.size() == 2) {
+        const Key &key0 = m_keys.first();
+        const Key &key1 = m_keys.at(1);
         if (key0 == Key(Qt::Key_W) && key1 == Key(Qt::Key_Q)) {
             // :wq, save change and quit edit mode.
             // We treat it same as :x.
@@ -4814,9 +4904,19 @@ void VVim::executeCommand(const QList<Key> &p_keys)
         validCommand = false;
     }
 
+    if (!validCommand && !hasNonDigitPendingKeys() && m_tokens.isEmpty()) {
+        // All digits.
+        // Jump to a specific line.
+        tryGetRepeatToken(m_keys, m_tokens);
+        tryAddMoveAction();
+        addMovementToken(Movement::LineJump);
+        processCommand(m_tokens);
+        validCommand = true;
+    }
+
     if (!validCommand) {
         QString str;
-        for (auto const & key : p_keys) {
+        for (auto const & key : m_keys) {
             str.append(keyToChar(key.m_key, key.m_modifiers));
         }
 
@@ -4826,15 +4926,20 @@ void VVim::executeCommand(const QList<Key> &p_keys)
     }
 }
 
-bool VVim::hasNonDigitPendingKeys()
+bool VVim::hasNonDigitPendingKeys(const QList<Key> &p_keys)
 {
-    for (auto const &key : m_keys) {
+    for (auto const &key : p_keys) {
         if (!key.isDigit()) {
             return true;
         }
     }
 
     return false;
+}
+
+bool VVim::hasNonDigitPendingKeys()
+{
+    return hasNonDigitPendingKeys(m_keys);
 }
 
 bool VVim::processLeaderSequence(const Key &p_key)

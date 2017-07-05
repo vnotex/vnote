@@ -254,6 +254,50 @@ bool VEditUtils::findTargetWithinBlock(QTextCursor &p_cursor,
     return true;
 }
 
+int VEditUtils::findTargetsWithinBlock(QTextCursor &p_cursor,
+                                       QTextCursor::MoveMode p_mode,
+                                       const QList<QChar> &p_targets,
+                                       bool p_forward,
+                                       bool p_inclusive)
+{
+    if (p_targets.isEmpty()) {
+        return -1;
+    }
+
+    int targetIdx = -1;
+    QTextBlock block = p_cursor.block();
+    QString text = block.text();
+    int pib = p_cursor.positionInBlock();
+    int delta = p_forward ? 1 : -1;
+
+    // The index to start searching.
+    int idx = pib + (p_inclusive ? delta : 2 * delta);
+
+    for (; idx < text.size() && idx >= 0; idx += delta) {
+        int index = p_targets.indexOf(text[idx]);
+        if (index != -1) {
+            targetIdx = index;
+            break;
+        }
+    }
+
+    if (idx < 0 || idx >= text.size()) {
+        return -1;
+    }
+
+    // text[idx] is the target character.
+    if ((p_forward && p_inclusive && p_mode == QTextCursor::KeepAnchor)
+        || (!p_forward && !p_inclusive)) {
+        ++idx;
+    } else if (p_forward && !p_inclusive && p_mode == QTextCursor::MoveAnchor) {
+        --idx;
+    }
+
+    p_cursor.setPosition(block.position() + idx, p_mode);
+    return targetIdx;
+}
+
+
 int VEditUtils::selectedBlockCount(const QTextCursor &p_cursor)
 {
     if (!p_cursor.hasSelection()) {

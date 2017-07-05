@@ -300,6 +300,7 @@ private:
         TillBackward,
         MarkJump,
         MarkJumpLine,
+        FindPair,
         Invalid
     };
 
@@ -617,9 +618,10 @@ private:
 
     // Move @p_cursor according to @p_moveMode and @p_token.
     // Return true if it has moved @p_cursor.
-    bool processMovement(QTextCursor &p_cursor, const QTextDocument *p_doc,
+    bool processMovement(QTextCursor &p_cursor,
                          QTextCursor::MoveMode p_moveMode,
-                         const Token &p_token, int p_repeat);
+                         const Token &p_token,
+                         int p_repeat);
 
     // Move @p_cursor according to @p_moveMode and @p_range.
     // Return true if it has moved @p_cursor.
@@ -647,14 +649,16 @@ private:
     // Returns true if a command has been completed, otherwise returns false.
     bool processCommandLine(const Key &p_key);
 
-    // Execute command specified by @p_keys.
+    // Execute command specified by m_keys.
     // @p_keys does not contain the leading colon.
     // Following commands are supported:
     // :w, :wq, :q, :q!, :x
-    void executeCommand(const QList<Key> &p_keys);
+    void executeCommand();
 
     // Check if m_keys has non-digit key.
     bool hasNonDigitPendingKeys();
+
+    bool hasNonDigitPendingKeys(const QList<Key> &p_keys);
 
     // Reading a leader sequence, read input @p_key and process it.
     // Returns true if a sequence has been replayed or it is being read,
