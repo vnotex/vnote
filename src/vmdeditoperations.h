@@ -56,6 +56,9 @@ private:
     // Insert inline-code marker or set selected text inline-coded.
     void decorateInlineCode();
 
+    // Insert strikethrough marker or set selected text strikethrough.
+    void decorateStrikethrough();
+
     // The cursor position after auto indent or auto list.
     // It will be -1 if last key press do not trigger the auto indent or auto list.
     int m_autoIndentPos;

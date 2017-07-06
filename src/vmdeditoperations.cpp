@@ -328,6 +328,17 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         break;
     }
 
+    case Qt::Key_D:
+    {
+        if (modifiers == Qt::ControlModifier) {
+            decorateStrikethrough();
+            p_event->accept();
+            ret = true;
+        }
+
+        break;
+    }
+
     default:
         break;
     }
@@ -653,18 +664,24 @@ void VMdEditOperations::decorateText(TextDecoration p_decoration)
         return;
     }
 
-    m_vim->setMode(VimMode::Insert, false);
-
     switch (p_decoration) {
     case TextDecoration::Bold:
+        m_vim->setMode(VimMode::Insert, false);
         decorateBold();
         break;
 
     case TextDecoration::Italic:
+        m_vim->setMode(VimMode::Insert, false);
         decorateItalic();
         break;
 
+    case TextDecoration::Strikethrough:
+        m_vim->setMode(VimMode::Insert, false);
+        decorateStrikethrough();
+        break;
+
     case TextDecoration::InlineCode:
+        m_vim->setMode(VimMode::Insert, false);
         decorateInlineCode();
         break;
 
@@ -778,6 +795,43 @@ void VMdEditOperations::decorateInlineCode()
         } else {
             cursor.insertText("``");
             cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 1);
+        }
+    }
+
+    cursor.endEditBlock();
+    m_editor->setTextCursor(cursor);
+}
+
+void VMdEditOperations::decorateStrikethrough()
+{
+    QTextCursor cursor = m_editor->textCursor();
+    cursor.beginEditBlock();
+    if (cursor.hasSelection()) {
+        // Insert ~~ around the selected text.
+        int start = cursor.selectionStart();
+        int end = cursor.selectionEnd();
+        cursor.clearSelection();
+        cursor.setPosition(start, QTextCursor::MoveAnchor);
+        cursor.insertText("~~");
+        cursor.setPosition(end + 2, QTextCursor::MoveAnchor);
+        cursor.insertText("~~");
+    } else {
+        // Insert ~~~~ and place cursor in the middle.
+        // Or if there are one ~~ after current cursor, just skip it.
+        int pos = cursor.positionInBlock();
+        bool hasStrikethrough = false;
+        QString text = cursor.block().text();
+        if (pos <= text.size() - 2) {
+            if (text[pos] == '~' && text[pos + 1] == '~') {
+                hasStrikethrough = true;
+            }
+        }
+
+        if (hasStrikethrough) {
+            cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 2);
+        } else {
+            cursor.insertText("~~~~");
+            cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 2);
         }
     }
 

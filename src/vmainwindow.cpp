@@ -187,21 +187,24 @@ void VMainWindow::initViewToolBar()
     QAction *onePanelViewAct = new QAction(QIcon(":/resources/icons/one_panel.svg"),
                                            tr("&Single Panel"), this);
     onePanelViewAct->setStatusTip(tr("Display only the notes list panel"));
+    onePanelViewAct->setToolTip(tr("Single Panel (Ctrl+E P)"));
     connect(onePanelViewAct, &QAction::triggered,
             this, &VMainWindow::onePanelView);
 
     QAction *twoPanelViewAct = new QAction(QIcon(":/resources/icons/two_panels.svg"),
                                            tr("&Two Panels"), this);
     twoPanelViewAct->setStatusTip(tr("Display both the folders and notes list panel"));
+    twoPanelViewAct->setToolTip(tr("Two Panels (Ctrl+E P)"));
     connect(twoPanelViewAct, &QAction::triggered,
             this, &VMainWindow::twoPanelView);
 
     QMenu *panelMenu = new QMenu(this);
+    panelMenu->setToolTipsVisible(true);
     panelMenu->addAction(onePanelViewAct);
     panelMenu->addAction(twoPanelViewAct);
 
     expandViewAct = new QAction(QIcon(":/resources/icons/expand.svg"),
-                                tr("Expand"), this);
+                                tr("Expand (Ctrl+E E)"), this);
     expandViewAct->setStatusTip(tr("Expand the edit area"));
     expandViewAct->setCheckable(true);
     expandViewAct->setMenu(panelMenu);
@@ -229,7 +232,7 @@ void VMainWindow::initEditToolBar()
     m_editToolBar->addSeparator();
 
     QAction *boldAct = new QAction(QIcon(":/resources/icons/bold.svg"),
-                                   tr("Bold"), this);
+                                   tr("Bold (Ctrl+B)"), this);
     boldAct->setStatusTip(tr("Insert bold text or change selected text to bold"));
     connect(boldAct, &QAction::triggered,
             this, [this](){
@@ -241,7 +244,7 @@ void VMainWindow::initEditToolBar()
     m_editToolBar->addAction(boldAct);
 
     QAction *italicAct = new QAction(QIcon(":/resources/icons/italic.svg"),
-                                     tr("Italic"), this);
+                                     tr("Italic (Ctrl+I)"), this);
     italicAct->setStatusTip(tr("Insert italic text or change selected text to italic"));
     connect(italicAct, &QAction::triggered,
             this, [this](){
@@ -252,20 +255,8 @@ void VMainWindow::initEditToolBar()
 
     m_editToolBar->addAction(italicAct);
 
-    QAction *underlineAct = new QAction(QIcon(":/resources/icons/underline.svg"),
-                                        tr("Underline"), this);
-    underlineAct->setStatusTip(tr("Insert underlined text or change selected text to underlined"));
-    connect(underlineAct, &QAction::triggered,
-            this, [this](){
-                if (m_curTab) {
-                    m_curTab->decorateText(TextDecoration::Underline);
-                }
-            });
-
-    m_editToolBar->addAction(underlineAct);
-
     QAction *strikethroughAct = new QAction(QIcon(":/resources/icons/strikethrough.svg"),
-                                            tr("Strikethrough"), this);
+                                            tr("Strikethrough (Ctrl+D)"), this);
     strikethroughAct->setStatusTip(tr("Insert strikethrough text or change selected text to strikethroughed"));
     connect(strikethroughAct, &QAction::triggered,
             this, [this](){
@@ -277,7 +268,7 @@ void VMainWindow::initEditToolBar()
     m_editToolBar->addAction(strikethroughAct);
 
     QAction *inlineCodeAct = new QAction(QIcon(":/resources/icons/inline_code.svg"),
-                                         tr("Inline Code"), this);
+                                         tr("Inline Code (Ctrl+O)"), this);
     inlineCodeAct->setStatusTip(tr("Insert inline-code text or change selected text to inline-coded"));
     connect(inlineCodeAct, &QAction::triggered,
             this, [this](){
@@ -336,14 +327,16 @@ void VMainWindow::initFileToolBar()
     discardExitAct = new QAction(QIcon(":/resources/icons/discard_exit.svg"),
                                  tr("Discard Changes And Read"), this);
     discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
+    discardExitAct->setToolTip(tr("Discard Changes And Read (Ctrl+E Q)"));
     connect(discardExitAct, &QAction::triggered,
             editArea, &VEditArea::readFile);
 
     QMenu *exitEditMenu = new QMenu(this);
+    exitEditMenu->setToolTipsVisible(true);
     exitEditMenu->addAction(discardExitAct);
 
     saveExitAct = new QAction(QIcon(":/resources/icons/save_exit.svg"),
-                              tr("Save Changes And Read"), this);
+                              tr("Save Changes And Read (Ctrl+T)"), this);
     saveExitAct->setStatusTip(tr("Save changes and exit edit mode"));
     saveExitAct->setMenu(exitEditMenu);
     saveExitAct->setShortcut(QKeySequence("Ctrl+T"));

@@ -42,11 +42,13 @@ Save current changes and exit edit mode.
 
 #### Text Editing
 - `Ctrl+B`  
-Insert bold. Press `Ctrl+B` again to exit. Currently selected text will be changed to bold if exist.
+Insert bold. Press `Ctrl+B` again to exit. Current selected text will be changed to bold if exist.
 - `Ctrl+I`  
-Insert italic. Press `Ctrl+I` again to exit. Currently selected text will be changed to italic if exist.
+Insert italic. Press `Ctrl+I` again to exit. Current selected text will be changed to italic if exist.
+- `Ctrl+D`  
+Insert strikethrought. Press `Ctrl+D` again to exit. Current selected text will be changed to strikethrough if exist.
 - `Ctrl+O`  
-Insert inline code. Press `Ctrl+O` again to exit. Currently selected text will be changed to inline code if exist.
+Insert inline code. Press `Ctrl+O` again to exit. Current selected text will be changed to inline code if exist.
 - `Ctrl+H`  
 Backspace. Delete a character backward.
 - `Ctrl+W`  
@@ -54,7 +56,7 @@ Delete all the characters from current cursor to the first space backward.
 - `Ctrl+U`  
 Delete all the characters from current cursor to the beginning of current line.
 - `Ctrl+<Num>`  
-Insert title at level `<Num>`. `<Num>` should be 1 to 6. Currently selected text will be changed to title if exist.
+Insert title at level `<Num>`. `<Num>` should be 1 to 6. Current selected text will be changed to title if exist.
 - `Tab`/`Shift+Tab`  
 Increase or decrease the indentation. If any text is selected, the indentation will operate on all these selected lines.
 - `Shift+Enter`  
