@@ -48,6 +48,7 @@ after_build:
     - copy "%APPVEYOR_BUILD_FOLDER%\LICENSE" "distrib\VNote\LICENSE.txt"
     - echo %vnote_version% > "distrib\VNote\version.txt"
     - echo %APPVEYOR_REPO_COMMIT% >> "distrib\VNote\version.txt"
+    - copy "distrib\VNote\VNote.exe" "distrib\VNote_win_%PLATFORM%.exe"
     # Copy OpenSSL DLLs
     - if "%PLATFORM%" EQU "X64" (xcopy "openssl-utils.git\win64\*.dll" "distrib\VNote")
     - if "%PLATFORM%" EQU "x86" (xcopy "openssl-utils.git\win32\*.dll" "distrib\VNote")
@@ -57,6 +58,8 @@ after_build:
 artifacts:
     - path: build\distrib\VNote_win_%PLATFORM%_portable_%vnote_version%.zip
       name: portable
+    - path: build\distrib\VNote_win_%PLATFORM%.exe
+      name: exe_only
 
 deploy:
     - provider: BinTray
@@ -69,3 +72,4 @@ deploy:
       version: 1.6
       publish: true
       override: true
+      artifact: portable
