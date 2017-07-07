@@ -61,15 +61,15 @@ public:
     // QStylesheet for danger button. Should keep identical with DangerBtn in QSS.
     static const QString c_dangerBtnStyle;
 
-    inline QFont getMdEditFont() const;
+    QFont getMdEditFont() const;
 
-    inline QPalette getMdEditPalette() const;
+    QPalette getMdEditPalette() const;
 
-    inline QVector<HighlightingStyle> getMdHighlightingStyles() const;
+    QVector<HighlightingStyle> getMdHighlightingStyles() const;
 
-    inline QHash<QString, QTextCharFormat> getCodeBlockStyles() const;
+    QHash<QString, QTextCharFormat> getCodeBlockStyles() const;
 
-    inline QString getWelcomePagePath() const;
+    QString getWelcomePagePath() const;
 
     QString getTemplateCssUrl();
 
@@ -81,123 +81,123 @@ public:
     const QString &getEditorStyle() const;
     void setEditorStyle(const QString &p_style);
 
-    inline QFont getBaseEditFont() const;
-    inline QPalette getBaseEditPalette() const;
+    QFont getBaseEditFont() const;
+    QPalette getBaseEditPalette() const;
 
-    inline int getCurNotebookIndex() const;
-    inline void setCurNotebookIndex(int index);
+    int getCurNotebookIndex() const;
+    void setCurNotebookIndex(int index);
 
-    inline void getNotebooks(QVector<VNotebook *> &p_notebooks, QObject *parent);
-    inline void setNotebooks(const QVector<VNotebook *> &p_notebooks);
+    void getNotebooks(QVector<VNotebook *> &p_notebooks, QObject *parent);
+    void setNotebooks(const QVector<VNotebook *> &p_notebooks);
 
-    inline hoedown_extensions getMarkdownExtensions() const;
-    inline MarkdownConverterType getMdConverterType() const;
-    inline void setMarkdownConverterType(MarkdownConverterType type);
+    hoedown_extensions getMarkdownExtensions() const;
+    MarkdownConverterType getMdConverterType() const;
+    void setMarkdownConverterType(MarkdownConverterType type);
 
-    inline int getTabStopWidth() const;
-    inline void setTabStopWidth(int tabStopWidth);
-    inline bool getIsExpandTab() const;
-    inline void setIsExpandTab(bool isExpandTab);
+    int getTabStopWidth() const;
+    void setTabStopWidth(int tabStopWidth);
+    bool getIsExpandTab() const;
+    void setIsExpandTab(bool isExpandTab);
 
-    inline bool getHighlightCursorLine() const;
-    inline void setHighlightCursorLine(bool p_cursorLine);
+    bool getHighlightCursorLine() const;
+    void setHighlightCursorLine(bool p_cursorLine);
 
-    inline bool getHighlightSelectedWord() const;
-    inline void setHighlightSelectedWord(bool p_selectedWord);
+    bool getHighlightSelectedWord() const;
+    void setHighlightSelectedWord(bool p_selectedWord);
 
-    inline bool getHighlightSearchedWord() const;
-    inline void setHighlightSearchedWord(bool p_searchedWord);
+    bool getHighlightSearchedWord() const;
+    void setHighlightSearchedWord(bool p_searchedWord);
 
-    inline bool getAutoIndent() const;
-    inline void setAutoIndent(bool p_autoIndent);
+    bool getAutoIndent() const;
+    void setAutoIndent(bool p_autoIndent);
 
-    inline bool getAutoList() const;
-    inline void setAutoList(bool p_autoList);
+    bool getAutoList() const;
+    void setAutoList(bool p_autoList);
 
-    inline const QVector<VColor> &getPredefinedColors() const;
+    const QVector<VColor> &getPredefinedColors() const;
 
-    inline const QString &getCurBackgroundColor() const;
-    inline void setCurBackgroundColor(const QString &colorName);
+    const QString &getCurBackgroundColor() const;
+    void setCurBackgroundColor(const QString &colorName);
 
-    inline const QString &getCurRenderBackgroundColor() const;
-    inline void setCurRenderBackgroundColor(const QString &colorName);
+    const QString &getCurRenderBackgroundColor() const;
+    void setCurRenderBackgroundColor(const QString &colorName);
 
-    inline bool getToolsDockChecked() const;
-    inline void setToolsDockChecked(bool p_checked);
+    bool getToolsDockChecked() const;
+    void setToolsDockChecked(bool p_checked);
 
-    inline const QByteArray &getMainWindowGeometry() const;
-    inline void setMainWindowGeometry(const QByteArray &p_geometry);
+    const QByteArray &getMainWindowGeometry() const;
+    void setMainWindowGeometry(const QByteArray &p_geometry);
 
-    inline const QByteArray &getMainWindowState() const;
-    inline void setMainWindowState(const QByteArray &p_state);
+    const QByteArray &getMainWindowState() const;
+    void setMainWindowState(const QByteArray &p_state);
 
-    inline const QByteArray &getMainSplitterState() const;
-    inline void setMainSplitterState(const QByteArray &p_state);
+    const QByteArray &getMainSplitterState() const;
+    void setMainSplitterState(const QByteArray &p_state);
 
-    inline bool getFindCaseSensitive() const;
-    inline void setFindCaseSensitive(bool p_enabled);
+    bool getFindCaseSensitive() const;
+    void setFindCaseSensitive(bool p_enabled);
 
-    inline bool getFindWholeWordOnly() const;
-    inline void setFindWholeWordOnly(bool p_enabled);
+    bool getFindWholeWordOnly() const;
+    void setFindWholeWordOnly(bool p_enabled);
 
-    inline bool getFindRegularExpression() const;
-    inline void setFindRegularExpression(bool p_enabled);
+    bool getFindRegularExpression() const;
+    void setFindRegularExpression(bool p_enabled);
 
-    inline bool getFindIncrementalSearch() const;
-    inline void setFindIncrementalSearch(bool p_enabled);
+    bool getFindIncrementalSearch() const;
+    void setFindIncrementalSearch(bool p_enabled);
 
-    inline QString getLanguage() const;
-    inline void setLanguage(const QString &p_language);
+    QString getLanguage() const;
+    void setLanguage(const QString &p_language);
 
-    inline bool getEnableMermaid() const;
-    inline void setEnableMermaid(bool p_enabled);
+    bool getEnableMermaid() const;
+    void setEnableMermaid(bool p_enabled);
 
-    inline bool getEnableFlowchart() const;
-    inline void setEnableFlowchart(bool p_enabled);
+    bool getEnableFlowchart() const;
+    void setEnableFlowchart(bool p_enabled);
 
-    inline bool getEnableMathjax() const;
-    inline void setEnableMathjax(bool p_enabled);
+    bool getEnableMathjax() const;
+    void setEnableMathjax(bool p_enabled);
 
-    inline qreal getWebZoomFactor() const;
+    qreal getWebZoomFactor() const;
     void setWebZoomFactor(qreal p_factor);
-    inline bool isCustomWebZoomFactor();
+    bool isCustomWebZoomFactor();
 
-    inline const QString &getEditorCurrentLineBg() const;
-    inline QString getEditorTrailingSpaceBackground() const;
+    const QString &getEditorCurrentLineBg() const;
+    QString getEditorTrailingSpaceBackground() const;
 
-    inline const QString &getEditorVimNormalBg() const;
-    inline const QString &getEditorVimInsertBg() const;
-    inline const QString &getEditorVimVisualBg() const;
-    inline const QString &getEditorVimReplaceBg() const;
+    const QString &getEditorVimNormalBg() const;
+    const QString &getEditorVimInsertBg() const;
+    const QString &getEditorVimVisualBg() const;
+    const QString &getEditorVimReplaceBg() const;
 
-    inline bool getEnableCodeBlockHighlight() const;
-    inline void setEnableCodeBlockHighlight(bool p_enabled);
+    bool getEnableCodeBlockHighlight() const;
+    void setEnableCodeBlockHighlight(bool p_enabled);
 
-    inline bool getEnablePreviewImages() const;
-    inline void setEnablePreviewImages(bool p_enabled);
+    bool getEnablePreviewImages() const;
+    void setEnablePreviewImages(bool p_enabled);
 
-    inline bool getEnablePreviewImageConstraint() const;
-    inline void setEnablePreviewImageConstraint(bool p_enabled);
+    bool getEnablePreviewImageConstraint() const;
+    void setEnablePreviewImageConstraint(bool p_enabled);
 
-    inline bool getEnableImageConstraint() const;
-    inline void setEnableImageConstraint(bool p_enabled);
+    bool getEnableImageConstraint() const;
+    void setEnableImageConstraint(bool p_enabled);
 
-    inline bool getEnableImageCaption() const;
-    inline void setEnableImageCaption(bool p_enabled);
+    bool getEnableImageCaption() const;
+    void setEnableImageCaption(bool p_enabled);
 
-    inline const QString &getImageFolder() const;
+    const QString &getImageFolder() const;
     // Empty string to reset the default folder.
-    inline void setImageFolder(const QString &p_folder);
-    inline bool isCustomImageFolder() const;
+    void setImageFolder(const QString &p_folder);
+    bool isCustomImageFolder() const;
 
-    inline bool getEnableTrailingSpaceHighlight() const;
-    inline void setEnableTrailingSapceHighlight(bool p_enabled);
+    bool getEnableTrailingSpaceHighlight() const;
+    void setEnableTrailingSapceHighlight(bool p_enabled);
 
-    inline bool getEnableVimMode() const;
-    inline void setEnableVimMode(bool p_enabled);
+    bool getEnableVimMode() const;
+    void setEnableVimMode(bool p_enabled);
 
-    inline bool getEnableSmartImInVimMode() const;
-    inline void setEnableSmartImInVimMode(bool p_enabled);
+    bool getEnableSmartImInVimMode() const;
+    void setEnableSmartImInVimMode(bool p_enabled);
 
     // Get the folder the ini file exists.
     QString getConfigFolder() const;
