@@ -84,6 +84,16 @@ VEdit::VEdit(VFile *p_file, QWidget *p_parent)
 
     connect(this, &VEdit::selectionChanged,
             this, &VEdit::highlightSelectedWord);
+
+    m_lineNumberArea = new LineNumberArea(this);
+    connect(document(), &QTextDocument::blockCountChanged,
+            this, &VEdit::updateLineNumberAreaMargin);
+    connect(this, &QTextEdit::textChanged,
+            this, &VEdit::updateLineNumberArea);
+    connect(verticalScrollBar(), &QScrollBar::valueChanged,
+            this, &VEdit::updateLineNumberArea);
+
+    updateLineNumberAreaMargin();
 }
 
 VEdit::~VEdit()
@@ -832,4 +842,165 @@ void VEdit::decorateText(TextDecoration p_decoration)
     if (m_editOps) {
         m_editOps->decorateText(p_decoration);
     }
+}
+
+void VEdit::updateLineNumberAreaMargin()
+{
+    int width = 0;
+    if (vconfig.getEditorLineNumber()) {
+        width = m_lineNumberArea->calculateWidth();
+    }
+
+    setViewportMargins(width, 0, 0, 0);
+}
+
+void VEdit::updateLineNumberArea()
+{
+    if (vconfig.getEditorLineNumber()) {
+        if (!m_lineNumberArea->isVisible()) {
+            updateLineNumberAreaMargin();
+            m_lineNumberArea->show();
+        }
+
+        m_lineNumberArea->update();
+    } else if (m_lineNumberArea->isVisible()) {
+        updateLineNumberAreaMargin();
+        m_lineNumberArea->hide();
+    }
+}
+
+void VEdit::resizeEvent(QResizeEvent *p_event)
+{
+    QTextEdit::resizeEvent(p_event);
+
+    if (vconfig.getEditorLineNumber()) {
+        QRect rect = contentsRect();
+        m_lineNumberArea->setGeometry(QRect(rect.left(),
+                                            rect.top(),
+                                            m_lineNumberArea->calculateWidth(),
+                                            rect.height()));
+    }
+}
+
+void VEdit::lineNumberAreaPaintEvent(QPaintEvent *p_event)
+{
+    if (!vconfig.getEditorLineNumber()) {
+        updateLineNumberAreaMargin();
+        m_lineNumberArea->hide();
+        return;
+    }
+
+    QPainter painter(m_lineNumberArea);
+    painter.fillRect(p_event->rect(), vconfig.getEditorLineNumberBg());
+
+    QTextDocument *doc = document();
+    QAbstractTextDocumentLayout *layout = doc->documentLayout();
+
+    QTextBlock block = firstVisibleBlock();
+    int blockNumber = block.blockNumber();
+    int offsetY = contentOffsetY();
+    QRectF rect = layout->blockBoundingRect(block);
+    int top = offsetY + (int)rect.y();
+    int bottom = top + (int)rect.height();
+    int eventTop = p_event->rect().top();
+    int eventBtm = p_event->rect().bottom();
+    const int digitHeight = m_lineNumberArea->getDigitHeight();
+    const int curBlockNumber = textCursor().block().blockNumber();
+    const bool relative = vconfig.getEditorLineNumber() == 2;
+    const QString &fg = vconfig.getEditorLineNumberFg();
+
+    while (block.isValid() && top <= eventBtm) {
+        if (block.isVisible() && bottom >= eventTop) {
+            QString number = QString::number(relative ? blockNumber - curBlockNumber
+                                                      : blockNumber + 1);
+            painter.setPen(fg);
+            painter.drawText(0, top + 2,
+                             m_lineNumberArea->width(),
+                             digitHeight, Qt::AlignRight, number);
+        }
+
+        block = block.next();
+        top = bottom;
+        bottom = top + (int)layout->blockBoundingRect(block).height();
+        ++blockNumber;
+    }
+}
+
+int VEdit::contentOffsetY()
+{
+    int offsety = 0;
+    QScrollBar *sb = verticalScrollBar();
+    offsety = sb->value();
+    return -offsety;
+}
+
+QTextBlock VEdit::firstVisibleBlock()
+{
+    QTextDocument *doc = document();
+    QAbstractTextDocumentLayout *layout = doc->documentLayout();
+    int offsetY = contentOffsetY();
+
+    // Binary search.
+    int idx = -1;
+    int start = 0, end = doc->blockCount() - 1;
+    while (start <= end) {
+        int mid = start + (end - start) / 2;
+        QTextBlock block = doc->findBlockByNumber(mid);
+        if (!block.isValid()) {
+            break;
+        }
+
+        int y = offsetY + (int)layout->blockBoundingRect(block).y();
+        if (y == 0) {
+            return block;
+        } else if (y < 0) {
+            start = mid + 1;
+        } else {
+            if (idx == -1 || mid < idx) {
+                idx = mid;
+            }
+
+            end = mid - 1;
+        }
+    }
+
+    if (idx != -1) {
+        return doc->findBlockByNumber(idx);
+    }
+
+    // Linear search.
+    qDebug() << "fall back to linear search for first visible block";
+    QTextBlock block = doc->begin();
+    while (block.isValid()) {
+        int y = offsetY + (int)layout->blockBoundingRect(block).y();
+        if (y >= 0) {
+            return block;
+        }
+
+        block = block.next();
+    }
+
+    Q_ASSERT(false);
+    return doc->begin();
+}
+
+int LineNumberArea::calculateWidth() const
+{
+    int bc = m_document->blockCount();
+    if (m_blockCount == bc) {
+        return m_width;
+    }
+
+    const_cast<LineNumberArea *>(this)->m_blockCount = bc;
+    int digits = 1;
+    int max = qMax(1, m_blockCount);
+    while (max >= 10) {
+        max /= 10;
+        ++digits;
+    }
+
+    int width = 2 + m_digitWidth * digits;
+    const_cast<LineNumberArea *>(this)->m_width = width;
+
+    return m_width;
 }

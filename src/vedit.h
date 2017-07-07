@@ -7,6 +7,7 @@
 #include <QVector>
 #include <QList>
 #include <QColor>
+#include <QRect>
 #include <QFontMetrics>
 #include "vconstants.h"
 #include "vtoc.h"
@@ -16,6 +17,10 @@ class VEditOperations;
 class QLabel;
 class QTimer;
 class VVim;
+class QPaintEvent;
+class QResizeEvent;
+class QSize;
+class QWidget;
 
 enum class SelectionId {
     CurrentLine = 0,
@@ -54,6 +59,8 @@ public:
     // Whether highlight a visual line or a whole block.
     bool m_highlightWholeBlock;
 };
+
+class LineNumberArea;
 
 class VEdit : public QTextEdit
 {
@@ -94,6 +101,9 @@ public:
 
     // Insert decoration markers or decorate selected text.
     void decorateText(TextDecoration p_decoration);
+
+    // LineNumberArea will call this to request paint itself.
+    void lineNumberAreaPaintEvent(QPaintEvent *p_event);
 
 signals:
     // Request VEditTab to save and exit edit mode.
@@ -137,6 +147,11 @@ private slots:
     void highlightTrailingSpace();
     void handleCursorPositionChanged();
 
+    // Update viewport margin to hold the line number area.
+    void updateLineNumberAreaMargin();
+
+    void updateLineNumberArea();
+
 protected:
     QPointer<VFile> m_file;
     VEditOperations *m_editOps;
@@ -150,6 +165,8 @@ protected:
     virtual void mousePressEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
     virtual void mouseReleaseEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
     virtual void mouseMoveEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
+
+    virtual void resizeEvent(QResizeEvent *p_event) Q_DECL_OVERRIDE;
 
     // Update m_config according to VConfigManager.
     void updateConfig();
@@ -177,6 +194,8 @@ private:
     // Whether enable input method.
     bool m_enableInputMethod;
 
+    LineNumberArea *m_lineNumberArea;
+
     void showWrapLabel();
 
     // Trigger the timer to request highlight.
@@ -196,8 +215,51 @@ private:
 
     void highlightSearchedWord(const QString &p_text, uint p_options);
     bool wordInSearchedSelection(const QString &p_text);
+
+    // Return the first visible block.
+    QTextBlock firstVisibleBlock();
+
+    // Return the y offset of the content.
+    int contentOffsetY();
 };
 
+class LineNumberArea : public QWidget
+{
+public:
+    LineNumberArea(VEdit *p_editor)
+        : QWidget(p_editor), m_editor(p_editor),
+          m_document(p_editor->document()),
+          m_width(0), m_blockCount(-1)
+    {
+        m_digitWidth = m_editor->fontMetrics().width(QLatin1Char('9'));
+        m_digitHeight = m_editor->fontMetrics().height();
+    }
 
+    QSize sizeHint() const Q_DECL_OVERRIDE
+    {
+        return QSize(calculateWidth(), 0);
+    }
+
+    int calculateWidth() const;
+
+    int getDigitHeight() const
+    {
+        return m_digitHeight;
+    }
+
+protected:
+    void paintEvent(QPaintEvent *p_event) Q_DECL_OVERRIDE
+    {
+        m_editor->lineNumberAreaPaintEvent(p_event);
+    }
+
+private:
+    VEdit *m_editor;
+    const QTextDocument *m_document;
+    int m_width;
+    int m_blockCount;
+    int m_digitWidth;
+    int m_digitHeight;
+};
 
 #endif // VEDIT_H

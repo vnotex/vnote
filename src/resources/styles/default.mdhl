@@ -15,6 +15,8 @@ font-family: Hiragino Sans GB, 冬青黑体, Microsoft YaHei, 微软雅黑, Micr
 # [VNote] Style for trailing space
 trailing-space: ffebee
 font-size: 12
+line-number-background: bdbdbd
+line-number-foreground: 424242
 
 editor-selection
 foreground: eeeeee

@@ -124,6 +124,10 @@ private:
     void initRenderBackgroundMenu(QMenu *menu);
     void initRenderStyleMenu(QMenu *p_menu);
     void initEditorBackgroundMenu(QMenu *menu);
+
+    // Init the Line Number submenu in Edit menu.
+    void initEditorLineNumberMenu(QMenu *p_menu);
+
     void initEditorStyleMenu(QMenu *p_emnu);
     void changeSplitterView(int nrPanel);
     void updateWindowTitle(const QString &str);

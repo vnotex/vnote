@@ -150,6 +150,9 @@ void VConfigManager::initialize()
 
     m_enableSmartImInVimMode = getConfigFromSettings("global",
                                                      "enable_smart_im_in_vim_mode").toBool();
+
+    m_editorLineNumber = getConfigFromSettings("global",
+                                               "editor_line_number").toInt();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()
@@ -336,6 +339,8 @@ void VConfigManager::updateMarkdownEditStyle()
     static const QString defaultVimVisualBg = "#90CAF9";
     static const QString defaultVimReplaceBg = "#F8BBD0";
     static const QString defaultTrailingSpaceBackground = "#FFEBEE";
+    static const QString defaultLineNumberBg = "#BDBDBD";
+    static const QString defaultLineNumberFg = "#424242";
 
     // Read style file .mdhl
     QString file(getEditorStyleUrl());
@@ -392,11 +397,23 @@ void VConfigManager::updateMarkdownEditStyle()
     }
 
     m_editorTrailingSpaceBg = defaultTrailingSpaceBackground;
+    m_editorLineNumberBg = defaultLineNumberBg;
+    m_editorLineNumberFg = defaultLineNumberFg;
     auto editorIt = styles.find("editor");
     if (editorIt != styles.end()) {
-        auto trailingIt = editorIt->find("trailing-space");
-        if (trailingIt != editorIt->end()) {
-            m_editorTrailingSpaceBg = "#" + *trailingIt;
+        auto it = editorIt->find("trailing-space");
+        if (it != editorIt->end()) {
+            m_editorTrailingSpaceBg = "#" + *it;
+        }
+
+        it = editorIt->find("line-number-background");
+        if (it != editorIt->end()) {
+            m_editorLineNumberBg = "#" + *it;
+        }
+
+        it = editorIt->find("line-number-foreground");
+        if (it != editorIt->end()) {
+            m_editorLineNumberFg = "#" + *it;
         }
     }
 }

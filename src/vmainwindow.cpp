@@ -848,6 +848,8 @@ void VMainWindow::initEditMenu()
 
     initEditorBackgroundMenu(editMenu);
 
+    initEditorLineNumberMenu(editMenu);
+
     editMenu->addAction(cursorLineAct);
     cursorLineAct->setChecked(vconfig.getHighlightCursorLine());
 
@@ -1127,6 +1129,51 @@ void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
         }
 
         backgroundColorMenu->addAction(tmpAct);
+    }
+}
+
+void VMainWindow::initEditorLineNumberMenu(QMenu *p_menu)
+{
+    QMenu *lineNumMenu = p_menu->addMenu(tr("Line Number"));
+    lineNumMenu->setToolTipsVisible(true);
+
+    QActionGroup *lineNumAct = new QActionGroup(lineNumMenu);
+    connect(lineNumAct, &QActionGroup::triggered,
+            this, [this](QAction *p_action){
+                if (!p_action) {
+                    return;
+                }
+
+                vconfig.setEditorLineNumber(p_action->data().toInt());
+            });
+
+    int lineNumberMode = vconfig.getEditorLineNumber();
+
+    QAction *act = lineNumAct->addAction(tr("None"));
+    act->setToolTip(tr("Do not display line number in edit mode"));
+    act->setCheckable(true);
+    act->setData(0);
+    lineNumMenu->addAction(act);
+    if (lineNumberMode == 0) {
+        act->setChecked(true);
+    }
+
+    act = lineNumAct->addAction(tr("Absolute"));
+    act->setToolTip(tr("Display absolute line number in edit mode"));
+    act->setCheckable(true);
+    act->setData(1);
+    lineNumMenu->addAction(act);
+    if (lineNumberMode == 1) {
+        act->setChecked(true);
+    }
+
+    act = lineNumAct->addAction(tr("Relative"));
+    act->setToolTip(tr("Display line number relative to current cursor line in edit mode"));
+    act->setCheckable(true);
+    act->setData(2);
+    lineNumMenu->addAction(act);
+    if (lineNumberMode == 2) {
+        act->setChecked(true);
     }
 }
 

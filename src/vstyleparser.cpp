@@ -234,7 +234,7 @@ void VStyleParser::fetchMarkdownEditorStyles(QPalette &palette, QFont &font,
         }
 
         // Get custom styles:
-        //     trailing-space.
+        //     trailing-space, line-number-background, line-number-foreground
         case pmh_attr_type_other:
         {
             QString attrName(editorStyles->name);

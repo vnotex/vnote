@@ -199,6 +199,12 @@ public:
     bool getEnableSmartImInVimMode() const;
     void setEnableSmartImInVimMode(bool p_enabled);
 
+    int getEditorLineNumber() const;
+    void setEditorLineNumber(int p_mode);
+
+    const QString &getEditorLineNumberBg() const;
+    const QString &getEditorLineNumberFg() const;
+
     // Get the folder the ini file exists.
     QString getConfigFolder() const;
 
@@ -363,6 +369,15 @@ private:
 
     // Enable smart input method in Vim mode.
     bool m_enableSmartImInVimMode;
+
+    // Editor line number mode.
+    int m_editorLineNumber;
+
+    // The background color of the line number area.
+    QString m_editorLineNumberBg;
+
+    // The foreground color of the line number area.
+    QString m_editorLineNumberFg;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -962,6 +977,32 @@ inline void VConfigManager::setEnableSmartImInVimMode(bool p_enabled)
     m_enableSmartImInVimMode = p_enabled;
     setConfigToSettings("global", "enable_smart_im_in_vim_mode",
                         m_enableSmartImInVimMode);
+}
+
+inline int VConfigManager::getEditorLineNumber() const
+{
+    return m_editorLineNumber;
+}
+
+inline void VConfigManager::setEditorLineNumber(int p_mode)
+{
+    if (m_editorLineNumber == p_mode) {
+        return;
+    }
+
+    m_editorLineNumber = p_mode;
+    setConfigToSettings("global", "editor_line_number",
+                        m_editorLineNumber);
+}
+
+inline const QString &VConfigManager::getEditorLineNumberBg() const
+{
+    return m_editorLineNumberBg;
+}
+
+inline const QString &VConfigManager::getEditorLineNumberFg() const
+{
+    return m_editorLineNumberFg;
 }
 
 #endif // VCONFIGMANAGER_H
