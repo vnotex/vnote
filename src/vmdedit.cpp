@@ -307,8 +307,6 @@ void VMdEdit::generateEditOutline()
 {
     QTextDocument *doc = document();
 
-    m_headers.clear();
-
     QVector<VHeader> headers;
 
     // Assume that each block contains only one line
@@ -331,6 +329,8 @@ void VMdEdit::generateEditOutline()
             }
         }
     }
+
+    m_headers.clear();
 
     int curLevel = baseLevel - 1;
     for (auto & item : headers) {

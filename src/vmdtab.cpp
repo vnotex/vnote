@@ -44,34 +44,8 @@ void VMdTab::setupUI()
 
     setupMarkdownViewer();
 
-    if (m_file->isModifiable()) {
-        m_editor = new VMdEdit(m_file, m_document, m_mdConType, this);
-        connect(dynamic_cast<VMdEdit *>(m_editor), &VMdEdit::headersChanged,
-                this, &VMdTab::updateTocFromHeaders);
-        connect(dynamic_cast<VMdEdit *>(m_editor), &VMdEdit::statusChanged,
-                this, &VMdTab::updateStatus);
-        connect(m_editor, SIGNAL(curHeaderChanged(VAnchor)),
-                this, SLOT(updateCurHeader(VAnchor)));
-        connect(m_editor, &VEdit::textChanged,
-                this, &VMdTab::handleTextChanged);
-        connect(m_editor, &VEdit::cursorPositionChanged,
-                this, &VMdTab::updateStatus);
-        connect(m_editor, &VEdit::saveAndRead,
-                this, &VMdTab::saveAndRead);
-        connect(m_editor, &VEdit::discardAndRead,
-                this, &VMdTab::discardAndRead);
-        connect(m_editor, &VEdit::saveNote,
-                this, &VMdTab::saveFile);
-        connect(m_editor, &VEdit::statusMessage,
-                this, &VEditTab::statusMessage);
-        connect(m_editor, &VEdit::vimStatusUpdated,
-                this, &VEditTab::vimStatusUpdated);
-
-        m_editor->reloadFile();
-        m_stacks->addWidget(m_editor);
-    } else {
-        m_editor = NULL;
-    }
+    // Setup editor when we really need it.
+    m_editor = NULL;
 
     setLayout(m_stacks);
 }
@@ -145,13 +119,26 @@ void VMdTab::showFileEditMode()
 
     m_isEditMode = true;
 
-    VMdEdit *mdEdit = dynamic_cast<VMdEdit *>(m_editor);
+    VMdEdit *mdEdit = dynamic_cast<VMdEdit *>(getEditor());
     V_ASSERT(mdEdit);
 
     // beginEdit() may change m_curHeader.
     int outlineIndex = m_curHeader.m_outlineIndex;
+
+    mdEdit->beginEdit();
+    m_stacks->setCurrentWidget(mdEdit);
+
     int lineNumber = -1;
-    auto headers = mdEdit->getHeaders();
+    const QVector<VHeader> &headers = mdEdit->getHeaders();
+    // If editor is not init, we need to wait for it to init headers.
+    // Generally, beginEdit() will generate the headers. Wait is needed when
+    // highlight completion is going to re-generate the headers.
+    int nrRetry = 5;
+    while (outlineIndex > -1 && headers.isEmpty() && nrRetry-- > 0) {
+        qDebug() << "wait another 100 ms for editor's headers ready";
+        VUtils::sleepWait(100);
+    }
+
     if (outlineIndex < 0 || outlineIndex >= headers.size()) {
         lineNumber = -1;
         outlineIndex = -1;
@@ -160,9 +147,6 @@ void VMdTab::showFileEditMode()
     }
 
     VAnchor anchor(m_file, "", lineNumber, outlineIndex);
-
-    mdEdit->beginEdit();
-    m_stacks->setCurrentWidget(mdEdit);
 
     mdEdit->scrollToHeader(anchor);
 
@@ -175,6 +159,7 @@ bool VMdTab::closeFile(bool p_forced)
 {
     if (p_forced && m_isEditMode) {
         // Discard buffer content
+        Q_ASSERT(m_editor);
         m_editor->reloadFile();
         m_editor->endEdit();
 
@@ -237,7 +222,13 @@ void VMdTab::readFile()
 
 bool VMdTab::saveFile()
 {
-    if (!m_isEditMode || !m_editor->isModified()) {
+    if (!m_isEditMode) {
+        return true;
+    }
+
+    Q_ASSERT(m_editor);
+
+    if (!m_editor->isModified()) {
         return true;
     }
 
@@ -305,6 +296,36 @@ void VMdTab::setupMarkdownViewer()
                          m_file->getBaseUrl());
 
     m_stacks->addWidget(m_webViewer);
+}
+
+void VMdTab::setupMarkdownEditor()
+{
+    Q_ASSERT(m_file->isModifiable() && !m_editor);
+    qDebug() << "create Markdown editor";
+    m_editor = new VMdEdit(m_file, m_document, m_mdConType, this);
+    connect(dynamic_cast<VMdEdit *>(m_editor), &VMdEdit::headersChanged,
+            this, &VMdTab::updateTocFromHeaders);
+    connect(dynamic_cast<VMdEdit *>(m_editor), &VMdEdit::statusChanged,
+            this, &VMdTab::updateStatus);
+    connect(m_editor, SIGNAL(curHeaderChanged(VAnchor)),
+            this, SLOT(updateCurHeader(VAnchor)));
+    connect(m_editor, &VEdit::textChanged,
+            this, &VMdTab::handleTextChanged);
+    connect(m_editor, &VEdit::cursorPositionChanged,
+            this, &VMdTab::updateStatus);
+    connect(m_editor, &VEdit::saveAndRead,
+            this, &VMdTab::saveAndRead);
+    connect(m_editor, &VEdit::discardAndRead,
+            this, &VMdTab::discardAndRead);
+    connect(m_editor, &VEdit::saveNote,
+            this, &VMdTab::saveFile);
+    connect(m_editor, &VEdit::statusMessage,
+            this, &VEditTab::statusMessage);
+    connect(m_editor, &VEdit::vimStatusUpdated,
+            this, &VEditTab::vimStatusUpdated);
+
+    m_editor->reloadFile();
+    m_stacks->addWidget(m_editor);
 }
 
 static void parseTocUl(QXmlStreamReader &p_xml, QVector<VHeader> &p_headers,
@@ -442,7 +463,7 @@ void VMdTab::scrollToAnchor(const VAnchor &p_anchor)
     m_curHeader = p_anchor;
 
     if (m_isEditMode) {
-        dynamic_cast<VMdEdit *>(m_editor)->scrollToHeader(p_anchor);
+        dynamic_cast<VMdEdit *>(getEditor())->scrollToHeader(p_anchor);
     } else {
         if (!p_anchor.anchor.isEmpty()) {
             m_document->scrollToAnchor(p_anchor.anchor.mid(1));
@@ -494,13 +515,15 @@ void VMdTab::insertImage()
         return;
     }
 
+    Q_ASSERT(m_editor);
     m_editor->insertImage();
 }
 
 void VMdTab::findText(const QString &p_text, uint p_options, bool p_peek,
                       bool p_forward)
 {
-    if (m_isEditMode || !m_webViewer) {
+    if (m_isEditMode) {
+        Q_ASSERT(m_editor);
         if (p_peek) {
             m_editor->peekText(p_text, p_options);
         } else {
@@ -515,6 +538,7 @@ void VMdTab::replaceText(const QString &p_text, uint p_options,
                          const QString &p_replaceText, bool p_findNext)
 {
     if (m_isEditMode) {
+        Q_ASSERT(m_editor);
         m_editor->replaceText(p_text, p_options, p_replaceText, p_findNext);
     }
 }
@@ -523,6 +547,7 @@ void VMdTab::replaceTextAll(const QString &p_text, uint p_options,
                             const QString &p_replaceText)
 {
     if (m_isEditMode) {
+        Q_ASSERT(m_editor);
         m_editor->replaceTextAll(p_text, p_options, p_replaceText);
     }
 }
@@ -546,7 +571,8 @@ void VMdTab::findTextInWebView(const QString &p_text, uint p_options,
 
 QString VMdTab::getSelectedText() const
 {
-    if (m_isEditMode || !m_webViewer) {
+    if (m_isEditMode) {
+        Q_ASSERT(m_editor);
         QTextCursor cursor = m_editor->textCursor();
         return cursor.selectedText();
     } else {

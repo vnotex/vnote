@@ -102,6 +102,9 @@ private:
     // Setup Markdown viewer.
     void setupMarkdownViewer();
 
+    // Setup Markdown editor.
+    void setupMarkdownEditor();
+
     // Use VMarkdownConverter (hoedown) to generate the Web view.
     void viewWebByConverter();
 
@@ -125,6 +128,9 @@ private:
     // Create a filled VEditTabInfo.
     VEditTabInfo createEditTabInfo() Q_DECL_OVERRIDE;
 
+    // Get the markdown editor. If not init yet, init and return it.
+    VEdit *getEditor();
+
     VEdit *m_editor;
     VWebView *m_webViewer;
     VDocument *m_document;
@@ -132,4 +138,16 @@ private:
 
     QStackedLayout *m_stacks;
 };
+
+inline VEdit *VMdTab::getEditor()
+{
+    if (m_editor) {
+        return m_editor;
+    } else if (m_file->isModifiable()) {
+        setupMarkdownEditor();
+    }
+
+    return m_editor;
+}
+
 #endif // VMDTAB_H
