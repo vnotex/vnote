@@ -153,6 +153,8 @@ void VConfigManager::initialize()
 
     m_editorLineNumber = getConfigFromSettings("global",
                                                "editor_line_number").toInt();
+
+    readShortcutsFromSettings();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()
@@ -338,7 +340,7 @@ void VConfigManager::updateMarkdownEditStyle()
     static const QString defaultVimInsertBg = "#CDC0B0";
     static const QString defaultVimVisualBg = "#90CAF9";
     static const QString defaultVimReplaceBg = "#F8BBD0";
-    static const QString defaultTrailingSpaceBackground = "#FFEBEE";
+    static const QString defaultTrailingSpaceBackground = "#A8A8A8";
     static const QString defaultLineNumberBg = "#BDBDBD";
     static const QString defaultLineNumberFg = "#424242";
 
@@ -481,6 +483,13 @@ QString VConfigManager::getConfigFolder() const
 
     QString iniPath = userSettings->fileName();
     return VUtils::basePathFromPath(iniPath);
+}
+
+QString VConfigManager::getConfigFilePath() const
+{
+    V_ASSERT(userSettings);
+
+    return userSettings->fileName();
 }
 
 QString VConfigManager::getStyleConfigFolder() const
@@ -689,4 +698,86 @@ void VConfigManager::setEditorStyle(const QString &p_style)
 QString VConfigManager::getVnoteNotebookFolderPath()
 {
     return QDir::home().filePath(c_vnoteNotebookFolderName);
+}
+
+bool VConfigManager::isValidKeySequence(const QString &p_seq)
+{
+    QString lower = p_seq.toLower();
+    return lower != "ctrl+q" && lower != "ctrl+e";
+}
+
+void VConfigManager::readShortcutsFromSettings()
+{
+    m_shortcuts.clear();
+    int size = defaultSettings->beginReadArray("shortcuts");
+    for (int i = 0; i < size; ++i) {
+        defaultSettings->setArrayIndex(i);
+        QString op = defaultSettings->value("operation").toString();
+        QString seq = defaultSettings->value("keysequence").toString().trimmed();
+
+        if (isValidKeySequence(seq)) {
+            qDebug() << "read shortcut config" << op << seq;
+            m_shortcuts[op] = seq;
+        }
+    }
+
+    defaultSettings->endArray();
+
+    // Whether we need to update user settings.
+    bool needUpdate = false;
+    size = userSettings->beginReadArray("shortcuts");
+    QSet<QString> matched;
+    matched.reserve(m_shortcuts.size());
+    for (int i = 0; i < size; ++i) {
+        userSettings->setArrayIndex(i);
+        QString op = userSettings->value("operation").toString();
+        QString seq = userSettings->value("keysequence").toString().trimmed();
+
+        if (isValidKeySequence(seq)) {
+            qDebug() << "read user shortcut config" << op << seq;
+            auto it = m_shortcuts.find(op);
+            if (it == m_shortcuts.end()) {
+                // Could not find this in default settings.
+                needUpdate = true;
+            } else {
+                matched.insert(op);
+                *it = seq;
+            }
+        }
+    }
+
+    userSettings->endArray();
+
+    if (needUpdate || matched.size() < m_shortcuts.size()) {
+        // Write the combined config to user settings.
+        writeShortcutsToSettings();
+    }
+}
+
+void VConfigManager::writeShortcutsToSettings()
+{
+    // Clear it first
+    userSettings->beginGroup("shortcuts");
+    userSettings->remove("");
+    userSettings->endGroup();
+
+    userSettings->beginWriteArray("shortcuts");
+    int idx = 0;
+    for (auto it = m_shortcuts.begin(); it != m_shortcuts.end(); ++it, ++idx) {
+        userSettings->setArrayIndex(idx);
+        userSettings->setValue("operation", it.key());
+        userSettings->setValue("keysequence", it.value());
+    }
+
+    userSettings->endArray();
+}
+
+QString VConfigManager::getShortcutKeySequence(const QString &p_operation) const
+{
+    auto it = m_shortcuts.find(p_operation);
+    if (it == m_shortcuts.end()) {
+        return QString();
+    }
+
+    return *it;
 }

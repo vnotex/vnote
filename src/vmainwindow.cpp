@@ -301,7 +301,9 @@ void VMainWindow::initFileToolBar()
     newNoteAct = new QAction(QIcon(":/resources/icons/create_note_tb.svg"),
                              tr("New &Note"), this);
     newNoteAct->setStatusTip(tr("Create a note in current folder"));
-    newNoteAct->setShortcut(QKeySequence::New);
+    QString keySeq = vconfig.getShortcutKeySequence("NewNote");
+    qDebug() << "set NewNote shortcut to" << keySeq;
+    newNoteAct->setShortcut(QKeySequence(keySeq));
     connect(newNoteAct, &QAction::triggered,
             fileList, &VFileList::newFile);
 
@@ -317,10 +319,25 @@ void VMainWindow::initFileToolBar()
     connect(deleteNoteAct, &QAction::triggered,
             this, &VMainWindow::deleteCurNote);
 
+    m_closeNoteAct = new QAction(QIcon(":/resources/icons/close_note_tb.svg"),
+                                 tr("&Close Note"), this);
+    m_closeNoteAct->setStatusTip(tr("Close current note"));
+    keySeq = vconfig.getShortcutKeySequence("CloseNote");
+    qDebug() << "set CloseNote shortcut to" << keySeq;
+    m_closeNoteAct->setShortcut(QKeySequence(keySeq));
+    connect(m_closeNoteAct, &QAction::triggered,
+            this, [this](){
+                if (m_curFile) {
+                    editArea->closeFile(m_curFile, false);
+                }
+            });
+
     editNoteAct = new QAction(QIcon(":/resources/icons/edit_note.svg"),
                               tr("&Edit"), this);
     editNoteAct->setStatusTip(tr("Edit current note"));
-    editNoteAct->setShortcut(QKeySequence("Ctrl+W"));
+    keySeq = vconfig.getShortcutKeySequence("EditNote");
+    qDebug() << "set EditNote shortcut to" << keySeq;
+    editNoteAct->setShortcut(QKeySequence(keySeq));
     connect(editNoteAct, &QAction::triggered,
             editArea, &VEditArea::editFile);
 
@@ -339,21 +356,26 @@ void VMainWindow::initFileToolBar()
                               tr("Save Changes And Read (Ctrl+T)"), this);
     saveExitAct->setStatusTip(tr("Save changes and exit edit mode"));
     saveExitAct->setMenu(exitEditMenu);
-    saveExitAct->setShortcut(QKeySequence("Ctrl+T"));
+    keySeq = vconfig.getShortcutKeySequence("SaveAndRead");
+    qDebug() << "set SaveAndRead shortcut to" << keySeq;
+    saveExitAct->setShortcut(QKeySequence(keySeq));
     connect(saveExitAct, &QAction::triggered,
             editArea, &VEditArea::saveAndReadFile);
 
     saveNoteAct = new QAction(QIcon(":/resources/icons/save_note.svg"),
                               tr("Save"), this);
     saveNoteAct->setStatusTip(tr("Save changes to current note"));
-    saveNoteAct->setShortcut(QKeySequence::Save);
+    keySeq = vconfig.getShortcutKeySequence("SaveNote");
+    qDebug() << "set SaveNote shortcut to" << keySeq;
+    saveNoteAct->setShortcut(QKeySequence(keySeq));
     connect(saveNoteAct, &QAction::triggered,
             editArea, &VEditArea::saveFile);
 
     newRootDirAct->setEnabled(false);
     newNoteAct->setEnabled(false);
-    noteInfoAct->setEnabled(false);
-    deleteNoteAct->setEnabled(false);
+    noteInfoAct->setVisible(false);
+    deleteNoteAct->setVisible(false);
+    m_closeNoteAct->setVisible(false);
     editNoteAct->setVisible(false);
     saveExitAct->setVisible(false);
     discardExitAct->setVisible(false);
@@ -361,9 +383,10 @@ void VMainWindow::initFileToolBar()
 
     fileToolBar->addAction(newRootDirAct);
     fileToolBar->addAction(newNoteAct);
+    fileToolBar->addSeparator();
     fileToolBar->addAction(noteInfoAct);
     fileToolBar->addAction(deleteNoteAct);
-    fileToolBar->addSeparator();
+    fileToolBar->addAction(m_closeNoteAct);
     fileToolBar->addAction(editNoteAct);
     fileToolBar->addAction(saveExitAct);
     fileToolBar->addAction(saveNoteAct);
@@ -634,6 +657,29 @@ void VMainWindow::initFileMenu()
 
     fileMenu->addAction(settingsAct);
 
+    QAction *customShortcutAct = new QAction(tr("Custom Shortcuts"), this);
+    customShortcutAct->setToolTip(tr("Custom some standard shortcuts"));
+    connect(customShortcutAct, &QAction::triggered,
+            this, [this](){
+                int ret = VUtils::showMessage(QMessageBox::Information,
+                              tr("Custom Shortcuts"),
+                              tr("VNote supports customing some standard shorcuts by "
+                                 "editing user's configuration file (vnote.ini). Please "
+                                 "reference the shortcuts help documentation for more "
+                                 "information."),
+                              tr("Click \"OK\" to custom shortcuts."),
+                              QMessageBox::Ok | QMessageBox::Cancel,
+                              QMessageBox::Ok,
+                              this);
+
+                if (ret == QMessageBox::Ok) {
+                    QUrl url = QUrl::fromLocalFile(vconfig.getConfigFilePath());
+                    QDesktopServices::openUrl(url);
+                }
+            });
+
+    fileMenu->addAction(customShortcutAct);
+
     fileMenu->addSeparator();
 
     // Exit.
@@ -663,19 +709,25 @@ void VMainWindow::initEditMenu()
     m_findReplaceAct = newAction(QIcon(":/resources/icons/find_replace.svg"),
                                  tr("Find/Replace"), this);
     m_findReplaceAct->setToolTip(tr("Open Find/Replace dialog to search in current note"));
-    m_findReplaceAct->setShortcut(QKeySequence::Find);
+    QString keySeq = vconfig.getShortcutKeySequence("Find");
+    qDebug() << "set Find shortcut to" << keySeq;
+    m_findReplaceAct->setShortcut(QKeySequence(keySeq));
     connect(m_findReplaceAct, &QAction::triggered,
             this, &VMainWindow::openFindDialog);
 
     m_findNextAct = new QAction(tr("Find Next"), this);
     m_findNextAct->setToolTip(tr("Find next occurence"));
-    m_findNextAct->setShortcut(QKeySequence::FindNext);
+    keySeq = vconfig.getShortcutKeySequence("FindNext");
+    qDebug() << "set FindNext shortcut to" << keySeq;
+    m_findNextAct->setShortcut(QKeySequence(keySeq));
     connect(m_findNextAct, SIGNAL(triggered(bool)),
             m_findReplaceDialog, SLOT(findNext()));
 
     m_findPreviousAct = new QAction(tr("Find Previous"), this);
     m_findPreviousAct->setToolTip(tr("Find previous occurence"));
-    m_findPreviousAct->setShortcut(QKeySequence::FindPrevious);
+    keySeq = vconfig.getShortcutKeySequence("FindPrevious");
+    qDebug() << "set FindPrevious shortcut to" << keySeq;
+    m_findPreviousAct->setShortcut(QKeySequence(keySeq));
     connect(m_findPreviousAct, SIGNAL(triggered(bool)),
             m_findReplaceDialog, SLOT(findPrevious()));
 
@@ -1279,8 +1331,9 @@ void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
     discardExitAct->setVisible(p_file && p_editMode);
     saveExitAct->setVisible(p_file && p_editMode);
     saveNoteAct->setVisible(p_file && p_editMode);
-    deleteNoteAct->setEnabled(p_file && p_file->isModifiable());
-    noteInfoAct->setEnabled(p_file && p_file->getType() == FileType::Normal);
+    deleteNoteAct->setVisible(p_file && p_file->isModifiable());
+    noteInfoAct->setVisible(p_file && p_file->getType() == FileType::Normal);
+    m_closeNoteAct->setVisible(p_file);
 
     m_insertImageAct->setEnabled(p_file && p_editMode);
 

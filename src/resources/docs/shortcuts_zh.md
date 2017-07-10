@@ -72,6 +72,37 @@
 - `Ctrl+Shift+Home`, `Ctrl+Shift+End`  
 扩展选定到笔记开始或结尾处。
 
+## 自定义快捷键
+VNote支持自定义部分标准快捷键（但并不建议这么做）。VNote将快捷键信息保存在用户配置文件`vnote.ini`中的`[shortcuts]`小节。
+
+例如，默认的配置可能是这样子的：
+
+
+```ini
+[shortcuts]
+1\operation=NewNote
+1\keysequence=Ctrl+N
+2\operation=SaveNote
+2\keysequence=Ctrl+S
+3\operation=SaveAndRead
+3\keysequence=Ctrl+T
+4\operation=EditNote
+4\keysequence=Ctrl+W
+5\operation=CloseNote
+5\keysequence=
+6\operation=Find
+6\keysequence=Ctrl+F
+7\operation=FindNext
+7\keysequence=F3
+8\operation=FindPrevious
+8\keysequence=Shift+F3
+size=8
+```
+
+`size=8` 告诉VNote这里定义了8组快捷键，每组快捷键都以一个数字序号开始。通过改变每组快捷键中`keysequence`的值来改变某个操作的默认快捷键。将`keysequence`设置为空（`keysequence=`）则会禁用该操作的任何快捷键。
+
+注意，`Ctrl+E`保留作为*舰长模式*的前导键，`Ctrl+Q`保留为退出VNote。
+
 # 舰长模式
 为了更有效地利用快捷键，VNote支持 **舰长模式**。
 

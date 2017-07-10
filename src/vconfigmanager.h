@@ -205,8 +205,15 @@ public:
     const QString &getEditorLineNumberBg() const;
     const QString &getEditorLineNumberFg() const;
 
+    // Return the configured key sequence of @p_operation.
+    // Return empty if there is no corresponding config.
+    QString getShortcutKeySequence(const QString &p_operation) const;
+
     // Get the folder the ini file exists.
     QString getConfigFolder() const;
+
+    // Get the ini config file path.
+    QString getConfigFilePath() const;
 
     // Get the folder c_styleConfigFolder in the config folder.
     QString getStyleConfigFolder() const;
@@ -247,6 +254,20 @@ private:
     // See if the old c_obsoleteDirConfigFile exists. If so, rename it to
     // the new one; if not, use the c_dirConfigFile.
     static QString fetchDirConfigFilePath(const QString &p_path);
+
+    // Read the [shortcuts] section in settings to init m_shortcuts.
+    // Will remove invalid config items.
+    // First read the config in default settings;
+    // Second read the config in user settings and overwrite the default ones;
+    // If there is any config in deafult settings that is absent in user settings,
+    // write the combined configs to user settings.
+    void readShortcutsFromSettings();
+
+    // Write m_shortcuts to the [shortcuts] section in the user settings.
+    void writeShortcutsToSettings();
+
+    // Whether @p_seq is a valid key sequence for shortcuts.
+    bool isValidKeySequence(const QString &p_seq);
 
     // Default font and palette.
     QFont m_defaultEditFont;
@@ -378,6 +399,10 @@ private:
 
     // The foreground color of the line number area.
     QString m_editorLineNumberFg;
+
+    // Shortcuts config.
+    // Operation -> KeySequence.
+    QHash<QString, QString> m_shortcuts;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.

@@ -115,5 +115,6 @@
         <file>resources/icons/italic.svg</file>
         <file>resources/icons/strikethrough.svg</file>
         <file>resources/icons/inline_code.svg</file>
+        <file>resources/icons/close_note_tb.svg</file>
     </qresource>
 </RCC>

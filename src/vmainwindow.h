@@ -178,6 +178,7 @@ private:
     QAction *newNoteAct;
     QAction *noteInfoAct;
     QAction *deleteNoteAct;
+    QAction *m_closeNoteAct;
     QAction *editNoteAct;
     QAction *saveNoteAct;
     QAction *saveExitAct;

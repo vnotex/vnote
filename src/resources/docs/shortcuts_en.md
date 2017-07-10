@@ -72,6 +72,36 @@ Expand the selection to the beginning or end of current line.
 - `Ctrl+Shift+Home`, `Ctrl+Shift+End`  
 Expand the selection to the beginning or end of current note.
 
+## Custom Shortcuts
+VNote supports customing some standard shortcuts, though it is not recommended. VNote stores shortcuts' configuration information in the `[shortcuts]` section of user configuration file `vnote.ini`.
+
+For example, the default configruation may look like this:
+
+```ini
+[shortcuts]
+1\operation=NewNote
+1\keysequence=Ctrl+N
+2\operation=SaveNote
+2\keysequence=Ctrl+S
+3\operation=SaveAndRead
+3\keysequence=Ctrl+T
+4\operation=EditNote
+4\keysequence=Ctrl+W
+5\operation=CloseNote
+5\keysequence=
+6\operation=Find
+6\keysequence=Ctrl+F
+7\operation=FindNext
+7\keysequence=F3
+8\operation=FindPrevious
+8\keysequence=Shift+F3
+size=8
+```
+
+`size=8` tells VNote that there are 8 shotcuts defined here, with each beginning with the number sequence. You could change the `keysequence` value to change the default key sequence of a specified operation. Leave the `keysequence` empty (`keysequence=`) to disable shortcut for that operation.
+
+Pay attention that `Ctrl+E` is reserved for *Captain Mode* and `Ctrl+Q` is reserved for quitting VNote.
+
 # Captain Mode
 To efficiently utilize the shortcuts, VNote supports the **Captain Mode**.
 
@@ -117,7 +147,7 @@ Move current tab one split window right.
 Display shortcuts documentation.
 
 ## Navigation Mode
-Within the Captain MOde, `W` will turn VNote into **Navigation Mode**. In this mode, VNote will display at most two characters on some major widgets, and then pressing corresponding characters will jump to that widget.
+Within the Captain Mode, `W` will turn VNote into **Navigation Mode**. In this mode, VNote will display at most two characters on some major widgets, and then pressing corresponding characters will jump to that widget.
 
 # Vim Mode
 VNote supports a simple but useful Vim mode, including **Normal**, **Insert**, **Visual**, and **VisualLine** modes.
