@@ -908,15 +908,44 @@ void VEdit::lineNumberAreaPaintEvent(QPaintEvent *p_event)
     const int curBlockNumber = textCursor().block().blockNumber();
     const bool relative = vconfig.getEditorLineNumber() == 2;
     const QString &fg = vconfig.getEditorLineNumberFg();
+    painter.setPen(fg);
 
     while (block.isValid() && top <= eventBtm) {
         if (block.isVisible() && bottom >= eventTop) {
-            QString number = QString::number(relative ? blockNumber - curBlockNumber
-                                                      : blockNumber + 1);
-            painter.setPen(fg);
-            painter.drawText(0, top + 2,
+            bool currentLine = false;
+            int number = blockNumber + 1;
+            if (relative) {
+                number = blockNumber - curBlockNumber;
+                if (number == 0) {
+                    currentLine = true;
+                    number = blockNumber + 1;
+                } else if (number < 0) {
+                    number = -number;
+                }
+            } else if (blockNumber == curBlockNumber) {
+                currentLine = true;
+            }
+
+            QString numberStr = QString::number(number);
+
+            if (currentLine) {
+                QFont font = painter.font();
+                font.setBold(true);
+                painter.setFont(font);
+            }
+
+            painter.drawText(0,
+                             top + 2,
                              m_lineNumberArea->width(),
-                             digitHeight, Qt::AlignRight, number);
+                             digitHeight,
+                             Qt::AlignRight,
+                             numberStr);
+
+            if (currentLine) {
+                QFont font = painter.font();
+                font.setBold(false);
+                painter.setFont(font);
+            }
         }
 
         block = block.next();
@@ -999,7 +1028,7 @@ int LineNumberArea::calculateWidth() const
         ++digits;
     }
 
-    int width = 2 + m_digitWidth * digits;
+    int width = m_digitWidth * digits;
     const_cast<LineNumberArea *>(this)->m_width = width;
 
     return m_width;

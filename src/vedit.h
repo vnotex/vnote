@@ -231,7 +231,7 @@ public:
           m_document(p_editor->document()),
           m_width(0), m_blockCount(-1)
     {
-        m_digitWidth = m_editor->fontMetrics().width(QLatin1Char('9'));
+        m_digitWidth = m_editor->fontMetrics().width(QLatin1Char('1'));
         m_digitHeight = m_editor->fontMetrics().height();
     }
 
