@@ -94,7 +94,7 @@ VVim::VVim(VEdit *p_editor)
 
     initRegisters();
 
-    connect(m_editor, &VEdit::copyAvailable,
+    connect(m_editor, &VEdit::selectionChangedByMouse,
             this, &VVim::selectionToVisualMode);
 }
 
@@ -4328,9 +4328,13 @@ int VVim::blockCountOfPageStep() const
 
 void VVim::selectionToVisualMode(bool p_hasText)
 {
-    if (p_hasText && m_mode == VimMode::Normal) {
-        // Enter visual mode without clearing the selection.
-        setMode(VimMode::Visual, false);
+    if (p_hasText) {
+        if (m_mode == VimMode::Normal) {
+            // Enter visual mode without clearing the selection.
+            setMode(VimMode::Visual, false);
+        }
+    } else if (m_mode == VimMode::Visual || m_mode == VimMode::VisualLine) {
+        setMode(VimMode::Normal);
     }
 }
 

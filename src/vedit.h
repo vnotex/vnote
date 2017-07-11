@@ -26,6 +26,8 @@ enum class SelectionId {
     CurrentLine = 0,
     SelectedWord,
     SearchedKeyword,
+    SearchedKeywordUnderCursor,
+    IncrementalSearchedKeyword,
     TrailingSapce,
     MaxSelection
 };
@@ -78,16 +80,27 @@ public:
     virtual void scrollToLine(int p_lineNumber);
     // User requests to insert an image.
     virtual void insertImage();
-    bool findTextHelper(const QString &p_text, uint p_options,
-                        bool p_forward, bool &p_wrapped);
+
+    // Used for incremental search.
+    // User has enter the content to search, but does not enter the "find" button yet.
     bool peekText(const QString &p_text, uint p_options);
+
     bool findText(const QString &p_text, uint p_options, bool p_forward);
     void replaceText(const QString &p_text, uint p_options,
                      const QString &p_replaceText, bool p_findNext);
     void replaceTextAll(const QString &p_text, uint p_options,
                         const QString &p_replaceText);
     void setReadOnly(bool p_ro);
+
+    // Clear SearchedKeyword highlight.
     void clearSearchedWordHighlight();
+
+    // Clear SearchedKeywordUnderCursor Highlight.
+    void clearSearchedWordUnderCursorHighlight(bool p_now = true);
+
+    // Clear IncrementalSearchedKeyword highlight.
+    void clearIncrementalSearchedWordHighlight(bool p_now = true);
+
     VFile *getFile() const;
 
     VEditConfig &getConfig();
@@ -126,6 +139,9 @@ signals:
 
     // Emit when Vim status updated.
     void vimStatusUpdated(const VVim *p_vim);
+
+    // Selection changed by mouse.
+    void selectionChangedByMouse(bool p_hasSelection);
 
 public slots:
     virtual void highlightCurrentLine();
@@ -181,6 +197,8 @@ private:
 
     QColor m_selectedWordColor;
     QColor m_searchedWordColor;
+    QColor m_searchedWordCursorColor;
+    QColor m_incrementalSearchedWordColor;
     QColor m_trailingSpaceColor;
 
     // Timer for extra selections highlight.
@@ -214,6 +232,13 @@ private:
                           void (*p_filter)(VEdit *, QList<QTextEdit::ExtraSelection> &) = NULL);
 
     void highlightSearchedWord(const QString &p_text, uint p_options);
+
+    // Highlight @p_cursor as the searched keyword under cursor.
+    void highlightSearchedWordUnderCursor(const QTextCursor &p_cursor);
+
+    // Highlight @p_cursor as the incremental searched keyword.
+    void highlightIncrementalSearchedWord(const QTextCursor &p_cursor);
+
     bool wordInSearchedSelection(const QString &p_text);
 
     // Return the first visible block.
@@ -221,6 +246,18 @@ private:
 
     // Return the y offset of the content.
     int contentOffsetY();
+
+    // Find @p_text in the document starting from @p_start.
+    // Returns true if @p_text is found and set @p_cursor to indicate
+    // the position.
+    // Will NOT change current cursor.
+    bool findTextHelper(const QString &p_text, uint p_options,
+                        bool p_forward, int p_start,
+                        bool &p_wrapped, QTextCursor &p_cursor);
+
+    // Scroll the content to make @p_block visible.
+    // Will not change current cursor.
+    void makeBlockVisible(const QTextBlock &p_block);
 };
 
 class LineNumberArea : public QWidget

@@ -339,7 +339,7 @@ void VEditUtils::scrollBlockInPage(QTextEdit *p_edit,
     QScrollBar *vsbar = p_edit->verticalScrollBar();
 
     if (!vsbar || !vsbar->isVisible()) {
-        // No vertical scrollbar. No need to scrool.
+        // No vertical scrollbar. No need to scroll.
         return;
     }
 

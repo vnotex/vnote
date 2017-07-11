@@ -51,6 +51,8 @@ VEdit::VEdit(VFile *p_file, QWidget *p_parent)
 
     m_selectedWordColor = QColor("Yellow");
     m_searchedWordColor = QColor(g_vnote->getColorFromPalette("Green4"));
+    m_searchedWordCursorColor = QColor("#64B5F6");
+    m_incrementalSearchedWordColor = QColor(g_vnote->getColorFromPalette("Purple2"));
     m_trailingSpaceColor = QColor(vconfig.getEditorTrailingSpaceBackground());
 
     QPixmap wrapPixmap(":/resources/icons/search_wrap.svg");
@@ -178,41 +180,29 @@ void VEdit::insertImage()
 
 bool VEdit::peekText(const QString &p_text, uint p_options)
 {
-    static int startPos = textCursor().selectionStart();
-    static int lastPos = startPos;
-    bool found = false;
-
     if (p_text.isEmpty()) {
-        // Clear previous selection
-        QTextCursor cursor = textCursor();
-        cursor.clearSelection();
-        cursor.setPosition(startPos);
-        setTextCursor(cursor);
-    } else {
-        QTextCursor cursor = textCursor();
-        int curPos = cursor.selectionStart();
-        if (curPos != lastPos) {
-            // Cursor has been moved. Just start at current potition.
-            startPos = curPos;
-            lastPos = curPos;
-        } else {
-            cursor.setPosition(startPos);
-            setTextCursor(cursor);
-        }
+        makeBlockVisible(document()->findBlock(textCursor().selectionStart()));
+        highlightIncrementalSearchedWord(QTextCursor());
+        return false;
     }
+
     bool wrapped = false;
-    found = findTextHelper(p_text, p_options, true, wrapped);
+    QTextCursor retCursor;
+    bool found = findTextHelper(p_text, p_options, true,
+                                textCursor().position() + 1, wrapped, retCursor);
     if (found) {
-        lastPos = textCursor().selectionStart();
-        found = true;
+        makeBlockVisible(document()->findBlock(retCursor.selectionStart()));
+        highlightIncrementalSearchedWord(retCursor);
     }
+
     return found;
 }
 
 // Use QTextEdit::find() instead of QTextDocument::find() because the later has
 // bugs in searching backward.
 bool VEdit::findTextHelper(const QString &p_text, uint p_options,
-                           bool p_forward, bool &p_wrapped)
+                           bool p_forward, int p_start,
+                           bool &p_wrapped, QTextCursor &p_cursor)
 {
     p_wrapped = false;
     bool found = false;
@@ -224,12 +214,15 @@ bool VEdit::findTextHelper(const QString &p_text, uint p_options,
         findFlags |= QTextDocument::FindCaseSensitively;
         caseSensitive = true;
     }
+
     if (p_options & FindOption::WholeWordOnly) {
         findFlags |= QTextDocument::FindWholeWords;
     }
+
     if (!p_forward) {
         findFlags |= QTextDocument::FindBackward;
     }
+
     // Use regular expression
     bool useRegExp = false;
     QRegExp exp;
@@ -238,32 +231,53 @@ bool VEdit::findTextHelper(const QString &p_text, uint p_options,
         exp = QRegExp(p_text,
                       caseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive);
     }
+
+    // Store current state of the cursor.
     QTextCursor cursor = textCursor();
+    if (cursor.position() != p_start) {
+        if (p_start < 0) {
+            p_start = 0;
+        } else if (p_start > document()->characterCount()) {
+            p_start = document()->characterCount();
+        }
+
+        QTextCursor startCursor = cursor;
+        startCursor.setPosition(p_start);
+        setTextCursor(startCursor);
+    }
+
     while (!found) {
         if (useRegExp) {
             found = find(exp, findFlags);
         } else {
             found = find(p_text, findFlags);
         }
+
         if (p_wrapped) {
-            if (!found) {
-                setTextCursor(cursor);
-            }
             break;
         }
+
         if (!found) {
             // Wrap to the other end of the document to search again.
             p_wrapped = true;
             QTextCursor wrapCursor = textCursor();
-            wrapCursor.clearSelection();
             if (p_forward) {
                 wrapCursor.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
             } else {
                 wrapCursor.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
             }
+
             setTextCursor(wrapCursor);
         }
     }
+
+    if (found) {
+        p_cursor = textCursor();
+    }
+
+    // Restore the original cursor.
+    setTextCursor(cursor);
+
     return found;
 }
 
@@ -312,26 +326,44 @@ QList<QTextCursor> VEdit::findTextAll(const QString &p_text, uint p_options)
 
 bool VEdit::findText(const QString &p_text, uint p_options, bool p_forward)
 {
-    bool found = false;
+    clearIncrementalSearchedWordHighlight();
+
     if (p_text.isEmpty()) {
-        QTextCursor cursor = textCursor();
-        cursor.clearSelection();
-        setTextCursor(cursor);
-    } else {
-        bool wrapped = false;
-        found = findTextHelper(p_text, p_options, p_forward, wrapped);
-        if (found) {
-            if (wrapped) {
-                showWrapLabel();
-            }
-            highlightSearchedWord(p_text, p_options);
-        } else {
-            // Simply clear previous highlight.
-            highlightSearchedWord("", p_options);
-        }
+        clearSearchedWordHighlight();
+        return false;
     }
-    qDebug() << "findText" << p_text << p_options << p_forward
-             << (found ? "Found" : "NotFound");
+
+    bool wrapped = false;
+    QTextCursor retCursor;
+    int matches = 0;
+    bool found = findTextHelper(p_text, p_options, p_forward,
+                                p_forward ? textCursor().position() + 1
+                                          : textCursor().position(),
+                                wrapped, retCursor);
+    if (found) {
+        Q_ASSERT(!retCursor.isNull());
+        if (wrapped) {
+            showWrapLabel();
+        }
+
+        QTextCursor cursor = textCursor();
+        cursor.setPosition(retCursor.selectionStart());
+        setTextCursor(cursor);
+
+        highlightSearchedWord(p_text, p_options);
+        highlightSearchedWordUnderCursor(retCursor);
+        matches = m_extraSelections[(int)SelectionId::SearchedKeyword].size();
+    } else {
+        clearSearchedWordHighlight();
+    }
+
+    if (matches == 0) {
+        statusMessage(tr("Found no match"));
+    } else {
+        statusMessage(tr("Found %1 %2").arg(matches)
+                                       .arg(matches > 1 ? tr("matches") : tr("match")));
+    }
+
     return found;
 }
 
@@ -339,47 +371,40 @@ void VEdit::replaceText(const QString &p_text, uint p_options,
                         const QString &p_replaceText, bool p_findNext)
 {
     QTextCursor cursor = textCursor();
-    if (cursor.hasSelection()) {
-        // Replace occurs only if the selected text matches @p_text with @p_options.
-        QTextCursor tmpCursor = cursor;
-        tmpCursor.setPosition(tmpCursor.selectionStart());
-        tmpCursor.clearSelection();
-        setTextCursor(tmpCursor);
-        bool wrapped = false;
-        bool found = findTextHelper(p_text, p_options, true, wrapped);
-        bool matched = false;
-        if (found) {
-            tmpCursor = textCursor();
-            matched = (cursor.selectionStart() == tmpCursor.selectionStart())
-                      && (cursor.selectionEnd() == tmpCursor.selectionEnd());
+    bool wrapped = false;
+    QTextCursor retCursor;
+    bool found = findTextHelper(p_text, p_options, true,
+                                cursor.position(), wrapped, retCursor);
+    if (found) {
+        if (retCursor.selectionStart() == cursor.position()) {
+            // Matched.
+            retCursor.beginEditBlock();
+            retCursor.insertText(p_replaceText);
+            retCursor.endEditBlock();
+            setTextCursor(retCursor);
         }
-        if (matched) {
-            cursor.beginEditBlock();
-            cursor.removeSelectedText();
-            cursor.insertText(p_replaceText);
-            cursor.endEditBlock();
-            setTextCursor(cursor);
-        } else {
-            setTextCursor(cursor);
+
+        if (p_findNext) {
+            findText(p_text, p_options, true);
         }
-    }
-    if (p_findNext) {
-        findText(p_text, p_options, true);
     }
 }
 
 void VEdit::replaceTextAll(const QString &p_text, uint p_options,
                            const QString &p_replaceText)
 {
-    // Replace from the start to the end and resotre the cursor.
+    // Replace from the start to the end and restore the cursor.
     QTextCursor cursor = textCursor();
     int nrReplaces = 0;
     QTextCursor tmpCursor = cursor;
     tmpCursor.setPosition(0);
     setTextCursor(tmpCursor);
+    int start = tmpCursor.position();
     while (true) {
         bool wrapped = false;
-        bool found = findTextHelper(p_text, p_options, true, wrapped);
+        QTextCursor retCursor;
+        bool found = findTextHelper(p_text, p_options, true,
+                                    start, wrapped, retCursor);
         if (!found) {
             break;
         } else {
@@ -387,19 +412,24 @@ void VEdit::replaceTextAll(const QString &p_text, uint p_options,
                 // Wrap back.
                 break;
             }
+
             nrReplaces++;
-            tmpCursor = textCursor();
-            tmpCursor.beginEditBlock();
-            tmpCursor.removeSelectedText();
-            tmpCursor.insertText(p_replaceText);
-            tmpCursor.endEditBlock();
-            setTextCursor(tmpCursor);
+            retCursor.beginEditBlock();
+            retCursor.insertText(p_replaceText);
+            retCursor.endEditBlock();
+            setTextCursor(retCursor);
+            start = retCursor.position();
         }
     }
+
     // Restore cursor position.
     cursor.clearSelection();
     setTextCursor(cursor);
     qDebug() << "replace all" << nrReplaces << "occurences";
+
+    emit statusMessage(tr("Replace %1 %2").arg(nrReplaces)
+                                          .arg(nrReplaces > 1 ? tr("occurences")
+                                                              : tr("occurence")));
 }
 
 void VEdit::showWrapLabel()
@@ -624,11 +654,82 @@ void VEdit::highlightSearchedWord(const QString &p_text, uint p_options)
     highlightTextAll(p_text, p_options, SelectionId::SearchedKeyword, format);
 }
 
+void VEdit::highlightSearchedWordUnderCursor(const QTextCursor &p_cursor)
+{
+    QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::SearchedKeywordUnderCursor];
+    if (!p_cursor.hasSelection()) {
+        if (!selects.isEmpty()) {
+            selects.clear();
+            highlightExtraSelections(true);
+        }
+
+        return;
+    }
+
+    selects.clear();
+    QTextEdit::ExtraSelection select;
+    select.format.setBackground(m_searchedWordCursorColor);
+    select.cursor = p_cursor;
+    selects.append(select);
+
+    highlightExtraSelections(true);
+}
+
+void VEdit::highlightIncrementalSearchedWord(const QTextCursor &p_cursor)
+{
+    QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::IncrementalSearchedKeyword];
+    if (!vconfig.getHighlightSearchedWord() || !p_cursor.hasSelection()) {
+        if (!selects.isEmpty()) {
+            selects.clear();
+            highlightExtraSelections(true);
+        }
+
+        return;
+    }
+
+    selects.clear();
+    QTextEdit::ExtraSelection select;
+    select.format.setBackground(m_incrementalSearchedWordColor);
+    select.cursor = p_cursor;
+    selects.append(select);
+
+    highlightExtraSelections(true);
+}
+
 void VEdit::clearSearchedWordHighlight()
 {
+    clearIncrementalSearchedWordHighlight(false);
+    clearSearchedWordUnderCursorHighlight(false);
+
     QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::SearchedKeyword];
+    if (selects.isEmpty()) {
+        return;
+    }
+
     selects.clear();
     highlightExtraSelections(true);
+}
+
+void VEdit::clearSearchedWordUnderCursorHighlight(bool p_now)
+{
+    QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::SearchedKeywordUnderCursor];
+    if (selects.isEmpty()) {
+        return;
+    }
+
+    selects.clear();
+    highlightExtraSelections(p_now);
+}
+
+void VEdit::clearIncrementalSearchedWordHighlight(bool p_now)
+{
+    QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::IncrementalSearchedKeyword];
+    if (selects.isEmpty()) {
+        return;
+    }
+
+    selects.clear();
+    highlightExtraSelections(p_now);
 }
 
 void VEdit::contextMenuEvent(QContextMenuEvent *p_event)
@@ -746,6 +847,8 @@ void VEdit::mousePressEvent(QMouseEvent *p_event)
     m_mouseMoveScrolled = false;
 
     QTextEdit::mousePressEvent(p_event);
+
+    emit selectionChangedByMouse(textCursor().hasSelection());
 }
 
 void VEdit::mouseReleaseEvent(QMouseEvent *p_event)
@@ -797,6 +900,8 @@ void VEdit::mouseMoveEvent(QMouseEvent *p_event)
     }
 
     QTextEdit::mouseMoveEvent(p_event);
+
+    emit selectionChangedByMouse(textCursor().hasSelection());
 }
 
 void VEdit::requestUpdateVimStatus()
@@ -1032,4 +1137,38 @@ int LineNumberArea::calculateWidth() const
     const_cast<LineNumberArea *>(this)->m_width = width;
 
     return m_width;
+}
+
+void VEdit::makeBlockVisible(const QTextBlock &p_block)
+{
+    if (!p_block.isValid() || !p_block.isVisible()) {
+        return;
+    }
+
+    QScrollBar *vbar = verticalScrollBar();
+    if (!vbar || !vbar->isVisible()) {
+        // No vertical scrollbar. No need to scroll.
+        return;
+    }
+
+    QAbstractTextDocumentLayout *layout = document()->documentLayout();
+    int height = rect().height();
+    QScrollBar *hbar = horizontalScrollBar();
+    if (hbar && hbar->isVisible()) {
+        height -= hbar->height();
+    }
+
+    QRectF rect = layout->blockBoundingRect(p_block);
+    int y = contentOffsetY() + (int)rect.y();
+    while (y < 0 && vbar->value() > vbar->minimum()) {
+        vbar->setValue(vbar->value() - vbar->singleStep());
+        rect = layout->blockBoundingRect(p_block);
+        y = contentOffsetY() + (int)rect.y();
+    }
+
+    while (y + (int)rect.height() > height && vbar->value() < vbar->maximum()) {
+        vbar->setValue(vbar->value() + vbar->singleStep());
+        rect = layout->blockBoundingRect(p_block);
+        y = contentOffsetY() + (int)rect.y();
+    }
 }
