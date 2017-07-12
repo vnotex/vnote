@@ -41,4 +41,13 @@ enum class TextDecoration { None,
                             Underline,
                             Strikethrough,
                             InlineCode };
+
+enum FindOption
+{
+    CaseSensitive = 0x1U,
+    WholeWordOnly = 0x2U,
+    RegularExpression = 0x4U,
+    IncrementalSearch = 0x8U
+};
+
 #endif

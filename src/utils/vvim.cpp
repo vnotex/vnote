@@ -11,12 +11,15 @@
 #include "vconfigmanager.h"
 #include "vedit.h"
 #include "utils/veditutils.h"
+#include "vconstants.h"
 
 extern VConfigManager vconfig;
 
 const QChar VVim::c_unnamedRegister = QChar('"');
 const QChar VVim::c_blackHoleRegister = QChar('_');
 const QChar VVim::c_selectionRegister = QChar('+');
+
+const int VVim::SearchHistory::c_capacity = 50;
 
 #define ADDKEY(x, y) case (x): {ch = (y); break;}
 
@@ -86,7 +89,7 @@ VVim::VVim(VEdit *p_editor)
     : QObject(p_editor), m_editor(p_editor),
       m_editConfig(&p_editor->getConfig()), m_mode(VimMode::Invalid),
       m_resetPositionInBlock(true), m_regName(c_unnamedRegister),
-      m_cmdMode(false), m_leaderKey(Key(Qt::Key_Space)), m_replayLeaderSequence(false)
+      m_leaderKey(Key(Qt::Key_Space)), m_replayLeaderSequence(false)
 {
     Q_ASSERT(m_editConfig->m_enableVimMode);
 
@@ -496,16 +499,6 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         qDebug() << "replaying sequence" << keyToChar(key, modifiers);
     }
 
-    if (expectingCommandLineInput()) {
-        // All input will be treated as command line input.
-        // [Enter] to execute the command and exit command line mode.
-        if (processCommandLine(keyInfo)) {
-            goto clear_accept;
-        } else {
-            goto accept;
-        }
-    }
-
     m_pendingKeys.append(keyInfo);
 
     if (expectingLeaderSequence()) {
@@ -726,8 +719,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 
             V_ASSERT(mm != Movement::Invalid);
             tryAddMoveAction();
-
-            m_tokens.append(Token(mm));
+            addMovementToken(mm);
             processCommand(m_tokens);
             resetPositionInBlock = false;
         }
@@ -1784,15 +1776,8 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             if (m_keys.isEmpty()
                 && m_tokens.isEmpty()
                 && checkMode(VimMode::Normal)) {
-                // :, enter command line mode.
-                // For simplicity, we do not use a standalone mode for this mode.
-                // Just let it be in Normal mode and use another variable to
-                // specify this.
-                m_cmdMode = true;
-                goto accept;
+                emit commandLineTriggered(CommandLineType::Command);
             }
-
-            break;
         }
 
         break;
@@ -2003,6 +1988,91 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         break;
     }
 
+    case Qt::Key_Slash:
+    {
+        if (modifiers == Qt::NoModifier) {
+            if (m_tokens.isEmpty()
+                && m_keys.isEmpty()
+                && checkMode(VimMode::Normal)) {
+                emit commandLineTriggered(CommandLineType::SearchForward);
+            }
+        }
+
+        break;
+    }
+
+    case Qt::Key_Question:
+    {
+        if (modifiers == Qt::ShiftModifier) {
+            if (m_tokens.isEmpty()
+                && m_keys.isEmpty()
+                && checkMode(VimMode::Normal)) {
+                emit commandLineTriggered(CommandLineType::SearchBackward);
+            }
+        }
+
+        break;
+    }
+
+    case Qt::Key_N:
+    {
+        if (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier) {
+            // n, FindNext/FindPrevious movement.
+            tryGetRepeatToken(m_keys, m_tokens);
+
+            if (!m_keys.isEmpty()) {
+                break;
+            }
+
+            Movement mm = Movement::FindNext;
+            if (modifiers == Qt::ShiftModifier) {
+                mm = Movement::FindPrevious;
+            }
+
+            tryAddMoveAction();
+            addMovementToken(mm);
+            processCommand(m_tokens);
+        }
+
+        break;
+    }
+
+    case Qt::Key_Asterisk:
+    {
+        if (modifiers == Qt::ShiftModifier) {
+            // *, FindNextWordUnderCursor movement.
+            tryGetRepeatToken(m_keys, m_tokens);
+
+            if (!m_keys.isEmpty()) {
+                break;
+            }
+
+            tryAddMoveAction();
+            addMovementToken(Movement::FindNextWordUnderCursor);
+            processCommand(m_tokens);
+        }
+
+        break;
+    }
+
+    case Qt::Key_NumberSign:
+    {
+        if (modifiers == Qt::ShiftModifier) {
+            // #, FindPreviousWordUnderCursor movement.
+            tryGetRepeatToken(m_keys, m_tokens);
+
+            if (!m_keys.isEmpty()) {
+                break;
+            }
+
+            tryAddMoveAction();
+            addMovementToken(Movement::FindPreviousWordUnderCursor);
+            processCommand(m_tokens);
+        }
+
+        break;
+    }
+
     default:
         break;
     }
@@ -2031,7 +2101,6 @@ void VVim::resetState()
     m_pendingKeys.clear();
     setRegister(c_unnamedRegister);
     m_resetPositionInBlock = true;
-    m_cmdMode = false;
 }
 
 VimMode VVim::getMode() const
@@ -2804,6 +2873,99 @@ handle_target:
                 p_cursor.setPosition(position, QTextCursor::KeepAnchor);
             }
         }
+
+        break;
+    }
+
+    case Movement::FindPrevious:
+        forward = false;
+        // Fall through.
+    case Movement::FindNext:
+    {
+        if (p_repeat == -1) {
+            p_repeat = 1;
+        }
+
+        if (m_searchHistory.isEmpty()) {
+            break;
+        }
+
+        // Record current location.
+        m_locations.addLocation(p_cursor);
+
+        const SearchItem &item = m_searchHistory.lastItem();
+        while (--p_repeat >= 0) {
+            hasMoved = m_editor->findText(item.m_text, item.m_options,
+                                          forward ? item.m_forward : !item.m_forward,
+                                          &p_cursor, p_moveMode);
+        }
+
+        break;
+    }
+
+    case Movement::FindPreviousWordUnderCursor:
+        forward = false;
+        // Fall through.
+    case Movement::FindNextWordUnderCursor:
+    {
+        if (p_repeat == -1) {
+            p_repeat = 1;
+        }
+
+        // Get current word under cursor.
+        // Different from Vim:
+        // We do not recognize a word as strict as Vim.
+        int start, end;
+        findCurrentWord(p_cursor, start, end);
+        if (start == end) {
+            // Spaces, find next word.
+            QTextCursor cursor = p_cursor;
+            while (true) {
+                moveCursorAcrossSpaces(cursor, p_moveMode, true);
+                if (cursor.atEnd()) {
+                    break;
+                }
+
+                if (!doc->characterAt(cursor.position()).isSpace()) {
+                    findCurrentWord(cursor, start, end);
+                    Q_ASSERT(start != end);
+                    break;
+                }
+            }
+
+            if (start == end) {
+                break;
+            }
+        }
+
+        QTextCursor cursor = p_cursor;
+        cursor.setPosition(start);
+        cursor.setPosition(end, QTextCursor::KeepAnchor);
+        QString text = cursor.selectedText();
+        if (text.isEmpty()) {
+            break;
+        }
+
+        // Record current location.
+        m_locations.addLocation(p_cursor);
+
+        p_cursor.setPosition(start, p_moveMode);
+
+        // Case-insensitive, non-regularexpression.
+        SearchItem item;
+        item.m_rawStr = text;
+        item.m_text = text;
+        item.m_forward = forward;
+
+        m_searchHistory.addItem(item);
+        m_searchHistory.resetIndex();
+        while (--p_repeat >= 0) {
+            hasMoved = m_editor->findText(item.m_text, item.m_options,
+                                          item.m_forward,
+                                          &p_cursor, p_moveMode);
+        }
+
+        Q_ASSERT(hasMoved);
 
         break;
     }
@@ -4395,11 +4557,6 @@ bool VVim::expectingReplaceCharacter() const
            && m_keys.first() == Key(Qt::Key_R, Qt::NoModifier);
 }
 
-bool VVim::expectingCommandLineInput() const
-{
-    return m_cmdMode;
-}
-
 bool VVim::expectingLeaderSequence() const
 {
     if (m_replayLeaderSequence || m_keys.isEmpty()) {
@@ -4800,134 +4957,153 @@ bool VVim::checkMode(VimMode p_mode)
     return m_mode == p_mode;
 }
 
-bool VVim::processCommandLine(const Key &p_key)
+bool VVim::processCommandLine(VVim::CommandLineType p_type, const QString &p_cmd)
 {
-    Q_ASSERT(m_cmdMode);
+    setMode(VimMode::Normal);
 
-    if (p_key == Key(Qt::Key_Return)
-        || p_key == Key(Qt::Key_Enter, Qt::KeypadModifier)) {
-        // Enter, try to execute the command and exit cmd line mode.
-        executeCommand();
-        m_cmdMode = false;
-        return true;
-    }
-
-    if (p_key.m_key == Qt::Key_Escape
-        || (p_key.m_key == Qt::Key_BracketLeft && isControlModifier(p_key.m_modifiers))) {
-        // Go back to Normal mode.
-        m_keys.clear();
-        m_pendingKeys.clear();
-        m_cmdMode = false;
-
-        setMode(VimMode::Normal);
-        return true;
-    }
-
-    switch (p_key.m_key) {
-    case Qt::Key_Backspace:
-        // Delete one char backward.
-        if (m_keys.isEmpty()) {
-            // Exit command line mode.
-            Q_ASSERT(m_pendingKeys.size() == 1);
-            m_pendingKeys.pop_back();
-            m_cmdMode = false;
-            return true;
-        } else {
-            m_keys.pop_back();
-            m_pendingKeys.pop_back();
-        }
-
+    bool ret = false;
+    switch (p_type) {
+    case CommandLineType::Command:
+        ret = executeCommand(p_cmd);
         break;
 
-    case Qt::Key_U:
+    case CommandLineType::SearchForward:
+        // Fall through.
+    case CommandLineType::SearchBackward:
     {
-        if (isControlModifier(p_key.m_modifiers)) {
-            // Ctrl+U, delete all input keys.
-            while (!m_keys.isEmpty()) {
-                m_keys.pop_back();
-                m_pendingKeys.pop_back();
-            }
-        } else {
-            // Just pend this key.
-            m_pendingKeys.append(p_key);
-            m_keys.append(p_key);
-        }
-
+        SearchItem item = fetchSearchItem(p_type, p_cmd);
+        m_editor->findText(item.m_text, item.m_options, item.m_forward);
+        m_searchHistory.addItem(item);
+        m_searchHistory.resetIndex();
         break;
     }
 
     default:
-        // Just pend this key.
-        m_pendingKeys.append(p_key);
-        m_keys.append(p_key);
+        break;
     }
 
-    return false;
+    return ret;
 }
 
-void VVim::executeCommand()
+void VVim::processCommandLineChanged(VVim::CommandLineType p_type,
+                                     const QString &p_cmd)
+{
+    setMode(VimMode::Normal);
+
+    if (p_type == CommandLineType::SearchForward
+        || p_type == CommandLineType::SearchBackward) {
+        // Peek text.
+        SearchItem item = fetchSearchItem(p_type, p_cmd);
+        m_editor->peekText(item.m_text, item.m_options, item.m_forward);
+    }
+}
+
+void VVim::processCommandLineCancelled()
+{
+    m_searchHistory.resetIndex();
+    m_editor->clearIncrementalSearchedWordHighlight();
+}
+
+VVim::SearchItem VVim::fetchSearchItem(VVim::CommandLineType p_type,
+                                       const QString &p_cmd)
+{
+    Q_ASSERT(p_type == CommandLineType::SearchForward
+             || p_type == CommandLineType::SearchBackward);
+
+    SearchItem item;
+    item.m_rawStr = p_cmd;
+    item.m_text = p_cmd;
+    item.m_forward = p_type == CommandLineType::SearchForward;
+
+    if (p_cmd.indexOf("\\C") > -1) {
+        item.m_options |= FindOption::CaseSensitive;
+        item.m_text.remove("\\C");
+    }
+
+    item.m_options |= FindOption::RegularExpression;
+
+    return item;
+}
+
+bool VVim::executeCommand(const QString &p_cmd)
 {
     bool validCommand = true;
     QString msg;
 
-    if (m_keys.isEmpty()) {
-        return;
-    } if (m_keys.size() == 1) {
-        const Key &key0 = m_keys.first();
-        if (key0 == Key(Qt::Key_W)) {
+    Q_ASSERT(m_tokens.isEmpty() && m_keys.isEmpty());
+    if (p_cmd.isEmpty()) {
+        return true;
+    }else if (p_cmd.size() == 1) {
+        if (p_cmd == "w") {
             // :w, save current file.
             emit m_editor->saveNote();
             msg = tr("Note has been saved");
-        } else if (key0 == Key(Qt::Key_Q)) {
+        } else if (p_cmd == "q") {
             // :q, quit edit mode.
             emit m_editor->discardAndRead();
             msg = tr("Quit");
-        } else if (key0 == Key(Qt::Key_X)) {
+        } else if (p_cmd == "x") {
             // :x, save if there is any change and quit edit mode.
             emit m_editor->saveAndRead();
             msg = tr("Quit with note having been saved");
         } else {
             validCommand = false;
         }
-    } else if (m_keys.size() == 2) {
-        const Key &key0 = m_keys.first();
-        const Key &key1 = m_keys.at(1);
-        if (key0 == Key(Qt::Key_W) && key1 == Key(Qt::Key_Q)) {
+    } else if (p_cmd.size() == 2) {
+        if (p_cmd == "wq") {
             // :wq, save change and quit edit mode.
             // We treat it same as :x.
             emit m_editor->saveAndRead();
             msg = tr("Quit with note having been saved");
-        } else if (key0 == Key(Qt::Key_Q) && key1 == Key(Qt::Key_Exclam, Qt::ShiftModifier)) {
+        } else if (p_cmd == "q!") {
             // :q!, discard change and quit edit mode.
             emit m_editor->discardAndRead();
             msg = tr("Quit");
         } else {
             validCommand = false;
         }
+    } else if (p_cmd == "nohlsearch") {
+        // :nohlsearch, clear highlight search.
+        clearSearchHighlight();
     } else {
         validCommand = false;
     }
 
-    if (!validCommand && !hasNonDigitPendingKeys() && m_tokens.isEmpty()) {
+    if (!validCommand) {
+        bool allDigits = true;
+        for (int i = 0; i < p_cmd.size(); ++i) {
+            if (!p_cmd[i].isDigit()) {
+                allDigits = false;
+                break;
+            }
+        }
+
         // All digits.
         // Jump to a specific line.
-        tryGetRepeatToken(m_keys, m_tokens);
-        tryAddMoveAction();
-        addMovementToken(Movement::LineJump);
-        processCommand(m_tokens);
-        validCommand = true;
+        if (allDigits) {
+            bool ok;
+            int num = p_cmd.toInt(&ok, 10);
+            if (num == 0) {
+                num = 1;
+            }
+
+            if (ok && num > 0) {
+                m_tokens.append(Token(num));
+                tryAddMoveAction();
+                addMovementToken(Movement::LineJump);
+                processCommand(m_tokens);
+                validCommand = true;
+            }
+        }
     }
 
     if (!validCommand) {
-        QString str;
-        for (auto const & key : m_keys) {
-            str.append(keyToChar(key.m_key, key.m_modifiers));
-        }
-
-        message(tr("Not an editor command: %1").arg(str));
+        message(tr("Not an editor command: %1").arg(p_cmd));
     } else {
         message(msg);
     }
+
+    return validCommand;
 }
 
 bool VVim::hasNonDigitPendingKeys(const QList<Key> &p_keys)
@@ -4974,6 +5150,9 @@ bool VVim::processLeaderSequence(const Key &p_key)
         replaySeq.append(Key(Qt::Key_QuoteDbl, Qt::ShiftModifier));
         replaySeq.append(Key(Qt::Key_Plus, Qt::ShiftModifier));
         replaySeq.append(Key(Qt::Key_P, Qt::ShiftModifier));
+    } else if (p_key == Key(Qt::Key_Space)) {
+        // <leader><space>, clear search highlight
+        clearSearchHighlight();
     } else {
         validSequence = false;
     }
@@ -4994,6 +5173,8 @@ bool VVim::processLeaderSequence(const Key &p_key)
         }
 
         m_replayLeaderSequence = false;
+    } else {
+        resetState();
     }
 
     return validSequence;
@@ -5162,4 +5343,110 @@ void VVim::processTitleJump(const QList<Token> &p_tokens, bool p_forward, int p_
         // Record current location.
         m_locations.addLocation(cursor);
     }
+}
+
+void VVim::SearchHistory::addItem(const SearchItem &p_item)
+{
+    m_isLastItemForward = p_item.m_forward;
+    if (m_isLastItemForward) {
+        m_forwardItems.push_back(p_item);
+        m_forwardIdx = m_forwardItems.size();
+    } else {
+        m_backwardItems.push_back(p_item);
+        m_backwardIdx = m_forwardItems.size();
+    }
+
+    qDebug() << "search history add item" << m_isLastItemForward
+             << m_forwardIdx << m_forwardItems.size()
+             << m_backwardIdx << m_backwardItems.size();
+}
+
+const VVim::SearchItem &VVim::SearchHistory::lastItem() const
+{
+    if (m_isLastItemForward) {
+        Q_ASSERT(!m_forwardItems.isEmpty());
+        return m_forwardItems.back();
+    } else {
+        Q_ASSERT(!m_backwardItems.isEmpty());
+        return m_backwardItems.back();
+    }
+}
+
+const VVim::SearchItem &VVim::SearchHistory::nextItem(bool p_forward)
+{
+    Q_ASSERT(hasNext(p_forward));
+    return p_forward ? m_forwardItems.at(++m_forwardIdx)
+                     : m_backwardItems.at(++m_backwardIdx);
+}
+
+// Return previous item in the @p_forward stack.
+const VVim::SearchItem &VVim::SearchHistory::previousItem(bool p_forward)
+{
+    Q_ASSERT(hasPrevious(p_forward));
+    qDebug() << "previousItem" << p_forward << m_forwardItems.size() << m_backwardItems.size()
+             << m_forwardIdx << m_backwardIdx;
+    return p_forward ? m_forwardItems.at(--m_forwardIdx)
+                     : m_backwardItems.at(--m_backwardIdx);
+}
+
+void VVim::SearchHistory::resetIndex()
+{
+    m_forwardIdx = m_forwardItems.size();
+    m_backwardIdx = m_backwardItems.size();
+}
+
+QString VVim::getNextCommandHistory(VVim::CommandLineType p_type,
+                                    const QString &p_cmd)
+{
+    Q_UNUSED(p_cmd);
+    bool forward = false;
+    QString cmd;
+    switch (p_type) {
+    case CommandLineType::SearchForward:
+        forward = true;
+        // Fall through.
+    case CommandLineType::SearchBackward:
+        if (m_searchHistory.hasNext(forward)) {
+            return m_searchHistory.nextItem(forward).m_rawStr;
+        } else {
+            m_searchHistory.resetIndex();
+        }
+
+        break;
+
+    default:
+        break;
+    }
+
+    return cmd;
+}
+
+// Get the previous command in history of @p_type. @p_cmd is the current input.
+QString VVim::getPreviousCommandHistory(VVim::CommandLineType p_type,
+                                        const QString &p_cmd)
+{
+    Q_UNUSED(p_cmd);
+    bool forward = false;
+    QString cmd;
+    switch (p_type) {
+    case CommandLineType::SearchForward:
+        forward = true;
+        // Fall through.
+    case CommandLineType::SearchBackward:
+        if (m_searchHistory.hasPrevious(forward)) {
+            return m_searchHistory.previousItem(forward).m_rawStr;
+        }
+
+        break;
+
+    default:
+        break;
+    }
+
+    return cmd;
+}
+
+void VVim::clearSearchHighlight()
+{
+    m_editor->clearSearchedWordHighlight();
 }

@@ -163,7 +163,11 @@ public:
     bool isCustomWebZoomFactor();
 
     const QString &getEditorCurrentLineBg() const;
-    QString getEditorTrailingSpaceBackground() const;
+    const QString &getEditorTrailingSpaceBg() const;
+    const QString &getEditorSelectedWordBg() const;
+    const QString &getEditorSearchedWordBg() const;
+    const QString &getEditorSearchedWordCursorBg() const;
+    const QString &getEditorIncrementalSearchedWordBg() const;
 
     const QString &getEditorVimNormalBg() const;
     const QString &getEditorVimInsertBg() const;
@@ -362,6 +366,18 @@ private:
 
     // Trailing space background color in editor.
     QString m_editorTrailingSpaceBg;
+
+    // Background color of selected word in editor.
+    QString m_editorSelectedWordBg;
+
+    // Background color of searched word in editor.
+    QString m_editorSearchedWordBg;
+
+    // Background color of searched word under cursor in editor.
+    QString m_editorSearchedWordCursorBg;
+
+    // Background color of incremental searched word in editor.
+    QString m_editorIncrementalSearchedWordBg;
 
     // Enable colde block syntax highlight.
     bool m_enableCodeBlockHighlight;
@@ -827,9 +843,29 @@ inline const QString &VConfigManager::getEditorCurrentLineBg() const
     return m_editorCurrentLineBg;
 }
 
-inline QString VConfigManager::getEditorTrailingSpaceBackground() const
+inline const QString &VConfigManager::getEditorTrailingSpaceBg() const
 {
     return m_editorTrailingSpaceBg;
+}
+
+inline const QString &VConfigManager::getEditorSelectedWordBg() const
+{
+    return m_editorSelectedWordBg;
+}
+
+inline const QString &VConfigManager::getEditorSearchedWordBg() const
+{
+    return m_editorSearchedWordBg;
+}
+
+inline const QString &VConfigManager::getEditorSearchedWordCursorBg() const
+{
+    return m_editorSearchedWordCursorBg;
+}
+
+inline const QString &VConfigManager::getEditorIncrementalSearchedWordBg() const
+{
+    return m_editorIncrementalSearchedWordBg;
 }
 
 inline const QString &VConfigManager::getEditorVimNormalBg() const

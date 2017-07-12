@@ -1773,10 +1773,10 @@ void VMainWindow::updateStatusInfo(const VEditTabInfo &p_info)
 
 void VMainWindow::handleVimStatusUpdated(const VVim *p_vim)
 {
+    m_vimIndicator->update(p_vim, m_curTab);
     if (!p_vim || !m_curTab || !m_curTab->isEditMode()) {
         m_vimIndicator->hide();
     } else {
-        m_vimIndicator->update(p_vim);
         m_vimIndicator->show();
     }
 }

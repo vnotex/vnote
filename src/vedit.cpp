@@ -6,8 +6,8 @@
 #include "vconfigmanager.h"
 #include "vtoc.h"
 #include "utils/vutils.h"
+#include "utils/veditutils.h"
 #include "veditoperations.h"
-#include "dialog/vfindreplacedialog.h"
 #include "vedittab.h"
 
 extern VConfigManager vconfig;
@@ -49,11 +49,11 @@ VEdit::VEdit(VFile *p_file, QWidget *p_parent)
     const int extraSelectionHighlightTimer = 500;
     const int labelSize = 64;
 
-    m_selectedWordColor = QColor("Yellow");
-    m_searchedWordColor = QColor(g_vnote->getColorFromPalette("Green4"));
-    m_searchedWordCursorColor = QColor("#64B5F6");
-    m_incrementalSearchedWordColor = QColor(g_vnote->getColorFromPalette("Purple2"));
-    m_trailingSpaceColor = QColor(vconfig.getEditorTrailingSpaceBackground());
+    m_selectedWordColor = QColor(vconfig.getEditorSelectedWordBg());
+    m_searchedWordColor = QColor(vconfig.getEditorSearchedWordBg());
+    m_searchedWordCursorColor = QColor(vconfig.getEditorSearchedWordCursorBg());
+    m_incrementalSearchedWordColor = QColor(vconfig.getEditorIncrementalSearchedWordBg());
+    m_trailingSpaceColor = QColor(vconfig.getEditorTrailingSpaceBg());
 
     QPixmap wrapPixmap(":/resources/icons/search_wrap.svg");
     m_wrapLabel = new QLabel(this);
@@ -151,11 +151,11 @@ void VEdit::scrollToLine(int p_lineNumber)
 {
     Q_ASSERT(p_lineNumber >= 0);
 
-    // Move the cursor to the end first
-    moveCursor(QTextCursor::End);
-    QTextCursor cursor(document()->findBlockByLineNumber(p_lineNumber));
-    cursor.movePosition(QTextCursor::EndOfBlock);
-    setTextCursor(cursor);
+    QTextBlock block = document()->findBlockByLineNumber(p_lineNumber);
+    if (block.isValid()) {
+        VEditUtils::scrollBlockInPage(this, block.blockNumber(), 0);
+        moveCursor(QTextCursor::EndOfBlock);
+    }
 }
 
 bool VEdit::isModified() const
@@ -178,7 +178,7 @@ void VEdit::insertImage()
     }
 }
 
-bool VEdit::peekText(const QString &p_text, uint p_options)
+bool VEdit::peekText(const QString &p_text, uint p_options, bool p_forward)
 {
     if (p_text.isEmpty()) {
         makeBlockVisible(document()->findBlock(textCursor().selectionStart()));
@@ -188,8 +188,10 @@ bool VEdit::peekText(const QString &p_text, uint p_options)
 
     bool wrapped = false;
     QTextCursor retCursor;
-    bool found = findTextHelper(p_text, p_options, true,
-                                textCursor().position() + 1, wrapped, retCursor);
+    bool found = findTextHelper(p_text, p_options, p_forward,
+                                p_forward ? textCursor().position() + 1
+                                          : textCursor().position(),
+                                wrapped, retCursor);
     if (found) {
         makeBlockVisible(document()->findBlock(retCursor.selectionStart()));
         highlightIncrementalSearchedWord(retCursor);
@@ -324,7 +326,8 @@ QList<QTextCursor> VEdit::findTextAll(const QString &p_text, uint p_options)
     return results;
 }
 
-bool VEdit::findText(const QString &p_text, uint p_options, bool p_forward)
+bool VEdit::findText(const QString &p_text, uint p_options, bool p_forward,
+                     QTextCursor *p_cursor, QTextCursor::MoveMode p_moveMode)
 {
     clearIncrementalSearchedWordHighlight();
 
@@ -333,12 +336,16 @@ bool VEdit::findText(const QString &p_text, uint p_options, bool p_forward)
         return false;
     }
 
+    QTextCursor cursor = textCursor();
     bool wrapped = false;
     QTextCursor retCursor;
     int matches = 0;
-    bool found = findTextHelper(p_text, p_options, p_forward,
-                                p_forward ? textCursor().position() + 1
-                                          : textCursor().position(),
+    int start = p_forward ? cursor.position() + 1 : cursor.position();
+    if (p_cursor) {
+        start = p_forward ? p_cursor->position() + 1 : p_cursor->position();
+    }
+
+    bool found = findTextHelper(p_text, p_options, p_forward, start,
                                 wrapped, retCursor);
     if (found) {
         Q_ASSERT(!retCursor.isNull());
@@ -346,9 +353,12 @@ bool VEdit::findText(const QString &p_text, uint p_options, bool p_forward)
             showWrapLabel();
         }
 
-        QTextCursor cursor = textCursor();
-        cursor.setPosition(retCursor.selectionStart());
-        setTextCursor(cursor);
+        if (p_cursor) {
+            p_cursor->setPosition(retCursor.selectionStart(), p_moveMode);
+        } else {
+            cursor.setPosition(retCursor.selectionStart(), p_moveMode);
+            setTextCursor(cursor);
+        }
 
         highlightSearchedWord(p_text, p_options);
         highlightSearchedWordUnderCursor(retCursor);

@@ -354,8 +354,15 @@ void VMdEdit::generateEditOutline()
 void VMdEdit::scrollToHeader(const VAnchor &p_anchor)
 {
     if (p_anchor.lineNumber == -1
-        || p_anchor.m_outlineIndex < 0
-        || p_anchor.m_outlineIndex >= m_headers.size()) {
+        || p_anchor.m_outlineIndex < 0) {
+        // Move to the start of document if m_headers is not empty.
+        // Otherwise, there is no outline, so just let it be.
+        if (!m_headers.isEmpty()) {
+            moveCursor(QTextCursor::Start);
+        }
+
+        return;
+    } else if (p_anchor.m_outlineIndex >= m_headers.size()) {
         return;
     }
 

@@ -12,11 +12,20 @@ editor
 # QTextEdit just choose the first available font, so specify the Chinese fonts first
 # Do not use "" to quote the name
 font-family: Hiragino Sans GB, 冬青黑体, Microsoft YaHei, 微软雅黑, Microsoft YaHei UI, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, STXihei, 华文细黑, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Helvetica, sans-serif, Tahoma, Arial, Verdana, Geneva, Georgia, Times New Roman
+font-size: 12
 # [VNote] Style for trailing space
 trailing-space: a8a8a8
-font-size: 12
+# [VNote] Style for line number
 line-number-background: bdbdbd
 line-number-foreground: 424242
+# [VNote] style for selected word highlight
+selected-word-background: dfdf00
+# [VNote] style for searched word highlight
+searched-word-background: 4db6ac
+# [VNote] style for searched word under cursor highlight
+searched-word-cursor-background: 66bb6a
+# [VNote] style for incremental searched word highlight
+incremental-searched-word-background: ce93d8
 
 editor-selection
 foreground: eeeeee

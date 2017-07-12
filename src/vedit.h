@@ -83,9 +83,14 @@ public:
 
     // Used for incremental search.
     // User has enter the content to search, but does not enter the "find" button yet.
-    bool peekText(const QString &p_text, uint p_options);
+    bool peekText(const QString &p_text, uint p_options, bool p_forward = true);
 
-    bool findText(const QString &p_text, uint p_options, bool p_forward);
+    // If @p_cursor is not now, set the position of @p_cursor instead of current
+    // cursor.
+    bool findText(const QString &p_text, uint p_options, bool p_forward,
+                  QTextCursor *p_cursor = NULL,
+                  QTextCursor::MoveMode p_moveMode = QTextCursor::MoveAnchor);
+
     void replaceText(const QString &p_text, uint p_options,
                      const QString &p_replaceText, bool p_findNext);
     void replaceTextAll(const QString &p_text, uint p_options,

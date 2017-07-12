@@ -340,7 +340,11 @@ void VConfigManager::updateMarkdownEditStyle()
     static const QString defaultVimInsertBg = "#CDC0B0";
     static const QString defaultVimVisualBg = "#90CAF9";
     static const QString defaultVimReplaceBg = "#F8BBD0";
-    static const QString defaultTrailingSpaceBackground = "#A8A8A8";
+    static const QString defaultTrailingSpaceBg = "#A8A8A8";
+    static const QString defaultSelectedWordBg = "#DFDF00";
+    static const QString defaultSearchedWordBg = "#81C784";
+    static const QString defaultSearchedWordCursorBg = "#4DB6AC";
+    static const QString defaultIncrementalSearchedWordBg = "#CE93D8";
     static const QString defaultLineNumberBg = "#BDBDBD";
     static const QString defaultLineNumberFg = "#424242";
 
@@ -398,7 +402,11 @@ void VConfigManager::updateMarkdownEditStyle()
         }
     }
 
-    m_editorTrailingSpaceBg = defaultTrailingSpaceBackground;
+    m_editorTrailingSpaceBg = defaultTrailingSpaceBg;
+    m_editorSelectedWordBg = defaultSelectedWordBg;
+    m_editorSearchedWordBg = defaultSearchedWordBg;
+    m_editorSearchedWordCursorBg = defaultSearchedWordCursorBg;
+    m_editorIncrementalSearchedWordBg = defaultIncrementalSearchedWordBg;
     m_editorLineNumberBg = defaultLineNumberBg;
     m_editorLineNumberFg = defaultLineNumberFg;
     auto editorIt = styles.find("editor");
@@ -416,6 +424,26 @@ void VConfigManager::updateMarkdownEditStyle()
         it = editorIt->find("line-number-foreground");
         if (it != editorIt->end()) {
             m_editorLineNumberFg = "#" + *it;
+        }
+
+        it = editorIt->find("selected-word-background");
+        if (it != editorIt->end()) {
+            m_editorSelectedWordBg = "#" + *it;
+        }
+
+        it = editorIt->find("searched-word-background");
+        if (it != editorIt->end()) {
+            m_editorSearchedWordBg = "#" + *it;
+        }
+
+        it = editorIt->find("searched-word-cursor-background");
+        if (it != editorIt->end()) {
+            m_editorSearchedWordCursorBg = "#" + *it;
+        }
+
+        it = editorIt->find("incremental-searched-word-background");
+        if (it != editorIt->end()) {
+            m_editorIncrementalSearchedWordBg = "#" + *it;
         }
     }
 }

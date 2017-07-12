@@ -146,6 +146,14 @@ public:
         QChar m_lastUsedMark;
     };
 
+    enum class CommandLineType
+    {
+        Command,
+        SearchForward,
+        SearchBackward,
+        Invalid
+    };
+
     // Handle key press event.
     // @p_autoIndentPos: the cursor position of last auto indent.
     // Returns true if the event is consumed and need no more handling.
@@ -172,6 +180,26 @@ public:
     // Get m_marks.
     const VVim::Marks &getMarks() const;
 
+    // Process command line of type @p_type and command @p_cmd.
+    // Returns true if it is a valid command.
+    bool processCommandLine(VVim::CommandLineType p_type, const QString &p_cmd);
+
+    // Process the command line text change.
+    void processCommandLineChanged(VVim::CommandLineType p_type,
+                                   const QString &p_cmd);
+
+    void processCommandLineCancelled();
+
+    // Get the next command in history of @p_type. @p_cmd is the current input.
+    // Return NULL QString if history is not applicable.
+    QString getNextCommandHistory(VVim::CommandLineType p_type,
+                                  const QString &p_cmd);
+
+    // Get the previous command in history of @p_type. @p_cmd is the current input.
+    // Return NULL QString if history is not applicable.
+    QString getPreviousCommandHistory(VVim::CommandLineType p_type,
+                                      const QString &p_cmd);
+
 signals:
     // Emit when current mode has been changed.
     void modeChanged(VimMode p_mode);
@@ -181,6 +209,9 @@ signals:
 
     // Emit when current status updated.
     void vimStatusUpdated(const VVim *p_vim);
+
+    // Emit when user pressed : to trigger command line.
+    void commandLineTriggered(VVim::CommandLineType p_type);
 
 private slots:
     // When user use mouse to select texts in Normal mode, we should change to
@@ -242,6 +273,79 @@ private:
         }
     };
 
+    // Search item including the searched text and options.
+    struct SearchItem
+    {
+        SearchItem() : m_options(0), m_forward(true) {}
+
+        // The user raw input.
+        QString m_rawStr;
+
+        // The string used to search.
+        QString m_text;
+
+        uint m_options;
+        bool m_forward;
+    };
+
+    class SearchHistory
+    {
+    public:
+        SearchHistory()
+            : m_forwardIdx(0), m_backwardIdx(0), m_isLastItemForward(true) {}
+
+        // Add @p_item to history.
+        void addItem(const SearchItem &p_item);
+
+        // Whether the history is empty.
+        bool isEmpty() const
+        {
+            return m_forwardItems.isEmpty() && m_backwardItems.isEmpty();
+        }
+
+        bool hasNext(bool p_forward) const
+        {
+            return p_forward ? m_forwardIdx < m_forwardItems.size() - 1
+                             : m_backwardIdx < m_backwardItems.size() - 1;
+        }
+
+        bool hasPrevious(bool p_forward) const
+        {
+            return p_forward ? m_forwardIdx > 0
+                             : m_backwardIdx > 0;
+        }
+
+        // Return the last search item according to m_isLastItemForward.
+        // Make sure the history is not empty before calling this.
+        const SearchItem &lastItem() const;
+
+        // Return next item in the @p_forward stack.
+        // Make sure before by calling hasNext().
+        const SearchItem &nextItem(bool p_forward);
+
+        // Return previous item in the @p_forward stack.
+        // Make sure before by calling hasPrevious().
+        const SearchItem &previousItem(bool p_forward);
+
+        void resetIndex();
+
+    private:
+        // Maintain two stacks for the search history. Use the back as the top
+        // of the stack.
+        // The idx points to the next item to push.
+        // Just simply add new search item to the stack, without duplication.
+        QList<SearchItem> m_forwardItems;
+        int m_forwardIdx;
+
+        QList<SearchItem> m_backwardItems;
+        int m_backwardIdx;
+
+        // Whether last search item is forward or not.
+        bool m_isLastItemForward;
+
+        static const int c_capacity;
+    };
+
     // Supported actions.
     enum class Action
     {
@@ -301,6 +405,10 @@ private:
         MarkJump,
         MarkJumpLine,
         FindPair,
+        FindNext,
+        FindPrevious,
+        FindNextWordUnderCursor,
+        FindPreviousWordUnderCursor,
         Invalid
     };
 
@@ -549,9 +657,6 @@ private:
     // Check m_keys to see if we are expecting a character to replace with.
     bool expectingReplaceCharacter() const;
 
-    // Check if we are in command line mode.
-    bool expectingCommandLineInput() const;
-
     // Check if we are in a leader sequence.
     bool expectingLeaderSequence() const;
 
@@ -645,15 +750,12 @@ private:
     // Check if m_mode equals to p_mode.
     bool checkMode(VimMode p_mode);
 
-    // In command line mode, read input @p_key and process it.
-    // Returns true if a command has been completed, otherwise returns false.
-    bool processCommandLine(const Key &p_key);
-
-    // Execute command specified by m_keys.
-    // @p_keys does not contain the leading colon.
+    // Execute command specified by @p_cmd.
+    // @p_cmd does not contain the leading colon.
+    // Returns true if it is a valid command.
     // Following commands are supported:
-    // :w, :wq, :q, :q!, :x
-    void executeCommand();
+    // w, wq, q, q!, x, <nums>
+    bool executeCommand(const QString &p_cmd);
 
     // Check if m_keys has non-digit key.
     bool hasNonDigitPendingKeys();
@@ -673,6 +775,15 @@ private:
     // Jump across titles.
     // [[, ]], [], ][, [{, ]}.
     void processTitleJump(const QList<Token> &p_tokens, bool p_forward, int p_relativeLevel);
+
+    // Fetch the searched string and options from @p_type and @p_cmd.
+    // \C for case-sensitive;
+    // Case-insensitive by default.
+    // Regular-expression by default.
+    VVim::SearchItem fetchSearchItem(VVim::CommandLineType p_type, const QString &p_cmd);
+
+    // Clear search highlight.
+    void clearSearchHighlight();
 
     VEdit *m_editor;
     const VEditConfig *m_editConfig;
@@ -699,9 +810,6 @@ private:
     // Last f/F/t/T Token.
     Token m_lastFindToken;
 
-    // Whether in command line mode.
-    bool m_cmdMode;
-
     // The leader key, which is Key_Space by default.
     Key m_leaderKey;
 
@@ -713,6 +821,9 @@ private:
     LocationStack m_locations;
 
     Marks m_marks;
+
+    // Search history.
+    SearchHistory m_searchHistory;
 
     static const QChar c_unnamedRegister;
     static const QChar c_blackHoleRegister;

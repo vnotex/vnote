@@ -9,14 +9,6 @@ class QLineEdit;
 class QPushButton;
 class QCheckBox;
 
-enum FindOption
-{
-    CaseSensitive = 0x1U,
-    WholeWordOnly = 0x2U,
-    RegularExpression = 0x4U,
-    IncrementalSearch = 0x8U
-};
-
 class VFindReplaceDialog : public QWidget
 {
     Q_OBJECT

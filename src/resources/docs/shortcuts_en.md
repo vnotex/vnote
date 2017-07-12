@@ -5,7 +5,7 @@
 ## Normal Shortcuts
 - `Ctrl+E E`  
 Toggle expanding the edit area.
-- `Ctrl+N`  
+- `Ctrl+Alt+N`  
 Create a note in current directory.
 - `Ctrl+F`  
 Find/Replace in current note.
@@ -162,10 +162,11 @@ VNote supports following features of Vim:
 - Jump locations list (`Ctrl+O` and `Ctrl+I`);
 - Leader key (`Space`)
     - Currently `<leader>y/d/p` equals to `"+y/d/p`, which will access the system's clipboard;
+    - `<leader><Space>` to clear search highlight;
 - `zz`, `zb`, `zt`;
 - `u` and `Ctrl+R` for undo and redo;
 - Text objects `i/a`: word, WORD, `''`, `""`, `` ` ` ``, `()`, `[]`, `<>`, and `{}`;
-- Command line `:w`, `:wq`, `:x`, `:q`, and `:q!`;
+- Command line `:w`, `:wq`, `:x`, `:q`, `:q!`, and `:nohlsearch`;
 - Jump between titles
     - `[[`: jump to previous title;
     - `]]`: jump to next title;
@@ -173,6 +174,9 @@ VNote supports following features of Vim:
     - `][`: jump to next title at the same level;
     - `[{`: jump to previous title at a higher level;
     - `]}`: jump to next title at a higher level;
+- `/` and `?` to search
+    - `n` and `N` to find next or previous occurence;
+    - `Ctrl+N` and `Ctrl+P` to navigate through the search history;
 
 For now, VNote does **NOT** support the macro and repeat(`.`) features of Vim.
 
