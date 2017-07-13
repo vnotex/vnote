@@ -45,6 +45,9 @@ signals:
     // Emit when the input text changed.
     void commandChanged(VVim::CommandLineType p_type, const QString &p_cmd);
 
+    // Emit when expecting to read a register.
+    void requestRegister(int p_key, int p_modifiers);
+
 protected:
     void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -54,10 +57,17 @@ private:
     // Return the leader of @p_type.
     QString commandLineTypeLeader(VVim::CommandLineType p_type);
 
+    void setRegisterPending(bool p_pending);
+
     VVim::CommandLineType m_type;
 
     // The latest command user input.
     QString m_userLastInput;
+
+    // Whether we are expecting a register name to read.
+    bool m_registerPending;
+
+    QString m_originStyleSheet;
 };
 
 class VVimIndicator : public QWidget

@@ -23,18 +23,24 @@ const int VVim::SearchHistory::c_capacity = 50;
 
 #define ADDKEY(x, y) case (x): {ch = (y); break;}
 
+// See if @p_modifiers is Control which is different on macOs and Windows.
+static bool isControlModifier(int p_modifiers)
+{
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    return p_modifiers == Qt::MetaModifier;
+#else
+    return p_modifiers == Qt::ControlModifier;
+#endif
+}
+
 // Returns NULL QChar if invalid.
 static QChar keyToChar(int p_key, int p_modifiers)
 {
-    if (p_modifiers != Qt::NoModifier
-        && p_modifiers != Qt::ShiftModifier) {
-        return QChar();
-    }
-
     if (p_key >= Qt::Key_0 && p_key <= Qt::Key_9) {
         return QChar('0' + (p_key - Qt::Key_0));
     } else if (p_key >= Qt::Key_A && p_key <= Qt::Key_Z) {
-        if (p_modifiers == Qt::ShiftModifier) {
+        if (p_modifiers == Qt::ShiftModifier
+            || isControlModifier(p_modifiers)) {
             return QChar('A' + (p_key - Qt::Key_A));
         } else {
             return QChar('a' + (p_key - Qt::Key_A));
@@ -85,11 +91,26 @@ static QChar keyToChar(int p_key, int p_modifiers)
     return ch;
 }
 
+static QString keyToString(int p_key, int p_modifiers)
+{
+    QChar ch = keyToChar(p_key, p_modifiers);
+    if (ch.isNull()) {
+        return QString();
+    }
+
+    if (isControlModifier(p_modifiers)) {
+        return QString("^") + ch;
+    } else {
+        return ch;
+    }
+}
+
 VVim::VVim(VEdit *p_editor)
     : QObject(p_editor), m_editor(p_editor),
       m_editConfig(&p_editor->getConfig()), m_mode(VimMode::Invalid),
       m_resetPositionInBlock(true), m_regName(c_unnamedRegister),
-      m_leaderKey(Key(Qt::Key_Space)), m_replayLeaderSequence(false)
+      m_leaderKey(Key(Qt::Key_Space)), m_replayLeaderSequence(false),
+      m_registerPending(false)
 {
     Q_ASSERT(m_editConfig->m_enableVimMode);
 
@@ -348,16 +369,6 @@ static int percentageToBlockNumber(const QTextDocument *p_doc, int p_percent)
     return num >= 0 ? num : 0;
 }
 
-// See if @p_modifiers is Control which is different on macOs and Windows.
-static bool isControlModifier(int p_modifiers)
-{
-#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
-    return p_modifiers == Qt::MetaModifier;
-#else
-    return p_modifiers == Qt::ControlModifier;
-#endif
-}
-
 // Replace each of the character of selected text with @p_char.
 // Returns true if replacement has taken place.
 // Need to setTextCursor() after calling this.
@@ -477,6 +488,27 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 
             setMode(VimMode::Normal);
             goto clear_accept;
+        }
+
+        if (m_registerPending) {
+            // Ctrl and Shift may be sent out first.
+            if (key == Qt::Key_Control || key == Qt::Key_Shift || key == Qt::Key_Meta) {
+                goto accept;
+            }
+
+            // Expecting a register name.
+            QChar reg = keyToRegisterName(keyInfo);
+            if (!reg.isNull()) {
+                // Insert register content.
+                m_editor->insertPlainText(m_registers[reg].read());
+            }
+
+            goto clear_accept;
+        } else if (key == Qt::Key_R && isControlModifier(modifiers)) {
+            // Ctrl+R, insert the content of a register.
+            m_pendingKeys.append(keyInfo);
+            m_registerPending = true;
+            goto accept;
         }
 
         // Let it be handled outside VVim.
@@ -2101,6 +2133,7 @@ void VVim::resetState()
     m_pendingKeys.clear();
     setRegister(c_unnamedRegister);
     m_resetPositionInBlock = true;
+    m_registerPending = false;
 }
 
 VimMode VVim::getMode() const
@@ -4941,7 +4974,7 @@ QString VVim::getPendingKeys() const
 {
     QString str;
     for (auto const & key : m_pendingKeys) {
-        str.append(keyToChar(key.m_key, key.m_modifiers));
+        str.append(keyToString(key.m_key, key.m_modifiers));
     }
 
     return str;
@@ -5449,4 +5482,15 @@ QString VVim::getPreviousCommandHistory(VVim::CommandLineType p_type,
 void VVim::clearSearchHighlight()
 {
     m_editor->clearSearchedWordHighlight();
+}
+
+QString VVim::readRegister(int p_key, int p_modifiers)
+{
+    Key keyInfo(p_key, p_modifiers);
+    QChar reg = keyToRegisterName(keyInfo);
+    if (!reg.isNull()) {
+        return m_registers[reg].read();
+    }
+
+    return "";
 }

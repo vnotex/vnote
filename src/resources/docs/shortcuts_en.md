@@ -177,6 +177,7 @@ VNote supports following features of Vim:
 - `/` and `?` to search
     - `n` and `N` to find next or previous occurence;
     - `Ctrl+N` and `Ctrl+P` to navigate through the search history;
+- `Ctrl+R` to read the content of a register;
 
 For now, VNote does **NOT** support the macro and repeat(`.`) features of Vim.
 

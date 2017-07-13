@@ -29,9 +29,7 @@ VEditOperations::VEditOperations(VEdit *p_editor, VFile *p_file)
 
 void VEditOperations::insertTextAtCurPos(const QString &p_text)
 {
-    QTextCursor cursor = m_editor->textCursor();
-    cursor.insertText(p_text);
-    m_editor->setTextCursor(cursor);
+    m_editor->insertPlainText(p_text);
 }
 
 VEditOperations::~VEditOperations()

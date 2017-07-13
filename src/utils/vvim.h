@@ -200,6 +200,10 @@ public:
     QString getPreviousCommandHistory(VVim::CommandLineType p_type,
                                       const QString &p_cmd);
 
+    // Read the register content.
+    // Returns empty string if it is not a valid register.
+    QString readRegister(int p_key, int p_modifiers);
+
 signals:
     // Emit when current mode has been changed.
     void modeChanged(VimMode p_mode);
@@ -824,6 +828,9 @@ private:
 
     // Search history.
     SearchHistory m_searchHistory;
+
+    // Whether we are expecting to read a register to insert.
+    bool m_registerPending;
 
     static const QChar c_unnamedRegister;
     static const QChar c_blackHoleRegister;

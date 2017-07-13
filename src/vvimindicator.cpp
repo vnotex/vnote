@@ -80,6 +80,16 @@ void VVimIndicator::setupUI()
                 }
             });
 
+    connect(m_cmdLineEdit, &VVimCmdLineEdit::requestRegister,
+            this, [this](int p_key, int p_modifiers){
+                if (m_vim) {
+                    QString val = m_vim->readRegister(p_key, p_modifiers);
+                    if (!val.isEmpty()) {
+                        m_cmdLineEdit->setText(m_cmdLineEdit->text() + val);
+                    }
+                }
+            });
+
     m_cmdLineEdit->hide();
 
     m_modeLabel = new QLabel(this);
@@ -320,7 +330,8 @@ void VVimIndicator::triggerCommandLine(VVim::CommandLineType p_type)
 }
 
 VVimCmdLineEdit::VVimCmdLineEdit(QWidget *p_parent)
-    : QLineEdit(p_parent), m_type(VVim::CommandLineType::Invalid)
+    : QLineEdit(p_parent), m_type(VVim::CommandLineType::Invalid),
+      m_registerPending(false)
 {
     // When user delete all the text, cancel command input.
     connect(this, &VVimCmdLineEdit::textChanged,
@@ -340,6 +351,8 @@ VVimCmdLineEdit::VVimCmdLineEdit(QWidget *p_parent)
                     m_userLastInput = p_text.right(p_text.size() - 1);
                 }
             });
+
+    m_originStyleSheet = styleSheet();
 }
 
 QString VVimCmdLineEdit::getCommand() const
@@ -404,6 +417,20 @@ void VVimCmdLineEdit::keyPressEvent(QKeyEvent *p_event)
     int key = p_event->key();
     int modifiers = p_event->modifiers();
 
+    if (m_registerPending) {
+        // Ctrl and Shift may be sent out first.
+        if (key == Qt::Key_Control || key == Qt::Key_Shift || key == Qt::Key_Meta) {
+            goto exit;
+        }
+
+        // Expecting a register name.
+        emit requestRegister(key, modifiers);
+
+        p_event->accept();
+        setRegisterPending(false);
+        return;
+    }
+
     if ((key == Qt::Key_Return && modifiers == Qt::NoModifier)
         || (key == Qt::Key_Enter && modifiers == Qt::KeypadModifier)) {
         // Enter, complete the command line input.
@@ -456,10 +483,21 @@ void VVimCmdLineEdit::keyPressEvent(QKeyEvent *p_event)
         return;
     }
 
+    case Qt::Key_R:
+    {
+        if (isControlModifier(modifiers)) {
+            // Ctrl+R, insert the content of a register.
+            setRegisterPending(true);
+            p_event->accept();
+            return;
+        }
+    }
+
     default:
         break;
     }
 
+exit:
     QLineEdit::keyPressEvent(p_event);
 }
 
@@ -478,4 +516,17 @@ void VVimCmdLineEdit::setCommand(const QString &p_cmd)
 void VVimCmdLineEdit::restoreUserLastInput()
 {
     setCommand(m_userLastInput);
+}
+
+void VVimCmdLineEdit::setRegisterPending(bool p_pending)
+{
+    if (p_pending && !m_registerPending) {
+        // Going to pending.
+        setStyleSheet("QLineEdit { background: #D6EACE }");
+    } else if (!p_pending && m_registerPending) {
+        // Leaving pending.
+        setStyleSheet(m_originStyleSheet);
+    }
+
+    m_registerPending = p_pending;
 }
