@@ -1,4 +1,16 @@
 # Changes History
+## v1.7
+- ATTENTION: please add font-size option to the "editor" section of your custom MDHL style.
+- Refine Vim mode (more functions, please refer to the shortcuts help).
+- Support Find in Vim mode.
+- Refine tab context menu.
+- Support Flowchart.js for flowchart.
+- Add toolbar for common text edit functions.
+- Support line number (both absolute and relative) in edit mode.
+- Support custom shortcuts.
+- Support [[, ]], [], ][, [{, ]} to navigate through titles in both edit and read mode.
+- Many minor bug fixes.
+
 ## v1.6
 - Support simple but powerful **Vim mode**.
 - Change the shortcut of ExitAndRead from `Ctrl+R` to `Ctrl+T`.
