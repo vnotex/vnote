@@ -62,16 +62,27 @@ public:
     bool loadConfiguration();
     bool saveConfiguration();
 
+    QGroupBox *m_noteBox;
+    QGroupBox *m_externalBox;
+
     // Image folder.
     QCheckBox *m_customImageFolder;
     QLineEdit *m_imageFolderEdit;
 
+    // Image folder of External File.
+    QCheckBox *m_customImageFolderExt;
+    QLineEdit *m_imageFolderEditExt;
+
 private slots:
     void customImageFolderChanged(int p_state);
+    void customImageFolderExtChanged(int p_state);
 
 private:
     bool loadImageFolder();
     bool saveImageFolder();
+
+    bool loadImageFolderExt();
+    bool saveImageFolderExt();
 };
 
 class VSettingsDialog : public QDialog

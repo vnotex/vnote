@@ -4,12 +4,15 @@
 #include <QFileInfo>
 #include <QDir>
 #include "utils/vutils.h"
+#include "vconfigmanager.h"
 
-VOrphanFile::VOrphanFile(const QString &p_path, QObject *p_parent)
-    : VFile(VUtils::fileNameFromPath(p_path), p_parent, FileType::Orphan, false),
-      m_path(p_path)
+extern VConfigManager vconfig;
+
+VOrphanFile::VOrphanFile(const QString &p_path, QObject *p_parent, bool p_modifiable)
+    : VFile(VUtils::fileNameFromPath(p_path), p_parent, FileType::Orphan, p_modifiable),
+      m_path(p_path), m_notebookName("[EXTERNAL]")
 {
-    qDebug() << "VOrphanFile" << p_path << m_name;
+    qDebug() << "VOrphanFile" << p_path << m_name << p_modifiable;
 }
 
 bool VOrphanFile::open()
@@ -18,8 +21,10 @@ bool VOrphanFile::open()
     if (m_opened) {
         return true;
     }
+
     Q_ASSERT(m_content.isEmpty());
     Q_ASSERT(QFileInfo::exists(m_path));
+
     m_content = VUtils::readFileFromDisk(m_path);
     m_modified = false;
     m_opened = true;
@@ -43,14 +48,24 @@ QString VOrphanFile::retriveBasePath() const
 
 QString VOrphanFile::retriveImagePath() const
 {
-    V_ASSERT(false);
-    return "";
+    QString folder = m_imageFolder;
+    if (m_imageFolder.isEmpty()) {
+        folder = vconfig.getImageFolderExt();
+    }
+
+    QFileInfo fi(folder);
+    if (fi.isAbsolute()) {
+        return folder;
+    } else {
+        return QDir(retriveBasePath()).filePath(folder);
+    }
 }
 
 bool VOrphanFile::save()
 {
-    V_ASSERT(false);
-    return false;
+    Q_ASSERT(m_opened);
+    Q_ASSERT(m_modifiable);
+    return VUtils::writeFileToDisk(retrivePath(), m_content);
 }
 
 void VOrphanFile::convert(DocType /* p_curType */, DocType /* p_targetType */)
@@ -75,7 +90,12 @@ const VDirectory *VOrphanFile::getDirectory() const
 
 QString VOrphanFile::getNotebookName() const
 {
-    return "[EMPTY]";
+    return m_notebookName;
+}
+
+void VOrphanFile::setNotebookName(const QString &p_notebook)
+{
+    m_notebookName = p_notebook;
 }
 
 VNotebook *VOrphanFile::getNotebook()
@@ -83,15 +103,16 @@ VNotebook *VOrphanFile::getNotebook()
     return NULL;
 }
 
-void VOrphanFile::setContent(const QString & /* p_content */)
+void VOrphanFile::setContent(const QString & p_content)
 {
-    V_ASSERT(false);
+    m_content = p_content;
 }
 
 bool VOrphanFile::isInternalImageFolder(const QString &p_path) const
 {
     return VUtils::equalPath(VUtils::basePathFromPath(p_path),
-                             VUtils::basePathFromPath(m_path));
+                             retriveBasePath())
+           || VUtils::equalPath(p_path, retriveImagePath());
 }
 
 bool VOrphanFile::rename(const QString &p_name)
@@ -105,4 +126,29 @@ bool VOrphanFile::rename(const QString &p_name)
     m_name = p_name;
     m_path = dir.filePath(m_name);
     return true;
+}
+
+void VOrphanFile::setImageFolder(const QString &p_path)
+{
+    m_imageFolder = p_path;
+}
+
+bool VOrphanFile::isRelativeImageFolder() const
+{
+    QString folder = m_imageFolder;
+    if (m_imageFolder.isEmpty()) {
+        folder = vconfig.getImageFolderExt();
+    }
+
+    return !QFileInfo(folder).isAbsolute();
+}
+
+QString VOrphanFile::getImageFolderInLink() const
+{
+    QString folder = m_imageFolder;
+    if (m_imageFolder.isEmpty()) {
+        folder = vconfig.getImageFolderExt();
+    }
+
+    return folder;
 }

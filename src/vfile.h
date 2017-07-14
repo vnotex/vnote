@@ -35,7 +35,10 @@ public:
     virtual QString retrivePath() const;
     virtual QString retriveRelativePath() const;
     virtual QString retriveBasePath() const;
+
+    // The path of the image folder.
     virtual QString retriveImagePath() const;
+
     bool isModified() const;
     bool isModifiable() const;
     bool isOpened() const;
@@ -51,6 +54,12 @@ public:
 
     // Rename the file.
     virtual bool rename(const QString &p_name);
+
+    // Whether the image folder is a relative path.
+    virtual bool isRelativeImageFolder() const;
+
+    // Return the image folder part in an image link.
+    virtual QString getImageFolderInLink() const;
 
 public slots:
     void setModified(bool p_modified);

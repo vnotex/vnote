@@ -228,6 +228,42 @@ QLabel[TitleLabel="true"] {
     background-color: @base-color;
 }
 
+QLabel[ColorRedLabel="true"] {
+    padding-left: 3px;
+    padding-right: 3px;
+    font: bold;
+    color: white;
+    border-radius: 2px;
+    background-color: @Red7;
+}
+
+QLabel[ColorGreenLabel="true"] {
+    padding-left: 3px;
+    padding-right: 3px;
+    font: bold;
+    color: white;
+    border-radius: 2px;
+    background-color: @Green7;
+}
+
+QLabel[ColorGreyLabel="true"] {
+    padding-left: 3px;
+    padding-right: 3px;
+    font: bold;
+    color: white;
+    border-radius: 2px;
+    background-color: @Grey7;
+}
+
+QLabel[ColorTealLabel="true"] {
+    padding-left: 3px;
+    padding-right: 3px;
+    font: bold;
+    color: white;
+    border-radius: 2px;
+    background-color: @Teal7;
+}
+
 QWidget[NotebookPanel="true"] {
     padding-left: 3px;
 }

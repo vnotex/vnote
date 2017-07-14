@@ -75,7 +75,7 @@ public:
     QString getNavigationLabelStyle(const QString &p_str) const;
 
     // Given the path of an external file, create a VFile struct.
-    VFile *getOrphanFile(const QString &p_path);
+    VFile *getOrphanFile(const QString &p_path, bool p_modifiable);
 
 public slots:
     void updateTemplate();

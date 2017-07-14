@@ -257,6 +257,10 @@ void VReadEditTab::customWebZoomChanged(int p_state)
 VNoteManagementTab::VNoteManagementTab(QWidget *p_parent)
     : QWidget(p_parent)
 {
+    m_noteBox = new QGroupBox(tr("Notes"));
+    m_externalBox = new QGroupBox(tr("External Files"));
+
+    // Note.
     // Image folder.
     m_customImageFolder = new QCheckBox(tr("Custom image folder"), this);
     m_customImageFolder->setToolTip(tr("Set the global name of the image folder to store images "
@@ -273,8 +277,35 @@ VNoteManagementTab::VNoteManagementTab(QWidget *p_parent)
     imageFolderLayout->addWidget(m_customImageFolder);
     imageFolderLayout->addWidget(m_imageFolderEdit);
 
-    QFormLayout *mainLayout = new QFormLayout();
-    mainLayout->addRow(imageFolderLayout);
+    QFormLayout *noteLayout = new QFormLayout();
+    noteLayout->addRow(imageFolderLayout);
+    m_noteBox->setLayout(noteLayout);
+
+    // External File.
+    // Image folder.
+    m_customImageFolderExt = new QCheckBox(tr("Custom image folder"), this);
+    m_customImageFolderExt->setToolTip(tr("Set the global name of the image folder to store images "
+                                          "of external files (restart VNote to make it work).\nYou "
+                                          "could use both absolute or relative path here. If you "
+                                          "use an absolute path, VNote will not manage\nthose images, "
+                                          "so you need to clean up unused images manually."));
+    connect(m_customImageFolderExt, &QCheckBox::stateChanged,
+            this, &VNoteManagementTab::customImageFolderExtChanged);
+
+    m_imageFolderEditExt = new QLineEdit(this);
+    m_imageFolderEditExt->setPlaceholderText(tr("Name of the image folder"));
+
+    QHBoxLayout *imageFolderExtLayout = new QHBoxLayout();
+    imageFolderExtLayout->addWidget(m_customImageFolderExt);
+    imageFolderExtLayout->addWidget(m_imageFolderEditExt);
+
+    QFormLayout *externalLayout = new QFormLayout();
+    externalLayout->addRow(imageFolderExtLayout);
+    m_externalBox->setLayout(externalLayout);
+
+    QVBoxLayout *mainLayout = new QVBoxLayout();
+    mainLayout->addWidget(m_noteBox);
+    mainLayout->addWidget(m_externalBox);
 
     setLayout(mainLayout);
 }
@@ -285,12 +316,20 @@ bool VNoteManagementTab::loadConfiguration()
         return false;
     }
 
+    if (!loadImageFolderExt()) {
+        return false;
+    }
+
     return true;
 }
 
 bool VNoteManagementTab::saveConfiguration()
 {
     if (!saveImageFolder()) {
+        return false;
+    }
+
+    if (!saveImageFolderExt()) {
         return false;
     }
 
@@ -327,5 +366,38 @@ void VNoteManagementTab::customImageFolderChanged(int p_state)
         m_imageFolderEdit->setFocus();
     } else {
         m_imageFolderEdit->setEnabled(false);
+    }
+}
+
+bool VNoteManagementTab::loadImageFolderExt()
+{
+    bool isCustom = vconfig.isCustomImageFolderExt();
+
+    m_customImageFolderExt->setChecked(isCustom);
+    m_imageFolderEditExt->setText(vconfig.getImageFolderExt());
+    m_imageFolderEditExt->setEnabled(isCustom);
+
+    return true;
+}
+
+bool VNoteManagementTab::saveImageFolderExt()
+{
+    if (m_customImageFolderExt->isChecked()) {
+        vconfig.setImageFolderExt(m_imageFolderEditExt->text());
+    } else {
+        vconfig.setImageFolderExt("");
+    }
+
+    return true;
+}
+
+void VNoteManagementTab::customImageFolderExtChanged(int p_state)
+{
+    if (p_state == Qt::Checked) {
+        m_imageFolderEditExt->setEnabled(true);
+        m_imageFolderEditExt->selectAll();
+        m_imageFolderEditExt->setFocus();
+    } else {
+        m_imageFolderEditExt->setEnabled(false);
     }
 }

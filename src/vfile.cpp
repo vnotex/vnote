@@ -275,3 +275,13 @@ bool VFile::rename(const QString &p_name)
 
     return true;
 }
+
+bool VFile::isRelativeImageFolder() const
+{
+    return true;
+}
+
+QString VFile::getImageFolderInLink() const
+{
+    return getNotebook()->getImageFolder();
+}

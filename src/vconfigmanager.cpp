@@ -142,6 +142,9 @@ void VConfigManager::initialize()
     m_imageFolder = getConfigFromSettings("global",
                                           "image_folder").toString();
 
+    m_imageFolderExt = getConfigFromSettings("global",
+                                             "external_image_folder").toString();
+
     m_enableTrailingSpaceHighlight = getConfigFromSettings("global",
                                                            "enable_trailing_space_highlight").toBool();
 

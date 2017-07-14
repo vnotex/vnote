@@ -197,7 +197,11 @@ void VMdEdit::imageInserted(const QString &p_path)
 {
     ImageLink link;
     link.m_path = p_path;
-    link.m_type = ImageLink::LocalRelativeInternal;
+    if (m_file->isRelativeImageFolder()) {
+        link.m_type = ImageLink::LocalRelativeInternal;
+    } else {
+        link.m_type = ImageLink::LocalAbsolute;
+    }
 
     m_insertedImages.append(link);
 }
@@ -217,7 +221,9 @@ void VMdEdit::clearUnusedImages()
         for (int i = 0; i < m_insertedImages.size(); ++i) {
             const ImageLink &link = m_insertedImages[i];
 
-            V_ASSERT(link.m_type == ImageLink::LocalRelativeInternal);
+            if (link.m_type != ImageLink::LocalRelativeInternal) {
+                continue;
+            }
 
             int j;
             for (j = 0; j < images.size(); ++j) {

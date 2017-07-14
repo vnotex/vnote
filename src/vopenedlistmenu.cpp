@@ -80,16 +80,22 @@ void VOpenedListMenu::updateOpenedList()
 
         // Whether add separator.
         QString curNotebook = file->getNotebookName();
-        if (curNotebook != notebook || file->getDirectory() != directory) {
+        if (curNotebook != notebook
+            || file->getDirectory() != directory) {
             notebook = curNotebook;
             directory = file->getDirectory();
             QString dirName;
-            if (!directory) {
-                dirName = file->retriveBasePath();
-            } else {
+            if (directory) {
                 dirName = directory->getName();
             }
-            QString text = QString("[%1] %2").arg(notebook).arg(dirName);
+
+            QString text;
+            if (dirName.isEmpty()) {
+                text = QString("[%1]").arg(notebook);
+            } else {
+                text = QString("[%1] %2").arg(notebook).arg(dirName);
+            }
+
             QAction *sepAct = addSection(text);
             sepAct->setFont(sepFont);
         }

@@ -25,6 +25,9 @@ private:
     // Indicate the readonly property.
     QLabel *m_readonlyLabel;
 
+    // Indicate whether it is a normal note or an external file.
+    QLabel *m_externalLabel;
+
     // Indicate the position of current cursor.
     QLabel *m_cursorLabel;
 };

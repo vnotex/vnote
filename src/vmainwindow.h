@@ -149,6 +149,9 @@ private:
                        const QString &p_text,
                        QObject *p_parent = nullptr);
 
+    // Open external files @p_files as orphan files.
+    void openExternalFiles(const QStringList &p_files);
+
     VNote *vnote;
     QPointer<VFile> m_curFile;
     QPointer<VEditTab> m_curTab;

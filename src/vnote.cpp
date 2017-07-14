@@ -77,6 +77,10 @@ void VNote::initPalette(QPalette palette)
     m_palette.append(QPair<QString, QString>("Teal3", "#4DB6AC"));
     m_palette.append(QPair<QString, QString>("Teal4", "#26A69A"));
     m_palette.append(QPair<QString, QString>("Teal5", "#009688"));
+    m_palette.append(QPair<QString, QString>("Teal6", "#00897B"));
+    m_palette.append(QPair<QString, QString>("Teal7", "#00796B"));
+    m_palette.append(QPair<QString, QString>("Teal8", "#00695C"));
+    m_palette.append(QPair<QString, QString>("Teal9", "#004D40"));
 
     m_palette.append(QPair<QString, QString>("Indigo0", "#E8EAF6"));
     m_palette.append(QPair<QString, QString>("Indigo1", "#C5CAE9"));
@@ -272,7 +276,7 @@ const QString &VNote::getMonospacedFont() const
     return font;
 }
 
-VFile *VNote::getOrphanFile(const QString &p_path)
+VFile *VNote::getOrphanFile(const QString &p_path, bool p_modifiable)
 {
     if (p_path.isEmpty()) {
         return NULL;
@@ -280,16 +284,25 @@ VFile *VNote::getOrphanFile(const QString &p_path)
 
     // See if the file has already been opened before.
     for (auto const &file : m_externalFiles) {
-        if (file->getType() == FileType::Orphan && file->retrivePath() == p_path) {
-            qDebug() << "find a VFile for path" << p_path;
+        Q_ASSERT(file->getType() == FileType::Orphan);
+        if (file->retrivePath() == p_path
+            && file->isModifiable() == p_modifiable) {
             return file;
         }
     }
 
-    // TODO: Clean up unopened file here.
+    for (int i = 0; i < m_externalFiles.size(); ++i) {
+        VFile *file = m_externalFiles[i];
+        if (!file->isOpened()) {
+            qDebug() << "release orphan file" << file;
+            m_externalFiles.removeAt(i);
+            delete file;
+            --i;
+        }
+    }
 
     // Create a VOrphanFile for p_path.
-    VOrphanFile *file = new VOrphanFile(p_path, this);
+    VOrphanFile *file = new VOrphanFile(p_path, this, p_modifiable);
     m_externalFiles.append(file);
     return file;
 }

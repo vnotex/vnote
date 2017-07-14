@@ -194,6 +194,11 @@ public:
     void setImageFolder(const QString &p_folder);
     bool isCustomImageFolder() const;
 
+    const QString &getImageFolderExt() const;
+    // Empty string to reset the default folder.
+    void setImageFolderExt(const QString &p_folder);
+    bool isCustomImageFolderExt() const;
+
     bool getEnableTrailingSpaceHighlight() const;
     void setEnableTrailingSapceHighlight(bool p_enabled);
 
@@ -397,6 +402,10 @@ private:
     // Global default folder name to store images of all the notes.
     // Each notebook can specify its custom folder.
     QString m_imageFolder;
+
+    // Global default folder name to store images of all external files.
+    // Each file can specify its custom folder.
+    QString m_imageFolderExt;
 
     // Enable trailing-space highlight.
     bool m_enableTrailingSpaceHighlight;
@@ -990,6 +999,32 @@ inline void VConfigManager::setImageFolder(const QString &p_folder)
 inline bool VConfigManager::isCustomImageFolder() const
 {
     return m_imageFolder != getDefaultConfig("global", "image_folder").toString();
+}
+
+inline const QString &VConfigManager::getImageFolderExt() const
+{
+    return m_imageFolderExt;
+}
+
+inline void VConfigManager::setImageFolderExt(const QString &p_folder)
+{
+    if (p_folder.isEmpty()) {
+        // Reset the default folder.
+        m_imageFolderExt = resetDefaultConfig("global", "external_image_folder").toString();
+        return;
+    }
+
+    if (m_imageFolderExt == p_folder) {
+        return;
+    }
+
+    m_imageFolderExt = p_folder;
+    setConfigToSettings("global", "external_image_folder", m_imageFolderExt);
+}
+
+inline bool VConfigManager::isCustomImageFolderExt() const
+{
+    return m_imageFolderExt != getDefaultConfig("global", "external_image_folder").toString();
 }
 
 inline bool VConfigManager::getEnableTrailingSpaceHighlight() const

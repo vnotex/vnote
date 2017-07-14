@@ -44,13 +44,16 @@ bool VMdEditOperations::insertImageFromMimeData(const QMimeData *source)
     dialog.setBrowseable(false);
     dialog.setImage(image);
     if (dialog.exec() == QDialog::Accepted) {
-        insertImageFromQImage(dialog.getImageTitleInput(), m_file->retriveImagePath(), image);
+        insertImageFromQImage(dialog.getImageTitleInput(),
+                              m_file->retriveImagePath(),
+                              m_file->getImageFolderInLink(),
+                              image);
     }
     return true;
 }
 
 void VMdEditOperations::insertImageFromQImage(const QString &title, const QString &path,
-                                              const QImage &image)
+                                              const QString &folderInLink, const QImage &image)
 {
     QString fileName = VUtils::generateImageFileName(path, title);
     QString filePath = QDir(path).filePath(fileName);
@@ -79,7 +82,7 @@ void VMdEditOperations::insertImageFromQImage(const QString &title, const QStrin
         return;
     }
 
-    QString md = QString("![%1](%2/%3)").arg(title).arg(VUtils::directoryNameFromPath(path)).arg(fileName);
+    QString md = QString("![%1](%2/%3)").arg(title).arg(folderInLink).arg(fileName);
     insertTextAtCurPos(md);
 
     qDebug() << "insert image" << title << filePath;
@@ -89,8 +92,8 @@ void VMdEditOperations::insertImageFromQImage(const QString &title, const QStrin
     mdEditor->imageInserted(filePath);
 }
 
-void VMdEditOperations::insertImageFromPath(const QString &title,
-                                            const QString &path, const QString &oriImagePath)
+void VMdEditOperations::insertImageFromPath(const QString &title, const QString &path,
+                                            const QString &folderInLink, const QString &oriImagePath)
 {
     QString fileName = VUtils::generateImageFileName(path, title, QFileInfo(oriImagePath).suffix());
     QString filePath = QDir(path).filePath(fileName);
@@ -119,7 +122,7 @@ void VMdEditOperations::insertImageFromPath(const QString &title,
         return;
     }
 
-    QString md = QString("![%1](%2/%3)").arg(title).arg(VUtils::directoryNameFromPath(path)).arg(fileName);
+    QString md = QString("![%1](%2/%3)").arg(title).arg(folderInLink).arg(fileName);
     insertTextAtCurPos(md);
 
     qDebug() << "insert image" << title << filePath;
@@ -168,10 +171,12 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
         if (isLocal) {
             insertImageFromPath(dialog.getImageTitleInput(),
                                 m_file->retriveImagePath(),
+                                m_file->getImageFolderInLink(),
                                 imagePath);
         } else {
             insertImageFromQImage(dialog.getImageTitleInput(),
                                   m_file->retriveImagePath(),
+                                  m_file->getImageFolderInLink(),
                                   dialog.getImage());
         }
     }
@@ -186,7 +191,10 @@ bool VMdEditOperations::insertImage()
         QString title = dialog.getImageTitleInput();
         QString imagePath = dialog.getPathInput();
         qDebug() << "insert image from" << imagePath << "as" << title;
-        insertImageFromPath(title, m_file->retriveImagePath(), imagePath);
+        insertImageFromPath(title,
+                            m_file->retriveImagePath(),
+                            m_file->getImageFolderInLink(),
+                            imagePath);
     }
     return true;
 }

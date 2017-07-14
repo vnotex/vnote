@@ -26,12 +26,17 @@ public:
     void decorateText(TextDecoration p_decoration) Q_DECL_OVERRIDE;
 
 private:
-    void insertImageFromPath(const QString &title, const QString &path, const QString &oriImagePath);
+    // Insert image from @oriImagePath as @path.
+    // @folderInLink: the folder part in the image link.
+    void insertImageFromPath(const QString &title, const QString &path,
+                             const QString &folderInLink, const QString &oriImagePath);
 
     // @title: title of the inserted image;
     // @path: the image folder path to insert the image in;
+    // @folderInLink: the folder part in the image link.
     // @image: the image to be inserted;
-    void insertImageFromQImage(const QString &title, const QString &path, const QImage &image);
+    void insertImageFromQImage(const QString &title, const QString &path,
+                               const QString &folderInLink, const QImage &image);
 
     // Key press handlers.
     bool handleKeyTab(QKeyEvent *p_event);
