@@ -33,6 +33,13 @@ Zoom in/out the page.
 Zoom in/out the page through the mouse scroll.
 - `Ctrl+0`  
 Recover the page zoom factor to 100%.
+- Jump between titles
+    - `[[`: jump to previous title;
+    - `]]`: jump to next title;
+    - `[]`: jump to previous title at the same level;
+    - `][`: jump to next title at the same level;
+    - `[{`: jump to previous title at a higher level;
+    - `]}`: jump to next title at a higher level;
 
 ### Edit Mode
 - `Ctrl+S`  

@@ -1,5 +1,10 @@
 var content;
-var keyState = 0;
+
+// Current header index in all headers.
+var currentHeaderIdx = -1;
+
+// Pending keys for keydown.
+var pendingKeys = [];
 
 var VMermaidDivClass = 'mermaid-diagram';
 var VFlowchartDivClass = 'flowchart-diagram';
@@ -50,6 +55,7 @@ var g_muteScroll = false;
 
 var scrollToAnchor = function(anchor) {
     g_muteScroll = true;
+    currentHeaderIdx = -1;
     if (!anchor) {
         window.scrollTo(0, 0);
         g_muteScroll = false;
@@ -59,6 +65,13 @@ var scrollToAnchor = function(anchor) {
     var anc = document.getElementById(anchor);
     if (anc != null) {
         anc.scrollIntoView();
+        var headers = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
+        for (var i = 0; i < headers.length; ++i) {
+            if (headers[i] == anc) {
+                currentHeaderIdx = i;
+                break;
+            }
+        }
     }
 
     // Disable scroll temporarily.
@@ -78,6 +91,7 @@ window.onscroll = function() {
         return;
     }
 
+    currentHeaderIdx = -1;
     var scrollTop = document.documentElement.scrollTop || document.body.scrollTop || window.pageYOffset;
     var eles = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
 
@@ -86,25 +100,30 @@ window.onscroll = function() {
         return;
     }
 
-    var curIdx = -1;
     var biaScrollTop = scrollTop + 50;
     for (var i = 0; i < eles.length; ++i) {
         if (biaScrollTop >= eles[i].offsetTop) {
-            curIdx = i;
+            currentHeaderIdx = i;
         } else {
             break;
         }
     }
 
     var curHeader = null;
-    if (curIdx != -1) {
-        curHeader = eles[curIdx].getAttribute("id");
+    if (currentHeaderIdx != -1) {
+        curHeader = eles[currentHeaderIdx].getAttribute("id");
     }
 
     content.setHeader(curHeader ? curHeader : "");
 };
 
 document.onkeydown = function(e) {
+    // Need to clear pending kyes.
+    var clear = true;
+
+    // This even has been handled completely. No need to call the default handler.
+    var accept = true;
+
     e = e || window.event;
     var key;
     var shift;
@@ -114,72 +133,182 @@ document.onkeydown = function(e) {
     } else {
         key = e.keyCode;
     }
+
     shift = !!e.shiftKey;
     ctrl = !!e.ctrlKey;
     switch (key) {
+    // Skip Ctrl, Shift, Alt, Supper.
+    case 16:
+    case 17:
+    case 18:
+    case 91:
+        clear = false;
+        break;
+
     case 74: // J
         window.scrollBy(0, 100);
-        keyState = 0;
-    break;
+        break;
 
     case 75: // K
         window.scrollBy(0, -100);
-        keyState = 0;
-    break;
+        break;
 
     case 72: // H
         window.scrollBy(-100, 0);
-        keyState = 0;
-    break;
+        break;
 
     case 76: // L
         window.scrollBy(100, 0);
-        keyState = 0;
-    break;
+        break;
 
     case 71: // G
         if (shift) {
-            var scrollLeft = document.documentElement.scrollLeft || document.body.scrollLeft || window.pageXOffset;
-            var scrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
-            window.scrollTo(scrollLeft, scrollHeight);
-            keyState = 0;
-            break;
-        } else {
-            if (keyState == 0) {
-                keyState = 1;
-            } else if (keyState == 1) {
-                keyState = 0;
+            if (pendingKeys.length == 0) {
                 var scrollLeft = document.documentElement.scrollLeft || document.body.scrollLeft || window.pageXOffset;
-                window.scrollTo(scrollLeft, 0);
+                var scrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
+                window.scrollTo(scrollLeft, scrollHeight);
+                break;
             }
-            break;
+        } else {
+            if (pendingKeys.length == 0) {
+                // First g, pend it.
+                pendingKeys.push({
+                    key: key,
+                    ctrl: ctrl,
+                    shift: shift
+                });
+
+                clear = false;
+                break;
+            } else if (pendingKeys.length == 1) {
+                var pendKey = pendingKeys[0];
+                if (pendKey.key == key && !pendKey.shift && !pendKey.ctrl) {
+                    var scrollLeft = document.documentElement.scrollLeft
+                                     || document.body.scrollLeft
+                                     || window.pageXOffset;
+                    window.scrollTo(scrollLeft, 0);
+                    break;
+                }
+            }
         }
-        return;
+
+        accept = false;
+        break;
 
     case 85: // U
-        keyState = 0;
         if (ctrl) {
             var clientHeight = document.documentElement.clientHeight;
             window.scrollBy(0, -clientHeight / 2);
             break;
         }
-        return;
+
+        accept = false;
+        break;
 
     case 68: // D
-        keyState = 0;
         if (ctrl) {
             var clientHeight = document.documentElement.clientHeight;
             window.scrollBy(0, clientHeight / 2);
             break;
         }
-        return;
+
+        accept = false;
+        break;
+
+    case 219: // [ or {
+        if (shift) {
+            // {
+            if (pendingKeys.length == 1) {
+                var pendKey = pendingKeys[0];
+                if (pendKey.key == key && !pendKey.shift && !pendKey.ctrl) {
+                    // [{, jump to previous title at a higher level.
+                    jumpTitle(false, -1, 1);
+                    break;
+                }
+            }
+        } else {
+            // [
+            if (pendingKeys.length == 0) {
+                // First [, pend it.
+                pendingKeys.push({
+                    key: key,
+                    ctrl: ctrl,
+                    shift: shift
+                });
+
+                clear = false;
+                break;
+            } else if (pendingKeys.length == 1) {
+                var pendKey = pendingKeys[0];
+                if (pendKey.key == key && !pendKey.shift && !pendKey.ctrl) {
+                    // [[, jump to previous title.
+                    jumpTitle(false, 1, 1);
+                    break;
+                } else if (pendKey.key == 221 && !pendKey.shift && !pendKey.ctrl) {
+                    // ][, jump to next title at the same level.
+                    jumpTitle(true, 0, 1);
+                    break;
+                }
+            }
+        }
+
+        accept = false;
+        break;
+
+    case 221: // ] or }
+        if (shift) {
+            // }
+            if (pendingKeys.length == 1) {
+                var pendKey = pendingKeys[0];
+                if (pendKey.key == key && !pendKey.shift && !pendKey.ctrl) {
+                    // ]}, jump to next title at a higher level.
+                    jumpTitle(true, -1, 1);
+                    break;
+                }
+            }
+        } else {
+            // ]
+            if (pendingKeys.length == 0) {
+                // First ], pend it.
+                pendingKeys.push({
+                    key: key,
+                    ctrl: ctrl,
+                    shift: shift
+                });
+
+                clear = false;
+                break;
+            } else if (pendingKeys.length == 1) {
+                var pendKey = pendingKeys[0];
+                if (pendKey.key == key && !pendKey.shift && !pendKey.ctrl) {
+                    // ]], jump to next title.
+                    jumpTitle(true, 1, 1);
+                    break;
+                } else if (pendKey.key == 219 && !pendKey.shift && !pendKey.ctrl) {
+                    // [], jump to previous title at the same level.
+                    jumpTitle(false, 0, 1);
+                    break;
+                }
+            }
+        }
+
+        accept = false;
+        break;
 
     default:
-        content.keyPressEvent(key, ctrl, shift);
-        keyState = 0;
-        return;
+        accept = false;
+        break;
     }
-    e.preventDefault();
+
+    if (clear) {
+        pendingKeys = [];
+    }
+
+    if (accept) {
+        e.preventDefault();
+    } else {
+        content.keyPressEvent(key, ctrl, shift);
+    }
 };
 
 var mermaidParserErr = false;
@@ -580,4 +709,82 @@ window.onmousemove = function(e) {
 
         e.preventDefault();
     }
+};
+
+// @forward: jump forward or backward.
+// @relativeLevel: 0 for the same level as current header;
+//                 negative value for upper level;
+//                 positive value is ignored.
+var jumpTitle = function(forward, relativeLevel, repeat) {
+    var headers = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
+    if (headers.length == 0) {
+        return;
+    }
+
+    if (currentHeaderIdx == -1) {
+        // At the beginning, before any headers.
+        if (relativeLevel < 0 || !forward) {
+            return;
+        }
+    }
+
+    var targetIdx = -1;
+    // -1: skip level check.
+    var targetLevel = 0;
+
+    var delta = 1;
+    if (!forward) {
+        delta = -1;
+    }
+
+    var scrollTop = document.documentElement.scrollTop || document.body.scrollTop || window.pageYOffset;
+
+    var firstHeader = true;
+    for (targetIdx = (currentHeaderIdx == -1 ? 0 : currentHeaderIdx);
+         targetIdx >= 0 && targetIdx < headers.length;
+         targetIdx += delta) {
+        var header = headers[targetIdx];
+        var level = parseInt(header.tagName.substr(1));
+        if (targetLevel == 0) {
+            targetLevel = level;
+            if (relativeLevel < 0) {
+                targetLevel += relativeLevel;
+                if (targetLevel < 1) {
+                    // Invalid level.
+                    return false;
+                }
+            } else if (relativeLevel > 0) {
+                targetLevel = -1;
+            }
+        }
+
+        if (targetLevel == -1 || level == targetLevel) {
+            if (targetIdx == currentHeaderIdx) {
+                // If current header is visible, skip it.
+                content.setLog("scroll " + scrollTop + " " + headers[targetIdx].offsetTop);
+                if (forward || scrollTop <= headers[targetIdx].offsetTop) {
+                    continue;
+                }
+            }
+
+            if (--repeat == 0) {
+                break;
+            }
+        } else if (level < targetLevel) {
+            return;
+        }
+
+        firstHeader = false;
+    }
+
+    if (targetIdx < 0 || targetIdx >= headers.length) {
+        return;
+    }
+
+    // Disable scroll temporarily.
+    g_muteScroll = true;
+    headers[targetIdx].scrollIntoView();
+    currentHeaderIdx = targetIdx;
+    content.setHeader(headers[targetIdx].getAttribute("id"));
+    setTimeout("g_muteScroll = false", 100);
 };
