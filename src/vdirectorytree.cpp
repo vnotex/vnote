@@ -132,7 +132,7 @@ void VDirectoryTree::updateDirectoryTree()
         fillTreeItem(*item, dir->getName(), dir,
                      QIcon(":/resources/icons/dir_item.svg"));
 
-        updateDirectoryTreeOne(item, 1);
+        buildSubTree(item, 1);
     }
 
     if (!restoreCurrentItem()) {
@@ -155,12 +155,12 @@ bool VDirectoryTree::restoreCurrentItem()
     return false;
 }
 
-void VDirectoryTree::updateDirectoryTreeOne(QTreeWidgetItem *p_parent, int depth)
+void VDirectoryTree::buildSubTree(QTreeWidgetItem *p_parent, int p_depth)
 {
-    Q_ASSERT(p_parent->childCount() == 0);
-    if (depth <= 0) {
+    if (p_depth == 0) {
         return;
     }
+
     VDirectory *dir = getVDirectory(p_parent);
     if (!dir->open()) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
@@ -169,16 +169,25 @@ void VDirectoryTree::updateDirectoryTreeOne(QTreeWidgetItem *p_parent, int depth
                             QMessageBox::Ok, QMessageBox::Ok, this);
         return;
     }
-    const QVector<VDirectory *> &subDirs = dir->getSubDirs();
-    for (int i = 0; i < subDirs.size(); ++i) {
-        VDirectory *subDir = subDirs[i];
-        QTreeWidgetItem *item = new QTreeWidgetItem(p_parent);
 
-        fillTreeItem(*item, subDir->getName(), subDir,
-                     QIcon(":/resources/icons/dir_item.svg"));
+    if (p_parent->childCount() > 0) {
+        // This directory has been built before. Try its children directly.
+        for (int i = 0; i < p_parent->childCount(); ++i) {
+            buildSubTree(p_parent->child(i), p_depth -1);
+        }
+    } else {
+        const QVector<VDirectory *> &subDirs = dir->getSubDirs();
+        for (int i = 0; i < subDirs.size(); ++i) {
+            VDirectory *subDir = subDirs[i];
+            QTreeWidgetItem *item = new QTreeWidgetItem(p_parent);
 
-        updateDirectoryTreeOne(item, depth - 1);
+            fillTreeItem(*item, subDir->getName(), subDir,
+                         QIcon(":/resources/icons/dir_item.svg"));
+
+            buildSubTree(item, p_depth - 1);
+        }
     }
+
     if (dir->isExpanded()) {
         expandItem(p_parent);
     }
@@ -197,7 +206,6 @@ void VDirectoryTree::handleItemExpanded(QTreeWidgetItem *p_item)
     dir->setExpanded(true);
 }
 
-// Update @p_item's children items
 void VDirectoryTree::updateChildren(QTreeWidgetItem *p_item)
 {
     Q_ASSERT(p_item);
@@ -205,12 +213,14 @@ void VDirectoryTree::updateChildren(QTreeWidgetItem *p_item)
     if (nrChild == 0) {
         return;
     }
+
     for (int i = 0; i < nrChild; ++i) {
         QTreeWidgetItem *childItem = p_item->child(i);
         if (childItem->childCount() > 0) {
             continue;
         }
-        updateDirectoryTreeOne(childItem, 1);
+
+        buildSubTree(childItem, 1);
     }
 }
 
@@ -252,7 +262,7 @@ void VDirectoryTree::updateItemChildren(QTreeWidgetItem *p_item)
                 item = new QTreeWidgetItem(this);
             }
             fillTreeItem(*item, dir->getName(), dir, QIcon(":/resources/icons/dir_item.svg"));
-            updateDirectoryTreeOne(item, 1);
+            buildSubTree(item, 1);
         }
         expandItemTree(item);
     }
@@ -577,6 +587,7 @@ void VDirectoryTree::keyPressEvent(QKeyEvent *event)
         if (item) {
             item->setExpanded(!item->isExpanded());
         }
+
         break;
     }
 
@@ -589,6 +600,7 @@ void VDirectoryTree::keyPressEvent(QKeyEvent *event)
             QCoreApplication::postEvent(this, downEvent);
             return;
         }
+
         break;
     }
 
@@ -601,6 +613,21 @@ void VDirectoryTree::keyPressEvent(QKeyEvent *event)
             QCoreApplication::postEvent(this, upEvent);
             return;
         }
+
+        break;
+    }
+
+    case Qt::Key_Asterisk:
+    {
+        if (modifiers == Qt::ShiftModifier) {
+            // *, by default will expand current item recursively.
+            // We build the tree recursively before the expanding.
+            QTreeWidgetItem *item = currentItem();
+            if (item) {
+                buildSubTree(item, -1);
+            }
+        }
+
         break;
     }
 
@@ -730,7 +757,7 @@ QTreeWidgetItem *VDirectoryTree::expandToVDirectory(const VDirectory *p_director
         }
         int nrChild = pItem->childCount();
         if (nrChild == 0) {
-            updateDirectoryTreeOne(pItem, 1);
+            buildSubTree(pItem, 1);
         }
         nrChild = pItem->childCount();
         for (int i = 0; i < nrChild; ++i) {
@@ -748,11 +775,13 @@ void VDirectoryTree::expandItemTree(QTreeWidgetItem *p_item)
     if (!p_item) {
         return;
     }
+
     VDirectory *dir = getVDirectory(p_item);
     int nrChild = p_item->childCount();
     for (int i = 0; i < nrChild; ++i) {
         expandItemTree(p_item->child(i));
     }
+
     if (dir->isExpanded()) {
         Q_ASSERT(nrChild > 0);
         expandItem(p_item);

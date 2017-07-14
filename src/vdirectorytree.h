@@ -40,6 +40,9 @@ public slots:
     void newRootDirectory();
     void deleteDirectory();
     void editDirectoryInfo();
+
+    // Clear and re-build the whole directory tree.
+    // Do not load all the sub-directories at once.
     void updateDirectoryTree();
 
 private slots:
@@ -58,9 +61,21 @@ protected:
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 
 private:
-    void updateDirectoryTreeOne(QTreeWidgetItem *p_parent, int depth);
+    // Build the subtree of @p_parent recursively to the depth @p_depth.
+    // Item @p_parent must not be built before.
+    // Will expand the item if the corresponding directory was expanded before.
+    // @p_depth: valid only when greater than 0.
+    void updateDirectoryTreeOne(QTreeWidgetItem *p_parent, int p_depth);
+
+    // Build the subtree of @p_parent recursively to the depth @p_depth.
+    // @p_depth: negative - infinite levels.
+    // Will expand the item if the corresponding directory was expanded before.
+    void buildSubTree(QTreeWidgetItem *p_parent, int p_depth);
+
+    // Fill the content of a tree item.
     void fillTreeItem(QTreeWidgetItem &p_item, const QString &p_name,
                       VDirectory *p_directory, const QIcon &p_icon);
+
     void initActions();
     // Update @p_item's direct children only: deleted, added, renamed.
     void updateItemChildren(QTreeWidgetItem *p_item);
@@ -72,11 +87,16 @@ private:
     void pasteDirectories(VDirectory *p_destDir);
     bool copyDirectory(VDirectory *p_destDir, const QString &p_destName,
                        VDirectory *p_srcDir, bool p_cut);
+
+    // Build the subtree of @p_item's children if it has not been built yet.
     void updateChildren(QTreeWidgetItem *p_item);
+
     // Expand/create the directory tree nodes to @p_directory.
     QTreeWidgetItem *expandToVDirectory(const VDirectory *p_directory);
-    // Expand the tree under @p_item according to VDirectory.isOpened().
+
+    // Expand the currently-built subtree of @p_item according to VDirectory.isExpanded().
     void expandItemTree(QTreeWidgetItem *p_item);
+
     QList<QTreeWidgetItem *> getVisibleItems() const;
     QList<QTreeWidgetItem *> getVisibleChildItems(const QTreeWidgetItem *p_item) const;
     bool restoreCurrentItem();
@@ -86,6 +106,7 @@ private:
     QVector<QPointer<VDirectory> > m_copiedDirs;
     VEditArea *m_editArea;
 
+    // Each notebook's current item's VDirectory.
     QHash<VNotebook *, VDirectory *> m_notebookCurrentDirMap;
 
     // Actions

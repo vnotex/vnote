@@ -637,6 +637,7 @@ void VFileList::showNavigation()
 
     // Generate labels for visible items.
     auto items = getVisibleItems();
+    int itemWidth = rect().width();
     for (int i = 0; i < 26 && i < items.size(); ++i) {
         QChar key('a' + i);
         m_keyMap[key] = items[i];
@@ -644,8 +645,10 @@ void VFileList::showNavigation()
         QString str = QString(m_majorKey) + key;
         QLabel *label = new QLabel(str, this);
         label->setStyleSheet(g_vnote->getNavigationLabelStyle(str));
-        label->move(fileList->visualItemRect(items[i]).topLeft());
         label->show();
+        QRect rect = fileList->visualItemRect(items[i]);
+        // Display the label at the end to show the file name.
+        label->move(rect.x() + itemWidth - label->width(), rect.y());
         m_naviLabels.append(label);
     }
 }
