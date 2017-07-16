@@ -270,6 +270,7 @@ VNoteManagementTab::VNoteManagementTab(QWidget *p_parent)
 
     m_imageFolderEdit = new QLineEdit(this);
     m_imageFolderEdit->setPlaceholderText(tr("Name of the image folder"));
+    m_imageFolderEdit->setToolTip(m_customImageFolder->toolTip());
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp), this);
     m_imageFolderEdit->setValidator(validator);
 
@@ -284,15 +285,16 @@ VNoteManagementTab::VNoteManagementTab(QWidget *p_parent)
     // External File.
     // Image folder.
     m_customImageFolderExt = new QCheckBox(tr("Custom image folder"), this);
-    m_customImageFolderExt->setToolTip(tr("Set the global name of the image folder to store images "
+    m_customImageFolderExt->setToolTip(tr("Set the path of the global image folder to store images "
                                           "of external files (restart VNote to make it work).\nYou "
-                                          "could use both absolute or relative path here. If you "
-                                          "use an absolute path, VNote will not manage\nthose images, "
+                                          "could use both absolute or relative path here. If "
+                                          "absolute path is used, VNote will not manage\nthose images, "
                                           "so you need to clean up unused images manually."));
     connect(m_customImageFolderExt, &QCheckBox::stateChanged,
             this, &VNoteManagementTab::customImageFolderExtChanged);
 
     m_imageFolderEditExt = new QLineEdit(this);
+    m_imageFolderEditExt->setToolTip(m_customImageFolderExt->toolTip());
     m_imageFolderEditExt->setPlaceholderText(tr("Name of the image folder"));
 
     QHBoxLayout *imageFolderExtLayout = new QHBoxLayout();

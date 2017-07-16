@@ -8,9 +8,10 @@
 
 extern VConfigManager vconfig;
 
-VOrphanFile::VOrphanFile(const QString &p_path, QObject *p_parent, bool p_modifiable)
+VOrphanFile::VOrphanFile(const QString &p_path, QObject *p_parent,
+                         bool p_modifiable, bool p_systemFile)
     : VFile(VUtils::fileNameFromPath(p_path), p_parent, FileType::Orphan, p_modifiable),
-      m_path(p_path), m_notebookName("[EXTERNAL]")
+      m_path(p_path), m_notebookName("[EXTERNAL]"), m_systemFile(p_systemFile)
 {
     qDebug() << "VOrphanFile" << p_path << m_name << p_modifiable;
 }
@@ -130,6 +131,8 @@ bool VOrphanFile::rename(const QString &p_name)
 
 void VOrphanFile::setImageFolder(const QString &p_path)
 {
+    qDebug() << "orphan file" << retrivePath() << "image folder"
+             << m_imageFolder << "->" << p_path;
     m_imageFolder = p_path;
 }
 

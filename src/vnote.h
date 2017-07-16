@@ -67,15 +67,16 @@ public:
     static const QString c_shortcutsDocFile_en;
     static const QString c_shortcutsDocFile_zh;
 
-    inline const QVector<QPair<QString, QString> > &getPalette() const;
+    const QVector<QPair<QString, QString> > &getPalette() const;
     void initPalette(QPalette palette);
     QString getColorFromPalette(const QString &p_name) const;
-    inline VMainWindow *getMainWindow() const;
+    VMainWindow *getMainWindow() const;
 
     QString getNavigationLabelStyle(const QString &p_str) const;
 
     // Given the path of an external file, create a VFile struct.
-    VFile *getOrphanFile(const QString &p_path, bool p_modifiable);
+    VFile *getOrphanFile(const QString &p_path, bool p_modifiable,
+                         bool p_systemFile = false);
 
 public slots:
     void updateTemplate();

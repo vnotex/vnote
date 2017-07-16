@@ -24,6 +24,7 @@
 #include "vtabindicator.h"
 #include "dialog/vupdater.h"
 #include "vorphanfile.h"
+#include "dialog/vorphanfileinfodialog.h"
 
 extern VConfigManager vconfig;
 
@@ -1720,7 +1721,7 @@ void VMainWindow::shortcutHelp()
         docName = VNote::c_shortcutsDocFile_zh;
     }
 
-    VFile *file = vnote->getOrphanFile(docName, false);
+    VFile *file = vnote->getOrphanFile(docName, false, true);
     (dynamic_cast<VOrphanFile *>(file))->setNotebookName(tr("[Help]"));
     editArea->openFile(file, OpenFileMode::Read);
 }
@@ -1813,5 +1814,17 @@ void VMainWindow::openExternalFiles(const QStringList &p_files)
     for (int i = 0; i < p_files.size(); ++i) {
         VFile *file = vnote->getOrphanFile(p_files[i], true);
         editArea->openFile(file, OpenFileMode::Read);
+    }
+}
+
+void VMainWindow::editOrphanFileInfo(VFile *p_file)
+{
+    VOrphanFile *file = dynamic_cast<VOrphanFile *>(p_file);
+    Q_ASSERT(file);
+
+    VOrphanFileInfoDialog dialog(file, this);
+    if (dialog.exec() == QDialog::Accepted) {
+        QString imgFolder = dialog.getImageFolder();
+        file->setImageFolder(imgFolder);
     }
 }

@@ -23,6 +23,7 @@ VVimIndicator::VVimIndicator(QWidget *p_parent)
 void VVimIndicator::setupUI()
 {
     m_cmdLineEdit = new VVimCmdLineEdit(this);
+    m_cmdLineEdit->setProperty("VimCommandLine", true);
     connect(m_cmdLineEdit, &VVimCmdLineEdit::commandCancelled,
             this, [this](){
                 if (m_vim) {

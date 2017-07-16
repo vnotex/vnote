@@ -165,6 +165,9 @@ private:
 
     // Close tabs to the right in tab menu.
     QAction *m_closeRightAct;
+
+    // View and edit info about this note.
+    QAction *m_noteInfoAct;
 };
 
 inline QString VEditWindow::generateTooltip(const VFile *p_file) const

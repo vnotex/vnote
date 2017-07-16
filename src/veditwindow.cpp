@@ -5,14 +5,16 @@
 #include "vnote.h"
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
-#include "vfile.h"
+#include "vorphanfile.h"
 #include "vmainwindow.h"
 #include "veditarea.h"
 #include "vopenedlistmenu.h"
 #include "vmdtab.h"
 #include "vhtmltab.h"
+#include "vfilelist.h"
 
 extern VConfigManager vconfig;
+extern VNote *g_vnote;
 
 VEditWindow::VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent)
     : QTabWidget(parent), vnote(vnote), m_editArea(editArea),
@@ -62,7 +64,8 @@ void VEditWindow::initTabActions()
     connect(m_moveRightAct, &QAction::triggered,
             this, &VEditWindow::handleMoveRightAct);
 
-    m_closeTabAct = new QAction(tr("Close Tab"), this);
+    m_closeTabAct = new QAction(QIcon(":/resources/icons/close.svg"),
+                                tr("Close Tab"), this);
     m_closeTabAct->setToolTip(tr("Close current note tab"));
     connect(m_closeTabAct, &QAction::triggered,
             this, [this](){
@@ -108,6 +111,24 @@ void VEditWindow::initTabActions()
                     if (!this->closeTab(i)) {
                         ++i;
                     }
+                }
+            });
+
+    m_noteInfoAct = new QAction(QIcon(":/resources/icons/note_info.svg"),
+                                tr("Note Info"), this);
+    m_noteInfoAct->setToolTip(tr("View and edit information of the note"));
+    connect(m_noteInfoAct, &QAction::triggered,
+            this, [this](){
+                int tab = this->m_closeTabAct->data().toInt();
+                Q_ASSERT(tab != -1);
+
+                VEditTab *editor = getTab(tab);
+                QPointer<VFile> file = editor->getFile();
+                Q_ASSERT(file);
+                if (file->getType() == FileType::Normal) {
+                    g_vnote->getMainWindow()->getFileList()->fileInfo(file);
+                } else if (file->getType() == FileType::Orphan) {
+                    g_vnote->getMainWindow()->editOrphanFileInfo(file);
                 }
             });
 }
@@ -500,13 +521,20 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
         return;
     }
 
-    m_locateAct->setData(tab);
     VEditTab *editor = getTab(tab);
-    QPointer<VFile> file = editor->getFile();
+    VFile *file = editor->getFile();
     if (file->getType() == FileType::Normal) {
         // Locate to folder.
+        m_locateAct->setData(tab);
         menu.addAction(m_locateAct);
+        m_noteInfoAct->setData(tab);
+        menu.addAction(m_noteInfoAct);
+    } else if (file->getType() == FileType::Orphan
+               && !dynamic_cast<VOrphanFile *>(file)->isSystemFile()) {
+        m_noteInfoAct->setData(tab);
+        menu.addAction(m_noteInfoAct);
     }
+
 
     int totalWin = m_editArea->windowCount();
     // When there is only one tab and one split window, there is no need to

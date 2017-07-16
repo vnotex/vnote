@@ -4,6 +4,7 @@
 #include <QHBoxLayout>
 
 #include "vedittab.h"
+#include "vorphanfile.h"
 
 VTabIndicator::VTabIndicator(QWidget *p_parent)
     : QWidget(p_parent)
@@ -25,11 +26,16 @@ void VTabIndicator::setupUI()
     m_externalLabel->setToolTip(tr("This file is not managed by any notebook or folder"));
     m_externalLabel->setProperty("ColorTealLabel", true);
 
+    m_systemLabel = new QLabel(tr("System"), this);
+    m_systemLabel->setToolTip(tr("This file is a system file"));
+    m_systemLabel->setProperty("ColorGreenLabel", true);
+
     m_cursorLabel = new QLabel(this);
 
     QHBoxLayout *mainLayout = new QHBoxLayout(this);
     mainLayout->addWidget(m_cursorLabel);
     mainLayout->addWidget(m_externalLabel);
+    mainLayout->addWidget(m_systemLabel);
     mainLayout->addWidget(m_readonlyLabel);
     mainLayout->addWidget(m_docTypeLabel);
     mainLayout->setContentsMargins(0, 0, 0, 0);
@@ -73,6 +79,7 @@ void VTabIndicator::update(const VEditTabInfo &p_info)
     DocType docType = DocType::Html;
     bool readonly = false;
     bool external = false;
+    bool system = false;
     QString cursorStr;
 
     if (p_info.m_editTab)
@@ -82,6 +89,7 @@ void VTabIndicator::update(const VEditTabInfo &p_info)
         docType = file->getDocType();
         readonly = !file->isModifiable();
         external = file->getType() == FileType::Orphan;
+        system = external && dynamic_cast<const VOrphanFile *>(file)->isSystemFile();
 
         if (editTab->isEditMode()) {
             int line = p_info.m_cursorBlockNumber + 1;
@@ -107,4 +115,5 @@ void VTabIndicator::update(const VEditTabInfo &p_info)
     m_docTypeLabel->setText(docTypeToString(docType));
     m_readonlyLabel->setVisible(readonly);
     m_externalLabel->setVisible(external);
+    m_systemLabel->setVisible(system);
 }

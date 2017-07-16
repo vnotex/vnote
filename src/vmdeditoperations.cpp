@@ -672,30 +672,33 @@ void VMdEditOperations::decorateText(TextDecoration p_decoration)
         return;
     }
 
+    bool validDecoration = true;
     switch (p_decoration) {
     case TextDecoration::Bold:
-        m_vim->setMode(VimMode::Insert, false);
         decorateBold();
         break;
 
     case TextDecoration::Italic:
-        m_vim->setMode(VimMode::Insert, false);
         decorateItalic();
         break;
 
     case TextDecoration::Strikethrough:
-        m_vim->setMode(VimMode::Insert, false);
         decorateStrikethrough();
         break;
 
     case TextDecoration::InlineCode:
-        m_vim->setMode(VimMode::Insert, false);
         decorateInlineCode();
         break;
 
     default:
+        validDecoration = false;
         qDebug() << "decoration" << (int)p_decoration << "is not implemented yet";
         break;
+    }
+
+    if (validDecoration && m_editConfig->m_enableVimMode) {
+        Q_ASSERT(m_vim);
+        m_vim->setMode(VimMode::Insert, false);
     }
 }
 

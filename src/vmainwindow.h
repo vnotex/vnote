@@ -44,6 +44,11 @@ public:
     void locateFile(VFile *p_file);
     void locateCurrentFile();
 
+    VFileList *getFileList() const;
+
+    // View and edit the information of @p_file, which is an orphan file.
+    void editOrphanFileInfo(VFile *p_file);
+
 private slots:
     void importNoteFromFile();
     void viewSettings();
@@ -212,5 +217,10 @@ private:
 
     QVector<QPixmap> predefinedColorPixmaps;
 };
+
+inline VFileList *VMainWindow::getFileList() const
+{
+    return fileList;
+}
 
 #endif // VMAINWINDOW_H

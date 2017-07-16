@@ -276,7 +276,7 @@ const QString &VNote::getMonospacedFont() const
     return font;
 }
 
-VFile *VNote::getOrphanFile(const QString &p_path, bool p_modifiable)
+VFile *VNote::getOrphanFile(const QString &p_path, bool p_modifiable, bool p_systemFile)
 {
     if (p_path.isEmpty()) {
         return NULL;
@@ -285,8 +285,10 @@ VFile *VNote::getOrphanFile(const QString &p_path, bool p_modifiable)
     // See if the file has already been opened before.
     for (auto const &file : m_externalFiles) {
         Q_ASSERT(file->getType() == FileType::Orphan);
-        if (file->retrivePath() == p_path
-            && file->isModifiable() == p_modifiable) {
+        VOrphanFile *oFile = dynamic_cast<VOrphanFile *>(file);
+        if (oFile->retrivePath() == p_path) {
+            Q_ASSERT(oFile->isModifiable() == p_modifiable);
+            Q_ASSERT(oFile->isSystemFile() == p_systemFile);
             return file;
         }
     }
@@ -302,7 +304,7 @@ VFile *VNote::getOrphanFile(const QString &p_path, bool p_modifiable)
     }
 
     // Create a VOrphanFile for p_path.
-    VOrphanFile *file = new VOrphanFile(p_path, this, p_modifiable);
+    VOrphanFile *file = new VOrphanFile(p_path, this, p_modifiable, p_systemFile);
     m_externalFiles.append(file);
     return file;
 }

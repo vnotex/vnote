@@ -8,7 +8,8 @@ class VOrphanFile : public VFile
 {
     Q_OBJECT
 public:
-    VOrphanFile(const QString &p_path, QObject *p_parent, bool p_modifiable);
+    VOrphanFile(const QString &p_path, QObject *p_parent,
+                bool p_modifiable, bool p_systemFile = false);
 
     bool open() Q_DECL_OVERRIDE;
     QString retrivePath() const Q_DECL_OVERRIDE;
@@ -27,11 +28,15 @@ public:
 
     void setImageFolder(const QString &p_path);
 
+    const QString getImageFolder() const;
+
     // Whether the image folder is a relative path.
     bool isRelativeImageFolder() const Q_DECL_OVERRIDE;
 
     // Return the image folder part in an image link.
     QString getImageFolderInLink() const Q_DECL_OVERRIDE;
+
+    bool isSystemFile() const;
 
 private:
     bool save() Q_DECL_OVERRIDE;
@@ -50,7 +55,20 @@ private:
     // Empty to use the global default config.
     QString m_imageFolder;
 
+    // Whether it is a system internal file.
+    bool m_systemFile;
+
     friend class VDirectory;
 };
+
+inline bool VOrphanFile::isSystemFile() const
+{
+    return m_systemFile;
+}
+
+inline const QString VOrphanFile::getImageFolder() const
+{
+    return m_imageFolder;
+}
 
 #endif // VORPHANFILE_H

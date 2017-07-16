@@ -281,3 +281,9 @@ QTabBar::close-button:focus {
     image: url(:/resources/icons/close.svg);
     background-color: @focus-color;
 }
+
+QLineEdit[VimCommandLine="true"] {
+    padding: 0px;
+    margin: 0px;
+    border: none;
+}

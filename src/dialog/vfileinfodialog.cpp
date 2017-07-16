@@ -39,6 +39,7 @@ void VFileInfoDialog::setupUI()
     if (infoLabel) {
         mainLayout->addWidget(infoLabel);
     }
+
     mainLayout->addLayout(topLayout);
     mainLayout->addWidget(m_btnBox);
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
