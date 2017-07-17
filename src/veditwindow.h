@@ -168,6 +168,9 @@ private:
 
     // View and edit info about this note.
     QAction *m_noteInfoAct;
+
+    // Open the location (the folder containing this file) of this note.
+    QAction *m_openLocationAct;
 };
 
 inline QString VEditWindow::generateTooltip(const VFile *p_file) const

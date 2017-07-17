@@ -131,6 +131,20 @@ void VEditWindow::initTabActions()
                     g_vnote->getMainWindow()->editOrphanFileInfo(file);
                 }
             });
+
+    m_openLocationAct = new QAction(tr("Open Note Location"), this);
+    m_openLocationAct->setToolTip(tr("Open the folder containing this note in operating system"));
+    connect(m_openLocationAct, &QAction::triggered,
+            this, [this](){
+                int tab = this->m_closeTabAct->data().toInt();
+                Q_ASSERT(tab != -1);
+
+                VEditTab *editor = getTab(tab);
+                QPointer<VFile> file = editor->getFile();
+                Q_ASSERT(file);
+                QUrl url = QUrl::fromLocalFile(file->retriveBasePath());
+                QDesktopServices::openUrl(url);
+            });
 }
 
 void VEditWindow::setupCornerWidget()
@@ -527,10 +541,17 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
         // Locate to folder.
         m_locateAct->setData(tab);
         menu.addAction(m_locateAct);
+
+        m_openLocationAct->setData(tab);
+        menu.addAction(m_openLocationAct);
+
         m_noteInfoAct->setData(tab);
         menu.addAction(m_noteInfoAct);
     } else if (file->getType() == FileType::Orphan
                && !dynamic_cast<VOrphanFile *>(file)->isSystemFile()) {
+        m_openLocationAct->setData(tab);
+        menu.addAction(m_openLocationAct);
+
         m_noteInfoAct->setData(tab);
         menu.addAction(m_noteInfoAct);
     }

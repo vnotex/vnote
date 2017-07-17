@@ -3,31 +3,51 @@
 
 #include <QString>
 #include <QSharedMemory>
-#include <QSystemSemaphore>
+#include <QStringList>
 
 class VSingleInstanceGuard
 {
 public:
     VSingleInstanceGuard();
-    ~VSingleInstanceGuard();
+
+    // Return ture if this is the only instance of VNote.
     bool tryRun();
 
+    // There is already another instance running.
+    // Call this to ask that instance to open external files passed in
+    // via command line arguments.
+    void openExternalFiles(const QStringList &p_files);
+
+    // Fetch files from shared memory to open.
+    // Will clear the shared memory.
+    QStringList fetchFilesToOpen();
+
 private:
-    void detachMemory();
-    bool tryAttach();
+    // The count of the entries in the buffer to hold the path of the files to open.
+    enum { FilesBufCount = 1024 };
 
     struct SharedStruct {
         // A magic number to identify if this struct is initialized
         int m_magic;
-        // If it is 1, then another instance ask this instance to show itself
-        int m_activeRequest;
+
+        // Next empty entry in m_filesBuf.
+        int m_filesBufIdx;
+
+        // File paths to be opened.
+        // Encoded in this way with 2 bytes for each size part.
+        // [size of file1][file1][size of file2][file 2]
+        // Unicode representation of QString.
+        ushort m_filesBuf[FilesBufCount];
     };
 
-    static const QString m_memKey;
-    static const QString m_semKey;
-    static const int m_magic;
+    // Append @p_file to the shared struct files buffer.
+    // Returns true if succeeds or false if there is no enough space.
+    bool appendFileToBuffer(SharedStruct *p_str, const QString &p_file);
+
     QSharedMemory m_sharedMemory;
-    QSystemSemaphore m_sem;
+
+    static const QString c_memKey;
+    static const int c_magic;
 };
 
 #endif // VSINGLEINSTANCEGUARD_H

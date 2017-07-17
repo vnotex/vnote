@@ -31,6 +31,8 @@ class VFindReplaceDialog;
 class VCaptain;
 class VVimIndicator;
 class VTabIndicator;
+class VSingleInstanceGuard;
+class QTimer;
 
 class VMainWindow : public QMainWindow
 {
@@ -39,7 +41,7 @@ class VMainWindow : public QMainWindow
 public:
     friend class VCaptain;
 
-    VMainWindow(QWidget *parent = 0);
+    VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent = 0);
     const QVector<QPair<QString, QString> > &getPalette() const;
     void locateFile(VFile *p_file);
     void locateCurrentFile();
@@ -48,6 +50,9 @@ public:
 
     // View and edit the information of @p_file, which is an orphan file.
     void editOrphanFileInfo(VFile *p_file);
+
+    // Open external files @p_files as orphan files.
+    void openExternalFiles(const QStringList &p_files);
 
 private slots:
     void importNoteFromFile();
@@ -99,6 +104,10 @@ private slots:
 
     // Handle the status update of the current tab of VEditArea.
     void handleAreaTabStatusUpdated(const VEditTabInfo &p_info);
+
+    // Check the shared memory between different instances to see if we have
+    // files to open.
+    void checkSharedMemory();
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -154,8 +163,9 @@ private:
                        const QString &p_text,
                        QObject *p_parent = nullptr);
 
-    // Open external files @p_files as orphan files.
-    void openExternalFiles(const QStringList &p_files);
+    // Init a timer to watch the change of the shared memory between instances of
+    // VNote.
+    void initSharedMemoryWatcher();
 
     VNote *vnote;
     QPointer<VFile> m_curFile;
@@ -216,6 +226,15 @@ private:
     QToolBar *m_editToolBar;
 
     QVector<QPixmap> predefinedColorPixmaps;
+
+    // Single instance guard.
+    VSingleInstanceGuard *m_guard;
+
+    // Timer to check the shared memory between instances of VNote.
+    QTimer *m_sharedMemTimer;
+
+    // Interval of the shared memory timer in ms.
+    static const int c_sharedMemTimerInterval;
 };
 
 inline VFileList *VMainWindow::getFileList() const

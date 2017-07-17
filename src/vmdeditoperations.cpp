@@ -530,6 +530,7 @@ bool VMdEditOperations::handleKeyEsc(QKeyEvent *p_event)
 
 bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
 {
+    bool autolist = true;
     if (p_event->modifiers() & Qt::ControlModifier) {
         m_autoIndentPos = -1;
         return false;
@@ -543,7 +544,9 @@ bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
         cursor.insertText("  ");
         cursor.endEditBlock();
 
-        // Let remaining logics handle inserting the new block.
+        // Let remaining logics handle inserting the new block except that we
+        // do not need to insert auto list.
+        autolist = false;
     }
 
     // See if we need to cancel auto indent.
@@ -585,7 +588,7 @@ bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
         textInserted = VEditUtils::insertBlockWithIndent(cursor);
 
         // Continue the list from previous line.
-        if (vconfig.getAutoList()) {
+        if (vconfig.getAutoList() && autolist) {
             textInserted = VEditUtils::insertListMarkAsPreviousBlock(cursor) || textInserted;
         }
 

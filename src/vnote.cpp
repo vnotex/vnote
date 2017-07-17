@@ -282,11 +282,12 @@ VFile *VNote::getOrphanFile(const QString &p_path, bool p_modifiable, bool p_sys
         return NULL;
     }
 
+    QString path = QDir::cleanPath(p_path);
     // See if the file has already been opened before.
     for (auto const &file : m_externalFiles) {
         Q_ASSERT(file->getType() == FileType::Orphan);
         VOrphanFile *oFile = dynamic_cast<VOrphanFile *>(file);
-        if (oFile->retrivePath() == p_path) {
+        if (VUtils::equalPath(QDir::cleanPath(oFile->retrivePath()), path)) {
             Q_ASSERT(oFile->isModifiable() == p_modifiable);
             Q_ASSERT(oFile->isSystemFile() == p_systemFile);
             return file;
@@ -303,8 +304,8 @@ VFile *VNote::getOrphanFile(const QString &p_path, bool p_modifiable, bool p_sys
         }
     }
 
-    // Create a VOrphanFile for p_path.
-    VOrphanFile *file = new VOrphanFile(p_path, this, p_modifiable, p_systemFile);
+    // Create a VOrphanFile for path.
+    VOrphanFile *file = new VOrphanFile(path, this, p_modifiable, p_systemFile);
     m_externalFiles.append(file);
     return file;
 }

@@ -6,6 +6,8 @@
 #include <QFile>
 #include <QTextCodec>
 #include <QFileInfo>
+#include <QStringList>
+#include <QDir>
 #include "utils/vutils.h"
 #include "vsingleinstanceguard.h"
 #include "vconfigmanager.h"
@@ -91,16 +93,18 @@ void VLogger(QtMsgType type, const QMessageLogContext &context, const QString &m
 
 int main(int argc, char *argv[])
 {
+    VSingleInstanceGuard guard;
+    bool canRun = guard.tryRun();
+
 #if defined(QT_NO_DEBUG)
-    g_logFile.setFileName(VConfigManager::getLogFilePath());
-    g_logFile.open(QIODevice::WriteOnly);
+    if (canRun) {
+        g_logFile.setFileName(VConfigManager::getLogFilePath());
+        g_logFile.open(QIODevice::WriteOnly);
+    }
 #endif
 
-    qInstallMessageHandler(VLogger);
-
-    VSingleInstanceGuard guard;
-    if (!guard.tryRun()) {
-        return 0;
+    if (canRun) {
+        qInstallMessageHandler(VLogger);
     }
 
     QTextCodec *codec = QTextCodec::codecForName("UTF8");
@@ -109,6 +113,35 @@ int main(int argc, char *argv[])
     }
 
     QApplication app(argc, argv);
+
+    // The file path passed via command line arguments.
+    QStringList filePaths;
+    QStringList args = app.arguments();
+    for (int i = 1; i < args.size(); ++i) {
+        if (QFileInfo::exists(args[i])) {
+            QString filePath = args[i];
+            QFileInfo fi(filePath);
+            if (fi.isFile()) {
+                // Need to use absolute path here since VNote may be launched
+                // in different working directory.
+                filePath = QDir::cleanPath(fi.absoluteFilePath());
+            }
+
+            filePaths.append(filePath);
+        }
+    }
+
+    qDebug() << "command line arguments" << args;
+
+    if (!canRun) {
+        // Ask another instance to open files passed in.
+        if (!filePaths.isEmpty()) {
+            guard.openExternalFiles(filePaths);
+        }
+
+        return 0;
+    }
+
     vconfig.initialize();
 
     QString locale = VUtils::getLocale();
@@ -119,6 +152,7 @@ int main(int argc, char *argv[])
     if (!qtTranslator.load("qt_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath))) {
         qtTranslator.load("qt_" + locale, "translations");
     }
+
     app.installTranslator(&qtTranslator);
 
     // load translation for vnote
@@ -128,7 +162,7 @@ int main(int argc, char *argv[])
         app.installTranslator(&translator);
     }
 
-    VMainWindow w;
+    VMainWindow w(&guard);
     QString style = VUtils::readFileFromDisk(":/resources/vnote.qss");
     if (!style.isEmpty()) {
         VUtils::processStyle(style, w.getPalette());
@@ -136,6 +170,8 @@ int main(int argc, char *argv[])
     }
 
     w.show();
+
+    w.openExternalFiles(filePaths);
 
     return app.exec();
 }

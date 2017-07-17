@@ -1,73 +1,132 @@
 #include "vsingleinstanceguard.h"
 #include <QDebug>
 
-const QString VSingleInstanceGuard::m_memKey = "vnote_shared_memory";
-const QString VSingleInstanceGuard::m_semKey = "vnote_semaphore";
-const int VSingleInstanceGuard::m_magic = 133191933;
+#include "utils/vutils.h"
+
+const QString VSingleInstanceGuard::c_memKey = "vnote_shared_memory";
+const int VSingleInstanceGuard::c_magic = 133191933;
 
 VSingleInstanceGuard::VSingleInstanceGuard()
-    : m_sharedMemory(m_memKey), m_sem(m_semKey, 1)
+    : m_sharedMemory(c_memKey)
 {
-}
-
-VSingleInstanceGuard::~VSingleInstanceGuard()
-{
-    if (m_sharedMemory.isAttached()) {
-        detachMemory();
-    }
-}
-
-void VSingleInstanceGuard::detachMemory()
-{
-    m_sem.acquire();
-    m_sharedMemory.detach();
-    m_sem.release();
-}
-
-bool VSingleInstanceGuard::tryAttach()
-{
-    m_sem.acquire();
-    bool ret = m_sharedMemory.attach();
-    m_sem.release();
-    if (ret) {
-        m_sharedMemory.lock();
-        SharedStruct *str = (SharedStruct *)m_sharedMemory.data();
-        str->m_activeRequest = 1;
-        m_sharedMemory.unlock();
-        detachMemory();
-    }
-    return ret;
 }
 
 bool VSingleInstanceGuard::tryRun()
 {
     // If we can attach to the sharedmemory, there is another instance running.
-    if (tryAttach()) {
+    // In Linux, crashes may cause the shared memory segment remains. In this case,
+    // this will attach to the old segment, then exit, freeing the old segment.
+    if (m_sharedMemory.attach()) {
         qDebug() << "another instance is running";
         return false;
     }
 
-    // Try to create it
-    m_sem.acquire();
+    // Try to create it.
     bool ret = m_sharedMemory.create(sizeof(SharedStruct));
-    m_sem.release();
     if (ret) {
-        // We created it
+        // We created it.
         m_sharedMemory.lock();
         SharedStruct *str = (SharedStruct *)m_sharedMemory.data();
-        str->m_magic = m_magic;
-        str->m_activeRequest = 0;
+        str->m_magic = c_magic;
+        str->m_filesBufIdx = 0;
         m_sharedMemory.unlock();
         return true;
     } else {
-        // Maybe another thread create it
-        if (tryAttach()) {
-            qDebug() << "another instance is running";
-            return false;
-        } else {
-            // Something wrong here
-            qWarning() << "fail to create or attach shared memory segment";
-            return false;
+        qDebug() << "fail to create shared memory segment";
+        return false;
+    }
+}
+
+void VSingleInstanceGuard::openExternalFiles(const QStringList &p_files)
+{
+    if (p_files.isEmpty()) {
+        return;
+    }
+
+    if (!m_sharedMemory.isAttached()) {
+        if (!m_sharedMemory.attach()) {
+            qDebug() << "fail to attach to the shared memory segment"
+                     << (m_sharedMemory.error() ? m_sharedMemory.errorString() : "");
+            return;
         }
     }
+
+    qDebug() << "try to request another instance to open files" << p_files;
+
+    int idx = 0;
+    int tryCount = 100;
+    while (tryCount--) {
+        qDebug() << "set shared memory one round" << idx << "of" << p_files.size();
+        m_sharedMemory.lock();
+        SharedStruct *str = (SharedStruct *)m_sharedMemory.data();
+        V_ASSERT(str->m_magic == c_magic);
+        for (; idx < p_files.size(); ++idx) {
+            if (p_files[idx].size() + 1 > FilesBufCount) {
+                qDebug() << "skip file since its long name" << p_files[idx];
+                // Skip this long long name file.
+                continue;
+            }
+
+            if (!appendFileToBuffer(str, p_files[idx])) {
+                break;
+            }
+        }
+
+        m_sharedMemory.unlock();
+
+        if (idx < p_files.size()) {
+            VUtils::sleepWait(500);
+        } else {
+            break;
+        }
+    }
+}
+
+bool VSingleInstanceGuard::appendFileToBuffer(SharedStruct *p_str, const QString &p_file)
+{
+    if (p_file.isEmpty()) {
+        return true;
+    }
+
+    int strSize = p_file.size();
+    if (strSize + 1 > FilesBufCount - p_str->m_filesBufIdx) {
+        qDebug() << "no enough space for" << p_file;
+        return false;
+    }
+
+    // Put the size first.
+    p_str->m_filesBuf[p_str->m_filesBufIdx++] = (ushort)strSize;
+    const QChar *data = p_file.constData();
+    for (int i = 0; i < strSize; ++i) {
+        p_str->m_filesBuf[p_str->m_filesBufIdx++] = data[i].unicode();
+    }
+
+    qDebug() << "after appended one file" << p_str->m_filesBufIdx << p_file;
+    return true;
+}
+
+QStringList VSingleInstanceGuard::fetchFilesToOpen()
+{
+    QStringList files;
+    Q_ASSERT(m_sharedMemory.isAttached());
+    m_sharedMemory.lock();
+    SharedStruct *str = (SharedStruct *)m_sharedMemory.data();
+    Q_ASSERT(str->m_magic == c_magic);
+    Q_ASSERT(str->m_filesBufIdx <= FilesBufCount);
+    int idx = 0;
+    while (idx < str->m_filesBufIdx) {
+        int strSize = str->m_filesBuf[idx++];
+        Q_ASSERT(strSize <= str->m_filesBufIdx - idx);
+        QString file;
+        for (int i = 0; i < strSize; ++i) {
+            file.append(QChar(str->m_filesBuf[idx++]));
+        }
+
+        files.append(file);
+    }
+
+    str->m_filesBufIdx = 0;
+    m_sharedMemory.unlock();
+
+    return files;
 }

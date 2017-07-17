@@ -6,7 +6,7 @@
 - `Ctrl+E E`  
 Toggle expanding the edit area.
 - `Ctrl+Alt+N`  
-Create a note in current directory.
+Create a note in current folder.
 - `Ctrl+F`  
 Find/Replace in current note.
 - `Ctrl+Q`  
@@ -135,7 +135,7 @@ Number key 1 to 9 will jump to the tabs with corresponding sequence number.
 - `0`   
 Jump to previous tab. Alternate between current and previous tab.
 - `D`   
-Locate to the directory of current note.
+Locate to the folder of current note.
 - `Q`   
 Discard current changes and exit edit mode.
 - `V`   

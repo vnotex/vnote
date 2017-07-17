@@ -25,17 +25,20 @@
 #include "dialog/vupdater.h"
 #include "vorphanfile.h"
 #include "dialog/vorphanfileinfodialog.h"
+#include "vsingleinstanceguard.h"
 
 extern VConfigManager vconfig;
 
 VNote *g_vnote;
 
+const int VMainWindow::c_sharedMemTimerInterval = 1000;
+
 #if defined(QT_NO_DEBUG)
 extern QFile g_logFile;
 #endif
 
-VMainWindow::VMainWindow(QWidget *parent)
-    : QMainWindow(parent), m_onePanel(false)
+VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
+    : QMainWindow(p_parent), m_onePanel(false), m_guard(p_guard)
 {
     setWindowIcon(QIcon(":/resources/icons/vnote.ico"));
     vnote = new VNote(this);
@@ -56,6 +59,19 @@ VMainWindow::VMainWindow(QWidget *parent)
     notebookSelector->update();
 
     initCaptain();
+
+    initSharedMemoryWatcher();
+}
+
+void VMainWindow::initSharedMemoryWatcher()
+{
+    m_sharedMemTimer = new QTimer(this);
+    m_sharedMemTimer->setSingleShot(false);
+    m_sharedMemTimer->setInterval(c_sharedMemTimerInterval);
+    connect(m_sharedMemTimer, &QTimer::timeout,
+            this, &VMainWindow::checkSharedMemory);
+
+    m_sharedMemTimer->start();
 }
 
 void VMainWindow::initCaptain()
@@ -1349,6 +1365,10 @@ void VMainWindow::setEditorStyle(QAction *p_action)
 void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
                                                        bool p_editMode)
 {
+    bool systemFile = p_file
+                      && p_file->getType() == FileType::Orphan
+                      && dynamic_cast<const VOrphanFile *>(p_file)->isSystemFile();
+
     m_printAct->setEnabled(p_file && p_file->getDocType() == DocType::Markdown);
     m_exportAsPDFAct->setEnabled(p_file && p_file->getDocType() == DocType::Markdown);
 
@@ -1356,8 +1376,8 @@ void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
     discardExitAct->setVisible(p_file && p_editMode);
     saveExitAct->setVisible(p_file && p_editMode);
     saveNoteAct->setVisible(p_file && p_editMode);
-    deleteNoteAct->setVisible(p_file && p_file->isModifiable());
-    noteInfoAct->setVisible(p_file && p_file->getType() == FileType::Normal);
+    deleteNoteAct->setVisible(p_file && p_file->getType() == FileType::Normal);
+    noteInfoAct->setVisible(p_file && !systemFile);
     m_closeNoteAct->setVisible(p_file);
 
     m_insertImageAct->setEnabled(p_file && p_editMode);
@@ -1483,17 +1503,25 @@ void VMainWindow::updateWindowTitle(const QString &str)
 
 void VMainWindow::curEditFileInfo()
 {
-    if (!m_curFile || m_curFile->getType() != FileType::Normal) {
-        return;
+    Q_ASSERT(m_curFile);
+
+    if (m_curFile->getType() == FileType::Normal) {
+        fileList->fileInfo(m_curFile);
+    } else if (m_curFile->getType() == FileType::Orphan) {
+        VOrphanFile *file = dynamic_cast<VOrphanFile *>((VFile *)m_curFile);
+        Q_ASSERT(file);
+        if (!file->isSystemFile()) {
+            editOrphanFileInfo(m_curFile);
+        }
     }
-    fileList->fileInfo(m_curFile);
 }
 
 void VMainWindow::deleteCurNote()
 {
-    if (!m_curFile || !m_curFile->isModifiable()) {
+    if (!m_curFile || m_curFile->getType() != FileType::Normal) {
         return;
     }
+
     fileList->deleteFile(m_curFile);
 }
 
@@ -1826,5 +1854,18 @@ void VMainWindow::editOrphanFileInfo(VFile *p_file)
     if (dialog.exec() == QDialog::Accepted) {
         QString imgFolder = dialog.getImageFolder();
         file->setImageFolder(imgFolder);
+    }
+}
+
+void VMainWindow::checkSharedMemory()
+{
+    QStringList files = m_guard->fetchFilesToOpen();
+    if (!files.isEmpty()) {
+        qDebug() << "shared memory fetch files" << files;
+        openExternalFiles(files);
+
+        show();
+        activateWindow();
+        QApplication::alert(this, 5000);
     }
 }
