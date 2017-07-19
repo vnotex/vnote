@@ -123,6 +123,12 @@ public:
     // LineNumberArea will call this to request paint itself.
     void lineNumberAreaPaintEvent(QPaintEvent *p_event);
 
+    // Scroll the content to make @p_block visible.
+    // If the @p_block is too long to hold in one page, just let it occupy the
+    // whole page.
+    // Will not change current cursor.
+    void makeBlockVisible(const QTextBlock &p_block);
+
 signals:
     // Request VEditTab to save and exit edit mode.
     void saveAndRead();
@@ -259,10 +265,6 @@ private:
     bool findTextHelper(const QString &p_text, uint p_options,
                         bool p_forward, int p_start,
                         bool &p_wrapped, QTextCursor &p_cursor);
-
-    // Scroll the content to make @p_block visible.
-    // Will not change current cursor.
-    void makeBlockVisible(const QTextBlock &p_block);
 };
 
 class LineNumberArea : public QWidget

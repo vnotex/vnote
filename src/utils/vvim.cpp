@@ -2111,6 +2111,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 
 clear_accept:
     resetState();
+    m_editor->makeBlockVisible(m_editor->textCursor().block());
 
 accept:
     ret = true;

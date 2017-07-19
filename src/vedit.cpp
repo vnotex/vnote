@@ -1168,17 +1168,65 @@ void VEdit::makeBlockVisible(const QTextBlock &p_block)
         height -= hbar->height();
     }
 
+    bool moved = false;
+
     QRectF rect = layout->blockBoundingRect(p_block);
     int y = contentOffsetY() + (int)rect.y();
+    int rectHeight = (int)rect.height();
+
+    // Handle the case rectHeight >= height.
+    if (rectHeight >= height) {
+        if (y <= 0) {
+            if (y + rectHeight < height) {
+                // Need to scroll up.
+                while (y + rectHeight < height && vbar->value() > vbar->minimum()) {
+                    moved = true;
+                    vbar->setValue(vbar->value() - vbar->singleStep());
+                    rect = layout->blockBoundingRect(p_block);
+                    rectHeight = (int)rect.height();
+                    y = contentOffsetY() + (int)rect.y();
+                }
+            }
+        } else {
+            // Need to scroll down.
+            while (y > 0 && vbar->value() < vbar->maximum()) {
+                moved = true;
+                vbar->setValue(vbar->value() + vbar->singleStep());
+                rect = layout->blockBoundingRect(p_block);
+                rectHeight = (int)rect.height();
+                y = contentOffsetY() + (int)rect.y();
+            }
+        }
+
+        if (moved) {
+            qDebug() << "scroll to make huge block visible";
+        }
+
+        return;
+    }
+
     while (y < 0 && vbar->value() > vbar->minimum()) {
+        moved = true;
         vbar->setValue(vbar->value() - vbar->singleStep());
         rect = layout->blockBoundingRect(p_block);
+        rectHeight = (int)rect.height();
         y = contentOffsetY() + (int)rect.y();
     }
 
-    while (y + (int)rect.height() > height && vbar->value() < vbar->maximum()) {
+    if (moved) {
+        qDebug() << "scroll page down to make block visible";
+        return;
+    }
+
+    while (y + rectHeight > height && vbar->value() < vbar->maximum()) {
+        moved = true;
         vbar->setValue(vbar->value() + vbar->singleStep());
         rect = layout->blockBoundingRect(p_block);
+        rectHeight = (int)rect.height();
         y = contentOffsetY() + (int)rect.y();
+    }
+
+    if (moved) {
+        qDebug() << "scroll page up to make block visible";
     }
 }
