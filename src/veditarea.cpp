@@ -597,9 +597,6 @@ int VEditArea::focusNextWindow(int p_biaIdx)
 
 void VEditArea::moveCurrentTabOneSplit(bool p_right)
 {
-    if (splitter->count() < 2) {
-        return;
-    }
     getWindow(curWindowIndex)->moveCurrentTabOneSplit(p_right);
 }
 

@@ -63,6 +63,12 @@ public:
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
 
+    // To accept specific drop.
+    void dragEnterEvent(QDragEnterEvent *p_event) Q_DECL_OVERRIDE;
+
+    // Drop the data.
+    void dropEvent(QDropEvent *p_event) Q_DECL_OVERRIDE;
+
 signals:
     // Status of current VEditTab has update.
     void tabStatusUpdated(const VEditTabInfo &p_info);

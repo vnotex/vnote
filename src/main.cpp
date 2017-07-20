@@ -125,9 +125,8 @@ int main(int argc, char *argv[])
                 // Need to use absolute path here since VNote may be launched
                 // in different working directory.
                 filePath = QDir::cleanPath(fi.absoluteFilePath());
+                filePaths.append(filePath);
             }
-
-            filePaths.append(filePath);
         }
     }
 

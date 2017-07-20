@@ -19,6 +19,7 @@ static const QString c_ClipboardPropertyMark = "CopiedImageURLAltered";
 VWebView::VWebView(VFile *p_file, QWidget *p_parent)
     : QWebEngineView(p_parent), m_file(p_file), m_actionHooked(false)
 {
+    setAcceptDrops(false);
 }
 
 void VWebView::contextMenuEvent(QContextMenuEvent *p_event)

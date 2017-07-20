@@ -20,6 +20,7 @@ VEditWindow::VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent)
     : QTabWidget(parent), vnote(vnote), m_editArea(editArea),
       m_curTabWidget(NULL), m_lastTabWidget(NULL)
 {
+    setAcceptDrops(true);
     initTabActions();
     setupCornerWidget();
 
@@ -808,6 +809,7 @@ void VEditWindow::moveCurrentTabOneSplit(bool p_right)
     if (idx == -1) {
         return;
     }
+
     moveTabOneSplit(idx, p_right);
 }
 
@@ -918,3 +920,37 @@ VEditTab* VEditWindow::getTab(int tabIndex) const
     return dynamic_cast<VEditTab *>(widget(tabIndex));
 }
 
+void VEditWindow::dragEnterEvent(QDragEnterEvent *p_event)
+{
+    if (p_event->mimeData()->hasFormat("text/uri-list")) {
+        p_event->acceptProposedAction();
+    }
+}
+
+void VEditWindow::dropEvent(QDropEvent *p_event)
+{
+    const QMimeData *mime = p_event->mimeData();
+    if (mime->hasFormat("text/uri-list") && mime->hasUrls()) {
+        // Open external files in this edit window.
+        QStringList files;
+        QList<QUrl> urls = mime->urls();
+        for (int i = 0; i < urls.size(); ++i) {
+            QString file;
+            if (urls[i].isLocalFile()) {
+                file = urls[i].toLocalFile();
+                QFileInfo fi(file);
+                if (fi.exists() && fi.isFile()) {
+                    file = QDir::cleanPath(fi.absoluteFilePath());
+                    files.append(file);
+                }
+            }
+        }
+
+        if (!files.isEmpty()) {
+            focusWindow();
+            g_vnote->getMainWindow()->openExternalFiles(files);
+        }
+
+        p_event->acceptProposedAction();
+    }
+}
