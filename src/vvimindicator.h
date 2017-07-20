@@ -29,6 +29,8 @@ public:
 
     void restoreUserLastInput();
 
+    QVariant inputMethodQuery(Qt::InputMethodQuery p_query) const Q_DECL_OVERRIDE;
+
 signals:
     // User has finished the input and the command is ready to execute.
     void commandFinished(VVim::CommandLineType p_type, const QString &p_cmd);
@@ -59,6 +61,8 @@ private:
 
     void setRegisterPending(bool p_pending);
 
+    void setInputMethodEnabled(bool p_enabled);
+
     VVim::CommandLineType m_type;
 
     // The latest command user input.
@@ -68,6 +72,9 @@ private:
     bool m_registerPending;
 
     QString m_originStyleSheet;
+
+    // Whether enable input method.
+    bool m_enableInputMethod;
 };
 
 class VVimIndicator : public QWidget

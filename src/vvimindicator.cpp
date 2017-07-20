@@ -7,6 +7,8 @@
 #include <QFontMetrics>
 #include <QFont>
 #include <QHeaderView>
+#include <QInputMethod>
+#include <QGuiApplication>
 
 #include "vconfigmanager.h"
 #include "vbuttonwithwidget.h"
@@ -332,7 +334,7 @@ void VVimIndicator::triggerCommandLine(VVim::CommandLineType p_type)
 
 VVimCmdLineEdit::VVimCmdLineEdit(QWidget *p_parent)
     : QLineEdit(p_parent), m_type(VVim::CommandLineType::Invalid),
-      m_registerPending(false)
+      m_registerPending(false), m_enableInputMethod(true)
 {
     // When user delete all the text, cancel command input.
     connect(this, &VVimCmdLineEdit::textChanged,
@@ -401,6 +403,28 @@ void VVimCmdLineEdit::reset(VVim::CommandLineType p_type)
     setCommand("");
     show();
     setFocus();
+    setInputMethodEnabled(p_type != VVim::CommandLineType::Command);
+}
+
+void VVimCmdLineEdit::setInputMethodEnabled(bool p_enabled)
+{
+    if (m_enableInputMethod != p_enabled) {
+        m_enableInputMethod = p_enabled;
+
+        QInputMethod *im = QGuiApplication::inputMethod();
+        im->reset();
+        // Ask input method to query current state, which will call inputMethodQuery().
+        im->update(Qt::ImEnabled);
+    }
+}
+
+QVariant VVimCmdLineEdit::inputMethodQuery(Qt::InputMethodQuery p_query) const
+{
+    if (p_query == Qt::ImEnabled) {
+        return m_enableInputMethod;
+    }
+
+    return QLineEdit::inputMethodQuery(p_query);
 }
 
 // See if @p_modifiers is Control which is different on macOs and Windows.
