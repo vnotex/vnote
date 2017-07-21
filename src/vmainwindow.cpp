@@ -1538,6 +1538,10 @@ void VMainWindow::closeEvent(QCloseEvent *event)
 
 void VMainWindow::saveStateAndGeometry()
 {
+    // In one panel view, it will save the wrong state that the directory tree
+    // panel has a width of zero.
+    twoPanelView();
+
     vconfig.setMainWindowGeometry(saveGeometry());
     vconfig.setMainWindowState(saveState());
     vconfig.setToolsDockChecked(toolDock->isVisible());

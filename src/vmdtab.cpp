@@ -323,6 +323,10 @@ void VMdTab::setupMarkdownEditor()
             this, &VEditTab::statusMessage);
     connect(m_editor, &VEdit::vimStatusUpdated,
             this, &VEditTab::vimStatusUpdated);
+    connect(m_editor, &VEdit::requestCloseFindReplaceDialog,
+            this, [this](){
+                this->m_editArea->getFindReplaceDialog()->closeDialog();
+            });
 
     m_editor->reloadFile();
     m_stacks->addWidget(m_editor);

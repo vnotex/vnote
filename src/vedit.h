@@ -154,6 +154,9 @@ signals:
     // Selection changed by mouse.
     void selectionChangedByMouse(bool p_hasSelection);
 
+    // Request the edit tab to close find and replace dialog.
+    void requestCloseFindReplaceDialog();
+
 public slots:
     virtual void highlightCurrentLine();
 

@@ -1311,7 +1311,10 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
     case Qt::Key_Escape:
     {
         // Clear selection and enter normal mode.
-        clearSelection();
+        bool ret = clearSelection();
+        if (!ret && checkMode(VimMode::Normal)) {
+            emit m_editor->requestCloseFindReplaceDialog();
+        }
 
         setMode(VimMode::Normal);
         break;
