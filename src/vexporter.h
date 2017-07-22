@@ -112,6 +112,9 @@ private:
 
     QPageLayout m_pageLayout;
 
+    // Whether a PDF has been exported.
+    bool m_exported;
+
     // The default directory.
     static QString s_defaultPathDir;
 };

@@ -31,7 +31,8 @@ VExporter::VExporter(MarkdownConverterType p_mdType, QWidget *p_parent)
     : QDialog(p_parent), m_webViewer(NULL), m_mdType(p_mdType),
       m_file(NULL), m_type(ExportType::PDF), m_source(ExportSource::Invalid),
       m_noteState(NoteState::NotReady), m_state(ExportState::Idle),
-      m_pageLayout(QPageLayout(QPageSize(QPageSize::A4), QPageLayout::Portrait, QMarginsF(0.0, 0.0, 0.0, 0.0)))
+      m_pageLayout(QPageLayout(QPageSize(QPageSize::A4), QPageLayout::Portrait, QMarginsF(0.0, 0.0, 0.0, 0.0))),
+      m_exported(false)
 {
     initMarkdownTemplate();
 
@@ -266,6 +267,14 @@ bool VExporter::isNoteStateFailed() const
 
 void VExporter::startExport()
 {
+    QPushButton *cancelBtn = m_btnBox->button(QDialogButtonBox::Cancel);
+
+    if (m_exported) {
+        cancelBtn->show();
+        m_exported = false;
+        accept();
+    }
+
     int exportedNum = 0;
     enableUserInput(false);
     V_ASSERT(m_state == ExportState::Idle);
@@ -347,7 +356,9 @@ exit:
     }
 
     if (exportedNum) {
+        m_exported = true;
         m_openBtn->show();
+        cancelBtn->hide();
     }
 
     m_state = ExportState::Idle;
