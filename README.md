@@ -53,6 +53,8 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS** (due to t
 - Supports [Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/), and [MathJax](https://www.mathjax.org/);
 - Supports HiDPI.
 
+![VNote Edit](screenshots/vnote_edit.gif)
+
 # Why VNote
 ## Markdown Editor & Notes Management
 VNote tries to be a powerful Markdown editor with notes management, or a note-taking application with pleasant Markdown support. If you are a fan of Markdown and enjoy writing Markdown notes for study, work, and life, VNote is the right tool for you.

@@ -52,6 +52,8 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 - 支持[Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/) 和 [MathJax](https://www.mathjax.org/);
 - 支持高分辨率；
 
+![VNote Edit](screenshots/vnote_edit.gif)
+
 # 开发VNote的动机
 ## Markdown编辑器与笔记管理
 VNote设计为带有笔记管理功能的Markdown编辑器，或者有良好Markdown支持的笔记软件。如果您喜欢Markdown并经常在学习、工作和生活中使用Markdown记录笔记，那么VNote就是一个适合您的工具。
