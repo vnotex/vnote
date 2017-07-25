@@ -6,6 +6,6 @@ GenericName=Markdown Note
 Comment=Note-taking application for pleasant Markdown
 Icon=vnote
 Terminal=false
-Exec=VNote
+Exec=VNote %F
 MimeType=text/markdown;
 Categories=Qt;Utility;TextEditor;Office;
