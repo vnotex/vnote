@@ -116,5 +116,6 @@
         <file>resources/icons/strikethrough.svg</file>
         <file>resources/icons/inline_code.svg</file>
         <file>resources/icons/close_note_tb.svg</file>
+        <file>resources/icons/32x32/vnote.png</file>
     </qresource>
 </RCC>

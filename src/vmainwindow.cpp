@@ -38,7 +38,8 @@ extern QFile g_logFile;
 #endif
 
 VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
-    : QMainWindow(p_parent), m_onePanel(false), m_guard(p_guard)
+    : QMainWindow(p_parent), m_onePanel(false), m_guard(p_guard),
+      m_windowOldState(Qt::WindowNoState), m_requestQuit(false)
 {
     setWindowIcon(QIcon(":/resources/icons/vnote.ico"));
     vnote = new VNote(this);
@@ -148,6 +149,8 @@ void VMainWindow::setupUI()
     // Create and show the status bar
     statusBar()->addPermanentWidget(m_vimIndicator);
     statusBar()->addPermanentWidget(m_tabIndicator);
+
+    initTrayIcon();
 }
 
 QWidget *VMainWindow::setupDirectoryPanel()
@@ -723,14 +726,20 @@ void VMainWindow::initFileMenu()
     fileMenu->addSeparator();
 
     // Exit.
-    QAction *exitAct = new QAction(tr("&Exit"), this);
-    exitAct->setToolTip(tr("Exit VNote"));
+    QAction *exitAct = new QAction(tr("&Quit"), this);
+    exitAct->setToolTip(tr("Quit VNote"));
     exitAct->setShortcut(QKeySequence("Ctrl+Q"));
     exitAct->setMenuRole(QAction::QuitRole);
     connect(exitAct, &QAction::triggered,
-            this, &VMainWindow::close);
+            this, &VMainWindow::quitApp);
 
     fileMenu->addAction(exitAct);
+}
+
+void VMainWindow::quitApp()
+{
+    m_requestQuit = true;
+    close();
 }
 
 void VMainWindow::initEditMenu()
@@ -1527,13 +1536,42 @@ void VMainWindow::deleteCurNote()
 
 void VMainWindow::closeEvent(QCloseEvent *event)
 {
-    if (!editArea->closeAllFiles(false)) {
-        // Fail to close all the opened files, cancel closing app
-        event->ignore();
-        return;
+    bool isExit = m_requestQuit || !vconfig.getMinimizeToStystemTray();
+    m_requestQuit = false;
+
+    if (!isExit && vconfig.getMinimizeToStystemTray() == -1) {
+        // Not initialized yet. Prompt for user.
+        int ret = VUtils::showMessage(QMessageBox::Information,
+                                      tr("Close VNote"),
+                                      tr("Do you want to minimize VNote to system tray "
+                                         "instead of quitting it when closing VNote?"),
+                                      tr("You could change the option in Settings later."),
+                                      QMessageBox::Ok | QMessageBox::No | QMessageBox::Cancel,
+                                      QMessageBox::Ok,
+                                      this);
+        if (ret == QMessageBox::Ok) {
+            vconfig.setMinimizeToSystemTray(1);
+        } else if (ret == QMessageBox::No) {
+            vconfig.setMinimizeToSystemTray(0);
+            isExit = true;
+        } else {
+            return;
+        }
     }
-    saveStateAndGeometry();
-    QMainWindow::closeEvent(event);
+
+    if (isExit) {
+        if (!editArea->closeAllFiles(false)) {
+            // Fail to close all the opened files, cancel closing app
+            event->ignore();
+            return;
+        }
+
+        saveStateAndGeometry();
+        QMainWindow::closeEvent(event);
+    } else {
+        hide();
+        event->ignore();
+    }
 }
 
 void VMainWindow::saveStateAndGeometry()
@@ -1868,8 +1906,58 @@ void VMainWindow::checkSharedMemory()
         qDebug() << "shared memory fetch files" << files;
         openExternalFiles(files);
 
-        show();
-        activateWindow();
-        QApplication::alert(this, 5000);
+        showMainWindow();
     }
+}
+
+void VMainWindow::initTrayIcon()
+{
+    QMenu *menu = new QMenu(this);
+    QAction *showMainWindowAct = menu->addAction(tr("Show VNote"));
+    connect(showMainWindowAct, &QAction::triggered,
+            this, &VMainWindow::showMainWindow);
+
+    QAction *exitAct = menu->addAction(tr("Quit"));
+    connect(exitAct, &QAction::triggered,
+            this, &VMainWindow::quitApp);
+
+    m_trayIcon = new QSystemTrayIcon(QIcon(":/resources/icons/32x32/vnote.png"), this);
+    m_trayIcon->setToolTip(tr("VNote"));
+    m_trayIcon->setContextMenu(menu);
+
+    connect(m_trayIcon, &QSystemTrayIcon::activated,
+            this, [this](QSystemTrayIcon::ActivationReason p_reason){
+                if (p_reason == QSystemTrayIcon::Trigger) {
+                    this->showMainWindow();
+                }
+            });
+
+    m_trayIcon->show();
+}
+
+void VMainWindow::changeEvent(QEvent *p_event)
+{
+    if (p_event->type() == QEvent::WindowStateChange) {
+        QWindowStateChangeEvent *eve = dynamic_cast<QWindowStateChangeEvent *>(p_event);
+        m_windowOldState = eve->oldState();
+    }
+
+    QMainWindow::changeEvent(p_event);
+}
+
+void VMainWindow::showMainWindow()
+{
+    if (this->isMinimized()) {
+        if (m_windowOldState & Qt::WindowMaximized) {
+            this->showMaximized();
+        } else if (m_windowOldState & Qt::WindowFullScreen) {
+            this->showFullScreen();
+        } else {
+            this->showNormal();
+        }
+    } else {
+        this->show();
+    }
+
+    this->activateWindow();
 }

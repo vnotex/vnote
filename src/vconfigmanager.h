@@ -214,6 +214,9 @@ public:
     const QString &getEditorLineNumberBg() const;
     const QString &getEditorLineNumberFg() const;
 
+    int getMinimizeToStystemTray() const;
+    void setMinimizeToSystemTray(int p_val);
+
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
     QString getShortcutKeySequence(const QString &p_operation) const;
@@ -428,6 +431,12 @@ private:
     // Shortcuts config.
     // Operation -> KeySequence.
     QHash<QString, QString> m_shortcuts;
+
+    // Whether minimize to system tray icon when closing the app.
+    // -1: uninitialized;
+    // 0: do not minimize to the tay;
+    // 1: minimize to the tray.
+    int m_minimizeToSystemTray;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1099,6 +1108,22 @@ inline const QString &VConfigManager::getEditorLineNumberBg() const
 inline const QString &VConfigManager::getEditorLineNumberFg() const
 {
     return m_editorLineNumberFg;
+}
+
+inline int VConfigManager::getMinimizeToStystemTray() const
+{
+    return m_minimizeToSystemTray;
+}
+
+inline void VConfigManager::setMinimizeToSystemTray(int p_val)
+{
+    if (m_minimizeToSystemTray == p_val) {
+        return;
+    }
+
+    m_minimizeToSystemTray = p_val;
+    setConfigToSettings("global", "minimize_to_system_tray",
+                        m_minimizeToSystemTray);
 }
 
 #endif // VCONFIGMANAGER_H

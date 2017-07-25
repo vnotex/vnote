@@ -157,6 +157,12 @@ void VConfigManager::initialize()
     m_editorLineNumber = getConfigFromSettings("global",
                                                "editor_line_number").toInt();
 
+    m_minimizeToSystemTray = getConfigFromSettings("global",
+                                                   "minimize_to_system_tray").toInt();
+    if (m_minimizeToSystemTray > 1 || m_minimizeToSystemTray < -1) {
+        setMinimizeToSystemTray(0);
+    }
+
     readShortcutsFromSettings();
 }
 

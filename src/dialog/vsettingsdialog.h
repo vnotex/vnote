@@ -25,8 +25,14 @@ private:
     bool loadLanguage();
     bool saveLanguage();
 
+    bool loadSystemTray();
+    bool saveSystemTray();
+
     // Language
     QComboBox *m_langCombo;
+
+    // System tray
+    QCheckBox *m_systemTray;
 
     static const QVector<QString> c_availableLangs;
 };

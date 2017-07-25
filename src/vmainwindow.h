@@ -33,6 +33,7 @@ class VVimIndicator;
 class VTabIndicator;
 class VSingleInstanceGuard;
 class QTimer;
+class QSystemTrayIcon;
 
 class VMainWindow : public QMainWindow
 {
@@ -109,10 +110,17 @@ private slots:
     // files to open.
     void checkSharedMemory();
 
+    void quitApp();
+
+    // Restore main window.
+    void showMainWindow();
+
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
     void resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
+
+    void changeEvent(QEvent *p_event) Q_DECL_OVERRIDE;
 
 private:
     void setupUI();
@@ -166,6 +174,9 @@ private:
     // Init a timer to watch the change of the shared memory between instances of
     // VNote.
     void initSharedMemoryWatcher();
+
+    // Init system tray icon and correspondign context menu.
+    void initTrayIcon();
 
     VNote *vnote;
     QPointer<VFile> m_curFile;
@@ -232,6 +243,15 @@ private:
 
     // Timer to check the shared memory between instances of VNote.
     QTimer *m_sharedMemTimer;
+
+    // Tray icon.
+    QSystemTrayIcon *m_trayIcon;
+
+    // The old state of window.
+    Qt::WindowStates m_windowOldState;
+
+    // Whether user request VNote to quit.
+    bool m_requestQuit;
 
     // Interval of the shared memory timer in ms.
     static const int c_sharedMemTimerInterval;

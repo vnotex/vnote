@@ -108,17 +108,28 @@ const QVector<QString> VGeneralTab::c_availableLangs = { "System", "English", "C
 VGeneralTab::VGeneralTab(QWidget *p_parent)
     : QWidget(p_parent)
 {
-    QLabel *langLabel = new QLabel(tr("&Language:"));
+    // Language combo.
     m_langCombo = new QComboBox(this);
+    m_langCombo->setToolTip(tr("Choose the language of VNote interface"));
     m_langCombo->addItem(tr("System"), "System");
     auto langs = VUtils::getAvailableLanguages();
     for (auto const &lang : langs) {
         m_langCombo->addItem(lang.second, lang.first);
     }
-    langLabel->setBuddy(m_langCombo);
+
+    QLabel *langLabel = new QLabel(tr("Language:"), this);
+    langLabel->setToolTip(m_langCombo->toolTip());
+
+    // System tray checkbox.
+    m_systemTray = new QCheckBox(this);
+    m_systemTray->setToolTip(tr("Minimized to the system tray after closing VNote"));
+
+    QLabel *trayLabel = new QLabel(tr("System tray:"), this);
+    trayLabel->setToolTip(m_systemTray->toolTip());
 
     QFormLayout *optionLayout = new QFormLayout();
     optionLayout->addRow(langLabel, m_langCombo);
+    optionLayout->addRow(trayLabel, m_systemTray);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(optionLayout);
@@ -131,6 +142,11 @@ bool VGeneralTab::loadConfiguration()
     if (!loadLanguage()) {
         return false;
     }
+
+    if (!loadSystemTray()) {
+        return false;
+    }
+
     return true;
 }
 
@@ -139,6 +155,11 @@ bool VGeneralTab::saveConfiguration()
     if (!saveLanguage()) {
         return false;
     }
+
+    if (!saveSystemTray()) {
+        return false;
+    }
+
     return true;
 }
 
@@ -171,6 +192,18 @@ bool VGeneralTab::saveLanguage()
 {
     QString curLang = m_langCombo->currentData().toString();
     vconfig.setLanguage(curLang);
+    return true;
+}
+
+bool VGeneralTab::loadSystemTray()
+{
+    m_systemTray->setChecked(vconfig.getMinimizeToStystemTray() != 0);
+    return true;
+}
+
+bool VGeneralTab::saveSystemTray()
+{
+    vconfig.setMinimizeToSystemTray(m_systemTray->isChecked() ? 1 : 0);
     return true;
 }
 
