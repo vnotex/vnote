@@ -29,6 +29,7 @@ bool VSingleInstanceGuard::tryRun()
         SharedStruct *str = (SharedStruct *)m_sharedMemory.data();
         str->m_magic = c_magic;
         str->m_filesBufIdx = 0;
+        str->m_askedToShow = false;
         m_sharedMemory.unlock();
         return true;
     } else {
@@ -129,4 +130,38 @@ QStringList VSingleInstanceGuard::fetchFilesToOpen()
     m_sharedMemory.unlock();
 
     return files;
+}
+
+void VSingleInstanceGuard::showInstance()
+{
+    if (!m_sharedMemory.isAttached()) {
+        if (!m_sharedMemory.attach()) {
+            qDebug() << "fail to attach to the shared memory segment"
+                     << (m_sharedMemory.error() ? m_sharedMemory.errorString() : "");
+            return;
+        }
+    }
+
+    m_sharedMemory.lock();
+    SharedStruct *str = (SharedStruct *)m_sharedMemory.data();
+    V_ASSERT(str->m_magic == c_magic);
+    str->m_askedToShow = true;
+    m_sharedMemory.unlock();
+
+    qDebug() << "try to request another instance to show up";
+}
+
+bool VSingleInstanceGuard::fetchAskedToShow()
+{
+    bool ret = false;
+
+    Q_ASSERT(m_sharedMemory.isAttached());
+    m_sharedMemory.lock();
+    SharedStruct *str = (SharedStruct *)m_sharedMemory.data();
+    Q_ASSERT(str->m_magic == c_magic);
+    ret = str->m_askedToShow;
+    str->m_askedToShow = false;
+    m_sharedMemory.unlock();
+
+    return ret;
 }

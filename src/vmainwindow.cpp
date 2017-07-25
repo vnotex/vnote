@@ -1906,6 +1906,12 @@ void VMainWindow::checkSharedMemory()
         qDebug() << "shared memory fetch files" << files;
         openExternalFiles(files);
 
+        // Eliminate the signal.
+        m_guard->fetchAskedToShow();
+
+        showMainWindow();
+    } else if (m_guard->fetchAskedToShow()) {
+        qDebug() << "shared memory asked to show up";
         showMainWindow();
     }
 }

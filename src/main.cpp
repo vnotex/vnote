@@ -136,6 +136,8 @@ int main(int argc, char *argv[])
         // Ask another instance to open files passed in.
         if (!filePaths.isEmpty()) {
             guard.openExternalFiles(filePaths);
+        } else {
+            guard.showInstance();
         }
 
         return 0;

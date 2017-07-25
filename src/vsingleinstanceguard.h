@@ -18,9 +18,15 @@ public:
     // via command line arguments.
     void openExternalFiles(const QStringList &p_files);
 
+    // Ask another instance to show itself.
+    void showInstance();
+
     // Fetch files from shared memory to open.
     // Will clear the shared memory.
     QStringList fetchFilesToOpen();
+
+    // Whether this instance is asked to show itself.
+    bool fetchAskedToShow();
 
 private:
     // The count of the entries in the buffer to hold the path of the files to open.
@@ -38,6 +44,9 @@ private:
         // [size of file1][file1][size of file2][file 2]
         // Unicode representation of QString.
         ushort m_filesBuf[FilesBufCount];
+
+        // Whether other instances ask to show the legal instance.
+        bool m_askedToShow;
     };
 
     // Append @p_file to the shared struct files buffer.
