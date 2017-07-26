@@ -117,5 +117,6 @@
         <file>resources/icons/inline_code.svg</file>
         <file>resources/icons/close_note_tb.svg</file>
         <file>resources/icons/32x32/vnote.png</file>
+        <file>resources/icons/editing_modified.svg</file>
     </qresource>
 </RCC>

@@ -26,6 +26,7 @@ VEditWindow::VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent)
 
     // Explicit speficy in macOS.
     setUsesScrollButtons(true);
+    setElideMode(Qt::ElideRight);
     setTabsClosable(true);
     setMovable(true);
     setContextMenuPolicy(Qt::CustomContextMenu);
@@ -150,18 +151,18 @@ void VEditWindow::initTabActions()
 
 void VEditWindow::setupCornerWidget()
 {
-    // Left corner button
+    // Left button
     leftBtn = new QPushButton(QIcon(":/resources/icons/corner_tablist.svg"),
                               "", this);
     leftBtn->setProperty("CornerBtn", true);
+    leftBtn->setToolTip(tr("Opened Notes List"));
     VOpenedListMenu *leftMenu = new VOpenedListMenu(this);
     leftMenu->setToolTipsVisible(true);
     connect(leftMenu, &VOpenedListMenu::fileTriggered,
             this, &VEditWindow::tabListJump);
     leftBtn->setMenu(leftMenu);
-    setCornerWidget(leftBtn, Qt::TopLeftCorner);
 
-    // Right corner button
+    // Right button
     // Actions
     splitAct = new QAction(QIcon(":/resources/icons/split_window.svg"),
                            tr("Split"), this);
@@ -180,14 +181,25 @@ void VEditWindow::setupCornerWidget()
     rightBtn = new QPushButton(QIcon(":/resources/icons/corner_menu.svg"),
                                "", this);
     rightBtn->setProperty("CornerBtn", true);
+    rightBtn->setToolTip(tr("Menu"));
     QMenu *rightMenu = new QMenu(this);
     rightMenu->setToolTipsVisible(true);
     rightMenu->addAction(splitAct);
     rightMenu->addAction(removeSplitAct);
     rightBtn->setMenu(rightMenu);
-    setCornerWidget(rightBtn, Qt::TopRightCorner);
     connect(rightMenu, &QMenu::aboutToShow,
             this, &VEditWindow::updateSplitMenu);
+
+    // Move all buttons to the right corner.
+    QWidget *widget = new QWidget(this);
+    QHBoxLayout *layout = new QHBoxLayout();
+    layout->addWidget(leftBtn);
+    layout->addWidget(rightBtn);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+    widget->setLayout(layout);
+
+    setCornerWidget(widget, Qt::TopRightCorner);
 }
 
 void VEditWindow::splitWindow(bool p_right)
@@ -438,8 +450,14 @@ void VEditWindow::updateTabInfo(int p_index)
     setTabText(p_index, generateTabText(p_index, file->getName(),
                                         file->isModified(), file->isModifiable()));
     setTabToolTip(p_index, generateTooltip(file));
-    setTabIcon(p_index, editMode ? QIcon(":/resources/icons/editing.svg") :
-               QIcon(":/resources/icons/reading.svg"));
+
+    QString iconUrl(":/resources/icons/reading.svg");
+    if (editMode) {
+        iconUrl = file->isModified() ? ":/resources/icons/editing_modified.svg"
+                                     : ":/resources/icons/editing.svg";
+    }
+
+    setTabIcon(p_index, QIcon(iconUrl));
 }
 
 void VEditWindow::updateAllTabsSequence()

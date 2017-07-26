@@ -165,8 +165,11 @@ bool VNotebookSelector::newNotebook()
     QString info(tr("Please type the name of the notebook and "
                     "choose a folder as the Root Folder of the notebook."));
     info += "\n";
-    info += tr("The root folder should be used EXCLUSIVELY by VNote and "
+    info += tr("* The root folder should be used EXCLUSIVELY by VNote and "
                "it is recommended to be EMPTY.");
+    info += "\n";
+    info += tr("* A previously created notebook could be imported into VNote "
+               "by choosing its root folder.");
 
     QString defaultName;
     QString defaultPath;

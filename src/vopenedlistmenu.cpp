@@ -25,9 +25,17 @@ static bool fileComp(const VOpenedListMenu::ItemInfo &a,
     } else if (notebooka > notebookb) {
         return false;
     } else {
-        QString patha = a.file->retriveRelativePath().toLower();
-        QString pathb = b.file->retriveRelativePath().toLower();
-        return patha < pathb;
+        QString patha = a.file->retriveBasePath();
+        QString pathb = b.file->retriveBasePath();
+#if defined(Q_OS_WIN)
+        patha = patha.toLower();
+        pathb = pathb.toLower();
+#endif
+        if (patha == pathb) {
+            return a.index < b.index;
+        } else {
+            return patha < pathb;
+        }
     }
 }
 
