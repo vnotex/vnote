@@ -235,12 +235,12 @@ void VMainWindow::initViewToolBar()
     viewToolBar->addAction(expandViewAct);
 }
 
-static void setActionsVisible(QWidget *p_widget, bool p_visible)
+static void setActionsEnabled(QWidget *p_widget, bool p_enabled)
 {
     Q_ASSERT(p_widget);
     QList<QAction *> actions = p_widget->actions();
     for (auto const & act : actions) {
-        act->setVisible(p_visible);
+        act->setEnabled(p_enabled);
     }
 }
 
@@ -304,7 +304,7 @@ void VMainWindow::initEditToolBar()
     toggleAct->setToolTip(tr("Toggle the edit toolbar"));
     viewMenu->addAction(toggleAct);
 
-    setActionsVisible(m_editToolBar, false);
+    setActionsEnabled(m_editToolBar, false);
 }
 
 void VMainWindow::initFileToolBar()
@@ -394,13 +394,13 @@ void VMainWindow::initFileToolBar()
 
     newRootDirAct->setEnabled(false);
     newNoteAct->setEnabled(false);
-    noteInfoAct->setVisible(false);
-    deleteNoteAct->setVisible(false);
-    m_closeNoteAct->setVisible(false);
-    editNoteAct->setVisible(false);
+    noteInfoAct->setEnabled(false);
+    deleteNoteAct->setEnabled(false);
+    m_closeNoteAct->setEnabled(false);
+    editNoteAct->setEnabled(false);
     saveExitAct->setVisible(false);
     discardExitAct->setVisible(false);
-    saveNoteAct->setVisible(false);
+    saveNoteAct->setEnabled(false);
 
     fileToolBar->addAction(newRootDirAct);
     fileToolBar->addAction(newNoteAct);
@@ -1388,17 +1388,18 @@ void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
     m_printAct->setEnabled(p_file && p_file->getDocType() == DocType::Markdown);
     m_exportAsPDFAct->setEnabled(p_file && p_file->getDocType() == DocType::Markdown);
 
-    editNoteAct->setVisible(p_file && p_file->isModifiable() && !p_editMode);
     discardExitAct->setVisible(p_file && p_editMode);
     saveExitAct->setVisible(p_file && p_editMode);
-    saveNoteAct->setVisible(p_file && p_editMode);
-    deleteNoteAct->setVisible(p_file && p_file->getType() == FileType::Normal);
-    noteInfoAct->setVisible(p_file && !systemFile);
-    m_closeNoteAct->setVisible(p_file);
+    editNoteAct->setEnabled(p_file && p_file->isModifiable() && !p_editMode);
+    editNoteAct->setVisible(!saveExitAct->isVisible());
+    saveNoteAct->setEnabled(p_file && p_editMode);
+    deleteNoteAct->setEnabled(p_file && p_file->getType() == FileType::Normal);
+    noteInfoAct->setEnabled(p_file && !systemFile);
+    m_closeNoteAct->setEnabled(p_file);
 
     m_insertImageAct->setEnabled(p_file && p_editMode);
 
-    setActionsVisible(m_editToolBar, p_file && p_editMode);
+    setActionsEnabled(m_editToolBar, p_file && p_editMode);
 
     // Find/Replace
     m_findReplaceAct->setEnabled(p_file);
