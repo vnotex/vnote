@@ -164,6 +164,8 @@ void VConfigManager::initialize()
     }
 
     readShortcutsFromSettings();
+
+    initDocSuffixes();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()
@@ -817,4 +819,31 @@ QString VConfigManager::getShortcutKeySequence(const QString &p_operation) const
     }
 
     return *it;
+}
+
+void VConfigManager::initDocSuffixes()
+{
+    m_docSuffixes.clear();
+
+    QString mdSuffix = getConfigFromSettings("global",
+                                             "markdown_suffix").toString();
+    if (mdSuffix.isEmpty()) {
+        mdSuffix = getDefaultConfig("global",
+                                    "markdown_suffix").toString();
+    }
+
+    Q_ASSERT(!mdSuffix.isEmpty());
+    QList<QString> md = mdSuffix.toLower().split(':', QString::SkipEmptyParts);
+    md.removeDuplicates();
+    m_docSuffixes[(int)DocType::Markdown] = md;
+
+    QList<QString> list;
+    list << "ls" << "list";
+    m_docSuffixes[(int)DocType::List] = list;
+
+    QList<QString> container;
+    container << "co" << "container" << "con";
+    m_docSuffixes[(int)DocType::Container] = container;
+
+    qDebug() << "doc suffixes" << m_docSuffixes;
 }

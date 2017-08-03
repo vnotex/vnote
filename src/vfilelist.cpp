@@ -217,9 +217,17 @@ void VFileList::newFile()
     if (!m_directory) {
         return;
     }
+
+    QList<QString> suffixes = vconfig.getDocSuffixes()[(int)DocType::Markdown];
+    QString suffixStr;
+    for (auto const & suf : suffixes) {
+        suffixStr += (suffixStr.isEmpty() ? suf : "/" + suf);
+    }
+
     QString info = tr("Create a note in <span style=\"%1\">%2</span>.")
                      .arg(vconfig.c_dataTextStyle).arg(m_directory->getName());
-    info = info + "<br>" + tr("Note with name ending with \".md\" will be treated as Markdown type.");
+    info = info + "<br>" + tr("Note with name ending with \"%1\" will be treated as Markdown type.")
+                             .arg(suffixStr);
     QString text(tr("Note &name:"));
     QString defaultText("new_note.md");
     do {

@@ -217,6 +217,9 @@ public:
     int getMinimizeToStystemTray() const;
     void setMinimizeToSystemTray(int p_val);
 
+    void initDocSuffixes();
+    const QHash<int, QList<QString>> &getDocSuffixes() const;
+
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
     QString getShortcutKeySequence(const QString &p_operation) const;
@@ -437,6 +440,10 @@ private:
     // 0: do not minimize to the tay;
     // 1: minimize to the tray.
     int m_minimizeToSystemTray;
+
+    // Suffixes of different doc type.
+    // [DocType] -> { Suffixes }.
+    QHash<int, QList<QString>> m_docSuffixes;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1126,4 +1133,8 @@ inline void VConfigManager::setMinimizeToSystemTray(int p_val)
                         m_minimizeToSystemTray);
 }
 
+inline const QHash<int, QList<QString>> &VConfigManager::getDocSuffixes() const
+{
+    return m_docSuffixes;
+}
 #endif // VCONFIGMANAGER_H

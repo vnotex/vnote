@@ -473,21 +473,7 @@ void VUtils::sleepWait(int p_milliseconds)
 
 DocType VUtils::docTypeFromName(const QString &p_name)
 {
-    static QMap<int, QVector<QString>> suffixes;
-
-    if (suffixes.isEmpty()) {
-        QVector<QString> md;
-        md << "md" << "markdown" << "mkd";
-        suffixes[(int)DocType::Markdown] = md;
-
-        QVector<QString> list;
-        list << "ls" << "list";
-        suffixes[(int)DocType::List] = list;
-
-        QVector<QString> container;
-        container << "co" << "container" << "con";
-        suffixes[(int)DocType::Container] = container;
-    }
+    const QHash<int, QList<QString>> &suffixes = vconfig.getDocSuffixes();
 
     QString suf = QFileInfo(p_name).suffix().toLower();
     for (auto it = suffixes.begin(); it != suffixes.end(); ++it) {
