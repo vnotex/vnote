@@ -306,7 +306,7 @@ void VMdEdit::generateEditOutline()
 
     // Assume that each block contains only one line
     // Only support # syntax for now
-    QRegExp headerReg("(#{1,6})\\s*(\\S.*)");  // Need to trim the spaces
+    QRegExp headerReg("(#{1,6})\\s+(\\S.*)");  // Need to trim the spaces
     int baseLevel = -1;
     for (QTextBlock block = doc->begin(); block != doc->end(); block = block.next()) {
         V_ASSERT(block.lineCount() == 1);
