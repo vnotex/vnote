@@ -219,9 +219,13 @@ void VFileList::newFile()
     }
 
     QList<QString> suffixes = vconfig.getDocSuffixes()[(int)DocType::Markdown];
+    QString defaultSuf;
     QString suffixStr;
     for (auto const & suf : suffixes) {
         suffixStr += (suffixStr.isEmpty() ? suf : "/" + suf);
+        if (defaultSuf.isEmpty() || suf == "md") {
+            defaultSuf = suf;
+        }
     }
 
     QString info = tr("Create a note in <span style=\"%1\">%2</span>.")
@@ -229,7 +233,7 @@ void VFileList::newFile()
     info = info + "<br>" + tr("Note with name ending with \"%1\" will be treated as Markdown type.")
                              .arg(suffixStr);
     QString text(tr("Note &name:"));
-    QString defaultText("new_note.md");
+    QString defaultText = QString("new_note.%1").arg(defaultSuf);
     do {
         VNewFileDialog dialog(tr("Create Note"), info, text, defaultText, this);
         if (dialog.exec() == QDialog::Accepted) {
