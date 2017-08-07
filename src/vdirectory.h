@@ -60,20 +60,20 @@ public:
     static VDirectory *copyDirectory(VDirectory *p_destDir, const QString &p_destName,
                                      VDirectory *p_srcDir, bool p_cut);
 
-    inline const QVector<VDirectory *> &getSubDirs() const;
-    inline const QString &getName() const;
-    inline void setName(const QString &p_name);
-    inline bool isOpened() const;
-    inline VDirectory *getParentDirectory();
-    inline const VDirectory *getParentDirectory() const;
-    inline VNotebook *getNotebook();
-    inline const VNotebook *getNotebook() const;
-    inline const QVector<VFile *> &getFiles() const;
-    inline QString retrivePath() const;
+    const QVector<VDirectory *> &getSubDirs() const;
+    const QString &getName() const;
+    void setName(const QString &p_name);
+    bool isOpened() const;
+    VDirectory *getParentDirectory();
+    const VDirectory *getParentDirectory() const;
+    VNotebook *getNotebook();
+    const VNotebook *getNotebook() const;
+    const QVector<VFile *> &getFiles() const;
+    QString retrivePath() const;
     QString retriveBasePath() const;
-    inline QString retriveRelativePath() const;
-    inline QString getNotebookName() const;
-    inline bool isExpanded() const;
+    QString retriveRelativePath() const;
+    QString getNotebookName() const;
+    bool isExpanded() const;
     void setExpanded(bool p_expanded);
     void reorderFiles(int p_first, int p_last, int p_destStart);
 
@@ -89,6 +89,9 @@ public:
     // If it is root directory, this will include sections belonging to
     // notebook.
     bool writeToConfig() const;
+
+    // Try to load file given relative path @p_filePath.
+    VFile *tryLoadFile(QStringList &p_filePath);
 
 private:
     // Get the path of @p_dir recursively

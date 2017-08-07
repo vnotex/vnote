@@ -109,6 +109,15 @@ public:
     // Returns true if @p_patha and @p_pathb points to the same file/directory.
     static bool equalPath(const QString &p_patha, const QString &p_pathb);
 
+    // Try to split @p_path into multiple parts based on @p_base.
+    // Returns false if @p_path is not under @p_base directory.
+    // @p_parts will be empty if @p_path is right @p_base.
+    // Example: "/home/tamlok/study", "/home/tamlok/study/a/b/c/vnote.md"
+    // returns true and @p_parts is {a, b, c, vnote.md}.
+    static bool splitPathInBasePath(const QString &p_base,
+                                    const QString &p_path,
+                                    QStringList &p_parts);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
     // Captured texts (need to be trimmed):

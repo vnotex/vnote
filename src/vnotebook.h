@@ -17,15 +17,27 @@ public:
     // Open the root directory to load contents
     bool open();
 
+    // Whether this notebook is opened.
+    bool isOpened() const;
+
     // Close all the directory and files of this notebook.
     // Please make sure all files belonging to this notebook have been closed in the tab.
     void close();
 
     bool containsFile(const VFile *p_file) const;
 
+    // Try to load the file @p_path.
+    // Returns the corresponding VFile struct if @p_path is a note inside this notebook.
+    // Otherwise, returns NULL.
+    // If notebook is not opened currently, it will open itself and close itself
+    // if @p_path is not inside this notebook.
+    VFile *tryLoadFile(const QString &p_path);
+
     QString getName() const;
     QString getPath() const;
-    inline VDirectory *getRootDir();
+
+    VDirectory *getRootDir() const;
+
     void rename(const QString &p_name);
 
     static VNotebook *createNotebook(const QString &p_name, const QString &p_path,
@@ -76,7 +88,7 @@ private:
     VDirectory *m_rootDir;
 };
 
-inline VDirectory *VNotebook::getRootDir()
+inline VDirectory *VNotebook::getRootDir() const
 {
     return m_rootDir;
 }

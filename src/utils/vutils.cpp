@@ -650,3 +650,37 @@ bool VUtils::equalPath(const QString &p_patha, const QString &p_pathb)
 
     return a == b;
 }
+
+bool VUtils::splitPathInBasePath(const QString &p_base,
+                                 const QString &p_path,
+                                 QStringList &p_parts)
+{
+    p_parts.clear();
+    QString a = QDir::cleanPath(p_base);
+    QString b = QDir::cleanPath(p_path);
+
+#if defined(Q_OS_WIN)
+    if (!b.toLower().startsWith(a.toLower())) {
+        return false;
+    }
+#else
+    if (!b.startsWith(a)) {
+        return false;
+    }
+#endif
+
+    if (a.size() == b.size()) {
+        return true;
+    }
+
+    Q_ASSERT(a.size() < b.size());
+
+    if (b.at(a.size()) != '/') {
+        return false;
+    }
+
+    p_parts = b.right(b.size() - a.size() - 1).split("/", QString::SkipEmptyParts);
+
+    qDebug() << QString("split path %1 based on %2 to %3 parts").arg(p_path).arg(p_base).arg(p_parts.size());
+    return true;
+}

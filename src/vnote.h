@@ -78,6 +78,11 @@ public:
     VFile *getOrphanFile(const QString &p_path, bool p_modifiable,
                          bool p_systemFile = false);
 
+    // Given the path of a file, try to find it in all notebooks.
+    // Returns a VFile struct if it is a note in one notebook.
+    // Otherwise, returns NULL.
+    VFile *getInternalFile(const QString &p_path);
+
 public slots:
     void updateTemplate();
 

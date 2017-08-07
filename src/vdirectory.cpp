@@ -678,3 +678,36 @@ void VDirectory::reorderFiles(int p_first, int p_last, int p_destStart)
         m_files = oriFiles;
     }
 }
+
+VFile *VDirectory::tryLoadFile(QStringList &p_filePath)
+{
+    qDebug() << "directory" << m_name << "tryLoadFile()" << p_filePath.join("/");
+    if (p_filePath.isEmpty()) {
+        return NULL;
+    }
+
+    bool opened = isOpened();
+    if (!open()) {
+        return NULL;
+    }
+
+    VFile *file = NULL;
+
+    if (p_filePath.size() == 1) {
+        // File.
+        file = findFile(p_filePath.at(0));
+    } else {
+        // Directory.
+        VDirectory *dir = findSubDirectory(p_filePath.at(0));
+        if (dir) {
+            p_filePath.removeFirst();
+            file = dir->tryLoadFile(p_filePath);
+        }
+    }
+
+    if (!file && !opened) {
+        close();
+    }
+
+    return file;
+}

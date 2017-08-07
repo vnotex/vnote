@@ -1890,11 +1890,19 @@ void VMainWindow::handleVimStatusUpdated(const VVim *p_vim)
     }
 }
 
-void VMainWindow::openExternalFiles(const QStringList &p_files)
+void VMainWindow::openExternalFiles(const QStringList &p_files, bool p_forceOrphan)
 {
     qDebug() << "open external files" << p_files;
     for (int i = 0; i < p_files.size(); ++i) {
-        VFile *file = vnote->getOrphanFile(p_files[i], true);
+        VFile *file = NULL;
+        if (!p_forceOrphan) {
+            file = vnote->getInternalFile(p_files[i]);
+        }
+
+        if (!file) {
+            file = vnote->getOrphanFile(p_files[i], true);
+        }
+
         editArea->openFile(file, OpenFileMode::Read);
     }
 }

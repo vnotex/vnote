@@ -309,3 +309,17 @@ VFile *VNote::getOrphanFile(const QString &p_path, bool p_modifiable, bool p_sys
     m_externalFiles.append(file);
     return file;
 }
+
+VFile *VNote::getInternalFile(const QString &p_path)
+{
+    VFile *file = NULL;
+    for (auto & nb : m_notebooks) {
+        file = nb->tryLoadFile(p_path);
+        if (file) {
+            break;
+        }
+    }
+
+    return file;
+}
+

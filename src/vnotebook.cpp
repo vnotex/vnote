@@ -187,6 +187,37 @@ bool VNotebook::containsFile(const VFile *p_file) const
     return m_rootDir->containsFile(p_file);
 }
 
+VFile *VNotebook::tryLoadFile(const QString &p_path)
+{
+    QFileInfo fi(p_path);
+    Q_ASSERT(fi.isAbsolute());
+    if (!fi.exists()) {
+        return NULL;
+    }
+
+    QStringList filePath;
+    if (VUtils::splitPathInBasePath(m_path, p_path, filePath)) {
+        if (filePath.isEmpty()) {
+            return NULL;
+        }
+
+        bool opened = isOpened();
+        if (!open()) {
+            return NULL;
+        }
+
+        VFile *file = m_rootDir->tryLoadFile(filePath);
+
+        if (!file && !opened) {
+            close();
+        }
+
+        return file;
+    }
+
+    return NULL;
+}
+
 const QString &VNotebook::getImageFolder() const
 {
     if (m_imageFolder.isEmpty()) {
@@ -204,4 +235,9 @@ void VNotebook::setImageFolder(const QString &p_imageFolder)
 const QString &VNotebook::getImageFolderConfig() const
 {
     return m_imageFolder;
+}
+
+bool VNotebook::isOpened() const
+{
+    return m_rootDir->isOpened();
 }

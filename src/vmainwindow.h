@@ -53,7 +53,9 @@ public:
     void editOrphanFileInfo(VFile *p_file);
 
     // Open external files @p_files as orphan files.
-    void openExternalFiles(const QStringList &p_files);
+    // If @p_forceOrphan is false, for each file, VNote will try to find out if
+    // it is a note inside VNote. If yes, VNote will open it as internal file.
+    void openExternalFiles(const QStringList &p_files, bool p_forceOrphan = false);
 
 private slots:
     void importNoteFromFile();
