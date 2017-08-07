@@ -1568,14 +1568,17 @@ void VMainWindow::closeEvent(QCloseEvent *event)
         }
     }
 
+    if (isVisible()) {
+        saveStateAndGeometry();
+    }
+
     if (isExit || !m_trayIcon->isVisible()) {
         if (!editArea->closeAllFiles(false)) {
-            // Fail to close all the opened files, cancel closing app
+            // Fail to close all the opened files, cancel closing app.
             event->ignore();
             return;
         }
 
-        saveStateAndGeometry();
         QMainWindow::closeEvent(event);
     } else {
         hide();
