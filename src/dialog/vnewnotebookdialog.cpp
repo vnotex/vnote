@@ -229,9 +229,10 @@ void VNewNotebookDialog::handleInputChanged()
     bool nameOk = !name.isEmpty();
     if (pathOk && nameOk) {
         // Check if the name conflicts with existing notebook name.
+        // Case-insensitive.
         int idx = -1;
         for (idx = 0; idx < m_notebooks.size(); ++idx) {
-            if (m_notebooks[idx]->getName() == name) {
+            if (m_notebooks[idx]->getName().toLower() == name.toLower()) {
                 break;
             }
         }
@@ -239,7 +240,7 @@ void VNewNotebookDialog::handleInputChanged()
         if (idx < m_notebooks.size()) {
             nameOk = false;
             showWarnLabel = true;
-            QString nameConflictText = tr("<span style=\"%1\">WARNING</span>: Name already exists. "
+            QString nameConflictText = tr("<span style=\"%1\">WARNING</span>: Name (case-insensitive) already exists. "
                                           "Please choose another name.")
                                           .arg(vconfig.c_warningTextStyle);
             m_warnLabel->setText(nameConflictText);

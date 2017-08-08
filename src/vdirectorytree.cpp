@@ -347,12 +347,15 @@ void VDirectoryTree::newSubDirectory()
         VNewDirDialog dialog(tr("Create Folder"), info, text, defaultText, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
-            if (curDir->findSubDirectory(name)) {
-                info = tr("Name already exists in <span style=\"%1\">%2</span>. Please choose another name.")
+            // Case-insensitive.
+            if (curDir->findSubDirectory(name, false)) {
+                info = tr("Name (case-insensitive) already exists in "
+                          "<span style=\"%1\">%2</span>. Please choose another name.")
                          .arg(vconfig.c_dataTextStyle).arg(curDir->getName());
                 defaultText = name;
                 continue;
             }
+
             VDirectory *subDir = curDir->createSubDirectory(name);
             if (!subDir) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
@@ -382,8 +385,9 @@ void VDirectoryTree::newRootDirectory()
         VNewDirDialog dialog(tr("Create Root Folder"), info, text, defaultText, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
-            if (rootDir->findSubDirectory(name)) {
-                info = tr("Name already exists in notebook <span style=\"%1\">%2</span>. Please choose another name.")
+            if (rootDir->findSubDirectory(name, false)) {
+                info = tr("Name (case-insensitive) already exists in "
+                          "notebook <span style=\"%1\">%2</span>. Please choose another name.")
                          .arg(vconfig.c_dataTextStyle).arg(m_notebook->getName());
                 defaultText = name;
                 continue;
@@ -461,11 +465,13 @@ void VDirectoryTree::editDirectoryInfo()
             if (name == curName) {
                 return;
             }
-            if (parentDir->findSubDirectory(name)) {
-                info = "Name already exists. Please choose another name.";
+
+            if (parentDir->findSubDirectory(name, false)) {
+                info = "Name (case-insensitive) already exists. Please choose another name.";
                 defaultName = name;
                 continue;
             }
+
             if (!curDir->rename(name)) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                     tr("Fail to rename folder <span style=\"%1\">%2</span>.")

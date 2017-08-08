@@ -21,10 +21,10 @@ public:
     VDirectory *createSubDirectory(const QString &p_name);
 
     // Returns the VDirectory with the name @p_name directly in this directory.
-    VDirectory *findSubDirectory(const QString &p_name);
+    VDirectory *findSubDirectory(const QString &p_name, bool p_caseSensitive);
 
     // Returns the VFile with the name @p_name directly in this directory.
-    VFile *findFile(const QString &p_name);
+    VFile *findFile(const QString &p_name, bool p_caseSensitive);
 
     // If current dir or its sub-dir contains @p_file.
     bool containsFile(const VFile *p_file) const;

@@ -206,14 +206,15 @@ VDirectory *VDirectory::createSubDirectory(const QString &p_name)
     return ret;
 }
 
-VDirectory *VDirectory::findSubDirectory(const QString &p_name)
+VDirectory *VDirectory::findSubDirectory(const QString &p_name, bool p_caseSensitive)
 {
     if (!open()) {
         return NULL;
     }
 
+    QString name = p_caseSensitive ? p_name : p_name.toLower();
     for (int i = 0; i < m_subDirs.size(); ++i) {
-        if (p_name == m_subDirs[i]->getName()) {
+        if (name == (p_caseSensitive ? m_subDirs[i]->getName() : m_subDirs[i]->getName().toLower())) {
             return m_subDirs[i];
         }
     }
@@ -221,14 +222,15 @@ VDirectory *VDirectory::findSubDirectory(const QString &p_name)
     return NULL;
 }
 
-VFile *VDirectory::findFile(const QString &p_name)
+VFile *VDirectory::findFile(const QString &p_name, bool p_caseSensitive)
 {
     if (!open()) {
         return NULL;
     }
 
+    QString name = p_caseSensitive ? p_name : p_name.toLower();
     for (int i = 0; i < m_files.size(); ++i) {
-        if (p_name == m_files[i]->getName()) {
+        if (name == (p_caseSensitive ? m_files[i]->getName() : m_files[i]->getName().toLower())) {
             return m_files[i];
         }
     }
@@ -693,12 +695,18 @@ VFile *VDirectory::tryLoadFile(QStringList &p_filePath)
 
     VFile *file = NULL;
 
+#if defined(Q_OS_WIN)
+    bool caseSensitive = false;
+#else
+    bool caseSensitive = true;
+#endif
+
     if (p_filePath.size() == 1) {
         // File.
-        file = findFile(p_filePath.at(0));
+        file = findFile(p_filePath.at(0), caseSensitive);
     } else {
         // Directory.
-        VDirectory *dir = findSubDirectory(p_filePath.at(0));
+        VDirectory *dir = findSubDirectory(p_filePath.at(0), caseSensitive);
         if (dir) {
             p_filePath.removeFirst();
             file = dir->tryLoadFile(p_filePath);

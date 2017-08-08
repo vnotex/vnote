@@ -146,8 +146,10 @@ void VFileList::fileInfo(VFile *p_file)
             if (name == curName) {
                 return;
             }
-            if (dir->findFile(name)) {
-                info = "Name already exists. Please choose another name.";
+
+            // Case-insensitive when creating note.
+            if (dir->findFile(name, false)) {
+                info = "Name (case-insensitive) already exists. Please choose another name.";
                 defaultName = name;
                 continue;
             }
@@ -238,11 +240,13 @@ void VFileList::newFile()
         VNewFileDialog dialog(tr("Create Note"), info, text, defaultText, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString name = dialog.getNameInput();
-            if (m_directory->findFile(name)) {
-                info = tr("Name already exists. Please choose another name.");
+            // Case-insensitive when creating note.
+            if (m_directory->findFile(name, false)) {
+                info = tr("Name (case-insensitive) already exists. Please choose another name.");
                 defaultText = name;
                 continue;
             }
+
             VFile *file = m_directory->createFile(name);
             if (!file) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
