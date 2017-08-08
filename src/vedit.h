@@ -129,6 +129,8 @@ public:
     // Will not change current cursor.
     void makeBlockVisible(const QTextBlock &p_block);
 
+    bool isBlockVisible(const QTextBlock &p_block);
+
 signals:
     // Request VEditTab to save and exit edit mode.
     void saveAndRead();

@@ -1230,3 +1230,29 @@ void VEdit::makeBlockVisible(const QTextBlock &p_block)
         qDebug() << "scroll page up to make block visible";
     }
 }
+
+bool VEdit::isBlockVisible(const QTextBlock &p_block)
+{
+    if (!p_block.isValid() || !p_block.isVisible()) {
+        return false;
+    }
+
+    QScrollBar *vbar = verticalScrollBar();
+    if (!vbar || !vbar->isVisible()) {
+        // No vertical scrollbar.
+        return true;
+    }
+
+    QAbstractTextDocumentLayout *layout = document()->documentLayout();
+    int height = rect().height();
+    QScrollBar *hbar = horizontalScrollBar();
+    if (hbar && hbar->isVisible()) {
+        height -= hbar->height();
+    }
+
+    QRectF rect = layout->blockBoundingRect(p_block);
+    int y = contentOffsetY() + (int)rect.y();
+    int rectHeight = (int)rect.height();
+
+    return (y >= 0 && y < height) || (y < 0 && y + rectHeight > 0);
+}

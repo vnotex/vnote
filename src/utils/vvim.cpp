@@ -4410,6 +4410,11 @@ void VVim::processJumpLocationAction(QList<Token> &p_tokens, bool p_next)
             pib = block.length() - 1;
         }
 
+        if (!m_editor->isBlockVisible(block)) {
+            // Scroll the block to the center of screen.
+            VEditUtils::scrollBlockInPage(m_editor, block.blockNumber(), 1);
+        }
+
         cursor.setPosition(block.position() + pib);
         m_editor->setTextCursor(cursor);
     }
