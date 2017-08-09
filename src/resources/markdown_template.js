@@ -51,6 +51,20 @@ new QWebChannel(qt.webChannelTransport,
         }
     });
 
+var VHighlightedAnchorClass = 'highlighted-anchor';
+
+var clearHighlightedAnchor = function() {
+    var headers = document.getElementsByClassName(VHighlightedAnchorClass);
+    while (headers.length > 0) {
+        headers[0].classList.remove(VHighlightedAnchorClass);
+    }
+};
+
+var highlightAnchor = function(anchor) {
+    clearHighlightedAnchor();
+    anchor.classList.add(VHighlightedAnchorClass);
+};
+
 var g_muteScroll = false;
 
 var scrollToAnchor = function(anchor) {
@@ -65,6 +79,8 @@ var scrollToAnchor = function(anchor) {
     var anc = document.getElementById(anchor);
     if (anc != null) {
         anc.scrollIntoView();
+        highlightAnchor(anc);
+
         var headers = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
         for (var i = 0; i < headers.length; ++i) {
             if (headers[i] == anc) {
@@ -784,6 +800,7 @@ var jumpTitle = function(forward, relativeLevel, repeat) {
     // Disable scroll temporarily.
     g_muteScroll = true;
     headers[targetIdx].scrollIntoView();
+    highlightAnchor(headers[targetIdx]);
     currentHeaderIdx = targetIdx;
     content.setHeader(headers[targetIdx].getAttribute("id"));
     setTimeout("g_muteScroll = false", 100);

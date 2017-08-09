@@ -5,6 +5,22 @@
     <style type="text/css">
         <!-- BACKGROUND_PLACE_HOLDER -->
     </style>
+
+    <style type="text/css">
+        @keyframes flash {
+            0% { color: #75C5B5; }
+            10% { color: #15AE67; }
+            40% { color: #15AE67; }
+            50% { color: #75C5B5; }
+            60% { color: #15AE67; }
+            90% { color: #15AE67; }
+        }
+
+        .highlighted-anchor {
+            animation: 1s flash;
+        }
+    </style>
+
     <link rel="stylesheet" type="text/css" href="CSS_PLACE_HOLDER">
     <link rel="stylesheet" type="text/css" href="qrc:/utils/highlightjs/styles/vnote.css">
     <script src="qrc:/resources/qwebchannel.js"></script>
