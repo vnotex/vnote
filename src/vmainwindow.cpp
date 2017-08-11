@@ -1907,6 +1907,24 @@ void VMainWindow::handleVimStatusUpdated(const VVim *p_vim)
     }
 }
 
+bool VMainWindow::tryOpenInternalFile(const QString &p_filePath)
+{
+    if (p_filePath.isEmpty()) {
+        return false;
+    }
+
+    if (QFileInfo::exists(p_filePath)) {
+        VFile *file = vnote->getInternalFile(p_filePath);
+
+        if (file) {
+            editArea->openFile(file, OpenFileMode::Read);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void VMainWindow::openExternalFiles(const QStringList &p_files, bool p_forceOrphan)
 {
     qDebug() << "open external files" << p_files;

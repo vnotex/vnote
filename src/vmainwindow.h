@@ -57,6 +57,9 @@ public:
     // it is a note inside VNote. If yes, VNote will open it as internal file.
     void openExternalFiles(const QStringList &p_files, bool p_forceOrphan = false);
 
+    // Try to open @p_filePath as internal note.
+    bool tryOpenInternalFile(const QString &p_filePath);
+
 private slots:
     void importNoteFromFile();
     void viewSettings();

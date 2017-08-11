@@ -10,7 +10,9 @@ public:
     explicit VPreviewPage(QWidget *parent = 0);
 
 protected:
-    bool acceptNavigationRequest(const QUrl &url, NavigationType type, bool isMainFrame);
+    bool acceptNavigationRequest(const QUrl &p_url,
+                                 NavigationType p_type,
+                                 bool p_isMainFrame);
 };
 
 #endif // VPREVIEWPAGE_H
