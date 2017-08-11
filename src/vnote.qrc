@@ -118,5 +118,7 @@
         <file>resources/icons/close_note_tb.svg</file>
         <file>resources/icons/32x32/vnote.png</file>
         <file>resources/icons/editing_modified.svg</file>
+        <file>resources/docs/markdown_guide_en.md</file>
+        <file>resources/docs/markdown_guide_zh.md</file>
     </qresource>
 </RCC>

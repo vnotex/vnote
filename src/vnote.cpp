@@ -48,6 +48,9 @@ const QString VNote::c_mathjaxJsFile = "https://cdn.mathjax.org/mathjax/latest/M
 const QString VNote::c_shortcutsDocFile_en = ":/resources/docs/shortcuts_en.md";
 const QString VNote::c_shortcutsDocFile_zh = ":/resources/docs/shortcuts_zh.md";
 
+const QString VNote::c_markdownGuideDocFile_en = ":/resources/docs/markdown_guide_en.md";
+const QString VNote::c_markdownGuideDocFile_zh = ":/resources/docs/markdown_guide_zh.md";
+
 VNote::VNote(QObject *parent)
     : QObject(parent), m_mainWindow(dynamic_cast<VMainWindow *>(parent))
 {

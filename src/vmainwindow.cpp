@@ -443,10 +443,25 @@ void VMainWindow::initHelpMenu()
     connect(shortcutAct, &QAction::triggered,
             this, &VMainWindow::shortcutHelp);
 
+    QAction *mdGuideAct = new QAction(tr("&Markdown Guide"), this);
+    mdGuideAct->setToolTip(tr("A quick guide of Markdown syntax"));
+    connect(mdGuideAct, &QAction::triggered,
+            this, [this](){
+                QString locale = VUtils::getLocale();
+                QString docName = VNote::c_markdownGuideDocFile_en;
+                if (locale == "zh_CN") {
+                    docName = VNote::c_markdownGuideDocFile_zh;
+                }
+
+                VFile *file = vnote->getOrphanFile(docName, false, true);
+                (dynamic_cast<VOrphanFile *>(file))->setNotebookName(tr("[Help]"));
+                editArea->openFile(file, OpenFileMode::Read);
+            });
+
     QAction *updateAct = new QAction(tr("Check For &Updates"), this);
     updateAct->setToolTip(tr("Check for updates of VNote"));
     connect(updateAct, &QAction::triggered,
-            this, [this]() {
+            this, [this](){
                 VUpdater updater(this);
                 updater.exec();
             });
@@ -479,14 +494,16 @@ void VMainWindow::initHelpMenu()
     connect(aboutQtAct, &QAction::triggered,
             qApp, &QApplication::aboutQt);
 
+    helpMenu->addAction(shortcutAct);
+    helpMenu->addAction(mdGuideAct);
+    helpMenu->addAction(updateAct);
+    helpMenu->addAction(starAct);
+    helpMenu->addAction(feedbackAct);
+
 #if defined(QT_NO_DEBUG)
     helpMenu->addAction(logAct);
 #endif
 
-    helpMenu->addAction(shortcutAct);
-    helpMenu->addAction(updateAct);
-    helpMenu->addAction(starAct);
-    helpMenu->addAction(feedbackAct);
     helpMenu->addAction(aboutQtAct);
     helpMenu->addAction(aboutAct);
 }

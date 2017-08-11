@@ -67,6 +67,9 @@ public:
     static const QString c_shortcutsDocFile_en;
     static const QString c_shortcutsDocFile_zh;
 
+    static const QString c_markdownGuideDocFile_en;
+    static const QString c_markdownGuideDocFile_zh;
+
     const QVector<QPair<QString, QString> > &getPalette() const;
     void initPalette(QPalette palette);
     QString getColorFromPalette(const QString &p_name) const;
