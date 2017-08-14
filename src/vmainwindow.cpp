@@ -194,16 +194,22 @@ QWidget *VMainWindow::setupDirectoryPanel()
 
 void VMainWindow::initToolBar()
 {
-    initFileToolBar();
-    initViewToolBar();
-    initEditToolBar();
+    const int tbIconSize = 20 * VUtils::calculateScaleFactor();
+    QSize iconSize(tbIconSize, tbIconSize);
+
+    initFileToolBar(iconSize);
+    initViewToolBar(iconSize);
+    initEditToolBar(iconSize);
 }
 
-void VMainWindow::initViewToolBar()
+void VMainWindow::initViewToolBar(QSize p_iconSize)
 {
     QToolBar *viewToolBar = addToolBar(tr("View"));
     viewToolBar->setObjectName("ViewToolBar");
     viewToolBar->setMovable(false);
+    if (p_iconSize.isValid()) {
+        viewToolBar->setIconSize(p_iconSize);
+    }
 
     QAction *onePanelViewAct = new QAction(QIcon(":/resources/icons/one_panel.svg"),
                                            tr("&Single Panel"), this);
@@ -244,11 +250,14 @@ static void setActionsEnabled(QWidget *p_widget, bool p_enabled)
     }
 }
 
-void VMainWindow::initEditToolBar()
+void VMainWindow::initEditToolBar(QSize p_iconSize)
 {
     m_editToolBar = addToolBar(tr("Edit Toolbar"));
     m_editToolBar->setObjectName("EditToolBar");
     m_editToolBar->setMovable(false);
+    if (p_iconSize.isValid()) {
+        m_editToolBar->setIconSize(p_iconSize);
+    }
 
     m_editToolBar->addSeparator();
 
@@ -307,11 +316,14 @@ void VMainWindow::initEditToolBar()
     setActionsEnabled(m_editToolBar, false);
 }
 
-void VMainWindow::initFileToolBar()
+void VMainWindow::initFileToolBar(QSize p_iconSize)
 {
     QToolBar *fileToolBar = addToolBar(tr("Note"));
     fileToolBar->setObjectName("NoteToolBar");
     fileToolBar->setMovable(false);
+    if (p_iconSize.isValid()) {
+        fileToolBar->setIconSize(p_iconSize);
+    }
 
     newRootDirAct = new QAction(QIcon(":/resources/icons/create_rootdir_tb.svg"),
                                 tr("New &Root Folder"), this);

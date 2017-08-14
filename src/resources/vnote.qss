@@ -1,5 +1,5 @@
 QPushButton[CornerBtn="true"] {
-    padding: 4px 0px 4px 0px;
+    padding: 4px -2px 4px -2px;
     margin: 0px;
     border: none;
     background-color: transparent;

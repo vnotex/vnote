@@ -132,11 +132,11 @@ private:
     QWidget *setupDirectoryPanel();
 
     void initToolBar();
-    void initFileToolBar();
-    void initViewToolBar();
+    void initFileToolBar(QSize p_iconSize = QSize());
+    void initViewToolBar(QSize p_iconSize = QSize());
 
     // Init the Edit toolbar.
-    void initEditToolBar();
+    void initEditToolBar(QSize p_iconSize = QSize());
 
     void initMenuBar();
     void initFileMenu();
