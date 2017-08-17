@@ -28,10 +28,6 @@ void VVimIndicator::setupUI()
     m_cmdLineEdit->setProperty("VimCommandLine", true);
     connect(m_cmdLineEdit, &VVimCmdLineEdit::commandCancelled,
             this, [this](){
-                if (m_vim) {
-                    m_vim->processCommandLineCancelled();
-                }
-
                 if (m_editTab) {
                     m_editTab->focusTab();
                 }
@@ -39,19 +35,26 @@ void VVimIndicator::setupUI()
                 // NOTICE: m_cmdLineEdit should not hide itself before setting
                 // focus to edit tab.
                 m_cmdLineEdit->hide();
+
+                if (m_vim) {
+                    m_vim->processCommandLineCancelled();
+                }
             });
 
     connect(m_cmdLineEdit, &VVimCmdLineEdit::commandFinished,
             this, [this](VVim::CommandLineType p_type, const QString &p_cmd){
-                if (m_vim) {
-                    m_vim->processCommandLine(p_type, p_cmd);
-                }
-
                 if (m_editTab) {
                     m_editTab->focusTab();
                 }
 
                 m_cmdLineEdit->hide();
+
+                // Hide the cmd line edit before execute the command.
+                // If we execute the command first, we will get Chinese input
+                // method enabled after returning to read mode.
+                if (m_vim) {
+                    m_vim->processCommandLine(p_type, p_cmd);
+                }
             });
 
     connect(m_cmdLineEdit, &VVimCmdLineEdit::commandChanged,
