@@ -1,4 +1,15 @@
 # Changes History
+## v1.8
+- Support editing external files. VNote could open files from command line.
+- Support drag-and-drop to open external files.
+- Refine tab context menu.
+- Support system tray icon.
+- Refine Vim mode.
+- Make all tool buttons always visible and smaller.
+- Support custom file type suffix.
+- Make the name of notebook/folder/note case-insensitive.
+- Support links to internal notes in notes.
+
 ## v1.7
 - ATTENTION: please add font-size option to the "editor" section of your custom MDHL style.
 - Refine Vim mode (more functions, please refer to the shortcuts help).
