@@ -372,6 +372,8 @@ private:
         JumpPreviousLocation,
         JumpNextLocation,
         Replace,
+        Join,
+        JoinNoModification,
         Invalid
     };
 
@@ -635,6 +637,10 @@ private:
 
     // Action::ReverseCase.
     void processReverseCaseAction(QList<Token> &p_tokens);
+
+    // Action::Join and Action::JoinNoModification action.
+    // @p_modifySpaces: whether remove the indent and insert up to two spaces.
+    void processJoinAction(QList<Token> &p_tokens, bool p_modifySpaces);
 
     // Clear selection if there is any.
     // Returns true if there is selection.

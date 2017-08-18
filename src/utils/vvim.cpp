@@ -434,6 +434,73 @@ static bool reverseSelectedTextCase(QTextCursor &p_cursor)
     return true;
 }
 
+// Join current cursor line and the next line.
+static void joinTwoLines(QTextCursor &p_cursor, bool p_modifySpaces)
+{
+    QTextDocument *doc = p_cursor.document();
+    QTextBlock firstBlock = p_cursor.block();
+    QString textToAppend = firstBlock.next().text();
+    p_cursor.movePosition(QTextCursor::EndOfBlock);
+
+    if (p_modifySpaces) {
+        bool insertSpaces = false;
+        if (firstBlock.length() > 1) {
+            QChar lastChar = doc->characterAt(p_cursor.position() - 1);
+            if (!lastChar.isSpace()) {
+                insertSpaces = true;
+            }
+        }
+
+        if (insertSpaces) {
+            p_cursor.insertText(" ");
+        }
+
+        // Remove indentation.
+        int idx = 0;
+        for (idx = 0; idx < textToAppend.size(); ++idx) {
+            if (!textToAppend[idx].isSpace()) {
+                break;
+            }
+        }
+
+        textToAppend = textToAppend.right(textToAppend.size() - idx);
+    }
+
+    // Now p_cursor is at the end of the first block.
+    int position = p_cursor.block().position() + p_cursor.positionInBlock();
+    p_cursor.insertText(textToAppend);
+
+    // Delete the second block.
+    p_cursor.movePosition(QTextCursor::NextBlock);
+    VEditUtils::removeBlock(p_cursor);
+
+    // Position p_cursor right at the front of appended text.
+    p_cursor.setPosition(position);
+}
+
+// Join lines specified by [@p_firstBlock, @p_firstBlock + p_blockCount).
+// Need to check the block range (based on 0).
+static bool joinLines(QTextCursor &p_cursor,
+                      int p_firstBlock,
+                      int p_blockCount,
+                      bool p_modifySpaces)
+{
+    QTextDocument *doc = p_cursor.document();
+    int totalBlockCount = doc->blockCount();
+    if (p_blockCount <= 0
+        || p_firstBlock >= totalBlockCount - 1) {
+        return false;
+    }
+
+    p_blockCount = qMin(p_blockCount, totalBlockCount - p_firstBlock);
+    p_cursor.setPosition(doc->findBlockByNumber(p_firstBlock).position());
+    for (int i = 1; i < p_blockCount; ++i) {
+        joinTwoLines(p_cursor, p_modifySpaces);
+    }
+
+    return true;
+}
+
 bool VVim::handleKeyPressEvent(QKeyEvent *p_event, int *p_autoIndentPos)
 {
     bool ret = handleKeyPressEvent(p_event->key(), p_event->modifiers(), p_autoIndentPos);
@@ -754,6 +821,24 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             addMovementToken(mm);
             processCommand(m_tokens);
             resetPositionInBlock = false;
+        } else if (modifiers == Qt::ShiftModifier) {
+            if (key == Qt::Key_J) {
+                tryGetRepeatToken(m_keys, m_tokens);
+
+                if (hasActionToken()) {
+                    break;
+                }
+
+                if (checkPendingKey(Key(Qt::Key_G))) {
+                    // gJ, JoinNoModification.
+                    addActionToken(Action::JoinNoModification);
+                } else if (m_keys.isEmpty()) {
+                    // J, Join.
+                    addActionToken(Action::Join);
+                }
+
+                processCommand(m_tokens);
+            }
         }
 
         break;
@@ -2250,6 +2335,14 @@ void VVim::processCommand(QList<Token> &p_tokens)
 
     case Action::ReverseCase:
         processReverseCaseAction(p_tokens);
+        break;
+
+    case Action::Join:
+        processJoinAction(p_tokens, true);
+        break;
+
+    case Action::JoinNoModification:
+        processJoinAction(p_tokens, false);
         break;
 
     default:
@@ -4501,6 +4594,48 @@ void VVim::processReverseCaseAction(QList<Token> &p_tokens)
     }
 
     bool changed = reverseSelectedTextCase(cursor);
+    cursor.endEditBlock();
+
+    if (changed) {
+        m_editor->setTextCursor(cursor);
+        setMode(VimMode::Normal);
+    }
+}
+
+void VVim::processJoinAction(QList<Token> &p_tokens, bool p_modifySpaces)
+{
+    int repeat = 2;
+    if (!p_tokens.isEmpty()) {
+        Token to = p_tokens.takeFirst();
+        Q_ASSERT(to.isRepeat() && p_tokens.isEmpty());
+        repeat = qMax(to.m_repeat, repeat);
+    }
+
+    if (!(checkMode(VimMode::Normal)
+          || checkMode(VimMode::Visual)
+          || checkMode(VimMode::VisualLine))) {
+        return;
+    }
+
+    // Join repeat lines, with the minimum of two lines. Do nothing when on the
+    // last line.
+    // If @p_modifySpaces is true, remove the indent and insert up to two spaces.
+    // If repeat is too big, it is reduced to the number of lines available.
+    // In visual mode, repeat is ignored and join the highlighted lines.
+    int firstBlock = -1;
+    int blockCount = repeat;
+    QTextCursor cursor = m_editor->textCursor();
+    cursor.beginEditBlock();
+    if (checkMode(VimMode::Normal)) {
+        firstBlock = cursor.block().blockNumber();
+    } else {
+        QTextDocument *doc = m_editor->document();
+        firstBlock = doc->findBlock(cursor.selectionStart()).blockNumber();
+        int lastBlock = doc->findBlock(cursor.selectionEnd()).blockNumber();
+        blockCount = lastBlock - firstBlock + 1;
+    }
+
+    bool changed = joinLines(cursor, firstBlock, blockCount, p_modifySpaces);
     cursor.endEditBlock();
 
     if (changed) {
