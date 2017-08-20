@@ -123,7 +123,7 @@ void VExporter::handleBrowseBtnClicked()
                        tr("Portable Document Format (*.pdf)") :
                        tr("WebPage, Complete (*.html)");
     QString path = QFileDialog::getSaveFileName(this, tr("Export As"),
-                                                fi.absolutePath(),
+                                                fi.absoluteFilePath(),
                                                 fileType);
     if (path.isEmpty()) {
         return;
