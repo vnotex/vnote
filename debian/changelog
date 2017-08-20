@@ -1,5 +1,6 @@
-vnote (1.2-0ubuntu1) xenial; urgency=medium
+vnote (1.8-0ubuntu1) zesty; urgency=medium
 
   * Initial release
+  * Adjusted the Makefile to fix $(DESTDIR) problems.
 
- -- Le Tan <tamlokveer@gmail.com>  Sun, 09 Apr 2017 16:32:22 +0800
+ -- Le Tan <tamlokveer@gmail.com>  Sun, 20 Aug 2017 09:32:22 +0800
