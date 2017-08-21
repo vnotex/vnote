@@ -11,48 +11,39 @@ cd ${project_dir}
 mkdir build
 cd build
 qmake -v
-qmake CONFIG-=debug CONFIG+=release -spec linux-g++-64 ../VNote.pro
-make
+qmake CONFIG+=release -spec linux-g++-64 ../VNote.pro
+make -j2
 
-mkdir -p distrib/VNote
-cd distrib/VNote
+#
+# Pack AppImage using linuxdeployqt
+#
+mkdir dist
+INSTALL_ROOT=${project_dir}/build/dist make install ; tree dist/
 
-# Copy VNote executable
-cp ../../src/VNote ./
-
-# Copy ICU libraries
-cp "${qt_install_dir}/Qt/5.7/gcc_64/lib/libicui18n.so.56.1" "libicui18n.so.56"
-cp "${qt_install_dir}/Qt/5.7/gcc_64/lib/libicuuc.so.56.1" "libicuuc.so.56"
-cp "${qt_install_dir}/Qt/5.7/gcc_64/lib/libicudata.so.56.1" "libicudata.so.56"
-
-mkdir platforms
-cp "${qt_install_dir}/Qt/5.7/gcc_64/plugins/platforms/libqxcb.so" "platforms/libqxcb.so"
-cp "${qt_install_dir}/Qt/5.7/gcc_64/plugins/platforms/libqminimal.so" "platforms/libqminimal.so"
-
-cp "${qt_install_dir}/Qt/5.7/gcc_64/lib/libQt5WebEngineWidgets.so.5.7.0" "libQt5WebEngineWidgets.so.5"
-cp "${qt_install_dir}/Qt/5.7/gcc_64/lib/libQt5WebEngineCore.so.5.7.0" "libQt5WebEngineCore.so.5"
-cp "${qt_install_dir}/Qt/5.7/gcc_64/lib/libQt5Widgets.so.5.7.0" "libQt5Widgets.so.5"
-cp "${qt_install_dir}/Qt/5.7/gcc_64/lib/libQt5WebChannel.so.5.7.0" "libQt5WebChannel.so.5"
-cp "${qt_install_dir}/Qt/5.7/gcc_64/lib/libQt5Core.so.5.7.0" "libQt5Core.so.5"
-cp "${qt_install_dir}/Qt/5.7/gcc_64/lib/libQt5Gui.so.5.7.0" "libQt5Gui.so.5"
-cp "${qt_install_dir}/Qt/5.7/gcc_64/lib/libQt5DBus.so.5.7.0" "libQt5DBus.so.5"
-cp "${qt_install_dir}/Qt/5.7/gcc_64/lib/libQt5XcbQpa.so.5.7.0" "libQt5XcbQpa.so.5"
-cp "${qt_install_dir}/Qt/5.7/gcc_64/lib/libQt5Qml.so.5.7.0" "libQt5Qml.so.5"
-cp "${qt_install_dir}/Qt/5.7/gcc_64/lib/libQt5Network.so.5.7.0" "libQt5Network.so.5"
-
-# Use chrpath to set up rpaths for Qt's libraries so they can find
-# each other
-chrpath -r \$ORIGIN/.. platforms/libqxcb.so
-chrpath -r \$ORIGIN/.. platforms/libqminimal.so
+# Copy SVG module
+mkdir -p dist/usr/plugins/iconengines
+mkdir -p dist/usr/plugins/imageformats
+cp "${qt_install_dir}"/Qt/5.7/gcc_64/plugins/iconengines/* dist/usr/plugins/iconengines/
+cp "${qt_install_dir}"/Qt/5.7/gcc_64/plugins/imageformats/* dist/usr/plugins/imageformats/
 
 # Copy other project files
-cp "${project_dir}/README.md" "README.md"
-cp "${project_dir}/LICENSE" "LICENSE"
-echo ${version} > version
-echo "${TRAVIS_COMMIT}" >> version
+cp "${project_dir}/README.md" "dist/README.md"
+cp "${project_dir}/LICENSE" "dist/LICENSE"
+echo ${version} > dist/version
+echo "${TRAVIS_COMMIT}" >> dist/version
 
-# Package portable executable
+# Get linuxdeployqt tool
+wget -c "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+chmod a+x linuxdeployqt*.AppImage
+./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -bundle-non-qt-libs
+./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -appimage
+
+tree dist/
+
+ls -l *.AppImage
+
+mv VNote-*.AppImage VNote_x86_64_${version}.AppImage
+
 cd ..
-tar -czvf VNote_linux_x86_64_portable_${version}.tar.gz VNote
 
 exit 0
