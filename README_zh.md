@@ -17,7 +17,10 @@
 ## Linux
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
 
-目前只能由用户自行从源代码构建编译，暂时还没有打包发布。希望了解Linux系统下打包发布的开发人员能提供这方面的帮助！
+VNote当前为主要Linux发行版提供了一个AppImage格式的独立可执行文件。希望了解Linux系统下打包发布的开发人员能提供这方面进一步的帮助！
+
+- [Github releases](https://github.com/tamlok/vnote/releases)
+- master分支的最新构建：[ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
 
 ## MacOS
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
@@ -132,6 +135,8 @@ VNote还支持其他很多的功能，比如：
 - 自动缩进和自动列表；
 
 # 构建与开发
+VNote需要5.7版本以上的Qt进行构建。
+
 1. 克隆代码仓库
     ```
     git clone https://github.com/tamlok/vnote.git vnote.git
@@ -140,16 +145,29 @@ VNote还支持其他很多的功能，比如：
     ```
 2. 下载Qt  
 下载[Qt 5.7.0](http://info.qt.io/download-qt-for-application-development)，导入`VNote.pro`创建一个工程。
-3. 或者，在Linux命令行下，您可以执行以下命令来编译和安装：
-    ```
-    cd vnote.git
-    mkdir build
-    cd build
-    # May need to use the qmake in your downloaded Qt.
-    qmake ../VNote.pro
-    make
-    sudo make install
-    ```
+
+## Linux
+如果您的Linux发行版不提供5.7以上版本的Qt，那么您需要从其他来源获取Qt。在Ubuntu中，您可以执行以下步骤：
+
+```
+sudo add-apt-repository ppa:beineri/opt-qt571-trusty -y
+sudo apt-get update -qq
+sudo apt-get -y install qt57base qt57webengine qt57webchannel qt57svg qt57location qt57tools qt57translations
+source /opt/qt*/bin/qt*-env.sh
+```
+
+当Qt和相关的模块准备就绪后，您可以执行以下命令来编译和安装：
+
+```
+cd vnote.git
+mkdir build
+cd build
+qmake ../VNote.pro
+make
+sudo make install
+```
+
+更多细节，您可以参考源代码根目录下的`.travis_linux.sh`。
 
 ## MacOS
 在macOS下，您可以执行以下步骤来编译：

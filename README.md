@@ -17,9 +17,10 @@ Users from China can download the latest release of VNote from [Baidu Netdisk](h
 ## Linux
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
 
-**NOT** ready yet! Please help yourself to compile and build it from sources.
+There is an AppImage format standalone executable of VNote for major Linux distributions. **Any help for packaging and distribution on Linux is appreciated!**
 
-**Any help for packaging and distribution on Linux is appreciated!**
+- [Github releases](https://github.com/tamlok/vnote/releases)
+- Latest builds on master: [ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
 
 ## MacOS
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
@@ -133,6 +134,8 @@ VNote also supports many other features, like:
 - Auto indent and auto list;
 
 # Build & Development
+VNote needs Qt 5.7 or above to build.
+
 1. Clone & Init
     ```
     git clone https://github.com/tamlok/vnote.git vnote.git
@@ -141,16 +144,29 @@ VNote also supports many other features, like:
     ```
 2. Download Qt & Have Fun  
 Download [Qt 5.7.0](http://info.qt.io/download-qt-for-application-development) and open `VNote.pro` as a project.
-3. Or if you prefer command line on Linux, you could follow these steps:
-    ```
-    cd vnote.git
-    mkdir build
-    cd build
-    # May need to use the qmake in your downloaded Qt.
-    qmake ../VNote.pro
-    make
-    sudo make install
-    ```
+
+## Linux
+If your distribution does not have Qt 5.7 or above, you need to add it from other sources. In Ubuntu, you could do this:
+
+```
+sudo add-apt-repository ppa:beineri/opt-qt571-trusty -y
+sudo apt-get update -qq
+sudo apt-get -y install qt57base qt57webengine qt57webchannel qt57svg qt57location qt57tools qt57translations
+source /opt/qt*/bin/qt*-env.sh
+```
+
+After Qt and some necessary modules are ready, you could follow these steps to build VNote
+
+```
+cd vnote.git
+mkdir build
+cd build
+qmake ../VNote.pro
+make
+sudo make install
+```
+
+For details, you could reference `.travis_linux.sh` in the source root.
 
 ## MacOS
 If you prefer command line on macOS, you could follow these steps.
