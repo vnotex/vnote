@@ -166,7 +166,7 @@ make
 sudo make install
 ```
 
-For details, you could reference `.travis_linux.sh` in the source root.
+For details, you could reference [.travis_linux.sh](.travis_linux.sh) in the source root.
 
 ## MacOS
 If you prefer command line on macOS, you could follow these steps.

@@ -167,7 +167,7 @@ make
 sudo make install
 ```
 
-更多细节，您可以参考源代码根目录下的`.travis_linux.sh`。
+更多细节，您可以参考源代码根目录下的 [.travis_linux.sh](.travis_linux.sh) 。
 
 ## MacOS
 在macOS下，您可以执行以下步骤来编译：
