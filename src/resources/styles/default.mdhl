@@ -34,9 +34,9 @@ background: 005fff
 editor-current-line
 background: c5cae9
 # [VNote] Vim insert mode cursor line background
-vim-insert-background: bcbcbc
+vim-insert-background: c5cae9
 # [VNote] Vim normal mode cursor line background
-vim-normal-background: b0bec5
+vim-normal-background: bcbcbc
 # [VNote] Vim visual mode cursor line background
 vim-visual-background: 90caf9
 # [VNote] Vim replace mode cursor line background
