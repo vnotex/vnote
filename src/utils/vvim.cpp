@@ -3834,6 +3834,18 @@ void VVim::processPasteAction(QList<Token> &p_tokens, bool p_pasteBefore)
 
     QTextCursor cursor = m_editor->textCursor();
     cursor.beginEditBlock();
+
+    // repalce the selected texts and block if needed
+    if (cursor.hasSelection()) {
+        cursor.removeSelectedText();
+        bool needToReplaceBlock = cursor.block().text().isEmpty() && reg.isBlock();
+        if (needToReplaceBlock) {
+            cursor.deleteChar();
+            cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor:: MoveAnchor);
+        }
+        setMode(VimMode::Normal);
+    }
+
     if (reg.isBlock()) {
         if (p_pasteBefore) {
             cursor.movePosition(QTextCursor::StartOfBlock);
