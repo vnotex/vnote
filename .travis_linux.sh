@@ -2,10 +2,39 @@
 project_dir=$(pwd)
 
 # Install qt5.7
+sudo add-apt-repository ppa:george-edison55/cmake-3.x -y
 sudo add-apt-repository ppa:beineri/opt-qt571-trusty -y
 sudo apt-get update -qq
 sudo apt-get -y install qt57base qt57webengine qt57webchannel qt57svg qt57location qt57tools qt57translations
 source /opt/qt*/bin/qt*-env.sh
+
+# Compile newer version fcitx-qt5
+sudo apt-get -y install fcitx-libs-dev libgl1-mesa-dev bison
+sudo apt-get -y install cmake
+
+wget http://xkbcommon.org/download/libxkbcommon-0.5.0.tar.xz
+tar xf libxkbcommon-0.5.0.tar.xz
+cd libxkbcommon-0.5.0
+./configure -prefix=/usr -libdir=/usr/lib/x86_64-linux-gnu -disable-x11
+make -j$(nproc) && sudo make install
+
+git clone git://anongit.kde.org/extra-cmake-modules
+cd extra-cmake-modules
+mkdir build && cd build
+cmake ..
+make -j$(nproc) && sudo make install
+
+git clone https://github.com/fcitx/fcitx-qt5
+cd fcitx-qt5
+git checkout 1.0.5
+cmake .
+make -j$(nproc) && sudo make install
+
+# Copy fcitx-qt5 files to qt
+sudo cp /usr/local/lib/libFcitxQt5DBusAddons.so* /opt/qt*/lib/
+sudo cp /usr/local/lib/libFcitxQt5WidgetsAddons.so* /opt/qt*/lib/
+
+tree /opt/qt57/lib/
 
 cd ${project_dir}
 mkdir build
@@ -23,8 +52,10 @@ INSTALL_ROOT=${project_dir}/build/dist make install ; tree dist/
 # Copy SVG module
 mkdir -p ./dist/usr/plugins/iconengines
 mkdir -p ./dist/usr/plugins/imageformats
+mkdir -p ./dist/usr/plugins/platforminputcontexts
 cp /opt/qt57/plugins/iconengines/* ./dist/usr/plugins/iconengines/
 cp /opt/qt57/plugins/imageformats/* ./dist/usr/plugins/imageformats/
+cp /opt/qt57/plugins/platforminputcontexts/* ./dist/usr/plugins/platforminputcontexts/
 
 # Copy other project files
 cp "${project_dir}/README.md" "dist/README.md"
