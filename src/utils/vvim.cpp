@@ -2056,23 +2056,22 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 addRangeToken(range);
                 processCommand(m_tokens);
                 break;
-            } else if (hasActionToken() || !checkMode(VimMode::Normal)) {
-                // Invalid sequence.
-                break;
-            } else if (checkPendingKey(Key(Qt::Key_BracketLeft))) {
+            } else if (hasActionToken() && checkPendingKey(Key(Qt::Key_BracketLeft))) {
                 // [{, goto previous title at one higher level.
                 processTitleJump(m_tokens, false, -1);
-            } else if (checkMode(VimMode::Normal)) {
-                // {, move to previous paragraph
+            } else if (checkMode(VimMode::Normal) || checkMode(VimMode::Visual) || checkMode(VimMode::VisualLine)) {
+                // {, move or select to previous paragraph
+                QTextCursor::MoveMode moveMode = checkMode(VimMode::Normal) ? QTextCursor::MoveAnchor : QTextCursor::KeepAnchor;
+
                 QTextCursor cursor = m_editor->textCursor();
                 while (cursor.block().text().isEmpty()) { // ignore blank lines under cursor
-                    bool success = cursor.movePosition(QTextCursor::Up, QTextCursor::MoveAnchor);
+                    bool success = cursor.movePosition(QTextCursor::Up, moveMode);
                     if (!success) break;
                 }
                 while (!cursor.block().text().isEmpty()) { // find first blank line in above area
-                    bool success = cursor.movePosition(QTextCursor::Up, QTextCursor::MoveAnchor);
+                    bool success = cursor.movePosition(QTextCursor::Up, moveMode);
                     if (!success) {
-                        cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
+                        cursor.movePosition(QTextCursor::StartOfLine, moveMode);
                         break;
                     }
                 }
@@ -2100,23 +2099,22 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 addRangeToken(range);
                 processCommand(m_tokens);
                 break;
-            } else if (hasActionToken() || !checkMode(VimMode::Normal)) {
-                // Invalid sequence.
-                break;
-            } else if (checkPendingKey(Key(Qt::Key_BracketRight))) {
+            } else if (hasActionToken() && checkPendingKey(Key(Qt::Key_BracketRight))) {
                 // ]}, goto next title at one higher level.
                 processTitleJump(m_tokens, true, -1);
-            } else if (checkMode(VimMode::Normal)) {
-                // }, move to next paragraph
+            } else if (checkMode(VimMode::Normal) || checkMode(VimMode::Visual) || checkMode(VimMode::VisualLine)) {
+                // }, move or select to next paragraph
+                QTextCursor::MoveMode moveMode = checkMode(VimMode::Normal) ? QTextCursor::MoveAnchor : QTextCursor::KeepAnchor;
+
                 QTextCursor cursor = m_editor->textCursor();
                 while (cursor.block().text().isEmpty()) { // ignore blank lines under cursor
-                    bool success = cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor);
+                    bool success = cursor.movePosition(QTextCursor::Down, moveMode);
                     if (!success) break;
                 }
                 while (!cursor.block().text().isEmpty()) { // find first blank line in below area
-                    bool success = cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor);
+                    bool success = cursor.movePosition(QTextCursor::Down, moveMode);
                     if (!success) {
-                        cursor.movePosition(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
+                        cursor.movePosition(QTextCursor::EndOfLine, moveMode);
                         break;
                     }
                 }
