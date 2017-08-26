@@ -122,7 +122,12 @@ VGeneralTab::VGeneralTab(QWidget *p_parent)
 
     // System tray checkbox.
     m_systemTray = new QCheckBox(this);
-    m_systemTray->setToolTip(tr("Minimized to the system tray after closing VNote"));
+    m_systemTray->setToolTip(tr("Minimized to the system tray after closing VNote"
+                                " (not supported in macOS)"));
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    // Do not support minimized to tray on macOS.
+    m_systemTray->setEnabled(false);
+#endif
 
     QLabel *trayLabel = new QLabel(tr("System tray:"), this);
     trayLabel->setToolTip(m_systemTray->toolTip());
@@ -203,7 +208,10 @@ bool VGeneralTab::loadSystemTray()
 
 bool VGeneralTab::saveSystemTray()
 {
-    vconfig.setMinimizeToSystemTray(m_systemTray->isChecked() ? 1 : 0);
+    if (m_systemTray->isEnabled()) {
+        vconfig.setMinimizeToSystemTray(m_systemTray->isChecked() ? 1 : 0);
+    }
+
     return true;
 }
 

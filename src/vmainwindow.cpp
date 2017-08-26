@@ -1576,6 +1576,11 @@ void VMainWindow::closeEvent(QCloseEvent *event)
     bool isExit = m_requestQuit || !vconfig.getMinimizeToStystemTray();
     m_requestQuit = false;
 
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    // Do not support minimized to tray on macOS.
+    isExit = true;
+#endif
+
     if (!isExit && vconfig.getMinimizeToStystemTray() == -1) {
         // Not initialized yet. Prompt for user.
         int ret = VUtils::showMessage(QMessageBox::Information,
@@ -2030,6 +2035,8 @@ void VMainWindow::showMainWindow()
         }
     } else {
         this->show();
+        // Need to call raise() in macOS.
+        this->raise();
     }
 
     this->activateWindow();
