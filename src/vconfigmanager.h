@@ -27,11 +27,16 @@ struct VColor
     QString rgb; // 'FFFFFF', without '#'
 };
 
+// FIXME: we do not free userSettings and defaultSettings here since there will
+// be only one global instance of VConfigManager. Freeing them in the destructor
+// causes crash in macOS.
+// One solution is to make the global variable a pointer, which causes too many
+// modifications. For now, we just choose the simple way.
 class VConfigManager
 {
 public:
     VConfigManager();
-    ~VConfigManager();
+
     void initialize();
 
     // Read config from the directory config json file into a QJsonObject.

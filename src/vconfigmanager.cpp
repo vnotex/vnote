@@ -33,16 +33,6 @@ VConfigManager::VConfigManager()
 {
 }
 
-VConfigManager::~VConfigManager()
-{
-    if (userSettings) {
-        delete userSettings;
-    }
-    if (defaultSettings) {
-        delete defaultSettings;
-    }
-}
-
 void VConfigManager::migrateIniFile()
 {
     const QString originalFolder = "tamlok";
