@@ -3822,6 +3822,7 @@ void VVim::processPasteAction(QList<Token> &p_tokens, bool p_pasteBefore)
 
     Register &reg = m_registers[m_regName];
     QString value = reg.read();
+    bool isBlock = reg.isBlock();
     if (value.isEmpty()) {
         return;
     }
@@ -3835,23 +3836,25 @@ void VVim::processPasteAction(QList<Token> &p_tokens, bool p_pasteBefore)
     QTextCursor cursor = m_editor->textCursor();
     cursor.beginEditBlock();
 
-    // repalce the selected texts and block if needed
-    if (cursor.hasSelection()) {
+    // Different from Vim:
+    //  In visual mode, by default vim select the current char, so paste operation will replace
+    //  current char, but here it is strange to follow this specification
+    bool hasSelection = cursor.hasSelection();
+    bool isVisualLine = checkMode(VimMode::VisualLine);
+    if (hasSelection) {
+        int pos = cursor.selectionStart();
         cursor.removeSelectedText();
-        bool needToReplaceBlock = cursor.block().text().isEmpty() && reg.isBlock();
-        if (needToReplaceBlock) {
-            cursor.deleteChar();
-            cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor:: MoveAnchor);
+        if (isBlock && !isVisualLine) {
+            insertChangeBlockAfterDeletion(cursor, pos);
         }
-        setMode(VimMode::Normal);
     }
 
-    if (reg.isBlock()) {
-        if (p_pasteBefore) {
+    if (isBlock) {
+        if (!hasSelection && p_pasteBefore) {
             cursor.movePosition(QTextCursor::StartOfBlock);
             cursor.insertBlock();
             cursor.movePosition(QTextCursor::PreviousBlock);
-        } else {
+        } else if (!isVisualLine) {
             cursor.movePosition(QTextCursor::EndOfBlock);
             cursor.insertBlock();
         }
@@ -3865,7 +3868,7 @@ void VVim::processPasteAction(QList<Token> &p_tokens, bool p_pasteBefore)
                                                                   : tr("line")));
         }
     } else {
-        if (!p_pasteBefore && !cursor.atBlockEnd()) {
+        if (!hasSelection && !p_pasteBefore && !cursor.atBlockEnd()) {
             // Insert behind current cursor.
             cursor.movePosition(QTextCursor::Right);
         }
@@ -3875,6 +3878,10 @@ void VVim::processPasteAction(QList<Token> &p_tokens, bool p_pasteBefore)
 
     cursor.endEditBlock();
     m_editor->setTextCursor(cursor);
+
+    if (checkMode(VimMode::Visual) || checkMode(VimMode::VisualLine)) {
+        setMode(VimMode::Normal);
+    }
 
     qDebug() << "text pasted" << text;
 }
