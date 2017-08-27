@@ -2,7 +2,7 @@
 #include "vdeletenotebookdialog.h"
 #include "vconfigmanager.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 VDeleteNotebookDialog::VDeleteNotebookDialog(const QString &p_title, const QString &p_name,
                                              const QString &p_path, QWidget *p_parent)
@@ -14,7 +14,7 @@ VDeleteNotebookDialog::VDeleteNotebookDialog(const QString &p_title, const QStri
 void VDeleteNotebookDialog::setupUI(const QString &p_title, const QString &p_name)
 {
     QLabel *infoLabel = new QLabel(tr("Are you sure to delete notebook <span style=\"%1\">%2</span>?")
-                                     .arg(vconfig.c_dataTextStyle).arg(p_name));
+                                     .arg(g_config->c_dataTextStyle).arg(p_name));
     m_warningLabel = new QLabel();
     m_warningLabel->setWordWrap(true);
 
@@ -109,12 +109,12 @@ void VDeleteNotebookDialog::deleteCheckChanged(int p_state)
 {
     if (!p_state) {
         m_warningLabel->setText(tr("VNote won't delete files in directory <span style=\"%1\">%2</span>.")
-                                  .arg(vconfig.c_dataTextStyle).arg(m_path));
+                                  .arg(g_config->c_dataTextStyle).arg(m_path));
     } else {
         m_warningLabel->setText(tr("<span style=\"%1\">WARNING</span>: "
                                    "VNote may delete <b>ANY</b> files in directory <span style=\"%2\">%3</span>! "
                                    "VNote will try to delete all the root folders within this notebook one by one. "
                                    "It may be UNRECOVERABLE!")
-                                  .arg(vconfig.c_warningTextStyle).arg(vconfig.c_dataTextStyle).arg(m_path));
+                                  .arg(g_config->c_warningTextStyle).arg(g_config->c_dataTextStyle).arg(m_path));
     }
 }

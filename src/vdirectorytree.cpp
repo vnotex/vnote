@@ -9,7 +9,7 @@
 #include "veditarea.h"
 #include "vconfigmanager.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 extern VNote *g_vnote;
 
 VDirectoryTree::VDirectoryTree(VNote *vnote, QWidget *parent)
@@ -103,7 +103,7 @@ void VDirectoryTree::setNotebook(VNotebook *p_notebook)
     if (!m_notebook->open()) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                             tr("Fail to open notebook <span style=\"%1\">%2</span>.")
-                              .arg(vconfig.c_dataTextStyle).arg(m_notebook->getName()), "",
+                              .arg(g_config->c_dataTextStyle).arg(m_notebook->getName()), "",
                             QMessageBox::Ok, QMessageBox::Ok, this);
         clear();
         return;
@@ -165,7 +165,7 @@ void VDirectoryTree::buildSubTree(QTreeWidgetItem *p_parent, int p_depth)
     if (!dir->open()) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                             tr("Fail to open folder <span style=\"%1\">%2</span>.")
-                              .arg(vconfig.c_dataTextStyle).arg(dir->getName()), "",
+                              .arg(g_config->c_dataTextStyle).arg(dir->getName()), "",
                             QMessageBox::Ok, QMessageBox::Ok, this);
         return;
     }
@@ -339,7 +339,7 @@ void VDirectoryTree::newSubDirectory()
     VDirectory *curDir = getVDirectory(curItem);
 
     QString info = tr("Create a subfolder in <span style=\"%1\">%2</span>.")
-                     .arg(vconfig.c_dataTextStyle).arg(curDir->getName());
+                     .arg(g_config->c_dataTextStyle).arg(curDir->getName());
     QString text(tr("Folder &name:"));
     QString defaultText("new_folder");
 
@@ -351,7 +351,7 @@ void VDirectoryTree::newSubDirectory()
             if (curDir->findSubDirectory(name, false)) {
                 info = tr("Name (case-insensitive) already exists in "
                           "<span style=\"%1\">%2</span>. Please choose another name.")
-                         .arg(vconfig.c_dataTextStyle).arg(curDir->getName());
+                         .arg(g_config->c_dataTextStyle).arg(curDir->getName());
                 defaultText = name;
                 continue;
             }
@@ -360,7 +360,7 @@ void VDirectoryTree::newSubDirectory()
             if (!subDir) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                     tr("Fail to create folder <span style=\"%1\">%2</span>.")
-                                      .arg(vconfig.c_dataTextStyle).arg(name), "",
+                                      .arg(g_config->c_dataTextStyle).arg(name), "",
                                     QMessageBox::Ok, QMessageBox::Ok, this);
                 return;
             }
@@ -377,7 +377,7 @@ void VDirectoryTree::newRootDirectory()
         return;
     }
     QString info = tr("Create a root folder in notebook <span style=\"%1\">%2</span>.")
-                     .arg(vconfig.c_dataTextStyle).arg(m_notebook->getName());
+                     .arg(g_config->c_dataTextStyle).arg(m_notebook->getName());
     QString text(tr("Folder &name:"));
     QString defaultText("new_folder");
     VDirectory *rootDir = m_notebook->getRootDir();
@@ -388,7 +388,7 @@ void VDirectoryTree::newRootDirectory()
             if (rootDir->findSubDirectory(name, false)) {
                 info = tr("Name (case-insensitive) already exists in "
                           "notebook <span style=\"%1\">%2</span>. Please choose another name.")
-                         .arg(vconfig.c_dataTextStyle).arg(m_notebook->getName());
+                         .arg(g_config->c_dataTextStyle).arg(m_notebook->getName());
                 defaultText = name;
                 continue;
             }
@@ -396,7 +396,7 @@ void VDirectoryTree::newRootDirectory()
             if (!subDir) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                     tr("Fail to create folder <span style=\"%1\">%2</span>.")
-                                      .arg(vconfig.c_dataTextStyle).arg(name), "",
+                                      .arg(g_config->c_dataTextStyle).arg(name), "",
                                     QMessageBox::Ok, QMessageBox::Ok, this);
                 return;
             }
@@ -416,12 +416,12 @@ void VDirectoryTree::deleteDirectory()
     VDirectory *curDir = getVDirectory(curItem);
     int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                   tr("Are you sure to delete folder <span style=\"%1\">%2</span>?")
-                                    .arg(vconfig.c_dataTextStyle).arg(curDir->getName()),
+                                    .arg(g_config->c_dataTextStyle).arg(curDir->getName()),
                                   tr("<span style=\"%1\">WARNING</span>: "
                                      "VNote will delete the whole directory (<b>ANY</b> files) "
                                      "<span style=\"%2\">%3</span>."
                                      "<br>It may be UNRECOVERABLE!")
-                                    .arg(vconfig.c_warningTextStyle).arg(vconfig.c_dataTextStyle).arg(curDir->retrivePath()),
+                                    .arg(g_config->c_warningTextStyle).arg(g_config->c_dataTextStyle).arg(curDir->retrivePath()),
                                   QMessageBox::Ok | QMessageBox::Cancel,
                                   QMessageBox::Ok, this, MessageBoxType::Danger);
     if (ret == QMessageBox::Ok) {
@@ -475,7 +475,7 @@ void VDirectoryTree::editDirectoryInfo()
             if (!curDir->rename(name)) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                     tr("Fail to rename folder <span style=\"%1\">%2</span>.")
-                                      .arg(vconfig.c_dataTextStyle).arg(curName), "",
+                                      .arg(g_config->c_dataTextStyle).arg(curName), "",
                                     QMessageBox::Ok, QMessageBox::Ok, this);
                 return;
             }
@@ -679,7 +679,7 @@ bool VDirectoryTree::copyDirectory(VDirectory *p_destDir, const QString &p_destN
     } else {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                             tr("Fail to copy folder <span style=\"%1\">%2</span>.")
-                              .arg(vconfig.c_dataTextStyle).arg(srcName),
+                              .arg(g_config->c_dataTextStyle).arg(srcName),
                             tr("Please check if there already exists a folder with the same name."),
                             QMessageBox::Ok, QMessageBox::Ok, this);
     }

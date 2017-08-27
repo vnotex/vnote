@@ -5,7 +5,7 @@
 #include "utils/vutils.h"
 #include "vnotebook.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 VNewNotebookDialog::VNewNotebookDialog(const QString &title, const QString &info,
                                        const QString &defaultName, const QString &defaultPath,
@@ -44,7 +44,7 @@ void VNewNotebookDialog::setupUI()
     QLabel *imageFolderLabel = new QLabel(tr("&Image folder:"));
     m_imageFolderEdit = new QLineEdit();
     m_imageFolderEdit->setPlaceholderText(tr("Use global configuration (%1)")
-                                            .arg(vconfig.getImageFolder()));
+                                            .arg(g_config->getImageFolder()));
     imageFolderLabel->setBuddy(m_imageFolderEdit);
     QString imageFolderTip = tr("Set the name of the folder for all the notes of this notebook to store images "
                                 "(empty to use global configuration)");
@@ -114,7 +114,7 @@ void VNewNotebookDialog::handleBrowseBtnClicked()
 {
     static QString defaultPath;
     if (defaultPath.isEmpty()) {
-        defaultPath = vconfig.getVnoteNotebookFolderPath();
+        defaultPath = g_config->getVnoteNotebookFolderPath();
         if (!QFileInfo::exists(defaultPath)) {
             defaultPath = QDir::homePath();
         }
@@ -146,7 +146,7 @@ void VNewNotebookDialog::handleInputChanged()
 {
     QString warnText = tr("<span style=\"%1\">WARNING</span>: The folder chosen is NOT empty! "
                           "It is highly recommended to use an EMPTY and EXCLUSIVE folder for a new notebook.")
-                          .arg(vconfig.c_warningTextStyle);
+                          .arg(g_config->c_warningTextStyle);
     QString infoText = tr("<span style=\"%1\">INFO</span>: The folder chosen seems to be a root "
                           "folder of a notebook created by VNote before. "
                           "VNote will try to import it by reading the configuration file.")
@@ -199,7 +199,7 @@ void VNewNotebookDialog::handleInputChanged()
             showWarnLabel = true;
             QString tmp = tr("<span style=\"%1\">WARNING</span>: The path seems to be illegal. "
                              "Please choose another one.")
-                            .arg(vconfig.c_warningTextStyle);
+                            .arg(g_config->c_warningTextStyle);
             m_warnLabel->setText(tmp);
         }
     }
@@ -218,8 +218,8 @@ void VNewNotebookDialog::handleInputChanged()
             showWarnLabel = true;
             QString existText = tr("<span style=\"%1\">WARNING</span>: The folder chosen has already been a root folder "
                                    "of existing notebook <span style=\"%2\">%3</span> in VNote.")
-                                   .arg(vconfig.c_warningTextStyle)
-                                   .arg(vconfig.c_dataTextStyle)
+                                   .arg(g_config->c_warningTextStyle)
+                                   .arg(g_config->c_dataTextStyle)
                                    .arg(m_notebooks[idx]->getName());
             m_warnLabel->setText(existText);
         }
@@ -242,7 +242,7 @@ void VNewNotebookDialog::handleInputChanged()
             showWarnLabel = true;
             QString nameConflictText = tr("<span style=\"%1\">WARNING</span>: Name (case-insensitive) already exists. "
                                           "Please choose another name.")
-                                          .arg(vconfig.c_warningTextStyle);
+                                          .arg(g_config->c_warningTextStyle);
             m_warnLabel->setText(nameConflictText);
         }
     }
@@ -261,7 +261,7 @@ bool VNewNotebookDialog::autoComplete()
         return false;
     }
 
-    QString vnoteFolder = vconfig.getVnoteNotebookFolderPath();
+    QString vnoteFolder = g_config->getVnoteNotebookFolderPath();
     QString pathText = pathEdit->text();
     if (!pathText.isEmpty()
         && !VUtils::equalPath(vnoteFolder, VUtils::basePathFromPath(pathText))) {

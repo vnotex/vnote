@@ -21,7 +21,7 @@
 #include "veditarea.h"
 #include "vnofocusitemdelegate.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 extern VNote *g_vnote;
 
 const int VNotebookSelector::c_notebookStartIdx = 1;
@@ -68,7 +68,7 @@ void VNotebookSelector::initActions()
 
 void VNotebookSelector::updateComboBox()
 {
-    int index = vconfig.getCurNotebookIndex();
+    int index = g_config->getCurNotebookIndex();
 
     disconnect(this, SIGNAL(currentIndexChanged(int)),
                this, SLOT(handleCurIndexChanged(int)));
@@ -85,7 +85,7 @@ void VNotebookSelector::updateComboBox()
             this, SLOT(handleCurIndexChanged(int)));
 
     if (m_notebooks.isEmpty()) {
-        vconfig.setCurNotebookIndex(-1);
+        g_config->setCurNotebookIndex(-1);
         setCurrentIndex(0);
     } else {
         setCurrentIndexNotebook(index);
@@ -140,7 +140,7 @@ void VNotebookSelector::handleCurIndexChanged(int p_index)
         tooltip = nb->getName();
     }
     setToolTip(tooltip);
-    vconfig.setCurNotebookIndex(p_index);
+    g_config->setCurNotebookIndex(p_index);
     emit curNotebookChanged(nb);
 }
 
@@ -200,13 +200,13 @@ void VNotebookSelector::createNotebook(const QString &p_name,
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                             tr("Fail to create notebook "
                                "<span style=\"%1\">%2</span> in <span style=\"%1\">%3</span>.")
-                            .arg(vconfig.c_dataTextStyle).arg(p_name).arg(p_path), "",
+                            .arg(g_config->c_dataTextStyle).arg(p_name).arg(p_path), "",
                             QMessageBox::Ok, QMessageBox::Ok, this);
         return;
     }
 
     m_notebooks.append(nb);
-    vconfig.setNotebooks(m_notebooks);
+    g_config->setNotebooks(m_notebooks);
 
     addNotebookItem(nb->getName());
     setCurrentIndexNotebook(m_notebooks.size() - 1);
@@ -240,7 +240,7 @@ void VNotebookSelector::deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles
     int idx = indexOfNotebook(p_notebook);
 
     m_notebooks.remove(idx);
-    vconfig.setNotebooks(m_notebooks);
+    g_config->setNotebooks(m_notebooks);
 
     removeNotebookItem(idx);
 
@@ -253,7 +253,7 @@ void VNotebookSelector::deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles
                                       tr("Fail to delete the root folder of notebook "
                                          "<span style=\"%1\">%2</span> from disk. You may open "
                                          "the folder and check it manually.")
-                                        .arg(vconfig.c_dataTextStyle).arg(name), "",
+                                        .arg(g_config->c_dataTextStyle).arg(name), "",
                                       QMessageBox::Open | QMessageBox::Ok,
                                       QMessageBox::Ok, this);
         if (cho == QMessageBox::Open) {
@@ -297,7 +297,7 @@ void VNotebookSelector::editNotebookInfo()
             updated = true;
             notebook->rename(name);
             updateComboBoxItem(index, name);
-            vconfig.setNotebooks(m_notebooks);
+            g_config->setNotebooks(m_notebooks);
         }
 
         QString imageFolder = dialog.getImageFolder();

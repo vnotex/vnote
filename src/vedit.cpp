@@ -10,35 +10,35 @@
 #include "veditoperations.h"
 #include "vedittab.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 extern VNote *g_vnote;
 
 void VEditConfig::init(const QFontMetrics &p_metric)
 {
     update(p_metric);
 
-    m_enableVimMode = vconfig.getEnableVimMode();
+    m_enableVimMode = g_config->getEnableVimMode();
 
     m_highlightWholeBlock = m_enableVimMode;
 }
 
 void VEditConfig::update(const QFontMetrics &p_metric)
 {
-    if (vconfig.getTabStopWidth() > 0) {
-        m_tabStopWidth = vconfig.getTabStopWidth() * p_metric.width(' ');
+    if (g_config->getTabStopWidth() > 0) {
+        m_tabStopWidth = g_config->getTabStopWidth() * p_metric.width(' ');
     } else {
         m_tabStopWidth = 0;
     }
 
-    m_expandTab = vconfig.getIsExpandTab();
+    m_expandTab = g_config->getIsExpandTab();
 
-    if (m_expandTab && (vconfig.getTabStopWidth() > 0)) {
-        m_tabSpaces = QString(vconfig.getTabStopWidth(), ' ');
+    if (m_expandTab && (g_config->getTabStopWidth() > 0)) {
+        m_tabSpaces = QString(g_config->getTabStopWidth(), ' ');
     } else {
         m_tabSpaces = "\t";
     }
 
-    m_cursorLineBg = QColor(vconfig.getEditorCurrentLineBg());
+    m_cursorLineBg = QColor(g_config->getEditorCurrentLineBg());
 }
 
 VEdit::VEdit(VFile *p_file, QWidget *p_parent)
@@ -49,11 +49,11 @@ VEdit::VEdit(VFile *p_file, QWidget *p_parent)
     const int extraSelectionHighlightTimer = 500;
     const int labelSize = 64;
 
-    m_selectedWordColor = QColor(vconfig.getEditorSelectedWordBg());
-    m_searchedWordColor = QColor(vconfig.getEditorSearchedWordBg());
-    m_searchedWordCursorColor = QColor(vconfig.getEditorSearchedWordCursorBg());
-    m_incrementalSearchedWordColor = QColor(vconfig.getEditorIncrementalSearchedWordBg());
-    m_trailingSpaceColor = QColor(vconfig.getEditorTrailingSpaceBg());
+    m_selectedWordColor = QColor(g_config->getEditorSelectedWordBg());
+    m_searchedWordColor = QColor(g_config->getEditorSearchedWordBg());
+    m_searchedWordCursorColor = QColor(g_config->getEditorSearchedWordCursorBg());
+    m_incrementalSearchedWordColor = QColor(g_config->getEditorIncrementalSearchedWordBg());
+    m_trailingSpaceColor = QColor(g_config->getEditorTrailingSpaceBg());
 
     QPixmap wrapPixmap(":/resources/icons/search_wrap.svg");
     m_wrapLabel = new QLabel(this);
@@ -467,8 +467,8 @@ void VEdit::labelTimerTimeout()
 
 void VEdit::updateFontAndPalette()
 {
-    setFont(vconfig.getBaseEditFont());
-    setPalette(vconfig.getBaseEditPalette());
+    setFont(g_config->getBaseEditFont());
+    setPalette(g_config->getBaseEditPalette());
 }
 
 void VEdit::highlightExtraSelections(bool p_now)
@@ -496,7 +496,7 @@ void VEdit::doHighlightExtraSelections()
 void VEdit::highlightCurrentLine()
 {
     QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::CurrentLine];
-    if (vconfig.getHighlightCursorLine() && !isReadOnly()) {
+    if (g_config->getHighlightCursorLine() && !isReadOnly()) {
         // Need to highlight current line.
         selects.clear();
 
@@ -545,7 +545,7 @@ void VEdit::setReadOnly(bool p_ro)
 void VEdit::highlightSelectedWord()
 {
     QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::SelectedWord];
-    if (!vconfig.getHighlightSelectedWord()) {
+    if (!g_config->getHighlightSelectedWord()) {
         if (!selects.isEmpty()) {
             selects.clear();
             highlightExtraSelections(true);
@@ -588,7 +588,7 @@ static void trailingSpaceFilter(VEdit *p_editor, QList<QTextEdit::ExtraSelection
 
 void VEdit::highlightTrailingSpace()
 {
-    if (!vconfig.getEnableTrailingSpaceHighlight()) {
+    if (!g_config->getEnableTrailingSpaceHighlight()) {
         QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::TrailingSapce];
         if (!selects.isEmpty()) {
             selects.clear();
@@ -650,7 +650,7 @@ void VEdit::highlightTextAll(const QString &p_text, uint p_options,
 void VEdit::highlightSearchedWord(const QString &p_text, uint p_options)
 {
     QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::SearchedKeyword];
-    if (!vconfig.getHighlightSearchedWord() || p_text.isEmpty()) {
+    if (!g_config->getHighlightSearchedWord() || p_text.isEmpty()) {
         if (!selects.isEmpty()) {
             selects.clear();
             highlightExtraSelections(true);
@@ -688,7 +688,7 @@ void VEdit::highlightSearchedWordUnderCursor(const QTextCursor &p_cursor)
 void VEdit::highlightIncrementalSearchedWord(const QTextCursor &p_cursor)
 {
     QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::IncrementalSearchedKeyword];
-    if (!vconfig.getHighlightSearchedWord() || !p_cursor.hasSelection()) {
+    if (!g_config->getHighlightSearchedWord() || !p_cursor.hasSelection()) {
         if (!selects.isEmpty()) {
             selects.clear();
             highlightExtraSelections(true);
@@ -962,7 +962,7 @@ void VEdit::decorateText(TextDecoration p_decoration)
 void VEdit::updateLineNumberAreaMargin()
 {
     int width = 0;
-    if (vconfig.getEditorLineNumber()) {
+    if (g_config->getEditorLineNumber()) {
         width = m_lineNumberArea->calculateWidth();
     }
 
@@ -971,7 +971,7 @@ void VEdit::updateLineNumberAreaMargin()
 
 void VEdit::updateLineNumberArea()
 {
-    if (vconfig.getEditorLineNumber()) {
+    if (g_config->getEditorLineNumber()) {
         if (!m_lineNumberArea->isVisible()) {
             updateLineNumberAreaMargin();
             m_lineNumberArea->show();
@@ -988,7 +988,7 @@ void VEdit::resizeEvent(QResizeEvent *p_event)
 {
     QTextEdit::resizeEvent(p_event);
 
-    if (vconfig.getEditorLineNumber()) {
+    if (g_config->getEditorLineNumber()) {
         QRect rect = contentsRect();
         m_lineNumberArea->setGeometry(QRect(rect.left(),
                                             rect.top(),
@@ -999,14 +999,14 @@ void VEdit::resizeEvent(QResizeEvent *p_event)
 
 void VEdit::lineNumberAreaPaintEvent(QPaintEvent *p_event)
 {
-    if (!vconfig.getEditorLineNumber()) {
+    if (!g_config->getEditorLineNumber()) {
         updateLineNumberAreaMargin();
         m_lineNumberArea->hide();
         return;
     }
 
     QPainter painter(m_lineNumberArea);
-    painter.fillRect(p_event->rect(), vconfig.getEditorLineNumberBg());
+    painter.fillRect(p_event->rect(), g_config->getEditorLineNumberBg());
 
     QTextDocument *doc = document();
     QAbstractTextDocumentLayout *layout = doc->documentLayout();
@@ -1021,8 +1021,8 @@ void VEdit::lineNumberAreaPaintEvent(QPaintEvent *p_event)
     int eventBtm = p_event->rect().bottom();
     const int digitHeight = m_lineNumberArea->getDigitHeight();
     const int curBlockNumber = textCursor().block().blockNumber();
-    const bool relative = vconfig.getEditorLineNumber() == 2;
-    const QString &fg = vconfig.getEditorLineNumberFg();
+    const bool relative = g_config->getEditorLineNumber() == 2;
+    const QString &fg = g_config->getEditorLineNumberFg();
     painter.setPen(fg);
 
     while (block.isValid() && top <= eventBtm) {

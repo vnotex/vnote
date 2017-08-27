@@ -8,7 +8,7 @@
 #include "vconfigmanager.h"
 #include "vdownloader.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 VUpdater::VUpdater(QWidget *p_parent)
     : QDialog(p_parent)
@@ -24,7 +24,7 @@ void VUpdater::setupUI()
     imgLabel->setPixmap(QPixmap::fromImage(img.scaled(imgSize)));
 
     m_versionLabel = new QLabel(tr("Current Version: v%1")
-                                  .arg(vconfig.c_version));
+                                  .arg(g_config->c_version));
 
     m_proLabel = new QLabel(tr("Checking for updates..."));
     m_proLabel->setOpenExternalLinks(true);
@@ -156,8 +156,8 @@ void VUpdater::parseResult(const QByteArray &p_data)
     QString body = json["body"].toString();
 
     m_versionLabel->setText(tr("Current Version: v%1\nLatest Version: v%2")
-                              .arg(vconfig.c_version).arg(tag));
-    if (isNewerVersion(vconfig.c_version, tag)) {
+                              .arg(g_config->c_version).arg(tag));
+    if (isNewerVersion(g_config->c_version, tag)) {
         m_proLabel->setText(tr("<span style=\"font-weight: bold;\">Updates Available!</span><br/>"
                                "Please visit <a href=\"%1\">Github Releases</a> to download the latest version.")
                               .arg(releaseUrl));

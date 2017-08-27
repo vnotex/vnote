@@ -14,7 +14,7 @@
 #include "vbuttonwithwidget.h"
 #include "vedittab.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 VVimIndicator::VVimIndicator(QWidget *p_parent)
     : QWidget(p_parent), m_vim(NULL)
@@ -187,23 +187,23 @@ static QString modeBackgroundColor(VimMode p_mode)
 
     switch (p_mode) {
     case VimMode::Normal:
-       color = vconfig.getEditorVimNormalBg();
+       color = g_config->getEditorVimNormalBg();
        break;
 
     case VimMode::Insert:
-       color = vconfig.getEditorVimInsertBg();
+       color = g_config->getEditorVimInsertBg();
        break;
 
     case VimMode::Visual:
-       color = vconfig.getEditorVimVisualBg();
+       color = g_config->getEditorVimVisualBg();
        break;
 
     case VimMode::VisualLine:
-       color = vconfig.getEditorVimVisualBg();
+       color = g_config->getEditorVimVisualBg();
        break;
 
     case VimMode::Replace:
-       color = vconfig.getEditorVimReplaceBg();
+       color = g_config->getEditorVimReplaceBg();
        break;
 
     default:

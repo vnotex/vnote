@@ -13,7 +13,7 @@
 #include "vdownloader.h"
 #include "hgmarkdownhighlighter.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 enum ImageProperty { ImagePath = 1 };
 
@@ -43,7 +43,7 @@ VImagePreviewer::VImagePreviewer(VMdEdit *p_edit, int p_timeToPreview)
 
 void VImagePreviewer::timerTimeout()
 {
-    if (!vconfig.getEnablePreviewImages()) {
+    if (!g_config->getEnablePreviewImages()) {
         if (m_enablePreview) {
             disableImagePreview();
         }
@@ -355,7 +355,7 @@ void VImagePreviewer::enableImagePreview()
 {
     m_enablePreview = true;
 
-    if (vconfig.getEnablePreviewImages()) {
+    if (g_config->getEnablePreviewImages()) {
         m_timer->stop();
         m_timer->start();
     }
@@ -542,7 +542,7 @@ bool VImagePreviewer::updateImageWidth(QTextImageFormat &p_format)
 
     if (it != m_imageCache.end()) {
         int newWidth = it.value().m_width;
-        if (vconfig.getEnablePreviewImageConstraint()) {
+        if (g_config->getEnablePreviewImageConstraint()) {
             newWidth = qMin(m_imageWidth, it.value().m_width);
         }
 

@@ -8,7 +8,7 @@
 #include "dialog/vfindreplacedialog.h"
 #include "utils/vutils.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 extern VNote *g_vnote;
 
 VEditArea::VEditArea(VNote *vnote, QWidget *parent)
@@ -26,13 +26,13 @@ void VEditArea::setupUI()
     splitter = new QSplitter(this);
     m_findReplace = new VFindReplaceDialog(this);
     m_findReplace->setOption(FindOption::CaseSensitive,
-                             vconfig.getFindCaseSensitive());
+                             g_config->getFindCaseSensitive());
     m_findReplace->setOption(FindOption::WholeWordOnly,
-                             vconfig.getFindWholeWordOnly());
+                             g_config->getFindWholeWordOnly());
     m_findReplace->setOption(FindOption::RegularExpression,
-                             vconfig.getFindRegularExpression());
+                             g_config->getFindRegularExpression());
     m_findReplace->setOption(FindOption::IncrementalSearch,
-                             vconfig.getFindIncrementalSearch());
+                             g_config->getFindIncrementalSearch());
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addWidget(splitter);
@@ -513,10 +513,10 @@ void VEditArea::handleFindTextChanged(const QString &p_text, uint p_options)
 void VEditArea::handleFindOptionChanged(uint p_options)
 {
     qDebug() << "find option changed" << p_options;
-    vconfig.setFindCaseSensitive(p_options & FindOption::CaseSensitive);
-    vconfig.setFindWholeWordOnly(p_options & FindOption::WholeWordOnly);
-    vconfig.setFindRegularExpression(p_options & FindOption::RegularExpression);
-    vconfig.setFindIncrementalSearch(p_options & FindOption::IncrementalSearch);
+    g_config->setFindCaseSensitive(p_options & FindOption::CaseSensitive);
+    g_config->setFindWholeWordOnly(p_options & FindOption::WholeWordOnly);
+    g_config->setFindRegularExpression(p_options & FindOption::RegularExpression);
+    g_config->setFindIncrementalSearch(p_options & FindOption::IncrementalSearch);
 }
 
 void VEditArea::handleFindNext(const QString &p_text, uint p_options,

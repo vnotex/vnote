@@ -7,7 +7,7 @@
 #include "vfile.h"
 #include "utils/vutils.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 VDirectory::VDirectory(VNotebook *p_notebook,
                        const QString &p_name, QObject *p_parent)
@@ -551,7 +551,7 @@ VFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
                 ret = VUtils::makePath(destImagePath);
                 if (!ret) {
                     errStr = tr("Fail to create image folder <span style=\"%1\">%2</span>.")
-                               .arg(vconfig.c_dataTextStyle).arg(destImagePath);
+                               .arg(g_config->c_dataTextStyle).arg(destImagePath);
                 } else {
                     destImagePath = QDir(destImagePath).filePath(VUtils::fileNameFromPath(link.m_path));
 
@@ -570,7 +570,7 @@ VFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
                     } else {
                         errStr = tr("Please check if there already exists a file <span style=\"%1\">%2</span> "
                                     "and then manually copy it and modify the note accordingly.")
-                                   .arg(vconfig.c_dataTextStyle).arg(destImagePath);
+                                   .arg(g_config->c_dataTextStyle).arg(destImagePath);
                     }
                 }
 
@@ -578,8 +578,8 @@ VFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
                     VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                         tr("Fail to copy image <span style=\"%1\">%2</span> while "
                                            "%5 note <span style=\"%3\">%4</span>.")
-                                          .arg(vconfig.c_dataTextStyle).arg(link.m_path)
-                                          .arg(vconfig.c_dataTextStyle).arg(srcPath)
+                                          .arg(g_config->c_dataTextStyle).arg(link.m_path)
+                                          .arg(g_config->c_dataTextStyle).arg(srcPath)
                                           .arg(p_cut ? tr("moving") : tr("copying")),
                                         errStr, QMessageBox::Ok, QMessageBox::Ok, NULL);
                 }

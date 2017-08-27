@@ -13,7 +13,7 @@
 #include "utils/veditutils.h"
 #include "vconstants.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 const QChar VVim::c_unnamedRegister = QChar('"');
 const QChar VVim::c_blackHoleRegister = QChar('_');
@@ -349,7 +349,7 @@ static void insertChangeBlockAfterDeletion(QTextCursor &p_cursor, int p_deletion
         p_cursor.movePosition(QTextCursor::PreviousBlock);
     }
 
-    if (vconfig.getAutoIndent()) {
+    if (g_config->getAutoIndent()) {
         VEditUtils::indentBlockAsPreviousBlock(p_cursor);
     }
 }
@@ -975,9 +975,9 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 }
 
                 bool textInserted = false;
-                if (vconfig.getAutoIndent()) {
+                if (g_config->getAutoIndent()) {
                     textInserted = VEditUtils::indentBlockAsPreviousBlock(cursor);
-                    if (vconfig.getAutoList()) {
+                    if (g_config->getAutoList()) {
                         textInserted = VEditUtils::insertListMarkAsPreviousBlock(cursor)
                                        || textInserted;
                     }
@@ -2239,7 +2239,7 @@ void VVim::setMode(VimMode p_mode, bool p_clearSelection)
 
         if (p_mode == VimMode::Insert) {
             m_editor->setInputMethodEnabled(true);
-        } else if (vconfig.getEnableSmartImInVimMode()) {
+        } else if (g_config->getEnableSmartImInVimMode()) {
             m_editor->setInputMethodEnabled(false);
         }
 

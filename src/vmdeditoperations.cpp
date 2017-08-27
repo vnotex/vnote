@@ -24,7 +24,7 @@
 #include "utils/vvim.h"
 #include "utils/veditutils.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 const QString VMdEditOperations::c_defaultImageTitle = "image";
 
@@ -63,18 +63,18 @@ void VMdEditOperations::insertImageFromQImage(const QString &title, const QStrin
     bool ret = VUtils::makePath(path);
     if (!ret) {
         errStr = tr("Fail to create image folder <span style=\"%1\">%2</span>.")
-                   .arg(vconfig.c_dataTextStyle).arg(path);
+                   .arg(g_config->c_dataTextStyle).arg(path);
     } else {
         ret = image.save(filePath);
         if (!ret) {
             errStr = tr("Fail to save image <span style=\"%1\">%2</span>.")
-                       .arg(vconfig.c_dataTextStyle).arg(filePath);
+                       .arg(g_config->c_dataTextStyle).arg(filePath);
         }
     }
 
     if (!ret) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                            tr("Fail to insert image <span style=\"%1\">%2</span>.").arg(vconfig.c_dataTextStyle).arg(title),
+                            tr("Fail to insert image <span style=\"%1\">%2</span>.").arg(g_config->c_dataTextStyle).arg(title),
                             errStr,
                             QMessageBox::Ok,
                             QMessageBox::Ok,
@@ -103,18 +103,18 @@ void VMdEditOperations::insertImageFromPath(const QString &title, const QString 
     bool ret = VUtils::makePath(path);
     if (!ret) {
         errStr = tr("Fail to create image folder <span style=\"%1\">%2</span>.")
-                   .arg(vconfig.c_dataTextStyle).arg(path);
+                   .arg(g_config->c_dataTextStyle).arg(path);
     } else {
         ret = QFile::copy(oriImagePath, filePath);
         if (!ret) {
             errStr = tr("Fail to copy image <span style=\"%1\">%2</span>.")
-                       .arg(vconfig.c_dataTextStyle).arg(filePath);
+                       .arg(g_config->c_dataTextStyle).arg(filePath);
         }
     }
 
     if (!ret) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                            tr("Fail to insert image <span style=\"%1\">%2</span>.").arg(vconfig.c_dataTextStyle).arg(title),
+                            tr("Fail to insert image <span style=\"%1\">%2</span>.").arg(g_config->c_dataTextStyle).arg(title),
                             errStr,
                             QMessageBox::Ok,
                             QMessageBox::Ok,
@@ -576,7 +576,7 @@ bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
 
     bool handled = false;
     m_autoIndentPos = -1;
-    if (vconfig.getAutoIndent()) {
+    if (g_config->getAutoIndent()) {
         handled = true;
 
         QTextCursor cursor = m_editor->textCursor();
@@ -588,7 +588,7 @@ bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
         textInserted = VEditUtils::insertBlockWithIndent(cursor);
 
         // Continue the list from previous line.
-        if (vconfig.getAutoList() && autolist) {
+        if (g_config->getAutoList() && autolist) {
             textInserted = VEditUtils::insertListMarkAsPreviousBlock(cursor) || textInserted;
         }
 

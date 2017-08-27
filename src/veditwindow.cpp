@@ -3,7 +3,6 @@
 #include "veditwindow.h"
 #include "vedittab.h"
 #include "vnote.h"
-#include "vconfigmanager.h"
 #include "utils/vutils.h"
 #include "vorphanfile.h"
 #include "vmainwindow.h"
@@ -13,7 +12,6 @@
 #include "vhtmltab.h"
 #include "vfilelist.h"
 
-extern VConfigManager vconfig;
 extern VNote *g_vnote;
 
 VEditWindow::VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent)

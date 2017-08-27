@@ -6,7 +6,7 @@
 #include "utils/vutils.h"
 #include "vconfigmanager.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 VOrphanFile::VOrphanFile(const QString &p_path, QObject *p_parent,
                          bool p_modifiable, bool p_systemFile)
@@ -51,7 +51,7 @@ QString VOrphanFile::retriveImagePath() const
 {
     QString folder = m_imageFolder;
     if (m_imageFolder.isEmpty()) {
-        folder = vconfig.getImageFolderExt();
+        folder = g_config->getImageFolderExt();
     }
 
     QFileInfo fi(folder);
@@ -140,7 +140,7 @@ bool VOrphanFile::isRelativeImageFolder() const
 {
     QString folder = m_imageFolder;
     if (m_imageFolder.isEmpty()) {
-        folder = vconfig.getImageFolderExt();
+        folder = g_config->getImageFolderExt();
     }
 
     return !QFileInfo(folder).isAbsolute();
@@ -150,7 +150,7 @@ QString VOrphanFile::getImageFolderInLink() const
 {
     QString folder = m_imageFolder;
     if (m_imageFolder.isEmpty()) {
-        folder = vconfig.getImageFolderExt();
+        folder = g_config->getImageFolderExt();
     }
 
     return folder;

@@ -6,7 +6,7 @@
 #include "vconfigmanager.h"
 #include "vfile.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 VNotebook::VNotebook(const QString &name, const QString &path, QObject *parent)
     : QObject(parent), m_name(name)
@@ -221,7 +221,7 @@ VFile *VNotebook::tryLoadFile(const QString &p_path)
 const QString &VNotebook::getImageFolder() const
 {
     if (m_imageFolder.isEmpty()) {
-        return vconfig.getImageFolder();
+        return g_config->getImageFolder();
     } else {
         return m_imageFolder;
     }

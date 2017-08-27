@@ -18,12 +18,12 @@
 #include "vconstants.h"
 #include "vwebview.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
                OpenFileMode p_mode, QWidget *p_parent)
     : VEditTab(p_file, p_editArea, p_parent), m_editor(NULL), m_webViewer(NULL),
-      m_document(NULL), m_mdConType(vconfig.getMdConverterType())
+      m_document(NULL), m_mdConType(g_config->getMdConverterType())
 {
     V_ASSERT(m_file->getDocType() == DocType::Markdown);
 
@@ -105,7 +105,7 @@ void VMdTab::viewWebByConverter()
     VMarkdownConverter mdConverter;
     QString toc;
     QString html = mdConverter.generateHtml(m_file->getContent(),
-                                            vconfig.getMarkdownExtensions(),
+                                            g_config->getMarkdownExtensions(),
                                             toc);
     m_document->setHtml(html);
     updateTocFromHtml(toc);
@@ -190,7 +190,7 @@ void VMdTab::readFile()
         // Prompt to save the changes.
         int ret = VUtils::showMessage(QMessageBox::Information, tr("Information"),
                                       tr("Note <span style=\"%1\">%2</span> has been modified.")
-                                        .arg(vconfig.c_dataTextStyle).arg(m_file->getName()),
+                                        .arg(g_config->c_dataTextStyle).arg(m_file->getName()),
                                       tr("Do you want to save your changes?"),
                                       QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
                                       QMessageBox::Save, this);
@@ -240,7 +240,7 @@ bool VMdTab::saveFile()
         qWarning() << filePath << "being written has been removed";
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"), tr("Fail to save note."),
                             tr("File <span style=\"%1\">%2</span> being written has been removed.")
-                              .arg(vconfig.c_dataTextStyle).arg(filePath),
+                              .arg(g_config->c_dataTextStyle).arg(filePath),
                             QMessageBox::Ok, QMessageBox::Ok, this);
         return false;
     }
@@ -278,7 +278,7 @@ void VMdTab::setupMarkdownViewer()
 
     VPreviewPage *page = new VPreviewPage(m_webViewer);
     m_webViewer->setPage(page);
-    m_webViewer->setZoomFactor(vconfig.getWebZoomFactor());
+    m_webViewer->setZoomFactor(g_config->getWebZoomFactor());
 
     m_document = new VDocument(m_file, m_webViewer);
 

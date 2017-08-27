@@ -9,7 +9,7 @@
 #include "veditarea.h"
 #include "vconstants.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 VHtmlTab::VHtmlTab(VFile *p_file, VEditArea *p_editArea,
                    OpenFileMode p_mode, QWidget *p_parent)
@@ -120,7 +120,7 @@ void VHtmlTab::readFile()
         // Prompt to save the changes.
         int ret = VUtils::showMessage(QMessageBox::Information, tr("Information"),
                                       tr("Note <span style=\"%1\">%2</span> has been modified.")
-                                        .arg(vconfig.c_dataTextStyle).arg(m_file->getName()),
+                                        .arg(g_config->c_dataTextStyle).arg(m_file->getName()),
                                       tr("Do you want to save your changes?"),
                                       QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
                                       QMessageBox::Save, this);
@@ -164,7 +164,7 @@ bool VHtmlTab::saveFile()
         qWarning() << filePath << "being written has been removed";
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"), tr("Fail to save note."),
                             tr("File <span style=\"%1\">%2</span> being written has been removed.")
-                              .arg(vconfig.c_dataTextStyle).arg(filePath),
+                              .arg(g_config->c_dataTextStyle).arg(filePath),
                             QMessageBox::Ok, QMessageBox::Ok, this);
         return false;
     }

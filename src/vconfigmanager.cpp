@@ -28,8 +28,8 @@ const QString VConfigManager::c_dangerBtnStyle = QString("QPushButton {color: #f
                                                          "QPushButton::hover {color: #fff; border-color: #ac2925; background-color: #c9302c;}");
 const QString VConfigManager::c_vnoteNotebookFolderName = QString("vnote_notebooks");
 
-VConfigManager::VConfigManager()
-    : userSettings(NULL), defaultSettings(NULL)
+VConfigManager::VConfigManager(QObject *p_parent)
+    : QObject(p_parent), userSettings(NULL), defaultSettings(NULL)
 {
 }
 
@@ -46,9 +46,10 @@ void VConfigManager::migrateIniFile()
 
 void VConfigManager::initialize()
 {
+    Q_ASSERT(!userSettings && !defaultSettings);
     userSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope,
-                                 orgName, appName);
-    defaultSettings = new QSettings(defaultConfigFilePath, QSettings::IniFormat);
+                                 orgName, appName, this);
+    defaultSettings = new QSettings(defaultConfigFilePath, QSettings::IniFormat, this);
 
     migrateIniFile();
 

@@ -10,7 +10,7 @@
 #include "dialog/vselectdialog.h"
 #include "vimagepreviewer.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 extern VNote *g_vnote;
 
 VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
@@ -20,8 +20,8 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
     V_ASSERT(p_file->getDocType() == DocType::Markdown);
 
     setAcceptRichText(false);
-    m_mdHighlighter = new HGMarkdownHighlighter(vconfig.getMdHighlightingStyles(),
-                                                vconfig.getCodeBlockStyles(),
+    m_mdHighlighter = new HGMarkdownHighlighter(g_config->getMdHighlightingStyles(),
+                                                g_config->getCodeBlockStyles(),
                                                 700, document());
     connect(m_mdHighlighter, &HGMarkdownHighlighter::highlightCompleted,
             this, &VMdEdit::generateEditOutline);
@@ -60,8 +60,8 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
 
 void VMdEdit::updateFontAndPalette()
 {
-    setFont(vconfig.getMdEditFont());
-    setPalette(vconfig.getMdEditPalette());
+    setFont(g_config->getMdEditFont());
+    setPalette(g_config->getMdEditPalette());
 }
 
 void VMdEdit::beginEdit()
@@ -392,7 +392,7 @@ int VMdEdit::removeObjectReplacementLine(QString &p_text, int p_index) const
 
 void VMdEdit::handleSelectionChanged()
 {
-    if (!vconfig.getEnablePreviewImages()) {
+    if (!g_config->getEnablePreviewImages()) {
         return;
     }
 

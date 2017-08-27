@@ -8,10 +8,8 @@
 #include "vtoc.h"
 #include "utils/vutils.h"
 #include "vnote.h"
-#include "vconfigmanager.h"
 
 extern VNote *g_vnote;
-extern VConfigManager vconfig;
 
 VOutline::VOutline(QWidget *parent)
     : QTreeWidget(parent), VNavigationMode()

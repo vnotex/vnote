@@ -13,7 +13,7 @@
 #include "vmainwindow.h"
 #include "vorphanfile.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 QString VNote::s_markdownTemplate;
 QString VNote::s_markdownTemplatePDF;
@@ -55,7 +55,7 @@ VNote::VNote(QObject *parent)
     : QObject(parent), m_mainWindow(dynamic_cast<VMainWindow *>(parent))
 {
     initTemplate();
-    vconfig.getNotebooks(m_notebooks, this);
+    g_config->getNotebooks(m_notebooks, this);
 }
 
 void VNote::initPalette(QPalette palette)
@@ -169,8 +169,8 @@ void VNote::updateTemplate()
 
     // Get background color
     QString rgb;
-    const QString &curRenderBg = vconfig.getCurRenderBackgroundColor();
-    const QVector<VColor> &predefinedColors = vconfig.getPredefinedColors();
+    const QString &curRenderBg = g_config->getCurRenderBackgroundColor();
+    const QVector<VColor> &predefinedColors = g_config->getPredefinedColors();
     if (curRenderBg != "System") {
         for (int i = 0; i < predefinedColors.size(); ++i) {
             if (predefinedColors[i].name == curRenderBg) {
@@ -184,7 +184,7 @@ void VNote::updateTemplate()
         cssStyle += "body { background-color: #" + rgb + " !important; }\n";
     }
 
-    if (vconfig.getEnableImageConstraint()) {
+    if (g_config->getEnableImageConstraint()) {
         // Constain the image width.
         cssStyle += "img { max-width: 100% !important; height: auto !important; }\n";
     }
@@ -193,7 +193,7 @@ void VNote::updateTemplate()
     const QString cssHolder("CSS_PLACE_HOLDER");
 
     s_markdownTemplate = VUtils::readFileFromDisk(c_markdownTemplatePath);
-    s_markdownTemplate.replace(cssHolder, vconfig.getTemplateCssUrl());
+    s_markdownTemplate.replace(cssHolder, g_config->getTemplateCssUrl());
 
     s_markdownTemplatePDF = s_markdownTemplate;
 
@@ -204,7 +204,7 @@ void VNote::updateTemplate()
     // Shoudl not display scrollbar in PDF.
     cssStyle += "pre code { white-space: pre-wrap !important; "
                            "word-break: break-all !important; }\n";
-    if (!vconfig.getEnableImageConstraint()) {
+    if (!g_config->getEnableImageConstraint()) {
         // Constain the image width by force in PDF, otherwise, the PDF will
         // be cut off.
         cssStyle += "img { max-width: 100% !important; height: auto !important; }\n";

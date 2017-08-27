@@ -4,7 +4,7 @@
 #include "utils/vutils.h"
 #include "vconfigmanager.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 VNotebookInfoDialog::VNotebookInfoDialog(const QString &p_title,
                                          const QString &p_info,
@@ -41,7 +41,7 @@ void VNotebookInfoDialog::setupUI(const QString &p_title, const QString &p_info)
     QLabel *imageFolderLabel = new QLabel(tr("&Image folder:"));
     m_imageFolderEdit = new QLineEdit(m_notebook->getImageFolderConfig());
     m_imageFolderEdit->setPlaceholderText(tr("Use global configuration (%1)")
-                                            .arg(vconfig.getImageFolder()));
+                                            .arg(g_config->getImageFolder()));
     imageFolderLabel->setBuddy(m_imageFolderEdit);
     QString imageFolderTip = tr("Set the name of the folder for all the notes of this notebook to store images "
                                 "(empty to use global configuration)");
@@ -103,7 +103,7 @@ void VNotebookInfoDialog::handleInputChanged()
             showWarnLabel = true;
             QString nameConflictText = tr("<span style=\"%1\">WARNING</span>: Name (case-insensitive) already exists. "
                                           "Please choose another name.")
-                                          .arg(vconfig.c_warningTextStyle);
+                                          .arg(g_config->c_warningTextStyle);
             m_warnLabel->setText(nameConflictText);
         }
     }

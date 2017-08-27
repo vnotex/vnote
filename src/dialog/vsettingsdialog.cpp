@@ -5,7 +5,7 @@
 #include "utils/vutils.h"
 #include "vconstants.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 VSettingsDialog::VSettingsDialog(QWidget *p_parent)
     : QDialog(p_parent)
@@ -170,7 +170,7 @@ bool VGeneralTab::saveConfiguration()
 
 bool VGeneralTab::loadLanguage()
 {
-    QString lang = vconfig.getLanguage();
+    QString lang = g_config->getLanguage();
     if (lang.isNull()) {
         return false;
     } else if (lang == "System") {
@@ -196,20 +196,20 @@ bool VGeneralTab::loadLanguage()
 bool VGeneralTab::saveLanguage()
 {
     QString curLang = m_langCombo->currentData().toString();
-    vconfig.setLanguage(curLang);
+    g_config->setLanguage(curLang);
     return true;
 }
 
 bool VGeneralTab::loadSystemTray()
 {
-    m_systemTray->setChecked(vconfig.getMinimizeToStystemTray() != 0);
+    m_systemTray->setChecked(g_config->getMinimizeToStystemTray() != 0);
     return true;
 }
 
 bool VGeneralTab::saveSystemTray()
 {
     if (m_systemTray->isEnabled()) {
-        vconfig.setMinimizeToSystemTray(m_systemTray->isChecked() ? 1 : 0);
+        g_config->setMinimizeToSystemTray(m_systemTray->isChecked() ? 1 : 0);
     }
 
     return true;
@@ -264,8 +264,8 @@ bool VReadEditTab::saveConfiguration()
 
 bool VReadEditTab::loadWebZoomFactor()
 {
-    qreal factor = vconfig.getWebZoomFactor();
-    bool customFactor = vconfig.isCustomWebZoomFactor();
+    qreal factor = g_config->getWebZoomFactor();
+    bool customFactor = g_config->isCustomWebZoomFactor();
     if (customFactor) {
         if (factor < c_webZoomFactorMin || factor > c_webZoomFactorMax) {
             factor = 1;
@@ -283,9 +283,9 @@ bool VReadEditTab::loadWebZoomFactor()
 bool VReadEditTab::saveWebZoomFactor()
 {
     if (m_customWebZoom->isChecked()) {
-        vconfig.setWebZoomFactor(m_webZoomFactorSpin->value());
+        g_config->setWebZoomFactor(m_webZoomFactorSpin->value());
     } else {
-        vconfig.setWebZoomFactor(-1);
+        g_config->setWebZoomFactor(-1);
     }
     return true;
 }
@@ -381,10 +381,10 @@ bool VNoteManagementTab::saveConfiguration()
 
 bool VNoteManagementTab::loadImageFolder()
 {
-    bool isCustom = vconfig.isCustomImageFolder();
+    bool isCustom = g_config->isCustomImageFolder();
 
     m_customImageFolder->setChecked(isCustom);
-    m_imageFolderEdit->setText(vconfig.getImageFolder());
+    m_imageFolderEdit->setText(g_config->getImageFolder());
     m_imageFolderEdit->setEnabled(isCustom);
 
     return true;
@@ -393,9 +393,9 @@ bool VNoteManagementTab::loadImageFolder()
 bool VNoteManagementTab::saveImageFolder()
 {
     if (m_customImageFolder->isChecked()) {
-        vconfig.setImageFolder(m_imageFolderEdit->text());
+        g_config->setImageFolder(m_imageFolderEdit->text());
     } else {
-        vconfig.setImageFolder("");
+        g_config->setImageFolder("");
     }
 
     return true;
@@ -414,10 +414,10 @@ void VNoteManagementTab::customImageFolderChanged(int p_state)
 
 bool VNoteManagementTab::loadImageFolderExt()
 {
-    bool isCustom = vconfig.isCustomImageFolderExt();
+    bool isCustom = g_config->isCustomImageFolderExt();
 
     m_customImageFolderExt->setChecked(isCustom);
-    m_imageFolderEditExt->setText(vconfig.getImageFolderExt());
+    m_imageFolderEditExt->setText(g_config->getImageFolderExt());
     m_imageFolderEditExt->setEnabled(isCustom);
 
     return true;
@@ -426,9 +426,9 @@ bool VNoteManagementTab::loadImageFolderExt()
 bool VNoteManagementTab::saveImageFolderExt()
 {
     if (m_customImageFolderExt->isChecked()) {
-        vconfig.setImageFolderExt(m_imageFolderEditExt->text());
+        g_config->setImageFolderExt(m_imageFolderEditExt->text());
     } else {
-        vconfig.setImageFolderExt("");
+        g_config->setImageFolderExt("");
     }
 
     return true;

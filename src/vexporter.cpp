@@ -23,7 +23,7 @@
 #include "vmarkdownconverter.h"
 #include "vdocument.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 QString VExporter::s_defaultPathDir = QDir::homePath();
 
@@ -183,7 +183,7 @@ void VExporter::exportNote(VFile *p_file, ExportType p_type)
     }
 
     m_infoLabel->setText(tr("Export note <span style=\"%1\">%2</span> as %3.")
-                            .arg(vconfig.c_dataTextStyle)
+                            .arg(g_config->c_dataTextStyle)
                             .arg(m_file->getName())
                             .arg(exportTypeStr(p_type)));
 
@@ -218,7 +218,7 @@ void VExporter::initWebViewer(VFile *p_file)
         VMarkdownConverter mdConverter;
         QString toc;
         QString html = mdConverter.generateHtml(p_file->getContent(),
-                                                vconfig.getMarkdownExtensions(),
+                                                g_config->getMarkdownExtensions(),
                                                 toc);
         document->setHtml(html);
     }

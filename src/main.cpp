@@ -12,7 +12,7 @@
 #include "vsingleinstanceguard.h"
 #include "vconfigmanager.h"
 
-VConfigManager vconfig;
+VConfigManager *g_config;
 
 #if defined(QT_NO_DEBUG)
 QFile g_logFile;
@@ -143,7 +143,9 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    VConfigManager vconfig;
     vconfig.initialize();
+    g_config = &vconfig;
 
     QString locale = VUtils::getLocale();
     qDebug() << "use locale" << locale;

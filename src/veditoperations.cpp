@@ -6,7 +6,7 @@
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 VEditOperations::VEditOperations(VEdit *p_editor, VFile *p_file)
     : QObject(p_editor), m_editor(p_editor), m_file(p_file),
@@ -41,20 +41,20 @@ void VEditOperations::updateCursorLineBg()
     if (m_editConfig->m_enableVimMode) {
         switch (m_vim->getMode()) {
         case VimMode::Normal:
-            m_editConfig->m_cursorLineBg = QColor(vconfig.getEditorVimNormalBg());
+            m_editConfig->m_cursorLineBg = QColor(g_config->getEditorVimNormalBg());
             break;
 
         case VimMode::Insert:
-            m_editConfig->m_cursorLineBg = QColor(vconfig.getEditorVimInsertBg());
+            m_editConfig->m_cursorLineBg = QColor(g_config->getEditorVimInsertBg());
             break;
 
         case VimMode::Visual:
         case VimMode::VisualLine:
-            m_editConfig->m_cursorLineBg = QColor(vconfig.getEditorVimVisualBg());
+            m_editConfig->m_cursorLineBg = QColor(g_config->getEditorVimVisualBg());
             break;
 
         case VimMode::Replace:
-            m_editConfig->m_cursorLineBg = QColor(vconfig.getEditorVimReplaceBg());
+            m_editConfig->m_cursorLineBg = QColor(g_config->getEditorVimReplaceBg());
             break;
 
         default:
@@ -62,7 +62,7 @@ void VEditOperations::updateCursorLineBg()
             break;
         }
     } else {
-        m_editConfig->m_cursorLineBg = QColor(vconfig.getEditorCurrentLineBg());
+        m_editConfig->m_cursorLineBg = QColor(g_config->getEditorCurrentLineBg());
     }
 
     m_editor->highlightCurrentLine();

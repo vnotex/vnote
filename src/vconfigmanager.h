@@ -1,6 +1,7 @@
 #ifndef VCONFIGMANAGER_H
 #define VCONFIGMANAGER_H
 
+#include <QObject>
 #include <QFont>
 #include <QPalette>
 #include <QVector>
@@ -27,15 +28,10 @@ struct VColor
     QString rgb; // 'FFFFFF', without '#'
 };
 
-// FIXME: we do not free userSettings and defaultSettings here since there will
-// be only one global instance of VConfigManager. Freeing them in the destructor
-// causes crash in macOS.
-// One solution is to make the global variable a pointer, which causes too many
-// modifications. For now, we just choose the simple way.
-class VConfigManager
+class VConfigManager : public QObject
 {
 public:
-    VConfigManager();
+    explicit VConfigManager(QObject *p_parent = NULL);
 
     void initialize();
 

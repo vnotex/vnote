@@ -5,7 +5,7 @@
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 VOrphanFileInfoDialog::VOrphanFileInfoDialog(const VOrphanFile *p_file, QWidget *p_parent)
     : QDialog(p_parent), m_file(p_file)
@@ -28,7 +28,7 @@ void VOrphanFileInfoDialog::setupUI()
     QLabel *imageFolderLabel = new QLabel(tr("Image folder:"));
     m_imageFolderEdit = new QLineEdit(m_file->getImageFolder());
     m_imageFolderEdit->setPlaceholderText(tr("Use global configuration (%1)")
-                                            .arg(vconfig.getImageFolderExt()));
+                                            .arg(g_config->getImageFolderExt()));
     QString imgFolderTip = tr("Set the path of the image folder to store images "
                               "of this file.\nIf absolute path is used, "
                               "VNote will not manage those images."

@@ -24,7 +24,7 @@
 #include "vfile.h"
 #include "vnote.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 QVector<QPair<QString, QString>> VUtils::s_availableLanguages;
 
@@ -338,7 +338,7 @@ int VUtils::showMessage(QMessageBox::Icon p_icon, const QString &p_title, const 
     if (p_type == MessageBoxType::Danger) {
         QPushButton *okBtn = dynamic_cast<QPushButton *>(msgBox.button(QMessageBox::Ok));
         if (okBtn) {
-            okBtn->setStyleSheet(vconfig.c_dangerBtnStyle);
+            okBtn->setStyleSheet(g_config->c_dangerBtnStyle);
         }
     }
     return msgBox.exec();
@@ -451,7 +451,7 @@ QChar VUtils::keyToChar(int p_key)
 
 QString VUtils::getLocale()
 {
-    QString locale = vconfig.getLanguage();
+    QString locale = g_config->getLanguage();
     if (locale == "System" || !isValidLanguage(locale)) {
         locale = QLocale::system().name();
     }
@@ -473,7 +473,7 @@ void VUtils::sleepWait(int p_milliseconds)
 
 DocType VUtils::docTypeFromName(const QString &p_name)
 {
-    const QHash<int, QList<QString>> &suffixes = vconfig.getDocSuffixes();
+    const QHash<int, QList<QString>> &suffixes = g_config->getDocSuffixes();
 
     QString suf = QFileInfo(p_name).suffix().toLower();
     for (auto it = suffixes.begin(); it != suffixes.end(); ++it) {
@@ -521,19 +521,19 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exp
         Q_ASSERT(false);
     }
 
-    if (vconfig.getEnableMermaid()) {
+    if (g_config->getEnableMermaid()) {
         extraFile += "<link rel=\"stylesheet\" type=\"text/css\" href=\"qrc" + VNote::c_mermaidCssFile + "\"/>\n" +
                      "<script src=\"qrc" + VNote::c_mermaidApiJsFile + "\"></script>\n" +
                      "<script>var VEnableMermaid = true;</script>\n";
     }
 
-    if (vconfig.getEnableFlowchart()) {
+    if (g_config->getEnableFlowchart()) {
         extraFile += "<script src=\"qrc" + VNote::c_raphaelJsFile + "\"></script>\n" +
                      "<script src=\"qrc" + VNote::c_flowchartJsFile + "\"></script>\n" +
                      "<script>var VEnableFlowchart = true;</script>\n";
     }
 
-    if (vconfig.getEnableMathjax()) {
+    if (g_config->getEnableMathjax()) {
         extraFile += "<script type=\"text/x-mathjax-config\">"
                      "MathJax.Hub.Config({\n"
                      "                    tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']]},\n"
@@ -544,7 +544,7 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exp
                      "<script>var VEnableMathjax = true;</script>\n";
     }
 
-    if (vconfig.getEnableImageCaption()) {
+    if (g_config->getEnableImageCaption()) {
         extraFile += "<script>var VEnableImageCaption = true;</script>\n";
     }
 

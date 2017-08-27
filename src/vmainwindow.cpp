@@ -27,7 +27,7 @@
 #include "dialog/vorphanfileinfodialog.h"
 #include "vsingleinstanceguard.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 VNote *g_vnote;
 
@@ -334,7 +334,7 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     newNoteAct = new QAction(QIcon(":/resources/icons/create_note_tb.svg"),
                              tr("New &Note"), this);
     newNoteAct->setStatusTip(tr("Create a note in current folder"));
-    QString keySeq = vconfig.getShortcutKeySequence("NewNote");
+    QString keySeq = g_config->getShortcutKeySequence("NewNote");
     qDebug() << "set NewNote shortcut to" << keySeq;
     newNoteAct->setShortcut(QKeySequence(keySeq));
     connect(newNoteAct, &QAction::triggered,
@@ -355,7 +355,7 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     m_closeNoteAct = new QAction(QIcon(":/resources/icons/close_note_tb.svg"),
                                  tr("&Close Note"), this);
     m_closeNoteAct->setStatusTip(tr("Close current note"));
-    keySeq = vconfig.getShortcutKeySequence("CloseNote");
+    keySeq = g_config->getShortcutKeySequence("CloseNote");
     qDebug() << "set CloseNote shortcut to" << keySeq;
     m_closeNoteAct->setShortcut(QKeySequence(keySeq));
     connect(m_closeNoteAct, &QAction::triggered,
@@ -368,7 +368,7 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     editNoteAct = new QAction(QIcon(":/resources/icons/edit_note.svg"),
                               tr("&Edit"), this);
     editNoteAct->setStatusTip(tr("Edit current note"));
-    keySeq = vconfig.getShortcutKeySequence("EditNote");
+    keySeq = g_config->getShortcutKeySequence("EditNote");
     qDebug() << "set EditNote shortcut to" << keySeq;
     editNoteAct->setShortcut(QKeySequence(keySeq));
     connect(editNoteAct, &QAction::triggered,
@@ -389,7 +389,7 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
                               tr("Save Changes And Read (Ctrl+T)"), this);
     saveExitAct->setStatusTip(tr("Save changes and exit edit mode"));
     saveExitAct->setMenu(exitEditMenu);
-    keySeq = vconfig.getShortcutKeySequence("SaveAndRead");
+    keySeq = g_config->getShortcutKeySequence("SaveAndRead");
     qDebug() << "set SaveAndRead shortcut to" << keySeq;
     saveExitAct->setShortcut(QKeySequence(keySeq));
     connect(saveExitAct, &QAction::triggered,
@@ -398,7 +398,7 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     saveNoteAct = new QAction(QIcon(":/resources/icons/save_note.svg"),
                               tr("Save"), this);
     saveNoteAct->setStatusTip(tr("Save changes to current note"));
-    keySeq = vconfig.getShortcutKeySequence("SaveNote");
+    keySeq = g_config->getShortcutKeySequence("SaveNote");
     qDebug() << "set SaveNote shortcut to" << keySeq;
     saveNoteAct->setShortcut(QKeySequence(keySeq));
     connect(saveNoteAct, &QAction::triggered,
@@ -442,10 +442,10 @@ void VMainWindow::initHelpMenu()
 
 #if defined(QT_NO_DEBUG)
     QAction *logAct = new QAction(tr("View &Log"), this);
-    logAct->setToolTip(tr("View VNote's debug log (%1)").arg(vconfig.getLogFilePath()));
+    logAct->setToolTip(tr("View VNote's debug log (%1)").arg(g_config->getLogFilePath()));
     connect(logAct, &QAction::triggered,
             this, [](){
-                QUrl url = QUrl::fromLocalFile(vconfig.getLogFilePath());
+                QUrl url = QUrl::fromLocalFile(g_config->getLogFilePath());
                 QDesktopServices::openUrl(url);
             });
 #endif
@@ -555,7 +555,7 @@ void VMainWindow::initMarkdownMenu()
     converterMenu->addAction(markdownitAct);
     converterMenu->addAction(showdownAct);
 
-    MarkdownConverterType converterType = vconfig.getMdConverterType();
+    MarkdownConverterType converterType = g_config->getMdConverterType();
     switch (converterType) {
     case MarkdownConverterType::Marked:
         markedAct->setChecked(true);
@@ -587,7 +587,7 @@ void VMainWindow::initMarkdownMenu()
     connect(constrainImageAct, &QAction::triggered,
             this, &VMainWindow::enableImageConstraint);
     markdownMenu->addAction(constrainImageAct);
-    constrainImageAct->setChecked(vconfig.getEnableImageConstraint());
+    constrainImageAct->setChecked(g_config->getEnableImageConstraint());
 
     QAction *imageCaptionAct = new QAction(tr("Enable Image Caption"), this);
     imageCaptionAct->setToolTip(tr("Center the images and display the alt text as caption (re-open current tabs to make it work)"));
@@ -595,7 +595,7 @@ void VMainWindow::initMarkdownMenu()
     connect(imageCaptionAct, &QAction::triggered,
             this, &VMainWindow::enableImageCaption);
     markdownMenu->addAction(imageCaptionAct);
-    imageCaptionAct->setChecked(vconfig.getEnableImageCaption());
+    imageCaptionAct->setChecked(g_config->getEnableImageCaption());
 
     markdownMenu->addSeparator();
 
@@ -606,17 +606,17 @@ void VMainWindow::initMarkdownMenu()
             this, &VMainWindow::enableMermaid);
     markdownMenu->addAction(mermaidAct);
 
-    mermaidAct->setChecked(vconfig.getEnableMermaid());
+    mermaidAct->setChecked(g_config->getEnableMermaid());
 
     QAction *flowchartAct = new QAction(tr("&Flowchart.js"), this);
     flowchartAct->setToolTip(tr("Enable Flowchart.js for flowchart diagram"));
     flowchartAct->setCheckable(true);
     connect(flowchartAct, &QAction::triggered,
             this, [this](bool p_enabled){
-                vconfig.setEnableFlowchart(p_enabled);
+                g_config->setEnableFlowchart(p_enabled);
             });
     markdownMenu->addAction(flowchartAct);
-    flowchartAct->setChecked(vconfig.getEnableFlowchart());
+    flowchartAct->setChecked(g_config->getEnableFlowchart());
 
     QAction *mathjaxAct = new QAction(tr("Math&Jax"), this);
     mathjaxAct->setToolTip(tr("Enable MathJax for math support in Markdown"));
@@ -625,7 +625,7 @@ void VMainWindow::initMarkdownMenu()
             this, &VMainWindow::enableMathjax);
     markdownMenu->addAction(mathjaxAct);
 
-    mathjaxAct->setChecked(vconfig.getEnableMathjax());
+    mathjaxAct->setChecked(g_config->getEnableMathjax());
 
     markdownMenu->addSeparator();
 
@@ -635,7 +635,7 @@ void VMainWindow::initMarkdownMenu()
     connect(codeBlockAct, &QAction::triggered,
             this, &VMainWindow::enableCodeBlockHighlight);
     markdownMenu->addAction(codeBlockAct);
-    codeBlockAct->setChecked(vconfig.getEnableCodeBlockHighlight());
+    codeBlockAct->setChecked(g_config->getEnableCodeBlockHighlight());
 
     QAction *previewImageAct = new QAction(tr("Preview Images In Edit Mode"), this);
     previewImageAct->setToolTip(tr("Enable image preview in edit mode"));
@@ -644,7 +644,7 @@ void VMainWindow::initMarkdownMenu()
             this, &VMainWindow::enableImagePreview);
     // TODO: add the action to the menu after handling the UNDO history well.
     // markdownMenu->addAction(previewImageAct);
-    previewImageAct->setChecked(vconfig.getEnablePreviewImages());
+    previewImageAct->setChecked(g_config->getEnablePreviewImages());
 
     QAction *previewWidthAct = new QAction(tr("Constrain The Width Of Previewed Images"), this);
     previewWidthAct->setToolTip(tr("Constrain the width of previewed images to the edit window in edit mode"));
@@ -652,7 +652,7 @@ void VMainWindow::initMarkdownMenu()
     connect(previewWidthAct, &QAction::triggered,
             this, &VMainWindow::enableImagePreviewConstraint);
     markdownMenu->addAction(previewWidthAct);
-    previewWidthAct->setChecked(vconfig.getEnablePreviewImageConstraint());
+    previewWidthAct->setChecked(g_config->getEnablePreviewImageConstraint());
 }
 
 void VMainWindow::initViewMenu()
@@ -747,9 +747,9 @@ void VMainWindow::initFileMenu()
                 if (ret == QMessageBox::Ok) {
 #if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
                     // On macOS, it seems that we could not open that ini file directly.
-                    QUrl url = QUrl::fromLocalFile(vconfig.getConfigFolder());
+                    QUrl url = QUrl::fromLocalFile(g_config->getConfigFolder());
 #else
-                    QUrl url = QUrl::fromLocalFile(vconfig.getConfigFilePath());
+                    QUrl url = QUrl::fromLocalFile(g_config->getConfigFilePath());
 #endif
                     QDesktopServices::openUrl(url);
                 }
@@ -792,7 +792,7 @@ void VMainWindow::initEditMenu()
     m_findReplaceAct = newAction(QIcon(":/resources/icons/find_replace.svg"),
                                  tr("Find/Replace"), this);
     m_findReplaceAct->setToolTip(tr("Open Find/Replace dialog to search in current note"));
-    QString keySeq = vconfig.getShortcutKeySequence("Find");
+    QString keySeq = g_config->getShortcutKeySequence("Find");
     qDebug() << "set Find shortcut to" << keySeq;
     m_findReplaceAct->setShortcut(QKeySequence(keySeq));
     connect(m_findReplaceAct, &QAction::triggered,
@@ -800,7 +800,7 @@ void VMainWindow::initEditMenu()
 
     m_findNextAct = new QAction(tr("Find Next"), this);
     m_findNextAct->setToolTip(tr("Find next occurence"));
-    keySeq = vconfig.getShortcutKeySequence("FindNext");
+    keySeq = g_config->getShortcutKeySequence("FindNext");
     qDebug() << "set FindNext shortcut to" << keySeq;
     m_findNextAct->setShortcut(QKeySequence(keySeq));
     connect(m_findNextAct, SIGNAL(triggered(bool)),
@@ -808,7 +808,7 @@ void VMainWindow::initEditMenu()
 
     m_findPreviousAct = new QAction(tr("Find Previous"), this);
     m_findPreviousAct->setToolTip(tr("Find previous occurence"));
-    keySeq = vconfig.getShortcutKeySequence("FindPrevious");
+    keySeq = g_config->getShortcutKeySequence("FindPrevious");
     qDebug() << "set FindPrevious shortcut to" << keySeq;
     m_findPreviousAct->setShortcut(QKeySequence(keySeq));
     connect(m_findPreviousAct, SIGNAL(triggered(bool)),
@@ -886,7 +886,7 @@ void VMainWindow::initEditMenu()
     smartImAct->setCheckable(true);
     connect(smartImAct, &QAction::triggered,
             this, [this](bool p_checked){
-                vconfig.setEnableSmartImInVimMode(p_checked);
+                g_config->setEnableSmartImInVimMode(p_checked);
             });
 
     // Highlight current cursor line.
@@ -924,7 +924,7 @@ void VMainWindow::initEditMenu()
     findReplaceMenu->addAction(m_replaceAllAct);
     findReplaceMenu->addSeparator();
     findReplaceMenu->addAction(searchedWordAct);
-    searchedWordAct->setChecked(vconfig.getHighlightSearchedWord());
+    searchedWordAct->setChecked(g_config->getHighlightSearchedWord());
 
     m_findReplaceAct->setEnabled(false);
     m_findNextAct->setEnabled(false);
@@ -935,7 +935,7 @@ void VMainWindow::initEditMenu()
 
     editMenu->addSeparator();
     editMenu->addAction(expandTabAct);
-    if (vconfig.getIsExpandTab()) {
+    if (g_config->getIsExpandTab()) {
         expandTabAct->setChecked(true);
     } else {
         expandTabAct->setChecked(false);
@@ -946,7 +946,7 @@ void VMainWindow::initEditMenu()
     tabStopWidthMenu->addAction(twoSpaceTabAct);
     tabStopWidthMenu->addAction(fourSpaceTabAct);
     tabStopWidthMenu->addAction(eightSpaceTabAct);
-    int tabStopWidth = vconfig.getTabStopWidth();
+    int tabStopWidth = g_config->getTabStopWidth();
     switch (tabStopWidth) {
     case 2:
         twoSpaceTabAct->setChecked(true);
@@ -962,20 +962,20 @@ void VMainWindow::initEditMenu()
     }
 
     editMenu->addAction(m_autoIndentAct);
-    m_autoIndentAct->setChecked(vconfig.getAutoIndent());
+    m_autoIndentAct->setChecked(g_config->getAutoIndent());
 
     editMenu->addAction(autoListAct);
-    if (vconfig.getAutoList()) {
+    if (g_config->getAutoList()) {
         // Let the trigger handler to trigger m_autoIndentAct, too.
         autoListAct->trigger();
     }
     Q_ASSERT(!(autoListAct->isChecked() && !m_autoIndentAct->isChecked()));
 
     editMenu->addAction(vimAct);
-    vimAct->setChecked(vconfig.getEnableVimMode());
+    vimAct->setChecked(g_config->getEnableVimMode());
 
     editMenu->addAction(smartImAct);
-    smartImAct->setChecked(vconfig.getEnableSmartImInVimMode());
+    smartImAct->setChecked(g_config->getEnableSmartImInVimMode());
 
     editMenu->addSeparator();
 
@@ -986,13 +986,13 @@ void VMainWindow::initEditMenu()
     initEditorLineNumberMenu(editMenu);
 
     editMenu->addAction(cursorLineAct);
-    cursorLineAct->setChecked(vconfig.getHighlightCursorLine());
+    cursorLineAct->setChecked(g_config->getHighlightCursorLine());
 
     editMenu->addAction(selectedWordAct);
-    selectedWordAct->setChecked(vconfig.getHighlightSelectedWord());
+    selectedWordAct->setChecked(g_config->getHighlightSelectedWord());
 
     editMenu->addAction(trailingSapceAct);
-    trailingSapceAct->setChecked(vconfig.getEnableTrailingSpaceHighlight());
+    trailingSapceAct->setChecked(g_config->getEnableTrailingSpaceHighlight());
 }
 
 void VMainWindow::initDockWindows()
@@ -1068,7 +1068,7 @@ void VMainWindow::changeMarkdownConverter(QAction *action)
 
     qDebug() << "switch to converter" << type;
 
-    vconfig.setMarkdownConverterType(type);
+    g_config->setMarkdownConverterType(type);
 }
 
 void VMainWindow::aboutMessage()
@@ -1083,37 +1083,37 @@ void VMainWindow::aboutMessage()
 
 void VMainWindow::changeExpandTab(bool checked)
 {
-    vconfig.setIsExpandTab(checked);
+    g_config->setIsExpandTab(checked);
 }
 
 void VMainWindow::enableMermaid(bool p_checked)
 {
-    vconfig.setEnableMermaid(p_checked);
+    g_config->setEnableMermaid(p_checked);
 }
 
 void VMainWindow::enableMathjax(bool p_checked)
 {
-    vconfig.setEnableMathjax(p_checked);
+    g_config->setEnableMathjax(p_checked);
 }
 
 void VMainWindow::changeHighlightCursorLine(bool p_checked)
 {
-    vconfig.setHighlightCursorLine(p_checked);
+    g_config->setHighlightCursorLine(p_checked);
 }
 
 void VMainWindow::changeHighlightSelectedWord(bool p_checked)
 {
-    vconfig.setHighlightSelectedWord(p_checked);
+    g_config->setHighlightSelectedWord(p_checked);
 }
 
 void VMainWindow::changeHighlightSearchedWord(bool p_checked)
 {
-    vconfig.setHighlightSearchedWord(p_checked);
+    g_config->setHighlightSearchedWord(p_checked);
 }
 
 void VMainWindow::changeHighlightTrailingSapce(bool p_checked)
 {
-    vconfig.setEnableTrailingSapceHighlight(p_checked);
+    g_config->setEnableTrailingSapceHighlight(p_checked);
 }
 
 void VMainWindow::setTabStopWidth(QAction *action)
@@ -1121,7 +1121,7 @@ void VMainWindow::setTabStopWidth(QAction *action)
     if (!action) {
         return;
     }
-    vconfig.setTabStopWidth(action->data().toInt());
+    g_config->setTabStopWidth(action->data().toInt());
 }
 
 void VMainWindow::setEditorBackgroundColor(QAction *action)
@@ -1130,12 +1130,12 @@ void VMainWindow::setEditorBackgroundColor(QAction *action)
         return;
     }
 
-    vconfig.setCurBackgroundColor(action->data().toString());
+    g_config->setCurBackgroundColor(action->data().toString());
 }
 
 void VMainWindow::initPredefinedColorPixmaps()
 {
-    const QVector<VColor> &bgColors = vconfig.getPredefinedColors();
+    const QVector<VColor> &bgColors = g_config->getPredefinedColors();
     predefinedColorPixmaps.clear();
     int size = 256;
     for (int i = 0; i < bgColors.size(); ++i) {
@@ -1155,7 +1155,7 @@ void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
 
     QMenu *renderBgMenu = menu->addMenu(tr("&Rendering Background"));
     renderBgMenu->setToolTipsVisible(true);
-    const QString &curBgColor = vconfig.getCurRenderBackgroundColor();
+    const QString &curBgColor = g_config->getCurRenderBackgroundColor();
     QAction *tmpAct = new QAction(tr("System"), renderBackgroundAct);
     tmpAct->setToolTip(tr("Use system's background color configuration for Markdown rendering"));
     tmpAct->setCheckable(true);
@@ -1165,7 +1165,7 @@ void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
     }
     renderBgMenu->addAction(tmpAct);
 
-    const QVector<VColor> &bgColors = vconfig.getPredefinedColors();
+    const QVector<VColor> &bgColors = g_config->getPredefinedColors();
     for (int i = 0; i < bgColors.size(); ++i) {
         tmpAct = new QAction(bgColors[i].name, renderBackgroundAct);
         tmpAct->setToolTip(tr("Set as the background color for Markdown rendering"));
@@ -1198,7 +1198,7 @@ void VMainWindow::updateRenderStyleMenu()
     }
 
     // Update the menu actions with styles.
-    QVector<QString> styles = vconfig.getCssStyles();
+    QVector<QString> styles = g_config->getCssStyles();
     for (auto const &style : styles) {
         QAction *act = new QAction(style, m_renderStyleActs);
         act->setToolTip(tr("Set as the CSS style for Markdown rendering"));
@@ -1208,7 +1208,7 @@ void VMainWindow::updateRenderStyleMenu()
         // Add it to the menu.
         menu->addAction(act);
 
-        if (vconfig.getTemplateCss() == style) {
+        if (g_config->getTemplateCss() == style) {
             act->setChecked(true);
         }
     }
@@ -1244,7 +1244,7 @@ void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
             this, &VMainWindow::setEditorBackgroundColor);
 
     // System background color
-    const QString &curBgColor = vconfig.getCurBackgroundColor();
+    const QString &curBgColor = g_config->getCurBackgroundColor();
     QAction *tmpAct = new QAction(tr("System"), backgroundColorAct);
     tmpAct->setToolTip(tr("Use system's background color configuration for editor"));
     tmpAct->setCheckable(true);
@@ -1253,7 +1253,7 @@ void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
         tmpAct->setChecked(true);
     }
     backgroundColorMenu->addAction(tmpAct);
-    const QVector<VColor> &bgColors = vconfig.getPredefinedColors();
+    const QVector<VColor> &bgColors = g_config->getPredefinedColors();
     for (int i = 0; i < bgColors.size(); ++i) {
         tmpAct = new QAction(bgColors[i].name, backgroundColorAct);
         tmpAct->setToolTip(tr("Set as the background color for editor"));
@@ -1282,10 +1282,10 @@ void VMainWindow::initEditorLineNumberMenu(QMenu *p_menu)
                     return;
                 }
 
-                vconfig.setEditorLineNumber(p_action->data().toInt());
+                g_config->setEditorLineNumber(p_action->data().toInt());
             });
 
-    int lineNumberMode = vconfig.getEditorLineNumber();
+    int lineNumberMode = g_config->getEditorLineNumber();
 
     QAction *act = lineNumAct->addAction(tr("None"));
     act->setToolTip(tr("Do not display line number in edit mode"));
@@ -1329,7 +1329,7 @@ void VMainWindow::updateEditorStyleMenu()
     }
 
     // Update the menu actions with styles.
-    QVector<QString> styles = vconfig.getEditorStyles();
+    QVector<QString> styles = g_config->getEditorStyles();
     for (auto const &style : styles) {
         QAction *act = new QAction(style, m_editorStyleActs);
         act->setToolTip(tr("Set as the editor style"));
@@ -1339,7 +1339,7 @@ void VMainWindow::updateEditorStyleMenu()
         // Add it to the menu.
         menu->addAction(act);
 
-        if (vconfig.getEditorStyle() == style) {
+        if (g_config->getEditorStyle() == style) {
             act->setChecked(true);
         }
     }
@@ -1370,7 +1370,7 @@ void VMainWindow::setRenderBackgroundColor(QAction *action)
     if (!action) {
         return;
     }
-    vconfig.setCurRenderBackgroundColor(action->data().toString());
+    g_config->setCurRenderBackgroundColor(action->data().toString());
     vnote->updateTemplate();
 }
 
@@ -1383,10 +1383,10 @@ void VMainWindow::setRenderStyle(QAction *p_action)
     QString data = p_action->data().toString();
     if (data == "AddStyle") {
         // Add custom style.
-        QUrl url = QUrl::fromLocalFile(vconfig.getStyleConfigFolder());
+        QUrl url = QUrl::fromLocalFile(g_config->getStyleConfigFolder());
         QDesktopServices::openUrl(url);
     } else {
-        vconfig.setTemplateCss(data);
+        g_config->setTemplateCss(data);
         vnote->updateTemplate();
     }
 }
@@ -1400,10 +1400,10 @@ void VMainWindow::setEditorStyle(QAction *p_action)
     QString data = p_action->data().toString();
     if (data == "AddStyle") {
         // Add custom style.
-        QUrl url = QUrl::fromLocalFile(vconfig.getStyleConfigFolder());
+        QUrl url = QUrl::fromLocalFile(g_config->getStyleConfigFolder());
         QDesktopServices::openUrl(url);
     } else {
-        vconfig.setEditorStyle(data);
+        g_config->setEditorStyle(data);
     }
 }
 
@@ -1573,7 +1573,7 @@ void VMainWindow::deleteCurNote()
 
 void VMainWindow::closeEvent(QCloseEvent *event)
 {
-    bool isExit = m_requestQuit || !vconfig.getMinimizeToStystemTray();
+    bool isExit = m_requestQuit || !g_config->getMinimizeToStystemTray();
     m_requestQuit = false;
 
 #if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
@@ -1581,7 +1581,7 @@ void VMainWindow::closeEvent(QCloseEvent *event)
     isExit = true;
 #endif
 
-    if (!isExit && vconfig.getMinimizeToStystemTray() == -1) {
+    if (!isExit && g_config->getMinimizeToStystemTray() == -1) {
         // Not initialized yet. Prompt for user.
         int ret = VUtils::showMessage(QMessageBox::Information,
                                       tr("Close VNote"),
@@ -1592,9 +1592,9 @@ void VMainWindow::closeEvent(QCloseEvent *event)
                                       QMessageBox::Ok,
                                       this);
         if (ret == QMessageBox::Ok) {
-            vconfig.setMinimizeToSystemTray(1);
+            g_config->setMinimizeToSystemTray(1);
         } else if (ret == QMessageBox::No) {
-            vconfig.setMinimizeToSystemTray(0);
+            g_config->setMinimizeToSystemTray(0);
             isExit = true;
         } else {
             event->ignore();
@@ -1626,24 +1626,24 @@ void VMainWindow::saveStateAndGeometry()
     // panel has a width of zero.
     twoPanelView();
 
-    vconfig.setMainWindowGeometry(saveGeometry());
-    vconfig.setMainWindowState(saveState());
-    vconfig.setToolsDockChecked(toolDock->isVisible());
-    vconfig.setMainSplitterState(mainSplitter->saveState());
+    g_config->setMainWindowGeometry(saveGeometry());
+    g_config->setMainWindowState(saveState());
+    g_config->setToolsDockChecked(toolDock->isVisible());
+    g_config->setMainSplitterState(mainSplitter->saveState());
 }
 
 void VMainWindow::restoreStateAndGeometry()
 {
-    const QByteArray &geometry = vconfig.getMainWindowGeometry();
+    const QByteArray &geometry = g_config->getMainWindowGeometry();
     if (!geometry.isEmpty()) {
         restoreGeometry(geometry);
     }
-    const QByteArray &state = vconfig.getMainWindowState();
+    const QByteArray &state = g_config->getMainWindowState();
     if (!state.isEmpty()) {
         restoreState(state);
     }
-    toolDock->setVisible(vconfig.getToolsDockChecked());
-    const QByteArray &splitterState = vconfig.getMainSplitterState();
+    toolDock->setVisible(g_config->getToolsDockChecked());
+    const QByteArray &splitterState = g_config->getMainSplitterState();
     if (!splitterState.isEmpty()) {
         mainSplitter->restoreState(splitterState);
     }
@@ -1781,12 +1781,12 @@ void VMainWindow::closeCurrentFile()
 
 void VMainWindow::changeAutoIndent(bool p_checked)
 {
-    vconfig.setAutoIndent(p_checked);
+    g_config->setAutoIndent(p_checked);
 }
 
 void VMainWindow::changeAutoList(bool p_checked)
 {
-    vconfig.setAutoList(p_checked);
+    g_config->setAutoList(p_checked);
     if (p_checked) {
         if (!m_autoIndentAct->isChecked()) {
             m_autoIndentAct->trigger();
@@ -1799,34 +1799,34 @@ void VMainWindow::changeAutoList(bool p_checked)
 
 void VMainWindow::changeVimMode(bool p_checked)
 {
-    vconfig.setEnableVimMode(p_checked);
+    g_config->setEnableVimMode(p_checked);
 }
 
 void VMainWindow::enableCodeBlockHighlight(bool p_checked)
 {
-    vconfig.setEnableCodeBlockHighlight(p_checked);
+    g_config->setEnableCodeBlockHighlight(p_checked);
 }
 
 void VMainWindow::enableImagePreview(bool p_checked)
 {
-    vconfig.setEnablePreviewImages(p_checked);
+    g_config->setEnablePreviewImages(p_checked);
 }
 
 void VMainWindow::enableImagePreviewConstraint(bool p_checked)
 {
-    vconfig.setEnablePreviewImageConstraint(p_checked);
+    g_config->setEnablePreviewImageConstraint(p_checked);
 }
 
 void VMainWindow::enableImageConstraint(bool p_checked)
 {
-    vconfig.setEnableImageConstraint(p_checked);
+    g_config->setEnableImageConstraint(p_checked);
 
     vnote->updateTemplate();
 }
 
 void VMainWindow::enableImageCaption(bool p_checked)
 {
-    vconfig.setEnableImageCaption(p_checked);
+    g_config->setEnableImageCaption(p_checked);
 }
 
 void VMainWindow::shortcutHelp()

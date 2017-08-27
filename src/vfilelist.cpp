@@ -11,7 +11,7 @@
 #include "vfile.h"
 #include "vconfigmanager.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 extern VNote *g_vnote;
 
 VFileList::VFileList(QWidget *parent)
@@ -161,7 +161,7 @@ void VFileList::fileInfo(VFile *p_file)
             if (!p_file->rename(name)) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                     tr("Fail to rename note <span style=\"%1\">%2</span>.")
-                                      .arg(vconfig.c_dataTextStyle).arg(curName), "",
+                                      .arg(g_config->c_dataTextStyle).arg(curName), "",
                                     QMessageBox::Ok, QMessageBox::Ok, this);
                 return;
             }
@@ -220,7 +220,7 @@ void VFileList::newFile()
         return;
     }
 
-    QList<QString> suffixes = vconfig.getDocSuffixes()[(int)DocType::Markdown];
+    QList<QString> suffixes = g_config->getDocSuffixes()[(int)DocType::Markdown];
     QString defaultSuf;
     QString suffixStr;
     for (auto const & suf : suffixes) {
@@ -231,7 +231,7 @@ void VFileList::newFile()
     }
 
     QString info = tr("Create a note in <span style=\"%1\">%2</span>.")
-                     .arg(vconfig.c_dataTextStyle).arg(m_directory->getName());
+                     .arg(g_config->c_dataTextStyle).arg(m_directory->getName());
     info = info + "<br>" + tr("Note with name ending with \"%1\" will be treated as Markdown type.")
                              .arg(suffixStr);
     QString text(tr("Note &name:"));
@@ -251,7 +251,7 @@ void VFileList::newFile()
             if (!file) {
                 VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                     tr("Fail to create note <span style=\"%1\">%2</span>.")
-                                      .arg(vconfig.c_dataTextStyle).arg(name), "",
+                                      .arg(g_config->c_dataTextStyle).arg(name), "",
                                     QMessageBox::Ok, QMessageBox::Ok, this);
                 return;
             }
@@ -309,10 +309,10 @@ void VFileList::deleteFile(VFile *p_file)
     QString fileName = p_file->getName();
     int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                   tr("Are you sure to delete note <span style=\"%1\">%2</span>?")
-                                    .arg(vconfig.c_dataTextStyle).arg(fileName),
+                                    .arg(g_config->c_dataTextStyle).arg(fileName),
                                   tr("<span style=\"%1\">WARNING</span>: The files (including images) "
                                      "deleted may be UNRECOVERABLE!")
-                                    .arg(vconfig.c_warningTextStyle),
+                                    .arg(g_config->c_warningTextStyle),
                                   QMessageBox::Ok | QMessageBox::Cancel,
                                   QMessageBox::Ok, this, MessageBoxType::Danger);
     if (ret == QMessageBox::Ok) {
@@ -486,7 +486,7 @@ void VFileList::pasteFiles(VDirectory *p_destDir)
         } else {
             VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                 tr("Fail to copy note <span style=\"%1\">%2</span>.")
-                                  .arg(vconfig.c_dataTextStyle).arg(srcFile->getName()),
+                                  .arg(g_config->c_dataTextStyle).arg(srcFile->getName()),
                                 tr("Please check if there already exists a file with the same name in the target folder."),
                                 QMessageBox::Ok, QMessageBox::Ok, this);
         }
@@ -528,7 +528,7 @@ bool VFileList::promptForDocTypeChange(const VFile *p_file, const QString &p_new
             int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                           tr("The renaming will change the note type."),
                                           tr("You should close the note <span style=\"%1\">%2</span> before continue.")
-                                            .arg(vconfig.c_dataTextStyle).arg(p_file->getName()),
+                                            .arg(g_config->c_dataTextStyle).arg(p_file->getName()),
                                           QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Ok, this);
             if (QMessageBox::Ok == ret) {
                 if (!editArea->closeFile(p_file, false)) {

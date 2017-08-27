@@ -6,7 +6,7 @@
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
 
-extern VConfigManager vconfig;
+extern VConfigManager *g_config;
 
 const int HGMarkdownHighlighter::initCapacity = 1024;
 
@@ -371,7 +371,7 @@ void HGMarkdownHighlighter::updateHighlight()
 
 bool HGMarkdownHighlighter::updateCodeBlocks()
 {
-    if (!vconfig.getEnableCodeBlockHighlight()) {
+    if (!g_config->getEnableCodeBlockHighlight()) {
         m_codeBlockHighlights.clear();
         return false;
     }
