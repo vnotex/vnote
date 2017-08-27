@@ -386,6 +386,8 @@ private:
         Down,
         VisualUp,
         VisualDown,
+        ParagraphUp,
+        ParagraphDown,
         PageUp,
         PageDown,
         HalfPageUp,

@@ -226,6 +226,78 @@ static void findCurrentWORD(const QTextCursor &p_cursor, int &p_start, int &p_en
     p_end += block.position();
 }
 
+// Find the start of the paragraph @p_cursor locates in.
+// @p_wrapIt true means wrap paragraph with one blank line if it has,
+//           false will return exactly first pos of the paragraph
+// @return the global start position of paragraph.
+static int findCurrentParagraphStart(QTextCursor p_cursor, bool p_wrapIt)
+{
+    bool success = false;
+    while (!p_cursor.block().text().isEmpty()) {
+        success = p_cursor.movePosition(QTextCursor::Up);
+        if (!success) {
+            p_cursor.movePosition(QTextCursor::StartOfLine);
+            break;
+        }
+    }
+    if (!p_wrapIt && success) {
+        p_cursor.setPosition(p_cursor.position() + 1);
+    }
+
+    return p_cursor.position();
+}
+
+
+// Find the start of the paragraph @p_cursor locates in.
+// @p_wrapIt true means wrap paragraph with one blank line if it has,
+//           false will return exactly last pos of the paragraph
+// @return the global end position of paragraph.
+static int findCurrentParagraphEnd(QTextCursor p_cursor, bool p_wrapIt)
+{
+    bool success = false;
+    while (!p_cursor.block().text().isEmpty()) {
+        success = p_cursor.movePosition(QTextCursor::Down);
+        if (!success) {
+            p_cursor.movePosition(QTextCursor::EndOfLine);
+            break;
+        }
+    }
+    if (!p_wrapIt && success) {
+        p_cursor.setPosition(p_cursor.position() - 1);
+    }
+    return p_cursor.position();
+}
+
+// Move @p_cursor to skip empty lines if current cursor is placed at an empty line
+// It will stop by the non-empty block on the way. It will keep position if it's not in
+// empty line.
+// @p_wrapIt true means to wrap the paragraph with one non-blank line and keep pos in the
+// begining, false means to move exactly to the first/last empty line.
+static void moveCursorAcrossEmptyLine(QTextCursor &p_cursor,
+                                   QTextCursor::MoveMode p_mode,
+                                   bool p_forward,
+                                   bool p_wrapIt)
+{
+    if(!p_cursor.block().text().isEmpty()) { // current line is non-empty
+        return;
+    }
+
+    QTextCursor::MoveOperation op = p_forward ? QTextCursor::Down : QTextCursor::Up;
+    while (p_cursor.block().text().isEmpty()) {
+        // move towards non-empty line until non-empty line, EOF, BOF
+        bool success = p_cursor.movePosition(op, p_mode);
+        if (!success) {
+            p_cursor.movePosition(QTextCursor::StartOfLine, p_mode);
+            break;
+        }
+    }
+    if (!p_wrapIt && !p_cursor.block().text().isEmpty()) {
+        // remove the non-empty line wrapper
+        op = p_forward ? QTextCursor::Up : QTextCursor::Down;
+        p_cursor.movePosition(op, p_mode);
+    }
+}
+
 // Move @p_cursor to skip spaces if current cursor is placed at a space
 // (may move across blocks). It will stop by the empty block on the way.
 // Forward: wwwwsssss|wwww
@@ -1030,14 +1102,11 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 
             setMode(VimMode::Insert);
         } else if (modifiers == Qt::ShiftModifier) {
-            // 1. Delete the current line if it is not empty
-            // 2. Enter Insert mode
-            QTextCursor cursor = m_editor->textCursor();
-            cursor.select(QTextCursor::LineUnderCursor);
-            cursor.removeSelectedText();
-            m_editor->setTextCursor(cursor);
-
-            setMode(VimMode::Insert);
+            // S, delete line and go to insert mode
+            tryGetRepeatToken(m_keys, m_tokens);
+            addActionToken(Action::Change);
+            addRangeToken(Range::Line);
+            processCommand(m_tokens);
         }
 
         break;
@@ -2060,22 +2129,10 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 // [{, goto previous title at one higher level.
                 processTitleJump(m_tokens, false, -1);
             } else if (checkMode(VimMode::Normal) || checkMode(VimMode::Visual) || checkMode(VimMode::VisualLine)) {
-                // {, move or select to previous paragraph
-                QTextCursor::MoveMode moveMode = checkMode(VimMode::Normal) ? QTextCursor::MoveAnchor : QTextCursor::KeepAnchor;
-
-                QTextCursor cursor = m_editor->textCursor();
-                while (cursor.block().text().isEmpty()) { // ignore blank lines under cursor
-                    bool success = cursor.movePosition(QTextCursor::Up, moveMode);
-                    if (!success) break;
-                }
-                while (!cursor.block().text().isEmpty()) { // find first blank line in above area
-                    bool success = cursor.movePosition(QTextCursor::Up, moveMode);
-                    if (!success) {
-                        cursor.movePosition(QTextCursor::StartOfLine, moveMode);
-                        break;
-                    }
-                }
-                m_editor->setTextCursor(cursor);
+                // {, paragraph movement up
+                tryAddMoveAction();
+                addMovementToken(Movement::ParagraphUp);
+                processCommand(m_tokens);
             }
 
             break;
@@ -2103,22 +2160,10 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 // ]}, goto next title at one higher level.
                 processTitleJump(m_tokens, true, -1);
             } else if (checkMode(VimMode::Normal) || checkMode(VimMode::Visual) || checkMode(VimMode::VisualLine)) {
-                // }, move or select to next paragraph
-                QTextCursor::MoveMode moveMode = checkMode(VimMode::Normal) ? QTextCursor::MoveAnchor : QTextCursor::KeepAnchor;
-
-                QTextCursor cursor = m_editor->textCursor();
-                while (cursor.block().text().isEmpty()) { // ignore blank lines under cursor
-                    bool success = cursor.movePosition(QTextCursor::Down, moveMode);
-                    if (!success) break;
-                }
-                while (!cursor.block().text().isEmpty()) { // find first blank line in below area
-                    bool success = cursor.movePosition(QTextCursor::Down, moveMode);
-                    if (!success) {
-                        cursor.movePosition(QTextCursor::EndOfLine, moveMode);
-                        break;
-                    }
-                }
-                m_editor->setTextCursor(cursor);
+                // }, paragraph movement down
+                tryAddMoveAction();
+                addMovementToken(Movement::ParagraphDown);
+                processCommand(m_tokens);
             }
 
             break;
@@ -2583,6 +2628,60 @@ bool VVim::processMovement(QTextCursor &p_cursor,
 
         p_cursor.movePosition(QTextCursor::Down, p_moveMode, p_repeat);
         hasMoved = true;
+        break;
+    }
+
+    case Movement::ParagraphUp:
+    {
+        if (p_repeat == -1) {
+            p_repeat = 1;
+        }
+
+        QTextCursor cursor = p_cursor;
+        int i = 0, start;
+        while (i < p_repeat) {
+            i++;
+            moveCursorAcrossEmptyLine(cursor, p_moveMode, false, true);
+            start = findCurrentParagraphStart(cursor, true);
+            cursor.setPosition(start);
+            if (cursor.atStart()) {
+                break;
+            }
+        }
+        if (i < p_repeat) {
+            hasMoved = false;
+        } else {
+            p_cursor.setPosition(start, p_moveMode);
+            hasMoved = true;
+        }
+
+        break;
+    }
+
+    case Movement::ParagraphDown:
+    {
+        if (p_repeat == -1) {
+            p_repeat = 1;
+        }
+
+        QTextCursor cursor = p_cursor;
+        int i = 0, end;
+        while (i < p_repeat) {
+            i++;
+            moveCursorAcrossEmptyLine(cursor, p_moveMode, true, true);
+            end = findCurrentParagraphEnd(cursor, true);
+            cursor.setPosition(end);
+            if (cursor.atEnd()) {
+                break;
+            }
+        }
+        if (i < p_repeat) {
+            hasMoved = false;
+        } else {
+            p_cursor.setPosition(end, p_moveMode);
+            hasMoved = true;
+        }
+
         break;
     }
 
