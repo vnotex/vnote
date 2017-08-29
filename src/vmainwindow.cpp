@@ -638,12 +638,11 @@ void VMainWindow::initMarkdownMenu()
     codeBlockAct->setChecked(g_config->getEnableCodeBlockHighlight());
 
     QAction *previewImageAct = new QAction(tr("Preview Images In Edit Mode"), this);
-    previewImageAct->setToolTip(tr("Enable image preview in edit mode"));
+    previewImageAct->setToolTip(tr("Enable image preview in edit mode (re-open current tabs to make it work)"));
     previewImageAct->setCheckable(true);
     connect(previewImageAct, &QAction::triggered,
             this, &VMainWindow::enableImagePreview);
-    // TODO: add the action to the menu after handling the UNDO history well.
-    // markdownMenu->addAction(previewImageAct);
+    markdownMenu->addAction(previewImageAct);
     previewImageAct->setChecked(g_config->getEnablePreviewImages());
 
     QAction *previewWidthAct = new QAction(tr("Constrain The Width Of Previewed Images"), this);

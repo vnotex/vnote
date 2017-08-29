@@ -71,7 +71,9 @@ SOURCES += main.cpp\
     vbuttonwithwidget.cpp \
     vtabindicator.cpp \
     dialog/vupdater.cpp \
-    dialog/vorphanfileinfodialog.cpp
+    dialog/vorphanfileinfodialog.cpp \
+    vtextblockdata.cpp \
+    utils/vpreviewutils.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -130,7 +132,9 @@ HEADERS  += vmainwindow.h \
     vedittabinfo.h \
     vtabindicator.h \
     dialog/vupdater.h \
-    dialog/vorphanfileinfodialog.h
+    dialog/vorphanfileinfodialog.h \
+    vtextblockdata.h \
+    utils/vpreviewutils.h
 
 RESOURCES += \
     vnote.qrc \

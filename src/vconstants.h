@@ -50,4 +50,15 @@ enum FindOption
     IncrementalSearch = 0x8U
 };
 
+enum class ImageProperty {/* ID of the image preview (long long). Unique for each source. */
+                          ImageID = 1,
+                          /* Source type of the preview, such as image, codeblock. */
+                          ImageSource,
+                          /* Type of the preview, block or inline. */
+                          ImageType };
+
+enum class PreviewImageType { Block, Inline, Invalid };
+
+enum class PreviewImageSource { Image, CodeBlock, Invalid };
+
 #endif

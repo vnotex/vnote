@@ -34,8 +34,8 @@ public:
 
     void scrollToHeader(const VAnchor &p_anchor);
 
-    // Like toPlainText(), but remove special blocks containing images.
-    QString toPlainTextWithoutImg() const;
+    // Like toPlainText(), but remove image preview characters.
+    QString toPlainTextWithoutImg();
 
     const QVector<VHeader> &getHeaders() const;
 
@@ -58,7 +58,6 @@ private slots:
     // When there is no header in current cursor, will signal an invalid header.
     void updateCurHeader();
 
-    void handleSelectionChanged();
     void handleClipboardChanged(QClipboard::Mode p_mode);
 
 protected:
@@ -69,19 +68,37 @@ protected:
     void resizeEvent(QResizeEvent *p_event) Q_DECL_OVERRIDE;
 
 private:
+    struct Region
+    {
+        Region() : m_startPos(-1), m_endPos(-1)
+        {
+        }
+
+        Region(int p_start, int p_end)
+            : m_startPos(p_start), m_endPos(p_end)
+        {
+        }
+
+        int m_startPos;
+        int m_endPos;
+    };
+
     void initInitImages();
     void clearUnusedImages();
 
-    // p_text[p_index] is QChar::ObjectReplacementCharacter. Remove the line containing it.
-    // Returns the index of previous line's '\n'.
-    int removeObjectReplacementLine(QString &p_text, int p_index) const;
-
-    // There is a QChar::ObjectReplacementCharacter in the selection.
-    // Get the QImage.
-    QImage selectedImage();
+    // There is a QChar::ObjectReplacementCharacter (and maybe some spaces)
+    // in the selection. Get the QImage.
+    QImage tryGetSelectedImage();
 
     // Return the header index in m_headers where current cursor locates.
     int currentCursorHeader() const;
+
+    QString getPlainTextWithoutPreviewImage() const;
+
+    // Try to get all the regions of preview image within @p_block.
+    // Returns false if preview image is not ready yet.
+    bool getPreviewImageRegionOfBlock(const QTextBlock &p_block,
+                                      QVector<Region> &p_regions) const;
 
     HGMarkdownHighlighter *m_mdHighlighter;
     VCodeBlockHighlightHelper *m_cbHighlighter;

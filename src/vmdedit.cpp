@@ -7,8 +7,11 @@
 #include "vconfigmanager.h"
 #include "vtoc.h"
 #include "utils/vutils.h"
+#include "utils/veditutils.h"
+#include "utils/vpreviewutils.h"
 #include "dialog/vselectdialog.h"
 #include "vimagepreviewer.h"
+#include "vtextblockdata.h"
 
 extern VConfigManager *g_config;
 extern VNote *g_vnote;
@@ -36,7 +39,11 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
     m_cbHighlighter = new VCodeBlockHighlightHelper(m_mdHighlighter, p_vdoc,
                                                     p_type);
 
-    m_imagePreviewer = new VImagePreviewer(this, 500);
+    m_imagePreviewer = new VImagePreviewer(this);
+    connect(m_mdHighlighter, &HGMarkdownHighlighter::imageLinksUpdated,
+            m_imagePreviewer, &VImagePreviewer::imageLinksChanged);
+    connect(m_imagePreviewer, &VImagePreviewer::requestUpdateImageLinks,
+            m_mdHighlighter, &HGMarkdownHighlighter::updateHighlight);
 
     m_editOps = new VMdEditOperations(this, m_file);
 
@@ -48,8 +55,6 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
     connect(this, &VMdEdit::cursorPositionChanged,
             this, &VMdEdit::updateCurHeader);
 
-    connect(this, &VMdEdit::selectionChanged,
-            this, &VMdEdit::handleSelectionChanged);
     connect(QApplication::clipboard(), &QClipboard::changed,
             this, &VMdEdit::handleClipboardChanged);
 
@@ -74,8 +79,6 @@ void VMdEdit::beginEdit()
 
     initInitImages();
 
-    m_imagePreviewer->refresh();
-
     setReadOnly(false);
     setModified(false);
 
@@ -94,6 +97,7 @@ void VMdEdit::saveFile()
     if (!document()->isModified()) {
         return;
     }
+
     m_file->setContent(toPlainTextWithoutImg());
     document()->setModified(false);
 }
@@ -364,50 +368,107 @@ void VMdEdit::scrollToHeader(const VAnchor &p_anchor)
     scrollToLine(p_anchor.lineNumber);
 }
 
-QString VMdEdit::toPlainTextWithoutImg() const
+QString VMdEdit::toPlainTextWithoutImg()
 {
-    QString text = toPlainText();
-    int start = 0;
-    do {
-        int index = text.indexOf(QChar::ObjectReplacementCharacter, start);
-        if (index == -1) {
-            break;
-        }
-        start = removeObjectReplacementLine(text, index);
-    } while (start > -1 && start < text.size());
+    QString text;
+    bool readOnly = isReadOnly();
+    setReadOnly(true);
+    text = getPlainTextWithoutPreviewImage();
+    setReadOnly(readOnly);
+
     return text;
 }
 
-int VMdEdit::removeObjectReplacementLine(QString &p_text, int p_index) const
+QString VMdEdit::getPlainTextWithoutPreviewImage() const
 {
-    Q_ASSERT(p_text.size() > p_index && p_text.at(p_index) == QChar::ObjectReplacementCharacter);
-    int prevLineIdx = p_text.lastIndexOf('\n', p_index);
-    if (prevLineIdx == -1) {
-        prevLineIdx = 0;
+    QVector<Region> deletions;
+
+    while (true) {
+        deletions.clear();
+
+        while (m_imagePreviewer->isPreviewing()) {
+            VUtils::sleepWait(100);
+        }
+
+        // Iterate all the block to get positions for deletion.
+        QTextBlock block = document()->begin();
+        bool tryAgain = false;
+        while (block.isValid()) {
+            if (VTextBlockData::containsPreviewImage(block)) {
+                if (!getPreviewImageRegionOfBlock(block, deletions)) {
+                    tryAgain = true;
+                    break;
+                }
+            }
+
+            block = block.next();
+        }
+
+        if (tryAgain) {
+            continue;
+        }
+
+        QString text = toPlainText();
+        // deletions is sorted by m_startPos.
+        // From back to front.
+        for (int i = deletions.size() - 1; i >= 0; --i) {
+            const Region &reg = deletions[i];
+            qDebug() << "img region to delete" << reg.m_startPos << reg.m_endPos;
+            text.remove(reg.m_startPos, reg.m_endPos - reg.m_startPos);
+        }
+
+        return text;
     }
-    // Remove [\n....?]
-    p_text.remove(prevLineIdx, p_index - prevLineIdx + 1);
-    return prevLineIdx - 1;
 }
 
-void VMdEdit::handleSelectionChanged()
+bool VMdEdit::getPreviewImageRegionOfBlock(const QTextBlock &p_block,
+                                           QVector<Region> &p_regions) const
 {
-    if (!g_config->getEnablePreviewImages()) {
-        return;
-    }
+    QTextDocument *doc = document();
+    QVector<Region> regs;
+    QString text = p_block.text();
+    int nrOtherChar = 0;
+    int nrImage = 0;
+    bool hasBlock = false;
 
-    QString text = textCursor().selectedText();
-    if (text.isEmpty() && !m_imagePreviewer->isPreviewEnabled()) {
-        m_imagePreviewer->enableImagePreview();
-    } else if (m_imagePreviewer->isPreviewEnabled()) {
-        if (text.trimmed() == QString(QChar::ObjectReplacementCharacter)) {
-            // Select the image and some whitespaces.
-            // We can let the user copy the image.
-            return;
-        } else if (text.contains(QChar::ObjectReplacementCharacter)) {
-            m_imagePreviewer->disableImagePreview();
+    // From back to front.
+    for (int i = text.size() - 1; i >= 0; --i) {
+        if (text[i].isSpace()) {
+            continue;
+        }
+
+        if (text[i] == QChar::ObjectReplacementCharacter) {
+            int pos = p_block.position() + i;
+            Q_ASSERT(doc->characterAt(pos) == QChar::ObjectReplacementCharacter);
+
+            QTextImageFormat imageFormat = VPreviewUtils::fetchFormatFromPosition(doc, pos);
+            if (imageFormat.isValid()) {
+                ++nrImage;
+                bool isBlock = VPreviewUtils::getPreviewImageType(imageFormat) == PreviewImageType::Block;
+                if (isBlock) {
+                    hasBlock = true;
+                } else {
+                    regs.push_back(Region(pos, pos + 1));
+                }
+            } else {
+                return false;
+            }
+        } else {
+            ++nrOtherChar;
         }
     }
+
+    if (hasBlock) {
+        if (nrOtherChar > 0 || nrImage > 1) {
+            // Inconsistent state.
+            return false;
+        }
+
+        regs.push_back(Region(p_block.position(), p_block.position() + p_block.length()));
+    }
+
+    p_regions.append(regs);
+    return true;
 }
 
 void VMdEdit::handleClipboardChanged(QClipboard::Mode p_mode)
@@ -415,24 +476,33 @@ void VMdEdit::handleClipboardChanged(QClipboard::Mode p_mode)
     if (!hasFocus()) {
         return;
     }
+
     if (p_mode == QClipboard::Clipboard) {
         QClipboard *clipboard = QApplication::clipboard();
         const QMimeData *mimeData = clipboard->mimeData();
         if (mimeData->hasText()) {
             QString text = mimeData->text();
-            if (clipboard->ownsClipboard() &&
-                (text.trimmed() == QString(QChar::ObjectReplacementCharacter))) {
-                QImage image = selectedImage();
-                clipboard->clear(QClipboard::Clipboard);
-                if (!image.isNull()) {
-                    clipboard->setImage(image, QClipboard::Clipboard);
+            if (clipboard->ownsClipboard()) {
+                if (text.trimmed() == QString(QChar::ObjectReplacementCharacter)) {
+                    QImage image = tryGetSelectedImage();
+                    clipboard->clear(QClipboard::Clipboard);
+                    if (!image.isNull()) {
+                        clipboard->setImage(image, QClipboard::Clipboard);
+                    }
+                } else {
+                    // Try to remove all the preview image in text.
+                    VEditUtils::removeObjectReplacementCharacter(text);
+                    if (text.size() != mimeData->text().size()) {
+                        clipboard->clear(QClipboard::Clipboard);
+                        clipboard->setText(text);
+                    }
                 }
             }
         }
     }
 }
 
-QImage VMdEdit::selectedImage()
+QImage VMdEdit::tryGetSelectedImage()
 {
     QImage image;
     QTextCursor cursor = textCursor();
@@ -442,25 +512,29 @@ QImage VMdEdit::selectedImage()
     int start = cursor.selectionStart();
     int end = cursor.selectionEnd();
     QTextDocument *doc = document();
-    QTextBlock startBlock = doc->findBlock(start);
-    QTextBlock endBlock = doc->findBlock(end);
-    QTextBlock block = startBlock;
-    while (block.isValid()) {
-        if (m_imagePreviewer->isImagePreviewBlock(block)) {
-            image = m_imagePreviewer->fetchCachedImageFromPreviewBlock(block);
+    QTextImageFormat format;
+    for (int i = start; i < end; ++i) {
+        if (doc->characterAt(i) == QChar::ObjectReplacementCharacter) {
+            format = VPreviewUtils::fetchFormatFromPosition(doc, i);
             break;
         }
-        if (block == endBlock) {
-            break;
-        }
-        block = block.next();
     }
+
+    if (format.isValid()) {
+        PreviewImageSource src = VPreviewUtils::getPreviewImageSource(format);
+        long long id = VPreviewUtils::getPreviewImageID(format);
+        if (src == PreviewImageSource::Image) {
+            Q_ASSERT(m_imagePreviewer->isEnabled());
+            image = m_imagePreviewer->fetchCachedImageByID(id);
+        }
+    }
+
     return image;
 }
 
 void VMdEdit::resizeEvent(QResizeEvent *p_event)
 {
-    m_imagePreviewer->update();
+    m_imagePreviewer->updatePreviewImageWidth();
 
     VEdit::resizeEvent(p_event);
 }

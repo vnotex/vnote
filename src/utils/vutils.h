@@ -53,7 +53,7 @@ public:
     static void processStyle(QString &style, const QVector<QPair<QString, QString> > &varMap);
 
     // Return the last directory name of @p_path.
-    static inline QString directoryNameFromPath(const QString& p_path);
+    static QString directoryNameFromPath(const QString& p_path);
 
     // Return the file name of @p_path.
     // /home/tamlok/abc, /home/tamlok/abc/ will both return abc.
@@ -118,6 +118,9 @@ public:
                                     const QString &p_path,
                                     QStringList &p_parts);
 
+    // Decode URL by simply replacing meta-characters.
+    static void decodeUrl(QString &p_url);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
     // Captured texts (need to be trimmed):
@@ -134,6 +137,9 @@ public:
     // Regular expression for fenced code block.
     static const QString c_fencedCodeBlockStartRegExp;
     static const QString c_fencedCodeBlockEndRegExp;
+
+    // Regular expression for preview image block.
+    static const QString c_previewImageBlockRegExp;
 
 private:
     VUtils();

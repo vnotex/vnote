@@ -83,12 +83,12 @@ struct HLUnitPos
     QString m_style;
 };
 
-// HTML comment.
-struct VCommentRegion
+// Denote the region of a certain Markdown element.
+struct VElementRegion
 {
-    VCommentRegion() : m_startPos(0), m_endPos(0) {}
+    VElementRegion() : m_startPos(0), m_endPos(0) {}
 
-    VCommentRegion(int p_start, int p_end) : m_startPos(p_start), m_endPos(p_end) {}
+    VElementRegion(int p_start, int p_end) : m_startPos(p_start), m_endPos(p_end) {}
 
     // The start position of the region in document.
     int m_startPos;
@@ -100,6 +100,12 @@ struct VCommentRegion
     bool contains(int p_pos) const
     {
         return m_startPos <= p_pos && m_endPos >= p_pos;
+    }
+
+    bool operator==(const VElementRegion &p_other) const
+    {
+        return (m_startPos == p_other.m_startPos
+                && m_endPos == p_other.m_endPos);
     }
 };
 
@@ -118,7 +124,12 @@ public:
 
 signals:
     void highlightCompleted();
+
+    // QList is implicitly shared.
     void codeBlocksUpdated(const QList<VCodeBlock> &p_codeBlocks);
+
+    // Emitted when image regions have been fetched from a new parsing result.
+    void imageLinksUpdated(const QVector<VElementRegion> &p_imageRegions);
 
 protected:
     void highlightBlock(const QString &text) Q_DECL_OVERRIDE;
@@ -151,7 +162,10 @@ private:
     int m_numOfCodeBlockHighlightsToRecv;
 
     // All HTML comment regions.
-    QVector<VCommentRegion> m_commentRegions;
+    QVector<VElementRegion> m_commentRegions;
+
+    // All image link regions.
+    QVector<VElementRegion> m_imageRegions;
 
     // Timer to signal highlightCompleted().
     QTimer *m_completeTimer;
@@ -168,7 +182,12 @@ private:
 
     void resizeBuffer(int newCap);
     void highlightCodeBlock(const QString &text);
+
+    // Highlight links using regular expression.
+    // PEG Markdown Highlight treat URLs with spaces illegal. This function is
+    // intended to complement this.
     void highlightLinkWithSpacesInURL(const QString &p_text);
+
     void parse();
     void parseInternal();
     void initBlockHighlightFromResult(int nrBlocks);
@@ -182,11 +201,17 @@ private:
     // Fetch all the HTML comment regions from parsing result.
     void initHtmlCommentRegionsFromResult();
 
+    // Fetch all the image link regions from parsing result.
+    void initImageRegionsFromResult();
+
     // Whether @p_block is totally inside a HTML comment.
     bool isBlockInsideCommentRegion(const QTextBlock &p_block) const;
 
     // Highlights have been changed. Try to signal highlightCompleted().
     void highlightChanged();
+
+    // Set the user data of currentBlock().
+    void updateBlockUserData(const QString &p_text);
 };
 
 #endif

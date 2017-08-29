@@ -203,6 +203,9 @@ protected:
     // Update m_config according to VConfigManager.
     void updateConfig();
 
+    // Called in contextMenuEvent() to modify the context menu.
+    virtual void alterContextMenu(QMenu *p_menu, const QList<QAction *> &p_actions);
+
 private:
     QLabel *m_wrapLabel;
     QTimer *m_labelTimer;

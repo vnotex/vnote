@@ -785,6 +785,8 @@ void VEdit::contextMenuEvent(QContextMenuEvent *p_event)
         }
     }
 
+    alterContextMenu(menu, actions);
+
     menu->exec(p_event->globalPos());
     delete menu;
 }
@@ -1255,4 +1257,10 @@ bool VEdit::isBlockVisible(const QTextBlock &p_block)
     int rectHeight = (int)rect.height();
 
     return (y >= 0 && y < height) || (y < 0 && y + rectHeight > 0);
+}
+
+void VEdit::alterContextMenu(QMenu *p_menu, const QList<QAction *> &p_actions)
+{
+    Q_UNUSED(p_menu);
+    Q_UNUSED(p_actions);
 }

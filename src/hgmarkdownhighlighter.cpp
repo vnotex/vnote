@@ -5,6 +5,7 @@
 #include "hgmarkdownhighlighter.h"
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
+#include "vtextblockdata.h"
 
 extern VConfigManager *g_config;
 
@@ -79,6 +80,17 @@ HGMarkdownHighlighter::~HGMarkdownHighlighter()
     }
 }
 
+void HGMarkdownHighlighter::updateBlockUserData(const QString &p_text)
+{
+    VTextBlockData *blockData = dynamic_cast<VTextBlockData *>(currentBlockUserData());
+    if (!blockData) {
+        blockData = new VTextBlockData();
+        setCurrentBlockUserData(blockData);
+    }
+
+    blockData->setContainsPreviewImage(p_text.contains(QChar::ObjectReplacementCharacter));
+}
+
 void HGMarkdownHighlighter::highlightBlock(const QString &text)
 {
     int blockNum = currentBlock().blockNumber();
@@ -94,6 +106,9 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
     // We use PEG Markdown Highlight as the main highlighter.
     // We can use other highlighting methods to complement it.
 
+    // Set current block's user data.
+    updateBlockUserData(text);
+
     // If it is a block inside HTML comment, just skip it.
     if (isBlockInsideCommentRegion(currentBlock())) {
         setCurrentBlockState(HighlightBlockState::Comment);
@@ -105,7 +120,9 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
     highlightCodeBlock(text);
 
     // PEG Markdown Highlight does not handle links with spaces in the URL.
-    highlightLinkWithSpacesInURL(text);
+    // Links in the URL should be encoded to %20. We just let it be here and won't
+    // fix this.
+    // highlightLinkWithSpacesInURL(text);
 
     // Highlight CodeBlock using VCodeBlockHighlightHelper.
     if (m_codeBlockHighlights.size() > blockNum) {
@@ -176,6 +193,7 @@ void HGMarkdownHighlighter::initBlockHighlightFromResult(int nrBlocks)
 
 void HGMarkdownHighlighter::initHtmlCommentRegionsFromResult()
 {
+    // From Qt5.7, the capacity is preserved.
     m_commentRegions.clear();
 
     if (!result) {
@@ -189,12 +207,54 @@ void HGMarkdownHighlighter::initHtmlCommentRegionsFromResult()
             continue;
         }
 
-        m_commentRegions.push_back(VCommentRegion(elem->pos, elem->end));
+        m_commentRegions.push_back(VElementRegion(elem->pos, elem->end));
 
         elem = elem->next;
     }
 
-    qDebug() << "highlighter:" << m_commentRegions.size() << "HTML comment regions";
+    qDebug() << "highlighter: parse" << m_commentRegions.size() << "HTML comment regions";
+}
+
+void HGMarkdownHighlighter::initImageRegionsFromResult()
+{
+    if (!result) {
+        // From Qt5.7, the capacity is preserved.
+        m_imageRegions.clear();
+        emit imageLinksUpdated(m_imageRegions);
+        return;
+    }
+
+    int idx = 0;
+    int oriSize = m_imageRegions.size();
+    pmh_element *elem = result[pmh_IMAGE];
+    while (elem != NULL) {
+        if (elem->end <= elem->pos) {
+            elem = elem->next;
+            continue;
+        }
+
+        if (idx < oriSize) {
+            // Try to reuse the original element.
+            VElementRegion &reg = m_imageRegions[idx];
+            if ((int)elem->pos != reg.m_startPos || (int)elem->end != reg.m_endPos) {
+                reg.m_startPos = (int)elem->pos;
+                reg.m_endPos = (int)elem->end;
+            }
+        } else {
+            m_imageRegions.push_back(VElementRegion(elem->pos, elem->end));
+        }
+
+        ++idx;
+        elem = elem->next;
+    }
+
+    if (idx < oriSize) {
+        m_imageRegions.resize(idx);
+    }
+
+    emit imageLinksUpdated(m_imageRegions);
+
+    qDebug() << "highlighter: parse" << m_imageRegions.size() << "image regions";
 }
 
 void HGMarkdownHighlighter::initBlockHighlihgtOne(unsigned long pos, unsigned long end, int styleIndex)
@@ -274,6 +334,7 @@ void HGMarkdownHighlighter::highlightLinkWithSpacesInURL(const QString &p_text)
     if (currentBlockState() == HighlightBlockState::CodeBlock) {
         return;
     }
+
     // TODO: should select links with spaces in URL.
     QRegExp regExp("[\\!]?\\[[^\\]]*\\]\\(([^\\n\\)]+)\\)");
     int index = regExp.indexIn(p_text);
@@ -298,23 +359,27 @@ void HGMarkdownHighlighter::parse()
         return;
     }
 
+    if (highlightingStyles.isEmpty()) {
+        goto exit;
+    }
+
+    {
     int nrBlocks = document->blockCount();
     parseInternal();
-
-    if (highlightingStyles.isEmpty()) {
-        qWarning() << "HighlightingStyles is not set";
-        return;
-    }
 
     initBlockHighlightFromResult(nrBlocks);
 
     initHtmlCommentRegionsFromResult();
 
+    initImageRegionsFromResult();
+
     if (result) {
         pmh_free_elements(result);
         result = NULL;
     }
+    }
 
+exit:
     parsing.store(0);
 }
 

@@ -116,6 +116,32 @@ bool VEditUtils::indentBlockAsPreviousBlock(QTextCursor &p_cursor)
     return changed;
 }
 
+bool VEditUtils::hasSameIndent(const QTextBlock &p_blocka, const QTextBlock &p_blockb)
+{
+    int nonSpaceIdxa = 0;
+    int nonSpaceIdxb = 0;
+
+    QString texta = p_blocka.text();
+    for (int i = 0; i < texta.size(); ++i) {
+        if (!texta[i].isSpace()) {
+            nonSpaceIdxa = i;
+            break;
+        }
+    }
+
+    QString textb = p_blockb.text();
+    for (int i = 0; i < textb.size(); ++i) {
+        if (!textb[i].isSpace()) {
+            nonSpaceIdxb = i;
+            break;
+        } else if (i >= nonSpaceIdxa || texta[i] != textb[i]) {
+            return false;
+        }
+    }
+
+    return nonSpaceIdxa == nonSpaceIdxb;
+}
+
 void VEditUtils::moveCursorFirstNonSpaceCharacter(QTextCursor &p_cursor,
                                                   QTextCursor::MoveMode p_mode)
 {
@@ -135,7 +161,7 @@ void VEditUtils::moveCursorFirstNonSpaceCharacter(QTextCursor &p_cursor,
 
 void VEditUtils::removeObjectReplacementCharacter(QString &p_text)
 {
-    QRegExp orcBlockExp(QString("[\\n|^][ |\\t]*\\xfffc[ |\\t]*(?=\\n)"));
+    QRegExp orcBlockExp(VUtils::c_previewImageBlockRegExp);
     p_text.remove(orcBlockExp);
     p_text.remove(QChar::ObjectReplacementCharacter);
 }

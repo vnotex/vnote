@@ -29,6 +29,9 @@ public:
     // @p_cursor will be placed at the position after inserting leading spaces.
     static bool indentBlockAsPreviousBlock(QTextCursor &p_cursor);
 
+    // Returns true if two blocks has the same indent.
+    static bool hasSameIndent(const QTextBlock &p_blocka, const QTextBlock &p_blockb);
+
     // Insert a new block at current position with the same indentation as
     // current block. Should clear the selection before calling this.
     // Returns true if non-empty indentation has been inserted.
