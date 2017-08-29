@@ -345,6 +345,7 @@ static void insertChangeBlockAfterDeletion(QTextCursor &p_cursor, int p_deletion
         p_cursor.insertBlock();
     } else {
         // Insert a new block above.
+        p_cursor.movePosition(QTextCursor::StartOfBlock);
         p_cursor.insertBlock();
         p_cursor.movePosition(QTextCursor::PreviousBlock);
     }
@@ -3824,6 +3825,16 @@ void VVim::processPasteAction(QList<Token> &p_tokens, bool p_pasteBefore)
     QString value = reg.read();
     bool isBlock = reg.isBlock();
     if (value.isEmpty()) {
+        if (checkMode(VimMode::Visual) || checkMode(VimMode::VisualLine)) {
+            setMode(VimMode::Normal);
+        }
+
+        return;
+    }
+
+    if (!(checkMode(VimMode::Normal)
+          || checkMode(VimMode::Visual)
+          || checkMode(VimMode::VisualLine))) {
         return;
     }
 
@@ -3833,67 +3844,101 @@ void VVim::processPasteAction(QList<Token> &p_tokens, bool p_pasteBefore)
         text.append(value);
     }
 
+    bool changed = false;
+    int nrBlock = 0;
+    int restorePos = -1;
     QTextCursor cursor = m_editor->textCursor();
     cursor.beginEditBlock();
 
     // Different from Vim:
     //  In visual mode, by default vim select the current char, so paste operation will replace
-    //  current char, but here it is strange to follow this specification
-    bool hasSelection = cursor.hasSelection();
+    //  current char, but here it is strange to follow this specification.
     bool isVisualLine = checkMode(VimMode::VisualLine);
-    if (hasSelection) {
-        int pos = cursor.selectionStart();
-        deleteSelectedText(cursor, false);
-        if (isBlock && !isVisualLine) {
-            insertChangeBlockAfterDeletion(cursor, pos);
-        }
+    if (!checkMode(VimMode::Normal)) {
+        // Visual or VisualLine mode.
+        if (cursor.hasSelection()) {
+            int pos = cursor.selectionStart();
+            deleteSelectedText(cursor, isVisualLine);
+            if (isVisualLine) {
+                // Insert a new block for insertion.
+                insertChangeBlockAfterDeletion(cursor, pos);
 
-        if (isBlock) {
-            if (!isVisualLine) {
-                cursor.movePosition(QTextCursor::EndOfBlock);
+                restorePos = cursor.position();
+
+                if (isBlock) {
+                    nrBlock = text.count('\n');
+                    // insertChangeBlockAfterDeletion() already insert a new line, so eliminate one here.
+                    text = text.left(text.size() - 1);
+                }
+            } else if (isBlock) {
+                // Insert new block right at current cursor.
+                nrBlock = text.count('\n');
                 cursor.insertBlock();
+                restorePos = cursor.position();
+            } else if (text.count('\n') > 0) {
+                restorePos = cursor.position();
             }
 
-            int nrBlock = text.count('\n');
-            if (nrBlock > 0) {
-                message(tr("%1 more %2").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
-                                                                      : tr("line")));
-            }
-            // inserBlock() already insert a new line, so eliminate one here.
-            text = text.left(text.size() - 1);
+            changed = true;
         }
-        cursor.insertText(text);
-    } else { // no selection
+
+        setMode(VimMode::Normal);
+    } else {
+        // Normal mode.
         if (isBlock) {
             if (p_pasteBefore) {
                 cursor.movePosition(QTextCursor::StartOfBlock);
                 cursor.insertBlock();
                 cursor.movePosition(QTextCursor::PreviousBlock);
-            } else if (!isVisualLine) {
+            } else {
                 cursor.movePosition(QTextCursor::EndOfBlock);
                 cursor.insertBlock();
             }
 
-            int nrBlock = text.count('\n');
-            if (nrBlock > 0) {
-                message(tr("%1 more %2").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
-                                                                      : tr("line")));
-            }
+            restorePos = cursor.position();
+
+            nrBlock = text.count('\n');
+
             // inserBlock() already insert a new line, so eliminate one here.
             text = text.left(text.size() - 1);
-        } else { // not a block
+        } else {
+            // Not a block.
             if (!p_pasteBefore && !cursor.atBlockEnd()) {
                 // Insert behind current cursor.
                 cursor.movePosition(QTextCursor::Right);
             }
+
+            if (text.count('\n') > 0) {
+                restorePos = cursor.position();
+            }
         }
+
+        changed = true;
+    }
+
+    if (changed) {
         cursor.insertText(text);
+
+        if (restorePos == -1) {
+            // Move cursor one character left.
+            cursor.movePosition(QTextCursor::Left);
+        } else {
+            // Move cursor at the right position.
+            cursor.setPosition(restorePos);
+        }
+
+        if (nrBlock > 0) {
+            message(tr("%1 more %2").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
+                                                                  : tr("line")));
+        }
     }
 
     cursor.endEditBlock();
-    m_editor->setTextCursor(cursor);
 
-    setMode(VimMode::Normal);
+    if (changed) {
+        m_editor->setTextCursor(cursor);
+    }
+
     qDebug() << "text pasted" << text;
 }
 
