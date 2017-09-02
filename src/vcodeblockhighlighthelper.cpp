@@ -15,6 +15,8 @@ VCodeBlockHighlightHelper::VCodeBlockHighlightHelper(HGMarkdownHighlighter *p_hi
             this, &VCodeBlockHighlightHelper::handleCodeBlocksUpdated);
     connect(m_vdocument, &VDocument::textHighlighted,
             this, &VCodeBlockHighlightHelper::handleTextHighlightResult);
+
+    // Web side is ready for code block highlight.
     connect(m_vdocument, &VDocument::readyToHighlightText,
             m_highlighter, &HGMarkdownHighlighter::updateHighlight);
 }
@@ -52,13 +54,22 @@ QString VCodeBlockHighlightHelper::unindentCodeBlock(const QString &p_text)
     return res;
 }
 
-void VCodeBlockHighlightHelper::handleCodeBlocksUpdated(const QList<VCodeBlock> &p_codeBlocks)
+void VCodeBlockHighlightHelper::handleCodeBlocksUpdated(const QVector<VCodeBlock> &p_codeBlocks)
 {
     int curStamp = m_timeStamp.fetchAndAddRelaxed(1) + 1;
     m_codeBlocks = p_codeBlocks;
     for (int i = 0; i < m_codeBlocks.size(); ++i) {
-        QString unindentedText = unindentCodeBlock(m_codeBlocks[i].m_text);
-        m_vdocument->highlightTextAsync(unindentedText, i, curStamp);
+        const VCodeBlock &block = m_codeBlocks[i];
+        auto it = m_cache.find(block.m_text);
+        if (it != m_cache.end()) {
+            // Hit cache.
+            qDebug() << "code block highlight hit cache" << curStamp << i;
+            it.value().m_timeStamp = curStamp;
+            updateHighlightResults(block.m_startPos, it.value().m_units);
+        } else {
+            QString unindentedText = unindentCodeBlock(block.m_text);
+            m_vdocument->highlightTextAsync(unindentedText, i, curStamp);
+        }
     }
 }
 
@@ -109,7 +120,7 @@ void VCodeBlockHighlightHelper::parseHighlightResult(int p_timeStamp,
     int startPos = block.m_startPos;
     QString text = block.m_text;
 
-    QList<HLUnitPos> hlUnits;
+    QVector<HLUnitPos> hlUnits;
 
     bool failed = true;
 
@@ -153,7 +164,7 @@ void VCodeBlockHighlightHelper::parseHighlightResult(int p_timeStamp,
                     failed = true;
                     goto exit;
                 }
-                if (!parseSpanElement(xml, startPos, text, textIndex, hlUnits)) {
+                if (!parseSpanElement(xml, text, textIndex, hlUnits)) {
                     failed = true;
                     goto exit;
                 }
@@ -185,15 +196,27 @@ exit:
         hlUnits.clear();
     }
 
+    // Add it to cache.
+    addToHighlightCache(text, p_timeStamp, hlUnits);
+
+    updateHighlightResults(startPos, hlUnits);
+}
+
+void VCodeBlockHighlightHelper::updateHighlightResults(int p_startPos,
+                                                       QVector<HLUnitPos> p_units)
+{
+    for (int i = 0; i < p_units.size(); ++i) {
+        p_units[i].m_position += p_startPos;
+    }
+
     // We need to call this function anyway to trigger the rehighlight.
-    m_highlighter->setCodeBlockHighlights(hlUnits);
+    m_highlighter->setCodeBlockHighlights(p_units);
 }
 
 bool VCodeBlockHighlightHelper::parseSpanElement(QXmlStreamReader &p_xml,
-                                                 int p_startPos,
                                                  const QString &p_text,
                                                  int &p_index,
-                                                 QList<HLUnitPos> &p_units)
+                                                 QVector<HLUnitPos> &p_units)
 {
     int unitStart = p_index;
     QString style = p_xml.attributes().value("class").toString();
@@ -215,7 +238,7 @@ bool VCodeBlockHighlightHelper::parseSpanElement(QXmlStreamReader &p_xml,
             }
 
             // Sub-span.
-            if (!parseSpanElement(p_xml, p_startPos, p_text, p_index, p_units)) {
+            if (!parseSpanElement(p_xml, p_text, p_index, p_units)) {
                 return false;
             }
         } else if (p_xml.isEndElement()) {
@@ -223,8 +246,8 @@ bool VCodeBlockHighlightHelper::parseSpanElement(QXmlStreamReader &p_xml,
                 return false;
             }
 
-            // Got a complete span.
-            HLUnitPos unit(unitStart + p_startPos, p_index - unitStart, style);
+            // Got a complete span. Use relative position here.
+            HLUnitPos unit(unitStart, p_index - unitStart, style);
             p_units.append(unit);
             return true;
         } else {
@@ -232,4 +255,25 @@ bool VCodeBlockHighlightHelper::parseSpanElement(QXmlStreamReader &p_xml,
         }
     }
     return false;
+}
+
+void VCodeBlockHighlightHelper::addToHighlightCache(const QString &p_text,
+                                                    int p_timeStamp,
+                                                    const QVector<HLUnitPos> &p_units)
+{
+    const int c_maxEntries = 100;
+    const int c_maxTimeStampSpan = 3;
+    if (m_cache.size() >= c_maxEntries) {
+        // Remove the oldest one.
+        int ts = p_timeStamp - c_maxTimeStampSpan;
+        for (auto it = m_cache.begin(); it != m_cache.end();) {
+            if (it.value().m_timeStamp < ts) {
+                it = m_cache.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    m_cache.insert(p_text, HLResult(p_timeStamp, p_units));
 }

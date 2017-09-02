@@ -446,7 +446,7 @@ bool HGMarkdownHighlighter::updateCodeBlocks()
         m_codeBlockHighlights[i].clear();
     }
 
-    QList<VCodeBlock> codeBlocks;
+    QVector<VCodeBlock> codeBlocks;
 
     VCodeBlock item;
     bool inBlock = false;
@@ -509,7 +509,7 @@ static bool HLUnitStyleComp(const HLUnitStyle &a, const HLUnitStyle &b)
     }
 }
 
-void HGMarkdownHighlighter::setCodeBlockHighlights(const QList<HLUnitPos> &p_units)
+void HGMarkdownHighlighter::setCodeBlockHighlights(const QVector<HLUnitPos> &p_units)
 {
     if (p_units.isEmpty()) {
         goto exit;

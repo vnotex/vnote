@@ -5,7 +5,6 @@
 #include <QSyntaxHighlighter>
 #include <QAtomicInt>
 #include <QSet>
-#include <QList>
 #include <QString>
 #include <QHash>
 
@@ -120,13 +119,13 @@ public:
                           QTextDocument *parent = 0);
     ~HGMarkdownHighlighter();
     // Request to update highlihgt (re-parse and re-highlight)
-    void setCodeBlockHighlights(const QList<HLUnitPos> &p_units);
+    void setCodeBlockHighlights(const QVector<HLUnitPos> &p_units);
 
 signals:
     void highlightCompleted();
 
-    // QList is implicitly shared.
-    void codeBlocksUpdated(const QList<VCodeBlock> &p_codeBlocks);
+    // QVector is implicitly shared.
+    void codeBlocksUpdated(const QVector<VCodeBlock> &p_codeBlocks);
 
     // Emitted when image regions have been fetched from a new parsing result.
     void imageLinksUpdated(const QVector<VElementRegion> &p_imageRegions);
