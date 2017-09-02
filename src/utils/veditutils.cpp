@@ -639,3 +639,34 @@ round:
     p_cursor.setPosition(closing, QTextCursor::KeepAnchor);
     return true;
 }
+
+int VEditUtils::findNextEmptyBlock(const QTextCursor &p_cursor,
+                                   bool p_forward,
+                                   int p_repeat)
+{
+    Q_ASSERT(p_repeat > 0);
+    int res = -1;
+    QTextBlock block = p_cursor.block();
+    if (p_forward) {
+        block = block.next();
+    } else {
+        block = block.previous();
+    }
+
+    while (block.isValid()) {
+        if (block.length() == 1) {
+            res = block.position();
+            if (--p_repeat == 0) {
+                break;
+            }
+        }
+
+        if (p_forward) {
+            block = block.next();
+        } else {
+            block = block.previous();
+        }
+    }
+
+    return p_repeat > 0 ? -1 : res;
+}

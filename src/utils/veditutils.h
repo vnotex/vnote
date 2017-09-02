@@ -124,6 +124,12 @@ public:
     // Need to call setTextCursor() to make it take effect.
     static void deleteIndentAndListMark(QTextCursor &p_cursor);
 
+    // Find next @p_repeat empty block.
+    // Returns the position of that block if found. Otherwise, returns -1.
+    static int findNextEmptyBlock(const QTextCursor &p_cursor,
+                                  bool p_forward,
+                                  int p_repeat);
+
 private:
     VEditUtils() {}
 };

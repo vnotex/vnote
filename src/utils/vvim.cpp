@@ -1030,6 +1030,17 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             }
 
             setMode(VimMode::Insert);
+        } else if (modifiers == Qt::ShiftModifier) {
+            // S, change current line.
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (hasActionToken() || !m_keys.isEmpty()) {
+                // Invalid sequence.
+                break;
+            }
+
+            addActionToken(Action::Change);
+            addRangeToken(Range::Line);
+            processCommand(m_tokens);
         }
 
         break;
@@ -2048,12 +2059,17 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 addRangeToken(range);
                 processCommand(m_tokens);
                 break;
-            } else if (hasActionToken() || !checkMode(VimMode::Normal)) {
-                // Invalid sequence.
-                break;
-            } else if (checkPendingKey(Key(Qt::Key_BracketLeft))) {
+            } else if (m_keys.isEmpty()) {
+                // {, ParagraphUp movement.
+                tryAddMoveAction();
+                addMovementToken(Movement::ParagraphUp);
+                processCommand(m_tokens);
+            } else if (!hasActionToken()
+                       && checkPendingKey(Key(Qt::Key_BracketLeft))) {
                 // [{, goto previous title at one higher level.
-                processTitleJump(m_tokens, false, -1);
+                if (checkMode(VimMode::Normal)) {
+                    processTitleJump(m_tokens, false, -1);
+                }
             }
 
             break;
@@ -2077,12 +2093,17 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 addRangeToken(range);
                 processCommand(m_tokens);
                 break;
-            } else if (hasActionToken() || !checkMode(VimMode::Normal)) {
-                // Invalid sequence.
-                break;
-            } else if (checkPendingKey(Key(Qt::Key_BracketRight))) {
+            } else if (m_keys.isEmpty()) {
+                // }, ParagraphDown movement.
+                tryAddMoveAction();
+                addMovementToken(Movement::ParagraphDown);
+                processCommand(m_tokens);
+            } else if (!hasActionToken()
+                       && checkPendingKey(Key(Qt::Key_BracketRight))) {
                 // ]}, goto next title at one higher level.
-                processTitleJump(m_tokens, true, -1);
+                if (checkMode(VimMode::Normal)) {
+                    processTitleJump(m_tokens, true, -1);
+                }
             }
 
             break;
@@ -3101,6 +3122,36 @@ handle_target:
         break;
     }
 
+    case Movement::ParagraphUp:
+        forward = false;
+        // Fall through.
+    case Movement::ParagraphDown:
+    {
+        if (p_repeat == -1) {
+            p_repeat = 1;
+        }
+
+        // Record current location.
+        m_locations.addLocation(p_cursor);
+
+        int oriPos = p_cursor.position();
+
+        int position = VEditUtils::findNextEmptyBlock(p_cursor,
+                                                      forward,
+                                                      p_repeat);
+        if (position == -1) {
+            // No empty block. Move to the first/last character.
+            p_cursor.movePosition(forward ? QTextCursor::End : QTextCursor::Start,
+                                  p_moveMode);
+            hasMoved = p_cursor.position() != oriPos;
+        } else {
+            p_cursor.setPosition(position, p_moveMode);
+            hasMoved = true;
+        }
+
+        break;
+    }
+
     default:
         break;
     }
@@ -3574,6 +3625,9 @@ void VVim::processDeleteAction(QList<Token> &p_tokens)
             qDebug() << "delete till end of document";
             break;
         }
+
+        // ParagraphUp and ParagraphDown are a little different from Vim in
+        // block deletion.
 
         default:
             break;

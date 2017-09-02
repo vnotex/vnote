@@ -415,6 +415,8 @@ private:
         FindPrevious,
         FindNextWordUnderCursor,
         FindPreviousWordUnderCursor,
+        ParagraphUp,
+        ParagraphDown,
         Invalid
     };
 
