@@ -25,7 +25,8 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
     setAcceptRichText(false);
     m_mdHighlighter = new HGMarkdownHighlighter(g_config->getMdHighlightingStyles(),
                                                 g_config->getCodeBlockStyles(),
-                                                700, document());
+                                                g_config->getMarkdownHighlightInterval(),
+                                                document());
     connect(m_mdHighlighter, &HGMarkdownHighlighter::highlightCompleted,
             this, &VMdEdit::generateEditOutline);
 

@@ -414,12 +414,14 @@ void HGMarkdownHighlighter::handleContentChange(int /* position */, int charsRem
     if (charsRemoved == 0 && charsAdded == 0) {
         return;
     }
+
     timer->stop();
     timer->start();
 }
 
 void HGMarkdownHighlighter::timerTimeout()
 {
+    qDebug() << "HGMarkdownHighlighter start a new parse";
     parse();
     if (!updateCodeBlocks()) {
         rehighlight();

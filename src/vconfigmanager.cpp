@@ -157,6 +157,9 @@ void VConfigManager::initialize()
     readShortcutsFromSettings();
 
     initDocSuffixes();
+
+    m_markdownHighlightInterval = getConfigFromSettings("global",
+                                                        "markdown_highlight_interval").toInt();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

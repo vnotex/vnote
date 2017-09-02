@@ -221,6 +221,8 @@ public:
     void initDocSuffixes();
     const QHash<int, QList<QString>> &getDocSuffixes() const;
 
+    int getMarkdownHighlightInterval() const;
+
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
     QString getShortcutKeySequence(const QString &p_operation) const;
@@ -445,6 +447,9 @@ private:
     // Suffixes of different doc type.
     // [DocType] -> { Suffixes }.
     QHash<int, QList<QString>> m_docSuffixes;
+
+    // Interval for HGMarkdownHighlighter highlight timer (milliseconds).
+    int m_markdownHighlightInterval;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1138,4 +1143,10 @@ inline const QHash<int, QList<QString>> &VConfigManager::getDocSuffixes() const
 {
     return m_docSuffixes;
 }
+
+inline int VConfigManager::getMarkdownHighlightInterval() const
+{
+    return m_markdownHighlightInterval;
+}
+
 #endif // VCONFIGMANAGER_H
