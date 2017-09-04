@@ -223,6 +223,8 @@ public:
 
     int getMarkdownHighlightInterval() const;
 
+    int getLineDistanceHeight() const;
+
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
     QString getShortcutKeySequence(const QString &p_operation) const;
@@ -450,6 +452,9 @@ private:
 
     // Interval for HGMarkdownHighlighter highlight timer (milliseconds).
     int m_markdownHighlightInterval;
+
+    // Line distance height in pixel.
+    int m_lineDistanceHeight;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1147,6 +1152,11 @@ inline const QHash<int, QList<QString>> &VConfigManager::getDocSuffixes() const
 inline int VConfigManager::getMarkdownHighlightInterval() const
 {
     return m_markdownHighlightInterval;
+}
+
+inline int VConfigManager::getLineDistanceHeight() const
+{
+    return m_lineDistanceHeight;
 }
 
 #endif // VCONFIGMANAGER_H

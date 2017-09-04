@@ -106,8 +106,12 @@ void VMdEdit::saveFile()
 void VMdEdit::reloadFile()
 {
     const QString &content = m_file->getContent();
-    V_ASSERT(content.indexOf(QChar::ObjectReplacementCharacter) == -1);
+    Q_ASSERT(content.indexOf(QChar::ObjectReplacementCharacter) == -1);
+
     setPlainText(content);
+
+    setBlockLineDistanceHeight();
+
     setModified(false);
 }
 

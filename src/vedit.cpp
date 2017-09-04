@@ -19,6 +19,12 @@ void VEditConfig::init(const QFontMetrics &p_metric)
 
     m_enableVimMode = g_config->getEnableVimMode();
 
+    if (g_config->getLineDistanceHeight() <= 0) {
+        m_lineDistanceHeight = 0;
+    } else {
+        m_lineDistanceHeight = g_config->getLineDistanceHeight() * VUtils::calculateScaleFactor();
+    }
+
     m_highlightWholeBlock = m_enableVimMode;
 }
 
@@ -96,6 +102,9 @@ VEdit::VEdit(VFile *p_file, QWidget *p_parent)
             this, &VEdit::updateLineNumberArea);
 
     updateLineNumberAreaMargin();
+
+    connect(document(), &QTextDocument::contentsChange,
+            this, &VEdit::updateBlockLineDistanceHeight);
 }
 
 VEdit::~VEdit()
@@ -144,6 +153,9 @@ void VEdit::saveFile()
 void VEdit::reloadFile()
 {
     setHtml(m_file->getContent());
+
+    setBlockLineDistanceHeight();
+
     setModified(false);
 }
 
@@ -1025,6 +1037,7 @@ void VEdit::lineNumberAreaPaintEvent(QPaintEvent *p_event)
     const int curBlockNumber = textCursor().block().blockNumber();
     const bool relative = g_config->getEditorLineNumber() == 2;
     const QString &fg = g_config->getEditorLineNumberFg();
+    const int lineDistanceHeight = m_config.m_lineDistanceHeight;
     painter.setPen(fg);
 
     while (block.isValid() && top <= eventBtm) {
@@ -1067,7 +1080,7 @@ void VEdit::lineNumberAreaPaintEvent(QPaintEvent *p_event)
 
         block = block.next();
         top = bottom;
-        bottom = top + (int)layout->blockBoundingRect(block).height();
+        bottom = top + (int)layout->blockBoundingRect(block).height() + lineDistanceHeight;
         ++blockNumber;
     }
 }
@@ -1263,4 +1276,71 @@ void VEdit::alterContextMenu(QMenu *p_menu, const QList<QAction *> &p_actions)
 {
     Q_UNUSED(p_menu);
     Q_UNUSED(p_actions);
+}
+
+void VEdit::setBlockLineDistanceHeight()
+{
+    if (m_config.m_lineDistanceHeight <= 0) {
+        return;
+    }
+
+    bool modified = isModified();
+    QTextCursor cursor = textCursor();
+    int anchorPos = cursor.selectionStart();
+    int cursorPos = cursor.selectionEnd();
+
+    QTextBlockFormat fmt = cursor.blockFormat();
+    fmt.setLineHeight(m_config.m_lineDistanceHeight,
+                      QTextBlockFormat::LineDistanceHeight);
+    cursor.select(QTextCursor::Document);
+    cursor.mergeBlockFormat(fmt);
+
+    cursor.setPosition(anchorPos);
+    cursor.setPosition(cursorPos, QTextCursor::KeepAnchor);
+
+    setTextCursor(cursor);
+
+    setModified(modified);
+}
+
+void VEdit::updateBlockLineDistanceHeight(int p_pos,
+                                          int p_charsRemoved,
+                                          int p_charsAdded)
+{
+    if ((p_charsRemoved == 0 && p_charsAdded == 0)
+        || m_config.m_lineDistanceHeight <= 0) {
+        return;
+    }
+
+    QTextDocument *doc = document();
+    QTextBlock block = doc->findBlock(p_pos);
+    QTextBlock lastBlock = doc->findBlock(p_pos + p_charsRemoved + p_charsAdded);
+    QTextCursor cursor(block);
+    bool changed = false;
+    while (block.isValid()) {
+        cursor.setPosition(block.position());
+        QTextBlockFormat fmt = cursor.blockFormat();
+        if (fmt.lineHeightType() != QTextBlockFormat::LineDistanceHeight
+            || fmt.lineHeight() != m_config.m_lineDistanceHeight) {
+            fmt.setLineHeight(m_config.m_lineDistanceHeight,
+                              QTextBlockFormat::LineDistanceHeight);
+            if (!changed) {
+                changed = true;
+                cursor.joinPreviousEditBlock();
+            }
+
+            cursor.mergeBlockFormat(fmt);
+            qDebug() << "merge block format line distance" << block.blockNumber();
+        }
+
+        if (block == lastBlock) {
+            break;
+        }
+
+        block = block.next();
+    }
+
+    if (changed) {
+        cursor.endEditBlock();
+    }
 }

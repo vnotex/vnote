@@ -37,7 +37,8 @@ public:
     VEditConfig() : m_tabStopWidth(0),
                     m_tabSpaces("\t"),
                     m_enableVimMode(false),
-                    m_highlightWholeBlock(false)
+                    m_highlightWholeBlock(false),
+                    m_lineDistanceHeight(0)
     {}
 
     void init(const QFontMetrics &p_metric);
@@ -60,6 +61,9 @@ public:
 
     // Whether highlight a visual line or a whole block.
     bool m_highlightWholeBlock;
+
+    // Line distance height in pixels.
+    int m_lineDistanceHeight;
 };
 
 class LineNumberArea;
@@ -184,6 +188,10 @@ private slots:
 
     void updateLineNumberArea();
 
+    // According to the document change, try to set the block line distance height
+    // if affected blocks are not set.
+    void updateBlockLineDistanceHeight(int p_pos, int p_charsRemoved, int p_charsAdded);
+
 protected:
     QPointer<VFile> m_file;
     VEditOperations *m_editOps;
@@ -205,6 +213,9 @@ protected:
 
     // Called in contextMenuEvent() to modify the context menu.
     virtual void alterContextMenu(QMenu *p_menu, const QList<QAction *> &p_actions);
+
+    // Set all the blocks' line height.
+    void setBlockLineDistanceHeight();
 
 private:
     QLabel *m_wrapLabel;

@@ -160,6 +160,9 @@ void VConfigManager::initialize()
 
     m_markdownHighlightInterval = getConfigFromSettings("global",
                                                         "markdown_highlight_interval").toInt();
+
+    m_lineDistanceHeight = getConfigFromSettings("global",
+                                                 "line_distance_height").toInt();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()
