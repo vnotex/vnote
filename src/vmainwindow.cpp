@@ -1704,35 +1704,45 @@ void VMainWindow::insertImage()
     m_curTab->insertImage();
 }
 
-void VMainWindow::locateFile(VFile *p_file)
+bool VMainWindow::locateFile(VFile *p_file)
 {
+    bool ret = false;
     if (!p_file || p_file->getType() != FileType::Normal) {
-        return;
+        return ret;
     }
-    qDebug() << "locate file" << p_file->retrivePath();
+
     VNotebook *notebook = p_file->getNotebook();
     if (notebookSelector->locateNotebook(notebook)) {
         while (directoryTree->currentNotebook() != notebook) {
             QCoreApplication::sendPostedEvents();
         }
+
         VDirectory *dir = p_file->getDirectory();
         if (directoryTree->locateDirectory(dir)) {
             while (fileList->currentDirectory() != dir) {
                 QCoreApplication::sendPostedEvents();
             }
-            fileList->locateFile(p_file);
+
+            if (fileList->locateFile(p_file)) {
+                ret = true;
+                fileList->setFocus();
+            }
         }
     }
 
     // Open the directory and file panels after location.
     twoPanelView();
+
+    return ret;
 }
 
-void VMainWindow::locateCurrentFile()
+bool VMainWindow::locateCurrentFile()
 {
     if (m_curFile) {
-        locateFile(m_curFile);
+        return locateFile(m_curFile);
     }
+
+    return false;
 }
 
 void VMainWindow::handleFindDialogTextChanged(const QString &p_text, uint /* p_options */)

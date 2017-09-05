@@ -14,10 +14,16 @@
 extern VConfigManager *g_config;
 extern VNote *g_vnote;
 
+const QString VFileList::c_infoShortcutSequence = "F2";
+const QString VFileList::c_copyShortcutSequence = "Ctrl+C";
+const QString VFileList::c_cutShortcutSequence = "Ctrl+X";
+const QString VFileList::c_pasteShortcutSequence = "Ctrl+V";
+
 VFileList::VFileList(QWidget *parent)
     : QWidget(parent), VNavigationMode()
 {
     setupUI();
+    initShortcuts();
     initActions();
 }
 
@@ -43,10 +49,46 @@ void VFileList::setupUI()
     setLayout(mainLayout);
 }
 
+void VFileList::initShortcuts()
+{
+    QShortcut *infoShortcut = new QShortcut(QKeySequence(c_infoShortcutSequence), this);
+    infoShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(infoShortcut, &QShortcut::activated,
+            this, [this](){
+                fileInfo();
+            });
+
+    QShortcut *copyShortcut = new QShortcut(QKeySequence(c_copyShortcutSequence), this);
+    copyShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(copyShortcut, &QShortcut::activated,
+            this, [this](){
+                copySelectedFiles();
+            });
+
+    QShortcut *cutShortcut = new QShortcut(QKeySequence(c_cutShortcutSequence), this);
+    cutShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(cutShortcut, &QShortcut::activated,
+            this, [this](){
+                cutSelectedFiles();
+            });
+
+    QShortcut *pasteShortcut = new QShortcut(QKeySequence(c_pasteShortcutSequence), this);
+    pasteShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(pasteShortcut, &QShortcut::activated,
+            this, [this](){
+                pasteFilesInCurDir();
+            });
+}
+
 void VFileList::initActions()
 {
     newFileAct = new QAction(QIcon(":/resources/icons/create_note.svg"),
                              tr("&New Note"), this);
+    QString shortcutStr = QKeySequence(g_config->getShortcutKeySequence("NewNote")).toString();
+    if (!shortcutStr.isEmpty()) {
+        newFileAct->setText(tr("&New Note\t%1").arg(shortcutStr));
+    }
+
     newFileAct->setToolTip(tr("Create a note in current folder"));
     connect(newFileAct, SIGNAL(triggered(bool)),
             this, SLOT(newFile()));
@@ -58,25 +100,25 @@ void VFileList::initActions()
             this, SLOT(deleteFile()));
 
     fileInfoAct = new QAction(QIcon(":/resources/icons/note_info.svg"),
-                              tr("&Info"), this);
+                              tr("&Info\t%1").arg(QKeySequence(c_infoShortcutSequence).toString()), this);
     fileInfoAct->setToolTip(tr("View and edit current note's information"));
     connect(fileInfoAct, SIGNAL(triggered(bool)),
             this, SLOT(fileInfo()));
 
     copyAct = new QAction(QIcon(":/resources/icons/copy.svg"),
-                          tr("&Copy"), this);
+                          tr("&Copy\t%1").arg(QKeySequence(c_copyShortcutSequence).toString()), this);
     copyAct->setToolTip(tr("Copy selected notes"));
     connect(copyAct, &QAction::triggered,
             this, &VFileList::copySelectedFiles);
 
     cutAct = new QAction(QIcon(":/resources/icons/cut.svg"),
-                          tr("C&ut"), this);
+                         tr("C&ut\t%1").arg(QKeySequence(c_cutShortcutSequence).toString()), this);
     cutAct->setToolTip(tr("Cut selected notes"));
     connect(cutAct, &QAction::triggered,
             this, &VFileList::cutSelectedFiles);
 
     pasteAct = new QAction(QIcon(":/resources/icons/paste.svg"),
-                          tr("&Paste"), this);
+                           tr("&Paste\t%1").arg(QKeySequence(c_pasteShortcutSequence).toString()), this);
     pasteAct->setToolTip(tr("Paste notes in current folder"));
     connect(pasteAct, &QAction::triggered,
             this, &VFileList::pasteFilesInCurDir);
@@ -117,9 +159,10 @@ void VFileList::updateFileList()
 
 void VFileList::fileInfo()
 {
-    QListWidgetItem *curItem = fileList->currentItem();
-    V_ASSERT(curItem);
-    fileInfo(getVFile(curItem));
+    QList<QListWidgetItem *> items = fileList->selectedItems();
+    if (items.size() == 1) {
+        fileInfo(getVFile(items[0]));
+    }
 }
 
 void VFileList::openFileLocation() const
@@ -383,10 +426,16 @@ QListWidgetItem* VFileList::findItem(const VFile *p_file)
 
 void VFileList::handleItemClicked(QListWidgetItem *currentItem)
 {
+    Qt::KeyboardModifiers modifiers = QGuiApplication::keyboardModifiers();
+    if (modifiers != Qt::NoModifier) {
+        return;
+    }
+
     if (!currentItem) {
         emit fileClicked(NULL);
         return;
     }
+
     // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
     fileList->update();
     emit fileClicked(getVFile(currentItem), OpenFileMode::Read);
@@ -456,6 +505,10 @@ void VFileList::copyFileInfoToClipboard(const QJsonArray &p_files, bool p_isCut)
 
 void VFileList::pasteFilesInCurDir()
 {
+    if (m_copiedFiles.isEmpty()) {
+        return;
+    }
+
     pasteFiles(m_directory);
 }
 
@@ -554,6 +607,7 @@ void VFileList::keyPressEvent(QKeyEvent *event)
         if (item) {
             handleItemClicked(item);
         }
+
         break;
     }
 
@@ -599,11 +653,14 @@ bool VFileList::locateFile(const VFile *p_file)
         if (p_file->getDirectory() != m_directory) {
             return false;
         }
+
         QListWidgetItem *item = findItem(p_file);
         if (item) {
             fileList->setCurrentItem(item, QItemSelectionModel::ClearAndSelect);
+            return true;
         }
     }
+
     return false;
 }
 

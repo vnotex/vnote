@@ -76,7 +76,10 @@ private:
     void fillTreeItem(QTreeWidgetItem &p_item, const QString &p_name,
                       VDirectory *p_directory, const QIcon &p_icon);
 
+    void initShortcuts();
+
     void initActions();
+
     // Update @p_item's direct children only: deleted, added, renamed.
     void updateItemChildren(QTreeWidgetItem *p_item);
     // Find the corresponding item of @p_dir;
@@ -124,6 +127,11 @@ private:
     // Map second key to QTreeWidgetItem.
     QMap<QChar, QTreeWidgetItem *> m_keyMap;
     QVector<QLabel *> m_naviLabels;
+
+    static const QString c_infoShortcutSequence;
+    static const QString c_copyShortcutSequence;
+    static const QString c_cutShortcutSequence;
+    static const QString c_pasteShortcutSequence;
 };
 
 inline QPointer<VDirectory> VDirectoryTree::getVDirectory(QTreeWidgetItem *p_item) const

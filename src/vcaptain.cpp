@@ -173,7 +173,10 @@ bool VCaptain::handleKeyPress(int p_key, Qt::KeyboardModifiers p_modifiers)
 
     case Qt::Key_D:
         // Locate current tab.
-        m_mainWindow->locateCurrentFile();
+        if (m_mainWindow->locateCurrentFile()) {
+            m_widgetBeforeCaptain = NULL;
+        }
+
         break;
 
     case Qt::Key_E:

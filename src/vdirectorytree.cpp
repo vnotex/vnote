@@ -12,6 +12,11 @@
 extern VConfigManager *g_config;
 extern VNote *g_vnote;
 
+const QString VDirectoryTree::c_infoShortcutSequence = "F2";
+const QString VDirectoryTree::c_copyShortcutSequence = "Ctrl+C";
+const QString VDirectoryTree::c_cutShortcutSequence = "Ctrl+X";
+const QString VDirectoryTree::c_pasteShortcutSequence = "Ctrl+V";
+
 VDirectoryTree::VDirectoryTree(VNote *vnote, QWidget *parent)
     : QTreeWidget(parent), VNavigationMode(),
       vnote(vnote), m_editArea(NULL)
@@ -19,6 +24,7 @@ VDirectoryTree::VDirectoryTree(VNote *vnote, QWidget *parent)
     setColumnCount(1);
     setHeaderHidden(true);
     setContextMenuPolicy(Qt::CustomContextMenu);
+    initShortcuts();
     initActions();
 
     connect(this, SIGNAL(itemExpanded(QTreeWidgetItem*)),
@@ -29,6 +35,37 @@ VDirectoryTree::VDirectoryTree(VNote *vnote, QWidget *parent)
             this, SLOT(contextMenuRequested(QPoint)));
     connect(this, &VDirectoryTree::currentItemChanged,
             this, &VDirectoryTree::currentDirectoryItemChanged);
+}
+
+void VDirectoryTree::initShortcuts()
+{
+    QShortcut *infoShortcut = new QShortcut(QKeySequence(c_infoShortcutSequence), this);
+    infoShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(infoShortcut, &QShortcut::activated,
+            this, [this](){
+                editDirectoryInfo();
+            });
+
+    QShortcut *copyShortcut = new QShortcut(QKeySequence(c_copyShortcutSequence), this);
+    copyShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(copyShortcut, &QShortcut::activated,
+            this, [this](){
+                copySelectedDirectories();
+            });
+
+    QShortcut *cutShortcut = new QShortcut(QKeySequence(c_cutShortcutSequence), this);
+    cutShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(cutShortcut, &QShortcut::activated,
+            this, [this](){
+                cutSelectedDirectories();
+            });
+
+    QShortcut *pasteShortcut = new QShortcut(QKeySequence(c_pasteShortcutSequence), this);
+    pasteShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(pasteShortcut, &QShortcut::activated,
+            this, [this](){
+                pasteDirectoriesInCurDir();
+            });
 }
 
 void VDirectoryTree::initActions()
@@ -51,25 +88,25 @@ void VDirectoryTree::initActions()
             this, &VDirectoryTree::deleteDirectory);
 
     dirInfoAct = new QAction(QIcon(":/resources/icons/dir_info.svg"),
-                             tr("&Info"), this);
+                             tr("&Info\t%1").arg(QKeySequence(c_infoShortcutSequence).toString()), this);
     dirInfoAct->setToolTip(tr("View and edit current folder's information"));
     connect(dirInfoAct, &QAction::triggered,
             this, &VDirectoryTree::editDirectoryInfo);
 
     copyAct = new QAction(QIcon(":/resources/icons/copy.svg"),
-                          tr("&Copy"), this);
+                          tr("&Copy\t%1").arg(QKeySequence(c_copyShortcutSequence).toString()), this);
     copyAct->setToolTip(tr("Copy selected folders"));
     connect(copyAct, &QAction::triggered,
             this, &VDirectoryTree::copySelectedDirectories);
 
     cutAct = new QAction(QIcon(":/resources/icons/cut.svg"),
-                          tr("C&ut"), this);
+                         tr("C&ut\t%1").arg(QKeySequence(c_cutShortcutSequence).toString()), this);
     cutAct->setToolTip(tr("Cut selected folders"));
     connect(cutAct, &QAction::triggered,
             this, &VDirectoryTree::cutSelectedDirectories);
 
     pasteAct = new QAction(QIcon(":/resources/icons/paste.svg"),
-                          tr("&Paste"), this);
+                           tr("&Paste\t%1").arg(QKeySequence(c_pasteShortcutSequence).toString()), this);
     pasteAct->setToolTip(tr("Paste folders in this folder"));
     connect(pasteAct, &QAction::triggered,
             this, &VDirectoryTree::pasteDirectoriesInCurDir);
@@ -534,11 +571,16 @@ void VDirectoryTree::cutSelectedDirectories()
 
 void VDirectoryTree::pasteDirectoriesInCurDir()
 {
+    if (m_copiedDirs.isEmpty()) {
+        return;
+    }
+
     QTreeWidgetItem *item = currentItem();
     VDirectory *destDir = m_notebook->getRootDir();
     if (item) {
         destDir = getVDirectory(item);
     }
+
     pasteDirectories(destDir);
 }
 
@@ -553,9 +595,10 @@ void VDirectoryTree::pasteDirectories(VDirectory *p_destDir)
     int nrPasted = 0;
     for (int i = 0; i < m_copiedDirs.size(); ++i) {
         QPointer<VDirectory> srcDir = m_copiedDirs[i];
-        if (!srcDir) {
+        if (!srcDir || srcDir == p_destDir) {
             continue;
         }
+
         QString dirName = srcDir->getName();
         VDirectory *srcParentDir = srcDir->getParentDirectory();
         if (srcParentDir == p_destDir && !isCut) {

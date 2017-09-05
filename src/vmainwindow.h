@@ -44,8 +44,12 @@ public:
 
     VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent = 0);
     const QVector<QPair<QString, QString> > &getPalette() const;
-    void locateFile(VFile *p_file);
-    void locateCurrentFile();
+
+    // Returns true if the location succeeds.
+    bool locateFile(VFile *p_file);
+
+    // Returns true if the location succeeds.
+    bool locateCurrentFile();
 
     VFileList *getFileList() const;
 

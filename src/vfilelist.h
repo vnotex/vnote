@@ -67,9 +67,15 @@ protected:
 
 private:
     void setupUI();
+
+    // Init shortcuts.
+    void initShortcuts();
+
     void updateFileList();
     QListWidgetItem *insertFileListItem(VFile *file, bool atFront = false);
     void removeFileListItem(QListWidgetItem *item);
+
+    // Init actions.
     void initActions();
 
     // Return the corresponding QListWidgetItem of @p_file.
@@ -113,6 +119,11 @@ private:
     // Map second key to QListWidgetItem.
     QMap<QChar, QListWidgetItem *> m_keyMap;
     QVector<QLabel *> m_naviLabels;
+
+    static const QString c_infoShortcutSequence;
+    static const QString c_copyShortcutSequence;
+    static const QString c_cutShortcutSequence;
+    static const QString c_pasteShortcutSequence;
 };
 
 inline void VFileList::setEditArea(VEditArea *editArea)
