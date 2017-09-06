@@ -33,8 +33,8 @@ public:
     // if @p_path is not inside this notebook.
     VFile *tryLoadFile(const QString &p_path);
 
-    QString getName() const;
-    QString getPath() const;
+    const QString &getName() const;
+    const QString &getPath() const;
 
     VDirectory *getRootDir() const;
 

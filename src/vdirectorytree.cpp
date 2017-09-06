@@ -115,6 +115,11 @@ void VDirectoryTree::initActions()
     m_openLocationAct->setToolTip(tr("Open the folder containing this folder in operating system"));
     connect(m_openLocationAct, &QAction::triggered,
             this, &VDirectoryTree::openDirectoryLocation);
+
+    m_reloadAct = new QAction(tr("&Reload From Disk"), this);
+    m_reloadAct->setToolTip(tr("Reload the content of this folder (or notebook) from disk"));
+    connect(m_reloadAct, &QAction::triggered,
+            this, &VDirectoryTree::reloadFromDisk);
 }
 
 void VDirectoryTree::setNotebook(VNotebook *p_notebook)
@@ -140,7 +145,9 @@ void VDirectoryTree::setNotebook(VNotebook *p_notebook)
     if (!m_notebook->open()) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                             tr("Fail to open notebook <span style=\"%1\">%2</span>.")
-                              .arg(g_config->c_dataTextStyle).arg(m_notebook->getName()), "",
+                              .arg(g_config->c_dataTextStyle).arg(m_notebook->getName()),
+                            tr("Please check if path <span style=\"%1\">%2</span> exists.")
+                              .arg(g_config->c_dataTextStyle).arg(m_notebook->getPath()),
                             QMessageBox::Ok, QMessageBox::Ok, this);
         clear();
         return;
@@ -202,7 +209,9 @@ void VDirectoryTree::buildSubTree(QTreeWidgetItem *p_parent, int p_depth)
     if (!dir->open()) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                             tr("Fail to open folder <span style=\"%1\">%2</span>.")
-                              .arg(g_config->c_dataTextStyle).arg(dir->getName()), "",
+                              .arg(g_config->c_dataTextStyle).arg(dir->getName()),
+                            tr("Please check if path <span style=\"%1\">%2</span> exists.")
+                              .arg(g_config->c_dataTextStyle).arg(dir->retrivePath()),
                             QMessageBox::Ok, QMessageBox::Ok, this);
         return;
     }
@@ -355,8 +364,10 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
         menu.addAction(pasteAct);
     }
 
+    menu.addSeparator();
+    menu.addAction(m_reloadAct);
+
     if (item) {
-        menu.addSeparator();
         menu.addAction(m_openLocationAct);
         menu.addAction(dirInfoAct);
     }
@@ -530,6 +541,81 @@ void VDirectoryTree::openDirectoryLocation() const
     V_ASSERT(curItem);
     QUrl url = QUrl::fromLocalFile(getVDirectory(curItem)->retriveBasePath());
     QDesktopServices::openUrl(url);
+}
+
+void VDirectoryTree::reloadFromDisk()
+{
+    if (!m_notebook) {
+        return;
+    }
+
+    QString info;
+    VDirectory *curDir = NULL;
+    QTreeWidgetItem *curItem = currentItem();
+    if (curItem) {
+        // Reload current directory.
+        curDir = getVDirectory(curItem);
+        info = tr("Are you sure to reload folder <span style=\"%1\">%2</span>?")
+                 .arg(g_config->c_dataTextStyle).arg(curDir->getName());
+    } else {
+        // Reload notebook.
+        info = tr("Are you sure to reload notebook <span style=\"%1\">%2</span>?")
+                 .arg(g_config->c_dataTextStyle).arg(m_notebook->getName());
+    }
+
+    int ret = VUtils::showMessage(QMessageBox::Information, tr("Information"),
+                                  info,
+                                  tr("VNote will close all the related notes before reload."),
+                                  QMessageBox::Ok | QMessageBox::Cancel,
+                                  QMessageBox::Ok, this);
+
+    if (ret != QMessageBox::Ok) {
+        return;
+    }
+
+    m_notebookCurrentDirMap.remove(m_notebook);
+
+    if (curItem) {
+        if (!m_editArea->closeFile(curDir, false)) {
+            return;
+        }
+
+        setCurrentItem(NULL);
+
+        curItem->setExpanded(false);
+        curDir->setExpanded(false);
+
+        curDir->close();
+
+        // Remove all its children.
+        QList<QTreeWidgetItem *> children = curItem->takeChildren();
+        for (int i = 0; i < children.size(); ++i) {
+            delete children[i];
+        }
+
+        buildSubTree(curItem, 1);
+
+        setCurrentItem(curItem);
+    } else {
+        if (!m_editArea->closeFile(m_notebook, false)) {
+            return;
+        }
+
+        m_notebook->close();
+
+        if (!m_notebook->open()) {
+            VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                                tr("Fail to open notebook <span style=\"%1\">%2</span>.")
+                                  .arg(g_config->c_dataTextStyle).arg(m_notebook->getName()),
+                                tr("Please check if path <span style=\"%1\">%2</span> exists.")
+                                  .arg(g_config->c_dataTextStyle).arg(m_notebook->getPath()),
+                                QMessageBox::Ok, QMessageBox::Ok, this);
+            clear();
+            return;
+        }
+
+        updateDirectoryTree();
+    }
 }
 
 void VDirectoryTree::copySelectedDirectories(bool p_cut)

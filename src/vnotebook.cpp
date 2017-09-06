@@ -82,12 +82,12 @@ bool VNotebook::writeConfig() const
     return VConfigManager::writeDirectoryConfig(m_path, json);
 }
 
-QString VNotebook::getName() const
+const QString &VNotebook::getName() const
 {
     return m_name;
 }
 
-QString VNotebook::getPath() const
+const QString &VNotebook::getPath() const
 {
     return m_path;
 }

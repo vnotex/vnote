@@ -56,6 +56,9 @@ private slots:
     void pasteDirectoriesInCurDir();
     void openDirectoryLocation() const;
 
+    // Reload the content of current directory.
+    void reloadFromDisk();
+
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
@@ -122,6 +125,9 @@ private:
     QAction *cutAct;
     QAction *pasteAct;
     QAction *m_openLocationAct;
+
+    // Reload content from disk.
+    QAction *m_reloadAct;
 
     // Navigation Mode.
     // Map second key to QTreeWidgetItem.
