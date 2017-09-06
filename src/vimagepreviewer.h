@@ -112,6 +112,19 @@ private:
         bool m_isBlock;
     };
 
+    // Status about the VMdEdit, used for restore.
+    struct EditStatus
+    {
+        EditStatus()
+            : m_modified(false), m_undoAvailable(false), m_redoAvailable(false)
+        {
+        }
+
+        bool m_modified;
+        bool m_undoAvailable;
+        bool m_redoAvailable;
+    };
+
     // Kick off new preview of m_imageRegions.
     void kickOffPreview(const QVector<VElementRegion> &p_imageRegions);
 
@@ -177,6 +190,9 @@ private:
 
     // Clean up image cache.
     void shrinkImageCache();
+
+    void saveEditStatus(EditStatus &p_status) const;
+    void restoreEditStatus(const EditStatus &p_status);
 
     VMdEdit *m_edit;
     QTextDocument *m_document;

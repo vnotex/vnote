@@ -110,8 +110,6 @@ void VMdEdit::reloadFile()
 
     setPlainText(content);
 
-    setBlockLineDistanceHeight();
-
     setModified(false);
 }
 

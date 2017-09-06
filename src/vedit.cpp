@@ -154,8 +154,6 @@ void VEdit::reloadFile()
 {
     setHtml(m_file->getContent());
 
-    setBlockLineDistanceHeight();
-
     setModified(false);
 }
 
@@ -1276,31 +1274,6 @@ void VEdit::alterContextMenu(QMenu *p_menu, const QList<QAction *> &p_actions)
 {
     Q_UNUSED(p_menu);
     Q_UNUSED(p_actions);
-}
-
-void VEdit::setBlockLineDistanceHeight()
-{
-    if (m_config.m_lineDistanceHeight <= 0) {
-        return;
-    }
-
-    bool modified = isModified();
-    QTextCursor cursor = textCursor();
-    int anchorPos = cursor.selectionStart();
-    int cursorPos = cursor.selectionEnd();
-
-    QTextBlockFormat fmt = cursor.blockFormat();
-    fmt.setLineHeight(m_config.m_lineDistanceHeight,
-                      QTextBlockFormat::LineDistanceHeight);
-    cursor.select(QTextCursor::Document);
-    cursor.mergeBlockFormat(fmt);
-
-    cursor.setPosition(anchorPos);
-    cursor.setPosition(cursorPos, QTextCursor::KeepAnchor);
-
-    setTextCursor(cursor);
-
-    setModified(modified);
 }
 
 void VEdit::updateBlockLineDistanceHeight(int p_pos,

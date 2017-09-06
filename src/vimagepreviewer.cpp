@@ -91,6 +91,7 @@ void VImagePreviewer::previewImageLinks(QVector<ImageLinkInfo> &p_imageLinks,
                                         QTextCursor &p_cursor)
 {
     bool hasNewPreview = false;
+    EditStatus status;
     for (int i = 0; i < p_imageLinks.size(); ++i) {
         ImageLinkInfo &link = p_imageLinks[i];
         if (link.m_previewImageID > -1) {
@@ -109,7 +110,7 @@ void VImagePreviewer::previewImageLinks(QVector<ImageLinkInfo> &p_imageLinks,
 
         updateImageWidth(imgFormat);
 
-        bool isModified = m_edit->isModified();
+        saveEditStatus(status);
         p_cursor.joinPreviousEditBlock();
         p_cursor.setPosition(link.m_endPos);
         if (link.m_isBlock) {
@@ -120,7 +121,7 @@ void VImagePreviewer::previewImageLinks(QVector<ImageLinkInfo> &p_imageLinks,
         p_cursor.insertImage(imgFormat);
         p_cursor.endEditBlock();
 
-        m_edit->setModified(isModified);
+        restoreEditStatus(status);
 
         Q_ASSERT(!m_previewImages.contains(info.m_id));
         m_previewImages.insert(info.m_id, info);
@@ -190,6 +191,8 @@ bool VImagePreviewer::clearObsoletePreviewImagesOfBlock(QTextBlock &p_block,
     bool hasObsolete = false;
     bool hasOtherChars = false;
     bool hasValidPreview = false;
+    EditStatus status;
+
     // From back to front.
     for (int i = text.size() - 1; i >= 0; --i) {
         if (text[i].isSpace()) {
@@ -211,12 +214,12 @@ bool VImagePreviewer::clearObsoletePreviewImagesOfBlock(QTextBlock &p_block,
             if (it == m_previewImages.end()) {
                 // It is obsolete since we can't find it in the cache.
                 qDebug() << "remove obsolete preview image" << imageID;
-                bool isModified = m_edit->isModified();
+                saveEditStatus(status);
                 p_cursor.joinPreviousEditBlock();
                 p_cursor.setPosition(pos);
                 p_cursor.deleteChar();
                 p_cursor.endEditBlock();
-                m_edit->setModified(isModified);
+                restoreEditStatus(status);
                 hasObsolete = true;
             } else {
                 hasValidPreview = true;
@@ -229,12 +232,12 @@ bool VImagePreviewer::clearObsoletePreviewImagesOfBlock(QTextBlock &p_block,
     if (hasObsolete && !hasOtherChars && !hasValidPreview) {
         // Delete the whole block.
         qDebug() << "delete a preview block" << p_block.blockNumber();
-        bool isModified = m_edit->isModified();
+        saveEditStatus(status);
         p_cursor.joinPreviousEditBlock();
         p_cursor.setPosition(p_block.position());
         VEditUtils::removeBlock(p_cursor);
         p_cursor.endEditBlock();
-        m_edit->setModified(isModified);
+        restoreEditStatus(status);
     }
 
     return hasObsolete;
@@ -572,6 +575,8 @@ bool VImagePreviewer::updatePreviewImageWidthOfBlock(const QTextBlock &p_block,
 {
     QString text = p_block.text();
     bool updated = false;
+    EditStatus status;
+
     // From back to front.
     for (int i = text.size() - 1; i >= 0; --i) {
         if (text[i].isSpace()) {
@@ -586,14 +591,14 @@ bool VImagePreviewer::updatePreviewImageWidthOfBlock(const QTextBlock &p_block,
             if (imageFormat.isValid()
                 && isImageSourcePreviewImage(imageFormat)
                 && updateImageWidth(imageFormat)) {
-                bool isModified = m_edit->isModified();
+                saveEditStatus(status);
                 p_cursor.joinPreviousEditBlock();
                 p_cursor.setPosition(pos);
                 p_cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 1);
                 Q_ASSERT(p_cursor.charFormat().toImageFormat().isValid());
                 p_cursor.setCharFormat(imageFormat);
                 p_cursor.endEditBlock();
-                m_edit->setModified(isModified);
+                restoreEditStatus(status);
                 updated = true;
             }
         }
@@ -621,4 +626,37 @@ void VImagePreviewer::shrinkImageCache()
             }
         }
     }
+}
+
+void VImagePreviewer::saveEditStatus(EditStatus &p_status) const
+{
+    p_status.m_modified = m_edit->isModified();
+    p_status.m_undoAvailable = m_document->isUndoAvailable();
+    p_status.m_redoAvailable = m_document->isRedoAvailable();
+}
+
+void VImagePreviewer::restoreEditStatus(const EditStatus &p_status)
+{
+    int st = 0;
+    if (!p_status.m_undoAvailable) {
+        st |= 1;
+    }
+
+    if (!p_status.m_redoAvailable) {
+        st |= 2;
+    }
+
+    if (st > 0) {
+        QTextDocument::Stacks stack = QTextDocument::UndoStack;
+        if (st == 2) {
+            stack = QTextDocument::RedoStack;
+        } else if (st == 3) {
+            stack = QTextDocument::UndoAndRedoStacks;
+        }
+
+        m_document->clearUndoRedoStacks(stack);
+    }
+
+    // Clear undo and redo stacks will change the state to modified.
+    m_edit->setModified(p_status.m_modified);
 }

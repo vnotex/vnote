@@ -214,9 +214,6 @@ protected:
     // Called in contextMenuEvent() to modify the context menu.
     virtual void alterContextMenu(QMenu *p_menu, const QList<QAction *> &p_actions);
 
-    // Set all the blocks' line height.
-    void setBlockLineDistanceHeight();
-
 private:
     QLabel *m_wrapLabel;
     QTimer *m_labelTimer;

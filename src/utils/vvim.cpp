@@ -4547,7 +4547,7 @@ void VVim::processUndoAction(QList<Token> &p_tokens)
     QTextDocument *doc = m_editor->document();
     int i = 0;
     for (i = 0; i < repeat && doc->isUndoAvailable(); ++i) {
-        doc->undo();
+        m_editor->undo();
     }
 
     message(tr("Undo %1 %2").arg(i).arg(i > 1 ? tr("changes") : tr("change")));
@@ -4569,7 +4569,7 @@ void VVim::processRedoAction(QList<Token> &p_tokens)
     QTextDocument *doc = m_editor->document();
     int i = 0;
     for (i = 0; i < repeat && doc->isRedoAvailable(); ++i) {
-        doc->redo();
+        m_editor->redo();
     }
 
     message(tr("Redo %1 %2").arg(i).arg(i > 1 ? tr("changes") : tr("change")));
