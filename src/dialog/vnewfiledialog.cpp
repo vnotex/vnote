@@ -77,7 +77,7 @@ void VNewFileDialog::handleInputChanged()
     QString name = nameEdit->text();
     bool nameOk = !name.isEmpty();
     if (nameOk) {
-        // Check if the name conflicts with existing notebook name.
+        // Check if the name conflicts with existing note name.
         // Case-insensitive when creating note.
         if (m_directory->findFile(name, false)) {
             nameOk = false;

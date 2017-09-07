@@ -1,16 +1,23 @@
 #include <QtWidgets>
 #include "vdirinfodialog.h"
+#include "vdirectory.h"
+#include "vconfigmanager.h"
 
-VDirInfoDialog::VDirInfoDialog(const QString &title, const QString &info,
-                               const QString &defaultName,
+extern VConfigManager *g_config;
+
+VDirInfoDialog::VDirInfoDialog(const QString &title,
+                               const QString &info,
+                               const VDirectory *directory,
+                               VDirectory *parentDirectory,
                                QWidget *parent)
-    : QDialog(parent), infoLabel(NULL), title(title), info(info), defaultName(defaultName)
+    : QDialog(parent), infoLabel(NULL), title(title), info(info),
+      m_directory(directory), m_parentDirectory(parentDirectory)
 {
     setupUI();
 
-    connect(nameEdit, &QLineEdit::textChanged, this, &VDirInfoDialog::enableOkButton);
+    connect(nameEdit, &QLineEdit::textChanged, this, &VDirInfoDialog::handleInputChanged);
 
-    enableOkButton();
+    handleInputChanged();
 }
 
 void VDirInfoDialog::setupUI()
@@ -19,9 +26,13 @@ void VDirInfoDialog::setupUI()
         infoLabel = new QLabel(info);
     }
     nameLabel = new QLabel(tr("Folder &name:"));
-    nameEdit = new QLineEdit(defaultName);
+    nameEdit = new QLineEdit(m_directory->getName());
     nameEdit->selectAll();
     nameLabel->setBuddy(nameEdit);
+
+    m_warnLabel = new QLabel();
+    m_warnLabel->setWordWrap(true);
+    m_warnLabel->hide();
 
     // Ok is the default button.
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -40,6 +51,7 @@ void VDirInfoDialog::setupUI()
         mainLayout->addWidget(infoLabel);
     }
     mainLayout->addLayout(topLayout);
+    mainLayout->addWidget(m_warnLabel);
     mainLayout->addWidget(m_btnBox);
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     setLayout(mainLayout);
@@ -47,10 +59,28 @@ void VDirInfoDialog::setupUI()
     setWindowTitle(title);
 }
 
-void VDirInfoDialog::enableOkButton()
+void VDirInfoDialog::handleInputChanged()
 {
+    bool showWarnLabel = false;
+    QString name = nameEdit->text();
+    bool nameOk = !name.isEmpty();
+    if (nameOk && name != m_directory->getName()) {
+        // Check if the name conflicts with existing directory name.
+        // Case-insensitive when creating note.
+        if (m_parentDirectory->findSubDirectory(name, false)) {
+            nameOk = false;
+            showWarnLabel = true;
+            QString nameConflictText = tr("<span style=\"%1\">WARNING</span>: Name (case-insensitive) already exists. "
+                                          "Please choose another name.")
+                                          .arg(g_config->c_warningTextStyle);
+            m_warnLabel->setText(nameConflictText);
+        }
+    }
+
+    m_warnLabel->setVisible(showWarnLabel);
+
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
-    okBtn->setEnabled(!nameEdit->text().isEmpty());
+    okBtn->setEnabled(nameOk);
 }
 
 QString VDirInfoDialog::getNameInput() const

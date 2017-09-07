@@ -388,35 +388,24 @@ void VDirectoryTree::newSubDirectory()
 
     QString info = tr("Create a subfolder in <span style=\"%1\">%2</span>.")
                      .arg(g_config->c_dataTextStyle).arg(curDir->getName());
-    QString text(tr("Folder &name:"));
-    QString defaultText("new_folder");
+    QString defaultName("new_folder");
+    defaultName = VUtils::getFileNameWithSequence(curDir->fetchPath(), defaultName);
+    VNewDirDialog dialog(tr("Create Folder"), info, defaultName, curDir, this);
+    if (dialog.exec() == QDialog::Accepted) {
+        QString name = dialog.getNameInput();
 
-    do {
-        VNewDirDialog dialog(tr("Create Folder"), info, text, defaultText, this);
-        if (dialog.exec() == QDialog::Accepted) {
-            QString name = dialog.getNameInput();
-            // Case-insensitive.
-            if (curDir->findSubDirectory(name, false)) {
-                info = tr("Name (case-insensitive) already exists in "
-                          "<span style=\"%1\">%2</span>. Please choose another name.")
-                         .arg(g_config->c_dataTextStyle).arg(curDir->getName());
-                defaultText = name;
-                continue;
-            }
-
-            VDirectory *subDir = curDir->createSubDirectory(name);
-            if (!subDir) {
-                VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    tr("Fail to create folder <span style=\"%1\">%2</span>.")
-                                      .arg(g_config->c_dataTextStyle).arg(name), "",
-                                    QMessageBox::Ok, QMessageBox::Ok, this);
-                return;
-            }
-            updateItemChildren(curItem);
-            locateDirectory(subDir);
+        VDirectory *subDir = curDir->createSubDirectory(name);
+        if (!subDir) {
+            VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                                tr("Fail to create folder <span style=\"%1\">%2</span>.")
+                                  .arg(g_config->c_dataTextStyle).arg(name), "",
+                                QMessageBox::Ok, QMessageBox::Ok, this);
+            return;
         }
-        break;
-    } while (true);
+
+        updateItemChildren(curItem);
+        locateDirectory(subDir);
+    }
 }
 
 void VDirectoryTree::newRootDirectory()
@@ -426,33 +415,25 @@ void VDirectoryTree::newRootDirectory()
     }
     QString info = tr("Create a root folder in notebook <span style=\"%1\">%2</span>.")
                      .arg(g_config->c_dataTextStyle).arg(m_notebook->getName());
-    QString text(tr("Folder &name:"));
-    QString defaultText("new_folder");
     VDirectory *rootDir = m_notebook->getRootDir();
-    do {
-        VNewDirDialog dialog(tr("Create Root Folder"), info, text, defaultText, this);
-        if (dialog.exec() == QDialog::Accepted) {
-            QString name = dialog.getNameInput();
-            if (rootDir->findSubDirectory(name, false)) {
-                info = tr("Name (case-insensitive) already exists in "
-                          "notebook <span style=\"%1\">%2</span>. Please choose another name.")
-                         .arg(g_config->c_dataTextStyle).arg(m_notebook->getName());
-                defaultText = name;
-                continue;
-            }
-            VDirectory *subDir = rootDir->createSubDirectory(name);
-            if (!subDir) {
-                VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    tr("Fail to create folder <span style=\"%1\">%2</span>.")
-                                      .arg(g_config->c_dataTextStyle).arg(name), "",
-                                    QMessageBox::Ok, QMessageBox::Ok, this);
-                return;
-            }
-            updateItemChildren(NULL);
-            locateDirectory(subDir);
+    QString defaultName("new_folder");
+    defaultName = VUtils::getFileNameWithSequence(rootDir->fetchPath(), defaultName);
+    VNewDirDialog dialog(tr("Create Root Folder"), info, defaultName, rootDir, this);
+    if (dialog.exec() == QDialog::Accepted) {
+        QString name = dialog.getNameInput();
+
+        VDirectory *subDir = rootDir->createSubDirectory(name);
+        if (!subDir) {
+            VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                                tr("Fail to create folder <span style=\"%1\">%2</span>.")
+                                  .arg(g_config->c_dataTextStyle).arg(name), "",
+                                QMessageBox::Ok, QMessageBox::Ok, this);
+            return;
         }
-        break;
-    } while (true);
+
+        updateItemChildren(NULL);
+        locateDirectory(subDir);
+    }
 }
 
 void VDirectoryTree::deleteDirectory()
@@ -503,36 +484,26 @@ void VDirectoryTree::editDirectoryInfo()
     VDirectory *curDir = getVDirectory(curItem);
     VDirectory *parentDir = curDir->getParentDirectory();
     QString curName = curDir->getName();
-    QString info;
-    QString defaultName = curName;
 
-    do {
-        VDirInfoDialog dialog(tr("Folder Information"), info, defaultName, this);
-        if (dialog.exec() == QDialog::Accepted) {
-            QString name = dialog.getNameInput();
-            if (name == curName) {
-                return;
-            }
-
-            if (parentDir->findSubDirectory(name, false)) {
-                info = "Name (case-insensitive) already exists. Please choose another name.";
-                defaultName = name;
-                continue;
-            }
-
-            if (!curDir->rename(name)) {
-                VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    tr("Fail to rename folder <span style=\"%1\">%2</span>.")
-                                      .arg(g_config->c_dataTextStyle).arg(curName), "",
-                                    QMessageBox::Ok, QMessageBox::Ok, this);
-                return;
-            }
-            curItem->setText(0, name);
-            curItem->setToolTip(0, name);
-            emit directoryUpdated(curDir);
+    VDirInfoDialog dialog(tr("Folder Information"), "", curDir, parentDir, this);
+    if (dialog.exec() == QDialog::Accepted) {
+        QString name = dialog.getNameInput();
+        if (name == curName) {
+            return;
         }
-        break;
-    } while (true);
+
+        if (!curDir->rename(name)) {
+            VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                                tr("Fail to rename folder <span style=\"%1\">%2</span>.")
+                                  .arg(g_config->c_dataTextStyle).arg(curName), "",
+                                QMessageBox::Ok, QMessageBox::Ok, this);
+            return;
+        }
+
+        curItem->setText(0, name);
+        curItem->setToolTip(0, name);
+        emit directoryUpdated(curDir);
+    }
 }
 
 void VDirectoryTree::openDirectoryLocation() const
