@@ -5459,6 +5459,10 @@ bool VVim::processLeaderSequence(const Key &p_key)
     } else if (p_key == Key(Qt::Key_Space)) {
         // <leader><space>, clear search highlight
         clearSearchHighlight();
+    } else if (p_key == Key(Qt::Key_W)) {
+        // <leader>w, save note
+        emit m_editor->saveNote();
+        message(tr("Note has been saved"));
     } else {
         validSequence = false;
     }

@@ -162,7 +162,7 @@ VNote supports a simple but useful Vim mode, including **Normal**, **Insert**, *
 VNote supports following features of Vim:
 
 - `r`, `s`, `S`, `i`, `I`, `a`, `A`, `c`, `C`, `o`, and `O`;
-- Actions `d`, `c`, `y`, `p`, `<`, `>`, `gu`, `gU`, and `~`;
+- Actions `d`, `c`, `y`, `p`, `<`, `>`, `gu`, `gU`, `J`, `gJ`, and `~`;
 - Movements `h/j/k/l`, `gj/gk`, `Ctrl+U`, `Ctrl+D`, `gg`, `G`, `0`, `^`, `{`, `}`, and `$`;
 - Marks `a-z`;
 - Registers `"`, `_`, `+`, `a-z`(`A-Z`);
@@ -170,6 +170,7 @@ VNote supports following features of Vim:
 - Leader key (`Space`)
     - Currently `<leader>y/d/p` equals to `"+y/d/p`, which will access the system's clipboard;
     - `<leader><Space>` to clear search highlight;
+    - `<leader>w` to save note;
 - `zz`, `zb`, `zt`;
 - `u` and `Ctrl+R` for undo and redo;
 - Text objects `i/a`: word, WORD, `''`, `""`, `` ` ` ``, `()`, `[]`, `<>`, and `{}`;
