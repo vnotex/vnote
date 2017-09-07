@@ -22,7 +22,7 @@ void VOrphanFileInfoDialog::setupUI()
 {
     QFormLayout *topLayout = new QFormLayout();
 
-    QLabel *fileLabel = new QLabel(m_file->retrivePath());
+    QLabel *fileLabel = new QLabel(m_file->fetchPath());
     topLayout->addRow(tr("File:"), fileLabel);
 
     QLabel *imageFolderLabel = new QLabel(tr("Image folder:"));

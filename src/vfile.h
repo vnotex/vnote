@@ -32,12 +32,12 @@ public:
     virtual const VNotebook *getNotebook() const;
     virtual VNotebook *getNotebook();
     virtual QString getNotebookName() const;
-    virtual QString retrivePath() const;
-    virtual QString retriveRelativePath() const;
-    virtual QString retriveBasePath() const;
+    virtual QString fetchPath() const;
+    virtual QString fetchRelativePath() const;
+    virtual QString fetchBasePath() const;
 
     // The path of the image folder.
-    virtual QString retriveImagePath() const;
+    virtual QString fetchImagePath() const;
 
     bool isModified() const;
     bool isModifiable() const;

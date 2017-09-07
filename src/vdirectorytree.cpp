@@ -211,7 +211,7 @@ void VDirectoryTree::buildSubTree(QTreeWidgetItem *p_parent, int p_depth)
                             tr("Fail to open folder <span style=\"%1\">%2</span>.")
                               .arg(g_config->c_dataTextStyle).arg(dir->getName()),
                             tr("Please check if path <span style=\"%1\">%2</span> exists.")
-                              .arg(g_config->c_dataTextStyle).arg(dir->retrivePath()),
+                              .arg(g_config->c_dataTextStyle).arg(dir->fetchPath()),
                             QMessageBox::Ok, QMessageBox::Ok, this);
         return;
     }
@@ -469,7 +469,7 @@ void VDirectoryTree::deleteDirectory()
                                      "VNote will delete the whole directory (<b>ANY</b> files) "
                                      "<span style=\"%2\">%3</span>."
                                      "<br>It may be UNRECOVERABLE!")
-                                    .arg(g_config->c_warningTextStyle).arg(g_config->c_dataTextStyle).arg(curDir->retrivePath()),
+                                    .arg(g_config->c_warningTextStyle).arg(g_config->c_dataTextStyle).arg(curDir->fetchPath()),
                                   QMessageBox::Ok | QMessageBox::Cancel,
                                   QMessageBox::Ok, this, MessageBoxType::Danger);
     if (ret == QMessageBox::Ok) {
@@ -539,7 +539,7 @@ void VDirectoryTree::openDirectoryLocation() const
 {
     QTreeWidgetItem *curItem = currentItem();
     V_ASSERT(curItem);
-    QUrl url = QUrl::fromLocalFile(getVDirectory(curItem)->retriveBasePath());
+    QUrl url = QUrl::fromLocalFile(getVDirectory(curItem)->fetchBasePath());
     QDesktopServices::openUrl(url);
 }
 
@@ -630,7 +630,7 @@ void VDirectoryTree::copySelectedDirectories(bool p_cut)
         VDirectory *dir = getVDirectory(items[i]);
         QJsonObject dirJson;
         dirJson["notebook"] = dir->getNotebookName();
-        dirJson["path"] = dir->retrivePath();
+        dirJson["path"] = dir->fetchPath();
         dirs.append(dirJson);
 
         m_copiedDirs.append(dir);
@@ -690,7 +690,7 @@ void VDirectoryTree::pasteDirectories(VDirectory *p_destDir)
         if (srcParentDir == p_destDir && !isCut) {
             // Copy and paste in the same directory.
             // Rename it to xx_copy
-            dirName = VUtils::generateCopiedDirName(srcParentDir->retrivePath(), dirName);
+            dirName = VUtils::generateCopiedDirName(srcParentDir->fetchPath(), dirName);
         }
         if (copyDirectory(p_destDir, dirName, srcDir, isCut)) {
             nrPasted++;
@@ -779,8 +779,8 @@ bool VDirectoryTree::copyDirectory(VDirectory *p_destDir, const QString &p_destN
     qDebug() << "copy" << p_srcDir->getName() << "to" << p_destDir->getName()
              << "as" << p_destName;
     QString srcName = p_srcDir->getName();
-    QString srcPath = QDir::cleanPath(p_srcDir->retrivePath());
-    QString destPath = QDir::cleanPath(QDir(p_destDir->retrivePath()).filePath(p_destName));
+    QString srcPath = QDir::cleanPath(p_srcDir->fetchPath());
+    QString destPath = QDir::cleanPath(QDir(p_destDir->fetchPath()).filePath(p_destName));
     if (VUtils::equalPath(srcPath, destPath)) {
         return true;
     }
@@ -855,7 +855,7 @@ QTreeWidgetItem *VDirectoryTree::findVDirectory(const VDirectory *p_dir, bool &p
 bool VDirectoryTree::locateDirectory(const VDirectory *p_directory)
 {
     if (p_directory) {
-        qDebug() << "locate folder" << p_directory->retrivePath()
+        qDebug() << "locate folder" << p_directory->fetchPath()
                  << "in" << m_notebook->getName();
         if (p_directory->getNotebook() != m_notebook) {
             return false;

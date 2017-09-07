@@ -25,8 +25,8 @@ static bool fileComp(const VOpenedListMenu::ItemInfo &a,
     } else if (notebooka > notebookb) {
         return false;
     } else {
-        QString patha = a.file->retriveBasePath();
-        QString pathb = b.file->retriveBasePath();
+        QString patha = a.file->fetchBasePath();
+        QString pathb = b.file->fetchBasePath();
 #if defined(Q_OS_WIN)
         patha = patha.toLower();
         pathb = pathb.toLower();
@@ -128,7 +128,7 @@ QString VOpenedListMenu::generateDescription(const VFile *p_file) const
         return "";
     }
     // [Notebook]path
-    return QString("[%1] %2").arg(p_file->getNotebookName()).arg(p_file->retrivePath());
+    return QString("[%1] %2").arg(p_file->getNotebookName()).arg(p_file->fetchPath());
 }
 
 void VOpenedListMenu::handleItemTriggered(QAction *p_action)

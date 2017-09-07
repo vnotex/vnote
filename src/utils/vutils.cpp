@@ -181,7 +181,7 @@ QVector<ImageLink> VUtils::fetchImagesFromMarkdownFile(VFile *p_file,
     }
 
     QRegExp regExp(c_imageLinkRegExp);
-    QString basePath = p_file->retriveBasePath();
+    QString basePath = p_file->fetchBasePath();
     int pos = 0;
     while (pos < text.size() && (pos = regExp.indexIn(text, pos)) != -1) {
         QString imageUrl = regExp.capturedTexts()[2].trimmed();

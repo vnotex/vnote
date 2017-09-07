@@ -386,7 +386,7 @@ QString VImagePreviewer::fetchImagePathToPreview(const QString &p_text)
     }
 
     QString imagePath;
-    QFileInfo info(m_file->retriveBasePath(), imageUrl);
+    QFileInfo info(m_file->fetchBasePath(), imageUrl);
 
     if (info.exists()) {
         if (info.isNativePath()) {
@@ -398,7 +398,7 @@ QString VImagePreviewer::fetchImagePathToPreview(const QString &p_text)
     } else {
         QString decodedUrl(imageUrl);
         VUtils::decodeUrl(decodedUrl);
-        QFileInfo dinfo(m_file->retriveBasePath(), decodedUrl);
+        QFileInfo dinfo(m_file->fetchBasePath(), decodedUrl);
         if (dinfo.exists()) {
             if (dinfo.isNativePath()) {
                 // Local file.

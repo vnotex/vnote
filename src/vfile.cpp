@@ -25,7 +25,7 @@ bool VFile::open()
         return true;
     }
     Q_ASSERT(m_content.isEmpty());
-    QString path = retrivePath();
+    QString path = fetchPath();
     qDebug() << "path" << path;
     m_content = VUtils::readFileFromDisk(path);
     m_modified = false;
@@ -53,7 +53,7 @@ void VFile::deleteDiskFile()
     }
 
     // Delete the file
-    QString filePath = retrivePath();
+    QString filePath = fetchPath();
     QFile file(filePath);
     if (file.remove()) {
         qDebug() << "deleted" << filePath;
@@ -65,7 +65,7 @@ void VFile::deleteDiskFile()
 bool VFile::save()
 {
     Q_ASSERT(m_opened);
-    bool ret = VUtils::writeFileToDisk(retrivePath(), m_content);
+    bool ret = VUtils::writeFileToDisk(fetchPath(), m_content);
     return ret;
 }
 
@@ -76,7 +76,7 @@ void VFile::convert(DocType p_curType, DocType p_targetType)
     if (p_curType == p_targetType) {
         return;
     }
-    QString path = retrivePath();
+    QString path = fetchPath();
     QString fileText = VUtils::readFileFromDisk(path);
     QTextEdit editor;
     if (p_curType == DocType::Markdown) {
@@ -109,7 +109,7 @@ void VFile::deleteLocalImages()
         }
     }
 
-    qDebug() << "delete" << deleted << "images for" << retrivePath();
+    qDebug() << "delete" << deleted << "images for" << fetchPath();
 }
 
 void VFile::setName(const QString &p_name)
@@ -163,26 +163,26 @@ VNotebook *VFile::getNotebook()
     return getDirectory()->getNotebook();
 }
 
-QString VFile::retrivePath() const
+QString VFile::fetchPath() const
 {
-    QString dirPath = getDirectory()->retrivePath();
+    QString dirPath = getDirectory()->fetchPath();
     return QDir(dirPath).filePath(m_name);
 }
 
-QString VFile::retriveRelativePath() const
+QString VFile::fetchRelativePath() const
 {
-    QString dirRelativePath = getDirectory()->retriveRelativePath();
+    QString dirRelativePath = getDirectory()->fetchRelativePath();
     return QDir(dirRelativePath).filePath(m_name);
 }
 
-QString VFile::retriveBasePath() const
+QString VFile::fetchBasePath() const
 {
-    return getDirectory()->retrivePath();
+    return getDirectory()->fetchPath();
 }
 
-QString VFile::retriveImagePath() const
+QString VFile::fetchImagePath() const
 {
-    return QDir(retriveBasePath()).filePath(getNotebook()->getImageFolder());
+    return QDir(fetchBasePath()).filePath(getNotebook()->getImageFolder());
 }
 
 void VFile::setContent(const QString &p_content)
@@ -213,14 +213,14 @@ FileType VFile::getType() const
 bool VFile::isInternalImageFolder(const QString &p_path) const
 {
     return VUtils::equalPath(VUtils::basePathFromPath(p_path),
-                             getDirectory()->retrivePath());
+                             getDirectory()->fetchPath());
 }
 
 QUrl VFile::getBaseUrl() const
 {
     // Need to judge the path: Url, local file, resource file.
     QUrl baseUrl;
-    QString basePath = retriveBasePath();
+    QString basePath = fetchBasePath();
     QFileInfo pathInfo(basePath);
     if (pathInfo.exists()) {
         if (pathInfo.isNativePath()) {
@@ -249,7 +249,7 @@ bool VFile::rename(const QString &p_name)
     VDirectory *dir = getDirectory();
     V_ASSERT(dir);
     // Rename it in disk.
-    QDir diskDir(dir->retrivePath());
+    QDir diskDir(dir->fetchPath());
     if (!diskDir.rename(m_name, p_name)) {
         qWarning() << "fail to rename note" << m_name << "to" << p_name << "in disk";
         return false;

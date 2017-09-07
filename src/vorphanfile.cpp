@@ -32,22 +32,22 @@ bool VOrphanFile::open()
     return true;
 }
 
-QString VOrphanFile::retrivePath() const
+QString VOrphanFile::fetchPath() const
 {
     return m_path;
 }
 
-QString VOrphanFile::retriveRelativePath() const
+QString VOrphanFile::fetchRelativePath() const
 {
     return m_path;
 }
 
-QString VOrphanFile::retriveBasePath() const
+QString VOrphanFile::fetchBasePath() const
 {
     return VUtils::basePathFromPath(m_path);
 }
 
-QString VOrphanFile::retriveImagePath() const
+QString VOrphanFile::fetchImagePath() const
 {
     QString folder = m_imageFolder;
     if (m_imageFolder.isEmpty()) {
@@ -58,7 +58,7 @@ QString VOrphanFile::retriveImagePath() const
     if (fi.isAbsolute()) {
         return folder;
     } else {
-        return QDir(retriveBasePath()).filePath(folder);
+        return QDir(fetchBasePath()).filePath(folder);
     }
 }
 
@@ -66,7 +66,7 @@ bool VOrphanFile::save()
 {
     Q_ASSERT(m_opened);
     Q_ASSERT(m_modifiable);
-    return VUtils::writeFileToDisk(retrivePath(), m_content);
+    return VUtils::writeFileToDisk(fetchPath(), m_content);
 }
 
 void VOrphanFile::convert(DocType /* p_curType */, DocType /* p_targetType */)
@@ -112,13 +112,13 @@ void VOrphanFile::setContent(const QString & p_content)
 bool VOrphanFile::isInternalImageFolder(const QString &p_path) const
 {
     return VUtils::equalPath(VUtils::basePathFromPath(p_path),
-                             retriveBasePath())
-           || VUtils::equalPath(p_path, retriveImagePath());
+                             fetchBasePath())
+           || VUtils::equalPath(p_path, fetchImagePath());
 }
 
 bool VOrphanFile::rename(const QString &p_name)
 {
-    QDir dir(retriveBasePath());
+    QDir dir(fetchBasePath());
     if (!dir.rename(m_name, p_name)) {
         qWarning() << "fail to rename note" << m_name << "to" << p_name << "in disk";
         return false;
@@ -131,7 +131,7 @@ bool VOrphanFile::rename(const QString &p_name)
 
 void VOrphanFile::setImageFolder(const QString &p_path)
 {
-    qDebug() << "orphan file" << retrivePath() << "image folder"
+    qDebug() << "orphan file" << fetchPath() << "image folder"
              << m_imageFolder << "->" << p_path;
     m_imageFolder = p_path;
 }

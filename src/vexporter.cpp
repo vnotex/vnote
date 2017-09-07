@@ -189,7 +189,7 @@ void VExporter::exportNote(VFile *p_file, ExportType p_type)
 
     setWindowTitle(tr("Export As %1").arg(exportTypeStr(p_type)));
 
-    setFilePath(QDir(s_defaultPathDir).filePath(QFileInfo(p_file->retrivePath()).baseName() +
+    setFilePath(QDir(s_defaultPathDir).filePath(QFileInfo(p_file->fetchPath()).baseName() +
                                                 "." + exportTypeStr(p_type).toLower()));
 }
 

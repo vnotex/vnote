@@ -24,7 +24,7 @@ bool VDirectory::open()
 
     V_ASSERT(m_subDirs.isEmpty() && m_files.isEmpty());
 
-    QString path = retrivePath();
+    QString path = fetchPath();
     QJsonObject configJson = VConfigManager::readDirectoryConfig(path);
     if (configJson.isEmpty()) {
         qWarning() << "invalid directory configuration in path" << path;
@@ -74,12 +74,12 @@ void VDirectory::close()
     m_opened = false;
 }
 
-QString VDirectory::retriveBasePath() const
+QString VDirectory::fetchBasePath() const
 {
-    return VUtils::basePathFromPath(retrivePath());
+    return VUtils::basePathFromPath(fetchPath());
 }
 
-QString VDirectory::retrivePath(const VDirectory *p_dir) const
+QString VDirectory::fetchPath(const VDirectory *p_dir) const
 {
     if (!p_dir) {
         return "";
@@ -87,13 +87,13 @@ QString VDirectory::retrivePath(const VDirectory *p_dir) const
     VDirectory *parentDir = (VDirectory *)p_dir->parent();
     if (parentDir) {
         // Not the root directory
-        return QDir(retrivePath(parentDir)).filePath(p_dir->getName());
+        return QDir(fetchPath(parentDir)).filePath(p_dir->getName());
     } else {
         return m_notebook->getPath();
     }
 }
 
-QString VDirectory::retriveRelativePath(const VDirectory *p_dir) const
+QString VDirectory::fetchRelativePath(const VDirectory *p_dir) const
 {
     if (!p_dir) {
         return "";
@@ -101,7 +101,7 @@ QString VDirectory::retriveRelativePath(const VDirectory *p_dir) const
     VDirectory *parentDir = (VDirectory *)p_dir->parent();
     if (parentDir) {
         // Not the root directory
-        return QDir(retriveRelativePath(parentDir)).filePath(p_dir->getName());
+        return QDir(fetchRelativePath(parentDir)).filePath(p_dir->getName());
     } else {
         return "";
     }
@@ -153,7 +153,7 @@ bool VDirectory::writeToConfig() const
 
 bool VDirectory::writeToConfig(const QJsonObject &p_json) const
 {
-    return VConfigManager::writeDirectoryConfig(retrivePath(), p_json);
+    return VConfigManager::writeDirectoryConfig(fetchPath(), p_json);
 }
 
 void VDirectory::addNotebookConfig(QJsonObject &p_json) const
@@ -179,7 +179,7 @@ VDirectory *VDirectory::createSubDirectory(const QString &p_name)
 
     qDebug() << "create subfolder" << p_name << "in" << m_name;
 
-    QString path = retrivePath();
+    QString path = fetchPath();
     QDir dir(path);
     if (!dir.mkdir(p_name)) {
         qWarning() << "fail to create directory" << p_name << "under" << path;
@@ -263,7 +263,7 @@ VFile *VDirectory::createFile(const QString &p_name)
         return NULL;
     }
 
-    QString path = retrivePath();
+    QString path = fetchPath();
     QFile file(QDir(path).filePath(p_name));
     if (!file.open(QIODevice::WriteOnly)) {
         qWarning() << "fail to create file" << p_name;
@@ -384,7 +384,7 @@ VDirectory *VDirectory::addSubDirectory(const QString &p_name, int p_index)
 
 void VDirectory::deleteSubDirectory(VDirectory *p_subDir)
 {
-    QString dirPath = p_subDir->retrivePath();
+    QString dirPath = p_subDir->fetchPath();
 
     p_subDir->close();
 
@@ -461,7 +461,7 @@ bool VDirectory::rename(const QString &p_name)
     VDirectory *parentDir = getParentDirectory();
     V_ASSERT(parentDir);
     // Rename it in disk.
-    QDir dir(parentDir->retrivePath());
+    QDir dir(parentDir->fetchPath());
     if (!dir.rename(m_name, p_name)) {
         qWarning() << "fail to rename folder" << m_name << "to" << p_name << "in disk";
         return false;
@@ -484,8 +484,8 @@ bool VDirectory::rename(const QString &p_name)
 VFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
                             VFile *p_srcFile, bool p_cut)
 {
-    QString srcPath = QDir::cleanPath(p_srcFile->retrivePath());
-    QString destPath = QDir::cleanPath(QDir(p_destDir->retrivePath()).filePath(p_destName));
+    QString srcPath = QDir::cleanPath(p_srcFile->fetchPath());
+    QString destPath = QDir::cleanPath(QDir(p_destDir->fetchPath()).filePath(p_destName));
     if (VUtils::equalPath(srcPath, destPath)) {
         return p_srcFile;
     }
@@ -535,7 +535,7 @@ VFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
     // We need to copy internal images when it is still markdown.
     if (!images.isEmpty()) {
         if (newDocType == DocType::Markdown) {
-            QString parentPath = destFile->retriveBasePath();
+            QString parentPath = destFile->fetchBasePath();
             int nrPasted = 0;
             for (int i = 0; i < images.size(); ++i) {
                 const ImageLink &link = images[i];
@@ -607,8 +607,8 @@ VFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
 VDirectory *VDirectory::copyDirectory(VDirectory *p_destDir, const QString &p_destName,
                                       VDirectory *p_srcDir, bool p_cut)
 {
-    QString srcPath = QDir::cleanPath(p_srcDir->retrivePath());
-    QString destPath = QDir::cleanPath(QDir(p_destDir->retrivePath()).filePath(p_destName));
+    QString srcPath = QDir::cleanPath(p_srcDir->fetchPath());
+    QString destPath = QDir::cleanPath(QDir(p_destDir->fetchPath()).filePath(p_destName));
     if (VUtils::equalPath(srcPath, destPath)) {
         return p_srcDir;
     }

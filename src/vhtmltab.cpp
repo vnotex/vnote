@@ -159,7 +159,7 @@ bool VHtmlTab::saveFile()
     bool ret;
     // Make sure the file already exists. Temporary deal with cases when user delete or move
     // a file.
-    QString filePath = m_file->retrivePath();
+    QString filePath = m_file->fetchPath();
     if (!QFileInfo::exists(filePath)) {
         qWarning() << filePath << "being written has been removed";
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"), tr("Fail to save note."),

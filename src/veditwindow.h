@@ -185,7 +185,7 @@ inline QString VEditWindow::generateTooltip(const VFile *p_file) const
         return "";
     }
     // [Notebook]path
-    return QString("[%1] %2").arg(p_file->getNotebookName()).arg(p_file->retrivePath());
+    return QString("[%1] %2").arg(p_file->getNotebookName()).arg(p_file->fetchPath());
 }
 
 inline QString VEditWindow::generateTabText(int p_index, const QString &p_name,

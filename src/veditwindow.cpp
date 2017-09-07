@@ -142,7 +142,7 @@ void VEditWindow::initTabActions()
                 VEditTab *editor = getTab(tab);
                 QPointer<VFile> file = editor->getFile();
                 Q_ASSERT(file);
-                QUrl url = QUrl::fromLocalFile(file->retriveBasePath());
+                QUrl url = QUrl::fromLocalFile(file->fetchBasePath());
                 QDesktopServices::openUrl(url);
             });
 }

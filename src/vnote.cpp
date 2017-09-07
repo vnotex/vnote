@@ -290,7 +290,7 @@ VFile *VNote::getOrphanFile(const QString &p_path, bool p_modifiable, bool p_sys
     for (auto const &file : m_externalFiles) {
         Q_ASSERT(file->getType() == FileType::Orphan);
         VOrphanFile *oFile = dynamic_cast<VOrphanFile *>(file);
-        if (VUtils::equalPath(QDir::cleanPath(oFile->retrivePath()), path)) {
+        if (VUtils::equalPath(QDir::cleanPath(oFile->fetchPath()), path)) {
             Q_ASSERT(oFile->isModifiable() == p_modifiable);
             Q_ASSERT(oFile->isSystemFile() == p_systemFile);
             return file;

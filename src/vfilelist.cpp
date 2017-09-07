@@ -169,7 +169,7 @@ void VFileList::openFileLocation() const
 {
     QListWidgetItem *curItem = fileList->currentItem();
     V_ASSERT(curItem);
-    QUrl url = QUrl::fromLocalFile(getVFile(curItem)->retriveBasePath());
+    QUrl url = QUrl::fromLocalFile(getVFile(curItem)->fetchBasePath());
     QDesktopServices::openUrl(url);
 }
 
@@ -188,7 +188,7 @@ void VFileList::fileInfo(VFile *p_file)
             return;
         }
 
-        if (!promptForDocTypeChange(p_file, QDir(p_file->retriveBasePath()).filePath(name))) {
+        if (!promptForDocTypeChange(p_file, QDir(p_file->fetchBasePath()).filePath(name))) {
             return;
         }
 
@@ -267,7 +267,7 @@ void VFileList::newFile()
     info = info + "<br>" + tr("Note with name ending with \"%1\" will be treated as Markdown type.")
                              .arg(suffixStr);
     QString defaultName = QString("new_note.%1").arg(defaultSuf);
-    defaultName = VUtils::getFileNameWithSequence(m_directory->retrivePath(), defaultName);
+    defaultName = VUtils::getFileNameWithSequence(m_directory->fetchPath(), defaultName);
     VNewFileDialog dialog(tr("Create Note"), info, defaultName, m_directory, this);
     if (dialog.exec() == QDialog::Accepted) {
         VFile *file = m_directory->createFile(dialog.getNameInput());
@@ -443,7 +443,7 @@ bool VFileList::importFile(const QString &p_srcFilePath)
     }
     Q_ASSERT(m_directory);
     // Copy file @name to current directory
-    QString targetPath = m_directory->retrivePath();
+    QString targetPath = m_directory->fetchPath();
     QString srcName = VUtils::fileNameFromPath(p_srcFilePath);
     if (srcName.isEmpty()) {
         return false;
@@ -473,7 +473,7 @@ void VFileList::copySelectedFiles(bool p_isCut)
         VFile *file = getVFile(items[i]);
         QJsonObject fileJson;
         fileJson["notebook"] = file->getNotebookName();
-        fileJson["path"] = file->retrivePath();
+        fileJson["path"] = file->fetchPath();
         files.append(fileJson);
 
         m_copiedFiles.append(file);
@@ -527,7 +527,7 @@ void VFileList::pasteFiles(VDirectory *p_destDir)
         if (srcDir == p_destDir && !isCut) {
             // Copy and paste in the same directory.
             // Rename it to xx_copy.md
-            fileName = VUtils::generateCopiedFileName(srcDir->retrivePath(), fileName);
+            fileName = VUtils::generateCopiedFileName(srcDir->fetchPath(), fileName);
         }
         if (copyFile(p_destDir, fileName, srcFile, isCut)) {
             nrPasted++;
@@ -547,8 +547,8 @@ void VFileList::pasteFiles(VDirectory *p_destDir)
 
 bool VFileList::copyFile(VDirectory *p_destDir, const QString &p_destName, VFile *p_file, bool p_cut)
 {
-    QString srcPath = QDir::cleanPath(p_file->retrivePath());
-    QString destPath = QDir::cleanPath(QDir(p_destDir->retrivePath()).filePath(p_destName));
+    QString srcPath = QDir::cleanPath(p_file->fetchPath());
+    QString destPath = QDir::cleanPath(QDir(p_destDir->fetchPath()).filePath(p_destName));
     if (VUtils::equalPath(srcPath, destPath)) {
         return true;
     }

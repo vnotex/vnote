@@ -69,9 +69,9 @@ public:
     VNotebook *getNotebook();
     const VNotebook *getNotebook() const;
     const QVector<VFile *> &getFiles() const;
-    QString retrivePath() const;
-    QString retriveBasePath() const;
-    QString retriveRelativePath() const;
+    QString fetchPath() const;
+    QString fetchBasePath() const;
+    QString fetchRelativePath() const;
     QString getNotebookName() const;
     bool isExpanded() const;
     void setExpanded(bool p_expanded);
@@ -95,9 +95,9 @@ public:
 
 private:
     // Get the path of @p_dir recursively
-    QString retrivePath(const VDirectory *p_dir) const;
+    QString fetchPath(const VDirectory *p_dir) const;
     // Get teh relative path of @p_dir recursively related to the notebook path
-    QString retriveRelativePath(const VDirectory *p_dir) const;
+    QString fetchRelativePath(const VDirectory *p_dir) const;
 
     // Write @p_json to config.
     bool writeToConfig(const QJsonObject &p_json) const;
@@ -177,14 +177,14 @@ inline const VNotebook *VDirectory::getNotebook() const
     return m_notebook;
 }
 
-inline QString VDirectory::retrivePath() const
+inline QString VDirectory::fetchPath() const
 {
-    return retrivePath(this);
+    return fetchPath(this);
 }
 
-inline QString VDirectory::retriveRelativePath() const
+inline QString VDirectory::fetchRelativePath() const
 {
-    return retriveRelativePath(this);
+    return fetchRelativePath(this);
 }
 
 inline bool VDirectory::isExpanded() const

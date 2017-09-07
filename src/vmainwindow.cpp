@@ -1459,7 +1459,7 @@ void VMainWindow::handleAreaTabStatusUpdated(const VEditTabInfo &p_info)
     if (m_curFile) {
         m_findReplaceDialog->updateState(m_curFile->getDocType(), editMode);
 
-        title = QString("[%1] %2").arg(m_curFile->getNotebookName()).arg(m_curFile->retrivePath());
+        title = QString("[%1] %2").arg(m_curFile->getNotebookName()).arg(m_curFile->fetchPath());
         if (m_curFile->isModifiable()) {
             if (m_curFile->isModified()) {
                 title.append('*');

@@ -12,9 +12,9 @@ public:
                 bool p_modifiable, bool p_systemFile = false);
 
     bool open() Q_DECL_OVERRIDE;
-    QString retrivePath() const Q_DECL_OVERRIDE;
-    QString retriveRelativePath() const Q_DECL_OVERRIDE;
-    QString retriveBasePath() const Q_DECL_OVERRIDE;
+    QString fetchPath() const Q_DECL_OVERRIDE;
+    QString fetchRelativePath() const Q_DECL_OVERRIDE;
+    QString fetchBasePath() const Q_DECL_OVERRIDE;
     VDirectory *getDirectory() Q_DECL_OVERRIDE;
     const VDirectory *getDirectory() const Q_DECL_OVERRIDE;
     QString getNotebookName() const Q_DECL_OVERRIDE;
@@ -42,7 +42,7 @@ private:
     bool save() Q_DECL_OVERRIDE;
     void convert(DocType p_curType, DocType p_targetType) Q_DECL_OVERRIDE;
     void setName(const QString &p_name) Q_DECL_OVERRIDE;
-    QString retriveImagePath() const Q_DECL_OVERRIDE;
+    QString fetchImagePath() const Q_DECL_OVERRIDE;
     void setContent(const QString &p_content) Q_DECL_OVERRIDE;
     bool isInternalImageFolder(const QString &p_path) const Q_DECL_OVERRIDE;
 
