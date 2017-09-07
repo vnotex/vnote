@@ -163,6 +163,9 @@ void VConfigManager::initialize()
 
     m_lineDistanceHeight = getConfigFromSettings("global",
                                                  "line_distance_height").toInt();
+
+    m_insertTitleFromNoteName = getConfigFromSettings("global",
+                                                      "insert_title_from_note_name").toBool();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

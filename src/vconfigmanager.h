@@ -225,6 +225,9 @@ public:
 
     int getLineDistanceHeight() const;
 
+    bool getInsertTitleFromNoteName() const;
+    void setInsertTitleFromNoteName(bool p_enabled);
+
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
     QString getShortcutKeySequence(const QString &p_operation) const;
@@ -455,6 +458,9 @@ private:
 
     // Line distance height in pixel.
     int m_lineDistanceHeight;
+
+    // Whether insert the note name as a title when creating a new note.
+    bool m_insertTitleFromNoteName;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1157,6 +1163,22 @@ inline int VConfigManager::getMarkdownHighlightInterval() const
 inline int VConfigManager::getLineDistanceHeight() const
 {
     return m_lineDistanceHeight;
+}
+
+inline bool VConfigManager::getInsertTitleFromNoteName() const
+{
+    return m_insertTitleFromNoteName;
+}
+
+inline void VConfigManager::setInsertTitleFromNoteName(bool p_enabled)
+{
+    if (p_enabled == m_insertTitleFromNoteName) {
+        return;
+    }
+
+    m_insertTitleFromNoteName = p_enabled;
+    setConfigToSettings("global", "insert_title_from_note_name",
+                        m_insertTitleFromNoteName);
 }
 
 #endif // VCONFIGMANAGER_H

@@ -178,46 +178,35 @@ void VFileList::fileInfo(VFile *p_file)
     if (!p_file) {
         return;
     }
+
     VDirectory *dir = p_file->getDirectory();
-    QString info;
-    QString defaultName = p_file->getName();
-    QString curName = defaultName;
-    do {
-        VFileInfoDialog dialog(tr("Note Information"), info, defaultName, this);
-        if (dialog.exec() == QDialog::Accepted) {
-            QString name = dialog.getNameInput();
-            if (name == curName) {
-                return;
-            }
-
-            // Case-insensitive when creating note.
-            if (dir->findFile(name, false)) {
-                info = "Name (case-insensitive) already exists. Please choose another name.";
-                defaultName = name;
-                continue;
-            }
-
-            if (!promptForDocTypeChange(p_file, QDir(p_file->retriveBasePath()).filePath(name))) {
-                return;
-            }
-
-            if (!p_file->rename(name)) {
-                VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    tr("Fail to rename note <span style=\"%1\">%2</span>.")
-                                      .arg(g_config->c_dataTextStyle).arg(curName), "",
-                                    QMessageBox::Ok, QMessageBox::Ok, this);
-                return;
-            }
-
-            QListWidgetItem *item = findItem(p_file);
-            if (item) {
-                fillItem(item, p_file);
-            }
-
-            emit fileUpdated(p_file);
+    QString curName = p_file->getName();
+    VFileInfoDialog dialog(tr("Note Information"), "", dir, p_file, this);
+    if (dialog.exec() == QDialog::Accepted) {
+        QString name = dialog.getNameInput();
+        if (name == curName) {
+            return;
         }
-        break;
-    } while (true);
+
+        if (!promptForDocTypeChange(p_file, QDir(p_file->retriveBasePath()).filePath(name))) {
+            return;
+        }
+
+        if (!p_file->rename(name)) {
+            VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                                tr("Fail to rename note <span style=\"%1\">%2</span>.")
+                                  .arg(g_config->c_dataTextStyle).arg(curName), "",
+                                QMessageBox::Ok, QMessageBox::Ok, this);
+            return;
+        }
+
+        QListWidgetItem *item = findItem(p_file);
+        if (item) {
+            fillItem(item, p_file);
+        }
+
+        emit fileUpdated(p_file);
+    }
 }
 
 void VFileList::fillItem(QListWidgetItem *p_item, const VFile *p_file)
@@ -277,38 +266,44 @@ void VFileList::newFile()
                      .arg(g_config->c_dataTextStyle).arg(m_directory->getName());
     info = info + "<br>" + tr("Note with name ending with \"%1\" will be treated as Markdown type.")
                              .arg(suffixStr);
-    QString text(tr("Note &name:"));
-    QString defaultText = QString("new_note.%1").arg(defaultSuf);
-    do {
-        VNewFileDialog dialog(tr("Create Note"), info, text, defaultText, this);
-        if (dialog.exec() == QDialog::Accepted) {
-            QString name = dialog.getNameInput();
-            // Case-insensitive when creating note.
-            if (m_directory->findFile(name, false)) {
-                info = tr("Name (case-insensitive) already exists. Please choose another name.");
-                defaultText = name;
-                continue;
-            }
-
-            VFile *file = m_directory->createFile(name);
-            if (!file) {
-                VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                    tr("Fail to create note <span style=\"%1\">%2</span>.")
-                                      .arg(g_config->c_dataTextStyle).arg(name), "",
-                                    QMessageBox::Ok, QMessageBox::Ok, this);
-                return;
-            }
-            QVector<QListWidgetItem *> items = updateFileListAdded();
-            Q_ASSERT(items.size() == 1);
-            fileList->setCurrentItem(items[0], QItemSelectionModel::ClearAndSelect);
-            // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
-            fileList->update();
-
-            // Open it in edit mode
-            emit fileCreated(file, OpenFileMode::Edit);
+    QString defaultName = QString("new_note.%1").arg(defaultSuf);
+    defaultName = VUtils::getFileNameWithSequence(m_directory->retrivePath(), defaultName);
+    VNewFileDialog dialog(tr("Create Note"), info, defaultName, m_directory, this);
+    if (dialog.exec() == QDialog::Accepted) {
+        VFile *file = m_directory->createFile(dialog.getNameInput());
+        if (!file) {
+            VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                                tr("Fail to create note <span style=\"%1\">%2</span>.")
+                                  .arg(g_config->c_dataTextStyle).arg(dialog.getNameInput()), "",
+                                QMessageBox::Ok, QMessageBox::Ok, this);
+            return;
         }
-        break;
-    } while (true);
+
+        // Write title if needed.
+        if (dialog.getInsertTitleInput()) {
+            if (!file->open()) {
+                qWarning() << "fail to open newly-created note" << file->getName();
+            } else {
+                Q_ASSERT(file->getContent().isEmpty());
+                QString content = QString("# %1\n").arg(QFileInfo(file->getName()).baseName());
+                file->setContent(content);
+                if (!file->save()) {
+                    qWarning() << "fail to write to newly-created note" << file->getName();
+                }
+
+                file->close();
+            }
+        }
+
+        QVector<QListWidgetItem *> items = updateFileListAdded();
+        Q_ASSERT(items.size() == 1);
+        fileList->setCurrentItem(items[0], QItemSelectionModel::ClearAndSelect);
+        // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
+        fileList->update();
+
+        // Open it in edit mode
+        emit fileCreated(file, OpenFileMode::Edit);
+    }
 }
 
 QVector<QListWidgetItem *> VFileList::updateFileListAdded()
