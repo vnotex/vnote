@@ -10,6 +10,7 @@
 #include "utils/vutils.h"
 #include "vfile.h"
 #include "vconfigmanager.h"
+#include "vmdedit.h"
 
 extern VConfigManager *g_config;
 extern VNote *g_vnote;
@@ -131,9 +132,17 @@ void VFileList::initActions()
 
 void VFileList::setDirectory(VDirectory *p_directory)
 {
+    // QPointer will be set to NULL automatically once the directory was deleted.
+    // If the last directory is deleted, m_directory and p_directory will both
+    // be NULL.
     if (m_directory == p_directory) {
+        if (!m_directory) {
+            fileList->clear();
+        }
+
         return;
     }
+
     m_directory = p_directory;
     if (!m_directory) {
         fileList->clear();
@@ -280,7 +289,8 @@ void VFileList::newFile()
         }
 
         // Write title if needed.
-        if (dialog.getInsertTitleInput()) {
+        bool contentInserted = false;
+        if (dialog.getInsertTitleInput() && file->getDocType() == DocType::Markdown) {
             if (!file->open()) {
                 qWarning() << "fail to open newly-created note" << file->getName();
             } else {
@@ -289,6 +299,8 @@ void VFileList::newFile()
                 file->setContent(content);
                 if (!file->save()) {
                     qWarning() << "fail to write to newly-created note" << file->getName();
+                } else {
+                    contentInserted = true;
                 }
 
                 file->close();
@@ -303,6 +315,17 @@ void VFileList::newFile()
 
         // Open it in edit mode
         emit fileCreated(file, OpenFileMode::Edit);
+
+        // Move cursor down if content has been inserted.
+        if (contentInserted) {
+            QWidget *wid = QApplication::focusWidget();
+            VMdEdit *edit = dynamic_cast<VMdEdit *>(wid);
+            if (edit && edit->getFile() == file) {
+                QKeyEvent *downEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Down,
+                                                     Qt::NoModifier);
+                QCoreApplication::postEvent(edit, downEvent);
+            }
+        }
     }
 }
 

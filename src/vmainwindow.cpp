@@ -122,6 +122,8 @@ void VMainWindow::setupUI()
 
     connect(notebookSelector, &VNotebookSelector::notebookUpdated,
             editArea, &VEditArea::handleNotebookUpdated);
+    connect(notebookSelector, &VNotebookSelector::notebookCreated,
+            directoryTree, &VDirectoryTree::newRootDirectory);
 
     connect(fileList, &VFileList::fileClicked,
             editArea, &VEditArea::openFile);

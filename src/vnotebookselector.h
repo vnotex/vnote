@@ -33,8 +33,12 @@ public:
 
 signals:
     void curNotebookChanged(VNotebook *p_notebook);
+
     // Info of current notebook was changed.
     void notebookUpdated(const VNotebook *p_notebook);
+
+    // Emit after creating a new notebook.
+    void notebookCreated();
 
 public slots:
     bool newNotebook();
@@ -85,6 +89,7 @@ private:
     // Actions
     QAction *m_deleteNotebookAct;
     QAction *m_notebookInfoAct;
+    QAction *m_openLocationAct;
 
     // We will add several special action item in the combobox. This is the start index
     // of the real notebook items related to m_notebooks.

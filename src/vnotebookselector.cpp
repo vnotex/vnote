@@ -64,6 +64,23 @@ void VNotebookSelector::initActions()
     m_notebookInfoAct->setToolTip(tr("View and edit current notebook's information"));
     connect(m_notebookInfoAct, SIGNAL(triggered(bool)),
             this, SLOT(editNotebookInfo()));
+
+    m_openLocationAct = new QAction(tr("&Open Notebook Location"), this);
+    m_openLocationAct->setToolTip(tr("Open the root folder of this notebook in operating system"));
+    connect(m_openLocationAct, &QAction::triggered,
+            this, [this]() {
+                QList<QListWidgetItem *> items = this->m_listWidget->selectedItems();
+                if (items.isEmpty()) {
+                    return;
+                }
+
+                Q_ASSERT(items.size() == 1);
+                QListWidgetItem *item = items[0];
+                int index = this->indexOfListItem(item);
+                VNotebook *notebook = this->getNotebookFromComboIndex(index);
+                QUrl url = QUrl::fromLocalFile(notebook->getPath());
+                QDesktopServices::openUrl(url);
+            });
 }
 
 void VNotebookSelector::updateComboBox()
@@ -183,6 +200,8 @@ bool VNotebookSelector::newNotebook()
                        dialog.getPathInput(),
                        dialog.isImportExistingNotebook(),
                        dialog.getImageFolder());
+
+        emit notebookCreated();
         return true;
     }
 
@@ -350,6 +369,7 @@ void VNotebookSelector::requestPopupListContextMenu(QPoint p_pos)
     QMenu menu(this);
     menu.setToolTipsVisible(true);
     menu.addAction(m_deleteNotebookAct);
+    menu.addAction(m_openLocationAct);
     menu.addAction(m_notebookInfoAct);
 
     menu.exec(m_listWidget->mapToGlobal(p_pos));

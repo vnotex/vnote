@@ -258,6 +258,20 @@ void VNewNotebookDialog::handleInputChanged()
 bool VNewNotebookDialog::autoComplete()
 {
     if (m_manualPath) {
+        if (m_manualName) {
+            return false;
+        }
+
+        // Set the name according to user-chosen path.
+        QString pathText = pathEdit->text();
+        if (!pathText.isEmpty()) {
+            QString autoName = VUtils::directoryNameFromPath(pathText);
+            if (autoName != nameEdit->text()) {
+                nameEdit->setText(autoName);
+                return true;
+            }
+        }
+
         return false;
     }
 
