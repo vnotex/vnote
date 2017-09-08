@@ -4,7 +4,7 @@
 #include <QTextCharFormat>
 #include <QSyntaxHighlighter>
 #include <QAtomicInt>
-#include <QSet>
+#include <QMap>
 #include <QString>
 #include <QHash>
 
@@ -118,8 +118,11 @@ public:
                           int waitInterval,
                           QTextDocument *parent = 0);
     ~HGMarkdownHighlighter();
+
     // Request to update highlihgt (re-parse and re-highlight)
     void setCodeBlockHighlights(const QVector<HLUnitPos> &p_units);
+
+    const QMap<int, bool> &getPotentialPreviewBlocks() const;
 
 signals:
     void highlightCompleted();
@@ -159,6 +162,11 @@ private:
     QVector<QVector<HLUnitStyle> > m_codeBlockHighlights;
 
     int m_numOfCodeBlockHighlightsToRecv;
+
+    // If the ith block contains preview, then the set contains i.
+    // If the set contains i, the ith block may contain preview.
+    // We just use the key.
+    QMap<int, bool> m_potentialPreviewBlocks;
 
     // All HTML comment regions.
     QVector<VElementRegion> m_commentRegions;
@@ -210,7 +218,12 @@ private:
     void highlightChanged();
 
     // Set the user data of currentBlock().
-    void updateBlockUserData(const QString &p_text);
+    void updateBlockUserData(int p_blockNum, const QString &p_text);
 };
+
+inline const QMap<int, bool> &HGMarkdownHighlighter::getPotentialPreviewBlocks() const
+{
+    return m_potentialPreviewBlocks;
+}
 
 #endif

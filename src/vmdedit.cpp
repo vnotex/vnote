@@ -44,7 +44,7 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
     m_cbHighlighter = new VCodeBlockHighlightHelper(m_mdHighlighter, p_vdoc,
                                                     p_type);
 
-    m_imagePreviewer = new VImagePreviewer(this);
+    m_imagePreviewer = new VImagePreviewer(this, m_mdHighlighter);
     connect(m_mdHighlighter, &HGMarkdownHighlighter::imageLinksUpdated,
             m_imagePreviewer, &VImagePreviewer::imageLinksChanged);
     connect(m_imagePreviewer, &VImagePreviewer::requestUpdateImageLinks,

@@ -20,10 +20,10 @@ extern VConfigManager *g_config;
 
 const int VImagePreviewer::c_minImageWidth = 100;
 
-VImagePreviewer::VImagePreviewer(VMdEdit *p_edit)
+VImagePreviewer::VImagePreviewer(VMdEdit *p_edit, const HGMarkdownHighlighter *p_highlighter)
     : QObject(p_edit), m_edit(p_edit), m_document(p_edit->document()),
-      m_file(p_edit->getFile()), m_imageWidth(c_minImageWidth),
-      m_timeStamp(0), m_previewIndex(0),
+      m_file(p_edit->getFile()), m_highlighter(p_highlighter),
+      m_imageWidth(c_minImageWidth), m_timeStamp(0), m_previewIndex(0),
       m_previewEnabled(g_config->getEnablePreviewImages()), m_isPreviewing(false)
 {
     m_updateTimer = new QTimer(this);
@@ -152,19 +152,28 @@ void VImagePreviewer::clearObsoletePreviewImages(QTextCursor &p_cursor)
         }
     }
 
-    bool hasObsolete = false;
-    QTextBlock block = m_document->begin();
     // Clean block data and delete obsolete preview.
-    while (block.isValid()) {
-        if (!VTextBlockData::containsPreviewImage(block)) {
-            block = block.next();
-            continue;
-        } else {
-            QTextBlock nextBlock = block.next();
-            // Notice the short circuit.
-            hasObsolete = clearObsoletePreviewImagesOfBlock(block, p_cursor) || hasObsolete;
-            block = nextBlock;
-        }
+    bool hasObsolete = false;
+    int blockCount = m_document->blockCount();
+    // Must copy it.
+    QMap<int, bool> potentialBlocks = m_highlighter->getPotentialPreviewBlocks();
+    // From back to front.
+    if (!potentialBlocks.isEmpty()) {
+        auto it = potentialBlocks.end();
+        do {
+            --it;
+            int blockNum = it.key();
+            if (blockNum >= blockCount) {
+                continue;
+            }
+
+            QTextBlock block = m_document->findBlockByNumber(blockNum);
+            if (block.isValid()
+                && VTextBlockData::containsPreviewImage(block)) {
+                // Notice the short circuit.
+                hasObsolete = clearObsoletePreviewImagesOfBlock(block, p_cursor) || hasObsolete;
+            }
+        } while (it != potentialBlocks.begin());
     }
 
     if (hasObsolete) {
@@ -246,11 +255,11 @@ bool VImagePreviewer::clearObsoletePreviewImagesOfBlock(QTextBlock &p_block,
     return hasObsolete;
 }
 
-// Returns true if p_text[p_start, p_end) is all spaces.
-static bool isAllSpaces(const QString &p_text, int p_start, int p_end)
+// Returns true if p_text[p_start, p_end) is all spaces or QChar::ObjectReplacementCharacter.
+static bool isAllSpacesOrObject(const QString &p_text, int p_start, int p_end)
 {
     for (int i = p_start; i < p_end && i < p_text.size(); ++i) {
-        if (!p_text[i].isSpace()) {
+        if (!p_text[i].isSpace() && p_text[i] != QChar::ObjectReplacementCharacter) {
             return false;
         }
     }
@@ -281,9 +290,9 @@ void VImagePreviewer::fetchImageLinksFromRegions(QVector<ImageLinkInfo> &p_image
         Q_ASSERT(reg.m_endPos <= blockEnd);
         ImageLinkInfo info(reg.m_startPos, reg.m_endPos);
         if ((reg.m_startPos == blockStart
-             || isAllSpaces(text, 0, reg.m_startPos - blockStart))
+             || isAllSpacesOrObject(text, 0, reg.m_startPos - blockStart))
             && (reg.m_endPos == blockEnd
-                || isAllSpaces(text, reg.m_endPos - blockStart, blockEnd - blockStart))) {
+                || isAllSpacesOrObject(text, reg.m_endPos - blockStart, blockEnd - blockStart))) {
             // Image block.
             info.m_isBlock = true;
             info.m_linkUrl = fetchImagePathToPreview(text);

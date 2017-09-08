@@ -17,7 +17,7 @@ class VImagePreviewer : public QObject
 {
     Q_OBJECT
 public:
-    explicit VImagePreviewer(VMdEdit *p_edit);
+    explicit VImagePreviewer(VMdEdit *p_edit, const HGMarkdownHighlighter *p_highlighter);
 
     // Whether @p_block is an image previewed block.
     // The image previewed block is a block containing only the special character
@@ -201,6 +201,8 @@ private:
     VMdEdit *m_edit;
     QTextDocument *m_document;
     VFile *m_file;
+
+    const HGMarkdownHighlighter *m_highlighter;
 
     // Map from image full path to QUrl identifier in the QTextDocument's cache.
     QHash<QString, ImageInfo> m_imageCache;

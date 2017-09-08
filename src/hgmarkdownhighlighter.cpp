@@ -80,7 +80,7 @@ HGMarkdownHighlighter::~HGMarkdownHighlighter()
     }
 }
 
-void HGMarkdownHighlighter::updateBlockUserData(const QString &p_text)
+void HGMarkdownHighlighter::updateBlockUserData(int p_blockNum, const QString &p_text)
 {
     VTextBlockData *blockData = dynamic_cast<VTextBlockData *>(currentBlockUserData());
     if (!blockData) {
@@ -88,7 +88,33 @@ void HGMarkdownHighlighter::updateBlockUserData(const QString &p_text)
         setCurrentBlockUserData(blockData);
     }
 
-    blockData->setContainsPreviewImage(p_text.contains(QChar::ObjectReplacementCharacter));
+    bool contains = p_text.contains(QChar::ObjectReplacementCharacter);
+    blockData->setContainsPreviewImage(contains);
+
+    auto curIt = m_potentialPreviewBlocks.find(p_blockNum);
+    if (curIt == m_potentialPreviewBlocks.end()) {
+        if (contains) {
+            m_potentialPreviewBlocks.insert(p_blockNum, true);
+        }
+    } else {
+        if (!contains) {
+            m_potentialPreviewBlocks.erase(curIt);
+        }
+    }
+
+    // Delete elements beyond current block count.
+    int blocks = document->blockCount();
+    if (!m_potentialPreviewBlocks.isEmpty()) {
+        auto it = m_potentialPreviewBlocks.end();
+        do {
+            --it;
+            if (it.key() >= blocks) {
+                it = m_potentialPreviewBlocks.erase(it);
+            } else {
+                break;
+            }
+        } while (it != m_potentialPreviewBlocks.begin());
+    }
 }
 
 void HGMarkdownHighlighter::highlightBlock(const QString &text)
@@ -107,7 +133,7 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
     // We can use other highlighting methods to complement it.
 
     // Set current block's user data.
-    updateBlockUserData(text);
+    updateBlockUserData(blockNum, text);
 
     // If it is a block inside HTML comment, just skip it.
     if (isBlockInsideCommentRegion(currentBlock())) {
