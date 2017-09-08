@@ -100,6 +100,8 @@ private:
     bool getPreviewImageRegionOfBlock(const QTextBlock &p_block,
                                       QVector<Region> &p_regions) const;
 
+    void finishOneAsyncJob(int p_idx);
+
     HGMarkdownHighlighter *m_mdHighlighter;
     VCodeBlockHighlightHelper *m_cbHighlighter;
     VImagePreviewer *m_imagePreviewer;
@@ -111,6 +113,12 @@ private:
     QVector<ImageLink> m_initImages;
 
     QVector<VHeader> m_headers;
+
+    bool m_freshEdit;
+
+    QVector<bool> m_finishedAsyncJobs;
+
+    static const int c_numberOfAysncJobs;
 };
 
 #endif // VMDEDIT_H

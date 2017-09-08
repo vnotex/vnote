@@ -48,6 +48,12 @@ signals:
     // Request highlighter to update image links.
     void requestUpdateImageLinks();
 
+    // Emit after finishing previewing.
+    void previewFinished();
+
+    // Emit after updating preview width.
+    void previewWidthUpdated();
+
 private:
     struct ImageInfo
     {
@@ -116,13 +122,11 @@ private:
     struct EditStatus
     {
         EditStatus()
-            : m_modified(false), m_undoAvailable(false), m_redoAvailable(false)
+            : m_modified(false)
         {
         }
 
         bool m_modified;
-        bool m_undoAvailable;
-        bool m_redoAvailable;
     };
 
     // Kick off new preview of m_imageRegions.

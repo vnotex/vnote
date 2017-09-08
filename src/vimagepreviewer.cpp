@@ -48,6 +48,7 @@ void VImagePreviewer::kickOffPreview(const QVector<VElementRegion> &p_imageRegio
         Q_ASSERT(m_imageRegions.isEmpty());
         Q_ASSERT(m_previewImages.isEmpty());
         Q_ASSERT(m_imageCache.isEmpty());
+        emit previewFinished();
         return;
     }
 
@@ -60,6 +61,8 @@ void VImagePreviewer::kickOffPreview(const QVector<VElementRegion> &p_imageRegio
 
     shrinkImageCache();
     m_isPreviewing = false;
+
+    emit previewFinished();
 }
 
 void VImagePreviewer::previewImages()
@@ -541,6 +544,7 @@ bool VImagePreviewer::updateImageWidth(QTextImageFormat &p_format)
 void VImagePreviewer::updatePreviewImageWidth()
 {
     if (!m_previewEnabled) {
+        emit previewWidthUpdated();
         return;
     }
 
@@ -568,6 +572,10 @@ void VImagePreviewer::doUpdatePreviewImageWidth()
     if (updated) {
         emit m_edit->statusChanged();
     }
+
+    qDebug() << "update preview image width" << updated;
+
+    emit previewWidthUpdated();
 }
 
 bool VImagePreviewer::updatePreviewImageWidthOfBlock(const QTextBlock &p_block,
@@ -631,32 +639,9 @@ void VImagePreviewer::shrinkImageCache()
 void VImagePreviewer::saveEditStatus(EditStatus &p_status) const
 {
     p_status.m_modified = m_edit->isModified();
-    p_status.m_undoAvailable = m_document->isUndoAvailable();
-    p_status.m_redoAvailable = m_document->isRedoAvailable();
 }
 
 void VImagePreviewer::restoreEditStatus(const EditStatus &p_status)
 {
-    int st = 0;
-    if (!p_status.m_undoAvailable) {
-        st |= 1;
-    }
-
-    if (!p_status.m_redoAvailable) {
-        st |= 2;
-    }
-
-    if (st > 0) {
-        QTextDocument::Stacks stack = QTextDocument::UndoStack;
-        if (st == 2) {
-            stack = QTextDocument::RedoStack;
-        } else if (st == 3) {
-            stack = QTextDocument::UndoAndRedoStacks;
-        }
-
-        m_document->clearUndoRedoStacks(stack);
-    }
-
-    // Clear undo and redo stacks will change the state to modified.
     m_edit->setModified(p_status.m_modified);
 }

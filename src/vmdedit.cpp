@@ -16,13 +16,17 @@
 extern VConfigManager *g_config;
 extern VNote *g_vnote;
 
+const int VMdEdit::c_numberOfAysncJobs = 2;
+
 VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
                  QWidget *p_parent)
-    : VEdit(p_file, p_parent), m_mdHighlighter(NULL)
+    : VEdit(p_file, p_parent), m_mdHighlighter(NULL), m_freshEdit(true),
+      m_finishedAsyncJobs(c_numberOfAysncJobs)
 {
     V_ASSERT(p_file->getDocType() == DocType::Markdown);
 
     setAcceptRichText(false);
+
     m_mdHighlighter = new HGMarkdownHighlighter(g_config->getMdHighlightingStyles(),
                                                 g_config->getCodeBlockStyles(),
                                                 g_config->getMarkdownHighlightInterval(),
@@ -45,6 +49,19 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
             m_imagePreviewer, &VImagePreviewer::imageLinksChanged);
     connect(m_imagePreviewer, &VImagePreviewer::requestUpdateImageLinks,
             m_mdHighlighter, &HGMarkdownHighlighter::updateHighlight);
+    connect(m_imagePreviewer, &VImagePreviewer::previewFinished,
+            this, [this](){
+                if (m_freshEdit) {
+                    finishOneAsyncJob(0);
+                }
+            });
+
+    connect(m_imagePreviewer, &VImagePreviewer::previewWidthUpdated,
+            this, [this](){
+                if (m_freshEdit) {
+                    finishOneAsyncJob(1);
+                }
+            });
 
     m_editOps = new VMdEditOperations(this, m_file);
 
@@ -80,11 +97,19 @@ void VMdEdit::beginEdit()
 
     initInitImages();
 
-    setReadOnly(false);
     setModified(false);
 
     // Request update outline.
     generateEditOutline();
+
+    if (m_freshEdit) {
+        // Will set to false when all async jobs completed.
+        setReadOnly(true);
+        // Disable and clear undo stacks temporary.
+        setUndoRedoEnabled(false);
+    } else {
+        setReadOnly(false);
+    }
 }
 
 void VMdEdit::endEdit()
@@ -633,4 +658,22 @@ bool VMdEdit::jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat)
     }
 
     return false;
+}
+
+void VMdEdit::finishOneAsyncJob(int p_idx)
+{
+    Q_ASSERT(m_freshEdit);
+    if (m_finishedAsyncJobs[p_idx]) {
+        return;
+    }
+
+    m_finishedAsyncJobs[p_idx] = true;
+    if (-1 == m_finishedAsyncJobs.indexOf(false)) {
+        // All jobs finished.
+        m_freshEdit = false;
+        setUndoRedoEnabled(true);
+        setReadOnly(false);
+        setModified(false);
+        emit statusChanged();
+    }
 }
