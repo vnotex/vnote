@@ -10,6 +10,7 @@
 #include "vnotebook.h"
 #include "hgmarkdownhighlighter.h"
 #include "vmarkdownconverter.h"
+#include "vconstants.h"
 
 class QJsonObject;
 class QString;
@@ -227,6 +228,9 @@ public:
 
     bool getInsertTitleFromNoteName() const;
     void setInsertTitleFromNoteName(bool p_enabled);
+
+    OpenFileMode getNoteOpenMode() const;
+    void setNoteOpenMode(OpenFileMode p_mode);
 
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
@@ -461,6 +465,9 @@ private:
 
     // Whether insert the note name as a title when creating a new note.
     bool m_insertTitleFromNoteName;
+
+    // Default mode when opening a note.
+    OpenFileMode m_noteOpenMode;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1179,6 +1186,22 @@ inline void VConfigManager::setInsertTitleFromNoteName(bool p_enabled)
     m_insertTitleFromNoteName = p_enabled;
     setConfigToSettings("global", "insert_title_from_note_name",
                         m_insertTitleFromNoteName);
+}
+
+inline OpenFileMode VConfigManager::getNoteOpenMode() const
+{
+    return m_noteOpenMode;
+}
+
+inline void VConfigManager::setNoteOpenMode(OpenFileMode p_mode)
+{
+    if (m_noteOpenMode == p_mode) {
+        return;
+    }
+
+    m_noteOpenMode = p_mode;
+    setConfigToSettings("global", "note_open_mode",
+                        m_noteOpenMode == OpenFileMode::Read ? 0 : 1);
 }
 
 #endif // VCONFIGMANAGER_H

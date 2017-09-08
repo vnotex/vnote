@@ -234,8 +234,18 @@ VReadEditTab::VReadEditTab(QWidget *p_parent)
     zoomFactorLayout->addWidget(m_customWebZoom);
     zoomFactorLayout->addWidget(m_webZoomFactorSpin);
 
+    // Default note open mode.
+    m_openModeCombo = new QComboBox();
+    m_openModeCombo->setToolTip(tr("Default mode to open a note"));
+    m_openModeCombo->addItem(tr("Read Mode"), (int)OpenFileMode::Read);
+    m_openModeCombo->addItem(tr("Edit Mode"), (int)OpenFileMode::Edit);
+
+    QLabel *openModeLabel = new QLabel(tr("Note open mode:"));
+    openModeLabel->setToolTip(m_openModeCombo->toolTip());
+
     QFormLayout *readLayout = new QFormLayout();
     readLayout->addRow(zoomFactorLayout);
+    readLayout->addRow(openModeLabel, m_openModeCombo);
 
     m_readBox->setLayout(readLayout);
 
@@ -251,6 +261,11 @@ bool VReadEditTab::loadConfiguration()
     if (!loadWebZoomFactor()) {
         return false;
     }
+
+    if (!loadOpenMode()) {
+        return false;
+    }
+
     return true;
 }
 
@@ -259,6 +274,11 @@ bool VReadEditTab::saveConfiguration()
     if (!saveWebZoomFactor()) {
         return false;
     }
+
+    if (!saveOpenMode()) {
+        return false;
+    }
+
     return true;
 }
 
@@ -293,6 +313,29 @@ bool VReadEditTab::saveWebZoomFactor()
 void VReadEditTab::customWebZoomChanged(int p_state)
 {
     m_webZoomFactorSpin->setEnabled(p_state == Qt::Checked);
+}
+
+bool VReadEditTab::loadOpenMode()
+{
+    int mode = (int)g_config->getNoteOpenMode();
+    bool found = false;
+    for (int i = 0; i < m_openModeCombo->count(); ++i) {
+        if (m_openModeCombo->itemData(i).toInt() == mode) {
+            m_openModeCombo->setCurrentIndex(i);
+            found = true;
+            break;
+        }
+    }
+
+    Q_ASSERT(found);
+    return true;
+}
+
+bool VReadEditTab::saveOpenMode()
+{
+    int mode = m_openModeCombo->currentData().toInt();
+    g_config->setNoteOpenMode((OpenFileMode)mode);
+    return true;
 }
 
 VNoteManagementTab::VNoteManagementTab(QWidget *p_parent)

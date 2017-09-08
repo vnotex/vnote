@@ -166,6 +166,14 @@ void VConfigManager::initialize()
 
     m_insertTitleFromNoteName = getConfigFromSettings("global",
                                                       "insert_title_from_note_name").toBool();
+
+    int openMode = getConfigFromSettings("global",
+                                         "note_open_mode").toInt();
+    if (openMode == 1) {
+        m_noteOpenMode = OpenFileMode::Edit;
+    } else {
+        m_noteOpenMode = OpenFileMode::Read;
+    }
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

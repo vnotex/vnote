@@ -456,7 +456,7 @@ void VFileList::handleItemClicked(QListWidgetItem *currentItem)
 
     // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
     fileList->update();
-    emit fileClicked(getVFile(currentItem), OpenFileMode::Read);
+    emit fileClicked(getVFile(currentItem), g_config->getNoteOpenMode());
 }
 
 bool VFileList::importFile(const QString &p_srcFilePath)

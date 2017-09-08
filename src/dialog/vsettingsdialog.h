@@ -52,12 +52,18 @@ public:
     QCheckBox *m_customWebZoom;
     QDoubleSpinBox *m_webZoomFactorSpin;
 
+    // Default note open mode for markdown.
+    QComboBox *m_openModeCombo;
+
 private slots:
     void customWebZoomChanged(int p_state);
 
 private:
     bool loadWebZoomFactor();
     bool saveWebZoomFactor();
+
+    bool loadOpenMode();
+    bool saveOpenMode();
 };
 
 class VNoteManagementTab : public QWidget
