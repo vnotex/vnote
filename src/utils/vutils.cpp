@@ -20,6 +20,7 @@
 #include <QValidator>
 #include <QRegExpValidator>
 #include <QRegExp>
+#include <QKeySequence>
 
 #include "vfile.h"
 #include "vnote.h"
@@ -695,4 +696,9 @@ void VUtils::decodeUrl(QString &p_url)
     for (auto it = maps.begin(); it != maps.end(); ++it) {
         p_url.replace(it.key(), it.value());
     }
+}
+
+QString VUtils::getShortcutText(const QString &p_keySeq)
+{
+    return QKeySequence(p_keySeq).toString(QKeySequence::NativeText);
 }

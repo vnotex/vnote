@@ -88,25 +88,25 @@ void VDirectoryTree::initActions()
             this, &VDirectoryTree::deleteDirectory);
 
     dirInfoAct = new QAction(QIcon(":/resources/icons/dir_info.svg"),
-                             tr("&Info\t%1").arg(QKeySequence(c_infoShortcutSequence).toString()), this);
+                             tr("&Info\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)), this);
     dirInfoAct->setToolTip(tr("View and edit current folder's information"));
     connect(dirInfoAct, &QAction::triggered,
             this, &VDirectoryTree::editDirectoryInfo);
 
     copyAct = new QAction(QIcon(":/resources/icons/copy.svg"),
-                          tr("&Copy\t%1").arg(QKeySequence(c_copyShortcutSequence).toString()), this);
+                          tr("&Copy\t%1").arg(VUtils::getShortcutText(c_copyShortcutSequence)), this);
     copyAct->setToolTip(tr("Copy selected folders"));
     connect(copyAct, &QAction::triggered,
             this, &VDirectoryTree::copySelectedDirectories);
 
     cutAct = new QAction(QIcon(":/resources/icons/cut.svg"),
-                         tr("C&ut\t%1").arg(QKeySequence(c_cutShortcutSequence).toString()), this);
+                         tr("C&ut\t%1").arg(VUtils::getShortcutText(c_cutShortcutSequence)), this);
     cutAct->setToolTip(tr("Cut selected folders"));
     connect(cutAct, &QAction::triggered,
             this, &VDirectoryTree::cutSelectedDirectories);
 
     pasteAct = new QAction(QIcon(":/resources/icons/paste.svg"),
-                           tr("&Paste\t%1").arg(QKeySequence(c_pasteShortcutSequence).toString()), this);
+                           tr("&Paste\t%1").arg(VUtils::getShortcutText(c_pasteShortcutSequence)), this);
     pasteAct->setToolTip(tr("Paste folders in this folder"));
     connect(pasteAct, &QAction::triggered,
             this, &VDirectoryTree::pasteDirectoriesInCurDir);

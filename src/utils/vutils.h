@@ -121,6 +121,9 @@ public:
     // Decode URL by simply replacing meta-characters.
     static void decodeUrl(QString &p_url);
 
+    // Returns the shortcut text.
+    static QString getShortcutText(const QString &p_keySeq);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
     // Captured texts (need to be trimmed):

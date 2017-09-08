@@ -85,7 +85,7 @@ void VFileList::initActions()
 {
     newFileAct = new QAction(QIcon(":/resources/icons/create_note.svg"),
                              tr("&New Note"), this);
-    QString shortcutStr = QKeySequence(g_config->getShortcutKeySequence("NewNote")).toString();
+    QString shortcutStr = VUtils::getShortcutText(g_config->getShortcutKeySequence("NewNote"));
     if (!shortcutStr.isEmpty()) {
         newFileAct->setText(tr("&New Note\t%1").arg(shortcutStr));
     }
@@ -101,25 +101,25 @@ void VFileList::initActions()
             this, SLOT(deleteFile()));
 
     fileInfoAct = new QAction(QIcon(":/resources/icons/note_info.svg"),
-                              tr("&Info\t%1").arg(QKeySequence(c_infoShortcutSequence).toString()), this);
+                              tr("&Info\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)), this);
     fileInfoAct->setToolTip(tr("View and edit current note's information"));
     connect(fileInfoAct, SIGNAL(triggered(bool)),
             this, SLOT(fileInfo()));
 
     copyAct = new QAction(QIcon(":/resources/icons/copy.svg"),
-                          tr("&Copy\t%1").arg(QKeySequence(c_copyShortcutSequence).toString()), this);
+                          tr("&Copy\t%1").arg(VUtils::getShortcutText(c_copyShortcutSequence)), this);
     copyAct->setToolTip(tr("Copy selected notes"));
     connect(copyAct, &QAction::triggered,
             this, &VFileList::copySelectedFiles);
 
     cutAct = new QAction(QIcon(":/resources/icons/cut.svg"),
-                         tr("C&ut\t%1").arg(QKeySequence(c_cutShortcutSequence).toString()), this);
+                         tr("C&ut\t%1").arg(VUtils::getShortcutText(c_cutShortcutSequence)), this);
     cutAct->setToolTip(tr("Cut selected notes"));
     connect(cutAct, &QAction::triggered,
             this, &VFileList::cutSelectedFiles);
 
     pasteAct = new QAction(QIcon(":/resources/icons/paste.svg"),
-                           tr("&Paste\t%1").arg(QKeySequence(c_pasteShortcutSequence).toString()), this);
+                           tr("&Paste\t%1").arg(VUtils::getShortcutText(c_pasteShortcutSequence)), this);
     pasteAct->setToolTip(tr("Paste notes in current folder"));
     connect(pasteAct, &QAction::triggered,
             this, &VFileList::pasteFilesInCurDir);
