@@ -321,9 +321,9 @@ void VFileList::newFile()
             QWidget *wid = QApplication::focusWidget();
             VMdEdit *edit = dynamic_cast<VMdEdit *>(wid);
             if (edit && edit->getFile() == file) {
-                QKeyEvent *downEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Down,
-                                                     Qt::NoModifier);
-                QCoreApplication::postEvent(edit, downEvent);
+                QTextCursor cursor = edit->textCursor();
+                cursor.movePosition(QTextCursor::End);
+                edit->setTextCursor(cursor);
             }
         }
     }
