@@ -278,9 +278,56 @@ void HGMarkdownHighlighter::initImageRegionsFromResult()
         m_imageRegions.resize(idx);
     }
 
-    emit imageLinksUpdated(m_imageRegions);
-
     qDebug() << "highlighter: parse" << m_imageRegions.size() << "image regions";
+
+    emit imageLinksUpdated(m_imageRegions);
+}
+
+void HGMarkdownHighlighter::initHeaderRegionsFromResult()
+{
+    if (!result) {
+        // From Qt5.7, the capacity is preserved.
+        m_headerRegions.clear();
+        emit headersUpdated(m_headerRegions);
+        return;
+    }
+
+    int idx = 0;
+    int oriSize = m_headerRegions.size();
+    pmh_element_type hx[6] = {pmh_H1, pmh_H2, pmh_H3, pmh_H4, pmh_H5, pmh_H6};
+    for (int i = 0; i < 6; ++i) {
+        pmh_element *elem = result[hx[i]];
+        while (elem != NULL) {
+            if (elem->end <= elem->pos) {
+                elem = elem->next;
+                continue;
+            }
+
+            if (idx < oriSize) {
+                // Try to reuse the original element.
+                VElementRegion &reg = m_headerRegions[idx];
+                if ((int)elem->pos != reg.m_startPos || (int)elem->end != reg.m_endPos) {
+                    reg.m_startPos = (int)elem->pos;
+                    reg.m_endPos = (int)elem->end;
+                }
+            } else {
+                m_headerRegions.push_back(VElementRegion(elem->pos, elem->end));
+            }
+
+            ++idx;
+            elem = elem->next;
+        }
+    }
+
+    if (idx < oriSize) {
+        m_headerRegions.resize(idx);
+    }
+
+    std::sort(m_headerRegions.begin(), m_headerRegions.end());
+
+    qDebug() << "highlighter: parse" << m_headerRegions.size() << "header regions";
+
+    emit headersUpdated(m_headerRegions);
 }
 
 void HGMarkdownHighlighter::initBlockHighlihgtOne(unsigned long pos, unsigned long end, int styleIndex)
@@ -398,6 +445,8 @@ void HGMarkdownHighlighter::parse()
     initHtmlCommentRegionsFromResult();
 
     initImageRegionsFromResult();
+
+    initHeaderRegionsFromResult();
 
     if (result) {
         pmh_free_elements(result);

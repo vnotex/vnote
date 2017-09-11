@@ -106,6 +106,17 @@ struct VElementRegion
         return (m_startPos == p_other.m_startPos
                 && m_endPos == p_other.m_endPos);
     }
+
+    bool operator<(const VElementRegion &p_other) const
+    {
+        if (m_startPos < p_other.m_startPos) {
+            return true;
+        } else if (m_startPos == p_other.m_startPos) {
+            return m_endPos <= p_other.m_endPos;
+        } else {
+            return false;
+        }
+    }
 };
 
 class HGMarkdownHighlighter : public QSyntaxHighlighter
@@ -132,6 +143,9 @@ signals:
 
     // Emitted when image regions have been fetched from a new parsing result.
     void imageLinksUpdated(const QVector<VElementRegion> &p_imageRegions);
+
+    // Emitted when header regions have been fetched from a new parsing result.
+    void headersUpdated(const QVector<VElementRegion> &p_headerRegions);
 
 protected:
     void highlightBlock(const QString &text) Q_DECL_OVERRIDE;
@@ -174,6 +188,11 @@ private:
     // All image link regions.
     QVector<VElementRegion> m_imageRegions;
 
+    // All header regions.
+    // May contains illegal elements.
+    // Sorted by start position.
+    QVector<VElementRegion> m_headerRegions;
+
     // Timer to signal highlightCompleted().
     QTimer *m_completeTimer;
 
@@ -210,6 +229,9 @@ private:
 
     // Fetch all the image link regions from parsing result.
     void initImageRegionsFromResult();
+
+    // Fetch all the header regions from parsing result.
+    void initHeaderRegionsFromResult();
 
     // Whether @p_block is totally inside a HTML comment.
     bool isBlockInsideCommentRegion(const QTextBlock &p_block) const;

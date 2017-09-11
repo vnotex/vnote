@@ -174,6 +174,9 @@ void VConfigManager::initialize()
     } else {
         m_noteOpenMode = OpenFileMode::Read;
     }
+
+    m_enableHeadingSequence = getConfigFromSettings("global",
+                                                    "enable_heading_sequence").toBool();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

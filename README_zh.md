@@ -14,6 +14,8 @@
 - [Github releases](https://github.com/tamlok/vnote/releases)
 - master分支的最新构建：[ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
 
+VNote不支持**XP**，因为QtWebEngineProcess无法在XP上运行。
+
 ## Linux
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
 

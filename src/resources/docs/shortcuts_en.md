@@ -189,4 +189,4 @@ VNote supports following features of Vim:
 
 For now, VNote does **NOT** support the macro and repeat(`.`) features of Vim.
 
-Enjoy Vim on VNote!
+Enjoy Vim in VNote!

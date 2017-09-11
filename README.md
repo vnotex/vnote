@@ -14,6 +14,8 @@ Users from China can download the latest release of VNote from [Baidu Netdisk](h
 - [Github releases](https://github.com/tamlok/vnote/releases)
 - Latest builds on master: [ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
 
+**NOT** supported in XP since QtWebEngineProcess used by VNote could not work in XP.
+
 ## Linux
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
 

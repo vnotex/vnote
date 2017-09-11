@@ -10,23 +10,55 @@ extern VConfigManager *g_config;
 VSettingsDialog::VSettingsDialog(QWidget *p_parent)
     : QDialog(p_parent)
 {
-    m_tabs = new QTabWidget;
-    m_tabs->addTab(new VGeneralTab(), tr("General"));
-    m_tabs->addTab(new VReadEditTab(), tr("Read/Edit"));
-    m_tabs->addTab(new VNoteManagementTab(), tr("Note Management"));
+    m_tabList = new QListWidget(this);
+    m_tabList->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+
+    m_tabs = new QStackedLayout();
 
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(m_btnBox, &QDialogButtonBox::accepted, this, &VSettingsDialog::saveConfiguration);
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
-    QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->addWidget(m_tabs);
+    QHBoxLayout *tabLayout = new QHBoxLayout();
+    tabLayout->addWidget(m_tabList);
+    tabLayout->addLayout(m_tabs);
+    tabLayout->setContentsMargins(0, 0, 0, 0);
+    tabLayout->setSpacing(0);
+    tabLayout->setStretch(0, 0);
+    tabLayout->setStretch(1, 5);
+
+    QVBoxLayout *mainLayout = new QVBoxLayout();
+    mainLayout->addLayout(tabLayout);
     mainLayout->addWidget(m_btnBox);
     setLayout(mainLayout);
 
     setWindowTitle(tr("Settings"));
 
+    // Add tabs.
+    addTab(new VGeneralTab(), tr("General"));
+    addTab(new VReadEditTab(), tr("Read/Edit"));
+    addTab(new VNoteManagementTab(), tr("Note Management"));
+    addTab(new VMarkdownTab(), tr("Markdown"));
+
+    m_tabList->setMaximumWidth(m_tabList->sizeHintForColumn(0) + 5);
+
+    connect(m_tabList, &QListWidget::currentItemChanged,
+            this, [this](QListWidgetItem *p_cur, QListWidgetItem *p_pre) {
+                Q_UNUSED(p_pre);
+                Q_ASSERT(p_cur);
+                int idx = p_cur->data(Qt::UserRole).toInt();
+                Q_ASSERT(idx >= 0);
+                m_tabs->setCurrentWidget(m_tabs->widget(idx));
+            });
+
     loadConfiguration();
+}
+
+void VSettingsDialog::addTab(QWidget *p_widget, const QString &p_label)
+{
+    int idx = m_tabs->addWidget(p_widget);
+    QListWidgetItem *item = new QListWidgetItem(p_label, m_tabList);
+    item->setData(Qt::UserRole, idx);
 }
 
 void VSettingsDialog::loadConfiguration()
@@ -54,6 +86,15 @@ void VSettingsDialog::loadConfiguration()
         VNoteManagementTab *noteManagementTab = dynamic_cast<VNoteManagementTab *>(m_tabs->widget(2));
         Q_ASSERT(noteManagementTab);
         if (!noteManagementTab->loadConfiguration()) {
+            goto err;
+        }
+    }
+
+    // Markdown Tab.
+    {
+        VMarkdownTab *markdownTab = dynamic_cast<VMarkdownTab *>(m_tabs->widget(3));
+        Q_ASSERT(markdownTab);
+        if (!markdownTab->loadConfiguration()) {
             goto err;
         }
     }
@@ -91,6 +132,15 @@ void VSettingsDialog::saveConfiguration()
         VNoteManagementTab *noteManagementTab = dynamic_cast<VNoteManagementTab *>(m_tabs->widget(2));
         Q_ASSERT(noteManagementTab);
         if (!noteManagementTab->saveConfiguration()) {
+            goto err;
+        }
+    }
+
+    // Markdown Tab.
+    {
+        VMarkdownTab *markdownTab = dynamic_cast<VMarkdownTab *>(m_tabs->widget(3));
+        Q_ASSERT(markdownTab);
+        if (!markdownTab->saveConfiguration()) {
             goto err;
         }
     }
@@ -234,25 +284,14 @@ VReadEditTab::VReadEditTab(QWidget *p_parent)
     zoomFactorLayout->addWidget(m_customWebZoom);
     zoomFactorLayout->addWidget(m_webZoomFactorSpin);
 
-    // Default note open mode.
-    m_openModeCombo = new QComboBox();
-    m_openModeCombo->setToolTip(tr("Default mode to open a note"));
-    m_openModeCombo->addItem(tr("Read Mode"), (int)OpenFileMode::Read);
-    m_openModeCombo->addItem(tr("Edit Mode"), (int)OpenFileMode::Edit);
-
-    QLabel *openModeLabel = new QLabel(tr("Note open mode:"));
-    openModeLabel->setToolTip(m_openModeCombo->toolTip());
-
     QFormLayout *readLayout = new QFormLayout();
     readLayout->addRow(zoomFactorLayout);
-    readLayout->addRow(openModeLabel, m_openModeCombo);
 
     m_readBox->setLayout(readLayout);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addWidget(m_readBox);
     mainLayout->addWidget(m_editBox);
-    m_editBox->hide();
     setLayout(mainLayout);
 }
 
@@ -262,20 +301,12 @@ bool VReadEditTab::loadConfiguration()
         return false;
     }
 
-    if (!loadOpenMode()) {
-        return false;
-    }
-
     return true;
 }
 
 bool VReadEditTab::saveConfiguration()
 {
     if (!saveWebZoomFactor()) {
-        return false;
-    }
-
-    if (!saveOpenMode()) {
         return false;
     }
 
@@ -313,29 +344,6 @@ bool VReadEditTab::saveWebZoomFactor()
 void VReadEditTab::customWebZoomChanged(int p_state)
 {
     m_webZoomFactorSpin->setEnabled(p_state == Qt::Checked);
-}
-
-bool VReadEditTab::loadOpenMode()
-{
-    int mode = (int)g_config->getNoteOpenMode();
-    bool found = false;
-    for (int i = 0; i < m_openModeCombo->count(); ++i) {
-        if (m_openModeCombo->itemData(i).toInt() == mode) {
-            m_openModeCombo->setCurrentIndex(i);
-            found = true;
-            break;
-        }
-    }
-
-    Q_ASSERT(found);
-    return true;
-}
-
-bool VReadEditTab::saveOpenMode()
-{
-    int mode = m_openModeCombo->currentData().toInt();
-    g_config->setNoteOpenMode((OpenFileMode)mode);
-    return true;
 }
 
 VNoteManagementTab::VNoteManagementTab(QWidget *p_parent)
@@ -486,4 +494,92 @@ void VNoteManagementTab::customImageFolderExtChanged(int p_state)
     } else {
         m_imageFolderEditExt->setEnabled(false);
     }
+}
+
+VMarkdownTab::VMarkdownTab(QWidget *p_parent)
+    : QWidget(p_parent)
+{
+    // Default note open mode.
+    m_openModeCombo = new QComboBox();
+    m_openModeCombo->setToolTip(tr("Default mode to open a note"));
+    m_openModeCombo->addItem(tr("Read Mode"), (int)OpenFileMode::Read);
+    m_openModeCombo->addItem(tr("Edit Mode"), (int)OpenFileMode::Edit);
+
+    QLabel *openModeLabel = new QLabel(tr("Note open mode:"));
+    openModeLabel->setToolTip(m_openModeCombo->toolTip());
+
+    // Heading sequence.
+    m_headingSequence = new QCheckBox();
+    m_headingSequence->setToolTip(tr("Enable auto sequence for all headings (in the form like 1.2.3.4.)"));
+
+    QLabel *headingSequenceLabel = new QLabel(tr("Heading sequence:"));
+    headingSequenceLabel->setToolTip(m_headingSequence->toolTip());
+
+    QFormLayout *mainLayout = new QFormLayout();
+    mainLayout->addRow(openModeLabel, m_openModeCombo);
+    mainLayout->addRow(headingSequenceLabel, m_headingSequence);
+
+    setLayout(mainLayout);
+}
+
+bool VMarkdownTab::loadConfiguration()
+{
+    if (!loadOpenMode()) {
+        return false;
+    }
+
+    if (!loadHeadingSequence()) {
+        return false;
+    }
+
+    return true;
+}
+
+bool VMarkdownTab::saveConfiguration()
+{
+    if (!saveOpenMode()) {
+        return false;
+    }
+
+    if (!saveHeadingSequence()) {
+        return false;
+    }
+
+    return true;
+}
+
+bool VMarkdownTab::loadOpenMode()
+{
+    int mode = (int)g_config->getNoteOpenMode();
+    bool found = false;
+    for (int i = 0; i < m_openModeCombo->count(); ++i) {
+        if (m_openModeCombo->itemData(i).toInt() == mode) {
+            m_openModeCombo->setCurrentIndex(i);
+            found = true;
+            break;
+        }
+    }
+
+    Q_ASSERT(found);
+    return true;
+}
+
+bool VMarkdownTab::saveOpenMode()
+{
+    int mode = m_openModeCombo->currentData().toInt();
+    g_config->setNoteOpenMode((OpenFileMode)mode);
+    return true;
+}
+
+bool VMarkdownTab::loadHeadingSequence()
+{
+    bool enabled = g_config->getEnableHeadingSequence();
+    m_headingSequence->setChecked(enabled);
+    return true;
+}
+
+bool VMarkdownTab::saveHeadingSequence()
+{
+    g_config->setEnableHeadingSequence(m_headingSequence->isChecked());
+    return true;
 }

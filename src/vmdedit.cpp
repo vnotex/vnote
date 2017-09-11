@@ -31,8 +31,9 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
                                                 g_config->getCodeBlockStyles(),
                                                 g_config->getMarkdownHighlightInterval(),
                                                 document());
-    connect(m_mdHighlighter, &HGMarkdownHighlighter::highlightCompleted,
-            this, &VMdEdit::generateEditOutline);
+
+    connect(m_mdHighlighter, &HGMarkdownHighlighter::headersUpdated,
+            this, &VMdEdit::updateOutline);
 
     // After highlight, the cursor may trun into non-visible. We should make it visible
     // in this case.
@@ -99,9 +100,6 @@ void VMdEdit::beginEdit()
 
     setModified(false);
 
-    // Request update outline.
-    generateEditOutline();
-
     if (m_freshEdit) {
         // Will set to false when all async jobs completed.
         setReadOnly(true);
@@ -110,6 +108,8 @@ void VMdEdit::beginEdit()
     } else {
         setReadOnly(false);
     }
+
+    m_mdHighlighter->updateHighlight();
 }
 
 void VMdEdit::endEdit()
@@ -330,24 +330,98 @@ void VMdEdit::updateCurHeader()
     emit curHeaderChanged(VAnchor(m_file, "", m_headers[idx].lineNumber, m_headers[idx].index));
 }
 
-void VMdEdit::generateEditOutline()
+static void addHeaderSequence(QVector<int> &p_sequence, int p_level)
+{
+    Q_ASSERT(p_level >= 1 && p_level < p_sequence.size());
+    ++p_sequence[p_level];
+    for (int i = p_level + 1; i < p_sequence.size(); ++i) {
+        p_sequence[i] = 0;
+    }
+}
+
+static QString headerSequenceStr(const QVector<int> &p_sequence)
+{
+    QString res;
+    for (int i = 1; i < p_sequence.size(); ++i) {
+        if (p_sequence[i] != 0) {
+            res = res + QString::number(p_sequence[i]) + '.';
+        } else if (res.isEmpty()) {
+            continue;
+        } else {
+            break;
+        }
+    }
+
+    return res;
+}
+
+static void insertSequenceToHeader(QTextBlock &p_block,
+                                   QRegExp &p_reg,
+                                   QRegExp &p_preReg,
+                                   const QString &p_seq)
+{
+    if (!p_block.isValid()) {
+        return;
+    }
+
+    QString text = p_block.text();
+    bool matched = p_reg.exactMatch(text);
+    Q_ASSERT(matched);
+
+    matched = p_preReg.exactMatch(text);
+    Q_ASSERT(matched);
+
+    int start = p_reg.cap(1).length() + 1;
+    int end = p_preReg.cap(1).length();
+
+    Q_ASSERT(start <= end);
+
+    QTextCursor cursor(p_block);
+    cursor.setPosition(p_block.position() + start);
+    if (start != end) {
+        cursor.setPosition(p_block.position() + end, QTextCursor::KeepAnchor);
+    }
+
+    cursor.insertText(p_seq + ' ');
+}
+
+void VMdEdit::updateOutline(const QVector<VElementRegion> &p_headerRegions)
 {
     QTextDocument *doc = document();
 
     QVector<VHeader> headers;
+    QVector<int> headerBlockNumbers;
+    QVector<QString> headerSequences;
+    if (!p_headerRegions.isEmpty()) {
+        headers.reserve(p_headerRegions.size());
+        headerBlockNumbers.reserve(p_headerRegions.size());
+        headerSequences.reserve(p_headerRegions.size());
+    }
 
     // Assume that each block contains only one line
     // Only support # syntax for now
-    QRegExp headerReg("(#{1,6})\\s+(\\S.*)");  // Need to trim the spaces
+    QRegExp headerReg(VUtils::c_headerRegExp);
     int baseLevel = -1;
-    for (QTextBlock block = doc->begin(); block != doc->end(); block = block.next()) {
-        V_ASSERT(block.lineCount() == 1);
+    for (auto const & reg : p_headerRegions) {
+        QTextBlock block = doc->findBlock(reg.m_startPos);
+        if (!block.isValid()) {
+            continue;
+        }
+
+        Q_ASSERT(block.lineCount() == 1);
+
+        if (!block.contains(reg.m_endPos - 1)) {
+            continue;
+        }
+
         if ((block.userState() == HighlightBlockState::Normal) &&
             headerReg.exactMatch(block.text())) {
             int level = headerReg.cap(1).length();
             VHeader header(level, headerReg.cap(2).trimmed(),
                            "", block.firstLineNumber(), headers.size());
             headers.append(header);
+            headerBlockNumbers.append(block.blockNumber());
+            headerSequences.append(headerReg.cap(3));
 
             if (baseLevel == -1) {
                 baseLevel = level;
@@ -359,18 +433,37 @@ void VMdEdit::generateEditOutline()
 
     m_headers.clear();
 
+    bool autoSequence = g_config->getEnableHeadingSequence() && !isReadOnly();
+    QVector<int> seqs(7, 0);
+    QRegExp preReg(VUtils::c_headerPrefixRegExp);
     int curLevel = baseLevel - 1;
-    for (auto & item : headers) {
+    for (int i = 0; i < headers.size(); ++i) {
+        VHeader &item = headers[i];
         while (item.level > curLevel + 1) {
             curLevel += 1;
 
             // Insert empty level which is an invalid header.
             m_headers.append(VHeader(curLevel, c_emptyHeaderName, "", -1, m_headers.size()));
+            if (autoSequence) {
+                addHeaderSequence(seqs, curLevel);
+            }
         }
 
         item.index = m_headers.size();
         m_headers.append(item);
         curLevel = item.level;
+        if (autoSequence) {
+            addHeaderSequence(seqs, item.level);
+
+            QString seqStr = headerSequenceStr(seqs);
+            if (headerSequences[i] != seqStr) {
+                // Insert correct sequence.
+                insertSequenceToHeader(doc->findBlockByNumber(headerBlockNumbers[i]),
+                                       headerReg,
+                                       preReg,
+                                       seqStr);
+            }
+        }
     }
 
     emit headersChanged(m_headers);
@@ -670,10 +763,10 @@ void VMdEdit::finishOneAsyncJob(int p_idx)
     m_finishedAsyncJobs[p_idx] = true;
     if (-1 == m_finishedAsyncJobs.indexOf(false)) {
         // All jobs finished.
-        m_freshEdit = false;
         setUndoRedoEnabled(true);
         setReadOnly(false);
         setModified(false);
+        m_freshEdit = false;
         emit statusChanged();
     }
 }

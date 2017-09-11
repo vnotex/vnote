@@ -232,6 +232,9 @@ public:
     OpenFileMode getNoteOpenMode() const;
     void setNoteOpenMode(OpenFileMode p_mode);
 
+    bool getEnableHeadingSequence() const;
+    void setEnableHeadingSequence(bool p_enabled);
+
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
     QString getShortcutKeySequence(const QString &p_operation) const;
@@ -468,6 +471,9 @@ private:
 
     // Default mode when opening a note.
     OpenFileMode m_noteOpenMode;
+
+    // Whether auto genearte heading sequence.
+    bool m_enableHeadingSequence;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1202,6 +1208,22 @@ inline void VConfigManager::setNoteOpenMode(OpenFileMode p_mode)
     m_noteOpenMode = p_mode;
     setConfigToSettings("global", "note_open_mode",
                         m_noteOpenMode == OpenFileMode::Read ? 0 : 1);
+}
+
+inline bool VConfigManager::getEnableHeadingSequence() const
+{
+    return m_enableHeadingSequence;
+}
+
+inline void VConfigManager::setEnableHeadingSequence(bool p_enabled)
+{
+    if (m_enableHeadingSequence == p_enabled) {
+        return;
+    }
+
+    m_enableHeadingSequence = p_enabled;
+    setConfigToSettings("global", "enable_heading_sequence",
+                        m_enableHeadingSequence);
 }
 
 #endif // VCONFIGMANAGER_H

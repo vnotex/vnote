@@ -144,8 +144,21 @@ public:
     // Regular expression for preview image block.
     static const QString c_previewImageBlockRegExp;
 
+    // Regular expression for header block.
+    // Captured texts:
+    // 1. Header marker (##);
+    // 2. Header Title (need to be trimmed);
+    // 3. Header Sequence (1.1., 1.2., optional);
+    // 4. Unused;
+    static const QString c_headerRegExp;
+
+    // Regular expression for header block.
+    // Captured texts:
+    // 1. prefix till the real header title content;
+    static const QString c_headerPrefixRegExp;
+
 private:
-    VUtils();
+    VUtils() {}
 
     static void initAvailableLanguage();
 

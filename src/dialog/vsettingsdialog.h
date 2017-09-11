@@ -6,12 +6,13 @@
 #include <QString>
 
 class QDialogButtonBox;
-class QTabWidget;
 class QComboBox;
 class QGroupBox;
 class QDoubleSpinBox;
 class QCheckBox;
 class QLineEdit;
+class QStackedLayout;
+class QListWidget;
 
 class VGeneralTab : public QWidget
 {
@@ -52,18 +53,12 @@ public:
     QCheckBox *m_customWebZoom;
     QDoubleSpinBox *m_webZoomFactorSpin;
 
-    // Default note open mode for markdown.
-    QComboBox *m_openModeCombo;
-
 private slots:
     void customWebZoomChanged(int p_state);
 
 private:
     bool loadWebZoomFactor();
     bool saveWebZoomFactor();
-
-    bool loadOpenMode();
-    bool saveOpenMode();
 };
 
 class VNoteManagementTab : public QWidget
@@ -97,6 +92,28 @@ private:
     bool saveImageFolderExt();
 };
 
+class VMarkdownTab : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit VMarkdownTab(QWidget *p_parent = 0);
+    bool loadConfiguration();
+    bool saveConfiguration();
+
+    // Default note open mode for markdown.
+    QComboBox *m_openModeCombo;
+
+    // Whether enable heading sequence.
+    QCheckBox *m_headingSequence;
+
+private:
+    bool loadOpenMode();
+    bool saveOpenMode();
+
+    bool loadHeadingSequence();
+    bool saveHeadingSequence();
+};
+
 class VSettingsDialog : public QDialog
 {
     Q_OBJECT
@@ -109,7 +126,10 @@ private slots:
 private:
     void loadConfiguration();
 
-    QTabWidget *m_tabs;
+    void addTab(QWidget *p_widget, const QString &p_label);
+
+    QStackedLayout *m_tabs;
+    QListWidget *m_tabList;
     QDialogButtonBox *m_btnBox;
 };
 

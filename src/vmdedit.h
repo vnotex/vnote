@@ -53,7 +53,7 @@ signals:
     void statusChanged();
 
 private slots:
-    void generateEditOutline();
+    void updateOutline(const QVector<VElementRegion> &p_headerRegions);
 
     // When there is no header in current cursor, will signal an invalid header.
     void updateCurHeader();
