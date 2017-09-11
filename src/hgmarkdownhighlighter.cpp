@@ -48,6 +48,10 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
         }
     }
 
+    m_colorColumnFormat = codeBlockFormat;
+    m_colorColumnFormat.setForeground(QColor(g_config->getEditorColorColumnFg()));
+    m_colorColumnFormat.setBackground(QColor(g_config->getEditorColorColumnBg()));
+
     resizeBuffer(initCapacity);
     document = parent;
 
@@ -183,6 +187,8 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
             }
         }
     }
+
+    highlightCodeBlockColorColumn(text);
 
 exit:
     highlightChanged();
@@ -400,6 +406,20 @@ void HGMarkdownHighlighter::highlightCodeBlock(const QString &text)
 
     setCurrentBlockState(state);
     setFormat(index, length, codeBlockFormat);
+}
+
+void HGMarkdownHighlighter::highlightCodeBlockColorColumn(const QString &p_text)
+{
+    int cc = g_config->getColorColumn();
+    if (cc <= 0 || currentBlockState() != HighlightBlockState::CodeBlock) {
+        return;
+    }
+
+    if (p_text.size() < cc) {
+        return;
+    }
+
+    setFormat(cc - 1, 1, m_colorColumnFormat);
 }
 
 void HGMarkdownHighlighter::highlightLinkWithSpacesInURL(const QString &p_text)

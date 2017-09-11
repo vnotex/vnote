@@ -355,7 +355,7 @@ static QString headerSequenceStr(const QVector<int> &p_sequence)
     return res;
 }
 
-static void insertSequenceToHeader(QTextBlock &p_block,
+static void insertSequenceToHeader(QTextBlock p_block,
                                    QRegExp &p_reg,
                                    QRegExp &p_preReg,
                                    const QString &p_seq)

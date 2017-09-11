@@ -18,14 +18,17 @@ trailing-space: a8a8a8
 # [VNote] Style for line number
 line-number-background: bdbdbd
 line-number-foreground: 424242
-# [VNote] style for selected word highlight
+# [VNote] Style for selected word highlight
 selected-word-background: dfdf00
-# [VNote] style for searched word highlight
+# [VNote] Style for searched word highlight
 searched-word-background: 4db6ac
-# [VNote] style for searched word under cursor highlight
+# [VNote] Style for searched word under cursor highlight
 searched-word-cursor-background: 66bb6a
-# [VNote] style for incremental searched word highlight
+# [VNote] Style for incremental searched word highlight
 incremental-searched-word-background: ce93d8
+# [VNote] Style for color column in fenced code block
+color-column-background: dd0000
+color-column-foreground: ffff00
 
 editor-selection
 foreground: eeeeee

@@ -235,6 +235,12 @@ public:
     bool getEnableHeadingSequence() const;
     void setEnableHeadingSequence(bool p_enabled);
 
+    int getColorColumn() const;
+    void setColorColumn(int p_column);
+
+    const QString &getEditorColorColumnBg() const;
+    const QString &getEditorColorColumnFg() const;
+
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
     QString getShortcutKeySequence(const QString &p_operation) const;
@@ -474,6 +480,15 @@ private:
 
     // Whether auto genearte heading sequence.
     bool m_enableHeadingSequence;
+
+    // The column to style in code block.
+    int m_colorColumn;
+
+    // The background color of the color column.
+    QString m_editorColorColumnBg;
+
+    // The foreground color of the color column.
+    QString m_editorColorColumnFg;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1224,6 +1239,31 @@ inline void VConfigManager::setEnableHeadingSequence(bool p_enabled)
     m_enableHeadingSequence = p_enabled;
     setConfigToSettings("global", "enable_heading_sequence",
                         m_enableHeadingSequence);
+}
+
+inline int VConfigManager::getColorColumn() const
+{
+    return m_colorColumn;
+}
+
+inline void VConfigManager::setColorColumn(int p_column)
+{
+    if (m_colorColumn == p_column) {
+        return;
+    }
+
+    m_colorColumn = p_column;
+    setConfigToSettings("global", "color_column", m_colorColumn);
+}
+
+inline const QString &VConfigManager::getEditorColorColumnBg() const
+{
+    return m_editorColorColumnBg;
+}
+
+inline const QString &VConfigManager::getEditorColorColumnFg() const
+{
+    return m_editorColorColumnFg;
 }
 
 #endif // VCONFIGMANAGER_H

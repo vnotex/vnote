@@ -36,7 +36,7 @@ private:
     QString title;
     QString info;
 
-    VDirectory *m_parentDirectory;
     const VDirectory *m_directory;
+    VDirectory *m_parentDirectory;
 };
 #endif // VDIRINFODIALOG_H

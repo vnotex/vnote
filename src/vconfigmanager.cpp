@@ -177,6 +177,8 @@ void VConfigManager::initialize()
 
     m_enableHeadingSequence = getConfigFromSettings("global",
                                                     "enable_heading_sequence").toBool();
+
+    m_colorColumn = getConfigFromSettings("global", "color_column").toInt();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()
@@ -369,6 +371,8 @@ void VConfigManager::updateMarkdownEditStyle()
     static const QString defaultIncrementalSearchedWordBg = "#CE93D8";
     static const QString defaultLineNumberBg = "#BDBDBD";
     static const QString defaultLineNumberFg = "#424242";
+    static const QString defaultColorColumnBg = "#DD0000";
+    static const QString defaultColorColumnFg = "#FFFF00";
 
     // Read style file .mdhl
     QString file(getEditorStyleUrl());
@@ -431,6 +435,8 @@ void VConfigManager::updateMarkdownEditStyle()
     m_editorIncrementalSearchedWordBg = defaultIncrementalSearchedWordBg;
     m_editorLineNumberBg = defaultLineNumberBg;
     m_editorLineNumberFg = defaultLineNumberFg;
+    m_editorColorColumnBg = defaultColorColumnBg;
+    m_editorColorColumnFg = defaultColorColumnFg;
     auto editorIt = styles.find("editor");
     if (editorIt != styles.end()) {
         auto it = editorIt->find("trailing-space");
@@ -466,6 +472,16 @@ void VConfigManager::updateMarkdownEditStyle()
         it = editorIt->find("incremental-searched-word-background");
         if (it != editorIt->end()) {
             m_editorIncrementalSearchedWordBg = "#" + *it;
+        }
+
+        it = editorIt->find("color-column-background");
+        if (it != editorIt->end()) {
+            m_editorColorColumnBg = "#" + *it;
+        }
+
+        it = editorIt->find("color-column-foreground");
+        if (it != editorIt->end()) {
+            m_editorColorColumnFg = "#" + *it;
         }
     }
 }

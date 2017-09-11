@@ -48,17 +48,6 @@ public:
 
     QGroupBox *m_readBox;
     QGroupBox *m_editBox;
-
-    // Web zoom factor.
-    QCheckBox *m_customWebZoom;
-    QDoubleSpinBox *m_webZoomFactorSpin;
-
-private slots:
-    void customWebZoomChanged(int p_state);
-
-private:
-    bool loadWebZoomFactor();
-    bool saveWebZoomFactor();
 };
 
 class VNoteManagementTab : public QWidget
@@ -106,12 +95,25 @@ public:
     // Whether enable heading sequence.
     QCheckBox *m_headingSequence;
 
+    // Web zoom factor.
+    QCheckBox *m_customWebZoom;
+    QDoubleSpinBox *m_webZoomFactorSpin;
+
+    // Color column in code block.
+    QLineEdit *m_colorColumnEdit;
+
 private:
     bool loadOpenMode();
     bool saveOpenMode();
 
     bool loadHeadingSequence();
     bool saveHeadingSequence();
+
+    bool loadWebZoomFactor();
+    bool saveWebZoomFactor();
+
+    bool loadColorColumn();
+    bool saveColorColumn();
 };
 
 class VSettingsDialog : public QDialog

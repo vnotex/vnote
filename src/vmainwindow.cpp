@@ -730,20 +730,35 @@ void VMainWindow::initFileMenu()
 
     fileMenu->addAction(settingsAct);
 
+    QAction *editConfigAct = new QAction(tr("Edit Configuration File"), this);
+    editConfigAct->setToolTip(tr("View and edit configuration file of VNote (vnote.ini)"));
+    connect(editConfigAct, &QAction::triggered,
+            this, [this](){
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+                // On macOS, it seems that we could not open that ini file directly.
+                QUrl url = QUrl::fromLocalFile(g_config->getConfigFolder());
+#else
+                QUrl url = QUrl::fromLocalFile(g_config->getConfigFilePath());
+#endif
+                QDesktopServices::openUrl(url);
+            });
+
+    fileMenu->addAction(editConfigAct);
+
     QAction *customShortcutAct = new QAction(tr("Custom Shortcuts"), this);
     customShortcutAct->setToolTip(tr("Custom some standard shortcuts"));
     connect(customShortcutAct, &QAction::triggered,
             this, [this](){
                 int ret = VUtils::showMessage(QMessageBox::Information,
-                              tr("Custom Shortcuts"),
-                              tr("VNote supports customing some standard shorcuts by "
-                                 "editing user's configuration file (vnote.ini). Please "
-                                 "reference the shortcuts help documentation for more "
-                                 "information."),
-                              tr("Click \"OK\" to custom shortcuts."),
-                              QMessageBox::Ok | QMessageBox::Cancel,
-                              QMessageBox::Ok,
-                              this);
+                                              tr("Custom Shortcuts"),
+                                              tr("VNote supports customing some standard shorcuts by "
+                                                 "editing user's configuration file (vnote.ini). Please "
+                                                 "reference the shortcuts help documentation for more "
+                                                 "information."),
+                                              tr("Click \"OK\" to custom shortcuts."),
+                                              QMessageBox::Ok | QMessageBox::Cancel,
+                                              QMessageBox::Ok,
+                                              this);
 
                 if (ret == QMessageBox::Ok) {
 #if defined(Q_OS_MACOS) || defined(Q_OS_MAC)

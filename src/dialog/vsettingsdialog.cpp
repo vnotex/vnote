@@ -171,7 +171,7 @@ VGeneralTab::VGeneralTab(QWidget *p_parent)
     langLabel->setToolTip(m_langCombo->toolTip());
 
     // System tray checkbox.
-    m_systemTray = new QCheckBox(this);
+    m_systemTray = new QCheckBox(tr("System tray"), this);
     m_systemTray->setToolTip(tr("Minimized to the system tray after closing VNote"
                                 " (not supported in macOS)"));
 #if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
@@ -179,12 +179,9 @@ VGeneralTab::VGeneralTab(QWidget *p_parent)
     m_systemTray->setEnabled(false);
 #endif
 
-    QLabel *trayLabel = new QLabel(tr("System tray:"), this);
-    trayLabel->setToolTip(m_systemTray->toolTip());
-
     QFormLayout *optionLayout = new QFormLayout();
     optionLayout->addRow(langLabel, m_langCombo);
-    optionLayout->addRow(trayLabel, m_systemTray);
+    optionLayout->addRow(m_systemTray);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(optionLayout);
@@ -271,24 +268,6 @@ VReadEditTab::VReadEditTab(QWidget *p_parent)
     m_readBox = new QGroupBox(tr("Read Mode (For Markdown Only)"));
     m_editBox = new QGroupBox(tr("Edit Mode"));
 
-    // Web Zoom Factor.
-    m_customWebZoom = new QCheckBox(tr("Custom Web zoom factor"), this);
-    m_customWebZoom->setToolTip(tr("Set the zoom factor of the Web page when reading"));
-    connect(m_customWebZoom, &QCheckBox::stateChanged,
-            this, &VReadEditTab::customWebZoomChanged);
-    m_webZoomFactorSpin = new QDoubleSpinBox(this);
-    m_webZoomFactorSpin->setMaximum(c_webZoomFactorMax);
-    m_webZoomFactorSpin->setMinimum(c_webZoomFactorMin);
-    m_webZoomFactorSpin->setSingleStep(0.25);
-    QHBoxLayout *zoomFactorLayout = new QHBoxLayout();
-    zoomFactorLayout->addWidget(m_customWebZoom);
-    zoomFactorLayout->addWidget(m_webZoomFactorSpin);
-
-    QFormLayout *readLayout = new QFormLayout();
-    readLayout->addRow(zoomFactorLayout);
-
-    m_readBox->setLayout(readLayout);
-
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addWidget(m_readBox);
     mainLayout->addWidget(m_editBox);
@@ -297,53 +276,12 @@ VReadEditTab::VReadEditTab(QWidget *p_parent)
 
 bool VReadEditTab::loadConfiguration()
 {
-    if (!loadWebZoomFactor()) {
-        return false;
-    }
-
     return true;
 }
 
 bool VReadEditTab::saveConfiguration()
 {
-    if (!saveWebZoomFactor()) {
-        return false;
-    }
-
     return true;
-}
-
-bool VReadEditTab::loadWebZoomFactor()
-{
-    qreal factor = g_config->getWebZoomFactor();
-    bool customFactor = g_config->isCustomWebZoomFactor();
-    if (customFactor) {
-        if (factor < c_webZoomFactorMin || factor > c_webZoomFactorMax) {
-            factor = 1;
-        }
-        m_customWebZoom->setChecked(true);
-        m_webZoomFactorSpin->setValue(factor);
-    } else {
-        m_customWebZoom->setChecked(false);
-        m_webZoomFactorSpin->setValue(factor);
-        m_webZoomFactorSpin->setEnabled(false);
-    }
-    return true;
-}
-
-bool VReadEditTab::saveWebZoomFactor()
-{
-    if (m_customWebZoom->isChecked()) {
-        g_config->setWebZoomFactor(m_webZoomFactorSpin->value());
-    } else {
-        g_config->setWebZoomFactor(-1);
-    }
-    return true;
-}
-
-void VReadEditTab::customWebZoomChanged(int p_state)
-{
-    m_webZoomFactorSpin->setEnabled(p_state == Qt::Checked);
 }
 
 VNoteManagementTab::VNoteManagementTab(QWidget *p_parent)
@@ -509,15 +447,40 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     openModeLabel->setToolTip(m_openModeCombo->toolTip());
 
     // Heading sequence.
-    m_headingSequence = new QCheckBox();
+    m_headingSequence = new QCheckBox(tr("Heading sequence"));
     m_headingSequence->setToolTip(tr("Enable auto sequence for all headings (in the form like 1.2.3.4.)"));
 
-    QLabel *headingSequenceLabel = new QLabel(tr("Heading sequence:"));
-    headingSequenceLabel->setToolTip(m_headingSequence->toolTip());
+    // Web Zoom Factor.
+    m_customWebZoom = new QCheckBox(tr("Custom Web zoom factor"), this);
+    m_customWebZoom->setToolTip(tr("Set the zoom factor of the Web page when reading"));
+    connect(m_customWebZoom, &QCheckBox::stateChanged,
+            this, [this](int p_state){
+                this->m_webZoomFactorSpin->setEnabled(p_state == Qt::Checked);
+            });
+
+    m_webZoomFactorSpin = new QDoubleSpinBox(this);
+    m_webZoomFactorSpin->setMaximum(c_webZoomFactorMax);
+    m_webZoomFactorSpin->setMinimum(c_webZoomFactorMin);
+    m_webZoomFactorSpin->setSingleStep(0.25);
+    QHBoxLayout *zoomFactorLayout = new QHBoxLayout();
+    zoomFactorLayout->addWidget(m_customWebZoom);
+    zoomFactorLayout->addWidget(m_webZoomFactorSpin);
+
+    // Color column.
+    m_colorColumnEdit = new QLineEdit();
+    m_colorColumnEdit->setToolTip(tr("Specify the screen column in fenced code block "
+                                     "which will be highlighted"));
+    QValidator *validator = new QRegExpValidator(QRegExp("\\d+"), this);
+    m_colorColumnEdit->setValidator(validator);
+
+    QLabel *colorColumnLabel = new QLabel(tr("Color column:"));
+    colorColumnLabel->setToolTip(m_colorColumnEdit->toolTip());
 
     QFormLayout *mainLayout = new QFormLayout();
     mainLayout->addRow(openModeLabel, m_openModeCombo);
-    mainLayout->addRow(headingSequenceLabel, m_headingSequence);
+    mainLayout->addRow(m_headingSequence);
+    mainLayout->addRow(zoomFactorLayout);
+    mainLayout->addRow(colorColumnLabel, m_colorColumnEdit);
 
     setLayout(mainLayout);
 }
@@ -532,6 +495,14 @@ bool VMarkdownTab::loadConfiguration()
         return false;
     }
 
+    if (!loadWebZoomFactor()) {
+        return false;
+    }
+
+    if (!loadColorColumn()) {
+        return false;
+    }
+
     return true;
 }
 
@@ -542,6 +513,14 @@ bool VMarkdownTab::saveConfiguration()
     }
 
     if (!saveHeadingSequence()) {
+        return false;
+    }
+
+    if (!saveWebZoomFactor()) {
+        return false;
+    }
+
+    if (!saveColorColumn()) {
         return false;
     }
 
@@ -583,3 +562,52 @@ bool VMarkdownTab::saveHeadingSequence()
     g_config->setEnableHeadingSequence(m_headingSequence->isChecked());
     return true;
 }
+
+bool VMarkdownTab::loadWebZoomFactor()
+{
+    qreal factor = g_config->getWebZoomFactor();
+    bool customFactor = g_config->isCustomWebZoomFactor();
+    if (customFactor) {
+        if (factor < c_webZoomFactorMin || factor > c_webZoomFactorMax) {
+            factor = 1;
+        }
+        m_customWebZoom->setChecked(true);
+        m_webZoomFactorSpin->setValue(factor);
+    } else {
+        m_customWebZoom->setChecked(false);
+        m_webZoomFactorSpin->setValue(factor);
+        m_webZoomFactorSpin->setEnabled(false);
+    }
+
+    return true;
+}
+
+bool VMarkdownTab::saveWebZoomFactor()
+{
+    if (m_customWebZoom->isChecked()) {
+        g_config->setWebZoomFactor(m_webZoomFactorSpin->value());
+    } else {
+        g_config->setWebZoomFactor(-1);
+    }
+
+    return true;
+}
+
+bool VMarkdownTab::loadColorColumn()
+{
+    int colorColumn = g_config->getColorColumn();
+    m_colorColumnEdit->setText(QString::number(colorColumn <= 0 ? 0 : colorColumn));
+    return true;
+}
+
+bool VMarkdownTab::saveColorColumn()
+{
+    bool ok = false;
+    int colorColumn = m_colorColumnEdit->text().toInt(&ok);
+    if (ok && colorColumn >= 0) {
+        g_config->setColorColumn(colorColumn);
+    }
+
+    return true;
+}
+

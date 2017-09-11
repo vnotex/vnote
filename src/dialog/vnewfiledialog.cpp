@@ -43,7 +43,7 @@ void VNewFileDialog::setupUI()
 
     QFormLayout *topLayout = new QFormLayout();
     topLayout->addRow(nameLabel, nameEdit);
-    topLayout->addRow("", m_insertTitleCB);
+    topLayout->addWidget(m_insertTitleCB);
 
     m_warnLabel = new QLabel();
     m_warnLabel->setWordWrap(true);

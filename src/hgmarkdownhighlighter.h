@@ -163,6 +163,7 @@ private:
     QTextCharFormat codeBlockFormat;
     QTextCharFormat m_linkFormat;
     QTextCharFormat m_imageFormat;
+    QTextCharFormat m_colorColumnFormat;
 
     QTextDocument *document;
     QVector<HighlightingStyle> highlightingStyles;
@@ -241,6 +242,9 @@ private:
 
     // Set the user data of currentBlock().
     void updateBlockUserData(int p_blockNum, const QString &p_text);
+
+    // Highlight color column in code block.
+    void highlightCodeBlockColorColumn(const QString &p_text);
 };
 
 inline const QMap<int, bool> &HGMarkdownHighlighter::getPotentialPreviewBlocks() const
