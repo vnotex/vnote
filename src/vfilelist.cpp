@@ -11,6 +11,7 @@
 #include "vfile.h"
 #include "vconfigmanager.h"
 #include "vmdedit.h"
+#include "vmdtab.h"
 
 extern VConfigManager *g_config;
 extern VNote *g_vnote;
@@ -318,12 +319,14 @@ void VFileList::newFile()
 
         // Move cursor down if content has been inserted.
         if (contentInserted) {
-            QWidget *wid = QApplication::focusWidget();
-            VMdEdit *edit = dynamic_cast<VMdEdit *>(wid);
-            if (edit && edit->getFile() == file) {
-                QTextCursor cursor = edit->textCursor();
-                cursor.movePosition(QTextCursor::End);
-                edit->setTextCursor(cursor);
+            const VMdTab *tab = dynamic_cast<VMdTab *>(editArea->currentEditTab());
+            if (tab) {
+                VMdEdit *edit = dynamic_cast<VMdEdit *>(tab->getEditor());
+                if (edit && edit->getFile() == file) {
+                    QTextCursor cursor = edit->textCursor();
+                    cursor.movePosition(QTextCursor::End);
+                    edit->setTextCursor(cursor);
+                }
             }
         }
     }

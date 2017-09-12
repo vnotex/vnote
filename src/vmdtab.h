@@ -53,6 +53,8 @@ public:
 
     VWebView *getWebViewer() const;
 
+    VEdit *getEditor() const;
+
     MarkdownConverterType getMarkdownConverterType() const;
 
     void requestUpdateVimStatus() Q_DECL_OVERRIDE;
@@ -147,6 +149,11 @@ inline VEdit *VMdTab::getEditor()
         setupMarkdownEditor();
     }
 
+    return m_editor;
+}
+
+inline VEdit *VMdTab::getEditor() const
+{
     return m_editor;
 }
 
