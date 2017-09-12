@@ -551,6 +551,11 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exp
         extraFile += "<script>var VEnableImageCaption = true;</script>\n";
     }
 
+    if (g_config->getEnableCodeBlockLineNumber()) {
+        extraFile += "<script src=\"qrc" + VNote::c_highlightjsLineNumberExtraFile + "\"></script>\n" +
+                     "<script>var VEnableHighlightLineNumber = true;</script>\n";
+    }
+
     QString htmlTemplate;
     if (p_exportPdf) {
         htmlTemplate = VNote::s_markdownTemplatePDF;

@@ -206,3 +206,33 @@ div.img-caption {
     text-align: center;
     line-height: 1.5;
 }
+
+/* For Highlight.js Line Number */
+table.hljs-ln tr {
+    border: none;
+    background-color: transparent;
+}
+
+table.hljs-ln tr td {
+    border: none;
+    background-color: transparent;
+}
+
+table.hljs-ln tr td.hljs-ln-numbers {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+
+	text-align: center;
+	color: #AAA;
+	border-right: 1px solid #CCC;
+	vertical-align: top;
+	padding-right: 5px;
+}
+
+table.hljs-ln tr td.hljs-ln-code {
+	padding-left: 10px;
+}

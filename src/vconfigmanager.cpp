@@ -179,6 +179,9 @@ void VConfigManager::initialize()
                                                     "enable_heading_sequence").toBool();
 
     m_colorColumn = getConfigFromSettings("global", "color_column").toInt();
+
+    m_enableCodeBlockLineNumber = getConfigFromSettings("global",
+                                                        "enable_code_block_line_number").toBool();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

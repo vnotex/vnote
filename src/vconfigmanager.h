@@ -241,6 +241,9 @@ public:
     const QString &getEditorColorColumnBg() const;
     const QString &getEditorColorColumnFg() const;
 
+    bool getEnableCodeBlockLineNumber() const;
+    void setEnableCodeBlockLineNumber(bool p_enabled);
+
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
     QString getShortcutKeySequence(const QString &p_operation) const;
@@ -483,6 +486,9 @@ private:
 
     // The column to style in code block.
     int m_colorColumn;
+
+    // Whether display line number of code block in read mode.
+    bool m_enableCodeBlockLineNumber;
 
     // The background color of the color column.
     QString m_editorColorColumnBg;
@@ -1264,6 +1270,23 @@ inline const QString &VConfigManager::getEditorColorColumnBg() const
 inline const QString &VConfigManager::getEditorColorColumnFg() const
 {
     return m_editorColorColumnFg;
+}
+
+inline bool VConfigManager::getEnableCodeBlockLineNumber() const
+{
+    return m_enableCodeBlockLineNumber;
+}
+
+inline void VConfigManager::setEnableCodeBlockLineNumber(bool p_enabled)
+{
+    if (m_enableCodeBlockLineNumber == p_enabled) {
+        return;
+    }
+
+    m_enableCodeBlockLineNumber = p_enabled;
+    setConfigToSettings("global",
+                        "enable_code_block_line_number",
+                        m_enableCodeBlockLineNumber);
 }
 
 #endif // VCONFIGMANAGER_H

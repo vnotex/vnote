@@ -1011,7 +1011,8 @@ void VEdit::resizeEvent(QResizeEvent *p_event)
 
 void VEdit::lineNumberAreaPaintEvent(QPaintEvent *p_event)
 {
-    if (!g_config->getEditorLineNumber()) {
+    int lineNumberType = g_config->getEditorLineNumber();
+    if (!lineNumberType) {
         updateLineNumberAreaMargin();
         m_lineNumberArea->hide();
         return;
@@ -1020,8 +1021,7 @@ void VEdit::lineNumberAreaPaintEvent(QPaintEvent *p_event)
     QPainter painter(m_lineNumberArea);
     painter.fillRect(p_event->rect(), g_config->getEditorLineNumberBg());
 
-    QTextDocument *doc = document();
-    QAbstractTextDocumentLayout *layout = doc->documentLayout();
+    QAbstractTextDocumentLayout *layout = document()->documentLayout();
 
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
@@ -1033,16 +1033,78 @@ void VEdit::lineNumberAreaPaintEvent(QPaintEvent *p_event)
     int eventBtm = p_event->rect().bottom();
     const int digitHeight = m_lineNumberArea->getDigitHeight();
     const int curBlockNumber = textCursor().block().blockNumber();
-    const bool relative = g_config->getEditorLineNumber() == 2;
     const QString &fg = g_config->getEditorLineNumberFg();
     const int lineDistanceHeight = m_config.m_lineDistanceHeight;
     painter.setPen(fg);
 
+    // Display line number only in code block.
+    if (lineNumberType == 3) {
+        if (m_file->getDocType() != DocType::Markdown) {
+            return;
+        }
+
+        int number = 0;
+        while (block.isValid() && top <= eventBtm) {
+            int blockState = block.userState();
+            switch (blockState) {
+            case HighlightBlockState::CodeBlockStart:
+                Q_ASSERT(number == 0);
+                number = 1;
+                break;
+
+            case HighlightBlockState::CodeBlockEnd:
+                number = 0;
+                break;
+
+            case HighlightBlockState::CodeBlock:
+                if (number == 0) {
+                    // Need to find current line number in code block.
+                    QTextBlock startBlock = block.previous();
+                    while (startBlock.isValid()) {
+                        if (startBlock.userState() == HighlightBlockState::CodeBlockStart) {
+                            number = block.blockNumber() - startBlock.blockNumber();
+                            break;
+                        }
+
+                        startBlock = startBlock.previous();
+                    }
+                }
+
+                break;
+
+            default:
+                break;
+            }
+
+            if (blockState == HighlightBlockState::CodeBlock) {
+                if (block.isVisible() && bottom >= eventTop) {
+                    QString numberStr = QString::number(number);
+                    painter.drawText(0,
+                                     top + 2,
+                                     m_lineNumberArea->width(),
+                                     digitHeight,
+                                     Qt::AlignRight,
+                                     numberStr);
+                }
+
+                ++number;
+            }
+
+            block = block.next();
+            top = bottom;
+            bottom = top + (int)layout->blockBoundingRect(block).height() + lineDistanceHeight;
+        }
+
+        return;
+    }
+
+    // Handle lineNumberType 1 and 2.
+    Q_ASSERT(lineNumberType == 1 || lineNumberType == 2);
     while (block.isValid() && top <= eventBtm) {
         if (block.isVisible() && bottom >= eventTop) {
             bool currentLine = false;
             int number = blockNumber + 1;
-            if (relative) {
+            if (lineNumberType == 2) {
                 number = blockNumber - curBlockNumber;
                 if (number == 0) {
                     currentLine = true;

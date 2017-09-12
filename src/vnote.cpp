@@ -45,6 +45,8 @@ const QString VNote::c_raphaelJsFile = ":/utils/flowchart.js/raphael.min.js";
 
 const QString VNote::c_mathjaxJsFile = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML";
 
+const QString VNote::c_highlightjsLineNumberExtraFile = ":/utils/highlightjs/highlightjs-line-numbers.min.js";
+
 const QString VNote::c_shortcutsDocFile_en = ":/resources/docs/shortcuts_en.md";
 const QString VNote::c_shortcutsDocFile_zh = ":/resources/docs/shortcuts_zh.md";
 

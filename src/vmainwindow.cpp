@@ -639,6 +639,16 @@ void VMainWindow::initMarkdownMenu()
     markdownMenu->addAction(codeBlockAct);
     codeBlockAct->setChecked(g_config->getEnableCodeBlockHighlight());
 
+    QAction *lineNumberAct = new QAction(tr("Display Line Number in Code Blocks"), this);
+    lineNumberAct->setToolTip(tr("Enable line number in code blocks in read mode"));
+    lineNumberAct->setCheckable(true);
+    connect(lineNumberAct, &QAction::triggered,
+            this, [this](bool p_checked){
+                g_config->setEnableCodeBlockLineNumber(p_checked);
+            });
+    markdownMenu->addAction(lineNumberAct);
+    lineNumberAct->setChecked(g_config->getEnableCodeBlockLineNumber());
+
     QAction *previewImageAct = new QAction(tr("Preview Images In Edit Mode"), this);
     previewImageAct->setToolTip(tr("Enable image preview in edit mode (re-open current tabs to make it work)"));
     previewImageAct->setCheckable(true);
@@ -1327,6 +1337,15 @@ void VMainWindow::initEditorLineNumberMenu(QMenu *p_menu)
     act->setData(2);
     lineNumMenu->addAction(act);
     if (lineNumberMode == 2) {
+        act->setChecked(true);
+    }
+
+    act = lineNumAct->addAction(tr("CodeBlock"));
+    act->setToolTip(tr("Display line number in code block in edit mode (for Markdown only)"));
+    act->setCheckable(true);
+    act->setData(3);
+    lineNumMenu->addAction(act);
+    if (lineNumberMode == 3) {
         act->setChecked(true);
     }
 }

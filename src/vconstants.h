@@ -61,4 +61,25 @@ enum class PreviewImageType { Block, Inline, Invalid };
 
 enum class PreviewImageSource { Image, CodeBlock, Invalid };
 
+enum HighlightBlockState
+{
+    Normal = 0,
+
+    // A fenced code block.
+    CodeBlockStart,
+    CodeBlock,
+    CodeBlockEnd,
+
+    // This block is inside a HTML comment region.
+    Comment
+};
+
+enum class LineNumberType
+{
+    None = 0,
+    Absolute,
+    Relative,
+    CodeBlock
+};
+
 #endif

@@ -24,6 +24,10 @@ if (typeof VEnableMathjax == 'undefined') {
     VEnableMathjax = false;
 }
 
+if (typeof VEnableHighlightLineNumber == 'undefined') {
+    VEnableHighlightLineNumber = false;
+}
+
 // Add a caption (using alt text) under the image.
 var VImageCenterClass = 'img-center';
 var VImageCaptionClass = 'img-caption';
@@ -804,4 +808,28 @@ var jumpTitle = function(forward, relativeLevel, repeat) {
     currentHeaderIdx = targetIdx;
     content.setHeader(headers[targetIdx].getAttribute("id"));
     setTimeout("g_muteScroll = false", 100);
+};
+
+var renderCodeBlockLineNumber = function() {
+    if (!VEnableHighlightLineNumber) {
+        return;
+    }
+
+    var codes = document.getElementsByTagName('code');
+    for (var i = 0; i < codes.length; ++i) {
+        var code = codes[i];
+        if (code.parentElement.tagName.toLowerCase() == 'pre') {
+            hljs.lineNumbersBlock(code);
+        }
+    }
+
+    // Delete the last extra row.
+    var tables = document.getElementsByTagName('table');
+    for (var i = 0; i < tables.length; ++i) {
+        var table = tables[i];
+        if (table.classList.contains("hljs-ln")) {
+            var rowCount = table.rows.length;
+            table.deleteRow(rowCount - 1);
+        }
+    }
 };

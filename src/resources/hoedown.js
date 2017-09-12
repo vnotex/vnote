@@ -41,6 +41,8 @@ var updateHtml = function(html) {
         }
     }
 
+    renderCodeBlockLineNumber();
+
     // If you add new logics after handling MathJax, please pay attention to
     // finishLoading logic.
     // MathJax may be not loaded for now.

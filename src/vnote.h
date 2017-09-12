@@ -64,6 +64,9 @@ public:
     // Mathjax
     static const QString c_mathjaxJsFile;
 
+    // Highlight.js line number plugin
+    static const QString c_highlightjsLineNumberExtraFile;
+
     static const QString c_shortcutsDocFile_en;
     static const QString c_shortcutsDocFile_zh;
 
