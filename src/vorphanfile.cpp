@@ -10,7 +10,12 @@ extern VConfigManager *g_config;
 
 VOrphanFile::VOrphanFile(const QString &p_path, QObject *p_parent,
                          bool p_modifiable, bool p_systemFile)
-    : VFile(VUtils::fileNameFromPath(p_path), p_parent, FileType::Orphan, p_modifiable),
+    : VFile(p_parent,
+            VUtils::fileNameFromPath(p_path),
+            FileType::Orphan,
+            p_modifiable,
+            QDateTime(),
+            QDateTime()),
       m_path(p_path), m_notebookName(tr("[EXTERNAL]")), m_systemFile(p_systemFile)
 {
     qDebug() << "VOrphanFile" << p_path << m_name << p_modifiable;

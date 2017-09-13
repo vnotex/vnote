@@ -31,6 +31,8 @@ namespace DirConfig
     static const QString c_files = "files";
     static const QString c_imageFolder = "image_folder";
     static const QString c_name = "name";
+    static const QString c_createdTime = "created_time";
+    static const QString c_modifiedTime = "modified_time";
 }
 
 static const QString c_emptyHeaderName = "[EMPTY]";

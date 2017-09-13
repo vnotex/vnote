@@ -148,7 +148,10 @@ int main(int argc, char *argv[])
     g_config = &vconfig;
 
     QString locale = VUtils::getLocale();
-    qDebug() << "use locale" << locale;
+    // Set default locale.
+    if (locale == "zh_CN") {
+        QLocale::setDefault(QLocale(QLocale::Chinese, QLocale::China));
+    }
 
     // load translation for Qt
     QTranslator qtTranslator;
@@ -161,7 +164,6 @@ int main(int argc, char *argv[])
     // load translation for vnote
     QTranslator translator;
     if (translator.load("vnote_" + locale, ":/translations")) {
-        qDebug() << "install VNote translator";
         app.installTranslator(&translator);
     }
 

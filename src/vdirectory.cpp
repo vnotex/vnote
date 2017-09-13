@@ -43,7 +43,10 @@ bool VDirectory::open()
     QJsonArray fileJson = configJson[DirConfig::c_files].toArray();
     for (int i = 0; i < fileJson.size(); ++i) {
         QJsonObject fileItem = fileJson[i].toObject();
-        VFile *file = new VFile(fileItem[DirConfig::c_name].toString(), this);
+        VFile *file = VFile::fromJson(fileItem,
+                                      this,
+                                      FileType::Normal,
+                                      true);
         m_files.append(file);
     }
 
@@ -123,11 +126,9 @@ QJsonObject VDirectory::toConfigJson() const
 
     QJsonArray files;
     for (int i = 0; i < m_files.size(); ++i) {
-        QJsonObject item;
-        item[DirConfig::c_name] = m_files[i]->getName();
-
-        files.append(item);
+        files.append(m_files[i]->toConfigJson());
     }
+
     dirJson[DirConfig::c_files] = files;
 
     return dirJson;
@@ -272,7 +273,13 @@ VFile *VDirectory::createFile(const QString &p_name)
 
     file.close();
 
-    VFile *ret = new VFile(p_name, this);
+    QDateTime dateTime = QDateTime::currentDateTimeUtc();
+    VFile *ret = new VFile(this,
+                           p_name,
+                           FileType::Normal,
+                           true,
+                           dateTime,
+                           dateTime);
     m_files.append(ret);
     if (!writeToConfig()) {
         file.remove();
@@ -321,7 +328,13 @@ VFile *VDirectory::addFile(const QString &p_name, int p_index)
         return NULL;
     }
 
-    VFile *file = new VFile(p_name, this);
+    QDateTime dateTime = QDateTime::currentDateTimeUtc();
+    VFile *file = new VFile(this,
+                            p_name,
+                            FileType::Normal,
+                            true,
+                            dateTime,
+                            dateTime);
     if (!file) {
         return NULL;
     }

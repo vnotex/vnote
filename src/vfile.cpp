@@ -6,11 +6,21 @@
 #include <QFileInfo>
 #include "utils/vutils.h"
 
-VFile::VFile(const QString &p_name, QObject *p_parent,
-             FileType p_type, bool p_modifiable)
-    : QObject(p_parent), m_name(p_name), m_opened(false), m_modified(false),
+VFile::VFile(QObject *p_parent,
+             const QString &p_name,
+             FileType p_type,
+             bool p_modifiable,
+             QDateTime p_createdTimeUtc,
+             QDateTime p_modifiedTimeUtc)
+    : QObject(p_parent),
+      m_name(p_name),
+      m_opened(false),
+      m_modified(false),
       m_docType(VUtils::docTypeFromName(p_name)),
-      m_type(p_type), m_modifiable(p_modifiable)
+      m_type(p_type),
+      m_modifiable(p_modifiable),
+      m_createdTimeUtc(p_createdTimeUtc),
+      m_modifiedTimeUtc(p_modifiedTimeUtc)
 {
 }
 
@@ -66,6 +76,10 @@ bool VFile::save()
 {
     Q_ASSERT(m_opened);
     bool ret = VUtils::writeFileToDisk(fetchPath(), m_content);
+    if (ret) {
+        m_modifiedTimeUtc = QDateTime::currentDateTimeUtc();
+    }
+
     return ret;
 }
 
@@ -259,4 +273,29 @@ bool VFile::isRelativeImageFolder() const
 QString VFile::getImageFolderInLink() const
 {
     return getNotebook()->getImageFolder();
+}
+
+VFile *VFile::fromJson(const QJsonObject &p_json,
+                       QObject *p_parent,
+                       FileType p_type,
+                       bool p_modifiable)
+{
+    return new VFile(p_parent,
+                     p_json[DirConfig::c_name].toString(),
+                     p_type,
+                     p_modifiable,
+                     QDateTime::fromString(p_json[DirConfig::c_createdTime].toString(),
+                                           Qt::ISODate),
+                     QDateTime::fromString(p_json[DirConfig::c_modifiedTime].toString(),
+                                           Qt::ISODate));
+}
+
+QJsonObject VFile::toConfigJson() const
+{
+    QJsonObject item;
+    item[DirConfig::c_name] = m_name;
+    item[DirConfig::c_createdTime] = m_createdTimeUtc.toString(Qt::ISODate);
+    item[DirConfig::c_modifiedTime] = m_modifiedTimeUtc.toString(Qt::ISODate);
+
+    return item;
 }

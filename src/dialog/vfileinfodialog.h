@@ -25,8 +25,6 @@ private slots:
 private:
     void setupUI();
 
-    QLabel *infoLabel;
-    QLabel *nameLabel;
     QLineEdit *nameEdit;
     QLabel *m_warnLabel;
     QDialogButtonBox *m_btnBox;

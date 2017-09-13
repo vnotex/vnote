@@ -10,7 +10,7 @@ extern VConfigManager *g_config;
 VFileInfoDialog::VFileInfoDialog(const QString &title, const QString &info,
                                  VDirectory *directory, const VFile *file,
                                  QWidget *parent)
-    : QDialog(parent), infoLabel(NULL), title(title), info(info),
+    : QDialog(parent), title(title), info(info),
       m_directory(directory), m_file(file)
 {
     setupUI();
@@ -22,13 +22,38 @@ VFileInfoDialog::VFileInfoDialog(const QString &title, const QString &info,
 
 void VFileInfoDialog::setupUI()
 {
+    QLabel *infoLabel = NULL;
     if (!info.isEmpty()) {
         infoLabel = new QLabel(info);
     }
-    nameLabel = new QLabel(tr("Note &name:"));
-    nameEdit = new QLineEdit(m_file->getName());
-    nameEdit->selectAll();
-    nameLabel->setBuddy(nameEdit);
+
+    // File name.
+    QString name = m_file->getName();
+    nameEdit = new QLineEdit(name);
+    int baseStart = 0, baseLength = name.size();
+    int dotIdx = name.lastIndexOf('.');
+    if (dotIdx != -1) {
+        baseLength = dotIdx;
+    }
+
+    // Select without suffix.
+    nameEdit->setSelection(baseStart, baseLength);
+
+    // Created time.
+    QString createdTimeStr = m_file->getCreatedTimeUtc().toLocalTime()
+                                                        .toString(Qt::DefaultLocaleLongDate);
+    QLabel *createdTimeLabel = new QLabel(createdTimeStr);
+
+    // Modified time.
+    createdTimeStr = m_file->getModifiedTimeUtc().toLocalTime()
+                                                 .toString(Qt::DefaultLocaleLongDate);
+    QLabel *modifiedTimeLabel = new QLabel(createdTimeStr);
+    modifiedTimeLabel->setToolTip(tr("Last modified time within VNote"));
+
+    QFormLayout *topLayout = new QFormLayout();
+    topLayout->addRow(tr("Note &name:"), nameEdit);
+    topLayout->addRow(tr("Created time:"), createdTimeLabel);
+    topLayout->addRow(tr("Modified time:"), modifiedTimeLabel);
 
     m_warnLabel = new QLabel();
     m_warnLabel->setWordWrap(true);
@@ -38,10 +63,6 @@ void VFileInfoDialog::setupUI()
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(m_btnBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
-
-    QHBoxLayout *topLayout = new QHBoxLayout();
-    topLayout->addWidget(nameLabel);
-    topLayout->addWidget(nameEdit);
 
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
     nameEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);

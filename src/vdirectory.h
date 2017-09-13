@@ -42,6 +42,7 @@ public:
     bool removeSubDirectory(VDirectory *p_dir);
 
     // Add the file in the config and m_files. If @p_index is -1, add it at the end.
+    // @p_name: the file name of the file to add.
     // Return the VFile if succeed.
     VFile *addFile(const QString &p_name, int p_index);
 

@@ -45,6 +45,13 @@ private:
     void setContent(const QString &p_content) Q_DECL_OVERRIDE;
     bool isInternalImageFolder(const QString &p_path) const Q_DECL_OVERRIDE;
 
+    static VFile *fromJson(const QJsonObject &p_json,
+                           QObject *p_parent,
+                           FileType p_type,
+                           bool p_modifiable);
+
+    QJsonObject toConfigJson() const;
+
     QString m_path;
 
     QString m_notebookName;
