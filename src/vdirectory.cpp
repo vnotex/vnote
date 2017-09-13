@@ -528,9 +528,7 @@ VFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
         return NULL;
     }
 
-    if (docType != newDocType) {
-        destFile->convert(docType, newDocType);
-    }
+    Q_ASSERT(docType == newDocType);
 
     // We need to copy internal images when it is still markdown.
     if (!images.isEmpty()) {

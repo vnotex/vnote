@@ -69,27 +69,6 @@ bool VFile::save()
     return ret;
 }
 
-void VFile::convert(DocType p_curType, DocType p_targetType)
-{
-    Q_ASSERT(!m_opened);
-    m_docType = p_targetType;
-    if (p_curType == p_targetType) {
-        return;
-    }
-    QString path = fetchPath();
-    QString fileText = VUtils::readFileFromDisk(path);
-    QTextEdit editor;
-    if (p_curType == DocType::Markdown) {
-        editor.setPlainText(fileText);
-        fileText = editor.toHtml();
-    } else {
-        editor.setHtml(fileText);
-        fileText = editor.toPlainText();
-    }
-    VUtils::writeFileToDisk(path, fileText);
-    qDebug() << getName() << "converted" << (int)p_curType << (int)p_targetType;
-}
-
 void VFile::setModified(bool p_modified)
 {
     m_modified = p_modified;
@@ -264,12 +243,8 @@ bool VFile::rename(const QString &p_name)
         return false;
     }
 
-    // Handle DocType change.
-    DocType newType = VUtils::docTypeFromName(m_name);
-    if (m_docType != newType) {
-        convert(m_docType, newType);
-        m_docType = newType;
-    }
+    // Can't not change doc type.
+    Q_ASSERT(m_docType == VUtils::docTypeFromName(m_name));
 
     qDebug() << "note renamed from" << oldName << "to" << m_name;
 

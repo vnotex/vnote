@@ -69,11 +69,6 @@ bool VOrphanFile::save()
     return VUtils::writeFileToDisk(fetchPath(), m_content);
 }
 
-void VOrphanFile::convert(DocType /* p_curType */, DocType /* p_targetType */)
-{
-    V_ASSERT(false);
-}
-
 void VOrphanFile::setName(const QString & /* p_name */)
 {
     V_ASSERT(false);

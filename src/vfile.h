@@ -19,8 +19,6 @@ public:
     virtual bool open();
     virtual void close();
     virtual bool save();
-    // Convert current file type.
-    virtual void convert(DocType p_curType, DocType p_targetType);
 
     const QString &getName() const;
     virtual void setName(const QString &p_name);

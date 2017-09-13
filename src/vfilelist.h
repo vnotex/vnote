@@ -91,13 +91,6 @@ private:
     bool identicalListWithDirectory() const;
     QList<QListWidgetItem *> getVisibleItems() const;
 
-    // @p_file: the file to be renamed or copied.
-    // @p_newFilePath: the new file path of @p_file.
-    // Check if the rename/copy will change the DocType. If yes, then ask
-    // user for confirmation.
-    // Return true if we can continue.
-    bool promptForDocTypeChange(const VFile *p_file, const QString &p_newFilePath);
-
     // Fill the info of @p_item according to @p_file.
     void fillItem(QListWidgetItem *p_item, const VFile *p_file);
 

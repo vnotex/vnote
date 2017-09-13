@@ -198,9 +198,7 @@ void VFileList::fileInfo(VFile *p_file)
             return;
         }
 
-        if (!promptForDocTypeChange(p_file, QDir(p_file->fetchBasePath()).filePath(name))) {
-            return;
-        }
+        Q_ASSERT(p_file->getDocType() == VUtils::docTypeFromName(name));
 
         if (!p_file->rename(name)) {
             VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
@@ -579,10 +577,8 @@ bool VFileList::copyFile(VDirectory *p_destDir, const QString &p_destName, VFile
         return true;
     }
 
-    // If change the file type, we need to close it first
-    if (!promptForDocTypeChange(p_file, destPath)) {
-        return false;
-    }
+    // DocType is not allowed to change.
+    Q_ASSERT(p_file->getDocType() == VUtils::docTypeFromName(destPath));
 
     VFile *destFile = VDirectory::copyFile(p_destDir, p_destName, p_file, p_cut);
     updateFileList();
@@ -590,31 +586,6 @@ bool VFileList::copyFile(VDirectory *p_destDir, const QString &p_destName, VFile
         emit fileUpdated(destFile);
     }
     return destFile != NULL;
-}
-
-bool VFileList::promptForDocTypeChange(const VFile *p_file, const QString &p_newFilePath)
-{
-    DocType docType = p_file->getDocType();
-    DocType newDocType = VUtils::docTypeFromName(p_newFilePath);
-
-    if (docType != newDocType) {
-        if (editArea->isFileOpened(p_file)) {
-            int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                          tr("The renaming will change the note type."),
-                                          tr("You should close the note <span style=\"%1\">%2</span> before continue.")
-                                            .arg(g_config->c_dataTextStyle).arg(p_file->getName()),
-                                          QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Ok, this);
-            if (QMessageBox::Ok == ret) {
-                if (!editArea->closeFile(p_file, false)) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        }
-    }
-
-    return true;
 }
 
 void VFileList::keyPressEvent(QKeyEvent *event)

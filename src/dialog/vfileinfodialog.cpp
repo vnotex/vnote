@@ -3,6 +3,7 @@
 #include "vdirectory.h"
 #include "vfile.h"
 #include "vconfigmanager.h"
+#include "utils/vutils.h"
 
 extern VConfigManager *g_config;
 
@@ -72,6 +73,14 @@ void VFileInfoDialog::handleInputChanged()
             showWarnLabel = true;
             QString nameConflictText = tr("<span style=\"%1\">WARNING</span>: Name (case-insensitive) already exists. "
                                           "Please choose another name.")
+                                          .arg(g_config->c_warningTextStyle);
+            m_warnLabel->setText(nameConflictText);
+        } else if (VUtils::docTypeFromName(name) != m_file->getDocType()) {
+            // Check if the name change the doc type.
+            nameOk = false;
+            showWarnLabel = true;
+            QString nameConflictText = tr("<span style=\"%1\">WARNING</span>: Changing type of the note is not supported. "
+                                          "Please use the same suffix as the old one.")
                                           .arg(g_config->c_warningTextStyle);
             m_warnLabel->setText(nameConflictText);
         }

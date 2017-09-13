@@ -40,7 +40,6 @@ public:
 
 private:
     bool save() Q_DECL_OVERRIDE;
-    void convert(DocType p_curType, DocType p_targetType) Q_DECL_OVERRIDE;
     void setName(const QString &p_name) Q_DECL_OVERRIDE;
     QString fetchImagePath() const Q_DECL_OVERRIDE;
     void setContent(const QString &p_content) Q_DECL_OVERRIDE;
