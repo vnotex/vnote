@@ -196,7 +196,7 @@ QWidget *VMainWindow::setupDirectoryPanel()
 
 void VMainWindow::initToolBar()
 {
-    const int tbIconSize = 20 * VUtils::calculateScaleFactor();
+    const int tbIconSize = g_config->getToolBarIconSize() * VUtils::calculateScaleFactor();
     QSize iconSize(tbIconSize, tbIconSize);
 
     initFileToolBar(iconSize);

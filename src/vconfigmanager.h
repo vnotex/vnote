@@ -244,6 +244,8 @@ public:
     bool getEnableCodeBlockLineNumber() const;
     void setEnableCodeBlockLineNumber(bool p_enabled);
 
+    int getToolBarIconSize() const;
+
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
     QString getShortcutKeySequence(const QString &p_operation) const;
@@ -495,6 +497,9 @@ private:
 
     // The foreground color of the color column.
     QString m_editorColorColumnFg;
+
+    // Icon size of tool bar in pixels.
+    int m_toolBarIconSize;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1287,6 +1292,11 @@ inline void VConfigManager::setEnableCodeBlockLineNumber(bool p_enabled)
     setConfigToSettings("global",
                         "enable_code_block_line_number",
                         m_enableCodeBlockLineNumber);
+}
+
+inline int VConfigManager::getToolBarIconSize() const
+{
+    return m_toolBarIconSize;
 }
 
 #endif // VCONFIGMANAGER_H

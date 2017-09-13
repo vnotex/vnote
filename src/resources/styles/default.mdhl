@@ -13,6 +13,7 @@ editor
 # Do not use "" to quote the name
 font-family: Hiragino Sans GB, 冬青黑体, Microsoft YaHei, 微软雅黑, Microsoft YaHei UI, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, STXihei, 华文细黑, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Helvetica, sans-serif, Tahoma, Arial, Verdana, Geneva, Georgia, Times New Roman
 font-size: 12
+foreground: 363636
 # [VNote] Style for trailing space
 trailing-space: a8a8a8
 # [VNote] Style for line number
@@ -46,32 +47,32 @@ vim-visual-background: 90caf9
 vim-replace-background: f8bbd0
 
 H1
-foreground: 111111
+foreground: 363636
 font-style: bold
 font-size: +8
 
 H2
-foreground: 111111
+foreground: 363636
 font-style: bold
 font-size: +6
 
 H3
-foreground: 111111
+foreground: 363636
 font-style: bold
 font-size: +4
 
 H4
-foreground: 111111
+foreground: 363636
 font-style: bold
 font-size: +2
 
 H5
-foreground: 111111
+foreground: 363636
 font-style: bold
 font-size: +2
 
 H6
-foreground: 111111
+foreground: 363636
 font-style: bold
 font-size: +2
 

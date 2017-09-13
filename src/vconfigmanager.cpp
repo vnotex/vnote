@@ -182,6 +182,9 @@ void VConfigManager::initialize()
 
     m_enableCodeBlockLineNumber = getConfigFromSettings("global",
                                                         "enable_code_block_line_number").toBool();
+
+    m_toolBarIconSize = getConfigFromSettings("global",
+                                              "tool_bar_icon_size").toInt();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()
