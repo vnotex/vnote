@@ -95,6 +95,28 @@ void VFileList::initActions()
     connect(newFileAct, SIGNAL(triggered(bool)),
             this, SLOT(newFile()));
 
+    m_openInReadAct = new QAction(QIcon(":/resources/icons/reading.svg"),
+                                  tr("&Open In Read Mode"), this);
+    m_openInReadAct->setToolTip(tr("Open current note in read mode"));
+    connect(m_openInReadAct, &QAction::triggered,
+            this, [this]() {
+                QListWidgetItem *item = fileList->currentItem();
+                if (item) {
+                    emit fileClicked(getVFile(item), OpenFileMode::Read);
+                }
+            });
+
+    m_openInEditAct = new QAction(QIcon(":/resources/icons/editing.svg"),
+                                  tr("Open In &Edit Mode"), this);
+    m_openInEditAct->setToolTip(tr("Open current note in edit mode"));
+    connect(m_openInEditAct, &QAction::triggered,
+            this, [this]() {
+                QListWidgetItem *item = fileList->currentItem();
+                if (item) {
+                    emit fileClicked(getVFile(item), OpenFileMode::Edit);
+                }
+            });
+
     deleteFileAct = new QAction(QIcon(":/resources/icons/delete_note.svg"),
                                 tr("&Delete"), this);
     deleteFileAct->setToolTip(tr("Delete selected note"));
@@ -399,7 +421,18 @@ void VFileList::contextMenuRequested(QPoint pos)
     if (!m_directory) {
         return;
     }
+
+    if (item && fileList->selectedItems().size() == 1) {
+        VFile *file = getVFile(item);
+        if (file && file->getDocType() == DocType::Markdown) {
+            menu.addAction(m_openInReadAct);
+            menu.addAction(m_openInEditAct);
+            menu.addSeparator();
+        }
+    }
+
     menu.addAction(newFileAct);
+
     if (item) {
         menu.addAction(deleteFileAct);
         menu.addSeparator();

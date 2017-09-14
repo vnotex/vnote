@@ -100,6 +100,8 @@ private:
     QVector<QPointer<VFile> > m_copiedFiles;
 
     // Actions
+    QAction *m_openInReadAct;
+    QAction *m_openInEditAct;
     QAction *newFileAct;
     QAction *deleteFileAct;
     QAction *fileInfoAct;
