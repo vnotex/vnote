@@ -12,6 +12,7 @@ VNotebook::VNotebook(const QString &name, const QString &path, QObject *parent)
     : QObject(parent), m_name(name)
 {
     m_path = QDir::cleanPath(path);
+    m_recycleBinFolder = g_config->getRecycleBinFolder();
     m_rootDir = new VDirectory(this,
                                VUtils::directoryNameFromPath(path),
                                NULL,
@@ -37,6 +38,12 @@ bool VNotebook::readConfig()
         m_imageFolder = it.value().toString();
     }
 
+    // [recycle_bin_folder] section.
+    it = configJson.find(DirConfig::c_recycleBinFolder);
+    if (it != configJson.end()) {
+        m_recycleBinFolder = it.value().toString();
+    }
+
     return true;
 }
 
@@ -46,6 +53,9 @@ QJsonObject VNotebook::toConfigJsonNotebook() const
 
     // [image_folder] section.
     json[DirConfig::c_imageFolder] = m_imageFolder;
+
+    // [recycle_bin_folder] section.
+    json[DirConfig::c_recycleBinFolder] = m_recycleBinFolder;
 
     return json;
 }
@@ -69,9 +79,9 @@ bool VNotebook::writeToConfig() const
     return VConfigManager::writeDirectoryConfig(m_path, toConfigJson());
 }
 
-bool VNotebook::writeConfig() const
+bool VNotebook::writeConfigNotebook() const
 {
-    QJsonObject json = toConfigJson();
+    QJsonObject nbJson = toConfigJsonNotebook();
 
     QJsonObject configJson = VConfigManager::readDirectoryConfig(m_path);
     if (configJson.isEmpty()) {
@@ -79,10 +89,11 @@ bool VNotebook::writeConfig() const
         return false;
     }
 
-    json[DirConfig::c_subDirectories] = configJson[DirConfig::c_subDirectories];
-    json[DirConfig::c_files] = configJson[DirConfig::c_files];
+    for (auto it = nbJson.begin(); it != nbJson.end(); ++it) {
+        configJson[it.key()] = it.value();
+    }
 
-    return VConfigManager::writeDirectoryConfig(m_path, json);
+    return VConfigManager::writeDirectoryConfig(m_path, configJson);
 }
 
 const QString &VNotebook::getName() const
@@ -102,6 +113,16 @@ void VNotebook::close()
 
 bool VNotebook::open()
 {
+    QString recycleBinPath = getRecycleBinFolderPath();
+    if (!QFileInfo::exists(recycleBinPath)) {
+        QDir dir(m_path);
+        if (!dir.mkpath(recycleBinPath)) {
+            qWarning() << "fail to create recycle bin folder" << recycleBinPath
+                       << "for notebook" << m_name;
+            return false;
+        }
+    }
+
     return m_rootDir->open();
 }
 
@@ -148,10 +169,20 @@ bool VNotebook::deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles)
             goto exit;
         }
 
+        // Delete sub directories.
         VDirectory *rootDir = p_notebook->getRootDir();
         QVector<VDirectory *> subdirs = rootDir->getSubDirs();
         for (auto dir : subdirs) {
-            rootDir->deleteSubDirectory(dir);
+            // Skip recycle bin.
+            rootDir->deleteSubDirectory(dir, true);
+        }
+
+        // Delete the recycle bin.
+        QDir recycleDir(p_notebook->getRecycleBinFolderPath());
+        if (!recycleDir.removeRecursively()) {
+            qWarning() << "fail to delete notebook recycle bin folder"
+                       << p_notebook->getRecycleBinFolderPath();
+            ret = false;
         }
 
         // Delete the config file.
@@ -254,4 +285,14 @@ QDateTime VNotebook::getCreatedTimeUtc()
     }
 
     return m_rootDir->getCreatedTimeUtc();
+}
+
+QString VNotebook::getRecycleBinFolderPath() const
+{
+    QFileInfo fi(m_recycleBinFolder);
+    if (fi.isAbsolute()) {
+        return m_recycleBinFolder;
+    } else {
+        return QDir(m_path).filePath(m_recycleBinFolder);
+    }
 }

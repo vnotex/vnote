@@ -12,6 +12,7 @@
 
 class QKeyEvent;
 class VFile;
+class VNotebook;
 
 #if !defined(V_ASSERT)
     #define V_ASSERT(cond) ((!(cond)) ? qt_assert(#cond, __FILE__, __LINE__) : qt_noop())
@@ -123,6 +124,27 @@ public:
 
     // Returns the shortcut text.
     static QString getShortcutText(const QString &p_keySeq);
+
+    // Delete directory recursively specified by @p_path.
+    // Will just move the directory to the recycle bin of @p_notebook if
+    // @p_skipRecycleBin is false.
+    static bool deleteDirectory(const VNotebook *p_notebook,
+                                const QString &p_path,
+                                bool p_skipRecycleBin = false);
+
+    // Empty all files in directory recursively specified by @p_path.
+    // Will just move files to the recycle bin of @p_notebook if
+    // @p_skipRecycleBin is false.
+    static bool emptyDirectory(const VNotebook *p_notebook,
+                               const QString &p_path,
+                               bool p_skipRecycleBin = false);
+
+    // Delete file specified by @p_path.
+    // Will just move the file to the recycle bin of @p_notebook if
+    // @p_skipRecycleBin is false.
+    static bool deleteFile(const VNotebook *p_notebook,
+                           const QString &p_path,
+                           bool p_skipRecycleBin = false);
 
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )

@@ -81,6 +81,78 @@ void VNotebookSelector::initActions()
                 QUrl url = QUrl::fromLocalFile(notebook->getPath());
                 QDesktopServices::openUrl(url);
             });
+
+    m_recycleBinAct = new QAction(QIcon(":/resources/icons/recycle_bin.svg"),
+                                  tr("&Recycle Bin"), this);
+    m_recycleBinAct->setToolTip(tr("Open the recycle bin of this notebook"));
+    connect(m_recycleBinAct, &QAction::triggered,
+            this, [this]() {
+                QList<QListWidgetItem *> items = this->m_listWidget->selectedItems();
+                if (items.isEmpty()) {
+                    return;
+                }
+
+                Q_ASSERT(items.size() == 1);
+                QListWidgetItem *item = items[0];
+                int index = this->indexOfListItem(item);
+                VNotebook *notebook = this->getNotebookFromComboIndex(index);
+                QUrl url = QUrl::fromLocalFile(notebook->getRecycleBinFolderPath());
+                QDesktopServices::openUrl(url);
+            });
+
+    m_emptyRecycleBinAct = new QAction(QIcon(":/resources/icons/empty_recycle_bin.svg"),
+                                       tr("&Empty Recycle Bin"), this);
+    m_emptyRecycleBinAct->setToolTip(tr("Empty the recycle bin of this notebook"));
+    connect(m_emptyRecycleBinAct, &QAction::triggered,
+            this, [this]() {
+                QList<QListWidgetItem *> items = this->m_listWidget->selectedItems();
+                if (items.isEmpty()) {
+                    return;
+                }
+
+                Q_ASSERT(items.size() == 1);
+                QListWidgetItem *item = items[0];
+                int index = this->indexOfListItem(item);
+                VNotebook *notebook = this->getNotebookFromComboIndex(index);
+                QString binPath = notebook->getRecycleBinFolderPath();
+
+                int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                                              tr("Are you sure to empty recycle bin of notebook "
+                                                 "<span style=\"%1\">%2</span>?")
+                                                .arg(g_config->c_dataTextStyle)
+                                                .arg(notebook->getName()),
+                                              tr("<span style=\"%1\">WARNING</span>: "
+                                                 "VNote will delete all the files in directory "
+                                                 "<span style=\"%2\">%3</span>."
+                                                 "<br>It may be UNRECOVERABLE!")
+                                                .arg(g_config->c_warningTextStyle)
+                                                .arg(g_config->c_dataTextStyle)
+                                                .arg(binPath),
+                                              QMessageBox::Ok | QMessageBox::Cancel,
+                                              QMessageBox::Ok, this, MessageBoxType::Danger);
+                if (ret == QMessageBox::Ok) {
+                    QString info;
+                    if (VUtils::emptyDirectory(notebook, binPath, true)) {
+                        info = tr("Successfully emptied recycle bin of notebook "
+                                  "<span style=\"%1\">%2</span>!")
+                                 .arg(g_config->c_dataTextStyle)
+                                 .arg(notebook->getName());
+                    } else {
+                        info = tr("Fail to empty recycle bin of notebook "
+                                  "<span style=\"%1\">%2</span>!")
+                                 .arg(g_config->c_dataTextStyle)
+                                 .arg(notebook->getName());
+                    }
+
+                    VUtils::showMessage(QMessageBox::Information,
+                                        tr("Information"),
+                                        info,
+                                        "",
+                                        QMessageBox::Ok,
+                                        QMessageBox::Ok,
+                                        this);
+                }
+            });
 }
 
 void VNotebookSelector::updateComboBox()
@@ -244,7 +316,7 @@ void VNotebookSelector::deleteNotebook()
     VNotebook *notebook = getNotebookFromComboIndex(index);
     Q_ASSERT(notebook);
 
-    VDeleteNotebookDialog dialog(tr("Delete Notebook"), notebook->getName(), notebook->getPath(), this);
+    VDeleteNotebookDialog dialog(tr("Delete Notebook"), notebook, this);
     if (dialog.exec() == QDialog::Accepted) {
         bool deleteFiles = dialog.getDeleteFiles();
         m_editArea->closeFile(notebook, true);
@@ -323,7 +395,7 @@ void VNotebookSelector::editNotebookInfo()
         if (imageFolder != notebook->getImageFolderConfig()) {
             updated = true;
             notebook->setImageFolder(imageFolder);
-            notebook->writeConfig();
+            notebook->writeConfigNotebook();
         }
 
         if (updated) {
@@ -369,6 +441,10 @@ void VNotebookSelector::requestPopupListContextMenu(QPoint p_pos)
     QMenu menu(this);
     menu.setToolTipsVisible(true);
     menu.addAction(m_deleteNotebookAct);
+    menu.addSeparator();
+    menu.addAction(m_recycleBinAct);
+    menu.addAction(m_emptyRecycleBinAct);
+    menu.addSeparator();
     menu.addAction(m_openLocationAct);
     menu.addAction(m_notebookInfoAct);
 

@@ -72,7 +72,8 @@ void VDirInfoDialog::handleInputChanged()
     if (nameOk && name != m_directory->getName()) {
         // Check if the name conflicts with existing directory name.
         // Case-insensitive when creating note.
-        if (m_parentDirectory->findSubDirectory(name, false)) {
+        const VDirectory *directory = m_parentDirectory->findSubDirectory(name, false);
+        if (directory && directory != m_directory) {
             nameOk = false;
             showWarnLabel = true;
             QString nameConflictText = tr("<span style=\"%1\">WARNING</span>: Name (case-insensitive) already exists. "

@@ -24,6 +24,7 @@
 
 #include "vfile.h"
 #include "vnote.h"
+#include "vnotebook.h"
 
 extern VConfigManager *g_config;
 
@@ -717,4 +718,101 @@ void VUtils::decodeUrl(QString &p_url)
 QString VUtils::getShortcutText(const QString &p_keySeq)
 {
     return QKeySequence(p_keySeq).toString(QKeySequence::NativeText);
+}
+
+static QString getRecycleBinSubFolderToUse(const VNotebook *p_notebook)
+{
+    QString folderPath = p_notebook->getRecycleBinFolderPath();
+    QDir dir(folderPath);
+    return QDir::cleanPath(dir.absoluteFilePath(QDateTime::currentDateTime().toString("yyyyMMdd")));
+}
+
+bool VUtils::deleteDirectory(const VNotebook *p_notebook,
+                             const QString &p_path,
+                             bool p_skipRecycleBin)
+{
+    if (p_skipRecycleBin) {
+        QDir dir(p_path);
+        return dir.removeRecursively();
+    } else {
+        // Move it to the recycle bin folder.
+        QString binPath = getRecycleBinSubFolderToUse(p_notebook);
+        QDir binDir(binPath);
+        if (!binDir.exists()) {
+            binDir.mkpath(binPath);
+            if (!binDir.exists()) {
+                return false;
+            }
+        }
+
+        QString destName = getFileNameWithSequence(binPath,
+                                                   directoryNameFromPath(p_path));
+
+        qDebug() << "try to move" << p_path << "to" << binPath << "as" << destName;
+        if (!binDir.rename(p_path, binDir.filePath(destName))) {
+            qWarning() << "fail to move directory" << p_path << "to" << binDir.filePath(destName);
+            return false;
+        }
+
+        return true;
+    }
+}
+
+bool VUtils::emptyDirectory(const VNotebook *p_notebook,
+                            const QString &p_path,
+                            bool p_skipRecycleBin)
+{
+    QDir dir(p_path);
+    if (!dir.exists()) {
+        return true;
+    }
+
+    QFileInfoList nodes = dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::Hidden
+                                            | QDir::NoSymLinks | QDir::NoDotAndDotDot);
+    for (int i = 0; i < nodes.size(); ++i) {
+        const QFileInfo &fileInfo = nodes.at(i);
+        if (fileInfo.isDir()) {
+            if (!deleteDirectory(p_notebook, fileInfo.absoluteFilePath(), p_skipRecycleBin)) {
+                return false;
+            }
+        } else {
+            Q_ASSERT(fileInfo.isFile());
+            if (!deleteFile(p_notebook, fileInfo.absoluteFilePath(), p_skipRecycleBin)) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+bool VUtils::deleteFile(const VNotebook *p_notebook,
+                        const QString &p_path,
+                        bool p_skipRecycleBin)
+{
+    if (p_skipRecycleBin) {
+        QFile file(p_path);
+        return file.remove();
+    } else {
+        // Move it to the recycle bin folder.
+        QString binPath = getRecycleBinSubFolderToUse(p_notebook);
+        QDir binDir(binPath);
+        if (!binDir.exists()) {
+            binDir.mkpath(binPath);
+            if (!binDir.exists()) {
+                return false;
+            }
+        }
+
+        QString destName = getFileNameWithSequence(binPath,
+                                                   fileNameFromPath(p_path));
+
+        qDebug() << "try to move" << p_path << "to" << binPath << "as" << destName;
+        if (!binDir.rename(p_path, binDir.filePath(destName))) {
+            qWarning() << "fail to move file" << p_path << "to" << binDir.filePath(destName);
+            return false;
+        }
+
+        return true;
+    }
 }

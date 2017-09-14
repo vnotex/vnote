@@ -412,20 +412,21 @@ VDirectory *VDirectory::addSubDirectory(const QString &p_name, int p_index)
     return dir;
 }
 
-void VDirectory::deleteSubDirectory(VDirectory *p_subDir)
+void VDirectory::deleteSubDirectory(VDirectory *p_subDir, bool p_skipRecycleBin)
 {
+    Q_ASSERT(p_subDir->getNotebook() == m_notebook);
+
     QString dirPath = p_subDir->fetchPath();
 
     p_subDir->close();
 
     removeSubDirectory(p_subDir);
 
-    // Delete the entire directory
-    QDir dir(dirPath);
-    if (!dir.removeRecursively()) {
+    // Delete the entire directory.
+    if (!VUtils::deleteDirectory(m_notebook, dirPath, p_skipRecycleBin)) {
         qWarning() << "fail to remove directory" << dirPath << "recursively";
     } else {
-        qDebug() << "deleted" << dirPath << "from disk";
+        qDebug() << "deleted" << dirPath << (p_skipRecycleBin ? "from disk" : "to recycle bin");
     }
 
     delete p_subDir;

@@ -64,8 +64,7 @@ void VFile::deleteDiskFile()
 
     // Delete the file
     QString filePath = fetchPath();
-    QFile file(filePath);
-    if (file.remove()) {
+    if (VUtils::deleteFile(getNotebook(), filePath, false)) {
         qDebug() << "deleted" << filePath;
     } else {
         qWarning() << "fail to delete" << filePath;
@@ -96,8 +95,7 @@ void VFile::deleteLocalImages()
                                                                     ImageLink::LocalRelativeInternal);
     int deleted = 0;
     for (int i = 0; i < images.size(); ++i) {
-        QFile file(images[i].m_path);
-        if (file.remove()) {
+        if (VUtils::deleteFile(getNotebook(), images[i].m_path, false)) {
             ++deleted;
         }
     }

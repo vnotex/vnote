@@ -394,8 +394,12 @@ void VFileList::deleteFile(VFile *p_file)
     int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                   tr("Are you sure to delete note <span style=\"%1\">%2</span>?")
                                     .arg(g_config->c_dataTextStyle).arg(fileName),
-                                  tr("<span style=\"%1\">WARNING</span>: The files (including images) "
-                                     "deleted may be UNRECOVERABLE!")
+                                  tr("<span style=\"%1\">WARNING</span>: "
+                                     "VNote will delete the note as well as all "
+                                     "its images and attachments managed by VNote. "
+                                     "You could find deleted files in the recycle "
+                                     "bin of this notebook.<br>"
+                                     "The operation is IRREVERSIBLE!")
                                     .arg(g_config->c_warningTextStyle),
                                   QMessageBox::Ok | QMessageBox::Cancel,
                                   QMessageBox::Ok, this, MessageBoxType::Danger);

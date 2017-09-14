@@ -90,6 +90,8 @@ private:
     QAction *m_deleteNotebookAct;
     QAction *m_notebookInfoAct;
     QAction *m_openLocationAct;
+    QAction *m_recycleBinAct;
+    QAction *m_emptyRecycleBinAct;
 
     // We will add several special action item in the combobox. This is the start index
     // of the real notebook items related to m_notebooks.

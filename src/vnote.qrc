@@ -121,5 +121,7 @@
         <file>resources/docs/markdown_guide_en.md</file>
         <file>resources/docs/markdown_guide_zh.md</file>
         <file>utils/highlightjs/highlightjs-line-numbers.min.js</file>
+        <file>resources/icons/recycle_bin.svg</file>
+        <file>resources/icons/empty_recycle_bin.svg</file>
     </qresource>
 </RCC>

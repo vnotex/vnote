@@ -264,6 +264,8 @@ public:
     MarkdownitOption getMarkdownitOption() const;
     void setMarkdownitOption(const MarkdownitOption &p_opt);
 
+    const QString &getRecycleBinFolder() const;
+
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
     QString getShortcutKeySequence(const QString &p_operation) const;
@@ -530,6 +532,9 @@ private:
 
     // Auto-convert URL-like text to links.
     bool m_markdownitOptLinkify;
+
+    // Default name of the recycle bin folder of notebook.
+    QString m_recycleBinFolder;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1375,6 +1380,11 @@ inline void VConfigManager::setMarkdownitOption(const MarkdownitOption &p_opt)
                             "markdownit_opt_linkify",
                             m_markdownitOptLinkify);
     }
+}
+
+inline const QString &VConfigManager::getRecycleBinFolder() const
+{
+    return m_recycleBinFolder;
 }
 
 #endif // VCONFIGMANAGER_H

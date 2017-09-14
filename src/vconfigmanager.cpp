@@ -197,6 +197,9 @@ void VConfigManager::initialize()
 
     m_markdownitOptLinkify = getConfigFromSettings("global",
                                                    "markdownit_opt_linkify").toBool();
+
+    m_recycleBinFolder = getConfigFromSettings("global",
+                                               "recycle_bin_folder").toString();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

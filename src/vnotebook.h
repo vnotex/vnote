@@ -13,6 +13,7 @@ class VNotebook : public QObject
     Q_OBJECT
 public:
     VNotebook(const QString &name, const QString &path, QObject *parent = 0);
+
     ~VNotebook();
 
     // Open the root directory to load contents
@@ -54,15 +55,20 @@ public:
     // Return m_imageFolder.
     const QString &getImageFolderConfig() const;
 
+    // Return m_recycleBinFolder.
+    const QString &getRecycleBinFolder() const;
+
+    // Get the recycle folder path for this notebook to use.
+    QString getRecycleBinFolderPath() const;
+
     void setImageFolder(const QString &p_imageFolder);
 
     // Read configurations (excluding "sub_directories" and "files" section)
     // from root directory config file.
     bool readConfig();
 
-    // Write configurations (excluding "sub_directories" and "files" section)
-    // to root directory config file.
-    bool writeConfig() const;
+    // Write configurations only related to notebook to root directory config file.
+    bool writeConfigNotebook() const;
 
     // Return only the info of notebook part in json.
     QJsonObject toConfigJsonNotebook() const;
@@ -88,6 +94,10 @@ private:
     // Otherwise, VNote will use the global configured folder.
     QString m_imageFolder;
 
+    // Folder name to store deleted files.
+    // Could be relative or absolute.
+    QString m_recycleBinFolder;
+
     // Parent is NULL for root directory
     VDirectory *m_rootDir;
 };
@@ -95,6 +105,11 @@ private:
 inline VDirectory *VNotebook::getRootDir() const
 {
     return m_rootDir;
+}
+
+inline const QString &VNotebook::getRecycleBinFolder() const
+{
+    return m_recycleBinFolder;
 }
 
 #endif // VNOTEBOOK_H

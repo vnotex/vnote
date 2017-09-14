@@ -255,7 +255,7 @@ void VMdEdit::clearUnusedImages()
 
             // This inserted image is no longer in the file.
             if (j == images.size()) {
-                if (!QFile(link.m_path).remove()) {
+                if (!VUtils::deleteFile(m_file->getNotebook(), link.m_path, false)) {
                     qWarning() << "fail to delete unused inserted image" << link.m_path;
                 } else {
                     qDebug() << "delete unused inserted image" << link.m_path;
@@ -280,7 +280,7 @@ void VMdEdit::clearUnusedImages()
 
         // Original local relative image is no longer in the file.
         if (j == images.size()) {
-            if (!QFile(link.m_path).remove()) {
+            if (!VUtils::deleteFile(m_file->getNotebook(), link.m_path, false)) {
                 qWarning() << "fail to delete unused original image" << link.m_path;
             } else {
                 qDebug() << "delete unused original image" << link.m_path;

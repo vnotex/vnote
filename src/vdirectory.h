@@ -35,7 +35,8 @@ public:
 
     VFile *createFile(const QString &p_name);
 
-    void deleteSubDirectory(VDirectory *p_subDir);
+    // Remove and delete subdirectory @p_subDir.
+    void deleteSubDirectory(VDirectory *p_subDir, bool p_skipRecycleBin = false);
 
     // Remove the file in the config and m_files without deleting it in the disk.
     // It won't change the parent of @p_file to enable it find its path.

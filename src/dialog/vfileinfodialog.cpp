@@ -89,7 +89,8 @@ void VFileInfoDialog::handleInputChanged()
     if (nameOk && name != m_file->getName()) {
         // Check if the name conflicts with existing note name.
         // Case-insensitive when creating note.
-        if (m_directory->findFile(name, false)) {
+        const VFile *file = m_directory->findFile(name, false);
+        if (file && file != m_file) {
             nameOk = false;
             showWarnLabel = true;
             QString nameConflictText = tr("<span style=\"%1\">WARNING</span>: Name (case-insensitive) already exists. "

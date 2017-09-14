@@ -34,6 +34,7 @@ class VTabIndicator;
 class VSingleInstanceGuard;
 class QTimer;
 class QSystemTrayIcon;
+class QShortcut;
 
 class VMainWindow : public QMainWindow
 {

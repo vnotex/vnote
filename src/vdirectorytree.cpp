@@ -447,9 +447,10 @@ void VDirectoryTree::deleteDirectory()
                                   tr("Are you sure to delete folder <span style=\"%1\">%2</span>?")
                                     .arg(g_config->c_dataTextStyle).arg(curDir->getName()),
                                   tr("<span style=\"%1\">WARNING</span>: "
-                                     "VNote will delete the whole directory (<b>ANY</b> files) "
+                                     "VNote will delete the whole directory "
                                      "<span style=\"%2\">%3</span>."
-                                     "<br>It may be UNRECOVERABLE!")
+                                     "You could find deleted files in the recycle bin "
+                                     "of this notebook.<br>The operation is IRREVERSIBLE!")
                                     .arg(g_config->c_warningTextStyle).arg(g_config->c_dataTextStyle).arg(curDir->fetchPath()),
                                   QMessageBox::Ok | QMessageBox::Cancel,
                                   QMessageBox::Ok, this, MessageBoxType::Danger);

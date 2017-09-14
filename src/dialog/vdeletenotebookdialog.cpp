@@ -4,11 +4,12 @@
 
 extern VConfigManager *g_config;
 
-VDeleteNotebookDialog::VDeleteNotebookDialog(const QString &p_title, const QString &p_name,
-                                             const QString &p_path, QWidget *p_parent)
-    : QDialog(p_parent), m_path(p_path)
+VDeleteNotebookDialog::VDeleteNotebookDialog(const QString &p_title,
+                                             const VNotebook *p_notebook,
+                                             QWidget *p_parent)
+    : QDialog(p_parent), m_notebook(p_notebook)
 {
-    setupUI(p_title, p_name);
+    setupUI(p_title, m_notebook->getName());
 }
 
 void VDeleteNotebookDialog::setupUI(const QString &p_title, const QString &p_name)
@@ -20,7 +21,7 @@ void VDeleteNotebookDialog::setupUI(const QString &p_title, const QString &p_nam
 
     m_deleteCheck = new QCheckBox(tr("Delete files from disk"), this);
     m_deleteCheck->setChecked(false);
-    m_deleteCheck->setToolTip(tr("When checked, VNote will delete all the files within this notebook from disk"));
+    m_deleteCheck->setToolTip(tr("When checked, VNote will delete all files (including Recycle Bin) of this notebook from disk"));
     connect(m_deleteCheck, &QCheckBox::stateChanged,
             this, &VDeleteNotebookDialog::deleteCheckChanged);
 
@@ -109,12 +110,16 @@ void VDeleteNotebookDialog::deleteCheckChanged(int p_state)
 {
     if (!p_state) {
         m_warningLabel->setText(tr("VNote won't delete files in directory <span style=\"%1\">%2</span>.")
-                                  .arg(g_config->c_dataTextStyle).arg(m_path));
+                                  .arg(g_config->c_dataTextStyle).arg(m_notebook->getPath()));
     } else {
         m_warningLabel->setText(tr("<span style=\"%1\">WARNING</span>: "
-                                   "VNote may delete <b>ANY</b> files in directory <span style=\"%2\">%3</span>! "
-                                   "VNote will try to delete all the root folders within this notebook one by one. "
+                                   "VNote may delete <b>ANY</b> files in directory <span style=\"%2\">%3</span> "
+                                   "and directory <span style=\"%2\">%4</span>!<br>"
+                                   "VNote will try to delete all the root folders within this notebook one by one.<br>"
                                    "It may be UNRECOVERABLE!")
-                                  .arg(g_config->c_warningTextStyle).arg(g_config->c_dataTextStyle).arg(m_path));
+                                  .arg(g_config->c_warningTextStyle)
+                                  .arg(g_config->c_dataTextStyle)
+                                  .arg(m_notebook->getPath())
+                                  .arg(m_notebook->getRecycleBinFolderPath()));
     }
 }

@@ -9,12 +9,14 @@ class QLineEdit;
 class QString;
 class QCheckBox;
 class QDialogButtonBox;
+class VNotebook;
 
 class VDeleteNotebookDialog : public QDialog
 {
     Q_OBJECT
 public:
-    VDeleteNotebookDialog(const QString &p_title, const QString &p_name, const QString &p_path,
+    VDeleteNotebookDialog(const QString &p_title,
+                          const VNotebook *p_notebook,
                           QWidget *p_parent = 0);
 
     // Whether delete files from disk.
@@ -27,7 +29,7 @@ private:
     void setupUI(const QString &p_title, const QString &p_name);
     QPixmap standardIcon(QMessageBox::Icon p_icon);
 
-    QString m_path;
+    const VNotebook *m_notebook;
     QLabel *m_warningLabel;
     QCheckBox *m_deleteCheck;
     QDialogButtonBox *m_btnBox;

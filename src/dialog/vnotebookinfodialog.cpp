@@ -42,9 +42,11 @@ void VNotebookInfoDialog::setupUI(const QString &p_title, const QString &p_info)
                                      "(empty to use global configuration)"));
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp), m_imageFolderEdit);
     m_imageFolderEdit->setValidator(validator);
-    QLabel *imageFolderLabel = new QLabel(tr("&Image folder:"));
-    imageFolderLabel->setBuddy(m_imageFolderEdit);
-    imageFolderLabel->setToolTip(m_imageFolderEdit->toolTip());
+
+    // Recycle bin folder.
+    QLineEdit *recycleBinFolderEdit = new QLineEdit(m_notebook->getRecycleBinFolder());
+    recycleBinFolderEdit->setReadOnly(true);
+    recycleBinFolderEdit->setToolTip(tr("The folder to hold deleted files from within VNote"));
 
     // Created time.
     QString createdTimeStr = const_cast<VNotebook *>(m_notebook)->getCreatedTimeUtc().toLocalTime()
@@ -54,7 +56,8 @@ void VNotebookInfoDialog::setupUI(const QString &p_title, const QString &p_info)
     QFormLayout *topLayout = new QFormLayout();
     topLayout->addRow(tr("Notebook &name:"), m_nameEdit);
     topLayout->addRow(tr("Notebook &root folder:"), m_pathEdit);
-    topLayout->addRow(imageFolderLabel, m_imageFolderEdit);
+    topLayout->addRow(tr("&Image folder:"), m_imageFolderEdit);
+    topLayout->addRow(tr("Recycle bin folder:"), recycleBinFolderEdit);
     topLayout->addRow(tr("Created time:"), createdTimeLabel);
 
     // Warning label.
@@ -100,7 +103,7 @@ void VNotebookInfoDialog::handleInputChanged()
             }
         }
 
-        if (idx < m_notebooks.size()) {
+        if (idx < m_notebooks.size() && m_notebooks[idx] != m_notebook) {
             nameOk = false;
             showWarnLabel = true;
             QString nameConflictText = tr("<span style=\"%1\">WARNING</span>: Name (case-insensitive) already exists. "
