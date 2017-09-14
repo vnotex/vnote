@@ -35,9 +35,12 @@ var getHeadingLevel = function(h) {
     return level;
 }
 
+// There is a VMarkdownitOption struct passed in.
+// var VMarkdownitOption = { html, breaks, linkify };
 var mdit = window.markdownit({
-    html: true,
-    linkify: true,
+    html: VMarkdownitOption.html,
+    breaks: VMarkdownitOption.breaks,
+    linkify: VMarkdownitOption.linkify,
     typographer: true,
     langPrefix: 'lang-',
     highlight: function(str, lang) {

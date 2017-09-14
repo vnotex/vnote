@@ -522,58 +522,12 @@ void VMainWindow::initMarkdownMenu()
 {
     QMenu *markdownMenu = menuBar()->addMenu(tr("&Markdown"));
     markdownMenu->setToolTipsVisible(true);
-    QMenu *converterMenu = markdownMenu->addMenu(tr("&Converter"));
-    converterMenu->setToolTipsVisible(true);
 
-    QActionGroup *converterAct = new QActionGroup(this);
-    QAction *markedAct = new QAction(tr("Marked"), converterAct);
-    markedAct->setToolTip(tr("Use Marked to convert Markdown to HTML (re-open current tabs to make it work)"));
-    markedAct->setCheckable(true);
-    markedAct->setData(int(MarkdownConverterType::Marked));
+    initConverterMenu(markdownMenu);
 
-    QAction *hoedownAct = new QAction(tr("Hoedown"), converterAct);
-    hoedownAct->setToolTip(tr("Use Hoedown to convert Markdown to HTML (re-open current tabs to make it work)"));
-    hoedownAct->setCheckable(true);
-    hoedownAct->setData(int(MarkdownConverterType::Hoedown));
+    initMarkdownitOptionMenu(markdownMenu);
 
-    QAction *markdownitAct = new QAction(tr("Markdown-it"), converterAct);
-    markdownitAct->setToolTip(tr("Use Markdown-it to convert Markdown to HTML (re-open current tabs to make it work)"));
-    markdownitAct->setCheckable(true);
-    markdownitAct->setData(int(MarkdownConverterType::MarkdownIt));
-
-    QAction *showdownAct = new QAction(tr("Showdown"), converterAct);
-    showdownAct->setToolTip(tr("Use Showdown to convert Markdown to HTML (re-open current tabs to make it work)"));
-    showdownAct->setCheckable(true);
-    showdownAct->setData(int(MarkdownConverterType::Showdown));
-
-    connect(converterAct, &QActionGroup::triggered,
-            this, &VMainWindow::changeMarkdownConverter);
-    converterMenu->addAction(hoedownAct);
-    converterMenu->addAction(markedAct);
-    converterMenu->addAction(markdownitAct);
-    converterMenu->addAction(showdownAct);
-
-    MarkdownConverterType converterType = g_config->getMdConverterType();
-    switch (converterType) {
-    case MarkdownConverterType::Marked:
-        markedAct->setChecked(true);
-        break;
-
-    case MarkdownConverterType::Hoedown:
-        hoedownAct->setChecked(true);
-        break;
-
-    case MarkdownConverterType::MarkdownIt:
-        markdownitAct->setChecked(true);
-        break;
-
-    case MarkdownConverterType::Showdown:
-        showdownAct->setChecked(true);
-        break;
-
-    default:
-        Q_ASSERT(false);
-    }
+    markdownMenu->addSeparator();
 
     initRenderStyleMenu(markdownMenu);
 
@@ -1167,6 +1121,107 @@ void VMainWindow::initPredefinedColorPixmaps()
         pixmap.fill(color);
         predefinedColorPixmaps.append(pixmap);
     }
+}
+
+void VMainWindow::initConverterMenu(QMenu *p_menu)
+{
+    QMenu *converterMenu = p_menu->addMenu(tr("&Converter"));
+    converterMenu->setToolTipsVisible(true);
+
+    QActionGroup *converterAct = new QActionGroup(this);
+    QAction *markedAct = new QAction(tr("Marked"), converterAct);
+    markedAct->setToolTip(tr("Use Marked to convert Markdown to HTML (re-open current tabs to make it work)"));
+    markedAct->setCheckable(true);
+    markedAct->setData(int(MarkdownConverterType::Marked));
+
+    QAction *hoedownAct = new QAction(tr("Hoedown"), converterAct);
+    hoedownAct->setToolTip(tr("Use Hoedown to convert Markdown to HTML (re-open current tabs to make it work)"));
+    hoedownAct->setCheckable(true);
+    hoedownAct->setData(int(MarkdownConverterType::Hoedown));
+
+    QAction *markdownitAct = new QAction(tr("Markdown-it"), converterAct);
+    markdownitAct->setToolTip(tr("Use Markdown-it to convert Markdown to HTML (re-open current tabs to make it work)"));
+    markdownitAct->setCheckable(true);
+    markdownitAct->setData(int(MarkdownConverterType::MarkdownIt));
+
+    QAction *showdownAct = new QAction(tr("Showdown"), converterAct);
+    showdownAct->setToolTip(tr("Use Showdown to convert Markdown to HTML (re-open current tabs to make it work)"));
+    showdownAct->setCheckable(true);
+    showdownAct->setData(int(MarkdownConverterType::Showdown));
+
+    connect(converterAct, &QActionGroup::triggered,
+            this, &VMainWindow::changeMarkdownConverter);
+    converterMenu->addAction(hoedownAct);
+    converterMenu->addAction(markedAct);
+    converterMenu->addAction(markdownitAct);
+    converterMenu->addAction(showdownAct);
+
+    MarkdownConverterType converterType = g_config->getMdConverterType();
+    switch (converterType) {
+    case MarkdownConverterType::Marked:
+        markedAct->setChecked(true);
+        break;
+
+    case MarkdownConverterType::Hoedown:
+        hoedownAct->setChecked(true);
+        break;
+
+    case MarkdownConverterType::MarkdownIt:
+        markdownitAct->setChecked(true);
+        break;
+
+    case MarkdownConverterType::Showdown:
+        showdownAct->setChecked(true);
+        break;
+
+    default:
+        Q_ASSERT(false);
+    }
+}
+
+void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
+{
+    QMenu *optMenu = p_menu->addMenu(tr("Markdown-it Options"));
+    optMenu->setToolTipsVisible(true);
+
+    MarkdownitOption opt = g_config->getMarkdownitOption();
+
+    QAction *htmlAct = new QAction(tr("HTML"), this);
+    htmlAct->setToolTip(tr("Enable HTML tags in source"));
+    htmlAct->setCheckable(true);
+    htmlAct->setChecked(opt.m_html);
+    connect(htmlAct, &QAction::triggered,
+            this, [this](bool p_checked) {
+                MarkdownitOption opt = g_config->getMarkdownitOption();
+                opt.m_html = p_checked;
+                g_config->setMarkdownitOption(opt);
+            });
+
+    QAction *breaksAct = new QAction(tr("Line Break"), this);
+    breaksAct->setToolTip(tr("Convert '\\n' in paragraphs into line break"));
+    breaksAct->setCheckable(true);
+    breaksAct->setChecked(opt.m_breaks);
+    connect(breaksAct, &QAction::triggered,
+            this, [this](bool p_checked) {
+                MarkdownitOption opt = g_config->getMarkdownitOption();
+                opt.m_breaks = p_checked;
+                g_config->setMarkdownitOption(opt);
+            });
+
+    QAction *linkifyAct = new QAction(tr("Linkify"), this);
+    linkifyAct->setToolTip(tr("Convert URL-like text into links"));
+    linkifyAct->setCheckable(true);
+    linkifyAct->setChecked(opt.m_linkify);
+    connect(linkifyAct, &QAction::triggered,
+            this, [this](bool p_checked) {
+                MarkdownitOption opt = g_config->getMarkdownitOption();
+                opt.m_linkify = p_checked;
+                g_config->setMarkdownitOption(opt);
+            });
+
+    optMenu->addAction(htmlAct);
+    optMenu->addAction(breaksAct);
+    optMenu->addAction(linkifyAct);
 }
 
 void VMainWindow::initRenderBackgroundMenu(QMenu *menu)

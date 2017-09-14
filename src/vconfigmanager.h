@@ -29,6 +29,18 @@ struct VColor
     QString rgb; // 'FFFFFF', without '#'
 };
 
+struct MarkdownitOption
+{
+    MarkdownitOption(bool p_html, bool p_breaks, bool p_linkify)
+        : m_html(p_html), m_breaks(p_breaks), m_linkify(p_linkify)
+    {
+    }
+
+    bool m_html;
+    bool m_breaks;
+    bool m_linkify;
+};
+
 class VConfigManager : public QObject
 {
 public:
@@ -248,6 +260,9 @@ public:
     void setEnableCodeBlockLineNumber(bool p_enabled);
 
     int getToolBarIconSize() const;
+
+    MarkdownitOption getMarkdownitOption() const;
+    void setMarkdownitOption(const MarkdownitOption &p_opt);
 
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
@@ -506,6 +521,15 @@ private:
 
     // Icon size of tool bar in pixels.
     int m_toolBarIconSize;
+
+    // Eanble HTML tags in source.
+    bool m_markdownitOptHtml;
+
+    // Convert '\n' in paragraphs into <br>.
+    bool m_markdownitOptBreaks;
+
+    // Auto-convert URL-like text to links.
+    bool m_markdownitOptLinkify;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1320,6 +1344,37 @@ inline void VConfigManager::setEnableCodeBlockLineNumber(bool p_enabled)
 inline int VConfigManager::getToolBarIconSize() const
 {
     return m_toolBarIconSize;
+}
+
+inline MarkdownitOption VConfigManager::getMarkdownitOption() const
+{
+    return MarkdownitOption(m_markdownitOptHtml,
+                            m_markdownitOptBreaks,
+                            m_markdownitOptLinkify);
+}
+
+inline void VConfigManager::setMarkdownitOption(const MarkdownitOption &p_opt)
+{
+    if (m_markdownitOptHtml != p_opt.m_html) {
+        m_markdownitOptHtml = p_opt.m_html;
+        setConfigToSettings("global",
+                            "markdownit_opt_html",
+                            m_markdownitOptHtml);
+    }
+
+    if (m_markdownitOptBreaks != p_opt.m_breaks) {
+        m_markdownitOptBreaks = p_opt.m_breaks;
+        setConfigToSettings("global",
+                            "markdownit_opt_breaks",
+                            m_markdownitOptBreaks);
+    }
+
+    if (m_markdownitOptLinkify != p_opt.m_linkify) {
+        m_markdownitOptLinkify = p_opt.m_linkify;
+        setConfigToSettings("global",
+                            "markdownit_opt_linkify",
+                            m_markdownitOptLinkify);
+    }
 }
 
 #endif // VCONFIGMANAGER_H

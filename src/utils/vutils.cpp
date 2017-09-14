@@ -504,6 +504,7 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exp
         break;
 
     case MarkdownConverterType::MarkdownIt:
+    {
         jsFile = "qrc" + VNote::c_markdownitJsFile;
         extraFile = "<script src=\"qrc" + VNote::c_markdownitExtraFile + "\"></script>\n" +
                     "<script src=\"qrc" + VNote::c_markdownitAnchorExtraFile + "\"></script>\n" +
@@ -511,7 +512,17 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exp
                     "<script src=\"qrc" + VNote::c_markdownitSubExtraFile + "\"></script>\n" +
                     "<script src=\"qrc" + VNote::c_markdownitSupExtraFile + "\"></script>\n" +
                     "<script src=\"qrc" + VNote::c_markdownitFootnoteExtraFile + "\"></script>\n";
+
+        MarkdownitOption opt = g_config->getMarkdownitOption();
+        QString optJs = QString("<script>var VMarkdownitOption = {"
+                                "html: %1, breaks: %2, linkify: %3};"
+                                "</script>\n")
+                               .arg(opt.m_html ? "true" : "false")
+                               .arg(opt.m_breaks ? "true" : "false")
+                               .arg(opt.m_linkify ? "true" : "false");
+        extraFile += optJs;
         break;
+    }
 
     case MarkdownConverterType::Showdown:
         jsFile = "qrc" + VNote::c_showdownJsFile;
