@@ -354,13 +354,11 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     connect(deleteNoteAct, &QAction::triggered,
             this, &VMainWindow::deleteCurNote);
 
-    m_closeNoteAct = new QAction(QIcon(":/resources/icons/close_note_tb.svg"),
-                                 tr("&Close Note"), this);
-    m_closeNoteAct->setStatusTip(tr("Close current note"));
     keySeq = g_config->getShortcutKeySequence("CloseNote");
     qDebug() << "set CloseNote shortcut to" << keySeq;
-    m_closeNoteAct->setShortcut(QKeySequence(keySeq));
-    connect(m_closeNoteAct, &QAction::triggered,
+    m_closeNoteShortcut = new QShortcut(QKeySequence(keySeq), this);
+    m_closeNoteShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(m_closeNoteShortcut, &QShortcut::activated,
             this, [this](){
                 if (m_curFile) {
                     editArea->closeFile(m_curFile, false);
@@ -410,7 +408,6 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     newNoteAct->setEnabled(false);
     noteInfoAct->setEnabled(false);
     deleteNoteAct->setEnabled(false);
-    m_closeNoteAct->setEnabled(false);
     editNoteAct->setEnabled(false);
     saveExitAct->setVisible(false);
     discardExitAct->setVisible(false);
@@ -421,7 +418,6 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     fileToolBar->addSeparator();
     fileToolBar->addAction(noteInfoAct);
     fileToolBar->addAction(deleteNoteAct);
-    fileToolBar->addAction(m_closeNoteAct);
     fileToolBar->addAction(editNoteAct);
     fileToolBar->addAction(saveExitAct);
     fileToolBar->addAction(saveNoteAct);
@@ -1459,7 +1455,6 @@ void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
     saveNoteAct->setEnabled(p_file && p_editMode);
     deleteNoteAct->setEnabled(p_file && p_file->getType() == FileType::Normal);
     noteInfoAct->setEnabled(p_file && !systemFile);
-    m_closeNoteAct->setEnabled(p_file);
 
     m_insertImageAct->setEnabled(p_file && p_editMode);
 

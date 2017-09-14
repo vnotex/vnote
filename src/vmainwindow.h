@@ -216,7 +216,6 @@ private:
     QAction *newNoteAct;
     QAction *noteInfoAct;
     QAction *deleteNoteAct;
-    QAction *m_closeNoteAct;
     QAction *editNoteAct;
     QAction *saveNoteAct;
     QAction *saveExitAct;
@@ -238,6 +237,8 @@ private:
 
     QActionGroup *m_renderStyleActs;
     QActionGroup *m_editorStyleActs;
+
+    QShortcut *m_closeNoteShortcut;
 
     // Menus
     QMenu *viewMenu;
