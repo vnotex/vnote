@@ -38,7 +38,6 @@ private:
 
     const VNotebook *m_notebook;
 
-    QLabel *m_infoLabel;
     QLineEdit *m_nameEdit;
     QLineEdit *m_pathEdit;
     QLineEdit *m_imageFolderEdit;

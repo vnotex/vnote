@@ -12,7 +12,10 @@ VNotebook::VNotebook(const QString &name, const QString &path, QObject *parent)
     : QObject(parent), m_name(name)
 {
     m_path = QDir::cleanPath(path);
-    m_rootDir = new VDirectory(this, VUtils::directoryNameFromPath(path));
+    m_rootDir = new VDirectory(this,
+                               VUtils::directoryNameFromPath(path),
+                               NULL,
+                               QDateTime::currentDateTimeUtc());
 }
 
 VNotebook::~VNotebook()
@@ -240,4 +243,15 @@ const QString &VNotebook::getImageFolderConfig() const
 bool VNotebook::isOpened() const
 {
     return m_rootDir->isOpened();
+}
+
+QDateTime VNotebook::getCreatedTimeUtc()
+{
+    if (!isOpened()) {
+        if (!open()) {
+            return QDateTime();
+        }
+    }
+
+    return m_rootDir->getCreatedTimeUtc();
 }

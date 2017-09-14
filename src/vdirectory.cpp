@@ -10,9 +10,15 @@
 extern VConfigManager *g_config;
 
 VDirectory::VDirectory(VNotebook *p_notebook,
-                       const QString &p_name, QObject *p_parent)
-    : QObject(p_parent), m_notebook(p_notebook), m_name(p_name), m_opened(false),
-      m_expanded(false)
+                       const QString &p_name,
+                       QObject *p_parent,
+                       QDateTime p_createdTimeUtc)
+    : QObject(p_parent),
+      m_notebook(p_notebook),
+      m_name(p_name),
+      m_opened(false),
+      m_expanded(false),
+      m_createdTimeUtc(p_createdTimeUtc)
 {
 }
 
@@ -30,6 +36,10 @@ bool VDirectory::open()
         qWarning() << "invalid directory configuration in path" << path;
         return false;
     }
+
+    // created_time
+    m_createdTimeUtc = QDateTime::fromString(configJson[DirConfig::c_createdTime].toString(),
+                                             Qt::ISODate);
 
     // [sub_directories] section
     QJsonArray dirJson = configJson[DirConfig::c_subDirectories].toArray();
@@ -114,6 +124,7 @@ QJsonObject VDirectory::toConfigJson() const
 {
     QJsonObject dirJson;
     dirJson[DirConfig::c_version] = "1";
+    dirJson[DirConfig::c_createdTime] = m_createdTimeUtc.toString(Qt::ISODate);
 
     QJsonArray subDirs;
     for (int i = 0; i < m_subDirs.size(); ++i) {
@@ -187,7 +198,10 @@ VDirectory *VDirectory::createSubDirectory(const QString &p_name)
         return NULL;
     }
 
-    VDirectory *ret = new VDirectory(m_notebook, p_name, this);
+    VDirectory *ret = new VDirectory(m_notebook,
+                                     p_name,
+                                     this,
+                                     QDateTime::currentDateTimeUtc());
     if (!ret->writeToConfig()) {
         dir.rmdir(p_name);
         delete ret;
@@ -382,7 +396,10 @@ VDirectory *VDirectory::addSubDirectory(const QString &p_name, int p_index)
         return NULL;
     }
 
-    VDirectory *dir = new VDirectory(m_notebook, p_name, this);
+    VDirectory *dir = new VDirectory(m_notebook,
+                                     p_name,
+                                     this,
+                                     QDateTime::currentDateTimeUtc());
     if (!dir) {
         return NULL;
     }

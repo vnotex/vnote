@@ -6,6 +6,7 @@
 #include <QVector>
 #include <QPointer>
 #include <QJsonObject>
+#include <QDateTime>
 #include "vnotebook.h"
 
 class VFile;
@@ -15,7 +16,10 @@ class VDirectory : public QObject
     Q_OBJECT
 public:
     VDirectory(VNotebook *p_notebook,
-               const QString &p_name, QObject *p_parent = 0);
+               const QString &p_name,
+               QObject *p_parent = 0,
+               QDateTime p_createdTimeUtc = QDateTime());
+
     bool open();
     void close();
     VDirectory *createSubDirectory(const QString &p_name);
@@ -94,6 +98,8 @@ public:
     // Try to load file given relative path @p_filePath.
     VFile *tryLoadFile(QStringList &p_filePath);
 
+    QDateTime getCreatedTimeUtc() const;
+
 private:
     // Get the path of @p_dir recursively
     QString fetchPath(const VDirectory *p_dir) const;
@@ -117,15 +123,27 @@ private:
     // Add the directory in the config and m_subDirs. If @p_index is -1, add it at the end.
     bool addSubDirectory(VDirectory *p_dir, int p_index);
 
+    // Notebook containing this folder.
     QPointer<VNotebook> m_notebook;
+
+    // Name of this folder.
     QString m_name;
+
     // Owner of the sub-directories
     QVector<VDirectory *> m_subDirs;
+
     // Owner of the files
     QVector<VFile *> m_files;
+
+    // Whether the directory has been opened.
     bool m_opened;
+
     // Whether expanded in the directory tree.
     bool m_expanded;
+
+    // UTC time when creating this directory.
+    // Loaded after open().
+    QDateTime m_createdTimeUtc;
 };
 
 inline const QVector<VDirectory *> &VDirectory::getSubDirs() const
@@ -191,6 +209,11 @@ inline QString VDirectory::fetchRelativePath() const
 inline bool VDirectory::isExpanded() const
 {
     return m_expanded;
+}
+
+inline QDateTime VDirectory::getCreatedTimeUtc() const
+{
+    return m_createdTimeUtc;
 }
 
 #endif // VDIRECTORY_H

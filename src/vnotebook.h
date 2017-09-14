@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QDateTime>
 
 class VDirectory;
 class VFile;
@@ -65,6 +66,9 @@ public:
 
     // Return only the info of notebook part in json.
     QJsonObject toConfigJsonNotebook() const;
+
+    // Need to check if this notebook has been opened.
+    QDateTime getCreatedTimeUtc();
 
 signals:
     void contentChanged();

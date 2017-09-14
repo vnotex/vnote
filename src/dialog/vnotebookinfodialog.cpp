@@ -11,7 +11,7 @@ VNotebookInfoDialog::VNotebookInfoDialog(const QString &p_title,
                                          const VNotebook *p_notebook,
                                          const QVector<VNotebook *> &p_notebooks,
                                          QWidget *p_parent)
-    : QDialog(p_parent), m_notebook(p_notebook), m_infoLabel(NULL),
+    : QDialog(p_parent), m_notebook(p_notebook),
       m_notebooks(p_notebooks)
 {
     setupUI(p_title, p_info);
@@ -24,42 +24,43 @@ VNotebookInfoDialog::VNotebookInfoDialog(const QString &p_title,
 
 void VNotebookInfoDialog::setupUI(const QString &p_title, const QString &p_info)
 {
+    QLabel *infoLabel = NULL;
     if (!p_info.isEmpty()) {
-        m_infoLabel = new QLabel(p_info);
+        infoLabel = new QLabel(p_info);
     }
 
-    QLabel *nameLabel = new QLabel(tr("Notebook &name:"));
     m_nameEdit = new QLineEdit(m_notebook->getName());
     m_nameEdit->selectAll();
-    nameLabel->setBuddy(m_nameEdit);
 
-    QLabel *pathLabel = new QLabel(tr("Notebook &root folder:"));
     m_pathEdit = new QLineEdit(m_notebook->getPath());
-    pathLabel->setBuddy(m_pathEdit);
     m_pathEdit->setReadOnly(true);
 
-    QLabel *imageFolderLabel = new QLabel(tr("&Image folder:"));
     m_imageFolderEdit = new QLineEdit(m_notebook->getImageFolderConfig());
     m_imageFolderEdit->setPlaceholderText(tr("Use global configuration (%1)")
                                             .arg(g_config->getImageFolder()));
-    imageFolderLabel->setBuddy(m_imageFolderEdit);
-    QString imageFolderTip = tr("Set the name of the folder for all the notes of this notebook to store images "
-                                "(empty to use global configuration)");
-    m_imageFolderEdit->setToolTip(imageFolderTip);
-    imageFolderLabel->setToolTip(imageFolderTip);
+    m_imageFolderEdit->setToolTip(tr("Set the name of the folder for all the notes of this notebook to store images "
+                                     "(empty to use global configuration)"));
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp), m_imageFolderEdit);
     m_imageFolderEdit->setValidator(validator);
+    QLabel *imageFolderLabel = new QLabel(tr("&Image folder:"));
+    imageFolderLabel->setBuddy(m_imageFolderEdit);
+    imageFolderLabel->setToolTip(m_imageFolderEdit->toolTip());
+
+    // Created time.
+    QString createdTimeStr = const_cast<VNotebook *>(m_notebook)->getCreatedTimeUtc().toLocalTime()
+                                                                                     .toString(Qt::DefaultLocaleLongDate);
+    QLabel *createdTimeLabel = new QLabel(createdTimeStr);
+
+    QFormLayout *topLayout = new QFormLayout();
+    topLayout->addRow(tr("Notebook &name:"), m_nameEdit);
+    topLayout->addRow(tr("Notebook &root folder:"), m_pathEdit);
+    topLayout->addRow(imageFolderLabel, m_imageFolderEdit);
+    topLayout->addRow(tr("Created time:"), createdTimeLabel);
 
     // Warning label.
     m_warnLabel = new QLabel();
     m_warnLabel->setWordWrap(true);
     m_warnLabel->hide();
-
-    QFormLayout *topLayout = new QFormLayout();
-    topLayout->addRow(nameLabel, m_nameEdit);
-    topLayout->addRow(pathLabel, m_pathEdit);
-    topLayout->addRow(imageFolderLabel, m_imageFolderEdit);
-    topLayout->addRow(m_warnLabel);
 
     // Ok is the default button.
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -70,11 +71,12 @@ void VNotebookInfoDialog::setupUI(const QString &p_title, const QString &p_info)
     m_pathEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
-    if (m_infoLabel) {
-        mainLayout->addWidget(m_infoLabel);
+    if (infoLabel) {
+        mainLayout->addWidget(infoLabel);
     }
 
     mainLayout->addLayout(topLayout);
+    mainLayout->addWidget(m_warnLabel);
     mainLayout->addWidget(m_btnBox);
 
     setLayout(mainLayout);

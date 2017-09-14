@@ -589,7 +589,7 @@ void VMainWindow::initMarkdownMenu()
     markdownMenu->addAction(codeBlockAct);
     codeBlockAct->setChecked(g_config->getEnableCodeBlockHighlight());
 
-    QAction *lineNumberAct = new QAction(tr("Display Line Number in Code Blocks"), this);
+    QAction *lineNumberAct = new QAction(tr("Display Line Number In Code Blocks"), this);
     lineNumberAct->setToolTip(tr("Enable line number in code blocks in read mode"));
     lineNumberAct->setCheckable(true);
     connect(lineNumberAct, &QAction::triggered,

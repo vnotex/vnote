@@ -10,7 +10,7 @@ VDirInfoDialog::VDirInfoDialog(const QString &title,
                                const VDirectory *directory,
                                VDirectory *parentDirectory,
                                QWidget *parent)
-    : QDialog(parent), infoLabel(NULL), title(title), info(info),
+    : QDialog(parent), title(title), info(info),
       m_directory(directory), m_parentDirectory(parentDirectory)
 {
     setupUI();
@@ -22,13 +22,22 @@ VDirInfoDialog::VDirInfoDialog(const QString &title,
 
 void VDirInfoDialog::setupUI()
 {
+    QLabel *infoLabel = NULL;
     if (!info.isEmpty()) {
         infoLabel = new QLabel(info);
     }
-    nameLabel = new QLabel(tr("Folder &name:"));
+
     nameEdit = new QLineEdit(m_directory->getName());
     nameEdit->selectAll();
-    nameLabel->setBuddy(nameEdit);
+
+    // Created time.
+    QString createdTimeStr = m_directory->getCreatedTimeUtc().toLocalTime()
+                                                             .toString(Qt::DefaultLocaleLongDate);
+    QLabel *createdTimeLabel = new QLabel(createdTimeStr);
+
+    QFormLayout *topLayout = new QFormLayout();
+    topLayout->addRow(tr("Folder &name:"), nameEdit);
+    topLayout->addRow(tr("Created time:"), createdTimeLabel);
 
     m_warnLabel = new QLabel();
     m_warnLabel->setWordWrap(true);
@@ -38,10 +47,6 @@ void VDirInfoDialog::setupUI()
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(m_btnBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
-
-    QHBoxLayout *topLayout = new QHBoxLayout();
-    topLayout->addWidget(nameLabel);
-    topLayout->addWidget(nameEdit);
 
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
     nameEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
