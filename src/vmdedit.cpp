@@ -109,7 +109,7 @@ void VMdEdit::beginEdit()
         setReadOnly(false);
     }
 
-    m_mdHighlighter->updateHighlight();
+    updateOutline(m_mdHighlighter->getHeaderRegions());
 }
 
 void VMdEdit::endEdit()
@@ -330,9 +330,14 @@ void VMdEdit::updateCurHeader()
     emit curHeaderChanged(VAnchor(m_file, "", m_headers[idx].lineNumber, m_headers[idx].index));
 }
 
-static void addHeaderSequence(QVector<int> &p_sequence, int p_level)
+static void addHeaderSequence(QVector<int> &p_sequence, int p_level, int p_baseLevel)
 {
     Q_ASSERT(p_level >= 1 && p_level < p_sequence.size());
+    if (p_level < p_baseLevel) {
+        p_sequence.fill(0);
+        return;
+    }
+
     ++p_sequence[p_level];
     for (int i = p_level + 1; i < p_sequence.size(); ++i) {
         p_sequence[i] = 0;
@@ -382,7 +387,11 @@ static void insertSequenceToHeader(QTextBlock p_block,
         cursor.setPosition(p_block.position() + end, QTextCursor::KeepAnchor);
     }
 
-    cursor.insertText(p_seq + ' ');
+    if (p_seq.isEmpty()) {
+        cursor.removeSelectedText();
+    } else {
+        cursor.insertText(p_seq + ' ');
+    }
 }
 
 void VMdEdit::updateOutline(const QVector<VElementRegion> &p_headerRegions)
@@ -434,6 +443,11 @@ void VMdEdit::updateOutline(const QVector<VElementRegion> &p_headerRegions)
     m_headers.clear();
 
     bool autoSequence = g_config->getEnableHeadingSequence() && !isReadOnly();
+    int headingSequenceBaseLevel = g_config->getHeadingSequenceBaseLevel();
+    if (headingSequenceBaseLevel < 1 || headingSequenceBaseLevel > 6) {
+        headingSequenceBaseLevel = 1;
+    }
+
     QVector<int> seqs(7, 0);
     QRegExp preReg(VUtils::c_headerPrefixRegExp);
     int curLevel = baseLevel - 1;
@@ -445,7 +459,7 @@ void VMdEdit::updateOutline(const QVector<VElementRegion> &p_headerRegions)
             // Insert empty level which is an invalid header.
             m_headers.append(VHeader(curLevel, c_emptyHeaderName, "", -1, m_headers.size()));
             if (autoSequence) {
-                addHeaderSequence(seqs, curLevel);
+                addHeaderSequence(seqs, curLevel, headingSequenceBaseLevel);
             }
         }
 
@@ -453,7 +467,7 @@ void VMdEdit::updateOutline(const QVector<VElementRegion> &p_headerRegions)
         m_headers.append(item);
         curLevel = item.level;
         if (autoSequence) {
-            addHeaderSequence(seqs, item.level);
+            addHeaderSequence(seqs, item.level, headingSequenceBaseLevel);
 
             QString seqStr = headerSequenceStr(seqs);
             if (headerSequences[i] != seqStr) {
@@ -768,5 +782,7 @@ void VMdEdit::finishOneAsyncJob(int p_idx)
         setModified(false);
         m_freshEdit = false;
         emit statusChanged();
+
+        updateOutline(m_mdHighlighter->getHeaderRegions());
     }
 }

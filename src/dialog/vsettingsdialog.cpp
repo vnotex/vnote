@@ -51,6 +51,8 @@ VSettingsDialog::VSettingsDialog(QWidget *p_parent)
                 m_tabs->setCurrentWidget(m_tabs->widget(idx));
             });
 
+    m_tabList->setCurrentRow(0);
+
     loadConfiguration();
 }
 
@@ -449,19 +451,34 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     // Heading sequence.
     m_headingSequence = new QCheckBox(tr("Heading sequence"));
     m_headingSequence->setToolTip(tr("Enable auto sequence for all headings (in the form like 1.2.3.4.)"));
+    m_headingSequenceCombo = new QComboBox();
+    m_headingSequenceCombo->setToolTip(tr("Base level to start heading sequence"));
+    m_headingSequenceCombo->addItem(tr("1"), 1);
+    m_headingSequenceCombo->addItem(tr("2"), 2);
+    m_headingSequenceCombo->addItem(tr("3"), 3);
+    m_headingSequenceCombo->addItem(tr("4"), 4);
+    m_headingSequenceCombo->addItem(tr("5"), 5);
+    m_headingSequenceCombo->addItem(tr("6"), 6);
+    m_headingSequenceCombo->setEnabled(false);
+    connect(m_headingSequence, &QCheckBox::stateChanged,
+            this, [this](int p_state){
+                this->m_headingSequenceCombo->setEnabled(p_state == Qt::Checked);
+            });
+    QHBoxLayout *headingSequenceLayout = new QHBoxLayout();
+    headingSequenceLayout->addWidget(m_headingSequence);
+    headingSequenceLayout->addWidget(m_headingSequenceCombo);
 
     // Web Zoom Factor.
     m_customWebZoom = new QCheckBox(tr("Custom Web zoom factor"), this);
     m_customWebZoom->setToolTip(tr("Set the zoom factor of the Web page when reading"));
-    connect(m_customWebZoom, &QCheckBox::stateChanged,
-            this, [this](int p_state){
-                this->m_webZoomFactorSpin->setEnabled(p_state == Qt::Checked);
-            });
-
     m_webZoomFactorSpin = new QDoubleSpinBox(this);
     m_webZoomFactorSpin->setMaximum(c_webZoomFactorMax);
     m_webZoomFactorSpin->setMinimum(c_webZoomFactorMin);
     m_webZoomFactorSpin->setSingleStep(0.25);
+    connect(m_customWebZoom, &QCheckBox::stateChanged,
+            this, [this](int p_state){
+                this->m_webZoomFactorSpin->setEnabled(p_state == Qt::Checked);
+            });
     QHBoxLayout *zoomFactorLayout = new QHBoxLayout();
     zoomFactorLayout->addWidget(m_customWebZoom);
     zoomFactorLayout->addWidget(m_webZoomFactorSpin);
@@ -478,7 +495,7 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
 
     QFormLayout *mainLayout = new QFormLayout();
     mainLayout->addRow(openModeLabel, m_openModeCombo);
-    mainLayout->addRow(m_headingSequence);
+    mainLayout->addRow(headingSequenceLayout);
     mainLayout->addRow(zoomFactorLayout);
     mainLayout->addRow(colorColumnLabel, m_colorColumnEdit);
 
@@ -553,13 +570,20 @@ bool VMarkdownTab::saveOpenMode()
 bool VMarkdownTab::loadHeadingSequence()
 {
     bool enabled = g_config->getEnableHeadingSequence();
+    int level = g_config->getHeadingSequenceBaseLevel();
+    if (level < 1 || level > 6) {
+        level = 1;
+    }
+
     m_headingSequence->setChecked(enabled);
+    m_headingSequenceCombo->setCurrentIndex(level - 1);
     return true;
 }
 
 bool VMarkdownTab::saveHeadingSequence()
 {
     g_config->setEnableHeadingSequence(m_headingSequence->isChecked());
+    g_config->setHeadingSequenceBaseLevel(m_headingSequenceCombo->currentData().toInt());
     return true;
 }
 

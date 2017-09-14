@@ -122,6 +122,8 @@ public:
 
     const QMap<int, bool> &getPotentialPreviewBlocks() const;
 
+    const QVector<VElementRegion> &getHeaderRegions() const;
+
 signals:
     void highlightCompleted();
 
@@ -237,6 +239,11 @@ private:
 inline const QMap<int, bool> &HGMarkdownHighlighter::getPotentialPreviewBlocks() const
 {
     return m_potentialPreviewBlocks;
+}
+
+inline const QVector<VElementRegion> &HGMarkdownHighlighter::getHeaderRegions() const
+{
+    return m_headerRegions;
 }
 
 #endif

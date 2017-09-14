@@ -94,6 +94,7 @@ public:
 
     // Whether enable heading sequence.
     QCheckBox *m_headingSequence;
+    QComboBox *m_headingSequenceCombo;
 
     // Web zoom factor.
     QCheckBox *m_customWebZoom;

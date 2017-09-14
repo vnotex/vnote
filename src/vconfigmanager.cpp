@@ -178,6 +178,9 @@ void VConfigManager::initialize()
     m_enableHeadingSequence = getConfigFromSettings("global",
                                                     "enable_heading_sequence").toBool();
 
+    m_headingSequenceBaseLevel = getConfigFromSettings("global",
+                                                       "heading_sequence_base_level").toInt();
+
     m_colorColumn = getConfigFromSettings("global", "color_column").toInt();
 
     m_enableCodeBlockLineNumber = getConfigFromSettings("global",

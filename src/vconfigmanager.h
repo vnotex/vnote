@@ -235,6 +235,9 @@ public:
     bool getEnableHeadingSequence() const;
     void setEnableHeadingSequence(bool p_enabled);
 
+    int getHeadingSequenceBaseLevel() const;
+    void setHeadingSequenceBaseLevel(int p_level);
+
     int getColorColumn() const;
     void setColorColumn(int p_column);
 
@@ -485,6 +488,9 @@ private:
 
     // Whether auto genearte heading sequence.
     bool m_enableHeadingSequence;
+
+    // Heading sequence base level.
+    int m_headingSequenceBaseLevel;
 
     // The column to style in code block.
     int m_colorColumn;
@@ -1250,6 +1256,23 @@ inline void VConfigManager::setEnableHeadingSequence(bool p_enabled)
     m_enableHeadingSequence = p_enabled;
     setConfigToSettings("global", "enable_heading_sequence",
                         m_enableHeadingSequence);
+}
+
+inline int VConfigManager::getHeadingSequenceBaseLevel() const
+{
+    return m_headingSequenceBaseLevel;
+}
+
+inline void VConfigManager::setHeadingSequenceBaseLevel(int p_level)
+{
+    if (m_headingSequenceBaseLevel == p_level) {
+        return;
+    }
+
+    m_headingSequenceBaseLevel = p_level;
+    setConfigToSettings("global",
+                        "heading_sequence_base_level",
+                        m_headingSequenceBaseLevel);
 }
 
 inline int VConfigManager::getColorColumn() const
