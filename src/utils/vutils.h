@@ -64,7 +64,7 @@ public:
     // /home/tamlok/abc, /home/tamlok/abc/ will both return /home/tamlok.
     static QString basePathFromPath(const QString &p_path);
 
-    // Fetch all the image links (including those in code blocks) in markdown file p_file.
+    // Fetch all the image links in markdown file p_file.
     // @p_type to filter the links returned.
     // Need to open p_file and will close it if it is originally closed.
     static QVector<ImageLink> fetchImagesFromMarkdownFile(VFile *p_file,
@@ -183,6 +183,9 @@ private:
     VUtils() {}
 
     static void initAvailableLanguage();
+
+    // Use HGMarkdownParser to parse @p_content to get all image link regions.
+    static QVector<VElementRegion> fetchImageRegionsUsingParser(const QString &p_content);
 
     // <value, name>
     static QVector<QPair<QString, QString>> s_availableLanguages;

@@ -25,6 +25,7 @@
 #include "vfile.h"
 #include "vnote.h"
 #include "vnotebook.h"
+#include "hgmarkdownhighlighter.h"
 
 extern VConfigManager *g_config;
 
@@ -165,7 +166,7 @@ QString VUtils::basePathFromPath(const QString &p_path)
 QVector<ImageLink> VUtils::fetchImagesFromMarkdownFile(VFile *p_file,
                                                        ImageLink::ImageLinkType p_type)
 {
-    V_ASSERT(p_file->getDocType() == DocType::Markdown);
+    Q_ASSERT(p_file->getDocType() == DocType::Markdown);
     QVector<ImageLink> images;
 
     bool isOpened = p_file->isOpened();
@@ -182,10 +183,14 @@ QVector<ImageLink> VUtils::fetchImagesFromMarkdownFile(VFile *p_file,
         return images;
     }
 
+    QVector<VElementRegion> regions = fetchImageRegionsUsingParser(text);
     QRegExp regExp(c_imageLinkRegExp);
     QString basePath = p_file->fetchBasePath();
-    int pos = 0;
-    while (pos < text.size() && (pos = regExp.indexIn(text, pos)) != -1) {
+    for (int i = 0; i < regions.size(); ++i) {
+        const VElementRegion &reg = regions[i];
+        QString linkText = text.mid(reg.m_startPos, reg.m_endPos - reg.m_startPos);
+        bool matched = regExp.exactMatch(linkText);
+        Q_ASSERT(matched);
         QString imageUrl = regExp.capturedTexts()[2].trimmed();
 
         ImageLink link;
@@ -215,8 +220,6 @@ QVector<ImageLink> VUtils::fetchImagesFromMarkdownFile(VFile *p_file,
             images.push_back(link);
             qDebug() << "fetch one image:" << link.m_type << link.m_path;
         }
-
-        pos += regExp.matchedLength();
     }
 
     if (!isOpened) {
@@ -815,4 +818,41 @@ bool VUtils::deleteFile(const VNotebook *p_notebook,
 
         return true;
     }
+}
+
+QVector<VElementRegion> VUtils::fetchImageRegionsUsingParser(const QString &p_content)
+{
+    Q_ASSERT(!p_content.isEmpty());
+    QVector<VElementRegion> regs;
+
+    QByteArray ba = p_content.toUtf8();
+    const char *data = (const char *)ba.data();
+    int len = ba.size();
+
+    pmh_element **result = NULL;
+    char *content = new char[len + 1];
+    memcpy(content, data, len);
+    content[len] = '\0';
+
+    pmh_markdown_to_elements(content, pmh_EXT_NONE, &result);
+
+    if (!result) {
+        return regs;
+    }
+
+    pmh_element *elem = result[pmh_IMAGE];
+    while (elem != NULL) {
+        if (elem->end <= elem->pos) {
+            elem = elem->next;
+            continue;
+        }
+
+        regs.push_back(VElementRegion(elem->pos, elem->end));
+
+        elem = elem->next;
+    }
+
+    pmh_free_elements(result);
+
+    return regs;
 }

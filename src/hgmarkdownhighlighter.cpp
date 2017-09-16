@@ -483,7 +483,7 @@ void HGMarkdownHighlighter::parseInternal()
     QString text = document->toPlainText();
     QByteArray ba = text.toUtf8();
     const char *data = (const char *)ba.data();
-   int len = ba.size();
+    int len = ba.size();
 
     if (result) {
         pmh_free_elements(result);

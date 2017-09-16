@@ -83,7 +83,12 @@ private:
         int m_endPos;
     };
 
+    // Get the initial images from file before edit.
     void initInitImages();
+
+    // Clear two kind of images according to initial images and current images:
+    // 1. Newly inserted images which are deleted later;
+    // 2. Initial images which are deleted;
     void clearUnusedImages();
 
     // There is a QChar::ObjectReplacementCharacter (and maybe some spaces)
