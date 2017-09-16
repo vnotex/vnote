@@ -176,9 +176,6 @@ bool VEdit::isModified() const
 void VEdit::setModified(bool p_modified)
 {
     document()->setModified(p_modified);
-    if (m_file) {
-        m_file->setModified(p_modified);
-    }
 }
 
 void VEdit::insertImage()

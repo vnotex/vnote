@@ -200,6 +200,9 @@ void VConfigManager::initialize()
 
     m_recycleBinFolder = getConfigFromSettings("global",
                                                "recycle_bin_folder").toString();
+
+    m_confirmImagesCleanUp = getConfigFromSettings("global",
+                                                   "confirm_images_clean_up").toBool();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

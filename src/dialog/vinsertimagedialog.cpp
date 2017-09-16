@@ -2,6 +2,7 @@
 #include <QValidator>
 #include <QRegExp>
 #include "vinsertimagedialog.h"
+#include "utils/vutils.h"
 
 VInsertImageDialog::VInsertImageDialog(const QString &title, const QString &defaultImageTitle,
                                        const QString &defaultPath, QWidget *parent)
@@ -112,7 +113,8 @@ void VInsertImageDialog::handleBrowseBtnClicked()
 void VInsertImageDialog::setImage(const QImage &image)
 {
     Q_ASSERT(!image.isNull());
-    QSize previewSize(256, 256);
+    int width = 512 * VUtils::calculateScaleFactor();
+    QSize previewSize(width, width);
     if (!this->image) {
         this->image = new QImage(image);
     } else {

@@ -73,7 +73,8 @@ SOURCES += main.cpp\
     dialog/vupdater.cpp \
     dialog/vorphanfileinfodialog.cpp \
     vtextblockdata.cpp \
-    utils/vpreviewutils.cpp
+    utils/vpreviewutils.cpp \
+    dialog/vconfirmdeletiondialog.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -134,7 +135,8 @@ HEADERS  += vmainwindow.h \
     dialog/vupdater.h \
     dialog/vorphanfileinfodialog.h \
     vtextblockdata.h \
-    utils/vpreviewutils.h
+    utils/vpreviewutils.h \
+    dialog/vconfirmdeletiondialog.h
 
 RESOURCES += \
     vnote.qrc \

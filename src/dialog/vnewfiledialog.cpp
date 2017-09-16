@@ -45,6 +45,8 @@ void VNewFileDialog::setupUI()
     topLayout->addRow(nameLabel, nameEdit);
     topLayout->addWidget(m_insertTitleCB);
 
+    nameEdit->setMinimumWidth(m_insertTitleCB->sizeHint().width());
+
     m_warnLabel = new QLabel();
     m_warnLabel->setWordWrap(true);
     m_warnLabel->hide();
@@ -53,9 +55,6 @@ void VNewFileDialog::setupUI()
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(m_btnBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
-
-    QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
-    nameEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     if (infoLabel) {

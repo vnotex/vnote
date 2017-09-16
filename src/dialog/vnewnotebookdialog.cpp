@@ -11,7 +11,7 @@ VNewNotebookDialog::VNewNotebookDialog(const QString &title, const QString &info
                                        const QString &defaultName, const QString &defaultPath,
                                        const QVector<VNotebook *> &p_notebooks,
                                        QWidget *parent)
-    : QDialog(parent), infoLabel(NULL),
+    : QDialog(parent),
       title(title), info(info), defaultName(defaultName), defaultPath(defaultPath),
       m_importNotebook(false), m_manualPath(false), m_manualName(false),
       m_notebooks(p_notebooks)
@@ -27,12 +27,13 @@ VNewNotebookDialog::VNewNotebookDialog(const QString &title, const QString &info
 
 void VNewNotebookDialog::setupUI()
 {
+    QLabel *infoLabel = NULL;
     if (!info.isEmpty()) {
         infoLabel = new QLabel(info);
         infoLabel->setWordWrap(true);
     }
 
-    nameLabel = new QLabel(tr("Notebook &name:"));
+    QLabel *nameLabel = new QLabel(tr("Notebook &name:"));
     nameEdit = new QLineEdit(defaultName);
     nameLabel->setBuddy(nameEdit);
 

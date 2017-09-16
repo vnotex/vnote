@@ -266,6 +266,9 @@ public:
 
     const QString &getRecycleBinFolder() const;
 
+    bool getConfirmImagesCleanUp() const;
+    void setConfirmImagesCleanUp(bool p_enabled);
+
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
     QString getShortcutKeySequence(const QString &p_operation) const;
@@ -535,6 +538,9 @@ private:
 
     // Default name of the recycle bin folder of notebook.
     QString m_recycleBinFolder;
+
+    // Confirm before deleting unused images.
+    bool m_confirmImagesCleanUp;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1387,4 +1393,20 @@ inline const QString &VConfigManager::getRecycleBinFolder() const
     return m_recycleBinFolder;
 }
 
+inline bool VConfigManager::getConfirmImagesCleanUp() const
+{
+    return m_confirmImagesCleanUp;
+}
+
+inline void VConfigManager::setConfirmImagesCleanUp(bool p_enabled)
+{
+    if (m_confirmImagesCleanUp == p_enabled) {
+        return;
+    }
+
+    m_confirmImagesCleanUp = p_enabled;
+    setConfigToSettings("global",
+                        "confirm_images_clean_up",
+                        m_confirmImagesCleanUp);
+}
 #endif // VCONFIGMANAGER_H

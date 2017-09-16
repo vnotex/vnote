@@ -10,6 +10,7 @@
 #include "utils/veditutils.h"
 #include "utils/vpreviewutils.h"
 #include "dialog/vselectdialog.h"
+#include "dialog/vconfirmdeletiondialog.h"
 #include "vimagepreviewer.h"
 #include "vtextblockdata.h"
 
@@ -238,6 +239,8 @@ void VMdEdit::clearUnusedImages()
     QVector<ImageLink> images = VUtils::fetchImagesFromMarkdownFile(m_file,
                                                                     ImageLink::LocalRelativeInternal);
 
+    QVector<QString> unusedImages;
+
     if (!m_insertedImages.isEmpty()) {
         for (int i = 0; i < m_insertedImages.size(); ++i) {
             const ImageLink &link = m_insertedImages[i];
@@ -255,11 +258,7 @@ void VMdEdit::clearUnusedImages()
 
             // This inserted image is no longer in the file.
             if (j == images.size()) {
-                if (!VUtils::deleteFile(m_file->getNotebook(), link.m_path, false)) {
-                    qWarning() << "fail to delete unused inserted image" << link.m_path;
-                } else {
-                    qDebug() << "delete unused inserted image" << link.m_path;
-                }
+                unusedImages.push_back(link.m_path);
             }
         }
 
@@ -280,10 +279,31 @@ void VMdEdit::clearUnusedImages()
 
         // Original local relative image is no longer in the file.
         if (j == images.size()) {
-            if (!VUtils::deleteFile(m_file->getNotebook(), link.m_path, false)) {
-                qWarning() << "fail to delete unused original image" << link.m_path;
+            unusedImages.push_back(link.m_path);
+        }
+    }
+
+    if (!unusedImages.isEmpty()) {
+        if (g_config->getConfirmImagesCleanUp()) {
+            QString info = tr("Following images seems not to be used in this note anymore. "
+                              "Please confirm the deletion of these images.<br>"
+                              "Click \"Cancel\" to leave them untouched.");
+            VConfirmDeletionDialog dialog(tr("Confirm Cleaning Up Unused Images"),
+                                          info,
+                                          unusedImages,
+                                          this);
+            if (dialog.exec()) {
+                unusedImages = dialog.getConfirmedFiles();
             } else {
-                qDebug() << "delete unused original image" << link.m_path;
+                unusedImages.clear();
+            }
+        }
+
+        for (int i = 0; i < unusedImages.size(); ++i) {
+            if (!VUtils::deleteFile(m_file->getNotebook(), unusedImages[i], false)) {
+                qWarning() << "fail to delete unused original image" << unusedImages[i];
+            } else {
+                qDebug() << "delete unused image" << unusedImages[i];
             }
         }
     }
