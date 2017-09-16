@@ -1639,6 +1639,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             tryGetRepeatToken(m_keys, m_tokens);
             if (!hasActionToken() && m_mode == VimMode::Normal) {
                 // Y, same as yy.
+                addActionToken(Action::Copy);
                 addRangeToken(Range::Line);
                 processCommand(m_tokens);
             }
