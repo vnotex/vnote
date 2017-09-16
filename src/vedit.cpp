@@ -1021,6 +1021,10 @@ void VEdit::lineNumberAreaPaintEvent(QPaintEvent *p_event)
     QAbstractTextDocumentLayout *layout = document()->documentLayout();
 
     QTextBlock block = firstVisibleBlock();
+    if (!block.isValid()) {
+        return;
+    }
+
     int blockNumber = block.blockNumber();
     int offsetY = contentOffsetY();
     QRectF rect = layout->blockBoundingRect(block);
@@ -1196,8 +1200,7 @@ QTextBlock VEdit::firstVisibleBlock()
         block = block.next();
     }
 
-    Q_ASSERT(false);
-    return doc->begin();
+    return QTextBlock();
 }
 
 int LineNumberArea::calculateWidth() const
