@@ -1317,11 +1317,19 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             }
         } else if (modifiers == Qt::ShiftModifier) {
             tryGetRepeatToken(m_keys, m_tokens);
-            if (!hasActionToken() && m_mode == VimMode::Normal) {
-                // D, same as d$.
-                addActionToken(Action::Delete);
-                addMovementToken(Movement::EndOfLine);
-                processCommand(m_tokens);
+            if (!hasActionToken()) {
+                if (checkMode(VimMode::Normal)) {
+                    // D, same as d$.
+                    addActionToken(Action::Delete);
+                    addMovementToken(Movement::EndOfLine);
+                    processCommand(m_tokens);
+                } else if (checkMode(VimMode::Visual) || checkMode(VimMode::VisualLine)) {
+                    // D, same as dd.
+                    addActionToken(Action::Delete);
+                    addRangeToken(Range::Line);
+                    processCommand(m_tokens);
+                    setMode(VimMode::Normal);
+                }
             }
 
             break;
@@ -1617,7 +1625,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             tryGetRepeatToken(m_keys, m_tokens);
             if (hasActionToken()) {
                 // This is another y, something like yy.
-                if (checkActionToken(Action::Copy)) {
+                if (checkActionToken(Action::Copy) && checkMode(VimMode::Normal)) {
                     addRangeToken(Range::Line);
                     processCommand(m_tokens);
                 } else {
@@ -1637,11 +1645,12 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             }
         } else if (modifiers == Qt::ShiftModifier) {
             tryGetRepeatToken(m_keys, m_tokens);
-            if (!hasActionToken() && m_mode == VimMode::Normal) {
+            if (!hasActionToken()) {
                 // Y, same as yy.
                 addActionToken(Action::Copy);
                 addRangeToken(Range::Line);
                 processCommand(m_tokens);
+                setMode(VimMode::Normal);
             }
 
             break;
@@ -3176,6 +3185,13 @@ bool VVim::selectRange(QTextCursor &p_cursor, const QTextDocument *p_doc,
     switch (p_range) {
     case Range::Line:
     {
+        // Visual mode, just select selected lines.
+        if (checkMode(VimMode::Visual) || checkMode(VimMode::VisualLine)) {
+            expandSelectionToWholeLines(p_cursor);
+            hasMoved = true;
+            break;
+        }
+
         // Current line and next (p_repeat - 1) lines.
         if (p_repeat == -1) {
             p_repeat = 1;
@@ -3466,14 +3482,12 @@ void VVim::processDeleteAction(QList<Token> &p_tokens)
             case Range::Line:
             {
                 // dd, delete current line.
-                if (repeat == -1) {
-                    repeat = 1;
-                }
-
                 if (cursor.hasSelection()) {
+                    repeat = VEditUtils::selectedBlockCount(cursor);
                     deleteSelectedText(cursor, true);
                 } else {
                     VEditUtils::removeBlock(cursor);
+                    repeat = 1;
                 }
 
                 message(tr("%1 fewer %2").arg(repeat).arg(repeat > 1 ? tr("lines")
@@ -3682,14 +3696,12 @@ void VVim::processCopyAction(QList<Token> &p_tokens)
             case Range::Line:
             {
                 // yy, copy current line.
-                if (repeat == -1) {
-                    repeat = 1;
-                }
-
                 if (cursor.hasSelection()) {
+                    repeat = VEditUtils::selectedBlockCount(cursor);
                     copySelectedText(cursor, true);
                 } else {
                     saveToRegister("\n");
+                    repeat = 1;
                 }
 
                 message(tr("%1 %2 yanked").arg(repeat).arg(repeat > 1 ? tr("lines")
