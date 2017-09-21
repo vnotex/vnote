@@ -7,6 +7,7 @@
 
 class VDirectory;
 class VFile;
+class VNoteFile;
 
 class VNotebook : public QObject
 {
@@ -29,11 +30,11 @@ public:
     bool containsFile(const VFile *p_file) const;
 
     // Try to load the file @p_path.
-    // Returns the corresponding VFile struct if @p_path is a note inside this notebook.
+    // Returns the corresponding VNoteFile struct if @p_path is a note inside this notebook.
     // Otherwise, returns NULL.
     // If notebook is not opened currently, it will open itself and close itself
     // if @p_path is not inside this notebook.
-    VFile *tryLoadFile(const QString &p_path);
+    VNoteFile *tryLoadFile(const QString &p_path);
 
     const QString &getName() const;
     const QString &getPath() const;

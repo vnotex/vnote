@@ -820,6 +820,19 @@ bool VUtils::deleteFile(const VNotebook *p_notebook,
     }
 }
 
+bool VUtils::deleteFile(const QString &p_path,
+                        bool p_skipRecycleBin)
+{
+    if (p_skipRecycleBin) {
+        QFile file(p_path);
+        return file.remove();
+    } else {
+        // TODO: Move it to the recycle bin folder.
+        QFile file(p_path);
+        return file.remove();
+    }
+}
+
 QVector<VElementRegion> VUtils::fetchImageRegionsUsingParser(const QString &p_content)
 {
     Q_ASSERT(!p_content.isEmpty());

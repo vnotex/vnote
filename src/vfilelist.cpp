@@ -8,7 +8,7 @@
 #include "vnote.h"
 #include "veditarea.h"
 #include "utils/vutils.h"
-#include "vfile.h"
+#include "vnotefile.h"
 #include "vconfigmanager.h"
 #include "vmdedit.h"
 #include "vmdtab.h"
@@ -182,9 +182,10 @@ void VFileList::updateFileList()
     if (!m_directory->open()) {
         return;
     }
-    const QVector<VFile *> &files = m_directory->getFiles();
+
+    const QVector<VNoteFile *> &files = m_directory->getFiles();
     for (int i = 0; i < files.size(); ++i) {
-        VFile *file = files[i];
+        VNoteFile *file = files[i];
         insertFileListItem(file);
     }
 }
@@ -205,7 +206,7 @@ void VFileList::openFileLocation() const
     QDesktopServices::openUrl(url);
 }
 
-void VFileList::fileInfo(VFile *p_file)
+void VFileList::fileInfo(VNoteFile *p_file)
 {
     if (!p_file) {
         return;
@@ -239,7 +240,7 @@ void VFileList::fileInfo(VFile *p_file)
     }
 }
 
-void VFileList::fillItem(QListWidgetItem *p_item, const VFile *p_file)
+void VFileList::fillItem(QListWidgetItem *p_item, const VNoteFile *p_file)
 {
     unsigned long long ptr = (long long)p_file;
     p_item->setData(Qt::UserRole, ptr);
@@ -249,7 +250,7 @@ void VFileList::fillItem(QListWidgetItem *p_item, const VFile *p_file)
     V_ASSERT(sizeof(p_file) <= sizeof(ptr));
 }
 
-QListWidgetItem* VFileList::insertFileListItem(VFile *file, bool atFront)
+QListWidgetItem* VFileList::insertFileListItem(VNoteFile *file, bool atFront)
 {
     V_ASSERT(file);
     QListWidgetItem *item = new QListWidgetItem();
@@ -300,7 +301,7 @@ void VFileList::newFile()
     defaultName = VUtils::getFileNameWithSequence(m_directory->fetchPath(), defaultName);
     VNewFileDialog dialog(tr("Create Note"), info, defaultName, m_directory, this);
     if (dialog.exec() == QDialog::Accepted) {
-        VFile *file = m_directory->createFile(dialog.getNameInput());
+        VNoteFile *file = m_directory->createFile(dialog.getNameInput());
         if (!file) {
             VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                 tr("Fail to create note <span style=\"%1\">%2</span>.")
@@ -355,14 +356,14 @@ void VFileList::newFile()
 QVector<QListWidgetItem *> VFileList::updateFileListAdded()
 {
     QVector<QListWidgetItem *> ret;
-    const QVector<VFile *> &files = m_directory->getFiles();
+    const QVector<VNoteFile *> &files = m_directory->getFiles();
     for (int i = 0; i < files.size(); ++i) {
-        VFile *file = files[i];
+        VNoteFile *file = files[i];
         if (i >= fileList->count()) {
             QListWidgetItem *item = insertFileListItem(file, false);
             ret.append(item);
         } else {
-            VFile *itemFile = getVFile(fileList->item(i));
+            VNoteFile *itemFile = getVFile(fileList->item(i));
             if (itemFile != file) {
                 QListWidgetItem *item = insertFileListItem(file, false);
                 ret.append(item);
@@ -384,11 +385,12 @@ void VFileList::deleteFile()
 }
 
 // @p_file may or may not be listed in VFileList
-void VFileList::deleteFile(VFile *p_file)
+void VFileList::deleteFile(VNoteFile *p_file)
 {
     if (!p_file) {
         return;
     }
+
     VDirectory *dir = p_file->getDirectory();
     QString fileName = p_file->getName();
     int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
@@ -427,7 +429,7 @@ void VFileList::contextMenuRequested(QPoint pos)
     }
 
     if (item && fileList->selectedItems().size() == 1) {
-        VFile *file = getVFile(item);
+        VNoteFile *file = getVFile(item);
         if (file && file->getDocType() == DocType::Markdown) {
             menu.addAction(m_openInReadAct);
             menu.addAction(m_openInEditAct);
@@ -464,7 +466,7 @@ void VFileList::contextMenuRequested(QPoint pos)
     menu.exec(fileList->mapToGlobal(pos));
 }
 
-QListWidgetItem* VFileList::findItem(const VFile *p_file)
+QListWidgetItem* VFileList::findItem(const VNoteFile *p_file)
 {
     if (!p_file || p_file->getDirectory() != m_directory) {
         return NULL;
@@ -477,6 +479,7 @@ QListWidgetItem* VFileList::findItem(const VFile *p_file)
             return item;
         }
     }
+
     return NULL;
 }
 
@@ -515,7 +518,7 @@ bool VFileList::importFile(const QString &p_srcFilePath)
         return false;
     }
 
-    VFile *destFile = m_directory->addFile(srcName, -1);
+    VNoteFile *destFile = m_directory->addFile(srcName, -1);
     if (destFile) {
         return insertFileListItem(destFile, false);
     }
@@ -531,7 +534,7 @@ void VFileList::copySelectedFiles(bool p_isCut)
     QJsonArray files;
     m_copiedFiles.clear();
     for (int i = 0; i < items.size(); ++i) {
-        VFile *file = getVFile(items[i]);
+        VNoteFile *file = getVFile(items[i]);
         QJsonObject fileJson;
         fileJson["notebook"] = file->getNotebookName();
         fileJson["path"] = file->fetchPath();
@@ -579,10 +582,11 @@ void VFileList::pasteFiles(VDirectory *p_destDir)
 
     int nrPasted = 0;
     for (int i = 0; i < m_copiedFiles.size(); ++i) {
-        QPointer<VFile> srcFile = m_copiedFiles[i];
+        QPointer<VNoteFile> srcFile = m_copiedFiles[i];
         if (!srcFile) {
             continue;
         }
+
         QString fileName = srcFile->getName();
         VDirectory *srcDir = srcFile->getDirectory();
         if (srcDir == p_destDir && !isCut) {
@@ -606,7 +610,7 @@ void VFileList::pasteFiles(VDirectory *p_destDir)
     m_copiedFiles.clear();
 }
 
-bool VFileList::copyFile(VDirectory *p_destDir, const QString &p_destName, VFile *p_file, bool p_cut)
+bool VFileList::copyFile(VDirectory *p_destDir, const QString &p_destName, VNoteFile *p_file, bool p_cut)
 {
     QString srcPath = QDir::cleanPath(p_file->fetchPath());
     QString destPath = QDir::cleanPath(QDir(p_destDir->fetchPath()).filePath(p_destName));
@@ -617,7 +621,7 @@ bool VFileList::copyFile(VDirectory *p_destDir, const QString &p_destName, VFile
     // DocType is not allowed to change.
     Q_ASSERT(p_file->getDocType() == VUtils::docTypeFromName(destPath));
 
-    VFile *destFile = VDirectory::copyFile(p_destDir, p_destName, p_file, p_cut);
+    VNoteFile *destFile = VDirectory::copyFile(p_destDir, p_destName, p_file, p_cut);
     updateFileList();
     if (destFile) {
         emit fileUpdated(destFile);
@@ -676,7 +680,7 @@ void VFileList::focusInEvent(QFocusEvent * /* p_event */)
     fileList->setFocus();
 }
 
-bool VFileList::locateFile(const VFile *p_file)
+bool VFileList::locateFile(const VNoteFile *p_file)
 {
     if (p_file) {
         if (p_file->getDirectory() != m_directory) {
@@ -704,7 +708,7 @@ void VFileList::handleRowsMoved(const QModelIndex &p_parent, int p_start, int p_
 
 bool VFileList::identicalListWithDirectory() const
 {
-    const QVector<VFile *> files = m_directory->getFiles();
+    const QVector<VNoteFile *> files = m_directory->getFiles();
     int nrItems = fileList->count();
     if (nrItems != files.size()) {
         return false;

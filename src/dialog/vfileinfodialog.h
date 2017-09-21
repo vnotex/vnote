@@ -8,32 +8,33 @@ class QLineEdit;
 class QDialogButtonBox;
 class QString;
 class VDirectory;
-class VFile;
+class VNoteFile;
 
+// File information dialog for internal note file.
 class VFileInfoDialog : public QDialog
 {
     Q_OBJECT
 public:
-    VFileInfoDialog(const QString &title, const QString &info,
-                    VDirectory *directory, const VFile *file,
+    VFileInfoDialog(const QString &title,
+                    const QString &info,
+                    VDirectory *directory,
+                    const VNoteFile *file,
                     QWidget *parent = 0);
+
     QString getNameInput() const;
 
 private slots:
     void handleInputChanged();
 
 private:
-    void setupUI();
+    void setupUI(const QString &p_title, const QString &p_info);
 
     QLineEdit *nameEdit;
     QLabel *m_warnLabel;
     QDialogButtonBox *m_btnBox;
 
-    QString title;
-    QString info;
-
     VDirectory *m_directory;
-    const VFile *m_file;
+    const VNoteFile *m_file;
 };
 
 #endif // VFILEINFODIALOG_H

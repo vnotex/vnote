@@ -10,11 +10,11 @@
 #include "vedittab.h"
 #include "vtoc.h"
 #include "vconstants.h"
+#include "vnotefile.h"
 
 class VNote;
 class QPushButton;
 class QActionGroup;
-class VFile;
 class VEditArea;
 
 class VEditWindow : public QTabWidget
@@ -184,8 +184,14 @@ inline QString VEditWindow::generateTooltip(const VFile *p_file) const
     if (!p_file) {
         return "";
     }
+
     // [Notebook]path
-    return QString("[%1] %2").arg(p_file->getNotebookName()).arg(p_file->fetchPath());
+    if (p_file->getType() == FileType::Note) {
+        const VNoteFile *tmpFile = dynamic_cast<const VNoteFile *>(p_file);
+        return QString("[%1] %2").arg(tmpFile->getNotebookName()).arg(tmpFile->fetchPath());
+    } else {
+        return QString("%1").arg(p_file->fetchPath());
+    }
 }
 
 inline QString VEditWindow::generateTabText(int p_index, const QString &p_name,

@@ -14,7 +14,8 @@
 #include "vconstants.h"
 
 class VMainWindow;
-class VFile;
+class VOrphanFile;
+class VNoteFile;
 
 class VNote : public QObject
 {
@@ -80,14 +81,15 @@ public:
 
     QString getNavigationLabelStyle(const QString &p_str) const;
 
-    // Given the path of an external file, create a VFile struct.
-    VFile *getOrphanFile(const QString &p_path, bool p_modifiable,
-                         bool p_systemFile = false);
+    // Given the path of an external file, create a VOrphanFile struct.
+    VOrphanFile *getOrphanFile(const QString &p_path,
+                               bool p_modifiable,
+                               bool p_systemFile = false);
 
     // Given the path of a file, try to find it in all notebooks.
-    // Returns a VFile struct if it is a note in one notebook.
+    // Returns a VNoteFile struct if it is a note in one notebook.
     // Otherwise, returns NULL.
-    VFile *getInternalFile(const QString &p_path);
+    VNoteFile *getInternalFile(const QString &p_path);
 
 public slots:
     void updateTemplate();
@@ -102,7 +104,7 @@ private:
 
     // Hold all external file: Orphan File.
     // Need to clean up periodly.
-    QList<VFile *> m_externalFiles;
+    QList<VOrphanFile *> m_externalFiles;
 };
 
 inline const QVector<QPair<QString, QString> >& VNote::getPalette() const

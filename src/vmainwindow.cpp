@@ -26,6 +26,7 @@
 #include "vorphanfile.h"
 #include "dialog/vorphanfileinfodialog.h"
 #include "vsingleinstanceguard.h"
+#include "vnotefile.h"
 
 extern VConfigManager *g_config;
 
@@ -464,7 +465,6 @@ void VMainWindow::initHelpMenu()
                 }
 
                 VFile *file = vnote->getOrphanFile(docName, false, true);
-                (dynamic_cast<VOrphanFile *>(file))->setNotebookName(tr("[Help]"));
                 editArea->openFile(file, OpenFileMode::Read);
             });
 
@@ -1508,7 +1508,7 @@ void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
     editNoteAct->setEnabled(p_file && p_file->isModifiable() && !p_editMode);
     editNoteAct->setVisible(!saveExitAct->isVisible());
     saveNoteAct->setEnabled(p_file && p_editMode);
-    deleteNoteAct->setEnabled(p_file && p_file->getType() == FileType::Normal);
+    deleteNoteAct->setEnabled(p_file && p_file->getType() == FileType::Note);
     noteInfoAct->setEnabled(p_file && !systemFile);
 
     m_insertImageAct->setEnabled(p_file && p_editMode);
@@ -1545,7 +1545,13 @@ void VMainWindow::handleAreaTabStatusUpdated(const VEditTabInfo &p_info)
     if (m_curFile) {
         m_findReplaceDialog->updateState(m_curFile->getDocType(), editMode);
 
-        title = QString("[%1] %2").arg(m_curFile->getNotebookName()).arg(m_curFile->fetchPath());
+        if (m_curFile->getType() == FileType::Note) {
+            const VNoteFile *tmpFile = dynamic_cast<const VNoteFile *>((VFile *)m_curFile);
+            title = QString("[%1] %2").arg(tmpFile->getNotebookName()).arg(tmpFile->fetchPath());
+        } else {
+            title = QString("%1").arg(m_curFile->fetchPath());
+        }
+
         if (m_curFile->isModifiable()) {
             if (m_curFile->isModified()) {
                 title.append('*');
@@ -1636,8 +1642,10 @@ void VMainWindow::curEditFileInfo()
 {
     Q_ASSERT(m_curFile);
 
-    if (m_curFile->getType() == FileType::Normal) {
-        fileList->fileInfo(m_curFile);
+    if (m_curFile->getType() == FileType::Note) {
+        VNoteFile *file = dynamic_cast<VNoteFile *>((VFile *)m_curFile);
+        Q_ASSERT(file);
+        fileList->fileInfo(file);
     } else if (m_curFile->getType() == FileType::Orphan) {
         VOrphanFile *file = dynamic_cast<VOrphanFile *>((VFile *)m_curFile);
         Q_ASSERT(file);
@@ -1649,11 +1657,12 @@ void VMainWindow::curEditFileInfo()
 
 void VMainWindow::deleteCurNote()
 {
-    if (!m_curFile || m_curFile->getType() != FileType::Normal) {
+    if (!m_curFile || m_curFile->getType() != FileType::Note) {
         return;
     }
 
-    fileList->deleteFile(m_curFile);
+    VNoteFile *file = dynamic_cast<VNoteFile *>((VFile *)m_curFile);
+    fileList->deleteFile(file);
 }
 
 void VMainWindow::closeEvent(QCloseEvent *event)
@@ -1793,23 +1802,24 @@ void VMainWindow::insertImage()
 bool VMainWindow::locateFile(VFile *p_file)
 {
     bool ret = false;
-    if (!p_file || p_file->getType() != FileType::Normal) {
+    if (!p_file || p_file->getType() != FileType::Note) {
         return ret;
     }
 
-    VNotebook *notebook = p_file->getNotebook();
+    VNoteFile *file = dynamic_cast<VNoteFile *>(p_file);
+    VNotebook *notebook = file->getNotebook();
     if (notebookSelector->locateNotebook(notebook)) {
         while (directoryTree->currentNotebook() != notebook) {
             QCoreApplication::sendPostedEvents();
         }
 
-        VDirectory *dir = p_file->getDirectory();
+        VDirectory *dir = file->getDirectory();
         if (directoryTree->locateDirectory(dir)) {
             while (fileList->currentDirectory() != dir) {
                 QCoreApplication::sendPostedEvents();
             }
 
-            if (fileList->locateFile(p_file)) {
+            if (fileList->locateFile(file)) {
                 ret = true;
                 fileList->setFocus();
             }
@@ -1933,7 +1943,6 @@ void VMainWindow::shortcutHelp()
     }
 
     VFile *file = vnote->getOrphanFile(docName, false, true);
-    (dynamic_cast<VOrphanFile *>(file))->setNotebookName(tr("[Help]"));
     editArea->openFile(file, OpenFileMode::Read);
 }
 

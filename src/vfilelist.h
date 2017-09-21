@@ -11,7 +11,7 @@
 #include "vnotebook.h"
 #include "vconstants.h"
 #include "vdirectory.h"
-#include "vfile.h"
+#include "vnotefile.h"
 #include "vnavigationmode.h"
 
 class QAction;
@@ -29,9 +29,9 @@ public:
     explicit VFileList(QWidget *parent = 0);
     bool importFile(const QString &p_srcFilePath);
     inline void setEditArea(VEditArea *editArea);
-    void fileInfo(VFile *p_file);
-    void deleteFile(VFile *p_file);
-    bool locateFile(const VFile *p_file);
+    void fileInfo(VNoteFile *p_file);
+    void deleteFile(VNoteFile *p_file);
+    bool locateFile(const VNoteFile *p_file);
     inline const VDirectory *currentDirectory() const;
 
     // Implementations for VNavigationMode.
@@ -41,16 +41,16 @@ public:
     bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE;
 
 signals:
-    void fileClicked(VFile *p_file, OpenFileMode mode = OpenFileMode::Read);
-    void fileCreated(VFile *p_file, OpenFileMode mode = OpenFileMode::Read);
-    void fileUpdated(const VFile *p_file);
+    void fileClicked(VNoteFile *p_file, OpenFileMode mode = OpenFileMode::Read);
+    void fileCreated(VNoteFile *p_file, OpenFileMode mode = OpenFileMode::Read);
+    void fileUpdated(const VNoteFile *p_file);
 
 private slots:
     void contextMenuRequested(QPoint pos);
     void handleItemClicked(QListWidgetItem *currentItem);
     void fileInfo();
     void openFileLocation() const;
-    // m_copiedFiles will keep the files's VFile.
+    // m_copiedFiles will keep the files's VNoteFile.
     void copySelectedFiles(bool p_isCut = false);
     void cutSelectedFiles();
     void pasteFilesInCurDir();
@@ -72,32 +72,36 @@ private:
     void initShortcuts();
 
     void updateFileList();
-    QListWidgetItem *insertFileListItem(VFile *file, bool atFront = false);
+
+    QListWidgetItem *insertFileListItem(VNoteFile *file, bool atFront = false);
+
     void removeFileListItem(QListWidgetItem *item);
 
     // Init actions.
     void initActions();
 
     // Return the corresponding QListWidgetItem of @p_file.
-    QListWidgetItem *findItem(const VFile *p_file);
+    QListWidgetItem *findItem(const VNoteFile *p_file);
 
     void copyFileInfoToClipboard(const QJsonArray &p_files, bool p_isCut);
     void pasteFiles(VDirectory *p_destDir);
-    bool copyFile(VDirectory *p_destDir, const QString &p_destName, VFile *p_file, bool p_cut);
+    bool copyFile(VDirectory *p_destDir, const QString &p_destName, VNoteFile *p_file, bool p_cut);
     // New items have been added to direcotry. Update file list accordingly.
     QVector<QListWidgetItem *> updateFileListAdded();
-    inline QPointer<VFile> getVFile(QListWidgetItem *p_item) const;
+
+    inline QPointer<VNoteFile> getVFile(QListWidgetItem *p_item) const;
+
     // Check if the list items match exactly the contents of the directory.
     bool identicalListWithDirectory() const;
     QList<QListWidgetItem *> getVisibleItems() const;
 
     // Fill the info of @p_item according to @p_file.
-    void fillItem(QListWidgetItem *p_item, const VFile *p_file);
+    void fillItem(QListWidgetItem *p_item, const VNoteFile *p_file);
 
     VEditArea *editArea;
     QListWidget *fileList;
     QPointer<VDirectory> m_directory;
-    QVector<QPointer<VFile> > m_copiedFiles;
+    QVector<QPointer<VNoteFile> > m_copiedFiles;
 
     // Actions
     QAction *m_openInReadAct;
@@ -126,10 +130,10 @@ inline void VFileList::setEditArea(VEditArea *editArea)
     this->editArea = editArea;
 }
 
-inline QPointer<VFile> VFileList::getVFile(QListWidgetItem *p_item) const
+inline QPointer<VNoteFile> VFileList::getVFile(QListWidgetItem *p_item) const
 {
     Q_ASSERT(p_item);
-    return (VFile *)p_item->data(Qt::UserRole).toULongLong();
+    return (VNoteFile *)p_item->data(Qt::UserRole).toULongLong();
 }
 
 inline const VDirectory *VFileList::currentDirectory() const

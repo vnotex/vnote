@@ -4,7 +4,7 @@
 #include "vdirectory.h"
 #include "utils/vutils.h"
 #include "vconfigmanager.h"
-#include "vfile.h"
+#include "vnotefile.h"
 
 extern VConfigManager *g_config;
 
@@ -221,7 +221,7 @@ bool VNotebook::containsFile(const VFile *p_file) const
     return m_rootDir->containsFile(p_file);
 }
 
-VFile *VNotebook::tryLoadFile(const QString &p_path)
+VNoteFile *VNotebook::tryLoadFile(const QString &p_path)
 {
     QFileInfo fi(p_path);
     Q_ASSERT(fi.isAbsolute());
@@ -240,7 +240,7 @@ VFile *VNotebook::tryLoadFile(const QString &p_path)
             return NULL;
         }
 
-        VFile *file = m_rootDir->tryLoadFile(filePath);
+        VNoteFile *file = m_rootDir->tryLoadFile(filePath);
 
         if (!file && !opened) {
             close();

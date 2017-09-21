@@ -10,6 +10,7 @@
 #include "vnotebook.h"
 
 class VFile;
+class VNoteFile;
 
 class VDirectory : public QObject
 {
@@ -27,20 +28,20 @@ public:
     // Returns the VDirectory with the name @p_name directly in this directory.
     VDirectory *findSubDirectory(const QString &p_name, bool p_caseSensitive);
 
-    // Returns the VFile with the name @p_name directly in this directory.
-    VFile *findFile(const QString &p_name, bool p_caseSensitive);
+    // Returns the VNoteFile with the name @p_name directly in this directory.
+    VNoteFile *findFile(const QString &p_name, bool p_caseSensitive);
 
     // If current dir or its sub-dir contains @p_file.
     bool containsFile(const VFile *p_file) const;
 
-    VFile *createFile(const QString &p_name);
+    VNoteFile *createFile(const QString &p_name);
 
     // Remove and delete subdirectory @p_subDir.
     void deleteSubDirectory(VDirectory *p_subDir, bool p_skipRecycleBin = false);
 
     // Remove the file in the config and m_files without deleting it in the disk.
     // It won't change the parent of @p_file to enable it find its path.
-    bool removeFile(VFile *p_file);
+    bool removeFile(VNoteFile *p_file);
 
     // Remove the directory in the config and m_subDirs without deleting it in the disk.
     // It won't change the parent of @p_dir to enable it find its path.
@@ -48,20 +49,20 @@ public:
 
     // Add the file in the config and m_files. If @p_index is -1, add it at the end.
     // @p_name: the file name of the file to add.
-    // Return the VFile if succeed.
-    VFile *addFile(const QString &p_name, int p_index);
+    // Return the VNoteFile if succeed.
+    VNoteFile *addFile(const QString &p_name, int p_index);
 
     // Delete @p_file both from disk and config, as well as its local images.
-    void deleteFile(VFile *p_file);
+    void deleteFile(VNoteFile *p_file);
 
     // Rename current directory to @p_name.
     bool rename(const QString &p_name);
 
     // Copy @p_srcFile to @p_destDir, setting new name to @p_destName.
     // @p_cut: copy or cut.
-    // Returns the dest VFile.
-    static VFile *copyFile(VDirectory *p_destDir, const QString &p_destName,
-                           VFile *p_srcFile, bool p_cut);
+    // Returns the dest VNoteFile.
+    static VNoteFile *copyFile(VDirectory *p_destDir, const QString &p_destName,
+                               VNoteFile *p_srcFile, bool p_cut);
 
     static VDirectory *copyDirectory(VDirectory *p_destDir, const QString &p_destName,
                                      VDirectory *p_srcDir, bool p_cut);
@@ -74,7 +75,7 @@ public:
     const VDirectory *getParentDirectory() const;
     VNotebook *getNotebook();
     const VNotebook *getNotebook() const;
-    const QVector<VFile *> &getFiles() const;
+    const QVector<VNoteFile *> &getFiles() const;
     QString fetchPath() const;
     QString fetchBasePath() const;
     QString fetchRelativePath() const;
@@ -97,7 +98,7 @@ public:
     bool writeToConfig() const;
 
     // Try to load file given relative path @p_filePath.
-    VFile *tryLoadFile(QStringList &p_filePath);
+    VNoteFile *tryLoadFile(QStringList &p_filePath);
 
     QDateTime getCreatedTimeUtc() const;
 
@@ -115,7 +116,7 @@ private:
     void addNotebookConfig(QJsonObject &p_json) const;
 
     // Add the file in the config and m_files. If @p_index is -1, add it at the end.
-    bool addFile(VFile *p_file, int p_index);
+    bool addFile(VNoteFile *p_file, int p_index);
 
     // Add the directory in the config and m_subDirs. If @p_index is -1, add it at the end.
     // Return the VDirectory if succeed.
@@ -134,7 +135,7 @@ private:
     QVector<VDirectory *> m_subDirs;
 
     // Owner of the files
-    QVector<VFile *> m_files;
+    QVector<VNoteFile *> m_files;
 
     // Whether the directory has been opened.
     bool m_opened;
@@ -177,7 +178,7 @@ inline const VDirectory *VDirectory::getParentDirectory() const
     return (const VDirectory *)this->parent();
 }
 
-inline const QVector<VFile *> &VDirectory::getFiles() const
+inline const QVector<VNoteFile *> &VDirectory::getFiles() const
 {
     return m_files;
 }

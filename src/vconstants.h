@@ -7,9 +7,9 @@
 // Container: a composite file containing multiple files;
 enum class DocType { Html = 0, Markdown, List, Container, Invalid };
 
-// Normal: note file managed by VNote;
+// Note: note file managed by VNote;
 // Orphan: external file;
-enum class FileType { Normal, Orphan };
+enum class FileType { Note, Orphan };
 
 enum class ClipboardOpType { Invalid, CopyFile, CopyDir };
 enum class OpenFileMode {Read = 0, Edit};

@@ -45,7 +45,7 @@ bool VMdEditOperations::insertImageFromMimeData(const QMimeData *source)
     dialog.setImage(image);
     if (dialog.exec() == QDialog::Accepted) {
         insertImageFromQImage(dialog.getImageTitleInput(),
-                              m_file->fetchImagePath(),
+                              m_file->fetchImageFolderPath(),
                               m_file->getImageFolderInLink(),
                               image);
     }
@@ -170,12 +170,12 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
     if (dialog.exec() == QDialog::Accepted) {
         if (isLocal) {
             insertImageFromPath(dialog.getImageTitleInput(),
-                                m_file->fetchImagePath(),
+                                m_file->fetchImageFolderPath(),
                                 m_file->getImageFolderInLink(),
                                 imagePath);
         } else {
             insertImageFromQImage(dialog.getImageTitleInput(),
-                                  m_file->fetchImagePath(),
+                                  m_file->fetchImageFolderPath(),
                                   m_file->getImageFolderInLink(),
                                   dialog.getImage());
         }
@@ -192,7 +192,7 @@ bool VMdEditOperations::insertImage()
         QString imagePath = dialog.getPathInput();
         qDebug() << "insert image from" << imagePath << "as" << title;
         insertImageFromPath(title,
-                            m_file->fetchImagePath(),
+                            m_file->fetchImageFolderPath(),
                             m_file->getImageFolderInLink(),
                             imagePath);
     }

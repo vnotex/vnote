@@ -12,6 +12,7 @@
 #include "vconfigmanager.h"
 #include "vmainwindow.h"
 #include "vorphanfile.h"
+#include "vnotefile.h"
 
 extern VConfigManager *g_config;
 
@@ -281,7 +282,7 @@ const QString &VNote::getMonospacedFont() const
     return font;
 }
 
-VFile *VNote::getOrphanFile(const QString &p_path, bool p_modifiable, bool p_systemFile)
+VOrphanFile *VNote::getOrphanFile(const QString &p_path, bool p_modifiable, bool p_systemFile)
 {
     if (p_path.isEmpty()) {
         return NULL;
@@ -290,17 +291,15 @@ VFile *VNote::getOrphanFile(const QString &p_path, bool p_modifiable, bool p_sys
     QString path = QDir::cleanPath(p_path);
     // See if the file has already been opened before.
     for (auto const &file : m_externalFiles) {
-        Q_ASSERT(file->getType() == FileType::Orphan);
-        VOrphanFile *oFile = dynamic_cast<VOrphanFile *>(file);
-        if (VUtils::equalPath(QDir::cleanPath(oFile->fetchPath()), path)) {
-            Q_ASSERT(oFile->isModifiable() == p_modifiable);
-            Q_ASSERT(oFile->isSystemFile() == p_systemFile);
+        if (VUtils::equalPath(QDir::cleanPath(file->fetchPath()), path)) {
+            Q_ASSERT(file->isModifiable() == p_modifiable);
+            Q_ASSERT(file->isSystemFile() == p_systemFile);
             return file;
         }
     }
 
     for (int i = 0; i < m_externalFiles.size(); ++i) {
-        VFile *file = m_externalFiles[i];
+        VOrphanFile *file = m_externalFiles[i];
         if (!file->isOpened()) {
             qDebug() << "release orphan file" << file;
             m_externalFiles.removeAt(i);
@@ -310,14 +309,14 @@ VFile *VNote::getOrphanFile(const QString &p_path, bool p_modifiable, bool p_sys
     }
 
     // Create a VOrphanFile for path.
-    VOrphanFile *file = new VOrphanFile(path, this, p_modifiable, p_systemFile);
+    VOrphanFile *file = new VOrphanFile(this, path, p_modifiable, p_systemFile);
     m_externalFiles.append(file);
     return file;
 }
 
-VFile *VNote::getInternalFile(const QString &p_path)
+VNoteFile *VNote::getInternalFile(const QString &p_path)
 {
-    VFile *file = NULL;
+    VNoteFile *file = NULL;
     for (auto & nb : m_notebooks) {
         file = nb->tryLoadFile(p_path);
         if (file) {

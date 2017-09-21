@@ -125,8 +125,9 @@ void VEditWindow::initTabActions()
                 VEditTab *editor = getTab(tab);
                 QPointer<VFile> file = editor->getFile();
                 Q_ASSERT(file);
-                if (file->getType() == FileType::Normal) {
-                    g_vnote->getMainWindow()->getFileList()->fileInfo(file);
+                if (file->getType() == FileType::Note) {
+                    VNoteFile *tmpFile = dynamic_cast<VNoteFile *>((VFile *)file);
+                    g_vnote->getMainWindow()->getFileList()->fileInfo(tmpFile);
                 } else if (file->getType() == FileType::Orphan) {
                     g_vnote->getMainWindow()->editOrphanFileInfo(file);
                 }
@@ -554,7 +555,7 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
 
     VEditTab *editor = getTab(tab);
     VFile *file = editor->getFile();
-    if (file->getType() == FileType::Normal) {
+    if (file->getType() == FileType::Note) {
         // Locate to folder.
         m_locateAct->setData(tab);
         menu.addAction(m_locateAct);
@@ -565,7 +566,7 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
         m_noteInfoAct->setData(tab);
         menu.addAction(m_noteInfoAct);
     } else if (file->getType() == FileType::Orphan
-               && !dynamic_cast<VOrphanFile *>(file)->isSystemFile()) {
+               && !(dynamic_cast<VOrphanFile *>(file)->isSystemFile())) {
         m_openLocationAct->setData(tab);
         menu.addAction(m_openLocationAct);
 
@@ -761,7 +762,7 @@ void VEditWindow::handleLocateAct()
     int tab = m_locateAct->data().toInt();
     VEditTab *editor = getTab(tab);
     QPointer<VFile> file = editor->getFile();
-    if (file->getType() == FileType::Normal) {
+    if (file->getType() == FileType::Note) {
         vnote->getMainWindow()->locateFile(file);
     }
 }

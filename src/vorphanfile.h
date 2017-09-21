@@ -3,78 +3,65 @@
 
 #include "vfile.h"
 
-// VOrphanFile is file not belong to any notebooks or directories.
+// VOrphanFile is a file not belonging to any notebooks or directories.
+// Such as external files, system files.
+// It uses the file path to locate and identify a file.
 class VOrphanFile : public VFile
 {
     Q_OBJECT
 public:
-    VOrphanFile(const QString &p_path, QObject *p_parent,
-                bool p_modifiable, bool p_systemFile = false);
+    VOrphanFile(QObject *p_parent,
+                const QString &p_path,
+                bool p_modifiable,
+                bool p_systemFile = false);
 
-    bool open() Q_DECL_OVERRIDE;
     QString fetchPath() const Q_DECL_OVERRIDE;
-    QString fetchRelativePath() const Q_DECL_OVERRIDE;
+
     QString fetchBasePath() const Q_DECL_OVERRIDE;
-    VDirectory *getDirectory() Q_DECL_OVERRIDE;
-    const VDirectory *getDirectory() const Q_DECL_OVERRIDE;
-    QString getNotebookName() const Q_DECL_OVERRIDE;
 
-    void setNotebookName(const QString &p_notebook);
+    QString fetchImageFolderPath() const Q_DECL_OVERRIDE;
 
-    VNotebook *getNotebook() Q_DECL_OVERRIDE;
-
-    // Rename file.
-    bool rename(const QString &p_name) Q_DECL_OVERRIDE;
-
-    void setImageFolder(const QString &p_path);
-
-    const QString getImageFolder() const;
-
-    // Whether the image folder is a relative path.
-    bool isRelativeImageFolder() const Q_DECL_OVERRIDE;
+    // Whether use a relative image folder.
+    bool useRelativeImageFolder() const Q_DECL_OVERRIDE;
 
     // Return the image folder part in an image link.
     QString getImageFolderInLink() const Q_DECL_OVERRIDE;
 
+    // Return image folder config.
+    const QString getImageFolder() const;
+
+    // Set the image folder config.
+    void setImageFolder(const QString &p_path);
+
     bool isSystemFile() const;
 
 private:
-    bool save() Q_DECL_OVERRIDE;
-    void setName(const QString &p_name) Q_DECL_OVERRIDE;
-    QString fetchImagePath() const Q_DECL_OVERRIDE;
-    void setContent(const QString &p_content) Q_DECL_OVERRIDE;
-    bool isInternalImageFolder(const QString &p_path) const Q_DECL_OVERRIDE;
-
-    static VFile *fromJson(const QJsonObject &p_json,
-                           QObject *p_parent,
-                           FileType p_type,
-                           bool p_modifiable);
-
-    QJsonObject toConfigJson() const;
-
+    // Full path of this file.
     QString m_path;
-
-    QString m_notebookName;
 
     // Image folder path of this file.
     // It could be an absolute or relative path.
     // Empty to use the global default config.
+    // Valid only within a session.
     QString m_imageFolder;
 
     // Whether it is a system internal file.
     bool m_systemFile;
-
-    friend class VDirectory;
 };
-
-inline bool VOrphanFile::isSystemFile() const
-{
-    return m_systemFile;
-}
 
 inline const QString VOrphanFile::getImageFolder() const
 {
     return m_imageFolder;
+}
+
+inline void VOrphanFile::setImageFolder(const QString &p_path)
+{
+    m_imageFolder = p_path;
+}
+
+inline bool VOrphanFile::isSystemFile() const
+{
+    return m_systemFile;
 }
 
 #endif // VORPHANFILE_H

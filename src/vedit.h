@@ -11,7 +11,7 @@
 #include <QFontMetrics>
 #include "vconstants.h"
 #include "vtoc.h"
-#include "vfile.h"
+#include "vnotefile.h"
 
 class VEditOperations;
 class QLabel;

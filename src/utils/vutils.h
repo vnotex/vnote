@@ -146,6 +146,12 @@ public:
                            const QString &p_path,
                            bool p_skipRecycleBin = false);
 
+    // Delete file specified by @p_path.
+    // Will just move the file to the recycle bin of VNote if
+    // @p_skipRecycleBin is false.
+    static bool deleteFile(const QString &p_path,
+                           bool p_skipRecycleBin = false);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
     // Captured texts (need to be trimmed):

@@ -4,7 +4,7 @@
 #include <QJsonArray>
 #include <QDebug>
 #include "vconfigmanager.h"
-#include "vfile.h"
+#include "vnotefile.h"
 #include "utils/vutils.h"
 
 extern VConfigManager *g_config;
@@ -53,10 +53,10 @@ bool VDirectory::open()
     QJsonArray fileJson = configJson[DirConfig::c_files].toArray();
     for (int i = 0; i < fileJson.size(); ++i) {
         QJsonObject fileItem = fileJson[i].toObject();
-        VFile *file = VFile::fromJson(fileItem,
-                                      this,
-                                      FileType::Normal,
-                                      true);
+        VNoteFile *file = VNoteFile::fromJson(this,
+                                              fileItem,
+                                              FileType::Note,
+                                              true);
         m_files.append(file);
     }
 
@@ -78,7 +78,7 @@ void VDirectory::close()
     m_subDirs.clear();
 
     for (int i = 0; i < m_files.size(); ++i) {
-        VFile *file = m_files[i];
+        VNoteFile *file = m_files[i];
         file->close();
         delete file;
     }
@@ -237,7 +237,7 @@ VDirectory *VDirectory::findSubDirectory(const QString &p_name, bool p_caseSensi
     return NULL;
 }
 
-VFile *VDirectory::findFile(const QString &p_name, bool p_caseSensitive)
+VNoteFile *VDirectory::findFile(const QString &p_name, bool p_caseSensitive)
 {
     if (!open()) {
         return NULL;
@@ -271,7 +271,7 @@ bool VDirectory::containsFile(const VFile *p_file) const
     return false;
 }
 
-VFile *VDirectory::createFile(const QString &p_name)
+VNoteFile *VDirectory::createFile(const QString &p_name)
 {
     Q_ASSERT(!p_name.isEmpty());
     if (!open()) {
@@ -288,12 +288,12 @@ VFile *VDirectory::createFile(const QString &p_name)
     file.close();
 
     QDateTime dateTime = QDateTime::currentDateTimeUtc();
-    VFile *ret = new VFile(this,
-                           p_name,
-                           FileType::Normal,
-                           true,
-                           dateTime,
-                           dateTime);
+    VNoteFile *ret = new VNoteFile(this,
+                                   p_name,
+                                   FileType::Note,
+                                   true,
+                                   dateTime,
+                                   dateTime);
     m_files.append(ret);
     if (!writeToConfig()) {
         file.remove();
@@ -307,7 +307,7 @@ VFile *VDirectory::createFile(const QString &p_name)
     return ret;
 }
 
-bool VDirectory::addFile(VFile *p_file, int p_index)
+bool VDirectory::addFile(VNoteFile *p_file, int p_index)
 {
     if (!open()) {
         return false;
@@ -336,19 +336,19 @@ bool VDirectory::addFile(VFile *p_file, int p_index)
     return true;
 }
 
-VFile *VDirectory::addFile(const QString &p_name, int p_index)
+VNoteFile *VDirectory::addFile(const QString &p_name, int p_index)
 {
     if (!open() || p_name.isEmpty()) {
         return NULL;
     }
 
     QDateTime dateTime = QDateTime::currentDateTimeUtc();
-    VFile *file = new VFile(this,
-                            p_name,
-                            FileType::Normal,
-                            true,
-                            dateTime,
-                            dateTime);
+    VNoteFile *file = new VNoteFile(this,
+                                    p_name,
+                                    FileType::Note,
+                                    true,
+                                    dateTime,
+                                    dateTime);
     if (!file) {
         return NULL;
     }
@@ -450,7 +450,7 @@ bool VDirectory::removeSubDirectory(VDirectory *p_dir)
     return true;
 }
 
-bool VDirectory::removeFile(VFile *p_file)
+bool VDirectory::removeFile(VNoteFile *p_file)
 {
     V_ASSERT(m_opened);
     V_ASSERT(p_file);
@@ -468,7 +468,7 @@ bool VDirectory::removeFile(VFile *p_file)
     return true;
 }
 
-void VDirectory::deleteFile(VFile *p_file)
+void VDirectory::deleteFile(VNoteFile *p_file)
 {
     removeFile(p_file);
 
@@ -476,7 +476,7 @@ void VDirectory::deleteFile(VFile *p_file)
     V_ASSERT(!p_file->isOpened());
     V_ASSERT(p_file->parent());
 
-    p_file->deleteDiskFile();
+    p_file->deleteFile();
 
     delete p_file;
 }
@@ -512,8 +512,8 @@ bool VDirectory::rename(const QString &p_name)
     return true;
 }
 
-VFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
-                            VFile *p_srcFile, bool p_cut)
+VNoteFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
+                                VNoteFile *p_srcFile, bool p_cut)
 {
     QString srcPath = QDir::cleanPath(p_srcFile->fetchPath());
     QString destPath = QDir::cleanPath(QDir(p_destDir->fetchPath()).filePath(p_destName));
@@ -536,9 +536,9 @@ VFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
         return NULL;
     }
 
-    // Handle VDirectory and VFile
+    // Handle VDirectory and VNoteFile
     int index = -1;
-    VFile *destFile = NULL;
+    VNoteFile *destFile = NULL;
     if (p_cut) {
         // Remove the file from config
         srcDir->removeFile(p_srcFile);
@@ -710,7 +710,7 @@ void VDirectory::reorderFiles(int p_first, int p_last, int p_destStart)
     }
 }
 
-VFile *VDirectory::tryLoadFile(QStringList &p_filePath)
+VNoteFile *VDirectory::tryLoadFile(QStringList &p_filePath)
 {
     qDebug() << "directory" << m_name << "tryLoadFile()" << p_filePath.join("/");
     if (p_filePath.isEmpty()) {
@@ -722,7 +722,7 @@ VFile *VDirectory::tryLoadFile(QStringList &p_filePath)
         return NULL;
     }
 
-    VFile *file = NULL;
+    VNoteFile *file = NULL;
 
 #if defined(Q_OS_WIN)
     bool caseSensitive = false;

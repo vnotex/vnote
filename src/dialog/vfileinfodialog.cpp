@@ -1,30 +1,31 @@
 #include <QtWidgets>
 #include "vfileinfodialog.h"
 #include "vdirectory.h"
-#include "vfile.h"
+#include "vnotefile.h"
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
 
 extern VConfigManager *g_config;
 
-VFileInfoDialog::VFileInfoDialog(const QString &title, const QString &info,
-                                 VDirectory *directory, const VFile *file,
+VFileInfoDialog::VFileInfoDialog(const QString &title,
+                                 const QString &info,
+                                 VDirectory *directory,
+                                 const VNoteFile *file,
                                  QWidget *parent)
-    : QDialog(parent), title(title), info(info),
-      m_directory(directory), m_file(file)
+    : QDialog(parent), m_directory(directory), m_file(file)
 {
-    setupUI();
+    setupUI(title, info);
 
     connect(nameEdit, &QLineEdit::textChanged, this, &VFileInfoDialog::handleInputChanged);
 
     handleInputChanged();
 }
 
-void VFileInfoDialog::setupUI()
+void VFileInfoDialog::setupUI(const QString &p_title, const QString &p_info)
 {
     QLabel *infoLabel = NULL;
-    if (!info.isEmpty()) {
-        infoLabel = new QLabel(info);
+    if (!p_info.isEmpty()) {
+        infoLabel = new QLabel(p_info);
     }
 
     // File name.
@@ -78,7 +79,7 @@ void VFileInfoDialog::setupUI()
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     setLayout(mainLayout);
 
-    setWindowTitle(title);
+    setWindowTitle(p_title);
 }
 
 void VFileInfoDialog::handleInputChanged()
@@ -89,7 +90,7 @@ void VFileInfoDialog::handleInputChanged()
     if (nameOk && name != m_file->getName()) {
         // Check if the name conflicts with existing note name.
         // Case-insensitive when creating note.
-        const VFile *file = m_directory->findFile(name, false);
+        const VNoteFile *file = m_directory->findFile(name, false);
         if (file && file != m_file) {
             nameOk = false;
             showWarnLabel = true;

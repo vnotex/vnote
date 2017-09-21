@@ -219,7 +219,7 @@ void VMdEdit::imageInserted(const QString &p_path)
 {
     ImageLink link;
     link.m_path = p_path;
-    if (m_file->isRelativeImageFolder()) {
+    if (m_file->useRelativeImageFolder()) {
         link.m_type = ImageLink::LocalRelativeInternal;
     } else {
         link.m_type = ImageLink::LocalAbsolute;
@@ -300,7 +300,15 @@ void VMdEdit::clearUnusedImages()
         }
 
         for (int i = 0; i < unusedImages.size(); ++i) {
-            if (!VUtils::deleteFile(m_file->getNotebook(), unusedImages[i], false)) {
+            bool ret = false;
+            if (m_file->getType() == FileType::Note) {
+                const VNoteFile *tmpFile = dynamic_cast<const VNoteFile *>((VFile *)m_file);
+                ret = VUtils::deleteFile(tmpFile->getNotebook(), unusedImages[i], false);
+            } else {
+                ret = VUtils::deleteFile(unusedImages[i], false);
+            }
+
+            if (!ret) {
                 qWarning() << "fail to delete unused original image" << unusedImages[i];
             } else {
                 qDebug() << "delete unused image" << unusedImages[i];

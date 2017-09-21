@@ -8,7 +8,7 @@
 #include <QStyleFactory>
 
 #include "veditwindow.h"
-#include "vfile.h"
+#include "vnotefile.h"
 #include "vedittab.h"
 #include "vdirectory.h"
 #include "utils/vutils.h"
@@ -18,8 +18,19 @@ static const int c_cmdTime = 1 * 1000;
 static bool fileComp(const VOpenedListMenu::ItemInfo &a,
                      const VOpenedListMenu::ItemInfo &b)
 {
-    QString notebooka = a.file->getNotebookName().toLower();
-    QString notebookb = b.file->getNotebookName().toLower();
+    QString notebooka, notebookb;
+    if (a.file->getType() == FileType::Note) {
+        notebooka = dynamic_cast<const VNoteFile *>(a.file)->getNotebookName().toLower();
+    } else {
+        notebooka = "EXTERNAL_FILES";
+    }
+
+    if (b.file->getType() == FileType::Note) {
+        notebookb = dynamic_cast<const VNoteFile *>(b.file)->getNotebookName().toLower();
+    } else {
+        notebookb = "EXTERNAL_FILES";
+    }
+
     if (notebooka < notebookb) {
         return true;
     } else if (notebooka > notebookb) {
@@ -87,11 +98,20 @@ void VOpenedListMenu::updateOpenedList()
         int index = files[i].index;
 
         // Whether add separator.
-        QString curNotebook = file->getNotebookName();
+        QString curNotebook;
+        const VDirectory *curDirectory = NULL;
+        if (file->getType() == FileType::Note) {
+            const VNoteFile *tmpFile = dynamic_cast<const VNoteFile *>((VFile *)file);
+            curNotebook = tmpFile->getNotebookName();
+            curDirectory = tmpFile->getDirectory();
+        } else {
+            curNotebook = "EXTERNAL_FILES";
+        }
+
         if (curNotebook != notebook
-            || file->getDirectory() != directory) {
+            || curDirectory != directory) {
             notebook = curNotebook;
-            directory = file->getDirectory();
+            directory = curDirectory;
             QString dirName;
             if (directory) {
                 dirName = directory->getName();
@@ -127,8 +147,14 @@ QString VOpenedListMenu::generateDescription(const VFile *p_file) const
     if (!p_file) {
         return "";
     }
+
     // [Notebook]path
-    return QString("[%1] %2").arg(p_file->getNotebookName()).arg(p_file->fetchPath());
+    if (p_file->getType() == FileType::Note) {
+        const VNoteFile *tmpFile = dynamic_cast<const VNoteFile *>(p_file);
+        return QString("[%1] %2").arg(tmpFile->getNotebookName()).arg(tmpFile->fetchPath());
+    } else {
+        return QString("%1").arg(p_file->fetchPath());
+    }
 }
 
 void VOpenedListMenu::handleItemTriggered(QAction *p_action)
