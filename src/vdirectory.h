@@ -82,6 +82,9 @@ public:
     QString getNotebookName() const;
     bool isExpanded() const;
     void setExpanded(bool p_expanded);
+
+    // Reorder files in m_files by index.
+    // Move [@p_first, @p_last] to @p_destStart.
     void reorderFiles(int p_first, int p_last, int p_destStart);
 
     // Serialize current instance to json.
@@ -96,6 +99,9 @@ public:
     // If it is root directory, this will include sections belonging to
     // notebook.
     bool writeToConfig() const;
+
+    // Write the config of @p_file to config file.
+    bool updateFileConfig(const VNoteFile *p_file);
 
     // Try to load file given relative path @p_filePath.
     VNoteFile *tryLoadFile(QStringList &p_filePath);

@@ -100,35 +100,35 @@ void VVimIndicator::setupUI()
 
     m_modeLabel = new QLabel(this);
 
-    m_regBtn = new VButtonWithWidget(QIcon(":/resources/icons/arrow_dropup.svg"),
-                                     "\"",
-                                     this);
-    m_regBtn->setToolTip(tr("Registers"));
-    m_regBtn->setProperty("StatusBtn", true);
-    m_regBtn->setFocusPolicy(Qt::NoFocus);
     QTreeWidget *regTree = new QTreeWidget(this);
     regTree->setColumnCount(2);
     regTree->header()->setStretchLastSection(true);
     QStringList headers;
     headers << tr("Register") << tr("Value");
     regTree->setHeaderLabels(headers);
-    m_regBtn->setPopupWidget(regTree);
+
+    m_regBtn = new VButtonWithWidget("\"",
+                                     regTree,
+                                     this);
+    m_regBtn->setToolTip(tr("Registers"));
+    m_regBtn->setProperty("StatusBtn", true);
+    m_regBtn->setFocusPolicy(Qt::NoFocus);
     connect(m_regBtn, &VButtonWithWidget::popupWidgetAboutToShow,
             this, &VVimIndicator::updateRegistersTree);
 
-    m_markBtn = new VButtonWithWidget(QIcon(":/resources/icons/arrow_dropup.svg"),
-                                      "[]",
-                                      this);
-    m_markBtn->setToolTip(tr("Marks"));
-    m_markBtn->setProperty("StatusBtn", true);
-    m_markBtn->setFocusPolicy(Qt::NoFocus);
     QTreeWidget *markTree = new QTreeWidget(this);
     markTree->setColumnCount(4);
     markTree->header()->setStretchLastSection(true);
     headers.clear();
     headers << tr("Mark") << tr("Line") << tr("Column") << tr("Text");
     markTree->setHeaderLabels(headers);
-    m_markBtn->setPopupWidget(markTree);
+
+    m_markBtn = new VButtonWithWidget("[]",
+                                      markTree,
+                                      this);
+    m_markBtn->setToolTip(tr("Marks"));
+    m_markBtn->setProperty("StatusBtn", true);
+    m_markBtn->setFocusPolicy(Qt::NoFocus);
     connect(m_markBtn, &VButtonWithWidget::popupWidgetAboutToShow,
             this, &VVimIndicator::updateMarksTree);
 

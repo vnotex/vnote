@@ -123,14 +123,13 @@ QString VUtils::generateImageFileName(const QString &path, const QString &title,
     baseName = baseName + '_' + QString::number(QDateTime::currentDateTime().toTime_t());
     baseName = baseName + '_' + QString::number(qrand());
 
+    QDir dir(path);
     QString imageName = baseName + "." + format.toLower();
-    QString filePath = QDir(path).filePath(imageName);
     int index = 1;
 
-    while (QFileInfo::exists(filePath)) {
+    while (fileExists(dir, imageName, true)) {
         imageName = QString("%1_%2.%3").arg(baseName).arg(index++)
                                        .arg(format.toLower());
-        filePath = QDir(path).filePath(imageName);
     }
 
     return imageName;
@@ -191,6 +190,7 @@ QVector<ImageLink> VUtils::fetchImagesFromMarkdownFile(VFile *p_file,
         QString linkText = text.mid(reg.m_startPos, reg.m_endPos - reg.m_startPos);
         bool matched = regExp.exactMatch(linkText);
         Q_ASSERT(matched);
+        Q_UNUSED(matched);
         QString imageUrl = regExp.capturedTexts()[2].trimmed();
 
         ImageLink link;
@@ -605,9 +605,23 @@ QString VUtils::getFileNameWithSequence(const QString &p_directory,
         if (!suffix.isEmpty()) {
             fileName = fileName + "." + suffix;
         }
-    } while (dir.exists(fileName));
+    } while (fileExists(dir, fileName, true));
 
     return fileName;
+}
+
+QString VUtils::getRandomFileName(const QString &p_directory)
+{
+    Q_ASSERT(!p_directory.isEmpty());
+
+    QString name;
+    QDir dir(p_directory);
+    do {
+        name = QString::number(QDateTime::currentDateTimeUtc().toTime_t());
+        name = name + '_' + QString::number(qrand());
+    } while (fileExists(dir, name, true));
+
+    return name;
 }
 
 bool VUtils::checkPathLegal(const QString &p_path)
@@ -868,4 +882,29 @@ QVector<VElementRegion> VUtils::fetchImageRegionsUsingParser(const QString &p_co
     pmh_free_elements(result);
 
     return regs;
+}
+
+QString VUtils::displayDateTime(const QDateTime &p_dateTime)
+{
+    QString res = p_dateTime.date().toString(Qt::DefaultLocaleLongDate);
+    res += " " + p_dateTime.time().toString();
+    return res;
+}
+
+bool VUtils::fileExists(const QDir &p_dir, const QString &p_name, bool p_forceCaseInsensitive)
+{
+    if (!p_forceCaseInsensitive) {
+        return p_dir.exists(p_name);
+    }
+
+    QString name = p_name.toLower();
+    QStringList names = p_dir.entryList(QDir::Dirs | QDir::Files | QDir::Hidden
+                                        | QDir::NoSymLinks | QDir::NoDotAndDotDot);
+    foreach (const QString &str, names) {
+        if (str.toLower() == name) {
+            return true;
+        }
+    }
+
+    return false;
 }

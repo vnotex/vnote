@@ -35,28 +35,37 @@ void VNotebookInfoDialog::setupUI(const QString &p_title, const QString &p_info)
     m_pathEdit = new QLineEdit(m_notebook->getPath());
     m_pathEdit->setReadOnly(true);
 
+    // Image folder.
     m_imageFolderEdit = new QLineEdit(m_notebook->getImageFolderConfig());
     m_imageFolderEdit->setPlaceholderText(tr("Use global configuration (%1)")
                                             .arg(g_config->getImageFolder()));
-    m_imageFolderEdit->setToolTip(tr("Set the name of the folder for all the notes of this notebook to store images "
+    m_imageFolderEdit->setToolTip(tr("Set the name of the folder to hold images of all the notes in this notebook "
                                      "(empty to use global configuration)"));
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp), m_imageFolderEdit);
     m_imageFolderEdit->setValidator(validator);
 
+    // Attachment folder.
+    Q_ASSERT(!m_notebook->getAttachmentFolder().isEmpty());
+    m_attachmentFolderEdit = new QLineEdit(m_notebook->getAttachmentFolder());
+    m_attachmentFolderEdit->setPlaceholderText(tr("Use global configuration (%1)")
+                                                 .arg(g_config->getAttachmentFolder()));
+    m_attachmentFolderEdit->setToolTip(tr("The folder to hold attachments of all the notes in this notebook"));
+    m_attachmentFolderEdit->setReadOnly(true);
+
     // Recycle bin folder.
     QLineEdit *recycleBinFolderEdit = new QLineEdit(m_notebook->getRecycleBinFolder());
     recycleBinFolderEdit->setReadOnly(true);
-    recycleBinFolderEdit->setToolTip(tr("The folder to hold deleted files from within VNote"));
+    recycleBinFolderEdit->setToolTip(tr("The folder to hold deleted files from within VNote of all the notes in this notebook"));
 
     // Created time.
-    QString createdTimeStr = const_cast<VNotebook *>(m_notebook)->getCreatedTimeUtc().toLocalTime()
-                                                                                     .toString(Qt::DefaultLocaleLongDate);
+    QString createdTimeStr = VUtils::displayDateTime(const_cast<VNotebook *>(m_notebook)->getCreatedTimeUtc().toLocalTime());
     QLabel *createdTimeLabel = new QLabel(createdTimeStr);
 
     QFormLayout *topLayout = new QFormLayout();
     topLayout->addRow(tr("Notebook &name:"), m_nameEdit);
     topLayout->addRow(tr("Notebook &root folder:"), m_pathEdit);
     topLayout->addRow(tr("&Image folder:"), m_imageFolderEdit);
+    topLayout->addRow(tr("Attachment folder:"), m_attachmentFolderEdit);
     topLayout->addRow(tr("Recycle bin folder:"), recycleBinFolderEdit);
     topLayout->addRow(tr("Created time:"), createdTimeLabel);
 

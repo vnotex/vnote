@@ -136,6 +136,13 @@ void VConfigManager::initialize()
     m_imageFolderExt = getConfigFromSettings("global",
                                              "external_image_folder").toString();
 
+    m_attachmentFolder = getConfigFromSettings("global",
+                                               "attachment_folder").toString();
+    if (m_attachmentFolder.isEmpty()) {
+        // Reset the default folder.
+        m_attachmentFolder = resetDefaultConfig("global", "attachment_folder").toString();
+    }
+
     m_enableTrailingSpaceHighlight = getConfigFromSettings("global",
                                                            "enable_trailing_space_highlight").toBool();
 
@@ -230,7 +237,7 @@ void VConfigManager::readNotebookFromSettings(QVector<VNotebook *> &p_notebooks,
         QString name = userSettings->value("name").toString();
         QString path = userSettings->value("path").toString();
         VNotebook *notebook = new VNotebook(name, path, parent);
-        notebook->readConfig();
+        notebook->readConfigNotebook();
         p_notebooks.append(notebook);
     }
     userSettings->endArray();

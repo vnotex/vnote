@@ -40,19 +40,24 @@ void VFileInfoDialog::setupUI(const QString &p_title, const QString &p_info)
     // Select without suffix.
     nameEdit->setSelection(baseStart, baseLength);
 
+    // Attachment folder.
+    QLineEdit *attachmentFolderEdit = new QLineEdit(m_file->getAttachmentFolder());
+    attachmentFolderEdit->setPlaceholderText(tr("Will be assigned when adding attachments"));
+    attachmentFolderEdit->setToolTip(tr("The folder to hold attachments of this note"));
+    attachmentFolderEdit->setReadOnly(true);
+
     // Created time.
-    QString createdTimeStr = m_file->getCreatedTimeUtc().toLocalTime()
-                                                        .toString(Qt::DefaultLocaleLongDate);
+    QString createdTimeStr = VUtils::displayDateTime(m_file->getCreatedTimeUtc().toLocalTime());
     QLabel *createdTimeLabel = new QLabel(createdTimeStr);
 
     // Modified time.
-    createdTimeStr = m_file->getModifiedTimeUtc().toLocalTime()
-                                                 .toString(Qt::DefaultLocaleLongDate);
+    createdTimeStr = VUtils::displayDateTime(m_file->getModifiedTimeUtc().toLocalTime());
     QLabel *modifiedTimeLabel = new QLabel(createdTimeStr);
     modifiedTimeLabel->setToolTip(tr("Last modified time within VNote"));
 
     QFormLayout *topLayout = new QFormLayout();
     topLayout->addRow(tr("Note &name:"), nameEdit);
+    topLayout->addRow(tr("Attachment folder:"), attachmentFolderEdit);
     topLayout->addRow(tr("Created time:"), createdTimeLabel);
     topLayout->addRow(tr("Modified time:"), modifiedTimeLabel);
 

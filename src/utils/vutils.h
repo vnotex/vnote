@@ -7,6 +7,7 @@
 #include <QPair>
 #include <QMessageBox>
 #include <QUrl>
+#include <QDir>
 #include "vconfigmanager.h"
 #include "vconstants.h"
 
@@ -104,6 +105,9 @@ public:
     static QString getFileNameWithSequence(const QString &p_directory,
                                            const QString &p_baseFileName);
 
+    // Get an available random file name in @p_directory.
+    static QString getRandomFileName(const QString &p_directory);
+
     // Try to check if @p_path is legal.
     static bool checkPathLegal(const QString &p_path);
 
@@ -151,6 +155,12 @@ public:
     // @p_skipRecycleBin is false.
     static bool deleteFile(const QString &p_path,
                            bool p_skipRecycleBin = false);
+
+    static QString displayDateTime(const QDateTime &p_dateTime);
+
+    // Check if file @p_name exists in @p_dir.
+    // @p_forceCaseInsensitive: if true, will check the name ignoring the case.
+    static bool fileExists(const QDir &p_dir, const QString &p_name, bool p_forceCaseInsensitive = false);
 
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )

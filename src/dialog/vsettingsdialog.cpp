@@ -295,7 +295,7 @@ VNoteManagementTab::VNoteManagementTab(QWidget *p_parent)
     // Note.
     // Image folder.
     m_customImageFolder = new QCheckBox(tr("Custom image folder"), this);
-    m_customImageFolder->setToolTip(tr("Set the global name of the image folder to store images "
+    m_customImageFolder->setToolTip(tr("Set the global name of the image folder to hold images "
                                        "of notes (restart VNote to make it work)"));
     connect(m_customImageFolder, &QCheckBox::stateChanged,
             this, &VNoteManagementTab::customImageFolderChanged);
@@ -310,14 +310,32 @@ VNoteManagementTab::VNoteManagementTab(QWidget *p_parent)
     imageFolderLayout->addWidget(m_customImageFolder);
     imageFolderLayout->addWidget(m_imageFolderEdit);
 
+    // Attachment folder.
+    m_customAttachmentFolder = new QCheckBox(tr("Custom attachment folder"), this);
+    m_customAttachmentFolder->setToolTip(tr("Set the global name of the attachment folder to hold attachments "
+                                            "of notes (restart VNote to make it work)"));
+    connect(m_customAttachmentFolder, &QCheckBox::stateChanged,
+            this, &VNoteManagementTab::customAttachmentFolderChanged);
+
+    m_attachmentFolderEdit = new QLineEdit(this);
+    m_attachmentFolderEdit->setPlaceholderText(tr("Name of the attachment folder"));
+    m_attachmentFolderEdit->setToolTip(m_customAttachmentFolder->toolTip());
+    validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp), this);
+    m_attachmentFolderEdit->setValidator(validator);
+
+    QHBoxLayout *attachmentFolderLayout = new QHBoxLayout();
+    attachmentFolderLayout->addWidget(m_customAttachmentFolder);
+    attachmentFolderLayout->addWidget(m_attachmentFolderEdit);
+
     QFormLayout *noteLayout = new QFormLayout();
     noteLayout->addRow(imageFolderLayout);
+    noteLayout->addRow(attachmentFolderLayout);
     m_noteBox->setLayout(noteLayout);
 
     // External File.
     // Image folder.
     m_customImageFolderExt = new QCheckBox(tr("Custom image folder"), this);
-    m_customImageFolderExt->setToolTip(tr("Set the path of the global image folder to store images "
+    m_customImageFolderExt->setToolTip(tr("Set the path of the global image folder to hold images "
                                           "of external files (restart VNote to make it work).\nYou "
                                           "could use both absolute or relative path here. If "
                                           "absolute path is used, VNote will not manage\nthose images, "
@@ -350,6 +368,10 @@ bool VNoteManagementTab::loadConfiguration()
         return false;
     }
 
+    if (!loadAttachmentFolder()) {
+        return false;
+    }
+
     if (!loadImageFolderExt()) {
         return false;
     }
@@ -360,6 +382,10 @@ bool VNoteManagementTab::loadConfiguration()
 bool VNoteManagementTab::saveConfiguration()
 {
     if (!saveImageFolder()) {
+        return false;
+    }
+
+    if (!saveAttachmentFolder()) {
         return false;
     }
 
@@ -400,6 +426,39 @@ void VNoteManagementTab::customImageFolderChanged(int p_state)
         m_imageFolderEdit->setFocus();
     } else {
         m_imageFolderEdit->setEnabled(false);
+    }
+}
+
+bool VNoteManagementTab::loadAttachmentFolder()
+{
+    bool isCustom = g_config->isCustomAttachmentFolder();
+
+    m_customAttachmentFolder->setChecked(isCustom);
+    m_attachmentFolderEdit->setText(g_config->getAttachmentFolder());
+    m_attachmentFolderEdit->setEnabled(isCustom);
+
+    return true;
+}
+
+bool VNoteManagementTab::saveAttachmentFolder()
+{
+    if (m_customAttachmentFolder->isChecked()) {
+        g_config->setAttachmentFolder(m_attachmentFolderEdit->text());
+    } else {
+        g_config->setAttachmentFolder("");
+    }
+
+    return true;
+}
+
+void VNoteManagementTab::customAttachmentFolderChanged(int p_state)
+{
+    if (p_state == Qt::Checked) {
+        m_attachmentFolderEdit->setEnabled(true);
+        m_attachmentFolderEdit->selectAll();
+        m_attachmentFolderEdit->setFocus();
+    } else {
+        m_attachmentFolderEdit->setEnabled(false);
     }
 }
 

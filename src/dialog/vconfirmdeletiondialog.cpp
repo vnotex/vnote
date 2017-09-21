@@ -56,8 +56,14 @@ private:
 VConfirmDeletionDialog::VConfirmDeletionDialog(const QString &p_title,
                                                const QString &p_info,
                                                const QVector<QString> &p_files,
+                                               bool p_enableAskAgain,
+                                               bool p_askAgainEnabled,
+                                               bool p_enablePreview,
                                                QWidget *p_parent)
-    : QDialog(p_parent)
+    : QDialog(p_parent),
+      m_enableAskAgain(p_enableAskAgain),
+      m_askAgainEnabled(p_askAgainEnabled),
+      m_enablePreview(p_enablePreview)
 {
     setupUI(p_title, p_info);
 
@@ -66,33 +72,44 @@ VConfirmDeletionDialog::VConfirmDeletionDialog(const QString &p_title,
 
 void VConfirmDeletionDialog::setupUI(const QString &p_title, const QString &p_info)
 {
-    QLabel *infoLabel = new QLabel(p_info);
+    QLabel *infoLabel = NULL;
+    if (!p_info.isEmpty()) {
+        infoLabel = new QLabel(p_info);
+        infoLabel->setWordWrap(true);
+    }
+
     m_listWidget = new QListWidget();
     connect(m_listWidget, &QListWidget::currentRowChanged,
             this, &VConfirmDeletionDialog::currentFileChanged);
 
     m_previewer = new QLabel();
 
-    m_askAgainCB = new QCheckBox(tr("Just delete them and do not ask for confirmation again"));
-    m_askAgainCB->setChecked(!g_config->getConfirmImagesCleanUp());
+    m_askAgainCB = new QCheckBox(tr("Do not ask for confirmation again"));
+    m_askAgainCB->setChecked(!m_askAgainEnabled);
+    m_askAgainCB->setVisible(m_enableAskAgain);
 
     // Ok is the default button.
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(m_btnBox, &QDialogButtonBox::accepted,
-            this, [this]() {
-                g_config->setConfirmImagesCleanUp(!m_askAgainCB->isChecked());
-                QDialog::accept();
-            });
+    connect(m_btnBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+    m_btnBox->button(QDialogButtonBox::Ok)->setStyleSheet(g_config->c_dangerBtnStyle);
 
     QHBoxLayout *midLayout = new QHBoxLayout;
     midLayout->addWidget(m_listWidget);
-    midLayout->addStretch();
-    midLayout->addWidget(m_previewer);
-    midLayout->addStretch();
+    if (m_enablePreview) {
+        midLayout->addStretch();
+        midLayout->addWidget(m_previewer);
+        midLayout->addStretch();
+    } else {
+        midLayout->addWidget(m_previewer);
+        m_previewer->setVisible(false);
+    }
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->addWidget(infoLabel);
+    if (infoLabel) {
+        mainLayout->addWidget(infoLabel);
+    }
+
     mainLayout->addWidget(m_askAgainCB);
     mainLayout->addWidget(m_btnBox);
     mainLayout->addLayout(midLayout);
@@ -137,10 +154,15 @@ void VConfirmDeletionDialog::initFileItems(const QVector<QString> &p_files)
     m_listWidget->setCurrentRow(0);
 }
 
+bool VConfirmDeletionDialog::getAskAgainEnabled() const
+{
+    return !m_askAgainCB->isChecked();
+}
+
 void VConfirmDeletionDialog::currentFileChanged(int p_row)
 {
     bool succeed = false;
-    if (p_row > -1) {
+    if (p_row > -1 && m_enablePreview) {
         ConfirmItemWidget *widget = getItemWidget(m_listWidget->item(p_row));
         if (widget) {
             QPixmap image(widget->getFile());

@@ -29,7 +29,9 @@ namespace DirConfig
     static const QString c_version = "version";
     static const QString c_subDirectories = "sub_directories";
     static const QString c_files = "files";
+    static const QString c_attachments = "attachments";
     static const QString c_imageFolder = "image_folder";
+    static const QString c_attachmentFolder = "attachment_folder";
     static const QString c_recycleBinFolder = "recycle_bin_folder";
     static const QString c_name = "name";
     static const QString c_createdTime = "created_time";

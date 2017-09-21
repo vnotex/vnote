@@ -75,7 +75,9 @@ SOURCES += main.cpp\
     vtextblockdata.cpp \
     utils/vpreviewutils.cpp \
     dialog/vconfirmdeletiondialog.cpp \
-    vnotefile.cpp
+    vnotefile.cpp \
+    vattachmentlist.cpp \
+    dialog/vsortdialog.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -138,7 +140,9 @@ HEADERS  += vmainwindow.h \
     vtextblockdata.h \
     utils/vpreviewutils.h \
     dialog/vconfirmdeletiondialog.h \
-    vnotefile.h
+    vnotefile.h \
+    vattachmentlist.h \
+    dialog/vsortdialog.h
 
 RESOURCES += \
     vnote.qrc \

@@ -4,6 +4,8 @@
 #include <QDebug>
 #include <QTextEdit>
 #include <QFileInfo>
+#include <QJsonObject>
+#include <QJsonArray>
 #include <QDebug>
 
 #include "utils/vutils.h"
@@ -14,8 +16,12 @@ VNoteFile::VNoteFile(VDirectory *p_directory,
                      FileType p_type,
                      bool p_modifiable,
                      QDateTime p_createdTimeUtc,
-                     QDateTime p_modifiedTimeUtc)
-    : VFile(p_directory, p_name, p_type, p_modifiable, p_createdTimeUtc, p_modifiedTimeUtc)
+                     QDateTime p_modifiedTimeUtc,
+                     const QString &p_attachmentFolder,
+                     const QVector<VAttachment> &p_attachments)
+    : VFile(p_directory, p_name, p_type, p_modifiable, p_createdTimeUtc, p_modifiedTimeUtc),
+      m_attachmentFolder(p_attachmentFolder),
+      m_attachments(p_attachments)
 {
 }
 
@@ -124,6 +130,14 @@ VNoteFile *VNoteFile::fromJson(VDirectory *p_directory,
                                FileType p_type,
                                bool p_modifiable)
 {
+    // Attachments.
+    QJsonArray attachmentJson = p_json[DirConfig::c_attachments].toArray();
+    QVector<VAttachment> attachments;
+    for (int i = 0; i < attachmentJson.size(); ++i) {
+        QJsonObject attachmentItem = attachmentJson[i].toObject();
+        attachments.push_back(VAttachment(attachmentItem[DirConfig::c_name].toString()));
+    }
+
     return new VNoteFile(p_directory,
                          p_json[DirConfig::c_name].toString(),
                          p_type,
@@ -131,7 +145,9 @@ VNoteFile *VNoteFile::fromJson(VDirectory *p_directory,
                          QDateTime::fromString(p_json[DirConfig::c_createdTime].toString(),
                                                Qt::ISODate),
                          QDateTime::fromString(p_json[DirConfig::c_modifiedTime].toString(),
-                                               Qt::ISODate));
+                                               Qt::ISODate),
+                         p_json[DirConfig::c_attachmentFolder].toString(),
+                         attachments);
 }
 
 QJsonObject VNoteFile::toConfigJson() const
@@ -140,6 +156,18 @@ QJsonObject VNoteFile::toConfigJson() const
     item[DirConfig::c_name] = m_name;
     item[DirConfig::c_createdTime] = m_createdTimeUtc.toString(Qt::ISODate);
     item[DirConfig::c_modifiedTime] = m_modifiedTimeUtc.toString(Qt::ISODate);
+    item[DirConfig::c_attachmentFolder] = m_attachmentFolder;
+
+    // Attachments.
+    QJsonArray attachmentJson;
+    for (int i = 0; i < m_attachments.size(); ++i) {
+        const VAttachment &item = m_attachments[i];
+        QJsonObject attachmentItem;
+        attachmentItem[DirConfig::c_name] = item.m_name;
+        attachmentJson.append(attachmentItem);
+    }
+
+    item[DirConfig::c_attachments] = attachmentJson;
 
     return item;
 }
@@ -185,3 +213,150 @@ void VNoteFile::deleteInternalImages()
     qDebug() << "delete" << deleted << "images for" << m_name << fetchPath();
 }
 
+bool VNoteFile::addAttachment(const QString &p_file)
+{
+    if (p_file.isEmpty() || !QFileInfo::exists(p_file)) {
+        return false;
+    }
+
+    QString folderPath = fetchAttachmentFolderPath();
+    QString name = VUtils::fileNameFromPath(p_file);
+    Q_ASSERT(!name.isEmpty());
+    name = VUtils::getFileNameWithSequence(folderPath, name);
+    QString destPath = QDir(folderPath).filePath(name);
+    if (!VUtils::copyFile(p_file, destPath, false)) {
+        return false;
+    }
+
+    m_attachments.push_back(VAttachment(name));
+
+    if (!getDirectory()->updateFileConfig(this)) {
+        qWarning() << "fail to update config of file" << m_name
+                   << "in directory" << fetchBasePath();
+        return false;
+    }
+
+    return true;
+}
+
+QString VNoteFile::fetchAttachmentFolderPath()
+{
+    QString folderPath = QDir(fetchBasePath()).filePath(getNotebook()->getAttachmentFolder());
+    if (m_attachmentFolder.isEmpty()) {
+        m_attachmentFolder = VUtils::getRandomFileName(folderPath);
+    }
+
+    folderPath = QDir(folderPath).filePath(m_attachmentFolder);
+    if (!QFileInfo::exists(folderPath)) {
+        QDir dir;
+        if (!dir.mkpath(folderPath)) {
+            qWarning() << "fail to create attachment folder of notebook" << m_name << folderPath;
+        }
+    }
+
+    return folderPath;
+}
+
+bool VNoteFile::deleteAttachments()
+{
+    if (m_attachments.isEmpty()) {
+        return true;
+    }
+
+    QVector<QString> attas;
+    for (int i = 0; i < m_attachments.size(); ++i) {
+        attas.push_back(m_attachments[i].m_name);
+    }
+
+    return deleteAttachments(attas);
+}
+
+bool VNoteFile::deleteAttachments(const QVector<QString> &p_names)
+{
+    if (p_names.isEmpty()) {
+        return true;
+    }
+
+    QDir dir(fetchAttachmentFolderPath());
+    bool ret = true;
+    for (int i = 0; i < p_names.size(); ++i) {
+        int idx = findAttachment(p_names[i]);
+        if (idx == -1) {
+            ret = false;
+            continue;
+        }
+
+        m_attachments.remove(idx);
+        if (!VUtils::deleteFile(getNotebook(), dir.filePath(p_names[i]), false)) {
+            ret = false;
+            qWarning() << "fail to delete attachment" << p_names[i]
+                       << "for note" << m_name;
+        }
+    }
+
+    if (!getDirectory()->updateFileConfig(this)) {
+        qWarning() << "fail to update config of file" << m_name
+                   << "in directory" << fetchBasePath();
+        ret = false;
+    }
+
+    return ret;
+}
+
+int VNoteFile::findAttachment(const QString &p_name, bool p_caseSensitive)
+{
+    const QString name = p_caseSensitive ? p_name : p_name.toLower();
+    for (int i = 0; i < m_attachments.size(); ++i) {
+        QString attaName = p_caseSensitive ? m_attachments[i].m_name
+                                           : m_attachments[i].m_name.toLower();
+        if (name == attaName) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+void VNoteFile::sortAttachments(QVector<int> p_sortedIdx)
+{
+    V_ASSERT(m_opened);
+    V_ASSERT(p_sortedIdx.size() == m_attachments.size());
+
+    auto oriFiles = m_attachments;
+
+    for (int i = 0; i < p_sortedIdx.size(); ++i) {
+        m_attachments[i] = oriFiles[p_sortedIdx[i]];
+    }
+
+    if (!getDirectory()->updateFileConfig(this)) {
+        qWarning() << "fail to reorder files in config" << p_sortedIdx;
+        m_attachments = oriFiles;
+    }
+}
+
+bool VNoteFile::renameAttachment(const QString &p_oldName, const QString &p_newName)
+{
+    int idx = findAttachment(p_oldName);
+    if (idx == -1) {
+        return false;
+    }
+
+    QDir dir(fetchAttachmentFolderPath());
+    if (!dir.rename(p_oldName, p_newName)) {
+        qWarning() << "fail to rename attachment file" << p_oldName << p_newName;
+        return false;
+    }
+
+    m_attachments[idx].m_name = p_newName;
+
+    if (!getDirectory()->updateFileConfig(this)) {
+        qWarning() << "fail to rename attachment in config" << p_oldName << p_newName;
+
+        m_attachments[idx].m_name = p_oldName;
+        dir.rename(p_newName, p_oldName);
+
+        return false;
+    }
+
+    return true;
+}

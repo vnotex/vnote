@@ -41,6 +41,8 @@ private:
     QLineEdit *m_nameEdit;
     QLineEdit *m_pathEdit;
     QLineEdit *m_imageFolderEdit;
+    // Read-only.
+    QLineEdit *m_attachmentFolderEdit;
     QLabel *m_warnLabel;
     QDialogButtonBox *m_btnBox;
     const QVector<VNotebook *> &m_notebooks;

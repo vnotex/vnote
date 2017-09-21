@@ -29,6 +29,10 @@ public:
     // Empty string indicates using global config.
     QString getImageFolder() const;
 
+    // Get the custom attachment folder for this notebook.
+    // Empty string indicates using global config.
+    QString getAttachmentFolder() const;
+
 private slots:
     void handleBrowseBtnClicked();
 
@@ -39,7 +43,7 @@ protected:
     void showEvent(QShowEvent *event) Q_DECL_OVERRIDE;
 
 private:
-    void setupUI();
+    void setupUI(const QString &p_title, const QString &p_info);
 
     // Should be called before enableOkButton() when path changed.
     void checkRootFolder(const QString &p_path);
@@ -53,10 +57,9 @@ private:
     QPushButton *browseBtn;
     QLabel *m_warnLabel;
     QLineEdit *m_imageFolderEdit;
+    QLineEdit *m_attachmentFolderEdit;
     QDialogButtonBox *m_btnBox;
 
-    QString title;
-    QString info;
     QString defaultName;
     QString defaultPath;
 

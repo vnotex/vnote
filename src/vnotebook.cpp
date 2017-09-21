@@ -24,7 +24,7 @@ VNotebook::~VNotebook()
     delete m_rootDir;
 }
 
-bool VNotebook::readConfig()
+bool VNotebook::readConfigNotebook()
 {
     QJsonObject configJson = VConfigManager::readDirectoryConfig(m_path);
     if (configJson.isEmpty()) {
@@ -44,6 +44,20 @@ bool VNotebook::readConfig()
         m_recycleBinFolder = it.value().toString();
     }
 
+    // [attachment_folder] section.
+    // SHOULD be processed at last.
+    it = configJson.find(DirConfig::c_attachmentFolder);
+    if (it != configJson.end()) {
+        m_attachmentFolder = it.value().toString();
+    }
+
+    // We do not allow empty attachment folder.
+    if (m_attachmentFolder.isEmpty()) {
+        m_attachmentFolder = g_config->getAttachmentFolder();
+        Q_ASSERT(!m_attachmentFolder.isEmpty());
+        writeConfigNotebook();
+    }
+
     return true;
 }
 
@@ -53,6 +67,9 @@ QJsonObject VNotebook::toConfigJsonNotebook() const
 
     // [image_folder] section.
     json[DirConfig::c_imageFolder] = m_imageFolder;
+
+    // [attachment_folder] section.
+    json[DirConfig::c_attachmentFolder] = m_attachmentFolder;
 
     // [recycle_bin_folder] section.
     json[DirConfig::c_recycleBinFolder] = m_recycleBinFolder;
@@ -126,8 +143,11 @@ bool VNotebook::open()
     return m_rootDir->open();
 }
 
-VNotebook *VNotebook::createNotebook(const QString &p_name, const QString &p_path,
-                                     bool p_import, const QString &p_imageFolder,
+VNotebook *VNotebook::createNotebook(const QString &p_name,
+                                     const QString &p_path,
+                                     bool p_import,
+                                     const QString &p_imageFolder,
+                                     const QString &p_attachmentFolder,
                                      QObject *p_parent)
 {
     VNotebook *nb = new VNotebook(p_name, p_path, p_parent);
@@ -136,10 +156,18 @@ VNotebook *VNotebook::createNotebook(const QString &p_name, const QString &p_pat
     // its image folder.
     nb->setImageFolder(p_imageFolder);
 
+    // If @p_attachmentFolder is empty, use global configured folder.
+    QString attachmentFolder = p_attachmentFolder;
+    if (attachmentFolder.isEmpty()) {
+        attachmentFolder = g_config->getAttachmentFolder();
+    }
+
+    nb->setAttachmentFolder(attachmentFolder);
+
     // Check if there alread exists a config file.
     if (p_import && VConfigManager::directoryConfigExist(p_path)) {
         qDebug() << "import existing notebook";
-        nb->readConfig();
+        nb->readConfigNotebook();
         return nb;
     }
 
@@ -269,6 +297,16 @@ void VNotebook::setImageFolder(const QString &p_imageFolder)
 const QString &VNotebook::getImageFolderConfig() const
 {
     return m_imageFolder;
+}
+
+const QString &VNotebook::getAttachmentFolder() const
+{
+    return m_attachmentFolder;
+}
+
+void VNotebook::setAttachmentFolder(const QString &p_attachmentFolder)
+{
+    m_attachmentFolder = p_attachmentFolder;
 }
 
 bool VNotebook::isOpened() const

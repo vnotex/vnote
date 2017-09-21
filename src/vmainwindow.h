@@ -35,6 +35,8 @@ class VSingleInstanceGuard;
 class QTimer;
 class QSystemTrayIcon;
 class QShortcut;
+class VButtonWithWidget;
+class VAttachmentList;
 
 class VMainWindow : public QMainWindow
 {
@@ -64,6 +66,9 @@ public:
 
     // Try to open @p_filePath as internal note.
     bool tryOpenInternalFile(const QString &p_filePath);
+
+    // Show a temporary message in status bar.
+    void showStatusMessage(const QString &p_msg);
 
 private slots:
     void importNoteFromFile();
@@ -107,9 +112,6 @@ private slots:
     void printNote();
     void exportAsPDF();
 
-    // Show a temporary message in status bar.
-    void showStatusMessage(const QString &p_msg);
-
     // Handle Vim status updated.
     void handleVimStatusUpdated(const VVim *p_vim);
 
@@ -139,6 +141,8 @@ private:
     void initToolBar();
     void initFileToolBar(QSize p_iconSize = QSize());
     void initViewToolBar(QSize p_iconSize = QSize());
+
+    void initNoteToolBar(QSize p_iconSize = QSize());
 
     // Init the Edit toolbar.
     void initEditToolBar(QSize p_iconSize = QSize());
@@ -248,6 +252,12 @@ private:
 
     // Edit Toolbar.
     QToolBar *m_editToolBar;
+
+    // Attachment button.
+    VButtonWithWidget *m_attachmentBtn;
+
+    // Attachment list.
+    VAttachmentList *m_attachmentList;
 
     QVector<QPixmap> predefinedColorPixmaps;
 

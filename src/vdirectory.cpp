@@ -163,6 +163,13 @@ bool VDirectory::writeToConfig() const
     return writeToConfig(json);
 }
 
+bool VDirectory::updateFileConfig(const VNoteFile *p_file)
+{
+    Q_ASSERT(m_opened);
+    Q_UNUSED(p_file);
+    return writeToConfig();
+}
+
 bool VDirectory::writeToConfig(const QJsonObject &p_json) const
 {
     return VConfigManager::writeDirectoryConfig(fetchPath(), p_json);

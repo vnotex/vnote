@@ -291,9 +291,13 @@ void VMdEdit::clearUnusedImages()
             VConfirmDeletionDialog dialog(tr("Confirm Cleaning Up Unused Images"),
                                           info,
                                           unusedImages,
+                                          true,
+                                          g_config->getConfirmImagesCleanUp(),
+                                          true,
                                           this);
             if (dialog.exec()) {
                 unusedImages = dialog.getConfirmedFiles();
+                g_config->setConfirmImagesCleanUp(dialog.getAskAgainEnabled());
             } else {
                 unusedImages.clear();
             }

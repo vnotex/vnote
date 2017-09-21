@@ -43,8 +43,11 @@ public:
 
     void rename(const QString &p_name);
 
-    static VNotebook *createNotebook(const QString &p_name, const QString &p_path,
-                                     bool p_import, const QString &p_imageFolder,
+    static VNotebook *createNotebook(const QString &p_name,
+                                     const QString &p_path,
+                                     bool p_import,
+                                     const QString &p_imageFolder,
+                                     const QString &p_attachmentFolder,
                                      QObject *p_parent = 0);
 
     static bool deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles);
@@ -56,6 +59,11 @@ public:
     // Return m_imageFolder.
     const QString &getImageFolderConfig() const;
 
+    // Different from image folder. We could not change the attachment folder
+    // of a notebook once it has been created.
+    // Get the attachment folder for this notebook to use.
+    const QString &getAttachmentFolder() const;
+
     // Return m_recycleBinFolder.
     const QString &getRecycleBinFolder() const;
 
@@ -64,9 +72,10 @@ public:
 
     void setImageFolder(const QString &p_imageFolder);
 
-    // Read configurations (excluding "sub_directories" and "files" section)
-    // from root directory config file.
-    bool readConfig();
+    void setAttachmentFolder(const QString &p_attachmentFolder);
+
+    // Read configurations (only notebook part) directly from root directory config file.
+    bool readConfigNotebook();
 
     // Write configurations only related to notebook to root directory config file.
     bool writeConfigNotebook() const;
@@ -94,6 +103,10 @@ private:
     // If not empty, VNote will store images in this folder within the same directory of the note.
     // Otherwise, VNote will use the global configured folder.
     QString m_imageFolder;
+
+    // Folder name to store attachments.
+    // Should not be empty and changed once a notebook is created.
+    QString m_attachmentFolder;
 
     // Folder name to store deleted files.
     // Could be relative or absolute.

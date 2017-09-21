@@ -69,9 +69,14 @@ public:
     QCheckBox *m_customImageFolderExt;
     QLineEdit *m_imageFolderEditExt;
 
+    // Attachment folder.
+    QCheckBox *m_customAttachmentFolder;
+    QLineEdit *m_attachmentFolderEdit;
+
 private slots:
     void customImageFolderChanged(int p_state);
     void customImageFolderExtChanged(int p_state);
+    void customAttachmentFolderChanged(int p_state);
 
 private:
     bool loadImageFolder();
@@ -79,6 +84,9 @@ private:
 
     bool loadImageFolderExt();
     bool saveImageFolderExt();
+
+    bool loadAttachmentFolder();
+    bool saveAttachmentFolder();
 };
 
 class VMarkdownTab : public QWidget

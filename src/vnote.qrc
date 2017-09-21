@@ -123,5 +123,12 @@
         <file>utils/highlightjs/highlightjs-line-numbers.min.js</file>
         <file>resources/icons/recycle_bin.svg</file>
         <file>resources/icons/empty_recycle_bin.svg</file>
+        <file>resources/icons/attachment.svg</file>
+        <file>resources/icons/attachment_full.svg</file>
+        <file>resources/icons/add_attachment.svg</file>
+        <file>resources/icons/clear_attachment.svg</file>
+        <file>resources/icons/locate_attachment.svg</file>
+        <file>resources/icons/delete_attachment.svg</file>
+        <file>resources/icons/sort.svg</file>
     </qresource>
 </RCC>

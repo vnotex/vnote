@@ -271,9 +271,10 @@ bool VNotebookSelector::newNotebook()
         createNotebook(dialog.getNameInput(),
                        dialog.getPathInput(),
                        dialog.isImportExistingNotebook(),
-                       dialog.getImageFolder());
+                       dialog.getImageFolder(),
+                       dialog.getAttachmentFolder());
 
-        emit notebookCreated();
+        emit notebookCreated(dialog.getNameInput(), dialog.isImportExistingNotebook());
         return true;
     }
 
@@ -283,10 +284,12 @@ bool VNotebookSelector::newNotebook()
 void VNotebookSelector::createNotebook(const QString &p_name,
                                        const QString &p_path,
                                        bool p_import,
-                                       const QString &p_imageFolder)
+                                       const QString &p_imageFolder,
+                                       const QString &p_attachmentFolder)
 {
     VNotebook *nb = VNotebook::createNotebook(p_name, p_path, p_import,
-                                              p_imageFolder, m_vnote);
+                                              p_imageFolder, p_attachmentFolder,
+                                              m_vnote);
     if (!nb) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                             tr("Fail to create notebook "
@@ -383,6 +386,7 @@ void VNotebookSelector::editNotebookInfo()
                                m_notebooks, this);
     if (dialog.exec() == QDialog::Accepted) {
         bool updated = false;
+        bool configUpdated = false;
         QString name = dialog.getName();
         if (name != curName) {
             updated = true;
@@ -393,8 +397,12 @@ void VNotebookSelector::editNotebookInfo()
 
         QString imageFolder = dialog.getImageFolder();
         if (imageFolder != notebook->getImageFolderConfig()) {
-            updated = true;
+            configUpdated = true;
             notebook->setImageFolder(imageFolder);
+        }
+
+        if (configUpdated) {
+            updated = true;
             notebook->writeConfigNotebook();
         }
 

@@ -12,11 +12,11 @@ VNewNotebookDialog::VNewNotebookDialog(const QString &title, const QString &info
                                        const QVector<VNotebook *> &p_notebooks,
                                        QWidget *parent)
     : QDialog(parent),
-      title(title), info(info), defaultName(defaultName), defaultPath(defaultPath),
+      defaultName(defaultName), defaultPath(defaultPath),
       m_importNotebook(false), m_manualPath(false), m_manualName(false),
       m_notebooks(p_notebooks)
 {
-    setupUI();
+    setupUI(title, info);
 
     connect(nameEdit, &QLineEdit::textChanged, this, &VNewNotebookDialog::handleInputChanged);
     connect(pathEdit, &QLineEdit::textChanged, this, &VNewNotebookDialog::handleInputChanged);
@@ -25,11 +25,11 @@ VNewNotebookDialog::VNewNotebookDialog(const QString &title, const QString &info
     handleInputChanged();
 }
 
-void VNewNotebookDialog::setupUI()
+void VNewNotebookDialog::setupUI(const QString &p_title, const QString &p_info)
 {
     QLabel *infoLabel = NULL;
-    if (!info.isEmpty()) {
-        infoLabel = new QLabel(info);
+    if (!p_info.isEmpty()) {
+        infoLabel = new QLabel(p_info);
         infoLabel->setWordWrap(true);
     }
 
@@ -44,15 +44,25 @@ void VNewNotebookDialog::setupUI()
 
     QLabel *imageFolderLabel = new QLabel(tr("&Image folder:"));
     m_imageFolderEdit = new QLineEdit();
+    imageFolderLabel->setBuddy(m_imageFolderEdit);
     m_imageFolderEdit->setPlaceholderText(tr("Use global configuration (%1)")
                                             .arg(g_config->getImageFolder()));
-    imageFolderLabel->setBuddy(m_imageFolderEdit);
-    QString imageFolderTip = tr("Set the name of the folder for all the notes of this notebook to store images "
-                                "(empty to use global configuration)");
-    m_imageFolderEdit->setToolTip(imageFolderTip);
-    imageFolderLabel->setToolTip(imageFolderTip);
+    m_imageFolderEdit->setToolTip(tr("Set the name of the folder to hold images of all the notes in this notebook "
+                                     "(empty to use global configuration)"));
+    imageFolderLabel->setToolTip(m_imageFolderEdit->toolTip());
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp), m_imageFolderEdit);
     m_imageFolderEdit->setValidator(validator);
+
+    QLabel *attachmentFolderLabel = new QLabel(tr("&Attachment folder:"));
+    m_attachmentFolderEdit = new QLineEdit();
+    attachmentFolderLabel->setBuddy(m_attachmentFolderEdit);
+    m_attachmentFolderEdit->setPlaceholderText(tr("Use global configuration (%1)")
+                                                 .arg(g_config->getAttachmentFolder()));
+    m_attachmentFolderEdit->setToolTip(tr("Set the name of the folder to hold attachments of all the notes in this notebook "
+                                          "(empty to use global configuration, read-only once created)"));
+    attachmentFolderLabel->setToolTip(m_attachmentFolderEdit->toolTip());
+    validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp), m_attachmentFolderEdit);
+    m_attachmentFolderEdit->setValidator(validator);
 
     QGridLayout *topLayout = new QGridLayout();
     topLayout->addWidget(nameLabel, 0, 0);
@@ -62,6 +72,8 @@ void VNewNotebookDialog::setupUI()
     topLayout->addWidget(browseBtn, 1, 2);
     topLayout->addWidget(imageFolderLabel, 2, 0);
     topLayout->addWidget(m_imageFolderEdit, 2, 1);
+    topLayout->addWidget(attachmentFolderLabel, 3, 0);
+    topLayout->addWidget(m_attachmentFolderEdit, 3, 1);
 
     // Warning label.
     m_warnLabel = new QLabel();
@@ -87,7 +99,7 @@ void VNewNotebookDialog::setupUI()
     // Will set the parent of above widgets properly.
     setLayout(mainLayout);
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
-    setWindowTitle(title);
+    setWindowTitle(p_title);
 }
 
 QString VNewNotebookDialog::getNameInput() const
@@ -106,6 +118,15 @@ QString VNewNotebookDialog::getImageFolder() const
 {
     if (m_imageFolderEdit->isEnabled()) {
         return m_imageFolderEdit->text();
+    } else {
+        return QString();
+    }
+}
+
+QString VNewNotebookDialog::getAttachmentFolder() const
+{
+    if (m_attachmentFolderEdit->isEnabled()) {
+        return m_attachmentFolderEdit->text();
     } else {
         return QString();
     }
@@ -251,6 +272,7 @@ void VNewNotebookDialog::handleInputChanged()
     m_warnLabel->setVisible(showWarnLabel);
     m_importNotebook = configExist;
     m_imageFolderEdit->setEnabled(!m_importNotebook);
+    m_attachmentFolderEdit->setEnabled(!m_importNotebook);
 
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
     okBtn->setEnabled(nameOk && pathOk);

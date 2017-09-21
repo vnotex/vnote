@@ -2,6 +2,7 @@
 #include "vdirinfodialog.h"
 #include "vdirectory.h"
 #include "vconfigmanager.h"
+#include "utils/vutils.h"
 
 extern VConfigManager *g_config;
 
@@ -31,8 +32,7 @@ void VDirInfoDialog::setupUI()
     nameEdit->selectAll();
 
     // Created time.
-    QString createdTimeStr = m_directory->getCreatedTimeUtc().toLocalTime()
-                                                             .toString(Qt::DefaultLocaleLongDate);
+    QString createdTimeStr = VUtils::displayDateTime(m_directory->getCreatedTimeUtc().toLocalTime());
     QLabel *createdTimeLabel = new QLabel(createdTimeStr);
 
     QFormLayout *topLayout = new QFormLayout();

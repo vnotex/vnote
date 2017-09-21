@@ -19,9 +19,14 @@ public:
     VConfirmDeletionDialog(const QString &p_title,
                            const QString &p_info,
                            const QVector<QString> &p_files,
+                           bool p_enableAskAgain,
+                           bool p_askAgainEnabled,
+                           bool p_enablePreview,
                            QWidget *p_parent = 0);
 
     QVector<QString> getConfirmedFiles() const;
+
+    bool getAskAgainEnabled() const;
 
 private slots:
     void currentFileChanged(int p_row);
@@ -37,6 +42,12 @@ private:
     QLabel *m_previewer;
     QDialogButtonBox *m_btnBox;
     QCheckBox *m_askAgainCB;
+
+    bool m_enableAskAgain;
+    // Init value if m_enableAskAgain is true.
+    bool m_askAgainEnabled;
+
+    bool m_enablePreview;
 };
 
 #endif // VCONFIRMDELETIONDIALOG_H

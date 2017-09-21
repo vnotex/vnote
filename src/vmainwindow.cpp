@@ -27,6 +27,8 @@
 #include "dialog/vorphanfileinfodialog.h"
 #include "vsingleinstanceguard.h"
 #include "vnotefile.h"
+#include "vbuttonwithwidget.h"
+#include "vattachmentlist.h"
 
 extern VConfigManager *g_config;
 
@@ -124,7 +126,12 @@ void VMainWindow::setupUI()
     connect(notebookSelector, &VNotebookSelector::notebookUpdated,
             editArea, &VEditArea::handleNotebookUpdated);
     connect(notebookSelector, &VNotebookSelector::notebookCreated,
-            directoryTree, &VDirectoryTree::newRootDirectory);
+            directoryTree, [this](const QString &p_name, bool p_import) {
+                Q_UNUSED(p_name);
+                if (!p_import) {
+                    directoryTree->newRootDirectory();
+                }
+            });
 
     connect(fileList, &VFileList::fileClicked,
             editArea, &VEditArea::openFile);
@@ -203,6 +210,7 @@ void VMainWindow::initToolBar()
     initFileToolBar(iconSize);
     initViewToolBar(iconSize);
     initEditToolBar(iconSize);
+    initNoteToolBar(iconSize);
 }
 
 void VMainWindow::initViewToolBar(QSize p_iconSize)
@@ -317,6 +325,38 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
     viewMenu->addAction(toggleAct);
 
     setActionsEnabled(m_editToolBar, false);
+}
+
+void VMainWindow::initNoteToolBar(QSize p_iconSize)
+{
+    QToolBar *noteToolBar = addToolBar(tr("Note Toolbar"));
+    noteToolBar->setObjectName("NoteToolBar");
+    noteToolBar->setMovable(false);
+    if (p_iconSize.isValid()) {
+        noteToolBar->setIconSize(p_iconSize);
+    }
+
+    noteToolBar->addSeparator();
+
+    // Attachment.
+    m_attachmentList = new VAttachmentList(this);
+    m_attachmentBtn = new VButtonWithWidget(QIcon(":/resources/icons/attachment.svg"),
+                                            "",
+                                            m_attachmentList,
+                                            this);
+    m_attachmentBtn->setToolTip(tr("Attachments"));
+    m_attachmentBtn->setStatusTip(tr("Manage current note's attachments"));
+    m_attachmentBtn->setProperty("CornerBtn", true);
+    m_attachmentBtn->setFocusPolicy(Qt::NoFocus);
+
+    connect(m_attachmentBtn, &VButtonWithWidget::popupWidgetAboutToShow,
+            this, [this]() {
+                m_attachmentList->setFile(dynamic_cast<VNoteFile *>(m_curFile.data()));
+            });
+
+    m_attachmentBtn->setEnabled(false);
+
+    noteToolBar->addWidget(m_attachmentBtn);
 }
 
 void VMainWindow::initFileToolBar(QSize p_iconSize)
@@ -1510,6 +1550,14 @@ void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
     saveNoteAct->setEnabled(p_file && p_editMode);
     deleteNoteAct->setEnabled(p_file && p_file->getType() == FileType::Note);
     noteInfoAct->setEnabled(p_file && !systemFile);
+
+    m_attachmentBtn->setEnabled(p_file && p_file->getType() == FileType::Note);
+    if (m_attachmentBtn->isEnabled()
+        && !dynamic_cast<const VNoteFile *>(p_file)->getAttachments().isEmpty()) {
+        m_attachmentBtn->setIcon(QIcon(":/resources/icons/attachment_full.svg"));
+    } else {
+        m_attachmentBtn->setIcon(QIcon(":/resources/icons/attachment.svg"));
+    }
 
     m_insertImageAct->setEnabled(p_file && p_editMode);
 
