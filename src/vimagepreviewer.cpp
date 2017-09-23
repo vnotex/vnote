@@ -303,6 +303,10 @@ void VImagePreviewer::fetchImageLinksFromRegions(QVector<ImageLinkInfo> &p_image
                                                               reg.m_endPos - reg.m_startPos));
         }
 
+        if (info.m_linkUrl.isEmpty()) {
+            continue;
+        }
+
         // Check if this image link has been previewed previously.
         info.m_previewImageID = isImageLinkPreviewed(info);
 

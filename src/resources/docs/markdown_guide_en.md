@@ -70,6 +70,10 @@ Notice that the sequence number is irrelevant. Markdown will change the sequence
 [Link Text](/url/of/the/link)
 ```
 
+**Notes**:
+
+- It is not recommended to use image links in reference format. VNote will not preview those images.
+
 ### Blockquotes
 ```md
 As VNote suggests:

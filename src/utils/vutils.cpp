@@ -189,8 +189,11 @@ QVector<ImageLink> VUtils::fetchImagesFromMarkdownFile(VFile *p_file,
         const VElementRegion &reg = regions[i];
         QString linkText = text.mid(reg.m_startPos, reg.m_endPos - reg.m_startPos);
         bool matched = regExp.exactMatch(linkText);
-        Q_ASSERT(matched);
-        Q_UNUSED(matched);
+        if (!matched) {
+            // Image links with reference format will not match.
+            continue;
+        }
+
         QString imageUrl = regExp.capturedTexts()[2].trimmed();
 
         ImageLink link;

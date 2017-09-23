@@ -71,6 +71,10 @@ __This text will be bold__
 [Link Text](/url/of/the/link)
 ```
 
+**注意**：
+
+- VNote不推荐使用参考式的图片链接。VNote不会预览这些图片。
+
 ### 块引用
 ```md
 As VNote suggests:
