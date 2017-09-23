@@ -1018,26 +1018,18 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 
     case Qt::Key_S:
     {
-        if (modifiers == Qt::NoModifier) {
-            // 1. If there is selection, delete the selected text.
-            // 2. Otherwise, if cursor is not at the end of block, delete the
-            //    character after current cursor.
-            // 3. Enter Insert mode.
-            QTextCursor cursor = m_editor->textCursor();
-            if (cursor.hasSelection() || !cursor.atBlockEnd()) {
-                cursor.deleteChar();
-                m_editor->setTextCursor(cursor);
-            }
+        tryGetRepeatToken(m_keys, m_tokens);
+        if (!m_keys.isEmpty() || hasActionToken()) {
+            break;
+        }
 
-            setMode(VimMode::Insert);
+        if (modifiers == Qt::NoModifier) {
+            addActionToken(Action::Change);
+            // Movement will be ignored in Visual mode.
+            addMovementToken(Movement::Right);
+            processCommand(m_tokens);
         } else if (modifiers == Qt::ShiftModifier) {
             // S, change current line.
-            tryGetRepeatToken(m_keys, m_tokens);
-            if (hasActionToken() || !m_keys.isEmpty()) {
-                // Invalid sequence.
-                break;
-            }
-
             addActionToken(Action::Change);
             addRangeToken(Range::Line);
             processCommand(m_tokens);
@@ -1294,25 +1286,15 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 }
             } else {
                 // The first d, an Action.
-                if (m_mode == VimMode::Visual || m_mode == VimMode::VisualLine) {
-                    QTextCursor cursor = m_editor->textCursor();
-                    cursor.beginEditBlock();
-                    // Different from Vim:
-                    // If there is no selection in Visual mode, we do nothing.
-                    if (cursor.hasSelection()) {
-                        deleteSelectedText(cursor, m_mode == VimMode::VisualLine);
-                    } else if (m_mode == VimMode::VisualLine) {
-                        VEditUtils::removeBlock(cursor);
-                        saveToRegister("\n");
-                    }
-
-                    cursor.endEditBlock();
-                    m_editor->setTextCursor(cursor);
+                addActionToken(Action::Delete);
+                if (checkMode(VimMode::Visual) || checkMode(VimMode::VisualLine)) {
+                    // Movement will be ignored.
+                    addMovementToken(Movement::Left);
+                    processCommand(m_tokens);
                     setMode(VimMode::Normal);
                     break;
                 }
 
-                addActionToken(Action::Delete);
                 goto accept;
             }
         } else if (modifiers == Qt::ShiftModifier) {
@@ -1601,17 +1583,27 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         if (modifiers == Qt::ShiftModifier || modifiers == Qt::NoModifier) {
             // x, or X to delete one char.
             tryGetRepeatToken(m_keys, m_tokens);
-            if (!m_keys.isEmpty()) {
+            if (!m_keys.isEmpty() || hasActionToken()) {
                 break;
             }
 
-            if (!hasActionToken()) {
-                addActionToken(Action::Delete);
-                addMovementToken(modifiers == Qt::ShiftModifier ? Movement::Left
-                                                                : Movement::Right);
-                processCommand(m_tokens);
+            addActionToken(Action::Delete);
+            if (modifiers == Qt::ShiftModifier) {
+                if (checkMode(VimMode::Visual) || checkMode(VimMode::VisualLine)) {
+                    // X, same as dd.
+                    addRangeToken(Range::Line);
+                } else {
+                    // X, delete one char.
+                    addMovementToken(Movement::Left);
+                }
+            } else {
+                // x.
+                // Movement will be ignored in Visual mode.
+                addMovementToken(Movement::Right);
             }
 
+            processCommand(m_tokens);
+            setMode(VimMode::Normal);
             break;
         }
 
@@ -1695,28 +1687,15 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 }
             } else {
                 // The first c, an action.
-                if (m_mode == VimMode::Visual || m_mode == VimMode::VisualLine) {
-                    QTextCursor cursor = m_editor->textCursor();
-                    int pos = cursor.selectionStart();
-                    cursor.beginEditBlock();
-                    // Different from Vim:
-                    // If there is no selection in Visual mode, we do nothing.
-                    if (cursor.hasSelection()) {
-                        deleteSelectedText(cursor, m_mode == VimMode::VisualLine);
-                        if (m_mode == VimMode::VisualLine) {
-                            insertChangeBlockAfterDeletion(cursor, pos);
-                        }
-                    } else if (m_mode == VimMode::VisualLine) {
-                        saveToRegister("\n");
-                    }
+                addActionToken(Action::Change);
 
-                    cursor.endEditBlock();
-                    m_editor->setTextCursor(cursor);
-                    setMode(VimMode::Insert);
+                if (checkMode(VimMode::VisualLine) || checkMode(VimMode::Visual)) {
+                    // Movement will be ignored.
+                    addMovementToken(Movement::Left);
+                    processCommand(m_tokens);
                     break;
                 }
 
-                addActionToken(Action::Change);
                 goto accept;
             }
         } else if (modifiers == Qt::ShiftModifier) {
@@ -3487,6 +3466,7 @@ void VVim::processDeleteAction(QList<Token> &p_tokens)
                     deleteSelectedText(cursor, true);
                 } else {
                     VEditUtils::removeBlock(cursor);
+                    saveToRegister("\n");
                     repeat = 1;
                 }
 
@@ -3582,6 +3562,23 @@ void VVim::processDeleteAction(QList<Token> &p_tokens)
     }
 
     cursor.beginEditBlock();
+    if (checkMode(VimMode::VisualLine) || checkMode(VimMode::Visual)) {
+        // Visual mode, omitting repeat and movement.
+        // Different from Vim:
+        // If there is no selection in Visual mode, we do nothing.
+        if (cursor.hasSelection()) {
+            hasMoved = true;
+            deleteSelectedText(cursor, m_mode == VimMode::VisualLine);
+        } else if (checkMode(VimMode::Visual)) {
+            hasMoved = true;
+            VEditUtils::removeBlock(cursor);
+            saveToRegister("\n");
+        }
+
+        cursor.endEditBlock();
+        goto exit;
+    }
+
     hasMoved = processMovement(cursor, moveMode, to, repeat);
     if (repeat == -1) {
         repeat = 1;
@@ -4115,6 +4112,27 @@ void VVim::processChangeAction(QList<Token> &p_tokens)
     }
 
     cursor.beginEditBlock();
+    if (checkMode(VimMode::VisualLine) || checkMode(VimMode::Visual)) {
+        // Visual mode, omitting repeat and movement.
+        // Different from Vim:
+        // If there is no selection in Visual mode, we do nothing.
+        bool visualLine = checkMode(VimMode::VisualLine);
+        if (cursor.hasSelection()) {
+            hasMoved = true;
+            int pos = cursor.selectionStart();
+            deleteSelectedText(cursor, visualLine);
+            if (visualLine) {
+                insertChangeBlockAfterDeletion(cursor, pos);
+            }
+        } else if (visualLine) {
+            hasMoved = true;
+            saveToRegister("\n");
+        }
+
+        cursor.endEditBlock();
+        goto exit;
+    }
+
     hasMoved = processMovement(cursor, moveMode, to, repeat);
     if (repeat == -1) {
         repeat = 1;
