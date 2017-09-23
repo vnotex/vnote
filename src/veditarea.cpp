@@ -126,10 +126,10 @@ void VEditArea::openFile(VFile *p_file, OpenFileMode p_mode)
     if (!p_file) {
         return;
     }
-    qDebug() << "VEditArea open" << p_file->getName() << (int)p_mode;
 
     // Find if it has been opened already
     int winIdx, tabIdx;
+    bool existFile = false;
     bool setFocus = false;
     auto tabs = findTabsByFile(p_file);
     if (!tabs.empty()) {
@@ -143,7 +143,9 @@ void VEditArea::openFile(VFile *p_file, OpenFileMode p_mode)
                 break;
             }
         }
+
         setFocus = true;
+        existFile = true;
         goto out;
     }
 
@@ -153,11 +155,20 @@ void VEditArea::openFile(VFile *p_file, OpenFileMode p_mode)
         insertSplitWindow(0);
         curWindowIndex = 0;
     }
+
     winIdx = curWindowIndex;
     tabIdx = openFileInWindow(winIdx, p_file, p_mode);
 
 out:
     setCurrentTab(winIdx, tabIdx, setFocus);
+
+    if (existFile) {
+        if (p_mode == OpenFileMode::Read) {
+            readFile();
+        } else if (p_mode == OpenFileMode::Edit) {
+            editFile();
+        }
+    }
 }
 
 QVector<QPair<int, int> > VEditArea::findTabsByFile(const VFile *p_file)
