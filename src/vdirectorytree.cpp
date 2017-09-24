@@ -8,6 +8,9 @@
 #include "utils/vutils.h"
 #include "veditarea.h"
 #include "vconfigmanager.h"
+#include "vmainwindow.h"
+
+extern VMainWindow *g_mainWin;
 
 extern VConfigManager *g_config;
 extern VNote *g_vnote;
@@ -521,6 +524,7 @@ void VDirectoryTree::reloadFromDisk()
         return;
     }
 
+    QString msg;
     QString info;
     VDirectory *curDir = NULL;
     QTreeWidgetItem *curItem = currentItem();
@@ -529,20 +533,35 @@ void VDirectoryTree::reloadFromDisk()
         curDir = getVDirectory(curItem);
         info = tr("Are you sure to reload folder <span style=\"%1\">%2</span>?")
                  .arg(g_config->c_dataTextStyle).arg(curDir->getName());
+        msg = tr("Successfully reloaded folder %1 from disk").arg(curDir->getName());
     } else {
         // Reload notebook.
         info = tr("Are you sure to reload notebook <span style=\"%1\">%2</span>?")
                  .arg(g_config->c_dataTextStyle).arg(m_notebook->getName());
+        msg = tr("Successfully reloaded notebook %1 from disk").arg(m_notebook->getName());
     }
 
-    int ret = VUtils::showMessage(QMessageBox::Information, tr("Information"),
-                                  info,
-                                  tr("VNote will close all the related notes before reload."),
-                                  QMessageBox::Ok | QMessageBox::Cancel,
-                                  QMessageBox::Ok, this);
+    if (g_config->getConfirmReloadFolder()) {
+        int ret = VUtils::showMessage(QMessageBox::Information, tr("Information"),
+                                      info,
+                                      tr("VNote will close all the related notes before reload."),
+                                      QMessageBox::Ok | QMessageBox::YesToAll | QMessageBox::Cancel,
+                                      QMessageBox::Ok,
+                                      this);
+        switch (ret) {
+        case QMessageBox::YesToAll:
+            g_config->setConfirmReloadFolder(false);
+            // Fall through.
 
-    if (ret != QMessageBox::Ok) {
-        return;
+        case QMessageBox::Ok:
+            break;
+
+        case QMessageBox::Cancel:
+            return;
+
+        default:
+            return;
+        }
     }
 
     m_notebookCurrentDirMap.remove(m_notebook);
@@ -587,6 +606,10 @@ void VDirectoryTree::reloadFromDisk()
         }
 
         updateDirectoryTree();
+    }
+
+    if (!msg.isEmpty()) {
+        g_mainWin->showStatusMessage(msg);
     }
 }
 

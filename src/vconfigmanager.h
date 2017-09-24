@@ -274,6 +274,9 @@ public:
     bool getConfirmImagesCleanUp() const;
     void setConfirmImagesCleanUp(bool p_enabled);
 
+    bool getConfirmReloadFolder() const;
+    void setConfirmReloadFolder(bool p_enabled);
+
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
     QString getShortcutKeySequence(const QString &p_operation) const;
@@ -550,6 +553,9 @@ private:
 
     // Confirm before deleting unused images.
     bool m_confirmImagesCleanUp;
+
+    // Confirm before reloading folder from disk.
+    bool m_confirmReloadFolder;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1444,4 +1450,22 @@ inline void VConfigManager::setConfirmImagesCleanUp(bool p_enabled)
                         "confirm_images_clean_up",
                         m_confirmImagesCleanUp);
 }
+
+inline bool VConfigManager::getConfirmReloadFolder() const
+{
+    return m_confirmReloadFolder;
+}
+
+inline void VConfigManager::setConfirmReloadFolder(bool p_enabled)
+{
+    if (m_confirmReloadFolder == p_enabled) {
+        return;
+    }
+
+    m_confirmReloadFolder = p_enabled;
+    setConfigToSettings("global",
+                        "confirm_reload_folder",
+                        m_confirmReloadFolder);
+}
+
 #endif // VCONFIGMANAGER_H

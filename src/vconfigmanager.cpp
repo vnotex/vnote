@@ -210,6 +210,9 @@ void VConfigManager::initialize()
 
     m_confirmImagesCleanUp = getConfigFromSettings("global",
                                                    "confirm_images_clean_up").toBool();
+
+    m_confirmReloadFolder = getConfigFromSettings("global",
+                                                  "confirm_reload_folder").toBool();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()
