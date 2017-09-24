@@ -147,7 +147,7 @@ void VEdit::saveFile()
         return;
     }
     m_file->setContent(toHtml());
-    document()->setModified(false);
+    setModified(false);
 }
 
 void VEdit::reloadFile()
@@ -170,12 +170,16 @@ void VEdit::scrollToLine(int p_lineNumber)
 
 bool VEdit::isModified() const
 {
+    Q_ASSERT(m_file ? (m_file->isModified() == document()->isModified()) : true);
     return document()->isModified();
 }
 
 void VEdit::setModified(bool p_modified)
 {
     document()->setModified(p_modified);
+    if (m_file) {
+        m_file->setModified(p_modified);
+    }
 }
 
 void VEdit::insertImage()

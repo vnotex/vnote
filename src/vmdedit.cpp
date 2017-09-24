@@ -126,7 +126,7 @@ void VMdEdit::saveFile()
     }
 
     m_file->setContent(toPlainTextWithoutImg());
-    document()->setModified(false);
+    setModified(false);
 }
 
 void VMdEdit::reloadFile()
