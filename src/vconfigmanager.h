@@ -277,6 +277,8 @@ public:
     bool getConfirmReloadFolder() const;
     void setConfirmReloadFolder(bool p_enabled);
 
+    const QString &getMathjaxJavascript() const;
+
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
     QString getShortcutKeySequence(const QString &p_operation) const;
@@ -556,6 +558,9 @@ private:
 
     // Confirm before reloading folder from disk.
     bool m_confirmReloadFolder;
+
+    // Location and configuration for Mathjax.
+    QString m_mathjaxJavascript;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1466,6 +1471,11 @@ inline void VConfigManager::setConfirmReloadFolder(bool p_enabled)
     setConfigToSettings("global",
                         "confirm_reload_folder",
                         m_confirmReloadFolder);
+}
+
+inline const QString &VConfigManager::getMathjaxJavascript() const
+{
+    return m_mathjaxJavascript;
 }
 
 #endif // VCONFIGMANAGER_H

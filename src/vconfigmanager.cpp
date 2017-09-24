@@ -213,6 +213,9 @@ void VConfigManager::initialize()
 
     m_confirmReloadFolder = getConfigFromSettings("global",
                                                   "confirm_reload_folder").toBool();
+
+    m_mathjaxJavascript = getConfigFromSettings("web",
+                                                "mathjax_javascript").toString();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

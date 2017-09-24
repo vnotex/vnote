@@ -561,7 +561,7 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exp
                      "                    showProcessingMessages: false,\n"
                      "                    messageStyle: \"none\"});\n"
                      "</script>\n"
-                     "<script type=\"text/javascript\" async src=\"" + VNote::c_mathjaxJsFile + "\"></script>\n" +
+                     "<script type=\"text/javascript\" async src=\"" + g_config->getMathjaxJavascript() + "\"></script>\n" +
                      "<script>var VEnableMathjax = true;</script>\n";
     }
 

@@ -62,9 +62,6 @@ public:
     static const QString c_flowchartJsFile;
     static const QString c_raphaelJsFile;
 
-    // Mathjax
-    static const QString c_mathjaxJsFile;
-
     // Highlight.js line number plugin
     static const QString c_highlightjsLineNumberExtraFile;
 
