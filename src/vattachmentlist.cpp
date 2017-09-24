@@ -378,6 +378,22 @@ void VAttachmentList::handleListItemCommitData(QWidget *p_itemEdit)
         return;
     }
 
+    bool legalName = true;
+    if (text.isEmpty()) {
+        legalName = false;
+    } else {
+        QRegExp reg(VUtils::c_fileNameRegExp);
+        if (!reg.exactMatch(text)) {
+            legalName = false;
+        }
+    }
+
+    if (!legalName) {
+        // Recover to old name.
+        item->setText(oldText);
+        return;
+    }
+
     if (!(oldText.toLower() == text.toLower())
         && m_file->findAttachment(text, false) > -1) {
         // Name conflict.
