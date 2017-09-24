@@ -553,20 +553,8 @@ bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
     if (m_autoIndentPos > -1) {
         // Cancel the auto indent/list if the pos is the same and cursor is at
         // the end of a block.
-        bool cancelAutoIndent = false;
         QTextCursor cursor = m_editor->textCursor();
-        QTextBlock block = cursor.block();
-        if (cursor.position() == m_autoIndentPos && !cursor.hasSelection()) {
-            if (VEditUtils::isListBlock(block)) {
-                if (cursor.atBlockEnd()) {
-                    cancelAutoIndent = true;
-                }
-            } else if (VEditUtils::isSpaceToBlockStart(block,
-                                                       cursor.positionInBlock())) {
-                cancelAutoIndent = true;
-            }
-        }
-        if (cancelAutoIndent) {
+        if (VEditUtils::needToCancelAutoIndent(m_autoIndentPos, cursor)) {
             m_autoIndentPos = -1;
             VEditUtils::deleteIndentAndListMark(cursor);
             m_editor->setTextCursor(cursor);

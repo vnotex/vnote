@@ -670,3 +670,22 @@ int VEditUtils::findNextEmptyBlock(const QTextCursor &p_cursor,
 
     return p_repeat > 0 ? -1 : res;
 }
+
+bool VEditUtils::needToCancelAutoIndent(int p_autoIndentPos, const QTextCursor &p_cursor)
+{
+    // Cancel the auto indent/list if the pos is the same and cursor is at
+    // the end of a block.
+    QTextBlock block = p_cursor.block();
+    if (p_cursor.position() == p_autoIndentPos
+        && !p_cursor.hasSelection()
+        && p_cursor.atBlockEnd()) {
+        if (isListBlock(block)) {
+            return true;
+        } else if (isSpaceToBlockStart(block,
+                                       p_cursor.positionInBlock())) {
+            return true;
+        }
+    }
+
+    return false;
+}

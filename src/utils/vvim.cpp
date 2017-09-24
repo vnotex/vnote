@@ -518,7 +518,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
     bool resetPositionInBlock = true;
     Key keyInfo(key, modifiers);
     bool unindent = false;
-    int autoIndentPos = -1;
+    int autoIndentPos = p_autoIndentPos ? *p_autoIndentPos : -1;
 
     // Handle Insert mode key press.
     if (VimMode::Insert == m_mode) {
@@ -527,20 +527,8 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             // See if we need to cancel auto indent.
             bool cancelAutoIndent = false;
             if (p_autoIndentPos && *p_autoIndentPos > -1) {
-                // Cancel the auto indent/list if the pos is the same and cursor is at
-                // the end of a block.
                 QTextCursor cursor = m_editor->textCursor();
-                QTextBlock block = cursor.block();
-                if (cursor.position() == *p_autoIndentPos && !cursor.hasSelection()) {
-                    if (VEditUtils::isListBlock(block)) {
-                        if (cursor.atBlockEnd()) {
-                            cancelAutoIndent = true;
-                        }
-                    } else if (VEditUtils::isSpaceToBlockStart(block,
-                                                               cursor.positionInBlock())) {
-                        cancelAutoIndent = true;
-                    }
-                }
+                cancelAutoIndent = VEditUtils::needToCancelAutoIndent(*p_autoIndentPos, cursor);
 
                 if (cancelAutoIndent) {
                     autoIndentPos = -1;

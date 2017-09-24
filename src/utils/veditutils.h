@@ -130,6 +130,10 @@ public:
                                   bool p_forward,
                                   int p_repeat);
 
+    // Check if we need to cancel auto indent.
+    // @p_autoIndentPos: the position of the cursor after auto indent.
+    static bool needToCancelAutoIndent(int p_autoIndentPos, const QTextCursor &p_cursor);
+
 private:
     VEditUtils() {}
 };
