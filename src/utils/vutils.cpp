@@ -492,7 +492,7 @@ DocType VUtils::docTypeFromName(const QString &p_name)
         }
     }
 
-    return DocType::Html;
+    return DocType::Unknown;
 }
 
 QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exportPdf)

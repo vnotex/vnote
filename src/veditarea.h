@@ -27,7 +27,10 @@ class VEditArea : public QWidget, public VNavigationMode
     Q_OBJECT
 public:
     explicit VEditArea(VNote *vnote, QWidget *parent = 0);
+
+    // Whether @p_file has been opened in edit area.
     bool isFileOpened(const VFile *p_file);
+
     bool closeAllFiles(bool p_forced);
     bool closeFile(const VFile *p_file, bool p_forced);
     bool closeFile(const VDirectory *p_dir, bool p_forced);

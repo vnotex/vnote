@@ -127,6 +127,13 @@ void VEditArea::openFile(VFile *p_file, OpenFileMode p_mode)
         return;
     }
 
+    // If it is DocType::Unknown, open it using system default method.
+    if (p_file->getDocType() == DocType::Unknown) {
+        QUrl url = QUrl::fromLocalFile(p_file->fetchPath());
+        QDesktopServices::openUrl(url);
+        return;
+    }
+
     // Find if it has been opened already
     int winIdx, tabIdx;
     bool existFile = false;

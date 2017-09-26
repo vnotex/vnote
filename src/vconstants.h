@@ -5,7 +5,7 @@
 // Markdown: Markdown text file;
 // List: Infinite list file like WorkFlowy;
 // Container: a composite file containing multiple files;
-enum class DocType { Html = 0, Markdown, List, Container, Invalid };
+enum class DocType { Html = 0, Markdown, List, Container, Unknown };
 
 // Note: note file managed by VNote;
 // Orphan: external file;

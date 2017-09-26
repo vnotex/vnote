@@ -912,5 +912,9 @@ void VConfigManager::initDocSuffixes()
     container << "co" << "container" << "con";
     m_docSuffixes[(int)DocType::Container] = container;
 
+    QList<QString> html;
+    html << "html";
+    m_docSuffixes[(int)DocType::Html] = html;
+
     qDebug() << "doc suffixes" << m_docSuffixes;
 }

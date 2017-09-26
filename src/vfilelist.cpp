@@ -117,6 +117,21 @@ void VFileList::initActions()
                 }
             });
 
+    m_openExternalAct = new QAction(tr("Open Via External Program"), this);
+    m_openExternalAct->setToolTip(tr("Open current note via external program"));
+    connect(m_openExternalAct, &QAction::triggered,
+            this, [this]() {
+                QListWidgetItem *item = fileList->currentItem();
+                if (item) {
+                    VNoteFile *file = getVFile(item);
+                    if (file
+                        && (!editArea->isFileOpened(file) || editArea->closeFile(file, false))) {
+                        QUrl url = QUrl::fromLocalFile(file->fetchPath());
+                        QDesktopServices::openUrl(url);
+                    }
+                }
+            });
+
     deleteFileAct = new QAction(QIcon(":/resources/icons/delete_note.svg"),
                                 tr("&Delete"), this);
     deleteFileAct->setToolTip(tr("Delete selected note"));
@@ -220,8 +235,6 @@ void VFileList::fileInfo(VNoteFile *p_file)
         if (name == curName) {
             return;
         }
-
-        Q_ASSERT(p_file->getDocType() == VUtils::docTypeFromName(name));
 
         if (!p_file->rename(name)) {
             VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
@@ -430,9 +443,13 @@ void VFileList::contextMenuRequested(QPoint pos)
 
     if (item && fileList->selectedItems().size() == 1) {
         VNoteFile *file = getVFile(item);
-        if (file && file->getDocType() == DocType::Markdown) {
-            menu.addAction(m_openInReadAct);
-            menu.addAction(m_openInEditAct);
+        if (file) {
+            if (file->getDocType() == DocType::Markdown) {
+                menu.addAction(m_openInReadAct);
+                menu.addAction(m_openInEditAct);
+            }
+
+            menu.addAction(m_openExternalAct);
             menu.addSeparator();
         }
     }

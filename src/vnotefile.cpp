@@ -87,7 +87,10 @@ bool VNoteFile::rename(const QString &p_name)
     }
 
     // Can't not change doc type.
-    Q_ASSERT(m_docType == VUtils::docTypeFromName(m_name));
+    Q_ASSERT(m_docType == DocType::Unknown
+             || m_docType == VUtils::docTypeFromName(m_name));
+
+    m_docType = VUtils::docTypeFromName(m_name);
 
     qDebug() << "file renamed from" << oldName << "to" << m_name;
     return true;

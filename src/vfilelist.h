@@ -106,6 +106,7 @@ private:
     // Actions
     QAction *m_openInReadAct;
     QAction *m_openInEditAct;
+    QAction *m_openExternalAct;
     QAction *newFileAct;
     QAction *deleteFileAct;
     QAction *fileInfoAct;

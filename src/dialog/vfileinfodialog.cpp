@@ -103,7 +103,8 @@ void VFileInfoDialog::handleInputChanged()
                                           "Please choose another name.")
                                           .arg(g_config->c_warningTextStyle);
             m_warnLabel->setText(nameConflictText);
-        } else if (VUtils::docTypeFromName(name) != m_file->getDocType()) {
+        } else if (m_file->getDocType() != DocType::Unknown
+                   && VUtils::docTypeFromName(name) != m_file->getDocType()) {
             // Check if the name change the doc type.
             nameOk = false;
             showWarnLabel = true;
