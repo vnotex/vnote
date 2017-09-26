@@ -3,7 +3,9 @@
 
 #include <QWidget>
 #include <QVector>
+#include <QStringList>
 #include "vnotefile.h"
+#include "vbuttonwithwidget.h"
 
 class QPushButton;
 class QListWidget;
@@ -12,13 +14,28 @@ class QLabel;
 class VNoteFile;
 class QAction;
 
-class VAttachmentList : public QWidget
+class VAttachmentList : public QWidget, public VButtonPopupWidget
 {
     Q_OBJECT
 public:
     explicit VAttachmentList(QWidget *p_parent = 0);
 
+    // Need to call updateContent() to update the list.
     void setFile(VNoteFile *p_file);
+
+    // Update attachment info of m_file.
+    void updateContent();
+
+    bool isAcceptDrops() const Q_DECL_OVERRIDE;
+
+    bool handleDragEnterEvent(QDragEnterEvent *p_event) Q_DECL_OVERRIDE;
+
+    bool handleDropEvent(QDropEvent *p_event) Q_DECL_OVERRIDE;
+
+    void handleAboutToShow() Q_DECL_OVERRIDE;
+
+protected:
+    void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
 private slots:
     void addAttachment();
@@ -38,10 +55,12 @@ private:
 
     void initActions();
 
-    // Update attachment info of m_file.
-    void updateContent();
-
     void fillAttachmentList(const QVector<VAttachment> &p_attachments);
+
+    void addAttachments(const QStringList &p_files);
+
+    // Update the state of VButtonWithWidget.
+    void updateButtonState() const;
 
     QPushButton *m_addBtn;
     QPushButton *m_clearBtn;

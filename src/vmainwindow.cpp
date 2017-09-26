@@ -344,16 +344,9 @@ void VMainWindow::initNoteToolBar(QSize p_iconSize)
                                             "",
                                             m_attachmentList,
                                             this);
-    m_attachmentBtn->setToolTip(tr("Attachments"));
-    m_attachmentBtn->setStatusTip(tr("Manage current note's attachments"));
+    m_attachmentBtn->setToolTip(tr("Attachments (drag files here to add attachments)"));
     m_attachmentBtn->setProperty("CornerBtn", true);
     m_attachmentBtn->setFocusPolicy(Qt::NoFocus);
-
-    connect(m_attachmentBtn, &VButtonWithWidget::popupWidgetAboutToShow,
-            this, [this]() {
-                m_attachmentList->setFile(dynamic_cast<VNoteFile *>(m_curFile.data()));
-            });
-
     m_attachmentBtn->setEnabled(false);
 
     noteToolBar->addWidget(m_attachmentBtn);
@@ -1552,12 +1545,6 @@ void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
     noteInfoAct->setEnabled(p_file && !systemFile);
 
     m_attachmentBtn->setEnabled(p_file && p_file->getType() == FileType::Note);
-    if (m_attachmentBtn->isEnabled()
-        && !dynamic_cast<const VNoteFile *>(p_file)->getAttachments().isEmpty()) {
-        m_attachmentBtn->setIcon(QIcon(":/resources/icons/attachment_full.svg"));
-    } else {
-        m_attachmentBtn->setIcon(QIcon(":/resources/icons/attachment.svg"));
-    }
 
     m_insertImageAct->setEnabled(p_file && p_editMode);
 
@@ -1588,6 +1575,8 @@ void VMainWindow::handleAreaTabStatusUpdated(const VEditTabInfo &p_info)
     }
 
     updateActionStateFromTabStatusChange(m_curFile, editMode);
+
+    m_attachmentList->setFile(dynamic_cast<VNoteFile *>(m_curFile.data()));
 
     QString title;
     if (m_curFile) {
@@ -2192,4 +2181,11 @@ void VMainWindow::showMainWindow()
     }
 
     this->activateWindow();
+}
+
+void VMainWindow::showAttachmentList()
+{
+    if (m_attachmentBtn->isEnabled()) {
+        m_attachmentBtn->showPopupWidget();
+    }
 }

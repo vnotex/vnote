@@ -171,6 +171,13 @@ bool VCaptain::handleKeyPress(int p_key, Qt::KeyboardModifiers p_modifiers)
         break;
     }
 
+    case Qt::Key_A:
+    {
+        // Show attachment list of current note.
+        m_mainWindow->showAttachmentList();
+        break;
+    }
+
     case Qt::Key_D:
         // Locate current tab.
         if (m_mainWindow->locateCurrentFile()) {

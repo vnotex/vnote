@@ -70,6 +70,9 @@ public:
     // Show a temporary message in status bar.
     void showStatusMessage(const QString &p_msg);
 
+    // Popup the attachment list if it is enabled.
+    void showAttachmentList();
+
 private slots:
     void importNoteFromFile();
     void viewSettings();

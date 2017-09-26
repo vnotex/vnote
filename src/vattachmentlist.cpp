@@ -28,6 +28,7 @@ void VAttachmentList::setupUI()
     m_addBtn = new QPushButton(QIcon(":/resources/icons/add_attachment.svg"), "");
     m_addBtn->setToolTip(tr("Add"));
     m_addBtn->setProperty("FlatBtn", true);
+    m_addBtn->setDefault(true);
     connect(m_addBtn, &QPushButton::clicked,
             this, &VAttachmentList::addAttachment);
 
@@ -68,6 +69,8 @@ void VAttachmentList::setupUI()
                         }
 
                         m_attachmentList->clear();
+
+                        updateButtonState();
                     }
                 }
             });
@@ -138,7 +141,8 @@ void VAttachmentList::initActions()
 void VAttachmentList::setFile(VNoteFile *p_file)
 {
     m_file = p_file;
-    updateContent();
+
+    updateButtonState();
 }
 
 void VAttachmentList::updateContent()
@@ -169,8 +173,13 @@ void VAttachmentList::updateContent()
     int cnt = m_attachmentList->count();
     if (cnt > 0) {
         m_numLabel->setText(tr("%1 %2").arg(cnt).arg(cnt > 1 ? tr("Files") : tr("File")));
+        m_attachmentList->setFocus();
     } else {
         m_numLabel->setText("");
+
+        if (m_file) {
+            m_addBtn->setFocus();
+        }
     }
 }
 
@@ -204,13 +213,23 @@ void VAttachmentList::addAttachment()
     // Update lastPath
     lastPath = QFileInfo(files[0]).path();
 
+    addAttachments(files);
+
+    updateButtonState();
+
+    updateContent();
+}
+
+void VAttachmentList::addAttachments(const QStringList &p_files)
+{
+    Q_ASSERT(m_file);
     int addedFiles = 0;
-    for (int i = 0; i < files.size(); ++i) {
-        if (!m_file->addAttachment(files[i])) {
+    for (int i = 0; i < p_files.size(); ++i) {
+        if (!m_file->addAttachment(p_files[i])) {
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Warning"),
                                 tr("Fail to add attachment %1 for note <span style=\"%2\">%3</span>.")
-                                  .arg(files[i])
+                                  .arg(p_files[i])
                                   .arg(g_config->c_dataTextStyle)
                                   .arg(m_file->getName()),
                                 "",
@@ -221,8 +240,6 @@ void VAttachmentList::addAttachment()
             ++addedFiles;
         }
     }
-
-    updateContent();
 
     if (addedFiles > 0) {
         g_vnote->getMainWindow()->showStatusMessage(tr("Added %1 %2 as attachments")
@@ -322,6 +339,8 @@ void VAttachmentList::deleteSelectedItems()
                                 g_vnote->getMainWindow());
         }
 
+        updateButtonState();
+
         updateContent();
     }
 }
@@ -417,4 +436,131 @@ void VAttachmentList::handleListItemCommitData(QWidget *p_itemEdit)
             item->setData(Qt::UserRole, text);
         }
     }
+}
+
+void VAttachmentList::keyPressEvent(QKeyEvent *p_event)
+{
+    int key = p_event->key();
+    int modifiers = p_event->modifiers();
+    switch (key) {
+    case Qt::Key_BracketLeft:
+    {
+        if (modifiers == Qt::ControlModifier) {
+            QKeyEvent *escEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Escape,
+                                                Qt::NoModifier);
+            QCoreApplication::postEvent(this, escEvent);
+            return;
+        }
+
+        break;
+    }
+
+    case Qt::Key_J:
+    {
+        if (modifiers == Qt::ControlModifier) {
+            QKeyEvent *downEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Down,
+                                                 Qt::NoModifier);
+            QCoreApplication::postEvent(m_attachmentList, downEvent);
+            return;
+        }
+
+        break;
+    }
+
+    case Qt::Key_K:
+    {
+        if (modifiers == Qt::ControlModifier) {
+            QKeyEvent *upEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Up,
+                                               Qt::NoModifier);
+            QCoreApplication::postEvent(m_attachmentList, upEvent);
+            return;
+        }
+
+        break;
+    }
+
+    default:
+        break;
+    }
+
+    QWidget::keyPressEvent(p_event);
+}
+
+bool VAttachmentList::isAcceptDrops() const
+{
+    return true;
+}
+
+bool VAttachmentList::handleDragEnterEvent(QDragEnterEvent *p_event)
+{
+    if (!m_file) {
+        return false;
+    }
+
+    if (p_event->mimeData()->hasFormat("text/uri-list")) {
+        p_event->acceptProposedAction();
+        return true;
+    }
+
+    return false;
+}
+
+bool VAttachmentList::handleDropEvent(QDropEvent *p_event)
+{
+    if (!m_file) {
+        return false;
+    }
+
+    const QMimeData *mime = p_event->mimeData();
+    if (mime->hasFormat("text/uri-list") && mime->hasUrls()) {
+        // Add attachments.
+        QStringList files;
+        QList<QUrl> urls = mime->urls();
+        for (int i = 0; i < urls.size(); ++i) {
+            QString file;
+            if (urls[i].isLocalFile()) {
+                file = urls[i].toLocalFile();
+                QFileInfo fi(file);
+                if (fi.exists() && fi.isFile()) {
+                    file = QDir::cleanPath(fi.absoluteFilePath());
+                    files.append(file);
+                }
+            }
+        }
+
+        if (!files.isEmpty()) {
+            addAttachments(files);
+
+            updateButtonState();
+        }
+
+        p_event->acceptProposedAction();
+        return true;
+    }
+
+    return false;
+}
+
+void VAttachmentList::handleAboutToShow()
+{
+    updateContent();
+}
+
+void VAttachmentList::updateButtonState() const
+{
+    VButtonWithWidget *btn = getButton();
+    Q_ASSERT(btn);
+    if (!btn) {
+        return;
+    }
+
+    int numOfAttachments = -1;
+    if (m_file) {
+        numOfAttachments = m_file->getAttachments().size();
+        if (numOfAttachments == 0) {
+            numOfAttachments = -1;
+        }
+    }
+
+    btn->setBubbleNumber(numOfAttachments);
 }

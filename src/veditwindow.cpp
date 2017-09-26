@@ -976,7 +976,10 @@ void VEditWindow::dragEnterEvent(QDragEnterEvent *p_event)
 {
     if (p_event->mimeData()->hasFormat("text/uri-list")) {
         p_event->acceptProposedAction();
+        return;
     }
+
+    QTabWidget::dragEnterEvent(p_event);
 }
 
 void VEditWindow::dropEvent(QDropEvent *p_event)
@@ -1004,5 +1007,8 @@ void VEditWindow::dropEvent(QDropEvent *p_event)
         }
 
         p_event->acceptProposedAction();
+        return;
     }
+
+    QTabWidget::dropEvent(p_event);
 }
