@@ -281,6 +281,8 @@ public:
 
     const QString &getMathjaxJavascript() const;
 
+    bool getDoubleClickCloseTab() const;
+
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
     QString getShortcutKeySequence(const QString &p_operation) const;
@@ -566,6 +568,9 @@ private:
 
     // Location and configuration for Mathjax.
     QString m_mathjaxJavascript;
+
+    // Whether double click on a tab to close it.
+    bool m_doubleClickCloseTab;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1486,6 +1491,11 @@ inline void VConfigManager::setConfirmReloadFolder(bool p_enabled)
 inline const QString &VConfigManager::getMathjaxJavascript() const
 {
     return m_mathjaxJavascript;
+}
+
+inline bool VConfigManager::getDoubleClickCloseTab() const
+{
+    return m_doubleClickCloseTab;
 }
 
 #endif // VCONFIGMANAGER_H

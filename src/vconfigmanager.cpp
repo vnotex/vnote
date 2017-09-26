@@ -219,6 +219,9 @@ void VConfigManager::initialize()
 
     m_mathjaxJavascript = getConfigFromSettings("web",
                                                 "mathjax_javascript").toString();
+
+    m_doubleClickCloseTab = getConfigFromSettings("global",
+                                                  "double_click_close_tab").toBool();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

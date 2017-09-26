@@ -11,8 +11,10 @@
 #include "vmdtab.h"
 #include "vhtmltab.h"
 #include "vfilelist.h"
+#include "vconfigmanager.h"
 
 extern VNote *g_vnote;
+extern VConfigManager *g_config;
 
 VEditWindow::VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent)
     : QTabWidget(parent), vnote(vnote), m_editArea(editArea),
@@ -38,6 +40,14 @@ VEditWindow::VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent)
             this, &VEditWindow::closeTab);
     connect(this, &VEditWindow::tabBarClicked,
             this, &VEditWindow::handleTabbarClicked);
+
+    connect(this, &VEditWindow::tabBarDoubleClicked,
+            this, [this](int p_index) {
+                if (p_index != -1 && g_config->getDoubleClickCloseTab()) {
+                    closeTab(p_index);
+                }
+            });
+
     connect(this, &VEditWindow::currentChanged,
             this, &VEditWindow::handleCurrentIndexChanged);
     connect(this, &VEditWindow::customContextMenuRequested,
@@ -548,6 +558,7 @@ void VEditWindow::handleCurrentIndexChanged(int p_index)
     if (wid && (wid == m_curTabWidget)) {
         return;
     }
+
     m_lastTabWidget = m_curTabWidget;
     m_curTabWidget = wid;
 }
