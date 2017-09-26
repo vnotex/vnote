@@ -22,7 +22,7 @@
 #include <QRegExp>
 #include <QKeySequence>
 
-#include "vfile.h"
+#include "vorphanfile.h"
 #include "vnote.h"
 #include "vnotebook.h"
 #include "hgmarkdownhighlighter.h"
@@ -740,13 +740,6 @@ QString VUtils::getShortcutText(const QString &p_keySeq)
     return QKeySequence(p_keySeq).toString(QKeySequence::NativeText);
 }
 
-static QString getRecycleBinSubFolderToUse(const VNotebook *p_notebook)
-{
-    QString folderPath = p_notebook->getRecycleBinFolderPath();
-    QDir dir(folderPath);
-    return QDir::cleanPath(dir.absoluteFilePath(QDateTime::currentDateTime().toString("yyyyMMdd")));
-}
-
 bool VUtils::deleteDirectory(const VNotebook *p_notebook,
                              const QString &p_path,
                              bool p_skipRecycleBin)
@@ -756,25 +749,7 @@ bool VUtils::deleteDirectory(const VNotebook *p_notebook,
         return dir.removeRecursively();
     } else {
         // Move it to the recycle bin folder.
-        QString binPath = getRecycleBinSubFolderToUse(p_notebook);
-        QDir binDir(binPath);
-        if (!binDir.exists()) {
-            binDir.mkpath(binPath);
-            if (!binDir.exists()) {
-                return false;
-            }
-        }
-
-        QString destName = getFileNameWithSequence(binPath,
-                                                   directoryNameFromPath(p_path));
-
-        qDebug() << "try to move" << p_path << "to" << binPath << "as" << destName;
-        if (!binDir.rename(p_path, binDir.filePath(destName))) {
-            qWarning() << "fail to move directory" << p_path << "to" << binDir.filePath(destName);
-            return false;
-        }
-
-        return true;
+        return deleteFile(p_notebook->getRecycleBinFolderPath(), p_path);
     }
 }
 
@@ -815,39 +790,51 @@ bool VUtils::deleteFile(const VNotebook *p_notebook,
         return file.remove();
     } else {
         // Move it to the recycle bin folder.
-        QString binPath = getRecycleBinSubFolderToUse(p_notebook);
-        QDir binDir(binPath);
-        if (!binDir.exists()) {
-            binDir.mkpath(binPath);
-            if (!binDir.exists()) {
-                return false;
-            }
-        }
-
-        QString destName = getFileNameWithSequence(binPath,
-                                                   fileNameFromPath(p_path));
-
-        qDebug() << "try to move" << p_path << "to" << binPath << "as" << destName;
-        if (!binDir.rename(p_path, binDir.filePath(destName))) {
-            qWarning() << "fail to move file" << p_path << "to" << binDir.filePath(destName);
-            return false;
-        }
-
-        return true;
+        return deleteFile(p_notebook->getRecycleBinFolderPath(), p_path);
     }
 }
 
-bool VUtils::deleteFile(const QString &p_path,
+bool VUtils::deleteFile(const VOrphanFile *p_file,
+                        const QString &p_path,
                         bool p_skipRecycleBin)
 {
     if (p_skipRecycleBin) {
         QFile file(p_path);
         return file.remove();
     } else {
-        // TODO: Move it to the recycle bin folder.
-        QFile file(p_path);
-        return file.remove();
+        // Move it to the recycle bin folder.
+        return deleteFile(p_file->fetchRecycleBinFolderPath(), p_path);
     }
+}
+
+static QString getRecycleBinSubFolderToUse(const QString &p_folderPath)
+{
+    QDir dir(p_folderPath);
+    return QDir::cleanPath(dir.absoluteFilePath(QDateTime::currentDateTime().toString("yyyyMMdd")));
+}
+
+bool VUtils::deleteFile(const QString &p_recycleBinFolderPath,
+                        const QString &p_path)
+{
+    QString binPath = getRecycleBinSubFolderToUse(p_recycleBinFolderPath);
+    QDir binDir(binPath);
+    if (!binDir.exists()) {
+        binDir.mkpath(binPath);
+        if (!binDir.exists()) {
+            return false;
+        }
+    }
+
+    QString destName = getFileNameWithSequence(binPath,
+                                               fileNameFromPath(p_path));
+
+    qDebug() << "try to move" << p_path << "to" << binPath << "as" << destName;
+    if (!binDir.rename(p_path, binDir.filePath(destName))) {
+        qWarning() << "fail to move" << p_path << "to" << binDir.filePath(destName);
+        return false;
+    }
+
+    return true;
 }
 
 QVector<VElementRegion> VUtils::fetchImageRegionsUsingParser(const QString &p_content)

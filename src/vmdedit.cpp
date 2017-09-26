@@ -13,6 +13,7 @@
 #include "dialog/vconfirmdeletiondialog.h"
 #include "vimagepreviewer.h"
 #include "vtextblockdata.h"
+#include "vorphanfile.h"
 
 extern VConfigManager *g_config;
 extern VNote *g_vnote;
@@ -308,8 +309,11 @@ void VMdEdit::clearUnusedImages()
             if (m_file->getType() == FileType::Note) {
                 const VNoteFile *tmpFile = dynamic_cast<const VNoteFile *>((VFile *)m_file);
                 ret = VUtils::deleteFile(tmpFile->getNotebook(), unusedImages[i], false);
+            } else if (m_file->getType() == FileType::Orphan) {
+                const VOrphanFile *tmpFile = dynamic_cast<const VOrphanFile *>((VFile *)m_file);
+                ret = VUtils::deleteFile(tmpFile, unusedImages[i], false);
             } else {
-                ret = VUtils::deleteFile(unusedImages[i], false);
+                Q_ASSERT(false);
             }
 
             if (!ret) {

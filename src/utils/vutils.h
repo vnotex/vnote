@@ -13,6 +13,7 @@
 
 class QKeyEvent;
 class VFile;
+class VOrphanFile;
 class VNotebook;
 
 #if !defined(V_ASSERT)
@@ -151,9 +152,10 @@ public:
                            bool p_skipRecycleBin = false);
 
     // Delete file specified by @p_path.
-    // Will just move the file to the recycle bin of VNote if
+    // Will just move the file to the recycle bin of VOrphanFile if
     // @p_skipRecycleBin is false.
-    static bool deleteFile(const QString &p_path,
+    static bool deleteFile(const VOrphanFile *p_file,
+                           const QString &p_path,
                            bool p_skipRecycleBin = false);
 
     static QString displayDateTime(const QDateTime &p_dateTime);
@@ -202,6 +204,11 @@ private:
 
     // Use HGMarkdownParser to parse @p_content to get all image link regions.
     static QVector<VElementRegion> fetchImageRegionsUsingParser(const QString &p_content);
+
+    // Delete file/directory specified by @p_path by moving it to the recycle bin
+    // folder @p_recycleBinFolderPath.
+    static bool deleteFile(const QString &p_recycleBinFolderPath,
+                           const QString &p_path);
 
     // <value, name>
     static QVector<QPair<QString, QString>> s_availableLanguages;

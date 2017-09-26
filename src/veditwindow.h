@@ -177,6 +177,9 @@ private:
 
     // Open the location (the folder containing this file) of this note.
     QAction *m_openLocationAct;
+
+    // Open the recycle bin folder of this note.
+    QAction *m_recycleBinAct;
 };
 
 inline QString VEditWindow::generateTooltip(const VFile *p_file) const

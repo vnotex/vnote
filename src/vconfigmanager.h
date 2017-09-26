@@ -271,6 +271,8 @@ public:
 
     const QString &getRecycleBinFolder() const;
 
+    const QString &getRecycleBinFolderExt() const;
+
     bool getConfirmImagesCleanUp() const;
     void setConfirmImagesCleanUp(bool p_enabled);
 
@@ -552,6 +554,9 @@ private:
 
     // Default name of the recycle bin folder of notebook.
     QString m_recycleBinFolder;
+
+    // Default name of the recycle bin folder of external files.
+    QString m_recycleBinFolderExt;
 
     // Confirm before deleting unused images.
     bool m_confirmImagesCleanUp;
@@ -1437,6 +1442,11 @@ inline void VConfigManager::setMarkdownitOption(const MarkdownitOption &p_opt)
 inline const QString &VConfigManager::getRecycleBinFolder() const
 {
     return m_recycleBinFolder;
+}
+
+inline const QString &VConfigManager::getRecycleBinFolderExt() const
+{
+    return m_recycleBinFolderExt;
 }
 
 inline bool VConfigManager::getConfirmImagesCleanUp() const

@@ -146,6 +146,33 @@ void VEditWindow::initTabActions()
                 QUrl url = QUrl::fromLocalFile(file->fetchBasePath());
                 QDesktopServices::openUrl(url);
             });
+
+    m_recycleBinAct = new QAction(QIcon(":/resources/icons/recycle_bin.svg"),
+                                  tr("&Recycle Bin"), this);
+    m_recycleBinAct->setToolTip(tr("Open the recycle bin of this note"));
+    connect(m_recycleBinAct, &QAction::triggered,
+            this, [this]() {
+                int tab = this->m_closeTabAct->data().toInt();
+                Q_ASSERT(tab != -1);
+
+                VEditTab *editor = getTab(tab);
+                VFile *file = editor->getFile();
+                Q_ASSERT(file);
+
+                QString folderPath;
+                if (file->getType() == FileType::Note) {
+                    const VNoteFile *tmpFile = dynamic_cast<const VNoteFile *>((VFile *)file);
+                    folderPath = tmpFile->getNotebook()->getRecycleBinFolderPath();
+                } else if (file->getType() == FileType::Orphan) {
+                    const VOrphanFile *tmpFile = dynamic_cast<const VOrphanFile *>((VFile *)file);
+                    folderPath = tmpFile->fetchRecycleBinFolderPath();
+                } else {
+                    Q_ASSERT(false);
+                }
+
+                QUrl url = QUrl::fromLocalFile(folderPath);
+                QDesktopServices::openUrl(url);
+            });
 }
 
 void VEditWindow::setupCornerWidget()
@@ -560,6 +587,11 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
         m_locateAct->setData(tab);
         menu.addAction(m_locateAct);
 
+        menu.addSeparator();
+
+        m_recycleBinAct->setData(tab);
+        menu.addAction(m_recycleBinAct);
+
         m_openLocationAct->setData(tab);
         menu.addAction(m_openLocationAct);
 
@@ -567,6 +599,9 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
         menu.addAction(m_noteInfoAct);
     } else if (file->getType() == FileType::Orphan
                && !(dynamic_cast<VOrphanFile *>(file)->isSystemFile())) {
+        m_recycleBinAct->setData(tab);
+        menu.addAction(m_recycleBinAct);
+
         m_openLocationAct->setData(tab);
         menu.addAction(m_openLocationAct);
 

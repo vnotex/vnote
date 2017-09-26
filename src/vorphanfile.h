@@ -35,6 +35,9 @@ public:
 
     bool isSystemFile() const;
 
+    // Get the recycle bin folder for this file.
+    QString fetchRecycleBinFolderPath() const;
+
 private:
     // Full path of this file.
     QString m_path;
@@ -44,6 +47,12 @@ private:
     // Empty to use the global default config.
     // Valid only within a session.
     QString m_imageFolder;
+
+    // Recycle bin forlder.
+    // May be absolute or relative path.
+    // Empty to use the global default config.
+    // Valid only within a session.
+    QString m_recycleBinFolder;
 
     // Whether it is a system internal file.
     bool m_systemFile;

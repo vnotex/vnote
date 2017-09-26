@@ -67,3 +67,18 @@ QString VOrphanFile::getImageFolderInLink() const
 
     return folder;
 }
+
+QString VOrphanFile::fetchRecycleBinFolderPath() const
+{
+    QString folder = m_recycleBinFolder;
+    if (m_recycleBinFolder.isEmpty()) {
+        folder = g_config->getRecycleBinFolderExt();
+    }
+
+    QFileInfo fi(folder);
+    if (fi.isAbsolute()) {
+        return folder;
+    } else {
+        return QDir(fetchBasePath()).filePath(folder);
+    }
+}
