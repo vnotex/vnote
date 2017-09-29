@@ -120,7 +120,15 @@ void VInsertImageDialog::setImage(const QImage &image)
     } else {
         *(this->image) = image;
     }
-    imagePreviewLabel->setPixmap(QPixmap::fromImage(this->image->scaled(previewSize)));
+
+    QPixmap pixmap;
+    if (image.width() > width || image.height() > width) {
+        pixmap = QPixmap::fromImage(this->image->scaled(previewSize, Qt::KeepAspectRatio));
+    } else {
+        pixmap = QPixmap::fromImage(*(this->image));
+    }
+
+    imagePreviewLabel->setPixmap(pixmap);
     imagePreviewLabel->setVisible(true);
     enableOkButton();
 }

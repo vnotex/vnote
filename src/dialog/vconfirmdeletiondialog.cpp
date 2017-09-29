@@ -95,6 +95,22 @@ void VConfirmDeletionDialog::setupUI(const QString &p_title,
     m_listWidget = new QListWidget();
     connect(m_listWidget, &QListWidget::currentRowChanged,
             this, &VConfirmDeletionDialog::currentFileChanged);
+    connect(m_listWidget, &QListWidget::itemActivated,
+            this, [this](QListWidgetItem *p_item) {
+                // Open it using resource manager.
+                if (!p_item) {
+                    return;
+                }
+
+                ConfirmItemWidget *widget = getItemWidget(p_item);
+                Q_ASSERT(widget);
+                QString filePath = m_items[widget->getIndex()].m_path;
+
+                if (!filePath.isEmpty()) {
+                    QUrl url = QUrl::fromLocalFile(filePath);
+                    QDesktopServices::openUrl(url);
+                }
+            });
 
     m_previewer = new QLabel();
 
@@ -195,7 +211,12 @@ void VConfirmDeletionDialog::currentFileChanged(int p_row)
             if (!image.isNull()) {
                 int width = 512 * VUtils::calculateScaleFactor();
                 QSize previewSize(width, width);
-                m_previewer->setPixmap(image.scaled(previewSize));
+                if (image.width() > width || image.height() > width) {
+                    m_previewer->setPixmap(image.scaled(previewSize, Qt::KeepAspectRatio));
+                } else {
+                    m_previewer->setPixmap(image);
+                }
+
                 succeed = true;
             }
         }
