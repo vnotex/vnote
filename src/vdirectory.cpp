@@ -10,8 +10,8 @@
 extern VConfigManager *g_config;
 
 VDirectory::VDirectory(VNotebook *p_notebook,
+                       VDirectory *p_parent,
                        const QString &p_name,
-                       QObject *p_parent,
                        QDateTime p_createdTimeUtc)
     : QObject(p_parent),
       m_notebook(p_notebook),
@@ -45,7 +45,7 @@ bool VDirectory::open()
     QJsonArray dirJson = configJson[DirConfig::c_subDirectories].toArray();
     for (int i = 0; i < dirJson.size(); ++i) {
         QJsonObject dirItem = dirJson[i].toObject();
-        VDirectory *dir = new VDirectory(m_notebook, dirItem[DirConfig::c_name].toString(), this);
+        VDirectory *dir = new VDirectory(m_notebook, this, dirItem[DirConfig::c_name].toString());
         m_subDirs.append(dir);
     }
 
@@ -188,28 +188,37 @@ void VDirectory::addNotebookConfig(QJsonObject &p_json) const
     }
 }
 
-VDirectory *VDirectory::createSubDirectory(const QString &p_name)
+VDirectory *VDirectory::createSubDirectory(const QString &p_name,
+                                           QString *p_errMsg)
 {
     Q_ASSERT(!p_name.isEmpty());
-    // First open current directory
+
     if (!open()) {
+        VUtils::addErrMsg(p_errMsg, tr("Fail to open folder %1.").arg(m_name));
         return NULL;
     }
 
-    qDebug() << "create subfolder" << p_name << "in" << m_name;
+    QDir dir(fetchPath());
+    if (dir.exists(p_name)) {
+        VUtils::addErrMsg(p_errMsg, tr("%1 already exists in directory %2.")
+                                      .arg(p_name)
+                                      .arg(fetchPath()));
+        return NULL;
+    }
 
-    QString path = fetchPath();
-    QDir dir(path);
     if (!dir.mkdir(p_name)) {
-        qWarning() << "fail to create directory" << p_name << "under" << path;
+        VUtils::addErrMsg(p_errMsg, tr("Fail to create folder in %1.")
+                                      .arg(m_name));
         return NULL;
     }
 
     VDirectory *ret = new VDirectory(m_notebook,
-                                     p_name,
                                      this,
+                                     p_name,
                                      QDateTime::currentDateTimeUtc());
     if (!ret->writeToConfig()) {
+        VUtils::addErrMsg(p_errMsg, tr("Fail to write configuration of folder %1.")
+                                      .arg(p_name));
         dir.rmdir(p_name);
         delete ret;
         return NULL;
@@ -217,11 +226,13 @@ VDirectory *VDirectory::createSubDirectory(const QString &p_name)
 
     m_subDirs.append(ret);
     if (!writeToConfig()) {
-        VConfigManager::deleteDirectoryConfig(QDir(path).filePath(p_name));
-        dir.rmdir(p_name);
+        VUtils::addErrMsg(p_errMsg, tr("Fail to write configuration of folder %1.")
+                                      .arg(p_name));
+
+        QDir subdir(dir.filePath(p_name));
+        subdir.removeRecursively();
         delete ret;
         m_subDirs.removeLast();
-
         return NULL;
     }
 
@@ -399,13 +410,13 @@ bool VDirectory::addSubDirectory(VDirectory *p_dir, int p_index)
 
 VDirectory *VDirectory::addSubDirectory(const QString &p_name, int p_index)
 {
-    if (!open()) {
+    if (!open() || p_name.isEmpty()) {
         return NULL;
     }
 
     VDirectory *dir = new VDirectory(m_notebook,
-                                     p_name,
                                      this,
+                                     p_name,
                                      QDateTime::currentDateTimeUtc());
     if (!dir) {
         return NULL;
@@ -419,24 +430,45 @@ VDirectory *VDirectory::addSubDirectory(const QString &p_name, int p_index)
     return dir;
 }
 
-void VDirectory::deleteSubDirectory(VDirectory *p_subDir, bool p_skipRecycleBin)
+bool VDirectory::deleteDirectory(bool p_skipRecycleBin, QString *p_errMsg)
 {
-    Q_ASSERT(p_subDir->getNotebook() == m_notebook);
-
-    QString dirPath = p_subDir->fetchPath();
-
-    p_subDir->close();
-
-    removeSubDirectory(p_subDir);
+    Q_ASSERT(!m_opened);
+    Q_ASSERT(parent());
 
     // Delete the entire directory.
+    bool ret = true;
+    QString dirPath = fetchPath();
     if (!VUtils::deleteDirectory(m_notebook, dirPath, p_skipRecycleBin)) {
-        qWarning() << "fail to remove directory" << dirPath << "recursively";
-    } else {
-        qDebug() << "deleted" << dirPath << (p_skipRecycleBin ? "from disk" : "to recycle bin");
+        VUtils::addErrMsg(p_errMsg, tr("Fail to delete the directory %1.").arg(dirPath));
+        ret = false;
     }
 
-    delete p_subDir;
+    return ret;
+}
+
+bool VDirectory::deleteDirectory(VDirectory *p_dir, bool p_skipRecycleBin, QString *p_errMsg)
+{
+    p_dir->close();
+
+    bool ret = true;
+
+    QString name = p_dir->getName();
+    QString path = p_dir->fetchPath();
+
+    if (!p_dir->deleteDirectory(p_skipRecycleBin, p_errMsg)) {
+        ret = false;
+    }
+
+    VDirectory *paDir = p_dir->getParentDirectory();
+    Q_ASSERT(paDir);
+    if (!paDir->removeSubDirectory(p_dir)) {
+        VUtils::addErrMsg(p_errMsg, tr("Fail to remove the folder from the folder configuration."));
+        ret = false;
+    }
+
+    delete p_dir;
+
+    return ret;
 }
 
 bool VDirectory::removeSubDirectory(VDirectory *p_dir)
@@ -451,8 +483,6 @@ bool VDirectory::removeSubDirectory(VDirectory *p_dir)
     if (!writeToConfig()) {
         return false;
     }
-
-    qDebug() << "folder" << p_dir->getName() << "removed from folder" << m_name;
 
     return true;
 }
@@ -504,35 +534,48 @@ bool VDirectory::rename(const QString &p_name)
     return true;
 }
 
-// Copy @p_srcDir to be a sub-directory of @p_destDir with name @p_destName.
-VDirectory *VDirectory::copyDirectory(VDirectory *p_destDir, const QString &p_destName,
-                                      VDirectory *p_srcDir, bool p_cut)
+bool VDirectory::copyDirectory(VDirectory *p_destDir,
+                               const QString &p_destName,
+                               VDirectory *p_dir,
+                               bool p_isCut,
+                               VDirectory **p_targetDir,
+                               QString *p_errMsg)
 {
-    QString srcPath = QDir::cleanPath(p_srcDir->fetchPath());
+    bool ret = true;
+    *p_targetDir = NULL;
+
+    QString srcPath = QDir::cleanPath(p_dir->fetchPath());
     QString destPath = QDir::cleanPath(QDir(p_destDir->fetchPath()).filePath(p_destName));
     if (VUtils::equalPath(srcPath, destPath)) {
-        return p_srcDir;
+        *p_targetDir = p_dir;
+        return false;
     }
 
-    VDirectory *srcParentDir = p_srcDir->getParentDirectory();
-
-    // Copy the directory
-    if (!VUtils::copyDirectory(srcPath, destPath, p_cut)) {
-        return NULL;
+    if (!p_destDir->isOpened()) {
+        VUtils::addErrMsg(p_errMsg, tr("Fail to open target folder."));
+        return false;
     }
 
-    // Handle VDirectory
-    int index = -1;
+    QString opStr = p_isCut ? tr("cut") : tr("copy");
+    VDirectory *paDir = p_dir->getParentDirectory();
+
+    Q_ASSERT(paDir->isOpened());
+
+    // Copy the directory.
+    if (!VUtils::copyDirectory(srcPath, destPath, p_isCut)) {
+        VUtils::addErrMsg(p_errMsg, tr("Fail to %1 the folder.").arg(opStr));
+        qWarning() << "fail to" << opStr << "the folder directory" << srcPath << "to" << destPath;
+        return false;
+    }
+
+    // Add directory to VDirectory.
     VDirectory *destDir = NULL;
-    if (p_cut) {
-        // Remove the directory from config
-        srcParentDir->removeSubDirectory(p_srcDir);
-
-        p_srcDir->setName(p_destName);
-
+    if (p_isCut) {
+        paDir->removeSubDirectory(p_dir);
+        p_dir->setName(p_destName);
         // Add the directory to new dir's config
-        if (p_destDir->addSubDirectory(p_srcDir, index)) {
-            destDir = p_srcDir;
+        if (p_destDir->addSubDirectory(p_dir, -1)) {
+            destDir = p_dir;
         } else {
             destDir = NULL;
         }
@@ -540,7 +583,15 @@ VDirectory *VDirectory::copyDirectory(VDirectory *p_destDir, const QString &p_de
         destDir = p_destDir->addSubDirectory(p_destName, -1);
     }
 
-    return destDir;
+    if (!destDir) {
+        VUtils::addErrMsg(p_errMsg, tr("Fail to add the folder to target folder's configuration."));
+        return false;
+    }
+
+    qDebug() << "copyDirectory:" << p_dir << "to" << destDir;
+
+    *p_targetDir = destDir;
+    return ret;
 }
 
 void VDirectory::setExpanded(bool p_expanded)
@@ -591,6 +642,39 @@ VNoteFile *VDirectory::tryLoadFile(QStringList &p_filePath)
     return file;
 }
 
+VDirectory *VDirectory::tryLoadDirectory(QStringList &p_filePath)
+{
+    qDebug() << "directory" << m_name << "tryLoadDirectory()" << p_filePath.join("/");
+    if (p_filePath.isEmpty()) {
+        return NULL;
+    }
+
+    bool opened = isOpened();
+    if (!open()) {
+        return NULL;
+    }
+
+#if defined(Q_OS_WIN)
+    bool caseSensitive = false;
+#else
+    bool caseSensitive = true;
+#endif
+
+    VDirectory *dir = findSubDirectory(p_filePath.at(0), caseSensitive);
+    if (dir) {
+        if (p_filePath.size() > 1) {
+            p_filePath.removeFirst();
+            dir = dir->tryLoadDirectory(p_filePath);
+        }
+    }
+
+    if (!dir && !opened) {
+        close();
+    }
+
+    return dir;
+}
+
 bool VDirectory::sortFiles(const QVector<int> &p_sortedIdx)
 {
     V_ASSERT(m_opened);
@@ -606,6 +690,27 @@ bool VDirectory::sortFiles(const QVector<int> &p_sortedIdx)
     if (!writeToConfig()) {
         qWarning() << "fail to reorder files in config" << p_sortedIdx;
         m_files = ori;
+        ret = false;
+    }
+
+    return ret;
+}
+
+bool VDirectory::sortSubDirectories(const QVector<int> &p_sortedIdx)
+{
+    V_ASSERT(m_opened);
+    V_ASSERT(p_sortedIdx.size() == m_subDirs.size());
+
+    auto ori = m_subDirs;
+
+    for (int i = 0; i < p_sortedIdx.size(); ++i) {
+        m_subDirs[i] = ori[p_sortedIdx[i]];
+    }
+
+    bool ret = true;
+    if (!writeToConfig()) {
+        qWarning() << "fail to reorder sub-directories in config" << p_sortedIdx;
+        m_subDirs = ori;
         ret = false;
     }
 

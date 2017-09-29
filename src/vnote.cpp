@@ -325,3 +325,16 @@ VNoteFile *VNote::getInternalFile(const QString &p_path)
     return file;
 }
 
+VDirectory *VNote::getInternalDirectory(const QString &p_path)
+{
+    VDirectory *dir = NULL;
+    for (auto & nb : m_notebooks) {
+        dir = nb->tryLoadDirectory(p_path);
+        if (dir) {
+            break;
+        }
+    }
+
+    return dir;
+
+}

@@ -177,7 +177,7 @@ QWidget *VMainWindow::setupDirectoryPanel()
     notebookSelector->setProperty("NotebookPanel", true);
     notebookSelector->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
 
-    directoryTree = new VDirectoryTree(vnote);
+    directoryTree = new VDirectoryTree;
     directoryTree->setProperty("NotebookPanel", true);
 
     QVBoxLayout *nbLayout = new QVBoxLayout;
@@ -193,7 +193,11 @@ QWidget *VMainWindow::setupDirectoryPanel()
     nbContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
     connect(notebookSelector, &VNotebookSelector::curNotebookChanged,
-            directoryTree, &VDirectoryTree::setNotebook);
+            this, [this](VNotebook *p_notebook) {
+                directoryTree->setNotebook(p_notebook);
+                directoryTree->setFocus();
+            });
+
     connect(notebookSelector, &VNotebookSelector::curNotebookChanged,
             this, &VMainWindow::handleCurrentNotebookChanged);
 
@@ -501,6 +505,14 @@ void VMainWindow::initHelpMenu()
                 editArea->openFile(file, OpenFileMode::Read);
             });
 
+    QAction *wikiAct = new QAction(tr("&Wiki"), this);
+    wikiAct->setToolTip(tr("View VNote's wiki on Github"));
+    connect(wikiAct, &QAction::triggered,
+            this, [this]() {
+                QString url("https://github.com/tamlok/vnote/wiki");
+                QDesktopServices::openUrl(url);
+            });
+
     QAction *updateAct = new QAction(tr("Check For &Updates"), this);
     updateAct->setToolTip(tr("Check for updates of VNote"));
     connect(updateAct, &QAction::triggered,
@@ -539,6 +551,7 @@ void VMainWindow::initHelpMenu()
 
     helpMenu->addAction(shortcutAct);
     helpMenu->addAction(mdGuideAct);
+    helpMenu->addAction(wikiAct);
     helpMenu->addAction(updateAct);
     helpMenu->addAction(starAct);
     helpMenu->addAction(feedbackAct);

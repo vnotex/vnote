@@ -19,6 +19,7 @@ namespace ClipboardConfig
     static const QString c_magic = "magic";
     static const QString c_isCut = "is_cut";
     static const QString c_files = "files";
+    static const QString c_dirs = "dirs";
 }
 
 enum class OpenFileMode {Read = 0, Edit};

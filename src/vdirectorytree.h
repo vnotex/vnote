@@ -12,7 +12,6 @@
 #include "vnotebook.h"
 #include "vnavigationmode.h"
 
-class VNote;
 class VEditArea;
 class QLabel;
 
@@ -20,10 +19,14 @@ class VDirectoryTree : public QTreeWidget, public VNavigationMode
 {
     Q_OBJECT
 public:
-    explicit VDirectoryTree(VNote *vnote, QWidget *parent = 0);
-    inline void setEditArea(VEditArea *p_editArea);
+    explicit VDirectoryTree(QWidget *parent = 0);
+
+    void setEditArea(VEditArea *p_editArea);
+
+    // Locate to the item representing @p_directory.
     bool locateDirectory(const VDirectory *p_directory);
-    inline const VNotebook *currentNotebook() const;
+
+    const VNotebook *currentNotebook() const;
 
     // Implementations for VNavigationMode.
     void registerNavigation(QChar p_majorKey) Q_DECL_OVERRIDE;
@@ -33,12 +36,17 @@ public:
 
 signals:
     void currentDirectoryChanged(VDirectory *p_directory);
+
     void directoryUpdated(const VDirectory *p_directory);
 
 public slots:
+    // Set directory tree to display a given notebook @p_notebook.
     void setNotebook(VNotebook *p_notebook);
+
+    // Create a root folder.
     void newRootDirectory();
-    void deleteDirectory();
+
+    // View and edit info about directory.
     void editDirectoryInfo();
 
     // Clear and re-build the whole directory tree.
@@ -46,74 +54,116 @@ public slots:
     void updateDirectoryTree();
 
 private slots:
+    // Set the state of expansion of the directory.
     void handleItemExpanded(QTreeWidgetItem *p_item);
+
+    // Set the state of expansion of the directory.
     void handleItemCollapsed(QTreeWidgetItem *p_item);
+
     void contextMenuRequested(QPoint pos);
+
+    // Directory selected folder.
+    // Currently only support single selected item.
+    void deleteSelectedDirectory();
+
+    // Create sub-directory of current item's directory.
     void newSubDirectory();
+
+    // Current tree item changed.
     void currentDirectoryItemChanged(QTreeWidgetItem *currentItem);
-    void copySelectedDirectories(bool p_cut = false);
+
+    // Copy selected directories.
+    // Will put a Json string into the clipboard which contains the information
+    // about copied directories.
+    void copySelectedDirectories(bool p_isCut = false);
+
     void cutSelectedDirectories();
-    void pasteDirectoriesInCurDir();
+
+    // Paste directories from clipboard as sub-directories of current item.
+    void pasteDirectoriesFromClipboard();
+
+    // Open the folder's parent directory in system's file browser.
     void openDirectoryLocation() const;
 
     // Reload the content of current directory.
     void reloadFromDisk();
 
+    // Sort sub-folders of current item's folder.
+    void sortItems();
+
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
+
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 
 private:
     // Build the subtree of @p_parent recursively to the depth @p_depth.
-    // Item @p_parent must not be built before.
-    // Will expand the item if the corresponding directory was expanded before.
-    // @p_depth: valid only when greater than 0.
-    void updateDirectoryTreeOne(QTreeWidgetItem *p_parent, int p_depth);
-
-    // Build the subtree of @p_parent recursively to the depth @p_depth.
     // @p_depth: negative - infinite levels.
     // Will expand the item if the corresponding directory was expanded before.
+    // Will treat items with children as items having been built before.
     void buildSubTree(QTreeWidgetItem *p_parent, int p_depth);
 
-    // Fill the content of a tree item.
-    void fillTreeItem(QTreeWidgetItem &p_item, const QString &p_name,
-                      VDirectory *p_directory, const QIcon &p_icon);
+    // Fill the content of a tree item according to @p_directory.
+    void fillTreeItem(QTreeWidgetItem *p_item, VDirectory *p_directory);
 
     void initShortcuts();
 
     void initActions();
 
     // Update @p_item's direct children only: deleted, added, renamed.
-    void updateItemChildren(QTreeWidgetItem *p_item);
+    void updateItemDirectChildren(QTreeWidgetItem *p_item);
+
     // Find the corresponding item of @p_dir;
     // Return's NULL if no item is found and it is the root directory if @p_widget is true.
-    QTreeWidgetItem *findVDirectory(const VDirectory *p_dir, bool &p_widget);
-    inline QPointer<VDirectory> getVDirectory(QTreeWidgetItem *p_item) const;
-    void copyDirectoryInfoToClipboard(const QJsonArray &p_dirs, bool p_cut);
-    void pasteDirectories(VDirectory *p_destDir);
-    bool copyDirectory(VDirectory *p_destDir, const QString &p_destName,
-                       VDirectory *p_srcDir, bool p_cut);
+    QTreeWidgetItem *findVDirectory(const VDirectory *p_dir, bool *p_widget = NULL);
+
+    QPointer<VDirectory> getVDirectory(QTreeWidgetItem *p_item) const;
+
+    // Paste @p_dirs as sub-directory of @p_destDir.
+    void pasteDirectories(VDirectory *p_destDir,
+                          const QVector<QString> &p_dirs,
+                          bool p_isCut);
 
     // Build the subtree of @p_item's children if it has not been built yet.
-    void updateChildren(QTreeWidgetItem *p_item);
+    // We need to fill the children before showing a item to get a correct render.
+    void buildChildren(QTreeWidgetItem *p_item);
 
     // Expand/create the directory tree nodes to @p_directory.
     QTreeWidgetItem *expandToVDirectory(const VDirectory *p_directory);
 
     // Expand the currently-built subtree of @p_item according to VDirectory.isExpanded().
-    void expandItemTree(QTreeWidgetItem *p_item);
+    void expandSubTree(QTreeWidgetItem *p_item);
 
     QList<QTreeWidgetItem *> getVisibleItems() const;
+
     QList<QTreeWidgetItem *> getVisibleChildItems(const QTreeWidgetItem *p_item) const;
+
+    // We use a map to save and restore current directory of each notebook.
+    // Try to restore current directory after changing notebook.
+    // Return false if no cache item found for current notebook.
     bool restoreCurrentItem();
 
-    VNote *vnote;
+    // Generate new magic to m_magicForClipboard.
+    int getNewMagic();
+
+    // Check if @p_magic equals to m_magicForClipboard.
+    bool checkMagic(int p_magic) const;
+
+    // Check if clipboard contains valid info to paste as directories.
+    bool pasteAvailable() const;
+
+    // Sort sub-directories of @p_dir.
+    void sortItems(VDirectory *p_dir);
+
     QPointer<VNotebook> m_notebook;
-    QVector<QPointer<VDirectory> > m_copiedDirs;
+
     VEditArea *m_editArea;
 
     // Each notebook's current item's VDirectory.
     QHash<VNotebook *, VDirectory *> m_notebookCurrentDirMap;
+
+    // Magic number for clipboard operations.
+    int m_magicForClipboard;
 
     // Actions
     QAction *newRootDirAct;
@@ -125,6 +175,7 @@ private:
     QAction *cutAct;
     QAction *pasteAct;
     QAction *m_openLocationAct;
+    QAction *m_sortAct;
 
     // Reload content from disk.
     QAction *m_reloadAct;

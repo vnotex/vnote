@@ -36,6 +36,13 @@ public:
     // if @p_path is not inside this notebook.
     VNoteFile *tryLoadFile(const QString &p_path);
 
+    // Try to load the directory @p_path.
+    // Returns the corresponding VDirectory struct if @p_path is a folder inside this notebook.
+    // Otherwise, returns NULL.
+    // If notebook is not opened currently, it will open itself and close itself
+    // if @p_path is not inside this notebook.
+    VDirectory *tryLoadDirectory(const QString &p_path);
+
     const QString &getName() const;
     const QString &getPath() const;
 
@@ -85,9 +92,6 @@ public:
 
     // Need to check if this notebook has been opened.
     QDateTime getCreatedTimeUtc();
-
-signals:
-    void contentChanged();
 
 private:
     // Serialize current instance to json.

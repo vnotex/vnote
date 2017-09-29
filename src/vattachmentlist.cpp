@@ -374,7 +374,6 @@ void VAttachmentList::sortItems()
     QTreeWidget *tree = dialog.getTreeWidget();
     tree->clear();
     tree->setColumnCount(1);
-    tree->header()->setStretchLastSection(true);
     QStringList headers;
     headers << tr("Name");
     tree->setHeaderLabels(headers);

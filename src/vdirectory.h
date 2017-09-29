@@ -17,13 +17,16 @@ class VDirectory : public QObject
     Q_OBJECT
 public:
     VDirectory(VNotebook *p_notebook,
+               VDirectory *p_parent,
                const QString &p_name,
-               QObject *p_parent = 0,
                QDateTime p_createdTimeUtc = QDateTime());
 
     bool open();
     void close();
-    VDirectory *createSubDirectory(const QString &p_name);
+
+    // Create a sub-directory with name @p_name.
+    VDirectory *createSubDirectory(const QString &p_name,
+                                   QString *p_errMsg = NULL);
 
     // Returns the VDirectory with the name @p_name directly in this directory.
     VDirectory *findSubDirectory(const QString &p_name, bool p_caseSensitive);
@@ -35,9 +38,6 @@ public:
     bool containsFile(const VFile *p_file) const;
 
     VNoteFile *createFile(const QString &p_name);
-
-    // Remove and delete subdirectory @p_subDir.
-    void deleteSubDirectory(VDirectory *p_subDir, bool p_skipRecycleBin = false);
 
     // Remove the file in the config and m_files without deleting it in the disk.
     // It won't change the parent of @p_file to enable it find its path.
@@ -58,10 +58,17 @@ public:
     // Rename current directory to @p_name.
     bool rename(const QString &p_name);
 
-    static VDirectory *copyDirectory(VDirectory *p_destDir, const QString &p_destName,
-                                     VDirectory *p_srcDir, bool p_cut);
+    // Copy @p_dir as a sub-directory of @p_destDir with the new name @p_destName.
+    // Return a directory representing the destination directory after copy/cut.
+    static bool copyDirectory(VDirectory *p_destDir,
+                              const QString &p_destName,
+                              VDirectory *p_dir,
+                              bool p_isCut,
+                              VDirectory **p_targetDir,
+                              QString *p_errMsg = NULL);
 
     const QVector<VDirectory *> &getSubDirs() const;
+
     const QString &getName() const;
     void setName(const QString &p_name);
     bool isOpened() const;
@@ -96,10 +103,21 @@ public:
     // Try to load file given relative path @p_filePath.
     VNoteFile *tryLoadFile(QStringList &p_filePath);
 
+    // Try to load directory given relative path @p_filePath.
+    VDirectory *tryLoadDirectory(QStringList &p_filePath);
+
     QDateTime getCreatedTimeUtc() const;
 
     // Reorder files in m_files by index.
     bool sortFiles(const QVector<int> &p_sortedIdx);
+
+    // Reorder sub-directories in m_subDirs by index.
+    bool sortSubDirectories(const QVector<int> &p_sortedIdx);
+
+    // Delete directory @p_dir.
+    static bool deleteDirectory(VDirectory *p_dir,
+                                bool p_skipRecycleBin = false,
+                                QString *p_errMsg = NULL);
 
 private:
     // Get the path of @p_dir recursively
@@ -120,6 +138,9 @@ private:
 
     // Add the directory in the config and m_subDirs. If @p_index is -1, add it at the end.
     bool addSubDirectory(VDirectory *p_dir, int p_index);
+
+    // Delete this directory in disk.
+    bool deleteDirectory(bool p_skipRecycleBin = false, QString *p_errMsg = NULL);
 
     // Notebook containing this folder.
     QPointer<VNotebook> m_notebook;

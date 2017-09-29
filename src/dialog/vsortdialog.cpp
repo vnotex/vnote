@@ -132,6 +132,11 @@ void VSortDialog::treeUpdated()
         m_treeWidget->resizeColumnToContents(i);
     }
 
+    QHeaderView *header = m_treeWidget->header();
+    if (header) {
+        header->setStretchLastSection(true);
+    }
+
     // We just need single level.
     int cnt = m_treeWidget->topLevelItemCount();
     for (int i = 0; i < cnt; ++i) {

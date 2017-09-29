@@ -88,6 +88,11 @@ public:
     // Otherwise, returns NULL.
     VNoteFile *getInternalFile(const QString &p_path);
 
+    // Given the path of a folder, try to find it in all notebooks.
+    // Returns a VDirectory struct if it is a folder in one notebook.
+    // Otherwise, returns NULL.
+    VDirectory *getInternalDirectory(const QString &p_path);
+
 public slots:
     void updateTemplate();
 

@@ -702,15 +702,16 @@ void VFileList::pasteFilesFromClipboard()
     }
 
     pasteFiles(m_directory, filesToPaste, isCut);
+
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->clear();
 }
 
 void VFileList::pasteFiles(VDirectory *p_destDir,
                            const QVector<QString> &p_files,
                            bool p_isCut)
 {
-    QClipboard *clipboard = QApplication::clipboard();
     if (!p_destDir || p_files.isEmpty()) {
-        clipboard->clear();
         return;
     }
 
@@ -721,7 +722,7 @@ void VFileList::pasteFiles(VDirectory *p_destDir,
             qWarning() << "Copied file is not an internal note" << p_files[i];
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Warning"),
-                                tr("Fail to copy note <span style=\"%1\">%2</span>.")
+                                tr("Fail to paste note <span style=\"%1\">%2</span>.")
                                   .arg(g_config->c_dataTextStyle)
                                   .arg(p_files[i]),
                                 tr("VNote could not find this note in any notebook."),
@@ -794,7 +795,7 @@ void VFileList::pasteFiles(VDirectory *p_destDir,
         }
     }
 
-    qDebug() << "copy" << nrPasted << "files";
+    qDebug() << "pasted" << nrPasted << "files";
     if (nrPasted > 0) {
         g_mainWin->showStatusMessage(tr("%1 %2 pasted")
                                        .arg(nrPasted)
@@ -802,7 +803,6 @@ void VFileList::pasteFiles(VDirectory *p_destDir,
     }
 
     updateFileList();
-    clipboard->clear();
     getNewMagic();
 }
 
@@ -1021,7 +1021,6 @@ void VFileList::sortItems()
     QTreeWidget *tree = dialog.getTreeWidget();
     tree->clear();
     tree->setColumnCount(3);
-    tree->header()->setStretchLastSection(true);
     QStringList headers;
     headers << tr("Name") << tr("Created Time") << tr("Modified Time");
     tree->setHeaderLabels(headers);

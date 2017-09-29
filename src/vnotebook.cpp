@@ -14,8 +14,8 @@ VNotebook::VNotebook(const QString &name, const QString &path, QObject *parent)
     m_path = QDir::cleanPath(path);
     m_recycleBinFolder = g_config->getRecycleBinFolder();
     m_rootDir = new VDirectory(this,
-                               VUtils::directoryNameFromPath(path),
                                NULL,
+                               VUtils::directoryNameFromPath(path),
                                QDateTime::currentDateTimeUtc());
 }
 
@@ -202,7 +202,7 @@ bool VNotebook::deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles)
         QVector<VDirectory *> subdirs = rootDir->getSubDirs();
         for (auto dir : subdirs) {
             // Skip recycle bin.
-            rootDir->deleteSubDirectory(dir, true);
+            VDirectory::deleteDirectory(dir, true);
         }
 
         // Delete the recycle bin.
@@ -275,6 +275,37 @@ VNoteFile *VNotebook::tryLoadFile(const QString &p_path)
         }
 
         return file;
+    }
+
+    return NULL;
+}
+
+VDirectory *VNotebook::tryLoadDirectory(const QString &p_path)
+{
+    QFileInfo fi(p_path);
+    Q_ASSERT(fi.isAbsolute());
+    if (!fi.exists()) {
+        return NULL;
+    }
+
+    QStringList filePath;
+    if (VUtils::splitPathInBasePath(m_path, p_path, filePath)) {
+        if (filePath.isEmpty()) {
+            return NULL;
+        }
+
+        bool opened = isOpened();
+        if (!open()) {
+            return NULL;
+        }
+
+        VDirectory *dir = m_rootDir->tryLoadDirectory(filePath);
+
+        if (!dir && !opened) {
+            close();
+        }
+
+        return dir;
     }
 
     return NULL;
