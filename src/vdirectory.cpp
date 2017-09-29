@@ -470,22 +470,7 @@ bool VDirectory::removeFile(VNoteFile *p_file)
         return false;
     }
 
-    qDebug() << "note" << p_file->getName() << "removed from folder" << m_name;
-
     return true;
-}
-
-void VDirectory::deleteFile(VNoteFile *p_file)
-{
-    removeFile(p_file);
-
-    // Delete the file
-    V_ASSERT(!p_file->isOpened());
-    V_ASSERT(p_file->parent());
-
-    p_file->deleteFile();
-
-    delete p_file;
 }
 
 bool VDirectory::rename(const QString &p_name)
@@ -517,126 +502,6 @@ bool VDirectory::rename(const QString &p_name)
     qDebug() << "folder renamed from" << oldName << "to" << m_name;
 
     return true;
-}
-
-VNoteFile *VDirectory::copyFile(VDirectory *p_destDir, const QString &p_destName,
-                                VNoteFile *p_srcFile, bool p_cut)
-{
-    QString srcPath = QDir::cleanPath(p_srcFile->fetchPath());
-    QString destPath = QDir::cleanPath(QDir(p_destDir->fetchPath()).filePath(p_destName));
-    if (VUtils::equalPath(srcPath, destPath)) {
-        return p_srcFile;
-    }
-
-    VDirectory *srcDir = p_srcFile->getDirectory();
-    DocType docType = p_srcFile->getDocType();
-    DocType newDocType = VUtils::docTypeFromName(destPath);
-
-    QVector<ImageLink> images;
-    if (docType == DocType::Markdown) {
-        images = VUtils::fetchImagesFromMarkdownFile(p_srcFile,
-                                                     ImageLink::LocalRelativeInternal);
-    }
-
-    // Copy the file
-    if (!VUtils::copyFile(srcPath, destPath, p_cut)) {
-        return NULL;
-    }
-
-    // Handle VDirectory and VNoteFile
-    int index = -1;
-    VNoteFile *destFile = NULL;
-    if (p_cut) {
-        // Remove the file from config
-        srcDir->removeFile(p_srcFile);
-
-        p_srcFile->setName(p_destName);
-
-        // Add the file to new dir's config
-        if (p_destDir->addFile(p_srcFile, index)) {
-            destFile = p_srcFile;
-        } else {
-            destFile = NULL;
-        }
-    } else {
-        destFile = p_destDir->addFile(p_destName, -1);
-    }
-
-    if (!destFile) {
-        return NULL;
-    }
-
-    Q_ASSERT(docType == newDocType);
-
-    // We need to copy internal images when it is still markdown.
-    if (!images.isEmpty()) {
-        if (newDocType == DocType::Markdown) {
-            QString parentPath = destFile->fetchBasePath();
-            int nrPasted = 0;
-            for (int i = 0; i < images.size(); ++i) {
-                const ImageLink &link = images[i];
-                if (!QFileInfo::exists(link.m_path)) {
-                    continue;
-                }
-
-                QString errStr;
-                bool ret = true;
-
-                QString imageFolder = VUtils::directoryNameFromPath(VUtils::basePathFromPath(link.m_path));
-                QString destImagePath = QDir(parentPath).filePath(imageFolder);
-                ret = VUtils::makePath(destImagePath);
-                if (!ret) {
-                    errStr = tr("Fail to create image folder <span style=\"%1\">%2</span>.")
-                               .arg(g_config->c_dataTextStyle).arg(destImagePath);
-                } else {
-                    destImagePath = QDir(destImagePath).filePath(VUtils::fileNameFromPath(link.m_path));
-
-                    // Copy or Cut the images accordingly.
-                    if (VUtils::equalPath(destImagePath, link.m_path)) {
-                        ret = false;
-                    } else {
-                        ret = VUtils::copyFile(link.m_path, destImagePath, p_cut);
-                    }
-
-                    if (ret) {
-                        qDebug() << (p_cut ? "Cut" : "Copy") << "image"
-                                 << link.m_path << "->" << destImagePath;
-
-                        nrPasted++;
-                    } else {
-                        errStr = tr("Please check if there already exists a file <span style=\"%1\">%2</span> "
-                                    "and then manually copy it and modify the note accordingly.")
-                                   .arg(g_config->c_dataTextStyle).arg(destImagePath);
-                    }
-                }
-
-                if (!ret) {
-                    VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                                        tr("Fail to copy image <span style=\"%1\">%2</span> while "
-                                           "%5 note <span style=\"%3\">%4</span>.")
-                                          .arg(g_config->c_dataTextStyle).arg(link.m_path)
-                                          .arg(g_config->c_dataTextStyle).arg(srcPath)
-                                          .arg(p_cut ? tr("moving") : tr("copying")),
-                                        errStr, QMessageBox::Ok, QMessageBox::Ok, NULL);
-                }
-            }
-
-            qDebug() << "pasted" << nrPasted << "images";
-        } else {
-            // Delete the images.
-            int deleted = 0;
-            for (int i = 0; i < images.size(); ++i) {
-                QFile file(images[i].m_path);
-                if (file.remove()) {
-                    ++deleted;
-                }
-            }
-
-            qDebug() << "delete" << deleted << "images since it is not Markdown any more for" << srcPath;
-        }
-    }
-
-    return destFile;
 }
 
 // Copy @p_srcDir to be a sub-directory of @p_destDir with name @p_destName.
@@ -687,36 +552,6 @@ void VDirectory::setExpanded(bool p_expanded)
     m_expanded = p_expanded;
 }
 
-void VDirectory::reorderFiles(int p_first, int p_last, int p_destStart)
-{
-    V_ASSERT(m_opened);
-    V_ASSERT(p_first <= p_last);
-    V_ASSERT(p_last < m_files.size());
-    V_ASSERT(p_destStart < p_first || p_destStart > p_last);
-    V_ASSERT(p_destStart >= 0 && p_destStart <= m_files.size());
-
-    auto oriFiles = m_files;
-
-    // Reorder m_files.
-    if (p_destStart > p_last) {
-        int to = p_destStart - 1;
-        for (int i = p_first; i <= p_last; ++i) {
-            // Move p_first to p_destStart every time.
-            m_files.move(p_first, to);
-        }
-    } else {
-        int to = p_destStart;
-        for (int i = p_first; i <= p_last; ++i) {
-            m_files.move(i, to++);
-        }
-    }
-
-    if (!writeToConfig()) {
-        qWarning() << "fail to reorder files in config" << p_first << p_last << p_destStart;
-        m_files = oriFiles;
-    }
-}
-
 VNoteFile *VDirectory::tryLoadFile(QStringList &p_filePath)
 {
     qDebug() << "directory" << m_name << "tryLoadFile()" << p_filePath.join("/");
@@ -754,4 +589,25 @@ VNoteFile *VDirectory::tryLoadFile(QStringList &p_filePath)
     }
 
     return file;
+}
+
+bool VDirectory::sortFiles(const QVector<int> &p_sortedIdx)
+{
+    V_ASSERT(m_opened);
+    V_ASSERT(p_sortedIdx.size() == m_files.size());
+
+    auto ori = m_files;
+
+    for (int i = 0; i < p_sortedIdx.size(); ++i) {
+        m_files[i] = ori[p_sortedIdx[i]];
+    }
+
+    bool ret = true;
+    if (!writeToConfig()) {
+        qWarning() << "fail to reorder files in config" << p_sortedIdx;
+        m_files = ori;
+        ret = false;
+    }
+
+    return ret;
 }

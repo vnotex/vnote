@@ -2,6 +2,33 @@
 
 #include <QtWidgets>
 
+void VTreeWidget::dropEvent(QDropEvent *p_event)
+{
+    QList<QTreeWidgetItem *> dragItems = selectedItems();
+
+    int first = -1, last = -1;
+    QTreeWidgetItem *firstItem = NULL;
+    for (int i = 0; i < dragItems.size(); ++i) {
+        int row = indexFromItem(dragItems[i]).row();
+        if (row > last) {
+            last = row;
+        }
+
+        if (first == -1 || row < first) {
+            first = row;
+            firstItem = dragItems[i];
+        }
+    }
+
+    Q_ASSERT(firstItem);
+
+    QTreeWidget::dropEvent(p_event);
+
+    int target = indexFromItem(firstItem).row();
+    emit rowsMoved(first, last, target);
+}
+
+
 VSortDialog::VSortDialog(const QString &p_title,
                          const QString &p_info,
                          QWidget *p_parent)
@@ -18,10 +45,28 @@ void VSortDialog::setupUI(const QString &p_title, const QString &p_info)
         infoLabel->setWordWrap(true);
     }
 
-    m_treeWidget = new QTreeWidget();
+    m_treeWidget = new VTreeWidget();
     m_treeWidget->setRootIsDecorated(false);
     m_treeWidget->setSelectionMode(QAbstractItemView::ContiguousSelection);
     m_treeWidget->setDragDropMode(QAbstractItemView::InternalMove);
+    connect(m_treeWidget, &VTreeWidget::rowsMoved,
+            this, [this](int p_first, int p_last, int p_row) {
+                Q_UNUSED(p_first);
+                Q_UNUSED(p_last);
+                QTreeWidgetItem *item = m_treeWidget->topLevelItem(p_row);
+                if (item) {
+                    m_treeWidget->setCurrentItem(item);
+
+                    // Select all items back.
+                    int cnt = p_last - p_first + 1;
+                    for (int i = 0; i < cnt; ++i) {
+                        QTreeWidgetItem *it = m_treeWidget->topLevelItem(p_row + i);
+                        if (it) {
+                            it->setSelected(true);
+                        }
+                    }
+                }
+            });
 
     // Buttons for top/up/down/bottom.
     m_topBtn = new QPushButton(tr("&Top"));
@@ -82,6 +127,11 @@ void VSortDialog::setupUI(const QString &p_title, const QString &p_info)
 
 void VSortDialog::treeUpdated()
 {
+    int cols = m_treeWidget->columnCount();
+    for (int i = 0; i < cols; ++i) {
+        m_treeWidget->resizeColumnToContents(i);
+    }
+
     // We just need single level.
     int cnt = m_treeWidget->topLevelItemCount();
     for (int i = 0; i < cnt; ++i) {
@@ -200,6 +250,20 @@ void VSortDialog::handleMoveOperation(MoveOperation p_op)
     }
 
     if (firstItem) {
+        m_treeWidget->setCurrentItem(firstItem);
         m_treeWidget->scrollToItem(firstItem);
     }
+}
+
+QVector<QVariant> VSortDialog::getSortedData() const
+{
+    int cnt = m_treeWidget->topLevelItemCount();
+    QVector<QVariant> data(cnt);
+    for (int i = 0; i < cnt; ++i) {
+        QTreeWidgetItem *item = m_treeWidget->topLevelItem(i);
+        Q_ASSERT(item);
+        data[i] = item->data(0, Qt::UserRole);
+    }
+
+    return data;
 }

@@ -53,9 +53,6 @@ QString VNoteFile::getImageFolderInLink() const
 
 void VNoteFile::setName(const QString &p_name)
 {
-    Q_ASSERT(m_name.isEmpty()
-             || (m_docType == VUtils::docTypeFromName(p_name)));
-
     m_name = p_name;
 }
 
@@ -80,7 +77,7 @@ bool VNoteFile::rename(const QString &p_name)
     m_name = p_name;
 
     // Update parent directory's config file.
-    if (!dir->writeToConfig()) {
+    if (!dir->updateFileConfig(this)) {
         m_name = oldName;
         diskDir.rename(p_name, m_name);
         return false;
@@ -175,32 +172,41 @@ QJsonObject VNoteFile::toConfigJson() const
     return item;
 }
 
-bool VNoteFile::deleteFile()
+bool VNoteFile::deleteFile(QString *p_errMsg)
 {
+    Q_ASSERT(!m_opened);
     Q_ASSERT(parent());
 
-    bool ret = false;
+    bool ret = true;
 
     // Delete local images if it is Markdown.
     if (m_docType == DocType::Markdown) {
-        deleteInternalImages();
+        if (!deleteInternalImages()) {
+            ret = false;
+            VUtils::addErrMsg(p_errMsg, tr("Fail to delete images of this note."));
+        }
     }
 
-    // TODO: Delete attachments.
+    // Delete attachments.
+    if (!deleteAttachments()) {
+        ret = false;
+        VUtils::addErrMsg(p_errMsg, tr("Fail to delete attachments of this note."));
+    }
 
     // Delete the file.
     QString filePath = fetchPath();
     if (VUtils::deleteFile(getNotebook(), filePath, false)) {
-        ret = true;
         qDebug() << "deleted" << m_name << filePath;
     } else {
+        ret = false;
+        VUtils::addErrMsg(p_errMsg, tr("Fail to delete the note file."));
         qWarning() << "fail to delete" << m_name << filePath;
     }
 
     return ret;
 }
 
-void VNoteFile::deleteInternalImages()
+bool VNoteFile::deleteInternalImages()
 {
     Q_ASSERT(parent() && m_docType == DocType::Markdown);
 
@@ -214,6 +220,8 @@ void VNoteFile::deleteInternalImages()
     }
 
     qDebug() << "delete" << deleted << "images for" << m_name << fetchPath();
+
+    return deleted == images.size();
 }
 
 bool VNoteFile::addAttachment(const QString &p_file)
@@ -297,10 +305,20 @@ bool VNoteFile::deleteAttachments(const QVector<QString> &p_names)
         }
     }
 
+    // Delete the attachment folder if m_attachments is empty now.
+    if (m_attachments.isEmpty()) {
+        dir.cdUp();
+        if (!dir.rmdir(m_attachmentFolder)) {
+            ret = false;
+            qWarning() << "fail to delete attachment folder" << m_attachmentFolder
+                       << "for note" << m_name;
+        }
+    }
+
     if (!getDirectory()->updateFileConfig(this)) {
+        ret = false;
         qWarning() << "fail to update config of file" << m_name
                    << "in directory" << fetchBasePath();
-        ret = false;
     }
 
     return ret;
@@ -320,21 +338,25 @@ int VNoteFile::findAttachment(const QString &p_name, bool p_caseSensitive)
     return -1;
 }
 
-void VNoteFile::sortAttachments(QVector<int> p_sortedIdx)
+bool VNoteFile::sortAttachments(const QVector<int> &p_sortedIdx)
 {
     V_ASSERT(m_opened);
     V_ASSERT(p_sortedIdx.size() == m_attachments.size());
 
-    auto oriFiles = m_attachments;
+    auto ori = m_attachments;
 
     for (int i = 0; i < p_sortedIdx.size(); ++i) {
-        m_attachments[i] = oriFiles[p_sortedIdx[i]];
+        m_attachments[i] = ori[p_sortedIdx[i]];
     }
 
+    bool ret = true;
     if (!getDirectory()->updateFileConfig(this)) {
-        qWarning() << "fail to reorder files in config" << p_sortedIdx;
-        m_attachments = oriFiles;
+        qWarning() << "fail to reorder attachments in config" << p_sortedIdx;
+        m_attachments = ori;
+        ret = false;
     }
+
+    return ret;
 }
 
 bool VNoteFile::renameAttachment(const QString &p_oldName, const QString &p_newName)
@@ -363,3 +385,172 @@ bool VNoteFile::renameAttachment(const QString &p_oldName, const QString &p_newN
 
     return true;
 }
+
+bool VNoteFile::deleteFile(VNoteFile *p_file, QString *p_errMsg)
+{
+    Q_ASSERT(!p_file->isOpened());
+
+    bool ret = true;
+    QString name = p_file->getName();
+    QString path = p_file->fetchPath();
+
+    if (!p_file->deleteFile(p_errMsg)) {
+        qWarning() << "fail to delete file" << name << path;
+        ret = false;
+    }
+
+    VDirectory *dir = p_file->getDirectory();
+    Q_ASSERT(dir);
+    if (!dir->removeFile(p_file)) {
+        qWarning() << "fail to remove file from directory" << name << path;
+        VUtils::addErrMsg(p_errMsg, tr("Fail to remove the note from the folder configuration."));
+        ret = false;
+    }
+
+    delete p_file;
+
+    return ret;
+}
+
+bool VNoteFile::copyFile(VDirectory *p_destDir,
+                         const QString &p_destName,
+                         VNoteFile *p_file,
+                         bool p_isCut,
+                         VNoteFile **p_targetFile,
+                         QString *p_errMsg)
+{
+    bool ret = true;
+    *p_targetFile = NULL;
+    int nrImageCopied = 0;
+    bool attachmentFolderCopied = false;
+
+    QString srcPath = QDir::cleanPath(p_file->fetchPath());
+    QString destPath = QDir::cleanPath(QDir(p_destDir->fetchPath()).filePath(p_destName));
+    if (VUtils::equalPath(srcPath, destPath)) {
+        *p_targetFile = p_file;
+        return false;
+    }
+
+    if (!p_destDir->isOpened()) {
+        VUtils::addErrMsg(p_errMsg, tr("Fail to open target folder."));
+        return false;
+    }
+
+    QString opStr = p_isCut ? tr("cut") : tr("copy");
+    VDirectory *srcDir = p_file->getDirectory();
+    DocType docType = p_file->getDocType();
+
+    Q_ASSERT(srcDir->isOpened());
+    Q_ASSERT(docType == VUtils::docTypeFromName(p_destName));
+
+    // Images to be copied.
+    QVector<ImageLink> images;
+    if (docType == DocType::Markdown) {
+        images = VUtils::fetchImagesFromMarkdownFile(p_file,
+                                                     ImageLink::LocalRelativeInternal);
+    }
+
+    // Attachments to be copied.
+    QString attaFolder = p_file->getAttachmentFolder();
+    QString attaFolderPath;
+    if (!attaFolder.isEmpty()) {
+        attaFolderPath = p_file->fetchAttachmentFolderPath();
+    }
+
+    // Copy the note file.
+    if (!VUtils::copyFile(srcPath, destPath, p_isCut)) {
+        VUtils::addErrMsg(p_errMsg, tr("Fail to %1 the note file.").arg(opStr));
+        qWarning() << "fail to" << opStr << "the note file" << srcPath << "to" << destPath;
+        return false;
+    }
+
+    // Add file to VDirectory.
+    VNoteFile *destFile = NULL;
+    if (p_isCut) {
+        srcDir->removeFile(p_file);
+        p_file->setName(p_destName);
+        if (p_destDir->addFile(p_file, -1)) {
+            destFile = p_file;
+        } else {
+            destFile = NULL;
+        }
+    } else {
+        destFile = p_destDir->addFile(p_destName, -1);
+    }
+
+    if (!destFile) {
+        VUtils::addErrMsg(p_errMsg, tr("Fail to add the note to target folder's configuration."));
+        return false;
+    }
+
+    // Copy images.
+    QDir parentDir(destFile->fetchBasePath());
+    for (int i = 0; i < images.size(); ++i) {
+        const ImageLink &link = images[i];
+        if (!QFileInfo::exists(link.m_path)) {
+            VUtils::addErrMsg(p_errMsg, tr("Source image %1 does not exist.")
+                                          .arg(link.m_path));
+            ret = false;
+            continue;
+        }
+
+        QString imageFolder = VUtils::directoryNameFromPath(VUtils::basePathFromPath(link.m_path));
+        QString destImagePath = QDir(parentDir.filePath(imageFolder)).filePath(VUtils::fileNameFromPath(link.m_path));
+
+        if (VUtils::equalPath(link.m_path, destImagePath)) {
+            VUtils::addErrMsg(p_errMsg, tr("Skip image with the same source and target path %1.")
+                                          .arg(link.m_path));
+            ret = false;
+            continue;
+        }
+
+        if (!VUtils::copyFile(link.m_path, destImagePath, p_isCut)) {
+            VUtils::addErrMsg(p_errMsg, tr("Fail to %1 image %2 to %3. "
+                                           "Please manually %1 it and modify the note.")
+                                          .arg(opStr).arg(link.m_path).arg(destImagePath));
+            ret = false;
+        } else {
+            ++nrImageCopied;
+            qDebug() << opStr << "image" << link.m_path << "to" << destImagePath;
+        }
+    }
+
+    // Copy attachment folder.
+    if (!attaFolderPath.isEmpty()) {
+        QDir dir(destFile->fetchBasePath());
+        QString folderPath = dir.filePath(destFile->getNotebook()->getAttachmentFolder());
+        attaFolder = VUtils::getFileNameWithSequence(folderPath, attaFolder);
+        folderPath = QDir(folderPath).filePath(attaFolder);
+
+        // Copy attaFolderPath to folderPath.
+        if (!VUtils::copyDirectory(attaFolderPath, folderPath, p_isCut)) {
+            VUtils::addErrMsg(p_errMsg, tr("Fail to %1 attachments folder %2 to %3. "
+                                           "Please manually maintain it.")
+                                          .arg(opStr).arg(attaFolderPath).arg(folderPath));
+            QVector<VAttachment> emptyAttas;
+            destFile->setAttachments(emptyAttas);
+            ret = false;
+        } else {
+            attachmentFolderCopied = true;
+
+            destFile->setAttachmentFolder(attaFolder);
+            if (!p_isCut) {
+                destFile->setAttachments(p_file->getAttachments());
+            }
+        }
+
+        if (!p_destDir->updateFileConfig(destFile)) {
+            VUtils::addErrMsg(p_errMsg, tr("Fail to update configuration of note %1.")
+                                          .arg(destFile->fetchPath()));
+            ret = false;
+        }
+    }
+
+    qDebug() << "copyFile:" << p_file << "to" << destFile
+             << "copied_images:" << nrImageCopied
+             << "copied_attachments:" << attachmentFolderCopied;
+
+    *p_targetFile = destFile;
+    return ret;
+}
+

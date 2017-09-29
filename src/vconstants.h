@@ -11,7 +11,16 @@ enum class DocType { Html = 0, Markdown, List, Container, Unknown };
 // Orphan: external file;
 enum class FileType { Note, Orphan };
 
-enum class ClipboardOpType { Invalid, CopyFile, CopyDir };
+enum class ClipboardOpType { CopyFile, CopyDir, Invalid };
+
+namespace ClipboardConfig
+{
+    static const QString c_type = "type";
+    static const QString c_magic = "magic";
+    static const QString c_isCut = "is_cut";
+    static const QString c_files = "files";
+}
+
 enum class OpenFileMode {Read = 0, Edit};
 
 static const qreal c_webZoomFactorMax = 5;

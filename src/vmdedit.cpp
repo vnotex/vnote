@@ -286,21 +286,39 @@ void VMdEdit::clearUnusedImages()
 
     if (!unusedImages.isEmpty()) {
         if (g_config->getConfirmImagesCleanUp()) {
-            QString info = tr("Following images seems not to be used in this note anymore. "
-                              "Please confirm the deletion of these images.<br>"
+            QVector<ConfirmItemInfo> items;
+            for (auto const & img : unusedImages) {
+                items.push_back(ConfirmItemInfo(img,
+                                                img,
+                                                img,
+                                                NULL));
+
+            }
+
+            QString text = tr("Following images seems not to be used in this note anymore. "
+                              "Please confirm the deletion of these images.");
+
+            QString info = tr("You could find deleted files in the recycle "
+                              "bin of this note.<br>"
                               "Click \"Cancel\" to leave them untouched.");
+
             VConfirmDeletionDialog dialog(tr("Confirm Cleaning Up Unused Images"),
+                                          text,
                                           info,
-                                          unusedImages,
+                                          items,
                                           true,
-                                          g_config->getConfirmImagesCleanUp(),
+                                          true,
                                           true,
                                           this);
+
+            unusedImages.clear();
             if (dialog.exec()) {
-                unusedImages = dialog.getConfirmedFiles();
+                items = dialog.getConfirmedItems();
                 g_config->setConfirmImagesCleanUp(dialog.getAskAgainEnabled());
-            } else {
-                unusedImages.clear();
+
+                for (auto const & item : items) {
+                    unusedImages.push_back(item.m_name);
+                }
             }
         }
 

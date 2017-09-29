@@ -533,12 +533,12 @@ void VDirectoryTree::reloadFromDisk()
         curDir = getVDirectory(curItem);
         info = tr("Are you sure to reload folder <span style=\"%1\">%2</span>?")
                  .arg(g_config->c_dataTextStyle).arg(curDir->getName());
-        msg = tr("Successfully reloaded folder %1 from disk").arg(curDir->getName());
+        msg = tr("Folder %1 reloaded from disk").arg(curDir->getName());
     } else {
         // Reload notebook.
         info = tr("Are you sure to reload notebook <span style=\"%1\">%2</span>?")
                  .arg(g_config->c_dataTextStyle).arg(m_notebook->getName());
-        msg = tr("Successfully reloaded notebook %1 from disk").arg(m_notebook->getName());
+        msg = tr("Notebook %1 reloaded from disk").arg(m_notebook->getName());
     }
 
     if (g_config->getConfirmReloadFolder()) {

@@ -51,7 +51,11 @@ public:
     static QRgb QRgbFromString(const QString &str);
     static QString generateImageFileName(const QString &path, const QString &title,
                                          const QString &format = "png");
+
+    // Given the file name @p_fileName and directory path @p_dirPath, generate
+    // a file name based on @p_fileName which does not exist in @p_dirPath.
     static QString generateCopiedFileName(const QString &p_dirPath, const QString &p_fileName);
+
     static QString generateCopiedDirName(const QString &p_parentDirPath, const QString &p_dirName);
     static void processStyle(QString &style, const QVector<QPair<QString, QString> > &varMap);
 
@@ -76,9 +80,24 @@ public:
     // @p_path could be /home/tamlok/abc, /home/tamlok/abc/.
     static bool makePath(const QString &p_path);
 
-    static ClipboardOpType opTypeInClipboard();
+    // Return QJsonObject if there is valid Json string in clipboard.
+    // Return empty object if there is no valid Json string.
+    static QJsonObject clipboardToJson();
+
+    // Get the operation type in system's clipboard.
+    static ClipboardOpType operationInClipboard();
+
+    static ClipboardOpType opTypeInClipboard() { return ClipboardOpType::Invalid; }
+
+    // Copy file @p_srcFilePath to @p_destFilePath.
+    // Will make necessary parent directory along the destination path.
     static bool copyFile(const QString &p_srcFilePath, const QString &p_destFilePath, bool p_isCut);
+
+    // Copy @p_srcDirPath to be @p_destDirPath.
+    // @p_destDirPath should not exist.
+    // Will make necessary parent directory along the destination path.
     static bool copyDirectory(const QString &p_srcDirPath, const QString &p_destDirPath, bool p_isCut);
+
     static int showMessage(QMessageBox::Icon p_icon, const QString &p_title, const QString &p_text,
                            const QString &p_infoText, QMessageBox::StandardButtons p_buttons,
                            QMessageBox::StandardButton p_defaultBtn, QWidget *p_parent,
@@ -163,6 +182,9 @@ public:
     // Check if file @p_name exists in @p_dir.
     // @p_forceCaseInsensitive: if true, will check the name ignoring the case.
     static bool fileExists(const QDir &p_dir, const QString &p_name, bool p_forceCaseInsensitive = false);
+
+    // Assign @p_str to @p_msg if it is not NULL.
+    static void addErrMsg(QString *p_msg, const QString &p_str);
 
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )

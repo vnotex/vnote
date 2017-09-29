@@ -1039,7 +1039,7 @@ void VMainWindow::importNoteFromFile()
 {
     static QString lastPath = QDir::homePath();
     QStringList files = QFileDialog::getOpenFileNames(this,
-                                                      tr("Select Files (HTML or Markdown) To Create Notes"),
+                                                      tr("Select Files To Create Notes"),
                                                       lastPath);
     if (files.isEmpty()) {
         return;
@@ -1048,23 +1048,21 @@ void VMainWindow::importNoteFromFile()
     // Update lastPath
     lastPath = QFileInfo(files[0]).path();
 
-    int failedFiles = 0;
-    for (int i = 0; i < files.size(); ++i) {
-        bool ret = fileList->importFile(files[i]);
-        if (!ret) {
-            ++failedFiles;
-        }
+    QString msg;
+    if (!fileList->importFiles(files, &msg)) {
+        VUtils::showMessage(QMessageBox::Warning,
+                            tr("Warning"),
+                            tr("Fail to create notes for all the files."),
+                            msg,
+                            QMessageBox::Ok,
+                            QMessageBox::Ok,
+                            this);
+    } else {
+        int cnt = files.size();
+        showStatusMessage(tr("%1 %2 created from external files")
+                            .arg(cnt)
+                            .arg(cnt > 1 ? tr("notes") : tr("note")));
     }
-
-    QMessageBox msgBox(QMessageBox::Information, tr("New Notes From Files"),
-                       tr("Created notes: %1 succeed, %2 failed.")
-                       .arg(files.size() - failedFiles).arg(failedFiles),
-                       QMessageBox::Ok, this);
-    if (failedFiles > 0) {
-        msgBox.setInformativeText(tr("Fail to create notes from files maybe due to name conflicts."));
-    }
-
-    msgBox.exec();
 }
 
 void VMainWindow::changeMarkdownConverter(QAction *action)

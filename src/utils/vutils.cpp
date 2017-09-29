@@ -250,18 +250,28 @@ bool VUtils::makePath(const QString &p_path)
     return ret;
 }
 
-ClipboardOpType VUtils::opTypeInClipboard()
+QJsonObject VUtils::clipboardToJson()
 {
     QClipboard *clipboard = QApplication::clipboard();
     const QMimeData *mimeData = clipboard->mimeData();
 
+    QJsonObject obj;
     if (mimeData->hasText()) {
         QString text = mimeData->text();
-        QJsonObject clip = QJsonDocument::fromJson(text.toLocal8Bit()).object();
-        if (clip.contains("operation")) {
-            return (ClipboardOpType)clip["operation"].toInt();
-        }
+        obj = QJsonDocument::fromJson(text.toUtf8()).object();
+        qDebug() << "Json object in clipboard" << obj;
     }
+
+    return obj;
+}
+
+ClipboardOpType VUtils::operationInClipboard()
+{
+    QJsonObject obj = clipboardToJson();
+    if (obj.contains(ClipboardConfig::c_type)) {
+        return (ClipboardOpType)obj[ClipboardConfig::c_type].toInt();
+    }
+
     return ClipboardOpType::Invalid;
 }
 
@@ -272,6 +282,12 @@ bool VUtils::copyFile(const QString &p_srcFilePath, const QString &p_destFilePat
 
     if (srcPath == destPath) {
         return true;
+    }
+
+    QDir dir;
+    if (!dir.mkpath(basePathFromPath(p_destFilePath))) {
+        qWarning() << "fail to create directory" << basePathFromPath(p_destFilePath);
+        return false;
     }
 
     if (p_isCut) {
@@ -286,10 +302,10 @@ bool VUtils::copyFile(const QString &p_srcFilePath, const QString &p_destFilePat
             return false;
         }
     }
+
     return true;
 }
 
-// Copy @p_srcDirPath to be @p_destDirPath.
 bool VUtils::copyDirectory(const QString &p_srcDirPath, const QString &p_destDirPath, bool p_isCut)
 {
     QString srcPath = QDir::cleanPath(p_srcDirPath);
@@ -298,17 +314,24 @@ bool VUtils::copyDirectory(const QString &p_srcDirPath, const QString &p_destDir
         return true;
     }
 
-    // Make a directory
-    QDir parentDir(VUtils::basePathFromPath(p_destDirPath));
-    QString dirName = VUtils::fileNameFromPath(p_destDirPath);
-    if (!parentDir.mkdir(dirName)) {
-        qWarning() << QString("fail to create target directory %1: already exists").arg(p_destDirPath);
+    if (QFileInfo::exists(destPath)) {
+        qWarning() << QString("target directory %1 already exists").arg(destPath);
         return false;
     }
 
-    // Handle sub-dirs recursively and copy files.
-    QDir srcDir(p_srcDirPath);
-    QDir destDir(p_destDirPath);
+    // QDir.rename() could not move directory across drives.
+
+    // Make sure target directory exists.
+    QDir destDir(destPath);
+    if (!destDir.exists()) {
+        if (!destDir.mkpath(destPath)) {
+            qWarning() << QString("fail to create target directory %1").arg(destPath);
+            return false;
+        }
+    }
+
+    // Handle directory recursively.
+    QDir srcDir(srcPath);
     Q_ASSERT(srcDir.exists() && destDir.exists());
     QFileInfoList nodes = srcDir.entryInfoList(QDir::Dirs | QDir::Files | QDir::Hidden
                                                | QDir::NoSymLinks | QDir::NoDotAndDotDot);
@@ -327,13 +350,13 @@ bool VUtils::copyDirectory(const QString &p_srcDirPath, const QString &p_destDir
         }
     }
 
-    // Delete the src dir if p_isCut
     if (p_isCut) {
-        if (!srcDir.removeRecursively()) {
-            qWarning() << "fail to remove directory" << p_srcDirPath;
+        if (!destDir.rmdir(srcPath)) {
+            qWarning() << QString("fail to delete source directory %1 after cut").arg(srcPath);
             return false;
         }
     }
+
     return true;
 }
 
@@ -364,19 +387,20 @@ QString VUtils::generateCopiedFileName(const QString &p_dirPath, const QString &
         suffix = p_fileName.right(p_fileName.size() - dotIdx);
         base = p_fileName.left(dotIdx);
     }
+
     QDir dir(p_dirPath);
     QString name = p_fileName;
-    QString filePath = dir.filePath(name);
     int index = 0;
-    while (QFile(filePath).exists()) {
+    while (dir.exists(name)) {
         QString seq;
         if (index > 0) {
             seq = QString::number(index);
         }
+
         index++;
         name = QString("%1_copy%2%3").arg(base).arg(seq).arg(suffix);
-        filePath = dir.filePath(name);
     }
+
     return name;
 }
 
@@ -897,4 +921,17 @@ bool VUtils::fileExists(const QDir &p_dir, const QString &p_name, bool p_forceCa
     }
 
     return false;
+}
+
+void VUtils::addErrMsg(QString *p_msg, const QString &p_str)
+{
+    if (!p_msg) {
+        return;
+    }
+
+    if (p_msg->isEmpty()) {
+        *p_msg = p_str;
+    } else {
+        *p_msg = *p_msg + '\n' + p_str;
+    }
 }

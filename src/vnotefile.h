@@ -67,21 +67,16 @@ public:
     // Get the relative path related to the notebook.
     QString fetchRelativePath() const;
 
-    // Create a VNoteFile from @p_json Json object.
-    static VNoteFile *fromJson(VDirectory *p_directory,
-                               const QJsonObject &p_json,
-                               FileType p_type,
-                               bool p_modifiable);
-
     // Create a Json object from current instance.
     QJsonObject toConfigJson() const;
 
-    // Delete this file in disk as well as all its images/attachments.
-    bool deleteFile();
-
     const QString &getAttachmentFolder() const;
 
+    void setAttachmentFolder(const QString &p_folder);
+
     const QVector<VAttachment> &getAttachments() const;
+
+    void setAttachments(const QVector<VAttachment> &p_attas);
 
     // Add @p_file as an attachment to this note.
     bool addAttachment(const QString &p_file);
@@ -97,17 +92,43 @@ public:
     bool deleteAttachments(const QVector<QString> &p_names);
 
     // Reorder attachments in m_attachments by index.
-    void sortAttachments(QVector<int> p_sortedIdx);
+    bool sortAttachments(const QVector<int> &p_sortedIdx);
 
     // Return the index of @p_name in m_attachments.
     // -1 if not found.
     int findAttachment(const QString &p_name, bool p_caseSensitive = true);
 
+    // Rename attachment @p_oldName to @p_newName.
     bool renameAttachment(const QString &p_oldName, const QString &p_newName);
+
+    // Create a VNoteFile from @p_json Json object.
+    static VNoteFile *fromJson(VDirectory *p_directory,
+                               const QJsonObject &p_json,
+                               FileType p_type,
+                               bool p_modifiable);
+
+    // Delete file @p_file including removing it from parent directory configuration
+    // and delete the file in disk.
+    // @p_file: should be a normal file with parent directory.
+    // @p_errMsg: if not NULL, it will contain error message if this function fails.
+    static bool deleteFile(VNoteFile *p_file, QString *p_errMsg = NULL);
+
+    // Copy file @p_file to @p_destDir with new name @p_destName.
+    // Returns a file representing the destination file after copy/cut.
+    static bool copyFile(VDirectory *p_destDir,
+                         const QString &p_destName,
+                         VNoteFile *p_file,
+                         bool p_isCut,
+                         VNoteFile **p_targetFile,
+                         QString *p_errMsg = NULL);
 
 private:
     // Delete internal images of this file.
-    void deleteInternalImages();
+    // Return true only when all internal images were deleted successfully.
+    bool deleteInternalImages();
+
+    // Delete this file in disk as well as all its images/attachments.
+    bool deleteFile(QString *p_msg = NULL);
 
     // Folder under the attachment folder of the notebook.
     // Store all the attachments of current file.
@@ -122,9 +143,19 @@ inline const QString &VNoteFile::getAttachmentFolder() const
     return m_attachmentFolder;
 }
 
+inline void VNoteFile::setAttachmentFolder(const QString &p_folder)
+{
+    m_attachmentFolder = p_folder;
+}
+
 inline const QVector<VAttachment> &VNoteFile::getAttachments() const
 {
     return m_attachments;
+}
+
+inline void VNoteFile::setAttachments(const QVector<VAttachment> &p_attas)
+{
+    m_attachments = p_attas;
 }
 
 #endif // VNOTEFILE_H

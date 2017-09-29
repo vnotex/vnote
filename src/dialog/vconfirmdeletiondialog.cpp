@@ -7,55 +7,52 @@
 
 extern VConfigManager *g_config;
 
-class ConfirmItemWidget : public QWidget
+ConfirmItemWidget::ConfirmItemWidget(bool p_checked,
+                                     const QString &p_file,
+                                     const QString &p_tip,
+                                     int p_index,
+                                     QWidget *p_parent)
+    : QWidget(p_parent), m_index(p_index)
 {
-public:
-    explicit ConfirmItemWidget(QWidget *p_parent = NULL)
-        : QWidget(p_parent)
-    {
-        setupUI();
+    setupUI();
+
+    m_checkBox->setChecked(p_checked);
+    m_fileLabel->setText(p_file);
+    if (!p_tip.isEmpty()) {
+        m_fileLabel->setToolTip(p_tip);
     }
+}
 
-    ConfirmItemWidget(bool p_checked, const QString &p_file, QWidget *p_parent = NULL)
-        : QWidget(p_parent)
-    {
-        setupUI();
+void ConfirmItemWidget::setupUI()
+{
+    m_checkBox = new QCheckBox;
+    connect(m_checkBox, &QCheckBox::stateChanged,
+            this, &ConfirmItemWidget::checkStateChanged);
 
-        m_checkBox->setChecked(p_checked);
-        m_fileLabel->setText(p_file);
-    }
+    m_fileLabel = new QLabel;
+    QHBoxLayout *mainLayout = new QHBoxLayout;
+    mainLayout->addWidget(m_checkBox);
+    mainLayout->addWidget(m_fileLabel);
+    mainLayout->addStretch();
+    mainLayout->setContentsMargins(3, 0, 0, 0);
 
-    bool isChecked() const
-    {
-        return m_checkBox->isChecked();
-    }
+    setLayout(mainLayout);
+}
 
-    QString getFile() const
-    {
-        return m_fileLabel->text();
-    }
+bool ConfirmItemWidget::isChecked() const
+{
+    return m_checkBox->isChecked();
+}
 
-private:
-    void setupUI()
-    {
-        m_checkBox = new QCheckBox;
-        m_fileLabel = new QLabel;
-        QHBoxLayout *mainLayout = new QHBoxLayout;
-        mainLayout->addWidget(m_checkBox);
-        mainLayout->addWidget(m_fileLabel);
-        mainLayout->addStretch();
-        mainLayout->setContentsMargins(3, 0, 0, 0);
-
-        setLayout(mainLayout);
-    }
-
-    QCheckBox *m_checkBox;
-    QLabel *m_fileLabel;
-};
+int ConfirmItemWidget::getIndex() const
+{
+    return m_index;
+}
 
 VConfirmDeletionDialog::VConfirmDeletionDialog(const QString &p_title,
+                                               const QString &p_text,
                                                const QString &p_info,
-                                               const QVector<QString> &p_files,
+                                               const QVector<ConfirmItemInfo> &p_items,
                                                bool p_enableAskAgain,
                                                bool p_askAgainEnabled,
                                                bool p_enablePreview,
@@ -63,20 +60,37 @@ VConfirmDeletionDialog::VConfirmDeletionDialog(const QString &p_title,
     : QDialog(p_parent),
       m_enableAskAgain(p_enableAskAgain),
       m_askAgainEnabled(p_askAgainEnabled),
-      m_enablePreview(p_enablePreview)
+      m_enablePreview(p_enablePreview),
+      m_items(p_items)
 {
-    setupUI(p_title, p_info);
+    setupUI(p_title, p_text, p_info);
 
-    initFileItems(p_files);
+    initItems();
+
+    updateCountLabel();
 }
 
-void VConfirmDeletionDialog::setupUI(const QString &p_title, const QString &p_info)
+void VConfirmDeletionDialog::setupUI(const QString &p_title,
+                                     const QString &p_text,
+                                     const QString &p_info)
 {
+    QLabel *textLabel = NULL;
+    if (!p_text.isEmpty()) {
+        textLabel = new QLabel(p_text);
+        textLabel->setWordWrap(true);
+    }
+
     QLabel *infoLabel = NULL;
     if (!p_info.isEmpty()) {
         infoLabel = new QLabel(p_info);
         infoLabel->setWordWrap(true);
     }
+
+    m_countLabel = new QLabel("Items");
+    QHBoxLayout *labelLayout = new QHBoxLayout;
+    labelLayout->addWidget(m_countLabel);
+    labelLayout->addStretch();
+    labelLayout->setContentsMargins(0, 0, 0, 0);
 
     m_listWidget = new QListWidget();
     connect(m_listWidget, &QListWidget::currentRowChanged,
@@ -106,40 +120,50 @@ void VConfirmDeletionDialog::setupUI(const QString &p_title, const QString &p_in
     }
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
+    if (textLabel) {
+        mainLayout->addWidget(textLabel);
+    }
+
     if (infoLabel) {
         mainLayout->addWidget(infoLabel);
     }
 
     mainLayout->addWidget(m_askAgainCB);
     mainLayout->addWidget(m_btnBox);
+    mainLayout->addLayout(labelLayout);
     mainLayout->addLayout(midLayout);
 
     setLayout(mainLayout);
     setWindowTitle(p_title);
 }
 
-QVector<QString> VConfirmDeletionDialog::getConfirmedFiles() const
+QVector<ConfirmItemInfo> VConfirmDeletionDialog::getConfirmedItems() const
 {
-    QVector<QString> files;
+    QVector<ConfirmItemInfo> confirmedItems;
 
     for (int i = 0; i < m_listWidget->count(); ++i) {
         ConfirmItemWidget *widget = getItemWidget(m_listWidget->item(i));
         if (widget->isChecked()) {
-            files.push_back(widget->getFile());
+            confirmedItems.push_back(m_items[widget->getIndex()]);
         }
     }
 
-    return files;
+    return confirmedItems;
 }
 
-void VConfirmDeletionDialog::initFileItems(const QVector<QString> &p_files)
+void VConfirmDeletionDialog::initItems()
 {
     m_listWidget->clear();
 
-    for (int i = 0; i < p_files.size(); ++i) {
+    for (int i = 0; i < m_items.size(); ++i) {
         ConfirmItemWidget *itemWidget = new ConfirmItemWidget(true,
-                                                              p_files[i],
+                                                              m_items[i].m_name,
+                                                              m_items[i].m_tip,
+                                                              i,
                                                               this);
+        connect(itemWidget, &ConfirmItemWidget::checkStateChanged,
+                this, &VConfirmDeletionDialog::updateCountLabel);
+
         QListWidgetItem *item = new QListWidgetItem();
         QSize size = itemWidget->sizeHint();
         size.setHeight(size.height() * 2);
@@ -165,7 +189,9 @@ void VConfirmDeletionDialog::currentFileChanged(int p_row)
     if (p_row > -1 && m_enablePreview) {
         ConfirmItemWidget *widget = getItemWidget(m_listWidget->item(p_row));
         if (widget) {
-            QPixmap image(widget->getFile());
+            int idx = widget->getIndex();
+            Q_ASSERT(idx < m_items.size());
+            QPixmap image(m_items[idx].m_path);
             if (!image.isNull()) {
                 int width = 512 * VUtils::calculateScaleFactor();
                 QSize previewSize(width, width);
@@ -182,4 +208,19 @@ ConfirmItemWidget *VConfirmDeletionDialog::getItemWidget(QListWidgetItem *p_item
 {
     QWidget *wid = m_listWidget->itemWidget(p_item);
     return dynamic_cast<ConfirmItemWidget *>(wid);
+}
+
+void VConfirmDeletionDialog::updateCountLabel()
+{
+    int total = m_listWidget->count();
+    int checked = 0;
+
+    for (int i = 0; i < total; ++i) {
+        ConfirmItemWidget *widget = getItemWidget(m_listWidget->item(i));
+        if (widget->isChecked()) {
+            ++checked;
+        }
+    }
+
+    m_countLabel->setText(tr("%1/%2 Items").arg(checked).arg(total));
 }

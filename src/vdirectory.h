@@ -52,17 +52,11 @@ public:
     // Return the VNoteFile if succeed.
     VNoteFile *addFile(const QString &p_name, int p_index);
 
-    // Delete @p_file both from disk and config, as well as its local images.
-    void deleteFile(VNoteFile *p_file);
+    // Add the file in the config and m_files. If @p_index is -1, add it at the end.
+    bool addFile(VNoteFile *p_file, int p_index);
 
     // Rename current directory to @p_name.
     bool rename(const QString &p_name);
-
-    // Copy @p_srcFile to @p_destDir, setting new name to @p_destName.
-    // @p_cut: copy or cut.
-    // Returns the dest VNoteFile.
-    static VNoteFile *copyFile(VDirectory *p_destDir, const QString &p_destName,
-                               VNoteFile *p_srcFile, bool p_cut);
 
     static VDirectory *copyDirectory(VDirectory *p_destDir, const QString &p_destName,
                                      VDirectory *p_srcDir, bool p_cut);
@@ -82,10 +76,6 @@ public:
     QString getNotebookName() const;
     bool isExpanded() const;
     void setExpanded(bool p_expanded);
-
-    // Reorder files in m_files by index.
-    // Move [@p_first, @p_last] to @p_destStart.
-    void reorderFiles(int p_first, int p_last, int p_destStart);
 
     // Serialize current instance to json.
     // Not including sections belonging to notebook.
@@ -108,6 +98,9 @@ public:
 
     QDateTime getCreatedTimeUtc() const;
 
+    // Reorder files in m_files by index.
+    bool sortFiles(const QVector<int> &p_sortedIdx);
+
 private:
     // Get the path of @p_dir recursively
     QString fetchPath(const VDirectory *p_dir) const;
@@ -120,9 +113,6 @@ private:
     // Add notebook part config to @p_json.
     // Should only be called with root directory.
     void addNotebookConfig(QJsonObject &p_json) const;
-
-    // Add the file in the config and m_files. If @p_index is -1, add it at the end.
-    bool addFile(VNoteFile *p_file, int p_index);
 
     // Add the directory in the config and m_subDirs. If @p_index is -1, add it at the end.
     // Return the VDirectory if succeed.
