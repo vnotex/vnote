@@ -268,7 +268,7 @@ QString VNoteFile::fetchAttachmentFolderPath()
     return folderPath;
 }
 
-bool VNoteFile::deleteAttachments()
+bool VNoteFile::deleteAttachments(bool p_omitMissing)
 {
     if (m_attachments.isEmpty()) {
         return true;
@@ -279,10 +279,11 @@ bool VNoteFile::deleteAttachments()
         attas.push_back(m_attachments[i].m_name);
     }
 
-    return deleteAttachments(attas);
+    return deleteAttachments(attas, p_omitMissing);
 }
 
-bool VNoteFile::deleteAttachments(const QVector<QString> &p_names)
+bool VNoteFile::deleteAttachments(const QVector<QString> &p_names,
+                                  bool p_omitMissing)
 {
     if (p_names.isEmpty()) {
         return true;
@@ -298,7 +299,15 @@ bool VNoteFile::deleteAttachments(const QVector<QString> &p_names)
         }
 
         m_attachments.remove(idx);
-        if (!VUtils::deleteFile(getNotebook(), dir.filePath(p_names[i]), false)) {
+
+        QString filePath = dir.filePath(p_names[i]);
+        if (p_omitMissing
+            && !QFileInfo::exists(filePath)) {
+            // The attachment file does not exist. We skip it to avoid error.
+            continue;
+        }
+
+        if (!VUtils::deleteFile(getNotebook(), filePath, false)) {
             ret = false;
             qWarning() << "fail to delete attachment" << p_names[i]
                        << "for note" << m_name;
@@ -384,6 +393,21 @@ bool VNoteFile::renameAttachment(const QString &p_oldName, const QString &p_newN
     }
 
     return true;
+}
+
+QVector<QString> VNoteFile::checkAttachments()
+{
+    QVector<QString> missing;
+
+    QDir dir(fetchAttachmentFolderPath());
+    for (auto const & atta : m_attachments) {
+        QString file = dir.filePath(atta.m_name);
+        if (!QFileInfo::exists(file)) {
+            missing.push_back(atta.m_name);
+        }
+    }
+
+    return missing;
 }
 
 bool VNoteFile::deleteFile(VNoteFile *p_file, QString *p_errMsg)

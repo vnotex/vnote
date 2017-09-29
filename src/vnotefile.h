@@ -86,10 +86,13 @@ public:
     QString fetchAttachmentFolderPath();
 
     // Delete all the attachments.
-    bool deleteAttachments();
+    // @p_omitMissing: omit the error if the attachment file does not exist.
+    bool deleteAttachments(bool p_omitMissing = false);
 
     // Delete attachments specified by @p_names.
-    bool deleteAttachments(const QVector<QString> &p_names);
+    // @p_omitMissing: omit the error if the attachment file does not exist.
+    bool deleteAttachments(const QVector<QString> &p_names,
+                           bool p_omitMissing = false);
 
     // Reorder attachments in m_attachments by index.
     bool sortAttachments(const QVector<int> &p_sortedIdx);
@@ -100,6 +103,10 @@ public:
 
     // Rename attachment @p_oldName to @p_newName.
     bool renameAttachment(const QString &p_oldName, const QString &p_newName);
+
+    // Check if all the attachment files still exist.
+    // Return the missing attachments' names.
+    QVector<QString> checkAttachments();
 
     // Create a VNoteFile from @p_json Json object.
     static VNoteFile *fromJson(VDirectory *p_directory,

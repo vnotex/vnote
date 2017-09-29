@@ -124,6 +124,8 @@ Toggle single panel or two panels mode.
 Toggle the Tools panel.
 - `F`   
 Popup the opened notes list of current split window. Within this list, pressing the sequence number in front of each note could jump to that note.
+- `A`   
+Popup the attachments list of current note.
 - `X`   
 Close current tab.
 - `J`   

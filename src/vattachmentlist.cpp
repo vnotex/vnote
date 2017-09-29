@@ -62,7 +62,8 @@ void VAttachmentList::setupUI()
                                                 tr("Fail to clear attachments of note <span style=\"%1\">%2</span>.")
                                                   .arg(g_config->c_dataTextStyle)
                                                   .arg(m_file->getName()),
-                                                tr("Please maintain the configureation file manually."),
+                                                tr("Please check the attachments folder and "
+                                                   "maintain the configuration file manually."),
                                                 QMessageBox::Ok,
                                                 QMessageBox::Ok,
                                                 g_vnote->getMainWindow());
@@ -344,7 +345,8 @@ void VAttachmentList::deleteSelectedItems()
                                 tr("Fail to delete attachments of note <span style=\"%1\">%2</span>.")
                                   .arg(g_config->c_dataTextStyle)
                                   .arg(m_file->getName()),
-                                tr("Please maintain the configureation file manually."),
+                                tr("Please check the attachments folder and "
+                                   "maintain the configuration file manually."),
                                 QMessageBox::Ok,
                                 QMessageBox::Ok,
                                 g_vnote->getMainWindow());
@@ -566,6 +568,8 @@ bool VAttachmentList::handleDropEvent(QDropEvent *p_event)
 void VAttachmentList::handleAboutToShow()
 {
     updateContent();
+
+    checkAttachments();
 }
 
 void VAttachmentList::updateButtonState() const
@@ -585,4 +589,66 @@ void VAttachmentList::updateButtonState() const
     }
 
     btn->setBubbleNumber(numOfAttachments);
+}
+
+void VAttachmentList::checkAttachments()
+{
+    if (!m_file) {
+        return;
+    }
+
+    QVector<QString> missingAttas = m_file->checkAttachments();
+    if (missingAttas.isEmpty()) {
+        return;
+    }
+
+    QVector<ConfirmItemInfo> items;
+    for (auto const & atta : missingAttas) {
+        items.push_back(ConfirmItemInfo(atta,
+                                        atta,
+                                        "",
+                                        NULL));
+    }
+
+    QString text = tr("VNote detects that these attachments of note "
+                      "<span style=\"%1\">%2</span> are missing in disk. "
+                      "Would you like to remove them from the note?")
+                     .arg(g_config->c_dataTextStyle)
+                     .arg(m_file->getName());
+
+    QString info = tr("Click \"Cancel\" to leave them untouched.");
+
+    VConfirmDeletionDialog dialog(tr("Confirm Deleting Attachments"),
+                                  text,
+                                  info,
+                                  items,
+                                  false,
+                                  false,
+                                  false,
+                                  g_vnote->getMainWindow());
+    if (dialog.exec()) {
+        items = dialog.getConfirmedItems();
+
+        QVector<QString> names;
+        for (auto const & item : items) {
+            names.push_back(item.m_name);
+        }
+
+        if (!m_file->deleteAttachments(names, true)) {
+            VUtils::showMessage(QMessageBox::Warning,
+                                tr("Warning"),
+                                tr("Fail to delete attachments of note <span style=\"%1\">%2</span>.")
+                                  .arg(g_config->c_dataTextStyle)
+                                  .arg(m_file->getName()),
+                                tr("Please check the attachments folder and "
+                                   "maintain the configuration file manually."),
+                                QMessageBox::Ok,
+                                QMessageBox::Ok,
+                                g_vnote->getMainWindow());
+        }
+
+        updateButtonState();
+
+        updateContent();
+    }
 }

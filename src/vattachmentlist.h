@@ -62,6 +62,9 @@ private:
     // Update the state of VButtonWithWidget.
     void updateButtonState() const;
 
+    // Check if there are attachments that do not exist in disk.
+    void checkAttachments();
+
     QPushButton *m_addBtn;
     QPushButton *m_clearBtn;
     QPushButton *m_locateBtn;
