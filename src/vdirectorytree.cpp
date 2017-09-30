@@ -81,7 +81,8 @@ void VDirectoryTree::initActions()
     connect(newRootDirAct, &QAction::triggered,
             this, &VDirectoryTree::newRootDirectory);
 
-    newSubDirAct = new QAction(tr("&New Subfolder"), this);
+    newSubDirAct = new QAction(QIcon(":/resources/icons/create_subdir.svg"),
+                               tr("&New Subfolder"), this);
     newSubDirAct->setToolTip(tr("Create a subfolder"));
     connect(newSubDirAct, &QAction::triggered,
             this, &VDirectoryTree::newSubDirectory);

@@ -129,5 +129,6 @@
         <file>resources/icons/locate_attachment.svg</file>
         <file>resources/icons/delete_attachment.svg</file>
         <file>resources/icons/sort.svg</file>
+        <file>resources/icons/create_subdir.svg</file>
     </qresource>
 </RCC>
