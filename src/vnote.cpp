@@ -180,6 +180,7 @@ void VNote::updateTemplate()
             }
         }
     }
+
     QString cssStyle;
     if (!rgb.isEmpty()) {
         cssStyle += "body { background-color: #" + rgb + " !important; }\n";
@@ -192,8 +193,12 @@ void VNote::updateTemplate()
 
     const QString styleHolder("<!-- BACKGROUND_PLACE_HOLDER -->");
     const QString cssHolder("CSS_PLACE_HOLDER");
+    const QString codeBlockCssHolder("HIGHLIGHTJS_CSS_PLACE_HOLDER");
 
     s_markdownTemplate = VUtils::readFileFromDisk(c_markdownTemplatePath);
+
+    // Must replace the code block holder first.
+    s_markdownTemplate.replace(codeBlockCssHolder, g_config->getTemplateCodeBlockCssUrl());
     s_markdownTemplate.replace(cssHolder, g_config->getTemplateCssUrl());
 
     s_markdownTemplatePDF = s_markdownTemplate;

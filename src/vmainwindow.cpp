@@ -579,6 +579,8 @@ void VMainWindow::initMarkdownMenu()
 
     initRenderBackgroundMenu(markdownMenu);
 
+    initCodeBlockStyleMenu(markdownMenu);
+
     QAction *constrainImageAct = new QAction(tr("Constrain The Width of Images"), this);
     constrainImageAct->setToolTip(tr("Constrain the width of images to the window in read mode (re-open current tabs to make it work)"));
     constrainImageAct->setCheckable(true);
@@ -1319,6 +1321,7 @@ void VMainWindow::updateRenderStyleMenu()
     }
 
     // Update the menu actions with styles.
+    QString curStyle = g_config->getTemplateCss();
     QVector<QString> styles = g_config->getCssStyles();
     for (auto const &style : styles) {
         QAction *act = new QAction(style, m_renderStyleActs);
@@ -1329,7 +1332,7 @@ void VMainWindow::updateRenderStyleMenu()
         // Add it to the menu.
         menu->addAction(act);
 
-        if (g_config->getTemplateCss() == style) {
+        if (curStyle == style) {
             act->setChecked(true);
         }
     }
@@ -1347,12 +1350,71 @@ void VMainWindow::initRenderStyleMenu(QMenu *p_menu)
             this, &VMainWindow::setRenderStyle);
 
     QAction *addAct = newAction(QIcon(":/resources/icons/add_style.svg"),
-                                tr("&Add Style"), m_renderStyleActs);
-    addAct->setToolTip(tr("Open the folder to add your custom CSS style files"));
+                                tr("&Add Style"),
+                                m_renderStyleActs);
+    addAct->setToolTip(tr("Open the folder to add your custom CSS style files "
+                          "for Markdown rendering"));
     addAct->setCheckable(true);
     addAct->setData("AddStyle");
 
     styleMenu->addAction(addAct);
+}
+
+void VMainWindow::updateCodeBlockStyleMenu()
+{
+    QMenu *menu = dynamic_cast<QMenu *>(sender());
+    V_ASSERT(menu);
+
+    QList<QAction *> actions = menu->actions();
+    // Remove all other actions except the first one.
+    for (int i = 1; i < actions.size(); ++i) {
+        menu->removeAction(actions[i]);
+        m_codeBlockStyleActs->removeAction(actions[i]);
+        delete actions[i];
+    }
+
+    // Update the menu actions with styles.
+    QString curStyle = g_config->getTemplateCodeBlockCss();
+    QVector<QString> styles = g_config->getCodeBlockCssStyles();
+    for (auto const &style : styles) {
+        QAction *act = new QAction(style, m_codeBlockStyleActs);
+        act->setToolTip(tr("Set as the code block CSS style for Markdown rendering"));
+        act->setCheckable(true);
+        act->setData(style);
+
+        // Add it to the menu.
+        menu->addAction(act);
+
+        if (curStyle == style) {
+            act->setChecked(true);
+        }
+    }
+}
+
+void VMainWindow::initCodeBlockStyleMenu(QMenu *p_menu)
+{
+    QMenu *styleMenu = p_menu->addMenu(tr("Code Block Style"));
+    styleMenu->setToolTipsVisible(true);
+    connect(styleMenu, &QMenu::aboutToShow,
+            this, &VMainWindow::updateCodeBlockStyleMenu);
+
+    m_codeBlockStyleActs = new QActionGroup(this);
+    connect(m_codeBlockStyleActs, &QActionGroup::triggered,
+            this, &VMainWindow::setCodeBlockStyle);
+
+    QAction *addAct = newAction(QIcon(":/resources/icons/add_style.svg"),
+                                tr("&Add Style"),
+                                m_codeBlockStyleActs);
+    addAct->setToolTip(tr("Open the folder to add your custom CSS style files "
+                          "for Markdown code block rendering"));
+    addAct->setCheckable(true);
+    addAct->setData("AddStyle");
+
+    styleMenu->addAction(addAct);
+
+    if (g_config->getUserSpecifyTemplateCodeBlockCssUrl()) {
+        styleMenu->setEnabled(false);
+    }
 }
 
 void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
@@ -1534,6 +1596,23 @@ void VMainWindow::setEditorStyle(QAction *p_action)
         QDesktopServices::openUrl(url);
     } else {
         g_config->setEditorStyle(data);
+    }
+}
+
+void VMainWindow::setCodeBlockStyle(QAction *p_action)
+{
+    if (!p_action) {
+        return;
+    }
+
+    QString data = p_action->data().toString();
+    if (data == "AddStyle") {
+        // Add custom style.
+        QUrl url = QUrl::fromLocalFile(g_config->getCodeBlockStyleConfigFolder());
+        QDesktopServices::openUrl(url);
+    } else {
+        g_config->setTemplateCodeBlockCss(data);
+        vnote->updateTemplate();
     }
 }
 

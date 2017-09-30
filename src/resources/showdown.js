@@ -76,6 +76,7 @@ var updateText = function(text) {
     highlightCodeBlocks(document, VEnableMermaid, VEnableFlowchart);
     renderMermaid('language-mermaid');
     renderFlowchart('language-flowchart');
+    addClassToCodeBlock();
     renderCodeBlockLineNumber();
 
     // If you add new logics after handling MathJax, please pay attention to

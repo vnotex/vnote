@@ -49,6 +49,7 @@ var updateText = function(text) {
     insertImageCaption();
     renderMermaid('lang-mermaid');
     renderFlowchart('lang-flowchart');
+    addClassToCodeBlock();
     renderCodeBlockLineNumber();
 
     // If you add new logics after handling MathJax, please pay attention to

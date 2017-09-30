@@ -833,3 +833,14 @@ var renderCodeBlockLineNumber = function() {
         }
     }
 };
+
+var addClassToCodeBlock = function() {
+    var hljsClass = 'hljs';
+    var codes = document.getElementsByTagName('code');
+    for (var i = 0; i < codes.length; ++i) {
+        var code = codes[i];
+        if (code.parentElement.tagName.toLowerCase() == 'pre') {
+            code.classList.add(hljsClass);
+        }
+    }
+};

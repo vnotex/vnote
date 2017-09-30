@@ -41,6 +41,7 @@ var updateHtml = function(html) {
         }
     }
 
+    addClassToCodeBlock();
     renderCodeBlockLineNumber();
 
     // If you add new logics after handling MathJax, please pay attention to

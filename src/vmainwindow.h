@@ -83,10 +83,22 @@ private slots:
     void setTabStopWidth(QAction *action);
     void setEditorBackgroundColor(QAction *action);
     void setRenderBackgroundColor(QAction *action);
+
     void setRenderStyle(QAction *p_action);
+
     void setEditorStyle(QAction *p_action);
+
+    // Set code block render style.
+    void setCodeBlockStyle(QAction *p_action);
+
+    // Update the render styles menu according to existing files.
     void updateRenderStyleMenu();
+
     void updateEditorStyleMenu();
+
+    // Update the code block styles menu according to existing files.
+    void updateCodeBlockStyleMenu();
+
     void changeHighlightCursorLine(bool p_checked);
     void changeHighlightSelectedWord(bool p_checked);
     void changeHighlightSearchedWord(bool p_checked);
@@ -161,7 +173,11 @@ private:
     void initAvatar();
     void initPredefinedColorPixmaps();
     void initRenderBackgroundMenu(QMenu *menu);
+
     void initRenderStyleMenu(QMenu *p_menu);
+
+    void initCodeBlockStyleMenu(QMenu *p_menu);
+
     void initConverterMenu(QMenu *p_menu);
     void initMarkdownitOptionMenu(QMenu *p_menu);
     void initEditorBackgroundMenu(QMenu *menu);
@@ -245,8 +261,13 @@ private:
 
     QAction *m_autoIndentAct;
 
+    // Act group for render styles.
     QActionGroup *m_renderStyleActs;
+
     QActionGroup *m_editorStyleActs;
+
+    // Act group for code block render styles.
+    QActionGroup *m_codeBlockStyleActs;
 
     QShortcut *m_closeNoteShortcut;
 

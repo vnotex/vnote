@@ -77,7 +77,6 @@ p, ul, ol {
 }
 
 pre {
-    padding: 0px 24px;
     background-color: #f8f8f8;
     border-radius: 3px;
     border: 1px solid #cccccc;
@@ -92,12 +91,12 @@ code {
 }
 
 pre code {
-   margin: 0;
-   padding: 0;
-   border: none;
-   background: transparent;
-   overflow: auto;
-   color: #363636;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    overflow: auto;
+    color: #363636;
 }
 
 aside {

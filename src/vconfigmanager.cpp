@@ -18,7 +18,9 @@ const QString VConfigManager::c_obsoleteDirConfigFile = QString(".vnote.json");
 const QString VConfigManager::c_dirConfigFile = QString("_vnote.json");
 const QString VConfigManager::defaultConfigFilePath = QString(":/resources/vnote.ini");
 const QString VConfigManager::c_styleConfigFolder = QString("styles");
+const QString VConfigManager::c_codeBlockStyleConfigFolder = QString("codeblock_styles");
 const QString VConfigManager::c_defaultCssFile = QString(":/resources/styles/default.css");
+const QString VConfigManager::c_defaultCodeBlockCssFile = QString(":/utils/highlightjs/styles/vnote.css");
 const QString VConfigManager::c_defaultMdhlFile = QString(":/resources/styles/default.mdhl");
 const QString VConfigManager::c_solarizedDarkMdhlFile = QString(":/resources/styles/solarized-dark.mdhl");
 const QString VConfigManager::c_solarizedLightMdhlFile = QString(":/resources/styles/solarized-light.mdhl");
@@ -55,6 +57,7 @@ void VConfigManager::initialize()
 
     // Override the default css styles on start up.
     outputDefaultCssStyle();
+    outputDefaultCodeBlockCssStyle();
     outputDefaultEditorStyle();
 
     m_defaultEditPalette = QTextEdit().palette();
@@ -63,6 +66,8 @@ void VConfigManager::initialize()
 
     welcomePagePath = getConfigFromSettings("global", "welcome_page_path").toString();
     m_templateCss = getConfigFromSettings("global", "template_css").toString();
+    m_templateCodeBlockCss = getConfigFromSettings("global", "template_code_block_css").toString();
+    m_templateCodeBlockCssUrl = getConfigFromSettings("global", "template_code_block_css_url").toString();
     curNotebookIndex = getConfigFromSettings("global", "current_notebook").toInt();
 
     markdownExtensions = hoedown_extensions(HOEDOWN_EXT_TABLES | HOEDOWN_EXT_FENCED_CODE |
@@ -606,6 +611,11 @@ QString VConfigManager::getStyleConfigFolder() const
     return getConfigFolder() + QDir::separator() + c_styleConfigFolder;
 }
 
+QString VConfigManager::getCodeBlockStyleConfigFolder() const
+{
+    return getStyleConfigFolder() + QDir::separator() + c_codeBlockStyleConfigFolder;
+}
+
 QVector<QString> VConfigManager::getCssStyles() const
 {
     QVector<QString> res;
@@ -613,6 +623,27 @@ QVector<QString> VConfigManager::getCssStyles() const
     if (!dir.exists()) {
         // Output pre-defined css styles to this folder.
         outputDefaultCssStyle();
+    }
+
+    // Get all the .css files in the folder.
+    dir.setFilter(QDir::Files | QDir::NoSymLinks);
+    dir.setNameFilters(QStringList("*.css"));
+    QStringList files = dir.entryList();
+    res.reserve(files.size());
+    for (auto const &item : files) {
+        res.push_back(item.left(item.size() - 4));
+    }
+
+    return res;
+}
+
+QVector<QString> VConfigManager::getCodeBlockCssStyles() const
+{
+    QVector<QString> res;
+    QDir dir(getCodeBlockStyleConfigFolder());
+    if (!dir.exists()) {
+        // Output pre-defined CSS styles to this folder.
+        outputDefaultCodeBlockCssStyle();
     }
 
     // Get all the .css files in the folder.
@@ -651,15 +682,46 @@ QVector<QString> VConfigManager::getEditorStyles() const
 bool VConfigManager::outputDefaultCssStyle() const
 {
     // Make sure the styles folder exists.
-    QDir dir(getConfigFolder());
-    if (!dir.exists(c_styleConfigFolder)) {
-        if (!dir.mkdir(c_styleConfigFolder)) {
+    QString folderPath = getStyleConfigFolder();
+    QDir dir(folderPath);
+    if (!dir.exists()) {
+        if (!dir.mkpath(folderPath)) {
             return false;
         }
     }
 
     QString srcPath = c_defaultCssFile;
-    QString destPath = getStyleConfigFolder() + QDir::separator() + QFileInfo(srcPath).fileName();
+    QString destPath = folderPath + QDir::separator() + QFileInfo(srcPath).fileName();
+
+    if (QFileInfo::exists(destPath)) {
+        QString bakPath = destPath + ".bak";
+        // We only keep one bak file.
+        if (!QFileInfo::exists(bakPath)) {
+            QFile::rename(destPath, bakPath);
+        } else {
+            // Just delete the default style.
+            QFile file(destPath);
+            file.setPermissions(QFile::ReadUser | QFile::WriteUser);
+            file.remove();
+        }
+    }
+
+    return VUtils::copyFile(srcPath, destPath, false);
+}
+
+bool VConfigManager::outputDefaultCodeBlockCssStyle() const
+{
+    // Make sure the styles folder exists.
+    QString folderPath = getCodeBlockStyleConfigFolder();
+    QDir dir(folderPath);
+    if (!dir.exists()) {
+        if (!dir.mkpath(folderPath)) {
+            return false;
+        }
+    }
+
+    QString srcPath = c_defaultCodeBlockCssFile;
+    QString destPath = folderPath + QDir::separator() + QFileInfo(srcPath).fileName();
 
     if (QFileInfo::exists(destPath)) {
         QString bakPath = destPath + ".bak";
@@ -753,6 +815,36 @@ QString VConfigManager::getTemplateCssUrl()
     return cssPath;
 }
 
+// The URL will be used in the Web page.
+QString VConfigManager::getTemplateCodeBlockCssUrl()
+{
+    if (!m_templateCodeBlockCssUrl.isEmpty()) {
+        return m_templateCodeBlockCssUrl;
+    }
+
+    QString cssPath = getCodeBlockStyleConfigFolder() +
+                      QDir::separator() +
+                      m_templateCodeBlockCss + ".css";
+    QUrl cssUrl = QUrl::fromLocalFile(cssPath);
+    cssPath = cssUrl.toString();
+    if (!QFile::exists(cssUrl.toLocalFile())) {
+        // Specified css not exists.
+        if (m_templateCss == "vnote") {
+            bool ret = outputDefaultCodeBlockCssStyle();
+            if (!ret) {
+                // Use embedded file.
+                cssPath = "qrc" + c_defaultCodeBlockCssFile;
+            }
+        } else {
+            setTemplateCodeBlockCss("vnote");
+            return getTemplateCodeBlockCssUrl();
+        }
+    }
+
+    qDebug() << "use template code block css:" << cssPath;
+    return cssPath;
+}
+
 QString VConfigManager::getEditorStyleUrl()
 {
     QString mdhlPath = getStyleConfigFolder() + QDir::separator() + m_editorStyle + ".mdhl";
@@ -773,20 +865,6 @@ QString VConfigManager::getEditorStyleUrl()
     qDebug() << "use editor style:" << mdhlPath;
     return mdhlPath;
 
-}
-
-const QString &VConfigManager::getTemplateCss() const
-{
-    return m_templateCss;
-}
-
-void VConfigManager::setTemplateCss(const QString &p_css)
-{
-    if (m_templateCss == p_css) {
-        return;
-    }
-    m_templateCss = p_css;
-    setConfigToSettings("global", "template_css", m_templateCss);
 }
 
 const QString &VConfigManager::getEditorStyle() const
