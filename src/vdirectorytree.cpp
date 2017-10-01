@@ -510,7 +510,7 @@ void VDirectoryTree::deleteSelectedDirectory()
                                   tr("<span style=\"%1\">WARNING</span>: "
                                      "VNote will delete the whole directory "
                                      "<span style=\"%2\">%3</span>."
-                                     "You could find deleted files in the recycle bin "
+                                     "Deleted files could be found in the recycle bin "
                                      "of this folder.<br>"
                                      "The operation is IRREVERSIBLE!")
                                     .arg(g_config->c_warningTextStyle)

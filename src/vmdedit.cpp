@@ -298,7 +298,7 @@ void VMdEdit::clearUnusedImages()
             QString text = tr("Following images seems not to be used in this note anymore. "
                               "Please confirm the deletion of these images.");
 
-            QString info = tr("You could find deleted files in the recycle "
+            QString info = tr("Deleted files could be found in the recycle "
                               "bin of this note.<br>"
                               "Click \"Cancel\" to leave them untouched.");
 

@@ -46,8 +46,8 @@ void VAttachmentList::setupUI()
                                                   tr("<span style=\"%1\">WARNING</span>: "
                                                      "VNote will delete all the files in directory "
                                                      "<span style=\"%2\">%3</span>."
-                                                     "You could find deleted files in the recycle bin "
-                                                     "of this notebook.<br>The operation is IRREVERSIBLE!")
+                                                     "Deleted files could be found in the recycle bin "
+                                                     "of this note.<br>The operation is IRREVERSIBLE!")
                                                     .arg(g_config->c_warningTextStyle)
                                                     .arg(g_config->c_dataTextStyle)
                                                     .arg(m_file->fetchAttachmentFolderPath()),
@@ -319,7 +319,7 @@ void VAttachmentList::deleteSelectedItems()
                       "<span style=\"%1\">%2</span>?")
                      .arg(g_config->c_dataTextStyle).arg(m_file->getName());
 
-    QString info = tr("You could find deleted files in the recycle "
+    QString info = tr("Deleted files could be found in the recycle "
                       "bin of this note.<br>"
                       "Click \"Cancel\" to leave them untouched.");
 

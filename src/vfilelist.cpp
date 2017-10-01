@@ -449,7 +449,7 @@ void VFileList::deleteFiles(const QVector<VNoteFile *> &p_files)
     QString info = tr("<span style=\"%1\">WARNING</span>: "
                       "VNote will delete notes as well as all "
                       "their images and attachments managed by VNote. "
-                      "You could find deleted files in the recycle "
+                      "Deleted files could be found in the recycle "
                       "bin of these notes.<br>"
                       "Click \"Cancel\" to leave them untouched.<br>"
                       "The operation is IRREVERSIBLE!")
@@ -625,7 +625,7 @@ bool VFileList::importFiles(const QStringList &p_files, QString *p_errMsg)
         QString targetFilePath = dir.filePath(name);
         bool ret = VUtils::copyFile(file, targetFilePath, false);
         if (!ret) {
-            VUtils::addErrMsg(p_errMsg, tr("Fail to copy file %1 as %1.")
+            VUtils::addErrMsg(p_errMsg, tr("Fail to copy file %1 as %2.")
                                           .arg(file)
                                           .arg(targetFilePath));
             ret = false;

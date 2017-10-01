@@ -28,7 +28,7 @@ void VNewDirDialog::setupUI()
         infoLabel->setWordWrap(true);
     }
 
-    QLabel *nameLabel = new QLabel("Folder &name:");
+    QLabel *nameLabel = new QLabel(tr("Folder &name:"));
     nameEdit = new QLineEdit(defaultName);
     nameEdit->selectAll();
     nameLabel->setBuddy(nameEdit);
