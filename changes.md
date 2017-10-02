@@ -1,4 +1,28 @@
 # Changes History
+## v1.9
+- Support attachments of notes.
+- Add recycle bin to notebook to hold deleted files.
+- Refine Vim mode:
+  - Support J and gJ to join line;
+  - Support S, {, and };
+  - <leader>w to save note;
+  - Fix Y and D actions in Visual mode.
+- Support AppImage package for Linux.
+- More responsive and efficient syntax highlight and image preview.
+- More pleasant line distance.
+- More natural interaction of folder and note management.
+- Support inserting note name as title.
+- Support custom default mode to open a note.
+- Support auto heading sequence.
+- Support color column in fenced code block in edit mode.
+- Support line number in code block in both read and edit mode.
+- Support created time and modified time of notes, folders, and notebooks.
+- Support custom Markdown-it options, such as auto line break.
+- Confirm when cleaning up unused images.
+- Support custom Mathjax location.
+- Support custom style for code block highlights in read mode.
+- Double click on a tab to close it.
+
 ## v1.8
 - Support editing external files. VNote could open files from command line.
 - Support drag-and-drop to open external files.
