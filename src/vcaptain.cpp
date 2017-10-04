@@ -276,7 +276,7 @@ bool VCaptain::handleKeyPress(int p_key, Qt::KeyboardModifiers p_modifiers)
         m_mainWindow->editArea->removeCurrentWindow();
 
         QWidget *nextFocus = m_mainWindow->editArea->currentEditTab();
-        m_widgetBeforeCaptain = nextFocus ? nextFocus : m_mainWindow->fileList;
+        m_widgetBeforeCaptain = nextFocus ? nextFocus : m_mainWindow->getFileList();
         break;
     }
 
@@ -305,7 +305,7 @@ bool VCaptain::handleKeyPress(int p_key, Qt::KeyboardModifiers p_modifiers)
 
         // m_widgetBeforeCaptain may be the closed tab which will cause crash.
         QWidget *nextFocus = m_mainWindow->editArea->currentEditTab();
-        m_widgetBeforeCaptain = nextFocus ? nextFocus : m_mainWindow->fileList;
+        m_widgetBeforeCaptain = nextFocus ? nextFocus : m_mainWindow->getFileList();
         break;
     }
 

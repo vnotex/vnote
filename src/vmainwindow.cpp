@@ -41,7 +41,7 @@ extern QFile g_logFile;
 #endif
 
 VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
-    : QMainWindow(p_parent), m_onePanel(false), m_guard(p_guard),
+    : QMainWindow(p_parent), m_guard(p_guard),
       m_windowOldState(Qt::WindowNoState), m_requestQuit(false)
 {
     setWindowIcon(QIcon(":/resources/icons/vnote.ico"));
@@ -49,6 +49,12 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
     g_vnote = vnote;
     vnote->initPalette(palette());
     initPredefinedColorPixmaps();
+
+    if (g_config->getEnableCompactMode()) {
+        m_panelViewState = PanelViewState::CompactMode;
+    } else {
+        m_panelViewState = PanelViewState::TwoPanels;
+    }
 
     setupUI();
 
@@ -58,6 +64,9 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
     initAvatar();
 
     restoreStateAndGeometry();
+
+    changePanelView(m_panelViewState);
+
     setContextMenuPolicy(Qt::NoContextMenu);
 
     notebookSelector->update();
@@ -88,7 +97,7 @@ void VMainWindow::initCaptain()
 
     m_captain->registerNavigationTarget(notebookSelector);
     m_captain->registerNavigationTarget(directoryTree);
-    m_captain->registerNavigationTarget(fileList);
+    m_captain->registerNavigationTarget(m_fileList);
     m_captain->registerNavigationTarget(editArea);
     m_captain->registerNavigationTarget(outline);
 }
@@ -97,29 +106,29 @@ void VMainWindow::setupUI()
 {
     QWidget *directoryPanel = setupDirectoryPanel();
 
-    fileList = new VFileList();
-    fileList->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
+    m_fileList = new VFileList();
+    m_fileList->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
     editArea = new VEditArea(vnote);
     editArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     m_findReplaceDialog = editArea->getFindReplaceDialog();
-    fileList->setEditArea(editArea);
+    m_fileList->setEditArea(editArea);
     directoryTree->setEditArea(editArea);
     notebookSelector->setEditArea(editArea);
 
     // Main Splitter
-    mainSplitter = new QSplitter();
-    mainSplitter->setObjectName("MainSplitter");
-    mainSplitter->addWidget(directoryPanel);
-    mainSplitter->addWidget(fileList);
-    mainSplitter->addWidget(editArea);
-    mainSplitter->setStretchFactor(0, 0);
-    mainSplitter->setStretchFactor(1, 0);
-    mainSplitter->setStretchFactor(2, 1);
+    m_mainSplitter = new QSplitter();
+    m_mainSplitter->setObjectName("MainSplitter");
+    m_mainSplitter->addWidget(directoryPanel);
+    m_mainSplitter->addWidget(m_fileList);
+    m_mainSplitter->addWidget(editArea);
+    m_mainSplitter->setStretchFactor(0, 0);
+    m_mainSplitter->setStretchFactor(1, 0);
+    m_mainSplitter->setStretchFactor(2, 1);
 
     // Signals
     connect(directoryTree, &VDirectoryTree::currentDirectoryChanged,
-            fileList, &VFileList::setDirectory);
+            m_fileList, &VFileList::setDirectory);
     connect(directoryTree, &VDirectoryTree::directoryUpdated,
             editArea, &VEditArea::handleDirectoryUpdated);
 
@@ -133,11 +142,11 @@ void VMainWindow::setupUI()
                 }
             });
 
-    connect(fileList, &VFileList::fileClicked,
+    connect(m_fileList, &VFileList::fileClicked,
             editArea, &VEditArea::openFile);
-    connect(fileList, &VFileList::fileCreated,
+    connect(m_fileList, &VFileList::fileCreated,
             editArea, &VEditArea::openFile);
-    connect(fileList, &VFileList::fileUpdated,
+    connect(m_fileList, &VFileList::fileUpdated,
             editArea, &VEditArea::handleFileUpdated);
     connect(editArea, &VEditArea::tabStatusUpdated,
             this, &VMainWindow::handleAreaTabStatusUpdated);
@@ -148,7 +157,7 @@ void VMainWindow::setupUI()
     connect(m_findReplaceDialog, &VFindReplaceDialog::findTextChanged,
             this, &VMainWindow::handleFindDialogTextChanged);
 
-    setCentralWidget(mainSplitter);
+    setCentralWidget(m_mainSplitter);
 
     m_vimIndicator = new VVimIndicator(this);
     m_vimIndicator->hide();
@@ -165,26 +174,49 @@ void VMainWindow::setupUI()
 
 QWidget *VMainWindow::setupDirectoryPanel()
 {
+    // Notebook selector.
     notebookLabel = new QLabel(tr("Notebooks"));
     notebookLabel->setProperty("TitleLabel", true);
     notebookLabel->setProperty("NotebookPanel", true);
-    directoryLabel = new QLabel(tr("Folders"));
-    directoryLabel->setProperty("TitleLabel", true);
-    directoryLabel->setProperty("NotebookPanel", true);
 
     notebookSelector = new VNotebookSelector(vnote);
     notebookSelector->setObjectName("NotebookSelector");
     notebookSelector->setProperty("NotebookPanel", true);
     notebookSelector->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
 
+    // Navigation panel.
+    directoryLabel = new QLabel(tr("Folders"));
+    directoryLabel->setProperty("TitleLabel", true);
+    directoryLabel->setProperty("NotebookPanel", true);
+
     directoryTree = new VDirectoryTree;
     directoryTree->setProperty("NotebookPanel", true);
+
+    QVBoxLayout *naviLayout = new QVBoxLayout;
+    naviLayout->addWidget(directoryLabel);
+    naviLayout->addWidget(directoryTree);
+    naviLayout->setContentsMargins(0, 0, 0, 0);
+    naviLayout->setSpacing(0);
+    QWidget *naviWidget = new QWidget();
+    naviWidget->setLayout(naviLayout);
+
+    QWidget *tmpWidget = new QWidget();
+
+    // Compact splitter.
+    m_naviSplitter = new QSplitter();
+    m_naviSplitter->setOrientation(Qt::Vertical);
+    m_naviSplitter->setObjectName("NaviSplitter");
+    m_naviSplitter->addWidget(naviWidget);
+    m_naviSplitter->addWidget(tmpWidget);
+    m_naviSplitter->setStretchFactor(0, 0);
+    m_naviSplitter->setStretchFactor(1, 1);
+
+    tmpWidget->hide();
 
     QVBoxLayout *nbLayout = new QVBoxLayout;
     nbLayout->addWidget(notebookLabel);
     nbLayout->addWidget(notebookSelector);
-    nbLayout->addWidget(directoryLabel);
-    nbLayout->addWidget(directoryTree);
+    nbLayout->addWidget(m_naviSplitter);
     nbLayout->setContentsMargins(0, 0, 0, 0);
     nbLayout->setSpacing(0);
     QWidget *nbContainer = new QWidget();
@@ -226,24 +258,62 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
         viewToolBar->setIconSize(p_iconSize);
     }
 
+    m_viewActGroup = new QActionGroup(this);
     QAction *onePanelViewAct = new QAction(QIcon(":/resources/icons/one_panel.svg"),
-                                           tr("&Single Panel"), this);
+                                           tr("&Single Panel"),
+                                           m_viewActGroup);
     onePanelViewAct->setStatusTip(tr("Display only the notes list panel"));
     onePanelViewAct->setToolTip(tr("Single Panel (Ctrl+E P)"));
-    connect(onePanelViewAct, &QAction::triggered,
-            this, &VMainWindow::onePanelView);
+    onePanelViewAct->setCheckable(true);
+    onePanelViewAct->setData((int)PanelViewState::SinglePanel);
 
     QAction *twoPanelViewAct = new QAction(QIcon(":/resources/icons/two_panels.svg"),
-                                           tr("&Two Panels"), this);
+                                           tr("&Two Panels"),
+                                           m_viewActGroup);
     twoPanelViewAct->setStatusTip(tr("Display both the folders and notes list panel"));
     twoPanelViewAct->setToolTip(tr("Two Panels (Ctrl+E P)"));
-    connect(twoPanelViewAct, &QAction::triggered,
-            this, &VMainWindow::twoPanelView);
+    twoPanelViewAct->setCheckable(true);
+    twoPanelViewAct->setData((int)PanelViewState::TwoPanels);
+
+    QAction *compactViewAct = new QAction(QIcon(":/resources/icons/compact_mode.svg"),
+                                           tr("&Compact Mode"),
+                                           m_viewActGroup);
+    compactViewAct->setStatusTip(tr("Integrate the folders and notes list panel in one column"));
+    compactViewAct->setCheckable(true);
+    compactViewAct->setData((int)PanelViewState::CompactMode);
+
+    connect(m_viewActGroup, &QActionGroup::triggered,
+            this, [this](QAction *p_action) {
+                if (!p_action) {
+                    return;
+                }
+
+                int act = p_action->data().toInt();
+                switch (act) {
+                case (int)PanelViewState::SinglePanel:
+                    onePanelView();
+                    break;
+
+                case (int)PanelViewState::TwoPanels:
+                    twoPanelView();
+                    break;
+
+                case (int)PanelViewState::CompactMode:
+                    m_panelViewState = PanelViewState::CompactMode;
+                    g_config->setEnableCompactMode(true);
+                    changePanelView(m_panelViewState);
+                    break;
+
+                default:
+                    break;
+                }
+            });
 
     QMenu *panelMenu = new QMenu(this);
     panelMenu->setToolTipsVisible(true);
     panelMenu->addAction(onePanelViewAct);
     panelMenu->addAction(twoPanelViewAct);
+    panelMenu->addAction(compactViewAct);
 
     expandViewAct = new QAction(QIcon(":/resources/icons/expand.svg"),
                                 tr("Expand (Ctrl+E E)"), this);
@@ -251,7 +321,11 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
     expandViewAct->setCheckable(true);
     expandViewAct->setMenu(panelMenu);
     connect(expandViewAct, &QAction::triggered,
-            this, &VMainWindow::expandPanelView);
+            this, [this](bool p_checked) {
+                // Recover m_panelViewState or change to expand mode.
+                changePanelView(p_checked ? PanelViewState::ExpandMode
+                                          : m_panelViewState);
+            });
 
     viewToolBar->addAction(expandViewAct);
 }
@@ -378,7 +452,7 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     qDebug() << "set NewNote shortcut to" << keySeq;
     newNoteAct->setShortcut(QKeySequence(keySeq));
     connect(newNoteAct, &QAction::triggered,
-            fileList, &VFileList::newFile);
+            m_fileList, &VFileList::newFile);
 
     noteInfoAct = new QAction(QIcon(":/resources/icons/note_info_tb.svg"),
                               tr("Note &Info"), this);
@@ -1064,7 +1138,7 @@ void VMainWindow::importNoteFromFile()
     lastPath = QFileInfo(files[0]).path();
 
     QString msg;
-    if (!fileList->importFiles(files, &msg)) {
+    if (!m_fileList->importFiles(files, &msg)) {
         VUtils::showMessage(QMessageBox::Warning,
                             tr("Warning"),
                             tr("Fail to create notes for all the files."),
@@ -1694,65 +1768,119 @@ void VMainWindow::handleAreaTabStatusUpdated(const VEditTabInfo &p_info)
 
 void VMainWindow::onePanelView()
 {
-    changeSplitterView(1);
-    expandViewAct->setChecked(false);
-    m_onePanel = true;
+    m_panelViewState = PanelViewState::SinglePanel;
+    g_config->setEnableCompactMode(false);
+    changePanelView(m_panelViewState);
 }
 
 void VMainWindow::twoPanelView()
 {
-    changeSplitterView(2);
-    expandViewAct->setChecked(false);
-    m_onePanel = false;
+    m_panelViewState = PanelViewState::TwoPanels;
+    g_config->setEnableCompactMode(false);
+    changePanelView(m_panelViewState);
 }
 
 void VMainWindow::toggleOnePanelView()
 {
-    if (m_onePanel) {
-        twoPanelView();
-    } else {
+    if (m_panelViewState == PanelViewState::TwoPanels) {
         onePanelView();
+    } else {
+        twoPanelView();
     }
 }
 
-void VMainWindow::expandPanelView(bool p_checked)
+void VMainWindow::enableCompactMode(bool p_enabled)
 {
-    int nrSplits = 0;
-    if (p_checked) {
-        nrSplits = 0;
+    const int fileListIdx = 1;
+    bool isCompactMode = m_naviSplitter->indexOf(m_fileList) != -1;
+    if (p_enabled) {
+        // Change to compact mode.
+        if (isCompactMode) {
+            return;
+        }
+
+        // Take m_fileList out of m_mainSplitter.
+        QWidget *tmpWidget = new QWidget(this);
+        Q_ASSERT(fileListIdx == m_mainSplitter->indexOf(m_fileList));
+        m_fileList->hide();
+        m_mainSplitter->replaceWidget(fileListIdx, tmpWidget);
+        tmpWidget->hide();
+
+        // Insert m_fileList into m_naviSplitter.
+        QWidget *wid = m_naviSplitter->replaceWidget(fileListIdx, m_fileList);
+        delete wid;
+
+        m_fileList->show();
     } else {
-        if (m_onePanel) {
-            nrSplits = 1;
+        // Disable compact mode and go back to two panels view.
+        if (!isCompactMode) {
+            return;
+        }
+
+        // Take m_fileList out of m_naviSplitter.
+        Q_ASSERT(fileListIdx == m_naviSplitter->indexOf(m_fileList));
+        QWidget *tmpWidget = new QWidget(this);
+        m_fileList->hide();
+        m_naviSplitter->replaceWidget(fileListIdx, tmpWidget);
+        tmpWidget->hide();
+
+        // Insert m_fileList into m_mainSplitter.
+        QWidget *wid = m_mainSplitter->replaceWidget(fileListIdx, m_fileList);
+        delete wid;
+
+        m_fileList->show();
+    }
+}
+
+void VMainWindow::changePanelView(PanelViewState p_state)
+{
+    switch (p_state) {
+    case PanelViewState::ExpandMode:
+        m_mainSplitter->widget(0)->hide();
+        m_mainSplitter->widget(1)->hide();
+        m_mainSplitter->widget(2)->show();
+        break;
+
+    case PanelViewState::SinglePanel:
+        enableCompactMode(false);
+
+        m_mainSplitter->widget(0)->hide();
+        m_mainSplitter->widget(1)->show();
+        m_mainSplitter->widget(2)->show();
+        break;
+
+    case PanelViewState::TwoPanels:
+        enableCompactMode(false);
+
+        m_mainSplitter->widget(0)->show();
+        m_mainSplitter->widget(1)->show();
+        m_mainSplitter->widget(2)->show();
+        break;
+
+    case PanelViewState::CompactMode:
+        m_mainSplitter->widget(0)->show();
+        m_mainSplitter->widget(1)->hide();
+        m_mainSplitter->widget(2)->show();
+
+        enableCompactMode(true);
+        break;
+
+    default:
+        break;
+    }
+
+    // Change the action state.
+    QList<QAction *> acts = m_viewActGroup->actions();
+    for (auto & act : acts) {
+        if (act->data().toInt() == (int)p_state) {
+            act->setChecked(true);
         } else {
-            nrSplits = 2;
+            act->setChecked(false);
         }
     }
-    changeSplitterView(nrSplits);
-}
 
-void VMainWindow::changeSplitterView(int nrPanel)
-{
-    switch (nrPanel) {
-    case 0:
-        // Expand
-        mainSplitter->widget(0)->hide();
-        mainSplitter->widget(1)->hide();
-        mainSplitter->widget(2)->show();
-        break;
-    case 1:
-        // Single panel
-        mainSplitter->widget(0)->hide();
-        mainSplitter->widget(1)->show();
-        mainSplitter->widget(2)->show();
-        break;
-    case 2:
-        // Two panels
-        mainSplitter->widget(0)->show();
-        mainSplitter->widget(1)->show();
-        mainSplitter->widget(2)->show();
-        break;
-    default:
-        qWarning() << "invalid panel number" << nrPanel;
+    if (p_state != PanelViewState::ExpandMode) {
+        expandViewAct->setChecked(false);
     }
 }
 
@@ -1772,7 +1900,7 @@ void VMainWindow::curEditFileInfo()
     if (m_curFile->getType() == FileType::Note) {
         VNoteFile *file = dynamic_cast<VNoteFile *>((VFile *)m_curFile);
         Q_ASSERT(file);
-        fileList->fileInfo(file);
+        m_fileList->fileInfo(file);
     } else if (m_curFile->getType() == FileType::Orphan) {
         VOrphanFile *file = dynamic_cast<VOrphanFile *>((VFile *)m_curFile);
         Q_ASSERT(file);
@@ -1789,7 +1917,7 @@ void VMainWindow::deleteCurNote()
     }
 
     VNoteFile *file = dynamic_cast<VNoteFile *>((VFile *)m_curFile);
-    fileList->deleteFile(file);
+    m_fileList->deleteFile(file);
 }
 
 void VMainWindow::closeEvent(QCloseEvent *event)
@@ -1843,14 +1971,17 @@ void VMainWindow::closeEvent(QCloseEvent *event)
 
 void VMainWindow::saveStateAndGeometry()
 {
-    // In one panel view, it will save the wrong state that the directory tree
-    // panel has a width of zero.
-    twoPanelView();
-
     g_config->setMainWindowGeometry(saveGeometry());
     g_config->setMainWindowState(saveState());
     g_config->setToolsDockChecked(toolDock->isVisible());
-    g_config->setMainSplitterState(mainSplitter->saveState());
+
+    // In one panel view, it will save the wrong state that the directory tree
+    // panel has a width of zero.
+    changePanelView(PanelViewState::TwoPanels);
+    g_config->setMainSplitterState(m_mainSplitter->saveState());
+
+    changePanelView(PanelViewState::CompactMode);
+    g_config->setNaviSplitterState(m_naviSplitter->saveState());
 }
 
 void VMainWindow::restoreStateAndGeometry()
@@ -1864,9 +1995,15 @@ void VMainWindow::restoreStateAndGeometry()
         restoreState(state);
     }
     toolDock->setVisible(g_config->getToolsDockChecked());
+
     const QByteArray &splitterState = g_config->getMainSplitterState();
     if (!splitterState.isEmpty()) {
-        mainSplitter->restoreState(splitterState);
+        m_mainSplitter->restoreState(splitterState);
+    }
+
+    const QByteArray &naviSplitterState = g_config->getNaviSplitterState();
+    if (!naviSplitterState.isEmpty()) {
+        m_naviSplitter->restoreState(naviSplitterState);
     }
 }
 
@@ -1908,7 +2045,7 @@ void VMainWindow::keyPressEvent(QKeyEvent *event)
 
 void VMainWindow::repositionAvatar()
 {
-    int diameter = mainSplitter->pos().y();
+    int diameter = m_mainSplitter->pos().y();
     int x = width() - diameter - 5;
     int y = 0;
     qDebug() << "avatar:" << diameter << x << y;
@@ -1942,13 +2079,13 @@ bool VMainWindow::locateFile(VFile *p_file)
 
         VDirectory *dir = file->getDirectory();
         if (directoryTree->locateDirectory(dir)) {
-            while (fileList->currentDirectory() != dir) {
+            while (m_fileList->currentDirectory() != dir) {
                 QCoreApplication::sendPostedEvents();
             }
 
-            if (fileList->locateFile(file)) {
+            if (m_fileList->locateFile(file)) {
                 ret = true;
-                fileList->setFocus();
+                m_fileList->setFocus();
             }
         }
     }

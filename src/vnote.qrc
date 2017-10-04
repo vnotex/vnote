@@ -130,5 +130,6 @@
         <file>resources/icons/delete_attachment.svg</file>
         <file>resources/icons/sort.svg</file>
         <file>resources/icons/create_subdir.svg</file>
+        <file>resources/icons/compact_mode.svg</file>
     </qresource>
 </RCC>

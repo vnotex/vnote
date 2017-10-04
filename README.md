@@ -54,7 +54,8 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS** (due to t
 - Supports infinite levels of folders;
 - Supports multiple tabs and splitting windows;
 - Supports [Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/), and [MathJax](https://www.mathjax.org/);
-- Supports HiDPI.
+- Supports HiDPI;
+- Supports attachments of notes.
 
 ![VNote Edit](screenshots/vnote_edit.gif)
 
@@ -199,7 +200,7 @@ If you prefer command line on macOS, you could follow these steps.
 5. Now you got the bundle `path/to/project/build/src/VNote.app`. Enjoy yourself!
 
 # Dependencies
-- [Qt 5.7](http://qt-project.org) (L-GPL v3)
+- [Qt 5.9](http://qt-project.org) (L-GPL v3)
 - [PEG Markdown Highlight](http://hasseg.org/peg-markdown-highlight/) (MIT License)
 - [Hoedown 3.0.7](https://github.com/hoedown/hoedown/) (ISC License)
 - [Marked](https://github.com/chjj/marked) (MIT License)

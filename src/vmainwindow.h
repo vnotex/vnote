@@ -38,6 +38,15 @@ class QShortcut;
 class VButtonWithWidget;
 class VAttachmentList;
 
+enum class PanelViewState
+{
+    ExpandMode,
+    SinglePanel,
+    TwoPanels,
+    CompactMode,
+    Invalid
+};
+
 class VMainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -105,7 +114,6 @@ private slots:
     void changeHighlightTrailingSapce(bool p_checked);
     void onePanelView();
     void twoPanelView();
-    void expandPanelView(bool p_checked);
     void curEditFileInfo();
     void deleteCurNote();
     void handleCurrentDirectoryChanged(const VDirectory *p_dir);
@@ -126,6 +134,9 @@ private slots:
     void enableImageCaption(bool p_checked);
     void printNote();
     void exportAsPDF();
+
+    // Set the panel view properly.
+    void enableCompactMode(bool p_enabled);
 
     // Handle Vim status updated.
     void handleVimStatusUpdated(const VVim *p_vim);
@@ -186,7 +197,6 @@ private:
     void initEditorLineNumberMenu(QMenu *p_menu);
 
     void initEditorStyleMenu(QMenu *p_emnu);
-    void changeSplitterView(int nrPanel);
     void updateWindowTitle(const QString &str);
     void updateActionStateFromTabStatusChange(const VFile *p_file,
                                               bool p_editMode);
@@ -213,6 +223,10 @@ private:
     // Init system tray icon and correspondign context menu.
     void initTrayIcon();
 
+    // Change the panel view according to @p_state.
+    // Will not change m_panelViewState.
+    void changePanelView(PanelViewState p_state);
+
     VNote *vnote;
     QPointer<VFile> m_curFile;
     QPointer<VEditTab> m_curTab;
@@ -222,9 +236,16 @@ private:
     QLabel *notebookLabel;
     QLabel *directoryLabel;
     VNotebookSelector *notebookSelector;
-    VFileList *fileList;
+    VFileList *m_fileList;
     VDirectoryTree *directoryTree;
-    QSplitter *mainSplitter;
+
+    // Splitter for directory | files | edit.
+    QSplitter *m_mainSplitter;
+
+    // Splitter for directory | files.
+    // Move directory and file panel in one compact vertical split.
+    QSplitter *m_naviSplitter;
+
     VEditArea *editArea;
     QDockWidget *toolDock;
     QToolBox *toolBox;
@@ -234,8 +255,7 @@ private:
     VVimIndicator *m_vimIndicator;
     VTabIndicator *m_tabIndicator;
 
-    // Whether it is one panel or two panles.
-    bool m_onePanel;
+    PanelViewState m_panelViewState;
 
     // Actions
     QAction *newRootDirAct;
@@ -268,6 +288,9 @@ private:
 
     // Act group for code block render styles.
     QActionGroup *m_codeBlockStyleActs;
+
+    // Act group for panel view actions.
+    QActionGroup *m_viewActGroup;
 
     QShortcut *m_closeNoteShortcut;
 
@@ -306,7 +329,7 @@ private:
 
 inline VFileList *VMainWindow::getFileList() const
 {
-    return fileList;
+    return m_fileList;
 }
 
 #endif // VMAINWINDOW_H

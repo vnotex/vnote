@@ -153,6 +153,9 @@ public:
     const QByteArray &getMainSplitterState() const;
     void setMainSplitterState(const QByteArray &p_state);
 
+    const QByteArray &getNaviSplitterState() const;
+    void setNaviSplitterState(const QByteArray &p_state);
+
     bool getFindCaseSensitive() const;
     void setFindCaseSensitive(bool p_enabled);
 
@@ -290,6 +293,9 @@ public:
 
     // Whether user specify template_code_block_css_url directly.
     bool getUserSpecifyTemplateCodeBlockCssUrl() const;
+
+    bool getEnableCompactMode() const;
+    void setEnableCompactMode(bool p_enabled);
 
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
@@ -429,6 +435,7 @@ private:
     QByteArray m_mainWindowGeometry;
     QByteArray m_mainWindowState;
     QByteArray m_mainSplitterState;
+    QByteArray m_naviSplitterState;
 
     // Find/Replace dialog options
     bool m_findCaseSensitive;
@@ -600,6 +607,9 @@ private:
     // Whether double click on a tab to close it.
     bool m_doubleClickCloseTab;
 
+    // Whether put folder and note panel in one single column.
+    bool m_enableCompactMode;
+
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
     static const QString c_obsoleteDirConfigFile;
@@ -609,8 +619,10 @@ private:
 
     // The name of the default configuration file
     static const QString defaultConfigFilePath;
+
     // QSettings for the user configuration
     QSettings *userSettings;
+
     // Qsettings for @defaultConfigFileName
     QSettings *defaultSettings;
 
@@ -897,6 +909,17 @@ inline void VConfigManager::setMainSplitterState(const QByteArray &p_state)
 {
     m_mainSplitterState = p_state;
     setConfigToSettings("session", "main_splitter_state", m_mainSplitterState);
+}
+
+inline const QByteArray& VConfigManager::getNaviSplitterState() const
+{
+    return m_naviSplitterState;
+}
+
+inline void VConfigManager::setNaviSplitterState(const QByteArray &p_state)
+{
+    m_naviSplitterState = p_state;
+    setConfigToSettings("session", "navi_splitter_state", m_naviSplitterState);
 }
 
 inline bool VConfigManager::getFindCaseSensitive() const
@@ -1568,6 +1591,21 @@ inline void VConfigManager::setTemplateCodeBlockCss(const QString &p_css)
 inline bool VConfigManager::getUserSpecifyTemplateCodeBlockCssUrl() const
 {
     return !m_templateCodeBlockCssUrl.isEmpty();
+}
+
+inline bool VConfigManager::getEnableCompactMode() const
+{
+    return m_enableCompactMode;
+}
+
+inline void VConfigManager::setEnableCompactMode(bool p_enabled)
+{
+    if (m_enableCompactMode == p_enabled) {
+        return;
+    }
+
+    m_enableCompactMode = p_enabled;
+    setConfigToSettings("global", "enable_compact_mode", m_enableCompactMode);
 }
 
 #endif // VCONFIGMANAGER_H

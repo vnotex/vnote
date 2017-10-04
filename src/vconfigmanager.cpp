@@ -95,6 +95,7 @@ void VConfigManager::initialize()
     m_mainWindowGeometry = getConfigFromSettings("session", "main_window_geometry").toByteArray();
     m_mainWindowState = getConfigFromSettings("session", "main_window_state").toByteArray();
     m_mainSplitterState = getConfigFromSettings("session", "main_splitter_state").toByteArray();
+    m_naviSplitterState = getConfigFromSettings("session", "navi_splitter_state").toByteArray();
 
     m_findCaseSensitive = getConfigFromSettings("global",
                                                 "find_case_sensitive").toBool();
@@ -227,6 +228,9 @@ void VConfigManager::initialize()
 
     m_doubleClickCloseTab = getConfigFromSettings("global",
                                                   "double_click_close_tab").toBool();
+
+    m_enableCompactMode = getConfigFromSettings("global",
+                                                "enable_compact_mode").toBool();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()

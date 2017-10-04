@@ -54,8 +54,9 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 - 支持Vim模式以及一系列强大的快捷键；
 - 支持无限层级的文件夹；
 - 支持多个标签页和窗口分割；
-- 支持[Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/) 和 [MathJax](https://www.mathjax.org/);
+- 支持[Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/) 和 [MathJax](https://www.mathjax.org/)；
 - 支持高分辨率；
+- 支持笔记附件。
 
 ![VNote Edit](screenshots/vnote_edit.gif)
 
@@ -203,7 +204,7 @@ sudo make install
 5. 此时得到VNote的Bundle `path/to/project/build/src/VNote.app`，打开即可。
 
 # 依赖
-- [Qt 5.7](http://qt-project.org) (L-GPL v3)
+- [Qt 5.9](http://qt-project.org) (L-GPL v3)
 - [PEG Markdown Highlight](http://hasseg.org/peg-markdown-highlight/) (MIT License)
 - [Hoedown 3.0.7](https://github.com/hoedown/hoedown/) (ISC License)
 - [Marked](https://github.com/chjj/marked) (MIT License)
