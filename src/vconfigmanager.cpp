@@ -8,52 +8,60 @@
 #include <QtDebug>
 #include <QTextEdit>
 #include <QStandardPaths>
+#include <QCoreApplication>
 #include "utils/vutils.h"
 #include "vstyleparser.h"
 
 const QString VConfigManager::orgName = QString("vnote");
+
 const QString VConfigManager::appName = QString("vnote");
+
 const QString VConfigManager::c_version = QString("1.9");
+
 const QString VConfigManager::c_obsoleteDirConfigFile = QString(".vnote.json");
+
 const QString VConfigManager::c_dirConfigFile = QString("_vnote.json");
-const QString VConfigManager::defaultConfigFilePath = QString(":/resources/vnote.ini");
+
+const QString VConfigManager::c_defaultConfigFilePath = QString(":/resources/vnote.ini");
+
+const QString VConfigManager::c_defaultConfigFile = QString("vnote.ini");
+
+const QString VConfigManager::c_sessionConfigFile = QString("session.ini");
+
 const QString VConfigManager::c_styleConfigFolder = QString("styles");
+
 const QString VConfigManager::c_codeBlockStyleConfigFolder = QString("codeblock_styles");
+
 const QString VConfigManager::c_defaultCssFile = QString(":/resources/styles/default.css");
+
 const QString VConfigManager::c_defaultCodeBlockCssFile = QString(":/utils/highlightjs/styles/vnote.css");
+
 const QString VConfigManager::c_defaultMdhlFile = QString(":/resources/styles/default.mdhl");
+
 const QString VConfigManager::c_solarizedDarkMdhlFile = QString(":/resources/styles/solarized-dark.mdhl");
+
 const QString VConfigManager::c_solarizedLightMdhlFile = QString(":/resources/styles/solarized-light.mdhl");
+
 const QString VConfigManager::c_warningTextStyle = QString("color: red; font: bold");
+
 const QString VConfigManager::c_dataTextStyle = QString("font: bold");
+
 const QString VConfigManager::c_dangerBtnStyle = QString("QPushButton {color: #fff; border-color: #d43f3a; background-color: #d9534f;}"
                                                          "QPushButton::hover {color: #fff; border-color: #ac2925; background-color: #c9302c;}");
+
 const QString VConfigManager::c_vnoteNotebookFolderName = QString("vnote_notebooks");
 
 VConfigManager::VConfigManager(QObject *p_parent)
-    : QObject(p_parent), userSettings(NULL), defaultSettings(NULL)
+    : QObject(p_parent),
+      userSettings(NULL),
+      defaultSettings(NULL),
+      m_sessionSettings(NULL)
 {
-}
-
-void VConfigManager::migrateIniFile()
-{
-    const QString originalFolder = "tamlok";
-    const QString newFolder = orgName;
-    QString configFolder = getConfigFolder();
-    QDir dir(configFolder);
-    dir.cdUp();
-    dir.rename(originalFolder, newFolder);
-    userSettings->sync();
 }
 
 void VConfigManager::initialize()
 {
-    Q_ASSERT(!userSettings && !defaultSettings);
-    userSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope,
-                                 orgName, appName, this);
-    defaultSettings = new QSettings(defaultConfigFilePath, QSettings::IniFormat, this);
-
-    migrateIniFile();
+    initSettings();
 
     // Override the default css styles on start up.
     outputDefaultCssStyle();
@@ -68,7 +76,6 @@ void VConfigManager::initialize()
     m_templateCss = getConfigFromSettings("global", "template_css").toString();
     m_templateCodeBlockCss = getConfigFromSettings("global", "template_code_block_css").toString();
     m_templateCodeBlockCssUrl = getConfigFromSettings("global", "template_code_block_css_url").toString();
-    curNotebookIndex = getConfigFromSettings("global", "current_notebook").toInt();
 
     markdownExtensions = hoedown_extensions(HOEDOWN_EXT_TABLES | HOEDOWN_EXT_FENCED_CODE |
                                             HOEDOWN_EXT_HIGHLIGHT | HOEDOWN_EXT_AUTOLINK |
@@ -91,11 +98,7 @@ void VConfigManager::initialize()
     curRenderBackgroundColor = getConfigFromSettings("global",
                                                      "current_render_background_color").toString();
 
-    m_toolsDockChecked = getConfigFromSettings("session", "tools_dock_checked").toBool();
-    m_mainWindowGeometry = getConfigFromSettings("session", "main_window_geometry").toByteArray();
-    m_mainWindowState = getConfigFromSettings("session", "main_window_state").toByteArray();
-    m_mainSplitterState = getConfigFromSettings("session", "main_splitter_state").toByteArray();
-    m_naviSplitterState = getConfigFromSettings("session", "navi_splitter_state").toByteArray();
+    m_toolsDockChecked = getConfigFromSettings("global", "tools_dock_checked").toBool();
 
     m_findCaseSensitive = getConfigFromSettings("global",
                                                 "find_case_sensitive").toBool();
@@ -231,6 +234,55 @@ void VConfigManager::initialize()
 
     m_enableCompactMode = getConfigFromSettings("global",
                                                 "enable_compact_mode").toBool();
+
+    initFromSessionSettings();
+}
+
+void VConfigManager::initSettings()
+{
+    Q_ASSERT(!userSettings && !defaultSettings && !m_sessionSettings);
+
+    // vnote.ini.
+    // First try to read vnote.ini from the directory of the executable.
+    QString userIniPath = QDir(QCoreApplication::applicationDirPath()).filePath(c_defaultConfigFile);
+    if (QFileInfo::exists(userIniPath)) {
+        userSettings = new QSettings(userIniPath,
+                                     QSettings::IniFormat,
+                                     this);
+    } else {
+        userSettings = new QSettings(QSettings::IniFormat,
+                                     QSettings::UserScope,
+                                     orgName,
+                                     appName,
+                                     this);
+    }
+
+    qDebug() << "use user config" << userSettings->fileName();
+
+    // Default vnote.ini from resource file.
+    defaultSettings = new QSettings(c_defaultConfigFilePath, QSettings::IniFormat, this);
+
+    // session.ini.
+    m_sessionSettings = new QSettings(QDir(getConfigFolder()).filePath(c_sessionConfigFile),
+                                      QSettings::IniFormat,
+                                      this);
+}
+
+void VConfigManager::initFromSessionSettings()
+{
+    curNotebookIndex = getConfigFromSessionSettings("global", "current_notebook").toInt();
+
+    m_mainWindowGeometry = getConfigFromSessionSettings("geometry",
+                                                        "main_window_geometry").toByteArray();
+
+    m_mainWindowState = getConfigFromSessionSettings("geometry",
+                                                     "main_window_state").toByteArray();
+
+    m_mainSplitterState = getConfigFromSessionSettings("geometry",
+                                                       "main_splitter_state").toByteArray();
+
+    m_naviSplitterState = getConfigFromSessionSettings("geometry",
+                                                       "navi_splitter_state").toByteArray();
 }
 
 void VConfigManager::readPredefinedColorsFromSettings()
@@ -249,49 +301,70 @@ void VConfigManager::readPredefinedColorsFromSettings()
              << "pre-defined colors from [predefined_colors] section";
 }
 
-void VConfigManager::readNotebookFromSettings(QVector<VNotebook *> &p_notebooks, QObject *parent)
+void VConfigManager::readNotebookFromSettings(QSettings *p_settings,
+                                              QVector<VNotebook *> &p_notebooks,
+                                              QObject *parent)
 {
     Q_ASSERT(p_notebooks.isEmpty());
-    int size = userSettings->beginReadArray("notebooks");
+    int size = p_settings->beginReadArray("notebooks");
     for (int i = 0; i < size; ++i) {
-        userSettings->setArrayIndex(i);
-        QString name = userSettings->value("name").toString();
-        QString path = userSettings->value("path").toString();
+        p_settings->setArrayIndex(i);
+        QString name = p_settings->value("name").toString();
+        QString path = p_settings->value("path").toString();
         VNotebook *notebook = new VNotebook(name, path, parent);
         notebook->readConfigNotebook();
         p_notebooks.append(notebook);
     }
-    userSettings->endArray();
+
+    p_settings->endArray();
     qDebug() << "read" << p_notebooks.size()
              << "notebook items from [notebooks] section";
 }
 
-void VConfigManager::writeNotebookToSettings(const QVector<VNotebook *> &p_notebooks)
+void VConfigManager::writeNotebookToSettings(QSettings *p_settings,
+                                             const QVector<VNotebook *> &p_notebooks)
 {
     // Clear it first
-    userSettings->beginGroup("notebooks");
-    userSettings->remove("");
-    userSettings->endGroup();
+    p_settings->beginGroup("notebooks");
+    p_settings->remove("");
+    p_settings->endGroup();
 
-    userSettings->beginWriteArray("notebooks");
+    p_settings->beginWriteArray("notebooks");
     for (int i = 0; i < p_notebooks.size(); ++i) {
-        userSettings->setArrayIndex(i);
+        p_settings->setArrayIndex(i);
         const VNotebook &notebook = *p_notebooks[i];
-        userSettings->setValue("name", notebook.getName());
-        userSettings->setValue("path", notebook.getPath());
+        p_settings->setValue("name", notebook.getName());
+        p_settings->setValue("path", notebook.getPath());
     }
-    userSettings->endArray();
+
+    p_settings->endArray();
     qDebug() << "write" << p_notebooks.size()
              << "notebook items in [notebooks] section";
 }
 
+static QVariant getConfigFromSettingsBySectionKey(const QSettings *p_settings,
+                                                  const QString &p_section,
+                                                  const QString &p_key)
+{
+    QString fullKey = p_section + "/" + p_key;
+    return p_settings->value(fullKey);
+}
+
+static void setConfigToSettingsBySectionKey(QSettings *p_settings,
+                                            const QString &p_section,
+                                            const QString &p_key,
+                                            const QVariant &p_value)
+{
+    QString fullKey = p_section + "/" + p_key;
+    return p_settings->setValue(fullKey, p_value);
+}
+
 QVariant VConfigManager::getConfigFromSettings(const QString &section, const QString &key) const
 {
-    QString fullKey = section + "/" + key;
     // First, look up the user-scoped config file
-    QVariant value = userSettings->value(fullKey);
+    QVariant value = getConfigFromSettingsBySectionKey(userSettings, section, key);
     if (!value.isNull()) {
-        qDebug() << "user config:" << fullKey << value.toString();
+        qDebug() << "user config:" << (section + "/" +  key) << value.toString();
         return value;
     }
 
@@ -302,18 +375,14 @@ QVariant VConfigManager::getConfigFromSettings(const QString &section, const QSt
 void VConfigManager::setConfigToSettings(const QString &section, const QString &key, const QVariant &value)
 {
     // Set the user-scoped config file
-    QString fullKey = section + "/" + key;
-    userSettings->setValue(fullKey, value);
-    qDebug() << "set user config:" << fullKey << value.toString();
+    setConfigToSettingsBySectionKey(userSettings, section, key, value);
+    qDebug() << "set user config:" << (section + "/" + key) << value.toString();
 }
 
 QVariant VConfigManager::getDefaultConfig(const QString &p_section, const QString &p_key) const
 {
-    QString fullKey = p_section + "/" + p_key;
-
-    QVariant value = defaultSettings->value(fullKey);
-    qDebug() << "default config:" << fullKey << value.toString();
-
+    QVariant value = getConfigFromSettingsBySectionKey(defaultSettings, p_section, p_key);
+    qDebug() << "default config:" << (p_section + "/" + p_key) << value.toString();
     return value;
 }
 
@@ -323,6 +392,24 @@ QVariant VConfigManager::resetDefaultConfig(const QString &p_section, const QStr
     setConfigToSettings(p_section, p_key, defaultValue);
 
     return defaultValue;
+}
+
+QVariant VConfigManager::getConfigFromSessionSettings(const QString &p_section,
+                                                      const QString &p_key) const
+{
+    return getConfigFromSettingsBySectionKey(m_sessionSettings,
+                                             p_section,
+                                             p_key);
+}
+
+void VConfigManager::setConfigToSessionSettings(const QString &p_section,
+                                                const QString &p_key,
+                                                const QVariant &p_value)
+{
+    setConfigToSettingsBySectionKey(m_sessionSettings,
+                                    p_section,
+                                    p_key,
+                                    p_value);
 }
 
 QString VConfigManager::fetchDirConfigFilePath(const QString &p_path)

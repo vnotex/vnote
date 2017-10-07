@@ -106,7 +106,10 @@ public:
     int getCurNotebookIndex() const;
     void setCurNotebookIndex(int index);
 
-    void getNotebooks(QVector<VNotebook *> &p_notebooks, QObject *parent);
+    // Read [notebooks] section from settings into @p_notebooks.
+    void getNotebooks(QVector<VNotebook *> &p_notebooks, QObject *p_parent);
+
+    // Write @p_notebooks to [notebooks] section into settings.
     void setNotebooks(const QVector<VNotebook *> &p_notebooks);
 
     hoedown_extensions getMarkdownExtensions() const;
@@ -323,7 +326,10 @@ public:
     QVector<QString> getEditorStyles() const;
 
 private:
+    // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
+
+    // Set a config to user settings.
     void setConfigToSettings(const QString &section, const QString &key, const QVariant &value);
 
     // Get default config from vnote.ini.
@@ -332,8 +338,29 @@ private:
     // Reset user config to default config and return the default config value.
     QVariant resetDefaultConfig(const QString &p_section, const QString &p_key);
 
-    void readNotebookFromSettings(QVector<VNotebook *> &p_notebooks, QObject *parent);
-    void writeNotebookToSettings(const QVector<VNotebook *> &p_notebooks);
+    // Look up a config from session settings.
+    QVariant getConfigFromSessionSettings(const QString &p_section, const QString &p_key) const;
+
+    // Set a config to session settings.
+    void setConfigToSessionSettings(const QString &p_section,
+                                    const QString &p_key,
+                                    const QVariant &p_value);
+
+    // Init defaultSettings, userSettings, and m_sessionSettings.
+    void initSettings();
+
+    // Init from m_sessionSettings.
+    void initFromSessionSettings();
+
+    // Read [notebooks] section from @p_settings.
+    void readNotebookFromSettings(QSettings *p_settings,
+                                  QVector<VNotebook *> &p_notebooks,
+                                  QObject *parent);
+
+    // Write to [notebooks] section to @p_settings.
+    void writeNotebookToSettings(QSettings *p_settings,
+                                 const QVector<VNotebook *> &p_notebooks);
+
     void readPredefinedColorsFromSettings();
 
     // 1. Update styles common in HTML and Markdown;
@@ -341,10 +368,6 @@ private:
     void updateEditStyle();
 
     void updateMarkdownEditStyle();
-
-    // Migrate ini file from tamlok/vnote.ini to vnote/vnote.ini.
-    // This is for the change of org name.
-    void migrateIniFile();
 
     // Output pre-defined CSS styles to style folder.
     bool outputDefaultCssStyle() const;
@@ -399,6 +422,8 @@ private:
     QString m_templateCodeBlockCssUrl;
 
     QString m_editorStyle;
+
+    // Index of current notebook.
     int curNotebookIndex;
 
     // Markdown Converter
@@ -617,14 +642,24 @@ private:
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
 
-    // The name of the default configuration file
-    static const QString defaultConfigFilePath;
+    // The path of the default configuration file
+    static const QString c_defaultConfigFilePath;
+
+    // The name of the config file.
+    static const QString c_defaultConfigFile;
+
+    // The name of the config file for session information.
+    static const QString c_sessionConfigFile;
 
     // QSettings for the user configuration
     QSettings *userSettings;
 
-    // Qsettings for @defaultConfigFileName
+    // Qsettings for @c_defaultConfigFilePath.
     QSettings *defaultSettings;
+
+    // QSettings for the session configuration, such as notebooks,
+    // geometry, last opened files.
+    QSettings *m_sessionSettings;
 
     // The folder name of style files.
     static const QString c_styleConfigFolder;
@@ -693,18 +728,35 @@ inline void VConfigManager::setCurNotebookIndex(int index)
     if (index == curNotebookIndex) {
         return;
     }
+
     curNotebookIndex = index;
-    setConfigToSettings("global", "current_notebook", index);
+    setConfigToSessionSettings("global", "current_notebook", index);
 }
 
-inline void VConfigManager::getNotebooks(QVector<VNotebook *> &p_notebooks, QObject *parent)
+inline void VConfigManager::getNotebooks(QVector<VNotebook *> &p_notebooks,
+                                         QObject *p_parent)
 {
-    readNotebookFromSettings(p_notebooks, parent);
+    // We used to store it in vnote.ini. For now, we store it in session.ini.
+    readNotebookFromSettings(m_sessionSettings, p_notebooks, p_parent);
+
+    // Migration.
+    if (p_notebooks.isEmpty()) {
+        readNotebookFromSettings(userSettings, p_notebooks, p_parent);
+
+        if (!p_notebooks.isEmpty()) {
+            // Clear and save it in another place.
+            userSettings->beginGroup("notebooks");
+            userSettings->remove("");
+            userSettings->endGroup();
+
+            writeNotebookToSettings(m_sessionSettings, p_notebooks);
+        }
+    }
 }
 
 inline void VConfigManager::setNotebooks(const QVector<VNotebook *> &p_notebooks)
 {
-    writeNotebookToSettings(p_notebooks);
+    writeNotebookToSettings(m_sessionSettings, p_notebooks);
 }
 
 inline hoedown_extensions VConfigManager::getMarkdownExtensions() const
@@ -872,7 +924,7 @@ inline bool VConfigManager::getToolsDockChecked() const
 inline void VConfigManager::setToolsDockChecked(bool p_checked)
 {
     m_toolsDockChecked = p_checked;
-    setConfigToSettings("session", "tools_dock_checked",
+    setConfigToSettings("global", "tools_dock_checked",
                         m_toolsDockChecked);
 }
 
@@ -884,8 +936,9 @@ inline const QByteArray& VConfigManager::getMainWindowGeometry() const
 inline void VConfigManager::setMainWindowGeometry(const QByteArray &p_geometry)
 {
     m_mainWindowGeometry = p_geometry;
-    setConfigToSettings("session", "main_window_geometry",
-                        m_mainWindowGeometry);
+    setConfigToSessionSettings("geometry",
+                               "main_window_geometry",
+                               m_mainWindowGeometry);
 }
 
 inline const QByteArray& VConfigManager::getMainWindowState() const
@@ -896,8 +949,9 @@ inline const QByteArray& VConfigManager::getMainWindowState() const
 inline void VConfigManager::setMainWindowState(const QByteArray &p_state)
 {
     m_mainWindowState = p_state;
-    setConfigToSettings("session", "main_window_state",
-                        m_mainWindowState);
+    setConfigToSessionSettings("geometry",
+                               "main_window_state",
+                               m_mainWindowState);
 }
 
 inline const QByteArray& VConfigManager::getMainSplitterState() const
@@ -908,7 +962,9 @@ inline const QByteArray& VConfigManager::getMainSplitterState() const
 inline void VConfigManager::setMainSplitterState(const QByteArray &p_state)
 {
     m_mainSplitterState = p_state;
-    setConfigToSettings("session", "main_splitter_state", m_mainSplitterState);
+    setConfigToSessionSettings("geometry",
+                               "main_splitter_state",
+                               m_mainSplitterState);
 }
 
 inline const QByteArray& VConfigManager::getNaviSplitterState() const
@@ -919,7 +975,9 @@ inline const QByteArray& VConfigManager::getNaviSplitterState() const
 inline void VConfigManager::setNaviSplitterState(const QByteArray &p_state)
 {
     m_naviSplitterState = p_state;
-    setConfigToSettings("session", "navi_splitter_state", m_naviSplitterState);
+    setConfigToSessionSettings("geometry",
+                               "navi_splitter_state",
+                               m_naviSplitterState);
 }
 
 inline bool VConfigManager::getFindCaseSensitive() const
