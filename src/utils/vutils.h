@@ -20,6 +20,32 @@ class VNotebook;
     #define V_ASSERT(cond) ((!(cond)) ? qt_assert(#cond, __FILE__, __LINE__) : qt_noop())
 #endif
 
+// Thanks to CGAL/cgal.
+#ifndef __has_attribute
+    #define __has_attribute(x) 0  // Compatibility with non-clang compilers.
+#endif
+
+#ifndef __has_cpp_attribute
+  #define __has_cpp_attribute(x) 0  // Compatibility with non-supporting compilers.
+#endif
+
+// The fallthrough attribute.
+// See for clang:
+//   http://clang.llvm.org/docs/AttributeReference.html#statement-attributes
+// See for gcc:
+//   https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
+#if __has_cpp_attribute(fallthrough)
+#  define V_FALLTHROUGH [[fallthrough]]
+#elif __has_cpp_attribute(gnu::fallthrough)
+#  define V_FALLTHROUGH [[gnu::fallthrough]]
+#elif __has_cpp_attribute(clang::fallthrough)
+#  define V_FALLTHROUGH [[clang::fallthrough]]
+#elif __has_attribute(fallthrough) && ! __clang__
+#  define V_FALLTHROUGH __attribute__ ((fallthrough))
+#else
+#  define V_FALLTHROUGH while(false){}
+#endif
+
 enum class MessageBoxType
 {
     Normal = 0,

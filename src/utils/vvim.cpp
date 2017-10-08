@@ -1115,6 +1115,8 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         } else {
             break;
         }
+
+        V_FALLTHROUGH;
     }
 
     case Qt::Key_PageUp:
@@ -1381,6 +1383,8 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         } else {
             break;
         }
+
+        V_FALLTHROUGH;
     }
 
     case Qt::Key_Escape:
@@ -3481,6 +3485,8 @@ void VVim::processDeleteAction(QList<Token> &p_tokens)
                 // Fall through.
                 mayCrossBlock = true;
 
+                V_FALLTHROUGH;
+
             case Range::WordAround:
                 // Fall through.
             case Range::WordInner:
@@ -3711,6 +3717,8 @@ void VVim::processCopyAction(QList<Token> &p_tokens)
             case Range::BraceAround:
                 // Fall through.
                 mayCrossBlock = true;
+
+                V_FALLTHROUGH;
 
             case Range::WordAround:
                 // Fall through.
