@@ -1,17 +1,1 @@
-<?xml version="1.0"?>
-<svg width="704" height="704" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
- <!-- Created with SVG-edit - http://svg-edit.googlecode.com/ -->
- <title>vnote</title>
- <g>
-  <title>Layer 3</title>
-  <rect stroke="#000000" id="svg_11" fill="#d6eace" stroke-width="5" stroke-dasharray="null" stroke-linejoin="null" stroke-linecap="null" x="-0.242409" y="-0.033089" width="704.290516" height="704.010575" stroke-opacity="0" rx="40" ry="40"/>
- </g>
- <g>
-  <title>Layer 1</title>
-  <path id="svg_7" d="m160.375009,100.656259l-0.250009,389.843741l129.9375,129.9375l260.15625,-260.4375l0,-259.875l-260.15625,259.875l0,-259.59375l-129.687491,0.250009z" stroke-opacity="0" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="null" stroke="#000000" fill="#15ae67"/>
- </g>
- <g>
-  <title>Layer 2</title>
-  <path id="svg_8" d="m550.43365,100.304726l-130.205135,-0.003944l0,130.042969" stroke-opacity="0" stroke-linecap="null" stroke-linejoin="null" stroke-dasharray="null" stroke-width="null" stroke="#000000" fill="#75c5b5"/>
- </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 82 82"><title>vnote</title><g id="图层_2" data-name="图层 2"><g id="图层_1-2" data-name="图层 1"><rect width="82" height="82" rx="11.76" ry="11.76" fill="#f2f2f2"/><path d="M50.29,12.74a1.52,1.52,0,0,1,1.52-1.52H62.73a.54.54,0,0,1,.38.92L51.21,24a.54.54,0,0,1-.92-.38Z" fill="#4d4d4d"/><path d="M19.23,28.27a1.52,1.52,0,0,1,1.52-1.52H31.66a.54.54,0,0,1,.38.92l-11.9,11.9a.54.54,0,0,1-.92-.38Z" fill="#4d4d4d"/><path d="M19.23,42.6a1.52,1.52,0,0,1,.45-1.08L32.79,28.41a.54.54,0,0,1,.92.38V40.9A1.52,1.52,0,0,1,33.26,42L20.15,55.1a.54.54,0,0,1-.92-.38Z" fill="#4d4d4d"/><rect x="19.23" y="11.21" width="14.48" height="14.48" rx="1.44" ry="1.44" fill="#c69c6d"/><path d="M34.76,43.8a1.52,1.52,0,0,1,1.52-1.52H62.73a.54.54,0,0,1,.38.92L35.68,70.63a.54.54,0,0,1-.92-.38Z" fill="#4d4d4d"/><path d="M36.8,41.23a.54.54,0,0,1-.38-.92L63.85,12.88a.54.54,0,0,1,.92.38V39.7a1.52,1.52,0,0,1-1.52,1.52Z" fill="#4d4d4d"/><path d="M20.52,58.36a1.52,1.52,0,0,1,0-2.16L32.79,43.94a.54.54,0,0,1,.92.38V70.25a.54.54,0,0,1-.92.38Z" fill="#4d4d4d"/></g></g></svg>
