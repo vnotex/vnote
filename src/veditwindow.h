@@ -40,7 +40,13 @@ public:
     void updateFileInfo(const VFile *p_file);
     void updateDirectoryInfo(const VDirectory *p_dir);
     void updateNotebookInfo(const VNotebook *p_notebook);
-    VEditTab *currentEditTab();
+
+    VEditTab *getCurrentTab() const;
+
+    VEditTab *getTab(int tabIndex) const;
+
+    QVector<VEditTabInfo> getAllTabsInfo() const;
+
     // Insert a tab with @p_widget. @p_widget is a fully initialized VEditTab.
     bool addEditTab(QWidget *p_widget);
     // Set whether it is the current window.
@@ -53,7 +59,6 @@ public:
     bool activateTab(int p_sequence);
     // Switch to previous activated tab.
     bool alternateTab();
-    VEditTab *getTab(int tabIndex) const;
 
     // Ask tab @p_index to update its status and propogate.
     // The status here means tab status, outline, current header.
@@ -124,9 +129,9 @@ private:
     int insertEditTab(int p_index, VFile *p_file, QWidget *p_page);
     int appendEditTab(VFile *p_file, QWidget *p_page);
     int openFileInTab(VFile *p_file, OpenFileMode p_mode);
-    inline QString generateTooltip(const VFile *p_file) const;
-    inline QString generateTabText(int p_index, const QString &p_name,
-                                   bool p_modified, bool p_modifiable) const;
+    QString generateTooltip(const VFile *p_file) const;
+    QString generateTabText(int p_index, const QString &p_name,
+                            bool p_modified, bool p_modifiable) const;
     bool canRemoveSplit();
 
     // Move tab at @p_tabIdx one split window.

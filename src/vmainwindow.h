@@ -68,10 +68,10 @@ public:
     // View and edit the information of @p_file, which is an orphan file.
     void editOrphanFileInfo(VFile *p_file);
 
-    // Open external files @p_files as orphan files.
+    // Open files @p_files as orphan files or internal note files.
     // If @p_forceOrphan is false, for each file, VNote will try to find out if
     // it is a note inside VNote. If yes, VNote will open it as internal file.
-    void openExternalFiles(const QStringList &p_files, bool p_forceOrphan = false);
+    void openFiles(const QStringList &p_files, bool p_forceOrphan = false);
 
     // Try to open @p_filePath as internal note.
     bool tryOpenInternalFile(const QString &p_filePath);
@@ -81,6 +81,9 @@ public:
 
     // Popup the attachment list if it is enabled.
     void showAttachmentList();
+
+    // Open startup pages according to configuration.
+    void openStartupPages();
 
 private slots:
     void importNoteFromFile();

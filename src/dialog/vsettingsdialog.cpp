@@ -169,9 +169,6 @@ VGeneralTab::VGeneralTab(QWidget *p_parent)
         m_langCombo->addItem(lang.second, lang.first);
     }
 
-    QLabel *langLabel = new QLabel(tr("Language:"), this);
-    langLabel->setToolTip(m_langCombo->toolTip());
-
     // System tray checkbox.
     m_systemTray = new QCheckBox(tr("System tray"), this);
     m_systemTray->setToolTip(tr("Minimized to the system tray after closing VNote"
@@ -181,14 +178,72 @@ VGeneralTab::VGeneralTab(QWidget *p_parent)
     m_systemTray->setEnabled(false);
 #endif
 
+    // Startup pages.
+    QLayout *startupLayout = setupStartupPagesLayout();
+
     QFormLayout *optionLayout = new QFormLayout();
-    optionLayout->addRow(langLabel, m_langCombo);
+    optionLayout->addRow(tr("Language:"), m_langCombo);
     optionLayout->addRow(m_systemTray);
+    optionLayout->addRow(tr("Startup pages:"), startupLayout);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(optionLayout);
 
     setLayout(mainLayout);
+}
+
+QLayout *VGeneralTab::setupStartupPagesLayout()
+{
+    m_startupPageTypeCombo = new QComboBox(this);
+    m_startupPageTypeCombo->setToolTip(tr("Restore tabs or open specific notes on startup"));
+    m_startupPageTypeCombo->addItem(tr("None"), (int)StartupPageType::None);
+    m_startupPageTypeCombo->addItem(tr("Continue where you left off"), (int)StartupPageType::ContinueLeftOff);
+    m_startupPageTypeCombo->addItem(tr("Open specific pages"), (int)StartupPageType::SpecificPages);
+    connect(m_startupPageTypeCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
+            this, [this](int p_index) {
+                int type = m_startupPageTypeCombo->itemData(p_index).toInt();
+                bool pagesEditVisible = type == (int)StartupPageType::SpecificPages;
+                m_startupPagesEdit->setVisible(pagesEditVisible);
+                m_startupPagesAddBtn->setVisible(pagesEditVisible);
+            });
+
+    m_startupPagesEdit = new QPlainTextEdit(this);
+    m_startupPagesEdit->setToolTip(tr("Absolute path of the notes to open on startup (one note per line)"));
+
+    m_startupPagesAddBtn = new QPushButton(tr("Browse"), this);
+    m_startupPagesAddBtn->setToolTip(tr("Select files to add as startup pages"));
+    connect(m_startupPagesAddBtn, &QPushButton::clicked,
+            this, [this]() {
+                static QString lastPath = QDir::homePath();
+                QStringList files = QFileDialog::getOpenFileNames(this,
+                                                                  tr("Select Files As Startup Pages"),
+                                                                  lastPath);
+                if (files.isEmpty()) {
+                    return;
+                }
+
+                // Update lastPath
+                lastPath = QFileInfo(files[0]).path();
+
+                m_startupPagesEdit->appendPlainText(files.join("\n"));
+            });
+
+    QHBoxLayout *startupPagesBtnLayout = new QHBoxLayout();
+    startupPagesBtnLayout->addStretch();
+    startupPagesBtnLayout->addWidget(m_startupPagesAddBtn);
+
+    QVBoxLayout *startupPagesLayout = new QVBoxLayout();
+    startupPagesLayout->addWidget(m_startupPagesEdit);
+    startupPagesLayout->addLayout(startupPagesBtnLayout);
+
+    QVBoxLayout *startupLayout = new QVBoxLayout();
+    startupLayout->addWidget(m_startupPageTypeCombo);
+    startupLayout->addLayout(startupPagesLayout);
+
+    m_startupPagesEdit->hide();
+    m_startupPagesAddBtn->hide();
+
+    return startupLayout;
 }
 
 bool VGeneralTab::loadConfiguration()
@@ -198,6 +253,10 @@ bool VGeneralTab::loadConfiguration()
     }
 
     if (!loadSystemTray()) {
+        return false;
+    }
+
+    if (!loadStartupPageType()) {
         return false;
     }
 
@@ -211,6 +270,10 @@ bool VGeneralTab::saveConfiguration()
     }
 
     if (!saveSystemTray()) {
+        return false;
+    }
+
+    if (!saveStartupPageType()) {
         return false;
     }
 
@@ -259,6 +322,42 @@ bool VGeneralTab::saveSystemTray()
 {
     if (m_systemTray->isEnabled()) {
         g_config->setMinimizeToSystemTray(m_systemTray->isChecked() ? 1 : 0);
+    }
+
+    return true;
+}
+
+bool VGeneralTab::loadStartupPageType()
+{
+    StartupPageType type = g_config->getStartupPageType();
+    bool found = false;
+    for (int i = 0; i < m_startupPageTypeCombo->count(); ++i) {
+        if (m_startupPageTypeCombo->itemData(i).toInt() == (int)type) {
+            found = true;
+            m_startupPageTypeCombo->setCurrentIndex(i);
+        }
+    }
+
+    Q_ASSERT(found);
+
+    const QStringList &pages = g_config->getStartupPages();
+    m_startupPagesEdit->setPlainText(pages.join("\n"));
+
+    bool pagesEditVisible = type == StartupPageType::SpecificPages;
+    m_startupPagesEdit->setVisible(pagesEditVisible);
+    m_startupPagesAddBtn->setVisible(pagesEditVisible);
+
+    return true;
+}
+
+bool VGeneralTab::saveStartupPageType()
+{
+    StartupPageType type = (StartupPageType)m_startupPageTypeCombo->currentData().toInt();
+    g_config->setStartupPageType(type);
+
+    if (type == StartupPageType::SpecificPages) {
+        QStringList pages = m_startupPagesEdit->toPlainText().split("\n");
+        g_config->setStartupPages(pages);
     }
 
     return true;

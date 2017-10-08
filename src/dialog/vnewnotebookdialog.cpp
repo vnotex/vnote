@@ -142,7 +142,8 @@ void VNewNotebookDialog::handleBrowseBtnClicked()
         }
     }
 
-    QString dirPath = QFileDialog::getExistingDirectory(this, tr("Select Root Folder Of The Notebook"),
+    QString dirPath = QFileDialog::getExistingDirectory(this,
+                                                        tr("Select Root Folder Of The Notebook"),
                                                         defaultPath,
                                                         QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 

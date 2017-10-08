@@ -235,12 +235,26 @@ void VConfigManager::initialize()
     m_enableCompactMode = getConfigFromSettings("global",
                                                 "enable_compact_mode").toBool();
 
+    int tmpStartupPageMode = getConfigFromSettings("global",
+                                                   "startup_page_type").toInt();
+    if (tmpStartupPageMode < (int)StartupPageType::Invalid
+        && tmpStartupPageMode >= (int)StartupPageType::None) {
+        m_startupPageType = (StartupPageType)tmpStartupPageMode;
+    } else {
+        m_startupPageType = StartupPageType::None;
+    }
+
+    m_startupPages = getConfigFromSettings("global",
+                                           "startup_pages").toStringList();
+
     initFromSessionSettings();
 }
 
 void VConfigManager::initSettings()
 {
     Q_ASSERT(!userSettings && !defaultSettings && !m_sessionSettings);
+
+    const char *codecForIni = "UTF-8";
 
     // vnote.ini.
     // First try to read vnote.ini from the directory of the executable.
@@ -257,15 +271,19 @@ void VConfigManager::initSettings()
                                      this);
     }
 
+    userSettings->setIniCodec(codecForIni);
+
     qDebug() << "use user config" << userSettings->fileName();
 
     // Default vnote.ini from resource file.
     defaultSettings = new QSettings(c_defaultConfigFilePath, QSettings::IniFormat, this);
+    defaultSettings->setIniCodec(codecForIni);
 
     // session.ini.
     m_sessionSettings = new QSettings(QDir(getConfigFolder()).filePath(c_sessionConfigFile),
                                       QSettings::IniFormat,
                                       this);
+    m_sessionSettings->setIniCodec(codecForIni);
 }
 
 void VConfigManager::initFromSessionSettings()
@@ -364,7 +382,7 @@ QVariant VConfigManager::getConfigFromSettings(const QString &section, const QSt
     // First, look up the user-scoped config file
     QVariant value = getConfigFromSettingsBySectionKey(userSettings, section, key);
     if (!value.isNull()) {
-        qDebug() << "user config:" << (section + "/" +  key) << value.toString();
+        qDebug() << "user config:" << (section + "/" +  key) << value;
         return value;
     }
 
@@ -376,13 +394,13 @@ void VConfigManager::setConfigToSettings(const QString &section, const QString &
 {
     // Set the user-scoped config file
     setConfigToSettingsBySectionKey(userSettings, section, key, value);
-    qDebug() << "set user config:" << (section + "/" + key) << value.toString();
+    qDebug() << "set user config:" << (section + "/" + key) << value;
 }
 
 QVariant VConfigManager::getDefaultConfig(const QString &p_section, const QString &p_key) const
 {
     QVariant value = getConfigFromSettingsBySectionKey(defaultSettings, p_section, p_key);
-    qDebug() << "default config:" << (p_section + "/" + p_key) << value.toString();
+    qDebug() << "default config:" << (p_section + "/" + p_key) << value;
     return value;
 }
 
@@ -1089,4 +1107,42 @@ void VConfigManager::initDocSuffixes()
     m_docSuffixes[(int)DocType::Html] = html;
 
     qDebug() << "doc suffixes" << m_docSuffixes;
+}
+
+QVector<VFileSessionInfo> VConfigManager::getLastOpenedFiles()
+{
+    QVector<VFileSessionInfo> files;
+    int size = m_sessionSettings->beginReadArray("last_opened_files");
+    for (int i = 0; i < size; ++i) {
+        m_sessionSettings->setArrayIndex(i);
+        files.push_back(VFileSessionInfo::fromSettings(m_sessionSettings));
+    }
+
+    m_sessionSettings->endArray();
+    qDebug() << "read" << files.size()
+             << "items from [last_opened_files] section";
+
+    return files;
+}
+
+void VConfigManager::setLastOpenedFiles(const QVector<VFileSessionInfo> &p_files)
+{
+    const QString section("last_opened_files");
+
+    // Clear it first
+    m_sessionSettings->beginGroup(section);
+    m_sessionSettings->remove("");
+    m_sessionSettings->endGroup();
+
+    m_sessionSettings->beginWriteArray(section);
+    for (int i = 0; i < p_files.size(); ++i) {
+        m_sessionSettings->setArrayIndex(i);
+        const VFileSessionInfo &info = p_files[i];
+        info.toSettings(m_sessionSettings);
+    }
+
+    m_sessionSettings->endArray();
+    qDebug() << "write" << p_files.size()
+             << "items in [last_opened_files] section";
+
 }

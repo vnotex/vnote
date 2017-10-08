@@ -959,3 +959,30 @@ void VUtils::addErrMsg(QString *p_msg, const QString &p_str)
         *p_msg = *p_msg + '\n' + p_str;
     }
 }
+
+QStringList VUtils::filterFilePathsToOpen(const QStringList &p_files)
+{
+    QStringList paths;
+    for (int i = 0; i < p_files.size(); ++i) {
+        QString path = validFilePathToOpen(p_files[i]);
+        if (!path.isEmpty()) {
+            paths.append(path);
+        }
+    }
+
+    return paths;
+}
+
+QString VUtils::validFilePathToOpen(const QString &p_file)
+{
+    if (QFileInfo::exists(p_file)) {
+        QFileInfo fi(p_file);
+        if (fi.isFile()) {
+            // Need to use absolute path here since VNote may be launched
+            // in different working directory.
+            return QDir::cleanPath(fi.absoluteFilePath());
+        }
+    }
+
+    return QString();
+}

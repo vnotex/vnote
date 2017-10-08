@@ -77,7 +77,8 @@ SOURCES += main.cpp\
     dialog/vconfirmdeletiondialog.cpp \
     vnotefile.cpp \
     vattachmentlist.cpp \
-    dialog/vsortdialog.cpp
+    dialog/vsortdialog.cpp \
+    vfilesessioninfo.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -142,7 +143,8 @@ HEADERS  += vmainwindow.h \
     dialog/vconfirmdeletiondialog.h \
     vnotefile.h \
     vattachmentlist.h \
-    dialog/vsortdialog.h
+    dialog/vsortdialog.h \
+    vfilesessioninfo.h
 
 RESOURCES += \
     vnote.qrc \

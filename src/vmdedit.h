@@ -32,7 +32,11 @@ public:
     // @p_path is the absolute path of the inserted image.
     void imageInserted(const QString &p_path);
 
-    void scrollToHeader(const VAnchor &p_anchor);
+    void scrollToAnchor(const VAnchor &p_anchor);
+
+    // Scroll to anchor given the the index in outline.
+    // Return true if @p_anchorIndex is valid.
+    bool scrollToAnchor(int p_anchorIndex);
 
     // Like toPlainText(), but remove image preview characters.
     QString toPlainTextWithoutImg();

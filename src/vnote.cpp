@@ -330,6 +330,16 @@ VNoteFile *VNote::getInternalFile(const QString &p_path)
     return file;
 }
 
+VFile *VNote::getFile(const QString &p_path)
+{
+    VFile *file = getInternalFile(p_path);
+    if (!file) {
+        file = getOrphanFile(p_path, true, false);
+    }
+
+    return file;
+}
+
 VDirectory *VNote::getInternalDirectory(const QString &p_path)
 {
     VDirectory *dir = NULL;

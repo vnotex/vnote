@@ -29,6 +29,7 @@
 #include "vnotefile.h"
 #include "vbuttonwithwidget.h"
 #include "vattachmentlist.h"
+#include "vfilesessioninfo.h"
 
 extern VConfigManager *g_config;
 
@@ -766,7 +767,7 @@ void VMainWindow::initFileMenu()
                 // Update lastPath
                 lastPath = QFileInfo(files[0]).path();
 
-                openExternalFiles(files);
+                openFiles(VUtils::filterFilePathsToOpen(files));
             });
 
     fileMenu->addAction(openAct);
@@ -1956,10 +1957,31 @@ void VMainWindow::closeEvent(QCloseEvent *event)
     }
 
     if (isExit || !m_trayIcon->isVisible()) {
+        // Get all the opened tabs.
+        bool saveOpenedNotes = g_config->getStartupPageType() == StartupPageType::ContinueLeftOff;
+        QVector<VFileSessionInfo> fileInfos;
+        QVector<VEditTabInfo> tabs;
+        if (saveOpenedNotes) {
+            tabs = editArea->getAllTabsInfo();
+
+            fileInfos.reserve(tabs.size());
+
+            for (auto const & tab : tabs) {
+                VFileSessionInfo info = VFileSessionInfo::fromEditTabInfo(&tab);
+                fileInfos.push_back(info);
+
+                qDebug() << "file session:" << info.m_file << (info.m_mode == OpenFileMode::Edit);
+            }
+        }
+
         if (!editArea->closeAllFiles(false)) {
             // Fail to close all the opened files, cancel closing app.
             event->ignore();
             return;
+        }
+
+        if (saveOpenedNotes) {
+            g_config->setLastOpenedFiles(fileInfos);
         }
 
         QMainWindow::closeEvent(event);
@@ -2059,7 +2081,7 @@ void VMainWindow::insertImage()
     if (!m_curTab) {
         return;
     }
-    Q_ASSERT(m_curTab == editArea->currentEditTab());
+    Q_ASSERT(m_curTab == editArea->getCurrentTab());
     m_curTab->insertImage();
 }
 
@@ -2310,9 +2332,8 @@ bool VMainWindow::tryOpenInternalFile(const QString &p_filePath)
     return false;
 }
 
-void VMainWindow::openExternalFiles(const QStringList &p_files, bool p_forceOrphan)
+void VMainWindow::openFiles(const QStringList &p_files, bool p_forceOrphan)
 {
-    qDebug() << "open external files" << p_files;
     for (int i = 0; i < p_files.size(); ++i) {
         VFile *file = NULL;
         if (!p_forceOrphan) {
@@ -2344,7 +2365,7 @@ void VMainWindow::checkSharedMemory()
     QStringList files = m_guard->fetchFilesToOpen();
     if (!files.isEmpty()) {
         qDebug() << "shared memory fetch files" << files;
-        openExternalFiles(files);
+        openFiles(files);
 
         // Eliminate the signal.
         m_guard->fetchAskedToShow();
@@ -2414,5 +2435,30 @@ void VMainWindow::showAttachmentList()
 {
     if (m_attachmentBtn->isEnabled()) {
         m_attachmentBtn->showPopupWidget();
+    }
+}
+
+void VMainWindow::openStartupPages()
+{
+    StartupPageType type = g_config->getStartupPageType();
+    switch (type) {
+    case StartupPageType::ContinueLeftOff:
+    {
+        QVector<VFileSessionInfo> files = g_config->getLastOpenedFiles();
+        qDebug() << "open" << files.size() << "last opened files";
+        editArea->openFiles(files);
+        break;
+    }
+
+    case StartupPageType::SpecificPages:
+    {
+        QStringList pagesToOpen = VUtils::filterFilePathsToOpen(g_config->getStartupPages());
+        qDebug() << "open startup pages" << pagesToOpen;
+        openFiles(pagesToOpen);
+        break;
+    }
+
+    default:
+        break;
     }
 }

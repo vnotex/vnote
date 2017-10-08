@@ -539,7 +539,7 @@ void VMdEdit::updateOutline(const QVector<VElementRegion> &p_headerRegions)
     updateCurHeader();
 }
 
-void VMdEdit::scrollToHeader(const VAnchor &p_anchor)
+void VMdEdit::scrollToAnchor(const VAnchor &p_anchor)
 {
     if (p_anchor.lineNumber == -1
         || p_anchor.m_outlineIndex < 0) {
@@ -555,6 +555,20 @@ void VMdEdit::scrollToHeader(const VAnchor &p_anchor)
     }
 
     scrollToLine(p_anchor.lineNumber);
+}
+
+bool VMdEdit::scrollToAnchor(int p_anchorIndex)
+{
+    if (p_anchorIndex >= 0 && p_anchorIndex < m_headers.size()) {
+        int lineNumber = m_headers[p_anchorIndex].lineNumber;
+        if (lineNumber >= 0) {
+            scrollToLine(lineNumber);
+
+            return true;
+        }
+    }
+
+    return false;
 }
 
 QString VMdEdit::toPlainTextWithoutImg()
@@ -838,5 +852,7 @@ void VMdEdit::finishOneAsyncJob(int p_idx)
         emit statusChanged();
 
         updateOutline(m_mdHighlighter->getHeaderRegions());
+
+        emit ready();
     }
 }

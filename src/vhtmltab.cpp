@@ -252,3 +252,12 @@ void VHtmlTab::requestUpdateVimStatus()
 {
     m_editor->requestUpdateVimStatus();
 }
+
+bool VHtmlTab::restoreFromTabInfo(const VEditTabInfo &p_info)
+{
+    if (p_info.m_editTab != this) {
+        return false;
+    }
+
+    return true;
+}

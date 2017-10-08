@@ -62,6 +62,9 @@ public:
     // Insert decoration markers or decorate selected text.
     void decorateText(TextDecoration p_decoration) Q_DECL_OVERRIDE;
 
+    // Create a filled VEditTabInfo.
+    VEditTabInfo fetchTabInfo() Q_DECL_OVERRIDE;
+
 public slots:
     // Enter edit mode.
     void editFile() Q_DECL_OVERRIDE;
@@ -91,6 +94,9 @@ private slots:
     // m_editor requests to discard changes and enter read mode.
     void discardAndRead();
 
+    // Restore from m_infoToRestore.
+    void restoreFromTabInfo();
+
 private:
     // Setup UI.
     void setupUI();
@@ -111,8 +117,16 @@ private:
     void viewWebByConverter();
 
     // Scroll Web view to given header.
-    // @p_outlineIndex is the index in m_toc.headers.
-    void scrollWebViewToHeader(int p_outlineIndex);
+    // @p_anchorIndex is the index in m_toc.headers.
+    // @p_strict: if true, scroll only when @p_anchorIndex is valid.
+    // Return true if scroll was made.
+    bool scrollWebViewToAnchor(int p_anchorIndex, bool p_strict = false);
+
+    // Scroll web/editor to given header.
+    // @p_anchorIndex is the index in m_toc.headers.
+    // @p_strict: if true, scroll only when @p_anchorIndex is valid.
+    // Return true if scroll was made.
+    bool scrollToAnchor(int p_anchorIndex, bool p_strict = false);
 
     // Search text in Web view.
     void findTextInWebView(const QString &p_text, uint p_options, bool p_peek,
@@ -127,11 +141,12 @@ private:
     // Focus the proper child widget.
     void focusChild() Q_DECL_OVERRIDE;
 
-    // Create a filled VEditTabInfo.
-    VEditTabInfo createEditTabInfo() Q_DECL_OVERRIDE;
-
     // Get the markdown editor. If not init yet, init and return it.
     VEdit *getEditor();
+
+    // Restore from @p_fino.
+    // Return true if succeed.
+    bool restoreFromTabInfo(const VEditTabInfo &p_info) Q_DECL_OVERRIDE;
 
     VEdit *m_editor;
     VWebView *m_webViewer;

@@ -116,22 +116,10 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     // The file path passed via command line arguments.
-    QStringList filePaths;
-    QStringList args = app.arguments();
-    for (int i = 1; i < args.size(); ++i) {
-        if (QFileInfo::exists(args[i])) {
-            QString filePath = args[i];
-            QFileInfo fi(filePath);
-            if (fi.isFile()) {
-                // Need to use absolute path here since VNote may be launched
-                // in different working directory.
-                filePath = QDir::cleanPath(fi.absoluteFilePath());
-                filePaths.append(filePath);
-            }
-        }
-    }
+    QStringList filePaths = VUtils::filterFilePathsToOpen(app.arguments().mid(1));
 
-    qDebug() << "command line arguments" << args;
+    qDebug() << "command line arguments" << app.arguments();
+    qDebug() << "files to open from arguments" << filePaths;
 
     if (!canRun) {
         // Ask another instance to open files passed in.
@@ -178,7 +166,9 @@ int main(int argc, char *argv[])
 
     w.show();
 
-    w.openExternalFiles(filePaths);
+    w.openFiles(filePaths);
+
+    w.openStartupPages();
 
     return app.exec();
 }

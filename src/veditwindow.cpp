@@ -794,13 +794,28 @@ void VEditWindow::updateNotebookInfo(const VNotebook *p_notebook)
     }
 }
 
-VEditTab *VEditWindow::currentEditTab()
+VEditTab *VEditWindow::getCurrentTab() const
 {
     int idx = currentIndex();
     if (idx == -1) {
         return NULL;
     }
+
     return getTab(idx);
+}
+
+QVector<VEditTabInfo> VEditWindow::getAllTabsInfo() const
+{
+    int nrTab = count();
+
+    QVector<VEditTabInfo> tabs;
+    tabs.reserve(nrTab);
+    for (int i = 0; i < nrTab; ++i) {
+        VEditTab *editTab = getTab(i);
+        tabs.push_back(editTab->fetchTabInfo());
+    }
+
+    return tabs;
 }
 
 void VEditWindow::handleLocateAct()
@@ -1014,7 +1029,7 @@ void VEditWindow::dropEvent(QDropEvent *p_event)
 
         if (!files.isEmpty()) {
             focusWindow();
-            g_vnote->getMainWindow()->openExternalFiles(files);
+            g_vnote->getMainWindow()->openFiles(files);
         }
 
         p_event->acceptProposedAction();

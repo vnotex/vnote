@@ -163,6 +163,9 @@ signals:
     // Request the edit tab to close find and replace dialog.
     void requestCloseFindReplaceDialog();
 
+    // Emit when all initialization is ready.
+    void ready();
+
 public slots:
     virtual void highlightCurrentLine();
 

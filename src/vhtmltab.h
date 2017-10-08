@@ -78,6 +78,10 @@ private:
     // Focus the proper child widget.
     void focusChild() Q_DECL_OVERRIDE;
 
+    // Restore from @p_fino.
+    // Return true if succeed.
+    bool restoreFromTabInfo(const VEditTabInfo &p_info) Q_DECL_OVERRIDE;
+
     VEdit *m_editor;
 };
 #endif // VHTMLTAB_H

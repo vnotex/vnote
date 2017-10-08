@@ -232,6 +232,13 @@ public:
     // Assign @p_str to @p_msg if it is not NULL.
     static void addErrMsg(QString *p_msg, const QString &p_str);
 
+    // Check each file of @p_files and return valid ones for VNote to open.
+    static QStringList filterFilePathsToOpen(const QStringList &p_files);
+
+    // Return the normalized file path of @p_file if it is valid to open.
+    // Return empty if it is not valid.
+    static QString validFilePathToOpen(const QString &p_file);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
     // Captured texts (need to be trimmed):

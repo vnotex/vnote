@@ -11,6 +11,8 @@
 #include "hgmarkdownhighlighter.h"
 #include "vmarkdownconverter.h"
 #include "vconstants.h"
+#include "vfilesessioninfo.h"
+
 
 class QJsonObject;
 class QString;
@@ -299,6 +301,18 @@ public:
 
     bool getEnableCompactMode() const;
     void setEnableCompactMode(bool p_enabled);
+
+    StartupPageType getStartupPageType() const;
+    void setStartupPageType(StartupPageType p_type);
+
+    const QStringList &getStartupPages() const;
+    void setStartupPages(const QStringList &p_pages);
+
+    // Read last opened files from [last_opened_files] of session.ini.
+    QVector<VFileSessionInfo> getLastOpenedFiles();
+
+    // Write last opened files to [last_opened_files] of session.ini.
+    void setLastOpenedFiles(const QVector<VFileSessionInfo> &p_files);
 
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
@@ -634,6 +648,12 @@ private:
 
     // Whether put folder and note panel in one single column.
     bool m_enableCompactMode;
+
+    // Type of the pages to open on startup.
+    StartupPageType m_startupPageType;
+
+    // File paths to open on startup.
+    QStringList m_startupPages;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1664,6 +1684,36 @@ inline void VConfigManager::setEnableCompactMode(bool p_enabled)
 
     m_enableCompactMode = p_enabled;
     setConfigToSettings("global", "enable_compact_mode", m_enableCompactMode);
+}
+
+inline StartupPageType VConfigManager::getStartupPageType() const
+{
+    return m_startupPageType;
+}
+
+inline void VConfigManager::setStartupPageType(StartupPageType p_type)
+{
+    if (m_startupPageType == p_type) {
+        return;
+    }
+
+    m_startupPageType = p_type;
+    setConfigToSettings("global", "startup_page_type", (int)m_startupPageType);
+}
+
+inline const QStringList &VConfigManager::getStartupPages() const
+{
+    return m_startupPages;
+}
+
+inline void VConfigManager::setStartupPages(const QStringList &p_pages)
+{
+    if (m_startupPages == p_pages) {
+        return;
+    }
+
+    m_startupPages = p_pages;
+    setConfigToSettings("global", "startup_pages", m_startupPages);
 }
 
 #endif // VCONFIGMANAGER_H

@@ -69,7 +69,16 @@ public:
     virtual void requestUpdateVimStatus() = 0;
 
     // Insert decoration markers or decorate selected text.
-    virtual void decorateText(TextDecoration p_decoration) {Q_UNUSED(p_decoration);};
+    virtual void decorateText(TextDecoration p_decoration) {Q_UNUSED(p_decoration);}
+
+    // Create a filled VEditTabInfo.
+    virtual VEditTabInfo fetchTabInfo();
+
+    VAnchor getCurrentHeader() const;
+
+    // Restore status from @p_info.
+    // If this tab is not ready yet, it will restore once it is ready.
+    void tryRestoreFromTabInfo(const VEditTabInfo &p_info);
 
 public slots:
     // Enter edit mode
@@ -87,8 +96,9 @@ protected:
     // Called to zoom in/out content.
     virtual void zoom(bool p_zoomIn, qreal p_step = 0.25) = 0;
 
-    // Create a filled VEditTabInfo.
-    virtual VEditTabInfo createEditTabInfo();
+    // Restore from @p_fino.
+    // Return true if succeed.
+    virtual bool restoreFromTabInfo(const VEditTabInfo &p_info) = 0;
 
     // File related to this tab.
     QPointer<VFile> m_file;
@@ -97,6 +107,9 @@ protected:
     VToc m_toc;
     VAnchor m_curHeader;
     VEditArea *m_editArea;
+
+    // Tab info to restore from once ready.
+    VEditTabInfo m_infoToRestore;
 
 signals:
     void getFocused();

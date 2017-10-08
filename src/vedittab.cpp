@@ -82,13 +82,37 @@ void VEditTab::updateStatus()
 {
     m_modified = m_file->isModified();
 
-    emit statusUpdated(createEditTabInfo());
+    emit statusUpdated(fetchTabInfo());
 }
 
-VEditTabInfo VEditTab::createEditTabInfo()
+VEditTabInfo VEditTab::fetchTabInfo()
 {
     VEditTabInfo info;
     info.m_editTab = this;
 
     return info;
+}
+
+VAnchor VEditTab::getCurrentHeader() const
+{
+    return m_curHeader;
+}
+
+void VEditTab::tryRestoreFromTabInfo(const VEditTabInfo &p_info)
+{
+    if (p_info.m_editTab != this) {
+        // Clear and return.
+        m_infoToRestore.m_editTab = NULL;
+        return;
+    }
+
+    if (restoreFromTabInfo(p_info)) {
+        // Clear and return.
+        m_infoToRestore.m_editTab = NULL;
+        return;
+    }
+
+    // Save it and restore later.
+    m_infoToRestore = p_info;
+    qDebug() << "save info for restore later" << p_info.m_anchorIndex;
 }

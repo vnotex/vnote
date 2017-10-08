@@ -6,8 +6,13 @@ class VEditTab;
 struct VEditTabInfo
 {
     VEditTabInfo()
-        : m_editTab(NULL), m_cursorBlockNumber(-1), m_cursorPositionInBlock(-1),
-          m_blockCount(-1) {}
+        : m_editTab(NULL),
+          m_cursorBlockNumber(-1),
+          m_cursorPositionInBlock(-1),
+          m_blockCount(-1),
+          m_anchorIndex(-1)
+    {
+    }
 
     VEditTab *m_editTab;
 
@@ -15,6 +20,9 @@ struct VEditTabInfo
     int m_cursorBlockNumber;
     int m_cursorPositionInBlock;
     int m_blockCount;
+
+    // Anchor index in outline.
+    int m_anchorIndex;
 };
 
 #endif // VEDITTABINFO_H

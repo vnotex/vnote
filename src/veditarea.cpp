@@ -7,6 +7,7 @@
 #include "vfile.h"
 #include "dialog/vfindreplacedialog.h"
 #include "utils/vutils.h"
+#include "vfilesessioninfo.h"
 
 extern VConfigManager *g_config;
 extern VNote *g_vnote;
@@ -119,17 +120,17 @@ void VEditArea::removeSplitWindow(VEditWindow *win)
     win->deleteLater();
 }
 
-void VEditArea::openFile(VFile *p_file, OpenFileMode p_mode, bool p_forceMode)
+VEditTab *VEditArea::openFile(VFile *p_file, OpenFileMode p_mode, bool p_forceMode)
 {
     if (!p_file) {
-        return;
+        return NULL;
     }
 
     // If it is DocType::Unknown, open it using system default method.
     if (p_file->getDocType() == DocType::Unknown) {
         QUrl url = QUrl::fromLocalFile(p_file->fetchPath());
         QDesktopServices::openUrl(url);
-        return;
+        return NULL;
     }
 
     // Find if it has been opened already
@@ -165,6 +166,8 @@ void VEditArea::openFile(VFile *p_file, OpenFileMode p_mode, bool p_forceMode)
     tabIdx = openFileInWindow(winIdx, p_file, p_mode);
 
 out:
+    VEditTab *tab = getTab(winIdx, tabIdx);
+
     setCurrentTab(winIdx, tabIdx, setFocus);
 
     if (existFile && p_forceMode) {
@@ -174,6 +177,8 @@ out:
             editFile();
         }
     }
+
+    return tab;
 }
 
 QVector<QPair<int, int> > VEditArea::findTabsByFile(const VFile *p_file)
@@ -482,13 +487,35 @@ void VEditArea::handleNotebookUpdated(const VNotebook *p_notebook)
     }
 }
 
-VEditTab *VEditArea::currentEditTab()
+VEditTab *VEditArea::getCurrentTab() const
 {
     if (curWindowIndex == -1) {
         return NULL;
     }
+
     VEditWindow *win = getWindow(curWindowIndex);
-    return win->currentEditTab();
+    return win->getCurrentTab();
+}
+
+VEditTab *VEditArea::getTab(int p_winIdx, int p_tabIdx) const
+{
+    VEditWindow *win = getWindow(p_winIdx);
+    if (!win) {
+        return NULL;
+    }
+
+    return win->getTab(p_tabIdx);
+}
+
+QVector<VEditTabInfo> VEditArea::getAllTabsInfo() const
+{
+    QVector<VEditTabInfo> tabs;
+    int nrWin = splitter->count();
+    for (int i = 0; i < nrWin; ++i) {
+        tabs.append(getWindow(i)->getAllTabsInfo());
+    }
+
+    return tabs;
 }
 
 int VEditArea::windowIndex(const VEditWindow *p_window) const
@@ -518,7 +545,7 @@ void VEditArea::moveTab(QWidget *p_widget, int p_fromIdx, int p_toIdx)
 // Only propogate the search in the IncrementalSearch case.
 void VEditArea::handleFindTextChanged(const QString &p_text, uint p_options)
 {
-    VEditTab *tab = currentEditTab();
+    VEditTab *tab = getCurrentTab();
     if (tab) {
         if (p_options & FindOption::IncrementalSearch) {
             tab->findText(p_text, p_options, true);
@@ -539,7 +566,7 @@ void VEditArea::handleFindNext(const QString &p_text, uint p_options,
                                bool p_forward)
 {
     qDebug() << "find next" << p_text << p_options << p_forward;
-    VEditTab *tab = currentEditTab();
+    VEditTab *tab = getCurrentTab();
     if (tab) {
         tab->findText(p_text, p_options, false, p_forward);
     }
@@ -550,7 +577,7 @@ void VEditArea::handleReplace(const QString &p_text, uint p_options,
 {
     qDebug() << "replace" << p_text << p_options << "with" << p_replaceText
              << p_findNext;
-    VEditTab *tab = currentEditTab();
+    VEditTab *tab = getCurrentTab();
     if (tab) {
         tab->replaceText(p_text, p_options, p_replaceText, p_findNext);
     }
@@ -560,7 +587,7 @@ void VEditArea::handleReplaceAll(const QString &p_text, uint p_options,
                                  const QString &p_replaceText)
 {
     qDebug() << "replace all" << p_text << p_options << "with" << p_replaceText;
-    VEditTab *tab = currentEditTab();
+    VEditTab *tab = getCurrentTab();
     if (tab) {
         tab->replaceTextAll(p_text, p_options, p_replaceText);
     }
@@ -584,7 +611,7 @@ void VEditArea::handleFindDialogClosed()
 
 QString VEditArea::getSelectedText()
 {
-    VEditTab *tab = currentEditTab();
+    VEditTab *tab = getCurrentTab();
     if (tab) {
         return tab->getSelectedText();
     } else {
@@ -694,3 +721,29 @@ bool VEditArea::handleKeyNavigation(int p_key, bool &p_succeed)
     return ret;
 }
 
+int VEditArea::openFiles(const QVector<VFileSessionInfo> &p_files)
+{
+    int nrOpened = 0;
+    for (auto const & info : p_files) {
+        QString filePath = VUtils::validFilePathToOpen(info.m_file);
+        if (filePath.isEmpty()) {
+            continue;
+        }
+
+        VFile *file = g_vnote->getFile(filePath);
+        if (!file) {
+            continue;
+        }
+
+        VEditTab *tab = openFile(file, info.m_mode, true);
+        ++nrOpened;
+
+        VEditTabInfo tabInfo;
+        tabInfo.m_editTab = tab;
+        info.toEditTabInfo(&tabInfo);
+
+        tab->tryRestoreFromTabInfo(tabInfo);
+    }
+
+    return nrOpened;
+}

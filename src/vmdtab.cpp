@@ -77,27 +77,46 @@ void VMdTab::showFileReadMode()
     m_stacks->setCurrentWidget(m_webViewer);
     clearSearchedWordHighlight();
 
-    scrollWebViewToHeader(outlineIndex);
+    scrollWebViewToAnchor(outlineIndex);
 
     updateStatus();
 }
 
-void VMdTab::scrollWebViewToHeader(int p_outlineIndex)
+bool VMdTab::scrollWebViewToAnchor(int p_anchorIndex, bool p_strict)
 {
     QString anchor;
 
-    m_curHeader = VAnchor(m_file, anchor, -1, p_outlineIndex);
+    VAnchor anch(m_file, anchor, -1, p_anchorIndex);
 
-    if (p_outlineIndex < m_toc.headers.size() && p_outlineIndex >= 0) {
-        QString tmp = m_toc.headers[p_outlineIndex].anchor;
-        V_ASSERT(!tmp.isEmpty());
-        m_curHeader.anchor = tmp;
+    bool validIndex = false;
+    if (p_anchorIndex < m_toc.headers.size() && p_anchorIndex >= 0) {
+        QString tmp = m_toc.headers[p_anchorIndex].anchor;
+        Q_ASSERT(!tmp.isEmpty());
+        anch.anchor = tmp;
         anchor = tmp.mid(1);
+        validIndex = true;
     }
 
-    m_document->scrollToAnchor(anchor);
+    if (validIndex || !p_strict) {
+        m_curHeader = anch;
 
-    emit curHeaderChanged(m_curHeader);
+        m_document->scrollToAnchor(anchor);
+
+        emit curHeaderChanged(m_curHeader);
+
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool VMdTab::scrollToAnchor(int p_anchorIndex, bool p_strict)
+{
+    if (m_isEditMode) {
+        return dynamic_cast<VMdEdit *>(getEditor())->scrollToAnchor(p_anchorIndex);
+    } else {
+        return scrollWebViewToAnchor(p_anchorIndex, p_strict);
+    }
 }
 
 void VMdTab::viewWebByConverter()
@@ -148,7 +167,7 @@ void VMdTab::showFileEditMode()
 
     VAnchor anchor(m_file, "", lineNumber, outlineIndex);
 
-    mdEdit->scrollToHeader(anchor);
+    mdEdit->scrollToAnchor(anchor);
 
     mdEdit->setFocus();
 
@@ -290,6 +309,8 @@ void VMdTab::setupMarkdownViewer()
             this, SLOT(updateCurHeader(const QString &)));
     connect(m_document, &VDocument::keyPressed,
             this, &VMdTab::handleWebKeyPressed);
+    connect(m_document, SIGNAL(logicsFinished(void)),
+            this, SLOT(restoreFromTabInfo(void)));
     page->setWebChannel(channel);
 
     m_webViewer->setHtml(VUtils::generateHtmlTemplate(m_mdConType, false),
@@ -324,9 +345,11 @@ void VMdTab::setupMarkdownEditor()
     connect(m_editor, &VEdit::vimStatusUpdated,
             this, &VEditTab::vimStatusUpdated);
     connect(m_editor, &VEdit::requestCloseFindReplaceDialog,
-            this, [this](){
+            this, [this]() {
                 this->m_editArea->getFindReplaceDialog()->closeDialog();
             });
+    connect(m_editor, SIGNAL(ready(void)),
+            this, SLOT(restoreFromTabInfo(void)));
 
     m_editor->reloadFile();
     m_stacks->addWidget(m_editor);
@@ -467,7 +490,7 @@ void VMdTab::scrollToAnchor(const VAnchor &p_anchor)
     m_curHeader = p_anchor;
 
     if (m_isEditMode) {
-        dynamic_cast<VMdEdit *>(getEditor())->scrollToHeader(p_anchor);
+        dynamic_cast<VMdEdit *>(getEditor())->scrollToAnchor(p_anchor);
     } else {
         if (!p_anchor.anchor.isEmpty()) {
             m_document->scrollToAnchor(p_anchor.anchor.mid(1));
@@ -682,9 +705,9 @@ void VMdTab::requestUpdateVimStatus()
     }
 }
 
-VEditTabInfo VMdTab::createEditTabInfo()
+VEditTabInfo VMdTab::fetchTabInfo()
 {
-    VEditTabInfo info = VEditTab::createEditTabInfo();
+    VEditTabInfo info = VEditTab::fetchTabInfo();
 
     if (m_editor) {
         QTextCursor cursor = m_editor->textCursor();
@@ -692,6 +715,8 @@ VEditTabInfo VMdTab::createEditTabInfo()
         info.m_cursorPositionInBlock = cursor.positionInBlock();
         info.m_blockCount = m_editor->document()->blockCount();
     }
+
+    info.m_anchorIndex = m_curHeader.m_outlineIndex;
 
     return info;
 }
@@ -701,4 +726,26 @@ void VMdTab::decorateText(TextDecoration p_decoration)
     if (m_editor) {
         m_editor->decorateText(p_decoration);
     }
+}
+
+bool VMdTab::restoreFromTabInfo(const VEditTabInfo &p_info)
+{
+    qDebug() << "restoreFromTabInfo" << p_info.m_anchorIndex;
+    if (p_info.m_editTab != this) {
+        return false;
+    }
+
+    // Restore anchor.
+    int anchorIdx = p_info.m_anchorIndex;
+    bool ret = scrollToAnchor(anchorIdx, true);
+
+    return ret;
+}
+
+void VMdTab::restoreFromTabInfo()
+{
+    restoreFromTabInfo(m_infoToRestore);
+
+    // Clear it anyway.
+    m_infoToRestore.m_editTab = NULL;
 }

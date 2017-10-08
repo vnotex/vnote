@@ -78,6 +78,10 @@ public:
 
     QString getNavigationLabelStyle(const QString &p_str) const;
 
+    // Given the path of a file, first try to open it as note file,
+    // then try to open it as orphan file.
+    VFile *getFile(const QString &p_path);
+
     // Given the path of an external file, create a VOrphanFile struct.
     VOrphanFile *getOrphanFile(const QString &p_path,
                                bool p_modifiable,

@@ -1,6 +1,8 @@
 #ifndef VCONSTANTS_H
 #define VCONSTANTS_H
 
+#include <QString>
+
 // Html: rich text file;
 // Markdown: Markdown text file;
 // List: Infinite list file like WorkFlowy;
@@ -22,7 +24,7 @@ namespace ClipboardConfig
     static const QString c_dirs = "dirs";
 }
 
-enum class OpenFileMode {Read = 0, Edit};
+enum class OpenFileMode {Read = 0, Edit, Invalid };
 
 static const qreal c_webZoomFactorMax = 5;
 static const qreal c_webZoomFactorMin = 0.25;
@@ -95,6 +97,15 @@ enum class LineNumberType
     Absolute,
     Relative,
     CodeBlock
+};
+
+// Pages to open on start up.
+enum class StartupPageType
+{
+    None = 0,
+    ContinueLeftOff = 1,
+    SpecificPages = 2,
+    Invalid
 };
 
 #endif

@@ -374,7 +374,7 @@ void VFileList::newFile()
 
         // Move cursor down if content has been inserted.
         if (contentInserted) {
-            const VMdTab *tab = dynamic_cast<VMdTab *>(editArea->currentEditTab());
+            const VMdTab *tab = dynamic_cast<VMdTab *>(editArea->getCurrentTab());
             if (tab) {
                 VMdEdit *edit = dynamic_cast<VMdEdit *>(tab->getEditor());
                 if (edit && edit->getFile() == file) {
