@@ -103,7 +103,7 @@ void VFileList::initActions()
             this, [this]() {
                 QListWidgetItem *item = fileList->currentItem();
                 if (item) {
-                    emit fileClicked(getVFile(item), OpenFileMode::Read);
+                    emit fileClicked(getVFile(item), OpenFileMode::Read, true);
                 }
             });
 
@@ -114,7 +114,7 @@ void VFileList::initActions()
             this, [this]() {
                 QListWidgetItem *item = fileList->currentItem();
                 if (item) {
-                    emit fileClicked(getVFile(item), OpenFileMode::Edit);
+                    emit fileClicked(getVFile(item), OpenFileMode::Edit, true);
                 }
             });
 
@@ -368,7 +368,7 @@ void VFileList::newFile()
         fileList->update();
 
         // Open it in edit mode
-        emit fileCreated(file, OpenFileMode::Edit);
+        emit fileCreated(file, OpenFileMode::Edit, true);
 
         // Move cursor down if content has been inserted.
         if (contentInserted) {

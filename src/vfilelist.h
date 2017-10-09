@@ -60,8 +60,14 @@ public slots:
     void newFile();
 
 signals:
-    void fileClicked(VNoteFile *p_file, OpenFileMode mode = OpenFileMode::Read);
-    void fileCreated(VNoteFile *p_file, OpenFileMode mode = OpenFileMode::Read);
+    void fileClicked(VNoteFile *p_file,
+                     OpenFileMode p_mode = OpenFileMode::Read,
+                     bool p_forceMode = false);
+
+    void fileCreated(VNoteFile *p_file,
+                     OpenFileMode p_mode = OpenFileMode::Read,
+                     bool p_forceMode = false);
+
     void fileUpdated(const VNoteFile *p_file);
 
 private slots:
