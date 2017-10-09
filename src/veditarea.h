@@ -79,7 +79,13 @@ protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
 
 public slots:
-    void openFile(VFile *p_file, OpenFileMode p_mode);
+    // Open @p_file in mode @p_mode.
+    // If @p_file has already been opened, change its mode to @p_mode only if
+    // @p_forceMode is true.
+    // A given file can be opened in multiple split windows. A given file could be
+    // opened at most in one tab inside a window.
+    void openFile(VFile *p_file, OpenFileMode p_mode, bool p_forceMode = false);
+
     void editFile();
     void saveFile();
     void readFile();

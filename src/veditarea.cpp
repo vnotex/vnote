@@ -119,9 +119,7 @@ void VEditArea::removeSplitWindow(VEditWindow *win)
     win->deleteLater();
 }
 
-// A given file can be opened in multiple split windows. A given file could be
-// opened at most in one tab inside a window.
-void VEditArea::openFile(VFile *p_file, OpenFileMode p_mode)
+void VEditArea::openFile(VFile *p_file, OpenFileMode p_mode, bool p_forceMode)
 {
     if (!p_file) {
         return;
@@ -169,7 +167,7 @@ void VEditArea::openFile(VFile *p_file, OpenFileMode p_mode)
 out:
     setCurrentTab(winIdx, tabIdx, setFocus);
 
-    if (existFile) {
+    if (existFile && p_forceMode) {
         if (p_mode == OpenFileMode::Read) {
             readFile();
         } else if (p_mode == OpenFileMode::Edit) {
