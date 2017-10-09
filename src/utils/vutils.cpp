@@ -377,31 +377,35 @@ int VUtils::showMessage(QMessageBox::Icon p_icon, const QString &p_title, const 
     return msgBox.exec();
 }
 
-QString VUtils::generateCopiedFileName(const QString &p_dirPath, const QString &p_fileName)
+QString VUtils::generateCopiedFileName(const QString &p_dirPath,
+                                       const QString &p_fileName,
+                                       bool p_completeBaseName)
 {
-    QString suffix;
-    QString base = p_fileName;
-    int dotIdx = p_fileName.lastIndexOf('.');
-    if (dotIdx != -1) {
-        // .md
-        suffix = p_fileName.right(p_fileName.size() - dotIdx);
-        base = p_fileName.left(dotIdx);
+    QDir dir(p_dirPath);
+    if (!dir.exists() || !dir.exists(p_fileName)) {
+        return p_fileName;
     }
 
-    QDir dir(p_dirPath);
-    QString name = p_fileName;
+    QFileInfo fi(p_fileName);
+    QString baseName = p_completeBaseName ? fi.completeBaseName() : fi.baseName();
+    QString suffix = p_completeBaseName ? fi.suffix() : fi.completeSuffix();
+
     int index = 0;
-    while (dir.exists(name)) {
+    QString fileName;
+    do {
         QString seq;
         if (index > 0) {
-            seq = QString::number(index);
+            seq = QString("%1").arg(QString::number(index), 3, '0');
         }
 
         index++;
-        name = QString("%1_copy%2%3").arg(base).arg(seq).arg(suffix);
-    }
+        fileName = QString("%1_copy%2").arg(baseName).arg(seq);
+        if (!suffix.isEmpty()) {
+            fileName = fileName + "." + suffix;
+        }
+    } while (fileExists(dir, fileName, true));
 
-    return name;
+    return fileName;
 }
 
 QString VUtils::generateCopiedDirName(const QString &p_parentDirPath, const QString &p_dirName)
@@ -614,7 +618,8 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exp
 }
 
 QString VUtils::getFileNameWithSequence(const QString &p_directory,
-                                        const QString &p_baseFileName)
+                                        const QString &p_baseFileName,
+                                        bool p_completeBaseName)
 {
     QDir dir(p_directory);
     if (!dir.exists() || !dir.exists(p_baseFileName)) {
@@ -623,8 +628,8 @@ QString VUtils::getFileNameWithSequence(const QString &p_directory,
 
     // Append a sequence.
     QFileInfo fi(p_baseFileName);
-    QString baseName = fi.baseName();
-    QString suffix = fi.completeSuffix();
+    QString baseName = p_completeBaseName ? fi.completeBaseName() : fi.baseName();
+    QString suffix = p_completeBaseName ? fi.suffix() : fi.completeSuffix();
     int seq = 1;
     QString fileName;
     do {
@@ -632,6 +637,24 @@ QString VUtils::getFileNameWithSequence(const QString &p_directory,
         if (!suffix.isEmpty()) {
             fileName = fileName + "." + suffix;
         }
+    } while (fileExists(dir, fileName, true));
+
+    return fileName;
+}
+
+QString VUtils::getDirNameWithSequence(const QString &p_directory,
+                                       const QString &p_baseDirName)
+{
+    QDir dir(p_directory);
+    if (!dir.exists() || !dir.exists(p_baseDirName)) {
+        return p_baseDirName;
+    }
+
+    // Append a sequence.
+    int seq = 1;
+    QString fileName;
+    do {
+        fileName = QString("%1_%2").arg(p_baseDirName).arg(QString::number(seq++), 3, '0');
     } while (fileExists(dir, fileName, true));
 
     return fileName;
@@ -850,7 +873,8 @@ bool VUtils::deleteFile(const QString &p_recycleBinFolderPath,
     }
 
     QString destName = getFileNameWithSequence(binPath,
-                                               fileNameFromPath(p_path));
+                                               fileNameFromPath(p_path),
+                                               true);
 
     qDebug() << "try to move" << p_path << "to" << binPath << "as" << destName;
     if (!binDir.rename(p_path, binDir.filePath(destName))) {

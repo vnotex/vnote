@@ -330,7 +330,9 @@ void VFileList::newFile()
     info = info + "<br>" + tr("Note with name ending with \"%1\" will be treated as Markdown type.")
                              .arg(suffixStr);
     QString defaultName = QString("new_note.%1").arg(defaultSuf);
-    defaultName = VUtils::getFileNameWithSequence(m_directory->fetchPath(), defaultName);
+    defaultName = VUtils::getFileNameWithSequence(m_directory->fetchPath(),
+                                                  defaultName,
+                                                  true);
     VNewFileDialog dialog(tr("Create Note"), info, defaultName, m_directory, this);
     if (dialog.exec() == QDialog::Accepted) {
         VNoteFile *file = m_directory->createFile(dialog.getNameInput());
@@ -349,7 +351,7 @@ void VFileList::newFile()
                 qWarning() << "fail to open newly-created note" << file->getName();
             } else {
                 Q_ASSERT(file->getContent().isEmpty());
-                QString content = QString("# %1\n").arg(QFileInfo(file->getName()).baseName());
+                QString content = QString("# %1\n").arg(QFileInfo(file->getName()).completeBaseName());
                 file->setContent(content);
                 if (!file->save()) {
                     qWarning() << "fail to write to newly-created note" << file->getName();
@@ -621,7 +623,7 @@ bool VFileList::importFiles(const QStringList &p_files, QString *p_errMsg)
 
         QString name = VUtils::fileNameFromPath(file);
         Q_ASSERT(!name.isEmpty());
-        name = VUtils::getFileNameWithSequence(dirPath, name);
+        name = VUtils::getFileNameWithSequence(dirPath, name, true);
         QString targetFilePath = dir.filePath(name);
         bool ret = VUtils::copyFile(file, targetFilePath, false);
         if (!ret) {
@@ -763,10 +765,14 @@ void VFileList::pasteFiles(VDirectory *p_destDir,
             }
 
             // Rename it to xxx_copy.md.
-            fileName = VUtils::generateCopiedFileName(file->fetchBasePath(), fileName);
+            fileName = VUtils::generateCopiedFileName(file->fetchBasePath(),
+                                                      fileName,
+                                                      true);
         } else {
             // Rename it to xxx_copy.md if needed.
-            fileName = VUtils::generateCopiedFileName(p_destDir->fetchPath(), fileName);
+            fileName = VUtils::generateCopiedFileName(p_destDir->fetchPath(),
+                                                      fileName,
+                                                      true);
         }
 
         QString msg;

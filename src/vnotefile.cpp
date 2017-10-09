@@ -233,7 +233,9 @@ bool VNoteFile::addAttachment(const QString &p_file)
     QString folderPath = fetchAttachmentFolderPath();
     QString name = VUtils::fileNameFromPath(p_file);
     Q_ASSERT(!name.isEmpty());
-    name = VUtils::getFileNameWithSequence(folderPath, name);
+    // For attachments, we do not use complete base name.
+    // abc.tar.gz should be abc_001.tar.gz instead of abc.tar_001.gz.
+    name = VUtils::getFileNameWithSequence(folderPath, name, false);
     QString destPath = QDir(folderPath).filePath(name);
     if (!VUtils::copyFile(p_file, destPath, false)) {
         return false;
@@ -543,7 +545,7 @@ bool VNoteFile::copyFile(VDirectory *p_destDir,
     if (!attaFolderPath.isEmpty()) {
         QDir dir(destFile->fetchBasePath());
         QString folderPath = dir.filePath(destFile->getNotebook()->getAttachmentFolder());
-        attaFolder = VUtils::getFileNameWithSequence(folderPath, attaFolder);
+        attaFolder = VUtils::getDirNameWithSequence(folderPath, attaFolder);
         folderPath = QDir(folderPath).filePath(attaFolder);
 
         // Copy attaFolderPath to folderPath.

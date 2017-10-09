@@ -80,9 +80,19 @@ public:
 
     // Given the file name @p_fileName and directory path @p_dirPath, generate
     // a file name based on @p_fileName which does not exist in @p_dirPath.
-    static QString generateCopiedFileName(const QString &p_dirPath, const QString &p_fileName);
+    // @p_completeBaseName: use complete base name or complete suffix. For example,
+    // "abc.tar.gz", if @p_completeBaseName is true, the base name is "abc.tar",
+    // otherwise, it is "abc".
+    static QString generateCopiedFileName(const QString &p_dirPath,
+                                          const QString &p_fileName,
+                                          bool p_completeBaseName = true);
 
-    static QString generateCopiedDirName(const QString &p_parentDirPath, const QString &p_dirName);
+    // Given the directory name @p_dirName and directory path @p_parentDirPath,
+    // generate a directory name based on @p_dirName which does not exist in
+    // @p_parentDirPath.
+    static QString generateCopiedDirName(const QString &p_parentDirPath,
+                                         const QString &p_dirName);
+
     static void processStyle(QString &style, const QVector<QPair<QString, QString> > &varMap);
 
     // Return the last directory name of @p_path.
@@ -148,8 +158,18 @@ public:
     // Get an available file name in @p_directory with base @p_baseFileName.
     // If there already exists a file named @p_baseFileName, try to add sequence
     // suffix to the name, such as _001.
+    // @p_completeBaseName: use complete base name or complete suffix. For example,
+    // "abc.tar.gz", if @p_completeBaseName is true, the base name is "abc.tar",
+    // otherwise, it is "abc".
     static QString getFileNameWithSequence(const QString &p_directory,
-                                           const QString &p_baseFileName);
+                                           const QString &p_baseFileName,
+                                           bool p_completeBaseName = true);
+
+    // Get an available directory name in @p_directory with base @p_baseDirName.
+    // If there already exists a file named @p_baseFileName, try to add sequence
+    // suffix to the name, such as _001.
+    static QString getDirNameWithSequence(const QString &p_directory,
+                                          const QString &p_baseDirName);
 
     // Get an available random file name in @p_directory.
     static QString getRandomFileName(const QString &p_directory);

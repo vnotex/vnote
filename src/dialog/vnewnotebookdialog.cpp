@@ -314,7 +314,7 @@ bool VNewNotebookDialog::autoComplete()
 
         // Get a folder name under vnoteFolder and set it as the name of the notebook.
         QString name = "vnotebook";
-        name = VUtils::getFileNameWithSequence(vnoteFolder, name);
+        name = VUtils::getDirNameWithSequence(vnoteFolder, name);
         nameEdit->setText(name);
         ret = true;
     } else {
