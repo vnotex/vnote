@@ -7,7 +7,7 @@
 #include <QColor>
 #include <QClipboard>
 #include <QImage>
-#include "vtoc.h"
+#include "vtableofcontent.h"
 #include "veditoperations.h"
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
@@ -32,35 +32,34 @@ public:
     // @p_path is the absolute path of the inserted image.
     void imageInserted(const QString &p_path);
 
-    void scrollToAnchor(const VAnchor &p_anchor);
-
-    // Scroll to anchor given the the index in outline.
-    // Return true if @p_anchorIndex is valid.
-    bool scrollToAnchor(int p_anchorIndex);
+    // Scroll to header @p_blockNumber.
+    // Return true if @p_blockNumber is valid to scroll to.
+    bool scrollToHeader(int p_blockNumber);
 
     // Like toPlainText(), but remove image preview characters.
     QString toPlainTextWithoutImg();
-
-    const QVector<VHeader> &getHeaders() const;
 
 public slots:
     bool jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat) Q_DECL_OVERRIDE;
 
 signals:
-    void headersChanged(const QVector<VHeader> &headers);
+    // Signal when headers change.
+    void headersChanged(const QVector<VTableOfContentItem> &p_headers);
 
     // Signal when current header change.
-    void curHeaderChanged(VAnchor p_anchor);
+    void currentHeaderChanged(int p_blockNumber);
 
     // Signal when the status of VMdEdit changed.
     // Will be emitted by VImagePreviewer for now.
     void statusChanged();
 
 private slots:
-    void updateOutline(const QVector<VElementRegion> &p_headerRegions);
+    // Update m_headers according to elements.
+    void updateHeaders(const QVector<VElementRegion> &p_headerRegions);
 
+    // Update current header according to cursor position.
     // When there is no header in current cursor, will signal an invalid header.
-    void updateCurHeader();
+    void updateCurrentHeader();
 
     void handleClipboardChanged(QClipboard::Mode p_mode);
 
@@ -99,9 +98,6 @@ private:
     // in the selection. Get the QImage.
     QImage tryGetSelectedImage();
 
-    // Return the header index in m_headers where current cursor locates.
-    int currentCursorHeader() const;
-
     QString getPlainTextWithoutPreviewImage() const;
 
     // Try to get all the regions of preview image within @p_block.
@@ -110,6 +106,9 @@ private:
                                       QVector<Region> &p_regions) const;
 
     void finishOneAsyncJob(int p_idx);
+
+    // Index in m_headers of current header which contains the cursor.
+    int indexOfCurrentHeader() const;
 
     HGMarkdownHighlighter *m_mdHighlighter;
     VCodeBlockHighlightHelper *m_cbHighlighter;
@@ -121,7 +120,8 @@ private:
     // Image links right at the beginning of the edit.
     QVector<ImageLink> m_initImages;
 
-    QVector<VHeader> m_headers;
+    // Mainly used for title jump.
+    QVector<VTableOfContentItem> m_headers;
 
     bool m_freshEdit;
 

@@ -11,7 +11,7 @@
 #include "vconfigmanager.h"
 #include "vmarkdownconverter.h"
 #include "vnotebook.h"
-#include "vtoc.h"
+#include "vtableofcontent.h"
 #include "vmdedit.h"
 #include "dialog/vfindreplacedialog.h"
 #include "veditarea.h"
@@ -50,72 +50,109 @@ void VMdTab::setupUI()
     setLayout(m_stacks);
 }
 
-void VMdTab::handleTextChanged()
-{
-    V_ASSERT(m_file->isModifiable());
-
-    if (m_modified) {
-        return;
-    }
-
-    updateStatus();
-}
-
 void VMdTab::showFileReadMode()
 {
     m_isEditMode = false;
 
-    int outlineIndex = m_curHeader.m_outlineIndex;
+    VHeaderPointer header(m_currentHeader);
 
     if (m_mdConType == MarkdownConverterType::Hoedown) {
         viewWebByConverter();
     } else {
         m_document->updateText();
-        updateTocFromHtml(m_document->getToc());
+        updateOutlineFromHtml(m_document->getToc());
     }
 
     m_stacks->setCurrentWidget(m_webViewer);
     clearSearchedWordHighlight();
 
-    scrollWebViewToAnchor(outlineIndex);
+    scrollWebViewToHeader(header);
 
     updateStatus();
 }
 
-bool VMdTab::scrollWebViewToAnchor(int p_anchorIndex, bool p_strict)
+bool VMdTab::scrollWebViewToHeader(const VHeaderPointer &p_header)
 {
-    QString anchor;
-
-    VAnchor anch(m_file, anchor, -1, p_anchorIndex);
-
-    bool validIndex = false;
-    if (p_anchorIndex < m_toc.headers.size() && p_anchorIndex >= 0) {
-        QString tmp = m_toc.headers[p_anchorIndex].anchor;
-        Q_ASSERT(!tmp.isEmpty());
-        anch.anchor = tmp;
-        anchor = tmp.mid(1);
-        validIndex = true;
+    if (!m_outline.isMatched(p_header)
+        || m_outline.getType() != VTableOfContentType::Anchor) {
+        return false;
     }
 
-    if (validIndex || !p_strict) {
-        m_curHeader = anch;
+    if (p_header.isValid()) {
+        const VTableOfContentItem *item = m_outline.getItem(p_header);
+        if (item) {
+            if (item->m_anchor.isEmpty()) {
+                return false;
+            }
 
-        m_document->scrollToAnchor(anchor);
+            m_currentHeader = p_header;
+            m_document->scrollToAnchor(item->m_anchor);
+        } else {
+            return false;
+        }
+    } else {
+        if (m_outline.isEmpty()) {
+            // Let it be.
+            m_currentHeader = p_header;
+        } else {
+            // Scroll to top.
+            m_currentHeader = p_header;
+            m_document->scrollToAnchor("");
+        }
+    }
 
-        emit curHeaderChanged(m_curHeader);
+    emit currentHeaderChanged(m_currentHeader);
+    return true;
+}
 
+bool VMdTab::scrollEditorToHeader(const VHeaderPointer &p_header)
+{
+    if (!m_outline.isMatched(p_header)
+        || m_outline.getType() != VTableOfContentType::BlockNumber) {
+        return false;
+    }
+
+    VMdEdit *mdEdit = dynamic_cast<VMdEdit *>(getEditor());
+
+    int blockNumber = -1;
+    if (p_header.isValid()) {
+        const VTableOfContentItem *item = m_outline.getItem(p_header);
+        if (item) {
+            blockNumber = item->m_blockNumber;
+            if (blockNumber == -1) {
+                // Empty item.
+                return false;
+            }
+        } else {
+            return false;
+        }
+    } else {
+        if (m_outline.isEmpty()) {
+            // No outline and scroll to -1 index.
+            // Just let it be.
+            m_currentHeader = p_header;
+            return true;
+        } else {
+            // Has outline and scroll to -1 index.
+            // Scroll to top.
+            blockNumber = 0;
+        }
+    }
+
+    if (mdEdit->scrollToHeader(blockNumber)) {
+        m_currentHeader = p_header;
         return true;
     } else {
         return false;
     }
 }
 
-bool VMdTab::scrollToAnchor(int p_anchorIndex, bool p_strict)
+bool VMdTab::scrollToHeaderInternal(const VHeaderPointer &p_header)
 {
     if (m_isEditMode) {
-        return dynamic_cast<VMdEdit *>(getEditor())->scrollToAnchor(p_anchorIndex);
+        return scrollEditorToHeader(p_header);
     } else {
-        return scrollWebViewToAnchor(p_anchorIndex, p_strict);
+        return scrollWebViewToHeader(p_header);
     }
 }
 
@@ -127,7 +164,7 @@ void VMdTab::viewWebByConverter()
                                             g_config->getMarkdownExtensions(),
                                             toc);
     m_document->setHtml(html);
-    updateTocFromHtml(toc);
+    updateOutlineFromHtml(toc);
 }
 
 void VMdTab::showFileEditMode()
@@ -136,42 +173,28 @@ void VMdTab::showFileEditMode()
         return;
     }
 
+    VHeaderPointer header(m_currentHeader);
+
     m_isEditMode = true;
 
     VMdEdit *mdEdit = dynamic_cast<VMdEdit *>(getEditor());
     V_ASSERT(mdEdit);
 
-    // beginEdit() may change m_curHeader.
-    int outlineIndex = m_curHeader.m_outlineIndex;
-
     mdEdit->beginEdit();
     m_stacks->setCurrentWidget(mdEdit);
 
-    int lineNumber = -1;
-    const QVector<VHeader> &headers = mdEdit->getHeaders();
     // If editor is not init, we need to wait for it to init headers.
     // Generally, beginEdit() will generate the headers. Wait is needed when
     // highlight completion is going to re-generate the headers.
     int nrRetry = 5;
-    while (outlineIndex > -1 && headers.isEmpty() && nrRetry-- > 0) {
+    while (header.m_index > -1 && m_outline.isEmpty() && nrRetry-- > 0) {
         qDebug() << "wait another 100 ms for editor's headers ready";
         VUtils::sleepWait(100);
     }
 
-    if (outlineIndex < 0 || outlineIndex >= headers.size()) {
-        lineNumber = -1;
-        outlineIndex = -1;
-    } else {
-        lineNumber = headers[outlineIndex].lineNumber;
-    }
-
-    VAnchor anchor(m_file, "", lineNumber, outlineIndex);
-
-    mdEdit->scrollToAnchor(anchor);
+    scrollEditorToHeader(header);
 
     mdEdit->setFocus();
-
-    updateStatus();
 }
 
 bool VMdTab::closeFile(bool p_forced)
@@ -273,8 +296,6 @@ bool VMdTab::saveFile()
         m_editor->setModified(true);
     }
 
-    updateStatus();
-
     return ret;
 }
 
@@ -304,9 +325,9 @@ void VMdTab::setupMarkdownViewer()
     QWebChannel *channel = new QWebChannel(m_webViewer);
     channel->registerObject(QStringLiteral("content"), m_document);
     connect(m_document, &VDocument::tocChanged,
-            this, &VMdTab::updateTocFromHtml);
-    connect(m_document, SIGNAL(headerChanged(const QString&)),
-            this, SLOT(updateCurHeader(const QString &)));
+            this, &VMdTab::updateOutlineFromHtml);
+    connect(m_document, SIGNAL(headerChanged(const QString &)),
+            this, SLOT(updateCurrentHeader(const QString &)));
     connect(m_document, &VDocument::keyPressed,
             this, &VMdTab::handleWebKeyPressed);
     connect(m_document, SIGNAL(logicsFinished(void)),
@@ -325,13 +346,13 @@ void VMdTab::setupMarkdownEditor()
     qDebug() << "create Markdown editor";
     m_editor = new VMdEdit(m_file, m_document, m_mdConType, this);
     connect(dynamic_cast<VMdEdit *>(m_editor), &VMdEdit::headersChanged,
-            this, &VMdTab::updateTocFromHeaders);
+            this, &VMdTab::updateOutlineFromHeaders);
+    connect(dynamic_cast<VMdEdit *>(m_editor), SIGNAL(currentHeaderChanged(int)),
+            this, SLOT(updateCurrentHeader(int)));
     connect(dynamic_cast<VMdEdit *>(m_editor), &VMdEdit::statusChanged,
             this, &VMdTab::updateStatus);
-    connect(m_editor, SIGNAL(curHeaderChanged(VAnchor)),
-            this, SLOT(updateCurHeader(VAnchor)));
     connect(m_editor, &VEdit::textChanged,
-            this, &VMdTab::handleTextChanged);
+            this, &VMdTab::updateStatus);
     connect(m_editor, &VEdit::cursorPositionChanged,
             this, &VMdTab::updateStatus);
     connect(m_editor, &VEdit::saveAndRead,
@@ -355,185 +376,71 @@ void VMdTab::setupMarkdownEditor()
     m_stacks->addWidget(m_editor);
 }
 
-static void parseTocUl(QXmlStreamReader &p_xml, QVector<VHeader> &p_headers,
-                       int p_level);
-
-static void parseTocLi(QXmlStreamReader &p_xml, QVector<VHeader> &p_headers, int p_level)
-{
-    Q_ASSERT(p_xml.isStartElement() && p_xml.name() == "li");
-
-    if (p_xml.readNextStartElement()) {
-        if (p_xml.name() == "a") {
-            QString anchor = p_xml.attributes().value("href").toString();
-            QString name;
-            if (p_xml.readNext()) {
-                if (p_xml.tokenString() == "Characters") {
-                    name = p_xml.text().toString();
-                } else if (!p_xml.isEndElement()) {
-                    qWarning() << "TOC HTML <a> should be ended by </a>" << p_xml.name();
-                    return;
-                }
-
-                VHeader header(p_level, name, anchor, -1, p_headers.size());
-                p_headers.append(header);
-            } else {
-                // Error
-                return;
-            }
-        } else if (p_xml.name() == "ul") {
-            // Such as header 3 under header 1 directly
-            VHeader header(p_level, c_emptyHeaderName, "#", -1, p_headers.size());
-            p_headers.append(header);
-            parseTocUl(p_xml, p_headers, p_level + 1);
-        } else {
-            qWarning() << "TOC HTML <li> should contain <a> or <ul>" << p_xml.name();
-            return;
-        }
-    }
-
-    while (p_xml.readNext()) {
-        if (p_xml.isEndElement()) {
-            if (p_xml.name() == "li") {
-                return;
-            }
-            continue;
-        }
-        if (p_xml.name() == "ul") {
-            // Nested unordered list
-            parseTocUl(p_xml, p_headers, p_level + 1);
-        } else {
-            return;
-        }
-    }
-}
-
-static void parseTocUl(QXmlStreamReader &p_xml, QVector<VHeader> &p_headers,
-                       int p_level)
-{
-    Q_ASSERT(p_xml.isStartElement() && p_xml.name() == "ul");
-
-    while (p_xml.readNextStartElement()) {
-        if (p_xml.name() == "li") {
-            parseTocLi(p_xml, p_headers, p_level);
-        } else {
-            qWarning() << "TOC HTML <ul> should contain <li>" << p_xml.name();
-            break;
-        }
-    }
-}
-
-static bool parseTocHtml(const QString &p_tocHtml,
-                         QVector<VHeader> &p_headers)
-{
-    if (!p_tocHtml.isEmpty()) {
-        QXmlStreamReader xml(p_tocHtml);
-        if (xml.readNextStartElement()) {
-            if (xml.name() == "ul") {
-                parseTocUl(xml, p_headers, 1);
-            } else {
-                qWarning() << "TOC HTML does not start with <ul>";
-            }
-        }
-
-        if (xml.hasError()) {
-            qWarning() << "fail to parse TOC in HTML";
-            return false;
-        }
-    }
-
-    return true;
-}
-
-void VMdTab::updateTocFromHtml(const QString &p_tocHtml)
+void VMdTab::updateOutlineFromHtml(const QString &p_tocHtml)
 {
     if (m_isEditMode) {
         return;
     }
 
-    m_toc.type = VHeaderType::Anchor;
-    m_toc.headers.clear();
+    m_outline.clear();
 
-    if (!parseTocHtml(p_tocHtml, m_toc.headers)) {
-        return;
+    if (m_outline.parseTableFromHtml(p_tocHtml)) {
+        m_outline.setFile(m_file);
+        m_outline.setType(VTableOfContentType::Anchor);
     }
 
-    m_toc.m_file = m_file;
-    m_toc.valid = true;
+    m_currentHeader.reset();
 
-    emit outlineChanged(m_toc);
+    emit outlineChanged(m_outline);
 }
 
-void VMdTab::updateTocFromHeaders(const QVector<VHeader> &p_headers)
+void VMdTab::updateOutlineFromHeaders(const QVector<VTableOfContentItem> &p_headers)
 {
     if (!m_isEditMode) {
         return;
     }
 
-    m_toc.type = VHeaderType::LineNumber;
-    m_toc.headers = p_headers;
-    m_toc.m_file = m_file;
-    m_toc.valid = true;
+    m_outline.update(m_file,
+                     p_headers,
+                     VTableOfContentType::BlockNumber);
 
-    // Clear current header.
-    m_curHeader = VAnchor(m_file, "", -1, -1);
-    emit curHeaderChanged(m_curHeader);
+    m_currentHeader.reset();
 
-    emit outlineChanged(m_toc);
+    emit outlineChanged(m_outline);
 }
 
-void VMdTab::scrollToAnchor(const VAnchor &p_anchor)
+void VMdTab::scrollToHeader(const VHeaderPointer &p_header)
 {
-    if (p_anchor == m_curHeader) {
+    if (m_outline.isMatched(p_header)) {
+        // Scroll only when @p_header is valid.
+        scrollToHeaderInternal(p_header);
+    }
+}
+
+void VMdTab::updateCurrentHeader(const QString &p_anchor)
+{
+    if (m_isEditMode) {
         return;
     }
 
-    m_curHeader = p_anchor;
+    // Find the index of the anchor in outline.
+    int idx = m_outline.indexOfItemByAnchor(p_anchor);
+    m_currentHeader.update(m_file, idx);
 
-    if (m_isEditMode) {
-        dynamic_cast<VMdEdit *>(getEditor())->scrollToAnchor(p_anchor);
-    } else {
-        if (!p_anchor.anchor.isEmpty()) {
-            m_document->scrollToAnchor(p_anchor.anchor.mid(1));
-        }
-    }
+    emit currentHeaderChanged(m_currentHeader);
 }
 
-void VMdTab::updateCurHeader(const QString &p_anchor)
+void VMdTab::updateCurrentHeader(int p_blockNumber)
 {
-    if (m_isEditMode || m_curHeader.anchor.mid(1) == p_anchor) {
+    if (!m_isEditMode) {
         return;
     }
 
-    m_curHeader = VAnchor(m_file, "#" + p_anchor, -1);
-    if (!p_anchor.isEmpty()) {
-        const QVector<VHeader> &headers = m_toc.headers;
-        for (int i = 0; i < headers.size(); ++i) {
-            if (headers[i].anchor == m_curHeader.anchor) {
-                V_ASSERT(headers[i].index == i);
-                m_curHeader.m_outlineIndex = headers[i].index;
-                break;
-            }
-        }
-    }
+    // Find the index of the block number in outline.
+    int idx = m_outline.indexOfItemByBlockNumber(p_blockNumber);
+    m_currentHeader.update(m_file, idx);
 
-    emit curHeaderChanged(m_curHeader);
-}
-
-void VMdTab::updateCurHeader(VAnchor p_anchor)
-{
-    if (m_isEditMode) {
-        if (!p_anchor.anchor.isEmpty() || p_anchor.lineNumber == m_curHeader.lineNumber) {
-            return;
-        }
-    } else {
-        if (p_anchor.lineNumber != -1 || p_anchor.anchor == m_curHeader.anchor) {
-            return;
-        }
-    }
-
-    m_curHeader = p_anchor;
-
-    emit curHeaderChanged(m_curHeader);
+    emit currentHeaderChanged(m_currentHeader);
 }
 
 void VMdTab::insertImage()
@@ -705,7 +612,7 @@ void VMdTab::requestUpdateVimStatus()
     }
 }
 
-VEditTabInfo VMdTab::fetchTabInfo()
+VEditTabInfo VMdTab::fetchTabInfo() const
 {
     VEditTabInfo info = VEditTab::fetchTabInfo();
 
@@ -716,7 +623,7 @@ VEditTabInfo VMdTab::fetchTabInfo()
         info.m_blockCount = m_editor->document()->blockCount();
     }
 
-    info.m_anchorIndex = m_curHeader.m_outlineIndex;
+    info.m_headerIndex = m_currentHeader.m_index;
 
     return info;
 }
@@ -730,15 +637,13 @@ void VMdTab::decorateText(TextDecoration p_decoration)
 
 bool VMdTab::restoreFromTabInfo(const VEditTabInfo &p_info)
 {
-    qDebug() << "restoreFromTabInfo" << p_info.m_anchorIndex;
     if (p_info.m_editTab != this) {
         return false;
     }
 
-    // Restore anchor.
-    int anchorIdx = p_info.m_anchorIndex;
-    bool ret = scrollToAnchor(anchorIdx, true);
-
+    // Restore header.
+    VHeaderPointer header(m_file, p_info.m_headerIndex);
+    bool ret = scrollToHeaderInternal(header);
     return ret;
 }
 
@@ -747,5 +652,5 @@ void VMdTab::restoreFromTabInfo()
     restoreFromTabInfo(m_infoToRestore);
 
     // Clear it anyway.
-    m_infoToRestore.m_editTab = NULL;
+    m_infoToRestore.clear();
 }

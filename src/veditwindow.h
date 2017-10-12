@@ -8,7 +8,6 @@
 #include <QDir>
 #include "vnotebook.h"
 #include "vedittab.h"
-#include "vtoc.h"
 #include "vconstants.h"
 #include "vnotefile.h"
 
@@ -32,11 +31,19 @@ public:
     void readFile();
     void saveAndReadFile();
     bool closeAllFiles(bool p_forced);
-    void requestUpdateOutline();
-    void requestUpdateCurHeader();
+
+    // Return outline of current tab.
+    VTableOfContent getOutline() const;
+
+    // Return current header of current tab.
+    VHeaderPointer getCurrentHeader() const;
+
     // Focus to current tab's editor
     void focusWindow();
-    void scrollCurTab(const VAnchor &p_anchor);
+
+    // Scroll current tab to header @p_header.
+    void scrollToHeader(const VHeaderPointer &p_header);
+
     void updateFileInfo(const VFile *p_file);
     void updateDirectoryInfo(const VDirectory *p_dir);
     void updateNotebookInfo(const VNotebook *p_notebook);
@@ -84,8 +91,10 @@ signals:
     void requestRemoveSplit(VEditWindow *curWindow);
     // This widget or its children get the focus
     void getFocused();
-    void outlineChanged(const VToc &toc);
-    void curHeaderChanged(const VAnchor &anchor);
+
+    void outlineChanged(const VTableOfContent &p_outline);
+
+    void currentHeaderChanged(const VHeaderPointer &p_header);
 
     // Emit when want to show message in status bar.
     void statusMessage(const QString &p_msg);
@@ -105,8 +114,11 @@ private slots:
     void handleCurrentIndexChanged(int p_index);
     void contextMenuRequested(QPoint pos);
     void tabListJump(VFile *p_file);
-    void handleOutlineChanged(const VToc &p_toc);
-    void handleCurHeaderChanged(const VAnchor &p_anchor);
+
+    void handleTabOutlineChanged(const VTableOfContent &p_outline);
+
+    void handleTabCurrentHeaderChanged(const VHeaderPointer &p_header);
+
     void updateSplitMenu();
     void tabbarContextMenuRequested(QPoint p_pos);
     void handleLocateAct();

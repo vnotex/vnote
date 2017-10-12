@@ -31,8 +31,8 @@ public:
     // Save file.
     bool saveFile() Q_DECL_OVERRIDE;
 
-    // Scroll to anchor @p_anchor.
-    void scrollToAnchor(const VAnchor& p_anchor) Q_DECL_OVERRIDE;
+    // Scroll to @p_header.
+    void scrollToHeader(const VHeaderPointer &p_header) Q_DECL_OVERRIDE;
 
     void insertImage() Q_DECL_OVERRIDE;
 
@@ -63,27 +63,25 @@ public:
     void decorateText(TextDecoration p_decoration) Q_DECL_OVERRIDE;
 
     // Create a filled VEditTabInfo.
-    VEditTabInfo fetchTabInfo() Q_DECL_OVERRIDE;
+    VEditTabInfo fetchTabInfo() const Q_DECL_OVERRIDE;
 
 public slots:
     // Enter edit mode.
     void editFile() Q_DECL_OVERRIDE;
 
 private slots:
-    // Handle text changed in m_editor.
-    void handleTextChanged();
+    // Update m_outline according to @p_tocHtml for read mode.
+    void updateOutlineFromHtml(const QString &p_tocHtml);
 
-    // Update m_toc according to @p_tocHtml for read mode.
-    void updateTocFromHtml(const QString &p_tocHtml);
-
-    // Update m_toc accroding to @p_headers for edit mode.
-    void updateTocFromHeaders(const QVector<VHeader> &p_headers);
+    // Update m_outline accroding to @p_headers for edit mode.
+    void updateOutlineFromHeaders(const QVector<VTableOfContentItem> &p_headers);
 
     // Web viewer requests to update current header.
-    void updateCurHeader(const QString &p_anchor);
+    // @p_anchor is the anchor of the header, like "toc_1".
+    void updateCurrentHeader(const QString &p_anchor);
 
     // Editor requests to update current header.
-    void updateCurHeader(VAnchor p_anchor);
+    void updateCurrentHeader(int p_blockNumber);
 
     // Handle key press event in Web view.
     void handleWebKeyPressed(int p_key, bool p_ctrl, bool p_shift);
@@ -117,16 +115,14 @@ private:
     void viewWebByConverter();
 
     // Scroll Web view to given header.
-    // @p_anchorIndex is the index in m_toc.headers.
-    // @p_strict: if true, scroll only when @p_anchorIndex is valid.
     // Return true if scroll was made.
-    bool scrollWebViewToAnchor(int p_anchorIndex, bool p_strict = false);
+    bool scrollWebViewToHeader(const VHeaderPointer &p_header);
+
+    bool scrollEditorToHeader(const VHeaderPointer &p_header);
 
     // Scroll web/editor to given header.
-    // @p_anchorIndex is the index in m_toc.headers.
-    // @p_strict: if true, scroll only when @p_anchorIndex is valid.
     // Return true if scroll was made.
-    bool scrollToAnchor(int p_anchorIndex, bool p_strict = false);
+    bool scrollToHeaderInternal(const VHeaderPointer &p_header);
 
     // Search text in Web view.
     void findTextInWebView(const QString &p_text, uint p_options, bool p_peek,

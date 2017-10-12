@@ -145,6 +145,7 @@ private slots:
     void handleVimStatusUpdated(const VVim *p_vim);
 
     // Handle the status update of the current tab of VEditArea.
+    // Will be called frequently.
     void handleAreaTabStatusUpdated(const VEditTabInfo &p_info);
 
     // Check the shared memory between different instances to see if we have

@@ -466,15 +466,15 @@ void VEditWindow::updateTabStatus(int p_index)
 
     if (p_index == -1) {
         emit tabStatusUpdated(VEditTabInfo());
-        emit outlineChanged(VToc());
-        emit curHeaderChanged(VAnchor());
+        emit outlineChanged(VTableOfContent());
+        emit currentHeaderChanged(VHeaderPointer());
         return;
     }
 
     VEditTab *tab = getTab(p_index);
-    tab->updateStatus();
-    tab->requestUpdateOutline();
-    tab->requestUpdateCurHeader();
+    emit tabStatusUpdated(tab->fetchTabInfo());
+    emit outlineChanged(tab->getOutline());
+    emit currentHeaderChanged(tab->getCurrentHeader());
 }
 
 void VEditWindow::updateTabInfo(int p_index)
@@ -506,26 +506,24 @@ void VEditWindow::updateAllTabsSequence()
     }
 }
 
-// Be requested to report current outline
-void VEditWindow::requestUpdateOutline()
+VTableOfContent VEditWindow::getOutline() const
 {
     int idx = currentIndex();
     if (idx == -1) {
-        emit outlineChanged(VToc());
-        return;
+        return VTableOfContent();
     }
-    getTab(idx)->requestUpdateOutline();
+
+    return getTab(idx)->getOutline();
 }
 
-// Be requested to report current header
-void VEditWindow::requestUpdateCurHeader()
+VHeaderPointer VEditWindow::getCurrentHeader() const
 {
     int idx = currentIndex();
     if (idx == -1) {
-        emit curHeaderChanged(VAnchor());
-        return;
+        return VHeaderPointer();
     }
-    getTab(idx)->requestUpdateCurHeader();
+
+    return getTab(idx)->getCurrentHeader();
 }
 
 // Focus this windows. Try to focus current tab.
@@ -681,44 +679,39 @@ bool VEditWindow::canRemoveSplit()
     return splitter->count() > 1;
 }
 
-void VEditWindow::handleOutlineChanged(const VToc &p_toc)
+void VEditWindow::handleTabOutlineChanged(const VTableOfContent &p_outline)
 {
-    // Only propagate it if it is current tab
-    int idx = currentIndex();
-    if (idx == -1) {
-        emit outlineChanged(VToc());
+    // Only propagate it if it is current tab.
+    VEditTab *tab = getCurrentTab();
+    if (tab) {
+        if (tab->getFile() == p_outline.getFile()) {
+            emit outlineChanged(p_outline);
+        }
+    } else {
+        emit outlineChanged(VTableOfContent());
         return;
-    }
-    const VFile *file = getTab(idx)->getFile();
-    if (p_toc.m_file == file) {
-        emit outlineChanged(p_toc);
     }
 }
 
-void VEditWindow::handleCurHeaderChanged(const VAnchor &p_anchor)
+void VEditWindow::handleTabCurrentHeaderChanged(const VHeaderPointer &p_header)
 {
-    // Only propagate it if it is current tab
-    int idx = currentIndex();
-    if (idx == -1) {
-        emit curHeaderChanged(VAnchor());
+    // Only propagate it if it is current tab.
+    VEditTab *tab = getCurrentTab();
+    if (tab) {
+        if (tab->getFile() == p_header.m_file) {
+            emit currentHeaderChanged(p_header);
+        }
+    } else {
+        emit currentHeaderChanged(VHeaderPointer());
         return;
-    }
-    const VFile *file = getTab(idx)->getFile();
-    if (p_anchor.m_file == file) {
-        emit curHeaderChanged(p_anchor);
     }
 }
 
-void VEditWindow::scrollCurTab(const VAnchor &p_anchor)
+void VEditWindow::scrollToHeader(const VHeaderPointer &p_header)
 {
-    int idx = currentIndex();
-    if (idx == -1) {
-        emit curHeaderChanged(VAnchor());
-        return;
-    }
-    const VFile *file = getTab(idx)->getFile();
-    if (file == p_anchor.m_file) {
-        getTab(idx)->scrollToAnchor(p_anchor);
+    VEditTab *tab = getCurrentTab();
+    if (tab) {
+        tab->scrollToHeader(p_header);
     }
 }
 
@@ -916,9 +909,9 @@ void VEditWindow::connectEditTab(const VEditTab *p_tab)
     connect(p_tab, &VEditTab::getFocused,
             this, &VEditWindow::getFocused);
     connect(p_tab, &VEditTab::outlineChanged,
-            this, &VEditWindow::handleOutlineChanged);
-    connect(p_tab, &VEditTab::curHeaderChanged,
-            this, &VEditWindow::handleCurHeaderChanged);
+            this, &VEditWindow::handleTabOutlineChanged);
+    connect(p_tab, &VEditTab::currentHeaderChanged,
+            this, &VEditWindow::handleTabCurrentHeaderChanged);
     connect(p_tab, &VEditTab::statusUpdated,
             this, &VEditWindow::handleTabStatusUpdated);
     connect(p_tab, &VEditTab::statusMessage,

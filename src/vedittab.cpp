@@ -3,12 +3,13 @@
 #include <QWheelEvent>
 
 VEditTab::VEditTab(VFile *p_file, VEditArea *p_editArea, QWidget *p_parent)
-    : QWidget(p_parent), m_file(p_file), m_isEditMode(false),
-      m_modified(false), m_editArea(p_editArea)
+    : QWidget(p_parent),
+      m_file(p_file),
+      m_isEditMode(false),
+      m_outline(p_file),
+      m_currentHeader(p_file, -1),
+      m_editArea(p_editArea)
 {
-    m_toc.m_file = m_file;
-    m_curHeader.m_file = m_file;
-
     connect(qApp, &QApplication::focusChanged,
             this, &VEditTab::handleFocusChanged);
 }
@@ -33,7 +34,7 @@ bool VEditTab::isEditMode() const
 
 bool VEditTab::isModified() const
 {
-    return m_modified;
+    return m_file->isModified();
 }
 
 VFile *VEditTab::getFile() const
@@ -53,16 +54,6 @@ void VEditTab::handleFocusChanged(QWidget * /* p_old */, QWidget *p_now)
     }
 }
 
-void VEditTab::requestUpdateCurHeader()
-{
-    emit curHeaderChanged(m_curHeader);
-}
-
-void VEditTab::requestUpdateOutline()
-{
-    emit outlineChanged(m_toc);
-}
-
 void VEditTab::wheelEvent(QWheelEvent *p_event)
 {
     QPoint angle = p_event->angleDelta();
@@ -78,41 +69,41 @@ void VEditTab::wheelEvent(QWheelEvent *p_event)
     p_event->ignore();
 }
 
-void VEditTab::updateStatus()
-{
-    m_modified = m_file->isModified();
-
-    emit statusUpdated(fetchTabInfo());
-}
-
-VEditTabInfo VEditTab::fetchTabInfo()
+VEditTabInfo VEditTab::fetchTabInfo() const
 {
     VEditTabInfo info;
-    info.m_editTab = this;
+    info.m_editTab = const_cast<VEditTab *>(this);
 
     return info;
 }
 
-VAnchor VEditTab::getCurrentHeader() const
+const VHeaderPointer &VEditTab::getCurrentHeader() const
 {
-    return m_curHeader;
+    return m_currentHeader;
+}
+
+const VTableOfContent &VEditTab::getOutline() const
+{
+    return m_outline;
 }
 
 void VEditTab::tryRestoreFromTabInfo(const VEditTabInfo &p_info)
 {
     if (p_info.m_editTab != this) {
-        // Clear and return.
-        m_infoToRestore.m_editTab = NULL;
+        m_infoToRestore.clear();
         return;
     }
 
     if (restoreFromTabInfo(p_info)) {
-        // Clear and return.
-        m_infoToRestore.m_editTab = NULL;
+        m_infoToRestore.clear();
         return;
     }
 
     // Save it and restore later.
     m_infoToRestore = p_info;
-    qDebug() << "save info for restore later" << p_info.m_anchorIndex;
+}
+
+void VEditTab::updateStatus()
+{
+    emit statusUpdated(fetchTabInfo());
 }

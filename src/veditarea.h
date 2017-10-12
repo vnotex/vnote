@@ -12,7 +12,6 @@
 #include <QSplitter>
 #include "vnotebook.h"
 #include "veditwindow.h"
-#include "vtoc.h"
 #include "vnavigationmode.h"
 
 class VNote;
@@ -82,8 +81,11 @@ signals:
     // Emit when current window's tab status updated.
     void tabStatusUpdated(const VEditTabInfo &p_info);
 
-    void outlineChanged(const VToc &toc);
-    void curHeaderChanged(const VAnchor &anchor);
+    // Emit when current window's tab's outline changed.
+    void outlineChanged(const VTableOfContent &p_outline);
+
+    // Emit when current window's tab's current header changed.
+    void currentHeaderChanged(const VHeaderPointer &p_header);
 
     // Emit when want to show message in status bar.
     void statusMessage(const QString &p_msg);
@@ -106,7 +108,10 @@ public slots:
     void saveFile();
     void readFile();
     void saveAndReadFile();
-    void handleOutlineItemActivated(const VAnchor &anchor);
+
+    // Scroll current tab to @p_header.
+    void scrollToHeader(const VHeaderPointer &p_header);
+
     void handleFileUpdated(const VFile *p_file);
     void handleDirectoryUpdated(const VDirectory *p_dir);
     void handleNotebookUpdated(const VNotebook *p_notebook);
@@ -118,8 +123,11 @@ private slots:
 
     void handleRemoveSplitRequest(VEditWindow *curWindow);
     void handleWindowFocused();
-    void handleOutlineChanged(const VToc &toc);
-    void handleCurHeaderChanged(const VAnchor &anchor);
+
+    void handleWindowOutlineChanged(const VTableOfContent &p_outline);
+
+    void handleWindowCurrentHeaderChanged(const VHeaderPointer &p_header);
+
     void handleFindTextChanged(const QString &p_text, uint p_options);
     void handleFindOptionChanged(uint p_options);
     void handleFindNext(const QString &p_text, uint p_options, bool p_forward);

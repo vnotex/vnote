@@ -44,7 +44,6 @@ SOURCES += main.cpp\
     veditwindow.cpp \
     vedittab.cpp \
     voutline.cpp \
-    vtoc.cpp \
     vsingleinstanceguard.cpp \
     vdirectory.cpp \
     vfile.cpp \
@@ -78,7 +77,8 @@ SOURCES += main.cpp\
     vnotefile.cpp \
     vattachmentlist.cpp \
     dialog/vsortdialog.cpp \
-    vfilesessioninfo.cpp
+    vfilesessioninfo.cpp \
+    vtableofcontent.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -108,7 +108,6 @@ HEADERS  += vmainwindow.h \
     veditwindow.h \
     vedittab.h \
     voutline.h \
-    vtoc.h \
     vsingleinstanceguard.h \
     vdirectory.h \
     vfile.h \
@@ -144,7 +143,8 @@ HEADERS  += vmainwindow.h \
     vnotefile.h \
     vattachmentlist.h \
     dialog/vsortdialog.h \
-    vfilesessioninfo.h
+    vfilesessioninfo.h \
+    vtableofcontent.h
 
 RESOURCES += \
     vnote.qrc \

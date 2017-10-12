@@ -10,7 +10,6 @@
 #include <QRect>
 #include <QFontMetrics>
 #include "vconstants.h"
-#include "vtoc.h"
 #include "vnotefile.h"
 
 class VEditOperations;
@@ -81,7 +80,9 @@ public:
     virtual void setModified(bool p_modified);
     bool isModified() const;
     virtual void reloadFile();
-    virtual void scrollToLine(int p_lineNumber);
+
+    virtual bool scrollToBlock(int p_blockNumber);
+
     // User requests to insert an image.
     virtual void insertImage();
 

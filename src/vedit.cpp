@@ -4,7 +4,7 @@
 #include "vedit.h"
 #include "vnote.h"
 #include "vconfigmanager.h"
-#include "vtoc.h"
+#include "vtableofcontent.h"
 #include "utils/vutils.h"
 #include "utils/veditutils.h"
 #include "veditoperations.h"
@@ -157,15 +157,16 @@ void VEdit::reloadFile()
     setModified(false);
 }
 
-void VEdit::scrollToLine(int p_lineNumber)
+bool VEdit::scrollToBlock(int p_blockNumber)
 {
-    Q_ASSERT(p_lineNumber >= 0);
-
-    QTextBlock block = document()->findBlockByLineNumber(p_lineNumber);
+    QTextBlock block = document()->findBlockByNumber(p_blockNumber);
     if (block.isValid()) {
         VEditUtils::scrollBlockInPage(this, block.blockNumber(), 0);
         moveCursor(QTextCursor::EndOfBlock);
+        return true;
     }
+
+    return false;
 }
 
 bool VEdit::isModified() const

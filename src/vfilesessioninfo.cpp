@@ -3,13 +3,13 @@
 #include <QSettings>
 
 #include "vedittabinfo.h"
-#include "vtoc.h"
+#include "vtableofcontent.h"
 #include "vedittab.h"
 
 
 VFileSessionInfo::VFileSessionInfo()
     : m_mode(OpenFileMode::Read),
-      m_anchorIndex(-1),
+      m_headerIndex(-1),
       m_cursorBlockNumber(-1),
       m_cursorPositionInBlock(-1)
 {
@@ -19,7 +19,7 @@ VFileSessionInfo::VFileSessionInfo(const QString &p_file,
                                    OpenFileMode p_mode)
     : m_file(p_file),
       m_mode(p_mode),
-      m_anchorIndex(-1),
+      m_headerIndex(-1),
       m_cursorBlockNumber(-1),
       m_cursorPositionInBlock(-1)
 {
@@ -32,7 +32,7 @@ VFileSessionInfo VFileSessionInfo::fromEditTabInfo(const VEditTabInfo *p_tabInfo
     VEditTab *tab = p_tabInfo->m_editTab;
     VFileSessionInfo info(tab->getFile()->fetchPath(),
                           tab->isEditMode() ? OpenFileMode::Edit : OpenFileMode::Read);
-    info.m_anchorIndex = p_tabInfo->m_anchorIndex;
+    info.m_headerIndex = p_tabInfo->m_headerIndex;
     info.m_cursorBlockNumber = p_tabInfo->m_cursorBlockNumber;
     info.m_cursorPositionInBlock = p_tabInfo->m_cursorPositionInBlock;
 
@@ -41,7 +41,7 @@ VFileSessionInfo VFileSessionInfo::fromEditTabInfo(const VEditTabInfo *p_tabInfo
 
 void VFileSessionInfo::toEditTabInfo(VEditTabInfo *p_tabInfo) const
 {
-    p_tabInfo->m_anchorIndex = m_anchorIndex;
+    p_tabInfo->m_headerIndex = m_headerIndex;
     p_tabInfo->m_cursorBlockNumber = m_cursorBlockNumber;
     p_tabInfo->m_cursorPositionInBlock = m_cursorPositionInBlock;
 }
@@ -57,7 +57,7 @@ VFileSessionInfo VFileSessionInfo::fromSettings(const QSettings *p_settings)
         info.m_mode = OpenFileMode::Read;
     }
 
-    info.m_anchorIndex = p_settings->value(FileSessionConfig::c_anchorIndex).toInt();
+    info.m_headerIndex = p_settings->value(FileSessionConfig::c_headerIndex).toInt();
     info.m_cursorBlockNumber = p_settings->value(FileSessionConfig::c_cursorBlockNumber).toInt();
     info.m_cursorPositionInBlock = p_settings->value(FileSessionConfig::c_cursorPositionInBlock).toInt();
 
@@ -68,7 +68,7 @@ void VFileSessionInfo::toSettings(QSettings *p_settings) const
 {
     p_settings->setValue(FileSessionConfig::c_file, m_file);
     p_settings->setValue(FileSessionConfig::c_mode, (int)m_mode);
-    p_settings->setValue(FileSessionConfig::c_anchorIndex, m_anchorIndex);
+    p_settings->setValue(FileSessionConfig::c_headerIndex, m_headerIndex);
     p_settings->setValue(FileSessionConfig::c_cursorBlockNumber, m_cursorBlockNumber);
     p_settings->setValue(FileSessionConfig::c_cursorPositionInBlock, m_cursorPositionInBlock);
 }

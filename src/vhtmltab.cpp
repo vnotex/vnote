@@ -32,7 +32,7 @@ void VHtmlTab::setupUI()
 {
     m_editor = new VEdit(m_file, this);
     connect(m_editor, &VEdit::textChanged,
-            this, &VHtmlTab::handleTextChanged);
+            this, &VHtmlTab::updateStatus);
     connect(m_editor, &VEdit::saveAndRead,
             this, &VHtmlTab::saveAndRead);
     connect(m_editor, &VEdit::discardAndRead,
@@ -50,17 +50,6 @@ void VHtmlTab::setupUI()
     mainLayout->addWidget(m_editor);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     setLayout(mainLayout);
-}
-
-void VHtmlTab::handleTextChanged()
-{
-    V_ASSERT(m_file->isModifiable());
-
-    if (m_modified) {
-        return;
-    }
-
-    updateStatus();
 }
 
 void VHtmlTab::showFileReadMode()
@@ -192,10 +181,6 @@ void VHtmlTab::saveAndRead()
 void VHtmlTab::discardAndRead()
 {
     readFile();
-}
-
-void VHtmlTab::scrollToAnchor(const VAnchor & /* p_anchor */)
-{
 }
 
 void VHtmlTab::insertImage()

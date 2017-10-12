@@ -77,9 +77,9 @@ void VEditArea::insertSplitWindow(int idx)
     connect(win, &VEditWindow::getFocused,
             this, &VEditArea::handleWindowFocused);
     connect(win, &VEditWindow::outlineChanged,
-            this, &VEditArea::handleOutlineChanged);
-    connect(win, &VEditWindow::curHeaderChanged,
-            this, &VEditArea::handleCurHeaderChanged);
+            this, &VEditArea::handleWindowOutlineChanged);
+    connect(win, &VEditWindow::currentHeaderChanged,
+            this, &VEditArea::handleWindowCurrentHeaderChanged);
     connect(win, &VEditWindow::statusMessage,
             this, &VEditArea::handleWindowStatusMessage);
     connect(win, &VEditWindow::vimStatusUpdated,
@@ -237,15 +237,13 @@ void VEditArea::updateWindowStatus()
         Q_ASSERT(splitter->count() == 0);
 
         emit tabStatusUpdated(VEditTabInfo());
-        emit outlineChanged(VToc());
-        emit curHeaderChanged(VAnchor());
+        emit outlineChanged(VTableOfContent());
+        emit currentHeaderChanged(VHeaderPointer());
         return;
     }
 
     VEditWindow *win = getWindow(curWindowIndex);
     win->updateTabStatus();
-    win->requestUpdateOutline();
-    win->requestUpdateCurHeader();
 }
 
 bool VEditArea::closeFile(const VFile *p_file, bool p_forced)
@@ -436,26 +434,28 @@ void VEditArea::handleWindowFocused()
     }
 }
 
-void VEditArea::handleOutlineChanged(const VToc &toc)
+void VEditArea::handleWindowOutlineChanged(const VTableOfContent &p_outline)
 {
     QObject *winObject = sender();
     if (splitter->widget(curWindowIndex) == winObject) {
-        emit outlineChanged(toc);
+        emit outlineChanged(p_outline);
     }
 }
 
-void VEditArea::handleCurHeaderChanged(const VAnchor &anchor)
+void VEditArea::handleWindowCurrentHeaderChanged(const VHeaderPointer &p_header)
 {
     QObject *winObject = sender();
     if (splitter->widget(curWindowIndex) == winObject) {
-        emit curHeaderChanged(anchor);
+        emit currentHeaderChanged(p_header);
     }
 }
 
-void VEditArea::handleOutlineItemActivated(const VAnchor &anchor)
+void VEditArea::scrollToHeader(const VHeaderPointer &p_header)
 {
-    // Notice current window
-    getWindow(curWindowIndex)->scrollCurTab(anchor);
+    VEditWindow *win = getCurrentWindow();
+    if (win) {
+        win->scrollToHeader(p_header);
+    }
 }
 
 bool VEditArea::isFileOpened(const VFile *p_file)
@@ -648,6 +648,7 @@ VEditWindow *VEditArea::getCurrentWindow() const
     if (curWindowIndex < 0) {
         return NULL;
     }
+
     return getWindow(curWindowIndex);
 }
 

@@ -1100,13 +1100,16 @@ void VMainWindow::initDockWindows()
     toolDock->setObjectName("tools_dock");
     toolDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     toolBox = new QToolBox(this);
+
+    // Outline tree.
     outline = new VOutline(this);
     connect(editArea, &VEditArea::outlineChanged,
             outline, &VOutline::updateOutline);
+    connect(editArea, &VEditArea::currentHeaderChanged,
+            outline, &VOutline::updateCurrentHeader);
     connect(outline, &VOutline::outlineItemActivated,
-            editArea, &VEditArea::handleOutlineItemActivated);
-    connect(editArea, &VEditArea::curHeaderChanged,
-            outline, &VOutline::updateCurHeader);
+            editArea, &VEditArea::scrollToHeader);
+
     toolBox->addItem(outline, QIcon(":/resources/icons/outline.svg"), tr("Outline"));
     toolDock->setWidget(toolBox);
     addDockWidget(Qt::RightDockWidgetArea, toolDock);

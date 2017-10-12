@@ -5,7 +5,7 @@
 #include "vmdeditoperations.h"
 #include "vnote.h"
 #include "vconfigmanager.h"
-#include "vtoc.h"
+#include "vtableofcontent.h"
 #include "utils/vutils.h"
 #include "utils/veditutils.h"
 #include "utils/vpreviewutils.h"
@@ -35,7 +35,7 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
                                                 document());
 
     connect(m_mdHighlighter, &HGMarkdownHighlighter::headersUpdated,
-            this, &VMdEdit::updateOutline);
+            this, &VMdEdit::updateHeaders);
 
     // After highlight, the cursor may trun into non-visible. We should make it visible
     // in this case.
@@ -74,7 +74,7 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
             this, &VEdit::vimStatusUpdated);
 
     connect(this, &VMdEdit::cursorPositionChanged,
-            this, &VMdEdit::updateCurHeader);
+            this, &VMdEdit::updateCurrentHeader);
 
     connect(QApplication::clipboard(), &QClipboard::changed,
             this, &VMdEdit::handleClipboardChanged);
@@ -111,7 +111,7 @@ void VMdEdit::beginEdit()
         setReadOnly(false);
     }
 
-    updateOutline(m_mdHighlighter->getHeaderRegions());
+    updateHeaders(m_mdHighlighter->getHeaderRegions());
 }
 
 void VMdEdit::endEdit()
@@ -345,43 +345,9 @@ void VMdEdit::clearUnusedImages()
     m_initImages.clear();
 }
 
-int VMdEdit::currentCursorHeader() const
+void VMdEdit::updateCurrentHeader()
 {
-    if (m_headers.isEmpty()) {
-        return -1;
-    }
-
-    int curLine = textCursor().block().firstLineNumber();
-    int i = 0;
-    for (i = m_headers.size() - 1; i >= 0; --i) {
-        if (!m_headers[i].isEmpty()) {
-            if (m_headers[i].lineNumber <= curLine) {
-                break;
-            }
-        }
-    }
-
-    if (i == -1) {
-        return -1;
-    } else {
-        Q_ASSERT(m_headers[i].index == i);
-        return i;
-    }
-}
-
-void VMdEdit::updateCurHeader()
-{
-    if (m_headers.isEmpty()) {
-        return;
-    }
-
-    int idx = currentCursorHeader();
-    if (idx == -1) {
-        emit curHeaderChanged(VAnchor(m_file, "", -1, -1));
-        return;
-    }
-
-    emit curHeaderChanged(VAnchor(m_file, "", m_headers[idx].lineNumber, m_headers[idx].index));
+    emit currentHeaderChanged(textCursor().block().blockNumber());
 }
 
 static void addHeaderSequence(QVector<int> &p_sequence, int p_level, int p_baseLevel)
@@ -448,11 +414,11 @@ static void insertSequenceToHeader(QTextBlock p_block,
     }
 }
 
-void VMdEdit::updateOutline(const QVector<VElementRegion> &p_headerRegions)
+void VMdEdit::updateHeaders(const QVector<VElementRegion> &p_headerRegions)
 {
     QTextDocument *doc = document();
 
-    QVector<VHeader> headers;
+    QVector<VTableOfContentItem> headers;
     QVector<int> headerBlockNumbers;
     QVector<QString> headerSequences;
     if (!p_headerRegions.isEmpty()) {
@@ -480,8 +446,10 @@ void VMdEdit::updateOutline(const QVector<VElementRegion> &p_headerRegions)
         if ((block.userState() == HighlightBlockState::Normal) &&
             headerReg.exactMatch(block.text())) {
             int level = headerReg.cap(1).length();
-            VHeader header(level, headerReg.cap(2).trimmed(),
-                           "", block.firstLineNumber(), headers.size());
+            VTableOfContentItem header(headerReg.cap(2).trimmed(),
+                                       level,
+                                       block.blockNumber(),
+                                       headers.size());
             headers.append(header);
             headerBlockNumbers.append(block.blockNumber());
             headerSequences.append(headerReg.cap(3));
@@ -506,22 +474,25 @@ void VMdEdit::updateOutline(const QVector<VElementRegion> &p_headerRegions)
     QRegExp preReg(VUtils::c_headerPrefixRegExp);
     int curLevel = baseLevel - 1;
     for (int i = 0; i < headers.size(); ++i) {
-        VHeader &item = headers[i];
-        while (item.level > curLevel + 1) {
+        VTableOfContentItem &item = headers[i];
+        while (item.m_level > curLevel + 1) {
             curLevel += 1;
 
             // Insert empty level which is an invalid header.
-            m_headers.append(VHeader(curLevel, c_emptyHeaderName, "", -1, m_headers.size()));
+            m_headers.append(VTableOfContentItem(c_emptyHeaderName,
+                                                 curLevel,
+                                                 -1,
+                                                 m_headers.size()));
             if (autoSequence) {
                 addHeaderSequence(seqs, curLevel, headingSequenceBaseLevel);
             }
         }
 
-        item.index = m_headers.size();
+        item.m_index = m_headers.size();
         m_headers.append(item);
-        curLevel = item.level;
+        curLevel = item.m_level;
         if (autoSequence) {
-            addHeaderSequence(seqs, item.level, headingSequenceBaseLevel);
+            addHeaderSequence(seqs, item.m_level, headingSequenceBaseLevel);
 
             QString seqStr = headerSequenceStr(seqs);
             if (headerSequences[i] != seqStr) {
@@ -536,39 +507,16 @@ void VMdEdit::updateOutline(const QVector<VElementRegion> &p_headerRegions)
 
     emit headersChanged(m_headers);
 
-    updateCurHeader();
+    updateCurrentHeader();
 }
 
-void VMdEdit::scrollToAnchor(const VAnchor &p_anchor)
+bool VMdEdit::scrollToHeader(int p_blockNumber)
 {
-    if (p_anchor.lineNumber == -1
-        || p_anchor.m_outlineIndex < 0) {
-        // Move to the start of document if m_headers is not empty.
-        // Otherwise, there is no outline, so just let it be.
-        if (!m_headers.isEmpty()) {
-            moveCursor(QTextCursor::Start);
-        }
-
-        return;
-    } else if (p_anchor.m_outlineIndex >= m_headers.size()) {
-        return;
+    if (p_blockNumber < 0) {
+        return false;
     }
 
-    scrollToLine(p_anchor.lineNumber);
-}
-
-bool VMdEdit::scrollToAnchor(int p_anchorIndex)
-{
-    if (p_anchorIndex >= 0 && p_anchorIndex < m_headers.size()) {
-        int lineNumber = m_headers[p_anchorIndex].lineNumber;
-        if (lineNumber >= 0) {
-            scrollToLine(lineNumber);
-
-            return true;
-        }
-    }
-
-    return false;
+    return scrollToBlock(p_blockNumber);
 }
 
 QString VMdEdit::toPlainTextWithoutImg()
@@ -742,9 +690,21 @@ void VMdEdit::resizeEvent(QResizeEvent *p_event)
     VEdit::resizeEvent(p_event);
 }
 
-const QVector<VHeader> &VMdEdit::getHeaders() const
+int VMdEdit::indexOfCurrentHeader() const
 {
-    return m_headers;
+    if (m_headers.isEmpty()) {
+        return -1;
+    }
+
+    int blockNumber = textCursor().block().blockNumber();
+    for (int i = m_headers.size() - 1; i >= 0; --i) {
+        if (!m_headers[i].isEmpty()
+            && m_headers[i].m_blockNumber <= blockNumber) {
+            return i;
+        }
+    }
+
+    return -1;
 }
 
 bool VMdEdit::jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat)
@@ -754,11 +714,11 @@ bool VMdEdit::jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat)
     }
 
     QTextCursor cursor = textCursor();
-    int cursorLine = cursor.block().firstLineNumber();
+    int cursorLine = cursor.block().blockNumber();
     int targetIdx = -1;
     // -1: skip level check.
     int targetLevel = 0;
-    int idx = currentCursorHeader();
+    int idx = indexOfCurrentHeader();
     if (idx == -1) {
         // Cursor locates at the beginning, before any headers.
         if (p_relativeLevel < 0 || !p_forward) {
@@ -775,7 +735,7 @@ bool VMdEdit::jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat)
     for (targetIdx = idx == -1 ? 0 : idx;
          targetIdx >= 0 && targetIdx < m_headers.size();
          targetIdx += delta) {
-        const VHeader &header = m_headers[targetIdx];
+        const VTableOfContentItem &header = m_headers[targetIdx];
         if (header.isEmpty()) {
             continue;
         }
@@ -783,7 +743,7 @@ bool VMdEdit::jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat)
         if (targetLevel == 0) {
             // The target level has not been init yet.
             Q_ASSERT(firstHeader);
-            targetLevel = header.level;
+            targetLevel = header.m_level;
             if (p_relativeLevel < 0) {
                 targetLevel += p_relativeLevel;
                 if (targetLevel < 1) {
@@ -795,9 +755,9 @@ bool VMdEdit::jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat)
             }
         }
 
-        if (targetLevel == -1 || header.level == targetLevel) {
+        if (targetLevel == -1 || header.m_level == targetLevel) {
             if (firstHeader
-                && (cursorLine == header.lineNumber
+                && (cursorLine == header.m_blockNumber
                     || p_forward)
                 && idx != -1) {
                 // This header is not counted for the repeat.
@@ -809,7 +769,7 @@ bool VMdEdit::jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat)
                 // Found.
                 break;
             }
-        } else if (header.level < targetLevel) {
+        } else if (header.m_level < targetLevel) {
             // Stop by higher level.
             return false;
         }
@@ -822,9 +782,9 @@ bool VMdEdit::jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat)
     }
 
     // Jump to target header.
-    int line = m_headers[targetIdx].lineNumber;
+    int line = m_headers[targetIdx].m_blockNumber;
     if (line > -1) {
-        QTextBlock block = document()->findBlockByLineNumber(line);
+        QTextBlock block = document()->findBlockByNumber(line);
         if (block.isValid()) {
             cursor.setPosition(block.position());
             setTextCursor(cursor);
@@ -851,7 +811,7 @@ void VMdEdit::finishOneAsyncJob(int p_idx)
         m_freshEdit = false;
         emit statusChanged();
 
-        updateOutline(m_mdHighlighter->getHeaderRegions());
+        updateHeaders(m_mdHighlighter->getHeaderRegions());
 
         emit ready();
     }

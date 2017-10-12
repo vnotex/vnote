@@ -12,7 +12,7 @@ namespace FileSessionConfig
     static const QString c_mode = "mode";
 
     // Index in outline of the anchor.
-    static const QString c_anchorIndex = "anchor_index";
+    static const QString c_headerIndex = "header_index";
 
     static const QString c_cursorBlockNumber = "cursor_block_number";
     static const QString c_cursorPositionInBlock = "cursor_position_in_block";
@@ -44,8 +44,8 @@ public:
     // Mode of this file in this session.
     OpenFileMode m_mode;
 
-    // Index in outline of the anchor.
-    int m_anchorIndex;
+    // Index in outline of the header.
+    int m_headerIndex;
 
     // Block number of cursor block.
     int m_cursorBlockNumber;
