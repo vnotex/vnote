@@ -464,7 +464,7 @@ void VMdEdit::updateHeaders(const QVector<VElementRegion> &p_headerRegions)
 
     m_headers.clear();
 
-    bool autoSequence = g_config->getEnableHeadingSequence() && !isReadOnly();
+    bool autoSequence = m_config.m_enableHeadingSequence && !isReadOnly();
     int headingSequenceBaseLevel = g_config->getHeadingSequenceBaseLevel();
     if (headingSequenceBaseLevel < 1 || headingSequenceBaseLevel > 6) {
         headingSequenceBaseLevel = 1;

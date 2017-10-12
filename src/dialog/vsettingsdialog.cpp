@@ -603,28 +603,34 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     m_openModeCombo->addItem(tr("Read Mode"), (int)OpenFileMode::Read);
     m_openModeCombo->addItem(tr("Edit Mode"), (int)OpenFileMode::Edit);
 
-    QLabel *openModeLabel = new QLabel(tr("Note open mode:"));
-    openModeLabel->setToolTip(m_openModeCombo->toolTip());
-
     // Heading sequence.
-    m_headingSequence = new QCheckBox(tr("Heading sequence"));
-    m_headingSequence->setToolTip(tr("Enable auto sequence for all headings (in the form like 1.2.3.4.)"));
-    m_headingSequenceCombo = new QComboBox();
-    m_headingSequenceCombo->setToolTip(tr("Base level to start heading sequence"));
-    m_headingSequenceCombo->addItem(tr("1"), 1);
-    m_headingSequenceCombo->addItem(tr("2"), 2);
-    m_headingSequenceCombo->addItem(tr("3"), 3);
-    m_headingSequenceCombo->addItem(tr("4"), 4);
-    m_headingSequenceCombo->addItem(tr("5"), 5);
-    m_headingSequenceCombo->addItem(tr("6"), 6);
-    m_headingSequenceCombo->setEnabled(false);
-    connect(m_headingSequence, &QCheckBox::stateChanged,
-            this, [this](int p_state){
-                this->m_headingSequenceCombo->setEnabled(p_state == Qt::Checked);
+    m_headingSequenceTypeCombo = new QComboBox();
+    m_headingSequenceTypeCombo->setToolTip(tr("Enable auto sequence for all headings (in the form like 1.2.3.4.)"));
+    m_headingSequenceTypeCombo->addItem(tr("Disabled"), (int)HeadingSequenceType::Disabled);
+    m_headingSequenceTypeCombo->addItem(tr("Enabled"), (int)HeadingSequenceType::Enabled);
+    m_headingSequenceTypeCombo->addItem(tr("Enabled for notes only"), (int)HeadingSequenceType::EnabledNoteOnly);
+
+    m_headingSequenceLevelCombo = new QComboBox();
+    m_headingSequenceLevelCombo->setToolTip(tr("Base level to start heading sequence"));
+    m_headingSequenceLevelCombo->addItem(tr("1"), 1);
+    m_headingSequenceLevelCombo->addItem(tr("2"), 2);
+    m_headingSequenceLevelCombo->addItem(tr("3"), 3);
+    m_headingSequenceLevelCombo->addItem(tr("4"), 4);
+    m_headingSequenceLevelCombo->addItem(tr("5"), 5);
+    m_headingSequenceLevelCombo->addItem(tr("6"), 6);
+    m_headingSequenceLevelCombo->setEnabled(false);
+
+    connect(m_headingSequenceTypeCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
+            this, [this](int p_index){
+                if (p_index > -1) {
+                    HeadingSequenceType type = (HeadingSequenceType)m_headingSequenceTypeCombo->itemData(p_index).toInt();
+                    m_headingSequenceLevelCombo->setEnabled(type != HeadingSequenceType::Disabled);
+                }
             });
+
     QHBoxLayout *headingSequenceLayout = new QHBoxLayout();
-    headingSequenceLayout->addWidget(m_headingSequence);
-    headingSequenceLayout->addWidget(m_headingSequenceCombo);
+    headingSequenceLayout->addWidget(m_headingSequenceTypeCombo);
+    headingSequenceLayout->addWidget(m_headingSequenceLevelCombo);
 
     // Web Zoom Factor.
     m_customWebZoom = new QCheckBox(tr("Custom Web zoom factor"), this);
@@ -652,8 +658,8 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     colorColumnLabel->setToolTip(m_colorColumnEdit->toolTip());
 
     QFormLayout *mainLayout = new QFormLayout();
-    mainLayout->addRow(openModeLabel, m_openModeCombo);
-    mainLayout->addRow(headingSequenceLayout);
+    mainLayout->addRow(tr("Note open mode:"), m_openModeCombo);
+    mainLayout->addRow(tr("Heading sequence:"), headingSequenceLayout);
     mainLayout->addRow(zoomFactorLayout);
     mainLayout->addRow(colorColumnLabel, m_colorColumnEdit);
 
@@ -727,21 +733,28 @@ bool VMarkdownTab::saveOpenMode()
 
 bool VMarkdownTab::loadHeadingSequence()
 {
-    bool enabled = g_config->getEnableHeadingSequence();
+    HeadingSequenceType type = g_config->getHeadingSequenceType();
     int level = g_config->getHeadingSequenceBaseLevel();
     if (level < 1 || level > 6) {
         level = 1;
     }
 
-    m_headingSequence->setChecked(enabled);
-    m_headingSequenceCombo->setCurrentIndex(level - 1);
+    int idx = m_headingSequenceTypeCombo->findData((int)type);
+    Q_ASSERT(idx > -1);
+    m_headingSequenceTypeCombo->setCurrentIndex(idx);
+    m_headingSequenceLevelCombo->setCurrentIndex(level - 1);
+    m_headingSequenceLevelCombo->setEnabled(type != HeadingSequenceType::Disabled);
+
     return true;
 }
 
 bool VMarkdownTab::saveHeadingSequence()
 {
-    g_config->setEnableHeadingSequence(m_headingSequence->isChecked());
-    g_config->setHeadingSequenceBaseLevel(m_headingSequenceCombo->currentData().toInt());
+    QVariant typeData = m_headingSequenceTypeCombo->currentData();
+    Q_ASSERT(typeData.isValid());
+    g_config->setHeadingSequenceType((HeadingSequenceType)typeData.toInt());
+    g_config->setHeadingSequenceBaseLevel(m_headingSequenceLevelCombo->currentData().toInt());
+
     return true;
 }
 

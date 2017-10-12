@@ -43,6 +43,18 @@ struct MarkdownitOption
     bool m_linkify;
 };
 
+// Type of heading sequence.
+enum class HeadingSequenceType
+{
+    Disabled = 0,
+    Enabled,
+
+    // Enabled only for internal notes.
+    EnabledNoteOnly,
+
+    Invalid
+};
+
 class VConfigManager : public QObject
 {
 public:
@@ -262,8 +274,8 @@ public:
     OpenFileMode getNoteOpenMode() const;
     void setNoteOpenMode(OpenFileMode p_mode);
 
-    bool getEnableHeadingSequence() const;
-    void setEnableHeadingSequence(bool p_enabled);
+    HeadingSequenceType getHeadingSequenceType() const;
+    void setHeadingSequenceType(HeadingSequenceType p_type);
 
     int getHeadingSequenceBaseLevel() const;
     void setHeadingSequenceBaseLevel(int p_level);
@@ -599,7 +611,7 @@ private:
     OpenFileMode m_noteOpenMode;
 
     // Whether auto genearte heading sequence.
-    bool m_enableHeadingSequence;
+    HeadingSequenceType m_headingSequenceType;
 
     // Heading sequence base level.
     int m_headingSequenceBaseLevel;
@@ -1471,20 +1483,21 @@ inline void VConfigManager::setNoteOpenMode(OpenFileMode p_mode)
                         m_noteOpenMode == OpenFileMode::Read ? 0 : 1);
 }
 
-inline bool VConfigManager::getEnableHeadingSequence() const
+inline HeadingSequenceType VConfigManager::getHeadingSequenceType() const
 {
-    return m_enableHeadingSequence;
+    return m_headingSequenceType;
 }
 
-inline void VConfigManager::setEnableHeadingSequence(bool p_enabled)
+inline void VConfigManager::setHeadingSequenceType(HeadingSequenceType p_type)
 {
-    if (m_enableHeadingSequence == p_enabled) {
+    if (m_headingSequenceType == p_type) {
         return;
     }
 
-    m_enableHeadingSequence = p_enabled;
-    setConfigToSettings("global", "enable_heading_sequence",
-                        m_enableHeadingSequence);
+    m_headingSequenceType = p_type;
+    setConfigToSettings("global",
+                        "heading_sequence_type",
+                        (int)m_headingSequenceType);
 }
 
 inline int VConfigManager::getHeadingSequenceBaseLevel() const

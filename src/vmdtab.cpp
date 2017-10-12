@@ -22,12 +22,24 @@ extern VConfigManager *g_config;
 
 VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
                OpenFileMode p_mode, QWidget *p_parent)
-    : VEditTab(p_file, p_editArea, p_parent), m_editor(NULL), m_webViewer(NULL),
-      m_document(NULL), m_mdConType(g_config->getMdConverterType())
+    : VEditTab(p_file, p_editArea, p_parent),
+      m_editor(NULL),
+      m_webViewer(NULL),
+      m_document(NULL),
+      m_mdConType(g_config->getMdConverterType()),
+      m_enableHeadingSequence(false)
 {
     V_ASSERT(m_file->getDocType() == DocType::Markdown);
 
     m_file->open();
+
+    HeadingSequenceType headingSequenceType = g_config->getHeadingSequenceType();
+    if (headingSequenceType == HeadingSequenceType::Enabled) {
+        m_enableHeadingSequence = true;
+    } else if (headingSequenceType == HeadingSequenceType::EnabledNoteOnly
+               && m_file->getType() == FileType::Note) {
+        m_enableHeadingSequence = true;
+    }
 
     setupUI();
 
@@ -344,6 +356,7 @@ void VMdTab::setupMarkdownEditor()
 {
     Q_ASSERT(m_file->isModifiable() && !m_editor);
     qDebug() << "create Markdown editor";
+
     m_editor = new VMdEdit(m_file, m_document, m_mdConType, this);
     connect(dynamic_cast<VMdEdit *>(m_editor), &VMdEdit::headersChanged,
             this, &VMdTab::updateOutlineFromHeaders);
@@ -372,6 +385,7 @@ void VMdTab::setupMarkdownEditor()
     connect(m_editor, SIGNAL(ready(void)),
             this, SLOT(restoreFromTabInfo(void)));
 
+    enableHeadingSequence(m_enableHeadingSequence);
     m_editor->reloadFile();
     m_stacks->addWidget(m_editor);
 }
@@ -653,4 +667,19 @@ void VMdTab::restoreFromTabInfo()
 
     // Clear it anyway.
     m_infoToRestore.clear();
+}
+
+void VMdTab::enableHeadingSequence(bool p_enabled)
+{
+    m_enableHeadingSequence = p_enabled;
+
+    if (m_editor) {
+        VEditConfig &config = m_editor->getConfig();
+        config.m_enableHeadingSequence = m_enableHeadingSequence;
+    }
+}
+
+bool VMdTab::isHeadingSequenceEnabled() const
+{
+    return m_enableHeadingSequence;
 }

@@ -202,8 +202,10 @@ private:
 
     void initEditorStyleMenu(QMenu *p_emnu);
     void updateWindowTitle(const QString &str);
-    void updateActionStateFromTabStatusChange(const VFile *p_file,
-                                              bool p_editMode);
+
+    // Update state of actions according to @p_tab.
+    void updateActionsStateFromTab(const VEditTab *p_tab);
+
     void saveStateAndGeometry();
     void restoreStateAndGeometry();
     void repositionAvatar();
@@ -230,6 +232,10 @@ private:
     // Change the panel view according to @p_state.
     // Will not change m_panelViewState.
     void changePanelView(PanelViewState p_state);
+
+    // Whether heading sequence is applicable to current tab.
+    // Only available for writable Markdown file.
+    bool isHeadingSequenceApplicable() const;
 
     VNote *vnote;
     QPointer<VFile> m_curFile;
@@ -284,6 +290,9 @@ private:
     QAction *m_replaceAllAct;
 
     QAction *m_autoIndentAct;
+
+    // Enable heading sequence for current note.
+    QAction *m_headingSequenceAct;
 
     // Act group for render styles.
     QActionGroup *m_renderStyleActs;

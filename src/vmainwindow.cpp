@@ -331,6 +331,7 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
     viewToolBar->addAction(expandViewAct);
 }
 
+// Enable/disable all actions of @p_widget.
 static void setActionsEnabled(QWidget *p_widget, bool p_enabled)
 {
     Q_ASSERT(p_widget);
@@ -350,6 +351,22 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
     }
 
     m_editToolBar->addSeparator();
+
+    m_headingSequenceAct = new QAction(QIcon(":/resources/icons/heading_sequence.svg"),
+                                       tr("Heading Sequence"),
+                                       this);
+    m_headingSequenceAct->setStatusTip(tr("Enable heading sequence in current note in edit mode"));
+    m_headingSequenceAct->setCheckable(true);
+    connect(m_headingSequenceAct, &QAction::triggered,
+            this, [this](bool p_checked){
+                if (isHeadingSequenceApplicable()) {
+                    VMdTab *tab = dynamic_cast<VMdTab *>(m_curTab.data());
+                    Q_ASSERT(tab);
+                    tab->enableHeadingSequence(p_checked);
+                }
+            });
+
+    m_editToolBar->addAction(m_headingSequenceAct);
 
     QAction *boldAct = new QAction(QIcon(":/resources/icons/bold.svg"),
                                    tr("Bold (Ctrl+B)"), this);
@@ -1694,61 +1711,66 @@ void VMainWindow::setCodeBlockStyle(QAction *p_action)
     }
 }
 
-void VMainWindow::updateActionStateFromTabStatusChange(const VFile *p_file,
-                                                       bool p_editMode)
+void VMainWindow::updateActionsStateFromTab(const VEditTab *p_tab)
 {
-    bool systemFile = p_file
-                      && p_file->getType() == FileType::Orphan
-                      && dynamic_cast<const VOrphanFile *>(p_file)->isSystemFile();
+    const VFile *file = p_tab ? p_tab->getFile() : NULL;
+    bool editMode = p_tab ? p_tab->isEditMode() : false;
+    bool systemFile = file
+                      && file->getType() == FileType::Orphan
+                      && dynamic_cast<const VOrphanFile *>(file)->isSystemFile();
 
-    m_printAct->setEnabled(p_file && p_file->getDocType() == DocType::Markdown);
-    m_exportAsPDFAct->setEnabled(p_file && p_file->getDocType() == DocType::Markdown);
+    m_printAct->setEnabled(file && file->getDocType() == DocType::Markdown);
+    m_exportAsPDFAct->setEnabled(file && file->getDocType() == DocType::Markdown);
 
-    discardExitAct->setVisible(p_file && p_editMode);
-    saveExitAct->setVisible(p_file && p_editMode);
-    editNoteAct->setEnabled(p_file && p_file->isModifiable() && !p_editMode);
+    discardExitAct->setVisible(file && editMode);
+    saveExitAct->setVisible(file && editMode);
+    editNoteAct->setEnabled(file && file->isModifiable() && !editMode);
     editNoteAct->setVisible(!saveExitAct->isVisible());
-    saveNoteAct->setEnabled(p_file && p_editMode);
-    deleteNoteAct->setEnabled(p_file && p_file->getType() == FileType::Note);
-    noteInfoAct->setEnabled(p_file && !systemFile);
+    saveNoteAct->setEnabled(file && editMode);
+    deleteNoteAct->setEnabled(file && file->getType() == FileType::Note);
+    noteInfoAct->setEnabled(file && !systemFile);
 
-    m_attachmentBtn->setEnabled(p_file && p_file->getType() == FileType::Note);
+    m_attachmentBtn->setEnabled(file && file->getType() == FileType::Note);
 
-    m_insertImageAct->setEnabled(p_file && p_editMode);
+    m_insertImageAct->setEnabled(file && editMode);
 
-    setActionsEnabled(m_editToolBar, p_file && p_editMode);
+    setActionsEnabled(m_editToolBar, file && editMode);
+
+    // Handle heading sequence act independently.
+    m_headingSequenceAct->setEnabled(isHeadingSequenceApplicable());
+    const VMdTab *mdTab = dynamic_cast<const VMdTab *>(p_tab);
+    m_headingSequenceAct->setChecked(mdTab && mdTab->isHeadingSequenceEnabled());
 
     // Find/Replace
-    m_findReplaceAct->setEnabled(p_file);
-    m_findNextAct->setEnabled(p_file);
-    m_findPreviousAct->setEnabled(p_file);
-    m_replaceAct->setEnabled(p_file && p_editMode);
-    m_replaceFindAct->setEnabled(p_file && p_editMode);
-    m_replaceAllAct->setEnabled(p_file && p_editMode);
+    m_findReplaceAct->setEnabled(file);
+    m_findNextAct->setEnabled(file);
+    m_findPreviousAct->setEnabled(file);
+    m_replaceAct->setEnabled(file && editMode);
+    m_replaceFindAct->setEnabled(file && editMode);
+    m_replaceAllAct->setEnabled(file && editMode);
 
-    if (!p_file) {
+    if (!file) {
         m_findReplaceDialog->closeDialog();
     }
 }
 
 void VMainWindow::handleAreaTabStatusUpdated(const VEditTabInfo &p_info)
 {
-    bool editMode = false;
     m_curTab = p_info.m_editTab;
     if (m_curTab) {
         m_curFile = m_curTab->getFile();
-        editMode = m_curTab->isEditMode();
     } else {
         m_curFile = NULL;
     }
 
-    updateActionStateFromTabStatusChange(m_curFile, editMode);
+    updateActionsStateFromTab(m_curTab);
 
     m_attachmentList->setFile(dynamic_cast<VNoteFile *>(m_curFile.data()));
 
     QString title;
     if (m_curFile) {
-        m_findReplaceDialog->updateState(m_curFile->getDocType(), editMode);
+        m_findReplaceDialog->updateState(m_curFile->getDocType(),
+                                         m_curTab->isEditMode());
 
         if (m_curFile->getType() == FileType::Note) {
             const VNoteFile *tmpFile = dynamic_cast<const VNoteFile *>((VFile *)m_curFile);
@@ -2464,4 +2486,20 @@ void VMainWindow::openStartupPages()
     default:
         break;
     }
+}
+
+bool VMainWindow::isHeadingSequenceApplicable() const
+{
+    if (!m_curTab) {
+        return false;
+    }
+
+    Q_ASSERT(m_curFile);
+
+    if (!m_curFile->isModifiable()
+        || m_curFile->getDocType() != DocType::Markdown) {
+        return false;
+    }
+
+    return true;
 }

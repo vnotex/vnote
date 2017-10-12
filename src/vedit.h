@@ -37,10 +37,12 @@ public:
                     m_tabSpaces("\t"),
                     m_enableVimMode(false),
                     m_highlightWholeBlock(false),
-                    m_lineDistanceHeight(0)
+                    m_lineDistanceHeight(0),
+                    m_enableHeadingSequence(false)
     {}
 
-    void init(const QFontMetrics &p_metric);
+    void init(const QFontMetrics &p_metric,
+              bool p_enableHeadingSequence);
 
     // Only update those configs which could be updated online.
     void update(const QFontMetrics &p_metric);
@@ -63,6 +65,9 @@ public:
 
     // Line distance height in pixels.
     int m_lineDistanceHeight;
+
+    // Whether enable auto heading sequence.
+    bool m_enableHeadingSequence;
 };
 
 class LineNumberArea;

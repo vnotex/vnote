@@ -191,8 +191,14 @@ void VConfigManager::initialize()
         m_noteOpenMode = OpenFileMode::Read;
     }
 
-    m_enableHeadingSequence = getConfigFromSettings("global",
-                                                    "enable_heading_sequence").toBool();
+    int tmpHeadingSequenceType = getConfigFromSettings("global",
+                                                       "heading_sequence_type").toInt();
+    if (tmpHeadingSequenceType < (int)HeadingSequenceType::Invalid
+        && tmpHeadingSequenceType >= (int)HeadingSequenceType::Disabled) {
+        m_headingSequenceType = (HeadingSequenceType)tmpHeadingSequenceType;
+    } else {
+        m_headingSequenceType = HeadingSequenceType::Disabled;
+    }
 
     m_headingSequenceBaseLevel = getConfigFromSettings("global",
                                                        "heading_sequence_base_level").toInt();

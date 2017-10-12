@@ -13,10 +13,12 @@
 extern VConfigManager *g_config;
 extern VNote *g_vnote;
 
-void VEditConfig::init(const QFontMetrics &p_metric)
+void VEditConfig::init(const QFontMetrics &p_metric,
+                       bool p_enableHeadingSequence)
 {
     update(p_metric);
 
+    // Init configs that do not support update later.
     m_enableVimMode = g_config->getEnableVimMode();
 
     if (g_config->getLineDistanceHeight() <= 0) {
@@ -26,6 +28,8 @@ void VEditConfig::init(const QFontMetrics &p_metric)
     }
 
     m_highlightWholeBlock = m_enableVimMode;
+
+    m_enableHeadingSequence = p_enableHeadingSequence;
 }
 
 void VEditConfig::update(const QFontMetrics &p_metric)
@@ -84,7 +88,7 @@ VEdit::VEdit(VFile *p_file, QWidget *p_parent)
 
     updateFontAndPalette();
 
-    m_config.init(QFontMetrics(font()));
+    m_config.init(QFontMetrics(font()), false);
     updateConfig();
 
     connect(this, &VEdit::cursorPositionChanged,

@@ -65,6 +65,11 @@ public:
     // Create a filled VEditTabInfo.
     VEditTabInfo fetchTabInfo() const Q_DECL_OVERRIDE;
 
+    // Enable or disable heading sequence.
+    void enableHeadingSequence(bool p_enabled);
+
+    bool isHeadingSequenceEnabled() const;
+
 public slots:
     // Enter edit mode.
     void editFile() Q_DECL_OVERRIDE;
@@ -148,6 +153,9 @@ private:
     VWebView *m_webViewer;
     VDocument *m_document;
     MarkdownConverterType m_mdConType;
+
+    // Whether heading sequence is enabled.
+    bool m_enableHeadingSequence;
 
     QStackedLayout *m_stacks;
 };

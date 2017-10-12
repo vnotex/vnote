@@ -117,8 +117,8 @@ public:
     QComboBox *m_openModeCombo;
 
     // Whether enable heading sequence.
-    QCheckBox *m_headingSequence;
-    QComboBox *m_headingSequenceCombo;
+    QComboBox *m_headingSequenceTypeCombo;
+    QComboBox *m_headingSequenceLevelCombo;
 
     // Web zoom factor.
     QCheckBox *m_customWebZoom;
