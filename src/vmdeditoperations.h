@@ -47,6 +47,10 @@ private:
     bool handleKeyEsc(QKeyEvent *p_event);
     bool handleKeyReturn(QKeyEvent *p_event);
     bool handleKeyBracketLeft(QKeyEvent *p_event);
+
+    // Insert title of level @p_level.
+    // Will detect if current block already has some leading #s. If yes,
+    // will delete it and insert the correct #s.
     bool insertTitle(int p_level);
 
     // Change the sequence number of a list block.

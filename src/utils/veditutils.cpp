@@ -689,3 +689,49 @@ bool VEditUtils::needToCancelAutoIndent(int p_autoIndentPos, const QTextCursor &
 
     return false;
 }
+
+void VEditUtils::insertTitleMark(QTextCursor &p_cursor,
+                                 const QTextBlock &p_block,
+                                 int p_level)
+{
+    if (!p_block.isValid()) {
+        return;
+    }
+
+    Q_ASSERT(p_level >= 1 && p_level <= 6);
+
+    bool needInsert = true;
+
+    p_cursor.setPosition(p_block.position());
+
+    // Test if this block contains title marks.
+    QRegExp headerReg(VUtils::c_headerRegExp);
+    QString text = p_block.text();
+    bool matched = headerReg.exactMatch(text);
+    if (matched) {
+        int level = headerReg.cap(1).length();
+        if (level == p_level) {
+            needInsert = false;
+        } else {
+            // Remove the title mark.
+            p_cursor.movePosition(QTextCursor::NextCharacter,
+                                  QTextCursor::KeepAnchor,
+                                  level);
+            p_cursor.removeSelectedText();
+        }
+    }
+
+    // Insert titleMark + " " at the front of the block.
+    if (needInsert) {
+        // Remove the spaces at front.
+        // insertText() will remove the selection.
+        moveCursorFirstNonSpaceCharacter(p_cursor, QTextCursor::KeepAnchor);
+
+        // Insert.
+        const QString titleMark(p_level, '#');
+        p_cursor.insertText(titleMark + " ");
+    }
+
+    // Go to the end of this block.
+    p_cursor.movePosition(QTextCursor::EndOfBlock);
+}

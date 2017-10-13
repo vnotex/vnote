@@ -132,7 +132,15 @@ public:
 
     // Check if we need to cancel auto indent.
     // @p_autoIndentPos: the position of the cursor after auto indent.
-    static bool needToCancelAutoIndent(int p_autoIndentPos, const QTextCursor &p_cursor);
+    static bool needToCancelAutoIndent(int p_autoIndentPos,
+                                       const QTextCursor &p_cursor);
+
+    // Insert title Mark at level @p_level in front of block @p_block
+    // If there already exists title marks, remove it first.
+    // Move cursor at the end of the block after insertion.
+    static void insertTitleMark(QTextCursor &p_cursor,
+                                const QTextBlock &p_block,
+                                int p_level);
 
 private:
     VEditUtils() {}

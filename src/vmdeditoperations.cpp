@@ -626,33 +626,25 @@ void VMdEditOperations::changeListBlockSeqNumber(QTextBlock &p_block, int p_seq)
 
 bool VMdEditOperations::insertTitle(int p_level)
 {
-    Q_ASSERT(p_level > 0 && p_level < 7);
     QTextDocument *doc = m_editor->document();
-    QString titleMark(p_level, '#');
     QTextCursor cursor = m_editor->textCursor();
+    int firstBlock = cursor.block().blockNumber();
+    int lastBlock = firstBlock;
+
     if (cursor.hasSelection()) {
-        // Insert title # in front of the selected lines.
+        // Insert title # in front of the selected blocks.
         int start = cursor.selectionStart();
         int end = cursor.selectionEnd();
-        int startBlock = doc->findBlock(start).blockNumber();
-        int endBlock = doc->findBlock(end).blockNumber();
-        cursor.beginEditBlock();
-        cursor.clearSelection();
-        for (int i = startBlock; i <= endBlock; ++i) {
-            QTextBlock block = doc->findBlockByNumber(i);
-            cursor.setPosition(block.position(), QTextCursor::MoveAnchor);
-            cursor.insertText(titleMark + " ");
-        }
-        cursor.movePosition(QTextCursor::EndOfBlock);
-        cursor.endEditBlock();
-    } else {
-        // Insert title # in front of current block.
-        cursor.beginEditBlock();
-        cursor.movePosition(QTextCursor::StartOfBlock);
-        cursor.insertText(titleMark + " ");
-        cursor.movePosition(QTextCursor::EndOfBlock);
-        cursor.endEditBlock();
+        firstBlock = doc->findBlock(start).blockNumber();
+        lastBlock = doc->findBlock(end).blockNumber();
     }
+
+    cursor.beginEditBlock();
+    for (int i = firstBlock; i <= lastBlock; ++i) {
+        VEditUtils::insertTitleMark(cursor, doc->findBlockByNumber(i), p_level);
+    }
+
+    cursor.endEditBlock();
     m_editor->setTextCursor(cursor);
     return true;
 }

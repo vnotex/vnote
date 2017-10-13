@@ -286,7 +286,7 @@ bool VMdTab::saveFile()
         return true;
     }
 
-    bool ret;
+    bool ret = true;
     // Make sure the file already exists. Temporary deal with cases when user delete or move
     // a file.
     QString filePath = m_file->fetchPath();
@@ -296,17 +296,19 @@ bool VMdTab::saveFile()
                             tr("File <span style=\"%1\">%2</span> being written has been removed.")
                               .arg(g_config->c_dataTextStyle).arg(filePath),
                             QMessageBox::Ok, QMessageBox::Ok, this);
-        return false;
+        ret = false;
+    } else {
+        m_editor->saveFile();
+        ret = m_file->save();
+        if (!ret) {
+            VUtils::showMessage(QMessageBox::Warning, tr("Warning"), tr("Fail to save note."),
+                                tr("Fail to write to disk when saving a note. Please try it again."),
+                                QMessageBox::Ok, QMessageBox::Ok, this);
+            m_editor->setModified(true);
+        }
     }
 
-    m_editor->saveFile();
-    ret = m_file->save();
-    if (!ret) {
-        VUtils::showMessage(QMessageBox::Warning, tr("Warning"), tr("Fail to save note."),
-                            tr("Fail to write to disk when saving a note. Please try it again."),
-                            QMessageBox::Ok, QMessageBox::Ok, this);
-        m_editor->setModified(true);
-    }
+    updateStatus();
 
     return ret;
 }
