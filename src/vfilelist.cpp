@@ -263,7 +263,7 @@ void VFileList::fileInfo(VNoteFile *p_file)
 
 void VFileList::fillItem(QListWidgetItem *p_item, const VNoteFile *p_file)
 {
-    unsigned long long ptr = (long long)p_file;
+    qulonglong ptr = (qulonglong)p_file;
     p_item->setData(Qt::UserRole, ptr);
     p_item->setToolTip(p_file->getName());
     p_item->setText(p_file->getName());

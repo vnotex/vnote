@@ -65,6 +65,8 @@ public:
 
     VFileList *getFileList() const;
 
+    VEditArea *getEditArea() const;
+
     // View and edit the information of @p_file, which is an orphan file.
     void editOrphanFileInfo(VFile *p_file);
 
@@ -257,6 +259,7 @@ private:
     QSplitter *m_naviSplitter;
 
     VEditArea *editArea;
+
     QDockWidget *toolDock;
     QToolBox *toolBox;
     VOutline *outline;
@@ -343,6 +346,11 @@ private:
 inline VFileList *VMainWindow::getFileList() const
 {
     return m_fileList;
+}
+
+inline VEditArea *VMainWindow::getEditArea() const
+{
+    return editArea;
 }
 
 #endif // VMAINWINDOW_H

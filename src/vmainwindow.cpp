@@ -115,7 +115,6 @@ void VMainWindow::setupUI()
     m_findReplaceDialog = editArea->getFindReplaceDialog();
     m_fileList->setEditArea(editArea);
     directoryTree->setEditArea(editArea);
-    notebookSelector->setEditArea(editArea);
 
     // Main Splitter
     m_mainSplitter = new QSplitter();
@@ -180,7 +179,7 @@ QWidget *VMainWindow::setupDirectoryPanel()
     notebookLabel->setProperty("TitleLabel", true);
     notebookLabel->setProperty("NotebookPanel", true);
 
-    notebookSelector = new VNotebookSelector(vnote);
+    notebookSelector = new VNotebookSelector();
     notebookSelector->setObjectName("NotebookSelector");
     notebookSelector->setProperty("NotebookPanel", true);
     notebookSelector->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
