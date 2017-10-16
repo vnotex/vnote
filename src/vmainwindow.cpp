@@ -1954,7 +1954,7 @@ bool VMainWindow::locateFile(VFile *p_file)
     }
 
     // Open the directory and file panels after location.
-    twoPanelView();
+    changePanelView(m_panelViewState);
 
     return ret;
 }
