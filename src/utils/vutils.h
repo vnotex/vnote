@@ -177,6 +177,9 @@ public:
     // Try to check if @p_path is legal.
     static bool checkPathLegal(const QString &p_path);
 
+    // Check if file/folder name is legal.
+    static bool checkFileNameLegal(const QString &p_name);
+
     // Returns true if @p_patha and @p_pathb points to the same file/directory.
     static bool equalPath(const QString &p_patha, const QString &p_pathb);
 
@@ -247,6 +250,9 @@ public:
     // 3. Image Optional Title with double quotes;
     // 4. Unused;
     static const QString c_imageLinkRegExp;
+
+    // Regular expression for image title.
+    static const QString c_imageTitleRegExp;
 
     // Regular expression for file/directory name.
     // Forbidden char: \/:*?"<>|

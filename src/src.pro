@@ -78,7 +78,9 @@ SOURCES += main.cpp\
     vattachmentlist.cpp \
     dialog/vsortdialog.cpp \
     vfilesessioninfo.cpp \
-    vtableofcontent.cpp
+    vtableofcontent.cpp \
+    utils/vmetawordmanager.cpp \
+    vlineedit.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -144,7 +146,9 @@ HEADERS  += vmainwindow.h \
     vattachmentlist.h \
     dialog/vsortdialog.h \
     vfilesessioninfo.h \
-    vtableofcontent.h
+    vtableofcontent.h \
+    utils/vmetawordmanager.h \
+    vlineedit.h
 
 RESOURCES += \
     vnote.qrc \

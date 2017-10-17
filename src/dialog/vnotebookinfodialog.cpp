@@ -3,6 +3,7 @@
 #include "vnotebook.h"
 #include "utils/vutils.h"
 #include "vconfigmanager.h"
+#include "vlineedit.h"
 
 extern VConfigManager *g_config;
 
@@ -29,7 +30,10 @@ void VNotebookInfoDialog::setupUI(const QString &p_title, const QString &p_info)
         infoLabel = new QLabel(p_info);
     }
 
-    m_nameEdit = new QLineEdit(m_notebook->getName());
+    m_nameEdit = new VLineEdit(m_notebook->getName());
+    QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp),
+                                                 m_nameEdit);
+    m_nameEdit->setValidator(validator);
     m_nameEdit->selectAll();
 
     m_pathEdit = new QLineEdit(m_notebook->getPath());
@@ -41,7 +45,7 @@ void VNotebookInfoDialog::setupUI(const QString &p_title, const QString &p_info)
                                             .arg(g_config->getImageFolder()));
     m_imageFolderEdit->setToolTip(tr("Set the name of the folder to hold images of all the notes in this notebook "
                                      "(empty to use global configuration)"));
-    QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp), m_imageFolderEdit);
+    validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp), m_imageFolderEdit);
     m_imageFolderEdit->setValidator(validator);
 
     // Attachment folder.
@@ -98,7 +102,7 @@ void VNotebookInfoDialog::setupUI(const QString &p_title, const QString &p_info)
 
 void VNotebookInfoDialog::handleInputChanged()
 {
-    QString name = m_nameEdit->text();
+    QString name = m_nameEdit->getEvaluatedText();
     bool nameOk = !name.isEmpty();
     bool showWarnLabel = false;
 
@@ -112,13 +116,29 @@ void VNotebookInfoDialog::handleInputChanged()
             }
         }
 
+        QString warnText;
         if (idx < m_notebooks.size() && m_notebooks[idx] != m_notebook) {
             nameOk = false;
+            warnText = tr("<span style=\"%1\">WARNING</span>: "
+                          "Name (case-insensitive) <span style=\"%2\">%3</span> already exists. "
+                          "Please choose another name.")
+                         .arg(g_config->c_warningTextStyle)
+                         .arg(g_config->c_dataTextStyle)
+                         .arg(name);
+        } else if (!VUtils::checkFileNameLegal(name)) {
+            // Check if evaluated name contains illegal characters.
+            nameOk = false;
+            warnText = tr("<span style=\"%1\">WARNING</span>: "
+                          "Name <span style=\"%2\">%3</span> contains illegal characters "
+                          "(after magic word evaluation).")
+                         .arg(g_config->c_warningTextStyle)
+                         .arg(g_config->c_dataTextStyle)
+                         .arg(name);
+        }
+
+        if (!nameOk) {
             showWarnLabel = true;
-            QString nameConflictText = tr("<span style=\"%1\">WARNING</span>: Name (case-insensitive) already exists. "
-                                          "Please choose another name.")
-                                          .arg(g_config->c_warningTextStyle);
-            m_warnLabel->setText(nameConflictText);
+            m_warnLabel->setText(warnText);
         }
     }
 
@@ -130,7 +150,7 @@ void VNotebookInfoDialog::handleInputChanged()
 
 QString VNotebookInfoDialog::getName() const
 {
-    return m_nameEdit->text();
+    return m_nameEdit->getEvaluatedText();
 }
 
 QString VNotebookInfoDialog::getImageFolder() const

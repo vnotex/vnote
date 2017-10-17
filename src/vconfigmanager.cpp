@@ -1152,3 +1152,21 @@ void VConfigManager::setLastOpenedFiles(const QVector<VFileSessionInfo> &p_files
              << "items in [last_opened_files] section";
 
 }
+
+QVector<VMagicWord> VConfigManager::getCustomMagicWords()
+{
+    QVector<VMagicWord> words;
+    int size = userSettings->beginReadArray("magic_words");
+    for (int i = 0; i < size; ++i) {
+        userSettings->setArrayIndex(i);
+
+        VMagicWord word;
+        word.m_name = userSettings->value("name").toString();
+        word.m_definition = userSettings->value("definition").toString();
+        words.push_back(word);
+    }
+
+    userSettings->endArray();
+
+    return words;
+}

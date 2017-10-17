@@ -16,6 +16,10 @@
 
 extern VConfigManager *g_config;
 
+// Meta word manager.
+VMetaWordManager *g_mwMgr;
+
+
 QString VNote::s_markdownTemplate;
 QString VNote::s_markdownTemplatePDF;
 
@@ -53,10 +57,15 @@ const QString VNote::c_markdownGuideDocFile_en = ":/resources/docs/markdown_guid
 const QString VNote::c_markdownGuideDocFile_zh = ":/resources/docs/markdown_guide_zh.md";
 
 VNote::VNote(QObject *parent)
-    : QObject(parent), m_mainWindow(dynamic_cast<VMainWindow *>(parent))
+    : QObject(parent)
 {
     initTemplate();
+
     g_config->getNotebooks(m_notebooks, this);
+
+    m_metaWordMgr.init();
+
+    g_mwMgr = &m_metaWordMgr;
 }
 
 void VNote::initPalette(QPalette palette)

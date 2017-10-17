@@ -8,6 +8,7 @@
 
 class QLabel;
 class QLineEdit;
+class VLineEdit;
 class QPushButton;
 class QDialogButtonBox;
 
@@ -37,7 +38,7 @@ private:
     void setupUI();
 
     QLabel *imageTitleLabel;
-    QLineEdit *imageTitleEdit;
+    VLineEdit *m_imageTitleEdit;
     QLabel *pathLabel;
     QLineEdit *pathEdit;
     QPushButton *browseBtn;

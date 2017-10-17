@@ -45,6 +45,8 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
     : QMainWindow(p_parent), m_guard(p_guard),
       m_windowOldState(Qt::WindowNoState), m_requestQuit(false)
 {
+    qsrand(QDateTime::currentDateTime().toTime_t());
+
     setWindowIcon(QIcon(":/resources/icons/vnote.ico"));
     vnote = new VNote(this);
     g_vnote = vnote;
@@ -110,7 +112,7 @@ void VMainWindow::setupUI()
     m_fileList = new VFileList();
     m_fileList->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
-    editArea = new VEditArea(vnote);
+    editArea = new VEditArea();
     editArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     m_findReplaceDialog = editArea->getFindReplaceDialog();
     m_fileList->setEditArea(editArea);

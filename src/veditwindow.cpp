@@ -2,7 +2,6 @@
 #include <QtDebug>
 #include "veditwindow.h"
 #include "vedittab.h"
-#include "vnote.h"
 #include "utils/vutils.h"
 #include "vorphanfile.h"
 #include "vmainwindow.h"
@@ -13,12 +12,14 @@
 #include "vfilelist.h"
 #include "vconfigmanager.h"
 
-extern VNote *g_vnote;
 extern VConfigManager *g_config;
+extern VMainWindow *g_mainWin;
 
-VEditWindow::VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent)
-    : QTabWidget(parent), vnote(vnote), m_editArea(editArea),
-      m_curTabWidget(NULL), m_lastTabWidget(NULL)
+VEditWindow::VEditWindow(VEditArea *editArea, QWidget *parent)
+    : QTabWidget(parent),
+      m_editArea(editArea),
+      m_curTabWidget(NULL),
+      m_lastTabWidget(NULL)
 {
     setAcceptDrops(true);
     initTabActions();
@@ -137,9 +138,9 @@ void VEditWindow::initTabActions()
                 Q_ASSERT(file);
                 if (file->getType() == FileType::Note) {
                     VNoteFile *tmpFile = dynamic_cast<VNoteFile *>((VFile *)file);
-                    g_vnote->getMainWindow()->getFileList()->fileInfo(tmpFile);
+                    g_mainWin->getFileList()->fileInfo(tmpFile);
                 } else if (file->getType() == FileType::Orphan) {
-                    g_vnote->getMainWindow()->editOrphanFileInfo(file);
+                    g_mainWin->editOrphanFileInfo(file);
                 }
             });
 
@@ -817,7 +818,7 @@ void VEditWindow::handleLocateAct()
     VEditTab *editor = getTab(tab);
     QPointer<VFile> file = editor->getFile();
     if (file->getType() == FileType::Note) {
-        vnote->getMainWindow()->locateFile(file);
+        g_mainWin->locateFile(file);
     }
 }
 
@@ -1022,7 +1023,7 @@ void VEditWindow::dropEvent(QDropEvent *p_event)
 
         if (!files.isEmpty()) {
             focusWindow();
-            g_vnote->getMainWindow()->openFiles(files);
+            g_mainWin->openFiles(files);
         }
 
         p_event->acceptProposedAction();

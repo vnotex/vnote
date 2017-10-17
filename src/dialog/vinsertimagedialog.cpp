@@ -3,6 +3,7 @@
 #include <QRegExp>
 #include "vinsertimagedialog.h"
 #include "utils/vutils.h"
+#include "vlineedit.h"
 
 VInsertImageDialog::VInsertImageDialog(const QString &title, const QString &defaultImageTitle,
                                        const QString &defaultPath, QWidget *parent)
@@ -11,9 +12,12 @@ VInsertImageDialog::VInsertImageDialog(const QString &title, const QString &defa
 {
     setupUI();
 
-    connect(imageTitleEdit, &QLineEdit::textChanged, this, &VInsertImageDialog::enableOkButton);
-    connect(pathEdit, &QLineEdit::textChanged, this, &VInsertImageDialog::enableOkButton);
-    connect(browseBtn, &QPushButton::clicked, this, &VInsertImageDialog::handleBrowseBtnClicked);
+    connect(m_imageTitleEdit, &QLineEdit::textChanged,
+            this, &VInsertImageDialog::enableOkButton);
+    connect(pathEdit, &QLineEdit::textChanged,
+            this, &VInsertImageDialog::enableOkButton);
+    connect(browseBtn, &QPushButton::clicked,
+            this, &VInsertImageDialog::handleBrowseBtnClicked);
 
     enableOkButton();
 }
@@ -34,19 +38,19 @@ void VInsertImageDialog::setupUI()
     browseBtn = new QPushButton(tr("&Browse"));
 
     imageTitleLabel = new QLabel(tr("&Image title:"));
-    imageTitleEdit = new QLineEdit(defaultImageTitle);
-    imageTitleEdit->selectAll();
-    imageTitleLabel->setBuddy(imageTitleEdit);
-    QRegExp regExp("[\\w\\(\\)@#%\\*\\-\\+=\\?<>\\,\\.\\s]+");
-    QValidator *validator = new QRegExpValidator(regExp, this);
-    imageTitleEdit->setValidator(validator);
+    m_imageTitleEdit = new VLineEdit(defaultImageTitle);
+    m_imageTitleEdit->selectAll();
+    imageTitleLabel->setBuddy(m_imageTitleEdit);
+    QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_imageTitleRegExp),
+                                                 m_imageTitleEdit);
+    m_imageTitleEdit->setValidator(validator);
 
     QGridLayout *topLayout = new QGridLayout();
     topLayout->addWidget(pathLabel, 0, 0);
     topLayout->addWidget(pathEdit, 0, 1);
     topLayout->addWidget(browseBtn, 0, 2);
     topLayout->addWidget(imageTitleLabel, 1, 0);
-    topLayout->addWidget(imageTitleEdit, 1, 1, 1, 2);
+    topLayout->addWidget(m_imageTitleEdit, 1, 1, 1, 2);
     topLayout->setColumnStretch(0, 0);
     topLayout->setColumnStretch(1, 1);
     topLayout->setColumnStretch(2, 0);
@@ -67,22 +71,25 @@ void VInsertImageDialog::setupUI()
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     setWindowTitle(title);
 
-    imageTitleEdit->setFocus();
+    m_imageTitleEdit->setFocus();
 }
 
 void VInsertImageDialog::enableOkButton()
 {
-    bool enabled = true;
-    if (imageTitleEdit->text().isEmpty() || !image) {
-        enabled = false;
+    QString title = m_imageTitleEdit->getEvaluatedText();
+    bool titleOk = !title.isEmpty();
+    if (titleOk) {
+        QRegExp reg(VUtils::c_imageTitleRegExp);
+        titleOk = reg.exactMatch(title);
     }
+
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
-    okBtn->setEnabled(enabled);
+    okBtn->setEnabled(titleOk);
 }
 
 QString VInsertImageDialog::getImageTitleInput() const
 {
-    return imageTitleEdit->text();
+    return m_imageTitleEdit->getEvaluatedText();
 }
 
 QString VInsertImageDialog::getPathInput() const

@@ -12,9 +12,10 @@
 extern VConfigManager *g_config;
 extern VNote *g_vnote;
 
-VEditArea::VEditArea(VNote *vnote, QWidget *parent)
-    : QWidget(parent), VNavigationMode(),
-      vnote(vnote), curWindowIndex(-1)
+VEditArea::VEditArea(QWidget *parent)
+    : QWidget(parent),
+      VNavigationMode(),
+      curWindowIndex(-1)
 {
     setupUI();
 
@@ -66,7 +67,7 @@ void VEditArea::setupUI()
 
 void VEditArea::insertSplitWindow(int idx)
 {
-    VEditWindow *win = new VEditWindow(vnote, this);
+    VEditWindow *win = new VEditWindow(this);
     splitter->insertWidget(idx, win);
     connect(win, &VEditWindow::tabStatusUpdated,
             this, &VEditArea::handleWindowTabStatusUpdated);

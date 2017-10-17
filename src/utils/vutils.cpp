@@ -33,6 +33,8 @@ QVector<QPair<QString, QString>> VUtils::s_availableLanguages;
 
 const QString VUtils::c_imageLinkRegExp = QString("\\!\\[([^\\]]*)\\]\\(([^\\)\"]+)\\s*(\"(\\\\.|[^\"\\)])*\")?\\s*\\)");
 
+const QString VUtils::c_imageTitleRegExp = QString("[\\w\\(\\)@#%\\*\\-\\+=\\?<>\\,\\.\\s]+");
+
 const QString VUtils::c_fileNameRegExp = QString("[^\\\\/:\\*\\?\"<>\\|]*");
 
 const QString VUtils::c_fencedCodeBlockStartRegExp = QString("^(\\s*)```([^`\\s]*)\\s*[^`]*$");
@@ -723,6 +725,16 @@ bool VUtils::checkPathLegal(const QString &p_path)
 
     delete validator;
     return ret;
+}
+
+bool VUtils::checkFileNameLegal(const QString &p_name)
+{
+    if (p_name.isEmpty()) {
+        return false;
+    }
+
+    QRegExp exp(c_fileNameRegExp);
+    return exp.exactMatch(p_name);
 }
 
 bool VUtils::equalPath(const QString &p_patha, const QString &p_pathb)

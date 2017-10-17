@@ -12,6 +12,7 @@
 #include "vmarkdownconverter.h"
 #include "vconstants.h"
 #include "vfilesessioninfo.h"
+#include "utils/vmetawordmanager.h"
 
 
 class QJsonObject;
@@ -325,6 +326,9 @@ public:
 
     // Write last opened files to [last_opened_files] of session.ini.
     void setLastOpenedFiles(const QVector<VFileSessionInfo> &p_files);
+
+    // Read custom magic words from [magic_words] section.
+    QVector<VMagicWord> getCustomMagicWords();
 
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.

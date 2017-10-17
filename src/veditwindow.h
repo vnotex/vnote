@@ -11,7 +11,6 @@
 #include "vconstants.h"
 #include "vnotefile.h"
 
-class VNote;
 class QPushButton;
 class QActionGroup;
 class VEditArea;
@@ -20,7 +19,7 @@ class VEditWindow : public QTabWidget
 {
     Q_OBJECT
 public:
-    explicit VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent = 0);
+    explicit VEditWindow(VEditArea *editArea, QWidget *parent = 0);
     int findTabByFile(const VFile *p_file) const;
     int openFile(VFile *p_file, OpenFileMode p_mode);
     bool closeFile(const VFile *p_file, bool p_forced);
@@ -160,7 +159,6 @@ private:
     // Connect the signals of VEditTab to this VEditWindow.
     void connectEditTab(const VEditTab *p_tab);
 
-    VNote *vnote;
     VEditArea *m_editArea;
 
     // These two members are only used for alternateTab().

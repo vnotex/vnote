@@ -14,7 +14,6 @@
 #include "veditwindow.h"
 #include "vnavigationmode.h"
 
-class VNote;
 class VFile;
 class VDirectory;
 class VFindReplaceDialog;
@@ -25,7 +24,7 @@ class VEditArea : public QWidget, public VNavigationMode
 {
     Q_OBJECT
 public:
-    explicit VEditArea(VNote *vnote, QWidget *parent = 0);
+    explicit VEditArea(QWidget *parent = 0);
 
     // Whether @p_file has been opened in edit area.
     bool isFileOpened(const VFile *p_file);
@@ -161,7 +160,6 @@ private:
     // Update status of current window.
     void updateWindowStatus();
 
-    VNote *vnote;
     int curWindowIndex;
 
     // Splitter holding multiple split windows
