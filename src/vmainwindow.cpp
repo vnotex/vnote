@@ -301,9 +301,7 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
                     break;
 
                 case (int)PanelViewState::CompactMode:
-                    m_panelViewState = PanelViewState::CompactMode;
-                    g_config->setEnableCompactMode(true);
-                    changePanelView(m_panelViewState);
+                    compactModeView();
                     break;
 
                 default:
@@ -1807,6 +1805,13 @@ void VMainWindow::twoPanelView()
     changePanelView(m_panelViewState);
 }
 
+void VMainWindow::compactModeView()
+{
+    m_panelViewState = PanelViewState::CompactMode;
+    g_config->setEnableCompactMode(true);
+    changePanelView(m_panelViewState);
+}
+
 void VMainWindow::toggleOnePanelView()
 {
     if (m_panelViewState == PanelViewState::TwoPanels) {
@@ -2139,7 +2144,11 @@ bool VMainWindow::locateFile(VFile *p_file)
     }
 
     // Open the directory and file panels after location.
-    twoPanelView();
+    if (m_panelViewState == PanelViewState::CompactMode) {
+        compactModeView();
+    } else {
+        twoPanelView();
+    }
 
     return ret;
 }

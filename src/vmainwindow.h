@@ -119,6 +119,7 @@ private slots:
     void changeHighlightTrailingSapce(bool p_checked);
     void onePanelView();
     void twoPanelView();
+    void compactModeView();
     void curEditFileInfo();
     void deleteCurNote();
     void handleCurrentDirectoryChanged(const VDirectory *p_dir);
@@ -268,6 +269,7 @@ private:
     VVimIndicator *m_vimIndicator;
     VTabIndicator *m_tabIndicator;
 
+    // SinglePanel, TwoPanels, CompactMode.
     PanelViewState m_panelViewState;
 
     // Actions
