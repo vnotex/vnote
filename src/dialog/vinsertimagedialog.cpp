@@ -13,13 +13,13 @@ VInsertImageDialog::VInsertImageDialog(const QString &title, const QString &defa
     setupUI();
 
     connect(m_imageTitleEdit, &QLineEdit::textChanged,
-            this, &VInsertImageDialog::enableOkButton);
+            this, &VInsertImageDialog::handleInputChanged);
     connect(pathEdit, &QLineEdit::textChanged,
-            this, &VInsertImageDialog::enableOkButton);
+            this, &VInsertImageDialog::handleInputChanged);
     connect(browseBtn, &QPushButton::clicked,
             this, &VInsertImageDialog::handleBrowseBtnClicked);
 
-    enableOkButton();
+    handleInputChanged();
 }
 
 VInsertImageDialog::~VInsertImageDialog()
@@ -74,17 +74,23 @@ void VInsertImageDialog::setupUI()
     m_imageTitleEdit->setFocus();
 }
 
-void VInsertImageDialog::enableOkButton()
+void VInsertImageDialog::handleInputChanged()
 {
-    QString title = m_imageTitleEdit->getEvaluatedText();
-    bool titleOk = !title.isEmpty();
-    if (titleOk) {
-        QRegExp reg(VUtils::c_imageTitleRegExp);
-        titleOk = reg.exactMatch(title);
+    bool pathOk = true;
+    if (pathEdit->isVisible() && !pathEdit->isReadOnly()) {
+        QString path = pathEdit->text();
+        if (path.isEmpty()
+            || !VUtils::checkPathLegal(path)) {
+            pathOk = false;
+        }
     }
 
+    QString title = m_imageTitleEdit->getEvaluatedText();
+    QRegExp reg(VUtils::c_imageTitleRegExp);
+    bool titleOk = reg.exactMatch(title);
+
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
-    okBtn->setEnabled(titleOk);
+    okBtn->setEnabled(pathOk && titleOk);
 }
 
 QString VInsertImageDialog::getImageTitleInput() const
@@ -137,7 +143,8 @@ void VInsertImageDialog::setImage(const QImage &image)
 
     imagePreviewLabel->setPixmap(pixmap);
     imagePreviewLabel->setVisible(true);
-    enableOkButton();
+
+    handleInputChanged();
 }
 
 void VInsertImageDialog::setBrowseable(bool browseable, bool visible)
@@ -148,6 +155,8 @@ void VInsertImageDialog::setBrowseable(bool browseable, bool visible)
     pathLabel->setVisible(visible);
     pathEdit->setVisible(visible);
     browseBtn->setVisible(visible);
+
+    handleInputChanged();
 }
 
 void VInsertImageDialog::imageDownloaded(const QByteArray &data)

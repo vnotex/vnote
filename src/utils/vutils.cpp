@@ -33,7 +33,7 @@ QVector<QPair<QString, QString>> VUtils::s_availableLanguages;
 
 const QString VUtils::c_imageLinkRegExp = QString("\\!\\[([^\\]]*)\\]\\(([^\\)\"]+)\\s*(\"(\\\\.|[^\"\\)])*\")?\\s*\\)");
 
-const QString VUtils::c_imageTitleRegExp = QString("[\\w\\(\\)@#%\\*\\-\\+=\\?<>\\,\\.\\s]+");
+const QString VUtils::c_imageTitleRegExp = QString("[\\w\\(\\)@#%\\*\\-\\+=\\?<>\\,\\.\\s]*");
 
 const QString VUtils::c_fileNameRegExp = QString("[^\\\\/:\\*\\?\"<>\\|]*");
 
@@ -106,10 +106,10 @@ QRgb VUtils::QRgbFromString(const QString &str)
     return QRgb();
 }
 
-QString VUtils::generateImageFileName(const QString &path, const QString &title,
+QString VUtils::generateImageFileName(const QString &path,
+                                      const QString &title,
                                       const QString &format)
 {
-    Q_ASSERT(!title.isEmpty());
     QRegExp regExp("\\W");
     QString baseName(title.toLower());
 
@@ -119,7 +119,9 @@ QString VUtils::generateImageFileName(const QString &path, const QString &title,
     // Constrain the length of the name.
     baseName.truncate(10);
 
-    baseName.prepend('_');
+    if (!baseName.isEmpty()) {
+        baseName.prepend('_');
+    }
 
     // Add current time and random number to make the name be most likely unique
     baseName = baseName + '_' + QString::number(QDateTime::currentDateTime().toTime_t());

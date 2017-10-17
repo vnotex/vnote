@@ -26,7 +26,7 @@
 
 extern VConfigManager *g_config;
 
-const QString VMdEditOperations::c_defaultImageTitle = "image";
+const QString VMdEditOperations::c_defaultImageTitle = "";
 
 VMdEditOperations::VMdEditOperations(VEdit *p_editor, VFile *p_file)
     : VEditOperations(p_editor, p_file), m_autoIndentPos(-1)

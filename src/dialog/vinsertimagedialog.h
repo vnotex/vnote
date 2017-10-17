@@ -31,7 +31,7 @@ public slots:
     void imageDownloaded(const QByteArray &data);
 
 private slots:
-    void enableOkButton();
+    void handleInputChanged();
     void handleBrowseBtnClicked();
 
 private:
