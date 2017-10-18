@@ -172,6 +172,8 @@ void VConfigManager::initialize()
 
     readShortcutsFromSettings();
 
+    readCaptainShortcutsFromSettings();
+
     initDocSuffixes();
 
     m_markdownHighlightInterval = getConfigFromSettings("global",
@@ -1002,82 +1004,136 @@ QString VConfigManager::getVnoteNotebookFolderPath()
     return QDir::home().filePath(c_vnoteNotebookFolderName);
 }
 
+QHash<QString, QString> VConfigManager::readShortcutsFromSettings(QSettings *p_settings,
+                                                                  const QString &p_group)
+{
+    QHash<QString, QString> ret;
+    p_settings->beginGroup(p_group);
+    QStringList keys = p_settings->childKeys();
+    for (auto const & key : keys) {
+        if (key.isEmpty()) {
+            continue;
+        }
+
+        QVariant varVal = p_settings->value(key);
+        QString sequence = varVal.toString();
+        if (varVal.type() == QVariant::StringList) {
+            sequence = varVal.toStringList().join(",");
+        }
+
+        sequence = sequence.trimmed();
+        if (isValidKeySequence(sequence)) {
+            ret.insert(key, sequence);
+        }
+    }
+
+    p_settings->endGroup();
+
+    return ret;
+}
+
 bool VConfigManager::isValidKeySequence(const QString &p_seq)
 {
-    QString lower = p_seq.toLower();
-    return lower != "ctrl+q" && lower != "ctrl+e";
+    return p_seq.toLower() != "ctrl+q"
+           && !QKeySequence(p_seq).isEmpty();
 }
 
 void VConfigManager::readShortcutsFromSettings()
 {
+    const QString group("shortcuts");
+
     m_shortcuts.clear();
-    int size = defaultSettings->beginReadArray("shortcuts");
-    for (int i = 0; i < size; ++i) {
-        defaultSettings->setArrayIndex(i);
-        QString op = defaultSettings->value("operation").toString();
-        QString seq = defaultSettings->value("keysequence").toString().trimmed();
+    m_shortcuts = readShortcutsFromSettings(defaultSettings, group);
 
-        if (isValidKeySequence(seq)) {
-            qDebug() << "read shortcut config" << op << seq;
-            m_shortcuts[op] = seq;
-        }
-    }
-
-    defaultSettings->endArray();
-
-    // Whether we need to update user settings.
-    bool needUpdate = false;
-    size = userSettings->beginReadArray("shortcuts");
+    // Update default settings according to user settings.
+    QHash<QString, QString> userShortcuts = readShortcutsFromSettings(userSettings,
+                                                                      group);
     QSet<QString> matched;
     matched.reserve(m_shortcuts.size());
-    for (int i = 0; i < size; ++i) {
-        userSettings->setArrayIndex(i);
-        QString op = userSettings->value("operation").toString();
-        QString seq = userSettings->value("keysequence").toString().trimmed();
-
-        if (isValidKeySequence(seq)) {
-            qDebug() << "read user shortcut config" << op << seq;
-            auto it = m_shortcuts.find(op);
-            if (it == m_shortcuts.end()) {
-                // Could not find this in default settings.
-                needUpdate = true;
+    for (auto it = userShortcuts.begin(); it != userShortcuts.end(); ++it) {
+        auto defaultIt = m_shortcuts.find(it.key());
+        if (defaultIt != m_shortcuts.end()) {
+            QString sequence = it.value().trimmed();
+            if (sequence != defaultIt.value()) {
+                if (isValidKeySequence(sequence)) {
+                    matched.insert(it.key());
+                    *defaultIt = sequence;
+                }
             } else {
-                matched.insert(op);
-                *it = seq;
+                matched.insert(it.key());
             }
         }
     }
 
-    userSettings->endArray();
-
-    if (needUpdate || matched.size() < m_shortcuts.size()) {
-        // Write the combined config to user settings.
-        writeShortcutsToSettings();
+    if (matched.size() < m_shortcuts.size()) {
+        writeShortcutsToSettings(userSettings, group, m_shortcuts);
     }
+
+    qDebug() << "shortcuts:" << m_shortcuts;
 }
 
-void VConfigManager::writeShortcutsToSettings()
+void VConfigManager::readCaptainShortcutsFromSettings()
 {
-    // Clear it first
-    userSettings->beginGroup("shortcuts");
-    userSettings->remove("");
-    userSettings->endGroup();
+    const QString group("captain_mode_shortcuts");
 
-    userSettings->beginWriteArray("shortcuts");
-    int idx = 0;
-    for (auto it = m_shortcuts.begin(); it != m_shortcuts.end(); ++it, ++idx) {
-        userSettings->setArrayIndex(idx);
-        userSettings->setValue("operation", it.key());
-        userSettings->setValue("keysequence", it.value());
+    m_captainShortcuts.clear();
+    m_captainShortcuts = readShortcutsFromSettings(defaultSettings, group);
+
+    // Update default settings according to user settings.
+    QHash<QString, QString> userShortcuts = readShortcutsFromSettings(userSettings,
+                                                                      group);
+    QSet<QString> matched;
+    matched.reserve(m_captainShortcuts.size());
+    for (auto it = userShortcuts.begin(); it != userShortcuts.end(); ++it) {
+        auto defaultIt = m_captainShortcuts.find(it.key());
+        if (defaultIt != m_captainShortcuts.end()) {
+            QString sequence = it.value().trimmed();
+            if (sequence != defaultIt.value()) {
+                if (isValidKeySequence(sequence)) {
+                    matched.insert(it.key());
+                    *defaultIt = sequence;
+                }
+            } else {
+                matched.insert(it.key());
+            }
+        }
     }
 
-    userSettings->endArray();
+    if (matched.size() < m_captainShortcuts.size()) {
+        writeShortcutsToSettings(userSettings, group, m_captainShortcuts);
+    }
+
+    qDebug() << "captain mode shortcuts:" << m_captainShortcuts;
+}
+
+void VConfigManager::writeShortcutsToSettings(QSettings *p_settings,
+                                              const QString &p_group,
+                                              const QHash<QString, QString> &p_shortcuts)
+{
+    p_settings->beginGroup(p_group);
+    p_settings->remove("");
+
+    for (auto it = p_shortcuts.begin(); it != p_shortcuts.end(); ++it) {
+        p_settings->setValue(it.key(), it.value());
+    }
+
+    p_settings->endGroup();
 }
 
 QString VConfigManager::getShortcutKeySequence(const QString &p_operation) const
 {
     auto it = m_shortcuts.find(p_operation);
     if (it == m_shortcuts.end()) {
+        return QString();
+    }
+
+    return *it;
+}
+
+QString VConfigManager::getCaptainShortcutKeySequence(const QString &p_operation) const
+{
+    auto it = m_captainShortcuts.find(p_operation);
+    if (it == m_captainShortcuts.end()) {
         return QString();
     }
 

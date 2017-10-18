@@ -263,7 +263,9 @@ void VEditWindow::removeEditTab(int p_index)
 
 int VEditWindow::insertEditTab(int p_index, VFile *p_file, QWidget *p_page)
 {
-    int idx = insertTab(p_index, p_page, p_file->getName());
+    int idx = insertTab(p_index,
+                        p_page,
+                        generateTabText(p_index, p_file));
     setTabToolTip(idx, generateTooltip(p_file));
     return idx;
 }
@@ -484,8 +486,7 @@ void VEditWindow::updateTabInfo(int p_index)
     const VFile *file = editor->getFile();
     bool editMode = editor->isEditMode();
 
-    setTabText(p_index, generateTabText(p_index, file->getName(),
-                                        file->isModified(), file->isModifiable()));
+    setTabText(p_index, generateTabText(p_index, file));
     setTabToolTip(p_index, generateTooltip(file));
 
     QString iconUrl(":/resources/icons/reading.svg");
@@ -502,8 +503,7 @@ void VEditWindow::updateAllTabsSequence()
     for (int i = 0; i < count(); ++i) {
         VEditTab *editor = getTab(i);
         const VFile *file = editor->getFile();
-        setTabText(i, generateTabText(i, file->getName(),
-                                      file->isModified(), file->isModifiable()));
+        setTabText(i, generateTabText(i, file));
     }
 }
 

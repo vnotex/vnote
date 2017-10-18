@@ -160,6 +160,36 @@ private:
     // Update status of current window.
     void updateWindowStatus();
 
+    // Init targets for Captain mode.
+    void registerCaptainTargets();
+
+    // Captain mode functions.
+
+    // Activate tab @p_idx.
+    static void activateTabByCaptain(void *p_target, void *p_data, int p_idx);
+
+    static void alternateTabByCaptain(void *p_target, void *p_data);
+
+    static void showOpenedFileListByCaptain(void *p_target, void *p_data);
+
+    static void activateSplitLeftByCaptain(void *p_target, void *p_data);
+
+    static void activateSplitRightByCaptain(void *p_target, void *p_data);
+
+    static void moveTabSplitLeftByCaptain(void *p_target, void *p_data);
+
+    static void moveTabSplitRightByCaptain(void *p_target, void *p_data);
+
+    static void activateNextTabByCaptain(void *p_target, void *p_data);
+
+    static void activatePreviousTabByCaptain(void *p_target, void *p_data);
+
+    static void verticalSplitByCaptain(void *p_target, void *p_data);
+
+    static void removeSplitByCaptain(void *p_target, void *p_data);
+
+    // End Captain mode functions.
+
     int curWindowIndex;
 
     // Splitter holding multiple split windows

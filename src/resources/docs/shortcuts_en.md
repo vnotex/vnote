@@ -80,41 +80,101 @@ Expand the selection to the beginning or end of current line.
 Expand the selection to the beginning or end of current note.
 
 ## Custom Shortcuts
-VNote supports customing some standard shortcuts, though it is not recommended. VNote stores shortcuts' configuration information in the `[shortcuts]` section of user configuration file `vnote.ini`.
+VNote supports customing some standard shortcuts, though it is not recommended. VNote stores shortcuts' configuration information in the `[shortcuts]` and `[captain_mode_shortcuts]` sections of user configuration file `vnote.ini`.
 
 For example, the default configruation may look like this:
 
 ```ini
 [shortcuts]
-1\operation=NewNote
-1\keysequence=Ctrl+N
-2\operation=SaveNote
-2\keysequence=Ctrl+S
-3\operation=SaveAndRead
-3\keysequence=Ctrl+T
-4\operation=EditNote
-4\keysequence=Ctrl+W
-5\operation=CloseNote
-5\keysequence=
-6\operation=Find
-6\keysequence=Ctrl+F
-7\operation=FindNext
-7\keysequence=F3
-8\operation=FindPrevious
-8\keysequence=Shift+F3
-size=8
+; Define shortcuts here, with each item in the form "operation=keysequence".
+; Leave keysequence empty to disable the shortcut of an operation.
+; Custom shortcuts may conflict with some key bindings in edit mode or Vim mode.
+; Ctrl+Q is reserved for quitting VNote.
+
+; Leader key of Captain mode
+CaptainMode=Ctrl+E
+; Create a note in current folder
+NewNote=Ctrl+Alt+N
+; Save current note
+SaveNote=Ctrl+S
+; Save changes and enter read mode
+SaveAndRead=Ctrl+T
+; Edit current note
+EditNote=Ctrl+W
+; Close current note
+CloseNote=
+; Open file/replace dialog
+Find=Ctrl+F
+; Find next occurence
+FindNext=F3
+; Find previous occurence
+FindPrevious=Shift+F3
+
+[captain_mode_shortcuts]
+; Define shortcuts in Captain mode here.
+; There shortcuts are the sub-sequence after the CaptainMode key sequence
+; in [shortcuts].
+
+; Enter Navigation mode
+NavigationMode=W
+; Show attachment list of current note
+AttachmentList=A
+; Locate to the folder of current note
+LocateCurrentFile=D
+; Toggle Expand mode
+ExpandMode=E
+; Alternate one/two panels view
+OnePanelView=P
+; Discard changes and enter read mode
+DiscardAndRead=Q
+; Toggle Tools dock widget
+ToolsDock=T
+; Close current note
+CloseNote=X
+; Show shortcuts help document
+ShortcutsHelp=?
+; Flush the log file
+FlushLogFile=";"
+; Show opened files list
+OpenedFileList=F
+; Activate the ith tab
+ActivateTab1=1
+ActivateTab2=2
+ActivateTab3=3
+ActivateTab4=4
+ActivateTab5=5
+ActivateTab6=6
+ActivateTab7=7
+ActivateTab8=8
+ActivateTab9=9
+; Alternate between current and last tab
+AlternateTab=0
+; Activate next tab
+ActivateNextTab=J
+; Activate previous tab
+ActivatePreviousTab=K
+; Activate the window split on the left
+ActivateSplitLeft=H
+; Activate the window split on the right
+ActivateSplitRight=L
+; Move current tab one split left
+MoveTabSplitLeft=Shift+H
+; Move current tab one split right
+MoveTabSplitRight=Shift+L
+; Create a vertical split
+VerticalSplit=V
+; Remove current split
+RemoveSplit=R
 ```
 
-`size=8` tells VNote that there are 8 shotcuts defined here, with each beginning with the number sequence. You could change the `keysequence` value to change the default key sequence of a specified operation. Leave the `keysequence` empty (`keysequence=`) to disable shortcut for that operation.
+Each item is in the form `operation=keysequence`, with `keysequence` empty to disable shortcuts for that operation.
 
-Pay attention that `Ctrl+E` is reserved for *Captain Mode* and `Ctrl+Q` is reserved for quitting VNote.
+Pay attention that `Ctrl+Q` is reserved for quitting VNote.
 
 # Captain Mode
 To efficiently utilize the shortcuts, VNote supports the **Captain Mode**.
 
 Press the leader key `Ctrl+E`, then VNote will enter the Captain Mode, within which VNote supports more efficient shortcuts.
-
-By the way, in this mode, `Ctrl+W` and `W` is equivalent, thus pressing `Ctrl+E+W` equals to `Ctrl+E W`.
 
 - `E`   
 Toggle expanding the edit area.

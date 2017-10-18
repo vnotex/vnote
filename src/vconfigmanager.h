@@ -334,6 +334,10 @@ public:
     // Return empty if there is no corresponding config.
     QString getShortcutKeySequence(const QString &p_operation) const;
 
+    // Return the configured key sequence in Captain mode.
+    // Return empty if there is no corresponding config.
+    QString getCaptainShortcutKeySequence(const QString &p_operation) const;
+
     // Get the folder the ini file exists.
     QString getConfigFolder() const;
 
@@ -418,8 +422,16 @@ private:
     // write the combined configs to user settings.
     void readShortcutsFromSettings();
 
-    // Write m_shortcuts to the [shortcuts] section in the user settings.
-    void writeShortcutsToSettings();
+    // Read the [captain_mode_shortcuts] section in the settings to init
+    // m_captainShortcuts.
+    void readCaptainShortcutsFromSettings();
+
+    QHash<QString, QString> readShortcutsFromSettings(QSettings *p_settings,
+                                                      const QString &p_group);
+
+    void writeShortcutsToSettings(QSettings *p_settings,
+                                  const QString &p_group,
+                                  const QHash<QString, QString> &p_shortcuts);
 
     // Whether @p_seq is a valid key sequence for shortcuts.
     bool isValidKeySequence(const QString &p_seq);
@@ -591,6 +603,10 @@ private:
     // Shortcuts config.
     // Operation -> KeySequence.
     QHash<QString, QString> m_shortcuts;
+
+    // Shortcuts config in Captain mode.
+    // Operation -> KeySequence.
+    QHash<QString, QString> m_captainShortcuts;
 
     // Whether minimize to system tray icon when closing the app.
     // -1: uninitialized;

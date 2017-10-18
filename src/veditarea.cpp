@@ -8,9 +8,14 @@
 #include "dialog/vfindreplacedialog.h"
 #include "utils/vutils.h"
 #include "vfilesessioninfo.h"
+#include "vmainwindow.h"
+#include "vcaptain.h"
 
 extern VConfigManager *g_config;
+
 extern VNote *g_vnote;
+
+extern VMainWindow *g_mainWin;
 
 VEditArea::VEditArea(QWidget *parent)
     : QWidget(parent),
@@ -21,6 +26,8 @@ VEditArea::VEditArea(QWidget *parent)
 
     insertSplitWindow(0);
     setCurrentWindow(0, false);
+
+    registerCaptainTargets();
 }
 
 void VEditArea::setupUI()
@@ -749,3 +756,180 @@ int VEditArea::openFiles(const QVector<VFileSessionInfo> &p_files)
 
     return nrOpened;
 }
+
+void VEditArea::registerCaptainTargets()
+{
+    using namespace std::placeholders;
+
+    VCaptain *captain = g_mainWin->getCaptain();
+
+    captain->registerCaptainTarget(tr("ActivateTab1"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab1"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 1));
+    captain->registerCaptainTarget(tr("ActivateTab2"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab2"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 2));
+    captain->registerCaptainTarget(tr("ActivateTab3"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab3"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 3));
+    captain->registerCaptainTarget(tr("ActivateTab4"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab4"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 4));
+    captain->registerCaptainTarget(tr("ActivateTab5"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab5"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 5));
+    captain->registerCaptainTarget(tr("ActivateTab6"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab6"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 6));
+    captain->registerCaptainTarget(tr("ActivateTab7"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab7"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 7));
+    captain->registerCaptainTarget(tr("ActivateTab8"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab8"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 8));
+    captain->registerCaptainTarget(tr("ActivateTab9"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab9"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 9));
+    captain->registerCaptainTarget(tr("AlternateTab"),
+                                   g_config->getCaptainShortcutKeySequence("AlternateTab"),
+                                   this,
+                                   alternateTabByCaptain);
+    captain->registerCaptainTarget(tr("OpenedFileList"),
+                                   g_config->getCaptainShortcutKeySequence("OpenedFileList"),
+                                   this,
+                                   showOpenedFileListByCaptain);
+    captain->registerCaptainTarget(tr("ActivateSplitLeft"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateSplitLeft"),
+                                   this,
+                                   activateSplitLeftByCaptain);
+    captain->registerCaptainTarget(tr("ActivateSplitRight"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateSplitRight"),
+                                   this,
+                                   activateSplitRightByCaptain);
+    captain->registerCaptainTarget(tr("MoveTabSplitLeft"),
+                                   g_config->getCaptainShortcutKeySequence("MoveTabSplitLeft"),
+                                   this,
+                                   moveTabSplitLeftByCaptain);
+    captain->registerCaptainTarget(tr("MoveTabSplitRight"),
+                                   g_config->getCaptainShortcutKeySequence("MoveTabSplitRight"),
+                                   this,
+                                   moveTabSplitRightByCaptain);
+    captain->registerCaptainTarget(tr("ActivateNextTab"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateNextTab"),
+                                   this,
+                                   activateNextTabByCaptain);
+    captain->registerCaptainTarget(tr("ActivatePreviousTab"),
+                                   g_config->getCaptainShortcutKeySequence("ActivatePreviousTab"),
+                                   this,
+                                   activatePreviousTabByCaptain);
+    captain->registerCaptainTarget(tr("VerticalSplit"),
+                                   g_config->getCaptainShortcutKeySequence("VerticalSplit"),
+                                   this,
+                                   verticalSplitByCaptain);
+    captain->registerCaptainTarget(tr("RemoveSplit"),
+                                   g_config->getCaptainShortcutKeySequence("RemoveSplit"),
+                                   this,
+                                   removeSplitByCaptain);
+}
+
+void VEditArea::activateTabByCaptain(void *p_target, void *p_data, int p_idx)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    VEditWindow *win = obj->getCurrentWindow();
+    if (win) {
+        win->activateTab(p_idx);
+    }
+}
+
+void VEditArea::alternateTabByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    VEditWindow *win = obj->getCurrentWindow();
+    if (win) {
+        win->alternateTab();
+    }
+}
+
+void VEditArea::showOpenedFileListByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    VEditWindow *win = obj->getCurrentWindow();
+    if (win) {
+        win->showOpenedFileList();
+    }
+}
+
+void VEditArea::activateSplitLeftByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    obj->focusNextWindow(-1);
+}
+
+void VEditArea::activateSplitRightByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    obj->focusNextWindow(1);
+}
+
+void VEditArea::moveTabSplitLeftByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    obj->moveCurrentTabOneSplit(false);
+}
+
+void VEditArea::moveTabSplitRightByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    obj->moveCurrentTabOneSplit(true);
+}
+
+void VEditArea::activateNextTabByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    VEditWindow *win = obj->getCurrentWindow();
+    if (win) {
+        win->focusNextTab(true);
+    }
+}
+
+void VEditArea::activatePreviousTabByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    VEditWindow *win = obj->getCurrentWindow();
+    if (win) {
+        win->focusNextTab(false);
+    }
+}
+
+void VEditArea::verticalSplitByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    obj->splitCurrentWindow();
+}
+
+void VEditArea::removeSplitByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    obj->removeCurrentWindow();
+}
+

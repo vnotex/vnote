@@ -13,7 +13,6 @@
 #include "vconfigmanager.h"
 
 VConfigManager *g_config;
-VMainWindow *g_mainWin;
 
 #if defined(QT_NO_DEBUG)
 QFile g_logFile;
@@ -157,7 +156,6 @@ int main(int argc, char *argv[])
     }
 
     VMainWindow w(&guard);
-    g_mainWin = &w;
     QString style = VUtils::readFileFromDisk(":/resources/vnote.qss");
     if (!style.isEmpty()) {
         VUtils::processStyle(style, w.getPalette());

@@ -60,9 +60,6 @@ public:
     // Returns true if the location succeeds.
     bool locateFile(VFile *p_file);
 
-    // Returns true if the location succeeds.
-    bool locateCurrentFile();
-
     VFileList *getFileList() const;
 
     VEditArea *getEditArea() const;
@@ -81,18 +78,20 @@ public:
     // Show a temporary message in status bar.
     void showStatusMessage(const QString &p_msg);
 
-    // Popup the attachment list if it is enabled.
-    void showAttachmentList();
-
     // Open startup pages according to configuration.
     void openStartupPages();
+
+    VCaptain *getCaptain() const;
 
 private slots:
     void importNoteFromFile();
     void viewSettings();
     void changeMarkdownConverter(QAction *action);
     void aboutMessage();
-    void shortcutHelp();
+
+    // Display shortcuts help.
+    void shortcutsHelp();
+
     void changeExpandTab(bool checked);
     void setTabStopWidth(QAction *action);
     void setEditorBackgroundColor(QAction *action);
@@ -129,7 +128,6 @@ private slots:
     void openFindDialog();
     void enableMermaid(bool p_checked);
     void enableMathjax(bool p_checked);
-    void handleCaptainModeChanged(bool p_enabled);
     void changeAutoIndent(bool p_checked);
     void changeAutoList(bool p_checked);
     void changeVimMode(bool p_checked);
@@ -159,6 +157,9 @@ private slots:
 
     // Restore main window.
     void showMainWindow();
+
+    // Close current note.
+    void closeCurrentFile();
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -213,9 +214,10 @@ private:
     void restoreStateAndGeometry();
     void repositionAvatar();
 
+    // Should init VCaptain before setupUI().
     void initCaptain();
-    void toggleOnePanelView();
-    void closeCurrentFile();
+
+    void registerCaptainAndNavigationTargets();
 
     // Update status bar information.
     void updateStatusInfo(const VEditTabInfo &p_info);
@@ -239,6 +241,29 @@ private:
     // Whether heading sequence is applicable to current tab.
     // Only available for writable Markdown file.
     bool isHeadingSequenceApplicable() const;
+
+    // Captain mode functions.
+
+    // Popup the attachment list if it is enabled.
+    static void showAttachmentListByCaptain(void *p_target, void *p_data);
+
+    static void locateCurrentFileByCaptain(void *p_target, void *p_data);
+
+    static void toggleExpandModeByCaptain(void *p_target, void *p_data);
+
+    static void toggleOnePanelViewByCaptain(void *p_target, void *p_data);
+
+    static void discardAndReadByCaptain(void *p_target, void *p_data);
+
+    static void toggleToolsDockByCaptain(void *p_target, void *p_data);
+
+    static void closeFileByCaptain(void *p_target, void *p_data);
+
+    static void shortcutsHelpByCaptain(void *p_target, void *p_data);
+
+    static void flushLogFileByCaptain(void *p_target, void *p_data);
+
+    // End Captain mode functions.
 
     VNote *vnote;
     QPointer<VFile> m_curFile;
@@ -353,6 +378,11 @@ inline VFileList *VMainWindow::getFileList() const
 inline VEditArea *VMainWindow::getEditArea() const
 {
     return editArea;
+}
+
+inline VCaptain *VMainWindow::getCaptain() const
+{
+    return m_captain;
 }
 
 #endif // VMAINWINDOW_H

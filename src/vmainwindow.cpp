@@ -31,6 +31,8 @@
 #include "vattachmentlist.h"
 #include "vfilesessioninfo.h"
 
+VMainWindow *g_mainWin;
+
 extern VConfigManager *g_config;
 
 VNote *g_vnote;
@@ -41,11 +43,14 @@ const int VMainWindow::c_sharedMemTimerInterval = 1000;
 extern QFile g_logFile;
 #endif
 
+
 VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
     : QMainWindow(p_parent), m_guard(p_guard),
       m_windowOldState(Qt::WindowNoState), m_requestQuit(false)
 {
     qsrand(QDateTime::currentDateTime().toTime_t());
+
+    g_mainWin = this;
 
     setWindowIcon(QIcon(":/resources/icons/vnote.ico"));
     vnote = new VNote(this);
@@ -58,6 +63,8 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
     } else {
         m_panelViewState = PanelViewState::TwoPanels;
     }
+
+    initCaptain();
 
     setupUI();
 
@@ -74,9 +81,9 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
 
     notebookSelector->update();
 
-    initCaptain();
-
     initSharedMemoryWatcher();
+
+    registerCaptainAndNavigationTargets();
 }
 
 void VMainWindow::initSharedMemoryWatcher()
@@ -95,14 +102,53 @@ void VMainWindow::initCaptain()
     // VCaptain should be visible to accpet key focus. But VCaptain
     // may hide other widgets.
     m_captain = new VCaptain(this);
-    connect(m_captain, &VCaptain::captainModeChanged,
-            this, &VMainWindow::handleCaptainModeChanged);
+}
 
+void VMainWindow::registerCaptainAndNavigationTargets()
+{
     m_captain->registerNavigationTarget(notebookSelector);
     m_captain->registerNavigationTarget(directoryTree);
     m_captain->registerNavigationTarget(m_fileList);
     m_captain->registerNavigationTarget(editArea);
     m_captain->registerNavigationTarget(outline);
+
+    // Register Captain mode targets.
+    m_captain->registerCaptainTarget(tr("AttachmentList"),
+                                     g_config->getCaptainShortcutKeySequence("AttachmentList"),
+                                     this,
+                                     showAttachmentListByCaptain);
+    m_captain->registerCaptainTarget(tr("LocateCurrentFile"),
+                                     g_config->getCaptainShortcutKeySequence("LocateCurrentFile"),
+                                     this,
+                                     locateCurrentFileByCaptain);
+    m_captain->registerCaptainTarget(tr("ExpandMode"),
+                                     g_config->getCaptainShortcutKeySequence("ExpandMode"),
+                                     this,
+                                     toggleExpandModeByCaptain);
+    m_captain->registerCaptainTarget(tr("OnePanelView"),
+                                     g_config->getCaptainShortcutKeySequence("OnePanelView"),
+                                     this,
+                                     toggleOnePanelViewByCaptain);
+    m_captain->registerCaptainTarget(tr("DiscardAndRead"),
+                                     g_config->getCaptainShortcutKeySequence("DiscardAndRead"),
+                                     this,
+                                     discardAndReadByCaptain);
+    m_captain->registerCaptainTarget(tr("ToolsDock"),
+                                     g_config->getCaptainShortcutKeySequence("ToolsDock"),
+                                     this,
+                                     toggleToolsDockByCaptain);
+    m_captain->registerCaptainTarget(tr("CloseNote"),
+                                     g_config->getCaptainShortcutKeySequence("CloseNote"),
+                                     this,
+                                     closeFileByCaptain);
+    m_captain->registerCaptainTarget(tr("ShortcutsHelp"),
+                                     g_config->getCaptainShortcutKeySequence("ShortcutsHelp"),
+                                     this,
+                                     shortcutsHelpByCaptain);
+    m_captain->registerCaptainTarget(tr("FlushLogFile"),
+                                     g_config->getCaptainShortcutKeySequence("FlushLogFile"),
+                                     this,
+                                     flushLogFileByCaptain);
 }
 
 void VMainWindow::setupUI()
@@ -488,11 +534,7 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     m_closeNoteShortcut = new QShortcut(QKeySequence(keySeq), this);
     m_closeNoteShortcut->setContext(Qt::WidgetWithChildrenShortcut);
     connect(m_closeNoteShortcut, &QShortcut::activated,
-            this, [this](){
-                if (m_curFile) {
-                    editArea->closeFile(m_curFile, false);
-                }
-            });
+            this, &VMainWindow::closeCurrentFile);
 
     editNoteAct = new QAction(QIcon(":/resources/icons/edit_note.svg"),
                               tr("&Edit"), this);
@@ -580,7 +622,7 @@ void VMainWindow::initHelpMenu()
     QAction *shortcutAct = new QAction(tr("&Shortcuts Help"), this);
     shortcutAct->setToolTip(tr("View information about shortcut keys"));
     connect(shortcutAct, &QAction::triggered,
-            this, &VMainWindow::shortcutHelp);
+            this, &VMainWindow::shortcutsHelp);
 
     QAction *mdGuideAct = new QAction(tr("&Markdown Guide"), this);
     mdGuideAct->setToolTip(tr("A quick guide of Markdown syntax"));
@@ -1812,15 +1854,6 @@ void VMainWindow::compactModeView()
     changePanelView(m_panelViewState);
 }
 
-void VMainWindow::toggleOnePanelView()
-{
-    if (m_panelViewState == PanelViewState::TwoPanels) {
-        onePanelView();
-    } else {
-        twoPanelView();
-    }
-}
-
 void VMainWindow::enableCompactMode(bool p_enabled)
 {
     const int fileListIdx = 1;
@@ -2153,15 +2186,6 @@ bool VMainWindow::locateFile(VFile *p_file)
     return ret;
 }
 
-bool VMainWindow::locateCurrentFile()
-{
-    if (m_curFile) {
-        return locateFile(m_curFile);
-    }
-
-    return false;
-}
-
 void VMainWindow::handleFindDialogTextChanged(const QString &p_text, uint /* p_options */)
 {
     bool enabled = true;
@@ -2184,18 +2208,6 @@ void VMainWindow::viewSettings()
 {
     VSettingsDialog settingsDialog(this);
     settingsDialog.exec();
-}
-
-void VMainWindow::handleCaptainModeChanged(bool p_enabled)
-{
-    static QString normalBaseColor = m_avatar->getBaseColor();
-    static QString captainModeColor = vnote->getColorFromPalette("Purple5");
-
-    if (p_enabled) {
-        m_avatar->updateBaseColor(captainModeColor);
-    } else {
-        m_avatar->updateBaseColor(normalBaseColor);
-    }
 }
 
 void VMainWindow::closeCurrentFile()
@@ -2255,7 +2267,7 @@ void VMainWindow::enableImageCaption(bool p_checked)
     g_config->setEnableImageCaption(p_checked);
 }
 
-void VMainWindow::shortcutHelp()
+void VMainWindow::shortcutsHelp()
 {
     QString locale = VUtils::getLocale();
     QString docName = VNote::c_shortcutsDocFile_en;
@@ -2466,13 +2478,6 @@ void VMainWindow::showMainWindow()
     this->activateWindow();
 }
 
-void VMainWindow::showAttachmentList()
-{
-    if (m_attachmentBtn->isEnabled()) {
-        m_attachmentBtn->showPopupWidget();
-    }
-}
-
 void VMainWindow::openStartupPages()
 {
     StartupPageType type = g_config->getStartupPageType();
@@ -2512,4 +2517,82 @@ bool VMainWindow::isHeadingSequenceApplicable() const
     }
 
     return true;
+}
+
+// Popup the attachment list if it is enabled.
+void VMainWindow::showAttachmentListByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    if (obj->m_attachmentBtn->isEnabled()) {
+        obj->m_attachmentBtn->showPopupWidget();
+    }
+}
+
+void VMainWindow::locateCurrentFileByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    if (obj->m_curFile) {
+        obj->locateFile(obj->m_curFile);
+    }
+}
+
+void VMainWindow::toggleExpandModeByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    obj->expandViewAct->trigger();
+}
+
+void VMainWindow::toggleOnePanelViewByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    if (obj->m_panelViewState == PanelViewState::TwoPanels) {
+        obj->onePanelView();
+    } else {
+        obj->twoPanelView();
+    }
+}
+
+void VMainWindow::discardAndReadByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    if (obj->m_curFile) {
+        obj->discardExitAct->trigger();
+    }
+}
+
+void VMainWindow::toggleToolsDockByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    obj->toolDock->setVisible(!obj->toolDock->isVisible());
+}
+
+void VMainWindow::closeFileByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    obj->closeCurrentFile();
+}
+
+void VMainWindow::shortcutsHelpByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    obj->shortcutsHelp();
+}
+
+void VMainWindow::flushLogFileByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_target);
+    Q_UNUSED(p_data);
+
+#if defined(QT_NO_DEBUG)
+    // Flush g_logFile.
+    g_logFile.flush();
+#endif
 }
