@@ -478,6 +478,8 @@ void VEditWindow::updateTabStatus(int p_index)
     emit tabStatusUpdated(tab->fetchTabInfo());
     emit outlineChanged(tab->getOutline());
     emit currentHeaderChanged(tab->getCurrentHeader());
+
+    updateTabInfo(p_index);
 }
 
 void VEditWindow::updateTabInfo(int p_index)

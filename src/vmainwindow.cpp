@@ -169,6 +169,7 @@ void VMainWindow::setupUI()
     m_mainSplitter->setObjectName("MainSplitter");
     m_mainSplitter->addWidget(directoryPanel);
     m_mainSplitter->addWidget(m_fileList);
+    setTabOrder(directoryTree, m_fileList->getContentWidget());
     m_mainSplitter->addWidget(editArea);
     m_mainSplitter->setStretchFactor(0, 0);
     m_mainSplitter->setStretchFactor(1, 0);
@@ -283,6 +284,7 @@ QWidget *VMainWindow::setupDirectoryPanel()
 
     connect(directoryTree, &VDirectoryTree::currentDirectoryChanged,
             this, &VMainWindow::handleCurrentDirectoryChanged);
+
     return nbContainer;
 }
 
@@ -1895,6 +1897,9 @@ void VMainWindow::enableCompactMode(bool p_enabled)
 
         m_fileList->show();
     }
+
+    // Set Tab order.
+    setTabOrder(directoryTree, m_fileList->getContentWidget());
 }
 
 void VMainWindow::changePanelView(PanelViewState p_state)

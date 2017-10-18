@@ -932,4 +932,3 @@ void VEditArea::removeSplitByCaptain(void *p_target, void *p_data)
     VEditArea *obj = static_cast<VEditArea *>(p_target);
     obj->removeCurrentWindow();
 }
-

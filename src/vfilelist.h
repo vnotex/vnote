@@ -44,7 +44,9 @@ public:
     // Locate @p_file in the list widget.
     bool locateFile(const VNoteFile *p_file);
 
-    inline const VDirectory *currentDirectory() const;
+    const VDirectory *currentDirectory() const;
+
+    QWidget *getContentWidget() const;
 
     // Implementations for VNavigationMode.
     void registerNavigation(QChar p_majorKey) Q_DECL_OVERRIDE;
@@ -197,6 +199,11 @@ inline QPointer<VNoteFile> VFileList::getVFile(QListWidgetItem *p_item) const
 inline const VDirectory *VFileList::currentDirectory() const
 {
     return m_directory;
+}
+
+inline QWidget *VFileList::getContentWidget() const
+{
+    return fileList;
 }
 
 #endif // VFILELIST_H

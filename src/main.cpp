@@ -164,9 +164,9 @@ int main(int argc, char *argv[])
 
     w.show();
 
-    w.openFiles(filePaths);
-
     w.openStartupPages();
+
+    w.openFiles(filePaths);
 
     return app.exec();
 }
