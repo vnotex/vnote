@@ -153,6 +153,7 @@ private:
     // and move the tab to the new split.
     void moveTabOneSplit(int p_tabIdx, bool p_right);
 
+    // Update info of tab @p_idx according to the state of the editor and file.
     void updateTabInfo(int p_idx);
 
     // Update the sequence number of all the tabs.

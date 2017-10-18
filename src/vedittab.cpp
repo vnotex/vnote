@@ -25,6 +25,7 @@ void VEditTab::focusTab()
 {
     focusChild();
     emit getFocused();
+    updateStatus();
 }
 
 bool VEditTab::isEditMode() const
@@ -49,8 +50,10 @@ void VEditTab::handleFocusChanged(QWidget * /* p_old */, QWidget *p_now)
         focusChild();
 
         emit getFocused();
+        updateStatus();
     } else if (isAncestorOf(p_now)) {
         emit getFocused();
+        updateStatus();
     }
 }
 

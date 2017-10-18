@@ -265,8 +265,8 @@ int VEditWindow::insertEditTab(int p_index, VFile *p_file, QWidget *p_page)
 {
     int idx = insertTab(p_index,
                         p_page,
-                        generateTabText(p_index, p_file));
-    setTabToolTip(idx, generateTooltip(p_file));
+                        p_file->getName());
+    updateTabInfo(idx);
     return idx;
 }
 

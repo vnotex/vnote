@@ -1155,7 +1155,7 @@ void VMainWindow::initEditMenu()
 void VMainWindow::initDockWindows()
 {
     toolDock = new QDockWidget(tr("Tools"), this);
-    toolDock->setObjectName("tools_dock");
+    toolDock->setObjectName("ToolsDock");
     toolDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     toolBox = new QToolBox(this);
 
