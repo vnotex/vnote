@@ -469,6 +469,16 @@ void VMdTab::insertImage()
     m_editor->insertImage();
 }
 
+void VMdTab::insertLink()
+{
+    if (!m_isEditMode) {
+        return;
+    }
+
+    Q_ASSERT(m_editor);
+    m_editor->insertLink();
+}
+
 void VMdTab::findText(const QString &p_text, uint p_options, bool p_peek,
                       bool p_forward)
 {

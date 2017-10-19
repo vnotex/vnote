@@ -16,10 +16,17 @@ class VMdEditOperations : public VEditOperations
     Q_OBJECT
 public:
     VMdEditOperations(VEdit *p_editor, VFile *p_file);
+
     bool insertImageFromMimeData(const QMimeData *source) Q_DECL_OVERRIDE;
+
     bool insertImage() Q_DECL_OVERRIDE;
+
     bool handleKeyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
+
     bool insertImageFromURL(const QUrl &p_imageUrl) Q_DECL_OVERRIDE;
+
+    bool insertLink(const QString &p_linkText,
+                    const QString &p_linkUrl);
 
     // Insert decoration markers or decorate selected text.
     // If it is Vim Normal mode, change to Insert mode first.

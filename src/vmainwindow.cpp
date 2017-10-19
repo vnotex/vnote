@@ -463,6 +463,19 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
 
     m_editToolBar->addAction(inlineCodeAct);
 
+    // Insert link.
+    QAction *insetLinkAct = new QAction(QIcon(":/resources/icons/link.svg"),
+                                        tr("Insert Link (Ctrl+L)"), this);
+    insetLinkAct->setStatusTip(tr("Insert a link"));
+    connect(insetLinkAct, &QAction::triggered,
+            this, [this]() {
+                if (m_curTab) {
+                    m_curTab->insertLink();
+                }
+            });
+
+    m_editToolBar->addAction(insetLinkAct);
+
     // Insert image.
     QAction *insertImageAct = new QAction(QIcon(":/resources/icons/insert_image.svg"),
                                           tr("Insert Image"),

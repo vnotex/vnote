@@ -90,3 +90,10 @@ void VEditOperations::requestUpdateVimStatus()
 {
     emit vimStatusUpdated(m_vim);
 }
+
+void VEditOperations::setVimMode(VimMode p_mode)
+{
+    if (m_vim && m_editConfig->m_enableVimMode) {
+        m_vim->setMode(p_mode);
+    }
+}

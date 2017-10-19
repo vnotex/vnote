@@ -120,3 +120,7 @@ bool VEditTab::tabHasFocus() const
     QWidget *wid = QApplication::focusWidget();
     return wid == this || isAncestorOf(wid);
 }
+
+void VEditTab::insertLink()
+{
+}

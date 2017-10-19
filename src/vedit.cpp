@@ -10,7 +10,7 @@
 #include "utils/vmetawordmanager.h"
 #include "veditoperations.h"
 #include "vedittab.h"
-
+#include "dialog/vinsertlinkdialog.h"
 
 extern VConfigManager *g_config;
 
@@ -196,6 +196,49 @@ void VEdit::insertImage()
 {
     if (m_editOps) {
         m_editOps->insertImage();
+    }
+}
+
+void VEdit::insertLink()
+{
+    if (!m_editOps) {
+        return;
+    }
+
+    QString text;
+    QString linkText, linkUrl;
+    QTextCursor cursor = textCursor();
+    if (cursor.hasSelection()) {
+        text = VEditUtils::selectedText(cursor).trimmed();
+        // Only pure space is accepted.
+        QRegExp reg("[\\S ]*");
+        if (reg.exactMatch(text)) {
+            QUrl url = QUrl::fromUserInput(text,
+                                           m_file->fetchBasePath());
+            QRegExp urlReg("[\\.\\\\/]");
+            if (url.isValid()
+                && text.contains(urlReg)) {
+                // Url.
+                linkUrl = text;
+            } else {
+                // Text.
+                linkText = text;
+            }
+        }
+    }
+
+    VInsertLinkDialog dialog(tr("Insert Link"),
+                             "",
+                             "",
+                             linkText,
+                             linkUrl,
+                             this);
+    if (dialog.exec() == QDialog::Accepted) {
+        linkText = dialog.getLinkText();
+        linkUrl = dialog.getLinkUrl();
+        Q_ASSERT(!linkText.isEmpty() && !linkUrl.isEmpty());
+
+        m_editOps->insertLink(linkText, linkUrl);
     }
 }
 

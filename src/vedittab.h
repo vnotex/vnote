@@ -49,6 +49,9 @@ public:
     // User requests to insert image.
     virtual void insertImage() = 0;
 
+    // User requests to insert link.
+    virtual void insertLink();
+
     // Search @p_text in current note.
     virtual void findText(const QString &p_text, uint p_options, bool p_peek,
                           bool p_forward = true) = 0;

@@ -18,10 +18,17 @@ class VEditOperations: public QObject
     Q_OBJECT
 public:
     VEditOperations(VEdit *p_editor, VFile *p_file);
+
     virtual ~VEditOperations();
+
     virtual bool insertImageFromMimeData(const QMimeData *source) = 0;
+
     virtual bool insertImage() = 0;
+
     virtual bool insertImageFromURL(const QUrl &p_imageUrl) = 0;
+
+    virtual bool insertLink(const QString &p_linkText,
+                            const QString &p_linkUrl) = 0;
 
     // Return true if @p_event has been handled and no need to be further
     // processed.
@@ -62,12 +69,5 @@ protected:
     VEditConfig *m_editConfig;
     VVim *m_vim;
 };
-
-inline void VEditOperations::setVimMode(VimMode p_mode)
-{
-    if (m_vim) {
-        m_vim->setMode(p_mode);
-    }
-}
 
 #endif // VEDITOPERATIONS_H

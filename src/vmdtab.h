@@ -36,6 +36,8 @@ public:
 
     void insertImage() Q_DECL_OVERRIDE;
 
+    void insertLink() Q_DECL_OVERRIDE;
+
     // Search @p_text in current note.
     void findText(const QString &p_text, uint p_options, bool p_peek,
                   bool p_forward = true) Q_DECL_OVERRIDE;

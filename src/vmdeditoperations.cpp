@@ -278,6 +278,17 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         break;
     }
 
+    case Qt::Key_L:
+    {
+        if (modifiers == Qt::ControlModifier) {
+            m_editor->insertLink();
+            p_event->accept();
+            ret = true;
+        }
+
+        break;
+    }
+
     case Qt::Key_O:
     {
         if (modifiers == Qt::ControlModifier) {
@@ -831,4 +842,17 @@ void VMdEditOperations::decorateStrikethrough()
 
     cursor.endEditBlock();
     m_editor->setTextCursor(cursor);
+}
+
+bool VMdEditOperations::insertLink(const QString &p_linkText,
+                                   const QString &p_linkUrl)
+{
+    QString link = QString("[%1](%2)").arg(p_linkText).arg(p_linkUrl);
+    QTextCursor cursor = m_editor->textCursor();
+    cursor.insertText(link);
+    m_editor->setTextCursor(cursor);
+
+    setVimMode(VimMode::Insert);
+
+    return true;
 }
