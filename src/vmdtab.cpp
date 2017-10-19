@@ -685,3 +685,10 @@ bool VMdTab::isHeadingSequenceEnabled() const
 {
     return m_enableHeadingSequence;
 }
+
+void VMdTab::evaluateMagicWords()
+{
+    if (isEditMode() && m_file->isModifiable()) {
+        getEditor()->evaluateMagicWords();
+    }
+}

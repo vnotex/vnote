@@ -188,6 +188,9 @@ private:
 
     static void removeSplitByCaptain(void *p_target, void *p_data);
 
+    // Evaluate selected text or the word on cursor as magic words.
+    static void evaluateMagicWordsByCaptain(void *p_target, void *p_data);
+
     // End Captain mode functions.
 
     int curWindowIndex;

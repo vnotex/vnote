@@ -7,11 +7,16 @@
 #include "vtableofcontent.h"
 #include "utils/vutils.h"
 #include "utils/veditutils.h"
+#include "utils/vmetawordmanager.h"
 #include "veditoperations.h"
 #include "vedittab.h"
 
+
 extern VConfigManager *g_config;
+
 extern VNote *g_vnote;
+
+extern VMetaWordManager *g_mwMgr;
 
 void VEditConfig::init(const QFontMetrics &p_metric,
                        bool p_enableHeadingSequence)
@@ -1386,5 +1391,38 @@ void VEdit::updateBlockLineDistanceHeight(int p_pos,
 
     if (changed) {
         cursor.endEditBlock();
+    }
+}
+
+void VEdit::evaluateMagicWords()
+{
+    QString text;
+    QTextCursor cursor = textCursor();
+    if (!cursor.hasSelection()) {
+        // Get the WORD in current cursor.
+        int start, end;
+        VEditUtils::findCurrentWORD(cursor, start, end);
+
+        if (start == end) {
+            return;
+        } else {
+            cursor.setPosition(start);
+            cursor.setPosition(end, QTextCursor::KeepAnchor);
+        }
+    }
+
+    text = VEditUtils::selectedText(cursor);
+    Q_ASSERT(!text.isEmpty());
+    QString evaText = g_mwMgr->evaluate(text);
+    if (text != evaText) {
+        qDebug() << "evaluateMagicWords" << text << evaText;
+
+        cursor.insertText(evaText);
+
+        if (m_editOps) {
+            m_editOps->setVimMode(VimMode::Insert);
+        }
+
+        setTextCursor(cursor);
     }
 }

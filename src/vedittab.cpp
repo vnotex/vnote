@@ -110,3 +110,7 @@ void VEditTab::updateStatus()
 {
     emit statusUpdated(fetchTabInfo());
 }
+
+void VEditTab::evaluateMagicWords()
+{
+}

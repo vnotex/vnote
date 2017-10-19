@@ -50,7 +50,8 @@ public:
               MetaWordType p_type,
               const QString &p_word,
               const QString &p_definition,
-              MetaWordFunc p_function = nullptr);
+              MetaWordFunc p_function = nullptr,
+              bool p_allowAllSpaces = false);
 
     bool isValid() const;
 
@@ -116,7 +117,9 @@ private:
 
     // Parse children word from definition.
     // Children word MUST be defined in m_manager already.
-    void checkAndParseDefinition();
+    // @p_allowAllSpaces: if true then we allow all spaces including \n and \t
+    // to appear in the definition.
+    void checkAndParseDefinition(bool p_allowAllSpaces);
 
     // Parse @p_text to a list of tokens.
     static QVector<VMetaWord::Token> parseToTokens(const QString &p_text);

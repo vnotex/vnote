@@ -82,6 +82,9 @@ public:
     // Emit signal to update current status.
     virtual void updateStatus();
 
+    // Called by evaluateMagicWordsByCaptain() to evaluate the magic words.
+    virtual void evaluateMagicWords();
+
 public slots:
     // Enter edit mode
     virtual void editFile() = 0;

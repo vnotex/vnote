@@ -171,62 +171,6 @@ static void findCurrentSpace(const QTextCursor &p_cursor, int &p_start, int &p_e
     p_end += block.position();
 }
 
-// Find the start and end of the word @p_cursor locates in (within a single block).
-// @p_start and @p_end will be the global position of the start and end of the word.
-// @p_start will equals to @p_end if @p_cursor is a space.
-static void findCurrentWord(QTextCursor p_cursor, int &p_start, int &p_end)
-{
-    QString text = p_cursor.block().text();
-    int pib = p_cursor.positionInBlock();
-
-    if (pib < text.size() && text[pib].isSpace()) {
-        p_start = p_end = p_cursor.position();
-        return;
-    }
-
-    p_cursor.movePosition(QTextCursor::StartOfWord);
-    p_start = p_cursor.position();
-    p_cursor.movePosition(QTextCursor::EndOfWord);
-    p_end = p_cursor.position();
-}
-
-// Find the start and end of the WORD @p_cursor locates in (within a single block).
-// @p_start and @p_end will be the global position of the start and end of the WORD.
-// @p_start will equals to @p_end if @p_cursor is a space.
-// Attention: www|sss will select www, which is different from findCurrentWord().
-static void findCurrentWORD(const QTextCursor &p_cursor, int &p_start, int &p_end)
-{
-    QTextBlock block = p_cursor.block();
-    QString text = block.text();
-    int pib = p_cursor.positionInBlock();
-
-    if (pib < text.size() && text[pib].isSpace()) {
-        p_start = p_end = p_cursor.position();
-        return;
-    }
-
-    // Find the start.
-    p_start = 0;
-    for (int i = pib - 1; i >= 0; --i) {
-        if (text[i].isSpace()) {
-            p_start = i + 1;
-            break;
-        }
-    }
-
-    // Find the end.
-    p_end = block.length() - 1;
-    for (int i = pib; i < text.size(); ++i) {
-        if (text[i].isSpace()) {
-            p_end = i;
-            break;
-        }
-    }
-
-    p_start += block.position();
-    p_end += block.position();
-}
-
 // Move @p_cursor to skip spaces if current cursor is placed at a space
 // (may move across blocks). It will stop by the empty block on the way.
 // Forward: wwwwsssss|wwww
@@ -2729,7 +2673,7 @@ bool VVim::processMovement(QTextCursor &p_cursor,
         for (int i = 0; i < p_repeat; ++i) {
             int start, end;
             // [start, end] is current WORD.
-            findCurrentWORD(p_cursor, start, end);
+            VEditUtils::findCurrentWORD(p_cursor, start, end);
 
             // Move cursor to end of current WORD.
             p_cursor.setPosition(end, p_moveMode);
@@ -2779,7 +2723,7 @@ bool VVim::processMovement(QTextCursor &p_cursor,
 
             int start, end;
             // [start, end] is current WORD.
-            findCurrentWORD(p_cursor, start, end);
+            VEditUtils::findCurrentWORD(p_cursor, start, end);
 
             // Move cursor to the end of current WORD.
             p_cursor.setPosition(end, p_moveMode);
@@ -2825,7 +2769,7 @@ bool VVim::processMovement(QTextCursor &p_cursor,
 
             int start, end;
             // [start, end] is current WORD.
-            findCurrentWORD(p_cursor, start, end);
+            VEditUtils::findCurrentWORD(p_cursor, start, end);
 
             // Move cursor to the start of current WORD.
             p_cursor.setPosition(start, p_moveMode);
@@ -2862,7 +2806,7 @@ bool VVim::processMovement(QTextCursor &p_cursor,
 
         for (int i = 0; i < p_repeat; ++i) {
             int start, end;
-            findCurrentWORD(p_cursor, start, end);
+            VEditUtils::findCurrentWORD(p_cursor, start, end);
 
             p_cursor.setPosition(start, p_moveMode);
 
@@ -3051,7 +2995,7 @@ handle_target:
         // Different from Vim:
         // We do not recognize a word as strict as Vim.
         int start, end;
-        findCurrentWord(p_cursor, start, end);
+        VEditUtils::findCurrentWord(p_cursor, start, end);
         if (start == end) {
             // Spaces, find next word.
             QTextCursor cursor = p_cursor;
@@ -3062,7 +3006,7 @@ handle_target:
                 }
 
                 if (!doc->characterAt(cursor.position()).isSpace()) {
-                    findCurrentWord(cursor, start, end);
+                    VEditUtils::findCurrentWord(cursor, start, end);
                     Q_ASSERT(start != end);
                     break;
                 }
@@ -3187,7 +3131,7 @@ bool VVim::selectRange(QTextCursor &p_cursor, const QTextDocument *p_doc,
         Q_ASSERT(p_repeat == -1);
         bool spaces = false;
         int start, end;
-        findCurrentWord(p_cursor, start, end);
+        VEditUtils::findCurrentWord(p_cursor, start, end);
 
         if (start == end) {
             // Select the space between previous word and next word.
@@ -3227,7 +3171,7 @@ bool VVim::selectRange(QTextCursor &p_cursor, const QTextDocument *p_doc,
         findCurrentSpace(p_cursor, start, end);
 
         if (start == end) {
-            findCurrentWORD(p_cursor, start, end);
+            VEditUtils::findCurrentWORD(p_cursor, start, end);
         } else {
             // Select the space between previous WORD and next WORD.
             spaces = true;
@@ -3246,7 +3190,7 @@ bool VVim::selectRange(QTextCursor &p_cursor, const QTextDocument *p_doc,
                         moveCursorAcrossSpaces(p_cursor, moveMode, true);
 
                         // [start, end] is current WORD.
-                        findCurrentWORD(p_cursor, start, end);
+                        VEditUtils::findCurrentWORD(p_cursor, start, end);
 
                         // Move cursor to the end of current WORD.
                         p_cursor.setPosition(end, moveMode);

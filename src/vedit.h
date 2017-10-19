@@ -141,6 +141,9 @@ public:
 
     bool isBlockVisible(const QTextBlock &p_block);
 
+    // Evaluate selected text or cursor word as magic words.
+    void evaluateMagicWords();
+
 signals:
     // Request VEditTab to save and exit edit mode.
     void saveAndRead();

@@ -33,6 +33,9 @@ public:
     // Insert decoration markers or decorate selected text.
     virtual void decorateText(TextDecoration p_decoration) {Q_UNUSED(p_decoration);};
 
+    // Set Vim mode if not NULL.
+    void setVimMode(VimMode p_mode);
+
 signals:
     // Want to display a template message in status bar.
     void statusMessage(const QString &p_msg);
@@ -59,5 +62,12 @@ protected:
     VEditConfig *m_editConfig;
     VVim *m_vim;
 };
+
+inline void VEditOperations::setVimMode(VimMode p_mode)
+{
+    if (m_vim) {
+        m_vim->setMode(p_mode);
+    }
+}
 
 #endif // VEDITOPERATIONS_H

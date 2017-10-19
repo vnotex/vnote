@@ -839,6 +839,10 @@ void VEditArea::registerCaptainTargets()
                                    g_config->getCaptainShortcutKeySequence("RemoveSplit"),
                                    this,
                                    removeSplitByCaptain);
+    captain->registerCaptainTarget(tr("MagicWord"),
+                                   g_config->getCaptainShortcutKeySequence("MagicWord"),
+                                   this,
+                                   evaluateMagicWordsByCaptain);
 }
 
 void VEditArea::activateTabByCaptain(void *p_target, void *p_data, int p_idx)
@@ -932,3 +936,14 @@ void VEditArea::removeSplitByCaptain(void *p_target, void *p_data)
     VEditArea *obj = static_cast<VEditArea *>(p_target);
     obj->removeCurrentWindow();
 }
+
+void VEditArea::evaluateMagicWordsByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    VEditTab *tab = obj->getCurrentTab();
+    if (tab) {
+        tab->evaluateMagicWords();
+    }
+}
+

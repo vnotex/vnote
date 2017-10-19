@@ -70,6 +70,9 @@ public:
 
     bool isHeadingSequenceEnabled() const;
 
+    // Evaluate magic words.
+    void evaluateMagicWords() Q_DECL_OVERRIDE;
+
 public slots:
     // Enter edit mode.
     void editFile() Q_DECL_OVERRIDE;

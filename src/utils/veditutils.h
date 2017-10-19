@@ -142,6 +142,21 @@ public:
                                 const QTextBlock &p_block,
                                 int p_level);
 
+    // Find the start and end of the word @p_cursor locates in (within a single block).
+    // @p_start and @p_end will be the global position of the start and end of the word.
+    // @p_start will equals to @p_end if @p_cursor is a space.
+    static void findCurrentWord(QTextCursor p_cursor,
+                                int &p_start,
+                                int &p_end);
+
+    // Find the start and end of the WORD @p_cursor locates in (within a single block).
+    // @p_start and @p_end will be the global position of the start and end of the WORD.
+    // @p_start will equals to @p_end if @p_cursor is a space.
+    // Attention: www|sss will select www, which is different from findCurrentWord().
+    static void findCurrentWORD(const QTextCursor &p_cursor,
+                                int &p_start,
+                                int &p_end);
+
 private:
     VEditUtils() {}
 };

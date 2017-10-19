@@ -735,3 +735,57 @@ void VEditUtils::insertTitleMark(QTextCursor &p_cursor,
     // Go to the end of this block.
     p_cursor.movePosition(QTextCursor::EndOfBlock);
 }
+
+void VEditUtils::findCurrentWord(QTextCursor p_cursor,
+                                 int &p_start,
+                                 int &p_end)
+{
+    QString text = p_cursor.block().text();
+    int pib = p_cursor.positionInBlock();
+
+    if (pib < text.size() && text[pib].isSpace()) {
+        p_start = p_end = p_cursor.position();
+        return;
+    }
+
+    p_cursor.movePosition(QTextCursor::StartOfWord);
+    p_start = p_cursor.position();
+    p_cursor.movePosition(QTextCursor::EndOfWord);
+    p_end = p_cursor.position();
+}
+
+void VEditUtils::findCurrentWORD(const QTextCursor &p_cursor,
+                                 int &p_start,
+                                 int &p_end)
+{
+    QTextBlock block = p_cursor.block();
+    QString text = block.text();
+    int pib = p_cursor.positionInBlock();
+
+    if (pib < text.size() && text[pib].isSpace()) {
+        p_start = p_end = p_cursor.position();
+        return;
+    }
+
+    // Find the start.
+    p_start = 0;
+    for (int i = pib - 1; i >= 0; --i) {
+        if (text[i].isSpace()) {
+            p_start = i + 1;
+            break;
+        }
+    }
+
+    // Find the end.
+    p_end = block.length() - 1;
+    for (int i = pib; i < text.size(); ++i) {
+        if (text[i].isSpace()) {
+            p_end = i;
+            break;
+        }
+    }
+
+    p_start += block.position();
+    p_end += block.position();
+}
+

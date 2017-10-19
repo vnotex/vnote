@@ -273,7 +273,9 @@ QString VMetaWordManager::evaluate(const QString &p_text) const
     VMetaWord metaWord(this,
                        MetaWordType::Compound,
                        tmpWord,
-                       p_text);
+                       p_text,
+                       nullptr,
+                       true);
     if (metaWord.isValid()) {
         return metaWord.evaluate();
     } else {
@@ -322,7 +324,8 @@ VMetaWord::VMetaWord(const VMetaWordManager *p_manager,
                      MetaWordType p_type,
                      const QString &p_word,
                      const QString &p_definition,
-                     MetaWordFunc p_function)
+                     MetaWordFunc p_function,
+                     bool p_allowAllSpaces)
     : m_manager(p_manager),
       m_type(p_type),
       m_word(p_word),
@@ -338,7 +341,7 @@ VMetaWord::VMetaWord(const VMetaWordManager *p_manager,
         Q_ASSERT(m_function);
     }
 
-    checkAndParseDefinition();
+    checkAndParseDefinition(p_allowAllSpaces);
 }
 
 bool VMetaWord::checkType(MetaWordType p_type)
@@ -346,7 +349,7 @@ bool VMetaWord::checkType(MetaWordType p_type)
     return m_type == p_type;
 }
 
-void VMetaWord::checkAndParseDefinition()
+void VMetaWord::checkAndParseDefinition(bool p_allowAllSpaces)
 {
     if (m_word.contains(VMetaWordManager::c_delimiter)) {
         m_valid = false;
@@ -358,7 +361,7 @@ void VMetaWord::checkAndParseDefinition()
 
     // We do not accept \n and \t in the definition.
     QRegExp defReg("[\\S ]*");
-    if (!defReg.exactMatch(m_definition)) {
+    if (!defReg.exactMatch(m_definition) && !p_allowAllSpaces) {
         m_valid = false;
         return;
     }
