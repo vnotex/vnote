@@ -123,7 +123,6 @@ private slots:
     void deleteCurNote();
     void handleCurrentDirectoryChanged(const VDirectory *p_dir);
     void handleCurrentNotebookChanged(const VNotebook *p_notebook);
-    void insertImage();
     void handleFindDialogTextChanged(const QString &p_text, uint p_options);
     void openFindDialog();
     void enableMermaid(bool p_checked);
@@ -311,7 +310,6 @@ private:
     QAction *m_printAct;
     QAction *m_exportAsPDFAct;
 
-    QAction *m_insertImageAct;
     QAction *m_findReplaceAct;
     QAction *m_findNextAct;
     QAction *m_findPreviousAct;

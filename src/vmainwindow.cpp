@@ -463,6 +463,20 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
 
     m_editToolBar->addAction(inlineCodeAct);
 
+    // Insert image.
+    QAction *insertImageAct = new QAction(QIcon(":/resources/icons/insert_image.svg"),
+                                          tr("Insert Image"),
+                                          this);
+    insertImageAct->setStatusTip(tr("Insert an image from file or URL"));
+    connect(insertImageAct, &QAction::triggered,
+            this, [this]() {
+                if (m_curTab) {
+                    m_curTab->insertImage();
+                }
+            });
+
+    m_editToolBar->addAction(insertImageAct);
+
     QAction *toggleAct = m_editToolBar->toggleViewAction();
     toggleAct->setToolTip(tr("Toggle the edit toolbar"));
     viewMenu->addAction(toggleAct);
@@ -873,20 +887,15 @@ void VMainWindow::initFileMenu()
 
     fileMenu->addAction(settingsAct);
 
-    QAction *editConfigAct = new QAction(tr("Edit Configuration File"), this);
-    editConfigAct->setToolTip(tr("View and edit configuration file of VNote (vnote.ini)"));
-    connect(editConfigAct, &QAction::triggered,
+    QAction *openConfigAct = new QAction(tr("Open Configuration Folder"), this);
+    openConfigAct->setToolTip(tr("Open configuration folder of VNote"));
+    connect(openConfigAct, &QAction::triggered,
             this, [this](){
-#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
-                // On macOS, it seems that we could not open that ini file directly.
                 QUrl url = QUrl::fromLocalFile(g_config->getConfigFolder());
-#else
-                QUrl url = QUrl::fromLocalFile(g_config->getConfigFilePath());
-#endif
                 QDesktopServices::openUrl(url);
             });
 
-    fileMenu->addAction(editConfigAct);
+    fileMenu->addAction(openConfigAct);
 
     QAction *customShortcutAct = new QAction(tr("Custom Shortcuts"), this);
     customShortcutAct->setToolTip(tr("Custom some standard shortcuts"));
@@ -939,13 +948,6 @@ void VMainWindow::initEditMenu()
 {
     QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
     editMenu->setToolTipsVisible(true);
-
-    // Insert image.
-    m_insertImageAct = newAction(QIcon(":/resources/icons/insert_image.svg"),
-                                 tr("Insert &Image"), this);
-    m_insertImageAct->setToolTip(tr("Insert an image from file into current note"));
-    connect(m_insertImageAct, &QAction::triggered,
-            this, &VMainWindow::insertImage);
 
     // Find/Replace.
     m_findReplaceAct = newAction(QIcon(":/resources/icons/find_replace.svg"),
@@ -1068,10 +1070,6 @@ void VMainWindow::initEditMenu()
     trailingSapceAct->setCheckable(true);
     connect(trailingSapceAct, &QAction::triggered,
             this, &VMainWindow::changeHighlightTrailingSapce);
-
-    editMenu->addAction(m_insertImageAct);
-    editMenu->addSeparator();
-    m_insertImageAct->setEnabled(false);
 
     QMenu *findReplaceMenu = editMenu->addMenu(tr("Find/Replace"));
     findReplaceMenu->setToolTipsVisible(true);
@@ -1775,8 +1773,6 @@ void VMainWindow::updateActionsStateFromTab(const VEditTab *p_tab)
 
     m_attachmentBtn->setEnabled(file && file->getType() == FileType::Note);
 
-    m_insertImageAct->setEnabled(file && editMode);
-
     setActionsEnabled(m_editToolBar, file && editMode);
 
     // Handle heading sequence act independently.
@@ -2143,15 +2139,6 @@ void VMainWindow::repositionAvatar()
     m_avatar->setDiameter(diameter);
     m_avatar->move(x, y);
     m_avatar->show();
-}
-
-void VMainWindow::insertImage()
-{
-    if (!m_curTab) {
-        return;
-    }
-    Q_ASSERT(m_curTab == editArea->getCurrentTab());
-    m_curTab->insertImage();
 }
 
 bool VMainWindow::locateFile(VFile *p_file)

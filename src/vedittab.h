@@ -37,6 +37,9 @@ public:
 
     void focusTab();
 
+    // Whether this tab has focus.
+    bool tabHasFocus() const;
+
     // Scroll to @p_header.
     // Will emit currentHeaderChanged() if @p_header is valid.
     virtual void scrollToHeader(const VHeaderPointer &p_header) { Q_UNUSED(p_header) }

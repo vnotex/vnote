@@ -942,7 +942,7 @@ void VEditArea::evaluateMagicWordsByCaptain(void *p_target, void *p_data)
     Q_UNUSED(p_data);
     VEditArea *obj = static_cast<VEditArea *>(p_target);
     VEditTab *tab = obj->getCurrentTab();
-    if (tab) {
+    if (tab && tab->tabHasFocus()) {
         tab->evaluateMagicWords();
     }
 }

@@ -114,3 +114,9 @@ void VEditTab::updateStatus()
 void VEditTab::evaluateMagicWords()
 {
 }
+
+bool VEditTab::tabHasFocus() const
+{
+    QWidget *wid = QApplication::focusWidget();
+    return wid == this || isAncestorOf(wid);
+}
