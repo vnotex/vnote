@@ -24,10 +24,11 @@ public:
     // Need to call setTextCursor() to make it take effect.
     static void moveCursorFirstNonSpaceCharacter(QTextCursor &p_cursor,
                                                  QTextCursor::MoveMode p_mode);
-    // Indent current block as previous block.
+    // Indent current block as next/previous block.
     // Return true if some changes have been made.
     // @p_cursor will be placed at the position after inserting leading spaces.
-    static bool indentBlockAsPreviousBlock(QTextCursor &p_cursor);
+    // @p_next: indent as next block or previous block.
+    static bool indentBlockAsBlock(QTextCursor &p_cursor, bool p_next);
 
     // Returns true if two blocks has the same indent.
     static bool hasSameIndent(const QTextBlock &p_blocka, const QTextBlock &p_blockb);
@@ -156,6 +157,14 @@ public:
     static void findCurrentWORD(const QTextCursor &p_cursor,
                                 int &p_start,
                                 int &p_end);
+
+    // Return the leading spaces of @p_block.
+    static QString fetchIndentSpaces(const QTextBlock &p_block);
+
+    // Insert a block above/below current block. Move the cursor to the start of
+    // the new block after insertion.
+    static void insertBlock(QTextCursor &p_cursor,
+                            bool p_above);
 
 private:
     VEditUtils() {}

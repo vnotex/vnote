@@ -9,6 +9,7 @@
 
 class QKeyEvent;
 class VNavigationMode;
+class QShortcut;
 
 // void func(void *p_target, void *p_data);
 typedef std::function<void(void *, void *)> CaptainFunc;

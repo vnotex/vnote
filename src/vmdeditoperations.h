@@ -72,6 +72,9 @@ private:
     // Insert inline-code marker or set selected text inline-coded.
     void decorateInlineCode();
 
+    // Insert inline-code marker or set selected text inline-coded.
+    void decorateCodeBlock();
+
     // Insert strikethrough marker or set selected text strikethrough.
     void decorateStrikethrough();
 

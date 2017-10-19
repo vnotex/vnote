@@ -48,7 +48,7 @@ bool VEditUtils::insertBlockWithIndent(QTextCursor &p_cursor)
 {
     V_ASSERT(!p_cursor.hasSelection());
     p_cursor.insertBlock();
-    return indentBlockAsPreviousBlock(p_cursor);
+    return indentBlockAsBlock(p_cursor, false);
 }
 
 bool VEditUtils::insertListMarkAsPreviousBlock(QTextCursor &p_cursor)
@@ -85,21 +85,16 @@ bool VEditUtils::insertListMarkAsPreviousBlock(QTextCursor &p_cursor)
 
 }
 
-bool VEditUtils::indentBlockAsPreviousBlock(QTextCursor &p_cursor)
+bool VEditUtils::indentBlockAsBlock(QTextCursor &p_cursor, bool p_next)
 {
     bool changed = false;
     QTextBlock block = p_cursor.block();
-    if (block.blockNumber() == 0) {
-        // The first block.
+    QTextBlock refBlock = p_next ? block.next() : block.previous();
+    if (!refBlock.isValid()) {
         return false;
     }
 
-    QTextBlock preBlock = block.previous();
-    QString text = preBlock.text();
-    QRegExp regExp("(^\\s*)");
-    regExp.indexIn(text);
-    V_ASSERT(regExp.captureCount() == 1);
-    QString leadingSpaces = regExp.capturedTexts()[1];
+    QString leadingSpaces = fetchIndentSpaces(refBlock);
 
     moveCursorFirstNonSpaceCharacter(p_cursor, QTextCursor::MoveAnchor);
     if (!p_cursor.atBlockStart()) {
@@ -789,3 +784,30 @@ void VEditUtils::findCurrentWORD(const QTextCursor &p_cursor,
     p_end += block.position();
 }
 
+QString VEditUtils::fetchIndentSpaces(const QTextBlock &p_block)
+{
+    QString text = p_block.text();
+    QRegExp regExp("(^\\s*)");
+    regExp.indexIn(text);
+    Q_ASSERT(regExp.captureCount() == 1);
+    return regExp.capturedTexts()[1];
+}
+
+void VEditUtils::insertBlock(QTextCursor &p_cursor,
+                             bool p_above)
+{
+    p_cursor.movePosition(p_above ? QTextCursor::StartOfBlock
+                                  : QTextCursor::EndOfBlock,
+                          QTextCursor::MoveAnchor,
+                          1);
+
+    p_cursor.insertBlock();
+
+    if (p_above) {
+        p_cursor.movePosition(QTextCursor::PreviousBlock,
+                              QTextCursor::MoveAnchor,
+                              1);
+    }
+
+    p_cursor.movePosition(QTextCursor::EndOfBlock);
+}

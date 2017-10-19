@@ -133,5 +133,6 @@
         <file>resources/icons/compact_mode.svg</file>
         <file>resources/icons/heading_sequence.svg</file>
         <file>resources/icons/link.svg</file>
+        <file>resources/icons/code_block.svg</file>
     </qresource>
 </RCC>

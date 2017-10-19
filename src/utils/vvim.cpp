@@ -296,7 +296,7 @@ static void insertChangeBlockAfterDeletion(QTextCursor &p_cursor, int p_deletion
     }
 
     if (g_config->getAutoIndent()) {
-        VEditUtils::indentBlockAsPreviousBlock(p_cursor);
+        VEditUtils::indentBlockAsBlock(p_cursor, false);
     }
 }
 
@@ -911,7 +911,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 
                 bool textInserted = false;
                 if (g_config->getAutoIndent()) {
-                    textInserted = VEditUtils::indentBlockAsPreviousBlock(cursor);
+                    textInserted = VEditUtils::indentBlockAsBlock(cursor, false);
                     if (g_config->getAutoList()) {
                         textInserted = VEditUtils::insertListMarkAsPreviousBlock(cursor)
                                        || textInserted;

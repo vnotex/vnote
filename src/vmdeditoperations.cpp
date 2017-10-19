@@ -289,6 +289,17 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         break;
     }
 
+    case Qt::Key_M:
+    {
+        if (modifiers == Qt::ControlModifier) {
+            decorateCodeBlock();
+            p_event->accept();
+            ret = true;
+        }
+
+        break;
+    }
+
     case Qt::Key_O:
     {
         if (modifiers == Qt::ControlModifier) {
@@ -684,6 +695,10 @@ void VMdEditOperations::decorateText(TextDecoration p_decoration)
         decorateInlineCode();
         break;
 
+    case TextDecoration::CodeBlock:
+        decorateCodeBlock();
+        break;
+
     default:
         validDecoration = false;
         qDebug() << "decoration" << (int)p_decoration << "is not implemented yet";
@@ -800,6 +815,86 @@ void VMdEditOperations::decorateInlineCode()
         } else {
             cursor.insertText("``");
             cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 1);
+        }
+    }
+
+    cursor.endEditBlock();
+    m_editor->setTextCursor(cursor);
+}
+
+void VMdEditOperations::decorateCodeBlock()
+{
+    const QString marker("```");
+
+    QTextCursor cursor = m_editor->textCursor();
+    cursor.beginEditBlock();
+    if (cursor.hasSelection()) {
+        // Insert ``` around the selected text.
+        int start = cursor.selectionStart();
+        int end = cursor.selectionEnd();
+
+        QString indentation = VEditUtils::fetchIndentSpaces(cursor.block());
+
+        // Insert the end marker first.
+        cursor.setPosition(end, QTextCursor::MoveAnchor);
+        VEditUtils::insertBlock(cursor, false);
+        VEditUtils::indentBlock(cursor, indentation);
+        cursor.insertText(marker);
+
+        // Insert the start marker.
+        cursor.setPosition(start, QTextCursor::MoveAnchor);
+        VEditUtils::insertBlock(cursor, true);
+        VEditUtils::indentBlock(cursor, indentation);
+        cursor.insertText(marker);
+    } else {
+        // Insert ``` ``` and place cursor after the first marker.
+        // Or if current block or next block is ```, we will skip it.
+        QTextBlock block = cursor.block();
+        int state = block.userState();
+        if (state == HighlightBlockState::CodeBlock
+            || state == HighlightBlockState::CodeBlockStart
+            || state == HighlightBlockState::CodeBlockEnd) {
+            // Find the block end.
+            while (block.isValid()) {
+                if (block.userState() == HighlightBlockState::CodeBlockEnd) {
+                    break;
+                }
+
+                block = block.next();
+            }
+
+            if (block.isValid()) {
+                // It is CodeBlockEnd.
+                cursor.setPosition(block.position());
+                if (block.next().isValid()) {
+                    cursor.movePosition(QTextCursor::NextBlock);
+                    cursor.movePosition(QTextCursor::StartOfBlock);
+                } else {
+                    cursor.movePosition(QTextCursor::EndOfBlock);
+                }
+            } else {
+                // Reach the end of the document.
+                cursor.movePosition(QTextCursor::End);
+            }
+        } else {
+            bool insertInline = false;
+            if (!cursor.atBlockEnd()) {
+                cursor.insertBlock();
+                cursor.movePosition(QTextCursor::PreviousBlock);
+            } else if (cursor.atBlockStart()) {
+                insertInline = true;
+            }
+
+            if (!insertInline) {
+                VEditUtils::insertBlock(cursor, false);
+                VEditUtils::indentBlockAsBlock(cursor, false);
+            }
+
+            cursor.insertText(marker);
+
+            VEditUtils::insertBlock(cursor, true);
+            VEditUtils::indentBlockAsBlock(cursor, true);
+            cursor.insertText(marker);
         }
     }
 

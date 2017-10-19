@@ -463,6 +463,21 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
 
     m_editToolBar->addAction(inlineCodeAct);
 
+    QAction *codeBlockAct = new QAction(QIcon(":/resources/icons/code_block.svg"),
+                                        tr("Code Block (Ctrl+M)"),
+                                        this);
+    codeBlockAct->setStatusTip(tr("Insert fenced code block text or wrap selected text into a fenced code block"));
+    connect(codeBlockAct, &QAction::triggered,
+            this, [this](){
+                if (m_curTab) {
+                    m_curTab->decorateText(TextDecoration::CodeBlock);
+                }
+            });
+
+    m_editToolBar->addAction(codeBlockAct);
+
+    m_editToolBar->addSeparator();
+
     // Insert link.
     QAction *insetLinkAct = new QAction(QIcon(":/resources/icons/link.svg"),
                                         tr("Insert Link (Ctrl+L)"), this);
