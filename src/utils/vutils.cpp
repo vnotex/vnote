@@ -45,7 +45,7 @@ const QString VUtils::c_previewImageBlockRegExp = QString("[\\n|^][ |\\t]*\\xfff
 
 const QString VUtils::c_headerRegExp = QString("^(#{1,6})\\s+(((\\d+\\.)+(?=\\s))?\\s?\\S.*)\\s*$");
 
-const QString VUtils::c_headerPrefixRegExp = QString("^(#{1,6}\\s+((\\d+\\.)+(?=\\s))?\\s?)\\S.*\\s*$");
+const QString VUtils::c_headerPrefixRegExp = QString("^(#{1,6}\\s+((\\d+\\.)+(?=\\s))?\\s?)($|\\S.*\\s*$)");
 
 void VUtils::initAvailableLanguage()
 {
