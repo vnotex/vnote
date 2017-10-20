@@ -2060,6 +2060,13 @@ void VMainWindow::closeEvent(QCloseEvent *event)
             fileInfos.reserve(tabs.size());
 
             for (auto const & tab : tabs) {
+                // Skip system file.
+                VFile *file = tab.m_editTab->getFile();
+                if (file->getType() == FileType::Orphan
+                    && dynamic_cast<VOrphanFile *>(file)->isSystemFile()) {
+                    continue;
+                }
+
                 VFileSessionInfo info = VFileSessionInfo::fromEditTabInfo(&tab);
                 fileInfos.push_back(info);
 
