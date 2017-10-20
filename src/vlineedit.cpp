@@ -36,6 +36,8 @@ void VLineEdit::handleTextChanged(const QString &p_text)
 
 void VLineEdit::init()
 {
+    m_evaluatedText = g_mwMgr->evaluate(text());
+
     connect(this, &QLineEdit::textChanged,
             this, &VLineEdit::handleTextChanged);
 }
