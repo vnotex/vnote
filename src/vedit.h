@@ -10,7 +10,6 @@
 #include <QRect>
 #include <QFontMetrics>
 #include "vconstants.h"
-#include "vtoc.h"
 #include "vnotefile.h"
 
 class VEditOperations;
@@ -38,10 +37,12 @@ public:
                     m_tabSpaces("\t"),
                     m_enableVimMode(false),
                     m_highlightWholeBlock(false),
-                    m_lineDistanceHeight(0)
+                    m_lineDistanceHeight(0),
+                    m_enableHeadingSequence(false)
     {}
 
-    void init(const QFontMetrics &p_metric);
+    void init(const QFontMetrics &p_metric,
+              bool p_enableHeadingSequence);
 
     // Only update those configs which could be updated online.
     void update(const QFontMetrics &p_metric);
@@ -64,6 +65,9 @@ public:
 
     // Line distance height in pixels.
     int m_lineDistanceHeight;
+
+    // Whether enable auto heading sequence.
+    bool m_enableHeadingSequence;
 };
 
 class LineNumberArea;
@@ -81,9 +85,14 @@ public:
     virtual void setModified(bool p_modified);
     bool isModified() const;
     virtual void reloadFile();
-    virtual void scrollToLine(int p_lineNumber);
+
+    virtual bool scrollToBlock(int p_blockNumber);
+
     // User requests to insert an image.
     virtual void insertImage();
+
+    // User requests to insert a link.
+    virtual void insertLink();
 
     // Used for incremental search.
     // User has enter the content to search, but does not enter the "find" button yet.
@@ -135,6 +144,9 @@ public:
 
     bool isBlockVisible(const QTextBlock &p_block);
 
+    // Evaluate selected text or cursor word as magic words.
+    void evaluateMagicWords();
+
 signals:
     // Request VEditTab to save and exit edit mode.
     void saveAndRead();
@@ -162,6 +174,9 @@ signals:
 
     // Request the edit tab to close find and replace dialog.
     void requestCloseFindReplaceDialog();
+
+    // Emit when all initialization is ready.
+    void ready();
 
 public slots:
     virtual void highlightCurrentLine();

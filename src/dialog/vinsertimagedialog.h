@@ -8,6 +8,7 @@
 
 class QLabel;
 class QLineEdit;
+class VLineEdit;
 class QPushButton;
 class QDialogButtonBox;
 
@@ -30,14 +31,14 @@ public slots:
     void imageDownloaded(const QByteArray &data);
 
 private slots:
-    void enableOkButton();
+    void handleInputChanged();
     void handleBrowseBtnClicked();
 
 private:
     void setupUI();
 
     QLabel *imageTitleLabel;
-    QLineEdit *imageTitleEdit;
+    VLineEdit *m_imageTitleEdit;
     QLabel *pathLabel;
     QLineEdit *pathEdit;
     QPushButton *browseBtn;

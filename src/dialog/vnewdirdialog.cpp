@@ -2,6 +2,8 @@
 #include "vnewdirdialog.h"
 #include "vdirectory.h"
 #include "vconfigmanager.h"
+#include "vlineedit.h"
+#include "utils/vutils.h"
 
 extern VConfigManager *g_config;
 
@@ -15,7 +17,7 @@ VNewDirDialog::VNewDirDialog(const QString &title,
 {
     setupUI();
 
-    connect(nameEdit, &QLineEdit::textChanged, this, &VNewDirDialog::handleInputChanged);
+    connect(m_nameEdit, &QLineEdit::textChanged, this, &VNewDirDialog::handleInputChanged);
 
     handleInputChanged();
 }
@@ -29,9 +31,12 @@ void VNewDirDialog::setupUI()
     }
 
     QLabel *nameLabel = new QLabel(tr("Folder &name:"));
-    nameEdit = new QLineEdit(defaultName);
-    nameEdit->selectAll();
-    nameLabel->setBuddy(nameEdit);
+    m_nameEdit = new VLineEdit(defaultName);
+    QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp),
+                                                 m_nameEdit);
+    m_nameEdit->setValidator(validator);
+    m_nameEdit->selectAll();
+    nameLabel->setBuddy(m_nameEdit);
 
     m_warnLabel = new QLabel();
     m_warnLabel->setWordWrap(true);
@@ -44,10 +49,10 @@ void VNewDirDialog::setupUI()
 
     QHBoxLayout *topLayout = new QHBoxLayout();
     topLayout->addWidget(nameLabel);
-    topLayout->addWidget(nameEdit);
+    topLayout->addWidget(m_nameEdit);
 
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
-    nameEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
+    m_nameEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     if (infoLabel) {
@@ -64,18 +69,34 @@ void VNewDirDialog::setupUI()
 void VNewDirDialog::handleInputChanged()
 {
     bool showWarnLabel = false;
-    QString name = nameEdit->text();
+    QString name = m_nameEdit->getEvaluatedText();
     bool nameOk = !name.isEmpty();
     if (nameOk) {
         // Check if the name conflicts with existing directory name.
         // Case-insensitive when creating folder.
+        QString warnText;
         if (m_directory->findSubDirectory(name, false)) {
             nameOk = false;
+            warnText = tr("<span style=\"%1\">WARNING</span>: "
+                          "Name (case-insensitive) <span style=\"%2\">%3</span> already exists. "
+                          "Please choose another name.")
+                         .arg(g_config->c_warningTextStyle)
+                         .arg(g_config->c_dataTextStyle)
+                         .arg(name);
+        } else if (!VUtils::checkFileNameLegal(name)) {
+            // Check if evaluated name contains illegal characters.
+            nameOk = false;
+            warnText = tr("<span style=\"%1\">WARNING</span>: "
+                          "Name <span style=\"%2\">%3</span> contains illegal characters "
+                          "(after magic word evaluation).")
+                         .arg(g_config->c_warningTextStyle)
+                         .arg(g_config->c_dataTextStyle)
+                         .arg(name);
+        }
+
+        if (!nameOk) {
             showWarnLabel = true;
-            QString nameConflictText = tr("<span style=\"%1\">WARNING</span>: Name (case-insensitive) already exists. "
-                                          "Please choose another name.")
-                                          .arg(g_config->c_warningTextStyle);
-            m_warnLabel->setText(nameConflictText);
+            m_warnLabel->setText(warnText);
         }
     }
 
@@ -87,5 +108,5 @@ void VNewDirDialog::handleInputChanged()
 
 QString VNewDirDialog::getNameInput() const
 {
-    return nameEdit->text();
+    return m_nameEdit->getEvaluatedText();
 }

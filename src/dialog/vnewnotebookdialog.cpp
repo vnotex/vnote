@@ -4,6 +4,7 @@
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
 #include "vnotebook.h"
+#include "vlineedit.h"
 
 extern VConfigManager *g_config;
 
@@ -18,7 +19,7 @@ VNewNotebookDialog::VNewNotebookDialog(const QString &title, const QString &info
 {
     setupUI(title, info);
 
-    connect(nameEdit, &QLineEdit::textChanged, this, &VNewNotebookDialog::handleInputChanged);
+    connect(m_nameEdit, &QLineEdit::textChanged, this, &VNewNotebookDialog::handleInputChanged);
     connect(pathEdit, &QLineEdit::textChanged, this, &VNewNotebookDialog::handleInputChanged);
     connect(browseBtn, &QPushButton::clicked, this, &VNewNotebookDialog::handleBrowseBtnClicked);
 
@@ -34,8 +35,11 @@ void VNewNotebookDialog::setupUI(const QString &p_title, const QString &p_info)
     }
 
     QLabel *nameLabel = new QLabel(tr("Notebook &name:"));
-    nameEdit = new QLineEdit(defaultName);
-    nameLabel->setBuddy(nameEdit);
+    m_nameEdit = new VLineEdit(defaultName);
+    QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp),
+                                                 m_nameEdit);
+    m_nameEdit->setValidator(validator);
+    nameLabel->setBuddy(m_nameEdit);
 
     QLabel *pathLabel = new QLabel(tr("Notebook &root folder:"));
     pathEdit = new QLineEdit(defaultPath);
@@ -50,7 +54,7 @@ void VNewNotebookDialog::setupUI(const QString &p_title, const QString &p_info)
     m_imageFolderEdit->setToolTip(tr("Set the name of the folder to hold images of all the notes in this notebook "
                                      "(empty to use global configuration)"));
     imageFolderLabel->setToolTip(m_imageFolderEdit->toolTip());
-    QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp), m_imageFolderEdit);
+    validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp), m_imageFolderEdit);
     m_imageFolderEdit->setValidator(validator);
 
     QLabel *attachmentFolderLabel = new QLabel(tr("&Attachment folder:"));
@@ -66,7 +70,7 @@ void VNewNotebookDialog::setupUI(const QString &p_title, const QString &p_info)
 
     QGridLayout *topLayout = new QGridLayout();
     topLayout->addWidget(nameLabel, 0, 0);
-    topLayout->addWidget(nameEdit, 0, 1, 1, 2);
+    topLayout->addWidget(m_nameEdit, 0, 1, 1, 2);
     topLayout->addWidget(pathLabel, 1, 0);
     topLayout->addWidget(pathEdit, 1, 1);
     topLayout->addWidget(browseBtn, 1, 2);
@@ -104,7 +108,7 @@ void VNewNotebookDialog::setupUI(const QString &p_title, const QString &p_info)
 
 QString VNewNotebookDialog::getNameInput() const
 {
-    return nameEdit->text();
+    return m_nameEdit->getEvaluatedText();
 }
 
 QString VNewNotebookDialog::getPathInput() const
@@ -142,7 +146,8 @@ void VNewNotebookDialog::handleBrowseBtnClicked()
         }
     }
 
-    QString dirPath = QFileDialog::getExistingDirectory(this, tr("Select Root Folder Of The Notebook"),
+    QString dirPath = QFileDialog::getExistingDirectory(this,
+                                                        tr("Select Root Folder Of The Notebook"),
                                                         defaultPath,
                                                         QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
@@ -160,7 +165,7 @@ bool VNewNotebookDialog::isImportExistingNotebook() const
 
 void VNewNotebookDialog::showEvent(QShowEvent *event)
 {
-    nameEdit->setFocus();
+    m_nameEdit->setFocus();
     QDialog::showEvent(event);
 }
 
@@ -182,7 +187,7 @@ void VNewNotebookDialog::handleInputChanged()
         m_manualPath = true;
     }
 
-    if (nameEdit->isModified()) {
+    if (m_nameEdit->isModified()) {
         m_manualName = true;
     }
 
@@ -247,7 +252,7 @@ void VNewNotebookDialog::handleInputChanged()
         }
     }
 
-    QString name = nameEdit->text();
+    QString name = m_nameEdit->getEvaluatedText();
     bool nameOk = !name.isEmpty();
     if (pathOk && nameOk) {
         // Check if the name conflicts with existing notebook name.
@@ -259,13 +264,29 @@ void VNewNotebookDialog::handleInputChanged()
             }
         }
 
+        QString warnText;
         if (idx < m_notebooks.size()) {
             nameOk = false;
+            warnText = tr("<span style=\"%1\">WARNING</span>: "
+                          "Name (case-insensitive) <span style=\"%2\">%3</span> already exists. "
+                          "Please choose another name.")
+                         .arg(g_config->c_warningTextStyle)
+                         .arg(g_config->c_dataTextStyle)
+                         .arg(name);
+        } else if (!VUtils::checkFileNameLegal(name)) {
+            // Check if evaluated name contains illegal characters.
+            nameOk = false;
+            warnText = tr("<span style=\"%1\">WARNING</span>: "
+                          "Name <span style=\"%2\">%3</span> contains illegal characters "
+                          "(after magic word evaluation).")
+                         .arg(g_config->c_warningTextStyle)
+                         .arg(g_config->c_dataTextStyle)
+                         .arg(name);
+        }
+
+        if (!nameOk) {
             showWarnLabel = true;
-            QString nameConflictText = tr("<span style=\"%1\">WARNING</span>: Name (case-insensitive) already exists. "
-                                          "Please choose another name.")
-                                          .arg(g_config->c_warningTextStyle);
-            m_warnLabel->setText(nameConflictText);
+            m_warnLabel->setText(warnText);
         }
     }
 
@@ -280,6 +301,8 @@ void VNewNotebookDialog::handleInputChanged()
 
 bool VNewNotebookDialog::autoComplete()
 {
+    QString nameText = m_nameEdit->getEvaluatedText();
+
     if (m_manualPath) {
         if (m_manualName) {
             return false;
@@ -289,8 +312,8 @@ bool VNewNotebookDialog::autoComplete()
         QString pathText = pathEdit->text();
         if (!pathText.isEmpty()) {
             QString autoName = VUtils::directoryNameFromPath(pathText);
-            if (autoName != nameEdit->text()) {
-                nameEdit->setText(autoName);
+            if (autoName != nameText) {
+                m_nameEdit->setText(autoName);
                 return true;
             }
         }
@@ -306,7 +329,6 @@ bool VNewNotebookDialog::autoComplete()
     }
 
     bool ret = false;
-    QString nameText = nameEdit->text();
     if (nameText.isEmpty()) {
         if (m_manualName) {
             return false;
@@ -314,8 +336,8 @@ bool VNewNotebookDialog::autoComplete()
 
         // Get a folder name under vnoteFolder and set it as the name of the notebook.
         QString name = "vnotebook";
-        name = VUtils::getFileNameWithSequence(vnoteFolder, name);
-        nameEdit->setText(name);
+        name = VUtils::getDirNameWithSequence(vnoteFolder, name);
+        m_nameEdit->setText(name);
         ret = true;
     } else {
         // Use the name as the folder name under vnoteFolder.

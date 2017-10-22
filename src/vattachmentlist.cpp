@@ -5,13 +5,12 @@
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
 #include "vbuttonwithwidget.h"
-#include "vnote.h"
 #include "vmainwindow.h"
 #include "dialog/vconfirmdeletiondialog.h"
 #include "dialog/vsortdialog.h"
 
 extern VConfigManager *g_config;
-extern VNote *g_vnote;
+extern VMainWindow *g_mainWin;
 
 VAttachmentList::VAttachmentList(QWidget *p_parent)
     : QWidget(p_parent), m_file(NULL)
@@ -53,7 +52,7 @@ void VAttachmentList::setupUI()
                                                     .arg(m_file->fetchAttachmentFolderPath()),
                                                   QMessageBox::Ok | QMessageBox::Cancel,
                                                   QMessageBox::Ok,
-                                                  g_vnote->getMainWindow(),
+                                                  g_mainWin,
                                                   MessageBoxType::Danger);
                     if (ret == QMessageBox::Ok) {
                         if (!m_file->deleteAttachments()) {
@@ -66,7 +65,7 @@ void VAttachmentList::setupUI()
                                                    "maintain the configuration file manually."),
                                                 QMessageBox::Ok,
                                                 QMessageBox::Ok,
-                                                g_vnote->getMainWindow());
+                                                g_mainWin);
                         }
 
                         m_attachmentList->clear();
@@ -204,7 +203,7 @@ void VAttachmentList::addAttachment()
     }
 
     static QString lastPath = QDir::homePath();
-    QStringList files = QFileDialog::getOpenFileNames(g_vnote->getMainWindow(),
+    QStringList files = QFileDialog::getOpenFileNames(g_mainWin,
                                                       tr("Select Files As Attachments"),
                                                       lastPath);
     if (files.isEmpty()) {
@@ -236,16 +235,16 @@ void VAttachmentList::addAttachments(const QStringList &p_files)
                                 "",
                                 QMessageBox::Ok,
                                 QMessageBox::Ok,
-                                g_vnote->getMainWindow());
+                                g_mainWin);
         } else {
             ++addedFiles;
         }
     }
 
     if (addedFiles > 0) {
-        g_vnote->getMainWindow()->showStatusMessage(tr("%1 %2 added as attachments")
-                                                      .arg(addedFiles)
-                                                      .arg(addedFiles > 1 ? tr("files") : tr("file")));
+        g_mainWin->showStatusMessage(tr("%1 %2 added as attachments")
+                                     .arg(addedFiles)
+                                     .arg(addedFiles > 1 ? tr("files") : tr("file")));
     }
 }
 
@@ -330,7 +329,7 @@ void VAttachmentList::deleteSelectedItems()
                                   false,
                                   false,
                                   false,
-                                  g_vnote->getMainWindow());
+                                  g_mainWin);
     if (dialog.exec()) {
         items = dialog.getConfirmedItems();
 
@@ -349,7 +348,7 @@ void VAttachmentList::deleteSelectedItems()
                                    "maintain the configuration file manually."),
                                 QMessageBox::Ok,
                                 QMessageBox::Ok,
-                                g_vnote->getMainWindow());
+                                g_mainWin);
         }
 
         updateButtonState();
@@ -370,7 +369,7 @@ void VAttachmentList::sortItems()
                           "in the configuration file.")
                          .arg(g_config->c_dataTextStyle)
                          .arg(m_file->getName()),
-                       g_vnote->getMainWindow());
+                       g_mainWin);
     QTreeWidget *tree = dialog.getTreeWidget();
     tree->clear();
     tree->setColumnCount(1);
@@ -624,7 +623,7 @@ void VAttachmentList::checkAttachments()
                                   false,
                                   false,
                                   false,
-                                  g_vnote->getMainWindow());
+                                  g_mainWin);
     if (dialog.exec()) {
         items = dialog.getConfirmedItems();
 
@@ -643,7 +642,7 @@ void VAttachmentList::checkAttachments()
                                    "maintain the configuration file manually."),
                                 QMessageBox::Ok,
                                 QMessageBox::Ok,
-                                g_vnote->getMainWindow());
+                                g_mainWin);
         }
 
         updateButtonState();

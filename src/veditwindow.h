@@ -8,11 +8,9 @@
 #include <QDir>
 #include "vnotebook.h"
 #include "vedittab.h"
-#include "vtoc.h"
 #include "vconstants.h"
 #include "vnotefile.h"
 
-class VNote;
 class QPushButton;
 class QActionGroup;
 class VEditArea;
@@ -21,7 +19,7 @@ class VEditWindow : public QTabWidget
 {
     Q_OBJECT
 public:
-    explicit VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent = 0);
+    explicit VEditWindow(VEditArea *editArea, QWidget *parent = 0);
     int findTabByFile(const VFile *p_file) const;
     int openFile(VFile *p_file, OpenFileMode p_mode);
     bool closeFile(const VFile *p_file, bool p_forced);
@@ -32,15 +30,29 @@ public:
     void readFile();
     void saveAndReadFile();
     bool closeAllFiles(bool p_forced);
-    void requestUpdateOutline();
-    void requestUpdateCurHeader();
+
+    // Return outline of current tab.
+    VTableOfContent getOutline() const;
+
+    // Return current header of current tab.
+    VHeaderPointer getCurrentHeader() const;
+
     // Focus to current tab's editor
     void focusWindow();
-    void scrollCurTab(const VAnchor &p_anchor);
+
+    // Scroll current tab to header @p_header.
+    void scrollToHeader(const VHeaderPointer &p_header);
+
     void updateFileInfo(const VFile *p_file);
     void updateDirectoryInfo(const VDirectory *p_dir);
     void updateNotebookInfo(const VNotebook *p_notebook);
-    VEditTab *currentEditTab();
+
+    VEditTab *getCurrentTab() const;
+
+    VEditTab *getTab(int tabIndex) const;
+
+    QVector<VEditTabInfo> getAllTabsInfo() const;
+
     // Insert a tab with @p_widget. @p_widget is a fully initialized VEditTab.
     bool addEditTab(QWidget *p_widget);
     // Set whether it is the current window.
@@ -53,7 +65,6 @@ public:
     bool activateTab(int p_sequence);
     // Switch to previous activated tab.
     bool alternateTab();
-    VEditTab *getTab(int tabIndex) const;
 
     // Ask tab @p_index to update its status and propogate.
     // The status here means tab status, outline, current header.
@@ -79,8 +90,10 @@ signals:
     void requestRemoveSplit(VEditWindow *curWindow);
     // This widget or its children get the focus
     void getFocused();
-    void outlineChanged(const VToc &toc);
-    void curHeaderChanged(const VAnchor &anchor);
+
+    void outlineChanged(const VTableOfContent &p_outline);
+
+    void currentHeaderChanged(const VHeaderPointer &p_header);
 
     // Emit when want to show message in status bar.
     void statusMessage(const QString &p_msg);
@@ -100,8 +113,11 @@ private slots:
     void handleCurrentIndexChanged(int p_index);
     void contextMenuRequested(QPoint pos);
     void tabListJump(VFile *p_file);
-    void handleOutlineChanged(const VToc &p_toc);
-    void handleCurHeaderChanged(const VAnchor &p_anchor);
+
+    void handleTabOutlineChanged(const VTableOfContent &p_outline);
+
+    void handleTabCurrentHeaderChanged(const VHeaderPointer &p_header);
+
     void updateSplitMenu();
     void tabbarContextMenuRequested(QPoint p_pos);
     void handleLocateAct();
@@ -124,9 +140,11 @@ private:
     int insertEditTab(int p_index, VFile *p_file, QWidget *p_page);
     int appendEditTab(VFile *p_file, QWidget *p_page);
     int openFileInTab(VFile *p_file, OpenFileMode p_mode);
-    inline QString generateTooltip(const VFile *p_file) const;
-    inline QString generateTabText(int p_index, const QString &p_name,
-                                   bool p_modified, bool p_modifiable) const;
+
+    QString generateTooltip(const VFile *p_file) const;
+
+    QString generateTabText(int p_index, const VFile *p_file) const;
+
     bool canRemoveSplit();
 
     // Move tab at @p_tabIdx one split window.
@@ -135,6 +153,7 @@ private:
     // and move the tab to the new split.
     void moveTabOneSplit(int p_tabIdx, bool p_right);
 
+    // Update info of tab @p_idx according to the state of the editor and file.
     void updateTabInfo(int p_idx);
 
     // Update the sequence number of all the tabs.
@@ -143,7 +162,6 @@ private:
     // Connect the signals of VEditTab to this VEditWindow.
     void connectEditTab(const VEditTab *p_tab);
 
-    VNote *vnote;
     VEditArea *m_editArea;
 
     // These two members are only used for alternateTab().
@@ -197,11 +215,16 @@ inline QString VEditWindow::generateTooltip(const VFile *p_file) const
     }
 }
 
-inline QString VEditWindow::generateTabText(int p_index, const QString &p_name,
-                                            bool p_modified, bool p_modifiable) const
+inline QString VEditWindow::generateTabText(int p_index, const VFile *p_file) const
 {
-    QString seq = QString::number(p_index + c_tabSequenceBase, 10);
-    return seq + ". " + p_name + (p_modifiable ? (p_modified ? "*" : "") : "#");
+    if (!p_file) {
+        return "";
+    }
+
+    return QString("%1.%2%3").arg(QString::number(p_index + c_tabSequenceBase, 10))
+                             .arg(p_file->getName())
+                             .arg(p_file->isModifiable()
+                                  ? (p_file->isModified() ? "*" : "") : "#");
 }
 
 #endif // VEDITWINDOW_H

@@ -11,6 +11,9 @@
 #include "hgmarkdownhighlighter.h"
 #include "vmarkdownconverter.h"
 #include "vconstants.h"
+#include "vfilesessioninfo.h"
+#include "utils/vmetawordmanager.h"
+
 
 class QJsonObject;
 class QString;
@@ -39,6 +42,18 @@ struct MarkdownitOption
     bool m_html;
     bool m_breaks;
     bool m_linkify;
+};
+
+// Type of heading sequence.
+enum class HeadingSequenceType
+{
+    Disabled = 0,
+    Enabled,
+
+    // Enabled only for internal notes.
+    EnabledNoteOnly,
+
+    Invalid
 };
 
 class VConfigManager : public QObject
@@ -106,7 +121,10 @@ public:
     int getCurNotebookIndex() const;
     void setCurNotebookIndex(int index);
 
-    void getNotebooks(QVector<VNotebook *> &p_notebooks, QObject *parent);
+    // Read [notebooks] section from settings into @p_notebooks.
+    void getNotebooks(QVector<VNotebook *> &p_notebooks, QObject *p_parent);
+
+    // Write @p_notebooks to [notebooks] section into settings.
     void setNotebooks(const QVector<VNotebook *> &p_notebooks);
 
     hoedown_extensions getMarkdownExtensions() const;
@@ -152,6 +170,9 @@ public:
 
     const QByteArray &getMainSplitterState() const;
     void setMainSplitterState(const QByteArray &p_state);
+
+    const QByteArray &getNaviSplitterState() const;
+    void setNaviSplitterState(const QByteArray &p_state);
 
     bool getFindCaseSensitive() const;
     void setFindCaseSensitive(bool p_enabled);
@@ -254,8 +275,8 @@ public:
     OpenFileMode getNoteOpenMode() const;
     void setNoteOpenMode(OpenFileMode p_mode);
 
-    bool getEnableHeadingSequence() const;
-    void setEnableHeadingSequence(bool p_enabled);
+    HeadingSequenceType getHeadingSequenceType() const;
+    void setHeadingSequenceType(HeadingSequenceType p_type);
 
     int getHeadingSequenceBaseLevel() const;
     void setHeadingSequenceBaseLevel(int p_level);
@@ -291,9 +312,31 @@ public:
     // Whether user specify template_code_block_css_url directly.
     bool getUserSpecifyTemplateCodeBlockCssUrl() const;
 
+    bool getEnableCompactMode() const;
+    void setEnableCompactMode(bool p_enabled);
+
+    StartupPageType getStartupPageType() const;
+    void setStartupPageType(StartupPageType p_type);
+
+    const QStringList &getStartupPages() const;
+    void setStartupPages(const QStringList &p_pages);
+
+    // Read last opened files from [last_opened_files] of session.ini.
+    QVector<VFileSessionInfo> getLastOpenedFiles();
+
+    // Write last opened files to [last_opened_files] of session.ini.
+    void setLastOpenedFiles(const QVector<VFileSessionInfo> &p_files);
+
+    // Read custom magic words from [magic_words] section.
+    QVector<VMagicWord> getCustomMagicWords();
+
     // Return the configured key sequence of @p_operation.
     // Return empty if there is no corresponding config.
     QString getShortcutKeySequence(const QString &p_operation) const;
+
+    // Return the configured key sequence in Captain mode.
+    // Return empty if there is no corresponding config.
+    QString getCaptainShortcutKeySequence(const QString &p_operation) const;
 
     // Get the folder the ini file exists.
     QString getConfigFolder() const;
@@ -317,7 +360,10 @@ public:
     QVector<QString> getEditorStyles() const;
 
 private:
+    // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
+
+    // Set a config to user settings.
     void setConfigToSettings(const QString &section, const QString &key, const QVariant &value);
 
     // Get default config from vnote.ini.
@@ -326,8 +372,29 @@ private:
     // Reset user config to default config and return the default config value.
     QVariant resetDefaultConfig(const QString &p_section, const QString &p_key);
 
-    void readNotebookFromSettings(QVector<VNotebook *> &p_notebooks, QObject *parent);
-    void writeNotebookToSettings(const QVector<VNotebook *> &p_notebooks);
+    // Look up a config from session settings.
+    QVariant getConfigFromSessionSettings(const QString &p_section, const QString &p_key) const;
+
+    // Set a config to session settings.
+    void setConfigToSessionSettings(const QString &p_section,
+                                    const QString &p_key,
+                                    const QVariant &p_value);
+
+    // Init defaultSettings, userSettings, and m_sessionSettings.
+    void initSettings();
+
+    // Init from m_sessionSettings.
+    void initFromSessionSettings();
+
+    // Read [notebooks] section from @p_settings.
+    void readNotebookFromSettings(QSettings *p_settings,
+                                  QVector<VNotebook *> &p_notebooks,
+                                  QObject *parent);
+
+    // Write to [notebooks] section to @p_settings.
+    void writeNotebookToSettings(QSettings *p_settings,
+                                 const QVector<VNotebook *> &p_notebooks);
+
     void readPredefinedColorsFromSettings();
 
     // 1. Update styles common in HTML and Markdown;
@@ -335,10 +402,6 @@ private:
     void updateEditStyle();
 
     void updateMarkdownEditStyle();
-
-    // Migrate ini file from tamlok/vnote.ini to vnote/vnote.ini.
-    // This is for the change of org name.
-    void migrateIniFile();
 
     // Output pre-defined CSS styles to style folder.
     bool outputDefaultCssStyle() const;
@@ -359,8 +422,16 @@ private:
     // write the combined configs to user settings.
     void readShortcutsFromSettings();
 
-    // Write m_shortcuts to the [shortcuts] section in the user settings.
-    void writeShortcutsToSettings();
+    // Read the [captain_mode_shortcuts] section in the settings to init
+    // m_captainShortcuts.
+    void readCaptainShortcutsFromSettings();
+
+    QHash<QString, QString> readShortcutsFromSettings(QSettings *p_settings,
+                                                      const QString &p_group);
+
+    void writeShortcutsToSettings(QSettings *p_settings,
+                                  const QString &p_group,
+                                  const QHash<QString, QString> &p_shortcuts);
 
     // Whether @p_seq is a valid key sequence for shortcuts.
     bool isValidKeySequence(const QString &p_seq);
@@ -393,6 +464,8 @@ private:
     QString m_templateCodeBlockCssUrl;
 
     QString m_editorStyle;
+
+    // Index of current notebook.
     int curNotebookIndex;
 
     // Markdown Converter
@@ -429,6 +502,7 @@ private:
     QByteArray m_mainWindowGeometry;
     QByteArray m_mainWindowState;
     QByteArray m_mainSplitterState;
+    QByteArray m_naviSplitterState;
 
     // Find/Replace dialog options
     bool m_findCaseSensitive;
@@ -530,6 +604,10 @@ private:
     // Operation -> KeySequence.
     QHash<QString, QString> m_shortcuts;
 
+    // Shortcuts config in Captain mode.
+    // Operation -> KeySequence.
+    QHash<QString, QString> m_captainShortcuts;
+
     // Whether minimize to system tray icon when closing the app.
     // -1: uninitialized;
     // 0: do not minimize to the tay;
@@ -553,7 +631,7 @@ private:
     OpenFileMode m_noteOpenMode;
 
     // Whether auto genearte heading sequence.
-    bool m_enableHeadingSequence;
+    HeadingSequenceType m_headingSequenceType;
 
     // Heading sequence base level.
     int m_headingSequenceBaseLevel;
@@ -600,6 +678,15 @@ private:
     // Whether double click on a tab to close it.
     bool m_doubleClickCloseTab;
 
+    // Whether put folder and note panel in one single column.
+    bool m_enableCompactMode;
+
+    // Type of the pages to open on startup.
+    StartupPageType m_startupPageType;
+
+    // File paths to open on startup.
+    QStringList m_startupPages;
+
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
     static const QString c_obsoleteDirConfigFile;
@@ -607,12 +694,24 @@ private:
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
 
-    // The name of the default configuration file
-    static const QString defaultConfigFilePath;
+    // The path of the default configuration file
+    static const QString c_defaultConfigFilePath;
+
+    // The name of the config file.
+    static const QString c_defaultConfigFile;
+
+    // The name of the config file for session information.
+    static const QString c_sessionConfigFile;
+
     // QSettings for the user configuration
     QSettings *userSettings;
-    // Qsettings for @defaultConfigFileName
+
+    // Qsettings for @c_defaultConfigFilePath.
     QSettings *defaultSettings;
+
+    // QSettings for the session configuration, such as notebooks,
+    // geometry, last opened files.
+    QSettings *m_sessionSettings;
 
     // The folder name of style files.
     static const QString c_styleConfigFolder;
@@ -681,18 +780,35 @@ inline void VConfigManager::setCurNotebookIndex(int index)
     if (index == curNotebookIndex) {
         return;
     }
+
     curNotebookIndex = index;
-    setConfigToSettings("global", "current_notebook", index);
+    setConfigToSessionSettings("global", "current_notebook", index);
 }
 
-inline void VConfigManager::getNotebooks(QVector<VNotebook *> &p_notebooks, QObject *parent)
+inline void VConfigManager::getNotebooks(QVector<VNotebook *> &p_notebooks,
+                                         QObject *p_parent)
 {
-    readNotebookFromSettings(p_notebooks, parent);
+    // We used to store it in vnote.ini. For now, we store it in session.ini.
+    readNotebookFromSettings(m_sessionSettings, p_notebooks, p_parent);
+
+    // Migration.
+    if (p_notebooks.isEmpty()) {
+        readNotebookFromSettings(userSettings, p_notebooks, p_parent);
+
+        if (!p_notebooks.isEmpty()) {
+            // Clear and save it in another place.
+            userSettings->beginGroup("notebooks");
+            userSettings->remove("");
+            userSettings->endGroup();
+
+            writeNotebookToSettings(m_sessionSettings, p_notebooks);
+        }
+    }
 }
 
 inline void VConfigManager::setNotebooks(const QVector<VNotebook *> &p_notebooks)
 {
-    writeNotebookToSettings(p_notebooks);
+    writeNotebookToSettings(m_sessionSettings, p_notebooks);
 }
 
 inline hoedown_extensions VConfigManager::getMarkdownExtensions() const
@@ -860,7 +976,7 @@ inline bool VConfigManager::getToolsDockChecked() const
 inline void VConfigManager::setToolsDockChecked(bool p_checked)
 {
     m_toolsDockChecked = p_checked;
-    setConfigToSettings("session", "tools_dock_checked",
+    setConfigToSettings("global", "tools_dock_checked",
                         m_toolsDockChecked);
 }
 
@@ -872,8 +988,9 @@ inline const QByteArray& VConfigManager::getMainWindowGeometry() const
 inline void VConfigManager::setMainWindowGeometry(const QByteArray &p_geometry)
 {
     m_mainWindowGeometry = p_geometry;
-    setConfigToSettings("session", "main_window_geometry",
-                        m_mainWindowGeometry);
+    setConfigToSessionSettings("geometry",
+                               "main_window_geometry",
+                               m_mainWindowGeometry);
 }
 
 inline const QByteArray& VConfigManager::getMainWindowState() const
@@ -884,8 +1001,9 @@ inline const QByteArray& VConfigManager::getMainWindowState() const
 inline void VConfigManager::setMainWindowState(const QByteArray &p_state)
 {
     m_mainWindowState = p_state;
-    setConfigToSettings("session", "main_window_state",
-                        m_mainWindowState);
+    setConfigToSessionSettings("geometry",
+                               "main_window_state",
+                               m_mainWindowState);
 }
 
 inline const QByteArray& VConfigManager::getMainSplitterState() const
@@ -896,7 +1014,22 @@ inline const QByteArray& VConfigManager::getMainSplitterState() const
 inline void VConfigManager::setMainSplitterState(const QByteArray &p_state)
 {
     m_mainSplitterState = p_state;
-    setConfigToSettings("session", "main_splitter_state", m_mainSplitterState);
+    setConfigToSessionSettings("geometry",
+                               "main_splitter_state",
+                               m_mainSplitterState);
+}
+
+inline const QByteArray& VConfigManager::getNaviSplitterState() const
+{
+    return m_naviSplitterState;
+}
+
+inline void VConfigManager::setNaviSplitterState(const QByteArray &p_state)
+{
+    m_naviSplitterState = p_state;
+    setConfigToSessionSettings("geometry",
+                               "navi_splitter_state",
+                               m_naviSplitterState);
 }
 
 inline bool VConfigManager::getFindCaseSensitive() const
@@ -1370,20 +1503,21 @@ inline void VConfigManager::setNoteOpenMode(OpenFileMode p_mode)
                         m_noteOpenMode == OpenFileMode::Read ? 0 : 1);
 }
 
-inline bool VConfigManager::getEnableHeadingSequence() const
+inline HeadingSequenceType VConfigManager::getHeadingSequenceType() const
 {
-    return m_enableHeadingSequence;
+    return m_headingSequenceType;
 }
 
-inline void VConfigManager::setEnableHeadingSequence(bool p_enabled)
+inline void VConfigManager::setHeadingSequenceType(HeadingSequenceType p_type)
 {
-    if (m_enableHeadingSequence == p_enabled) {
+    if (m_headingSequenceType == p_type) {
         return;
     }
 
-    m_enableHeadingSequence = p_enabled;
-    setConfigToSettings("global", "enable_heading_sequence",
-                        m_enableHeadingSequence);
+    m_headingSequenceType = p_type;
+    setConfigToSettings("global",
+                        "heading_sequence_type",
+                        (int)m_headingSequenceType);
 }
 
 inline int VConfigManager::getHeadingSequenceBaseLevel() const
@@ -1568,6 +1702,51 @@ inline void VConfigManager::setTemplateCodeBlockCss(const QString &p_css)
 inline bool VConfigManager::getUserSpecifyTemplateCodeBlockCssUrl() const
 {
     return !m_templateCodeBlockCssUrl.isEmpty();
+}
+
+inline bool VConfigManager::getEnableCompactMode() const
+{
+    return m_enableCompactMode;
+}
+
+inline void VConfigManager::setEnableCompactMode(bool p_enabled)
+{
+    if (m_enableCompactMode == p_enabled) {
+        return;
+    }
+
+    m_enableCompactMode = p_enabled;
+    setConfigToSettings("global", "enable_compact_mode", m_enableCompactMode);
+}
+
+inline StartupPageType VConfigManager::getStartupPageType() const
+{
+    return m_startupPageType;
+}
+
+inline void VConfigManager::setStartupPageType(StartupPageType p_type)
+{
+    if (m_startupPageType == p_type) {
+        return;
+    }
+
+    m_startupPageType = p_type;
+    setConfigToSettings("global", "startup_page_type", (int)m_startupPageType);
+}
+
+inline const QStringList &VConfigManager::getStartupPages() const
+{
+    return m_startupPages;
+}
+
+inline void VConfigManager::setStartupPages(const QStringList &p_pages)
+{
+    if (m_startupPages == p_pages) {
+        return;
+    }
+
+    m_startupPages = p_pages;
+    setConfigToSettings("global", "startup_pages", m_startupPages);
 }
 
 #endif // VCONFIGMANAGER_H

@@ -93,6 +93,8 @@ public:
     // Need to check if this notebook has been opened.
     QDateTime getCreatedTimeUtc();
 
+    bool isValid() const;
+
 private:
     // Serialize current instance to json.
     QJsonObject toConfigJson() const;
@@ -118,6 +120,10 @@ private:
 
     // Parent is NULL for root directory
     VDirectory *m_rootDir;
+
+    // Whether this notebook is valid.
+    // Will set to true after readConfigNotebook().
+    bool m_valid;
 };
 
 inline VDirectory *VNotebook::getRootDir() const
@@ -128,6 +134,11 @@ inline VDirectory *VNotebook::getRootDir() const
 inline const QString &VNotebook::getRecycleBinFolder() const
 {
     return m_recycleBinFolder;
+}
+
+inline bool VNotebook::isValid() const
+{
+    return m_valid;
 }
 
 #endif // VNOTEBOOK_H

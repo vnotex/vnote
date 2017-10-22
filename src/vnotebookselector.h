@@ -7,8 +7,6 @@
 #include "vnavigationmode.h"
 
 class VNotebook;
-class VNote;
-class VEditArea;
 class QListWidget;
 class QAction;
 class QListWidgetItem;
@@ -18,11 +16,15 @@ class VNotebookSelector : public QComboBox, public VNavigationMode
 {
     Q_OBJECT
 public:
-    explicit VNotebookSelector(VNote *vnote, QWidget *p_parent = 0);
+    explicit VNotebookSelector(QWidget *p_parent = 0);
+
+    // Update Combox from m_notebooks.
     void update();
-    inline void setEditArea(VEditArea *p_editArea);
+
     // Select notebook @p_notebook.
     bool locateNotebook(const VNotebook *p_notebook);
+
+    // Add notebook on popup if no notebooks currently.
     void showPopup() Q_DECL_OVERRIDE;
 
     // Implementations for VNavigationMode.
@@ -41,24 +43,32 @@ signals:
     void notebookCreated(const QString &p_name, bool p_import);
 
 public slots:
+    // Popup a dialog to prompt user to create a notebook.
     bool newNotebook();
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) Q_DECL_OVERRIDE;
 
 private slots:
+    // Act to currentIndexChanged() signal if m_muted is false.
     void handleCurIndexChanged(int p_index);
-    void handleItemActivated(int p_index);
-    void requestPopupListContextMenu(QPoint p_pos);
+
+    void popupListContextMenuRequested(QPoint p_pos);
+
+    // Delete currently selected notebook.
     void deleteNotebook();
+
+    // View and edit notebook information of selected notebook.
     void editNotebookInfo();
 
 private:
     void initActions();
+
+    // Update Combox from m_notebooks.
     void updateComboBox();
 
-    // Return the index of @p_notebook in m_noteboks.
-    int indexOfNotebook(const VNotebook *p_notebook);
+    // Return the item index of @p_notebook.
+    int itemIndexOfNotebook(const VNotebook *p_notebook) const;
 
     // If @p_import is true, we will use the existing config file.
     // If @p_imageFolder is empty, we will use the global one.
@@ -68,25 +78,36 @@ private:
                         const QString &p_attachmentFolder);
 
     void deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles);
-    void addNotebookItem(const QString &p_name);
-    // @p_index is the index of m_notebooks, NOT of QComboBox.
-    void removeNotebookItem(int p_index);
-    // @p_index is the index of QComboBox.
-    void updateComboBoxItem(int p_index, const QString &p_name);
+
+    // Add an item corresponding to @p_notebook to combo box.
+    void addNotebookItem(const VNotebook *p_notebook);
+
+    void fillItem(QListWidgetItem *p_item, const VNotebook *p_notebook) const;
+
+    // Insert "Add Notebook" item to combo box.
     void insertAddNotebookItem();
-    // @p_index is the index of m_notebooks.
-    void setCurrentIndexNotebook(int p_index);
-    int indexOfListItem(const QListWidgetItem *p_item);
-    // @p_index is the idnex of QComboBox.
-    inline VNotebook *getNotebookFromComboIndex(int p_index);
+
+    // Set current item corresponding to @p_notebook.
+    void setCurrentItemToNotebook(const VNotebook *p_notebook);
+
+    // Get VNotebook from @p_itemIdx, the index of m_listWidget.
+    VNotebook *getNotebook(int p_itemIdx) const;
+
+    VNotebook *getNotebook(const QListWidgetItem *p_item) const;
+
     void resizeListWidgetToContent();
+
     bool handlePopupKeyPress(QKeyEvent *p_event);
 
-    VNote *m_vnote;
     QVector<VNotebook *> &m_notebooks;
-    VEditArea *m_editArea;
+
     QListWidget *m_listWidget;
+
+    // Used to restore after clicking Add Notebook item.
     int m_lastValidIndex;
+
+    // Whether it is muted from currentIndexChanged().
+    bool m_muted;
 
     // Actions
     QAction *m_deleteNotebookAct;
@@ -95,28 +116,7 @@ private:
     QAction *m_recycleBinAct;
     QAction *m_emptyRecycleBinAct;
 
-    // We will add several special action item in the combobox. This is the start index
-    // of the real notebook items related to m_notebooks.
-    static const int c_notebookStartIdx;
-
     QLabel *m_naviLabel;
 };
-
-inline void VNotebookSelector::setEditArea(VEditArea *p_editArea)
-{
-    m_editArea = p_editArea;
-}
-
-inline VNotebook *VNotebookSelector::getNotebookFromComboIndex(int p_index)
-{
-    if (p_index < c_notebookStartIdx) {
-        return NULL;
-    }
-    int nbIdx = p_index - c_notebookStartIdx;
-    if (nbIdx >= m_notebooks.size()) {
-        return NULL;
-    }
-    return m_notebooks[nbIdx];
-}
 
 #endif // VNOTEBOOKSELECTOR_H

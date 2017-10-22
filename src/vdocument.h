@@ -16,9 +16,15 @@ class VDocument : public QObject
 public:
     // @p_file could be NULL.
     VDocument(const VFile *p_file, QObject *p_parent = 0);
+
     QString getToc();
+
+    // Scroll to @anchor in the web.
+    // @anchor is the id without '#', like "toc_1". If empty, will scroll to top.
     void scrollToAnchor(const QString &anchor);
+
     void setHtml(const QString &html);
+
     // Request to highlight a segment text.
     // Use p_id to identify the result.
     void highlightTextAsync(const QString &p_text, int p_id, int p_timeStamp);
@@ -35,6 +41,7 @@ public slots:
 
     // When the Web view has been scrolled, it will signal current header anchor.
     // Empty @anchor to indicate an invalid header.
+    // The header does not begins with '#'.
     void setHeader(const QString &anchor);
 
     void setLog(const QString &p_log);
@@ -49,8 +56,12 @@ public slots:
 
 signals:
     void textChanged(const QString &text);
+
     void tocChanged(const QString &toc);
+
     void requestScrollToAnchor(const QString &anchor);
+
+    // @anchor is the id of that anchor, without '#'.
     void headerChanged(const QString &anchor);
     void htmlChanged(const QString &html);
     void logChanged(const QString &p_log);

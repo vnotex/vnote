@@ -56,6 +56,10 @@
 插入删除线；再次按`Ctrl+D`退出。如果已经选择文本，则将当前选择文本改为删除线。
 - `Ctrl+O`  
 插入行内代码；再次按`Ctrl+O`退出。如果已经选择文本，则将当前选择文本改为行内代码。
+- `Ctrl+M`  
+插入代码块；再次按`Ctrl+M`退出。如果已经选择文本，则将当前选择文本嵌入到代码块中。
+- `Ctrl+L`  
+插入链接。
 - `Ctrl+H`  
 退格键，向前删除一个字符。
 - `Ctrl+W`  
@@ -80,42 +84,102 @@
 扩展选定到笔记开始或结尾处。
 
 ## 自定义快捷键
-VNote支持自定义部分标准快捷键（但并不建议这么做）。VNote将快捷键信息保存在用户配置文件`vnote.ini`中的`[shortcuts]`小节。
+VNote支持自定义部分标准快捷键（但并不建议这么做）。VNote将快捷键信息保存在用户配置文件`vnote.ini`中的`[shortcuts]`和`[captain_mode_shortcuts]`两个小节。
 
 例如，默认的配置可能是这样子的：
 
 
 ```ini
 [shortcuts]
-1\operation=NewNote
-1\keysequence=Ctrl+N
-2\operation=SaveNote
-2\keysequence=Ctrl+S
-3\operation=SaveAndRead
-3\keysequence=Ctrl+T
-4\operation=EditNote
-4\keysequence=Ctrl+W
-5\operation=CloseNote
-5\keysequence=
-6\operation=Find
-6\keysequence=Ctrl+F
-7\operation=FindNext
-7\keysequence=F3
-8\operation=FindPrevious
-8\keysequence=Shift+F3
-size=8
+; Define shortcuts here, with each item in the form "operation=keysequence".
+; Leave keysequence empty to disable the shortcut of an operation.
+; Custom shortcuts may conflict with some key bindings in edit mode or Vim mode.
+; Ctrl+Q is reserved for quitting VNote.
+
+; Leader key of Captain mode
+CaptainMode=Ctrl+E
+; Create a note in current folder
+NewNote=Ctrl+Alt+N
+; Save current note
+SaveNote=Ctrl+S
+; Save changes and enter read mode
+SaveAndRead=Ctrl+T
+; Edit current note
+EditNote=Ctrl+W
+; Close current note
+CloseNote=
+; Open file/replace dialog
+Find=Ctrl+F
+; Find next occurence
+FindNext=F3
+; Find previous occurence
+FindPrevious=Shift+F3
+
+[captain_mode_shortcuts]
+; Define shortcuts in Captain mode here.
+; There shortcuts are the sub-sequence after the CaptainMode key sequence
+; in [shortcuts].
+
+; Enter Navigation mode
+NavigationMode=W
+; Show attachment list of current note
+AttachmentList=A
+; Locate to the folder of current note
+LocateCurrentFile=D
+; Toggle Expand mode
+ExpandMode=E
+; Alternate one/two panels view
+OnePanelView=P
+; Discard changes and enter read mode
+DiscardAndRead=Q
+; Toggle Tools dock widget
+ToolsDock=T
+; Close current note
+CloseNote=X
+; Show shortcuts help document
+ShortcutsHelp=?
+; Flush the log file
+FlushLogFile=";"
+; Show opened files list
+OpenedFileList=F
+; Activate the ith tab
+ActivateTab1=1
+ActivateTab2=2
+ActivateTab3=3
+ActivateTab4=4
+ActivateTab5=5
+ActivateTab6=6
+ActivateTab7=7
+ActivateTab8=8
+ActivateTab9=9
+; Alternate between current and last tab
+AlternateTab=0
+; Activate next tab
+ActivateNextTab=J
+; Activate previous tab
+ActivatePreviousTab=K
+; Activate the window split on the left
+ActivateSplitLeft=H
+; Activate the window split on the right
+ActivateSplitRight=L
+; Move current tab one split left
+MoveTabSplitLeft=Shift+H
+; Move current tab one split right
+MoveTabSplitRight=Shift+L
+; Create a vertical split
+VerticalSplit=V
+; Remove current split
+RemoveSplit=R
 ```
 
-`size=8` 告诉VNote这里定义了8组快捷键，每组快捷键都以一个数字序号开始。通过改变每组快捷键中`keysequence`的值来改变某个操作的默认快捷键。将`keysequence`设置为空（`keysequence=`）则会禁用该操作的任何快捷键。
+每一项配置的形式为`操作=按键序列`。如果`按键序列`为空，则表示禁用该操作的快捷键。
 
-注意，`Ctrl+E`保留作为*舰长模式*的前导键，`Ctrl+Q`保留为退出VNote。
+注意，`Ctrl+Q`保留为退出VNote。
 
 # 舰长模式
 为了更有效地利用快捷键，VNote支持 **舰长模式**。
 
 按前导键`Ctrl+E`后，VNote会进入舰长模式。在舰长模式中，VNote会支持更多高效的快捷操作。
-
-另外，在该模式中，`Ctrl+W`和`W`是等效的，因此，可以`Ctrl+E+W`来实现`Ctrl+E W`的操作。
 
 - `E`   
 是否扩展编辑区域。

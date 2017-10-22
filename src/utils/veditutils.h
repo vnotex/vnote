@@ -24,10 +24,11 @@ public:
     // Need to call setTextCursor() to make it take effect.
     static void moveCursorFirstNonSpaceCharacter(QTextCursor &p_cursor,
                                                  QTextCursor::MoveMode p_mode);
-    // Indent current block as previous block.
+    // Indent current block as next/previous block.
     // Return true if some changes have been made.
     // @p_cursor will be placed at the position after inserting leading spaces.
-    static bool indentBlockAsPreviousBlock(QTextCursor &p_cursor);
+    // @p_next: indent as next block or previous block.
+    static bool indentBlockAsBlock(QTextCursor &p_cursor, bool p_next);
 
     // Returns true if two blocks has the same indent.
     static bool hasSameIndent(const QTextBlock &p_blocka, const QTextBlock &p_blockb);
@@ -132,7 +133,38 @@ public:
 
     // Check if we need to cancel auto indent.
     // @p_autoIndentPos: the position of the cursor after auto indent.
-    static bool needToCancelAutoIndent(int p_autoIndentPos, const QTextCursor &p_cursor);
+    static bool needToCancelAutoIndent(int p_autoIndentPos,
+                                       const QTextCursor &p_cursor);
+
+    // Insert title Mark at level @p_level in front of block @p_block
+    // If there already exists title marks, remove it first.
+    // Move cursor at the end of the block after insertion.
+    static void insertTitleMark(QTextCursor &p_cursor,
+                                const QTextBlock &p_block,
+                                int p_level);
+
+    // Find the start and end of the word @p_cursor locates in (within a single block).
+    // @p_start and @p_end will be the global position of the start and end of the word.
+    // @p_start will equals to @p_end if @p_cursor is a space.
+    static void findCurrentWord(QTextCursor p_cursor,
+                                int &p_start,
+                                int &p_end);
+
+    // Find the start and end of the WORD @p_cursor locates in (within a single block).
+    // @p_start and @p_end will be the global position of the start and end of the WORD.
+    // @p_start will equals to @p_end if @p_cursor is a space.
+    // Attention: www|sss will select www, which is different from findCurrentWord().
+    static void findCurrentWORD(const QTextCursor &p_cursor,
+                                int &p_start,
+                                int &p_end);
+
+    // Return the leading spaces of @p_block.
+    static QString fetchIndentSpaces(const QTextBlock &p_block);
+
+    // Insert a block above/below current block. Move the cursor to the start of
+    // the new block after insertion.
+    static void insertBlock(QTextCursor &p_cursor,
+                            bool p_above);
 
 private:
     VEditUtils() {}

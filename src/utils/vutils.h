@@ -20,6 +20,32 @@ class VNotebook;
     #define V_ASSERT(cond) ((!(cond)) ? qt_assert(#cond, __FILE__, __LINE__) : qt_noop())
 #endif
 
+// Thanks to CGAL/cgal.
+#ifndef __has_attribute
+    #define __has_attribute(x) 0  // Compatibility with non-clang compilers.
+#endif
+
+#ifndef __has_cpp_attribute
+  #define __has_cpp_attribute(x) 0  // Compatibility with non-supporting compilers.
+#endif
+
+// The fallthrough attribute.
+// See for clang:
+//   http://clang.llvm.org/docs/AttributeReference.html#statement-attributes
+// See for gcc:
+//   https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
+#if __has_cpp_attribute(fallthrough)
+#  define V_FALLTHROUGH [[fallthrough]]
+#elif __has_cpp_attribute(gnu::fallthrough)
+#  define V_FALLTHROUGH [[gnu::fallthrough]]
+#elif __has_cpp_attribute(clang::fallthrough)
+#  define V_FALLTHROUGH [[clang::fallthrough]]
+#elif __has_attribute(fallthrough) && ! __clang__
+#  define V_FALLTHROUGH __attribute__ ((fallthrough))
+#else
+#  define V_FALLTHROUGH while(false){}
+#endif
+
 enum class MessageBoxType
 {
     Normal = 0,
@@ -54,9 +80,19 @@ public:
 
     // Given the file name @p_fileName and directory path @p_dirPath, generate
     // a file name based on @p_fileName which does not exist in @p_dirPath.
-    static QString generateCopiedFileName(const QString &p_dirPath, const QString &p_fileName);
+    // @p_completeBaseName: use complete base name or complete suffix. For example,
+    // "abc.tar.gz", if @p_completeBaseName is true, the base name is "abc.tar",
+    // otherwise, it is "abc".
+    static QString generateCopiedFileName(const QString &p_dirPath,
+                                          const QString &p_fileName,
+                                          bool p_completeBaseName = true);
 
-    static QString generateCopiedDirName(const QString &p_parentDirPath, const QString &p_dirName);
+    // Given the directory name @p_dirName and directory path @p_parentDirPath,
+    // generate a directory name based on @p_dirName which does not exist in
+    // @p_parentDirPath.
+    static QString generateCopiedDirName(const QString &p_parentDirPath,
+                                         const QString &p_dirName);
+
     static void processStyle(QString &style, const QVector<QPair<QString, QString> > &varMap);
 
     // Return the last directory name of @p_path.
@@ -122,14 +158,27 @@ public:
     // Get an available file name in @p_directory with base @p_baseFileName.
     // If there already exists a file named @p_baseFileName, try to add sequence
     // suffix to the name, such as _001.
+    // @p_completeBaseName: use complete base name or complete suffix. For example,
+    // "abc.tar.gz", if @p_completeBaseName is true, the base name is "abc.tar",
+    // otherwise, it is "abc".
     static QString getFileNameWithSequence(const QString &p_directory,
-                                           const QString &p_baseFileName);
+                                           const QString &p_baseFileName,
+                                           bool p_completeBaseName = true);
+
+    // Get an available directory name in @p_directory with base @p_baseDirName.
+    // If there already exists a file named @p_baseFileName, try to add sequence
+    // suffix to the name, such as _001.
+    static QString getDirNameWithSequence(const QString &p_directory,
+                                          const QString &p_baseDirName);
 
     // Get an available random file name in @p_directory.
     static QString getRandomFileName(const QString &p_directory);
 
     // Try to check if @p_path is legal.
     static bool checkPathLegal(const QString &p_path);
+
+    // Check if file/folder name is legal.
+    static bool checkFileNameLegal(const QString &p_name);
 
     // Returns true if @p_patha and @p_pathb points to the same file/directory.
     static bool equalPath(const QString &p_patha, const QString &p_pathb);
@@ -186,6 +235,13 @@ public:
     // Assign @p_str to @p_msg if it is not NULL.
     static void addErrMsg(QString *p_msg, const QString &p_str);
 
+    // Check each file of @p_files and return valid ones for VNote to open.
+    static QStringList filterFilePathsToOpen(const QStringList &p_files);
+
+    // Return the normalized file path of @p_file if it is valid to open.
+    // Return empty if it is not valid.
+    static QString validFilePathToOpen(const QString &p_file);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
     // Captured texts (need to be trimmed):
@@ -194,6 +250,9 @@ public:
     // 3. Image Optional Title with double quotes;
     // 4. Unused;
     static const QString c_imageLinkRegExp;
+
+    // Regular expression for image title.
+    static const QString c_imageTitleRegExp;
 
     // Regular expression for file/directory name.
     // Forbidden char: \/:*?"<>|

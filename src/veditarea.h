@@ -12,10 +12,8 @@
 #include <QSplitter>
 #include "vnotebook.h"
 #include "veditwindow.h"
-#include "vtoc.h"
 #include "vnavigationmode.h"
 
-class VNote;
 class VFile;
 class VDirectory;
 class VFindReplaceDialog;
@@ -26,7 +24,7 @@ class VEditArea : public QWidget, public VNavigationMode
 {
     Q_OBJECT
 public:
-    explicit VEditArea(VNote *vnote, QWidget *parent = 0);
+    explicit VEditArea(QWidget *parent = 0);
 
     // Whether @p_file has been opened in edit area.
     bool isFileOpened(const VFile *p_file);
@@ -35,17 +33,31 @@ public:
     bool closeFile(const VFile *p_file, bool p_forced);
     bool closeFile(const VDirectory *p_dir, bool p_forced);
     bool closeFile(const VNotebook *p_notebook, bool p_forced);
-    // Returns current edit tab.
-    VEditTab *currentEditTab();
-    // Returns the count of VEditWindow.
-    inline int windowCount() const;
+
+    // Return current edit window.
+    VEditWindow *getCurrentWindow() const;
+
+    // Return current edit tab.
+    VEditTab *getCurrentTab() const;
+
+    // Return the @p_tabIdx tab in the @p_winIdx window.
+    VEditTab *getTab(int p_winIdx, int p_tabIdx) const;
+
+    // Return VEditTabInfo of all edit tabs.
+    QVector<VEditTabInfo> getAllTabsInfo() const;
+
+    // Return the count of VEditWindow.
+    int windowCount() const;
+
     // Returns the index of @p_window.
     int windowIndex(const VEditWindow *p_window) const;
     // Move tab widget @p_widget from window @p_fromIdx to @p_toIdx.
     // @p_widget has been removed from the original window.
     // If fail, just delete the p_widget.
     void moveTab(QWidget *p_widget, int p_fromIdx, int p_toIdx);
-    inline VFindReplaceDialog *getFindReplaceDialog() const;
+
+    VFindReplaceDialog *getFindReplaceDialog() const;
+
     // Return selected text of current edit tab.
     QString getSelectedText();
     void splitCurrentWindow();
@@ -54,7 +66,6 @@ public:
     // Return the new current window index, otherwise, return -1.
     int focusNextWindow(int p_biaIdx);
     void moveCurrentTabOneSplit(bool p_right);
-    VEditWindow *getCurrentWindow() const;
 
     // Implementations for VNavigationMode.
     void registerNavigation(QChar p_majorKey) Q_DECL_OVERRIDE;
@@ -62,12 +73,18 @@ public:
     void hideNavigation() Q_DECL_OVERRIDE;
     bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE;
 
+    // Open files @p_files.
+    int openFiles(const QVector<VFileSessionInfo> &p_files);
+
 signals:
     // Emit when current window's tab status updated.
     void tabStatusUpdated(const VEditTabInfo &p_info);
 
-    void outlineChanged(const VToc &toc);
-    void curHeaderChanged(const VAnchor &anchor);
+    // Emit when current window's tab's outline changed.
+    void outlineChanged(const VTableOfContent &p_outline);
+
+    // Emit when current window's tab's current header changed.
+    void currentHeaderChanged(const VHeaderPointer &p_header);
 
     // Emit when want to show message in status bar.
     void statusMessage(const QString &p_msg);
@@ -84,13 +101,16 @@ public slots:
     // @p_forceMode is true.
     // A given file can be opened in multiple split windows. A given file could be
     // opened at most in one tab inside a window.
-    void openFile(VFile *p_file, OpenFileMode p_mode, bool p_forceMode = false);
+    VEditTab *openFile(VFile *p_file, OpenFileMode p_mode, bool p_forceMode = false);
 
     void editFile();
     void saveFile();
     void readFile();
     void saveAndReadFile();
-    void handleOutlineItemActivated(const VAnchor &anchor);
+
+    // Scroll current tab to @p_header.
+    void scrollToHeader(const VHeaderPointer &p_header);
+
     void handleFileUpdated(const VFile *p_file);
     void handleDirectoryUpdated(const VDirectory *p_dir);
     void handleNotebookUpdated(const VNotebook *p_notebook);
@@ -102,8 +122,11 @@ private slots:
 
     void handleRemoveSplitRequest(VEditWindow *curWindow);
     void handleWindowFocused();
-    void handleOutlineChanged(const VToc &toc);
-    void handleCurHeaderChanged(const VAnchor &anchor);
+
+    void handleWindowOutlineChanged(const VTableOfContent &p_outline);
+
+    void handleWindowCurrentHeaderChanged(const VHeaderPointer &p_header);
+
     void handleFindTextChanged(const QString &p_text, uint p_options);
     void handleFindOptionChanged(uint p_options);
     void handleFindNext(const QString &p_text, uint p_options, bool p_forward);
@@ -128,14 +151,48 @@ private:
     int openFileInWindow(int windowIndex, VFile *p_file, OpenFileMode p_mode);
     void setCurrentTab(int windowIndex, int tabIndex, bool setFocus);
     void setCurrentWindow(int windowIndex, bool setFocus);
-    inline VEditWindow *getWindow(int windowIndex) const;
+
+    VEditWindow *getWindow(int windowIndex) const;
+
     void insertSplitWindow(int idx);
     void removeSplitWindow(VEditWindow *win);
 
     // Update status of current window.
     void updateWindowStatus();
 
-    VNote *vnote;
+    // Init targets for Captain mode.
+    void registerCaptainTargets();
+
+    // Captain mode functions.
+
+    // Activate tab @p_idx.
+    static void activateTabByCaptain(void *p_target, void *p_data, int p_idx);
+
+    static void alternateTabByCaptain(void *p_target, void *p_data);
+
+    static void showOpenedFileListByCaptain(void *p_target, void *p_data);
+
+    static void activateSplitLeftByCaptain(void *p_target, void *p_data);
+
+    static void activateSplitRightByCaptain(void *p_target, void *p_data);
+
+    static void moveTabSplitLeftByCaptain(void *p_target, void *p_data);
+
+    static void moveTabSplitRightByCaptain(void *p_target, void *p_data);
+
+    static void activateNextTabByCaptain(void *p_target, void *p_data);
+
+    static void activatePreviousTabByCaptain(void *p_target, void *p_data);
+
+    static void verticalSplitByCaptain(void *p_target, void *p_data);
+
+    static void removeSplitByCaptain(void *p_target, void *p_data);
+
+    // Evaluate selected text or the word on cursor as magic words.
+    static void evaluateMagicWordsByCaptain(void *p_target, void *p_data);
+
+    // End Captain mode functions.
+
     int curWindowIndex;
 
     // Splitter holding multiple split windows

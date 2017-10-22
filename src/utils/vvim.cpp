@@ -18,6 +18,7 @@ extern VConfigManager *g_config;
 const QChar VVim::c_unnamedRegister = QChar('"');
 const QChar VVim::c_blackHoleRegister = QChar('_');
 const QChar VVim::c_selectionRegister = QChar('+');
+QMap<QChar, VVim::Register> VVim::s_registers;
 
 const int VVim::SearchHistory::c_capacity = 50;
 
@@ -170,62 +171,6 @@ static void findCurrentSpace(const QTextCursor &p_cursor, int &p_start, int &p_e
     p_end += block.position();
 }
 
-// Find the start and end of the word @p_cursor locates in (within a single block).
-// @p_start and @p_end will be the global position of the start and end of the word.
-// @p_start will equals to @p_end if @p_cursor is a space.
-static void findCurrentWord(QTextCursor p_cursor, int &p_start, int &p_end)
-{
-    QString text = p_cursor.block().text();
-    int pib = p_cursor.positionInBlock();
-
-    if (pib < text.size() && text[pib].isSpace()) {
-        p_start = p_end = p_cursor.position();
-        return;
-    }
-
-    p_cursor.movePosition(QTextCursor::StartOfWord);
-    p_start = p_cursor.position();
-    p_cursor.movePosition(QTextCursor::EndOfWord);
-    p_end = p_cursor.position();
-}
-
-// Find the start and end of the WORD @p_cursor locates in (within a single block).
-// @p_start and @p_end will be the global position of the start and end of the WORD.
-// @p_start will equals to @p_end if @p_cursor is a space.
-// Attention: www|sss will select www, which is different from findCurrentWord().
-static void findCurrentWORD(const QTextCursor &p_cursor, int &p_start, int &p_end)
-{
-    QTextBlock block = p_cursor.block();
-    QString text = block.text();
-    int pib = p_cursor.positionInBlock();
-
-    if (pib < text.size() && text[pib].isSpace()) {
-        p_start = p_end = p_cursor.position();
-        return;
-    }
-
-    // Find the start.
-    p_start = 0;
-    for (int i = pib - 1; i >= 0; --i) {
-        if (text[i].isSpace()) {
-            p_start = i + 1;
-            break;
-        }
-    }
-
-    // Find the end.
-    p_end = block.length() - 1;
-    for (int i = pib; i < text.size(); ++i) {
-        if (text[i].isSpace()) {
-            p_end = i;
-            break;
-        }
-    }
-
-    p_start += block.position();
-    p_end += block.position();
-}
-
 // Move @p_cursor to skip spaces if current cursor is placed at a space
 // (may move across blocks). It will stop by the empty block on the way.
 // Forward: wwwwsssss|wwww
@@ -351,7 +296,7 @@ static void insertChangeBlockAfterDeletion(QTextCursor &p_cursor, int p_deletion
     }
 
     if (g_config->getAutoIndent()) {
-        VEditUtils::indentBlockAsPreviousBlock(p_cursor);
+        VEditUtils::indentBlockAsBlock(p_cursor, false);
     }
 }
 
@@ -556,7 +501,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             QChar reg = keyToRegisterName(keyInfo);
             if (!reg.isNull()) {
                 // Insert register content.
-                m_editor->insertPlainText(m_registers[reg].read());
+                m_editor->insertPlainText(getRegister(reg).read());
             }
 
             goto clear_accept;
@@ -602,11 +547,12 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         QChar reg = keyToRegisterName(keyInfo);
         if (!reg.isNull()) {
             m_keys.clear();
-            setRegister(reg);
-            if (m_registers[reg].isNamedRegister()) {
-                m_registers[reg].m_append = (modifiers == Qt::ShiftModifier);
+            setCurrentRegisterName(reg);
+            Register &r = getRegister(reg);
+            if (r.isNamedRegister()) {
+                r.m_append = (modifiers == Qt::ShiftModifier);
             } else {
-                Q_ASSERT(!m_registers[reg].m_append);
+                Q_ASSERT(!r.m_append);
             }
 
             goto accept;
@@ -965,7 +911,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 
                 bool textInserted = false;
                 if (g_config->getAutoIndent()) {
-                    textInserted = VEditUtils::indentBlockAsPreviousBlock(cursor);
+                    textInserted = VEditUtils::indentBlockAsBlock(cursor, false);
                     if (g_config->getAutoList()) {
                         textInserted = VEditUtils::insertListMarkAsPreviousBlock(cursor)
                                        || textInserted;
@@ -1115,6 +1061,8 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         } else {
             break;
         }
+
+        V_FALLTHROUGH;
     }
 
     case Qt::Key_PageUp:
@@ -1381,6 +1329,8 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         } else {
             break;
         }
+
+        V_FALLTHROUGH;
     }
 
     case Qt::Key_Escape:
@@ -2219,7 +2169,7 @@ void VVim::resetState()
     m_keys.clear();
     m_tokens.clear();
     m_pendingKeys.clear();
-    setRegister(c_unnamedRegister);
+    setCurrentRegisterName(c_unnamedRegister);
     m_resetPositionInBlock = true;
     m_registerPending = false;
 }
@@ -2723,7 +2673,7 @@ bool VVim::processMovement(QTextCursor &p_cursor,
         for (int i = 0; i < p_repeat; ++i) {
             int start, end;
             // [start, end] is current WORD.
-            findCurrentWORD(p_cursor, start, end);
+            VEditUtils::findCurrentWORD(p_cursor, start, end);
 
             // Move cursor to end of current WORD.
             p_cursor.setPosition(end, p_moveMode);
@@ -2773,7 +2723,7 @@ bool VVim::processMovement(QTextCursor &p_cursor,
 
             int start, end;
             // [start, end] is current WORD.
-            findCurrentWORD(p_cursor, start, end);
+            VEditUtils::findCurrentWORD(p_cursor, start, end);
 
             // Move cursor to the end of current WORD.
             p_cursor.setPosition(end, p_moveMode);
@@ -2819,7 +2769,7 @@ bool VVim::processMovement(QTextCursor &p_cursor,
 
             int start, end;
             // [start, end] is current WORD.
-            findCurrentWORD(p_cursor, start, end);
+            VEditUtils::findCurrentWORD(p_cursor, start, end);
 
             // Move cursor to the start of current WORD.
             p_cursor.setPosition(start, p_moveMode);
@@ -2856,7 +2806,7 @@ bool VVim::processMovement(QTextCursor &p_cursor,
 
         for (int i = 0; i < p_repeat; ++i) {
             int start, end;
-            findCurrentWORD(p_cursor, start, end);
+            VEditUtils::findCurrentWORD(p_cursor, start, end);
 
             p_cursor.setPosition(start, p_moveMode);
 
@@ -3045,7 +2995,7 @@ handle_target:
         // Different from Vim:
         // We do not recognize a word as strict as Vim.
         int start, end;
-        findCurrentWord(p_cursor, start, end);
+        VEditUtils::findCurrentWord(p_cursor, start, end);
         if (start == end) {
             // Spaces, find next word.
             QTextCursor cursor = p_cursor;
@@ -3056,7 +3006,7 @@ handle_target:
                 }
 
                 if (!doc->characterAt(cursor.position()).isSpace()) {
-                    findCurrentWord(cursor, start, end);
+                    VEditUtils::findCurrentWord(cursor, start, end);
                     Q_ASSERT(start != end);
                     break;
                 }
@@ -3181,7 +3131,7 @@ bool VVim::selectRange(QTextCursor &p_cursor, const QTextDocument *p_doc,
         Q_ASSERT(p_repeat == -1);
         bool spaces = false;
         int start, end;
-        findCurrentWord(p_cursor, start, end);
+        VEditUtils::findCurrentWord(p_cursor, start, end);
 
         if (start == end) {
             // Select the space between previous word and next word.
@@ -3221,7 +3171,7 @@ bool VVim::selectRange(QTextCursor &p_cursor, const QTextDocument *p_doc,
         findCurrentSpace(p_cursor, start, end);
 
         if (start == end) {
-            findCurrentWORD(p_cursor, start, end);
+            VEditUtils::findCurrentWORD(p_cursor, start, end);
         } else {
             // Select the space between previous WORD and next WORD.
             spaces = true;
@@ -3240,7 +3190,7 @@ bool VVim::selectRange(QTextCursor &p_cursor, const QTextDocument *p_doc,
                         moveCursorAcrossSpaces(p_cursor, moveMode, true);
 
                         // [start, end] is current WORD.
-                        findCurrentWORD(p_cursor, start, end);
+                        VEditUtils::findCurrentWORD(p_cursor, start, end);
 
                         // Move cursor to the end of current WORD.
                         p_cursor.setPosition(end, moveMode);
@@ -3481,6 +3431,8 @@ void VVim::processDeleteAction(QList<Token> &p_tokens)
                 // Fall through.
                 mayCrossBlock = true;
 
+                V_FALLTHROUGH;
+
             case Range::WordAround:
                 // Fall through.
             case Range::WordInner:
@@ -3712,6 +3664,8 @@ void VVim::processCopyAction(QList<Token> &p_tokens)
                 // Fall through.
                 mayCrossBlock = true;
 
+                V_FALLTHROUGH;
+
             case Range::WordAround:
                 // Fall through.
             case Range::WordInner:
@@ -3873,7 +3827,7 @@ void VVim::processPasteAction(QList<Token> &p_tokens, bool p_pasteBefore)
         repeat = to.m_repeat;
     }
 
-    Register &reg = m_registers[m_regName];
+    Register &reg = getRegister(m_regName);
     QString value = reg.read();
     bool isBlock = reg.isBlock();
     if (value.isEmpty()) {
@@ -4847,14 +4801,17 @@ void VVim::expandSelectionToWholeLines(QTextCursor &p_cursor)
 
 void VVim::initRegisters()
 {
-    m_registers.clear();
-    for (char ch = 'a'; ch <= 'z'; ++ch) {
-        m_registers[QChar(ch)] = Register(QChar(ch));
+    if (!s_registers.isEmpty()) {
+        return;
     }
 
-    m_registers[c_unnamedRegister] = Register(c_unnamedRegister);
-    m_registers[c_blackHoleRegister] = Register(c_blackHoleRegister);
-    m_registers[c_selectionRegister] = Register(c_selectionRegister);
+    for (char ch = 'a'; ch <= 'z'; ++ch) {
+        s_registers[QChar(ch)] = Register(QChar(ch));
+    }
+
+    s_registers[c_unnamedRegister] = Register(c_unnamedRegister);
+    s_registers[c_blackHoleRegister] = Register(c_blackHoleRegister);
+    s_registers[c_selectionRegister] = Register(c_selectionRegister);
 }
 
 bool VVim::expectingRegisterName() const
@@ -5137,12 +5094,12 @@ void VVim::saveToRegister(const QString &p_text)
 
     qDebug() << QString("save text(%1) to register(%2)").arg(text).arg(m_regName);
 
-    Register &reg = m_registers[m_regName];
+    Register &reg = getRegister(m_regName);
     reg.update(text);
 
     if (!reg.isBlackHoleRegister() && !reg.isUnnamedRegister()) {
         // Save it to unnamed register.
-        m_registers[c_unnamedRegister].update(reg.m_value);
+        setRegister(c_unnamedRegister, reg.m_value);
     }
 }
 
@@ -5249,7 +5206,7 @@ void VVim::message(const QString &p_msg)
 
 const QMap<QChar, VVim::Register> &VVim::getRegisters() const
 {
-    return m_registers;
+    return s_registers;
 }
 
 const VVim::Marks &VVim::getMarks() const
@@ -5272,7 +5229,7 @@ QString VVim::getPendingKeys() const
     return str;
 }
 
-void VVim::setRegister(QChar p_reg)
+void VVim::setCurrentRegisterName(QChar p_reg)
 {
     m_regName = p_reg;
 }
@@ -5785,7 +5742,7 @@ QString VVim::readRegister(int p_key, int p_modifiers)
     Key keyInfo(p_key, p_modifiers);
     QChar reg = keyToRegisterName(keyInfo);
     if (!reg.isNull()) {
-        return m_registers[reg].read();
+        return getRegister(reg).read();
     }
 
     return "";

@@ -4,6 +4,7 @@
 #include "vnotefile.h"
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
+#include "vlineedit.h"
 
 extern VConfigManager *g_config;
 
@@ -16,7 +17,7 @@ VFileInfoDialog::VFileInfoDialog(const QString &title,
 {
     setupUI(title, info);
 
-    connect(nameEdit, &QLineEdit::textChanged, this, &VFileInfoDialog::handleInputChanged);
+    connect(m_nameEdit, &QLineEdit::textChanged, this, &VFileInfoDialog::handleInputChanged);
 
     handleInputChanged();
 }
@@ -30,7 +31,10 @@ void VFileInfoDialog::setupUI(const QString &p_title, const QString &p_info)
 
     // File name.
     QString name = m_file->getName();
-    nameEdit = new QLineEdit(name);
+    m_nameEdit = new VLineEdit(name);
+    QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp),
+                                                 m_nameEdit);
+    m_nameEdit->setValidator(validator);
     int baseStart = 0, baseLength = name.size();
     int dotIdx = name.lastIndexOf('.');
     if (dotIdx != -1) {
@@ -38,7 +42,7 @@ void VFileInfoDialog::setupUI(const QString &p_title, const QString &p_info)
     }
 
     // Select without suffix.
-    nameEdit->setSelection(baseStart, baseLength);
+    m_nameEdit->setSelection(baseStart, baseLength);
 
     // Attachment folder.
     QLineEdit *attachmentFolderEdit = new QLineEdit(m_file->getAttachmentFolder());
@@ -56,7 +60,7 @@ void VFileInfoDialog::setupUI(const QString &p_title, const QString &p_info)
     modifiedTimeLabel->setToolTip(tr("Last modified time within VNote"));
 
     QFormLayout *topLayout = new QFormLayout();
-    topLayout->addRow(tr("Note &name:"), nameEdit);
+    topLayout->addRow(tr("Note &name:"), m_nameEdit);
     topLayout->addRow(tr("Attachment folder:"), attachmentFolderEdit);
     topLayout->addRow(tr("Created time:"), createdTimeLabel);
     topLayout->addRow(tr("Modified time:"), modifiedTimeLabel);
@@ -71,7 +75,7 @@ void VFileInfoDialog::setupUI(const QString &p_title, const QString &p_info)
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
-    nameEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
+    m_nameEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     if (infoLabel) {
@@ -90,28 +94,43 @@ void VFileInfoDialog::setupUI(const QString &p_title, const QString &p_info)
 void VFileInfoDialog::handleInputChanged()
 {
     bool showWarnLabel = false;
-    QString name = nameEdit->text();
+    QString name = m_nameEdit->getEvaluatedText();
     bool nameOk = !name.isEmpty();
     if (nameOk && name != m_file->getName()) {
         // Check if the name conflicts with existing note name.
         // Case-insensitive when creating note.
         const VNoteFile *file = m_directory->findFile(name, false);
+        QString warnText;
         if (file && file != m_file) {
             nameOk = false;
-            showWarnLabel = true;
-            QString nameConflictText = tr("<span style=\"%1\">WARNING</span>: Name (case-insensitive) already exists. "
-                                          "Please choose another name.")
-                                          .arg(g_config->c_warningTextStyle);
-            m_warnLabel->setText(nameConflictText);
+            warnText = tr("<span style=\"%1\">WARNING</span>: "
+                          "Name (case-insensitive) <span style=\"%2\">%3</span> already exists. "
+                          "Please choose another name.")
+                         .arg(g_config->c_warningTextStyle)
+                         .arg(g_config->c_dataTextStyle)
+                         .arg(name);
         } else if (m_file->getDocType() != DocType::Unknown
                    && VUtils::docTypeFromName(name) != m_file->getDocType()) {
             // Check if the name change the doc type.
             nameOk = false;
+            warnText = tr("<span style=\"%1\">WARNING</span>: "
+                          "Changing type of the note is not supported. "
+                          "Please use the same suffix as the old one.")
+                         .arg(g_config->c_warningTextStyle);
+        } else if (!VUtils::checkFileNameLegal(name)) {
+            // Check if evaluated name contains illegal characters.
+            nameOk = false;
+            warnText = tr("<span style=\"%1\">WARNING</span>: "
+                          "Name <span style=\"%2\">%3</span> contains illegal characters "
+                          "(after magic word evaluation).")
+                         .arg(g_config->c_warningTextStyle)
+                         .arg(g_config->c_dataTextStyle)
+                         .arg(name);
+        }
+
+        if (!nameOk) {
             showWarnLabel = true;
-            QString nameConflictText = tr("<span style=\"%1\">WARNING</span>: Changing type of the note is not supported. "
-                                          "Please use the same suffix as the old one.")
-                                          .arg(g_config->c_warningTextStyle);
-            m_warnLabel->setText(nameConflictText);
+            m_warnLabel->setText(warnText);
         }
     }
 
@@ -123,5 +142,5 @@ void VFileInfoDialog::handleInputChanged()
 
 QString VFileInfoDialog::getNameInput() const
 {
-    return nameEdit->text();
+    return m_nameEdit->getEvaluatedText();
 }

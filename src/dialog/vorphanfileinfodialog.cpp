@@ -25,7 +25,6 @@ void VOrphanFileInfoDialog::setupUI()
     QLabel *fileLabel = new QLabel(m_file->fetchPath());
     topLayout->addRow(tr("File:"), fileLabel);
 
-    QLabel *imageFolderLabel = new QLabel(tr("Image folder:"));
     m_imageFolderEdit = new QLineEdit(m_file->getImageFolder());
     m_imageFolderEdit->setPlaceholderText(tr("Use global configuration (%1)")
                                             .arg(g_config->getImageFolderExt()));
@@ -33,9 +32,8 @@ void VOrphanFileInfoDialog::setupUI()
                               "of this file.\nIf absolute path is used, "
                               "VNote will not manage those images."
                               "(empty to use global configuration)");
-    imageFolderLabel->setToolTip(imgFolderTip);
     m_imageFolderEdit->setToolTip(imgFolderTip);
-    topLayout->addRow(imageFolderLabel, m_imageFolderEdit);
+    topLayout->addRow(tr("&Image folder:"), m_imageFolderEdit);
 
     // Ok is the default button.
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);

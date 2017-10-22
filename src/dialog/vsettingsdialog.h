@@ -13,6 +13,8 @@ class QCheckBox;
 class QLineEdit;
 class QStackedLayout;
 class QListWidget;
+class QPlainTextEdit;
+class QVBoxLayout;
 
 class VGeneralTab : public QWidget
 {
@@ -23,17 +25,31 @@ public:
     bool saveConfiguration();
 
 private:
+    QLayout *setupStartupPagesLayout();
+
     bool loadLanguage();
     bool saveLanguage();
 
     bool loadSystemTray();
     bool saveSystemTray();
 
+    bool loadStartupPageType();
+    bool saveStartupPageType();
+
     // Language
     QComboBox *m_langCombo;
 
     // System tray
     QCheckBox *m_systemTray;
+
+    // Startup page type.
+    QComboBox *m_startupPageTypeCombo;
+
+    // Startup pages.
+    QPlainTextEdit *m_startupPagesEdit;
+
+    // Startup pages add files button.
+    QPushButton *m_startupPagesAddBtn;
 
     static const QVector<QString> c_availableLangs;
 };
@@ -101,8 +117,8 @@ public:
     QComboBox *m_openModeCombo;
 
     // Whether enable heading sequence.
-    QCheckBox *m_headingSequence;
-    QComboBox *m_headingSequenceCombo;
+    QComboBox *m_headingSequenceTypeCombo;
+    QComboBox *m_headingSequenceLevelCombo;
 
     // Web zoom factor.
     QCheckBox *m_customWebZoom;

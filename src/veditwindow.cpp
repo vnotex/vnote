@@ -2,7 +2,6 @@
 #include <QtDebug>
 #include "veditwindow.h"
 #include "vedittab.h"
-#include "vnote.h"
 #include "utils/vutils.h"
 #include "vorphanfile.h"
 #include "vmainwindow.h"
@@ -13,12 +12,14 @@
 #include "vfilelist.h"
 #include "vconfigmanager.h"
 
-extern VNote *g_vnote;
 extern VConfigManager *g_config;
+extern VMainWindow *g_mainWin;
 
-VEditWindow::VEditWindow(VNote *vnote, VEditArea *editArea, QWidget *parent)
-    : QTabWidget(parent), vnote(vnote), m_editArea(editArea),
-      m_curTabWidget(NULL), m_lastTabWidget(NULL)
+VEditWindow::VEditWindow(VEditArea *editArea, QWidget *parent)
+    : QTabWidget(parent),
+      m_editArea(editArea),
+      m_curTabWidget(NULL),
+      m_lastTabWidget(NULL)
 {
     setAcceptDrops(true);
     initTabActions();
@@ -137,9 +138,9 @@ void VEditWindow::initTabActions()
                 Q_ASSERT(file);
                 if (file->getType() == FileType::Note) {
                     VNoteFile *tmpFile = dynamic_cast<VNoteFile *>((VFile *)file);
-                    g_vnote->getMainWindow()->getFileList()->fileInfo(tmpFile);
+                    g_mainWin->getFileList()->fileInfo(tmpFile);
                 } else if (file->getType() == FileType::Orphan) {
-                    g_vnote->getMainWindow()->editOrphanFileInfo(file);
+                    g_mainWin->editOrphanFileInfo(file);
                 }
             });
 
@@ -262,8 +263,10 @@ void VEditWindow::removeEditTab(int p_index)
 
 int VEditWindow::insertEditTab(int p_index, VFile *p_file, QWidget *p_page)
 {
-    int idx = insertTab(p_index, p_page, p_file->getName());
-    setTabToolTip(idx, generateTooltip(p_file));
+    int idx = insertTab(p_index,
+                        p_page,
+                        p_file->getName());
+    updateTabInfo(idx);
     return idx;
 }
 
@@ -466,15 +469,17 @@ void VEditWindow::updateTabStatus(int p_index)
 
     if (p_index == -1) {
         emit tabStatusUpdated(VEditTabInfo());
-        emit outlineChanged(VToc());
-        emit curHeaderChanged(VAnchor());
+        emit outlineChanged(VTableOfContent());
+        emit currentHeaderChanged(VHeaderPointer());
         return;
     }
 
     VEditTab *tab = getTab(p_index);
-    tab->updateStatus();
-    tab->requestUpdateOutline();
-    tab->requestUpdateCurHeader();
+    emit tabStatusUpdated(tab->fetchTabInfo());
+    emit outlineChanged(tab->getOutline());
+    emit currentHeaderChanged(tab->getCurrentHeader());
+
+    updateTabInfo(p_index);
 }
 
 void VEditWindow::updateTabInfo(int p_index)
@@ -483,8 +488,7 @@ void VEditWindow::updateTabInfo(int p_index)
     const VFile *file = editor->getFile();
     bool editMode = editor->isEditMode();
 
-    setTabText(p_index, generateTabText(p_index, file->getName(),
-                                        file->isModified(), file->isModifiable()));
+    setTabText(p_index, generateTabText(p_index, file));
     setTabToolTip(p_index, generateTooltip(file));
 
     QString iconUrl(":/resources/icons/reading.svg");
@@ -501,31 +505,28 @@ void VEditWindow::updateAllTabsSequence()
     for (int i = 0; i < count(); ++i) {
         VEditTab *editor = getTab(i);
         const VFile *file = editor->getFile();
-        setTabText(i, generateTabText(i, file->getName(),
-                                      file->isModified(), file->isModifiable()));
+        setTabText(i, generateTabText(i, file));
     }
 }
 
-// Be requested to report current outline
-void VEditWindow::requestUpdateOutline()
+VTableOfContent VEditWindow::getOutline() const
 {
     int idx = currentIndex();
     if (idx == -1) {
-        emit outlineChanged(VToc());
-        return;
+        return VTableOfContent();
     }
-    getTab(idx)->requestUpdateOutline();
+
+    return getTab(idx)->getOutline();
 }
 
-// Be requested to report current header
-void VEditWindow::requestUpdateCurHeader()
+VHeaderPointer VEditWindow::getCurrentHeader() const
 {
     int idx = currentIndex();
     if (idx == -1) {
-        emit curHeaderChanged(VAnchor());
-        return;
+        return VHeaderPointer();
     }
-    getTab(idx)->requestUpdateCurHeader();
+
+    return getTab(idx)->getCurrentHeader();
 }
 
 // Focus this windows. Try to focus current tab.
@@ -681,44 +682,39 @@ bool VEditWindow::canRemoveSplit()
     return splitter->count() > 1;
 }
 
-void VEditWindow::handleOutlineChanged(const VToc &p_toc)
+void VEditWindow::handleTabOutlineChanged(const VTableOfContent &p_outline)
 {
-    // Only propagate it if it is current tab
-    int idx = currentIndex();
-    if (idx == -1) {
-        emit outlineChanged(VToc());
+    // Only propagate it if it is current tab.
+    VEditTab *tab = getCurrentTab();
+    if (tab) {
+        if (tab->getFile() == p_outline.getFile()) {
+            emit outlineChanged(p_outline);
+        }
+    } else {
+        emit outlineChanged(VTableOfContent());
         return;
-    }
-    const VFile *file = getTab(idx)->getFile();
-    if (p_toc.m_file == file) {
-        emit outlineChanged(p_toc);
     }
 }
 
-void VEditWindow::handleCurHeaderChanged(const VAnchor &p_anchor)
+void VEditWindow::handleTabCurrentHeaderChanged(const VHeaderPointer &p_header)
 {
-    // Only propagate it if it is current tab
-    int idx = currentIndex();
-    if (idx == -1) {
-        emit curHeaderChanged(VAnchor());
+    // Only propagate it if it is current tab.
+    VEditTab *tab = getCurrentTab();
+    if (tab) {
+        if (tab->getFile() == p_header.m_file) {
+            emit currentHeaderChanged(p_header);
+        }
+    } else {
+        emit currentHeaderChanged(VHeaderPointer());
         return;
-    }
-    const VFile *file = getTab(idx)->getFile();
-    if (p_anchor.m_file == file) {
-        emit curHeaderChanged(p_anchor);
     }
 }
 
-void VEditWindow::scrollCurTab(const VAnchor &p_anchor)
+void VEditWindow::scrollToHeader(const VHeaderPointer &p_header)
 {
-    int idx = currentIndex();
-    if (idx == -1) {
-        emit curHeaderChanged(VAnchor());
-        return;
-    }
-    const VFile *file = getTab(idx)->getFile();
-    if (file == p_anchor.m_file) {
-        getTab(idx)->scrollToAnchor(p_anchor);
+    VEditTab *tab = getCurrentTab();
+    if (tab) {
+        tab->scrollToHeader(p_header);
     }
 }
 
@@ -794,13 +790,28 @@ void VEditWindow::updateNotebookInfo(const VNotebook *p_notebook)
     }
 }
 
-VEditTab *VEditWindow::currentEditTab()
+VEditTab *VEditWindow::getCurrentTab() const
 {
     int idx = currentIndex();
     if (idx == -1) {
         return NULL;
     }
+
     return getTab(idx);
+}
+
+QVector<VEditTabInfo> VEditWindow::getAllTabsInfo() const
+{
+    int nrTab = count();
+
+    QVector<VEditTabInfo> tabs;
+    tabs.reserve(nrTab);
+    for (int i = 0; i < nrTab; ++i) {
+        VEditTab *editTab = getTab(i);
+        tabs.push_back(editTab->fetchTabInfo());
+    }
+
+    return tabs;
 }
 
 void VEditWindow::handleLocateAct()
@@ -809,7 +820,7 @@ void VEditWindow::handleLocateAct()
     VEditTab *editor = getTab(tab);
     QPointer<VFile> file = editor->getFile();
     if (file->getType() == FileType::Note) {
-        vnote->getMainWindow()->locateFile(file);
+        g_mainWin->locateFile(file);
     }
 }
 
@@ -901,9 +912,9 @@ void VEditWindow::connectEditTab(const VEditTab *p_tab)
     connect(p_tab, &VEditTab::getFocused,
             this, &VEditWindow::getFocused);
     connect(p_tab, &VEditTab::outlineChanged,
-            this, &VEditWindow::handleOutlineChanged);
-    connect(p_tab, &VEditTab::curHeaderChanged,
-            this, &VEditWindow::handleCurHeaderChanged);
+            this, &VEditWindow::handleTabOutlineChanged);
+    connect(p_tab, &VEditTab::currentHeaderChanged,
+            this, &VEditWindow::handleTabCurrentHeaderChanged);
     connect(p_tab, &VEditTab::statusUpdated,
             this, &VEditWindow::handleTabStatusUpdated);
     connect(p_tab, &VEditTab::statusMessage,
@@ -1014,7 +1025,7 @@ void VEditWindow::dropEvent(QDropEvent *p_event)
 
         if (!files.isEmpty()) {
             focusWindow();
-            g_vnote->getMainWindow()->openExternalFiles(files);
+            g_mainWin->openFiles(files);
         }
 
         p_event->acceptProposedAction();

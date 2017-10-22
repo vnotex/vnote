@@ -430,7 +430,7 @@ void VDirectoryTree::newSubDirectory()
                      .arg(g_config->c_dataTextStyle)
                      .arg(curDir->getName());
     QString defaultName("new_folder");
-    defaultName = VUtils::getFileNameWithSequence(curDir->fetchPath(), defaultName);
+    defaultName = VUtils::getDirNameWithSequence(curDir->fetchPath(), defaultName);
     VNewDirDialog dialog(tr("Create Folder"), info, defaultName, curDir, this);
     if (dialog.exec() == QDialog::Accepted) {
         QString name = dialog.getNameInput();
@@ -467,7 +467,7 @@ void VDirectoryTree::newRootDirectory()
                      .arg(g_config->c_dataTextStyle)
                      .arg(m_notebook->getName());
     QString defaultName("new_folder");
-    defaultName = VUtils::getFileNameWithSequence(rootDir->fetchPath(), defaultName);
+    defaultName = VUtils::getDirNameWithSequence(rootDir->fetchPath(), defaultName);
     VNewDirDialog dialog(tr("Create Root Folder"), info, defaultName, rootDir, this);
     if (dialog.exec() == QDialog::Accepted) {
         QString name = dialog.getNameInput();

@@ -4,7 +4,7 @@
 #include <QDialog>
 
 class QLabel;
-class QLineEdit;
+class VLineEdit;
 class QDialogButtonBox;
 class QString;
 class VDirectory;
@@ -27,7 +27,7 @@ private slots:
 private:
     void setupUI();
 
-    QLineEdit *nameEdit;
+    VLineEdit *m_nameEdit;
     QLabel *m_warnLabel;
     QDialogButtonBox *m_btnBox;
 

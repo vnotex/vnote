@@ -33,6 +33,8 @@ QVector<QPair<QString, QString>> VUtils::s_availableLanguages;
 
 const QString VUtils::c_imageLinkRegExp = QString("\\!\\[([^\\]]*)\\]\\(([^\\)\"]+)\\s*(\"(\\\\.|[^\"\\)])*\")?\\s*\\)");
 
+const QString VUtils::c_imageTitleRegExp = QString("[\\w\\(\\)@#%\\*\\-\\+=\\?<>\\,\\.\\s]*");
+
 const QString VUtils::c_fileNameRegExp = QString("[^\\\\/:\\*\\?\"<>\\|]*");
 
 const QString VUtils::c_fencedCodeBlockStartRegExp = QString("^(\\s*)```([^`\\s]*)\\s*[^`]*$");
@@ -43,7 +45,7 @@ const QString VUtils::c_previewImageBlockRegExp = QString("[\\n|^][ |\\t]*\\xfff
 
 const QString VUtils::c_headerRegExp = QString("^(#{1,6})\\s+(((\\d+\\.)+(?=\\s))?\\s?\\S.*)\\s*$");
 
-const QString VUtils::c_headerPrefixRegExp = QString("^(#{1,6}\\s+((\\d+\\.)+(?=\\s))?\\s?)\\S.*\\s*$");
+const QString VUtils::c_headerPrefixRegExp = QString("^(#{1,6}\\s+((\\d+\\.)+(?=\\s))?\\s?)($|\\S.*\\s*$)");
 
 void VUtils::initAvailableLanguage()
 {
@@ -104,10 +106,10 @@ QRgb VUtils::QRgbFromString(const QString &str)
     return QRgb();
 }
 
-QString VUtils::generateImageFileName(const QString &path, const QString &title,
+QString VUtils::generateImageFileName(const QString &path,
+                                      const QString &title,
                                       const QString &format)
 {
-    Q_ASSERT(!title.isEmpty());
     QRegExp regExp("\\W");
     QString baseName(title.toLower());
 
@@ -117,7 +119,9 @@ QString VUtils::generateImageFileName(const QString &path, const QString &title,
     // Constrain the length of the name.
     baseName.truncate(10);
 
-    baseName.prepend('_');
+    if (!baseName.isEmpty()) {
+        baseName.prepend('_');
+    }
 
     // Add current time and random number to make the name be most likely unique
     baseName = baseName + '_' + QString::number(QDateTime::currentDateTime().toTime_t());
@@ -377,31 +381,35 @@ int VUtils::showMessage(QMessageBox::Icon p_icon, const QString &p_title, const 
     return msgBox.exec();
 }
 
-QString VUtils::generateCopiedFileName(const QString &p_dirPath, const QString &p_fileName)
+QString VUtils::generateCopiedFileName(const QString &p_dirPath,
+                                       const QString &p_fileName,
+                                       bool p_completeBaseName)
 {
-    QString suffix;
-    QString base = p_fileName;
-    int dotIdx = p_fileName.lastIndexOf('.');
-    if (dotIdx != -1) {
-        // .md
-        suffix = p_fileName.right(p_fileName.size() - dotIdx);
-        base = p_fileName.left(dotIdx);
+    QDir dir(p_dirPath);
+    if (!dir.exists() || !dir.exists(p_fileName)) {
+        return p_fileName;
     }
 
-    QDir dir(p_dirPath);
-    QString name = p_fileName;
+    QFileInfo fi(p_fileName);
+    QString baseName = p_completeBaseName ? fi.completeBaseName() : fi.baseName();
+    QString suffix = p_completeBaseName ? fi.suffix() : fi.completeSuffix();
+
     int index = 0;
-    while (dir.exists(name)) {
+    QString fileName;
+    do {
         QString seq;
         if (index > 0) {
-            seq = QString::number(index);
+            seq = QString("%1").arg(QString::number(index), 3, '0');
         }
 
         index++;
-        name = QString("%1_copy%2%3").arg(base).arg(seq).arg(suffix);
-    }
+        fileName = QString("%1_copy%2").arg(baseName).arg(seq);
+        if (!suffix.isEmpty()) {
+            fileName = fileName + "." + suffix;
+        }
+    } while (fileExists(dir, fileName, true));
 
-    return name;
+    return fileName;
 }
 
 QString VUtils::generateCopiedDirName(const QString &p_parentDirPath, const QString &p_dirName)
@@ -614,7 +622,8 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exp
 }
 
 QString VUtils::getFileNameWithSequence(const QString &p_directory,
-                                        const QString &p_baseFileName)
+                                        const QString &p_baseFileName,
+                                        bool p_completeBaseName)
 {
     QDir dir(p_directory);
     if (!dir.exists() || !dir.exists(p_baseFileName)) {
@@ -623,8 +632,8 @@ QString VUtils::getFileNameWithSequence(const QString &p_directory,
 
     // Append a sequence.
     QFileInfo fi(p_baseFileName);
-    QString baseName = fi.baseName();
-    QString suffix = fi.completeSuffix();
+    QString baseName = p_completeBaseName ? fi.completeBaseName() : fi.baseName();
+    QString suffix = p_completeBaseName ? fi.suffix() : fi.completeSuffix();
     int seq = 1;
     QString fileName;
     do {
@@ -632,6 +641,24 @@ QString VUtils::getFileNameWithSequence(const QString &p_directory,
         if (!suffix.isEmpty()) {
             fileName = fileName + "." + suffix;
         }
+    } while (fileExists(dir, fileName, true));
+
+    return fileName;
+}
+
+QString VUtils::getDirNameWithSequence(const QString &p_directory,
+                                       const QString &p_baseDirName)
+{
+    QDir dir(p_directory);
+    if (!dir.exists() || !dir.exists(p_baseDirName)) {
+        return p_baseDirName;
+    }
+
+    // Append a sequence.
+    int seq = 1;
+    QString fileName;
+    do {
+        fileName = QString("%1_%2").arg(p_baseDirName).arg(QString::number(seq++), 3, '0');
     } while (fileExists(dir, fileName, true));
 
     return fileName;
@@ -700,6 +727,16 @@ bool VUtils::checkPathLegal(const QString &p_path)
 
     delete validator;
     return ret;
+}
+
+bool VUtils::checkFileNameLegal(const QString &p_name)
+{
+    if (p_name.isEmpty()) {
+        return false;
+    }
+
+    QRegExp exp(c_fileNameRegExp);
+    return exp.exactMatch(p_name);
 }
 
 bool VUtils::equalPath(const QString &p_patha, const QString &p_pathb)
@@ -850,7 +887,8 @@ bool VUtils::deleteFile(const QString &p_recycleBinFolderPath,
     }
 
     QString destName = getFileNameWithSequence(binPath,
-                                               fileNameFromPath(p_path));
+                                               fileNameFromPath(p_path),
+                                               true);
 
     qDebug() << "try to move" << p_path << "to" << binPath << "as" << destName;
     if (!binDir.rename(p_path, binDir.filePath(destName))) {
@@ -934,4 +972,31 @@ void VUtils::addErrMsg(QString *p_msg, const QString &p_str)
     } else {
         *p_msg = *p_msg + '\n' + p_str;
     }
+}
+
+QStringList VUtils::filterFilePathsToOpen(const QStringList &p_files)
+{
+    QStringList paths;
+    for (int i = 0; i < p_files.size(); ++i) {
+        QString path = validFilePathToOpen(p_files[i]);
+        if (!path.isEmpty()) {
+            paths.append(path);
+        }
+    }
+
+    return paths;
+}
+
+QString VUtils::validFilePathToOpen(const QString &p_file)
+{
+    if (QFileInfo::exists(p_file)) {
+        QFileInfo fi(p_file);
+        if (fi.isFile()) {
+            // Need to use absolute path here since VNote may be launched
+            // in different working directory.
+            return QDir::cleanPath(fi.absoluteFilePath());
+        }
+    }
+
+    return QString();
 }

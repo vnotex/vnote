@@ -4,19 +4,26 @@
 #include "vedit.h"
 #include "vnote.h"
 #include "vconfigmanager.h"
-#include "vtoc.h"
+#include "vtableofcontent.h"
 #include "utils/vutils.h"
 #include "utils/veditutils.h"
+#include "utils/vmetawordmanager.h"
 #include "veditoperations.h"
 #include "vedittab.h"
+#include "dialog/vinsertlinkdialog.h"
 
 extern VConfigManager *g_config;
+
 extern VNote *g_vnote;
 
-void VEditConfig::init(const QFontMetrics &p_metric)
+extern VMetaWordManager *g_mwMgr;
+
+void VEditConfig::init(const QFontMetrics &p_metric,
+                       bool p_enableHeadingSequence)
 {
     update(p_metric);
 
+    // Init configs that do not support update later.
     m_enableVimMode = g_config->getEnableVimMode();
 
     if (g_config->getLineDistanceHeight() <= 0) {
@@ -26,6 +33,8 @@ void VEditConfig::init(const QFontMetrics &p_metric)
     }
 
     m_highlightWholeBlock = m_enableVimMode;
+
+    m_enableHeadingSequence = p_enableHeadingSequence;
 }
 
 void VEditConfig::update(const QFontMetrics &p_metric)
@@ -84,7 +93,7 @@ VEdit::VEdit(VFile *p_file, QWidget *p_parent)
 
     updateFontAndPalette();
 
-    m_config.init(QFontMetrics(font()));
+    m_config.init(QFontMetrics(font()), false);
     updateConfig();
 
     connect(this, &VEdit::cursorPositionChanged,
@@ -157,15 +166,16 @@ void VEdit::reloadFile()
     setModified(false);
 }
 
-void VEdit::scrollToLine(int p_lineNumber)
+bool VEdit::scrollToBlock(int p_blockNumber)
 {
-    Q_ASSERT(p_lineNumber >= 0);
-
-    QTextBlock block = document()->findBlockByLineNumber(p_lineNumber);
+    QTextBlock block = document()->findBlockByNumber(p_blockNumber);
     if (block.isValid()) {
         VEditUtils::scrollBlockInPage(this, block.blockNumber(), 0);
         moveCursor(QTextCursor::EndOfBlock);
+        return true;
     }
+
+    return false;
 }
 
 bool VEdit::isModified() const
@@ -186,6 +196,49 @@ void VEdit::insertImage()
 {
     if (m_editOps) {
         m_editOps->insertImage();
+    }
+}
+
+void VEdit::insertLink()
+{
+    if (!m_editOps) {
+        return;
+    }
+
+    QString text;
+    QString linkText, linkUrl;
+    QTextCursor cursor = textCursor();
+    if (cursor.hasSelection()) {
+        text = VEditUtils::selectedText(cursor).trimmed();
+        // Only pure space is accepted.
+        QRegExp reg("[\\S ]*");
+        if (reg.exactMatch(text)) {
+            QUrl url = QUrl::fromUserInput(text,
+                                           m_file->fetchBasePath());
+            QRegExp urlReg("[\\.\\\\/]");
+            if (url.isValid()
+                && text.contains(urlReg)) {
+                // Url.
+                linkUrl = text;
+            } else {
+                // Text.
+                linkText = text;
+            }
+        }
+    }
+
+    VInsertLinkDialog dialog(tr("Insert Link"),
+                             "",
+                             "",
+                             linkText,
+                             linkUrl,
+                             this);
+    if (dialog.exec() == QDialog::Accepted) {
+        linkText = dialog.getLinkText();
+        linkUrl = dialog.getLinkUrl();
+        Q_ASSERT(!linkText.isEmpty() && !linkUrl.isEmpty());
+
+        m_editOps->insertLink(linkText, linkUrl);
     }
 }
 
@@ -1381,5 +1434,38 @@ void VEdit::updateBlockLineDistanceHeight(int p_pos,
 
     if (changed) {
         cursor.endEditBlock();
+    }
+}
+
+void VEdit::evaluateMagicWords()
+{
+    QString text;
+    QTextCursor cursor = textCursor();
+    if (!cursor.hasSelection()) {
+        // Get the WORD in current cursor.
+        int start, end;
+        VEditUtils::findCurrentWORD(cursor, start, end);
+
+        if (start == end) {
+            return;
+        } else {
+            cursor.setPosition(start);
+            cursor.setPosition(end, QTextCursor::KeepAnchor);
+        }
+    }
+
+    text = VEditUtils::selectedText(cursor);
+    Q_ASSERT(!text.isEmpty());
+    QString evaText = g_mwMgr->evaluate(text);
+    if (text != evaText) {
+        qDebug() << "evaluateMagicWords" << text << evaText;
+
+        cursor.insertText(evaText);
+
+        if (m_editOps) {
+            m_editOps->setVimMode(VimMode::Insert);
+        }
+
+        setTextCursor(cursor);
     }
 }

@@ -9,11 +9,11 @@ QPushButton[CornerBtn="true"]::menu-indicator {
     image: none;
 }
 
-QPushButton[CornerBtn="true"]::hover {
+QPushButton[CornerBtn="true"]:hover {
     background-color: @hover-color;
 }
 
-QPushButton[CornerBtn="true"]::focus {
+QPushButton[CornerBtn="true"]:focus {
     background-color: @focus-color;
 }
 
@@ -25,11 +25,11 @@ QPushButton[StatusBtn="true"] {
     background-color: transparent;
 }
 
-QPushButton[StatusBtn="true"]::hover {
+QPushButton[StatusBtn="true"]:hover {
     background-color: @hover-color;
 }
 
-QPushButton[StatusBtn="true"]::focus {
+QPushButton[StatusBtn="true"]:focus {
     background-color: @focus-color;
 }
 
@@ -40,11 +40,11 @@ QPushButton[FlatBtn="true"] {
     background-color: transparent;
 }
 
-QPushButton[FlatBtn="true"]::hover {
+QPushButton[FlatBtn="true"]:hover {
     background-color: @hover-color;
 }
 
-QPushButton[FlatBtn="true"]::focus {
+QPushButton[FlatBtn="true"]:focus {
     background-color: @focus-color;
 }
 
@@ -56,11 +56,11 @@ QPushButton[SelectionBtn="true"] {
     text-align: left;
 }
 
-QPushButton[SelectionBtn="true"]::hover {
+QPushButton[SelectionBtn="true"]:hover {
     background-color: @hover-color;
 }
 
-QPushButton[SelectionBtn="true"]::focus {
+QPushButton[SelectionBtn="true"]:focus {
     background-color: @focus-color;
 }
 
@@ -71,11 +71,11 @@ QPushButton[TitleBtn="true"] {
     background-color: @base-color;
 }
 
-QPushButton[TitleBtn="true"]::hover {
+QPushButton[TitleBtn="true"]:hover {
     background-color: @hover-color;
 }
 
-QPushButton[TitleBtn="true"]::focus {
+QPushButton[TitleBtn="true"]:focus {
     background-color: @focus-color;
 }
 
@@ -85,7 +85,7 @@ QPushButton[DangerBtn="true"] {
     background-color: #d9534f;
 }
 
-QPushButton[DangerBtn="true"]::hover {
+QPushButton[DangerBtn="true"]:hover {
     color: #fff;
     border-color: #ac2925;
     background-color: #c9302c;
@@ -95,8 +95,12 @@ QToolBar {
     border: none;
 }
 
-QToolButton::hover {
+QToolButton:hover {
     background-color: @hover-color;
+}
+
+/* Override default shift behavior */
+QToolButton::menu-arrow:open {
 }
 
 QMenuBar {
@@ -141,7 +145,7 @@ QComboBox#NotebookSelector {
     icon-size: 30px;
 }
 
-QComboBox#NotebookSelector::focus {
+QComboBox#NotebookSelector:focus {
     background-color: @focus-color;
 }
 

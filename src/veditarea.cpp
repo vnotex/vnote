@@ -7,18 +7,27 @@
 #include "vfile.h"
 #include "dialog/vfindreplacedialog.h"
 #include "utils/vutils.h"
+#include "vfilesessioninfo.h"
+#include "vmainwindow.h"
+#include "vcaptain.h"
 
 extern VConfigManager *g_config;
+
 extern VNote *g_vnote;
 
-VEditArea::VEditArea(VNote *vnote, QWidget *parent)
-    : QWidget(parent), VNavigationMode(),
-      vnote(vnote), curWindowIndex(-1)
+extern VMainWindow *g_mainWin;
+
+VEditArea::VEditArea(QWidget *parent)
+    : QWidget(parent),
+      VNavigationMode(),
+      curWindowIndex(-1)
 {
     setupUI();
 
     insertSplitWindow(0);
     setCurrentWindow(0, false);
+
+    registerCaptainTargets();
 }
 
 void VEditArea::setupUI()
@@ -65,7 +74,7 @@ void VEditArea::setupUI()
 
 void VEditArea::insertSplitWindow(int idx)
 {
-    VEditWindow *win = new VEditWindow(vnote, this);
+    VEditWindow *win = new VEditWindow(this);
     splitter->insertWidget(idx, win);
     connect(win, &VEditWindow::tabStatusUpdated,
             this, &VEditArea::handleWindowTabStatusUpdated);
@@ -76,9 +85,9 @@ void VEditArea::insertSplitWindow(int idx)
     connect(win, &VEditWindow::getFocused,
             this, &VEditArea::handleWindowFocused);
     connect(win, &VEditWindow::outlineChanged,
-            this, &VEditArea::handleOutlineChanged);
-    connect(win, &VEditWindow::curHeaderChanged,
-            this, &VEditArea::handleCurHeaderChanged);
+            this, &VEditArea::handleWindowOutlineChanged);
+    connect(win, &VEditWindow::currentHeaderChanged,
+            this, &VEditArea::handleWindowCurrentHeaderChanged);
     connect(win, &VEditWindow::statusMessage,
             this, &VEditArea::handleWindowStatusMessage);
     connect(win, &VEditWindow::vimStatusUpdated,
@@ -119,17 +128,17 @@ void VEditArea::removeSplitWindow(VEditWindow *win)
     win->deleteLater();
 }
 
-void VEditArea::openFile(VFile *p_file, OpenFileMode p_mode, bool p_forceMode)
+VEditTab *VEditArea::openFile(VFile *p_file, OpenFileMode p_mode, bool p_forceMode)
 {
     if (!p_file) {
-        return;
+        return NULL;
     }
 
     // If it is DocType::Unknown, open it using system default method.
     if (p_file->getDocType() == DocType::Unknown) {
         QUrl url = QUrl::fromLocalFile(p_file->fetchPath());
         QDesktopServices::openUrl(url);
-        return;
+        return NULL;
     }
 
     // Find if it has been opened already
@@ -165,6 +174,8 @@ void VEditArea::openFile(VFile *p_file, OpenFileMode p_mode, bool p_forceMode)
     tabIdx = openFileInWindow(winIdx, p_file, p_mode);
 
 out:
+    VEditTab *tab = getTab(winIdx, tabIdx);
+
     setCurrentTab(winIdx, tabIdx, setFocus);
 
     if (existFile && p_forceMode) {
@@ -174,6 +185,8 @@ out:
             editFile();
         }
     }
+
+    return tab;
 }
 
 QVector<QPair<int, int> > VEditArea::findTabsByFile(const VFile *p_file)
@@ -232,15 +245,13 @@ void VEditArea::updateWindowStatus()
         Q_ASSERT(splitter->count() == 0);
 
         emit tabStatusUpdated(VEditTabInfo());
-        emit outlineChanged(VToc());
-        emit curHeaderChanged(VAnchor());
+        emit outlineChanged(VTableOfContent());
+        emit currentHeaderChanged(VHeaderPointer());
         return;
     }
 
     VEditWindow *win = getWindow(curWindowIndex);
     win->updateTabStatus();
-    win->requestUpdateOutline();
-    win->requestUpdateCurHeader();
 }
 
 bool VEditArea::closeFile(const VFile *p_file, bool p_forced)
@@ -431,26 +442,28 @@ void VEditArea::handleWindowFocused()
     }
 }
 
-void VEditArea::handleOutlineChanged(const VToc &toc)
+void VEditArea::handleWindowOutlineChanged(const VTableOfContent &p_outline)
 {
     QObject *winObject = sender();
     if (splitter->widget(curWindowIndex) == winObject) {
-        emit outlineChanged(toc);
+        emit outlineChanged(p_outline);
     }
 }
 
-void VEditArea::handleCurHeaderChanged(const VAnchor &anchor)
+void VEditArea::handleWindowCurrentHeaderChanged(const VHeaderPointer &p_header)
 {
     QObject *winObject = sender();
     if (splitter->widget(curWindowIndex) == winObject) {
-        emit curHeaderChanged(anchor);
+        emit currentHeaderChanged(p_header);
     }
 }
 
-void VEditArea::handleOutlineItemActivated(const VAnchor &anchor)
+void VEditArea::scrollToHeader(const VHeaderPointer &p_header)
 {
-    // Notice current window
-    getWindow(curWindowIndex)->scrollCurTab(anchor);
+    VEditWindow *win = getCurrentWindow();
+    if (win) {
+        win->scrollToHeader(p_header);
+    }
 }
 
 bool VEditArea::isFileOpened(const VFile *p_file)
@@ -482,13 +495,35 @@ void VEditArea::handleNotebookUpdated(const VNotebook *p_notebook)
     }
 }
 
-VEditTab *VEditArea::currentEditTab()
+VEditTab *VEditArea::getCurrentTab() const
 {
     if (curWindowIndex == -1) {
         return NULL;
     }
+
     VEditWindow *win = getWindow(curWindowIndex);
-    return win->currentEditTab();
+    return win->getCurrentTab();
+}
+
+VEditTab *VEditArea::getTab(int p_winIdx, int p_tabIdx) const
+{
+    VEditWindow *win = getWindow(p_winIdx);
+    if (!win) {
+        return NULL;
+    }
+
+    return win->getTab(p_tabIdx);
+}
+
+QVector<VEditTabInfo> VEditArea::getAllTabsInfo() const
+{
+    QVector<VEditTabInfo> tabs;
+    int nrWin = splitter->count();
+    for (int i = 0; i < nrWin; ++i) {
+        tabs.append(getWindow(i)->getAllTabsInfo());
+    }
+
+    return tabs;
 }
 
 int VEditArea::windowIndex(const VEditWindow *p_window) const
@@ -518,7 +553,7 @@ void VEditArea::moveTab(QWidget *p_widget, int p_fromIdx, int p_toIdx)
 // Only propogate the search in the IncrementalSearch case.
 void VEditArea::handleFindTextChanged(const QString &p_text, uint p_options)
 {
-    VEditTab *tab = currentEditTab();
+    VEditTab *tab = getCurrentTab();
     if (tab) {
         if (p_options & FindOption::IncrementalSearch) {
             tab->findText(p_text, p_options, true);
@@ -539,7 +574,7 @@ void VEditArea::handleFindNext(const QString &p_text, uint p_options,
                                bool p_forward)
 {
     qDebug() << "find next" << p_text << p_options << p_forward;
-    VEditTab *tab = currentEditTab();
+    VEditTab *tab = getCurrentTab();
     if (tab) {
         tab->findText(p_text, p_options, false, p_forward);
     }
@@ -550,7 +585,7 @@ void VEditArea::handleReplace(const QString &p_text, uint p_options,
 {
     qDebug() << "replace" << p_text << p_options << "with" << p_replaceText
              << p_findNext;
-    VEditTab *tab = currentEditTab();
+    VEditTab *tab = getCurrentTab();
     if (tab) {
         tab->replaceText(p_text, p_options, p_replaceText, p_findNext);
     }
@@ -560,7 +595,7 @@ void VEditArea::handleReplaceAll(const QString &p_text, uint p_options,
                                  const QString &p_replaceText)
 {
     qDebug() << "replace all" << p_text << p_options << "with" << p_replaceText;
-    VEditTab *tab = currentEditTab();
+    VEditTab *tab = getCurrentTab();
     if (tab) {
         tab->replaceTextAll(p_text, p_options, p_replaceText);
     }
@@ -584,7 +619,7 @@ void VEditArea::handleFindDialogClosed()
 
 QString VEditArea::getSelectedText()
 {
-    VEditTab *tab = currentEditTab();
+    VEditTab *tab = getCurrentTab();
     if (tab) {
         return tab->getSelectedText();
     } else {
@@ -621,6 +656,7 @@ VEditWindow *VEditArea::getCurrentWindow() const
     if (curWindowIndex < 0) {
         return NULL;
     }
+
     return getWindow(curWindowIndex);
 }
 
@@ -692,5 +728,222 @@ bool VEditArea::handleKeyNavigation(int p_key, bool &p_succeed)
         ret = true;
     }
     return ret;
+}
+
+int VEditArea::openFiles(const QVector<VFileSessionInfo> &p_files)
+{
+    int nrOpened = 0;
+    for (auto const & info : p_files) {
+        QString filePath = VUtils::validFilePathToOpen(info.m_file);
+        if (filePath.isEmpty()) {
+            continue;
+        }
+
+        VFile *file = g_vnote->getFile(filePath);
+        if (!file) {
+            continue;
+        }
+
+        VEditTab *tab = openFile(file, info.m_mode, true);
+        ++nrOpened;
+
+        VEditTabInfo tabInfo;
+        tabInfo.m_editTab = tab;
+        info.toEditTabInfo(&tabInfo);
+
+        tab->tryRestoreFromTabInfo(tabInfo);
+    }
+
+    return nrOpened;
+}
+
+void VEditArea::registerCaptainTargets()
+{
+    using namespace std::placeholders;
+
+    VCaptain *captain = g_mainWin->getCaptain();
+
+    captain->registerCaptainTarget(tr("ActivateTab1"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab1"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 1));
+    captain->registerCaptainTarget(tr("ActivateTab2"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab2"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 2));
+    captain->registerCaptainTarget(tr("ActivateTab3"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab3"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 3));
+    captain->registerCaptainTarget(tr("ActivateTab4"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab4"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 4));
+    captain->registerCaptainTarget(tr("ActivateTab5"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab5"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 5));
+    captain->registerCaptainTarget(tr("ActivateTab6"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab6"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 6));
+    captain->registerCaptainTarget(tr("ActivateTab7"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab7"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 7));
+    captain->registerCaptainTarget(tr("ActivateTab8"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab8"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 8));
+    captain->registerCaptainTarget(tr("ActivateTab9"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateTab9"),
+                                   this,
+                                   std::bind(activateTabByCaptain, _1, _2, 9));
+    captain->registerCaptainTarget(tr("AlternateTab"),
+                                   g_config->getCaptainShortcutKeySequence("AlternateTab"),
+                                   this,
+                                   alternateTabByCaptain);
+    captain->registerCaptainTarget(tr("OpenedFileList"),
+                                   g_config->getCaptainShortcutKeySequence("OpenedFileList"),
+                                   this,
+                                   showOpenedFileListByCaptain);
+    captain->registerCaptainTarget(tr("ActivateSplitLeft"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateSplitLeft"),
+                                   this,
+                                   activateSplitLeftByCaptain);
+    captain->registerCaptainTarget(tr("ActivateSplitRight"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateSplitRight"),
+                                   this,
+                                   activateSplitRightByCaptain);
+    captain->registerCaptainTarget(tr("MoveTabSplitLeft"),
+                                   g_config->getCaptainShortcutKeySequence("MoveTabSplitLeft"),
+                                   this,
+                                   moveTabSplitLeftByCaptain);
+    captain->registerCaptainTarget(tr("MoveTabSplitRight"),
+                                   g_config->getCaptainShortcutKeySequence("MoveTabSplitRight"),
+                                   this,
+                                   moveTabSplitRightByCaptain);
+    captain->registerCaptainTarget(tr("ActivateNextTab"),
+                                   g_config->getCaptainShortcutKeySequence("ActivateNextTab"),
+                                   this,
+                                   activateNextTabByCaptain);
+    captain->registerCaptainTarget(tr("ActivatePreviousTab"),
+                                   g_config->getCaptainShortcutKeySequence("ActivatePreviousTab"),
+                                   this,
+                                   activatePreviousTabByCaptain);
+    captain->registerCaptainTarget(tr("VerticalSplit"),
+                                   g_config->getCaptainShortcutKeySequence("VerticalSplit"),
+                                   this,
+                                   verticalSplitByCaptain);
+    captain->registerCaptainTarget(tr("RemoveSplit"),
+                                   g_config->getCaptainShortcutKeySequence("RemoveSplit"),
+                                   this,
+                                   removeSplitByCaptain);
+    captain->registerCaptainTarget(tr("MagicWord"),
+                                   g_config->getCaptainShortcutKeySequence("MagicWord"),
+                                   this,
+                                   evaluateMagicWordsByCaptain);
+}
+
+void VEditArea::activateTabByCaptain(void *p_target, void *p_data, int p_idx)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    VEditWindow *win = obj->getCurrentWindow();
+    if (win) {
+        win->activateTab(p_idx);
+    }
+}
+
+void VEditArea::alternateTabByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    VEditWindow *win = obj->getCurrentWindow();
+    if (win) {
+        win->alternateTab();
+    }
+}
+
+void VEditArea::showOpenedFileListByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    VEditWindow *win = obj->getCurrentWindow();
+    if (win) {
+        win->showOpenedFileList();
+    }
+}
+
+void VEditArea::activateSplitLeftByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    obj->focusNextWindow(-1);
+}
+
+void VEditArea::activateSplitRightByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    obj->focusNextWindow(1);
+}
+
+void VEditArea::moveTabSplitLeftByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    obj->moveCurrentTabOneSplit(false);
+}
+
+void VEditArea::moveTabSplitRightByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    obj->moveCurrentTabOneSplit(true);
+}
+
+void VEditArea::activateNextTabByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    VEditWindow *win = obj->getCurrentWindow();
+    if (win) {
+        win->focusNextTab(true);
+    }
+}
+
+void VEditArea::activatePreviousTabByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    VEditWindow *win = obj->getCurrentWindow();
+    if (win) {
+        win->focusNextTab(false);
+    }
+}
+
+void VEditArea::verticalSplitByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    obj->splitCurrentWindow();
+}
+
+void VEditArea::removeSplitByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    obj->removeCurrentWindow();
+}
+
+void VEditArea::evaluateMagicWordsByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    VEditTab *tab = obj->getCurrentTab();
+    if (tab && tab->tabHasFocus()) {
+        tab->evaluateMagicWords();
+    }
 }
 

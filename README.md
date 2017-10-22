@@ -54,7 +54,8 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS** (due to t
 - Supports infinite levels of folders;
 - Supports multiple tabs and splitting windows;
 - Supports [Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/), and [MathJax](https://www.mathjax.org/);
-- Supports HiDPI.
+- Supports HiDPI;
+- Supports attachments of notes.
 
 ![VNote Edit](screenshots/vnote_edit.gif)
 
@@ -136,7 +137,7 @@ VNote also supports many other features, like:
 - Auto indent and auto list;
 
 # Build & Development
-VNote needs Qt 5.7 or above to build.
+VNote needs Qt 5.9.1 or above to build.
 
 1. Clone & Init
     ```
@@ -145,15 +146,15 @@ VNote needs Qt 5.7 or above to build.
     git submodule update --init
     ```
 2. Download Qt & Have Fun  
-Download [Qt 5.7.0](http://info.qt.io/download-qt-for-application-development) and open `VNote.pro` as a project.
+Download [Qt 5.9.1](http://info.qt.io/download-qt-for-application-development) and open `VNote.pro` as a project.
 
 ## Linux
-If your distribution does not have Qt 5.7 or above, you need to add it from other sources. In Ubuntu, you could do this:
+If your distribution does not have Qt 5.9.1 or above, you need to add it from other sources. In Ubuntu, you could do this:
 
 ```
-sudo add-apt-repository ppa:beineri/opt-qt571-trusty -y
+sudo add-apt-repository ppa:beineri/opt-qt591-trusty -y
 sudo apt-get update -qq
-sudo apt-get -y install qt57base qt57webengine qt57webchannel qt57svg qt57location qt57tools qt57translations
+sudo apt-get -y install qt59base qt59webengine qt59webchannel qt59svg qt59location qt59tools qt59translations
 source /opt/qt*/bin/qt*-env.sh
 ```
 
@@ -174,13 +175,13 @@ For details, you could reference [.travis_linux.sh](.travis_linux.sh) in the sou
 If you prefer command line on macOS, you could follow these steps.
 
 1. Install Xcode and Homebrew;
-2. Install Qt5.7 via Homebrew:
+2. Install Qt 5.9.1 via Homebrew:
     ```
-    brew install qt@5.7
+    brew install qt@5.9.1
     ```
 3. In the project directory, create `build_macos.sh` like this:
     ```sh
-    QTDIR="/usr/local/opt/qt@5.7"
+    QTDIR="/usr/local/opt/qt@5.9.1"
     PATH="$QTDIR/bin:$PATH"
     LDFLAGS=-L$QTDIR/lib
     CPPFLAGS=-I$QTDIR/include
@@ -199,7 +200,7 @@ If you prefer command line on macOS, you could follow these steps.
 5. Now you got the bundle `path/to/project/build/src/VNote.app`. Enjoy yourself!
 
 # Dependencies
-- [Qt 5.7](http://qt-project.org) (L-GPL v3)
+- [Qt 5.9](http://qt-project.org) (L-GPL v3)
 - [PEG Markdown Highlight](http://hasseg.org/peg-markdown-highlight/) (MIT License)
 - [Hoedown 3.0.7](https://github.com/hoedown/hoedown/) (ISC License)
 - [Marked](https://github.com/chjj/marked) (MIT License)
@@ -212,6 +213,7 @@ If you prefer command line on macOS, you could follow these steps.
 - [MathJax](https://www.mathjax.org/) (Apache-2.0)
 - [showdown](https://github.com/showdownjs/showdown) (Unknown)
 - [flowchart.js](https://github.com/adrai/flowchart.js) (MIT License)
+- Icons made by a326703305@qq.com
 
 # License
 VNote is licensed under the [MIT license](http://opensource.org/licenses/MIT).

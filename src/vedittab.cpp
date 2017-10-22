@@ -3,12 +3,13 @@
 #include <QWheelEvent>
 
 VEditTab::VEditTab(VFile *p_file, VEditArea *p_editArea, QWidget *p_parent)
-    : QWidget(p_parent), m_file(p_file), m_isEditMode(false),
-      m_modified(false), m_editArea(p_editArea)
+    : QWidget(p_parent),
+      m_file(p_file),
+      m_isEditMode(false),
+      m_outline(p_file),
+      m_currentHeader(p_file, -1),
+      m_editArea(p_editArea)
 {
-    m_toc.m_file = m_file;
-    m_curHeader.m_file = m_file;
-
     connect(qApp, &QApplication::focusChanged,
             this, &VEditTab::handleFocusChanged);
 }
@@ -24,6 +25,7 @@ void VEditTab::focusTab()
 {
     focusChild();
     emit getFocused();
+    updateStatus();
 }
 
 bool VEditTab::isEditMode() const
@@ -33,7 +35,7 @@ bool VEditTab::isEditMode() const
 
 bool VEditTab::isModified() const
 {
-    return m_modified;
+    return m_file->isModified();
 }
 
 VFile *VEditTab::getFile() const
@@ -48,19 +50,11 @@ void VEditTab::handleFocusChanged(QWidget * /* p_old */, QWidget *p_now)
         focusChild();
 
         emit getFocused();
+        updateStatus();
     } else if (isAncestorOf(p_now)) {
         emit getFocused();
+        updateStatus();
     }
-}
-
-void VEditTab::requestUpdateCurHeader()
-{
-    emit curHeaderChanged(m_curHeader);
-}
-
-void VEditTab::requestUpdateOutline()
-{
-    emit outlineChanged(m_toc);
 }
 
 void VEditTab::wheelEvent(QWheelEvent *p_event)
@@ -78,17 +72,55 @@ void VEditTab::wheelEvent(QWheelEvent *p_event)
     p_event->ignore();
 }
 
-void VEditTab::updateStatus()
-{
-    m_modified = m_file->isModified();
-
-    emit statusUpdated(createEditTabInfo());
-}
-
-VEditTabInfo VEditTab::createEditTabInfo()
+VEditTabInfo VEditTab::fetchTabInfo() const
 {
     VEditTabInfo info;
-    info.m_editTab = this;
+    info.m_editTab = const_cast<VEditTab *>(this);
 
     return info;
+}
+
+const VHeaderPointer &VEditTab::getCurrentHeader() const
+{
+    return m_currentHeader;
+}
+
+const VTableOfContent &VEditTab::getOutline() const
+{
+    return m_outline;
+}
+
+void VEditTab::tryRestoreFromTabInfo(const VEditTabInfo &p_info)
+{
+    if (p_info.m_editTab != this) {
+        m_infoToRestore.clear();
+        return;
+    }
+
+    if (restoreFromTabInfo(p_info)) {
+        m_infoToRestore.clear();
+        return;
+    }
+
+    // Save it and restore later.
+    m_infoToRestore = p_info;
+}
+
+void VEditTab::updateStatus()
+{
+    emit statusUpdated(fetchTabInfo());
+}
+
+void VEditTab::evaluateMagicWords()
+{
+}
+
+bool VEditTab::tabHasFocus() const
+{
+    QWidget *wid = QApplication::focusWidget();
+    return wid == this || isAncestorOf(wid);
+}
+
+void VEditTab::insertLink()
+{
 }

@@ -26,9 +26,6 @@ public:
     // Save file.
     bool saveFile() Q_DECL_OVERRIDE;
 
-    // Scroll to anchor @p_anchor.
-    void scrollToAnchor(const VAnchor& p_anchor) Q_DECL_OVERRIDE;
-
     void insertImage() Q_DECL_OVERRIDE;
 
     // Search @p_text in current note.
@@ -53,9 +50,6 @@ public slots:
     void editFile() Q_DECL_OVERRIDE;
 
 private slots:
-    // Handle text changed in m_editor.
-    void handleTextChanged();
-
     // m_editor requests to save changes and enter read mode.
     void saveAndRead();
 
@@ -77,6 +71,10 @@ private:
 
     // Focus the proper child widget.
     void focusChild() Q_DECL_OVERRIDE;
+
+    // Restore from @p_fino.
+    // Return true if succeed.
+    bool restoreFromTabInfo(const VEditTabInfo &p_info) Q_DECL_OVERRIDE;
 
     VEdit *m_editor;
 };

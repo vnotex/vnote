@@ -9,7 +9,7 @@
 extern VConfigManager *g_config;
 
 VNotebook::VNotebook(const QString &name, const QString &path, QObject *parent)
-    : QObject(parent), m_name(name)
+    : QObject(parent), m_name(name), m_valid(false)
 {
     m_path = QDir::cleanPath(path);
     m_recycleBinFolder = g_config->getRecycleBinFolder();
@@ -29,6 +29,7 @@ bool VNotebook::readConfigNotebook()
     QJsonObject configJson = VConfigManager::readDirectoryConfig(m_path);
     if (configJson.isEmpty()) {
         qWarning() << "fail to read notebook configuration" << m_path;
+        m_valid = false;
         return false;
     }
 
@@ -58,6 +59,7 @@ bool VNotebook::readConfigNotebook()
         writeConfigNotebook();
     }
 
+    m_valid = true;
     return true;
 }
 

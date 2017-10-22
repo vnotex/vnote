@@ -18,10 +18,17 @@ class VEditOperations: public QObject
     Q_OBJECT
 public:
     VEditOperations(VEdit *p_editor, VFile *p_file);
+
     virtual ~VEditOperations();
+
     virtual bool insertImageFromMimeData(const QMimeData *source) = 0;
+
     virtual bool insertImage() = 0;
+
     virtual bool insertImageFromURL(const QUrl &p_imageUrl) = 0;
+
+    virtual bool insertLink(const QString &p_linkText,
+                            const QString &p_linkUrl) = 0;
 
     // Return true if @p_event has been handled and no need to be further
     // processed.
@@ -32,6 +39,9 @@ public:
 
     // Insert decoration markers or decorate selected text.
     virtual void decorateText(TextDecoration p_decoration) {Q_UNUSED(p_decoration);};
+
+    // Set Vim mode if not NULL.
+    void setVimMode(VimMode p_mode);
 
 signals:
     // Want to display a template message in status bar.

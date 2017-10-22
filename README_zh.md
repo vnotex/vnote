@@ -54,8 +54,9 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 - 支持Vim模式以及一系列强大的快捷键；
 - 支持无限层级的文件夹；
 - 支持多个标签页和窗口分割；
-- 支持[Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/) 和 [MathJax](https://www.mathjax.org/);
+- 支持[Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/) 和 [MathJax](https://www.mathjax.org/)；
 - 支持高分辨率；
+- 支持笔记附件。
 
 ![VNote Edit](screenshots/vnote_edit.gif)
 
@@ -137,7 +138,7 @@ VNote还支持其他很多的功能，比如：
 - 自动缩进和自动列表；
 
 # 构建与开发
-VNote需要5.7版本以上的Qt进行构建。
+VNote需要5.9.1版本以上的Qt进行构建。
 
 1. 克隆代码仓库
     ```
@@ -146,15 +147,15 @@ VNote需要5.7版本以上的Qt进行构建。
     git submodule update --init
     ```
 2. 下载Qt  
-下载[Qt 5.7.0](http://info.qt.io/download-qt-for-application-development)，导入`VNote.pro`创建一个工程。
+下载[Qt 5.9.1](http://info.qt.io/download-qt-for-application-development)，导入`VNote.pro`创建一个工程。
 
 ## Linux
-如果您的Linux发行版不提供5.7以上版本的Qt，那么您需要从其他来源获取Qt。在Ubuntu中，您可以执行以下步骤：
+如果您的Linux发行版不提供5.9.1以上版本的Qt，那么您需要从其他来源获取Qt。在Ubuntu中，您可以执行以下步骤：
 
 ```
-sudo add-apt-repository ppa:beineri/opt-qt571-trusty -y
+sudo add-apt-repository ppa:beineri/opt-qt591-trusty -y
 sudo apt-get update -qq
-sudo apt-get -y install qt57base qt57webengine qt57webchannel qt57svg qt57location qt57tools qt57translations
+sudo apt-get -y install qt59base qt59webengine qt59webchannel qt59svg qt59location qt59tools qt59translations
 source /opt/qt*/bin/qt*-env.sh
 ```
 
@@ -175,15 +176,15 @@ sudo make install
 在macOS下，您可以执行以下步骤来编译：
 
 1. 安装Xcode和Homebrew：
-2. 通过Homebrew安装Qt5.7：
+2. 通过Homebrew安装Qt5.9.1：
 
     ```
-    brew install qt@5.7
+    brew install qt@5.9.1
     ```
 3. 在VNote源码根目录下，新建一个文件`build_macos.sh`：
 
     ```sh
-    QTDIR="/usr/local/opt/qt@5.7"
+    QTDIR="/usr/local/opt/qt@5.9.1"
     PATH="$QTDIR/bin:$PATH"
     LDFLAGS=-L$QTDIR/lib
     CPPFLAGS=-I$QTDIR/include
@@ -203,7 +204,7 @@ sudo make install
 5. 此时得到VNote的Bundle `path/to/project/build/src/VNote.app`，打开即可。
 
 # 依赖
-- [Qt 5.7](http://qt-project.org) (L-GPL v3)
+- [Qt 5.9](http://qt-project.org) (L-GPL v3)
 - [PEG Markdown Highlight](http://hasseg.org/peg-markdown-highlight/) (MIT License)
 - [Hoedown 3.0.7](https://github.com/hoedown/hoedown/) (ISC License)
 - [Marked](https://github.com/chjj/marked) (MIT License)
@@ -216,6 +217,7 @@ sudo make install
 - [MathJax](https://www.mathjax.org/) (Apache-2.0)
 - [showdown](https://github.com/showdownjs/showdown) (Unknown)
 - [flowchart.js](https://github.com/adrai/flowchart.js) (MIT License)
+- 图标由九梦岛主(a326703305@qq.com)制作
 
 # 代码许可
 VNote使用[MIT许可](http://opensource.org/licenses/MIT)。

@@ -20,22 +20,27 @@
 #include "vnote.h"
 #include "veditarea.h"
 #include "vnofocusitemdelegate.h"
+#include "vmainwindow.h"
 
 extern VConfigManager *g_config;
+
 extern VNote *g_vnote;
 
-const int VNotebookSelector::c_notebookStartIdx = 1;
+extern VMainWindow *g_mainWin;
 
-VNotebookSelector::VNotebookSelector(VNote *vnote, QWidget *p_parent)
-    : QComboBox(p_parent), VNavigationMode(),
-      m_vnote(vnote), m_notebooks(m_vnote->getNotebooks()),
-      m_editArea(NULL), m_lastValidIndex(-1), m_naviLabel(NULL)
+VNotebookSelector::VNotebookSelector(QWidget *p_parent)
+    : QComboBox(p_parent),
+      VNavigationMode(),
+      m_notebooks(g_vnote->getNotebooks()),
+      m_lastValidIndex(-1),
+      m_muted(false),
+      m_naviLabel(NULL)
 {
     m_listWidget = new QListWidget(this);
     m_listWidget->setItemDelegate(new VNoFocusItemDelegate(this));
     m_listWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_listWidget, &QListWidget::customContextMenuRequested,
-            this, &VNotebookSelector::requestPopupListContextMenu);
+            this, &VNotebookSelector::popupListContextMenuRequested);
 
     setModel(m_listWidget->model());
     setView(m_listWidget);
@@ -47,8 +52,6 @@ VNotebookSelector::VNotebookSelector(VNote *vnote, QWidget *p_parent)
 
     connect(this, SIGNAL(currentIndexChanged(int)),
             this, SLOT(handleCurIndexChanged(int)));
-    connect(this, SIGNAL(activated(int)),
-            this, SLOT(handleItemActivated(int)));
 }
 
 void VNotebookSelector::initActions()
@@ -75,9 +78,7 @@ void VNotebookSelector::initActions()
                 }
 
                 Q_ASSERT(items.size() == 1);
-                QListWidgetItem *item = items[0];
-                int index = this->indexOfListItem(item);
-                VNotebook *notebook = this->getNotebookFromComboIndex(index);
+                VNotebook *notebook = getNotebook(items[0]);
                 QUrl url = QUrl::fromLocalFile(notebook->getPath());
                 QDesktopServices::openUrl(url);
             });
@@ -93,9 +94,7 @@ void VNotebookSelector::initActions()
                 }
 
                 Q_ASSERT(items.size() == 1);
-                QListWidgetItem *item = items[0];
-                int index = this->indexOfListItem(item);
-                VNotebook *notebook = this->getNotebookFromComboIndex(index);
+                VNotebook *notebook = getNotebook(items[0]);
                 QUrl url = QUrl::fromLocalFile(notebook->getRecycleBinFolderPath());
                 QDesktopServices::openUrl(url);
             });
@@ -111,9 +110,7 @@ void VNotebookSelector::initActions()
                 }
 
                 Q_ASSERT(items.size() == 1);
-                QListWidgetItem *item = items[0];
-                int index = this->indexOfListItem(item);
-                VNotebook *notebook = this->getNotebookFromComboIndex(index);
+                VNotebook *notebook = getNotebook(items[0]);
                 QString binPath = notebook->getRecycleBinFolderPath();
 
                 int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
@@ -129,7 +126,9 @@ void VNotebookSelector::initActions()
                                                 .arg(g_config->c_dataTextStyle)
                                                 .arg(binPath),
                                               QMessageBox::Ok | QMessageBox::Cancel,
-                                              QMessageBox::Ok, this, MessageBoxType::Danger);
+                                              QMessageBox::Ok,
+                                              this,
+                                              MessageBoxType::Danger);
                 if (ret == QMessageBox::Ok) {
                     QString info;
                     if (VUtils::emptyDirectory(notebook, binPath, true)) {
@@ -157,37 +156,60 @@ void VNotebookSelector::initActions()
 
 void VNotebookSelector::updateComboBox()
 {
+    m_muted = true;
+
     int index = g_config->getCurNotebookIndex();
 
-    disconnect(this, SIGNAL(currentIndexChanged(int)),
-               this, SLOT(handleCurIndexChanged(int)));
     clear();
+
     m_listWidget->clear();
 
     insertAddNotebookItem();
 
     for (int i = 0; i < m_notebooks.size(); ++i) {
-        addNotebookItem(m_notebooks[i]->getName());
+        addNotebookItem(m_notebooks[i]);
     }
+
     setCurrentIndex(-1);
-    connect(this, SIGNAL(currentIndexChanged(int)),
-            this, SLOT(handleCurIndexChanged(int)));
+
+    m_muted = false;
 
     if (m_notebooks.isEmpty()) {
         g_config->setCurNotebookIndex(-1);
         setCurrentIndex(0);
     } else {
-        setCurrentIndexNotebook(index);
+        const VNotebook *nb = NULL;
+        if (index >= 0 && index < m_notebooks.size()) {
+            nb = m_notebooks[index];
+        }
+
+        setCurrentItemToNotebook(nb);
     }
+
     qDebug() << "notebooks" << m_notebooks.size() << "current index" << index;
 }
 
-void VNotebookSelector::setCurrentIndexNotebook(int p_index)
+void VNotebookSelector::setCurrentItemToNotebook(const VNotebook *p_notebook)
 {
-    if (p_index > -1) {
-        p_index += c_notebookStartIdx;
+    setCurrentIndex(itemIndexOfNotebook(p_notebook));
+}
+
+int VNotebookSelector::itemIndexOfNotebook(const VNotebook *p_notebook) const
+{
+    if (!p_notebook) {
+        return -1;
     }
-    setCurrentIndex(p_index);
+
+    qulonglong ptr = (qulonglong)p_notebook;
+    int cnt = m_listWidget->count();
+    for (int i = 0; i < cnt; ++i) {
+        QListWidgetItem *item = m_listWidget->item(i);
+        if (item->data(Qt::UserRole).toULongLong() == ptr) {
+            return i;
+        }
+    }
+
+    return -1;
 }
 
 void VNotebookSelector::insertAddNotebookItem()
@@ -199,49 +221,51 @@ void VNotebookSelector::insertAddNotebookItem()
     font.setItalic(true);
     item->setData(Qt::FontRole, font);
     item->setToolTip(tr("Create or import a notebook"));
+
     m_listWidget->insertItem(0, item);
 }
 
 void VNotebookSelector::handleCurIndexChanged(int p_index)
 {
-    qDebug() << "current index changed" << p_index << "startIdx" << c_notebookStartIdx;
+    if (m_muted) {
+        return;
+    }
+
+    QString tooltip = tr("View and edit notebooks");
     VNotebook *nb = NULL;
     if (p_index > -1) {
-        if (p_index < c_notebookStartIdx) {
-            // Click a special action item.
-            if (m_listWidget->count() == c_notebookStartIdx) {
-                // There is no regular notebook item. Just let it be selected.
-                p_index = -1;
-            } else {
-                // handleItemActivated() will handle the logics.
-                return;
-            }
-        } else {
-            int nbIdx = p_index - c_notebookStartIdx;
-            Q_ASSERT(nbIdx >= 0);
-            nb = m_notebooks[nbIdx];
-        }
-    }
-    m_lastValidIndex = p_index;
-    QString tooltip;
-    if (p_index > -1) {
-        p_index -= c_notebookStartIdx;
-        tooltip = nb->getName();
-    }
-    setToolTip(tooltip);
-    g_config->setCurNotebookIndex(p_index);
-    emit curNotebookChanged(nb);
-}
+        nb = getNotebook(p_index);
+        if (!nb) {
+            // Add notebook.
+            setToolTip(tooltip);
 
-void VNotebookSelector::handleItemActivated(int p_index)
-{
-    if (p_index > -1 && p_index < c_notebookStartIdx) {
-        // Click a special action item
-        if (m_lastValidIndex > -1) {
-            setCurrentIndex(m_lastValidIndex);
+            if (m_lastValidIndex != p_index && m_lastValidIndex > -1) {
+                setCurrentIndex(m_lastValidIndex);
+            }
+
+            if (!m_notebooks.isEmpty()) {
+                newNotebook();
+            }
+
+            return;
         }
-        newNotebook();
     }
+
+    m_lastValidIndex = p_index;
+
+    int nbIdx = -1;
+    if (nb) {
+        tooltip = nb->getName();
+
+        nbIdx = m_notebooks.indexOf(nb);
+        Q_ASSERT(nbIdx > -1);
+    }
+
+    g_config->setCurNotebookIndex(nbIdx);
+
+    setToolTip(tooltip);
+
+    emit curNotebookChanged(nb);
 }
 
 void VNotebookSelector::update()
@@ -260,13 +284,14 @@ bool VNotebookSelector::newNotebook()
     info += tr("* A previously created notebook could be imported into VNote "
                "by choosing its root folder.");
 
-    QString defaultName;
-    QString defaultPath;
-
     // Use empty default name and path to let the dialog to auto generate a name
     // under the default VNote notebook folder.
-    VNewNotebookDialog dialog(tr("Add Notebook"), info, defaultName,
-                              defaultPath, m_notebooks, this);
+    VNewNotebookDialog dialog(tr("Add Notebook"),
+                              info,
+                              "",
+                              "",
+                              m_notebooks,
+                              this);
     if (dialog.exec() == QDialog::Accepted) {
         createNotebook(dialog.getNameInput(),
                        dialog.getPathInput(),
@@ -289,7 +314,7 @@ void VNotebookSelector::createNotebook(const QString &p_name,
 {
     VNotebook *nb = VNotebook::createNotebook(p_name, p_path, p_import,
                                               p_imageFolder, p_attachmentFolder,
-                                              m_vnote);
+                                              g_vnote);
     if (!nb) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                             tr("Fail to create notebook "
@@ -302,8 +327,8 @@ void VNotebookSelector::createNotebook(const QString &p_name,
     m_notebooks.append(nb);
     g_config->setNotebooks(m_notebooks);
 
-    addNotebookItem(nb->getName());
-    setCurrentIndexNotebook(m_notebooks.size() - 1);
+    addNotebookItem(nb);
+    setCurrentItemToNotebook(nb);
 }
 
 void VNotebookSelector::deleteNotebook()
@@ -312,62 +337,60 @@ void VNotebookSelector::deleteNotebook()
     if (items.isEmpty()) {
         return;
     }
-    Q_ASSERT(items.size() == 1);
-    QListWidgetItem *item = items[0];
-    int index = indexOfListItem(item);
 
-    VNotebook *notebook = getNotebookFromComboIndex(index);
+    Q_ASSERT(items.size() == 1);
+
+    VNotebook *notebook = getNotebook(items[0]);
     Q_ASSERT(notebook);
 
     VDeleteNotebookDialog dialog(tr("Delete Notebook"), notebook, this);
     if (dialog.exec() == QDialog::Accepted) {
         bool deleteFiles = dialog.getDeleteFiles();
-        m_editArea->closeFile(notebook, true);
+        g_mainWin->getEditArea()->closeFile(notebook, true);
         deleteNotebook(notebook, deleteFiles);
     }
 }
 
 void VNotebookSelector::deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles)
 {
-    V_ASSERT(p_notebook);
+    Q_ASSERT(p_notebook);
 
-    int idx = indexOfNotebook(p_notebook);
-
-    m_notebooks.remove(idx);
+    m_notebooks.removeOne(p_notebook);
     g_config->setNotebooks(m_notebooks);
 
-    removeNotebookItem(idx);
+    int idx = itemIndexOfNotebook(p_notebook);
+    QListWidgetItem *item = m_listWidget->takeItem(idx);
+    Q_ASSERT(item);
+    delete item;
 
     QString name(p_notebook->getName());
     QString path(p_notebook->getPath());
     bool ret = VNotebook::deleteNotebook(p_notebook, p_deleteFiles);
     if (!ret) {
         // Notebook could not be deleted completely.
-        int cho = VUtils::showMessage(QMessageBox::Information, tr("Delete Notebook Folder From Disk"),
+        int cho = VUtils::showMessage(QMessageBox::Information,
+                                      tr("Delete Notebook Folder From Disk"),
                                       tr("Fail to delete the root folder of notebook "
                                          "<span style=\"%1\">%2</span> from disk. You may open "
                                          "the folder and check it manually.")
-                                        .arg(g_config->c_dataTextStyle).arg(name), "",
+                                        .arg(g_config->c_dataTextStyle).arg(name),
+                                      "",
                                       QMessageBox::Open | QMessageBox::Ok,
-                                      QMessageBox::Ok, this);
+                                      QMessageBox::Ok,
+                                      this);
         if (cho == QMessageBox::Open) {
             // Open the notebook location.
             QUrl url = QUrl::fromLocalFile(path);
             QDesktopServices::openUrl(url);
         }
     }
-}
 
-int VNotebookSelector::indexOfNotebook(const VNotebook *p_notebook)
-{
-    for (int i = 0; i < m_notebooks.size(); ++i) {
-        if (m_notebooks[i] == p_notebook) {
-            return i;
-        }
+    if (m_notebooks.isEmpty()) {
+        m_muted = true;
+        setCurrentIndex(0);
+        m_muted = false;
     }
-    return -1;
 }
-
 
 void VNotebookSelector::editNotebookInfo()
 {
@@ -375,23 +398,22 @@ void VNotebookSelector::editNotebookInfo()
     if (items.isEmpty()) {
         return;
     }
+
     Q_ASSERT(items.size() == 1);
-    QListWidgetItem *item = items[0];
-    int index = indexOfListItem(item);
 
-    VNotebook *notebook = getNotebookFromComboIndex(index);
-    QString curName = notebook->getName();
-
-    VNotebookInfoDialog dialog(tr("Notebook Information"), "", notebook,
-                               m_notebooks, this);
+    VNotebook *notebook = getNotebook(items[0]);
+    VNotebookInfoDialog dialog(tr("Notebook Information"),
+                               "",
+                               notebook,
+                               m_notebooks,
+                               this);
     if (dialog.exec() == QDialog::Accepted) {
         bool updated = false;
         bool configUpdated = false;
         QString name = dialog.getName();
-        if (name != curName) {
+        if (name != notebook->getName()) {
             updated = true;
             notebook->rename(name);
-            updateComboBoxItem(index, name);
             g_config->setNotebooks(m_notebooks);
         }
 
@@ -407,54 +429,58 @@ void VNotebookSelector::editNotebookInfo()
         }
 
         if (updated) {
+            fillItem(items[0], notebook);
             emit notebookUpdated(notebook);
         }
     }
 }
 
-void VNotebookSelector::addNotebookItem(const QString &p_name)
+void VNotebookSelector::addNotebookItem(const VNotebook *p_notebook)
 {
     QListWidgetItem *item = new QListWidgetItem(m_listWidget);
-    item->setText(p_name);
-    item->setToolTip(p_name);
-    item->setIcon(QIcon(":/resources/icons/notebook_item.svg"));
+    fillItem(item, p_notebook);
 }
 
-void VNotebookSelector::removeNotebookItem(int p_index)
+void VNotebookSelector::fillItem(QListWidgetItem *p_item,
+                                 const VNotebook *p_notebook) const
 {
-    QListWidgetItem *item = m_listWidget->item(p_index + c_notebookStartIdx);
-    m_listWidget->removeItemWidget(item);
-    delete item;
+    p_item->setText(p_notebook->getName());
+    p_item->setToolTip(p_notebook->getName());
+    p_item->setIcon(QIcon(":/resources/icons/notebook_item.svg"));
+    p_item->setData(Qt::UserRole, (qulonglong)p_notebook);
 }
 
-void VNotebookSelector::updateComboBoxItem(int p_index, const QString &p_name)
-{
-    QListWidgetItem *item = m_listWidget->item(p_index);
-    item->setText(p_name);
-    item->setToolTip(p_name);
-}
 
-void VNotebookSelector::requestPopupListContextMenu(QPoint p_pos)
+void VNotebookSelector::popupListContextMenuRequested(QPoint p_pos)
 {
-    QModelIndex index = m_listWidget->indexAt(p_pos);
-    if (!index.isValid() || index.row() < c_notebookStartIdx) {
+    QListWidgetItem *item = m_listWidget->itemAt(p_pos);
+    if (!item) {
         return;
     }
 
-    QListWidgetItem *item = m_listWidget->itemAt(p_pos);
-    Q_ASSERT(item);
+    const VNotebook *nb = getNotebook(item);
+    if (!nb) {
+        return;
+    }
+
     m_listWidget->clearSelection();
     item->setSelected(true);
 
     QMenu menu(this);
     menu.setToolTipsVisible(true);
     menu.addAction(m_deleteNotebookAct);
-    menu.addSeparator();
-    menu.addAction(m_recycleBinAct);
-    menu.addAction(m_emptyRecycleBinAct);
+    if (nb->isValid()) {
+        menu.addSeparator();
+        menu.addAction(m_recycleBinAct);
+        menu.addAction(m_emptyRecycleBinAct);
+    }
+
     menu.addSeparator();
     menu.addAction(m_openLocationAct);
-    menu.addAction(m_notebookInfoAct);
+
+    if (nb->isValid()) {
+        menu.addAction(m_notebookInfoAct);
+    }
 
     menu.exec(m_listWidget->mapToGlobal(p_pos));
 }
@@ -471,40 +497,30 @@ bool VNotebookSelector::eventFilter(QObject *watched, QEvent *event)
             return true;
         }
     }
-    return QComboBox::eventFilter(watched, event);
-}
 
-int VNotebookSelector::indexOfListItem(const QListWidgetItem *p_item)
-{
-    int nrItems = m_listWidget->count();
-    for (int i = 0; i < nrItems; ++i) {
-        if (m_listWidget->item(i) == p_item) {
-            return i;
-        }
-    }
-    return -1;
+    return QComboBox::eventFilter(watched, event);
 }
 
 bool VNotebookSelector::locateNotebook(const VNotebook *p_notebook)
 {
-    if (p_notebook) {
-        for (int i = 0; i < m_notebooks.size(); ++i) {
-            if (m_notebooks[i] == p_notebook) {
-                setCurrentIndexNotebook(i);
-                return true;
-            }
-        }
+    bool ret = false;
+    int index = itemIndexOfNotebook(p_notebook);
+    if (index > -1) {
+        setCurrentIndex(index);
+        ret = true;
     }
-    return false;
+
+    return ret;
 }
 
 void VNotebookSelector::showPopup()
 {
-    if (count() <= c_notebookStartIdx) {
+    if (m_notebooks.isEmpty()) {
         // No normal notebook items. Just add notebook.
         newNotebook();
         return;
     }
+
     resizeListWidgetToContent();
     QComboBox::showPopup();
 }
@@ -526,6 +542,7 @@ void VNotebookSelector::resizeListWidgetToContent()
         minHeight = m_listWidget->sizeHintForRow(0) * m_listWidget->count() + 10;
         minHeight = qMin(minHeight, maxMinHeight);
     }
+
     m_listWidget->setMinimumSize(minWidth, minHeight);
 }
 
@@ -615,4 +632,24 @@ bool VNotebookSelector::handlePopupKeyPress(QKeyEvent *p_event)
     }
 
     return false;
+}
+
+VNotebook *VNotebookSelector::getNotebook(int p_itemIdx) const
+{
+    VNotebook *nb = NULL;
+    QListWidgetItem *item = m_listWidget->item(p_itemIdx);
+    if (item) {
+        nb = (VNotebook *)item->data(Qt::UserRole).toULongLong();
+    }
+
+    return nb;
+}
+
+VNotebook *VNotebookSelector::getNotebook(const QListWidgetItem *p_item) const
+{
+    if (p_item) {
+        return (VNotebook *)p_item->data(Qt::UserRole).toULongLong();
+    }
+
+    return NULL;
 }

@@ -1,0 +1,10 @@
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+ <!-- Created with SVG-edit - http://svg-edit.googlecode.com/ -->
+ <title>one_panel</title>
+ <g>
+  <title>Layer 1</title>
+  <rect fill="none" stroke="#000000" stroke-width="40" x="58" y="57" width="395" height="395" id="svg_1"/>
+  <line fill="none" stroke="#000000" stroke-width="40" stroke-dasharray="null" stroke-linejoin="null" stroke-linecap="null" x1="193" y1="61" x2="193" y2="455" id="svg_4"/>
+  <line stroke="#000000" transform="rotate(-90 125.49999237060548,220.1999969482422) " id="svg_2" fill="none" stroke-width="40" stroke-dasharray="null" stroke-linejoin="null" stroke-linecap="null" x1="125.49999" y1="169.7" x2="125.49999" y2="270.7"/>
+ </g>
+</svg>

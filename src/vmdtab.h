@@ -31,10 +31,12 @@ public:
     // Save file.
     bool saveFile() Q_DECL_OVERRIDE;
 
-    // Scroll to anchor @p_anchor.
-    void scrollToAnchor(const VAnchor& p_anchor) Q_DECL_OVERRIDE;
+    // Scroll to @p_header.
+    void scrollToHeader(const VHeaderPointer &p_header) Q_DECL_OVERRIDE;
 
     void insertImage() Q_DECL_OVERRIDE;
+
+    void insertLink() Q_DECL_OVERRIDE;
 
     // Search @p_text in current note.
     void findText(const QString &p_text, uint p_options, bool p_peek,
@@ -62,25 +64,34 @@ public:
     // Insert decoration markers or decorate selected text.
     void decorateText(TextDecoration p_decoration) Q_DECL_OVERRIDE;
 
+    // Create a filled VEditTabInfo.
+    VEditTabInfo fetchTabInfo() const Q_DECL_OVERRIDE;
+
+    // Enable or disable heading sequence.
+    void enableHeadingSequence(bool p_enabled);
+
+    bool isHeadingSequenceEnabled() const;
+
+    // Evaluate magic words.
+    void evaluateMagicWords() Q_DECL_OVERRIDE;
+
 public slots:
     // Enter edit mode.
     void editFile() Q_DECL_OVERRIDE;
 
 private slots:
-    // Handle text changed in m_editor.
-    void handleTextChanged();
+    // Update m_outline according to @p_tocHtml for read mode.
+    void updateOutlineFromHtml(const QString &p_tocHtml);
 
-    // Update m_toc according to @p_tocHtml for read mode.
-    void updateTocFromHtml(const QString &p_tocHtml);
-
-    // Update m_toc accroding to @p_headers for edit mode.
-    void updateTocFromHeaders(const QVector<VHeader> &p_headers);
+    // Update m_outline accroding to @p_headers for edit mode.
+    void updateOutlineFromHeaders(const QVector<VTableOfContentItem> &p_headers);
 
     // Web viewer requests to update current header.
-    void updateCurHeader(const QString &p_anchor);
+    // @p_anchor is the anchor of the header, like "toc_1".
+    void updateCurrentHeader(const QString &p_anchor);
 
     // Editor requests to update current header.
-    void updateCurHeader(VAnchor p_anchor);
+    void updateCurrentHeader(int p_blockNumber);
 
     // Handle key press event in Web view.
     void handleWebKeyPressed(int p_key, bool p_ctrl, bool p_shift);
@@ -90,6 +101,9 @@ private slots:
 
     // m_editor requests to discard changes and enter read mode.
     void discardAndRead();
+
+    // Restore from m_infoToRestore.
+    void restoreFromTabInfo();
 
 private:
     // Setup UI.
@@ -111,8 +125,14 @@ private:
     void viewWebByConverter();
 
     // Scroll Web view to given header.
-    // @p_outlineIndex is the index in m_toc.headers.
-    void scrollWebViewToHeader(int p_outlineIndex);
+    // Return true if scroll was made.
+    bool scrollWebViewToHeader(const VHeaderPointer &p_header);
+
+    bool scrollEditorToHeader(const VHeaderPointer &p_header);
+
+    // Scroll web/editor to given header.
+    // Return true if scroll was made.
+    bool scrollToHeaderInternal(const VHeaderPointer &p_header);
 
     // Search text in Web view.
     void findTextInWebView(const QString &p_text, uint p_options, bool p_peek,
@@ -127,16 +147,20 @@ private:
     // Focus the proper child widget.
     void focusChild() Q_DECL_OVERRIDE;
 
-    // Create a filled VEditTabInfo.
-    VEditTabInfo createEditTabInfo() Q_DECL_OVERRIDE;
-
     // Get the markdown editor. If not init yet, init and return it.
     VEdit *getEditor();
+
+    // Restore from @p_fino.
+    // Return true if succeed.
+    bool restoreFromTabInfo(const VEditTabInfo &p_info) Q_DECL_OVERRIDE;
 
     VEdit *m_editor;
     VWebView *m_webViewer;
     VDocument *m_document;
     MarkdownConverterType m_mdConType;
+
+    // Whether heading sequence is enabled.
+    bool m_enableHeadingSequence;
 
     QStackedLayout *m_stacks;
 };

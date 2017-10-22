@@ -11,9 +11,9 @@ environment:
     VSVER: 14
 
     matrix:
-        - QT: C:\Qt\5.7\msvc2015_64
+        - QT: C:\Qt\5.9.1\msvc2015_64
           PLATFORM: amd64
-        - QT: C:\Qt\5.7\msvc2015
+        - QT: C:\Qt\5.9.1\msvc2015
           PLATFORM: x86
 
 clone_depth: 1
@@ -29,8 +29,8 @@ before_build:
     # After calling vcvarsall.bat, %PLATFORM% will be X64 or x86
     - mkdir build
     - cd build
-    - if "%PLATFORM%" EQU "X64" (qmake -r -spec win32-msvc2015 CONFIG+=x86_64 CONFIG-=debug CONFIG+=release ../VNote.pro)
-    - if "%PLATFORM%" EQU "x86" (qmake -r -spec win32-msvc2015 CONFIG+=Win32 CONFIG-=debug CONFIG+=release ../VNote.pro)
+    - if "%PLATFORM%" EQU "X64" (qmake -r -spec win32-msvc CONFIG+=x86_64 CONFIG-=debug CONFIG+=release ../VNote.pro)
+    - if "%PLATFORM%" EQU "x86" (qmake -r -spec win32-msvc CONFIG+=Win32 CONFIG-=debug CONFIG+=release ../VNote.pro)
 
 # custom build scripts
 build_script:

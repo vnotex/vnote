@@ -12,10 +12,11 @@
 #include <QPalette>
 #include "vnotebook.h"
 #include "vconstants.h"
+#include "utils/vmetawordmanager.h"
 
-class VMainWindow;
 class VOrphanFile;
 class VNoteFile;
+
 
 class VNote : public QObject
 {
@@ -74,9 +75,12 @@ public:
     const QVector<QPair<QString, QString> > &getPalette() const;
     void initPalette(QPalette palette);
     QString getColorFromPalette(const QString &p_name) const;
-    VMainWindow *getMainWindow() const;
 
     QString getNavigationLabelStyle(const QString &p_str) const;
+
+    // Given the path of a file, first try to open it as note file,
+    // then try to open it as orphan file.
+    VFile *getFile(const QString &p_path);
 
     // Given the path of an external file, create a VOrphanFile struct.
     VOrphanFile *getOrphanFile(const QString &p_path,
@@ -102,7 +106,8 @@ private:
     // Maintain all the notebooks. Other holder should use QPointer.
     QVector<VNotebook *> m_notebooks;
     QVector<QPair<QString, QString> > m_palette;
-    VMainWindow *m_mainWindow;
+
+    VMetaWordManager m_metaWordMgr;
 
     // Hold all external file: Orphan File.
     // Need to clean up periodly.
@@ -112,11 +117,6 @@ private:
 inline const QVector<QPair<QString, QString> >& VNote::getPalette() const
 {
     return m_palette;
-}
-
-inline VMainWindow *VNote::getMainWindow() const
-{
-    return m_mainWindow;
 }
 
 #endif // VNOTE_H

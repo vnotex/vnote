@@ -48,7 +48,7 @@ bool VEditUtils::insertBlockWithIndent(QTextCursor &p_cursor)
 {
     V_ASSERT(!p_cursor.hasSelection());
     p_cursor.insertBlock();
-    return indentBlockAsPreviousBlock(p_cursor);
+    return indentBlockAsBlock(p_cursor, false);
 }
 
 bool VEditUtils::insertListMarkAsPreviousBlock(QTextCursor &p_cursor)
@@ -85,21 +85,16 @@ bool VEditUtils::insertListMarkAsPreviousBlock(QTextCursor &p_cursor)
 
 }
 
-bool VEditUtils::indentBlockAsPreviousBlock(QTextCursor &p_cursor)
+bool VEditUtils::indentBlockAsBlock(QTextCursor &p_cursor, bool p_next)
 {
     bool changed = false;
     QTextBlock block = p_cursor.block();
-    if (block.blockNumber() == 0) {
-        // The first block.
+    QTextBlock refBlock = p_next ? block.next() : block.previous();
+    if (!refBlock.isValid()) {
         return false;
     }
 
-    QTextBlock preBlock = block.previous();
-    QString text = preBlock.text();
-    QRegExp regExp("(^\\s*)");
-    regExp.indexIn(text);
-    V_ASSERT(regExp.captureCount() == 1);
-    QString leadingSpaces = regExp.capturedTexts()[1];
+    QString leadingSpaces = fetchIndentSpaces(refBlock);
 
     moveCursorFirstNonSpaceCharacter(p_cursor, QTextCursor::MoveAnchor);
     if (!p_cursor.atBlockStart()) {
@@ -688,4 +683,131 @@ bool VEditUtils::needToCancelAutoIndent(int p_autoIndentPos, const QTextCursor &
     }
 
     return false;
+}
+
+void VEditUtils::insertTitleMark(QTextCursor &p_cursor,
+                                 const QTextBlock &p_block,
+                                 int p_level)
+{
+    if (!p_block.isValid()) {
+        return;
+    }
+
+    Q_ASSERT(p_level >= 1 && p_level <= 6);
+
+    bool needInsert = true;
+
+    p_cursor.setPosition(p_block.position());
+
+    // Test if this block contains title marks.
+    QRegExp headerReg(VUtils::c_headerRegExp);
+    QString text = p_block.text();
+    bool matched = headerReg.exactMatch(text);
+    if (matched) {
+        int level = headerReg.cap(1).length();
+        if (level == p_level) {
+            needInsert = false;
+        } else {
+            // Remove the title mark.
+            p_cursor.movePosition(QTextCursor::NextCharacter,
+                                  QTextCursor::KeepAnchor,
+                                  level);
+            p_cursor.removeSelectedText();
+        }
+    }
+
+    // Insert titleMark + " " at the front of the block.
+    if (needInsert) {
+        // Remove the spaces at front.
+        // insertText() will remove the selection.
+        moveCursorFirstNonSpaceCharacter(p_cursor, QTextCursor::KeepAnchor);
+
+        // Insert.
+        const QString titleMark(p_level, '#');
+        p_cursor.insertText(titleMark + " ");
+    }
+
+    // Go to the end of this block.
+    p_cursor.movePosition(QTextCursor::EndOfBlock);
+}
+
+void VEditUtils::findCurrentWord(QTextCursor p_cursor,
+                                 int &p_start,
+                                 int &p_end)
+{
+    QString text = p_cursor.block().text();
+    int pib = p_cursor.positionInBlock();
+
+    if (pib < text.size() && text[pib].isSpace()) {
+        p_start = p_end = p_cursor.position();
+        return;
+    }
+
+    p_cursor.movePosition(QTextCursor::StartOfWord);
+    p_start = p_cursor.position();
+    p_cursor.movePosition(QTextCursor::EndOfWord);
+    p_end = p_cursor.position();
+}
+
+void VEditUtils::findCurrentWORD(const QTextCursor &p_cursor,
+                                 int &p_start,
+                                 int &p_end)
+{
+    QTextBlock block = p_cursor.block();
+    QString text = block.text();
+    int pib = p_cursor.positionInBlock();
+
+    if (pib < text.size() && text[pib].isSpace()) {
+        p_start = p_end = p_cursor.position();
+        return;
+    }
+
+    // Find the start.
+    p_start = 0;
+    for (int i = pib - 1; i >= 0; --i) {
+        if (text[i].isSpace()) {
+            p_start = i + 1;
+            break;
+        }
+    }
+
+    // Find the end.
+    p_end = block.length() - 1;
+    for (int i = pib; i < text.size(); ++i) {
+        if (text[i].isSpace()) {
+            p_end = i;
+            break;
+        }
+    }
+
+    p_start += block.position();
+    p_end += block.position();
+}
+
+QString VEditUtils::fetchIndentSpaces(const QTextBlock &p_block)
+{
+    QString text = p_block.text();
+    QRegExp regExp("(^\\s*)");
+    regExp.indexIn(text);
+    Q_ASSERT(regExp.captureCount() == 1);
+    return regExp.capturedTexts()[1];
+}
+
+void VEditUtils::insertBlock(QTextCursor &p_cursor,
+                             bool p_above)
+{
+    p_cursor.movePosition(p_above ? QTextCursor::StartOfBlock
+                                  : QTextCursor::EndOfBlock,
+                          QTextCursor::MoveAnchor,
+                          1);
+
+    p_cursor.insertBlock();
+
+    if (p_above) {
+        p_cursor.movePosition(QTextCursor::PreviousBlock,
+                              QTextCursor::MoveAnchor,
+                              1);
+    }
+
+    p_cursor.movePosition(QTextCursor::EndOfBlock);
 }

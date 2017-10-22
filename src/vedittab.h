@@ -4,7 +4,7 @@
 #include <QWidget>
 #include <QString>
 #include <QPointer>
-#include "vtoc.h"
+#include "vtableofcontent.h"
 #include "vfile.h"
 #include "utils/vvim.h"
 #include "vedittabinfo.h"
@@ -37,17 +37,20 @@ public:
 
     void focusTab();
 
-    virtual void requestUpdateOutline();
+    // Whether this tab has focus.
+    bool tabHasFocus() const;
 
-    virtual void requestUpdateCurHeader();
-
-    // Scroll to anchor @p_anchor.
-    virtual void scrollToAnchor(const VAnchor& p_anchor) = 0;
+    // Scroll to @p_header.
+    // Will emit currentHeaderChanged() if @p_header is valid.
+    virtual void scrollToHeader(const VHeaderPointer &p_header) { Q_UNUSED(p_header) }
 
     VFile *getFile() const;
 
     // User requests to insert image.
     virtual void insertImage() = 0;
+
+    // User requests to insert link.
+    virtual void insertLink();
 
     // Search @p_text in current note.
     virtual void findText(const QString &p_text, uint p_options, bool p_peek,
@@ -69,14 +72,28 @@ public:
     virtual void requestUpdateVimStatus() = 0;
 
     // Insert decoration markers or decorate selected text.
-    virtual void decorateText(TextDecoration p_decoration) {Q_UNUSED(p_decoration);};
+    virtual void decorateText(TextDecoration p_decoration) {Q_UNUSED(p_decoration);}
+
+    // Create a filled VEditTabInfo.
+    virtual VEditTabInfo fetchTabInfo() const;
+
+    const VTableOfContent &getOutline() const;
+
+    const VHeaderPointer &getCurrentHeader() const;
+
+    // Restore status from @p_info.
+    // If this tab is not ready yet, it will restore once it is ready.
+    void tryRestoreFromTabInfo(const VEditTabInfo &p_info);
+
+    // Emit signal to update current status.
+    virtual void updateStatus();
+
+    // Called by evaluateMagicWordsByCaptain() to evaluate the magic words.
+    virtual void evaluateMagicWords();
 
 public slots:
     // Enter edit mode
     virtual void editFile() = 0;
-
-    // Update status of current tab. Emit statusUpdated().
-    virtual void updateStatus();
 
 protected:
     void wheelEvent(QWheelEvent *p_event) Q_DECL_OVERRIDE;
@@ -87,23 +104,32 @@ protected:
     // Called to zoom in/out content.
     virtual void zoom(bool p_zoomIn, qreal p_step = 0.25) = 0;
 
-    // Create a filled VEditTabInfo.
-    virtual VEditTabInfo createEditTabInfo();
+    // Restore from @p_fino.
+    // Return true if succeed.
+    virtual bool restoreFromTabInfo(const VEditTabInfo &p_info) = 0;
 
     // File related to this tab.
     QPointer<VFile> m_file;
+
     bool m_isEditMode;
-    bool m_modified;
-    VToc m_toc;
-    VAnchor m_curHeader;
+
+    // Table of content of this tab.
+    VTableOfContent m_outline;
+
+    // Current header in m_outline of this tab.
+    VHeaderPointer m_currentHeader;
+
     VEditArea *m_editArea;
+
+    // Tab info to restore from once ready.
+    VEditTabInfo m_infoToRestore;
 
 signals:
     void getFocused();
 
-    void outlineChanged(const VToc &p_toc);
+    void outlineChanged(const VTableOfContent &p_outline);
 
-    void curHeaderChanged(const VAnchor &p_anchor);
+    void currentHeaderChanged(const VHeaderPointer &p_header);
 
     // The status of current tab has updates.
     void statusUpdated(const VEditTabInfo &p_info);

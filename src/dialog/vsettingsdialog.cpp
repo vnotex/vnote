@@ -169,9 +169,6 @@ VGeneralTab::VGeneralTab(QWidget *p_parent)
         m_langCombo->addItem(lang.second, lang.first);
     }
 
-    QLabel *langLabel = new QLabel(tr("Language:"), this);
-    langLabel->setToolTip(m_langCombo->toolTip());
-
     // System tray checkbox.
     m_systemTray = new QCheckBox(tr("System tray"), this);
     m_systemTray->setToolTip(tr("Minimized to the system tray after closing VNote"
@@ -181,14 +178,72 @@ VGeneralTab::VGeneralTab(QWidget *p_parent)
     m_systemTray->setEnabled(false);
 #endif
 
+    // Startup pages.
+    QLayout *startupLayout = setupStartupPagesLayout();
+
     QFormLayout *optionLayout = new QFormLayout();
-    optionLayout->addRow(langLabel, m_langCombo);
+    optionLayout->addRow(tr("Language:"), m_langCombo);
     optionLayout->addRow(m_systemTray);
+    optionLayout->addRow(tr("Startup pages:"), startupLayout);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(optionLayout);
 
     setLayout(mainLayout);
+}
+
+QLayout *VGeneralTab::setupStartupPagesLayout()
+{
+    m_startupPageTypeCombo = new QComboBox(this);
+    m_startupPageTypeCombo->setToolTip(tr("Restore tabs or open specific notes on startup"));
+    m_startupPageTypeCombo->addItem(tr("None"), (int)StartupPageType::None);
+    m_startupPageTypeCombo->addItem(tr("Continue where you left off"), (int)StartupPageType::ContinueLeftOff);
+    m_startupPageTypeCombo->addItem(tr("Open specific pages"), (int)StartupPageType::SpecificPages);
+    connect(m_startupPageTypeCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
+            this, [this](int p_index) {
+                int type = m_startupPageTypeCombo->itemData(p_index).toInt();
+                bool pagesEditVisible = type == (int)StartupPageType::SpecificPages;
+                m_startupPagesEdit->setVisible(pagesEditVisible);
+                m_startupPagesAddBtn->setVisible(pagesEditVisible);
+            });
+
+    m_startupPagesEdit = new QPlainTextEdit(this);
+    m_startupPagesEdit->setToolTip(tr("Absolute path of the notes to open on startup (one note per line)"));
+
+    m_startupPagesAddBtn = new QPushButton(tr("Browse"), this);
+    m_startupPagesAddBtn->setToolTip(tr("Select files to add as startup pages"));
+    connect(m_startupPagesAddBtn, &QPushButton::clicked,
+            this, [this]() {
+                static QString lastPath = QDir::homePath();
+                QStringList files = QFileDialog::getOpenFileNames(this,
+                                                                  tr("Select Files As Startup Pages"),
+                                                                  lastPath);
+                if (files.isEmpty()) {
+                    return;
+                }
+
+                // Update lastPath
+                lastPath = QFileInfo(files[0]).path();
+
+                m_startupPagesEdit->appendPlainText(files.join("\n"));
+            });
+
+    QHBoxLayout *startupPagesBtnLayout = new QHBoxLayout();
+    startupPagesBtnLayout->addStretch();
+    startupPagesBtnLayout->addWidget(m_startupPagesAddBtn);
+
+    QVBoxLayout *startupPagesLayout = new QVBoxLayout();
+    startupPagesLayout->addWidget(m_startupPagesEdit);
+    startupPagesLayout->addLayout(startupPagesBtnLayout);
+
+    QVBoxLayout *startupLayout = new QVBoxLayout();
+    startupLayout->addWidget(m_startupPageTypeCombo);
+    startupLayout->addLayout(startupPagesLayout);
+
+    m_startupPagesEdit->hide();
+    m_startupPagesAddBtn->hide();
+
+    return startupLayout;
 }
 
 bool VGeneralTab::loadConfiguration()
@@ -198,6 +253,10 @@ bool VGeneralTab::loadConfiguration()
     }
 
     if (!loadSystemTray()) {
+        return false;
+    }
+
+    if (!loadStartupPageType()) {
         return false;
     }
 
@@ -211,6 +270,10 @@ bool VGeneralTab::saveConfiguration()
     }
 
     if (!saveSystemTray()) {
+        return false;
+    }
+
+    if (!saveStartupPageType()) {
         return false;
     }
 
@@ -259,6 +322,42 @@ bool VGeneralTab::saveSystemTray()
 {
     if (m_systemTray->isEnabled()) {
         g_config->setMinimizeToSystemTray(m_systemTray->isChecked() ? 1 : 0);
+    }
+
+    return true;
+}
+
+bool VGeneralTab::loadStartupPageType()
+{
+    StartupPageType type = g_config->getStartupPageType();
+    bool found = false;
+    for (int i = 0; i < m_startupPageTypeCombo->count(); ++i) {
+        if (m_startupPageTypeCombo->itemData(i).toInt() == (int)type) {
+            found = true;
+            m_startupPageTypeCombo->setCurrentIndex(i);
+        }
+    }
+
+    Q_ASSERT(found);
+
+    const QStringList &pages = g_config->getStartupPages();
+    m_startupPagesEdit->setPlainText(pages.join("\n"));
+
+    bool pagesEditVisible = type == StartupPageType::SpecificPages;
+    m_startupPagesEdit->setVisible(pagesEditVisible);
+    m_startupPagesAddBtn->setVisible(pagesEditVisible);
+
+    return true;
+}
+
+bool VGeneralTab::saveStartupPageType()
+{
+    StartupPageType type = (StartupPageType)m_startupPageTypeCombo->currentData().toInt();
+    g_config->setStartupPageType(type);
+
+    if (type == StartupPageType::SpecificPages) {
+        QStringList pages = m_startupPagesEdit->toPlainText().split("\n");
+        g_config->setStartupPages(pages);
     }
 
     return true;
@@ -504,28 +603,34 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     m_openModeCombo->addItem(tr("Read Mode"), (int)OpenFileMode::Read);
     m_openModeCombo->addItem(tr("Edit Mode"), (int)OpenFileMode::Edit);
 
-    QLabel *openModeLabel = new QLabel(tr("Note open mode:"));
-    openModeLabel->setToolTip(m_openModeCombo->toolTip());
-
     // Heading sequence.
-    m_headingSequence = new QCheckBox(tr("Heading sequence"));
-    m_headingSequence->setToolTip(tr("Enable auto sequence for all headings (in the form like 1.2.3.4.)"));
-    m_headingSequenceCombo = new QComboBox();
-    m_headingSequenceCombo->setToolTip(tr("Base level to start heading sequence"));
-    m_headingSequenceCombo->addItem(tr("1"), 1);
-    m_headingSequenceCombo->addItem(tr("2"), 2);
-    m_headingSequenceCombo->addItem(tr("3"), 3);
-    m_headingSequenceCombo->addItem(tr("4"), 4);
-    m_headingSequenceCombo->addItem(tr("5"), 5);
-    m_headingSequenceCombo->addItem(tr("6"), 6);
-    m_headingSequenceCombo->setEnabled(false);
-    connect(m_headingSequence, &QCheckBox::stateChanged,
-            this, [this](int p_state){
-                this->m_headingSequenceCombo->setEnabled(p_state == Qt::Checked);
+    m_headingSequenceTypeCombo = new QComboBox();
+    m_headingSequenceTypeCombo->setToolTip(tr("Enable auto sequence for all headings (in the form like 1.2.3.4.)"));
+    m_headingSequenceTypeCombo->addItem(tr("Disabled"), (int)HeadingSequenceType::Disabled);
+    m_headingSequenceTypeCombo->addItem(tr("Enabled"), (int)HeadingSequenceType::Enabled);
+    m_headingSequenceTypeCombo->addItem(tr("Enabled for notes only"), (int)HeadingSequenceType::EnabledNoteOnly);
+
+    m_headingSequenceLevelCombo = new QComboBox();
+    m_headingSequenceLevelCombo->setToolTip(tr("Base level to start heading sequence"));
+    m_headingSequenceLevelCombo->addItem(tr("1"), 1);
+    m_headingSequenceLevelCombo->addItem(tr("2"), 2);
+    m_headingSequenceLevelCombo->addItem(tr("3"), 3);
+    m_headingSequenceLevelCombo->addItem(tr("4"), 4);
+    m_headingSequenceLevelCombo->addItem(tr("5"), 5);
+    m_headingSequenceLevelCombo->addItem(tr("6"), 6);
+    m_headingSequenceLevelCombo->setEnabled(false);
+
+    connect(m_headingSequenceTypeCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
+            this, [this](int p_index){
+                if (p_index > -1) {
+                    HeadingSequenceType type = (HeadingSequenceType)m_headingSequenceTypeCombo->itemData(p_index).toInt();
+                    m_headingSequenceLevelCombo->setEnabled(type != HeadingSequenceType::Disabled);
+                }
             });
+
     QHBoxLayout *headingSequenceLayout = new QHBoxLayout();
-    headingSequenceLayout->addWidget(m_headingSequence);
-    headingSequenceLayout->addWidget(m_headingSequenceCombo);
+    headingSequenceLayout->addWidget(m_headingSequenceTypeCombo);
+    headingSequenceLayout->addWidget(m_headingSequenceLevelCombo);
 
     // Web Zoom Factor.
     m_customWebZoom = new QCheckBox(tr("Custom Web zoom factor"), this);
@@ -553,8 +658,8 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     colorColumnLabel->setToolTip(m_colorColumnEdit->toolTip());
 
     QFormLayout *mainLayout = new QFormLayout();
-    mainLayout->addRow(openModeLabel, m_openModeCombo);
-    mainLayout->addRow(headingSequenceLayout);
+    mainLayout->addRow(tr("Note open mode:"), m_openModeCombo);
+    mainLayout->addRow(tr("Heading sequence:"), headingSequenceLayout);
     mainLayout->addRow(zoomFactorLayout);
     mainLayout->addRow(colorColumnLabel, m_colorColumnEdit);
 
@@ -628,21 +733,28 @@ bool VMarkdownTab::saveOpenMode()
 
 bool VMarkdownTab::loadHeadingSequence()
 {
-    bool enabled = g_config->getEnableHeadingSequence();
+    HeadingSequenceType type = g_config->getHeadingSequenceType();
     int level = g_config->getHeadingSequenceBaseLevel();
     if (level < 1 || level > 6) {
         level = 1;
     }
 
-    m_headingSequence->setChecked(enabled);
-    m_headingSequenceCombo->setCurrentIndex(level - 1);
+    int idx = m_headingSequenceTypeCombo->findData((int)type);
+    Q_ASSERT(idx > -1);
+    m_headingSequenceTypeCombo->setCurrentIndex(idx);
+    m_headingSequenceLevelCombo->setCurrentIndex(level - 1);
+    m_headingSequenceLevelCombo->setEnabled(type != HeadingSequenceType::Disabled);
+
     return true;
 }
 
 bool VMarkdownTab::saveHeadingSequence()
 {
-    g_config->setEnableHeadingSequence(m_headingSequence->isChecked());
-    g_config->setHeadingSequenceBaseLevel(m_headingSequenceCombo->currentData().toInt());
+    QVariant typeData = m_headingSequenceTypeCombo->currentData();
+    Q_ASSERT(typeData.isValid());
+    g_config->setHeadingSequenceType((HeadingSequenceType)typeData.toInt());
+    g_config->setHeadingSequenceBaseLevel(m_headingSequenceLevelCombo->currentData().toInt());
+
     return true;
 }
 

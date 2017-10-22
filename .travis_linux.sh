@@ -1,11 +1,11 @@
 #!/bin/bash
 project_dir=$(pwd)
 
-# Install qt5.7
+# Install qt5.9
 sudo add-apt-repository ppa:george-edison55/cmake-3.x -y
-sudo add-apt-repository ppa:beineri/opt-qt571-trusty -y
+sudo add-apt-repository ppa:beineri/opt-qt591-trusty -y
 sudo apt-get update -qq
-sudo apt-get -y install qt57base qt57webengine qt57webchannel qt57svg qt57location qt57tools qt57translations
+sudo apt-get -y install qt59base qt59webengine qt59webchannel qt59svg qt59location qt59tools qt59translations
 source /opt/qt*/bin/qt*-env.sh
 
 # Compile newer version fcitx-qt5
@@ -34,7 +34,7 @@ make -j$(nproc) && sudo make install
 sudo cp /usr/local/lib/libFcitxQt5DBusAddons.so* /opt/qt*/lib/
 sudo cp /usr/local/lib/libFcitxQt5WidgetsAddons.so* /opt/qt*/lib/
 
-tree /opt/qt57/lib/
+tree /opt/qt59/lib/
 
 cd ${project_dir}
 mkdir build
@@ -53,9 +53,9 @@ INSTALL_ROOT=${project_dir}/build/dist make install ; tree dist/
 mkdir -p ./dist/usr/plugins/iconengines
 mkdir -p ./dist/usr/plugins/imageformats
 mkdir -p ./dist/usr/plugins/platforminputcontexts
-cp /opt/qt57/plugins/iconengines/* ./dist/usr/plugins/iconengines/
-cp /opt/qt57/plugins/imageformats/* ./dist/usr/plugins/imageformats/
-cp /opt/qt57/plugins/platforminputcontexts/* ./dist/usr/plugins/platforminputcontexts/
+cp /opt/qt59/plugins/iconengines/* ./dist/usr/plugins/iconengines/
+cp /opt/qt59/plugins/imageformats/* ./dist/usr/plugins/imageformats/
+cp /opt/qt59/plugins/platforminputcontexts/* ./dist/usr/plugins/platforminputcontexts/
 
 # Copy other project files
 cp "${project_dir}/README.md" "dist/README.md"
@@ -70,7 +70,7 @@ unset QTDIR; unset QT_PLUGIN_PATH ; unset LD_LIBRARY_PATH
 ./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -bundle-non-qt-libs
 
 # Copy translations
-cp /opt/qt57/translations/*_zh_CN.qm ./dist/usr/translations/
+cp /opt/qt59/translations/*_zh_CN.qm ./dist/usr/translations/
 
 # Package it for the second time.
 ./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -appimage

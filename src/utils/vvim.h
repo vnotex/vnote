@@ -166,7 +166,7 @@ public:
     void setMode(VimMode p_mode, bool p_clearSelection = true);
 
     // Set current register.
-    void setRegister(QChar p_reg);
+    void setCurrentRegisterName(QChar p_reg);
 
     // Get m_registers.
     const QMap<QChar, Register> &getRegisters() const;
@@ -797,6 +797,10 @@ private:
     // Clear search highlight.
     void clearSearchHighlight();
 
+    // Function utils for register.
+    Register &getRegister(QChar p_regName) const;
+    void setRegister(QChar p_regName, const QString &p_val);
+
     VEdit *m_editor;
     const VEditConfig *m_editConfig;
     VimMode m_mode;
@@ -813,8 +817,6 @@ private:
 
     // Whether reset the position in block when moving cursor.
     bool m_resetPositionInBlock;
-
-    QMap<QChar, Register> m_registers;
 
     // Currently used register.
     QChar m_regName;
@@ -843,6 +845,18 @@ private:
     static const QChar c_unnamedRegister;
     static const QChar c_blackHoleRegister;
     static const QChar c_selectionRegister;
+
+    static QMap<QChar, VVim::Register> s_registers;
 };
+
+inline VVim::Register &VVim::getRegister(QChar p_regName) const
+{
+    return s_registers[p_regName];
+}
+
+inline void VVim::setRegister(QChar p_regName, const QString &p_val)
+{
+    s_registers[p_regName].update(p_val);
+}
 
 #endif // VVIM_H

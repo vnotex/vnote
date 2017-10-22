@@ -44,7 +44,6 @@ SOURCES += main.cpp\
     veditwindow.cpp \
     vedittab.cpp \
     voutline.cpp \
-    vtoc.cpp \
     vsingleinstanceguard.cpp \
     vdirectory.cpp \
     vfile.cpp \
@@ -77,7 +76,12 @@ SOURCES += main.cpp\
     dialog/vconfirmdeletiondialog.cpp \
     vnotefile.cpp \
     vattachmentlist.cpp \
-    dialog/vsortdialog.cpp
+    dialog/vsortdialog.cpp \
+    vfilesessioninfo.cpp \
+    vtableofcontent.cpp \
+    utils/vmetawordmanager.cpp \
+    vlineedit.cpp \
+    dialog/vinsertlinkdialog.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -107,7 +111,6 @@ HEADERS  += vmainwindow.h \
     veditwindow.h \
     vedittab.h \
     voutline.h \
-    vtoc.h \
     vsingleinstanceguard.h \
     vdirectory.h \
     vfile.h \
@@ -142,7 +145,12 @@ HEADERS  += vmainwindow.h \
     dialog/vconfirmdeletiondialog.h \
     vnotefile.h \
     vattachmentlist.h \
-    dialog/vsortdialog.h
+    dialog/vsortdialog.h \
+    vfilesessioninfo.h \
+    vtableofcontent.h \
+    utils/vmetawordmanager.h \
+    vlineedit.h \
+    dialog/vinsertlinkdialog.h
 
 RESOURCES += \
     vnote.qrc \

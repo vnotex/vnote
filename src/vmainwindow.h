@@ -38,6 +38,15 @@ class QShortcut;
 class VButtonWithWidget;
 class VAttachmentList;
 
+enum class PanelViewState
+{
+    ExpandMode,
+    SinglePanel,
+    TwoPanels,
+    CompactMode,
+    Invalid
+};
+
 class VMainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -51,18 +60,17 @@ public:
     // Returns true if the location succeeds.
     bool locateFile(VFile *p_file);
 
-    // Returns true if the location succeeds.
-    bool locateCurrentFile();
-
     VFileList *getFileList() const;
+
+    VEditArea *getEditArea() const;
 
     // View and edit the information of @p_file, which is an orphan file.
     void editOrphanFileInfo(VFile *p_file);
 
-    // Open external files @p_files as orphan files.
+    // Open files @p_files as orphan files or internal note files.
     // If @p_forceOrphan is false, for each file, VNote will try to find out if
     // it is a note inside VNote. If yes, VNote will open it as internal file.
-    void openExternalFiles(const QStringList &p_files, bool p_forceOrphan = false);
+    void openFiles(const QStringList &p_files, bool p_forceOrphan = false);
 
     // Try to open @p_filePath as internal note.
     bool tryOpenInternalFile(const QString &p_filePath);
@@ -70,15 +78,23 @@ public:
     // Show a temporary message in status bar.
     void showStatusMessage(const QString &p_msg);
 
-    // Popup the attachment list if it is enabled.
-    void showAttachmentList();
+    // Open startup pages according to configuration.
+    void openStartupPages();
+
+    VCaptain *getCaptain() const;
+
+    // Prompt user for new notebook if there is no notebook.
+    void promptNewNotebookIfEmpty();
 
 private slots:
     void importNoteFromFile();
     void viewSettings();
     void changeMarkdownConverter(QAction *action);
     void aboutMessage();
-    void shortcutHelp();
+
+    // Display shortcuts help.
+    void shortcutsHelp();
+
     void changeExpandTab(bool checked);
     void setTabStopWidth(QAction *action);
     void setEditorBackgroundColor(QAction *action);
@@ -105,17 +121,15 @@ private slots:
     void changeHighlightTrailingSapce(bool p_checked);
     void onePanelView();
     void twoPanelView();
-    void expandPanelView(bool p_checked);
+    void compactModeView();
     void curEditFileInfo();
     void deleteCurNote();
     void handleCurrentDirectoryChanged(const VDirectory *p_dir);
     void handleCurrentNotebookChanged(const VNotebook *p_notebook);
-    void insertImage();
     void handleFindDialogTextChanged(const QString &p_text, uint p_options);
     void openFindDialog();
     void enableMermaid(bool p_checked);
     void enableMathjax(bool p_checked);
-    void handleCaptainModeChanged(bool p_enabled);
     void changeAutoIndent(bool p_checked);
     void changeAutoList(bool p_checked);
     void changeVimMode(bool p_checked);
@@ -127,10 +141,14 @@ private slots:
     void printNote();
     void exportAsPDF();
 
+    // Set the panel view properly.
+    void enableCompactMode(bool p_enabled);
+
     // Handle Vim status updated.
     void handleVimStatusUpdated(const VVim *p_vim);
 
     // Handle the status update of the current tab of VEditArea.
+    // Will be called frequently.
     void handleAreaTabStatusUpdated(const VEditTabInfo &p_info);
 
     // Check the shared memory between different instances to see if we have
@@ -141,6 +159,9 @@ private slots:
 
     // Restore main window.
     void showMainWindow();
+
+    // Close current note.
+    void closeCurrentFile();
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -186,17 +207,19 @@ private:
     void initEditorLineNumberMenu(QMenu *p_menu);
 
     void initEditorStyleMenu(QMenu *p_emnu);
-    void changeSplitterView(int nrPanel);
     void updateWindowTitle(const QString &str);
-    void updateActionStateFromTabStatusChange(const VFile *p_file,
-                                              bool p_editMode);
+
+    // Update state of actions according to @p_tab.
+    void updateActionsStateFromTab(const VEditTab *p_tab);
+
     void saveStateAndGeometry();
     void restoreStateAndGeometry();
     void repositionAvatar();
 
+    // Should init VCaptain before setupUI().
     void initCaptain();
-    void toggleOnePanelView();
-    void closeCurrentFile();
+
+    void registerCaptainAndNavigationTargets();
 
     // Update status bar information.
     void updateStatusInfo(const VEditTabInfo &p_info);
@@ -213,6 +236,37 @@ private:
     // Init system tray icon and correspondign context menu.
     void initTrayIcon();
 
+    // Change the panel view according to @p_state.
+    // Will not change m_panelViewState.
+    void changePanelView(PanelViewState p_state);
+
+    // Whether heading sequence is applicable to current tab.
+    // Only available for writable Markdown file.
+    bool isHeadingSequenceApplicable() const;
+
+    // Captain mode functions.
+
+    // Popup the attachment list if it is enabled.
+    static void showAttachmentListByCaptain(void *p_target, void *p_data);
+
+    static void locateCurrentFileByCaptain(void *p_target, void *p_data);
+
+    static void toggleExpandModeByCaptain(void *p_target, void *p_data);
+
+    static void toggleOnePanelViewByCaptain(void *p_target, void *p_data);
+
+    static void discardAndReadByCaptain(void *p_target, void *p_data);
+
+    static void toggleToolsDockByCaptain(void *p_target, void *p_data);
+
+    static void closeFileByCaptain(void *p_target, void *p_data);
+
+    static void shortcutsHelpByCaptain(void *p_target, void *p_data);
+
+    static void flushLogFileByCaptain(void *p_target, void *p_data);
+
+    // End Captain mode functions.
+
     VNote *vnote;
     QPointer<VFile> m_curFile;
     QPointer<VEditTab> m_curTab;
@@ -222,10 +276,18 @@ private:
     QLabel *notebookLabel;
     QLabel *directoryLabel;
     VNotebookSelector *notebookSelector;
-    VFileList *fileList;
+    VFileList *m_fileList;
     VDirectoryTree *directoryTree;
-    QSplitter *mainSplitter;
+
+    // Splitter for directory | files | edit.
+    QSplitter *m_mainSplitter;
+
+    // Splitter for directory | files.
+    // Move directory and file panel in one compact vertical split.
+    QSplitter *m_naviSplitter;
+
     VEditArea *editArea;
+
     QDockWidget *toolDock;
     QToolBox *toolBox;
     VOutline *outline;
@@ -234,8 +296,8 @@ private:
     VVimIndicator *m_vimIndicator;
     VTabIndicator *m_tabIndicator;
 
-    // Whether it is one panel or two panles.
-    bool m_onePanel;
+    // SinglePanel, TwoPanels, CompactMode.
+    PanelViewState m_panelViewState;
 
     // Actions
     QAction *newRootDirAct;
@@ -251,7 +313,6 @@ private:
     QAction *m_printAct;
     QAction *m_exportAsPDFAct;
 
-    QAction *m_insertImageAct;
     QAction *m_findReplaceAct;
     QAction *m_findNextAct;
     QAction *m_findPreviousAct;
@@ -261,6 +322,9 @@ private:
 
     QAction *m_autoIndentAct;
 
+    // Enable heading sequence for current note.
+    QAction *m_headingSequenceAct;
+
     // Act group for render styles.
     QActionGroup *m_renderStyleActs;
 
@@ -268,6 +332,9 @@ private:
 
     // Act group for code block render styles.
     QActionGroup *m_codeBlockStyleActs;
+
+    // Act group for panel view actions.
+    QActionGroup *m_viewActGroup;
 
     QShortcut *m_closeNoteShortcut;
 
@@ -306,7 +373,17 @@ private:
 
 inline VFileList *VMainWindow::getFileList() const
 {
-    return fileList;
+    return m_fileList;
+}
+
+inline VEditArea *VMainWindow::getEditArea() const
+{
+    return editArea;
+}
+
+inline VCaptain *VMainWindow::getCaptain() const
+{
+    return m_captain;
 }
 
 #endif // VMAINWINDOW_H
