@@ -97,7 +97,7 @@ void VMetaWordManager::init()
     // %MMMM%.
     addMetaWord(MetaWordType::FunctionBased,
                 "MMMM",
-                tr("the long localized month name (e.g. `January` to `December`"),
+                tr("the long localized month name (e.g. `January` to `December`)"),
                 std::bind(formattedDateTime, _1, "MMMM"));
 
     // %yy%.
@@ -115,25 +115,25 @@ void VMetaWordManager::init()
     // %h%.
     addMetaWord(MetaWordType::FunctionBased,
                 "h",
-                tr("the hour without a leading zero (`0` to `23` or `1` to `12` if AM/PM display"),
+                tr("the hour without a leading zero (`0` to `23` or `1` to `12` if AM/PM display)"),
                 std::bind(formattedDateTime, _1, "h"));
 
     // %hh%.
     addMetaWord(MetaWordType::FunctionBased,
                 "hh",
-                tr("the hour with a leading zero (`00` to `23` or `01` to `12` if AM/PM display"),
+                tr("the hour with a leading zero (`00` to `23` or `01` to `12` if AM/PM display)"),
                 std::bind(formattedDateTime, _1, "hh"));
 
     // %H%.
     addMetaWord(MetaWordType::FunctionBased,
                 "H",
-                tr("the hour without a leading zero (`0` to `23` even with AM/PM display"),
+                tr("the hour without a leading zero (`0` to `23` even with AM/PM display)"),
                 std::bind(formattedDateTime, _1, "H"));
 
     // %HH%.
     addMetaWord(MetaWordType::FunctionBased,
                 "HH",
-                tr("the hour with a leading zero (`00` to `23` even with AM/PM display"),
+                tr("the hour with a leading zero (`00` to `23` even with AM/PM display)"),
                 std::bind(formattedDateTime, _1, "HH"));
 
     // %m%.

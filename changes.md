@@ -1,4 +1,16 @@
 # Changes History
+## v1.10
+- Migrate to Qt 5.9.1;
+- Support Compact mode in main window;
+- Update icons;
+- Support custom startup pages;
+- Remove obsolete title marker when inserting new one;
+- Support Magic Words;
+- Vim mode
+    - Share registers among all tabs;
+- Add "Code Block", "Insert Link", and "Insert Image" tool bar buttons;
+
+
 ## v1.9
 - Support attachments of notes.
 - Add recycle bin to notebook to hold deleted files.
