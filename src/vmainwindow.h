@@ -83,6 +83,9 @@ public:
 
     VCaptain *getCaptain() const;
 
+    // Prompt user for new notebook if there is no notebook.
+    void promptNewNotebookIfEmpty();
+
 private slots:
     void importNoteFromFile();
     void viewSettings();

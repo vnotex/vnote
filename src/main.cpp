@@ -168,5 +168,7 @@ int main(int argc, char *argv[])
 
     w.openFiles(filePaths);
 
+    w.promptNewNotebookIfEmpty();
+
     return app.exec();
 }

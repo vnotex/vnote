@@ -243,7 +243,9 @@ void VNotebookSelector::handleCurIndexChanged(int p_index)
                 setCurrentIndex(m_lastValidIndex);
             }
 
-            newNotebook();
+            if (!m_notebooks.isEmpty()) {
+                newNotebook();
+            }
 
             return;
         }
@@ -381,6 +383,12 @@ void VNotebookSelector::deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles
             QUrl url = QUrl::fromLocalFile(path);
             QDesktopServices::openUrl(url);
         }
+    }
+
+    if (m_notebooks.isEmpty()) {
+        m_muted = true;
+        setCurrentIndex(0);
+        m_muted = false;
     }
 }
 

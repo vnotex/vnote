@@ -2623,3 +2623,10 @@ void VMainWindow::flushLogFileByCaptain(void *p_target, void *p_data)
     g_logFile.flush();
 #endif
 }
+
+void VMainWindow::promptNewNotebookIfEmpty()
+{
+    if (vnote->getNotebooks().isEmpty()) {
+        notebookSelector->newNotebook();
+    }
+}
