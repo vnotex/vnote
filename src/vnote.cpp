@@ -343,7 +343,13 @@ VFile *VNote::getFile(const QString &p_path)
 {
     VFile *file = getInternalFile(p_path);
     if (!file) {
-        file = getOrphanFile(p_path, true, false);
+        QFileInfo fi(p_path);
+        if (fi.isNativePath()) {
+            file = getOrphanFile(p_path, true, false);
+        } else {
+            // File in Qt resource system.
+            file = getOrphanFile(p_path, false, true);
+        }
     }
 
     return file;

@@ -302,18 +302,25 @@ bool VEditWindow::closeFile(const VFile *p_file, bool p_forced)
 
     VEditTab *editor = getTab(idx);
     Q_ASSERT(editor);
+    VEditTabInfo tabInfo = editor->fetchTabInfo();
+    VFileSessionInfo info = VFileSessionInfo::fromEditTabInfo(&tabInfo);
     if (!p_forced) {
         setCurrentIndex(idx);
         updateTabStatus(idx);
     }
+
     // Even p_forced is true we need to delete unused images.
     bool ok = editor->closeFile(p_forced);
     if (ok) {
         removeEditTab(idx);
+
+        m_editArea->recordClosedFile(info);
     }
+
     if (count() == 0) {
         emit requestRemoveSplit(this);
     }
+
     return ok;
 }
 
@@ -362,22 +369,30 @@ bool VEditWindow::closeAllFiles(bool p_forced)
     for (int i = 0; i < nrTab; ++i) {
         VEditTab *editor = getTab(0);
 
+        VEditTabInfo tabInfo = editor->fetchTabInfo();
+        VFileSessionInfo info = VFileSessionInfo::fromEditTabInfo(&tabInfo);
+
         if (!p_forced) {
             setCurrentIndex(0);
             updateTabStatus(0);
         }
+
         // Even p_forced is true we need to delete unused images.
         bool ok = editor->closeFile(p_forced);
         if (ok) {
             removeEditTab(0);
+
+            m_editArea->recordClosedFile(info);
         } else {
             ret = false;
             break;
         }
     }
+
     if (count() == 0) {
         emit requestRemoveSplit(this);
     }
+
     return ret;
 }
 
@@ -420,9 +435,13 @@ bool VEditWindow::closeTab(int p_index)
 {
     VEditTab *editor = getTab(p_index);
     Q_ASSERT(editor);
+    VEditTabInfo tabInfo = editor->fetchTabInfo();
+    VFileSessionInfo info = VFileSessionInfo::fromEditTabInfo(&tabInfo);
     bool ok = editor->closeFile(false);
     if (ok) {
         removeEditTab(p_index);
+
+        m_editArea->recordClosedFile(info);
     }
 
     // User clicks the close button. We should make this window
@@ -431,6 +450,7 @@ bool VEditWindow::closeTab(int p_index)
     if (count() == 0) {
         emit requestRemoveSplit(this);
     }
+
     return ok;
 }
 

@@ -8,11 +8,12 @@
 #include <QDir>
 #include <QVector>
 #include <QPair>
-#include <QtDebug>
 #include <QSplitter>
+#include <QStack>
 #include "vnotebook.h"
 #include "veditwindow.h"
 #include "vnavigationmode.h"
+#include "vfilesessioninfo.h"
 
 class VFile;
 class VDirectory;
@@ -75,6 +76,9 @@ public:
 
     // Open files @p_files.
     int openFiles(const QVector<VFileSessionInfo> &p_files);
+
+    // Record a closed file in the stack.
+    void recordClosedFile(const VFileSessionInfo &p_file);
 
 signals:
     // Emit when current window's tab status updated.
@@ -198,6 +202,9 @@ private:
     // Splitter holding multiple split windows
     QSplitter *splitter;
     VFindReplaceDialog *m_findReplace;
+
+    // Last closed files stack.
+    QStack<VFileSessionInfo> m_lastClosedFiles;
 
     // Navigation Mode.
     // Map second key to VEditWindow.

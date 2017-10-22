@@ -70,6 +70,22 @@ void VEditArea::setupUI()
     connect(m_findReplace, &VFindReplaceDialog::dialogClosed,
             this, &VEditArea::handleFindDialogClosed);
     m_findReplace->hide();
+
+    // Shortcut Ctrl+Shift+T to open last closed file.
+    QString keySeq = g_config->getShortcutKeySequence("LastClosedFile");
+    qDebug() << "set LastClosedFile shortcut to" << keySeq;
+    QShortcut *lastClosedFileShortcut = new QShortcut(QKeySequence(keySeq), this);
+    lastClosedFileShortcut->setContext(Qt::ApplicationShortcut);
+    connect(lastClosedFileShortcut, &QShortcut::activated,
+            this, [this]() {
+                if (!m_lastClosedFiles.isEmpty()) {
+                    const VFileSessionInfo &file = m_lastClosedFiles.top();
+                    QVector<VFileSessionInfo> files(1, file);
+                    m_lastClosedFiles.pop();
+
+                    openFiles(files);
+                }
+            });
 }
 
 void VEditArea::insertSplitWindow(int idx)
@@ -947,3 +963,16 @@ void VEditArea::evaluateMagicWordsByCaptain(void *p_target, void *p_data)
     }
 }
 
+void VEditArea::recordClosedFile(const VFileSessionInfo &p_file)
+{
+    for (auto it = m_lastClosedFiles.begin(); it != m_lastClosedFiles.end(); ++it) {
+        if (it->m_file == p_file.m_file) {
+            // Remove it.
+            m_lastClosedFiles.erase(it);
+            break;
+        }
+    }
+
+    m_lastClosedFiles.push(p_file);
+    qDebug() << "pushed closed file" << p_file.m_file;
+}

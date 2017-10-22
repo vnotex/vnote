@@ -15,6 +15,8 @@ Quit VNote.
 VNote supports `Ctrl+J` and `Ctrl+K` for navigation in the notebooks list, directories list, notes list, opened notes list, and outline list.
 - `Ctrl+Left Mouse`  
 Scroll in all directions.
+- `Ctrl+Shift+T`  
+Recover last closed file.
 
 ### Read Mode
 - `Ctrl+W`  
