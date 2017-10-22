@@ -1793,9 +1793,9 @@ void VMainWindow::updateActionsStateFromTab(const VEditTab *p_tab)
 
     discardExitAct->setVisible(file && editMode);
     saveExitAct->setVisible(file && editMode);
-    editNoteAct->setEnabled(file && file->isModifiable() && !editMode);
+    editNoteAct->setEnabled(file && !editMode);
     editNoteAct->setVisible(!saveExitAct->isVisible());
-    saveNoteAct->setEnabled(file && editMode);
+    saveNoteAct->setEnabled(file && editMode && file->isModifiable());
     deleteNoteAct->setEnabled(file && file->getType() == FileType::Note);
     noteInfoAct->setEnabled(file && !systemFile);
 
@@ -1846,12 +1846,12 @@ void VMainWindow::handleAreaTabStatusUpdated(const VEditTabInfo &p_info)
             title = QString("%1").arg(m_curFile->fetchPath());
         }
 
-        if (m_curFile->isModifiable()) {
-            if (m_curFile->isModified()) {
-                title.append('*');
-            }
-        } else {
+        if (!m_curFile->isModifiable()) {
             title.append('#');
+        }
+
+        if (m_curFile->isModified()) {
+            title.append('*');
         }
     }
 

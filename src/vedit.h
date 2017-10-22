@@ -108,7 +108,6 @@ public:
                      const QString &p_replaceText, bool p_findNext);
     void replaceTextAll(const QString &p_text, uint p_options,
                         const QString &p_replaceText);
-    void setReadOnly(bool p_ro);
 
     // Clear SearchedKeyword highlight.
     void clearSearchedWordHighlight();
@@ -228,6 +227,9 @@ protected:
 
     // Called in contextMenuEvent() to modify the context menu.
     virtual void alterContextMenu(QMenu *p_menu, const QList<QAction *> &p_actions);
+
+    // Set read-only property and highlight current line.
+    void setReadOnlyAndHighlight(bool p_readonly);
 
 private:
     QLabel *m_wrapLabel;

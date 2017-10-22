@@ -104,11 +104,11 @@ void VMdEdit::beginEdit()
 
     if (m_freshEdit) {
         // Will set to false when all async jobs completed.
-        setReadOnly(true);
+        setReadOnlyAndHighlight(true);
         // Disable and clear undo stacks temporary.
         setUndoRedoEnabled(false);
     } else {
-        setReadOnly(false);
+        setReadOnlyAndHighlight(false);
     }
 
     updateHeaders(m_mdHighlighter->getHeaderRegions());
@@ -116,12 +116,14 @@ void VMdEdit::beginEdit()
 
 void VMdEdit::endEdit()
 {
-    setReadOnly(true);
+    setReadOnlyAndHighlight(true);
     clearUnusedImages();
 }
 
 void VMdEdit::saveFile()
 {
+    Q_ASSERT(m_file->isModifiable());
+
     if (!document()->isModified()) {
         return;
     }
@@ -464,7 +466,9 @@ void VMdEdit::updateHeaders(const QVector<VElementRegion> &p_headerRegions)
 
     m_headers.clear();
 
-    bool autoSequence = m_config.m_enableHeadingSequence && !isReadOnly();
+    bool autoSequence = m_config.m_enableHeadingSequence
+                        && !isReadOnly()
+                        && m_file->isModifiable();
     int headingSequenceBaseLevel = g_config->getHeadingSequenceBaseLevel();
     if (headingSequenceBaseLevel < 1 || headingSequenceBaseLevel > 6) {
         headingSequenceBaseLevel = 1;
@@ -523,9 +527,9 @@ QString VMdEdit::toPlainTextWithoutImg()
 {
     QString text;
     bool readOnly = isReadOnly();
-    setReadOnly(true);
+    setReadOnlyAndHighlight(true);
     text = getPlainTextWithoutPreviewImage();
-    setReadOnly(readOnly);
+    setReadOnlyAndHighlight(readOnly);
 
     return text;
 }
@@ -806,7 +810,9 @@ void VMdEdit::finishOneAsyncJob(int p_idx)
     if (-1 == m_finishedAsyncJobs.indexOf(false)) {
         // All jobs finished.
         setUndoRedoEnabled(true);
-        setReadOnly(false);
+
+        setReadOnlyAndHighlight(false);
+
         setModified(false);
         m_freshEdit = false;
         emit statusChanged();

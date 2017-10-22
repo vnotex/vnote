@@ -221,10 +221,10 @@ inline QString VEditWindow::generateTabText(int p_index, const VFile *p_file) co
         return "";
     }
 
-    return QString("%1.%2%3").arg(QString::number(p_index + c_tabSequenceBase, 10))
-                             .arg(p_file->getName())
-                             .arg(p_file->isModifiable()
-                                  ? (p_file->isModified() ? "*" : "") : "#");
+    return QString("%1.%2%3%4").arg(QString::number(p_index + c_tabSequenceBase, 10))
+                               .arg(p_file->getName())
+                               .arg(p_file->isModifiable() ? "" : "#")
+                               .arg(p_file->isModified() ? "*" : "");
 }
 
 #endif // VEDITWINDOW_H

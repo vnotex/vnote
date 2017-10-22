@@ -181,10 +181,6 @@ void VMdTab::viewWebByConverter()
 
 void VMdTab::showFileEditMode()
 {
-    if (!m_file->isModifiable()) {
-        return;
-    }
-
     VHeaderPointer header(m_currentHeader);
 
     m_isEditMode = true;
@@ -227,7 +223,7 @@ bool VMdTab::closeFile(bool p_forced)
 
 void VMdTab::editFile()
 {
-    if (m_isEditMode || !m_file->isModifiable()) {
+    if (m_isEditMode) {
         return;
     }
 
@@ -242,15 +238,25 @@ void VMdTab::readFile()
 
     if (m_editor && m_editor->isModified()) {
         // Prompt to save the changes.
+        bool modifiable = m_file->isModifiable();
         int ret = VUtils::showMessage(QMessageBox::Information, tr("Information"),
                                       tr("Note <span style=\"%1\">%2</span> has been modified.")
                                         .arg(g_config->c_dataTextStyle).arg(m_file->getName()),
                                       tr("Do you want to save your changes?"),
-                                      QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
-                                      QMessageBox::Save, this);
+                                      modifiable ? (QMessageBox::Save
+                                                    | QMessageBox::Discard
+                                                    | QMessageBox::Cancel)
+                                                 : (QMessageBox::Discard
+                                                    | QMessageBox::Cancel),
+                                      modifiable ? QMessageBox::Save
+                                                 : QMessageBox::Cancel,
+                                      this);
         switch (ret) {
         case QMessageBox::Save:
-            saveFile();
+            if (!saveFile()) {
+                return;
+            }
+
             // Fall through
 
         case QMessageBox::Discard:
@@ -286,10 +292,23 @@ bool VMdTab::saveFile()
         return true;
     }
 
+    QString filePath = m_file->fetchPath();
+
+    if (!m_file->isModifiable()) {
+        VUtils::showMessage(QMessageBox::Warning,
+                            tr("Warning"),
+                            tr("Could not modify a read-only note <span style=\"%1\">%2</span>.")
+                              .arg(g_config->c_dataTextStyle).arg(filePath),
+                            tr("Please save your changes to other notes manually."),
+                            QMessageBox::Ok,
+                            QMessageBox::Ok,
+                            this);
+        return false;
+    }
+
     bool ret = true;
     // Make sure the file already exists. Temporary deal with cases when user delete or move
     // a file.
-    QString filePath = m_file->fetchPath();
     if (!QFileInfo::exists(filePath)) {
         qWarning() << filePath << "being written has been removed";
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"), tr("Fail to save note."),
@@ -356,7 +375,7 @@ void VMdTab::setupMarkdownViewer()
 
 void VMdTab::setupMarkdownEditor()
 {
-    Q_ASSERT(m_file->isModifiable() && !m_editor);
+    Q_ASSERT(!m_editor);
     qDebug() << "create Markdown editor";
 
     m_editor = new VMdEdit(m_file, m_document, m_mdConType, this);

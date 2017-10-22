@@ -141,20 +141,24 @@ void VEdit::beginEdit()
 
     updateConfig();
 
-    setReadOnly(false);
+    setReadOnlyAndHighlight(false);
+
     setModified(false);
 }
 
 void VEdit::endEdit()
 {
-    setReadOnly(true);
+    setReadOnlyAndHighlight(true);
 }
 
 void VEdit::saveFile()
 {
+    Q_ASSERT(m_file->isModifiable());
+
     if (!document()->isModified()) {
         return;
     }
+
     m_file->setContent(toHtml());
     setModified(false);
 }
@@ -598,12 +602,6 @@ void VEdit::highlightCurrentLine()
     }
 
     highlightExtraSelections(true);
-}
-
-void VEdit::setReadOnly(bool p_ro)
-{
-    QTextEdit::setReadOnly(p_ro);
-    highlightCurrentLine();
 }
 
 void VEdit::highlightSelectedWord()
@@ -1468,4 +1466,10 @@ void VEdit::evaluateMagicWords()
 
         setTextCursor(cursor);
     }
+}
+
+void VEdit::setReadOnlyAndHighlight(bool p_readonly)
+{
+    setReadOnly(p_readonly);
+    highlightCurrentLine();
 }

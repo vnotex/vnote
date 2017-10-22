@@ -59,6 +59,7 @@ void VFile::close()
 bool VFile::save()
 {
     Q_ASSERT(m_opened);
+    Q_ASSERT(m_modifiable);
     bool ret = VUtils::writeFileToDisk(fetchPath(), m_content);
     if (ret) {
         m_modifiedTimeUtc = QDateTime::currentDateTimeUtc();

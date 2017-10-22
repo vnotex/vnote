@@ -169,11 +169,10 @@ inline VEdit *VMdTab::getEditor()
 {
     if (m_editor) {
         return m_editor;
-    } else if (m_file->isModifiable()) {
+    } else {
         setupMarkdownEditor();
+        return m_editor;
     }
-
-    return m_editor;
 }
 
 inline VEdit *VMdTab::getEditor() const
