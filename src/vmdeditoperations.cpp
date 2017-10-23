@@ -881,7 +881,7 @@ void VMdEditOperations::decorateCodeBlock()
             if (!cursor.atBlockEnd()) {
                 cursor.insertBlock();
                 cursor.movePosition(QTextCursor::PreviousBlock);
-            } else if (cursor.atBlockStart()) {
+            } else if (cursor.atBlockStart() || VEditUtils::isSpaceBlock(block)) {
                 insertInline = true;
             }
 

@@ -26,7 +26,7 @@ public:
     bool insertImageFromURL(const QUrl &p_imageUrl) Q_DECL_OVERRIDE;
 
     bool insertLink(const QString &p_linkText,
-                    const QString &p_linkUrl);
+                    const QString &p_linkUrl) Q_DECL_OVERRIDE;
 
     // Insert decoration markers or decorate selected text.
     // If it is Vim Normal mode, change to Insert mode first.

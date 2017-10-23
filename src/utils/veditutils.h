@@ -121,6 +121,9 @@ public:
     // If the start of @p_block to postition @p_posInBlock are spaces.
     static bool isSpaceToBlockStart(const QTextBlock &p_block, int p_posInBlock);
 
+    // If block @p_block only contains spaces.
+    static bool isSpaceBlock(const QTextBlock &p_block);
+
     // @p_cursor is positioned right after auto indetn and auto list.
     // Need to call setTextCursor() to make it take effect.
     static void deleteIndentAndListMark(QTextCursor &p_cursor);

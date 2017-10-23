@@ -458,6 +458,11 @@ bool VEditUtils::isSpaceToBlockStart(const QTextBlock &p_block, int p_posInBlock
     return text.left(p_posInBlock).trimmed().isEmpty();
 }
 
+bool VEditUtils::isSpaceBlock(const QTextBlock &p_block)
+{
+    return p_block.text().trimmed().isEmpty();
+}
+
 void VEditUtils::deleteIndentAndListMark(QTextCursor &p_cursor)
 {
     V_ASSERT(!p_cursor.hasSelection());

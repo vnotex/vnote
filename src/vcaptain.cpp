@@ -14,9 +14,6 @@ extern VMainWindow *g_mainWin;
 
 extern VConfigManager *g_config;
 
-// 3s pending time after the leader keys.
-const int c_pendingTime = 3 * 1000;
-
 VCaptain::VCaptain(QWidget *p_parent)
     : QWidget(p_parent),
       m_mode(CaptainMode::Normal),
