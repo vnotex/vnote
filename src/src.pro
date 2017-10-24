@@ -81,7 +81,10 @@ SOURCES += main.cpp\
     vtableofcontent.cpp \
     utils/vmetawordmanager.cpp \
     vlineedit.cpp \
-    dialog/vinsertlinkdialog.cpp
+    dialog/vinsertlinkdialog.cpp \
+    vplaintextedit.cpp \
+    vimageresourcemanager.cpp \
+    vlinenumberarea.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -150,7 +153,10 @@ HEADERS  += vmainwindow.h \
     vtableofcontent.h \
     utils/vmetawordmanager.h \
     vlineedit.h \
-    dialog/vinsertlinkdialog.h
+    dialog/vinsertlinkdialog.h \
+    vplaintextedit.h \
+    vimageresourcemanager.h \
+    vlinenumberarea.h
 
 RESOURCES += \
     vnote.qrc \

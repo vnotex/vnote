@@ -97,3 +97,8 @@ void VEditOperations::setVimMode(VimMode p_mode)
         m_vim->setMode(p_mode);
     }
 }
+
+void VEditOperations::decorateText(TextDecoration p_decoration)
+{
+    Q_UNUSED(p_decoration);
+}

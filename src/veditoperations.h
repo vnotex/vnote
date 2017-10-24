@@ -38,7 +38,7 @@ public:
     void requestUpdateVimStatus();
 
     // Insert decoration markers or decorate selected text.
-    virtual void decorateText(TextDecoration p_decoration) {Q_UNUSED(p_decoration);};
+    virtual void decorateText(TextDecoration p_decoration);
 
     // Set Vim mode if not NULL.
     void setVimMode(VimMode p_mode);
