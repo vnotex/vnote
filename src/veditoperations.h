@@ -8,7 +8,7 @@
 #include "vfile.h"
 #include "utils/vvim.h"
 
-class VEdit;
+class VEditor;
 class VEditConfig;
 class QMimeData;
 class QKeyEvent;
@@ -17,7 +17,7 @@ class VEditOperations: public QObject
 {
     Q_OBJECT
 public:
-    VEditOperations(VEdit *p_editor, VFile *p_file);
+    VEditOperations(VEditor *p_editor, VFile *p_file);
 
     virtual ~VEditOperations();
 
@@ -64,7 +64,7 @@ private:
 protected:
     void insertTextAtCurPos(const QString &p_text);
 
-    VEdit *m_editor;
+    VEditor *m_editor;
     QPointer<VFile> m_file;
     VEditConfig *m_editConfig;
     VVim *m_vim;

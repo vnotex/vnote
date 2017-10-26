@@ -95,14 +95,6 @@ enum HighlightBlockState
     Comment
 };
 
-enum class LineNumberType
-{
-    None = 0,
-    Absolute,
-    Relative,
-    CodeBlock
-};
-
 // Pages to open on start up.
 enum class StartupPageType
 {

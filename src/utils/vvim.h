@@ -8,7 +8,7 @@
 #include <QDebug>
 #include "vutils.h"
 
-class VEdit;
+class VEditor;
 class QKeyEvent;
 class VEditConfig;
 class QKeyEvent;
@@ -26,7 +26,7 @@ class VVim : public QObject
 {
     Q_OBJECT
 public:
-    explicit VVim(VEdit *p_editor);
+    explicit VVim(VEditor *p_editor);
 
     // Struct for a location.
     struct Location
@@ -801,7 +801,7 @@ private:
     Register &getRegister(QChar p_regName) const;
     void setRegister(QChar p_regName, const QString &p_val);
 
-    VEdit *m_editor;
+    VEditor *m_editor;
     const VEditConfig *m_editConfig;
     VimMode m_mode;
 

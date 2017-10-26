@@ -12,11 +12,14 @@
 #include "vmarkdownconverter.h"
 #include "vnotebook.h"
 #include "vtableofcontent.h"
-#include "vmdedit.h"
 #include "dialog/vfindreplacedialog.h"
 #include "veditarea.h"
 #include "vconstants.h"
 #include "vwebview.h"
+#include "vmdeditor.h"
+#include "vmainwindow.h"
+
+extern VMainWindow *g_mainWin;
 
 extern VConfigManager *g_config;
 
@@ -124,7 +127,7 @@ bool VMdTab::scrollEditorToHeader(const VHeaderPointer &p_header)
         return false;
     }
 
-    VMdEdit *mdEdit = dynamic_cast<VMdEdit *>(getEditor());
+    VMdEditor *mdEdit = getEditor();
 
     int blockNumber = -1;
     if (p_header.isValid()) {
@@ -185,8 +188,7 @@ void VMdTab::showFileEditMode()
 
     m_isEditMode = true;
 
-    VMdEdit *mdEdit = dynamic_cast<VMdEdit *>(getEditor());
-    V_ASSERT(mdEdit);
+    VMdEditor *mdEdit = getEditor();
 
     mdEdit->beginEdit();
     m_stacks->setCurrentWidget(mdEdit);
@@ -376,34 +378,35 @@ void VMdTab::setupMarkdownViewer()
 void VMdTab::setupMarkdownEditor()
 {
     Q_ASSERT(!m_editor);
-    qDebug() << "create Markdown editor";
 
-    m_editor = new VMdEdit(m_file, m_document, m_mdConType, this);
-    connect(dynamic_cast<VMdEdit *>(m_editor), &VMdEdit::headersChanged,
+    m_editor = new VMdEditor(m_file, m_document, m_mdConType, this);
+    connect(m_editor, &VMdEditor::headersChanged,
             this, &VMdTab::updateOutlineFromHeaders);
-    connect(dynamic_cast<VMdEdit *>(m_editor), SIGNAL(currentHeaderChanged(int)),
+    connect(m_editor, SIGNAL(currentHeaderChanged(int)),
             this, SLOT(updateCurrentHeader(int)));
-    connect(dynamic_cast<VMdEdit *>(m_editor), &VMdEdit::statusChanged,
+    connect(m_editor, &VMdEditor::statusChanged,
             this, &VMdTab::updateStatus);
-    connect(m_editor, &VEdit::textChanged,
+    connect(m_editor, &VMdEditor::textChanged,
             this, &VMdTab::updateStatus);
-    connect(m_editor, &VEdit::cursorPositionChanged,
+    connect(m_editor, &VMdEditor::cursorPositionChanged,
             this, &VMdTab::updateStatus);
-    connect(m_editor, &VEdit::saveAndRead,
+    connect(g_mainWin, &VMainWindow::editorConfigUpdated,
+            m_editor, &VMdEditor::updateConfig);
+    connect(m_editor->object(), &VEditorObject::saveAndRead,
             this, &VMdTab::saveAndRead);
-    connect(m_editor, &VEdit::discardAndRead,
+    connect(m_editor->object(), &VEditorObject::discardAndRead,
             this, &VMdTab::discardAndRead);
-    connect(m_editor, &VEdit::saveNote,
+    connect(m_editor->object(), &VEditorObject::saveNote,
             this, &VMdTab::saveFile);
-    connect(m_editor, &VEdit::statusMessage,
+    connect(m_editor->object(), &VEditorObject::statusMessage,
             this, &VEditTab::statusMessage);
-    connect(m_editor, &VEdit::vimStatusUpdated,
+    connect(m_editor->object(), &VEditorObject::vimStatusUpdated,
             this, &VEditTab::vimStatusUpdated);
-    connect(m_editor, &VEdit::requestCloseFindReplaceDialog,
+    connect(m_editor->object(), &VEditorObject::requestCloseFindReplaceDialog,
             this, [this]() {
                 this->m_editArea->getFindReplaceDialog()->closeDialog();
             });
-    connect(m_editor, SIGNAL(ready(void)),
+    connect(m_editor->object(), SIGNAL(ready(void)),
             this, SLOT(restoreFromTabInfo(void)));
 
     enableHeadingSequence(m_enableHeadingSequence);

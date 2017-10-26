@@ -83,6 +83,8 @@ public:
 
     void setLineNumberType(LineNumberType p_type);
 
+    void setLineNumberColor(const QColor &p_foreground, const QColor &p_background);
+
     // The minimum width of an image in pixels.
     static const int c_minimumImageWidth;
 
@@ -110,6 +112,8 @@ private:
     QRectF originalBlockBoundingRect(const QTextBlock &p_block) const;
 
     VPlainTextDocumentLayout *getLayout() const;
+
+    void updateImageWidth();
 
     // Widget to display line number area.
     VLineNumberArea *m_lineNumberArea;
@@ -174,6 +178,13 @@ inline void VPlainTextEdit::setLineNumberType(LineNumberType p_type)
     m_lineNumberType = p_type;
 
     updateLineNumberArea();
+}
+
+inline void VPlainTextEdit::setLineNumberColor(const QColor &p_foreground,
+                                               const QColor &p_background)
+{
+    m_lineNumberArea->setForegroundColor(p_foreground);
+    m_lineNumberArea->setBackgroundColor(p_background);
 }
 
 #endif // VPLAINTEXTEDIT_H

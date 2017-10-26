@@ -84,7 +84,7 @@ private:
         int m_endPos;
         QString m_linkUrl;
 
-        // Whether it is a image block.
+        // Whether it is an image block.
         bool m_isBlock;
 
         // The previewed image ID if this link has been previewed.

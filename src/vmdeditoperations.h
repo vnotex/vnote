@@ -15,7 +15,7 @@ class VMdEditOperations : public VEditOperations
 {
     Q_OBJECT
 public:
-    VMdEditOperations(VEdit *p_editor, VFile *p_file);
+    VMdEditOperations(VEditor *p_editor, VFile *p_file);
 
     bool insertImageFromMimeData(const QMimeData *source) Q_DECL_OVERRIDE;
 

@@ -66,6 +66,8 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
                 }
             });
 
+    // Comment out these lines since we use VMdEditor to replace VMdEdit.
+    /*
     m_editOps = new VMdEditOperations(this, m_file);
 
     connect(m_editOps, &VEditOperations::statusMessage,
@@ -78,6 +80,7 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
 
     connect(QApplication::clipboard(), &QClipboard::changed,
             this, &VMdEdit::handleClipboardChanged);
+    */
 
     updateFontAndPalette();
 

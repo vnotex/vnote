@@ -1,18 +1,21 @@
 #include <QTextCursor>
 #include <QTextDocument>
 #include <QFontMetrics>
-#include "vedit.h"
+#include "veditor.h"
 #include "veditoperations.h"
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
 
 extern VConfigManager *g_config;
 
-VEditOperations::VEditOperations(VEdit *p_editor, VFile *p_file)
-    : QObject(p_editor), m_editor(p_editor), m_file(p_file),
-      m_editConfig(&p_editor->getConfig()), m_vim(NULL)
+VEditOperations::VEditOperations(VEditor *p_editor, VFile *p_file)
+    : QObject(p_editor->getEditor()),
+      m_editor(p_editor),
+      m_file(p_file),
+      m_editConfig(&p_editor->getConfig()),
+      m_vim(NULL)
 {
-    connect(m_editor, &VEdit::configUpdated,
+    connect(m_editor->object(), &VEditorObject::configUpdated,
             this, &VEditOperations::handleEditConfigUpdated);
 
     if (m_editConfig->m_enableVimMode) {
@@ -29,7 +32,7 @@ VEditOperations::VEditOperations(VEdit *p_editor, VFile *p_file)
 
 void VEditOperations::insertTextAtCurPos(const QString &p_text)
 {
-    m_editor->insertPlainText(p_text);
+    m_editor->insertPlainTextW(p_text);
 }
 
 VEditOperations::~VEditOperations()

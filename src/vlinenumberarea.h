@@ -13,7 +13,8 @@ enum class LineNumberType
     None = 0,
     Absolute,
     Relative,
-    CodeBlock
+    CodeBlock,
+    Invalid
 };
 
 

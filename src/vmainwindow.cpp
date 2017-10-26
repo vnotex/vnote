@@ -1630,6 +1630,7 @@ void VMainWindow::initEditorLineNumberMenu(QMenu *p_menu)
                 }
 
                 g_config->setEditorLineNumber(p_action->data().toInt());
+                emit editorConfigUpdated();
             });
 
     int lineNumberMode = g_config->getEditorLineNumber();
@@ -2280,6 +2281,8 @@ void VMainWindow::enableImagePreview(bool p_checked)
 void VMainWindow::enableImagePreviewConstraint(bool p_checked)
 {
     g_config->setEnablePreviewImageConstraint(p_checked);
+
+    emit editorConfigUpdated();
 }
 
 void VMainWindow::enableImageConstraint(bool p_checked)

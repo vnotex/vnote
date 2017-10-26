@@ -86,6 +86,10 @@ public:
     // Prompt user for new notebook if there is no notebook.
     void promptNewNotebookIfEmpty();
 
+signals:
+    // Emit when editor related configurations were changed by user.
+    void editorConfigUpdated();
+
 private slots:
     void importNoteFromFile();
     void viewSettings();

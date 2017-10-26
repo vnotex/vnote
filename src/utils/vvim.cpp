@@ -9,7 +9,7 @@
 #include <QApplication>
 #include <QMimeData>
 #include "vconfigmanager.h"
-#include "vedit.h"
+#include "veditor.h"
 #include "utils/veditutils.h"
 #include "vconstants.h"
 
@@ -106,8 +106,8 @@ static QString keyToString(int p_key, int p_modifiers)
     }
 }
 
-VVim::VVim(VEdit *p_editor)
-    : QObject(p_editor), m_editor(p_editor),
+VVim::VVim(VEditor *p_editor)
+    : QObject(p_editor->getEditor()), m_editor(p_editor),
       m_editConfig(&p_editor->getConfig()), m_mode(VimMode::Invalid),
       m_resetPositionInBlock(true), m_regName(c_unnamedRegister),
       m_leaderKey(Key(Qt::Key_Space)), m_replayLeaderSequence(false),
@@ -119,7 +119,7 @@ VVim::VVim(VEdit *p_editor)
 
     initRegisters();
 
-    connect(m_editor, &VEdit::selectionChangedByMouse,
+    connect(m_editor->object(), &VEditorObject::selectionChangedByMouse,
             this, &VVim::selectionToVisualMode);
 }
 
@@ -472,13 +472,13 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             // See if we need to cancel auto indent.
             bool cancelAutoIndent = false;
             if (p_autoIndentPos && *p_autoIndentPos > -1) {
-                QTextCursor cursor = m_editor->textCursor();
+                QTextCursor cursor = m_editor->textCursorW();
                 cancelAutoIndent = VEditUtils::needToCancelAutoIndent(*p_autoIndentPos, cursor);
 
                 if (cancelAutoIndent) {
                     autoIndentPos = -1;
                     VEditUtils::deleteIndentAndListMark(cursor);
-                    m_editor->setTextCursor(cursor);
+                    m_editor->setTextCursorW(cursor);
                 }
             }
 
@@ -501,7 +501,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             QChar reg = keyToRegisterName(keyInfo);
             if (!reg.isNull()) {
                 // Insert register content.
-                m_editor->insertPlainText(getRegister(reg).read());
+                m_editor->insertPlainTextW(getRegister(reg).read());
             }
 
             goto clear_accept;
@@ -565,7 +565,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         // Expecting a mark name to create a mark.
         if (keyInfo.isAlphabet() && modifiers == Qt::NoModifier) {
             m_keys.clear();
-            m_marks.setMark(keyToChar(key, modifiers), m_editor->textCursor());
+            m_marks.setMark(keyToChar(key, modifiers), m_editor->textCursorW());
         }
 
         goto clear_accept;
@@ -804,7 +804,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 setMode(VimMode::Insert, false);
             }
         } else if (modifiers == Qt::ShiftModifier) {
-            QTextCursor cursor = m_editor->textCursor();
+            QTextCursor cursor = m_editor->textCursorW();
             if (m_mode == VimMode::Normal) {
                 // Insert at the first non-space character.
                 VEditUtils::moveCursorFirstNonSpaceCharacter(cursor, QTextCursor::MoveAnchor);
@@ -815,7 +815,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                                     1);
             }
 
-            m_editor->setTextCursor(cursor);
+            m_editor->setTextCursorW(cursor);
             setMode(VimMode::Insert);
         } else if (isControlModifier(modifiers)) {
             // Ctrl+I, jump to next location.
@@ -856,29 +856,29 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             // Enter Insert mode.
             // Move cursor back one character.
             if (m_mode == VimMode::Normal) {
-                QTextCursor cursor = m_editor->textCursor();
+                QTextCursor cursor = m_editor->textCursorW();
                 V_ASSERT(!cursor.hasSelection());
 
                 if (!cursor.atBlockEnd()) {
                     cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 1);
-                    m_editor->setTextCursor(cursor);
+                    m_editor->setTextCursorW(cursor);
                 }
 
                 setMode(VimMode::Insert);
             }
         } else if (modifiers == Qt::ShiftModifier) {
             // Insert at the end of line.
-            QTextCursor cursor = m_editor->textCursor();
+            QTextCursor cursor = m_editor->textCursorW();
             if (m_mode == VimMode::Normal) {
                 cursor.movePosition(QTextCursor::EndOfBlock,
                                     QTextCursor::MoveAnchor,
                                     1);
-                m_editor->setTextCursor(cursor);
+                m_editor->setTextCursorW(cursor);
             } else if (m_mode == VimMode::Visual || m_mode == VimMode::VisualLine) {
                 if (!cursor.atBlockEnd()) {
                     cursor.clearSelection();
                     cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 1);
-                    m_editor->setTextCursor(cursor);
+                    m_editor->setTextCursorW(cursor);
                 }
             }
 
@@ -894,7 +894,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             // Insert a new block under/above current block and enter insert mode.
             bool insertAbove = modifiers == Qt::ShiftModifier;
             if (m_mode == VimMode::Normal) {
-                QTextCursor cursor = m_editor->textCursor();
+                QTextCursor cursor = m_editor->textCursorW();
                 cursor.beginEditBlock();
                 cursor.movePosition(insertAbove ? QTextCursor::StartOfBlock
                                                 : QTextCursor::EndOfBlock,
@@ -919,7 +919,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 }
 
                 cursor.endEditBlock();
-                m_editor->setTextCursor(cursor);
+                m_editor->setTextCursorW(cursor);
 
                 if (textInserted) {
                     autoIndentPos = cursor.position();
@@ -1104,7 +1104,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         } else if (m_keys.isEmpty() && !hasActionToken()) {
             if (m_mode == VimMode::Visual || m_mode == VimMode::VisualLine) {
                 // u/U for tolower and toupper selected text.
-                QTextCursor cursor = m_editor->textCursor();
+                QTextCursor cursor = m_editor->textCursorW();
                 cursor.beginEditBlock();
                 // Different from Vim:
                 // If there is no selection in Visual mode, we do nothing.
@@ -1116,7 +1116,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 
                 convertCaseOfSelectedText(cursor, toLower);
                 cursor.endEditBlock();
-                m_editor->setTextCursor(cursor);
+                m_editor->setTextCursorW(cursor);
 
                 setMode(VimMode::Normal);
                 break;
@@ -1143,7 +1143,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             } else if (checkPendingKey(Key(Qt::Key_G))) {
                 // gu/gU, ToLower/ToUpper action.
                 if (m_mode == VimMode::Visual || m_mode == VimMode::VisualLine) {
-                    QTextCursor cursor = m_editor->textCursor();
+                    QTextCursor cursor = m_editor->textCursorW();
                     cursor.beginEditBlock();
                     // Different from Vim:
                     // If there is no selection in Visual mode, we do nothing.
@@ -1155,7 +1155,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 
                     convertCaseOfSelectedText(cursor, toLower);
                     cursor.endEditBlock();
-                    m_editor->setTextCursor(cursor);
+                    m_editor->setTextCursorW(cursor);
                     setMode(VimMode::Normal);
                     break;
                 }
@@ -1338,7 +1338,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         // Clear selection and enter normal mode.
         bool ret = clearSelection();
         if (!ret && checkMode(VimMode::Normal)) {
-            emit m_editor->requestCloseFindReplaceDialog();
+            emit m_editor->object()->requestCloseFindReplaceDialog();
         }
 
         setMode(VimMode::Normal);
@@ -1367,9 +1367,9 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             setMode(mode);
 
             if (m_mode == VimMode::VisualLine) {
-                QTextCursor cursor = m_editor->textCursor();
+                QTextCursor cursor = m_editor->textCursorW();
                 expandSelectionToWholeLines(cursor);
-                m_editor->setTextCursor(cursor);
+                m_editor->setTextCursorW(cursor);
             }
         }
 
@@ -1681,8 +1681,8 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             } else {
                 // The first >/<, an Action.
                 if (m_mode == VimMode::Visual || m_mode == VimMode::VisualLine) {
-                    QTextCursor cursor = m_editor->textCursor();
-                    VEditUtils::indentSelectedBlocks(m_editor->document(),
+                    QTextCursor cursor = m_editor->textCursorW();
+                    VEditUtils::indentSelectedBlocks(m_editor->documentW(),
                                                      cursor,
                                                      m_editConfig->m_tabSpaces,
                                                      !unindent);
@@ -1857,7 +1857,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                     // xx%, jump to a certain line (percentage of the documents).
                     // Change the repeat from percentage to line number.
                     Token *token = getRepeatToken();
-                    int bn = percentageToBlockNumber(m_editor->document(), token->m_repeat);
+                    int bn = percentageToBlockNumber(m_editor->documentW(), token->m_repeat);
                     if (bn == -1) {
                         break;
                     } else {
@@ -2148,7 +2148,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 
 clear_accept:
     resetState();
-    m_editor->makeBlockVisible(m_editor->textCursor().block());
+    m_editor->makeBlockVisible(m_editor->textCursorW().block());
 
 accept:
     ret = true;
@@ -2353,7 +2353,7 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
         return;
     }
 
-    QTextCursor cursor = m_editor->textCursor();
+    QTextCursor cursor = m_editor->textCursorW();
     if (m_resetPositionInBlock) {
         positionInBlock = cursor.positionInBlock();
     }
@@ -2389,7 +2389,7 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
             expandSelectionToWholeLines(cursor);
         }
 
-        m_editor->setTextCursor(cursor);
+        m_editor->setTextCursorW(cursor);
     }
 }
 
@@ -3383,8 +3383,8 @@ void VVim::processDeleteAction(QList<Token> &p_tokens)
         return;
     }
 
-    QTextCursor cursor = m_editor->textCursor();
-    QTextDocument *doc = m_editor->document();
+    QTextCursor cursor = m_editor->textCursorW();
+    QTextDocument *doc = m_editor->documentW();
     bool hasMoved = false;
     QTextCursor::MoveMode moveMode = QTextCursor::KeepAnchor;
 
@@ -3598,7 +3598,7 @@ void VVim::processDeleteAction(QList<Token> &p_tokens)
 
 exit:
     if (hasMoved) {
-        m_editor->setTextCursor(cursor);
+        m_editor->setTextCursorW(cursor);
     }
 }
 
@@ -3616,8 +3616,8 @@ void VVim::processCopyAction(QList<Token> &p_tokens)
         return;
     }
 
-    QTextCursor cursor = m_editor->textCursor();
-    QTextDocument *doc = m_editor->document();
+    QTextCursor cursor = m_editor->textCursorW();
+    QTextDocument *doc = m_editor->documentW();
     int oriPos = cursor.position();
     bool changed = false;
     QTextCursor::MoveMode moveMode = QTextCursor::KeepAnchor;
@@ -3810,7 +3810,7 @@ void VVim::processCopyAction(QList<Token> &p_tokens)
 
 exit:
     if (changed) {
-        m_editor->setTextCursor(cursor);
+        m_editor->setTextCursorW(cursor);
     }
 }
 
@@ -3853,7 +3853,7 @@ void VVim::processPasteAction(QList<Token> &p_tokens, bool p_pasteBefore)
     bool changed = false;
     int nrBlock = 0;
     int restorePos = -1;
-    QTextCursor cursor = m_editor->textCursor();
+    QTextCursor cursor = m_editor->textCursorW();
     cursor.beginEditBlock();
 
     // Different from Vim:
@@ -3942,7 +3942,7 @@ void VVim::processPasteAction(QList<Token> &p_tokens, bool p_pasteBefore)
     cursor.endEditBlock();
 
     if (changed) {
-        m_editor->setTextCursor(cursor);
+        m_editor->setTextCursorW(cursor);
     }
 
     qDebug() << "text pasted" << text;
@@ -3962,8 +3962,8 @@ void VVim::processChangeAction(QList<Token> &p_tokens)
         return;
     }
 
-    QTextCursor cursor = m_editor->textCursor();
-    QTextDocument *doc = m_editor->document();
+    QTextCursor cursor = m_editor->textCursorW();
+    QTextDocument *doc = m_editor->documentW();
     bool hasMoved = false;
     QTextCursor::MoveMode moveMode = QTextCursor::KeepAnchor;
 
@@ -4226,7 +4226,7 @@ void VVim::processChangeAction(QList<Token> &p_tokens)
             int pos = cursor.selectionStart();
             bool allDeleted = false;
             if (pos == 0) {
-                QTextBlock block = m_editor->document()->lastBlock();
+                QTextBlock block = m_editor->documentW()->lastBlock();
                 if (block.position() + block.length() - 1 == cursor.selectionEnd()) {
                     allDeleted = true;
                 }
@@ -4243,7 +4243,7 @@ void VVim::processChangeAction(QList<Token> &p_tokens)
 
 exit:
     if (hasMoved) {
-        m_editor->setTextCursor(cursor);
+        m_editor->setTextCursorW(cursor);
     }
 
     setMode(VimMode::Insert);
@@ -4263,8 +4263,8 @@ void VVim::processIndentAction(QList<Token> &p_tokens, bool p_isIndent)
         return;
     }
 
-    QTextCursor cursor = m_editor->textCursor();
-    QTextDocument *doc = m_editor->document();
+    QTextCursor cursor = m_editor->textCursorW();
+    QTextDocument *doc = m_editor->documentW();
 
     if (to.isRange()) {
         bool changed = selectRange(cursor, doc, to.m_range, repeat);
@@ -4402,8 +4402,8 @@ void VVim::processToLowerAction(QList<Token> &p_tokens, bool p_toLower)
         return;
     }
 
-    QTextCursor cursor = m_editor->textCursor();
-    QTextDocument *doc = m_editor->document();
+    QTextCursor cursor = m_editor->textCursorW();
+    QTextDocument *doc = m_editor->documentW();
     bool changed = false;
     QTextCursor::MoveMode moveMode = QTextCursor::KeepAnchor;
     int oriPos = cursor.position();
@@ -4500,7 +4500,7 @@ void VVim::processToLowerAction(QList<Token> &p_tokens, bool p_toLower)
 
 exit:
     if (changed) {
-        m_editor->setTextCursor(cursor);
+        m_editor->setTextCursorW(cursor);
     }
 }
 
@@ -4517,10 +4517,10 @@ void VVim::processUndoAction(QList<Token> &p_tokens)
         repeat = to.m_repeat;
     }
 
-    QTextDocument *doc = m_editor->document();
+    QTextDocument *doc = m_editor->documentW();
     int i = 0;
     for (i = 0; i < repeat && doc->isUndoAvailable(); ++i) {
-        m_editor->undo();
+        m_editor->undoW();
     }
 
     message(tr("Undo %1 %2").arg(i).arg(i > 1 ? tr("changes") : tr("change")));
@@ -4539,10 +4539,10 @@ void VVim::processRedoAction(QList<Token> &p_tokens)
         repeat = to.m_repeat;
     }
 
-    QTextDocument *doc = m_editor->document();
+    QTextDocument *doc = m_editor->documentW();
     int i = 0;
     for (i = 0; i < repeat && doc->isRedoAvailable(); ++i) {
-        m_editor->redo();
+        m_editor->redoW();
     }
 
     message(tr("Redo %1 %2").arg(i).arg(i > 1 ? tr("changes") : tr("change")));
@@ -4550,7 +4550,7 @@ void VVim::processRedoAction(QList<Token> &p_tokens)
 
 void VVim::processRedrawLineAction(QList<Token> &p_tokens, int p_dest)
 {
-    QTextCursor cursor = m_editor->textCursor();
+    QTextCursor cursor = m_editor->textCursorW();
     int repeat = cursor.block().blockNumber();
     if (!p_tokens.isEmpty()) {
         Token to = p_tokens.takeFirst();
@@ -4562,7 +4562,7 @@ void VVim::processRedrawLineAction(QList<Token> &p_tokens, int p_dest)
         repeat = to.m_repeat - 1;
     }
 
-    VEditUtils::scrollBlockInPage(m_editor, repeat, p_dest);
+    m_editor->scrollBlockInPage(repeat, p_dest);
 }
 
 void VVim::processJumpLocationAction(QList<Token> &p_tokens, bool p_next)
@@ -4578,7 +4578,7 @@ void VVim::processJumpLocationAction(QList<Token> &p_tokens, bool p_next)
         repeat = to.m_repeat;
     }
 
-    QTextCursor cursor = m_editor->textCursor();
+    QTextCursor cursor = m_editor->textCursorW();
     Location loc;
     if (p_next) {
         while (m_locations.hasNext() && repeat > 0) {
@@ -4593,7 +4593,7 @@ void VVim::processJumpLocationAction(QList<Token> &p_tokens, bool p_next)
     }
 
     if (loc.isValid()) {
-        QTextDocument *doc = m_editor->document();
+        QTextDocument *doc = m_editor->documentW();
         if (loc.m_blockNumber >= doc->blockCount()) {
             message(tr("Mark has invalid line number"));
             return;
@@ -4607,11 +4607,11 @@ void VVim::processJumpLocationAction(QList<Token> &p_tokens, bool p_next)
 
         if (!m_editor->isBlockVisible(block)) {
             // Scroll the block to the center of screen.
-            VEditUtils::scrollBlockInPage(m_editor, block.blockNumber(), 1);
+            m_editor->scrollBlockInPage(block.blockNumber(), 1);
         }
 
         cursor.setPosition(block.position() + pib);
-        m_editor->setTextCursor(cursor);
+        m_editor->setTextCursorW(cursor);
     }
 }
 
@@ -4643,7 +4643,7 @@ void VVim::processReplaceAction(QList<Token> &p_tokens)
     // If repeat is greater than the number of left characters in current line,
     // do nothing.
     // In visual mode, repeat is ignored.
-    QTextCursor cursor = m_editor->textCursor();
+    QTextCursor cursor = m_editor->textCursorW();
     cursor.beginEditBlock();
     if (checkMode(VimMode::Normal)) {
         // Select the characters to be replaced.
@@ -4659,7 +4659,7 @@ void VVim::processReplaceAction(QList<Token> &p_tokens)
     cursor.endEditBlock();
 
     if (changed) {
-        m_editor->setTextCursor(cursor);
+        m_editor->setTextCursorW(cursor);
         setMode(VimMode::Normal);
     }
 }
@@ -4683,7 +4683,7 @@ void VVim::processReverseCaseAction(QList<Token> &p_tokens)
     // If repeat is greater than the number of left characters in current line,
     // just change the actual number of left characters.
     // In visual mode, repeat is ignored and reverse the selected text.
-    QTextCursor cursor = m_editor->textCursor();
+    QTextCursor cursor = m_editor->textCursorW();
     cursor.beginEditBlock();
     if (checkMode(VimMode::Normal)) {
         // Select the characters to be replaced.
@@ -4699,7 +4699,7 @@ void VVim::processReverseCaseAction(QList<Token> &p_tokens)
     cursor.endEditBlock();
 
     if (changed) {
-        m_editor->setTextCursor(cursor);
+        m_editor->setTextCursorW(cursor);
         setMode(VimMode::Normal);
     }
 }
@@ -4726,12 +4726,12 @@ void VVim::processJoinAction(QList<Token> &p_tokens, bool p_modifySpaces)
     // In visual mode, repeat is ignored and join the highlighted lines.
     int firstBlock = -1;
     int blockCount = repeat;
-    QTextCursor cursor = m_editor->textCursor();
+    QTextCursor cursor = m_editor->textCursorW();
     cursor.beginEditBlock();
     if (checkMode(VimMode::Normal)) {
         firstBlock = cursor.block().blockNumber();
     } else {
-        QTextDocument *doc = m_editor->document();
+        QTextDocument *doc = m_editor->documentW();
         firstBlock = doc->findBlock(cursor.selectionStart()).blockNumber();
         int lastBlock = doc->findBlock(cursor.selectionEnd()).blockNumber();
         blockCount = lastBlock - firstBlock + 1;
@@ -4741,17 +4741,17 @@ void VVim::processJoinAction(QList<Token> &p_tokens, bool p_modifySpaces)
     cursor.endEditBlock();
 
     if (changed) {
-        m_editor->setTextCursor(cursor);
+        m_editor->setTextCursorW(cursor);
         setMode(VimMode::Normal);
     }
 }
 
 bool VVim::clearSelection()
 {
-    QTextCursor cursor = m_editor->textCursor();
+    QTextCursor cursor = m_editor->textCursorW();
     if (cursor.hasSelection()) {
         cursor.clearSelection();
-        m_editor->setTextCursor(cursor);
+        m_editor->setTextCursorW(cursor);
         return true;
     }
 
@@ -4760,8 +4760,8 @@ bool VVim::clearSelection()
 
 int VVim::blockCountOfPageStep() const
 {
-    int lineCount = m_editor->document()->blockCount();
-    QScrollBar *bar = m_editor->verticalScrollBar();
+    int lineCount = m_editor->documentW()->blockCount();
+    QScrollBar *bar = m_editor->verticalScrollBarW();
     int steps = (bar->maximum() - bar->minimum() + bar->pageStep());
     int pageLineCount = lineCount * (bar->pageStep() * 1.0 / steps);
     return pageLineCount;
@@ -4781,7 +4781,7 @@ void VVim::selectionToVisualMode(bool p_hasText)
 
 void VVim::expandSelectionToWholeLines(QTextCursor &p_cursor)
 {
-    QTextDocument *doc = m_editor->document();
+    QTextDocument *doc = m_editor->documentW();
     int curPos = p_cursor.position();
     int anchorPos = p_cursor.anchor();
     QTextBlock curBlock = doc->findBlock(curPos);
@@ -5031,12 +5031,12 @@ void VVim::deleteSelectedText(QTextCursor &p_cursor, bool p_clearEmptyBlock)
 
 void VVim::copySelectedText(bool p_addNewLine)
 {
-    QTextCursor cursor = m_editor->textCursor();
+    QTextCursor cursor = m_editor->textCursorW();
     if (cursor.hasSelection()) {
         cursor.beginEditBlock();
         copySelectedText(cursor, p_addNewLine);
         cursor.endEditBlock();
-        m_editor->setTextCursor(cursor);
+        m_editor->setTextCursorW(cursor);
     }
 }
 
@@ -5318,15 +5318,15 @@ bool VVim::executeCommand(const QString &p_cmd)
     }else if (p_cmd.size() == 1) {
         if (p_cmd == "w") {
             // :w, save current file.
-            emit m_editor->saveNote();
+            emit m_editor->object()->saveNote();
             msg = tr("Note has been saved");
         } else if (p_cmd == "q") {
             // :q, quit edit mode.
-            emit m_editor->discardAndRead();
+            emit m_editor->object()->discardAndRead();
             msg = tr("Quit");
         } else if (p_cmd == "x") {
             // :x, save if there is any change and quit edit mode.
-            emit m_editor->saveAndRead();
+            emit m_editor->object()->saveAndRead();
             msg = tr("Quit with note having been saved");
         } else {
             validCommand = false;
@@ -5335,11 +5335,11 @@ bool VVim::executeCommand(const QString &p_cmd)
         if (p_cmd == "wq") {
             // :wq, save change and quit edit mode.
             // We treat it same as :x.
-            emit m_editor->saveAndRead();
+            emit m_editor->object()->saveAndRead();
             msg = tr("Quit with note having been saved");
         } else if (p_cmd == "q!") {
             // :q!, discard change and quit edit mode.
-            emit m_editor->discardAndRead();
+            emit m_editor->object()->discardAndRead();
             msg = tr("Quit");
         } else {
             validCommand = false;
@@ -5437,7 +5437,7 @@ bool VVim::processLeaderSequence(const Key &p_key)
         clearSearchHighlight();
     } else if (p_key == Key(Qt::Key_W)) {
         // <leader>w, save note
-        emit m_editor->saveNote();
+        emit m_editor->object()->saveNote();
         message(tr("Note has been saved"));
     } else {
         validSequence = false;
@@ -5624,7 +5624,7 @@ void VVim::processTitleJump(const QList<Token> &p_tokens, bool p_forward, int p_
         return;
     }
 
-    QTextCursor cursor = m_editor->textCursor();
+    QTextCursor cursor = m_editor->textCursorW();
     if (m_editor->jumpTitle(p_forward, p_relativeLevel, repeat)) {
         // Record current location.
         m_locations.addLocation(cursor);

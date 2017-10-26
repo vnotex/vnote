@@ -6,6 +6,7 @@
 
 class QTextDocument;
 class QTextEdit;
+class QPlainTextEdit;
 
 // Utils for text edit.
 class VEditUtils
@@ -110,6 +111,14 @@ public:
     // @p_blockNum is based on 0.
     // Will set the cursor to the block.
     static void scrollBlockInPage(QTextEdit *p_edit,
+                                  int p_blockNum,
+                                  int p_dest);
+
+    // Scroll block @p_blockNum into the visual window.
+    // @p_dest is the position of the window: 0 for top, 1 for center, 2 for bottom.
+    // @p_blockNum is based on 0.
+    // Will set the cursor to the block.
+    static void scrollBlockInPage(QPlainTextEdit *p_edit,
                                   int p_blockNum,
                                   int p_dest);
 

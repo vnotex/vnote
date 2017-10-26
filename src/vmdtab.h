@@ -10,8 +10,8 @@
 
 class VWebView;
 class QStackedLayout;
-class VEdit;
 class VDocument;
+class VMdEditor;
 
 class VMdTab : public VEditTab
 {
@@ -55,7 +55,7 @@ public:
 
     VWebView *getWebViewer() const;
 
-    VEdit *getEditor() const;
+    VMdEditor *getEditor() const;
 
     MarkdownConverterType getMarkdownConverterType() const;
 
@@ -148,13 +148,13 @@ private:
     void focusChild() Q_DECL_OVERRIDE;
 
     // Get the markdown editor. If not init yet, init and return it.
-    VEdit *getEditor();
+    VMdEditor *getEditor();
 
     // Restore from @p_fino.
     // Return true if succeed.
     bool restoreFromTabInfo(const VEditTabInfo &p_info) Q_DECL_OVERRIDE;
 
-    VEdit *m_editor;
+    VMdEditor *m_editor;
     VWebView *m_webViewer;
     VDocument *m_document;
     MarkdownConverterType m_mdConType;
@@ -165,7 +165,7 @@ private:
     QStackedLayout *m_stacks;
 };
 
-inline VEdit *VMdTab::getEditor()
+inline VMdEditor *VMdTab::getEditor()
 {
     if (m_editor) {
         return m_editor;
@@ -175,7 +175,7 @@ inline VEdit *VMdTab::getEditor()
     }
 }
 
-inline VEdit *VMdTab::getEditor() const
+inline VMdEditor *VMdTab::getEditor() const
 {
     return m_editor;
 }

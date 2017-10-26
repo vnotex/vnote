@@ -16,10 +16,10 @@
 #include "dialog/vinsertimagedialog.h"
 #include "dialog/vselectdialog.h"
 #include "utils/vutils.h"
-#include "vedit.h"
+#include "veditor.h"
 #include "vdownloader.h"
 #include "vfile.h"
-#include "vmdedit.h"
+#include "vmdeditor.h"
 #include "vconfigmanager.h"
 #include "utils/vvim.h"
 #include "utils/veditutils.h"
@@ -28,7 +28,7 @@ extern VConfigManager *g_config;
 
 const QString VMdEditOperations::c_defaultImageTitle = "";
 
-VMdEditOperations::VMdEditOperations(VEdit *p_editor, VFile *p_file)
+VMdEditOperations::VMdEditOperations(VEditor *p_editor, VFile *p_file)
     : VEditOperations(p_editor, p_file), m_autoIndentPos(-1)
 {
 }
@@ -40,7 +40,9 @@ bool VMdEditOperations::insertImageFromMimeData(const QMimeData *source)
         return false;
     }
     VInsertImageDialog dialog(tr("Insert Image From Clipboard"),
-                              c_defaultImageTitle, "", (QWidget *)m_editor);
+                              c_defaultImageTitle,
+                              "",
+                              m_editor->getEditor());
     dialog.setBrowseable(false);
     dialog.setImage(image);
     if (dialog.exec() == QDialog::Accepted) {
@@ -78,7 +80,7 @@ void VMdEditOperations::insertImageFromQImage(const QString &title, const QStrin
                             errStr,
                             QMessageBox::Ok,
                             QMessageBox::Ok,
-                            (QWidget *)m_editor);
+                            m_editor->getEditor());
         return;
     }
 
@@ -87,7 +89,7 @@ void VMdEditOperations::insertImageFromQImage(const QString &title, const QStrin
 
     qDebug() << "insert image" << title << filePath;
 
-    VMdEdit *mdEditor = dynamic_cast<VMdEdit *>(m_editor);
+    VMdEditor *mdEditor = dynamic_cast<VMdEditor *>(m_editor);
     Q_ASSERT(mdEditor);
     mdEditor->imageInserted(filePath);
 }
@@ -118,7 +120,7 @@ void VMdEditOperations::insertImageFromPath(const QString &title, const QString 
                             errStr,
                             QMessageBox::Ok,
                             QMessageBox::Ok,
-                            (QWidget *)m_editor);
+                            m_editor->getEditor());
         return;
     }
 
@@ -127,7 +129,7 @@ void VMdEditOperations::insertImageFromPath(const QString &title, const QString 
 
     qDebug() << "insert image" << title << filePath;
 
-    VMdEdit *mdEditor = dynamic_cast<VMdEdit *>(m_editor);
+    VMdEditor *mdEditor = dynamic_cast<VMdEditor *>(m_editor);
     Q_ASSERT(mdEditor);
     mdEditor->imageInserted(filePath);
 }
@@ -156,7 +158,7 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
 
 
     VInsertImageDialog dialog(title, c_defaultImageTitle,
-                              imagePath, (QWidget *)m_editor);
+                              imagePath, m_editor->getEditor());
     dialog.setBrowseable(false, true);
     if (isLocal) {
         dialog.setImage(image);
@@ -186,7 +188,7 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
 bool VMdEditOperations::insertImage()
 {
     VInsertImageDialog dialog(tr("Insert Image From File"),
-                              c_defaultImageTitle, "", (QWidget *)m_editor);
+                              c_defaultImageTitle, "", m_editor->getEditor());
     if (dialog.exec() == QDialog::Accepted) {
         QString title = dialog.getImageTitleInput();
         QString imagePath = dialog.getPathInput();
@@ -393,10 +395,10 @@ bool VMdEditOperations::handleKeyBracketLeft(QKeyEvent *p_event)
     // 1. If there is any selection, clear it.
     // 2. Otherwise, ignore this event and let parent handles it.
     if (p_event->modifiers() == Qt::ControlModifier) {
-        QTextCursor cursor = m_editor->textCursor();
+        QTextCursor cursor = m_editor->textCursorW();
         if (cursor.hasSelection()) {
             cursor.clearSelection();
-            m_editor->setTextCursor(cursor);
+            m_editor->setTextCursorW(cursor);
             p_event->accept();
             return true;
         }
@@ -407,18 +409,18 @@ bool VMdEditOperations::handleKeyBracketLeft(QKeyEvent *p_event)
 
 bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)
 {
-    QTextDocument *doc = m_editor->document();
+    QTextDocument *doc = m_editor->documentW();
     QString text(m_editConfig->m_tabSpaces);
 
     if (p_event->modifiers() == Qt::NoModifier) {
-        QTextCursor cursor = m_editor->textCursor();
+        QTextCursor cursor = m_editor->textCursorW();
         if (cursor.hasSelection()) {
             m_autoIndentPos = -1;
             cursor.beginEditBlock();
             // Indent each selected line.
             VEditUtils::indentSelectedBlocks(doc, cursor, text, true);
             cursor.endEditBlock();
-            m_editor->setTextCursor(cursor);
+            m_editor->setTextCursorW(cursor);
         } else {
             // If it is a Tab key following auto list, increase the indent level.
             QTextBlock block = cursor.block();
@@ -433,7 +435,7 @@ bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)
                 }
                 blockCursor.endEditBlock();
                 // Change m_autoIndentPos to let it can be repeated.
-                m_autoIndentPos = m_editor->textCursor().position();
+                m_autoIndentPos = m_editor->textCursorW().position();
             } else {
                 // Just insert "tab".
                 insertTextAtCurPos(text);
@@ -454,8 +456,8 @@ bool VMdEditOperations::handleKeyBackTab(QKeyEvent *p_event)
         m_autoIndentPos = -1;
         return false;
     }
-    QTextDocument *doc = m_editor->document();
-    QTextCursor cursor = m_editor->textCursor();
+    QTextDocument *doc = m_editor->documentW();
+    QTextCursor cursor = m_editor->textCursorW();
     QTextBlock block = doc->findBlock(cursor.selectionStart());
     bool continueAutoIndent = false;
     int seq = -1;
@@ -474,7 +476,7 @@ bool VMdEditOperations::handleKeyBackTab(QKeyEvent *p_event)
     cursor.endEditBlock();
 
     if (continueAutoIndent) {
-        m_autoIndentPos = m_editor->textCursor().position();
+        m_autoIndentPos = m_editor->textCursorW().position();
     } else {
         m_autoIndentPos = -1;
     }
@@ -486,7 +488,7 @@ bool VMdEditOperations::handleKeyH(QKeyEvent *p_event)
 {
     if (p_event->modifiers() == Qt::ControlModifier) {
         // Ctrl+H, equal to backspace.
-        QTextCursor cursor = m_editor->textCursor();
+        QTextCursor cursor = m_editor->textCursorW();
         cursor.deletePreviousChar();
 
         p_event->accept();
@@ -499,7 +501,7 @@ bool VMdEditOperations::handleKeyU(QKeyEvent *p_event)
 {
     if (p_event->modifiers() == Qt::ControlModifier) {
         // Ctrl+U, delete till the start of line.
-        QTextCursor cursor = m_editor->textCursor();
+        QTextCursor cursor = m_editor->textCursorW();
         bool ret;
         if (cursor.atBlockStart()) {
             ret = cursor.movePosition(QTextCursor::PreviousWord, QTextCursor::KeepAnchor);
@@ -520,7 +522,7 @@ bool VMdEditOperations::handleKeyW(QKeyEvent *p_event)
 {
     if (p_event->modifiers() == Qt::ControlModifier) {
         // Ctrl+W, delete till the start of previous word.
-        QTextCursor cursor = m_editor->textCursor();
+        QTextCursor cursor = m_editor->textCursorW();
         if (cursor.hasSelection()) {
             cursor.removeSelectedText();
         } else {
@@ -539,10 +541,10 @@ bool VMdEditOperations::handleKeyEsc(QKeyEvent *p_event)
 {
     // 1. If there is any selection, clear it.
     // 2. Otherwise, ignore this event and let parent handles it.
-    QTextCursor cursor = m_editor->textCursor();
+    QTextCursor cursor = m_editor->textCursorW();
     if (cursor.hasSelection()) {
         cursor.clearSelection();
-        m_editor->setTextCursor(cursor);
+        m_editor->setTextCursorW(cursor);
         p_event->accept();
         return true;
     }
@@ -560,7 +562,7 @@ bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
         // Insert two spaces and a new line.
         m_autoIndentPos = -1;
 
-        QTextCursor cursor = m_editor->textCursor();
+        QTextCursor cursor = m_editor->textCursorW();
         cursor.beginEditBlock();
         cursor.removeSelectedText();
         cursor.insertText("  ");
@@ -575,11 +577,11 @@ bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
     if (m_autoIndentPos > -1) {
         // Cancel the auto indent/list if the pos is the same and cursor is at
         // the end of a block.
-        QTextCursor cursor = m_editor->textCursor();
+        QTextCursor cursor = m_editor->textCursorW();
         if (VEditUtils::needToCancelAutoIndent(m_autoIndentPos, cursor)) {
             m_autoIndentPos = -1;
             VEditUtils::deleteIndentAndListMark(cursor);
-            m_editor->setTextCursor(cursor);
+            m_editor->setTextCursorW(cursor);
             return true;
         }
     }
@@ -589,7 +591,7 @@ bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
     if (g_config->getAutoIndent()) {
         handled = true;
 
-        QTextCursor cursor = m_editor->textCursor();
+        QTextCursor cursor = m_editor->textCursorW();
         bool textInserted = false;
         cursor.beginEditBlock();
         cursor.removeSelectedText();
@@ -603,9 +605,9 @@ bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
         }
 
         cursor.endEditBlock();
-        m_editor->setTextCursor(cursor);
+        m_editor->setTextCursorW(cursor);
         if (textInserted) {
-            m_autoIndentPos = m_editor->textCursor().position();
+            m_autoIndentPos = m_editor->textCursorW().position();
         }
     }
 
@@ -648,8 +650,8 @@ void VMdEditOperations::changeListBlockSeqNumber(QTextBlock &p_block, int p_seq)
 
 bool VMdEditOperations::insertTitle(int p_level)
 {
-    QTextDocument *doc = m_editor->document();
-    QTextCursor cursor = m_editor->textCursor();
+    QTextDocument *doc = m_editor->documentW();
+    QTextCursor cursor = m_editor->textCursorW();
     int firstBlock = cursor.block().blockNumber();
     int lastBlock = firstBlock;
 
@@ -667,7 +669,7 @@ bool VMdEditOperations::insertTitle(int p_level)
     }
 
     cursor.endEditBlock();
-    m_editor->setTextCursor(cursor);
+    m_editor->setTextCursorW(cursor);
     return true;
 }
 
@@ -713,7 +715,7 @@ void VMdEditOperations::decorateText(TextDecoration p_decoration)
 
 void VMdEditOperations::decorateBold()
 {
-    QTextCursor cursor = m_editor->textCursor();
+    QTextCursor cursor = m_editor->textCursorW();
     cursor.beginEditBlock();
     if (cursor.hasSelection()) {
         // Insert ** around the selected text.
@@ -745,12 +747,12 @@ void VMdEditOperations::decorateBold()
     }
 
     cursor.endEditBlock();
-    m_editor->setTextCursor(cursor);
+    m_editor->setTextCursorW(cursor);
 }
 
 void VMdEditOperations::decorateItalic()
 {
-    QTextCursor cursor = m_editor->textCursor();
+    QTextCursor cursor = m_editor->textCursorW();
     cursor.beginEditBlock();
     if (cursor.hasSelection()) {
         // Insert * around the selected text.
@@ -782,12 +784,12 @@ void VMdEditOperations::decorateItalic()
     }
 
     cursor.endEditBlock();
-    m_editor->setTextCursor(cursor);
+    m_editor->setTextCursorW(cursor);
 }
 
 void VMdEditOperations::decorateInlineCode()
 {
-    QTextCursor cursor = m_editor->textCursor();
+    QTextCursor cursor = m_editor->textCursorW();
     cursor.beginEditBlock();
     if (cursor.hasSelection()) {
         // Insert ` around the selected text.
@@ -819,14 +821,14 @@ void VMdEditOperations::decorateInlineCode()
     }
 
     cursor.endEditBlock();
-    m_editor->setTextCursor(cursor);
+    m_editor->setTextCursorW(cursor);
 }
 
 void VMdEditOperations::decorateCodeBlock()
 {
     const QString marker("```");
 
-    QTextCursor cursor = m_editor->textCursor();
+    QTextCursor cursor = m_editor->textCursorW();
     cursor.beginEditBlock();
     if (cursor.hasSelection()) {
         // Insert ``` around the selected text.
@@ -899,12 +901,12 @@ void VMdEditOperations::decorateCodeBlock()
     }
 
     cursor.endEditBlock();
-    m_editor->setTextCursor(cursor);
+    m_editor->setTextCursorW(cursor);
 }
 
 void VMdEditOperations::decorateStrikethrough()
 {
-    QTextCursor cursor = m_editor->textCursor();
+    QTextCursor cursor = m_editor->textCursorW();
     cursor.beginEditBlock();
     if (cursor.hasSelection()) {
         // Insert ~~ around the selected text.
@@ -936,16 +938,16 @@ void VMdEditOperations::decorateStrikethrough()
     }
 
     cursor.endEditBlock();
-    m_editor->setTextCursor(cursor);
+    m_editor->setTextCursorW(cursor);
 }
 
 bool VMdEditOperations::insertLink(const QString &p_linkText,
                                    const QString &p_linkUrl)
 {
     QString link = QString("[%1](%2)").arg(p_linkText).arg(p_linkUrl);
-    QTextCursor cursor = m_editor->textCursor();
+    QTextCursor cursor = m_editor->textCursorW();
     cursor.insertText(link);
-    m_editor->setTextCursor(cursor);
+    m_editor->setTextCursorW(cursor);
 
     setVimMode(VimMode::Insert);
 

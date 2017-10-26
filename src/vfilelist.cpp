@@ -10,7 +10,7 @@
 #include "utils/vutils.h"
 #include "vnotefile.h"
 #include "vconfigmanager.h"
-#include "vmdedit.h"
+#include "vmdeditor.h"
 #include "vmdtab.h"
 #include "dialog/vconfirmdeletiondialog.h"
 #include "dialog/vsortdialog.h"
@@ -376,7 +376,7 @@ void VFileList::newFile()
         if (contentInserted) {
             const VMdTab *tab = dynamic_cast<VMdTab *>(editArea->getCurrentTab());
             if (tab) {
-                VMdEdit *edit = dynamic_cast<VMdEdit *>(tab->getEditor());
+                VMdEditor *edit = tab->getEditor();
                 if (edit && edit->getFile() == file) {
                     QTextCursor cursor = edit->textCursor();
                     cursor.movePosition(QTextCursor::End);

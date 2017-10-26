@@ -14,10 +14,11 @@ const int VPlainTextEdit::c_minimumImageWidth = 100;
 
 enum class BlockState
 {
-    Normal = 1,
+    Normal = 0,
     CodeBlockStart,
     CodeBlock,
-    CodeBlockEnd
+    CodeBlockEnd,
+    Comment
 };
 
 
@@ -79,6 +80,8 @@ void VPlainTextEdit::updateBlockImages(const QVector<VBlockImageInfo> &p_blocksI
 {
     if (m_blockImageEnabled) {
         m_imageMgr->updateBlockInfos(p_blocksInfo, m_maximumImageWidth);
+
+        update();
     }
 }
 
@@ -298,6 +301,9 @@ void VPlainTextEdit::drawImageOfBlock(const QTextBlock &p_block,
                      qMax(info->m_imageHeight, tmpRect.height() - oriHeight));
 
     p_painter->drawPixmap(targetRect, *image);
+
+    auto *layout = getLayout();
+    emit layout->documentSizeChanged(layout->documentSize());
 }
 
 QRectF VPlainTextEdit::originalBlockBoundingRect(const QTextBlock &p_block) const
@@ -322,14 +328,23 @@ void VPlainTextEdit::setBlockImageEnabled(bool p_enabled)
 void VPlainTextEdit::setImageWidthConstrainted(bool p_enabled)
 {
     m_imageWidthConstrainted = p_enabled;
+
+    updateImageWidth();
+
+    auto *layout = getLayout();
+    emit layout->documentSizeChanged(layout->documentSize());
 }
 
-void VPlainTextEdit::resizeEvent(QResizeEvent *p_event)
+void VPlainTextEdit::updateImageWidth()
 {
     bool needUpdate = false;
     if (m_imageWidthConstrainted) {
-        const QSize &si = p_event->size();
-        m_maximumImageWidth = si.width();
+        int viewWidth = viewport()->size().width();
+        m_maximumImageWidth = viewWidth - 10;
+        if (m_maximumImageWidth < 0) {
+            m_maximumImageWidth = viewWidth;
+        }
+
         needUpdate = true;
     } else if (m_maximumImageWidth != INT_MAX) {
         needUpdate = true;
@@ -339,6 +354,11 @@ void VPlainTextEdit::resizeEvent(QResizeEvent *p_event)
     if (needUpdate) {
         m_imageMgr->updateImageWidth(m_maximumImageWidth);
     }
+}
+
+void VPlainTextEdit::resizeEvent(QResizeEvent *p_event)
+{
+    updateImageWidth();
 
     QPlainTextEdit::resizeEvent(p_event);
 
@@ -368,9 +388,8 @@ void VPlainTextEdit::paintLineNumberArea(QPaintEvent *p_event)
     }
 
     int blockNumber = block.blockNumber();
-    int offsetY = (int)contentOffset().y();
-    QRectF rect = blockBoundingRect(block);
-    int top = offsetY + (int)rect.y();
+    QRectF rect = blockBoundingGeometry(block);
+    int top = (int)(contentOffset().y() + rect.y());
     int bottom = top + (int)rect.height();
     int eventTop = p_event->rect().top();
     int eventBtm = p_event->rect().bottom();
@@ -496,7 +515,9 @@ void VPlainTextEdit::updateLineNumberAreaMargin()
         width = m_lineNumberArea->calculateWidth();
     }
 
-    setViewportMargins(width, 0, 0, 0);
+    if (width != viewportMargins().left()) {
+        setViewportMargins(width, 0, 0, 0);
+    }
 }
 
 void VPlainTextEdit::updateLineNumberArea()

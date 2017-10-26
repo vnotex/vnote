@@ -44,7 +44,7 @@ void VImageResourceManager::updateBlockInfos(const QVector<VBlockImageInfo> &p_b
 
     // Clear unused images.
     for (auto it = m_images.begin(); it != m_images.end();) {
-        if (!m_images.contains(it.key())) {
+        if (!usedImages.contains(it.key())) {
             // Remove the image.
             it = m_images.erase(it);
         } else {
