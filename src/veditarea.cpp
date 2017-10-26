@@ -28,6 +28,31 @@ VEditArea::VEditArea(QWidget *parent)
     setCurrentWindow(0, false);
 
     registerCaptainTargets();
+
+
+    QString keySeq = g_config->getShortcutKeySequence("ActivateNextTab");
+    qDebug() << "set ActivateNextTab shortcut to" << keySeq;
+    QShortcut *activateNextTab = new QShortcut(QKeySequence(keySeq), this);
+    activateNextTab->setContext(Qt::ApplicationShortcut);
+    connect(activateNextTab, &QShortcut::activated,
+            this, [this]() {
+                VEditWindow *win = getCurrentWindow();
+                if (win) {
+                    win->focusNextTab(true);
+                }
+            });
+
+    keySeq = g_config->getShortcutKeySequence("ActivatePreviousTab");
+    qDebug() << "set ActivatePreviousTab shortcut to" << keySeq;
+    QShortcut *activatePreviousTab = new QShortcut(QKeySequence(keySeq), this);
+    activatePreviousTab->setContext(Qt::ApplicationShortcut);
+    connect(activatePreviousTab, &QShortcut::activated,
+            this, [this]() {
+                VEditWindow *win = getCurrentWindow();
+                if (win) {
+                    win->focusNextTab(false);
+                }
+            });
 }
 
 void VEditArea::setupUI()

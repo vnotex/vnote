@@ -521,13 +521,6 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         goto accept;
     }
 
-    // Ctrl+Tab and Ctrl+Shift+BackTab to alternate tabs.
-    if ((key == Qt::Key_Tab && modifiers == Qt::ControlModifier)
-        || (key == Qt::Key_Backtab && modifiers == (Qt::ShiftModifier | Qt::ControlModifier))) {
-        // Let it be handled outside VVim.
-        goto exit;
-    }
-
     if (m_replayLeaderSequence) {
         qDebug() << "replaying sequence" << keyToChar(key, modifiers);
     }
