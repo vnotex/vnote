@@ -853,6 +853,8 @@ void VMdEditor::updateTextEditConfig()
 
     setLineLeading(m_config.m_lineDistanceHeight);
 
+    setImageLineColor(g_config->getEditorPreviewImageLineFg());
+
     int lineNumber = g_config->getEditorLineNumber();
     if (lineNumber < (int)LineNumberType::None || lineNumber >= (int)LineNumberType::Invalid) {
         lineNumber = (int)LineNumberType::None;

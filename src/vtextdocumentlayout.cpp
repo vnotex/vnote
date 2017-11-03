@@ -27,7 +27,8 @@ VTextDocumentLayout::VTextDocumentLayout(QTextDocument *p_doc,
       m_cursorMargin(4),
       m_imageMgr(p_imageMgr),
       m_blockImageEnabled(false),
-      m_imageWidthConstrainted(false)
+      m_imageWidthConstrainted(false),
+      m_imageLineColor("#9575CD")
 {
 }
 
@@ -757,6 +758,13 @@ void VTextDocumentLayout::drawBlockImage(QPainter *p_painter,
                      size.height());
 
     p_painter->drawPixmap(targetRect, *image);
+
+    // Draw a thin line to link them.
+    QPen oldPen = p_painter->pen();
+    QPen newPen(m_imageLineColor, 2, Qt::DashLine);
+    p_painter->setPen(newPen);
+    p_painter->drawLine(QPointF(2, p_offset.y()), QPointF(2, targetRect.bottom()));
+    p_painter->setPen(oldPen);
 }
 
 void VTextDocumentLayout::relayout()

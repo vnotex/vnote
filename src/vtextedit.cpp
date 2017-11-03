@@ -313,3 +313,8 @@ void VTextEdit::setImageWidthConstrainted(bool p_enabled)
 {
     getLayout()->setImageWidthConstrainted(p_enabled);
 }
+
+void VTextEdit::setImageLineColor(const QColor &p_color)
+{
+    getLayout()->setImageLineColor(p_color);
+}

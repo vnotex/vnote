@@ -538,6 +538,7 @@ void VConfigManager::updateMarkdownEditStyle()
     static const QString defaultLineNumberFg = "#424242";
     static const QString defaultColorColumnBg = "#DD0000";
     static const QString defaultColorColumnFg = "#FFFF00";
+    static const QString defaultPreviewImageLineFg = "#9575CD";
 
     // Read style file .mdhl
     QString file(getEditorStyleUrl());
@@ -602,6 +603,7 @@ void VConfigManager::updateMarkdownEditStyle()
     m_editorLineNumberFg = defaultLineNumberFg;
     m_editorColorColumnBg = defaultColorColumnBg;
     m_editorColorColumnFg = defaultColorColumnFg;
+    m_editorPreviewImageLineFg = defaultPreviewImageLineFg;
     auto editorIt = styles.find("editor");
     if (editorIt != styles.end()) {
         auto it = editorIt->find("trailing-space");
@@ -647,6 +649,11 @@ void VConfigManager::updateMarkdownEditStyle()
         it = editorIt->find("color-column-foreground");
         if (it != editorIt->end()) {
             m_editorColorColumnFg = "#" + *it;
+        }
+
+        it = editorIt->find("preview-image-line-foreground");
+        if (it != editorIt->end()) {
+            m_editorPreviewImageLineFg = "#" + *it;
         }
     }
 }

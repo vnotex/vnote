@@ -287,6 +287,8 @@ public:
     const QString &getEditorColorColumnBg() const;
     const QString &getEditorColorColumnFg() const;
 
+    const QString &getEditorPreviewImageLineFg() const;
+
     bool getEnableCodeBlockLineNumber() const;
     void setEnableCodeBlockLineNumber(bool p_enabled);
 
@@ -647,6 +649,9 @@ private:
 
     // The foreground color of the color column.
     QString m_editorColorColumnFg;
+
+    // The foreground color of the preview image line.
+    QString m_editorPreviewImageLineFg;
 
     // Icon size of tool bar in pixels.
     int m_toolBarIconSize;
@@ -1560,6 +1565,11 @@ inline const QString &VConfigManager::getEditorColorColumnBg() const
 inline const QString &VConfigManager::getEditorColorColumnFg() const
 {
     return m_editorColorColumnFg;
+}
+
+inline const QString &VConfigManager::getEditorPreviewImageLineFg() const
+{
+    return m_editorPreviewImageLineFg;
 }
 
 inline bool VConfigManager::getEnableCodeBlockLineNumber() const

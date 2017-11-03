@@ -129,6 +129,8 @@ public:
 
     void setImageWidthConstrainted(bool p_enabled);
 
+    void setImageLineColor(const QColor &p_color);
+
 protected:
     void resizeEvent(QResizeEvent *p_event) Q_DECL_OVERRIDE;
 

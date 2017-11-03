@@ -51,6 +51,8 @@ public:
     // Relayout @p_blocks.
     void relayout(const QSet<int> &p_blocks);
 
+    void setImageLineColor(const QColor &p_color);
+
 protected:
     void documentChanged(int p_from, int p_charsRemoved, int p_charsAdded) Q_DECL_OVERRIDE;
 
@@ -184,11 +186,19 @@ private:
 
     // Whether constraint the width of image to the width of the page.
     bool m_imageWidthConstrainted;
+
+    // Color of the image line.
+    QColor m_imageLineColor;
 };
 
 inline qreal VTextDocumentLayout::getLineLeading() const
 {
     return m_lineLeading;
+}
+
+inline void VTextDocumentLayout::setImageLineColor(const QColor &p_color)
+{
+    m_imageLineColor = p_color;
 }
 
 #endif // VTEXTDOCUMENTLAYOUT_H
