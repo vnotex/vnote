@@ -8,6 +8,7 @@
 #include <QFileInfo>
 #include <QStringList>
 #include <QDir>
+#include <QSslSocket>
 #include "utils/vutils.h"
 #include "vsingleinstanceguard.h"
 #include "vconfigmanager.h"
@@ -113,6 +114,10 @@ int main(int argc, char *argv[])
     }
 
     QApplication app(argc, argv);
+
+    // Check the openSSL.
+    qDebug() << "openSSL" << QSslSocket::sslLibraryBuildVersionString()
+             << QSslSocket::sslLibraryVersionNumber();
 
     // The file path passed via command line arguments.
     QStringList filePaths = VUtils::filterFilePathsToOpen(app.arguments().mid(1));
