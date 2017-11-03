@@ -519,7 +519,7 @@ void VTextDocumentLayout::layoutBlock(const QTextBlock &p_block)
         availableWidth = qreal(INT_MAX);
     }
 
-    availableWidth -= (2 * m_margin + extraMargin + m_cursorMargin);
+    availableWidth -= (2 * m_margin + extraMargin + m_cursorMargin + m_cursorWidth);
 
     tl->beginLayout();
 
@@ -651,7 +651,7 @@ QRectF VTextDocumentLayout::blockRectFromTextLayout(const QTextBlock &p_block)
         }
     }
 
-    br.adjust(0, 0, m_margin + m_cursorMargin, 0);
+    br.adjust(0, 0, m_margin + m_cursorWidth, 0);
 
     // Add bottom margin.
     if (!p_block.next().isValid()) {
