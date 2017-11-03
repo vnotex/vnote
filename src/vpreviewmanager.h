@@ -48,20 +48,23 @@ private:
         ImageLinkInfo()
             : m_startPos(-1),
               m_endPos(-1),
+              m_blockPos(-1),
               m_blockNumber(-1),
-              m_margin(0),
+              m_padding(0),
               m_isBlock(false)
         {
         }
 
         ImageLinkInfo(int p_startPos,
                       int p_endPos,
+                      int p_blockPos,
                       int p_blockNumber,
-                      int p_margin)
+                      int p_padding)
             : m_startPos(p_startPos),
               m_endPos(p_endPos),
+              m_blockPos(p_blockPos),
               m_blockNumber(p_blockNumber),
-              m_margin(p_margin),
+              m_padding(p_padding),
               m_isBlock(false)
         {
         }
@@ -70,10 +73,13 @@ private:
 
         int m_endPos;
 
+        // Position of this block.
+        int m_blockPos;
+
         int m_blockNumber;
 
-        // Left margin of this block in pixels.
-        int m_margin;
+        // Left padding of this block in pixels.
+        int m_padding;
 
         // Short URL within the () of ![]().
         // Used as the ID of the image.
@@ -125,7 +131,7 @@ private:
 
     // All preview images and information.
     // Each preview source corresponds to one vector.
-    QVector<QVector<VBlockImageInfo>> m_blockImageInfo;
+    QVector<QVector<VBlockImageInfo2>> m_blockImageInfo;
 
     // Map from URL to name in the resource manager.
     // Used for downloading images.

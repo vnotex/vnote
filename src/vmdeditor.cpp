@@ -25,7 +25,7 @@ VMdEditor::VMdEditor(VFile *p_file,
                      VDocument *p_doc,
                      MarkdownConverterType p_type,
                      QWidget *p_parent)
-    : VPlainTextEdit(p_parent),
+    : VTextEdit(p_parent),
       VEditor(p_file, this),
       m_mdHighlighter(NULL),
       m_freshEdit(true)
@@ -35,12 +35,12 @@ VMdEditor::VMdEditor(VFile *p_file,
     VEditor::init();
 
     // Hook functions from VEditor.
-    connect(this, &VPlainTextEdit::cursorPositionChanged,
+    connect(this, &VTextEdit::cursorPositionChanged,
             this, [this]() {
                 highlightOnCursorPositionChanged();
             });
 
-    connect(this, &VPlainTextEdit::selectionChanged,
+    connect(this, &VTextEdit::selectionChanged,
             this, [this]() {
                 highlightSelectedWord();
             });
@@ -77,7 +77,7 @@ VMdEditor::VMdEditor(VFile *p_file,
     connect(m_editOps, &VEditOperations::vimStatusUpdated,
             m_object, &VEditorObject::vimStatusUpdated);
 
-    connect(this, &VPlainTextEdit::cursorPositionChanged,
+    connect(this, &VTextEdit::cursorPositionChanged,
             this, &VMdEditor::updateCurrentHeader);
 
     updateFontAndPalette();
@@ -152,7 +152,7 @@ bool VMdEditor::scrollToBlock(int p_blockNumber)
 }
 
 // Get the visual offset of a block.
-#define GETVISUALOFFSETY ((int)(contentOffset().y() + rect.y()))
+#define GETVISUALOFFSETY (contentOffsetY() + (int)rect.y())
 
 void VMdEditor::makeBlockVisible(const QTextBlock &p_block)
 {
@@ -174,31 +174,36 @@ void VMdEditor::makeBlockVisible(const QTextBlock &p_block)
 
     bool moved = false;
 
-    QRectF rect = blockBoundingGeometry(p_block);
+    QAbstractTextDocumentLayout *layout = document()->documentLayout();
+    QRectF rect = layout->blockBoundingRect(p_block);
     int y = GETVISUALOFFSETY;
     int rectHeight = (int)rect.height();
 
     // Handle the case rectHeight >= height.
     if (rectHeight >= height) {
-        if (y <= 0) {
-            if (y + rectHeight < height) {
-                // Need to scroll up.
-                while (y + rectHeight < height && vbar->value() > vbar->minimum()) {
-                    moved = true;
-                    vbar->setValue(vbar->value() - vbar->singleStep());
-                    rect = blockBoundingGeometry(p_block);
-                    rectHeight = (int)rect.height();
-                    y = GETVISUALOFFSETY;
-                }
+        if (y < 0) {
+            // Need to scroll up.
+            while (y + rectHeight < height && vbar->value() > vbar->minimum()) {
+                moved = true;
+                vbar->setValue(vbar->value() - vbar->singleStep());
+                rect = layout->blockBoundingRect(p_block);
+                rectHeight = (int)rect.height();
+                y = GETVISUALOFFSETY;
             }
-        } else {
+        } else if (y > 0) {
             // Need to scroll down.
             while (y > 0 && vbar->value() < vbar->maximum()) {
                 moved = true;
                 vbar->setValue(vbar->value() + vbar->singleStep());
-                rect = blockBoundingGeometry(p_block);
+                rect = layout->blockBoundingRect(p_block);
                 rectHeight = (int)rect.height();
                 y = GETVISUALOFFSETY;
+            }
+
+            if (y < 0) {
+                // One step back.
+                moved = true;
+                vbar->setValue(vbar->value() - vbar->singleStep());
             }
         }
 
@@ -213,7 +218,7 @@ void VMdEditor::makeBlockVisible(const QTextBlock &p_block)
         qDebug() << y << vbar->value() << vbar->minimum() << rectHeight;
         moved = true;
         vbar->setValue(vbar->value() - vbar->singleStep());
-        rect = blockBoundingGeometry(p_block);
+        rect = layout->blockBoundingRect(p_block);
         rectHeight = (int)rect.height();
         y = GETVISUALOFFSETY;
     }
@@ -226,7 +231,7 @@ void VMdEditor::makeBlockVisible(const QTextBlock &p_block)
     while (y + rectHeight > height && vbar->value() < vbar->maximum()) {
         moved = true;
         vbar->setValue(vbar->value() + vbar->singleStep());
-        rect = blockBoundingGeometry(p_block);
+        rect = layout->blockBoundingRect(p_block);
         rectHeight = (int)rect.height();
         y = GETVISUALOFFSETY;
     }
@@ -283,7 +288,7 @@ void VMdEditor::mousePressEvent(QMouseEvent *p_event)
         return;
     }
 
-    VPlainTextEdit::mousePressEvent(p_event);
+    VTextEdit::mousePressEvent(p_event);
 
     emit m_object->selectionChangedByMouse(textCursor().hasSelection());
 }
@@ -294,7 +299,7 @@ void VMdEditor::mouseReleaseEvent(QMouseEvent *p_event)
         return;
     }
 
-    VPlainTextEdit::mousePressEvent(p_event);
+    VTextEdit::mousePressEvent(p_event);
 }
 
 void VMdEditor::mouseMoveEvent(QMouseEvent *p_event)
@@ -303,7 +308,7 @@ void VMdEditor::mouseMoveEvent(QMouseEvent *p_event)
         return;
     }
 
-    VPlainTextEdit::mouseMoveEvent(p_event);
+    VTextEdit::mouseMoveEvent(p_event);
 
     emit m_object->selectionChangedByMouse(textCursor().hasSelection());
 }
@@ -315,7 +320,7 @@ QVariant VMdEditor::inputMethodQuery(Qt::InputMethodQuery p_query) const
         return ret;
     }
 
-    return VPlainTextEdit::inputMethodQuery(p_query);
+    return VTextEdit::inputMethodQuery(p_query);
 }
 
 bool VMdEditor::isBlockVisible(const QTextBlock &p_block)
@@ -336,7 +341,8 @@ bool VMdEditor::isBlockVisible(const QTextBlock &p_block)
         height -= hbar->height();
     }
 
-    QRectF rect = blockBoundingGeometry(p_block);
+    QAbstractTextDocumentLayout *layout = document()->documentLayout();
+    QRectF rect = layout->blockBoundingRect(p_block);
     int y = GETVISUALOFFSETY;
     int rectHeight = (int)rect.height();
 
@@ -630,14 +636,14 @@ void VMdEditor::keyPressEvent(QKeyEvent *p_event)
         return;
     }
 
-    VPlainTextEdit::keyPressEvent(p_event);
+    VTextEdit::keyPressEvent(p_event);
 }
 
 bool VMdEditor::canInsertFromMimeData(const QMimeData *p_source) const
 {
     return p_source->hasImage()
            || p_source->hasUrls()
-           || VPlainTextEdit::canInsertFromMimeData(p_source);
+           || VTextEdit::canInsertFromMimeData(p_source);
 }
 
 void VMdEditor::insertFromMimeData(const QMimeData *p_source)
@@ -653,7 +659,7 @@ void VMdEditor::insertFromMimeData(const QMimeData *p_source)
                 if (dialog.getSelection() == 1) {
                     // Insert as text.
                     Q_ASSERT(p_source->hasText() && p_source->hasImage());
-                    VPlainTextEdit::insertFromMimeData(p_source);
+                    VTextEdit::insertFromMimeData(p_source);
                     return;
                 }
             } else {
@@ -676,7 +682,7 @@ void VMdEditor::insertFromMimeData(const QMimeData *p_source)
 
                 QMimeData newSource;
                 newSource.setUrls(urls);
-                VPlainTextEdit::insertFromMimeData(&newSource);
+                VTextEdit::insertFromMimeData(&newSource);
                 return;
             } else {
                 return;
@@ -703,7 +709,7 @@ void VMdEditor::insertFromMimeData(const QMimeData *p_source)
         Q_ASSERT(p_source->hasText());
     }
 
-    VPlainTextEdit::insertFromMimeData(p_source);
+    VTextEdit::insertFromMimeData(p_source);
 }
 
 void VMdEditor::imageInserted(const QString &p_path)
@@ -838,12 +844,14 @@ void VMdEditor::scrollBlockInPage(int p_blockNum, int p_dest)
     VEditUtils::scrollBlockInPage(this, p_blockNum, p_dest);
 }
 
-void VMdEditor::updatePlainTextEditConfig()
+void VMdEditor::updateTextEditConfig()
 {
     m_previewMgr->setPreviewEnabled(g_config->getEnablePreviewImages());
     setBlockImageEnabled(g_config->getEnablePreviewImages());
 
     setImageWidthConstrainted(g_config->getEnablePreviewImageConstraint());
+
+    setLineLeading(m_config.m_lineDistanceHeight);
 
     int lineNumber = g_config->getEditorLineNumber();
     if (lineNumber < (int)LineNumberType::None || lineNumber >= (int)LineNumberType::Invalid) {
@@ -857,6 +865,6 @@ void VMdEditor::updatePlainTextEditConfig()
 
 void VMdEditor::updateConfig()
 {
-    updatePlainTextEditConfig();
     updateEditConfig();
+    updateTextEditConfig();
 }

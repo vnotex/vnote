@@ -6,7 +6,7 @@
 #include <QClipboard>
 #include <QImage>
 
-#include "vplaintextedit.h"
+#include "vtextedit.h"
 #include "veditor.h"
 #include "vconfigmanager.h"
 #include "vtableofcontent.h"
@@ -19,7 +19,7 @@ class VCodeBlockHighlightHelper;
 class VDocument;
 class VPreviewManager;
 
-class VMdEditor : public VPlainTextEdit, public VEditor
+class VMdEditor : public VTextEdit, public VEditor
 {
     Q_OBJECT
 public:
@@ -177,8 +177,8 @@ private slots:
     void updateCurrentHeader();
 
 private:
-    // Update the config of VPlainTextEdit according to global configurations.
-    void updatePlainTextEditConfig();
+    // Update the config of VTextEdit according to global configurations.
+    void updateTextEditConfig();
 
     // Get the initial images from file before edit.
     void initInitImages();

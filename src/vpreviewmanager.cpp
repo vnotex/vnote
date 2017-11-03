@@ -132,6 +132,7 @@ void VPreviewManager::fetchImageLinksFromRegions(QVector<ImageLinkInfo> &p_image
         Q_ASSERT(reg.m_endPos <= blockEnd);
         ImageLinkInfo info(reg.m_startPos,
                            reg.m_endPos,
+                           blockStart,
                            block.blockNumber(),
                            calculateBlockMargin(block));
         if ((reg.m_startPos == blockStart
@@ -219,7 +220,7 @@ QString VPreviewManager::fetchImagePathToPreview(const QString &p_text, QString 
 
 void VPreviewManager::updateBlockImageInfo(const QVector<ImageLinkInfo> &p_imageLinks)
 {
-    QVector<VBlockImageInfo> &blockInfos = m_blockImageInfo[PreviewSource::ImageLink];
+    QVector<VBlockImageInfo2> &blockInfos = m_blockImageInfo[PreviewSource::ImageLink];
     blockInfos.clear();
 
     for (int i = 0; i < p_imageLinks.size(); ++i) {
@@ -235,7 +236,11 @@ void VPreviewManager::updateBlockImageInfo(const QVector<ImageLinkInfo> &p_image
             continue;
         }
 
-        VBlockImageInfo info(link.m_blockNumber, name, link.m_margin);
+        VBlockImageInfo2 info(link.m_blockNumber,
+                              name,
+                              link.m_startPos - link.m_blockPos,
+                              link.m_endPos - link.m_blockPos,
+                              link.m_padding);
         blockInfos.push_back(info);
     }
 }

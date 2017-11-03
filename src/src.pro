@@ -88,7 +88,10 @@ SOURCES += main.cpp\
     veditor.cpp \
     vmdeditor.cpp \
     veditconfig.cpp \
-    vpreviewmanager.cpp
+    vpreviewmanager.cpp \
+    vimageresourcemanager2.cpp \
+    vtextdocumentlayout.cpp \
+    vtextedit.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -164,7 +167,10 @@ HEADERS  += vmainwindow.h \
     veditor.h \
     vmdeditor.h \
     veditconfig.h \
-    vpreviewmanager.h
+    vpreviewmanager.h \
+    vimageresourcemanager2.h \
+    vtextdocumentlayout.h \
+    vtextedit.h
 
 RESOURCES += \
     vnote.qrc \

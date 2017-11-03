@@ -2276,6 +2276,8 @@ void VMainWindow::enableCodeBlockHighlight(bool p_checked)
 void VMainWindow::enableImagePreview(bool p_checked)
 {
     g_config->setEnablePreviewImages(p_checked);
+
+    emit editorConfigUpdated();
 }
 
 void VMainWindow::enableImagePreviewConstraint(bool p_checked)
