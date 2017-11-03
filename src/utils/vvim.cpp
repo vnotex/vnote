@@ -694,7 +694,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
     case Qt::Key_K:
     case Qt::Key_L:
     {
-        if (modifiers == Qt::NoModifier) {
+        if (modifiers == Qt::NoModifier || modifiers == Qt::KeypadModifier) {
             // Check if we could generate a Repeat token.
             tryGetRepeatToken(m_keys, m_tokens);
 
