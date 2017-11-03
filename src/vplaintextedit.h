@@ -12,6 +12,7 @@ class VImageResourceManager;
 class QPaintEvent;
 class QPainter;
 class QResizeEvent;
+class VPlainTextDocumentLayout;
 
 
 struct VBlockImageInfo
