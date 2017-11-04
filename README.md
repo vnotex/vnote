@@ -42,7 +42,9 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS** (due to t
 # Supports
 - [Github issues](https://github.com/tamlok/vnote/issues);
 - Email: tamlokveer at gmail.com;
-- QQ group: 487756074;  
+- QQ group: 487756074;
+- WeChat Public Account: VNote笔记 (vnote_md);  
+![VNote WeChat](screenshots/vnote_md.jpg)
 
 # Highlights
 - Supports inserting images directly from clipboard;

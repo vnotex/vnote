@@ -43,7 +43,9 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 # 支持
 - [Github issues](https://github.com/tamlok/vnote/issues)；
 - 邮箱: tamlokveer at gmail.com；
-- QQ群: 487756074；  
+- QQ群: 487756074；
+- 微信公众号: VNote笔记（vnote_md）；  
+![VNote WeChat](screenshots/vnote_md.jpg)
 
 # 亮点
 - 支持直接从剪切板插入图片；
