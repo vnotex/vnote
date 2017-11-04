@@ -42,6 +42,8 @@ VTextEdit::~VTextEdit()
 
 void VTextEdit::init()
 {
+    setAcceptRichText(false);
+
     m_lineNumberType = LineNumberType::None;
 
     m_blockImageEnabled = false;
