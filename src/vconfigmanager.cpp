@@ -32,6 +32,8 @@ const QString VConfigManager::c_styleConfigFolder = QString("styles");
 
 const QString VConfigManager::c_codeBlockStyleConfigFolder = QString("codeblock_styles");
 
+const QString VConfigManager::c_templateConfigFolder = QString("templates");
+
 const QString VConfigManager::c_defaultCssFile = QString(":/resources/styles/default.css");
 
 const QString VConfigManager::c_defaultCodeBlockCssFile = QString(":/utils/highlightjs/styles/vnote.css");
@@ -740,6 +742,11 @@ QString VConfigManager::getCodeBlockStyleConfigFolder() const
     return getStyleConfigFolder() + QDir::separator() + c_codeBlockStyleConfigFolder;
 }
 
+QString VConfigManager::getTemplateConfigFolder() const
+{
+    return getConfigFolder() + QDir::separator() + c_templateConfigFolder;
+}
+
 QVector<QString> VConfigManager::getCssStyles() const
 {
     QVector<QString> res;
@@ -756,6 +763,28 @@ QVector<QString> VConfigManager::getCssStyles() const
     res.reserve(files.size());
     for (auto const &item : files) {
         res.push_back(item.left(item.size() - 4));
+    }
+
+    return res;
+}
+
+QVector<QString> VConfigManager::getNoteTemplates(DocType p_type) const
+{
+    QVector<QString> res;
+    QDir dir(getTemplateConfigFolder());
+    if (!dir.exists()) {
+        dir.mkpath(getTemplateConfigFolder());
+        return res;
+    }
+
+    dir.setFilter(QDir::Files | QDir::NoSymLinks);
+    QStringList files = dir.entryList();
+    res.reserve(files.size());
+    for (auto const &item : files) {
+        if (p_type == DocType::Unknown
+            || p_type == VUtils::docTypeFromName(item)) {
+            res.push_back(item);
+        }
     }
 
     return res;

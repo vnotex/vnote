@@ -14,7 +14,7 @@ public:
     VLineEdit(const QString &p_contents, QWidget *p_parent = Q_NULLPTR);
 
     // Return the evaluated text.
-    const QString getEvaluatedText() const;
+    const QString &getEvaluatedText() const;
 
 private slots:
     void handleTextChanged(const QString &p_text);

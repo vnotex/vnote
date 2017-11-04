@@ -344,19 +344,32 @@ void VFileList::newFile()
             return;
         }
 
-        // Write title if needed.
-        bool contentInserted = false;
+        // Whether need to move the cursor to the end.
+        bool moveCursorEnd = false;
+        // Content needed to insert into the new file, title/template.
+        QString insertContent;
         if (dialog.getInsertTitleInput() && file->getDocType() == DocType::Markdown) {
+            // Insert title.
+            insertContent = QString("# %1\n").arg(QFileInfo(file->getName()).completeBaseName());
+        }
+
+        if (dialog.isTemplateUsed()) {
+            Q_ASSERT(insertContent.isEmpty());
+            insertContent = dialog.getTemplate();
+        }
+
+        if (!insertContent.isEmpty()) {
             if (!file->open()) {
                 qWarning() << "fail to open newly-created note" << file->getName();
             } else {
                 Q_ASSERT(file->getContent().isEmpty());
-                QString content = QString("# %1\n").arg(QFileInfo(file->getName()).completeBaseName());
-                file->setContent(content);
+                file->setContent(insertContent);
                 if (!file->save()) {
                     qWarning() << "fail to write to newly-created note" << file->getName();
                 } else {
-                    contentInserted = true;
+                    if (dialog.getInsertTitleInput()) {
+                        moveCursorEnd = true;
+                    }
                 }
 
                 file->close();
@@ -373,7 +386,7 @@ void VFileList::newFile()
         emit fileCreated(file, OpenFileMode::Edit, true);
 
         // Move cursor down if content has been inserted.
-        if (contentInserted) {
+        if (moveCursorEnd) {
             const VMdTab *tab = dynamic_cast<VMdTab *>(editArea->getCurrentTab());
             if (tab) {
                 VMdEditor *edit = tab->getEditor();

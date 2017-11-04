@@ -5,8 +5,8 @@
 
 #include "utils/vmetawordmanager.h"
 
-
 extern VMetaWordManager *g_mwMgr;
+
 
 VLineEdit::VLineEdit(QWidget *p_parent)
     : QLineEdit(p_parent)
@@ -42,7 +42,7 @@ void VLineEdit::init()
             this, &VLineEdit::handleTextChanged);
 }
 
-const QString VLineEdit::getEvaluatedText() const
+const QString &VLineEdit::getEvaluatedText() const
 {
     return m_evaluatedText;
 }

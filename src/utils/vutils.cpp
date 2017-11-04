@@ -515,6 +515,10 @@ void VUtils::sleepWait(int p_milliseconds)
 
 DocType VUtils::docTypeFromName(const QString &p_name)
 {
+    if (p_name.isEmpty()) {
+        return DocType::Unknown;
+    }
+
     const QHash<int, QList<QString>> &suffixes = g_config->getDocSuffixes();
 
     QString suf = QFileInfo(p_name).suffix().toLower();

@@ -134,5 +134,6 @@
         <file>resources/icons/heading_sequence.svg</file>
         <file>resources/icons/link.svg</file>
         <file>resources/icons/code_block.svg</file>
+        <file>resources/icons/manage_template.svg</file>
     </qresource>
 </RCC>

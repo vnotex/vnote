@@ -349,8 +349,14 @@ public:
     // Get the folder c_styleConfigFolder in the config folder.
     QString getStyleConfigFolder() const;
 
+    // Get the folder c_templateConfigFolder in the config folder.
+    QString getTemplateConfigFolder() const;
+
     // Read all available css files in c_styleConfigFolder.
     QVector<QString> getCssStyles() const;
+
+    // Read all available templates files in c_templateConfigFolder.
+    QVector<QString> getNoteTemplates(DocType p_type = DocType::Unknown) const;
 
     // Get the folder c_codeBlockStyleConfigFolder in the config folder.
     QString getCodeBlockStyleConfigFolder() const;
@@ -723,6 +729,9 @@ private:
 
     // The folder name of code block style files.
     static const QString c_codeBlockStyleConfigFolder;
+
+    // The folder name of template files.
+    static const QString c_templateConfigFolder;
 
     // Default CSS file in resource system.
     static const QString c_defaultCssFile;
