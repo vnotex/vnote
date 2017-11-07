@@ -107,11 +107,16 @@ static QString keyToString(int p_key, int p_modifiers)
 }
 
 VVim::VVim(VEditor *p_editor)
-    : QObject(p_editor->getEditor()), m_editor(p_editor),
-      m_editConfig(&p_editor->getConfig()), m_mode(VimMode::Invalid),
-      m_resetPositionInBlock(true), m_regName(c_unnamedRegister),
-      m_leaderKey(Key(Qt::Key_Space)), m_replayLeaderSequence(false),
-      m_registerPending(false)
+    : QObject(p_editor->getEditor()),
+      m_editor(p_editor),
+      m_editConfig(&p_editor->getConfig()),
+      m_mode(VimMode::Invalid),
+      m_resetPositionInBlock(true),
+      m_regName(c_unnamedRegister),
+      m_leaderKey(Key(Qt::Key_Space)),
+      m_replayLeaderSequence(false),
+      m_registerPending(false),
+      m_insertModeAfterCommand(false)
 {
     Q_ASSERT(m_editConfig->m_enableVimMode);
 
@@ -509,6 +514,14 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             // Ctrl+R, insert the content of a register.
             m_pendingKeys.append(keyInfo);
             m_registerPending = true;
+            goto accept;
+        }
+
+        if (key == Qt::Key_O && isControlModifier(modifiers)) {
+            // Ctrl+O, enter normal mode, execute one command, then return to insert mode.
+            m_insertModeAfterCommand = true;
+            clearSelection();
+            setMode(VimMode::Normal);
             goto accept;
         }
 
@@ -2141,6 +2154,14 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 
 clear_accept:
     resetState();
+
+    if (m_insertModeAfterCommand
+        && !checkMode(VimMode::Visual)
+        && !checkMode(VimMode::VisualLine)) {
+        m_insertModeAfterCommand = false;
+        setMode(VimMode::Insert);
+    }
+
     m_editor->makeBlockVisible(m_editor->textCursorW().block());
 
 accept:

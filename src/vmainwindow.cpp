@@ -452,7 +452,7 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
     m_editToolBar->addAction(strikethroughAct);
 
     QAction *inlineCodeAct = new QAction(QIcon(":/resources/icons/inline_code.svg"),
-                                         tr("Inline Code (Ctrl+O)"), this);
+                                         tr("Inline Code (Ctrl+K)"), this);
     inlineCodeAct->setStatusTip(tr("Insert inline-code text or change selected text to inline-coded"));
     connect(inlineCodeAct, &QAction::triggered,
             this, [this](){

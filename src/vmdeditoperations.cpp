@@ -302,7 +302,7 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         break;
     }
 
-    case Qt::Key_O:
+    case Qt::Key_K:
     {
         if (modifiers == Qt::ControlModifier) {
             decorateInlineCode();

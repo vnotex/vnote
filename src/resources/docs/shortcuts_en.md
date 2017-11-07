@@ -56,8 +56,8 @@ Insert bold. Press `Ctrl+B` again to exit. Current selected text will be changed
 Insert italic. Press `Ctrl+I` again to exit. Current selected text will be changed to italic if exists.
 - `Ctrl+D`  
 Insert strikethrought. Press `Ctrl+D` again to exit. Current selected text will be changed to strikethrough if exists.
-- `Ctrl+O`  
-Insert inline code. Press `Ctrl+O` again to exit. Current selected text will be changed to inline code if exists.
+- `Ctrl+K`  
+Insert inline code. Press `Ctrl+K` again to exit. Current selected text will be changed to inline code if exists.
 - `Ctrl+M`  
 Insert fenced code block. Press `Ctrl+M` again to exit. Current selected text will be wrapped into a code block if exists.
 - `Ctrl+L`  
@@ -254,6 +254,7 @@ VNote supports following features of Vim:
     - `n` and `N` to find next or previous occurence;
     - `Ctrl+N` and `Ctrl+P` to navigate through the search history;
 - `Ctrl+R` to read the content of a register;
+- `Ctrl+O` in Insert mode to enter Normal mode temporarily;
 
 For now, VNote does **NOT** support the macro and repeat(`.`) features of Vim.
 

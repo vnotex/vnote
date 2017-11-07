@@ -842,6 +842,9 @@ private:
     // Whether we are expecting to read a register to insert.
     bool m_registerPending;
 
+    // Whether enter insert mode after a command.
+    bool m_insertModeAfterCommand;
+
     static const QChar c_unnamedRegister;
     static const QChar c_blackHoleRegister;
     static const QChar c_selectionRegister;
