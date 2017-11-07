@@ -8,6 +8,7 @@
 #include <QVector>
 #include <QHash>
 #include <QDateTime>
+#include <QHash>
 
 
 enum class MetaWordType
@@ -163,7 +164,9 @@ public:
     void init();
 
     // Expand meta words in @p_text and return the expanded text.
-    QString evaluate(const QString &p_text) const;
+    // @p_overriddenWords: a table containing overridden meta words.
+    QString evaluate(const QString &p_text,
+                     const QHash<QString, QString> &p_overriddenWords = QHash<QString, QString>()) const;
 
     const VMetaWord *findMetaWord(const QString &p_word) const;
 
@@ -172,6 +175,10 @@ public:
     const QDateTime &getDateTime() const;
 
     const QHash<QString, VMetaWord> &getAllMetaWords() const;
+
+    // Find @p_word in the overridden table.
+    // Return true if found and set @p_value to the overridden value.
+    bool findOverriddenValue(const QString &p_word, QString &p_value) const;
 
     // % by default.
     static const QChar c_delimiter;
@@ -190,6 +197,10 @@ private:
     // Used for data/time related evaluate.
     // Will be updated before each evaluation.
     QDateTime m_dateTime;
+
+    // Overridden table containing meta words with their designated value.
+    // Will be updated before each evaluation and clear after the evaluation.
+    QHash<QString, QString> m_overriddenWords;
 };
 
 inline const QDateTime &VMetaWordManager::getDateTime() const

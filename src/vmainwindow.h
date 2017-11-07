@@ -52,9 +52,8 @@ class VMainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    friend class VCaptain;
-
     VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent = 0);
+
     const QVector<QPair<QString, QString> > &getPalette() const;
 
     // Returns true if the location succeeds.
@@ -85,6 +84,8 @@ public:
 
     // Prompt user for new notebook if there is no notebook.
     void promptNewNotebookIfEmpty();
+
+    VFile *getCurrentFile() const;
 
 signals:
     // Emit when editor related configurations were changed by user.
@@ -388,6 +389,11 @@ inline VEditArea *VMainWindow::getEditArea() const
 inline VCaptain *VMainWindow::getCaptain() const
 {
     return m_captain;
+}
+
+inline VFile *VMainWindow::getCurrentFile() const
+{
+    return m_curFile;
 }
 
 #endif // VMAINWINDOW_H

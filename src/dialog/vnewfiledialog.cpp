@@ -258,7 +258,11 @@ bool VNewFileDialog::isTemplateUsed() const
 
 QString VNewFileDialog::getTemplate() const
 {
-    return g_mwMgr->evaluate(m_template);
+    QString name = m_nameEdit->getEvaluatedText();
+    QHash<QString, QString> overriddenTable;
+    overriddenTable.insert("note", name);
+    overriddenTable.insert("no", QFileInfo(name).completeBaseName());
+    return g_mwMgr->evaluate(m_template, overriddenTable);
 }
 
 void VNewFileDialog::tryToSelectLastTemplate()

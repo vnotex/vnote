@@ -3,14 +3,11 @@
 #include <QDebug>
 #include <QShortcut>
 #include "vcaptain.h"
-#include "vmainwindow.h"
 #include "veditarea.h"
 #include "vedittab.h"
 #include "vfilelist.h"
 #include "vnavigationmode.h"
 #include "vconfigmanager.h"
-
-extern VMainWindow *g_mainWin;
 
 extern VConfigManager *g_config;
 

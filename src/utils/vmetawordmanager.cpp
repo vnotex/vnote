@@ -4,10 +4,14 @@
 #include <QWidget>
 #include <QApplication>
 #include <QToolTip>
+#include <QFileInfo>
 
 #include "vconfigmanager.h"
+#include "vmainwindow.h"
 
 extern VConfigManager *g_config;
+
+extern VMainWindow *g_mainWin;
 
 
 // Used as the function template for some date/time related meta words.
@@ -238,6 +242,37 @@ void VMetaWordManager::init()
                 "datetime",
                 QString("%1date%1 %1time%1").arg(c_delimiter));
 
+    // %dt%.
+    addMetaWord(MetaWordType::Compound,
+                "dt",
+                QString("%1da%1-%1time%1").arg(c_delimiter));
+
+    // %note%.
+    addMetaWord(MetaWordType::FunctionBased,
+                "note",
+                tr("name of current note"),
+                [](const VMetaWord *) {
+                    const VFile *file = g_mainWin->getCurrentFile();
+                    if (file) {
+                        return file->getName();
+                    }
+
+                    return QString();
+                });
+
+    // %no%.
+    addMetaWord(MetaWordType::FunctionBased,
+                "no",
+                tr("complete base name of current note"),
+                [](const VMetaWord *) {
+                    const VFile *file = g_mainWin->getCurrentFile();
+                    if (file) {
+                        return QFileInfo(file->getName()).completeBaseName();
+                    }
+
+                    return QString();
+                });
+
     // Custom meta words.
     initCustomMetaWords();
 
@@ -258,7 +293,8 @@ void VMetaWordManager::initCustomMetaWords()
     }
 }
 
-QString VMetaWordManager::evaluate(const QString &p_text) const
+QString VMetaWordManager::evaluate(const QString &p_text,
+                                   const QHash<QString, QString> &p_overriddenWords) const
 {
     if (p_text.isEmpty()) {
         return p_text;
@@ -266,6 +302,9 @@ QString VMetaWordManager::evaluate(const QString &p_text) const
 
     // Update datetime for later parse.
     const_cast<VMetaWordManager *>(this)->m_dateTime = QDateTime::currentDateTime();
+
+    // Update overriden table.
+    const_cast<VMetaWordManager *>(this)->m_overriddenWords = p_overriddenWords;
 
     // Treat the text as a Compound meta word.
     const QString tmpWord("vnote_tmp_metaword");
@@ -276,11 +315,17 @@ QString VMetaWordManager::evaluate(const QString &p_text) const
                        p_text,
                        nullptr,
                        true);
+
+    QString val;
     if (metaWord.isValid()) {
-        return metaWord.evaluate();
+        val = metaWord.evaluate();
     } else {
-        return p_text;
+        val = p_text;
     }
+
+    const_cast<VMetaWordManager *>(this)->m_overriddenWords.clear();
+
+    return val;
 }
 
 bool VMetaWordManager::contains(const QString &p_word) const
@@ -318,6 +363,18 @@ void VMetaWordManager::addMetaWord(MetaWordType p_type,
         qDebug() << QString("MetaWord %1%2%1[%3] added")
                            .arg(c_delimiter).arg(p_word).arg(p_definition);
     }
+}
+
+bool VMetaWordManager::findOverriddenValue(const QString &p_word,
+                                           QString &p_value) const
+{
+    auto it = m_overriddenWords.find(p_word);
+    if (it != m_overriddenWords.end()) {
+        p_value = it.value();
+        return true;
+    }
+
+    return false;
 }
 
 VMetaWord::VMetaWord(const VMetaWordManager *p_manager,
@@ -398,7 +455,13 @@ bool VMetaWord::isValid() const
 QString VMetaWord::evaluate() const
 {
     Q_ASSERT(m_valid);
-    qDebug() << "evaluate meta word" << m_word;
+
+    // Check overridden table first.
+    QString overriddenVal;
+    if (m_manager->findOverriddenValue(m_word, overriddenVal)) {
+        return overriddenVal;
+    }
+
     switch (m_type) {
     case MetaWordType::Simple:
         return m_definition;
