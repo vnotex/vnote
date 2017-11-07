@@ -49,9 +49,7 @@ public:
     QWidget *getContentWidget() const;
 
     // Implementations for VNavigationMode.
-    void registerNavigation(QChar p_majorKey) Q_DECL_OVERRIDE;
     void showNavigation() Q_DECL_OVERRIDE;
-    void hideNavigation() Q_DECL_OVERRIDE;
     bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE;
 
 public slots:
@@ -104,7 +102,8 @@ private slots:
     void sortItems();
 
 protected:
-    void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
+    void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
+
     void focusInEvent(QFocusEvent *p_event) Q_DECL_OVERRIDE;
 
 private:
@@ -140,8 +139,6 @@ private:
 
     inline QPointer<VNoteFile> getVFile(QListWidgetItem *p_item) const;
 
-    QList<QListWidgetItem *> getVisibleItems() const;
-
     // Fill the info of @p_item according to @p_file.
     void fillItem(QListWidgetItem *p_item, const VNoteFile *p_file);
 
@@ -173,11 +170,6 @@ private:
     QAction *pasteAct;
     QAction *m_openLocationAct;
     QAction *m_sortAct;
-
-    // Navigation Mode.
-    // Map second key to QListWidgetItem.
-    QMap<QChar, QListWidgetItem *> m_keyMap;
-    QVector<QLabel *> m_naviLabels;
 
     static const QString c_infoShortcutSequence;
     static const QString c_copyShortcutSequence;

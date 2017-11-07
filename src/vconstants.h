@@ -50,6 +50,18 @@ namespace DirConfig
     static const QString c_modifiedTime = "modified_time";
 }
 
+// Snippet Cofnig file items.
+namespace SnippetConfig
+{
+    static const QString c_version = "version";
+    static const QString c_snippets = "snippets";
+    static const QString c_name = "name";
+    static const QString c_type = "type";
+    static const QString c_cursorMark = "cursor_mark";
+    static const QString c_selectionMark = "selection_mark";
+    static const QString c_shortcut = "shortcut";
+}
+
 static const QString c_emptyHeaderName = "[EMPTY]";
 
 enum class TextDecoration

@@ -72,9 +72,16 @@ class VUtils
 {
 public:
     static QString readFileFromDisk(const QString &filePath);
+
     static bool writeFileToDisk(const QString &filePath, const QString &text);
+
+    static bool writeJsonToDisk(const QString &p_filePath, const QJsonObject &p_json);
+
+    static QJsonObject readJsonFromDisk(const QString &p_filePath);
+
     // Transform FFFFFF string to QRgb
     static QRgb QRgbFromString(const QString &str);
+
     static QString generateImageFileName(const QString &path, const QString &title,
                                          const QString &format = "png");
 
@@ -226,6 +233,9 @@ public:
                            const QString &p_path,
                            bool p_skipRecycleBin = false);
 
+    // Delete file specified by @p_path.
+    static bool deleteFile(const QString &p_path);
+
     static QString displayDateTime(const QDateTime &p_dateTime);
 
     // Check if file @p_name exists in @p_dir.
@@ -241,6 +251,9 @@ public:
     // Return the normalized file path of @p_file if it is valid to open.
     // Return empty if it is not valid.
     static QString validFilePathToOpen(const QString &p_file);
+
+    // See if @p_modifiers is Control which is different on macOs and Windows.
+    static bool isControlModifierForVim(int p_modifiers);
 
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )

@@ -135,5 +135,11 @@
         <file>resources/icons/link.svg</file>
         <file>resources/icons/code_block.svg</file>
         <file>resources/icons/manage_template.svg</file>
+        <file>resources/icons/snippets.svg</file>
+        <file>resources/icons/add_snippet.svg</file>
+        <file>resources/icons/locate_snippet.svg</file>
+        <file>resources/icons/delete_snippet.svg</file>
+        <file>resources/icons/snippet_info.svg</file>
+        <file>resources/icons/apply_snippet.svg</file>
     </qresource>
 </RCC>

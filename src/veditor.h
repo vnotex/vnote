@@ -16,6 +16,7 @@ class VEditOperations;
 class QTimer;
 class QLabel;
 class VVim;
+enum class VimMode;
 
 
 enum class SelectionId {
@@ -135,6 +136,8 @@ public:
 
     // Update config according to global configurations.
     virtual void updateConfig();
+
+    void setVimMode(VimMode p_mode);
 
 // Wrapper functions for QPlainTextEdit/QTextEdit.
 // Ends with W to distinguish it from the original interfaces.

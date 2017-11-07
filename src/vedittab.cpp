@@ -124,3 +124,8 @@ bool VEditTab::tabHasFocus() const
 void VEditTab::insertLink()
 {
 }
+
+void VEditTab::applySnippet(const VSnippet *p_snippet)
+{
+    Q_UNUSED(p_snippet);
+}

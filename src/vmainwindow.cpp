@@ -30,6 +30,7 @@
 #include "vbuttonwithwidget.h"
 #include "vattachmentlist.h"
 #include "vfilesessioninfo.h"
+#include "vsnippetlist.h"
 
 VMainWindow *g_mainWin;
 
@@ -111,6 +112,7 @@ void VMainWindow::registerCaptainAndNavigationTargets()
     m_captain->registerNavigationTarget(m_fileList);
     m_captain->registerNavigationTarget(editArea);
     m_captain->registerNavigationTarget(outline);
+    m_captain->registerNavigationTarget(m_snippetList);
 
     // Register Captain mode targets.
     m_captain->registerCaptainTarget(tr("AttachmentList"),
@@ -1185,7 +1187,6 @@ void VMainWindow::initDockWindows()
     toolDock = new QDockWidget(tr("Tools"), this);
     toolDock->setObjectName("ToolsDock");
     toolDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    toolBox = new QToolBox(this);
 
     // Outline tree.
     outline = new VOutline(this);
@@ -1196,8 +1197,18 @@ void VMainWindow::initDockWindows()
     connect(outline, &VOutline::outlineItemActivated,
             editArea, &VEditArea::scrollToHeader);
 
-    toolBox->addItem(outline, QIcon(":/resources/icons/outline.svg"), tr("Outline"));
-    toolDock->setWidget(toolBox);
+    // Snippets.
+    m_snippetList = new VSnippetList(this);
+
+    m_toolBox = new QToolBox(this);
+    m_toolBox->addItem(outline,
+                       QIcon(":/resources/icons/outline.svg"),
+                       tr("Outline"));
+    m_toolBox->addItem(m_snippetList,
+                       QIcon(":/resources/icons/snippets.svg"),
+                       tr("Snippets"));
+
+    toolDock->setWidget(m_toolBox);
     addDockWidget(Qt::RightDockWidgetArea, toolDock);
 
     QAction *toggleAct = toolDock->toggleViewAction();

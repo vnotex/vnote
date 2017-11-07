@@ -18,6 +18,7 @@
 #include "vwebview.h"
 #include "vmdeditor.h"
 #include "vmainwindow.h"
+#include "vsnippet.h"
 
 extern VMainWindow *g_mainWin;
 
@@ -722,5 +723,21 @@ void VMdTab::evaluateMagicWords()
 {
     if (isEditMode() && m_file->isModifiable()) {
         getEditor()->evaluateMagicWords();
+    }
+}
+
+void VMdTab::applySnippet(const VSnippet *p_snippet)
+{
+    if (isEditMode()
+        && m_file->isModifiable()
+        && p_snippet->getType() == VSnippet::Type::PlainText) {
+        Q_ASSERT(m_editor);
+        QTextCursor cursor = m_editor->textCursor();
+        bool changed = p_snippet->apply(cursor);
+        if (changed) {
+            m_editor->setTextCursor(cursor);
+
+            m_editor->setVimMode(VimMode::Insert);
+        }
     }
 }

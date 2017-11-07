@@ -24,16 +24,6 @@ const int VVim::SearchHistory::c_capacity = 50;
 
 #define ADDKEY(x, y) case (x): {ch = (y); break;}
 
-// See if @p_modifiers is Control which is different on macOs and Windows.
-static bool isControlModifier(int p_modifiers)
-{
-#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
-    return p_modifiers == Qt::MetaModifier;
-#else
-    return p_modifiers == Qt::ControlModifier;
-#endif
-}
-
 // Returns NULL QChar if invalid.
 static QChar keyToChar(int p_key, int p_modifiers)
 {
@@ -41,7 +31,7 @@ static QChar keyToChar(int p_key, int p_modifiers)
         return QChar('0' + (p_key - Qt::Key_0));
     } else if (p_key >= Qt::Key_A && p_key <= Qt::Key_Z) {
         if (p_modifiers == Qt::ShiftModifier
-            || isControlModifier(p_modifiers)) {
+            || VUtils::isControlModifierForVim(p_modifiers)) {
             return QChar('A' + (p_key - Qt::Key_A));
         } else {
             return QChar('a' + (p_key - Qt::Key_A));
@@ -99,7 +89,7 @@ static QString keyToString(int p_key, int p_modifiers)
         return QString();
     }
 
-    if (isControlModifier(p_modifiers)) {
+    if (VUtils::isControlModifierForVim(p_modifiers)) {
         return QString("^") + ch;
     } else {
         return ch;
@@ -473,7 +463,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
     // Handle Insert mode key press.
     if (VimMode::Insert == m_mode) {
         if (key == Qt::Key_Escape
-            || (key == Qt::Key_BracketLeft && isControlModifier(modifiers))) {
+            || (key == Qt::Key_BracketLeft && VUtils::isControlModifierForVim(modifiers))) {
             // See if we need to cancel auto indent.
             bool cancelAutoIndent = false;
             if (p_autoIndentPos && *p_autoIndentPos > -1) {
@@ -510,14 +500,14 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             }
 
             goto clear_accept;
-        } else if (key == Qt::Key_R && isControlModifier(modifiers)) {
+        } else if (key == Qt::Key_R && VUtils::isControlModifierForVim(modifiers)) {
             // Ctrl+R, insert the content of a register.
             m_pendingKeys.append(keyInfo);
             m_registerPending = true;
             goto accept;
         }
 
-        if (key == Qt::Key_O && isControlModifier(modifiers)) {
+        if (key == Qt::Key_O && VUtils::isControlModifierForVim(modifiers)) {
             // Ctrl+O, enter normal mode, execute one command, then return to insert mode.
             m_insertModeAfterCommand = true;
             clearSelection();
@@ -823,7 +813,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 
             m_editor->setTextCursorW(cursor);
             setMode(VimMode::Insert);
-        } else if (isControlModifier(modifiers)) {
+        } else if (VUtils::isControlModifierForVim(modifiers)) {
             // Ctrl+I, jump to next location.
             if (!m_tokens.isEmpty()
                 || !checkMode(VimMode::Normal)) {
@@ -935,7 +925,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             }
 
             break;
-        } else if (isControlModifier(modifiers)) {
+        } else if (VUtils::isControlModifierForVim(modifiers)) {
             // Ctrl+O, jump to previous location.
             if (!m_tokens.isEmpty()
                 || !checkMode(VimMode::Normal)) {
@@ -1037,7 +1027,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
     // Should be kept together with Qt::Key_PageUp.
     case Qt::Key_B:
     {
-        if (isControlModifier(modifiers)) {
+        if (VUtils::isControlModifierForVim(modifiers)) {
             // Ctrl+B, page up, fall through.
             modifiers = Qt::NoModifier;
         } else if (modifiers == Qt::NoModifier || modifiers == Qt::ShiftModifier) {
@@ -1095,7 +1085,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
         tryGetRepeatToken(m_keys, m_tokens);
         bool toLower = modifiers == Qt::NoModifier;
 
-        if (isControlModifier(modifiers)) {
+        if (VUtils::isControlModifierForVim(modifiers)) {
             // Ctrl+U, HalfPageUp.
             if (!m_keys.isEmpty()) {
                 // Not a valid sequence.
@@ -1200,7 +1190,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 
     case Qt::Key_D:
     {
-        if (isControlModifier(modifiers)) {
+        if (VUtils::isControlModifierForVim(modifiers)) {
             // Ctrl+D, HalfPageDown.
             tryGetRepeatToken(m_keys, m_tokens);
             if (!m_keys.isEmpty()) {
@@ -1301,7 +1291,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
     // Should be kept together with Qt::Key_Escape.
     case Qt::Key_BracketLeft:
     {
-        if (isControlModifier(modifiers)) {
+        if (VUtils::isControlModifierForVim(modifiers)) {
             // fallthrough.
         } else if (modifiers == Qt::NoModifier) {
             tryGetRepeatToken(m_keys, m_tokens);
@@ -1792,7 +1782,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             break;
         }
 
-        if (isControlModifier(modifiers)) {
+        if (VUtils::isControlModifierForVim(modifiers)) {
             // Redo.
             tryGetRepeatToken(m_keys, m_tokens);
             if (!m_keys.isEmpty() || hasActionToken()) {

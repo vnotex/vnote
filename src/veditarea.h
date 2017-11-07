@@ -205,11 +205,6 @@ private:
 
     // Last closed files stack.
     QStack<VFileSessionInfo> m_lastClosedFiles;
-
-    // Navigation Mode.
-    // Map second key to VEditWindow.
-    QMap<QChar, VEditWindow *> m_keyMap;
-    QVector<QLabel *> m_naviLabels;
 };
 
 inline VEditWindow* VEditArea::getWindow(int windowIndex) const

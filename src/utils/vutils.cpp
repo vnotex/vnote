@@ -61,7 +61,7 @@ QString VUtils::readFileFromDisk(const QString &filePath)
 {
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qWarning() << "fail to read file" << filePath;
+        qWarning() << "fail to open file" << filePath << "to read";
         return QString();
     }
     QString fileText(file.readAll());
@@ -82,6 +82,34 @@ bool VUtils::writeFileToDisk(const QString &filePath, const QString &text)
     file.close();
     qDebug() << "write file content:" << filePath;
     return true;
+}
+
+bool VUtils::writeJsonToDisk(const QString &p_filePath, const QJsonObject &p_json)
+{
+    QFile file(p_filePath);
+    // We use Unix LF for config file.
+    if (!file.open(QIODevice::WriteOnly)) {
+        qWarning() << "fail to open file" << p_filePath << "to write";
+        return false;
+    }
+
+    QJsonDocument doc(p_json);
+    if (-1 == file.write(doc.toJson())) {
+        return false;
+    }
+
+    return true;
+}
+
+QJsonObject VUtils::readJsonFromDisk(const QString &p_filePath)
+{
+    QFile file(p_filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "fail to open file" << p_filePath << "to read";
+        return QJsonObject();
+    }
+
+    return QJsonDocument::fromJson(file.readAll()).object();
 }
 
 QRgb VUtils::QRgbFromString(const QString &str)
@@ -859,6 +887,12 @@ bool VUtils::deleteFile(const VNotebook *p_notebook,
     }
 }
 
+bool VUtils::deleteFile(const QString &p_path)
+{
+    QFile file(p_path);
+    return file.remove();
+}
+
 bool VUtils::deleteFile(const VOrphanFile *p_file,
                         const QString &p_path,
                         bool p_skipRecycleBin)
@@ -1003,4 +1037,13 @@ QString VUtils::validFilePathToOpen(const QString &p_file)
     }
 
     return QString();
+}
+
+bool VUtils::isControlModifierForVim(int p_modifiers)
+{
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    return p_modifiers == Qt::MetaModifier;
+#else
+    return p_modifiers == Qt::ControlModifier;
+#endif
 }

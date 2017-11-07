@@ -37,6 +37,7 @@ class QSystemTrayIcon;
 class QShortcut;
 class VButtonWithWidget;
 class VAttachmentList;
+class VSnippetList;
 
 enum class PanelViewState
 {
@@ -86,6 +87,8 @@ public:
     void promptNewNotebookIfEmpty();
 
     VFile *getCurrentFile() const;
+
+    VEditTab *getCurrentTab() const;
 
 signals:
     // Emit when editor related configurations were changed by user.
@@ -294,8 +297,15 @@ private:
     VEditArea *editArea;
 
     QDockWidget *toolDock;
-    QToolBox *toolBox;
+
+    // Tool box in the dock widget.
+    QToolBox *m_toolBox;
+
     VOutline *outline;
+
+    // View and manage snippets.
+    VSnippetList *m_snippetList;
+
     VAvatar *m_avatar;
     VFindReplaceDialog *m_findReplaceDialog;
     VVimIndicator *m_vimIndicator;
@@ -394,6 +404,11 @@ inline VCaptain *VMainWindow::getCaptain() const
 inline VFile *VMainWindow::getCurrentFile() const
 {
     return m_curFile;
+}
+
+inline VEditTab *VMainWindow::getCurrentTab() const
+{
+    return m_curTab;
 }
 
 #endif // VMAINWINDOW_H

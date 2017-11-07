@@ -57,6 +57,7 @@ SOURCES += main.cpp\
     dialog/vselectdialog.cpp \
     vcaptain.cpp \
     vopenedlistmenu.cpp \
+    vnavigationmode.cpp \
     vorphanfile.cpp \
     vcodeblockhighlighthelper.cpp \
     vwebview.cpp \
@@ -91,7 +92,11 @@ SOURCES += main.cpp\
     vpreviewmanager.cpp \
     vimageresourcemanager2.cpp \
     vtextdocumentlayout.cpp \
-    vtextedit.cpp
+    vtextedit.cpp \
+    vsnippetlist.cpp \
+    vsnippet.cpp \
+    dialog/veditsnippetdialog.cpp \
+    utils/vimnavigationforwidget.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -170,7 +175,11 @@ HEADERS  += vmainwindow.h \
     vpreviewmanager.h \
     vimageresourcemanager2.h \
     vtextdocumentlayout.h \
-    vtextedit.h
+    vtextedit.h \
+    vsnippetlist.h \
+    vsnippet.h \
+    dialog/veditsnippetdialog.h \
+    utils/vimnavigationforwidget.h
 
 RESOURCES += \
     vnote.qrc \

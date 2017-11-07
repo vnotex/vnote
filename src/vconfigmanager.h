@@ -352,6 +352,11 @@ public:
     // Get the folder c_templateConfigFolder in the config folder.
     QString getTemplateConfigFolder() const;
 
+    // Get the folder c_snippetConfigFolder in the config folder.
+    QString getSnippetConfigFolder() const;
+
+    QString getSnippetConfigFilePath() const;
+
     // Read all available css files in c_styleConfigFolder.
     QVector<QString> getCssStyles() const;
 
@@ -714,6 +719,9 @@ private:
     // The name of the config file for session information.
     static const QString c_sessionConfigFile;
 
+    // The name of the config file for snippets folder.
+    static const QString c_snippetConfigFile;
+
     // QSettings for the user configuration
     QSettings *userSettings;
 
@@ -732,6 +740,9 @@ private:
 
     // The folder name of template files.
     static const QString c_templateConfigFolder;
+
+    // The folder name of snippet files.
+    static const QString c_snippetConfigFolder;
 
     // Default CSS file in resource system.
     static const QString c_defaultCssFile;

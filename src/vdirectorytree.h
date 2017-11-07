@@ -29,9 +29,7 @@ public:
     const VNotebook *currentNotebook() const;
 
     // Implementations for VNavigationMode.
-    void registerNavigation(QChar p_majorKey) Q_DECL_OVERRIDE;
     void showNavigation() Q_DECL_OVERRIDE;
-    void hideNavigation() Q_DECL_OVERRIDE;
     bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE;
 
 signals:
@@ -134,10 +132,6 @@ private:
     // Expand the currently-built subtree of @p_item according to VDirectory.isExpanded().
     void expandSubTree(QTreeWidgetItem *p_item);
 
-    QList<QTreeWidgetItem *> getVisibleItems() const;
-
-    QList<QTreeWidgetItem *> getVisibleChildItems(const QTreeWidgetItem *p_item) const;
-
     // We use a map to save and restore current directory of each notebook.
     // Try to restore current directory after changing notebook.
     // Return false if no cache item found for current notebook.
@@ -179,11 +173,6 @@ private:
 
     // Reload content from disk.
     QAction *m_reloadAct;
-
-    // Navigation Mode.
-    // Map second key to QTreeWidgetItem.
-    QMap<QChar, QTreeWidgetItem *> m_keyMap;
-    QVector<QLabel *> m_naviLabels;
 
     static const QString c_infoShortcutSequence;
     static const QString c_copyShortcutSequence;

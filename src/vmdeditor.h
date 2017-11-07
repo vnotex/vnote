@@ -10,7 +10,6 @@
 #include "veditor.h"
 #include "vconfigmanager.h"
 #include "vtableofcontent.h"
-#include "veditoperations.h"
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
 

@@ -194,6 +194,7 @@ void VOpenedListMenu::keyPressEvent(QKeyEvent *p_event)
             hide();
             return;
         }
+
         break;
     }
 
@@ -201,7 +202,7 @@ void VOpenedListMenu::keyPressEvent(QKeyEvent *p_event)
     {
         m_cmdTimer->stop();
         m_cmdNum = 0;
-        if (modifiers == Qt::ControlModifier) {
+        if (VUtils::isControlModifierForVim(modifiers)) {
             QList<QAction *> acts = actions();
             if (acts.size() == 0) {
                 return;
@@ -230,6 +231,7 @@ void VOpenedListMenu::keyPressEvent(QKeyEvent *p_event)
             setActiveAction(act);
             return;
         }
+
         break;
     }
 
@@ -237,11 +239,12 @@ void VOpenedListMenu::keyPressEvent(QKeyEvent *p_event)
     {
         m_cmdTimer->stop();
         m_cmdNum = 0;
-        if (modifiers == Qt::ControlModifier) {
+        if (VUtils::isControlModifierForVim(modifiers)) {
             QList<QAction *> acts = actions();
             if (acts.size() == 0) {
                 return;
             }
+
             int idx = acts.size() - 1;
             QAction *act = activeAction();
             if (act) {
@@ -266,6 +269,7 @@ void VOpenedListMenu::keyPressEvent(QKeyEvent *p_event)
             setActiveAction(act);
             return;
         }
+
         break;
     }
 
@@ -274,6 +278,7 @@ void VOpenedListMenu::keyPressEvent(QKeyEvent *p_event)
         m_cmdNum = 0;
         break;
     }
+
     QMenu::keyPressEvent(p_event);
 }
 

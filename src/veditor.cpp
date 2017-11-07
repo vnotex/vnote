@@ -9,6 +9,7 @@
 #include "veditoperations.h"
 #include "dialog/vinsertlinkdialog.h"
 #include "utils/vmetawordmanager.h"
+#include "utils/vvim.h"
 
 extern VConfigManager *g_config;
 
@@ -914,4 +915,11 @@ void VEditor::decorateText(TextDecoration p_decoration)
 void VEditor::updateConfig()
 {
     updateEditConfig();
+}
+
+void VEditor::setVimMode(VimMode p_mode)
+{
+    if (m_editOps) {
+        m_editOps->setVimMode(p_mode);
+    }
 }

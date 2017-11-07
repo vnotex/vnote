@@ -8,6 +8,7 @@
 #include "vmainwindow.h"
 #include "dialog/vconfirmdeletiondialog.h"
 #include "dialog/vsortdialog.h"
+#include "utils/vimnavigationforwidget.h"
 
 extern VConfigManager *g_config;
 extern VMainWindow *g_mainWin;
@@ -462,47 +463,10 @@ void VAttachmentList::handleListItemCommitData(QWidget *p_itemEdit)
 
 void VAttachmentList::keyPressEvent(QKeyEvent *p_event)
 {
-    int key = p_event->key();
-    int modifiers = p_event->modifiers();
-    switch (key) {
-    case Qt::Key_BracketLeft:
-    {
-        if (modifiers == Qt::ControlModifier) {
-            QKeyEvent *escEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Escape,
-                                                Qt::NoModifier);
-            QCoreApplication::postEvent(this, escEvent);
-            return;
-        }
-
-        break;
-    }
-
-    case Qt::Key_J:
-    {
-        if (modifiers == Qt::ControlModifier) {
-            QKeyEvent *downEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Down,
-                                                 Qt::NoModifier);
-            QCoreApplication::postEvent(m_attachmentList, downEvent);
-            return;
-        }
-
-        break;
-    }
-
-    case Qt::Key_K:
-    {
-        if (modifiers == Qt::ControlModifier) {
-            QKeyEvent *upEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Up,
-                                               Qt::NoModifier);
-            QCoreApplication::postEvent(m_attachmentList, upEvent);
-            return;
-        }
-
-        break;
-    }
-
-    default:
-        break;
+    if (VimNavigationForWidget::injectKeyPressEventForVim(m_attachmentList,
+                                                          p_event,
+                                                          this)) {
+        return;
     }
 
     QWidget::keyPressEvent(p_event);

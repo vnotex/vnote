@@ -19,9 +19,7 @@ public:
     VOutline(QWidget *parent = 0);
 
     // Implementations for VNavigationMode.
-    void registerNavigation(QChar p_majorKey) Q_DECL_OVERRIDE;
     void showNavigation() Q_DECL_OVERRIDE;
-    void hideNavigation() Q_DECL_OVERRIDE;
     bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE;
 
 signals:
@@ -64,9 +62,6 @@ private:
 
     bool selectHeaderOne(QTreeWidgetItem *p_item, const VHeaderPointer &p_header);
 
-    QList<QTreeWidgetItem *> getVisibleItems() const;
-    QList<QTreeWidgetItem *> getVisibleChildItems(const QTreeWidgetItem *p_item) const;
-
     // Fill the info of @p_item.
     void fillItem(QTreeWidgetItem *p_item, const VTableOfContentItem &p_header);
 
@@ -79,11 +74,6 @@ private:
 
     // When true, won't emit outlineItemActivated().
     bool m_muted;
-
-    // Navigation Mode.
-    // Map second key to QTreeWidgetItem.
-    QMap<QChar, QTreeWidgetItem *> m_keyMap;
-    QVector<QLabel *> m_naviLabels;
 };
 
 #endif // VOUTLINE_H

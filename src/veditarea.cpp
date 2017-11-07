@@ -756,7 +756,8 @@ bool VEditArea::handleKeyNavigation(int p_key, bool &p_succeed)
         ret = true;
         auto it = m_keyMap.find(keyChar);
         if (it != m_keyMap.end()) {
-            setCurrentWindow(splitter->indexOf(it.value()), true);
+            setCurrentWindow(splitter->indexOf(static_cast<VEditWindow *>(it.value())),
+                                               true);
         }
     } else if (keyChar == m_majorKey) {
         // Major key pressed.

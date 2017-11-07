@@ -10,6 +10,7 @@
 #include "vedittabinfo.h"
 
 class VEditArea;
+class VSnippet;
 
 // VEditTab is the base class of an edit tab inside VEditWindow.
 class VEditTab : public QWidget
@@ -90,6 +91,9 @@ public:
 
     // Called by evaluateMagicWordsByCaptain() to evaluate the magic words.
     virtual void evaluateMagicWords();
+
+    // Insert snippet @p_snippet.
+    virtual void applySnippet(const VSnippet *p_snippet);
 
 public slots:
     // Enter edit mode

@@ -28,11 +28,15 @@ const QString VConfigManager::c_defaultConfigFile = QString("vnote.ini");
 
 const QString VConfigManager::c_sessionConfigFile = QString("session.ini");
 
+const QString VConfigManager::c_snippetConfigFile = QString("snippet.json");
+
 const QString VConfigManager::c_styleConfigFolder = QString("styles");
 
 const QString VConfigManager::c_codeBlockStyleConfigFolder = QString("codeblock_styles");
 
 const QString VConfigManager::c_templateConfigFolder = QString("templates");
+
+const QString VConfigManager::c_snippetConfigFolder = QString("snippets");
 
 const QString VConfigManager::c_defaultCssFile = QString(":/resources/styles/default.css");
 
@@ -483,6 +487,7 @@ bool VConfigManager::writeDirectoryConfig(const QString &path, const QJsonObject
     QString configFile = fetchDirConfigFilePath(path);
 
     QFile config(configFile);
+    // We use Unix LF for config file.
     if (!config.open(QIODevice::WriteOnly)) {
         qWarning() << "fail to open directory configuration file for write:"
                    << configFile;
@@ -734,17 +739,32 @@ QString VConfigManager::getConfigFilePath() const
 
 QString VConfigManager::getStyleConfigFolder() const
 {
-    return getConfigFolder() + QDir::separator() + c_styleConfigFolder;
+    static QString path = QDir(getConfigFolder()).filePath(c_styleConfigFolder);
+    return path;
 }
 
 QString VConfigManager::getCodeBlockStyleConfigFolder() const
 {
-    return getStyleConfigFolder() + QDir::separator() + c_codeBlockStyleConfigFolder;
+    static QString path = QDir(getStyleConfigFolder()).filePath(c_codeBlockStyleConfigFolder);
+    return path;
 }
 
 QString VConfigManager::getTemplateConfigFolder() const
 {
-    return getConfigFolder() + QDir::separator() + c_templateConfigFolder;
+    static QString path = QDir(getConfigFolder()).filePath(c_templateConfigFolder);
+    return path;
+}
+
+QString VConfigManager::getSnippetConfigFolder() const
+{
+    static QString path = QDir(getConfigFolder()).filePath(c_snippetConfigFolder);
+    return path;
+}
+
+QString VConfigManager::getSnippetConfigFilePath() const
+{
+    static QString path = QDir(getSnippetConfigFolder()).filePath(c_snippetConfigFile);
+    return path;
 }
 
 QVector<QString> VConfigManager::getCssStyles() const

@@ -15,6 +15,7 @@
 #include "dialog/vconfirmdeletiondialog.h"
 #include "dialog/vsortdialog.h"
 #include "vmainwindow.h"
+#include "utils/vimnavigationforwidget.h"
 
 extern VConfigManager *g_config;
 extern VNote *g_vnote;
@@ -825,50 +826,21 @@ void VFileList::pasteFiles(VDirectory *p_destDir,
     getNewMagic();
 }
 
-void VFileList::keyPressEvent(QKeyEvent *event)
+void VFileList::keyPressEvent(QKeyEvent *p_event)
 {
-    int key = event->key();
-    int modifiers = event->modifiers();
-    switch (key) {
-    case Qt::Key_Return:
-    {
+    if (VimNavigationForWidget::injectKeyPressEventForVim(fileList,
+                                                          p_event)) {
+        return;
+    }
+
+    if (p_event->key() == Qt::Key_Return) {
         QListWidgetItem *item = fileList->currentItem();
         if (item) {
             handleItemClicked(item);
         }
-
-        break;
     }
 
-
-    case Qt::Key_J:
-    {
-        if (modifiers == Qt::ControlModifier) {
-            event->accept();
-            QKeyEvent *downEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Down,
-                                                 Qt::NoModifier);
-            QCoreApplication::postEvent(fileList, downEvent);
-            return;
-        }
-        break;
-    }
-
-    case Qt::Key_K:
-    {
-        if (modifiers == Qt::ControlModifier) {
-            event->accept();
-            QKeyEvent *upEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Up,
-                                               Qt::NoModifier);
-            QCoreApplication::postEvent(fileList, upEvent);
-            return;
-        }
-        break;
-    }
-
-    default:
-        break;
-    }
-    QWidget::keyPressEvent(event);
+    QWidget::keyPressEvent(p_event);
 }
 
 void VFileList::focusInEvent(QFocusEvent * /* p_event */)
@@ -893,91 +865,15 @@ bool VFileList::locateFile(const VNoteFile *p_file)
     return false;
 }
 
-void VFileList::registerNavigation(QChar p_majorKey)
-{
-    m_majorKey = p_majorKey;
-    V_ASSERT(m_keyMap.empty());
-    V_ASSERT(m_naviLabels.empty());
-}
-
 void VFileList::showNavigation()
 {
-    // Clean up.
-    m_keyMap.clear();
-    for (auto label : m_naviLabels) {
-        delete label;
-    }
-    m_naviLabels.clear();
-
-    if (!isVisible()) {
-        return;
-    }
-
-    // Generate labels for visible items.
-    auto items = getVisibleItems();
-    int itemWidth = rect().width();
-    for (int i = 0; i < 26 && i < items.size(); ++i) {
-        QChar key('a' + i);
-        m_keyMap[key] = items[i];
-
-        QString str = QString(m_majorKey) + key;
-        QLabel *label = new QLabel(str, this);
-        label->setStyleSheet(g_vnote->getNavigationLabelStyle(str));
-        label->show();
-        QRect rect = fileList->visualItemRect(items[i]);
-        // Display the label at the end to show the file name.
-        label->move(rect.x() + itemWidth - label->width(), rect.y());
-        m_naviLabels.append(label);
-    }
-}
-
-void VFileList::hideNavigation()
-{
-    m_keyMap.clear();
-    for (auto label : m_naviLabels) {
-        delete label;
-    }
-    m_naviLabels.clear();
+    VNavigationMode::showNavigation(fileList);
 }
 
 bool VFileList::handleKeyNavigation(int p_key, bool &p_succeed)
 {
     static bool secondKey = false;
-    bool ret = false;
-    p_succeed = false;
-    QChar keyChar = VUtils::keyToChar(p_key);
-    if (secondKey && !keyChar.isNull()) {
-        secondKey = false;
-        p_succeed = true;
-        ret = true;
-        auto it = m_keyMap.find(keyChar);
-        if (it != m_keyMap.end()) {
-            fileList->setCurrentItem(it.value(), QItemSelectionModel::ClearAndSelect);
-            fileList->setFocus();
-        }
-    } else if (keyChar == m_majorKey) {
-        // Major key pressed.
-        // Need second key if m_keyMap is not empty.
-        if (m_keyMap.isEmpty()) {
-            p_succeed = true;
-        } else {
-            secondKey = true;
-        }
-        ret = true;
-    }
-    return ret;
-}
-
-QList<QListWidgetItem *> VFileList::getVisibleItems() const
-{
-    QList<QListWidgetItem *> items;
-    for (int i = 0; i < fileList->count(); ++i) {
-        QListWidgetItem *item = fileList->item(i);
-        if (!item->isHidden()) {
-            items.append(item);
-        }
-    }
-    return items;
+    return VNavigationMode::handleKeyNavigation(fileList, secondKey, p_key, p_succeed);
 }
 
 int VFileList::getNewMagic()
