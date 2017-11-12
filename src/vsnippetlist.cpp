@@ -604,3 +604,14 @@ bool VSnippetList::deleteSnippetFile(const VSnippet &p_snippet, QString *p_errMs
 
     return true;
 }
+
+void VSnippetList::focusInEvent(QFocusEvent *p_event)
+{
+    QWidget::focusInEvent(p_event);
+
+    if (m_snippets.isEmpty()) {
+        m_addBtn->setFocus();
+    } else {
+        m_snippetList->setFocus();
+    }
+}

@@ -14,6 +14,7 @@ class QListWidgetItem;
 class QLabel;
 class QAction;
 class QKeyEvent;
+class QFocusEvent;
 
 
 class VSnippetList : public QWidget, public VNavigationMode
@@ -28,6 +29,8 @@ public:
 
 protected:
     void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
+
+    void focusInEvent(QFocusEvent *p_event) Q_DECL_OVERRIDE;
 
 private slots:
     void newSnippet();

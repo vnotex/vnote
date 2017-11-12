@@ -6,11 +6,13 @@
 #include <QString>
 #include <QVector>
 
+#include "vnavigationmode.h"
+
 class QPushButton;
 class QStackedLayout;
 class QBoxLayout;
 
-class VToolBox : public QWidget
+class VToolBox : public QWidget, public VNavigationMode
 {
     Q_OBJECT
 public:
@@ -19,6 +21,12 @@ public:
     int addItem(QWidget *p_widget, const QIcon &p_iconSet, const QString &p_text);
 
     void setCurrentIndex(int p_idx);
+
+    void setCurrentWidget(QWidget *p_widget);
+
+    // Implementations for VNavigationMode.
+    void showNavigation() Q_DECL_OVERRIDE;
+    bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE;
 
 private:
     struct ItemInfo

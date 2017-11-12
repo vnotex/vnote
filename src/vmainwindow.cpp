@@ -112,6 +112,7 @@ void VMainWindow::registerCaptainAndNavigationTargets()
     m_captain->registerNavigationTarget(directoryTree);
     m_captain->registerNavigationTarget(m_fileList);
     m_captain->registerNavigationTarget(editArea);
+    m_captain->registerNavigationTarget(m_toolBox);
     m_captain->registerNavigationTarget(outline);
     m_captain->registerNavigationTarget(m_snippetList);
 
