@@ -23,7 +23,7 @@ class VNotebook;
 class QActionGroup;
 class VFileList;
 class VEditArea;
-class QToolBox;
+class VToolBox;
 class VOutline;
 class VNotebookSelector;
 class VAvatar;
@@ -299,7 +299,7 @@ private:
     QDockWidget *toolDock;
 
     // Tool box in the dock widget.
-    QToolBox *m_toolBox;
+    VToolBox *m_toolBox;
 
     VOutline *outline;
 

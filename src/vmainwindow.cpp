@@ -31,6 +31,7 @@
 #include "vattachmentlist.h"
 #include "vfilesessioninfo.h"
 #include "vsnippetlist.h"
+#include "vtoolbox.h"
 
 VMainWindow *g_mainWin;
 
@@ -1200,7 +1201,7 @@ void VMainWindow::initDockWindows()
     // Snippets.
     m_snippetList = new VSnippetList(this);
 
-    m_toolBox = new QToolBox(this);
+    m_toolBox = new VToolBox(this);
     m_toolBox->addItem(outline,
                        QIcon(":/resources/icons/outline.svg"),
                        tr("Outline"));

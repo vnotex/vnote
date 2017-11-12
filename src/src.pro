@@ -96,7 +96,8 @@ SOURCES += main.cpp\
     vsnippetlist.cpp \
     vsnippet.cpp \
     dialog/veditsnippetdialog.cpp \
-    utils/vimnavigationforwidget.cpp
+    utils/vimnavigationforwidget.cpp \
+    vtoolbox.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -179,7 +180,8 @@ HEADERS  += vmainwindow.h \
     vsnippetlist.h \
     vsnippet.h \
     dialog/veditsnippetdialog.h \
-    utils/vimnavigationforwidget.h
+    utils/vimnavigationforwidget.h \
+    vtoolbox.h
 
 RESOURCES += \
     vnote.qrc \
