@@ -95,6 +95,9 @@ public:
     // Insert snippet @p_snippet.
     virtual void applySnippet(const VSnippet *p_snippet);
 
+    // Prompt for user to apply a snippet.
+    virtual void applySnippet();
+
 public slots:
     // Enter edit mode
     virtual void editFile() = 0;

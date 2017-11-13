@@ -144,7 +144,8 @@ void VSnippetList::newSnippet()
                          dialog.getTypeInput(),
                          dialog.getContentInput(),
                          dialog.getCursorMarkInput(),
-                         dialog.getSelectionMarkInput());
+                         dialog.getSelectionMarkInput(),
+                         dialog.getShortcutInput());
 
         QString errMsg;
         if (!addSnippet(snippet, &errMsg)) {
@@ -215,8 +216,9 @@ void VSnippetList::deleteSelectedItems()
     }
 
     for (auto const & item : selectedItems) {
-        items.push_back(ConfirmItemInfo(item->text(),
-                                        item->text(),
+        QString name = item->data(Qt::UserRole).toString();
+        items.push_back(ConfirmItemInfo(name,
+                                        name,
                                         "",
                                         NULL));
     }
@@ -377,7 +379,10 @@ void VSnippetList::updateContent()
 
     for (int i = 0; i < m_snippets.size(); ++i) {
         const VSnippet &snip = m_snippets[i];
-        QListWidgetItem *item = new QListWidgetItem(snip.getName());
+        QString text = QString("%1%2").arg(snip.getName())
+                                      .arg(snip.getShortcut().isNull()
+                                           ? "" : QString(" [%1]").arg(snip.getShortcut()));
+        QListWidgetItem *item = new QListWidgetItem(text);
         item->setToolTip(snip.getName());
         item->setData(Qt::UserRole, snip.getName());
 

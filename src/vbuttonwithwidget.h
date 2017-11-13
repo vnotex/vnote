@@ -39,25 +39,6 @@ private:
     VButtonWithWidget *m_btn;
 };
 
-class VButtonWidgetAction : public QWidgetAction
-{
-    Q_OBJECT
-public:
-    VButtonWidgetAction(QWidget *p_widget, QWidget *p_parent)
-        : QWidgetAction(p_parent), m_widget(p_widget)
-    {
-    }
-
-    QWidget *createWidget(QWidget *p_parent)
-    {
-        m_widget->setParent(p_parent);
-        return m_widget;
-    }
-
-private:
-    QWidget *m_widget;
-};
-
 // A QPushButton with popup widget.
 class VButtonWithWidget : public QPushButton
 {

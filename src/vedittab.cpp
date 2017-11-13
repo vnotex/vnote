@@ -129,3 +129,7 @@ void VEditTab::applySnippet(const VSnippet *p_snippet)
 {
     Q_UNUSED(p_snippet);
 }
+
+void VEditTab::applySnippet()
+{
+}

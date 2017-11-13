@@ -41,7 +41,8 @@ void VButtonWithWidget::init()
     m_bubbleBg = QColor("#15AE67");
 
     QMenu *menu = new QMenu(this);
-    VButtonWidgetAction *act = new VButtonWidgetAction(m_popupWidget, menu);
+    QWidgetAction *act = new QWidgetAction(menu);
+    act->setDefaultWidget(m_popupWidget);
     menu->addAction(act);
     connect(menu, &QMenu::aboutToShow,
             this, [this]() {

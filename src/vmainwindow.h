@@ -64,6 +64,8 @@ public:
 
     VEditArea *getEditArea() const;
 
+    VSnippetList *getSnippetList() const;
+
     // View and edit the information of @p_file, which is an orphan file.
     void editOrphanFileInfo(VFile *p_file);
 
@@ -409,6 +411,11 @@ inline VFile *VMainWindow::getCurrentFile() const
 inline VEditTab *VMainWindow::getCurrentTab() const
 {
     return m_curTab;
+}
+
+inline VSnippetList *VMainWindow::getSnippetList() const
+{
+    return m_snippetList;
 }
 
 #endif // VMAINWINDOW_H

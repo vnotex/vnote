@@ -516,6 +516,7 @@ QChar VUtils::keyToChar(int p_key)
     if (p_key >= Qt::Key_A && p_key <= Qt::Key_Z) {
         return QChar('a' + p_key - Qt::Key_A);
     }
+
     return QChar();
 }
 

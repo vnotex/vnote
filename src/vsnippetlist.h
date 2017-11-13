@@ -23,6 +23,10 @@ class VSnippetList : public QWidget, public VNavigationMode
 public:
     explicit VSnippetList(QWidget *p_parent = nullptr);
 
+    const QVector<VSnippet> &getSnippets() const;
+
+    const VSnippet *getSnippet(const QString &p_name) const;
+
     // Implementations for VNavigationMode.
     void showNavigation() Q_DECL_OVERRIDE;
     bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE;
@@ -98,4 +102,19 @@ private:
     static const QString c_infoShortcutSequence;
 };
 
+inline const QVector<VSnippet> &VSnippetList::getSnippets() const
+{
+    return m_snippets;
+}
+
+inline const VSnippet *VSnippetList::getSnippet(const QString &p_name) const
+{
+    for (auto const & snip : m_snippets) {
+        if (snip.getName() == p_name) {
+            return &snip;
+        }
+    }
+
+    return NULL;
+}
 #endif // VSNIPPETLIST_H

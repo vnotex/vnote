@@ -885,6 +885,10 @@ void VEditArea::registerCaptainTargets()
                                    g_config->getCaptainShortcutKeySequence("MagicWord"),
                                    this,
                                    evaluateMagicWordsByCaptain);
+    captain->registerCaptainTarget(tr("ApplySnippet"),
+                                   g_config->getCaptainShortcutKeySequence("ApplySnippet"),
+                                   this,
+                                   applySnippetByCaptain);
 }
 
 void VEditArea::activateTabByCaptain(void *p_target, void *p_data, int p_idx)
@@ -986,6 +990,16 @@ void VEditArea::evaluateMagicWordsByCaptain(void *p_target, void *p_data)
     VEditTab *tab = obj->getCurrentTab();
     if (tab && tab->tabHasFocus()) {
         tab->evaluateMagicWords();
+    }
+}
+
+void VEditArea::applySnippetByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    VEditTab *tab = obj->getCurrentTab();
+    if (tab && tab->tabHasFocus()) {
+        tab->applySnippet();
     }
 }
 

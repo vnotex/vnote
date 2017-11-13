@@ -12,6 +12,7 @@ class VWebView;
 class QStackedLayout;
 class VDocument;
 class VMdEditor;
+class VInsertSelector;
 
 class VMdTab : public VEditTab
 {
@@ -76,6 +77,8 @@ public:
     void evaluateMagicWords() Q_DECL_OVERRIDE;
 
     void applySnippet(const VSnippet *p_snippet) Q_DECL_OVERRIDE;
+
+    void applySnippet() Q_DECL_OVERRIDE;
 
 public slots:
     // Enter edit mode.
@@ -155,6 +158,9 @@ private:
     // Restore from @p_fino.
     // Return true if succeed.
     bool restoreFromTabInfo(const VEditTabInfo &p_info) Q_DECL_OVERRIDE;
+
+    // Prepare insert selector with snippets.
+    VInsertSelector *prepareSnippetSelector(QWidget *p_parent = nullptr);
 
     VMdEditor *m_editor;
     VWebView *m_webViewer;

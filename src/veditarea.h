@@ -195,6 +195,9 @@ private:
     // Evaluate selected text or the word on cursor as magic words.
     static void evaluateMagicWordsByCaptain(void *p_target, void *p_data);
 
+    // Prompt for user to apply a snippet.
+    static void applySnippetByCaptain(void *p_target, void *p_data);
+
     // End Captain mode functions.
 
     int curWindowIndex;

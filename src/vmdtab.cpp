@@ -1,7 +1,7 @@
 #include <QtWidgets>
 #include <QWebChannel>
 #include <QFileInfo>
-#include <QXmlStreamReader>
+#include <QCoreApplication>
 #include "vmdtab.h"
 #include "vdocument.h"
 #include "vnote.h"
@@ -19,6 +19,8 @@
 #include "vmdeditor.h"
 #include "vmainwindow.h"
 #include "vsnippet.h"
+#include "vinsertselector.h"
+#include "vsnippetlist.h"
 
 extern VMainWindow *g_mainWin;
 
@@ -728,6 +730,8 @@ void VMdTab::evaluateMagicWords()
 
 void VMdTab::applySnippet(const VSnippet *p_snippet)
 {
+    Q_ASSERT(p_snippet);
+
     if (isEditMode()
         && m_file->isModifiable()
         && p_snippet->getType() == VSnippet::Type::PlainText) {
@@ -738,6 +742,79 @@ void VMdTab::applySnippet(const VSnippet *p_snippet)
             m_editor->setTextCursor(cursor);
 
             m_editor->setVimMode(VimMode::Insert);
+
+            g_mainWin->showStatusMessage(tr("Snippet applied"));
+        }
+    } else {
+        g_mainWin->showStatusMessage(tr("Snippet %1 is not applicable").arg(p_snippet->getName()));
+    }
+}
+
+void VMdTab::applySnippet()
+{
+    if (!isEditMode() || !m_file->isModifiable()) {
+        g_mainWin->showStatusMessage(tr("Snippets are not applicable"));
+        return;
+    }
+
+    QPoint pos(m_editor->cursorRect().bottomRight());
+    QMenu menu(this);
+    VInsertSelector *sel = prepareSnippetSelector(&menu);
+    if (!sel) {
+        g_mainWin->showStatusMessage(tr("No available snippets defined with shortcuts"));
+        return;
+    }
+
+    QWidgetAction *act = new QWidgetAction(&menu);
+    act->setDefaultWidget(sel);
+    connect(sel, &VInsertSelector::accepted,
+            this, [this, &menu]() {
+                QKeyEvent *escEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Escape,
+                                                    Qt::NoModifier);
+                QCoreApplication::postEvent(&menu, escEvent);
+            });
+
+    menu.addAction(act);
+
+    menu.exec(m_editor->mapToGlobal(pos));
+
+    QString chosenItem = sel->getClickedItem();
+    if (!chosenItem.isEmpty()) {
+        const VSnippet *snip = g_mainWin->getSnippetList()->getSnippet(chosenItem);
+        if (snip) {
+            applySnippet(snip);
         }
     }
+}
+
+static bool selectorItemCmp(const VInsertSelectorItem &p_a, const VInsertSelectorItem &p_b)
+{
+    if (p_a.m_shortcut < p_b.m_shortcut) {
+        return true;
+    }
+
+    return false;
+}
+
+VInsertSelector *VMdTab::prepareSnippetSelector(QWidget *p_parent)
+{
+    auto snippets = g_mainWin->getSnippetList()->getSnippets();
+    QVector<VInsertSelectorItem> items;
+    for (auto const & snip : snippets) {
+        if (!snip.getShortcut().isNull()) {
+            items.push_back(VInsertSelectorItem(snip.getName(),
+                                                snip.getName(),
+                                                snip.getShortcut()));
+        }
+    }
+
+    if (items.isEmpty()) {
+        return NULL;
+    }
+
+    // Sort items by shortcut.
+    std::sort(items.begin(), items.end(), selectorItemCmp);
+
+    VInsertSelector *sel = new VInsertSelector(7, items, p_parent);
+    return sel;
 }

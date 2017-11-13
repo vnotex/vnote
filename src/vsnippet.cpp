@@ -162,11 +162,16 @@ bool VSnippet::apply(QTextCursor &p_cursor) const
     // Evaluate the content.
     QString content = g_mwMgr->evaluate(m_content);
 
+    if (content.isEmpty()) {
+        p_cursor.endEditBlock();
+        return true;
+    }
+
     // Find the cursor mark and break the content.
     QString secondPart;
     if (!m_cursorMark.isEmpty()) {
-        QStringList parts = content.split(m_cursorMark, QString::SkipEmptyParts);
-        Q_ASSERT(parts.size() < 3);
+        QStringList parts = content.split(m_cursorMark);
+        Q_ASSERT(parts.size() < 3 && parts.size() > 0);
 
         content = parts[0];
         if (parts.size() == 2) {
@@ -175,13 +180,14 @@ bool VSnippet::apply(QTextCursor &p_cursor) const
     }
 
     // Replace the selection mark.
-    if (!m_selectionMark.isEmpty()) {
+    // Content may be empty.
+    if (!m_selectionMark.isEmpty() && !content.isEmpty()) {
         content.replace(m_selectionMark, selection);
     }
 
     int pos = p_cursor.position() + content.size();
 
-    if (!secondPart.isEmpty()) {
+    if (!m_selectionMark.isEmpty() && !secondPart.isEmpty()) {
         secondPart.replace(m_selectionMark, selection);
         content += secondPart;
     }

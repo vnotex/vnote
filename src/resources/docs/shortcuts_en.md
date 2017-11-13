@@ -218,6 +218,8 @@ Jump to the first split window on the right.
 Move current tab one split window left.
 - `Shift+L`  
 Move current tab one split window right.
+- `S`  
+Apply a snippet in edit mode.
 - `?`   
 Display shortcuts documentation.
 
