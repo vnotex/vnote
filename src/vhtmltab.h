@@ -26,6 +26,8 @@ public:
     // Save file.
     bool saveFile() Q_DECL_OVERRIDE;
 
+    bool isModified() const Q_DECL_OVERRIDE;
+
     void insertImage() Q_DECL_OVERRIDE;
 
     // Search @p_text in current note.
@@ -44,6 +46,8 @@ public:
     void clearSearchedWordHighlight() Q_DECL_OVERRIDE;
 
     void requestUpdateVimStatus() Q_DECL_OVERRIDE;
+
+    void reload() Q_DECL_OVERRIDE;
 
 public slots:
     // Enter edit mode.

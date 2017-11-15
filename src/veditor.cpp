@@ -27,10 +27,6 @@ VEditor::VEditor(VFile *p_file, QWidget *p_editor)
 
 VEditor::~VEditor()
 {
-    if (m_file && m_document) {
-        QObject::disconnect(m_document, &QTextDocument::modificationChanged,
-                            (VFile *)m_file, &VFile::setModified);
-    }
 }
 
 void VEditor::init()
@@ -64,9 +60,6 @@ void VEditor::init()
                      m_object, &VEditorObject::doHighlightExtraSelections);
 
     m_extraSelections.resize((int)SelectionId::MaxSelection);
-
-    QObject::connect(m_document, &QTextDocument::modificationChanged,
-                     (VFile *)m_file, &VFile::setModified);
 
     updateFontAndPalette();
 
@@ -344,17 +337,12 @@ bool VEditor::wordInSearchedSelection(const QString &p_text)
 
 bool VEditor::isModified() const
 {
-    Q_ASSERT(m_file ? (m_file->isModified() == m_document->isModified())
-                    : true);
     return m_document->isModified();
 }
 
 void VEditor::setModified(bool p_modified)
 {
     m_document->setModified(p_modified);
-    if (m_file) {
-        m_file->setModified(p_modified);
-    }
 }
 
 void VEditor::insertImage()

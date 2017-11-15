@@ -158,6 +158,17 @@ void VEditWindow::initTabActions()
                 QDesktopServices::openUrl(url);
             });
 
+    m_reloadAct = new QAction(tr("Reload From Disk"), this);
+    m_reloadAct->setToolTip(tr("Reload the content of this note from disk"));
+    connect(m_reloadAct, &QAction::triggered,
+            this, [this](){
+                int tab = this->m_closeTabAct->data().toInt();
+                Q_ASSERT(tab != -1);
+
+                VEditTab *editor = getTab(tab);
+                editor->reloadFromDisk();
+            });
+
     m_recycleBinAct = new QAction(QIcon(":/resources/icons/recycle_bin.svg"),
                                   tr("&Recycle Bin"), this);
     m_recycleBinAct->setToolTip(tr("Open the recycle bin of this note"));
@@ -508,13 +519,16 @@ void VEditWindow::updateTabInfo(int p_index)
     const VFile *file = editor->getFile();
     bool editMode = editor->isEditMode();
 
-    setTabText(p_index, generateTabText(p_index, file));
+    setTabText(p_index, generateTabText(p_index, editor));
     setTabToolTip(p_index, generateTooltip(file));
 
-    QString iconUrl(":/resources/icons/reading.svg");
+    QString iconUrl;
     if (editMode) {
-        iconUrl = file->isModified() ? ":/resources/icons/editing_modified.svg"
-                                     : ":/resources/icons/editing.svg";
+        iconUrl = editor->isModified() ? ":/resources/icons/editing_modified.svg"
+                                       : ":/resources/icons/editing.svg";
+    } else {
+        iconUrl = editor->isModified() ? ":/resources/icons/reading_modified.svg"
+                                       : ":/resources/icons/reading.svg";
     }
 
     setTabIcon(p_index, QIcon(iconUrl));
@@ -524,8 +538,7 @@ void VEditWindow::updateAllTabsSequence()
 {
     for (int i = 0; i < count(); ++i) {
         VEditTab *editor = getTab(i);
-        const VFile *file = editor->getFile();
-        setTabText(i, generateTabText(i, file));
+        setTabText(i, generateTabText(i, editor));
     }
 }
 
@@ -627,6 +640,9 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
         m_openLocationAct->setData(tab);
         menu.addAction(m_openLocationAct);
 
+        m_reloadAct->setData(tab);
+        menu.addAction(m_reloadAct);
+
         m_noteInfoAct->setData(tab);
         menu.addAction(m_noteInfoAct);
     } else if (file->getType() == FileType::Orphan
@@ -636,6 +652,9 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
 
         m_openLocationAct->setData(tab);
         menu.addAction(m_openLocationAct);
+
+        m_reloadAct->setData(tab);
+        menu.addAction(m_reloadAct);
 
         m_noteInfoAct->setData(tab);
         menu.addAction(m_noteInfoAct);
@@ -1053,4 +1072,25 @@ void VEditWindow::dropEvent(QDropEvent *p_event)
     }
 
     QTabWidget::dropEvent(p_event);
+}
+
+QVector<VEditTab *> VEditWindow::getAllTabs() const
+{
+    int nrTab = count();
+
+    QVector<VEditTab *> tabs;
+    tabs.reserve(nrTab);
+    for (int i = 0; i < nrTab; ++i) {
+        tabs.push_back(getTab(i));
+    }
+
+    return tabs;
+}
+
+void VEditWindow::checkFileChangeOutside()
+{
+    int nrTab = count();
+    for (int i = 0; i < nrTab; ++i) {
+        getTab(i)->checkFileChangeOutside();
+    }
 }

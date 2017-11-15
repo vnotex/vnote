@@ -22,21 +22,22 @@ public:
     virtual ~VFile();
 
     // Open the file to load content into m_content.
-    // Init m_opened, m_modified, and m_content.
+    // Init m_opened, and m_content.
     virtual bool open();
 
     // Close the file.
-    // Clear m_modified, m_content, m_opened.
+    // Clear m_content, m_opened.
     virtual void close();
 
     // Save m_content to the file.
     virtual bool save();
 
+    // Reload content from disk.
+    virtual void reload();
+
     const QString &getName() const;
 
     DocType getDocType() const;
-
-    bool isModified() const;
 
     bool isModifiable() const;
 
@@ -75,8 +76,8 @@ public:
 
     QDateTime getModifiedTimeUtc() const;
 
-public slots:
-    void setModified(bool p_modified);
+    // Whether this file was changed outside VNote.
+    bool isChangedOutside() const;
 
 protected:
     // Name of this file.
@@ -84,9 +85,6 @@ protected:
 
     // Whether this file has been opened (content loaded).
     bool m_opened;
-
-    // m_content is different from that in the disk.
-    bool m_modified;
 
     // DocType of this file: Html, Markdown.
     DocType m_docType;
@@ -105,6 +103,10 @@ protected:
 
     // UTC time of last modification to this file in VNote.
     QDateTime m_modifiedTimeUtc;
+
+    // Last modified date and local time when the file is last modified
+    // corresponding to m_content.
+    QDateTime m_lastModified;
 };
 
 inline const QString &VFile::getName() const
@@ -115,11 +117,6 @@ inline const QString &VFile::getName() const
 inline DocType VFile::getDocType() const
 {
     return m_docType;
-}
-
-inline bool VFile::isModified() const
-{
-    return m_modified;
 }
 
 inline bool VFile::isModifiable() const
@@ -146,7 +143,6 @@ inline const QString &VFile::getContent() const
 inline void VFile::setContent(const QString &p_content)
 {
     m_content = p_content;
-    m_modified = true;
 }
 
 inline QDateTime VFile::getCreatedTimeUtc() const

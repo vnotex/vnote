@@ -32,6 +32,8 @@ public:
     // Save file.
     bool saveFile() Q_DECL_OVERRIDE;
 
+    bool isModified() const Q_DECL_OVERRIDE;
+
     // Scroll to @p_header.
     void scrollToHeader(const VHeaderPointer &p_header) Q_DECL_OVERRIDE;
 
@@ -79,6 +81,8 @@ public:
     void applySnippet(const VSnippet *p_snippet) Q_DECL_OVERRIDE;
 
     void applySnippet() Q_DECL_OVERRIDE;
+
+    void reload() Q_DECL_OVERRIDE;
 
 public slots:
     // Enter edit mode.

@@ -262,6 +262,12 @@ void VConfigManager::initialize()
                                            "startup_pages").toStringList();
 
     initFromSessionSettings();
+
+    m_fileTimerInterval = getConfigFromSettings("global",
+                                                "file_timer_interval").toInt();
+    if (m_fileTimerInterval < 100) {
+        m_fileTimerInterval = 100;
+    }
 }
 
 void VConfigManager::initSettings()

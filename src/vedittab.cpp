@@ -2,13 +2,20 @@
 #include <QApplication>
 #include <QWheelEvent>
 
+#include "utils/vutils.h"
+#include "vconfigmanager.h"
+
+extern VConfigManager *g_config;
+
 VEditTab::VEditTab(VFile *p_file, VEditArea *p_editArea, QWidget *p_parent)
     : QWidget(p_parent),
       m_file(p_file),
       m_isEditMode(false),
       m_outline(p_file),
       m_currentHeader(p_file, -1),
-      m_editArea(p_editArea)
+      m_editArea(p_editArea),
+      m_checkFileChange(true),
+      m_fileDiverged(false)
 {
     connect(qApp, &QApplication::focusChanged,
             this, &VEditTab::handleFocusChanged);
@@ -35,7 +42,7 @@ bool VEditTab::isEditMode() const
 
 bool VEditTab::isModified() const
 {
-    return m_file->isModified();
+    return false;
 }
 
 VFile *VEditTab::getFile() const
@@ -132,4 +139,45 @@ void VEditTab::applySnippet(const VSnippet *p_snippet)
 
 void VEditTab::applySnippet()
 {
+}
+
+void VEditTab::checkFileChangeOutside()
+{
+    if (!m_checkFileChange) {
+        return;
+    }
+
+    if (m_file->isChangedOutside()) {
+        int ret = VUtils::showMessage(QMessageBox::Information,
+                                      tr("Information"),
+                                      tr("Note <span style=\"%1\">%2</span> has been modified by another program.")
+                                        .arg(g_config->c_dataTextStyle).arg(m_file->fetchPath()),
+                                      tr("Do you want to reload it?"),
+                                      QMessageBox::Yes | QMessageBox::No,
+                                      QMessageBox::Yes,
+                                      this);
+        switch (ret) {
+        case QMessageBox::Yes:
+            reloadFromDisk();
+            break;
+
+        case QMessageBox::No:
+            m_checkFileChange = false;
+            m_fileDiverged = true;
+            updateStatus();
+            break;
+
+        default:
+            Q_ASSERT(false);
+            break;
+        }
+    }
+}
+
+void VEditTab::reloadFromDisk()
+{
+    m_file->reload();
+    m_fileDiverged = false;
+    m_checkFileChange = true;
+    reload();
 }

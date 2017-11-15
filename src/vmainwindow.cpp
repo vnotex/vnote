@@ -1864,7 +1864,7 @@ void VMainWindow::handleAreaTabStatusUpdated(const VEditTabInfo &p_info)
             title.append('#');
         }
 
-        if (m_curFile->isModified()) {
+        if (m_curTab->isModified()) {
             title.append('*');
         }
     }

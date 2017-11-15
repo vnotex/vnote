@@ -241,7 +241,7 @@ void VMdTab::readFile()
         return;
     }
 
-    if (m_editor && m_editor->isModified()) {
+    if (m_editor && isModified()) {
         // Prompt to save the changes.
         bool modifiable = m_file->isModifiable();
         int ret = VUtils::showMessage(QMessageBox::Information, tr("Information"),
@@ -262,7 +262,7 @@ void VMdTab::readFile()
                 return;
             }
 
-            // Fall through
+            V_FALLTHROUGH;
 
         case QMessageBox::Discard:
             m_editor->reloadFile();
@@ -293,7 +293,7 @@ bool VMdTab::saveFile()
 
     Q_ASSERT(m_editor);
 
-    if (!m_editor->isModified()) {
+    if (!isModified()) {
         return true;
     }
 
@@ -329,12 +329,20 @@ bool VMdTab::saveFile()
                                 tr("Fail to write to disk when saving a note. Please try it again."),
                                 QMessageBox::Ok, QMessageBox::Ok, this);
             m_editor->setModified(true);
+        } else {
+            m_fileDiverged = false;
+            m_checkFileChange = true;
         }
     }
 
     updateStatus();
 
     return ret;
+}
+
+bool VMdTab::isModified() const
+{
+    return (m_editor ? m_editor->isModified() : false) || m_fileDiverged;
 }
 
 void VMdTab::saveAndRead()
@@ -817,4 +825,20 @@ VInsertSelector *VMdTab::prepareSnippetSelector(QWidget *p_parent)
 
     VInsertSelector *sel = new VInsertSelector(7, items, p_parent);
     return sel;
+}
+
+void VMdTab::reload()
+{
+    if (m_isEditMode) {
+        m_editor->reloadFile();
+        m_editor->endEdit();
+        m_editor->beginEdit();
+        updateStatus();
+    } else {
+        if (m_editor) {
+            m_editor->reloadFile();
+        }
+
+        showFileReadMode();
+    }
 }

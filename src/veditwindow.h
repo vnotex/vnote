@@ -53,6 +53,8 @@ public:
 
     QVector<VEditTabInfo> getAllTabsInfo() const;
 
+    QVector<VEditTab *> getAllTabs() const;
+
     // Insert a tab with @p_widget. @p_widget is a fully initialized VEditTab.
     bool addEditTab(QWidget *p_widget);
     // Set whether it is the current window.
@@ -70,6 +72,9 @@ public:
     // The status here means tab status, outline, current header.
     // If @p_index is -1, it is current tab.
     void updateTabStatus(int p_index = -1);
+
+    // Check whether opened files have been changed outside.
+    void checkFileChangeOutside();
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
@@ -143,7 +148,7 @@ private:
 
     QString generateTooltip(const VFile *p_file) const;
 
-    QString generateTabText(int p_index, const VFile *p_file) const;
+    QString generateTabText(int p_index, const VEditTab *p_tab) const;
 
     bool canRemoveSplit();
 
@@ -196,6 +201,9 @@ private:
     // Open the location (the folder containing this file) of this note.
     QAction *m_openLocationAct;
 
+    // Reload the note from disk.
+    QAction *m_reloadAct;
+
     // Open the recycle bin folder of this note.
     QAction *m_recycleBinAct;
 };
@@ -215,16 +223,17 @@ inline QString VEditWindow::generateTooltip(const VFile *p_file) const
     }
 }
 
-inline QString VEditWindow::generateTabText(int p_index, const VFile *p_file) const
+inline QString VEditWindow::generateTabText(int p_index, const VEditTab *p_tab) const
 {
-    if (!p_file) {
+    const VFile *file = p_tab->getFile();
+    if (!file) {
         return "";
     }
 
     return QString("%1.%2%3%4").arg(QString::number(p_index + c_tabSequenceBase, 10))
-                               .arg(p_file->getName())
-                               .arg(p_file->isModifiable() ? "" : "#")
-                               .arg(p_file->isModified() ? "*" : "");
+                               .arg(file->getName())
+                               .arg(file->isModifiable() ? "" : "#")
+                               .arg(p_tab->isModified() ? "*" : "");
 }
 
 #endif // VEDITWINDOW_H

@@ -34,7 +34,7 @@ public:
 
     bool isEditMode() const;
 
-    bool isModified() const;
+    virtual bool isModified() const;
 
     void focusTab();
 
@@ -98,6 +98,15 @@ public:
     // Prompt for user to apply a snippet.
     virtual void applySnippet();
 
+    // Check whether this file has been changed outside.
+    void checkFileChangeOutside();
+
+    // Reload the editor from file.
+    virtual void reload() = 0;
+
+    // Reload file from disk and reload the editor.
+    void reloadFromDisk();
+
 public slots:
     // Enter edit mode
     virtual void editFile() = 0;
@@ -130,6 +139,12 @@ protected:
 
     // Tab info to restore from once ready.
     VEditTabInfo m_infoToRestore;
+
+    // Whether check the file change outside.
+    bool m_checkFileChange;
+
+    // File has diverged from disk.
+    bool m_fileDiverged;
 
 signals:
     void getFocused();

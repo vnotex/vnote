@@ -53,6 +53,14 @@ VEditArea::VEditArea(QWidget *parent)
                     win->focusNextTab(false);
                 }
             });
+
+    QTimer *timer = new QTimer(this);
+    timer->setSingleShot(false);
+    timer->setInterval(g_config->getFileTimerInterval());
+    connect(timer, &QTimer::timeout,
+            this, &VEditArea::handleFileTimerTimeout);
+
+    timer->start();
 }
 
 void VEditArea::setupUI()
@@ -1015,4 +1023,17 @@ void VEditArea::recordClosedFile(const VFileSessionInfo &p_file)
 
     m_lastClosedFiles.push(p_file);
     qDebug() << "pushed closed file" << p_file.m_file;
+}
+
+void VEditArea::handleFileTimerTimeout()
+{
+    checkFileChangeOutside();
+}
+
+void VEditArea::checkFileChangeOutside()
+{
+    int nrWin = splitter->count();
+    for (int i = 0; i < nrWin; ++i) {
+        getWindow(i)->checkFileChangeOutside();
+    }
 }

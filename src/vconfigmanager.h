@@ -372,6 +372,9 @@ public:
     // Read all available mdhl files in c_styleConfigFolder.
     QVector<QString> getEditorStyles() const;
 
+    // Return the timer interval for checking file.
+    int getFileTimerInterval() const;
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -702,6 +705,9 @@ private:
 
     // File paths to open on startup.
     QStringList m_startupPages;
+
+    // Timer interval to check file in milliseconds.
+    int m_fileTimerInterval;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1777,6 +1783,11 @@ inline void VConfigManager::setStartupPages(const QStringList &p_pages)
 
     m_startupPages = p_pages;
     setConfigToSettings("global", "startup_pages", m_startupPages);
+}
+
+inline int VConfigManager::getFileTimerInterval() const
+{
+    return m_fileTimerInterval;
 }
 
 #endif // VCONFIGMANAGER_H

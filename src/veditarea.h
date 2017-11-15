@@ -149,6 +149,9 @@ private slots:
     // Handle the vimStatusUpdated signal of VEditWindow.
     void handleWindowVimStatusUpdated(const VVim *p_vim);
 
+    // Handle the timeout signal of file timer.
+    void handleFileTimerTimeout();
+
 private:
     void setupUI();
     QVector<QPair<int, int> > findTabsByFile(const VFile *p_file);
@@ -166,6 +169,9 @@ private:
 
     // Init targets for Captain mode.
     void registerCaptainTargets();
+
+    // Check whether opened files have been changed outside.
+    void checkFileChangeOutside();
 
     // Captain mode functions.
 

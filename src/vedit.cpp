@@ -48,9 +48,6 @@ VEdit::VEdit(VFile *p_file, QWidget *p_parent)
     connect(m_highlightTimer, &QTimer::timeout,
             this, &VEdit::doHighlightExtraSelections);
 
-    connect(document(), &QTextDocument::modificationChanged,
-            (VFile *)m_file, &VFile::setModified);
-
     m_extraSelections.resize((int)SelectionId::MaxSelection);
 
     updateFontAndPalette();
@@ -80,10 +77,6 @@ VEdit::VEdit(VFile *p_file, QWidget *p_parent)
 
 VEdit::~VEdit()
 {
-    if (m_file) {
-        disconnect(document(), &QTextDocument::modificationChanged,
-                   (VFile *)m_file, &VFile::setModified);
-    }
 }
 
 void VEdit::updateConfig()
@@ -146,16 +139,12 @@ bool VEdit::scrollToBlock(int p_blockNumber)
 
 bool VEdit::isModified() const
 {
-    Q_ASSERT(m_file ? (m_file->isModified() == document()->isModified()) : true);
     return document()->isModified();
 }
 
 void VEdit::setModified(bool p_modified)
 {
     document()->setModified(p_modified);
-    if (m_file) {
-        m_file->setModified(p_modified);
-    }
 }
 
 void VEdit::insertImage()

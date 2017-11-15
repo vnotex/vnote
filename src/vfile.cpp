@@ -1,7 +1,6 @@
 #include "vfile.h"
 
 #include <QDir>
-#include <QDebug>
 #include <QTextEdit>
 #include <QFileInfo>
 #include "utils/vutils.h"
@@ -15,7 +14,6 @@ VFile::VFile(QObject *p_parent,
     : QObject(p_parent),
       m_name(p_name),
       m_opened(false),
-      m_modified(false),
       m_docType(VUtils::docTypeFromName(p_name)),
       m_type(p_type),
       m_modifiable(p_modifiable),
@@ -40,7 +38,7 @@ bool VFile::open()
     QString filePath = fetchPath();
     Q_ASSERT(QFileInfo::exists(filePath));
     m_content = VUtils::readFileFromDisk(filePath);
-    m_modified = false;
+    m_lastModified = QFileInfo(filePath).lastModified();
     m_opened = true;
     return true;
 }
@@ -52,7 +50,6 @@ void VFile::close()
     }
 
     m_content.clear();
-    m_modified = false;
     m_opened = false;
 }
 
@@ -62,8 +59,8 @@ bool VFile::save()
     Q_ASSERT(m_modifiable);
     bool ret = VUtils::writeFileToDisk(fetchPath(), m_content);
     if (ret) {
+        m_lastModified = QFileInfo(fetchPath()).lastModified();
         m_modifiedTimeUtc = QDateTime::currentDateTimeUtc();
-        m_modified = false;
     }
 
     return ret;
@@ -98,8 +95,18 @@ bool VFile::isInternalImageFolder(const QString &p_path) const
            || VUtils::equalPath(p_path, fetchImageFolderPath());
 }
 
-void VFile::setModified(bool p_modified)
+bool VFile::isChangedOutside() const
 {
-    m_modified = p_modified;
+    QDateTime lm = QFileInfo(fetchPath()).lastModified();
+    return  lm != m_lastModified;
 }
 
+void VFile::reload()
+{
+    Q_ASSERT(m_opened);
+
+    QString filePath = fetchPath();
+    Q_ASSERT(QFileInfo::exists(filePath));
+    m_content = VUtils::readFileFromDisk(filePath);
+    m_lastModified = QFileInfo(filePath).lastModified();
+}
