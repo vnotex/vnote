@@ -55,6 +55,10 @@ public:
 
     void updateConfig() Q_DECL_OVERRIDE;
 
+    QString getContent() const Q_DECL_OVERRIDE;
+
+    void setContent(const QString &p_content, bool p_modified = false) Q_DECL_OVERRIDE;
+
 public slots:
     bool jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat) Q_DECL_OVERRIDE;
 

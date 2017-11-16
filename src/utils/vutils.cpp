@@ -891,7 +891,14 @@ bool VUtils::deleteFile(const VNotebook *p_notebook,
 bool VUtils::deleteFile(const QString &p_path)
 {
     QFile file(p_path);
-    return file.remove();
+    bool ret = file.remove();
+    if (ret) {
+        qDebug() << "deleted file" << p_path;
+    } else {
+        qWarning() << "fail to delete file" << p_path;
+    }
+
+    return ret;
 }
 
 bool VUtils::deleteFile(const VOrphanFile *p_file,

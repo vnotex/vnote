@@ -124,6 +124,9 @@ protected:
     // Return true if succeed.
     virtual bool restoreFromTabInfo(const VEditTabInfo &p_info) = 0;
 
+    // Write modified buffer content to backup file.
+    virtual void writeBackupFile();
+
     // File related to this tab.
     QPointer<VFile> m_file;
 
@@ -146,6 +149,12 @@ protected:
     // File has diverged from disk.
     bool m_fileDiverged;
 
+    // Tab has been ready or not.
+    int m_ready;
+
+    // Whether backup file is enabled.
+    bool m_enableBackupFile;
+
 signals:
     void getFocused();
 
@@ -160,6 +169,9 @@ signals:
     void statusMessage(const QString &p_msg);
 
     void vimStatusUpdated(const VVim *p_vim);
+
+    // Request to close itself.
+    void closeRequested(VEditTab *p_tab);
 
 private slots:
     // Called when app focus changed.

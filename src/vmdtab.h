@@ -13,6 +13,7 @@ class QStackedLayout;
 class VDocument;
 class VMdEditor;
 class VInsertSelector;
+class QTimer;
 
 class VMdTab : public VEditTab
 {
@@ -88,6 +89,9 @@ public slots:
     // Enter edit mode.
     void editFile() Q_DECL_OVERRIDE;
 
+protected:
+    void writeBackupFile() Q_DECL_OVERRIDE;
+
 private slots:
     // Update m_outline according to @p_tocHtml for read mode.
     void updateOutlineFromHtml(const QString &p_tocHtml);
@@ -115,6 +119,8 @@ private slots:
     void restoreFromTabInfo();
 
 private:
+    enum TabReady { None = 0, ReadMode = 0x1, EditMode = 0x2 };
+
     // Setup UI.
     void setupUI();
 
@@ -166,6 +172,13 @@ private:
     // Prepare insert selector with snippets.
     VInsertSelector *prepareSnippetSelector(QWidget *p_parent = nullptr);
 
+    // Called once read or edit mode is ready.
+    void tabIsReady(TabReady p_mode);
+
+    // Check if there exists backup file from previous session.
+    // Return true if we could continue.
+    bool checkPreviousBackupFile();
+
     VMdEditor *m_editor;
     VWebView *m_webViewer;
     VDocument *m_document;
@@ -175,6 +188,11 @@ private:
     bool m_enableHeadingSequence;
 
     QStackedLayout *m_stacks;
+
+    // Timer to write backup file when content has been changed.
+    QTimer *m_backupTimer;
+
+    bool m_backupFileChecked;
 };
 
 inline VMdEditor *VMdTab::getEditor()

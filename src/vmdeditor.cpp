@@ -59,6 +59,11 @@ VMdEditor::VMdEditor(VFile *p_file,
     connect(m_mdHighlighter, &HGMarkdownHighlighter::highlightCompleted,
             this, [this]() {
             makeBlockVisible(textCursor().block());
+
+            if (m_freshEdit) {
+                m_freshEdit = false;
+                emit m_object->ready();
+            }
     });
 
     m_cbHighlighter = new VCodeBlockHighlightHelper(m_mdHighlighter,
@@ -106,11 +111,6 @@ void VMdEditor::beginEdit()
     emit statusChanged();
 
     updateHeaders(m_mdHighlighter->getHeaderRegions());
-
-    if (m_freshEdit) {
-        m_freshEdit = false;
-        emit m_object->ready();
-    }
 }
 
 void VMdEditor::endEdit()
@@ -161,14 +161,14 @@ void VMdEditor::makeBlockVisible(const QTextBlock &p_block)
     }
 
     QScrollBar *vbar = verticalScrollBar();
-    if (!vbar || !vbar->isVisible()) {
+    if (!vbar || (vbar->minimum() == vbar->maximum())) {
         // No vertical scrollbar. No need to scroll.
         return;
     }
 
     int height = rect().height();
     QScrollBar *hbar = horizontalScrollBar();
-    if (hbar && hbar->isVisible()) {
+    if (hbar && (hbar->minimum() != hbar->maximum())) {
         height -= hbar->height();
     }
 
@@ -869,4 +869,21 @@ void VMdEditor::updateConfig()
 {
     updateEditConfig();
     updateTextEditConfig();
+}
+
+QString VMdEditor::getContent() const
+{
+    return toPlainText();
+}
+
+void VMdEditor::setContent(const QString &p_content, bool p_modified)
+{
+    if (p_modified) {
+        QTextCursor cursor = textCursor();
+        cursor.select(QTextCursor::Document);
+        cursor.insertText(p_content);
+        setTextCursor(cursor);
+    } else {
+        setPlainText(p_content);
+    }
 }

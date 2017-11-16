@@ -33,7 +33,8 @@ VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
       m_webViewer(NULL),
       m_document(NULL),
       m_mdConType(g_config->getMdConverterType()),
-      m_enableHeadingSequence(false)
+      m_enableHeadingSequence(false),
+      m_backupFileChecked(false)
 {
     V_ASSERT(m_file->getDocType() == DocType::Markdown);
 
@@ -48,6 +49,14 @@ VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
     }
 
     setupUI();
+
+    m_backupTimer = new QTimer(this);
+    m_backupTimer->setSingleShot(true);
+    m_backupTimer->setInterval(g_config->getFileTimerInterval());
+    connect(m_backupTimer, &QTimer::timeout,
+            this, [this]() {
+                writeBackupFile();
+            });
 
     if (p_mode == OpenFileMode::Edit) {
         showFileEditMode();
@@ -325,9 +334,13 @@ bool VMdTab::saveFile()
         m_editor->saveFile();
         ret = m_file->save();
         if (!ret) {
-            VUtils::showMessage(QMessageBox::Warning, tr("Warning"), tr("Fail to save note."),
+            VUtils::showMessage(QMessageBox::Warning,
+                                tr("Warning"),
+                                tr("Fail to save note."),
                                 tr("Fail to write to disk when saving a note. Please try it again."),
-                                QMessageBox::Ok, QMessageBox::Ok, this);
+                                QMessageBox::Ok,
+                                QMessageBox::Ok,
+                                this);
             m_editor->setModified(true);
         } else {
             m_fileDiverged = false;
@@ -376,8 +389,17 @@ void VMdTab::setupMarkdownViewer()
             this, SLOT(updateCurrentHeader(const QString &)));
     connect(m_document, &VDocument::keyPressed,
             this, &VMdTab::handleWebKeyPressed);
-    connect(m_document, SIGNAL(logicsFinished(void)),
-            this, SLOT(restoreFromTabInfo(void)));
+    connect(m_document, &VDocument::logicsFinished,
+            this, [this]() {
+                if (m_ready & TabReady::ReadMode) {
+                    return;
+                }
+
+                m_ready |= TabReady::ReadMode;
+
+                tabIsReady(TabReady::ReadMode);
+            });
+
     page->setWebChannel(channel);
 
     m_webViewer->setHtml(VUtils::generateHtmlTemplate(m_mdConType, false),
@@ -417,8 +439,16 @@ void VMdTab::setupMarkdownEditor()
             this, [this]() {
                 this->m_editArea->getFindReplaceDialog()->closeDialog();
             });
-    connect(m_editor->object(), SIGNAL(ready(void)),
-            this, SLOT(restoreFromTabInfo(void)));
+    connect(m_editor->object(), &VEditorObject::ready,
+            this, [this]() {
+                if (m_ready & TabReady::EditMode) {
+                    return;
+                }
+
+                m_ready |= TabReady::EditMode;
+
+                tabIsReady(TabReady::EditMode);
+            });
 
     enableHeadingSequence(m_enableHeadingSequence);
     m_editor->reloadFile();
@@ -841,4 +871,101 @@ void VMdTab::reload()
 
         showFileReadMode();
     }
+}
+
+void VMdTab::tabIsReady(TabReady p_mode)
+{
+    bool isCurrentMode = m_isEditMode && p_mode == TabReady::EditMode
+                         || !m_isEditMode && p_mode == TabReady::ReadMode;
+
+    if (isCurrentMode) {
+        restoreFromTabInfo();
+
+        if (m_enableBackupFile
+            && !m_backupFileChecked
+            && m_file->isModifiable()) {
+            if (!checkPreviousBackupFile()) {
+                return;
+            }
+        }
+    }
+
+    if (m_enableBackupFile
+        && m_file->isModifiable()
+        && p_mode == TabReady::EditMode) {
+        // contentsChanged will be emitted even the content is not changed.
+        connect(m_editor->document(), &QTextDocument::contentsChange,
+                this, [this]() {
+                    if (m_isEditMode) {
+                        m_backupTimer->stop();
+                        m_backupTimer->start();
+                    }
+                });
+    }
+}
+
+void VMdTab::writeBackupFile()
+{
+    Q_ASSERT(m_enableBackupFile && m_file->isModifiable());
+    m_file->writeBackupFile(m_editor->getContent());
+}
+
+bool VMdTab::checkPreviousBackupFile()
+{
+    m_backupFileChecked = true;
+
+    QString preFile = m_file->backupFileOfPreviousSession();
+    if (preFile.isEmpty()) {
+        return true;
+    }
+
+    QMessageBox box(QMessageBox::Warning,
+                    tr("Backup File Found"),
+                    tr("Found backup file <span style=\"%1\">%2</span> "
+                       "when opening note <span style=\"%1\">%3</span>.")
+                      .arg(g_config->c_dataTextStyle)
+                      .arg(preFile)
+                      .arg(m_file->fetchPath()),
+                    QMessageBox::NoButton,
+                    this);
+    QString backupContent = m_file->readBackupFile(preFile);
+    QString info = tr("VNote may crash while editing this note before.<br/>"
+                      "Please choose to recover from the backup file or delete it.<br/><br/>"
+                      "Note file last modified: <span style=\"%1\">%2</span><br/>"
+                      "Backup file last modified: <span style=\"%1\">%3</span><br/>"
+                      "Content comparison: <span style=\"%1\">%4</span>")
+                     .arg(g_config->c_dataTextStyle)
+                     .arg(VUtils::displayDateTime(QFileInfo(m_file->fetchPath()).lastModified()))
+                     .arg(VUtils::displayDateTime(QFileInfo(preFile).lastModified()))
+                     .arg(m_file->getContent() == backupContent ? tr("Identical")
+                                                                : tr("Different"));
+    box.setInformativeText(info);
+    QPushButton *recoverBtn = box.addButton(tr("Recover From Backup File"), QMessageBox::YesRole);
+    box.addButton(tr("Discard Backup File"), QMessageBox::NoRole);
+    QPushButton *cancelBtn = box.addButton(tr("Cancel"), QMessageBox::RejectRole);
+
+    box.setDefaultButton(cancelBtn);
+    box.setTextInteractionFlags(Qt::TextSelectableByMouse);
+
+    box.exec();
+    QAbstractButton *btn = box.clickedButton();
+    if (btn == cancelBtn || !btn) {
+        // Close current tab.
+        emit closeRequested(this);
+        return false;
+    } else if (btn == recoverBtn) {
+        // Load content from the backup file.
+        if (!m_isEditMode) {
+            showFileEditMode();
+        }
+
+        Q_ASSERT(m_editor);
+        m_editor->setContent(backupContent, true);
+
+        updateStatus();
+    }
+
+    VUtils::deleteFile(preFile);
+
+    return true;
 }

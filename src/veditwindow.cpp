@@ -960,6 +960,8 @@ void VEditWindow::connectEditTab(const VEditTab *p_tab)
             this, &VEditWindow::handleTabStatusMessage);
     connect(p_tab, &VEditTab::vimStatusUpdated,
             this, &VEditWindow::handleTabVimStatusUpdated);
+    connect(p_tab, &VEditTab::closeRequested,
+            this, &VEditWindow::tabRequestToClose);
 }
 
 void VEditWindow::setCurrentWindow(bool p_current)
@@ -1092,5 +1094,18 @@ void VEditWindow::checkFileChangeOutside()
     int nrTab = count();
     for (int i = 0; i < nrTab; ++i) {
         getTab(i)->checkFileChangeOutside();
+    }
+}
+
+void VEditWindow::tabRequestToClose(VEditTab *p_tab)
+{
+    bool ok = p_tab->closeFile(false);
+    if (ok) {
+        removeTab(indexOf(p_tab));
+
+        // Disconnect all the signals.
+        disconnect(p_tab, 0, this, 0);
+
+        p_tab->deleteLater();
     }
 }

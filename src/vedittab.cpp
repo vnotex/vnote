@@ -15,7 +15,9 @@ VEditTab::VEditTab(VFile *p_file, VEditArea *p_editArea, QWidget *p_parent)
       m_currentHeader(p_file, -1),
       m_editArea(p_editArea),
       m_checkFileChange(true),
-      m_fileDiverged(false)
+      m_fileDiverged(false),
+      m_ready(0),
+      m_enableBackupFile(g_config->getEnableBackupFile())
 {
     connect(qApp, &QApplication::focusChanged,
             this, &VEditTab::handleFocusChanged);
@@ -180,4 +182,8 @@ void VEditTab::reloadFromDisk()
     m_fileDiverged = false;
     m_checkFileChange = true;
     reload();
+}
+
+void VEditTab::writeBackupFile()
+{
 }

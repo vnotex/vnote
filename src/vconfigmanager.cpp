@@ -268,6 +268,18 @@ void VConfigManager::initialize()
     if (m_fileTimerInterval < 100) {
         m_fileTimerInterval = 100;
     }
+
+    m_backupDirectory = getConfigFromSettings("global",
+                                              "backup_directory").toString();
+
+    m_backupExtension = getConfigFromSettings("global",
+                                              "backup_extension").toString();
+    if (m_backupExtension.isEmpty()) {
+        m_backupExtension = ".";
+    }
+
+    m_enableBackupFile = getConfigFromSettings("global",
+                                               "enable_backup_file").toBool();
 }
 
 void VConfigManager::initSettings()

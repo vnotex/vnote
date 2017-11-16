@@ -138,6 +138,9 @@ private slots:
     // Handle the statusUpdated signal of VEditTab.
     void handleTabStatusUpdated(const VEditTabInfo &p_info);
 
+    // @p_tab request to close itself.
+    void tabRequestToClose(VEditTab *p_tab);
+
 private:
     void initTabActions();
     void setupCornerWidget();

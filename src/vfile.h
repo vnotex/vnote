@@ -79,6 +79,14 @@ public:
     // Whether this file was changed outside VNote.
     bool isChangedOutside() const;
 
+    // Return backup file of previous session if there exists one.
+    QString backupFileOfPreviousSession() const;
+
+    // Write @p_content to backup file.
+    bool writeBackupFile(const QString &p_content);
+
+    QString readBackupFile(const QString &p_file);
+
 protected:
     // Name of this file.
     QString m_name;
@@ -107,6 +115,25 @@ protected:
     // Last modified date and local time when the file is last modified
     // corresponding to m_content.
     QDateTime m_lastModified;
+
+    // Name of the backup file.
+    QString m_backupName;
+
+    // Used to identify file path change.
+    QString m_lastBackupFilePath;
+
+private:
+    // Fetch backup file path.
+    QString fetchBackupFilePath();
+
+    QStringList getPotentialBackupFiles(const QString &p_dir) const;
+
+    // Read the file content to check if it is a backup file.
+    bool isBackupFile(const QString &p_file) const;
+
+    QString fetchBackupFileHead() const;
+
+    static const QString c_backupFileHeadMagic;
 };
 
 inline const QString &VFile::getName() const

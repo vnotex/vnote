@@ -375,6 +375,15 @@ public:
     // Return the timer interval for checking file.
     int getFileTimerInterval() const;
 
+    // Get the backup directory.
+    const QString &getBackupDirectory() const;
+
+    // Get the backup file extension.
+    const QString &getBackupExtension() const;
+
+    // Whether backup file is enabled.
+    bool getEnableBackupFile() const;
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -708,6 +717,15 @@ private:
 
     // Timer interval to check file in milliseconds.
     int m_fileTimerInterval;
+
+    // Directory for the backup file (relative or absolute path).
+    QString m_backupDirectory;
+
+    // Extension of the backup file.
+    QString m_backupExtension;
+
+    // Whether enable backup file.
+    bool m_enableBackupFile;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1788,6 +1806,21 @@ inline void VConfigManager::setStartupPages(const QStringList &p_pages)
 inline int VConfigManager::getFileTimerInterval() const
 {
     return m_fileTimerInterval;
+}
+
+inline const QString &VConfigManager::getBackupDirectory() const
+{
+    return m_backupDirectory;
+}
+
+inline const QString &VConfigManager::getBackupExtension() const
+{
+    return m_backupExtension;
+}
+
+inline bool VConfigManager::getEnableBackupFile() const
+{
+    return m_enableBackupFile;
 }
 
 #endif // VCONFIGMANAGER_H
