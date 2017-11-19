@@ -218,6 +218,8 @@ Jump to the first split window on the right.
 Move current tab one split window left.
 - `Shift+L`  
 Move current tab one split window right.
+- `M`  
+Evaluate current cursor word or selected text as magic words.
 - `S`  
 Apply a snippet in edit mode.
 - `?`   
