@@ -11,9 +11,9 @@ environment:
     VSVER: 14
 
     matrix:
-        - QT: C:\Qt\5.9.1\msvc2015_64
+        - QT: C:\Qt\5.9\msvc2015_64
           PLATFORM: amd64
-        - QT: C:\Qt\5.9.1\msvc2015
+        - QT: C:\Qt\5.9\msvc2015
           PLATFORM: x86
 
 clone_depth: 1
@@ -27,6 +27,7 @@ install:
 before_build:
     - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %PLATFORM%
     # After calling vcvarsall.bat, %PLATFORM% will be X64 or x86
+    - qmake --version
     - mkdir build
     - cd build
     - if "%PLATFORM%" EQU "X64" (qmake -r -spec win32-msvc CONFIG+=x86_64 CONFIG-=debug CONFIG+=release ../VNote.pro)
