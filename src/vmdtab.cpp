@@ -875,8 +875,8 @@ void VMdTab::reload()
 
 void VMdTab::tabIsReady(TabReady p_mode)
 {
-    bool isCurrentMode = m_isEditMode && p_mode == TabReady::EditMode
-                         || !m_isEditMode && p_mode == TabReady::ReadMode;
+    bool isCurrentMode = (m_isEditMode && p_mode == TabReady::EditMode)
+                         || (!m_isEditMode && p_mode == TabReady::ReadMode);
 
     if (isCurrentMode) {
         restoreFromTabInfo();
