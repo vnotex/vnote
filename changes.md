@@ -8,8 +8,15 @@
 - Support Magic Words;
 - Vim mode
     - Share registers among all tabs;
+    - Support `Ctrl+O` in Insert mode;
 - Add "Code Block", "Insert Link", and "Insert Image" tool bar buttons;
-
+- Support `Ctrl+Shift+T` to recover last closed tabs;
+- Support view read-only files in edit mode;
+- Refactor editor for speed;
+- Support templates when creating notes;
+- Support snippets;
+- Support file change check;
+- Support backup file (save changes automatically);
 
 ## v1.9
 - Support attachments of notes.
