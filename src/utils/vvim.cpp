@@ -1367,6 +1367,12 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 expandSelectionToWholeLines(cursor);
                 m_editor->setTextCursorW(cursor);
             }
+        } else if (VUtils::isControlModifierForVim(modifiers)) {
+            if (g_config->getVimExemptionKeys().contains('v')) {
+                // Let it be handled outside.
+                resetState();
+                goto exit;
+            }
         }
 
         break;
@@ -1642,6 +1648,12 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             }
 
             break;
+        } else if (VUtils::isControlModifierForVim(modifiers)) {
+            if (g_config->getVimExemptionKeys().contains('c')) {
+                // Let it be handled outside.
+                resetState();
+                goto exit;
+            }
         }
 
         break;

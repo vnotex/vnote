@@ -387,6 +387,8 @@ public:
     // Get defined external editors.
     QVector<QPair<QString, QString>> getExternalEditors() const;
 
+    const QString &getVimExemptionKeys() const;
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -729,6 +731,11 @@ private:
 
     // Whether enable backup file.
     bool m_enableBackupFile;
+
+    // Skipped keys in Vim mode.
+    // c: Ctrl+C
+    // v: Ctrl+V
+    QString m_vimExemptionKeys;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1824,6 +1831,11 @@ inline const QString &VConfigManager::getBackupExtension() const
 inline bool VConfigManager::getEnableBackupFile() const
 {
     return m_enableBackupFile;
+}
+
+inline const QString &VConfigManager::getVimExemptionKeys() const
+{
+    return m_vimExemptionKeys;
 }
 
 #endif // VCONFIGMANAGER_H
