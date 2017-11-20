@@ -1111,8 +1111,8 @@ QHash<QString, QString> VConfigManager::readShortcutsFromSettings(QSettings *p_s
 
 bool VConfigManager::isValidKeySequence(const QString &p_seq)
 {
-    return p_seq.toLower() != "ctrl+q"
-           && !QKeySequence(p_seq).isEmpty();
+    return p_seq.isEmpty()
+           || (p_seq.toLower() != "ctrl+q" && !QKeySequence(p_seq).isEmpty());
 }
 
 void VConfigManager::readShortcutsFromSettings()
@@ -1143,10 +1143,9 @@ void VConfigManager::readShortcutsFromSettings()
     }
 
     if (matched.size() < m_shortcuts.size()) {
+        qDebug() << "override user shortcuts settings using default settings";
         writeShortcutsToSettings(userSettings, group, m_shortcuts);
     }
-
-    qDebug() << "shortcuts:" << m_shortcuts;
 }
 
 void VConfigManager::readCaptainShortcutsFromSettings()
@@ -1320,4 +1319,27 @@ QVector<QPair<QString, QString>> VConfigManager::getExternalEditors() const
     userSettings->endGroup();
 
     return ret;
+}
+
+const QString &VConfigManager::getFlashPage() const
+{
+    if (m_flashPage.isEmpty()) {
+        VConfigManager *var = const_cast<VConfigManager *>(this);
+
+        var->m_flashPage = var->getConfigFromSettings("global",
+                                                      "flash_page").toString();
+        if (var->m_flashPage.isEmpty()) {
+            var->m_flashPage = var->resetDefaultConfig("global", "flash_page").toString();
+        }
+
+        if (VUtils::checkFileNameLegal(m_flashPage)) {
+            var->m_flashPage = QDir(getConfigFolder()).filePath(m_flashPage);
+        }
+    }
+
+    if (!QFileInfo::exists(m_flashPage)) {
+        VUtils::touchFile(m_flashPage);
+    }
+
+    return m_flashPage;
 }

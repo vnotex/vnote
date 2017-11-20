@@ -34,7 +34,6 @@ class VTabIndicator;
 class VSingleInstanceGuard;
 class QTimer;
 class QSystemTrayIcon;
-class QShortcut;
 class VButtonWithWidget;
 class VAttachmentList;
 class VSnippetList;
@@ -72,7 +71,10 @@ public:
     // Open files @p_files as orphan files or internal note files.
     // If @p_forceOrphan is false, for each file, VNote will try to find out if
     // it is a note inside VNote. If yes, VNote will open it as internal file.
-    void openFiles(const QStringList &p_files, bool p_forceOrphan = false);
+    void openFiles(const QStringList &p_files,
+                   bool p_forceOrphan = false,
+                   OpenFileMode p_mode = OpenFileMode::Read,
+                   bool p_forceMode = false);
 
     // Try to open @p_filePath as internal note.
     bool tryOpenInternalFile(const QString &p_filePath);
@@ -173,6 +175,9 @@ private slots:
     // Close current note.
     void closeCurrentFile();
 
+    // Open flash page in edit mode.
+    void openFlashPage();
+
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
     void resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
@@ -253,6 +258,8 @@ private:
     // Whether heading sequence is applicable to current tab.
     // Only available for writable Markdown file.
     bool isHeadingSequenceApplicable() const;
+
+    void initShortcuts();
 
     // Captain mode functions.
 
@@ -352,8 +359,6 @@ private:
 
     // Act group for panel view actions.
     QActionGroup *m_viewActGroup;
-
-    QShortcut *m_closeNoteShortcut;
 
     // Menus
     QMenu *viewMenu;

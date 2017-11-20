@@ -71,8 +71,13 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
     setupUI();
 
     initMenuBar();
+
     initToolBar();
+
+    initShortcuts();
+
     initDockWindows();
+
     initAvatar();
 
     restoreStateAndGeometry();
@@ -317,7 +322,7 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
                                            tr("&Single Panel"),
                                            m_viewActGroup);
     onePanelViewAct->setStatusTip(tr("Display only the notes list panel"));
-    onePanelViewAct->setToolTip(tr("Single Panel (Ctrl+E P)"));
+    onePanelViewAct->setToolTip(tr("Single Panel"));
     onePanelViewAct->setCheckable(true);
     onePanelViewAct->setData((int)PanelViewState::SinglePanel);
 
@@ -325,7 +330,7 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
                                            tr("&Two Panels"),
                                            m_viewActGroup);
     twoPanelViewAct->setStatusTip(tr("Display both the folders and notes list panel"));
-    twoPanelViewAct->setToolTip(tr("Two Panels (Ctrl+E P)"));
+    twoPanelViewAct->setToolTip(tr("Two Panels"));
     twoPanelViewAct->setCheckable(true);
     twoPanelViewAct->setData((int)PanelViewState::TwoPanels);
 
@@ -368,7 +373,7 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
     panelMenu->addAction(compactViewAct);
 
     expandViewAct = new QAction(QIcon(":/resources/icons/expand.svg"),
-                                tr("Expand (Ctrl+E E)"), this);
+                                tr("Expand"), this);
     expandViewAct->setStatusTip(tr("Expand the edit area"));
     expandViewAct->setCheckable(true);
     expandViewAct->setMenu(panelMenu);
@@ -420,7 +425,8 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
     m_editToolBar->addAction(m_headingSequenceAct);
 
     QAction *boldAct = new QAction(QIcon(":/resources/icons/bold.svg"),
-                                   tr("Bold (Ctrl+B)"), this);
+                                   tr("Bold\t%1").arg(VUtils::getShortcutText("Ctrl+B")),
+                                   this);
     boldAct->setStatusTip(tr("Insert bold text or change selected text to bold"));
     connect(boldAct, &QAction::triggered,
             this, [this](){
@@ -432,7 +438,8 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
     m_editToolBar->addAction(boldAct);
 
     QAction *italicAct = new QAction(QIcon(":/resources/icons/italic.svg"),
-                                     tr("Italic (Ctrl+I)"), this);
+                                     tr("Italic\t%1").arg(VUtils::getShortcutText("Ctrl+I")),
+                                     this);
     italicAct->setStatusTip(tr("Insert italic text or change selected text to italic"));
     connect(italicAct, &QAction::triggered,
             this, [this](){
@@ -444,7 +451,8 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
     m_editToolBar->addAction(italicAct);
 
     QAction *strikethroughAct = new QAction(QIcon(":/resources/icons/strikethrough.svg"),
-                                            tr("Strikethrough (Ctrl+D)"), this);
+                                            tr("Strikethrough\t%1").arg(VUtils::getShortcutText("Ctrl+D")),
+                                            this);
     strikethroughAct->setStatusTip(tr("Insert strikethrough text or change selected text to strikethroughed"));
     connect(strikethroughAct, &QAction::triggered,
             this, [this](){
@@ -456,7 +464,8 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
     m_editToolBar->addAction(strikethroughAct);
 
     QAction *inlineCodeAct = new QAction(QIcon(":/resources/icons/inline_code.svg"),
-                                         tr("Inline Code (Ctrl+K)"), this);
+                                         tr("Inline Code\t%1").arg(VUtils::getShortcutText("Ctrl+K")),
+                                         this);
     inlineCodeAct->setStatusTip(tr("Insert inline-code text or change selected text to inline-coded"));
     connect(inlineCodeAct, &QAction::triggered,
             this, [this](){
@@ -468,7 +477,7 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
     m_editToolBar->addAction(inlineCodeAct);
 
     QAction *codeBlockAct = new QAction(QIcon(":/resources/icons/code_block.svg"),
-                                        tr("Code Block (Ctrl+M)"),
+                                        tr("Code Block\t%1").arg(VUtils::getShortcutText("Ctrl+M")),
                                         this);
     codeBlockAct->setStatusTip(tr("Insert fenced code block text or wrap selected text into a fenced code block"));
     connect(codeBlockAct, &QAction::triggered,
@@ -484,7 +493,8 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
 
     // Insert link.
     QAction *insetLinkAct = new QAction(QIcon(":/resources/icons/link.svg"),
-                                        tr("Insert Link (Ctrl+L)"), this);
+                                        tr("Insert Link\t%1").arg(VUtils::getShortcutText("Ctrl+L")),
+                                        this);
     insetLinkAct->setStatusTip(tr("Insert a link"));
     connect(insetLinkAct, &QAction::triggered,
             this, [this]() {
@@ -538,7 +548,18 @@ void VMainWindow::initNoteToolBar(QSize p_iconSize)
     m_attachmentBtn->setFocusPolicy(Qt::NoFocus);
     m_attachmentBtn->setEnabled(false);
 
+    QAction *flashPageAct = new QAction(QIcon(":/resources/icons/flash_page.svg"),
+                                        tr("Flash Page"),
+                                        this);
+    flashPageAct->setStatusTip(tr("Open the Flash Page to edit"));
+    QString keySeq = g_config->getShortcutKeySequence("FlashPage");
+    qDebug() << "set FlashPage shortcut to" << keySeq;
+    flashPageAct->setShortcut(QKeySequence(keySeq));
+    connect(flashPageAct, &QAction::triggered,
+            this, &VMainWindow::openFlashPage);
+
     noteToolBar->addWidget(m_attachmentBtn);
+    noteToolBar->addAction(flashPageAct);
 }
 
 void VMainWindow::initFileToolBar(QSize p_iconSize)
@@ -577,13 +598,6 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     connect(deleteNoteAct, &QAction::triggered,
             this, &VMainWindow::deleteCurNote);
 
-    keySeq = g_config->getShortcutKeySequence("CloseNote");
-    qDebug() << "set CloseNote shortcut to" << keySeq;
-    m_closeNoteShortcut = new QShortcut(QKeySequence(keySeq), this);
-    m_closeNoteShortcut->setContext(Qt::WidgetWithChildrenShortcut);
-    connect(m_closeNoteShortcut, &QShortcut::activated,
-            this, &VMainWindow::closeCurrentFile);
-
     editNoteAct = new QAction(QIcon(":/resources/icons/edit_note.svg"),
                               tr("&Edit"), this);
     editNoteAct->setStatusTip(tr("Edit current note"));
@@ -596,7 +610,7 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     discardExitAct = new QAction(QIcon(":/resources/icons/discard_exit.svg"),
                                  tr("Discard Changes And Read"), this);
     discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
-    discardExitAct->setToolTip(tr("Discard Changes And Read (Ctrl+E Q)"));
+    discardExitAct->setToolTip(tr("Discard Changes And Read"));
     connect(discardExitAct, &QAction::triggered,
             editArea, &VEditArea::readFile);
 
@@ -605,7 +619,7 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     exitEditMenu->addAction(discardExitAct);
 
     saveExitAct = new QAction(QIcon(":/resources/icons/save_exit.svg"),
-                              tr("Save Changes And Read (Ctrl+T)"), this);
+                              tr("Save Changes And Read"), this);
     saveExitAct->setStatusTip(tr("Save changes and exit edit mode"));
     saveExitAct->setMenu(exitEditMenu);
     keySeq = g_config->getShortcutKeySequence("SaveAndRead");
@@ -2424,7 +2438,10 @@ bool VMainWindow::tryOpenInternalFile(const QString &p_filePath)
     return false;
 }
 
-void VMainWindow::openFiles(const QStringList &p_files, bool p_forceOrphan)
+void VMainWindow::openFiles(const QStringList &p_files,
+                            bool p_forceOrphan,
+                            OpenFileMode p_mode,
+                            bool p_forceMode)
 {
     for (int i = 0; i < p_files.size(); ++i) {
         VFile *file = NULL;
@@ -2436,7 +2453,7 @@ void VMainWindow::openFiles(const QStringList &p_files, bool p_forceOrphan)
             file = vnote->getOrphanFile(p_files[i], true);
         }
 
-        editArea->openFile(file, OpenFileMode::Read);
+        editArea->openFile(file, p_mode, p_forceMode);
     }
 }
 
@@ -2647,4 +2664,24 @@ void VMainWindow::promptNewNotebookIfEmpty()
     if (vnote->getNotebooks().isEmpty()) {
         notebookSelector->newNotebook();
     }
+}
+
+void VMainWindow::initShortcuts()
+{
+    QString keySeq = g_config->getShortcutKeySequence("CloseNote");
+    qDebug() << "set CloseNote shortcut to" << keySeq;
+    if (!keySeq.isEmpty()) {
+        QShortcut *closeNoteShortcut = new QShortcut(QKeySequence(keySeq), this);
+        closeNoteShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+        connect(closeNoteShortcut, &QShortcut::activated,
+                this, &VMainWindow::closeCurrentFile);
+    }
+}
+
+void VMainWindow::openFlashPage()
+{
+    openFiles(QStringList() << g_config->getFlashPage(),
+              false,
+              OpenFileMode::Edit,
+              true);
 }

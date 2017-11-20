@@ -255,6 +255,9 @@ public:
     // See if @p_modifiers is Control which is different on macOs and Windows.
     static bool isControlModifierForVim(int p_modifiers);
 
+    // If @p_file does not exists, create an empty file.
+    static void touchFile(const QString &p_file);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
     // Captured texts (need to be trimmed):

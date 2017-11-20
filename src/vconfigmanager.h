@@ -389,6 +389,8 @@ public:
 
     const QString &getVimExemptionKeys() const;
 
+    const QString &getFlashPage() const;
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -736,6 +738,9 @@ private:
     // c: Ctrl+C
     // v: Ctrl+V
     QString m_vimExemptionKeys;
+
+    // Absolute path of flash page.
+    QString m_flashPage;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
