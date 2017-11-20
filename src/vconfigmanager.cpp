@@ -1300,3 +1300,21 @@ QVector<VMagicWord> VConfigManager::getCustomMagicWords()
 
     return words;
 }
+
+QVector<QPair<QString, QString>> VConfigManager::getExternalEditors() const
+{
+    QVector<QPair<QString, QString>> ret;
+    userSettings->beginGroup("external_editors");
+    QStringList keys = userSettings->childKeys();
+    for (auto const & key : keys) {
+        if (key.isEmpty()) {
+            continue;
+        }
+
+        ret.push_back(QPair<QString, QString>(key, userSettings->value(key).toString()));
+    }
+
+    userSettings->endGroup();
+
+    return ret;
+}

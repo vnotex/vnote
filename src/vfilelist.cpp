@@ -119,21 +119,6 @@ void VFileList::initActions()
                 }
             });
 
-    m_openExternalAct = new QAction(tr("Open Via External Program"), this);
-    m_openExternalAct->setToolTip(tr("Open current note via external program"));
-    connect(m_openExternalAct, &QAction::triggered,
-            this, [this]() {
-                QListWidgetItem *item = fileList->currentItem();
-                if (item) {
-                    VNoteFile *file = getVFile(item);
-                    if (file
-                        && (!editArea->isFileOpened(file) || editArea->closeFile(file, false))) {
-                        QUrl url = QUrl::fromLocalFile(file->fetchPath());
-                        QDesktopServices::openUrl(url);
-                    }
-                }
-            });
-
     deleteFileAct = new QAction(QIcon(":/resources/icons/delete_note.svg"),
                                 tr("&Delete"), this);
     deleteFileAct->setToolTip(tr("Delete selected note"));
@@ -175,6 +160,8 @@ void VFileList::initActions()
     m_sortAct->setToolTip(tr("Sort notes in this folder manually"));
     connect(m_sortAct, &QAction::triggered,
             this, &VFileList::sortItems);
+
+    initOpenWithMenu();
 }
 
 void VFileList::setDirectory(VDirectory *p_directory)
@@ -540,7 +527,7 @@ void VFileList::contextMenuRequested(QPoint pos)
                 menu.addAction(m_openInEditAct);
             }
 
-            menu.addAction(m_openExternalAct);
+            menu.addMenu(m_openWithMenu);
             menu.addSeparator();
         }
     }
@@ -975,5 +962,60 @@ void VFileList::sortItems()
         }
 
         updateFileList();
+    }
+}
+
+void VFileList::initOpenWithMenu()
+{
+    m_openWithMenu = new QMenu(tr("Open With"), this);
+    m_openWithMenu->setToolTipsVisible(true);
+
+    auto programs = g_config->getExternalEditors();
+    for (auto const & pa : programs) {
+        QAction *act = new QAction(pa.first, this);
+        act->setToolTip(tr("Open current note with %1").arg(pa.first));
+        act->setStatusTip(pa.second);
+        act->setData(pa.second);
+        connect(act, &QAction::triggered,
+                this, &VFileList::handleOpenWithActionTriggered);
+
+        m_openWithMenu->addAction(act);
+    }
+
+    QAction *defaultAct = new QAction(tr("System's Default Program"), this);
+    defaultAct->setToolTip(tr("Open current note with system's default program"));
+    connect(defaultAct, &QAction::triggered,
+            this, [this]() {
+                QListWidgetItem *item = fileList->currentItem();
+                if (item) {
+                    VNoteFile *file = getVFile(item);
+                    if (file
+                        && (!editArea->isFileOpened(file) || editArea->closeFile(file, false))) {
+                        QUrl url = QUrl::fromLocalFile(file->fetchPath());
+                        QDesktopServices::openUrl(url);
+                    }
+                }
+            });
+
+    m_openWithMenu->addAction(defaultAct);
+}
+
+void VFileList::handleOpenWithActionTriggered()
+{
+    QAction *act = static_cast<QAction *>(sender());
+    QString cmd = act->data().toString();
+
+    QListWidgetItem *item = fileList->currentItem();
+    if (item) {
+        VNoteFile *file = getVFile(item);
+        if (file
+            && (!editArea->isFileOpened(file) || editArea->closeFile(file, false))) {
+            cmd.replace("%0", file->fetchPath());
+            QProcess *process = new QProcess(this);
+            connect(process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
+                    process, &QProcess::deleteLater);
+            process->start(cmd);
+            qDebug() << "open with" << cmd << "process" << process->processId();
+        }
     }
 }

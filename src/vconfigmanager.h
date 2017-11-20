@@ -384,6 +384,9 @@ public:
     // Whether backup file is enabled.
     bool getEnableBackupFile() const;
 
+    // Get defined external editors.
+    QVector<QPair<QString, QString>> getExternalEditors() const;
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;

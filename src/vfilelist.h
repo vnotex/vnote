@@ -21,6 +21,7 @@ class QPushButton;
 class VEditArea;
 class QFocusEvent;
 class QLabel;
+class QMenu;
 
 class VFileList : public QWidget, public VNavigationMode
 {
@@ -101,6 +102,9 @@ private slots:
     // Sort files in this list.
     void sortItems();
 
+    // Hanlde Open With action's triggered signal.
+    void handleOpenWithActionTriggered();
+
 protected:
     void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -151,6 +155,9 @@ private:
     // Check if there are files in clipboard available to paste.
     bool pasteAvailable() const;
 
+    // Init Open With menu.
+    void initOpenWithMenu();
+
     VEditArea *editArea;
     QListWidget *fileList;
     QPointer<VDirectory> m_directory;
@@ -161,7 +168,6 @@ private:
     // Actions
     QAction *m_openInReadAct;
     QAction *m_openInEditAct;
-    QAction *m_openExternalAct;
     QAction *newFileAct;
     QAction *deleteFileAct;
     QAction *fileInfoAct;
@@ -170,6 +176,9 @@ private:
     QAction *pasteAct;
     QAction *m_openLocationAct;
     QAction *m_sortAct;
+
+    // Context sub-menu of Open With.
+    QMenu *m_openWithMenu;
 
     static const QString c_infoShortcutSequence;
     static const QString c_copyShortcutSequence;
