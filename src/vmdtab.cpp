@@ -782,6 +782,8 @@ void VMdTab::applySnippet(const VSnippet *p_snippet)
             m_editor->setVimMode(VimMode::Insert);
 
             g_mainWin->showStatusMessage(tr("Snippet applied"));
+
+            focusTab();
         }
     } else {
         g_mainWin->showStatusMessage(tr("Snippet %1 is not applicable").arg(p_snippet->getName()));

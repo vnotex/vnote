@@ -189,8 +189,9 @@ bool VSnippet::apply(QTextCursor &p_cursor) const
 
     if (!m_selectionMark.isEmpty() && !secondPart.isEmpty()) {
         secondPart.replace(m_selectionMark, selection);
-        content += secondPart;
     }
+
+    content += secondPart;
 
     // Insert it.
     switch (m_type) {

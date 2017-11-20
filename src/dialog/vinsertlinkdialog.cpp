@@ -130,3 +130,12 @@ QString VInsertLinkDialog::getLinkUrl() const
 {
     return m_linkUrlEdit->text();
 }
+
+void VInsertLinkDialog::showEvent(QShowEvent *p_event)
+{
+    QDialog::showEvent(p_event);
+
+    if (!m_linkTextEdit->text().isEmpty() && m_linkUrlEdit->text().isEmpty()) {
+        m_linkUrlEdit->setFocus();
+    }
+}

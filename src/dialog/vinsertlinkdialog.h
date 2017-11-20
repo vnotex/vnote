@@ -7,6 +7,7 @@
 class VLineEdit;
 class QLineEdit;
 class QDialogButtonBox;
+class QShowEvent;
 
 class VInsertLinkDialog : public QDialog
 {
@@ -22,6 +23,9 @@ public:
     QString getLinkText() const;
 
     QString getLinkUrl() const;
+
+protected:
+    void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 
 private slots:
     void handleInputChanged();
