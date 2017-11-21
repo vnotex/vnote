@@ -1066,3 +1066,11 @@ void VUtils::touchFile(const QString &p_file)
 
     file.close();
 }
+
+bool VUtils::isMetaKey(int p_key)
+{
+    return p_key == Qt::Key_Control
+           || p_key == Qt::Key_Shift
+           || p_key == Qt::Key_Meta
+           || p_key == Qt::Key_Alt;
+}

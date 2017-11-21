@@ -258,6 +258,9 @@ public:
     // If @p_file does not exists, create an empty file.
     static void touchFile(const QString &p_file);
 
+    // Ctrl, Meta, Shift, Alt.
+    static bool isMetaKey(int p_key);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
     // Captured texts (need to be trimmed):

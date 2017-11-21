@@ -264,23 +264,23 @@ private:
     // Captain mode functions.
 
     // Popup the attachment list if it is enabled.
-    static void showAttachmentListByCaptain(void *p_target, void *p_data);
+    static bool showAttachmentListByCaptain(void *p_target, void *p_data);
 
-    static void locateCurrentFileByCaptain(void *p_target, void *p_data);
+    static bool locateCurrentFileByCaptain(void *p_target, void *p_data);
 
-    static void toggleExpandModeByCaptain(void *p_target, void *p_data);
+    static bool toggleExpandModeByCaptain(void *p_target, void *p_data);
 
-    static void toggleOnePanelViewByCaptain(void *p_target, void *p_data);
+    static bool toggleOnePanelViewByCaptain(void *p_target, void *p_data);
 
-    static void discardAndReadByCaptain(void *p_target, void *p_data);
+    static bool discardAndReadByCaptain(void *p_target, void *p_data);
 
-    static void toggleToolsDockByCaptain(void *p_target, void *p_data);
+    static bool toggleToolsDockByCaptain(void *p_target, void *p_data);
 
-    static void closeFileByCaptain(void *p_target, void *p_data);
+    static bool closeFileByCaptain(void *p_target, void *p_data);
 
-    static void shortcutsHelpByCaptain(void *p_target, void *p_data);
+    static bool shortcutsHelpByCaptain(void *p_target, void *p_data);
 
-    static void flushLogFileByCaptain(void *p_target, void *p_data);
+    static bool flushLogFileByCaptain(void *p_target, void *p_data);
 
     // End Captain mode functions.
 

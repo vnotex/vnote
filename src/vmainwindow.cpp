@@ -2582,32 +2582,39 @@ bool VMainWindow::isHeadingSequenceApplicable() const
 }
 
 // Popup the attachment list if it is enabled.
-void VMainWindow::showAttachmentListByCaptain(void *p_target, void *p_data)
+bool VMainWindow::showAttachmentListByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VMainWindow *obj = static_cast<VMainWindow *>(p_target);
     if (obj->m_attachmentBtn->isEnabled()) {
         obj->m_attachmentBtn->showPopupWidget();
     }
+
+    return true;
 }
 
-void VMainWindow::locateCurrentFileByCaptain(void *p_target, void *p_data)
+bool VMainWindow::locateCurrentFileByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VMainWindow *obj = static_cast<VMainWindow *>(p_target);
     if (obj->m_curFile) {
-        obj->locateFile(obj->m_curFile);
+        if (obj->locateFile(obj->m_curFile)) {
+            return false;
+        }
     }
+
+    return true;
 }
 
-void VMainWindow::toggleExpandModeByCaptain(void *p_target, void *p_data)
+bool VMainWindow::toggleExpandModeByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VMainWindow *obj = static_cast<VMainWindow *>(p_target);
     obj->expandViewAct->trigger();
+    return true;
 }
 
-void VMainWindow::toggleOnePanelViewByCaptain(void *p_target, void *p_data)
+bool VMainWindow::toggleOnePanelViewByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VMainWindow *obj = static_cast<VMainWindow *>(p_target);
@@ -2616,39 +2623,57 @@ void VMainWindow::toggleOnePanelViewByCaptain(void *p_target, void *p_data)
     } else {
         obj->twoPanelView();
     }
+
+    return true;
 }
 
-void VMainWindow::discardAndReadByCaptain(void *p_target, void *p_data)
+bool VMainWindow::discardAndReadByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VMainWindow *obj = static_cast<VMainWindow *>(p_target);
-    if (obj->m_curFile) {
+    if (obj->m_curTab) {
         obj->discardExitAct->trigger();
+        obj->m_curTab->setFocus();
+
+        return false;
     }
+
+    return true;
 }
 
-void VMainWindow::toggleToolsDockByCaptain(void *p_target, void *p_data)
+bool VMainWindow::toggleToolsDockByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VMainWindow *obj = static_cast<VMainWindow *>(p_target);
     obj->toolDock->setVisible(!obj->toolDock->isVisible());
+    return true;
 }
 
-void VMainWindow::closeFileByCaptain(void *p_target, void *p_data)
+bool VMainWindow::closeFileByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VMainWindow *obj = static_cast<VMainWindow *>(p_target);
     obj->closeCurrentFile();
+
+    QWidget *nextFocus = obj->editArea->getCurrentTab();
+    if (nextFocus) {
+        nextFocus->setFocus();
+    } else {
+        obj->m_fileList->setFocus();
+    }
+
+    return false;
 }
 
-void VMainWindow::shortcutsHelpByCaptain(void *p_target, void *p_data)
+bool VMainWindow::shortcutsHelpByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VMainWindow *obj = static_cast<VMainWindow *>(p_target);
     obj->shortcutsHelp();
+    return false;
 }
 
-void VMainWindow::flushLogFileByCaptain(void *p_target, void *p_data)
+bool VMainWindow::flushLogFileByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_target);
     Q_UNUSED(p_data);
@@ -2657,6 +2682,8 @@ void VMainWindow::flushLogFileByCaptain(void *p_target, void *p_data)
     // Flush g_logFile.
     g_logFile.flush();
 #endif
+
+    return true;
 }
 
 void VMainWindow::promptNewNotebookIfEmpty()

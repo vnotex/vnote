@@ -4,6 +4,7 @@
 #include <QLabel>
 #include <QListWidget>
 #include <QTreeWidget>
+#include <QScrollBar>
 
 #include "vnote.h"
 #include "utils/vutils.h"
@@ -50,8 +51,16 @@ void VNavigationMode::showNavigation(QListWidget *p_widget)
         label->show();
         QRect rect = p_widget->visualItemRect(items[i]);
         // Display the label at the end to show the file name.
-        label->move(rect.x() + p_widget->rect().width() - label->width() - 2,
+        // Fix: take the vertical scrollbar into account.
+        int extraWidth = label->width() + 2;
+        QScrollBar *vbar = p_widget->verticalScrollBar();
+        if (vbar && vbar->minimum() != vbar->maximum()) {
+            extraWidth += vbar->width();
+        }
+
+        label->move(rect.x() + p_widget->rect().width() - extraWidth,
                     rect.y());
+
         m_naviLabels.append(label);
     }
 }

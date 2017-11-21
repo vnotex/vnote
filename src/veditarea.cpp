@@ -10,6 +10,7 @@
 #include "vfilesessioninfo.h"
 #include "vmainwindow.h"
 #include "vcaptain.h"
+#include "vfilelist.h"
 
 extern VConfigManager *g_config;
 
@@ -899,65 +900,87 @@ void VEditArea::registerCaptainTargets()
                                    applySnippetByCaptain);
 }
 
-void VEditArea::activateTabByCaptain(void *p_target, void *p_data, int p_idx)
+bool VEditArea::activateTabByCaptain(void *p_target, void *p_data, int p_idx)
 {
     Q_UNUSED(p_data);
     VEditArea *obj = static_cast<VEditArea *>(p_target);
     VEditWindow *win = obj->getCurrentWindow();
     if (win) {
-        win->activateTab(p_idx);
+        if (win->activateTab(p_idx)) {
+            return false;
+        }
     }
+
+    return true;
 }
 
-void VEditArea::alternateTabByCaptain(void *p_target, void *p_data)
+bool VEditArea::alternateTabByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VEditArea *obj = static_cast<VEditArea *>(p_target);
     VEditWindow *win = obj->getCurrentWindow();
     if (win) {
-        win->alternateTab();
+        if (win->alternateTab()) {
+            return false;
+        }
     }
+
+    return true;
 }
 
-void VEditArea::showOpenedFileListByCaptain(void *p_target, void *p_data)
+bool VEditArea::showOpenedFileListByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VEditArea *obj = static_cast<VEditArea *>(p_target);
     VEditWindow *win = obj->getCurrentWindow();
     if (win) {
-        win->showOpenedFileList();
+        if (win->showOpenedFileList()) {
+            return false;
+        }
     }
+
+    return true;
 }
 
-void VEditArea::activateSplitLeftByCaptain(void *p_target, void *p_data)
+bool VEditArea::activateSplitLeftByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VEditArea *obj = static_cast<VEditArea *>(p_target);
-    obj->focusNextWindow(-1);
+    if (obj->focusNextWindow(-1) > -1) {
+        return false;
+    }
+
+    return true;
 }
 
-void VEditArea::activateSplitRightByCaptain(void *p_target, void *p_data)
+bool VEditArea::activateSplitRightByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VEditArea *obj = static_cast<VEditArea *>(p_target);
-    obj->focusNextWindow(1);
+    if (obj->focusNextWindow(1) > -1) {
+        return false;
+    }
+
+    return true;
 }
 
-void VEditArea::moveTabSplitLeftByCaptain(void *p_target, void *p_data)
+bool VEditArea::moveTabSplitLeftByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VEditArea *obj = static_cast<VEditArea *>(p_target);
     obj->moveCurrentTabOneSplit(false);
+    return true;
 }
 
-void VEditArea::moveTabSplitRightByCaptain(void *p_target, void *p_data)
+bool VEditArea::moveTabSplitRightByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VEditArea *obj = static_cast<VEditArea *>(p_target);
     obj->moveCurrentTabOneSplit(true);
+    return true;
 }
 
-void VEditArea::activateNextTabByCaptain(void *p_target, void *p_data)
+bool VEditArea::activateNextTabByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VEditArea *obj = static_cast<VEditArea *>(p_target);
@@ -965,50 +988,75 @@ void VEditArea::activateNextTabByCaptain(void *p_target, void *p_data)
     if (win) {
         win->focusNextTab(true);
     }
+
+    return true;
 }
 
-void VEditArea::activatePreviousTabByCaptain(void *p_target, void *p_data)
+bool VEditArea::activatePreviousTabByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VEditArea *obj = static_cast<VEditArea *>(p_target);
     VEditWindow *win = obj->getCurrentWindow();
     if (win) {
         win->focusNextTab(false);
+        return false;
     }
+
+    return true;
 }
 
-void VEditArea::verticalSplitByCaptain(void *p_target, void *p_data)
+bool VEditArea::verticalSplitByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VEditArea *obj = static_cast<VEditArea *>(p_target);
     obj->splitCurrentWindow();
+    return false;
 }
 
-void VEditArea::removeSplitByCaptain(void *p_target, void *p_data)
+bool VEditArea::removeSplitByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VEditArea *obj = static_cast<VEditArea *>(p_target);
     obj->removeCurrentWindow();
+
+    QWidget *nextFocus = obj->getCurrentTab();
+    if (nextFocus) {
+        nextFocus->setFocus();
+    } else {
+        g_mainWin->getFileList()->setFocus();
+    }
+
+    return false;
 }
 
-void VEditArea::evaluateMagicWordsByCaptain(void *p_target, void *p_data)
+bool VEditArea::evaluateMagicWordsByCaptain(void *p_target, void *p_data)
 {
-    Q_UNUSED(p_data);
     VEditArea *obj = static_cast<VEditArea *>(p_target);
+    CaptainData *data = static_cast<CaptainData *>(p_data);
+
     VEditTab *tab = obj->getCurrentTab();
-    if (tab && tab->tabHasFocus()) {
+    if (tab
+        && (data->m_focusWidgetBeforeCaptain == tab
+            || tab->isAncestorOf(data->m_focusWidgetBeforeCaptain))) {
         tab->evaluateMagicWords();
     }
+
+    return true;
 }
 
-void VEditArea::applySnippetByCaptain(void *p_target, void *p_data)
+bool VEditArea::applySnippetByCaptain(void *p_target, void *p_data)
 {
-    Q_UNUSED(p_data);
     VEditArea *obj = static_cast<VEditArea *>(p_target);
+    CaptainData *data = static_cast<CaptainData *>(p_data);
+
     VEditTab *tab = obj->getCurrentTab();
-    if (tab && tab->tabHasFocus()) {
+    if (tab
+        && (data->m_focusWidgetBeforeCaptain == tab
+            || tab->isAncestorOf(data->m_focusWidgetBeforeCaptain))) {
         tab->applySnippet();
     }
+
+    return true;
 }
 
 void VEditArea::recordClosedFile(const VFileSessionInfo &p_file)

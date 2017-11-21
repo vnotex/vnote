@@ -11,8 +11,22 @@ class QKeyEvent;
 class VNavigationMode;
 class QShortcut;
 
-// void func(void *p_target, void *p_data);
-typedef std::function<void(void *, void *)> CaptainFunc;
+// bool func(void *p_target, void *p_data);
+// Return true if the target needs to restore focus by the Captain.
+typedef std::function<bool(void *, void *)> CaptainFunc;
+
+
+// Will be passed to CaptainFunc as the data.
+struct CaptainData
+{
+    CaptainData(QWidget *p_focusWidgetBeforeCaptain)
+        : m_focusWidgetBeforeCaptain(p_focusWidgetBeforeCaptain)
+    {
+    }
+
+    QWidget *m_focusWidgetBeforeCaptain;
+};
+
 
 class VCaptain : public QWidget
 {
@@ -62,20 +76,18 @@ private:
 
     struct CaptainModeTarget {
         CaptainModeTarget()
-            : m_target(nullptr), m_function(nullptr), m_shortcut(nullptr)
+            : m_target(nullptr), m_function(nullptr)
         {
         }
 
         CaptainModeTarget(const QString &p_name,
                           const QString &p_key,
                           void *p_target,
-                          CaptainFunc p_func,
-                          QShortcut *p_shortcut)
+                          CaptainFunc p_func)
             : m_name(p_name),
               m_key(p_key),
               m_target(p_target),
-              m_function(p_func),
-              m_shortcut(p_shortcut)
+              m_function(p_func)
         {
         }
 
@@ -96,12 +108,9 @@ private:
 
         // Function to call when this target is trigger.
         CaptainFunc m_function;
-
-        // Shortcut for this target.
-        QShortcut *m_shortcut;
     };
 
-    // Restore the focus to m_widgetBeforeNavigation.
+    // Restore the focus to m_widgetBeforeCaptain.
     void restoreFocus();
 
     // Return true if finish handling the event; otherwise, let the base widget
@@ -112,6 +121,10 @@ private:
     bool handleKeyPressNavigationMode(int p_key,
                                       Qt::KeyboardModifiers p_modifiers);
 
+    // Handle key press event in Captain mode.
+    bool handleKeyPressCaptainMode(int p_key,
+                                   Qt::KeyboardModifiers p_modifiers);
+
     // Get next major key to use for Navigation mode.
     QChar getNextMajorKey();
 
@@ -121,6 +134,8 @@ private:
     // Exit navigation mode to ask all targets hide themselves.
     void exitNavigationMode();
 
+    void exitCaptainMode();
+
     // Called to trigger the action of a Captain target which has
     // registered @p_key.
     void triggerCaptainTarget(const QString &p_key);
@@ -129,13 +144,17 @@ private:
 
     bool checkMode(CaptainMode p_mode) const;
 
-    static void navigationModeByCaptain(void *p_target, void *p_data);
+    void trigger();
 
-    // Used to indicate whether we are in Navigation mode.
+    void triggerCaptainMode();
+
+    static bool navigationModeByCaptain(void *p_target, void *p_data);
+
+    // Used to indicate current mode.
     CaptainMode m_mode;
 
-    // The widget which has the focus before entering Navigation mode.
-    QWidget* m_widgetBeforeNavigation;
+    // The widget which has the focus before entering Captain mode.
+    QWidget *m_widgetBeforeCaptain;
 
     // Targets for Navigation mode.
     QVector<NaviModeTarget> m_naviTargets;
@@ -146,11 +165,8 @@ private:
     // Key(lower) -> CaptainModeTarget.
     QHash<QString, CaptainModeTarget> m_captainTargets;
 
-    // Ignore focus change during handling Navigation target actions.
+    // Ignore focus change during handling Captain and Navigation target actions.
     bool m_ignoreFocusChange;
-
-    // Leader key sequence for Captain mode.
-    QString m_leaderKey;
 };
 
 inline void VCaptain::setMode(CaptainMode p_mode)

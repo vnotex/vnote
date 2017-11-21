@@ -176,33 +176,33 @@ private:
     // Captain mode functions.
 
     // Activate tab @p_idx.
-    static void activateTabByCaptain(void *p_target, void *p_data, int p_idx);
+    static bool activateTabByCaptain(void *p_target, void *p_data, int p_idx);
 
-    static void alternateTabByCaptain(void *p_target, void *p_data);
+    static bool alternateTabByCaptain(void *p_target, void *p_data);
 
-    static void showOpenedFileListByCaptain(void *p_target, void *p_data);
+    static bool showOpenedFileListByCaptain(void *p_target, void *p_data);
 
-    static void activateSplitLeftByCaptain(void *p_target, void *p_data);
+    static bool activateSplitLeftByCaptain(void *p_target, void *p_data);
 
-    static void activateSplitRightByCaptain(void *p_target, void *p_data);
+    static bool activateSplitRightByCaptain(void *p_target, void *p_data);
 
-    static void moveTabSplitLeftByCaptain(void *p_target, void *p_data);
+    static bool moveTabSplitLeftByCaptain(void *p_target, void *p_data);
 
-    static void moveTabSplitRightByCaptain(void *p_target, void *p_data);
+    static bool moveTabSplitRightByCaptain(void *p_target, void *p_data);
 
-    static void activateNextTabByCaptain(void *p_target, void *p_data);
+    static bool activateNextTabByCaptain(void *p_target, void *p_data);
 
-    static void activatePreviousTabByCaptain(void *p_target, void *p_data);
+    static bool activatePreviousTabByCaptain(void *p_target, void *p_data);
 
-    static void verticalSplitByCaptain(void *p_target, void *p_data);
+    static bool verticalSplitByCaptain(void *p_target, void *p_data);
 
-    static void removeSplitByCaptain(void *p_target, void *p_data);
+    static bool removeSplitByCaptain(void *p_target, void *p_data);
 
     // Evaluate selected text or the word on cursor as magic words.
-    static void evaluateMagicWordsByCaptain(void *p_target, void *p_data);
+    static bool evaluateMagicWordsByCaptain(void *p_target, void *p_data);
 
     // Prompt for user to apply a snippet.
-    static void applySnippetByCaptain(void *p_target, void *p_data);
+    static bool applySnippetByCaptain(void *p_target, void *p_data);
 
     // End Captain mode functions.
 
