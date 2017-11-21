@@ -16,7 +16,20 @@
 VConfigManager *g_config;
 
 #if defined(QT_NO_DEBUG)
+// 5MB log size.
+#define MAX_LOG_SIZE 5 * 1024 * 1024
+
 QFile g_logFile;
+
+static void initLogFile(const QString &p_file)
+{
+    g_logFile.setFileName(p_file);
+    if (g_logFile.size() >= MAX_LOG_SIZE) {
+        g_logFile.open(QIODevice::WriteOnly | QIODevice::Text);
+    } else {
+        g_logFile.open(QIODevice::Append | QIODevice::Text);
+    }
+}
 #endif
 
 void VLogger(QtMsgType type, const QMessageLogContext &context, const QString &msg)
@@ -50,11 +63,7 @@ void VLogger(QtMsgType type, const QMessageLogContext &context, const QString &m
 
     QTextStream stream(&g_logFile);
 
-#if defined(Q_OS_WIN)
-    stream << header << localMsg << "\r\n";
-#else
     stream << header << localMsg << "\n";
-#endif
 
     if (type == QtFatalMsg) {
         g_logFile.close();
@@ -97,17 +106,6 @@ int main(int argc, char *argv[])
     VSingleInstanceGuard guard;
     bool canRun = guard.tryRun();
 
-#if defined(QT_NO_DEBUG)
-    if (canRun) {
-        g_logFile.setFileName(VConfigManager::getLogFilePath());
-        g_logFile.open(QIODevice::WriteOnly);
-    }
-#endif
-
-    if (canRun) {
-        qInstallMessageHandler(VLogger);
-    }
-
     QTextCodec *codec = QTextCodec::codecForName("UTF8");
     if (codec) {
         QTextCodec::setCodecForLocale(codec);
@@ -115,15 +113,8 @@ int main(int argc, char *argv[])
 
     QApplication app(argc, argv);
 
-    // Check the openSSL.
-    qDebug() << "openSSL" << QSslSocket::sslLibraryBuildVersionString()
-             << QSslSocket::sslLibraryVersionNumber();
-
     // The file path passed via command line arguments.
     QStringList filePaths = VUtils::filterFilePathsToOpen(app.arguments().mid(1));
-
-    qDebug() << "command line arguments" << app.arguments();
-    qDebug() << "files to open from arguments" << filePaths;
 
     if (!canRun) {
         // Ask another instance to open files passed in.
@@ -140,11 +131,24 @@ int main(int argc, char *argv[])
     vconfig.initialize();
     g_config = &vconfig;
 
+#if defined(QT_NO_DEBUG)
+    initLogFile(vconfig.getLogFilePath());
+#endif
+
+    qInstallMessageHandler(VLogger);
+
     QString locale = VUtils::getLocale();
     // Set default locale.
     if (locale == "zh_CN") {
         QLocale::setDefault(QLocale(QLocale::Chinese, QLocale::China));
     }
+
+    qDebug() << "command line arguments" << app.arguments();
+    qDebug() << "files to open from arguments" << filePaths;
+
+    // Check the openSSL.
+    qDebug() << "openSSL" << QSslSocket::sslLibraryBuildVersionString()
+             << QSslSocket::sslLibraryVersionNumber();
 
     // load translation for Qt
     QTranslator qtTranslator;

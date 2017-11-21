@@ -71,8 +71,6 @@ public:
     static bool directoryConfigExist(const QString &path);
     static bool deleteDirectoryConfig(const QString &path);
 
-    static QString getLogFilePath();
-
     // Get the path of the folder used to store default notebook.
     static QString getVnoteNotebookFolderPath();
 
@@ -99,6 +97,8 @@ public:
     QHash<QString, QTextCharFormat> getCodeBlockStyles() const;
 
     QString getWelcomePagePath() const;
+
+    QString getLogFilePath() const;
 
     QString getTemplateCssUrl();
 

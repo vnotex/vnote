@@ -535,19 +535,9 @@ bool VConfigManager::deleteDirectoryConfig(const QString &path)
     return true;
 }
 
-QString VConfigManager::getLogFilePath()
+QString VConfigManager::getLogFilePath() const
 {
-    static QString logPath;
-
-    if (logPath.isEmpty()) {
-        QString location = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-        V_ASSERT(!location.isEmpty());
-        QDir dir(location);
-        dir.mkdir("VNote");
-        logPath = dir.filePath("VNote/vnote.log");
-    }
-
-    return logPath;
+    return QDir(getConfigFolder()).filePath("vnote.log");
 }
 
 void VConfigManager::updateMarkdownEditStyle()
