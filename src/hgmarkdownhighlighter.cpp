@@ -715,11 +715,17 @@ void HGMarkdownHighlighter::highlightChanged()
 bool HGMarkdownHighlighter::isValidHeader(unsigned long p_pos, unsigned long p_end)
 {
     // There must exist spaces after #s.
+    // No more than 6 #s.
+    int nrNumberSign = 0;
     for (unsigned long i = p_pos; i < p_end; ++i) {
         QChar ch = document->characterAt(i);
         if (ch.isSpace()) {
             return true;
-        } else if (ch != QChar('#')) {
+        } else if (ch == QChar('#')) {
+            if (++nrNumberSign > 6) {
+                return false;
+            }
+        } else {
             return false;
         }
     }
