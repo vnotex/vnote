@@ -209,6 +209,10 @@ void HGMarkdownHighlighter::initBlockHighlightFromResult(int nrBlocks)
     {
         const HighlightingStyle &style = highlightingStyles[i];
         pmh_element *elem_cursor = result[style.type];
+
+        // pmh_H1 to pmh_H6 is continuous.
+        bool isHeader = style.type >= pmh_H1 && style.type <= pmh_H6;
+
         while (elem_cursor != NULL)
         {
             // elem_cursor->pos and elem_cursor->end is the start
@@ -217,6 +221,14 @@ void HGMarkdownHighlighter::initBlockHighlightFromResult(int nrBlocks)
                 elem_cursor = elem_cursor->next;
                 continue;
             }
+
+            // Check header. Skip those headers with no spaces after #s.
+            if (isHeader
+                && !isValidHeader(elem_cursor->pos, elem_cursor->end)) {
+                elem_cursor = elem_cursor->next;
+                continue;
+            }
+
             initBlockHighlihgtOne(elem_cursor->pos, elem_cursor->end, i);
             elem_cursor = elem_cursor->next;
         }
@@ -304,7 +316,8 @@ void HGMarkdownHighlighter::initHeaderRegionsFromResult()
     for (int i = 0; i < 6; ++i) {
         pmh_element *elem = result[hx[i]];
         while (elem != NULL) {
-            if (elem->end <= elem->pos) {
+            if (elem->end <= elem->pos
+                || !isValidHeader(elem->pos, elem->end)) {
                 elem = elem->next;
                 continue;
             }
@@ -336,10 +349,20 @@ void HGMarkdownHighlighter::initHeaderRegionsFromResult()
     emit headersUpdated(m_headerRegions);
 }
 
-void HGMarkdownHighlighter::initBlockHighlihgtOne(unsigned long pos, unsigned long end, int styleIndex)
+void HGMarkdownHighlighter::initBlockHighlihgtOne(unsigned long pos,
+                                                  unsigned long end,
+                                                  int styleIndex)
 {
+    // When the the highlight element is at the end of document, @end will equals
+    // to the characterCount.
+    unsigned int nrChar = (unsigned int)document->characterCount();
+    if (end >= nrChar && nrChar > 0) {
+        end = nrChar - 1;
+    }
+
     int startBlockNum = document->findBlock(pos).blockNumber();
     int endBlockNum = document->findBlock(end).blockNumber();
+
     for (int i = startBlockNum; i <= endBlockNum; ++i)
     {
         QTextBlock block = document->findBlockByNumber(i);
@@ -687,4 +710,19 @@ void HGMarkdownHighlighter::highlightChanged()
 {
     m_completeTimer->stop();
     m_completeTimer->start();
+}
+
+bool HGMarkdownHighlighter::isValidHeader(unsigned long p_pos, unsigned long p_end)
+{
+    // There must exist spaces after #s.
+    for (unsigned long i = p_pos; i < p_end; ++i) {
+        QChar ch = document->characterAt(i);
+        if (ch.isSpace()) {
+            return true;
+        } else if (ch != QChar('#')) {
+            return false;
+        }
+    }
+
+    return false;
 }

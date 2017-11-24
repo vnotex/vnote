@@ -437,7 +437,9 @@ void VMdEditor::updateHeaders(const QVector<VElementRegion> &p_headerRegions)
         }
 
         if (!block.contains(reg.m_endPos - 1)) {
-            continue;
+            qWarning() << "header accross multiple blocks, starting from block"
+                       << block.blockNumber()
+                       << block.text();
         }
 
         if ((block.userState() == HighlightBlockState::Normal)

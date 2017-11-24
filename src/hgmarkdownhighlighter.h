@@ -206,8 +206,13 @@ private:
 
     void parse();
     void parseInternal();
+
+    // Init highlight elements for all the blocks from parse results.
     void initBlockHighlightFromResult(int nrBlocks);
-    void initBlockHighlihgtOne(unsigned long pos, unsigned long end,
+
+    // Init highlight elements for blocks from one parse result.
+    void initBlockHighlihgtOne(unsigned long pos,
+                               unsigned long end,
                                int styleIndex);
 
     // Return true if there are fenced code blocks and it will call rehighlight() later.
@@ -234,6 +239,9 @@ private:
 
     // Highlight color column in code block.
     void highlightCodeBlockColorColumn(const QString &p_text);
+
+    // Check if [p_pos, p_end) is a valid header.
+    bool isValidHeader(unsigned long p_pos, unsigned long p_end);
 };
 
 inline const QMap<int, bool> &HGMarkdownHighlighter::getPotentialPreviewBlocks() const

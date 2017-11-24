@@ -38,20 +38,34 @@ static bool parseTocLi(QXmlStreamReader &p_xml,
         if (p_xml.name() == "a") {
             QString anchor = p_xml.attributes().value("href").toString().mid(1);
             QString name;
-            if (p_xml.readNext()) {
+            // Read till </a>.
+            int nrStart = 1;
+            while (p_xml.readNext()) {
                 if (p_xml.tokenString() == "Characters") {
-                    name = p_xml.text().toString();
-                } else if (!p_xml.isEndElement()) {
-                    qWarning() << "TOC HTML <a> should be ended by </a>" << p_xml.name();
-                    return false;
-                }
+                    name += p_xml.text().toString();
+                } else if (p_xml.isEndElement()) {
+                    --nrStart;
+                    if (nrStart < 0) {
+                        qWarning() << "end elements more than start elements in <a>" << anchor << p_xml.name();
+                        return false;
+                    }
 
-                VTableOfContentItem header(name, p_level, anchor, p_table.size());
-                p_table.append(header);
-            } else {
+                    if (p_xml.name() == "a") {
+                        break;
+                    }
+                } else if (p_xml.isStartElement()) {
+                    ++nrStart;
+                }
+            }
+
+            if (p_xml.hasError()) {
                 // Error
+                qWarning() << "fail to parse an entire <a> element" << anchor << name;
                 return false;
             }
+
+            VTableOfContentItem header(name, p_level, anchor, p_table.size());
+            p_table.append(header);
         } else if (p_xml.name() == "ul") {
             // Such as header 3 under header 1 directly
             VTableOfContentItem header(c_emptyHeaderName, p_level, "", p_table.size());
