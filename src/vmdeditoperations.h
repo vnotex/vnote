@@ -58,6 +58,7 @@ private:
     // Insert title of level @p_level.
     // Will detect if current block already has some leading #s. If yes,
     // will delete it and insert the correct #s.
+    // @p_level: 0 to cancel title.
     bool insertTitle(int p_level);
 
     // Change the sequence number of a list block.

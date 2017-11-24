@@ -17,6 +17,8 @@ VNote supports `Ctrl+J` and `Ctrl+K` for navigation in the notebooks list, direc
 Scroll in all directions.
 - `Ctrl+Shift+T`  
 Recover last closed file.
+- `Ctrl+Alt+L`  
+Open Flash Page.
 
 ### Read Mode
 - `Ctrl+W`  
@@ -70,6 +72,8 @@ Delete all the characters from current cursor to the first space backward.
 Delete all the characters from current cursor to the beginning of current line.
 - `Ctrl+<Num>`  
 Insert title at level `<Num>`. `<Num>` should be 1 to 6. Current selected text will be changed to title if exists.
+- `Ctrl+7`  
+Delete the title mark of current line or selected text.
 - `Tab`/`Shift+Tab`  
 Increase or decrease the indentation. If any text is selected, the indentation will operate on all these selected lines.
 - `Shift+Enter`  

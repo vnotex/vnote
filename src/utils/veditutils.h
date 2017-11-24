@@ -151,6 +151,7 @@ public:
     // Insert title Mark at level @p_level in front of block @p_block
     // If there already exists title marks, remove it first.
     // Move cursor at the end of the block after insertion.
+    // If @p_level is 0, remove the title mark.
     static void insertTitleMark(QTextCursor &p_cursor,
                                 const QTextBlock &p_block,
                                 int p_level);

@@ -785,7 +785,7 @@ void VEditUtils::insertTitleMark(QTextCursor &p_cursor,
         return;
     }
 
-    Q_ASSERT(p_level >= 1 && p_level <= 6);
+    Q_ASSERT(p_level >= 0 && p_level <= 6);
 
     bool needInsert = true;
 
@@ -801,15 +801,24 @@ void VEditUtils::insertTitleMark(QTextCursor &p_cursor,
             needInsert = false;
         } else {
             // Remove the title mark.
+            int length = level;
+            if (p_level == 0) {
+                // Remove all the prefix.
+                QRegExp prefixReg(VUtils::c_headerPrefixRegExp);
+                bool preMatched = prefixReg.exactMatch(text);
+                Q_ASSERT(preMatched);
+                length = prefixReg.cap(1).length();
+            }
+
             p_cursor.movePosition(QTextCursor::NextCharacter,
                                   QTextCursor::KeepAnchor,
-                                  level);
+                                  length);
             p_cursor.removeSelectedText();
         }
     }
 
     // Insert titleMark + " " at the front of the block.
-    if (needInsert) {
+    if (p_level > 0 && needInsert) {
         // Remove the spaces at front.
         // insertText() will remove the selection.
         moveCursorFirstNonSpaceCharacter(p_cursor, QTextCursor::KeepAnchor);

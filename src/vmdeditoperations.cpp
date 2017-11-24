@@ -219,10 +219,11 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
     case Qt::Key_4:
     case Qt::Key_5:
     case Qt::Key_6:
+    case Qt::Key_7:
     {
         if (modifiers == Qt::ControlModifier) {
             // Ctrl + <N>: insert title at level <N>.
-            if (insertTitle(key - Qt::Key_0)) {
+            if (insertTitle(key == Qt::Key_7 ? 0 : key - Qt::Key_0)) {
                 p_event->accept();
                 ret = true;
                 goto exit;
@@ -728,18 +729,32 @@ void VMdEditOperations::decorateBold()
         cursor.insertText("**");
     } else {
         // Insert **** and place cursor in the middle.
-        // Or if there are two * after current cursor, just skip them.
+        // Or if there are two * after current cursor, just skip them or delete
+        // them if four * appear.
         int pos = cursor.positionInBlock();
         bool hasStars = false;
+        bool emptyMarkers = false;
         QString text = cursor.block().text();
         if (pos <= text.size() - 2) {
             if (text[pos] == '*' && text[pos + 1] == '*') {
                 hasStars = true;
+
+                if (pos >= 2
+                    && text[pos - 1] == '*'
+                    && text[pos - 2] == '*') {
+                    emptyMarkers = true;
+                }
             }
         }
 
         if (hasStars) {
-            cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 2);
+            if (emptyMarkers) {
+                cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::MoveAnchor, 2);
+                cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, 4);
+                cursor.removeSelectedText();
+            } else {
+                cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 2);
+            }
         } else {
             cursor.insertText("****");
             cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 2);
@@ -765,18 +780,31 @@ void VMdEditOperations::decorateItalic()
         cursor.insertText("*");
     } else {
         // Insert ** and place cursor in the middle.
-        // Or if there are one * after current cursor, just skip it.
+        // Or if there are one * after current cursor, just skip them or delete
+        // them if two * appear.
         int pos = cursor.positionInBlock();
         bool hasStar = false;
+        bool emptyMarkers = false;
         QString text = cursor.block().text();
         if (pos <= text.size() - 1) {
-            if (text[pos] == '*') {
+            if (text[pos] == '*'
+                && (pos == text.size() - 1 || text[pos + 1] != '*')) {
                 hasStar = true;
+
+                if (pos >= 1 && text[pos - 1] == '*') {
+                    emptyMarkers = true;
+                }
             }
         }
 
         if (hasStar) {
-            cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 1);
+            if (emptyMarkers) {
+                cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::MoveAnchor, 1);
+                cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, 2);
+                cursor.removeSelectedText();
+            } else {
+                cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 1);
+            }
         } else {
             cursor.insertText("**");
             cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 1);
@@ -802,18 +830,30 @@ void VMdEditOperations::decorateInlineCode()
         cursor.insertText("`");
     } else {
         // Insert `` and place cursor in the middle.
-        // Or if there are one ` after current cursor, just skip it.
+        // Or if there are one ` after current cursor, just skip them or delete
+        // them if two ` appear.
         int pos = cursor.positionInBlock();
         bool hasBackquote = false;
+        bool emptyMarkers = false;
         QString text = cursor.block().text();
         if (pos <= text.size() - 1) {
             if (text[pos] == '`') {
                 hasBackquote = true;
+
+                if (pos >= 1 && text[pos - 1] == '`') {
+                    emptyMarkers = true;
+                }
             }
         }
 
         if (hasBackquote) {
-            cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 1);
+            if (emptyMarkers) {
+                cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::MoveAnchor, 1);
+                cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, 2);
+                cursor.removeSelectedText();
+            } else {
+                cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 1);
+            }
         } else {
             cursor.insertText("``");
             cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 1);
@@ -857,22 +897,32 @@ void VMdEditOperations::decorateCodeBlock()
             || state == HighlightBlockState::CodeBlockStart
             || state == HighlightBlockState::CodeBlockEnd) {
             // Find the block end.
-            while (block.isValid()) {
-                if (block.userState() == HighlightBlockState::CodeBlockEnd) {
+            QTextBlock endBlock = block;
+            while (endBlock.isValid()) {
+                if (endBlock.userState() == HighlightBlockState::CodeBlockEnd) {
                     break;
                 }
 
-                block = block.next();
+                endBlock = endBlock.next();
             }
 
-            if (block.isValid()) {
+            if (endBlock.isValid()) {
                 // It is CodeBlockEnd.
-                cursor.setPosition(block.position());
-                if (block.next().isValid()) {
-                    cursor.movePosition(QTextCursor::NextBlock);
-                    cursor.movePosition(QTextCursor::StartOfBlock);
+                if (endBlock.previous().isValid()
+                    && endBlock.previous().userState() == HighlightBlockState::CodeBlockStart) {
+                    // Delete empty code blocks.
+                    cursor.setPosition(endBlock.previous().position());
+                    cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
+                    cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+                    cursor.removeSelectedText();
                 } else {
-                    cursor.movePosition(QTextCursor::EndOfBlock);
+                    cursor.setPosition(endBlock.position());
+                    if (endBlock.next().isValid()) {
+                        cursor.movePosition(QTextCursor::NextBlock);
+                        cursor.movePosition(QTextCursor::StartOfBlock);
+                    } else {
+                        cursor.movePosition(QTextCursor::EndOfBlock);
+                    }
                 }
             } else {
                 // Reach the end of the document.
@@ -919,18 +969,32 @@ void VMdEditOperations::decorateStrikethrough()
         cursor.insertText("~~");
     } else {
         // Insert ~~~~ and place cursor in the middle.
-        // Or if there are one ~~ after current cursor, just skip it.
+        // Or if there are one ~~ after current cursor, just skip it or delete
+        // it if for ~ appear.
         int pos = cursor.positionInBlock();
         bool hasStrikethrough = false;
+        bool emptyMarkers = false;
         QString text = cursor.block().text();
         if (pos <= text.size() - 2) {
             if (text[pos] == '~' && text[pos + 1] == '~') {
                 hasStrikethrough = true;
+
+                if (pos >= 2
+                    && text[pos - 1] == '~'
+                    && text[pos - 2] == '~') {
+                    emptyMarkers = true;
+                }
             }
         }
 
         if (hasStrikethrough) {
-            cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 2);
+            if (emptyMarkers) {
+                cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::MoveAnchor, 2);
+                cursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, 4);
+                cursor.removeSelectedText();
+            } else {
+                cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 2);
+            }
         } else {
             cursor.insertText("~~~~");
             cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 2);
