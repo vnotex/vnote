@@ -72,6 +72,11 @@ void VEditSnippetDialog::setupUI(const QString &p_title, const QString &p_info)
     m_selectionMarkEdit = new QLineEdit(m_snippet.getSelectionMark());
     m_selectionMarkEdit->setToolTip(tr("String in the content to be replaced with selected text"));
 
+    // Auto Indent.
+    m_autoIndentCB = new QCheckBox(tr("Auto indent"), this);
+    m_autoIndentCB->setToolTip(tr("Auto indent the content according to the first line"));
+    m_autoIndentCB->setChecked(m_snippet.getAutoIndent());
+
     // Content.
     m_contentEdit = new QTextEdit();
     setContentEditByType();
@@ -82,6 +87,7 @@ void VEditSnippetDialog::setupUI(const QString &p_title, const QString &p_info)
     topLayout->addRow(tr("Shortc&ut:"), m_shortcutCB);
     topLayout->addRow(tr("Cursor &mark:"), m_cursorMarkEdit);
     topLayout->addRow(tr("&Selection mark:"), m_selectionMarkEdit);
+    topLayout->addWidget(m_autoIndentCB);
     topLayout->addRow(tr("&Content:"), m_contentEdit);
 
     m_warnLabel = new QLabel();
@@ -273,6 +279,11 @@ QString VEditSnippetDialog::getContentInput() const
 QChar VEditSnippetDialog::getShortcutInput() const
 {
     return m_shortcutCB->currentData().toChar();
+}
+
+bool VEditSnippetDialog::getAutoIndentInput() const
+{
+    return m_autoIndentCB->isChecked();
 }
 
 QVector<QChar> VEditSnippetDialog::getAvailableShortcuts() const

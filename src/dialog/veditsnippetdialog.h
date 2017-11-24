@@ -12,6 +12,7 @@ class QLabel;
 class QDialogButtonBox;
 class QComboBox;
 class QTextEdit;
+class QCheckBox;
 
 
 class VEditSnippetDialog : public QDialog
@@ -36,6 +37,8 @@ public:
 
     QChar getShortcutInput() const;
 
+    bool getAutoIndentInput() const;
+
 private slots:
     void handleInputChanged();
 
@@ -53,6 +56,7 @@ private:
     QComboBox *m_shortcutCB;
     QLineEdit *m_cursorMarkEdit;
     QLineEdit *m_selectionMarkEdit;
+    QCheckBox *m_autoIndentCB;
     QTextEdit *m_contentEdit;
 
     QLabel *m_warnLabel;

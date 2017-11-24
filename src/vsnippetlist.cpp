@@ -145,7 +145,8 @@ void VSnippetList::newSnippet()
                          dialog.getContentInput(),
                          dialog.getCursorMarkInput(),
                          dialog.getSelectionMarkInput(),
-                         dialog.getShortcutInput());
+                         dialog.getShortcutInput(),
+                         dialog.getAutoIndentInput());
 
         QString errMsg;
         if (!addSnippet(snippet, &errMsg)) {
@@ -336,7 +337,8 @@ void VSnippetList::snippetInfo()
                          dialog.getContentInput(),
                          dialog.getCursorMarkInput(),
                          dialog.getSelectionMarkInput(),
-                         dialog.getShortcutInput())) {
+                         dialog.getShortcutInput(),
+                         dialog.getAutoIndentInput())) {
             if (!writeSnippetFile(*snip, &errMsg)) {
                 ret = false;
             }

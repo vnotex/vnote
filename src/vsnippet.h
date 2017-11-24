@@ -23,7 +23,8 @@ public:
              const QString &p_content = QString(),
              const QString &p_cursorMark = c_defaultCursorMark,
              const QString &p_selectionMark = c_defaultSelectionMark,
-             QChar p_shortcut = QChar());
+             QChar p_shortcut = QChar(),
+             bool p_autoIndent = false);
 
     // Return true if there is any update.
     bool update(const QString &p_name,
@@ -31,7 +32,8 @@ public:
                 const QString &p_content,
                 const QString &p_cursorMark,
                 const QString &p_selectionMark,
-                QChar p_shortcut);
+                QChar p_shortcut,
+                bool p_autoIndent);
 
     const QString &getName() const
     {
@@ -61,6 +63,11 @@ public:
     QChar getShortcut() const
     {
         return m_shortcut;
+    }
+
+    bool getAutoIndent() const
+    {
+        return m_autoIndent;
     }
 
     void setContent(const QString &p_content)
@@ -102,6 +109,9 @@ private:
 
     // Shortcut to apply this snippet.
     QChar m_shortcut;
+
+    // Auto indent with the first line.
+    bool m_autoIndent;
 
     static const QString c_defaultCursorMark;
 

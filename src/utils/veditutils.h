@@ -63,9 +63,10 @@ public:
                                      bool p_isIndent);
 
     // Indent current block.
-    // Skip empty block.
+    // @p_skipEmpty: skip empty block.
     static void indentBlock(QTextCursor &p_cursor,
-                            const QString &p_indentationText);
+                            const QString &p_indentationText,
+                            bool p_skipEmpty = true);
 
     static void unindentBlock(QTextCursor &p_cursor,
                               const QString &p_indentationText);

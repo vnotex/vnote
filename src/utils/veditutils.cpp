@@ -200,10 +200,11 @@ void VEditUtils::indentSelectedBlocks(const QTextDocument *p_doc,
 }
 
 void VEditUtils::indentBlock(QTextCursor &p_cursor,
-                             const QString &p_indentationText)
+                             const QString &p_indentationText,
+                             bool p_skipEmpty)
 {
     QTextBlock block = p_cursor.block();
-    if (block.length() > 1) {
+    if (block.length() > 1 || !p_skipEmpty) {
         p_cursor.movePosition(QTextCursor::StartOfBlock);
         p_cursor.insertText(p_indentationText);
     }
