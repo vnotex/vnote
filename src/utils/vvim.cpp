@@ -1688,18 +1688,47 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 }
             } else {
                 // The first >/<, an Action.
-                if (m_mode == VimMode::Visual || m_mode == VimMode::VisualLine) {
-                    QTextCursor cursor = m_editor->textCursorW();
-                    VEditUtils::indentSelectedBlocks(m_editor->documentW(),
-                                                     cursor,
-                                                     m_editConfig->m_tabSpaces,
-                                                     !unindent);
-                    // Different from Vim:
-                    // Do not exit Visual mode after indentation/unindentation.
+                addActionToken(unindent ? Action::UnIndent : Action::Indent);
+
+                if (checkMode(VimMode::Visual)
+                    || checkMode(VimMode::VisualLine)) {
+                    // Movement will be ignored.
+                    addMovementToken(Movement::Left);
+                    processCommand(m_tokens);
                     break;
                 }
 
-                addActionToken(unindent ? Action::UnIndent : Action::Indent);
+                goto accept;
+            }
+        }
+
+        break;
+    }
+
+    case Qt::Key_Equal:
+    {
+        if (modifiers == Qt::NoModifier) {
+            // =, AutoIndent.
+            tryGetRepeatToken(m_keys, m_tokens);
+            if (hasActionToken()) {
+                // ==.
+                if (checkActionToken(Action::AutoIndent)) {
+                    addRangeToken(Range::Line);
+                    processCommand(m_tokens);
+                    break;
+                }
+            } else {
+                // The first =, an Action.
+                addActionToken(Action::AutoIndent);
+
+                if (checkMode(VimMode::Visual)
+                    || checkMode(VimMode::VisualLine)) {
+                    // Movement will be ignored.
+                    addMovementToken(Movement::Left);
+                    processCommand(m_tokens);
+                    break;
+                }
+
                 goto accept;
             }
         }
@@ -2251,11 +2280,15 @@ void VVim::processCommand(QList<Token> &p_tokens)
         break;
 
     case Action::Indent:
-        processIndentAction(p_tokens, true);
+        processIndentAction(p_tokens, IndentType::Indent);
         break;
 
     case Action::UnIndent:
-        processIndentAction(p_tokens, false);
+        processIndentAction(p_tokens, IndentType::UnIndent);
+        break;
+
+    case Action::AutoIndent:
+        processIndentAction(p_tokens, IndentType::AutoIndent);
         break;
 
     case Action::ToLower:
@@ -4265,7 +4298,7 @@ exit:
     setMode(VimMode::Insert);
 }
 
-void VVim::processIndentAction(QList<Token> &p_tokens, bool p_isIndent)
+void VVim::processIndentAction(QList<Token> &p_tokens, IndentType p_type)
 {
     Token to = p_tokens.takeFirst();
     int repeat = -1;
@@ -4280,10 +4313,27 @@ void VVim::processIndentAction(QList<Token> &p_tokens, bool p_isIndent)
     }
 
     QTextCursor cursor = m_editor->textCursorW();
-    QTextDocument *doc = m_editor->documentW();
+
+    QString op;
+    switch (p_type) {
+    case IndentType::Indent:
+        op = ">";
+        break;
+
+    case IndentType::UnIndent:
+        op = "<";
+        break;
+
+    case IndentType::AutoIndent:
+        op = "=";
+        break;
+
+    default:
+        Q_ASSERT(false);
+    }
 
     if (to.isRange()) {
-        bool changed = selectRange(cursor, doc, to.m_range, repeat);
+        bool changed = selectRange(cursor, m_editor->documentW(), to.m_range, repeat);
         if (changed) {
             switch (to.m_range) {
             case Range::Line:
@@ -4293,19 +4343,18 @@ void VVim::processIndentAction(QList<Token> &p_tokens, bool p_isIndent)
                     repeat = 1;
                 }
 
-                VEditUtils::indentSelectedBlocks(doc,
-                                                 cursor,
-                                                 m_editConfig->m_tabSpaces,
-                                                 p_isIndent);
-
-                if (p_isIndent) {
-                    message(tr("%1 %2 >ed 1 time").arg(repeat).arg(repeat > 1 ? tr("lines")
-                                                                              : tr("line")));
+                if (p_type == IndentType::AutoIndent) {
+                    VEditUtils::indentSelectedBlocksAsBlock(cursor, false);
                 } else {
-                    message(tr("%1 %2 <ed 1 time").arg(repeat).arg(repeat > 1 ? tr("lines")
-                                                                              : tr("line")));
+                    VEditUtils::indentSelectedBlocks(cursor,
+                                                     m_editConfig->m_tabSpaces,
+                                                     p_type == IndentType::Indent);
                 }
 
+                message(tr("%1 %2 %3ed 1 time").arg(repeat)
+                                               .arg(repeat > 1 ? tr("lines")
+                                                               : tr("line"))
+                                               .arg(op));
                 break;
             }
 
@@ -4346,19 +4395,18 @@ void VVim::processIndentAction(QList<Token> &p_tokens, bool p_isIndent)
             case Range::BackQuoteAround:
             {
                 int nrBlock = VEditUtils::selectedBlockCount(cursor);
-                VEditUtils::indentSelectedBlocks(doc,
-                                                 cursor,
-                                                 m_editConfig->m_tabSpaces,
-                                                 p_isIndent);
-
-                if (p_isIndent) {
-                    message(tr("%1 %2 >ed 1 time").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
-                                                                                : tr("line")));
+                if (p_type == IndentType::AutoIndent) {
+                    VEditUtils::indentSelectedBlocksAsBlock(cursor, false);
                 } else {
-                    message(tr("%1 %2 <ed 1 time").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
-                                                                                : tr("line")));
+                    VEditUtils::indentSelectedBlocks(cursor,
+                                                     m_editConfig->m_tabSpaces,
+                                                     p_type == IndentType::Indent);
                 }
 
+                message(tr("%1 %2 %3ed 1 time").arg(nrBlock)
+                                               .arg(nrBlock > 1 ? tr("lines")
+                                                                : tr("line"))
+                                               .arg(op));
                 break;
             }
 
@@ -4384,24 +4432,39 @@ void VVim::processIndentAction(QList<Token> &p_tokens, bool p_isIndent)
         break;
     }
 
+    if (checkMode(VimMode::VisualLine) || checkMode(VimMode::Visual)) {
+        // Visual mode, omitting repeat and movement.
+        // Different from Vim:
+        // Do not exit Visual mode after indentation/unindentation.
+        if (p_type == IndentType::AutoIndent) {
+            VEditUtils::indentSelectedBlocksAsBlock(cursor, false);
+        } else {
+            VEditUtils::indentSelectedBlocks(cursor,
+                                             m_editConfig->m_tabSpaces,
+                                             p_type == IndentType::Indent);
+        }
+
+        return;
+    }
+
     processMovement(cursor,
                     QTextCursor::KeepAnchor,
                     to,
                     repeat);
 
     int nrBlock = VEditUtils::selectedBlockCount(cursor);
-    if (p_isIndent) {
-        message(tr("%1 %2 >ed 1 time").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
-                                                                    : tr("line")));
+    if (p_type == IndentType::AutoIndent) {
+        VEditUtils::indentSelectedBlocksAsBlock(cursor, false);
     } else {
-        message(tr("%1 %2 <ed 1 time").arg(nrBlock).arg(nrBlock > 1 ? tr("lines")
-                                                                    : tr("line")));
+        VEditUtils::indentSelectedBlocks(cursor,
+                                         m_editConfig->m_tabSpaces,
+                                         p_type == IndentType::Indent);
     }
 
-    VEditUtils::indentSelectedBlocks(doc,
-                                     cursor,
-                                     m_editConfig->m_tabSpaces,
-                                     p_isIndent);
+    message(tr("%1 %2 %3ed 1 time").arg(nrBlock)
+                                   .arg(nrBlock > 1 ? tr("lines")
+                                                    : tr("line"))
+                                   .arg(op));
 }
 
 void VVim::processToLowerAction(QList<Token> &p_tokens, bool p_toLower)

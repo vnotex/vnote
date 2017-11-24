@@ -88,14 +88,21 @@ bool VEditUtils::insertListMarkAsPreviousBlock(QTextCursor &p_cursor)
 
 bool VEditUtils::indentBlockAsBlock(QTextCursor &p_cursor, bool p_next)
 {
-    bool changed = false;
     QTextBlock block = p_cursor.block();
     QTextBlock refBlock = p_next ? block.next() : block.previous();
-    if (!refBlock.isValid()) {
+    return indentBlockAsBlock(p_cursor, refBlock);
+}
+
+bool VEditUtils::indentBlockAsBlock(QTextCursor &p_cursor, const QTextBlock &p_refBlock)
+{
+    if (!p_refBlock.isValid()) {
         return false;
     }
 
-    QString leadingSpaces = fetchIndentSpaces(refBlock);
+    Q_ASSERT(!p_cursor.hasSelection());
+
+    bool changed = false;
+    QString leadingSpaces = fetchIndentSpaces(p_refBlock);
 
     moveCursorFirstNonSpaceCharacter(p_cursor, QTextCursor::MoveAnchor);
     if (!p_cursor.atBlockStart()) {
@@ -110,6 +117,42 @@ bool VEditUtils::indentBlockAsBlock(QTextCursor &p_cursor, bool p_next)
     }
 
     return changed;
+}
+
+// Use another QTextCursor to remain the selection.
+void VEditUtils::indentSelectedBlocksAsBlock(const QTextCursor &p_cursor, bool p_next)
+{
+    int nrBlocks = 1;
+    int start = p_cursor.selectionStart();
+    int end = p_cursor.selectionEnd();
+
+    QTextDocument *doc = p_cursor.document();
+    QTextBlock sBlock = doc->findBlock(start);
+    QTextBlock refBlock;
+    if (!p_next) {
+        refBlock = sBlock.previous();
+    }
+
+    if (start != end) {
+        QTextBlock eBlock = doc->findBlock(end);
+        nrBlocks = eBlock.blockNumber() - sBlock.blockNumber() + 1;
+
+        if (p_next) {
+            refBlock = eBlock.next();
+        }
+    } else {
+        refBlock = sBlock.next();
+    }
+
+    QTextCursor bCursor(sBlock);
+    bCursor.beginEditBlock();
+    for (int i = 0; i < nrBlocks; ++i) {
+        indentBlockAsBlock(bCursor, refBlock);
+
+        bCursor.movePosition(QTextCursor::NextBlock);
+    }
+
+    bCursor.endEditBlock();
 }
 
 bool VEditUtils::hasSameIndent(const QTextBlock &p_blocka, const QTextBlock &p_blockb)
@@ -170,8 +213,7 @@ QString VEditUtils::selectedText(const QTextCursor &p_cursor)
 }
 
 // Use another QTextCursor to remain the selection.
-void VEditUtils::indentSelectedBlocks(const QTextDocument *p_doc,
-                                      const QTextCursor &p_cursor,
+void VEditUtils::indentSelectedBlocks(const QTextCursor &p_cursor,
                                       const QString &p_indentationText,
                                       bool p_isIndent)
 {
@@ -179,9 +221,10 @@ void VEditUtils::indentSelectedBlocks(const QTextDocument *p_doc,
     int start = p_cursor.selectionStart();
     int end = p_cursor.selectionEnd();
 
-    QTextBlock sBlock = p_doc->findBlock(start);
+    QTextDocument *doc = p_cursor.document();
+    QTextBlock sBlock = doc->findBlock(start);
     if (start != end) {
-        QTextBlock eBlock = p_doc->findBlock(end);
+        QTextBlock eBlock = doc->findBlock(end);
         nrBlocks = eBlock.blockNumber() - sBlock.blockNumber() + 1;
     }
 
@@ -196,6 +239,7 @@ void VEditUtils::indentSelectedBlocks(const QTextDocument *p_doc,
 
         bCursor.movePosition(QTextCursor::NextBlock);
     }
+
     bCursor.endEditBlock();
 }
 

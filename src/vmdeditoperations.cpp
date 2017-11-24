@@ -410,7 +410,6 @@ bool VMdEditOperations::handleKeyBracketLeft(QKeyEvent *p_event)
 
 bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)
 {
-    QTextDocument *doc = m_editor->documentW();
     QString text(m_editConfig->m_tabSpaces);
 
     if (p_event->modifiers() == Qt::NoModifier) {
@@ -419,7 +418,7 @@ bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)
             m_autoIndentPos = -1;
             cursor.beginEditBlock();
             // Indent each selected line.
-            VEditUtils::indentSelectedBlocks(doc, cursor, text, true);
+            VEditUtils::indentSelectedBlocks(cursor, text, true);
             cursor.endEditBlock();
             m_editor->setTextCursorW(cursor);
         } else {
@@ -457,9 +456,9 @@ bool VMdEditOperations::handleKeyBackTab(QKeyEvent *p_event)
         m_autoIndentPos = -1;
         return false;
     }
-    QTextDocument *doc = m_editor->documentW();
+
     QTextCursor cursor = m_editor->textCursorW();
-    QTextBlock block = doc->findBlock(cursor.selectionStart());
+    QTextBlock block = m_editor->documentW()->findBlock(cursor.selectionStart());
     bool continueAutoIndent = false;
     int seq = -1;
     if (cursor.position() == m_autoIndentPos
@@ -473,7 +472,7 @@ bool VMdEditOperations::handleKeyBackTab(QKeyEvent *p_event)
         changeListBlockSeqNumber(block, 1);
     }
 
-    VEditUtils::indentSelectedBlocks(doc, cursor, m_editConfig->m_tabSpaces, false);
+    VEditUtils::indentSelectedBlocks(cursor, m_editConfig->m_tabSpaces, false);
     cursor.endEditBlock();
 
     if (continueAutoIndent) {

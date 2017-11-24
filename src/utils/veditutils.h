@@ -31,6 +31,9 @@ public:
     // @p_next: indent as next block or previous block.
     static bool indentBlockAsBlock(QTextCursor &p_cursor, bool p_next);
 
+    // Indent current block as @p_refBlock.
+    static bool indentBlockAsBlock(QTextCursor &p_cursor, const QTextBlock &p_refBlock);
+
     // Returns true if two blocks has the same indent.
     static bool hasSameIndent(const QTextBlock &p_blocka, const QTextBlock &p_blockb);
 
@@ -56,11 +59,17 @@ public:
     static QString selectedText(const QTextCursor &p_cursor);
 
     // Indent selected blocks. If no selection, indent current block.
+    // Cursor position and selection is not changed.
     // @p_isIndent: whether it is indentation or unindentation.
-    static void indentSelectedBlocks(const QTextDocument *p_doc,
-                                     const QTextCursor &p_cursor,
+    static void indentSelectedBlocks(const QTextCursor &p_cursor,
                                      const QString &p_indentationText,
                                      bool p_isIndent);
+
+    // Indent seleced block as next/previous block.
+    // Cursor position and selection is not changed.
+    // Return true if some changes have been made.
+    // @p_next: indent as next block or previous block.
+    static void indentSelectedBlocksAsBlock(const QTextCursor &p_cursor, bool p_next);
 
     // Indent current block.
     // @p_skipEmpty: skip empty block.

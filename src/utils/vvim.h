@@ -361,6 +361,7 @@ private:
         Change,
         Indent,
         UnIndent,
+        AutoIndent,
         ToUpper,
         ToLower,
         ReverseCase,
@@ -582,6 +583,8 @@ private:
         const int c_maximumLocations;
     };
 
+    enum IndentType { Indent = 0, UnIndent, AutoIndent };
+
     // Returns true if the event is consumed and need no more handling.
     bool handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos = NULL);
 
@@ -615,8 +618,9 @@ private:
     // @p_tokens is the arguments of the Action::Change action.
     void processChangeAction(QList<Token> &p_tokens);
 
-    // @p_tokens is the arguments of the Action::Indent and Action::UnIndent action.
-    void processIndentAction(QList<Token> &p_tokens, bool p_isIndent);
+    // @p_tokens is the arguments of the Action::Indent, Action::UnIndent,
+    // and Action::AutoIndent action.
+    void processIndentAction(QList<Token> &p_tokens, IndentType p_type);
 
     // @p_tokens is the arguments of the Action::ToLower and Action::ToUpper action.
     void processToLowerAction(QList<Token> &p_tokens, bool p_toLower);
