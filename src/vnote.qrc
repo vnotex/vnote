@@ -143,5 +143,6 @@
         <file>resources/icons/apply_snippet.svg</file>
         <file>resources/icons/reading_modified.svg</file>
         <file>resources/icons/flash_page.svg</file>
+        <file>resources/icons/heading.svg</file>
     </qresource>
 </RCC>

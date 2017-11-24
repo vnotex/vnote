@@ -223,7 +223,7 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
     {
         if (modifiers == Qt::ControlModifier) {
             // Ctrl + <N>: insert title at level <N>.
-            if (insertTitle(key == Qt::Key_7 ? 0 : key - Qt::Key_0)) {
+            if (decorateHeading(key == Qt::Key_7 ? 0 : key - Qt::Key_0)) {
                 p_event->accept();
                 ret = true;
                 goto exit;
@@ -649,7 +649,7 @@ void VMdEditOperations::changeListBlockSeqNumber(QTextBlock &p_block, int p_seq)
     cursor.insertText(QString::number(p_seq));
 }
 
-bool VMdEditOperations::insertTitle(int p_level)
+bool VMdEditOperations::decorateHeading(int p_level)
 {
     QTextDocument *doc = m_editor->documentW();
     QTextCursor cursor = m_editor->textCursorW();
@@ -674,7 +674,7 @@ bool VMdEditOperations::insertTitle(int p_level)
     return true;
 }
 
-void VMdEditOperations::decorateText(TextDecoration p_decoration)
+void VMdEditOperations::decorateText(TextDecoration p_decoration, int p_level)
 {
     if (p_decoration == TextDecoration::None) {
         return;
@@ -700,6 +700,10 @@ void VMdEditOperations::decorateText(TextDecoration p_decoration)
 
     case TextDecoration::CodeBlock:
         decorateCodeBlock();
+        break;
+
+    case TextDecoration::Heading:
+        decorateHeading(p_level);
         break;
 
     default:

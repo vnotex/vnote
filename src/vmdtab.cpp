@@ -717,10 +717,10 @@ VEditTabInfo VMdTab::fetchTabInfo() const
     return info;
 }
 
-void VMdTab::decorateText(TextDecoration p_decoration)
+void VMdTab::decorateText(TextDecoration p_decoration, int p_level)
 {
     if (m_editor) {
-        m_editor->decorateText(p_decoration);
+        m_editor->decorateText(p_decoration, p_level);
     }
 }
 

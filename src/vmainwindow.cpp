@@ -424,6 +424,8 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
 
     m_editToolBar->addAction(m_headingSequenceAct);
 
+    initHeadingButton(m_editToolBar);
+
     QAction *boldAct = new QAction(QIcon(":/resources/icons/bold.svg"),
                                    tr("Bold\t%1").arg(VUtils::getShortcutText("Ctrl+B")),
                                    this);
@@ -1829,6 +1831,8 @@ void VMainWindow::updateActionsStateFromTab(const VEditTab *p_tab)
 
     m_attachmentBtn->setEnabled(file && file->getType() == FileType::Note);
 
+    m_headingBtn->setEnabled(file && editMode);
+
     setActionsEnabled(m_editToolBar, file && editMode);
 
     // Handle heading sequence act independently.
@@ -2711,4 +2715,63 @@ void VMainWindow::openFlashPage()
               false,
               OpenFileMode::Edit,
               true);
+}
+
+void VMainWindow::initHeadingButton(QToolBar *p_tb)
+{
+    m_headingBtn = new QPushButton(QIcon(":/resources/icons/heading.svg"),
+                                              "",
+                                              this);
+    m_headingBtn->setToolTip(tr("Headings"));
+    m_headingBtn->setProperty("CornerBtn", true);
+    m_headingBtn->setFocusPolicy(Qt::NoFocus);
+    m_headingBtn->setEnabled(false);
+
+    QMenu *menu = new QMenu(this);
+    QAction *act = menu->addAction(tr("Heading 1\t%1").arg(VUtils::getShortcutText("Ctrl+1")));
+    QFont font = act->font();
+    int ps = font.pointSize();
+    font.setBold(true);
+    font.setPointSize(ps + 8);
+    act->setFont(font);
+    act->setData(1);
+
+    act = menu->addAction(tr("Heading 2\t%1").arg(VUtils::getShortcutText("Ctrl+2")));
+    font.setPointSize(ps + 6);
+    act->setFont(font);
+    act->setData(2);
+
+    act = menu->addAction(tr("Heading 3\t%1").arg(VUtils::getShortcutText("Ctrl+3")));
+    font.setPointSize(ps + 4);
+    act->setFont(font);
+    act->setData(3);
+
+    act = menu->addAction(tr("Heading 4\t%1").arg(VUtils::getShortcutText("Ctrl+4")));
+    font.setPointSize(ps + 2);
+    act->setFont(font);
+    act->setData(4);
+
+    act = menu->addAction(tr("Heading 5\t%1").arg(VUtils::getShortcutText("Ctrl+5")));
+    font.setPointSize(ps + 2);
+    act->setFont(font);
+    act->setData(5);
+
+    act = menu->addAction(tr("Heading 6\t%1").arg(VUtils::getShortcutText("Ctrl+6")));
+    font.setPointSize(ps + 2);
+    act->setFont(font);
+    act->setData(6);
+
+    act = menu->addAction(tr("Clear\t%1").arg(VUtils::getShortcutText("Ctrl+7")));
+    act->setData(0);
+
+    connect(menu, &QMenu::triggered,
+            this, [this](QAction *p_action) {
+                if (m_curTab) {
+                    int level = p_action->data().toInt();
+                    m_curTab->decorateText(TextDecoration::Heading, level);
+                }
+            });
+
+    m_headingBtn->setMenu(menu);
+    p_tb->addWidget(m_headingBtn);
 }

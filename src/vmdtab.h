@@ -66,7 +66,7 @@ public:
     void requestUpdateVimStatus() Q_DECL_OVERRIDE;
 
     // Insert decoration markers or decorate selected text.
-    void decorateText(TextDecoration p_decoration) Q_DECL_OVERRIDE;
+    void decorateText(TextDecoration p_decoration, int p_level = -1) Q_DECL_OVERRIDE;
 
     // Create a filled VEditTabInfo.
     VEditTabInfo fetchTabInfo() const Q_DECL_OVERRIDE;

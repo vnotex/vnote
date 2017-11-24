@@ -261,6 +261,8 @@ private:
 
     void initShortcuts();
 
+    void initHeadingButton(QToolBar *p_tb);
+
     // Captain mode functions.
 
     // Popup the attachment list if it is enabled.
@@ -371,6 +373,8 @@ private:
 
     // Attachment list.
     VAttachmentList *m_attachmentList;
+
+    QPushButton *m_headingBtn;
 
     QVector<QPixmap> predefinedColorPixmaps;
 

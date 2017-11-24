@@ -120,7 +120,7 @@ public:
     void setInputMethodEnabled(bool p_enabled);
 
     // Insert decoration markers or decorate selected text.
-    void decorateText(TextDecoration p_decoration);
+    void decorateText(TextDecoration p_decoration, int p_level);
 
     virtual bool isBlockVisible(const QTextBlock &p_block) = 0;
 

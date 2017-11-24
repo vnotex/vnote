@@ -30,7 +30,7 @@ public:
 
     // Insert decoration markers or decorate selected text.
     // If it is Vim Normal mode, change to Insert mode first.
-    void decorateText(TextDecoration p_decoration) Q_DECL_OVERRIDE;
+    void decorateText(TextDecoration p_decoration, int p_level = -1) Q_DECL_OVERRIDE;
 
 private:
     // Insert image from @oriImagePath as @path.
@@ -55,12 +55,6 @@ private:
     bool handleKeyReturn(QKeyEvent *p_event);
     bool handleKeyBracketLeft(QKeyEvent *p_event);
 
-    // Insert title of level @p_level.
-    // Will detect if current block already has some leading #s. If yes,
-    // will delete it and insert the correct #s.
-    // @p_level: 0 to cancel title.
-    bool insertTitle(int p_level);
-
     // Change the sequence number of a list block.
     void changeListBlockSeqNumber(QTextBlock &p_block, int p_seq);
 
@@ -78,6 +72,12 @@ private:
 
     // Insert strikethrough marker or set selected text strikethrough.
     void decorateStrikethrough();
+
+    // Insert title of level @p_level.
+    // Will detect if current block already has some leading #s. If yes,
+    // will delete it and insert the correct #s.
+    // @p_level: 0 to cancel title.
+    bool decorateHeading(int p_level);
 
     // The cursor position after auto indent or auto list.
     // It will be -1 if last key press do not trigger the auto indent or auto list.

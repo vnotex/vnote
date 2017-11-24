@@ -72,7 +72,8 @@ enum class TextDecoration
     Underline,
     Strikethrough,
     InlineCode,
-    CodeBlock
+    CodeBlock,
+    Heading
 };
 
 enum FindOption

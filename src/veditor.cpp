@@ -893,10 +893,10 @@ void VEditor::setInputMethodEnabled(bool p_enabled)
     }
 }
 
-void VEditor::decorateText(TextDecoration p_decoration)
+void VEditor::decorateText(TextDecoration p_decoration, int p_level)
 {
     if (m_editOps) {
-        m_editOps->decorateText(p_decoration);
+        m_editOps->decorateText(p_decoration, p_level);
     }
 }
 
