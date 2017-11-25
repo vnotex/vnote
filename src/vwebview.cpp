@@ -11,6 +11,7 @@
 #include <QApplication>
 #include <QImage>
 #include "vfile.h"
+#include "utils/vclipboardutils.h"
 
 // We set the property of the clipboard to mark that the URL copied in the
 // clipboard has been altered.
@@ -133,7 +134,7 @@ void VWebView::copyImage()
         if (!imgPath.isEmpty()) {
             QImage img(imgPath);
             if (!img.isNull()) {
-                clipboard->setImage(img, QClipboard::Clipboard);
+                VClipboardUtils::setImageToClipboard(clipboard, img, QClipboard::Clipboard);
                 qDebug() << "clipboard copy image via URL" << imgPath;
                 return;
             }
