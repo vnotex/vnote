@@ -4,11 +4,6 @@
 #include <QHash>
 #include <QString>
 #include <QPixmap>
-#include <QTextBlock>
-#include <QVector>
-#include <QSet>
-
-struct VBlockImageInfo2;
 
 
 class VImageResourceManager2
@@ -20,15 +15,11 @@ public:
     // If @p_name already exists in the resources, it will update it.
     void addImage(const QString &p_name, const QPixmap &p_image);
 
+    // Remove image @p_name.
+    void removeImage(const QString &p_name);
+
     // Whether the resources contains image with name @p_name.
     bool contains(const QString &p_name) const;
-
-    // Update the block-image info for all blocks.
-    // @p_maximumWidth: maximum width of the images plus the margin.
-    // Return changed blocks' block number.
-    QSet<int> updateBlockInfos(const QVector<VBlockImageInfo2> &p_blocksInfo);
-
-    const QVector<VBlockImageInfo2> *findImageInfoByBlock(int p_blockNumber) const;
 
     const QPixmap *findImage(const QString &p_name) const;
 
@@ -37,11 +28,6 @@ public:
 private:
     // All the images resources.
     QHash<QString, QPixmap> m_images;
-
-    // Image info of all the blocks with image.
-    // One block may contain multiple inline images or only one block image.
-    // If there are multiple inline images, they are sorted by the start position.
-    QHash<int, QVector<VBlockImageInfo2>> m_blocksInfo;
 };
 
 #endif // VIMAGERESOURCEMANAGER2_H

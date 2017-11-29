@@ -7,7 +7,8 @@
 #include <QSet>
 
 class VImageResourceManager2;
-struct VBlockImageInfo2;
+struct VPreviewedImageInfo;
+struct VPreviewInfo;
 
 
 class VTextDocumentLayout : public QAbstractTextDocumentLayout
@@ -141,7 +142,7 @@ private:
     // Layout inline image in a line.
     // @p_info: if NULL, means just layout a marker.
     // Returns the image height.
-    void layoutInlineImage(const VBlockImageInfo2 *p_info,
+    void layoutInlineImage(const VPreviewedImageInfo *p_info,
                            qreal p_heightInBlock,
                            qreal p_imageSpaceHeight,
                            qreal p_xStart,
@@ -154,11 +155,11 @@ private:
     // @p_images: contains all images and markers (NULL element indicates it
     // is just a placeholder for the marker.
     // Returns the maximum height of the images.
-    qreal fetchInlineImagesForOneLine(const QVector<VBlockImageInfo2> &p_info,
+    qreal fetchInlineImagesForOneLine(const QVector<VPreviewInfo *> &p_info,
                                       const QTextLine *p_line,
                                       qreal p_margin,
                                       int &p_index,
-                                      QVector<const VBlockImageInfo2 *> &p_images,
+                                      QVector<const VPreviewedImageInfo *> &p_images,
                                       QVector<QPair<qreal, qreal>> &p_imageRange);
 
     // Clear the layout of @p_block.
@@ -211,7 +212,7 @@ private:
     // remain the same.
     void updateDocumentSizeWithOneBlockChanged(int p_blockNumber);
 
-    void adjustImagePaddingAndSize(const VBlockImageInfo2 *p_info,
+    void adjustImagePaddingAndSize(const VPreviewedImageInfo *p_info,
                                    int p_maximumWidth,
                                    int &p_padding,
                                    QSize &p_size) const;

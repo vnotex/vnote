@@ -11,7 +11,6 @@
 #include "utils/vpreviewutils.h"
 #include "dialog/vselectdialog.h"
 #include "dialog/vconfirmdeletiondialog.h"
-#include "vimagepreviewer.h"
 #include "vtextblockdata.h"
 #include "vorphanfile.h"
 
@@ -47,6 +46,7 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
     m_cbHighlighter = new VCodeBlockHighlightHelper(m_mdHighlighter, p_vdoc,
                                                     p_type);
 
+    /*
     m_imagePreviewer = new VImagePreviewer(this, m_mdHighlighter);
     connect(m_mdHighlighter, &HGMarkdownHighlighter::imageLinksUpdated,
             m_imagePreviewer, &VImagePreviewer::imageLinksChanged);
@@ -65,6 +65,7 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
                     finishOneAsyncJob(1);
                 }
             });
+    */
 
     // Comment out these lines since we use VMdEditor to replace VMdEdit.
     /*
@@ -544,13 +545,16 @@ QString VMdEdit::getPlainTextWithoutPreviewImage() const
     while (true) {
         deletions.clear();
 
+        /*
         while (m_imagePreviewer->isPreviewing()) {
             VUtils::sleepWait(100);
         }
+        */
 
         // Iterate all the block to get positions for deletion.
         QTextBlock block = document()->begin();
         bool tryAgain = false;
+        /*
         while (block.isValid()) {
             if (VTextBlockData::containsPreviewImage(block)) {
                 if (!getPreviewImageRegionOfBlock(block, deletions)) {
@@ -561,6 +565,7 @@ QString VMdEdit::getPlainTextWithoutPreviewImage() const
 
             block = block.next();
         }
+        */
 
         if (tryAgain) {
             continue;
@@ -680,10 +685,12 @@ QImage VMdEdit::tryGetSelectedImage()
 
     if (format.isValid()) {
         PreviewImageSource src = VPreviewUtils::getPreviewImageSource(format);
-        long long id = VPreviewUtils::getPreviewImageID(format);
+        // long long id = VPreviewUtils::getPreviewImageID(format);
         if (src == PreviewImageSource::Image) {
+            /*
             Q_ASSERT(m_imagePreviewer->isEnabled());
             image = m_imagePreviewer->fetchCachedImageByID(id);
+            */
         }
     }
 
@@ -692,7 +699,9 @@ QImage VMdEdit::tryGetSelectedImage()
 
 void VMdEdit::resizeEvent(QResizeEvent *p_event)
 {
+    /*
     m_imagePreviewer->updatePreviewImageWidth();
+    */
 
     VEdit::resizeEvent(p_event);
 }

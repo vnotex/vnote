@@ -5,8 +5,8 @@
 #include <QSyntaxHighlighter>
 #include <QAtomicInt>
 #include <QMap>
+#include <QSet>
 #include <QString>
-#include <QHash>
 
 extern "C" {
 #include <pmh_parser.h>
@@ -124,6 +124,10 @@ public:
 
     const QVector<VElementRegion> &getHeaderRegions() const;
 
+    const QSet<int> &getPossiblePreviewBlocks() const;
+
+    void clearPossiblePreviewBlocks(const QVector<int> &p_blocksToClear);
+
 signals:
     void highlightCompleted();
 
@@ -167,11 +171,6 @@ private:
 
     int m_numOfCodeBlockHighlightsToRecv;
 
-    // If the ith block contains preview, then the set contains i.
-    // If the set contains i, the ith block may contain preview.
-    // We just use the key.
-    QMap<int, bool> m_potentialPreviewBlocks;
-
     // All HTML comment regions.
     QVector<VElementRegion> m_commentRegions;
 
@@ -192,6 +191,9 @@ private:
 
     // Whether this is the first parse.
     bool m_firstParse;
+
+    // Block number of those blocks which possible contains previewed image.
+    QSet<int> m_possiblePreviewBlocks;
 
     char *content;
     int capacity;
@@ -247,14 +249,20 @@ private:
     bool isValidHeader(unsigned long p_pos, unsigned long p_end);
 };
 
-inline const QMap<int, bool> &HGMarkdownHighlighter::getPotentialPreviewBlocks() const
-{
-    return m_potentialPreviewBlocks;
-}
-
 inline const QVector<VElementRegion> &HGMarkdownHighlighter::getHeaderRegions() const
 {
     return m_headerRegions;
 }
 
+inline const QSet<int> &HGMarkdownHighlighter::getPossiblePreviewBlocks() const
+{
+    return m_possiblePreviewBlocks;
+}
+
+inline void HGMarkdownHighlighter::clearPossiblePreviewBlocks(const QVector<int> &p_blocksToClear)
+{
+    for (auto i : p_blocksToClear) {
+        m_possiblePreviewBlocks.remove(i);
+    }
+}
 #endif

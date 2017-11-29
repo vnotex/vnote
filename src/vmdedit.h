@@ -15,7 +15,6 @@
 class HGMarkdownHighlighter;
 class VCodeBlockHighlightHelper;
 class VDocument;
-class VImagePreviewer;
 
 class VMdEdit : public VEdit
 {
@@ -112,7 +111,7 @@ private:
 
     HGMarkdownHighlighter *m_mdHighlighter;
     VCodeBlockHighlightHelper *m_cbHighlighter;
-    VImagePreviewer *m_imagePreviewer;
+    // VImagePreviewer *m_imagePreviewer;
 
     // Image links inserted while editing.
     QVector<ImageLink> m_insertedImages;

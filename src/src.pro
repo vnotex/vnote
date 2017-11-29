@@ -61,7 +61,6 @@ SOURCES += main.cpp\
     vorphanfile.cpp \
     vcodeblockhighlighthelper.cpp \
     vwebview.cpp \
-    vimagepreviewer.cpp \
     vexporter.cpp \
     vmdtab.cpp \
     vhtmltab.cpp \
@@ -146,7 +145,6 @@ HEADERS  += vmainwindow.h \
     vorphanfile.h \
     vcodeblockhighlighthelper.h \
     vwebview.h \
-    vimagepreviewer.h \
     vexporter.h \
     vmdtab.h \
     vhtmltab.h \

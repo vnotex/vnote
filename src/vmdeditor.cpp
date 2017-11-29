@@ -70,7 +70,7 @@ VMdEditor::VMdEditor(VFile *p_file,
                                                     p_doc,
                                                     p_type);
 
-    m_previewMgr = new VPreviewManager(this);
+    m_previewMgr = new VPreviewManager(this, m_mdHighlighter);
     connect(m_mdHighlighter, &HGMarkdownHighlighter::imageLinksUpdated,
             m_previewMgr, &VPreviewManager::imageLinksUpdated);
     connect(m_previewMgr, &VPreviewManager::requestUpdateImageLinks,
@@ -215,7 +215,6 @@ void VMdEditor::makeBlockVisible(const QTextBlock &p_block)
     }
 
     while (y < 0 && vbar->value() > vbar->minimum()) {
-        qDebug() << y << vbar->value() << vbar->minimum() << rectHeight;
         moved = true;
         vbar->setValue(vbar->value() - vbar->singleStep());
         rect = layout->blockBoundingRect(p_block);
@@ -848,7 +847,6 @@ void VMdEditor::scrollBlockInPage(int p_blockNum, int p_dest)
 
 void VMdEditor::updateTextEditConfig()
 {
-    m_previewMgr->setPreviewEnabled(g_config->getEnablePreviewImages());
     setBlockImageEnabled(g_config->getEnablePreviewImages());
 
     setImageWidthConstrainted(g_config->getEnablePreviewImageConstraint());
@@ -865,6 +863,8 @@ void VMdEditor::updateTextEditConfig()
     setLineNumberType((LineNumberType)lineNumber);
     setLineNumberColor(g_config->getEditorLineNumberFg(),
                        g_config->getEditorLineNumberBg());
+
+    m_previewMgr->setPreviewEnabled(g_config->getEnablePreviewImages());
 }
 
 void VMdEditor::updateConfig()

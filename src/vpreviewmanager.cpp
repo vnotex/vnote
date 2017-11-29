@@ -9,17 +9,17 @@
 #include "utils/vutils.h"
 #include "vdownloader.h"
 #include "hgmarkdownhighlighter.h"
-#include "vtextblockdata.h"
 
 extern VConfigManager *g_config;
 
-VPreviewManager::VPreviewManager(VMdEditor *p_editor)
+VPreviewManager::VPreviewManager(VMdEditor *p_editor, HGMarkdownHighlighter *p_highlighter)
     : QObject(p_editor),
       m_editor(p_editor),
-      m_previewEnabled(false)
+      m_document(p_editor->document()),
+      m_highlighter(p_highlighter),
+      m_previewEnabled(false),
+      m_timeStamp(0)
 {
-    m_blockImageInfo.resize(PreviewSource::Invalid);
-
     m_downloader = new VDownloader(this);
     connect(m_downloader, &VDownloader::downloadFinished,
             this, &VPreviewManager::imageDownloaded);
@@ -31,9 +31,10 @@ void VPreviewManager::imageLinksUpdated(const QVector<VElementRegion> &p_imageRe
         return;
     }
 
+    TS ts = ++m_timeStamp;
     m_imageRegions = p_imageRegions;
 
-    previewImages();
+    previewImages(ts);
 }
 
 void VPreviewManager::imageDownloaded(const QByteArray &p_data, const QString &p_url)
@@ -71,27 +72,35 @@ void VPreviewManager::setPreviewEnabled(bool p_enabled)
 
         if (!m_previewEnabled) {
             clearPreview();
+        } else {
+            requestUpdateImageLinks();
         }
     }
 }
 
 void VPreviewManager::clearPreview()
 {
-    for (int i = 0; i < m_blockImageInfo.size(); ++i) {
-        m_blockImageInfo[i].clear();
-    }
+    m_imageRegions.clear();
 
-    updateEditorBlockImages();
+    long long ts = ++m_timeStamp;
+
+    for (int i = 0; i < (int)PreviewSource::MaxNumberOfSources; ++i) {
+        clearBlockObsoletePreviewInfo(ts, static_cast<PreviewSource>(i));
+
+        clearObsoleteImages(ts, static_cast<PreviewSource>(i));
+    }
 }
 
-void VPreviewManager::previewImages()
+void VPreviewManager::previewImages(TS p_timeStamp)
 {
     QVector<ImageLinkInfo> imageLinks;
     fetchImageLinksFromRegions(imageLinks);
 
-    updateBlockImageInfo(imageLinks);
+    updateBlockPreviewInfo(p_timeStamp, imageLinks);
 
-    updateEditorBlockImages();
+    clearBlockObsoletePreviewInfo(p_timeStamp, PreviewSource::ImageLink);
+
+    clearObsoleteImages(p_timeStamp, PreviewSource::ImageLink);
 }
 
 // Returns true if p_text[p_start, p_end) is all spaces.
@@ -218,30 +227,6 @@ QString VPreviewManager::fetchImagePathToPreview(const QString &p_text, QString 
     return imagePath;
 }
 
-void VPreviewManager::updateBlockImageInfo(const QVector<ImageLinkInfo> &p_imageLinks)
-{
-    QVector<VBlockImageInfo2> &blockInfos = m_blockImageInfo[PreviewSource::ImageLink];
-    blockInfos.clear();
-
-    for (int i = 0; i < p_imageLinks.size(); ++i) {
-        const ImageLinkInfo &link = p_imageLinks[i];
-
-        QString name = imageResourceName(link);
-        if (name.isEmpty()) {
-            continue;
-        }
-
-        VBlockImageInfo2 info(link.m_blockNumber,
-                              name,
-                              link.m_startPos - link.m_blockPos,
-                              link.m_endPos - link.m_blockPos,
-                              link.m_padding,
-                              !link.m_isBlock);
-
-        blockInfos.push_back(info);
-    }
-}
-
 QString VPreviewManager::imageResourceName(const ImageLinkInfo &p_link)
 {
     QString name = p_link.m_linkShortUrl;
@@ -269,14 +254,6 @@ QString VPreviewManager::imageResourceName(const ImageLinkInfo &p_link)
 
     m_editor->addImage(name, image);
     return name;
-}
-
-void VPreviewManager::updateEditorBlockImages()
-{
-    // TODO: need to combine all preview sources.
-    Q_ASSERT(m_blockImageInfo.size() == 1);
-
-    m_editor->updateBlockImages(m_blockImageInfo[PreviewSource::ImageLink]);
 }
 
 int VPreviewManager::calculateBlockMargin(const QTextBlock &p_block)
@@ -315,4 +292,86 @@ int VPreviewManager::calculateBlockMargin(const QTextBlock &p_block)
     }
 
     return spaceWidth * nrSpaces;
+}
+
+void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
+                                             const QVector<ImageLinkInfo> &p_imageLinks)
+{
+    for (auto const & link : p_imageLinks) {
+        QTextBlock block = m_document->findBlockByNumber(link.m_blockNumber);
+        if (!block.isValid()) {
+            continue;
+        }
+
+        QString name = imageResourceName(link);
+        if (name.isEmpty()) {
+            continue;
+        }
+
+        VTextBlockData *blockData = dynamic_cast<VTextBlockData *>(block.userData());
+        Q_ASSERT(blockData);
+
+        VPreviewInfo *info = new VPreviewInfo(PreviewSource::ImageLink,
+                                              p_timeStamp,
+                                              link.m_startPos - link.m_blockPos,
+                                              link.m_endPos - link.m_blockPos,
+                                              link.m_padding,
+                                              !link.m_isBlock,
+                                              name,
+                                              m_editor->imageSize(name));
+        blockData->insertPreviewInfo(info);
+
+        imageCache(PreviewSource::ImageLink).insert(name, p_timeStamp);
+
+        qDebug() << "block" << link.m_blockNumber
+                 << imageCache(PreviewSource::ImageLink).size()
+                 << blockData->toString();
+    }
+}
+
+void VPreviewManager::clearObsoleteImages(long long p_timeStamp, PreviewSource p_source)
+{
+    auto cache = imageCache(p_source);
+
+    for (auto it = cache.begin(); it != cache.end();) {
+        if (it.value() < p_timeStamp) {
+            m_editor->removeImage(it.key());
+            it = cache.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+void VPreviewManager::clearBlockObsoletePreviewInfo(long long p_timeStamp,
+                                                    PreviewSource p_source)
+{
+    QSet<int> affectedBlocks;
+    QVector<int> obsoleteBlocks;
+    auto blocks = m_highlighter->getPossiblePreviewBlocks();
+    qDebug() << "possible preview blocks" << blocks;
+    for (auto i : blocks) {
+        QTextBlock block = m_document->findBlockByNumber(i);
+        if (!block.isValid()) {
+            obsoleteBlocks.append(i);
+            continue;
+        }
+
+        VTextBlockData *blockData = dynamic_cast<VTextBlockData *>(block.userData());
+        if (!blockData) {
+            continue;
+        }
+
+        if (blockData->clearObsoletePreview(p_timeStamp, p_source)) {
+            affectedBlocks.insert(i);
+        }
+
+        if (blockData->getPreviews().isEmpty()) {
+            obsoleteBlocks.append(i);
+        }
+    }
+
+    m_highlighter->clearPossiblePreviewBlocks(obsoleteBlocks);
+
+    m_editor->relayout(affectedBlocks);
 }

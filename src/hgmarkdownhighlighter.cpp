@@ -93,38 +93,18 @@ HGMarkdownHighlighter::~HGMarkdownHighlighter()
 
 void HGMarkdownHighlighter::updateBlockUserData(int p_blockNum, const QString &p_text)
 {
+    Q_UNUSED(p_text);
+
     VTextBlockData *blockData = dynamic_cast<VTextBlockData *>(currentBlockUserData());
     if (!blockData) {
         blockData = new VTextBlockData();
         setCurrentBlockUserData(blockData);
     }
 
-    bool contains = p_text.contains(QChar::ObjectReplacementCharacter);
-    blockData->setContainsPreviewImage(contains);
-
-    auto curIt = m_potentialPreviewBlocks.find(p_blockNum);
-    if (curIt == m_potentialPreviewBlocks.end()) {
-        if (contains) {
-            m_potentialPreviewBlocks.insert(p_blockNum, true);
-        }
+    if (blockData->getPreviews().isEmpty()) {
+        m_possiblePreviewBlocks.remove(p_blockNum);
     } else {
-        if (!contains) {
-            m_potentialPreviewBlocks.erase(curIt);
-        }
-    }
-
-    // Delete elements beyond current block count.
-    int blocks = document->blockCount();
-    if (!m_potentialPreviewBlocks.isEmpty()) {
-        auto it = m_potentialPreviewBlocks.end();
-        do {
-            --it;
-            if (it.key() >= blocks) {
-                it = m_potentialPreviewBlocks.erase(it);
-            } else {
-                break;
-            }
-        } while (it != m_potentialPreviewBlocks.begin());
+        m_possiblePreviewBlocks.insert(p_blockNum);
     }
 }
 

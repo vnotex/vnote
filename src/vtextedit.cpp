@@ -269,14 +269,6 @@ int VTextEdit::contentOffsetY() const
     return -(sb->value());
 }
 
-void VTextEdit::updateBlockImages(const QVector<VBlockImageInfo2> &p_blocksInfo)
-{
-    if (m_blockImageEnabled) {
-        auto blocks = m_imageMgr->updateBlockInfos(p_blocksInfo);
-        getLayout()->relayout(blocks);
-    }
-}
-
 void VTextEdit::clearBlockImages()
 {
     m_imageMgr->clear();
@@ -284,9 +276,24 @@ void VTextEdit::clearBlockImages()
     getLayout()->relayout();
 }
 
+void VTextEdit::relayout(const QSet<int> &p_blocks)
+{
+    getLayout()->relayout(p_blocks);
+}
+
 bool VTextEdit::containsImage(const QString &p_imageName) const
 {
     return m_imageMgr->contains(p_imageName);
+}
+
+QSize VTextEdit::imageSize(const QString &p_imageName) const
+{
+    const QPixmap *img = m_imageMgr->findImage(p_imageName);
+    if (img) {
+        return img->size();
+    }
+
+    return QSize();
 }
 
 void VTextEdit::addImage(const QString &p_imageName, const QPixmap &p_image)
@@ -294,6 +301,11 @@ void VTextEdit::addImage(const QString &p_imageName, const QPixmap &p_image)
     if (m_blockImageEnabled) {
         m_imageMgr->addImage(p_imageName, p_image);
     }
+}
+
+void VTextEdit::removeImage(const QString &p_imageName)
+{
+    m_imageMgr->removeImage(p_imageName);
 }
 
 void VTextEdit::setBlockImageEnabled(bool p_enabled)

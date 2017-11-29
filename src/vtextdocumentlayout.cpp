@@ -12,6 +12,7 @@
 
 #include "vimageresourcemanager2.h"
 #include "vtextedit.h"
+#include "vtextblockdata.h"
 
 #define MARKER_THICKNESS        2
 #define MAX_INLINE_IMAGE_HEIGHT 400
@@ -545,14 +546,15 @@ qreal VTextDocumentLayout::layoutLines(const QTextBlock &p_block,
 {
     // Handle block inline image.
     bool hasInlineImages = false;
-    const QVector<VBlockImageInfo2> *info = NULL;
+    const QVector<VPreviewInfo *> *info = NULL;
     if (m_blockImageEnabled) {
-        info = m_imageMgr->findImageInfoByBlock(p_block.blockNumber());
-
-        if (info
-            && !info->isEmpty()
-            && info->first().m_inlineImage) {
-            hasInlineImages = true;
+        VTextBlockData *blockData = dynamic_cast<VTextBlockData *>(p_block.userData());
+        if (blockData) {
+            info = &(blockData->getPreviews());
+            if (!info->isEmpty()
+                && info->first()->m_imageInfo.m_inline) {
+                hasInlineImages = true;
+            }
         }
     }
 
@@ -571,7 +573,7 @@ qreal VTextDocumentLayout::layoutLines(const QTextBlock &p_block,
         p_height += m_lineLeading;
 
         if (hasInlineImages) {
-            QVector<const VBlockImageInfo2 *> images;
+            QVector<const VPreviewedImageInfo *> images;
             QVector<QPair<qreal, qreal>> imageRange;
             qreal imgHeight = fetchInlineImagesForOneLine(*info,
                                                           &line,
@@ -604,7 +606,7 @@ qreal VTextDocumentLayout::layoutLines(const QTextBlock &p_block,
     return p_height;
 }
 
-void VTextDocumentLayout::layoutInlineImage(const VBlockImageInfo2 *p_info,
+void VTextDocumentLayout::layoutInlineImage(const VPreviewedImageInfo *p_info,
                                             qreal p_heightInBlock,
                                             qreal p_imageSpaceHeight,
                                             qreal p_xStart,
@@ -756,26 +758,29 @@ QRectF VTextDocumentLayout::blockRectFromTextLayout(const QTextBlock &p_block,
 
     // Handle block non-inline image.
     if (m_blockImageEnabled) {
-        const QVector<VBlockImageInfo2> *info = m_imageMgr->findImageInfoByBlock(p_block.blockNumber());
-        if (info && info->size() == 1) {
-            const VBlockImageInfo2& img = info->first();
-            if (!img.m_inlineImage && !img.m_imageSize.isNull()) {
-                int maximumWidth = tlRect.width();
-                int padding;
-                QSize size;
-                adjustImagePaddingAndSize(&img, maximumWidth, padding, size);
+        VTextBlockData *blockData = dynamic_cast<VTextBlockData *>(p_block.userData());
+        if (blockData) {
+            const QVector<VPreviewInfo *> &info = blockData->getPreviews();
+            if (info.size() == 1) {
+                const VPreviewedImageInfo& img = info.first()->m_imageInfo;
+                if (!img.m_inline) {
+                    int maximumWidth = tlRect.width();
+                    int padding;
+                    QSize size;
+                    adjustImagePaddingAndSize(&img, maximumWidth, padding, size);
 
-                if (p_image) {
-                    p_image->m_name = img.m_imageName;
-                    p_image->m_rect = QRectF(padding + m_margin,
-                                             br.height() + m_lineLeading,
-                                             size.width(),
-                                             size.height());
+                    if (p_image) {
+                        p_image->m_name = img.m_imageName;
+                        p_image->m_rect = QRectF(padding + m_margin,
+                                                 br.height() + m_lineLeading,
+                                                 size.width(),
+                                                 size.height());
+                    }
+
+                    int dw = padding + size.width() + m_margin - br.width();
+                    int dh = size.height() + m_lineLeading;
+                    br.adjust(0, 0, dw > 0 ? dw : 0, dh);
                 }
-
-                int dw = padding + size.width() + m_margin - br.width();
-                int dh = size.height() + m_lineLeading;
-                br.adjust(0, 0, dw > 0 ? dw : 0, dh);
             }
         }
     }
@@ -831,7 +836,7 @@ void VTextDocumentLayout::setBlockImageEnabled(bool p_enabled)
     relayout();
 }
 
-void VTextDocumentLayout::adjustImagePaddingAndSize(const VBlockImageInfo2 *p_info,
+void VTextDocumentLayout::adjustImagePaddingAndSize(const VPreviewedImageInfo *p_info,
                                                     int p_maximumWidth,
                                                     int &p_padding,
                                                     QSize &p_size) const
@@ -873,7 +878,10 @@ void VTextDocumentLayout::drawImages(QPainter *p_painter,
 
     for (auto const & img : images) {
         const QPixmap *image = m_imageMgr->findImage(img.m_name);
-        Q_ASSERT(image);
+        if (!image) {
+            continue;
+        }
+
         QRect targetRect = img.m_rect.adjusted(p_offset.x(),
                                                p_offset.y(),
                                                p_offset.x(),
@@ -952,11 +960,11 @@ void VTextDocumentLayout::relayout(const QSet<int> &p_blocks)
     updateDocumentSize();
 }
 
-qreal VTextDocumentLayout::fetchInlineImagesForOneLine(const QVector<VBlockImageInfo2> &p_info,
+qreal VTextDocumentLayout::fetchInlineImagesForOneLine(const QVector<VPreviewInfo *> &p_info,
                                                        const QTextLine *p_line,
                                                        qreal p_margin,
                                                        int &p_index,
-                                                       QVector<const VBlockImageInfo2 *> &p_images,
+                                                       QVector<const VPreviewedImageInfo *> &p_images,
                                                        QVector<QPair<qreal, qreal>> &p_imageRange)
 {
     qreal maxHeight = 0;
@@ -964,13 +972,8 @@ qreal VTextDocumentLayout::fetchInlineImagesForOneLine(const QVector<VBlockImage
     int end = p_line->textLength() + start;
 
     for (int i = 0; i < p_info.size(); ++i) {
-        const VBlockImageInfo2 &img = p_info[i];
-        Q_ASSERT(img.m_inlineImage);
-
-        if (img.m_imageSize.isNull()) {
-            p_index = i + 1;
-            continue;
-        }
+        const VPreviewedImageInfo &img = p_info[i]->m_imageInfo;
+        Q_ASSERT(img.m_inline);
 
         if (img.m_startPos >= start && img.m_startPos < end) {
             // Start of a new image.

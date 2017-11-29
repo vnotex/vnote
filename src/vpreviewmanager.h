@@ -8,15 +8,18 @@
 #include <QVector>
 #include "hgmarkdownhighlighter.h"
 #include "vmdeditor.h"
+#include "vtextblockdata.h"
 
 class VDownloader;
+
+typedef long long TS;
 
 
 class VPreviewManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit VPreviewManager(VMdEditor *p_editor);
+    VPreviewManager(VMdEditor *p_editor, HGMarkdownHighlighter *p_highlighter);
 
     void setPreviewEnabled(bool p_enabled);
 
@@ -36,13 +39,6 @@ private slots:
     void imageDownloaded(const QByteArray &p_data, const QString &p_url);
 
 private:
-    // Sources of the preview.
-    enum PreviewSource
-    {
-        ImageLink = 0,
-        Invalid
-    };
-
     struct ImageLinkInfo
     {
         ImageLinkInfo()
@@ -93,7 +89,7 @@ private:
     };
 
     // Start to preview images according to image links.
-    void previewImages();
+    void previewImages(TS p_timeStamp);
 
     // According to m_imageRegions, fetch the image link Url.
     // @p_imageRegions: output.
@@ -106,20 +102,28 @@ private:
     // @p_url: contains the short URL in ![]().
     QString fetchImagePathToPreview(const QString &p_text, QString &p_url);
 
-    void updateBlockImageInfo(const QVector<ImageLinkInfo> &p_imageLinks);
+    // Update the preview info of related blocks according to @p_imageLinks.
+    void updateBlockPreviewInfo(TS p_timeStamp, const QVector<ImageLinkInfo> &p_imageLinks);
 
     // Get the name of the image in the resource manager.
     // Will add the image to the resource manager if not exists.
     // Returns empty if fail to add the image to the resource manager.
     QString imageResourceName(const ImageLinkInfo &p_link);
 
-    // Ask the editor to preview images.
-    void updateEditorBlockImages();
-
     // Calculate the block margin (prefix spaces) in pixels.
     int calculateBlockMargin(const QTextBlock &p_block);
 
+    QHash<QString, long long> &imageCache(PreviewSource p_source);
+
+    void clearObsoleteImages(long long p_timeStamp, PreviewSource p_source);
+
+    void clearBlockObsoletePreviewInfo(long long p_timeStamp, PreviewSource p_source);
+
     VMdEditor *m_editor;
+
+    QTextDocument *m_document;
+
+    HGMarkdownHighlighter *m_highlighter;
 
     VDownloader *m_downloader;
 
@@ -129,13 +133,18 @@ private:
     // Regions of all the image links.
     QVector<VElementRegion> m_imageRegions;
 
-    // All preview images and information.
-    // Each preview source corresponds to one vector.
-    QVector<QVector<VBlockImageInfo2>> m_blockImageInfo;
-
     // Map from URL to name in the resource manager.
     // Used for downloading images.
     QHash<QString, QString> m_urlToName;
+
+    TS m_timeStamp;
+
+    // Used to discard obsolete images. One per each preview source.
+    QHash<QString, long long> m_imageCaches[(int)PreviewSource::MaxNumberOfSources];
 };
 
+inline QHash<QString, long long> &VPreviewManager::imageCache(PreviewSource p_source)
+{
+    return m_imageCaches[(int)p_source];
+}
 #endif // VPREVIEWMANAGER_H
