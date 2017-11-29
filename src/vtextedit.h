@@ -50,6 +50,19 @@ public:
                && m_imageSize == p_other.m_imageSize;
     }
 
+    bool operator<(const VBlockImageInfo2 &p_other) const
+    {
+        if (m_blockNumber < p_other.m_blockNumber) {
+            return true;
+        } else if (m_blockNumber > p_other.m_blockNumber) {
+            return false;
+        } else if (m_startPos < p_other.m_startPos) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     QString toString() const
     {
         return QString("VBlockImageInfo2 block %1 start %2 end %3 padding %4 "

@@ -13,6 +13,8 @@
 #include "vimageresourcemanager2.h"
 #include "vtextedit.h"
 
+#define MARKER_THICKNESS        2
+#define MAX_INLINE_IMAGE_HEIGHT 400
 
 VTextDocumentLayout::VTextDocumentLayout(QTextDocument *p_doc,
                                          VImageResourceManager2 *p_imageMgr)
@@ -223,7 +225,9 @@ void VTextDocumentLayout::draw(QPainter *p_painter, const PaintContext &p_contex
                      selections,
                      p_context.clip.isValid() ? p_context.clip : QRectF());
 
-        drawBlockImage(p_painter, block, offset);
+        drawImages(p_painter, block, offset);
+
+        drawMarkers(p_painter, block, offset);
 
         // Draw the cursor.
         int blpos = block.position();
@@ -502,8 +506,6 @@ void VTextDocumentLayout::layoutBlock(const QTextBlock &p_block)
     QTextDocument *doc = document();
     Q_ASSERT(m_margin == doc->documentMargin());
 
-    // The height (y) of the next line.
-    qreal height = 0;
     QTextLayout *tl = p_block.layout();
     QTextOption option = doc->defaultTextOption();
     tl->setTextOption(option);
@@ -521,46 +523,156 @@ void VTextDocumentLayout::layoutBlock(const QTextBlock &p_block)
 
     availableWidth -= (2 * m_margin + extraMargin + m_cursorMargin + m_cursorWidth);
 
-    tl->beginLayout();
+    QVector<Marker> markers;
+    QVector<ImagePaintInfo> images;
 
-    while (true) {
-        QTextLine line = tl->createLine();
-        if (!line.isValid()) {
-            break;
-        }
-
-        line.setLeadingIncluded(true);
-        line.setLineWidth(availableWidth);
-        height += m_lineLeading;
-        line.setPosition(QPointF(m_margin, height));
-        height += line.height();
-    }
-
-    tl->endLayout();
+    layoutLines(p_block, tl, markers, images, availableWidth, 0);
 
     // Set this block's line count to its layout's line count.
     // That is one block may occupy multiple visual lines.
     const_cast<QTextBlock&>(p_block).setLineCount(p_block.isVisible() ? tl->lineCount() : 0);
 
     // Update the info about this block.
-    finishBlockLayout(p_block);
+    finishBlockLayout(p_block, markers, images);
 }
 
-void VTextDocumentLayout::finishBlockLayout(const QTextBlock &p_block)
+qreal VTextDocumentLayout::layoutLines(const QTextBlock &p_block,
+                                       QTextLayout *p_tl,
+                                       QVector<Marker> &p_markers,
+                                       QVector<ImagePaintInfo> &p_images,
+                                       qreal p_availableWidth,
+                                       qreal p_height)
+{
+    // Handle block inline image.
+    bool hasInlineImages = false;
+    const QVector<VBlockImageInfo2> *info = NULL;
+    if (m_blockImageEnabled) {
+        info = m_imageMgr->findImageInfoByBlock(p_block.blockNumber());
+
+        if (info
+            && !info->isEmpty()
+            && info->first().m_inlineImage) {
+            hasInlineImages = true;
+        }
+    }
+
+    p_tl->beginLayout();
+
+    int imgIdx = 0;
+
+    while (true) {
+        QTextLine line = p_tl->createLine();
+        if (!line.isValid()) {
+            break;
+        }
+
+        line.setLeadingIncluded(true);
+        line.setLineWidth(p_availableWidth);
+        p_height += m_lineLeading;
+
+        if (hasInlineImages) {
+            QVector<const VBlockImageInfo2 *> images;
+            QVector<QPair<qreal, qreal>> imageRange;
+            qreal imgHeight = fetchInlineImagesForOneLine(*info,
+                                                          &line,
+                                                          m_margin,
+                                                          imgIdx,
+                                                          images,
+                                                          imageRange);
+
+            for (int i = 0; i < images.size(); ++i) {
+                layoutInlineImage(images[i],
+                                  p_height,
+                                  imgHeight,
+                                  imageRange[i].first,
+                                  imageRange[i].second,
+                                  p_markers,
+                                  p_images);
+            }
+
+            if (!images.isEmpty()) {
+                p_height += imgHeight + MARKER_THICKNESS + MARKER_THICKNESS;
+            }
+        }
+
+        line.setPosition(QPointF(m_margin, p_height));
+        p_height += line.height();
+    }
+
+    p_tl->endLayout();
+
+    return p_height;
+}
+
+void VTextDocumentLayout::layoutInlineImage(const VBlockImageInfo2 *p_info,
+                                            qreal p_heightInBlock,
+                                            qreal p_imageSpaceHeight,
+                                            qreal p_xStart,
+                                            qreal p_xEnd,
+                                            QVector<Marker> &p_markers,
+                                            QVector<ImagePaintInfo> &p_images)
+{
+    Marker mk;
+    qreal mky = p_imageSpaceHeight + p_heightInBlock + MARKER_THICKNESS;
+    mk.m_start = QPointF(p_xStart, mky);
+    mk.m_end = QPointF(p_xEnd, mky);
+    p_markers.append(mk);
+
+    if (p_info) {
+        QSize size = p_info->m_imageSize;
+        scaleSize(size, p_xEnd - p_xStart, p_imageSpaceHeight);
+
+        ImagePaintInfo ipi;
+        ipi.m_name = p_info->m_imageName;
+        ipi.m_rect = QRectF(QPointF(p_xStart,
+                                    p_heightInBlock + p_imageSpaceHeight - size.height()),
+                            size);
+        p_images.append(ipi);
+    }
+}
+
+void VTextDocumentLayout::finishBlockLayout(const QTextBlock &p_block,
+                                            const QVector<Marker> &p_markers,
+                                            const QVector<ImagePaintInfo> &p_images)
 {
     // Update rect and offset.
     Q_ASSERT(p_block.isValid());
     int num = p_block.blockNumber();
     Q_ASSERT(m_blocks.size() > num);
+    ImagePaintInfo ipi;
     BlockInfo &info = m_blocks[num];
     info.reset();
-    info.m_rect = blockRectFromTextLayout(p_block);
+    info.m_rect = blockRectFromTextLayout(p_block, &ipi);
     Q_ASSERT(!info.m_rect.isNull());
     int pre = previousValidBlockNumber(num);
     if (pre == -1) {
         info.m_offset = 0;
     } else if (m_blocks[pre].hasOffset()) {
         info.m_offset = m_blocks[pre].bottom();
+    }
+
+    bool hasImage = false;
+    if (ipi.isValid()) {
+        Q_ASSERT(p_markers.isEmpty());
+        Q_ASSERT(p_images.isEmpty());
+        info.m_images.append(ipi);
+        hasImage = true;
+    } else if (!p_markers.isEmpty()) {
+        // Q_ASSERT(!p_images.isEmpty());
+        info.m_markers = p_markers;
+        info.m_images = p_images;
+        hasImage = true;
+    }
+
+    // Add vertical marker.
+    if (hasImage) {
+        // Fill the marker.
+        // Will be adjusted using offset.
+        Marker mk;
+        mk.m_start = QPointF(-1, 0);
+        mk.m_end = QPointF(-1, info.m_rect.height());
+
+        info.m_markers.append(mk);
     }
 
     if (info.hasOffset()) {
@@ -622,8 +734,13 @@ int VTextDocumentLayout::cursorWidth() const
     return m_cursorWidth;
 }
 
-QRectF VTextDocumentLayout::blockRectFromTextLayout(const QTextBlock &p_block)
+QRectF VTextDocumentLayout::blockRectFromTextLayout(const QTextBlock &p_block,
+                                                    ImagePaintInfo *p_image)
 {
+    if (p_image) {
+        *p_image = ImagePaintInfo();
+    }
+
     QTextLayout *tl = p_block.layout();
     if (tl->lineCount() < 1) {
         return QRectF();
@@ -637,17 +754,29 @@ QRectF VTextDocumentLayout::blockRectFromTextLayout(const QTextBlock &p_block)
         br.setWidth(qMax(br.width(), tl->lineAt(0).naturalTextWidth()));
     }
 
-    // Handle block image.
+    // Handle block non-inline image.
     if (m_blockImageEnabled) {
-        const VBlockImageInfo2 *info = m_imageMgr->findImageInfoByBlock(p_block.blockNumber());
-        if (info && !info->m_imageSize.isNull()) {
-            int maximumWidth = tlRect.width();
-            int padding;
-            QSize size;
-            adjustImagePaddingAndSize(info, maximumWidth, padding, size);
-            int dw = padding + size.width() + m_margin - br.width();
-            int dh = size.height() + m_lineLeading;
-            br.adjust(0, 0, dw > 0 ? dw : 0, dh);
+        const QVector<VBlockImageInfo2> *info = m_imageMgr->findImageInfoByBlock(p_block.blockNumber());
+        if (info && info->size() == 1) {
+            const VBlockImageInfo2& img = info->first();
+            if (!img.m_inlineImage && !img.m_imageSize.isNull()) {
+                int maximumWidth = tlRect.width();
+                int padding;
+                QSize size;
+                adjustImagePaddingAndSize(&img, maximumWidth, padding, size);
+
+                if (p_image) {
+                    p_image->m_name = img.m_imageName;
+                    p_image->m_rect = QRectF(padding + m_margin,
+                                             br.height() + m_lineLeading,
+                                             size.width(),
+                                             size.height());
+                }
+
+                int dw = padding + size.width() + m_margin - br.width();
+                int dh = size.height() + m_lineLeading;
+                br.adjust(0, 0, dw > 0 ? dw : 0, dh);
+            }
         }
     }
 
@@ -729,41 +858,53 @@ void VTextDocumentLayout::adjustImagePaddingAndSize(const VBlockImageInfo2 *p_in
     }
 }
 
-void VTextDocumentLayout::drawBlockImage(QPainter *p_painter,
-                                         const QTextBlock &p_block,
-                                         const QPointF &p_offset)
+void VTextDocumentLayout::drawImages(QPainter *p_painter,
+                                     const QTextBlock &p_block,
+                                     const QPointF &p_offset)
 {
-    if (!m_blockImageEnabled) {
+    if (m_blocks.size() <= p_block.blockNumber()) {
         return;
     }
 
-    const VBlockImageInfo2 *info = m_imageMgr->findImageInfoByBlock(p_block.blockNumber());
-    if (!info || info->m_imageSize.isNull()) {
+    const QVector<ImagePaintInfo> &images = m_blocks[p_block.blockNumber()].m_images;
+    if (images.isEmpty()) {
         return;
     }
 
-    const QPixmap *image = m_imageMgr->findImage(info->m_imageName);
-    Q_ASSERT(image);
+    for (auto const & img : images) {
+        const QPixmap *image = m_imageMgr->findImage(img.m_name);
+        Q_ASSERT(image);
+        QRect targetRect = img.m_rect.adjusted(p_offset.x(),
+                                               p_offset.y(),
+                                               p_offset.x(),
+                                               p_offset.y()).toRect();
 
-    // Draw block image.
-    QTextLayout *tl = p_block.layout();
-    QRectF tlRect = tl->boundingRect();
-    int maximumWidth = tlRect.width();
-    int padding;
-    QSize size;
-    adjustImagePaddingAndSize(info, maximumWidth, padding, size);
-    QRect targetRect(p_offset.x() + padding,
-                     p_offset.y() + tlRect.height() + m_lineLeading,
-                     size.width(),
-                     size.height());
+        p_painter->drawPixmap(targetRect, *image);
+    }
+}
 
-    p_painter->drawPixmap(targetRect, *image);
 
-    // Draw a thin line to link them.
+void VTextDocumentLayout::drawMarkers(QPainter *p_painter,
+                                      const QTextBlock &p_block,
+                                      const QPointF &p_offset)
+{
+    if (m_blocks.size() <= p_block.blockNumber()) {
+        return;
+    }
+
+    const QVector<Marker> &markers = m_blocks[p_block.blockNumber()].m_markers;
+    if (markers.isEmpty()) {
+        return;
+    }
+
     QPen oldPen = p_painter->pen();
-    QPen newPen(m_imageLineColor, 2, Qt::DashLine);
+    QPen newPen(m_imageLineColor, MARKER_THICKNESS, Qt::DashLine);
     p_painter->setPen(newPen);
-    p_painter->drawLine(QPointF(2, p_offset.y()), QPointF(2, targetRect.bottom()));
+
+    for (auto const & mk : markers) {
+        p_painter->drawLine(mk.m_start + p_offset, mk.m_end + p_offset);
+    }
+
     p_painter->setPen(oldPen);
 }
 
@@ -809,4 +950,102 @@ void VTextDocumentLayout::relayout(const QSet<int> &p_blocks)
     }
 
     updateDocumentSize();
+}
+
+qreal VTextDocumentLayout::fetchInlineImagesForOneLine(const QVector<VBlockImageInfo2> &p_info,
+                                                       const QTextLine *p_line,
+                                                       qreal p_margin,
+                                                       int &p_index,
+                                                       QVector<const VBlockImageInfo2 *> &p_images,
+                                                       QVector<QPair<qreal, qreal>> &p_imageRange)
+{
+    qreal maxHeight = 0;
+    int start = p_line->textStart();
+    int end = p_line->textLength() + start;
+
+    for (int i = 0; i < p_info.size(); ++i) {
+        const VBlockImageInfo2 &img = p_info[i];
+        Q_ASSERT(img.m_inlineImage);
+
+        if (img.m_imageSize.isNull()) {
+            p_index = i + 1;
+            continue;
+        }
+
+        if (img.m_startPos >= start && img.m_startPos < end) {
+            // Start of a new image.
+            qreal startX = p_line->cursorToX(img.m_startPos) + p_margin;
+            qreal endX;
+            if (img.m_endPos <= end) {
+                // End an image.
+                endX = p_line->cursorToX(img.m_endPos) + p_margin;
+                p_images.append(&img);
+                p_imageRange.append(QPair<qreal, qreal>(startX, endX));
+
+                QSize size = img.m_imageSize;
+                scaleSize(size, endX - startX, MAX_INLINE_IMAGE_HEIGHT);
+                if (size.height() > maxHeight) {
+                    maxHeight = size.height();
+                }
+
+                // Image i has been drawn.
+                p_index = i + 1;
+            } else {
+                // This image cross the line.
+                endX = p_line->x() + p_line->width() + p_margin;
+                if (end - img.m_startPos >= ((img.m_endPos - img.m_startPos) >> 1)) {
+                    // Put image at this side.
+                    p_images.append(&img);
+                    p_imageRange.append(QPair<qreal, qreal>(startX, endX));
+
+                    QSize size = img.m_imageSize;
+                    scaleSize(size, endX - startX, MAX_INLINE_IMAGE_HEIGHT);
+                    if (size.height() > maxHeight) {
+                        maxHeight = size.height();
+                    }
+
+                    // Image i has been drawn.
+                    p_index = i + 1;
+                } else {
+                    // Just put a marker here.
+                    p_images.append(NULL);
+                    p_imageRange.append(QPair<qreal, qreal>(startX, endX));
+                }
+
+                break;
+            }
+        } else if (img.m_endPos > start && img.m_startPos < start) {
+            qreal startX = p_line->x() + p_margin;
+            qreal endX = img.m_endPos > end ? p_line->x() + p_line->width()
+                                            : p_line->cursorToX(img.m_endPos);
+            if (p_index <= i) {
+                // Image i has not been drawn. Draw it here.
+                p_images.append(&img);
+                p_imageRange.append(QPair<qreal, qreal>(startX, endX));
+
+                QSize size = img.m_imageSize;
+                scaleSize(size, endX - startX, MAX_INLINE_IMAGE_HEIGHT);
+                if (size.height() > maxHeight) {
+                    maxHeight = size.height();
+                }
+
+                // Image i has been drawn.
+                p_index = i + 1;
+            } else {
+                // Image i has been drawn. Just put a marker here.
+                p_images.append(NULL);
+                p_imageRange.append(QPair<qreal, qreal>(startX, endX));
+            }
+
+            if (img.m_endPos >= end) {
+                break;
+            }
+        } else if (img.m_endPos <= start) {
+            continue;
+        } else {
+            break;
+        }
+    }
+
+    return maxHeight;
 }

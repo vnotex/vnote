@@ -57,6 +57,27 @@ protected:
     void documentChanged(int p_from, int p_charsRemoved, int p_charsAdded) Q_DECL_OVERRIDE;
 
 private:
+    // Denote the start and end position of a marker line.
+    struct Marker
+    {
+        QPointF m_start;
+        QPointF m_end;
+    };
+
+    struct ImagePaintInfo
+    {
+        // The rect to draw the image.
+        QRectF m_rect;
+
+        // Name of the image.
+        QString m_name;
+
+        bool isValid()
+        {
+            return !m_name.isEmpty();
+        }
+    };
+
     struct BlockInfo
     {
         BlockInfo()
@@ -68,6 +89,8 @@ private:
         {
             m_offset = -1;
             m_rect = QRectF();
+            m_markers.clear();
+            m_images.clear();
         }
 
         bool hasOffset() const
@@ -94,9 +117,49 @@ private:
         // The bounding rect of this block, including the margins.
         // Null for invalid.
         QRectF m_rect;
+
+        // Markers to draw for this block.
+        // Y is the offset within this block.
+        QVector<Marker> m_markers;
+
+        // Images to draw for this block.
+        // Y is the offset within this block.
+        QVector<ImagePaintInfo> m_images;
     };
 
     void layoutBlock(const QTextBlock &p_block);
+
+    // Returns the total height of this block after layouting lines and inline
+    // images.
+    qreal layoutLines(const QTextBlock &p_block,
+                      QTextLayout *p_tl,
+                      QVector<Marker> &p_markers,
+                      QVector<ImagePaintInfo> &p_images,
+                      qreal p_availableWidth,
+                      qreal p_height);
+
+    // Layout inline image in a line.
+    // @p_info: if NULL, means just layout a marker.
+    // Returns the image height.
+    void layoutInlineImage(const VBlockImageInfo2 *p_info,
+                           qreal p_heightInBlock,
+                           qreal p_imageSpaceHeight,
+                           qreal p_xStart,
+                           qreal p_xEnd,
+                           QVector<Marker> &p_markers,
+                           QVector<ImagePaintInfo> &p_images);
+
+    // Get inline images belonging to @p_line from @p_info.
+    // @p_index: image [0, p_index) has been drawn.
+    // @p_images: contains all images and markers (NULL element indicates it
+    // is just a placeholder for the marker.
+    // Returns the maximum height of the images.
+    qreal fetchInlineImagesForOneLine(const QVector<VBlockImageInfo2> &p_info,
+                                      const QTextLine *p_line,
+                                      qreal p_margin,
+                                      int &p_index,
+                                      QVector<const VBlockImageInfo2 *> &p_images,
+                                      QVector<QPair<qreal, qreal>> &p_imageRange);
 
     // Clear the layout of @p_block.
     // Also clear all the offset behind this block.
@@ -115,7 +178,9 @@ private:
 
     bool validateBlocks() const;
 
-    void finishBlockLayout(const QTextBlock &p_block);
+    void finishBlockLayout(const QTextBlock &p_block,
+                           const QVector<Marker> &p_markers,
+                           const QVector<ImagePaintInfo> &p_images);
 
     int previousValidBlockNumber(int p_number) const;
 
@@ -136,8 +201,11 @@ private:
     void blockRangeFromRectBS(const QRectF &p_rect, int &p_first, int &p_last) const;
 
     // Return a rect from the layout.
+    // If @p_imageRect is not NULL and there is block image for this block, it will
+    // be set to the rect of that image.
     // Return a null rect if @p_block has not been layouted.
-    QRectF blockRectFromTextLayout(const QTextBlock &p_block);
+    QRectF blockRectFromTextLayout(const QTextBlock &p_block,
+                                   ImagePaintInfo *p_image = NULL);
 
     // Update document size when only block @p_blockNumber is changed and the height
     // remain the same.
@@ -150,9 +218,15 @@ private:
 
     // Draw images of block @p_block.
     // @p_offset: the offset for the drawing of the block.
-    void drawBlockImage(QPainter *p_painter,
-                        const QTextBlock &p_block,
-                        const QPointF &p_offset);
+    void drawImages(QPainter *p_painter,
+                    const QTextBlock &p_block,
+                    const QPointF &p_offset);
+
+    void drawMarkers(QPainter *p_painter,
+                     const QTextBlock &p_block,
+                     const QPointF &p_offset);
+
+    void scaleSize(QSize &p_size, int p_width, int p_height);
 
     // Document margin on left/right/bottom.
     qreal m_margin;
@@ -201,4 +275,10 @@ inline void VTextDocumentLayout::setImageLineColor(const QColor &p_color)
     m_imageLineColor = p_color;
 }
 
+inline void VTextDocumentLayout::scaleSize(QSize &p_size, int p_width, int p_height)
+{
+    if (p_size.width() > p_width || p_size.height() > p_height) {
+        p_size.scale(p_width, p_height, Qt::KeepAspectRatio);
+    }
+}
 #endif // VTEXTDOCUMENTLAYOUT_H

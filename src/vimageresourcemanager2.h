@@ -28,7 +28,7 @@ public:
     // Return changed blocks' block number.
     QSet<int> updateBlockInfos(const QVector<VBlockImageInfo2> &p_blocksInfo);
 
-    const VBlockImageInfo2 *findImageInfoByBlock(int p_blockNumber) const;
+    const QVector<VBlockImageInfo2> *findImageInfoByBlock(int p_blockNumber) const;
 
     const QPixmap *findImage(const QString &p_name) const;
 
@@ -39,7 +39,9 @@ private:
     QHash<QString, QPixmap> m_images;
 
     // Image info of all the blocks with image.
-    QHash<int, VBlockImageInfo2> m_blocksInfo;
+    // One block may contain multiple inline images or only one block image.
+    // If there are multiple inline images, they are sorted by the start position.
+    QHash<int, QVector<VBlockImageInfo2>> m_blocksInfo;
 };
 
 #endif // VIMAGERESOURCEMANAGER2_H

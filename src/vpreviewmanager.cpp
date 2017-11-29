@@ -226,11 +226,6 @@ void VPreviewManager::updateBlockImageInfo(const QVector<ImageLinkInfo> &p_image
     for (int i = 0; i < p_imageLinks.size(); ++i) {
         const ImageLinkInfo &link = p_imageLinks[i];
 
-        // Skip inline images.
-        if (!link.m_isBlock) {
-            continue;
-        }
-
         QString name = imageResourceName(link);
         if (name.isEmpty()) {
             continue;
@@ -240,7 +235,9 @@ void VPreviewManager::updateBlockImageInfo(const QVector<ImageLinkInfo> &p_image
                               name,
                               link.m_startPos - link.m_blockPos,
                               link.m_endPos - link.m_blockPos,
-                              link.m_padding);
+                              link.m_padding,
+                              !link.m_isBlock);
+
         blockInfos.push_back(info);
     }
 }

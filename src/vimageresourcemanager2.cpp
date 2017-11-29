@@ -23,20 +23,44 @@ bool VImageResourceManager2::contains(const QString &p_name) const
 QSet<int> VImageResourceManager2::updateBlockInfos(const QVector<VBlockImageInfo2> &p_blocksInfo)
 {
     QSet<QString> usedImages;
-    QHash<int, VBlockImageInfo2> newBlocksInfo;
+    QHash<int, QVector<VBlockImageInfo2>> newBlocksInfo;
 
     for (auto const & info : p_blocksInfo) {
-        auto it = newBlocksInfo.insert(info.m_blockNumber, info);
-        VBlockImageInfo2 &newInfo = it.value();
-        if (newInfo.m_padding < 0) {
-            newInfo.m_padding = 0;
+        VBlockImageInfo2 *newInfo = NULL;
+        auto blockIt = newBlocksInfo.find(info.m_blockNumber);
+        if (blockIt == newBlocksInfo.end()) {
+            // New block.
+            QVector<VBlockImageInfo2> vec(1, info);
+            auto it = newBlocksInfo.insert(info.m_blockNumber, vec);
+            newInfo = &it.value().last();
+        } else {
+            // Multiple images for a block.
+            QVector<VBlockImageInfo2> &vec = blockIt.value();
+            int i;
+            for (i = 0; i < vec.size(); ++i) {
+                Q_ASSERT(vec[i].m_blockNumber == info.m_blockNumber);
+                if (info < vec[i]) {
+                    vec.insert(i, info);
+                    newInfo = &vec[i];
+                    break;
+                }
+            }
+
+            if (i == vec.size()) {
+                vec.append(info);
+                newInfo = &vec.last();
+            }
         }
 
-        auto imageIt = m_images.find(newInfo.m_imageName);
+        if (newInfo->m_padding < 0) {
+            newInfo->m_padding = 0;
+        }
+
+        auto imageIt = m_images.find(newInfo->m_imageName);
         if (imageIt != m_images.end()) {
             // Fill the width and height.
-            newInfo.m_imageSize = imageIt.value().size();
-            usedImages.insert(newInfo.m_imageName);
+            newInfo->m_imageSize = imageIt.value().size();
+            usedImages.insert(newInfo->m_imageName);
         }
     }
 
@@ -61,7 +85,7 @@ QSet<int> VImageResourceManager2::updateBlockInfos(const QVector<VBlockImageInfo
     return affectedBlocks;
 }
 
-const VBlockImageInfo2 *VImageResourceManager2::findImageInfoByBlock(int p_blockNumber) const
+const QVector<VBlockImageInfo2> *VImageResourceManager2::findImageInfoByBlock(int p_blockNumber) const
 {
     auto it = m_blocksInfo.find(p_blockNumber);
     if (it != m_blocksInfo.end()) {
