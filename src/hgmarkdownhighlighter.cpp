@@ -29,9 +29,16 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
                                              const QHash<QString, QTextCharFormat> &codeBlockStyles,
                                              int waitInterval,
                                              QTextDocument *parent)
-    : QSyntaxHighlighter(parent), highlightingStyles(styles),
-      m_codeBlockStyles(codeBlockStyles), m_numOfCodeBlockHighlightsToRecv(0),
-      parsing(0), waitInterval(waitInterval), content(NULL), capacity(0), result(NULL)
+    : QSyntaxHighlighter(parent),
+      highlightingStyles(styles),
+      m_codeBlockStyles(codeBlockStyles),
+      m_numOfCodeBlockHighlightsToRecv(0),
+      parsing(0),
+      waitInterval(waitInterval),
+      m_firstParse(true),
+      content(NULL),
+      capacity(0),
+      result(NULL)
 {
     codeBlockStartExp = QRegExp(VUtils::c_fencedCodeBlockStartRegExp);
     codeBlockEndExp = QRegExp(VUtils::c_fencedCodeBlockEndRegExp);
@@ -541,11 +548,15 @@ void HGMarkdownHighlighter::timerTimeout()
 {
     qDebug() << "HGMarkdownHighlighter start a new parse";
     parse();
-    if (!updateCodeBlocks()) {
+    if (!updateCodeBlocks() || m_firstParse) {
         rehighlight();
     }
 
     highlightChanged();
+
+    if (m_firstParse) {
+        m_firstParse = false;
+    }
 }
 
 void HGMarkdownHighlighter::updateHighlight()

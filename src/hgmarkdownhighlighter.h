@@ -190,6 +190,9 @@ private:
     QTimer *timer;
     int waitInterval;
 
+    // Whether this is the first parse.
+    bool m_firstParse;
+
     char *content;
     int capacity;
     pmh_element **result;
