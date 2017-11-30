@@ -98,7 +98,8 @@ SOURCES += main.cpp\
     utils/vimnavigationforwidget.cpp \
     vtoolbox.cpp \
     vinsertselector.cpp \
-    utils/vclipboardutils.cpp
+    utils/vclipboardutils.cpp \
+    vpalette.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -183,7 +184,8 @@ HEADERS  += vmainwindow.h \
     utils/vimnavigationforwidget.h \
     vtoolbox.h \
     vinsertselector.h \
-    utils/vclipboardutils.h
+    utils/vclipboardutils.h \
+    vpalette.h
 
 RESOURCES += \
     vnote.qrc \

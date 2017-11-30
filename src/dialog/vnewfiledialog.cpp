@@ -52,7 +52,7 @@ void VNewFileDialog::setupUI(const QString &p_title,
     m_nameEdit->setSelection(0, (dotIndex == -1) ? p_defaultName.size() : dotIndex);
 
     // Template.
-    m_templateCB = new QComboBox();
+    m_templateCB = VUtils::getComboBox();
     m_templateCB->setToolTip(tr("Choose a template (magic word supported)"));
     m_templateCB->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 

@@ -353,15 +353,20 @@ public:
     QString getConfigFilePath() const;
 
     // Get the folder c_styleConfigFolder in the config folder.
-    QString getStyleConfigFolder() const;
+    const QString &getStyleConfigFolder() const;
 
     // Get the folder c_templateConfigFolder in the config folder.
-    QString getTemplateConfigFolder() const;
+    const QString &getTemplateConfigFolder() const;
+
+    // Get the folder c_themeConfigFolder in the config folder.
+    const QString &getThemeConfigFolder() const;
 
     // Get the folder c_snippetConfigFolder in the config folder.
-    QString getSnippetConfigFolder() const;
+    const QString &getSnippetConfigFolder() const;
 
-    QString getSnippetConfigFilePath() const;
+    const QString &getSnippetConfigFilePath() const;
+
+    QString getThemeFile() const;
 
     // Read all available css files in c_styleConfigFolder.
     QVector<QString> getCssStyles() const;
@@ -370,7 +375,7 @@ public:
     QVector<QString> getNoteTemplates(DocType p_type = DocType::Unknown) const;
 
     // Get the folder c_codeBlockStyleConfigFolder in the config folder.
-    QString getCodeBlockStyleConfigFolder() const;
+    const QString &getCodeBlockStyleConfigFolder() const;
 
     // Read all available css files in c_codeBlockStyleConfigFolder.
     QVector<QString> getCodeBlockCssStyles() const;
@@ -396,6 +401,14 @@ public:
     const QString &getVimExemptionKeys() const;
 
     const QString &getFlashPage() const;
+
+    // All the themes.
+    QList<QString> getThemes() const;
+
+    // Return current theme name.
+    const QString &getTheme() const;
+
+    void setTheme(const QString &p_theme);
 
 private:
     // Look up a config from user and default settings.
@@ -473,6 +486,9 @@ private:
 
     // Whether @p_seq is a valid key sequence for shortcuts.
     bool isValidKeySequence(const QString &p_seq);
+
+    // Init the themes name-file mappings.
+    void initThemes();
 
     // Default font and palette.
     QFont m_defaultEditFont;
@@ -760,6 +776,13 @@ private:
     // Absolute path of flash page.
     QString m_flashPage;
 
+    // The theme name.
+    QString m_theme;
+
+    // All the themes.
+    // [name] -> [file path].
+    QMap<QString, QString> m_themes;
+
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
     static const QString c_obsoleteDirConfigFile;
@@ -791,6 +814,9 @@ private:
 
     // The folder name of style files.
     static const QString c_styleConfigFolder;
+
+    // The folder name of theme files.
+    static const QString c_themeConfigFolder;
 
     // The folder name of code block style files.
     static const QString c_codeBlockStyleConfigFolder;
@@ -1879,6 +1905,26 @@ inline bool VConfigManager::getEnableBackupFile() const
 inline const QString &VConfigManager::getVimExemptionKeys() const
 {
     return m_vimExemptionKeys;
+}
+
+inline QList<QString> VConfigManager::getThemes() const
+{
+    return m_themes.keys();
+}
+
+inline const QString &VConfigManager::getTheme() const
+{
+    return m_theme;
+}
+
+inline void VConfigManager::setTheme(const QString &p_theme)
+{
+    if (p_theme == m_theme) {
+        return;
+    }
+
+    m_theme = p_theme;
+    setConfigToSettings("global", "theme", m_theme);
 }
 
 #endif // VCONFIGMANAGER_H

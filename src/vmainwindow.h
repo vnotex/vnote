@@ -263,6 +263,8 @@ private:
 
     void initHeadingButton(QToolBar *p_tb);
 
+    void initThemeMenu(QMenu *p_emnu);
+
     // Captain mode functions.
 
     // Popup the attachment list if it is enabled.

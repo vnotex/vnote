@@ -21,6 +21,8 @@
 #include <QRegExpValidator>
 #include <QRegExp>
 #include <QKeySequence>
+#include <QComboBox>
+#include <QStyledItemDelegate>
 
 #include "vorphanfile.h"
 #include "vnote.h"
@@ -1073,4 +1075,13 @@ bool VUtils::isMetaKey(int p_key)
            || p_key == Qt::Key_Shift
            || p_key == Qt::Key_Meta
            || p_key == Qt::Key_Alt;
+}
+
+QComboBox *VUtils::getComboBox(QWidget *p_parent)
+{
+    QComboBox *box = new QComboBox(p_parent);
+    QStyledItemDelegate *itemDelegate = new QStyledItemDelegate(box);
+    box->setItemDelegate(itemDelegate);
+
+    return box;
 }

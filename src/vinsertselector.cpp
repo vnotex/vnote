@@ -111,3 +111,13 @@ void VInsertSelector::showEvent(QShowEvent *p_event)
         setFocus();
     }
 }
+
+void VInsertSelector::paintEvent(QPaintEvent *p_event)
+{
+    QStyleOption opt;
+    opt.init(this);
+    QPainter p(this);
+    style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
+
+    QWidget::paintEvent(p_event);
+}

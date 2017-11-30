@@ -7,6 +7,7 @@
 class QPushButton;
 class QKeyEvent;
 class QShowEvent;
+class QPaintEvent;
 
 struct VInsertSelectorItem
 {
@@ -63,6 +64,8 @@ protected:
     void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
     void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
+
+    void paintEvent(QPaintEvent *p_event) Q_DECL_OVERRIDE;
 
 private slots:
     void itemClicked(const QString &p_name);

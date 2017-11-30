@@ -161,7 +161,7 @@ VGeneralTab::VGeneralTab(QWidget *p_parent)
     : QWidget(p_parent)
 {
     // Language combo.
-    m_langCombo = new QComboBox(this);
+    m_langCombo = VUtils::getComboBox(this);
     m_langCombo->setToolTip(tr("Choose the language of VNote interface"));
     m_langCombo->addItem(tr("System"), "System");
     auto langs = VUtils::getAvailableLanguages();
@@ -194,7 +194,7 @@ VGeneralTab::VGeneralTab(QWidget *p_parent)
 
 QLayout *VGeneralTab::setupStartupPagesLayout()
 {
-    m_startupPageTypeCombo = new QComboBox(this);
+    m_startupPageTypeCombo = VUtils::getComboBox(this);
     m_startupPageTypeCombo->setToolTip(tr("Restore tabs or open specific notes on startup"));
     m_startupPageTypeCombo->addItem(tr("None"), (int)StartupPageType::None);
     m_startupPageTypeCombo->addItem(tr("Continue where you left off"), (int)StartupPageType::ContinueLeftOff);
@@ -598,19 +598,19 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     : QWidget(p_parent)
 {
     // Default note open mode.
-    m_openModeCombo = new QComboBox();
+    m_openModeCombo = VUtils::getComboBox();
     m_openModeCombo->setToolTip(tr("Default mode to open a note"));
     m_openModeCombo->addItem(tr("Read Mode"), (int)OpenFileMode::Read);
     m_openModeCombo->addItem(tr("Edit Mode"), (int)OpenFileMode::Edit);
 
     // Heading sequence.
-    m_headingSequenceTypeCombo = new QComboBox();
+    m_headingSequenceTypeCombo = VUtils::getComboBox();
     m_headingSequenceTypeCombo->setToolTip(tr("Enable auto sequence for all headings (in the form like 1.2.3.4.)"));
     m_headingSequenceTypeCombo->addItem(tr("Disabled"), (int)HeadingSequenceType::Disabled);
     m_headingSequenceTypeCombo->addItem(tr("Enabled"), (int)HeadingSequenceType::Enabled);
     m_headingSequenceTypeCombo->addItem(tr("Enabled for notes only"), (int)HeadingSequenceType::EnabledNoteOnly);
 
-    m_headingSequenceLevelCombo = new QComboBox();
+    m_headingSequenceLevelCombo = VUtils::getComboBox();
     m_headingSequenceLevelCombo->setToolTip(tr("Base level to start heading sequence"));
     m_headingSequenceLevelCombo->addItem(tr("1"), 1);
     m_headingSequenceLevelCombo->addItem(tr("2"), 2);

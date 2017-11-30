@@ -32,6 +32,8 @@ const QString VConfigManager::c_snippetConfigFile = QString("snippet.json");
 
 const QString VConfigManager::c_styleConfigFolder = QString("styles");
 
+const QString VConfigManager::c_themeConfigFolder = QString("themes");
+
 const QString VConfigManager::c_codeBlockStyleConfigFolder = QString("codeblock_styles");
 
 const QString VConfigManager::c_templateConfigFolder = QString("templates");
@@ -73,6 +75,8 @@ void VConfigManager::initialize()
     outputDefaultCssStyle();
     outputDefaultCodeBlockCssStyle();
     outputDefaultEditorStyle();
+
+    initThemes();
 
     m_defaultEditPalette = QTextEdit().palette();
 
@@ -283,6 +287,9 @@ void VConfigManager::initialize()
 
     m_vimExemptionKeys = getConfigFromSettings("global",
                                                "vim_exemption_keys").toString();
+
+    m_theme = getConfigFromSettings("global",
+                                    "theme").toString();
 }
 
 void VConfigManager::initSettings()
@@ -783,34 +790,51 @@ QString VConfigManager::getConfigFilePath() const
     return userSettings->fileName();
 }
 
-QString VConfigManager::getStyleConfigFolder() const
+const QString &VConfigManager::getStyleConfigFolder() const
 {
     static QString path = QDir(getConfigFolder()).filePath(c_styleConfigFolder);
     return path;
 }
 
-QString VConfigManager::getCodeBlockStyleConfigFolder() const
+const QString &VConfigManager::getThemeConfigFolder() const
+{
+    static QString path = QDir(getConfigFolder()).filePath(c_themeConfigFolder);
+    return path;
+}
+
+const QString &VConfigManager::getCodeBlockStyleConfigFolder() const
 {
     static QString path = QDir(getStyleConfigFolder()).filePath(c_codeBlockStyleConfigFolder);
     return path;
 }
 
-QString VConfigManager::getTemplateConfigFolder() const
+const QString &VConfigManager::getTemplateConfigFolder() const
 {
     static QString path = QDir(getConfigFolder()).filePath(c_templateConfigFolder);
     return path;
 }
 
-QString VConfigManager::getSnippetConfigFolder() const
+const QString &VConfigManager::getSnippetConfigFolder() const
 {
     static QString path = QDir(getConfigFolder()).filePath(c_snippetConfigFolder);
     return path;
 }
 
-QString VConfigManager::getSnippetConfigFilePath() const
+const QString &VConfigManager::getSnippetConfigFilePath() const
 {
     static QString path = QDir(getSnippetConfigFolder()).filePath(c_snippetConfigFile);
     return path;
+}
+
+QString VConfigManager::getThemeFile() const
+{
+    QString file;
+    auto it = m_themes.find(m_theme);
+    if (it != m_themes.end()) {
+        file = QDir(getThemeConfigFolder()).filePath(it.value());
+    }
+
+    return file;
 }
 
 QVector<QString> VConfigManager::getCssStyles() const
@@ -1367,4 +1391,32 @@ const QString &VConfigManager::getFlashPage() const
     }
 
     return m_flashPage;
+}
+
+void VConfigManager::initThemes()
+{
+    m_themes.clear();
+
+    // Built-in.
+    m_themes.insert(tr("v_white"), ":/resources/themes/v_white/v_white.palette");
+
+    // User theme folder.
+    QDir dir(getThemeConfigFolder());
+    if (!dir.exists()) {
+        dir.mkpath(getThemeConfigFolder());
+        return;
+    }
+
+    dir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);
+    QStringList dirs = dir.entryList();
+    for (auto const &item : dirs) {
+        QDir themeDir(dir.filePath(item));
+        QStringList files = themeDir.entryList(QStringList() << "*.palette");
+        if (files.size() != 1) {
+            continue;
+        }
+
+        QFileInfo fi(files[0]);
+        m_themes.insert(fi.completeBaseName(), themeDir.filePath(files[0]));
+    }
 }

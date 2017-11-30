@@ -15,6 +15,8 @@ class QKeyEvent;
 class VFile;
 class VOrphanFile;
 class VNotebook;
+class QWidget;
+class QComboBox;
 
 #if !defined(V_ASSERT)
     #define V_ASSERT(cond) ((!(cond)) ? qt_assert(#cond, __FILE__, __LINE__) : qt_noop())
@@ -260,6 +262,9 @@ public:
 
     // Ctrl, Meta, Shift, Alt.
     static bool isMetaKey(int p_key);
+
+    // Create and return a QComboBox.
+    static QComboBox *getComboBox(QWidget *p_parent = nullptr);
 
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )

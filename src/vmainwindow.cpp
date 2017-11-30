@@ -925,6 +925,9 @@ void VMainWindow::initFileMenu()
             this, &VMainWindow::printNote);
     m_printAct->setEnabled(false);
 
+    // Themes.
+    initThemeMenu(fileMenu);
+
     // Settings.
     QAction *settingsAct = newAction(QIcon(":/resources/icons/settings.svg"),
                                      tr("&Settings"), this);
@@ -2774,4 +2777,37 @@ void VMainWindow::initHeadingButton(QToolBar *p_tb)
 
     m_headingBtn->setMenu(menu);
     p_tb->addWidget(m_headingBtn);
+}
+
+void VMainWindow::initThemeMenu(QMenu *p_menu)
+{
+    QMenu *themeMenu = p_menu->addMenu(tr("Theme"));
+    themeMenu->setToolTipsVisible(true);
+
+    QActionGroup *ag = new QActionGroup(this);
+    connect(ag, &QActionGroup::triggered,
+            this, [this](QAction *p_action) {
+                if (!p_action) {
+                    return;
+                }
+
+                QString data = p_action->data().toString();
+                g_config->setTheme(data);
+            });
+
+    QList<QString> themes = g_config->getThemes();
+    QString theme = g_config->getTheme();
+    for (auto const &item : themes) {
+        QAction *act = new QAction(item, ag);
+        act->setToolTip(tr("Set as the theme of VNote (restart VNote to make it work)"));
+        act->setCheckable(true);
+        act->setData(item);
+
+        // Add it to the menu.
+        themeMenu->addAction(act);
+
+        if (theme == item) {
+            act->setChecked(true);
+        }
+    }
 }

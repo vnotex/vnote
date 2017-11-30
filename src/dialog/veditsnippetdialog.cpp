@@ -39,7 +39,7 @@ void VEditSnippetDialog::setupUI(const QString &p_title, const QString &p_info)
     m_nameEdit->setValidator(validator);
 
     // Type.
-    m_typeCB = new QComboBox();
+    m_typeCB = VUtils::getComboBox();
     for (int i = 0; i < VSnippet::Type::Invalid; ++i) {
         m_typeCB->addItem(VSnippet::typeStr(static_cast<VSnippet::Type>(i)), i);
     }
@@ -49,7 +49,7 @@ void VEditSnippetDialog::setupUI(const QString &p_title, const QString &p_info)
     m_typeCB->setCurrentIndex(typeIdx);
 
     // Shortcut.
-    m_shortcutCB = new QComboBox();
+    m_shortcutCB = VUtils::getComboBox();
     m_shortcutCB->addItem(tr("None"), QChar());
     auto shortcuts = getAvailableShortcuts();
     for (auto it : shortcuts) {

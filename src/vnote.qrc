@@ -65,7 +65,6 @@
         <file>resources/icons/paste.svg</file>
         <file>resources/icons/dir_item.svg</file>
         <file>resources/icons/notebook_item.svg</file>
-        <file>resources/icons/arrow_dropdown.svg</file>
         <file>resources/icons/vnote.png</file>
         <file>resources/icons/insert_image.svg</file>
         <file>resources/icons/import_note.svg</file>
@@ -93,8 +92,6 @@
         <file>utils/mermaid/mermaid.forest.css</file>
         <file>utils/mermaid/mermaidAPI.min.js</file>
         <file>resources/icons/close_red.svg</file>
-        <file>resources/icons/close_grey.svg</file>
-        <file>resources/icons/float.svg</file>
         <file>resources/docs/shortcuts_en.md</file>
         <file>resources/docs/shortcuts_zh.md</file>
         <file>resources/styles/default.css</file>
@@ -107,7 +104,6 @@
         <file>utils/markdown-it/markdown-it-sub.min.js</file>
         <file>utils/markdown-it/markdown-it-sup.min.js</file>
         <file>utils/markdown-it/markdown-it-footnote.min.js</file>
-        <file>resources/icons/arrow_dropup.svg</file>
         <file>resources/icons/vnote_update.svg</file>
         <file>utils/flowchart.js/flowchart.min.js</file>
         <file>utils/flowchart.js/raphael.min.js</file>
@@ -144,5 +140,11 @@
         <file>resources/icons/reading_modified.svg</file>
         <file>resources/icons/flash_page.svg</file>
         <file>resources/icons/heading.svg</file>
+        <file>resources/themes/v_white/arrow_dropdown.svg</file>
+        <file>resources/themes/v_white/close.svg</file>
+        <file>resources/themes/v_white/close_grey.svg</file>
+        <file>resources/themes/v_white/float.svg</file>
+        <file>resources/themes/v_white/v_white.palette</file>
+        <file>resources/themes/v_white/v_white.qss</file>
     </qresource>
 </RCC>

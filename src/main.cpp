@@ -12,8 +12,11 @@
 #include "utils/vutils.h"
 #include "vsingleinstanceguard.h"
 #include "vconfigmanager.h"
+#include "vpalette.h"
 
 VConfigManager *g_config;
+
+VPalette *g_palette;
 
 #if defined(QT_NO_DEBUG)
 // 5MB log size.
@@ -164,10 +167,12 @@ int main(int argc, char *argv[])
         app.installTranslator(&translator);
     }
 
+    VPalette palette(g_config->getThemeFile());
+    g_palette = &palette;
+
     VMainWindow w(&guard);
-    QString style = VUtils::readFileFromDisk(":/resources/vnote.qss");
+    QString style = palette.fetchQtStyleSheet();
     if (!style.isEmpty()) {
-        VUtils::processStyle(style, w.getPalette());
         app.setStyleSheet(style);
     }
 

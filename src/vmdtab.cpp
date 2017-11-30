@@ -413,6 +413,7 @@ void VMdTab::setupMarkdownEditor()
     Q_ASSERT(!m_editor);
 
     m_editor = new VMdEditor(m_file, m_document, m_mdConType, this);
+    m_editor->setProperty("MainEditor", true);
     connect(m_editor, &VMdEditor::headersChanged,
             this, &VMdTab::updateOutlineFromHeaders);
     connect(m_editor, SIGNAL(currentHeaderChanged(int)),
