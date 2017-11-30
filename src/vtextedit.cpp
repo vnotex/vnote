@@ -48,6 +48,8 @@ void VTextEdit::init()
 
     m_blockImageEnabled = false;
 
+    m_cursorBlockMode = false;
+
     m_imageMgr = new VImageResourceManager2();
 
     QTextDocument *doc = document();
@@ -83,6 +85,10 @@ void VTextEdit::setLineLeading(qreal p_leading)
 void VTextEdit::resizeEvent(QResizeEvent *p_event)
 {
     QTextEdit::resizeEvent(p_event);
+
+    if (m_cursorBlockMode) {
+        setCursorWidth(p_event->size().width());
+    }
 
     if (m_lineNumberType != LineNumberType::None) {
         QRect rect = contentsRect();
@@ -331,4 +337,30 @@ void VTextEdit::setImageWidthConstrainted(bool p_enabled)
 void VTextEdit::setImageLineColor(const QColor &p_color)
 {
     getLayout()->setImageLineColor(p_color);
+}
+
+void VTextEdit::setCursorBlockMode(bool p_enabled)
+{
+    if (p_enabled != m_cursorBlockMode) {
+        m_cursorBlockMode = p_enabled;
+        getLayout()->setCursorBlockMode(m_cursorBlockMode);
+
+        if (p_enabled) {
+            // Will set cursor width according to the viewport.
+            setCursorWidth(viewport()->width());
+        } else {
+            // Restore cursor width.
+            setCursorWidth(1);
+        }
+    }
+}
+
+void VTextEdit::setCursorBlockFg(const QColor &p_color)
+{
+    getLayout()->setCursorBlockFg(p_color);
+}
+
+void VTextEdit::setCursorBlockBg(const QColor &p_color)
+{
+    getLayout()->setCursorBlockBg(p_color);
 }

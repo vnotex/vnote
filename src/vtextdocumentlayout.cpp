@@ -31,7 +31,11 @@ VTextDocumentLayout::VTextDocumentLayout(QTextDocument *p_doc,
       m_imageMgr(p_imageMgr),
       m_blockImageEnabled(false),
       m_imageWidthConstrainted(false),
-      m_imageLineColor("#9575CD")
+      m_imageLineColor("#9575CD"),
+      m_cursorBlockMode(false),
+      m_virtualCursorBlockWidth(8),
+      m_cursorBlockFg("#EEEEEE"),
+      m_cursorBlockBg("#222222")
 {
 }
 
@@ -221,6 +225,25 @@ void VTextDocumentLayout::draw(QPainter *p_painter, const PaintContext &p_contex
 
         auto selections = formatRangeFromSelection(block, p_context.selections);
 
+        // Draw the cursor.
+        int blpos = block.position();
+        int bllen = block.length();
+        bool drawCursor = p_context.cursorPosition >= blpos
+                          && p_context.cursorPosition < blpos + bllen;
+        bool drawCursorAsBlock = drawCursor && m_cursorBlockMode;
+        if (drawCursorAsBlock) {
+            if (p_context.cursorPosition == blpos + bllen - 1) {
+                drawCursorAsBlock = false;
+            } else {
+                QTextLayout::FormatRange o;
+                o.start = p_context.cursorPosition - blpos;
+                o.length = 1;
+                o.format.setForeground(m_cursorBlockFg);
+                o.format.setBackground(m_cursorBlockBg);
+                selections.append(o);
+            }
+        }
+
         layout->draw(p_painter,
                      offset,
                      selections,
@@ -230,12 +253,7 @@ void VTextDocumentLayout::draw(QPainter *p_painter, const PaintContext &p_contex
 
         drawMarkers(p_painter, block, offset);
 
-        // Draw the cursor.
-        int blpos = block.position();
-        int bllen = block.length();
-        bool drawCursor = p_context.cursorPosition >= blpos
-                          && p_context.cursorPosition < blpos + bllen;
-        if (drawCursor
+        if ((drawCursor && !drawCursorAsBlock)
             || (p_context.cursorPosition < -1
                 && !layout->preeditAreaText().isEmpty())) {
             int cpos = p_context.cursorPosition;
@@ -245,7 +263,11 @@ void VTextDocumentLayout::draw(QPainter *p_painter, const PaintContext &p_contex
                 cpos -= blpos;
             }
 
-            layout->drawCursor(p_painter, offset, cpos, m_cursorWidth);
+            layout->drawCursor(p_painter,
+                               offset,
+                               cpos,
+                               m_cursorBlockMode ? m_virtualCursorBlockWidth
+                                                 : m_cursorWidth);
         }
 
         offset.ry() += rect.height();

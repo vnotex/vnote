@@ -56,6 +56,12 @@ public:
 
     void relayout(const QSet<int> &p_blocks);
 
+    void setCursorBlockMode(bool p_enabled);
+
+    void setCursorBlockFg(const QColor &p_color);
+
+    void setCursorBlockBg(const QColor &p_color);
+
 protected:
     void resizeEvent(QResizeEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -78,6 +84,8 @@ private:
     VImageResourceManager2 *m_imageMgr;
 
     bool m_blockImageEnabled;
+
+    bool m_cursorBlockMode;
 };
 
 inline void VTextEdit::setLineNumberType(LineNumberType p_type)

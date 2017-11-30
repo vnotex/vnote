@@ -54,6 +54,12 @@ public:
 
     void setImageLineColor(const QColor &p_color);
 
+    void setCursorBlockMode(bool p_enabled);
+
+    void setCursorBlockFg(const QColor &p_color);
+
+    void setCursorBlockBg(const QColor &p_color);
+
 protected:
     void documentChanged(int p_from, int p_charsRemoved, int p_charsAdded) Q_DECL_OVERRIDE;
 
@@ -264,6 +270,18 @@ private:
 
     // Color of the image line.
     QColor m_imageLineColor;
+
+    // Draw cursor as block.
+    bool m_cursorBlockMode;
+
+    // Virtual cursor block: cursor block on no character.
+    int m_virtualCursorBlockWidth;
+
+    // Foreground of cursor block.
+    QColor m_cursorBlockFg;
+
+    // Background of cursor block.
+    QColor m_cursorBlockBg;
 };
 
 inline qreal VTextDocumentLayout::getLineLeading() const
@@ -282,4 +300,20 @@ inline void VTextDocumentLayout::scaleSize(QSize &p_size, int p_width, int p_hei
         p_size.scale(p_width, p_height, Qt::KeepAspectRatio);
     }
 }
+
+inline void VTextDocumentLayout::setCursorBlockMode(bool p_enabled)
+{
+    m_cursorBlockMode = p_enabled;
+}
+
+inline void VTextDocumentLayout::setCursorBlockFg(const QColor &p_color)
+{
+    m_cursorBlockFg = p_color;
+}
+
+inline void VTextDocumentLayout::setCursorBlockBg(const QColor &p_color)
+{
+    m_cursorBlockBg = p_color;
+}
+
 #endif // VTEXTDOCUMENTLAYOUT_H
