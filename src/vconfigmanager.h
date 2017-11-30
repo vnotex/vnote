@@ -210,7 +210,13 @@ public:
     const QString &getEditorIncrementalSearchedWordBg() const;
 
     const QString &getEditorVimNormalBg() const;
+    const QString &getEditorVimNormalCursorBg() const;
+    const QString &getEditorVimNormalCursorFg() const;
+
     const QString &getEditorVimInsertBg() const;
+    const QString &getEditorVimInsertCursorBg() const;
+    const QString &getEditorVimInsertCursorFg() const;
+
     const QString &getEditorVimVisualBg() const;
     const QString &getEditorVimReplaceBg() const;
 
@@ -563,8 +569,20 @@ private:
     // Current line background color in editor in Vim normal mode.
     QString m_editorVimNormalBg;
 
+    // Cursour block background color in editor in Vim normal mode.
+    QString m_editorVimNormalCursorBg;
+
+    // Cursour block foreground color in editor in Vim normal mode.
+    QString m_editorVimNormalCursorFg;
+
     // Current line background color in editor in Vim insert mode.
     QString m_editorVimInsertBg;
+
+    // Cursour block background color in editor in Vim insert mode.
+    QString m_editorVimInsertCursorBg;
+
+    // Cursour block foreground color in editor in Vim insert mode.
+    QString m_editorVimInsertCursorFg;
 
     // Current line background color in editor in Vim visual mode.
     QString m_editorVimVisualBg;
@@ -1259,9 +1277,29 @@ inline const QString &VConfigManager::getEditorVimNormalBg() const
     return m_editorVimNormalBg;
 }
 
+inline const QString &VConfigManager::getEditorVimNormalCursorBg() const
+{
+    return m_editorVimNormalCursorBg;
+}
+
+inline const QString &VConfigManager::getEditorVimNormalCursorFg() const
+{
+    return m_editorVimNormalCursorFg;
+}
+
 inline const QString &VConfigManager::getEditorVimInsertBg() const
 {
     return m_editorVimInsertBg;
+}
+
+inline const QString &VConfigManager::getEditorVimInsertCursorBg() const
+{
+    return m_editorVimInsertCursorBg;
+}
+
+inline const QString &VConfigManager::getEditorVimInsertCursorFg() const
+{
+    return m_editorVimInsertCursorFg;
 }
 
 inline const QString &VConfigManager::getEditorVimVisualBg() const

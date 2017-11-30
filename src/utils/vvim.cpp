@@ -2240,6 +2240,26 @@ void VVim::setMode(VimMode p_mode, bool p_clearSelection)
         m_mode = p_mode;
         resetState();
 
+        bool cursorBlock = false;
+        switch (m_mode) {
+        case VimMode::Insert:
+            cursorBlock = true;
+            m_editor->setCursorBlockColor(g_config->getEditorVimInsertCursorBg(),
+                                          g_config->getEditorVimInsertCursorFg());
+            break;
+
+        case VimMode::Normal:
+            cursorBlock = true;
+            m_editor->setCursorBlockColor(g_config->getEditorVimNormalCursorBg(),
+                                          g_config->getEditorVimNormalCursorFg());
+            break;
+
+        default:
+            break;
+        }
+
+        m_editor->setCursorBlockEnabled(cursorBlock);
+
         emit modeChanged(m_mode);
         emit vimStatusUpdated(this);
     }
