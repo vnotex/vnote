@@ -31,6 +31,8 @@ public:
 
     void setFile(const VFile *p_file);
 
+    bool isReadyToHighlight() const;
+
 public slots:
     // Will be called in the HTML side
 
@@ -82,6 +84,13 @@ private:
     QString m_html;
 
     const VFile *m_file;
+
+    // Whether the web side is ready to handle highlight text request.
+    bool m_readyToHighlight;
 };
 
+inline bool VDocument::isReadyToHighlight() const
+{
+    return m_readyToHighlight;
+}
 #endif // VDOCUMENT_H

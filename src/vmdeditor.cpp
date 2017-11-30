@@ -46,6 +46,8 @@ VMdEditor::VMdEditor(VFile *p_file,
             });
     // End.
 
+    setReadOnly(true);
+
     m_mdHighlighter = new HGMarkdownHighlighter(g_config->getMdHighlightingStyles(),
                                                 g_config->getCodeBlockStyles(),
                                                 g_config->getMarkdownHighlightInterval(),
@@ -110,7 +112,11 @@ void VMdEditor::beginEdit()
 
     emit statusChanged();
 
-    updateHeaders(m_mdHighlighter->getHeaderRegions());
+    if (m_freshEdit) {
+        m_mdHighlighter->updateHighlight();
+    } else {
+        updateHeaders(m_mdHighlighter->getHeaderRegions());
+    }
 }
 
 void VMdEditor::endEdit()
@@ -133,10 +139,17 @@ void VMdEditor::saveFile()
 
 void VMdEditor::reloadFile()
 {
+    bool readonly = isReadOnly();
+    setReadOnly(true);
+
     const QString &content = m_file->getContent();
     setPlainText(content);
-
     setModified(false);
+    m_mdHighlighter->updateHighlightFast();
+
+    m_freshEdit = true;
+
+    setReadOnly(readonly);
 }
 
 bool VMdEditor::scrollToBlock(int p_blockNumber)

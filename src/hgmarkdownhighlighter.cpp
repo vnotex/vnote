@@ -34,8 +34,8 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
       m_codeBlockStyles(codeBlockStyles),
       m_numOfCodeBlockHighlightsToRecv(0),
       parsing(0),
+      m_blockHLResultReady(false),
       waitInterval(waitInterval),
-      m_firstParse(true),
       content(NULL),
       capacity(0),
       result(NULL)
@@ -65,7 +65,10 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
     timer = new QTimer(this);
     timer->setSingleShot(true);
     timer->setInterval(this->waitInterval);
-    connect(timer, &QTimer::timeout, this, &HGMarkdownHighlighter::timerTimeout);
+    connect(timer, &QTimer::timeout,
+            this, [this]() {
+                startParseAndHighlight(false);
+            });
 
     static const int completeWaitTime = 500;
     m_completeTimer = new QTimer(this);
@@ -111,7 +114,7 @@ void HGMarkdownHighlighter::updateBlockUserData(int p_blockNum, const QString &p
 void HGMarkdownHighlighter::highlightBlock(const QString &text)
 {
     int blockNum = currentBlock().blockNumber();
-    if (!parsing && blockHighlights.size() > blockNum) {
+    if (m_blockHLResultReady && blockHighlights.size() > blockNum) {
         const QVector<HLUnit> &units = blockHighlights[blockNum];
         for (int i = 0; i < units.size(); ++i) {
             // TODO: merge two format within the same range
@@ -456,7 +459,7 @@ void HGMarkdownHighlighter::highlightLinkWithSpacesInURL(const QString &p_text)
     }
 }
 
-void HGMarkdownHighlighter::parse()
+void HGMarkdownHighlighter::parse(bool p_fast)
 {
     if (!parsing.testAndSetRelaxed(0, 1)) {
         return;
@@ -467,16 +470,22 @@ void HGMarkdownHighlighter::parse()
     }
 
     {
+    m_blockHLResultReady = false;
+
     int nrBlocks = document->blockCount();
     parseInternal();
 
     initBlockHighlightFromResult(nrBlocks);
 
-    initHtmlCommentRegionsFromResult();
+    m_blockHLResultReady = true;
 
-    initImageRegionsFromResult();
+    if (!p_fast) {
+        initHtmlCommentRegionsFromResult();
 
-    initHeaderRegionsFromResult();
+        initImageRegionsFromResult();
+
+        initHeaderRegionsFromResult();
+    }
 
     if (result) {
         pmh_free_elements(result);
@@ -524,25 +533,32 @@ void HGMarkdownHighlighter::handleContentChange(int /* position */, int charsRem
     timer->start();
 }
 
-void HGMarkdownHighlighter::timerTimeout()
+void HGMarkdownHighlighter::startParseAndHighlight(bool p_fast)
 {
-    qDebug() << "HGMarkdownHighlighter start a new parse";
-    parse();
-    if (!updateCodeBlocks() || m_firstParse) {
+    qDebug() << "HGMarkdownHighlighter start a new parse (fast" << p_fast << ")";
+    parse(p_fast);
+
+    if (p_fast) {
         rehighlight();
-    }
+    } else {
+        if (!updateCodeBlocks()) {
+            rehighlight();
+        }
 
-    highlightChanged();
-
-    if (m_firstParse) {
-        m_firstParse = false;
+        highlightChanged();
     }
 }
 
 void HGMarkdownHighlighter::updateHighlight()
 {
     timer->stop();
-    timerTimeout();
+    startParseAndHighlight(false);
+}
+
+void HGMarkdownHighlighter::updateHighlightFast()
+{
+    timer->stop();
+    startParseAndHighlight(true);
 }
 
 bool HGMarkdownHighlighter::updateCodeBlocks()

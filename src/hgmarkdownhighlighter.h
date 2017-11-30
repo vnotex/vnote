@@ -128,6 +128,9 @@ public:
 
     void clearPossiblePreviewBlocks(const QVector<int> &p_blocksToClear);
 
+    // Parse and only update the highlight results for rehighlight().
+    void updateHighlightFast();
+
 signals:
     void highlightCompleted();
 
@@ -144,11 +147,14 @@ protected:
     void highlightBlock(const QString &text) Q_DECL_OVERRIDE;
 
 public slots:
+    // Parse and rehighlight immediately.
     void updateHighlight();
 
 private slots:
     void handleContentChange(int position, int charsRemoved, int charsAdded);
-    void timerTimeout();
+
+    // @p_fast: if true, just parse and update styles.
+    void startParseAndHighlight(bool p_fast = false);
 
 private:
     QRegExp codeBlockStartExp;
@@ -186,11 +192,12 @@ private:
     QTimer *m_completeTimer;
 
     QAtomicInt parsing;
+
+    // Whether highlight results for blocks are ready.
+    bool m_blockHLResultReady;
+
     QTimer *timer;
     int waitInterval;
-
-    // Whether this is the first parse.
-    bool m_firstParse;
 
     // Block number of those blocks which possible contains previewed image.
     QSet<int> m_possiblePreviewBlocks;
@@ -209,7 +216,8 @@ private:
     // intended to complement this.
     void highlightLinkWithSpacesInURL(const QString &p_text);
 
-    void parse();
+    void parse(bool p_fast = false);
+
     void parseInternal();
 
     // Init highlight elements for all the blocks from parse results.

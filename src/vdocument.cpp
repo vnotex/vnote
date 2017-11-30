@@ -3,7 +3,9 @@
 #include <QDebug>
 
 VDocument::VDocument(const VFile *v_file, QObject *p_parent)
-    : QObject(p_parent), m_file(v_file)
+    : QObject(p_parent),
+      m_file(v_file),
+      m_readyToHighlight(false)
 {
 }
 
@@ -77,6 +79,7 @@ void VDocument::highlightTextCB(const QString &p_html, int p_id, int p_timeStamp
 
 void VDocument::noticeReadyToHighlightText()
 {
+    m_readyToHighlight = true;
     emit readyToHighlightText();
 }
 

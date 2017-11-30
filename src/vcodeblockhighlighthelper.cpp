@@ -8,8 +8,11 @@
 VCodeBlockHighlightHelper::VCodeBlockHighlightHelper(HGMarkdownHighlighter *p_highlighter,
                                                      VDocument *p_vdoc,
                                                      MarkdownConverterType p_type)
-    : QObject(p_highlighter), m_highlighter(p_highlighter), m_vdocument(p_vdoc),
-      m_type(p_type), m_timeStamp(0)
+    : QObject(p_highlighter),
+      m_highlighter(p_highlighter),
+      m_vdocument(p_vdoc),
+      m_type(p_type),
+      m_timeStamp(0)
 {
     connect(m_highlighter, &HGMarkdownHighlighter::codeBlocksUpdated,
             this, &VCodeBlockHighlightHelper::handleCodeBlocksUpdated);
@@ -56,6 +59,16 @@ QString VCodeBlockHighlightHelper::unindentCodeBlock(const QString &p_text)
 
 void VCodeBlockHighlightHelper::handleCodeBlocksUpdated(const QVector<VCodeBlock> &p_codeBlocks)
 {
+    if (!m_vdocument->isReadyToHighlight()) {
+        // Immediately return empty results.
+        QVector<HLUnitPos> emptyRes;
+        for (int i = 0; i < p_codeBlocks.size(); ++i) {
+            updateHighlightResults(0, emptyRes);
+        }
+
+        return;
+    }
+
     int curStamp = m_timeStamp.fetchAndAddRelaxed(1) + 1;
     m_codeBlocks = p_codeBlocks;
     for (int i = 0; i < m_codeBlocks.size(); ++i) {
