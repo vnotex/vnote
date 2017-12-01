@@ -8,6 +8,7 @@
 #include "vtextdocumentlayout.h"
 #include "vimageresourcemanager2.h"
 
+#define VIRTUAL_CURSOR_BLOCK_WIDTH 8
 
 enum class BlockState
 {
@@ -57,6 +58,16 @@ void VTextEdit::init()
     docLayout->setBlockImageEnabled(m_blockImageEnabled);
     doc->setDocumentLayout(docLayout);
 
+    docLayout->setVirtualCursorBlockWidth(VIRTUAL_CURSOR_BLOCK_WIDTH);
+
+    connect(docLayout, &VTextDocumentLayout::cursorBlockWidthUpdated,
+            this, [this](int p_width) {
+                if (p_width != cursorWidth()
+                    && p_width > VIRTUAL_CURSOR_BLOCK_WIDTH) {
+                    setCursorWidth(p_width);
+                }
+            });
+
     m_lineNumberArea = new VLineNumberArea(this,
                                            document(),
                                            fontMetrics().width(QLatin1Char('8')),
@@ -85,10 +96,6 @@ void VTextEdit::setLineLeading(qreal p_leading)
 void VTextEdit::resizeEvent(QResizeEvent *p_event)
 {
     QTextEdit::resizeEvent(p_event);
-
-    if (m_cursorBlockMode) {
-        setCursorWidth(p_event->size().width());
-    }
 
     if (m_lineNumberType != LineNumberType::None) {
         QRect rect = contentsRect();
@@ -345,13 +352,7 @@ void VTextEdit::setCursorBlockMode(bool p_enabled)
         m_cursorBlockMode = p_enabled;
         getLayout()->setCursorBlockMode(m_cursorBlockMode);
 
-        if (p_enabled) {
-            // Will set cursor width according to the viewport.
-            setCursorWidth(viewport()->width());
-        } else {
-            // Restore cursor width.
-            setCursorWidth(1);
-        }
+        setCursorWidth(m_cursorBlockMode ? VIRTUAL_CURSOR_BLOCK_WIDTH : 1);
     }
 }
 

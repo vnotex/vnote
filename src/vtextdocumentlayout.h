@@ -60,6 +60,12 @@ public:
 
     void setCursorBlockBg(const QColor &p_color);
 
+    void setVirtualCursorBlockWidth(int p_width);
+
+signals:
+    // Emit to update current cursor block width if m_cursorBlockMode is enabled.
+    void cursorBlockWidthUpdated(int p_width);
+
 protected:
     void documentChanged(int p_from, int p_charsRemoved, int p_charsAdded) Q_DECL_OVERRIDE;
 
@@ -235,6 +241,10 @@ private:
 
     void scaleSize(QSize &p_size, int p_width, int p_height);
 
+    // Get text length in pixel.
+    // @p_pos: position within the layout.
+    int getTextWidthWithinTextLine(const QTextLayout *p_layout, int p_pos, int p_length);
+
     // Document margin on left/right/bottom.
     qreal m_margin;
 
@@ -282,6 +292,8 @@ private:
 
     // Background of cursor block.
     QColor m_cursorBlockBg;
+
+    int m_lastCursorBlockWidth;
 };
 
 inline qreal VTextDocumentLayout::getLineLeading() const
@@ -316,4 +328,8 @@ inline void VTextDocumentLayout::setCursorBlockBg(const QColor &p_color)
     m_cursorBlockBg = p_color;
 }
 
+inline void VTextDocumentLayout::setVirtualCursorBlockWidth(int p_width)
+{
+    m_virtualCursorBlockWidth = p_width;
+}
 #endif // VTEXTDOCUMENTLAYOUT_H

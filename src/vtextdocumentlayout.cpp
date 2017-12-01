@@ -35,7 +35,8 @@ VTextDocumentLayout::VTextDocumentLayout(QTextDocument *p_doc,
       m_cursorBlockMode(false),
       m_virtualCursorBlockWidth(8),
       m_cursorBlockFg("#EEEEEE"),
-      m_cursorBlockBg("#222222")
+      m_cursorBlockBg("#222222"),
+      m_lastCursorBlockWidth(-1)
 {
 }
 
@@ -230,17 +231,23 @@ void VTextDocumentLayout::draw(QPainter *p_painter, const PaintContext &p_contex
         int bllen = block.length();
         bool drawCursor = p_context.cursorPosition >= blpos
                           && p_context.cursorPosition < blpos + bllen;
-        bool drawCursorAsBlock = drawCursor && m_cursorBlockMode;
-        if (drawCursorAsBlock) {
+        int cursorWidth = m_cursorWidth;
+        if (drawCursor && m_cursorBlockMode) {
             if (p_context.cursorPosition == blpos + bllen - 1) {
-                drawCursorAsBlock = false;
+                cursorWidth = m_virtualCursorBlockWidth;
             } else {
-                QTextLayout::FormatRange o;
-                o.start = p_context.cursorPosition - blpos;
-                o.length = 1;
-                o.format.setForeground(m_cursorBlockFg);
-                o.format.setBackground(m_cursorBlockBg);
-                selections.append(o);
+                // Get the width of the selection to update cursor width.
+                cursorWidth = getTextWidthWithinTextLine(layout,
+                                                         p_context.cursorPosition - blpos,
+                                                         1);
+                if (cursorWidth < m_cursorWidth) {
+                    cursorWidth = m_cursorWidth;
+                }
+            }
+
+            if (cursorWidth != m_lastCursorBlockWidth) {
+                m_lastCursorBlockWidth = cursorWidth;
+                emit cursorBlockWidthUpdated(m_lastCursorBlockWidth);
             }
         }
 
@@ -253,7 +260,7 @@ void VTextDocumentLayout::draw(QPainter *p_painter, const PaintContext &p_contex
 
         drawMarkers(p_painter, block, offset);
 
-        if ((drawCursor && !drawCursorAsBlock)
+        if (drawCursor
             || (p_context.cursorPosition < -1
                 && !layout->preeditAreaText().isEmpty())) {
             int cpos = p_context.cursorPosition;
@@ -266,8 +273,7 @@ void VTextDocumentLayout::draw(QPainter *p_painter, const PaintContext &p_contex
             layout->drawCursor(p_painter,
                                offset,
                                cpos,
-                               m_cursorBlockMode ? m_virtualCursorBlockWidth
-                                                 : m_cursorWidth);
+                               cursorWidth);
         }
 
         offset.ry() += rect.height();
@@ -1073,4 +1079,13 @@ qreal VTextDocumentLayout::fetchInlineImagesForOneLine(const QVector<VPreviewInf
     }
 
     return maxHeight;
+}
+
+int VTextDocumentLayout::getTextWidthWithinTextLine(const QTextLayout *p_layout,
+                                                    int p_pos,
+                                                    int p_length)
+{
+    QTextLine line = p_layout->lineForTextPosition(p_pos);
+    Q_ASSERT(p_pos + p_length <= line.textStart() + line.textLength());
+    return line.cursorToX(p_pos + p_length) - line.cursorToX(p_pos);
 }
