@@ -353,6 +353,12 @@ int VTextDocumentLayout::hitTest(const QPointF &p_point, Qt::HitTestAccuracy p_a
         }
     }
 
+    if (m_cursorBlockMode
+        && off == block.length() - 1
+        && off != 0) {
+        --off;
+    }
+
     return block.position() + off;
 }
 

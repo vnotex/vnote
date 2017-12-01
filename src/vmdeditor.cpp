@@ -311,7 +311,7 @@ void VMdEditor::mouseReleaseEvent(QMouseEvent *p_event)
         return;
     }
 
-    VTextEdit::mousePressEvent(p_event);
+    VTextEdit::mouseReleaseEvent(p_event);
 }
 
 void VMdEditor::mouseMoveEvent(QMouseEvent *p_event)
