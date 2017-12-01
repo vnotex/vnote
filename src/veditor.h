@@ -8,6 +8,7 @@
 #include <QColor>
 
 #include "veditconfig.h"
+#include "vconstants.h"
 #include "vfile.h"
 
 class QWidget;
@@ -17,6 +18,7 @@ class QTimer;
 class QLabel;
 class VVim;
 enum class VimMode;
+class QMouseEvent;
 
 
 enum class SelectionId {
@@ -144,9 +146,6 @@ public:
     // @p_modified: if true, delete the whole content and insert the new content.
     virtual void setContent(const QString &p_content, bool p_modified = false) = 0;
 
-    // Whether display cursor as block.
-    virtual void setCursorBlockEnabled(bool p_enabled) = 0;
-
     // Set the cursor block's background and foreground.
     virtual void setCursorBlockColor(const QColor &p_bg, const QColor &p_fg) = 0;
 
@@ -185,6 +184,9 @@ public:
     virtual void undoW() = 0;
 
     virtual void redoW() = 0;
+
+    // Whether display cursor as block.
+    virtual void setCursorBlockModeW(CursorBlock p_mode) = 0;
 
 protected:
     void init();
@@ -332,9 +334,6 @@ signals:
     // Request VEditTab to save this file.
     void saveNote();
 
-    // Selection changed by mouse.
-    void selectionChangedByMouse(bool p_hasSelection);
-
     // Emit when Vim status updated.
     void vimStatusUpdated(const VVim *p_vim);
 
@@ -343,6 +342,10 @@ signals:
 
     // Request the edit tab to close find and replace dialog.
     void requestCloseFindReplaceDialog();
+
+    void mouseMoved(QMouseEvent *p_event);
+
+    void mousePressed(QMouseEvent *p_event);
 
 private slots:
     // Timer for find-wrap label.

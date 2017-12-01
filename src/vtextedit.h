@@ -5,6 +5,7 @@
 #include <QTextBlock>
 
 #include "vlinenumberarea.h"
+#include "vconstants.h"
 
 class VTextDocumentLayout;
 class QPainter;
@@ -56,7 +57,7 @@ public:
 
     void relayout(const QSet<int> &p_blocks);
 
-    void setCursorBlockMode(bool p_enabled);
+    void setCursorBlockMode(CursorBlock p_mode);
 
     void setCursorBlockFg(const QColor &p_color);
 
@@ -85,7 +86,7 @@ private:
 
     bool m_blockImageEnabled;
 
-    bool m_cursorBlockMode;
+    CursorBlock m_cursorBlockMode;
 };
 
 inline void VTextEdit::setLineNumberType(LineNumberType p_type)

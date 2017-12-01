@@ -32,7 +32,7 @@ VTextDocumentLayout::VTextDocumentLayout(QTextDocument *p_doc,
       m_blockImageEnabled(false),
       m_imageWidthConstrainted(false),
       m_imageLineColor("#9575CD"),
-      m_cursorBlockMode(false),
+      m_cursorBlockMode(CursorBlock::None),
       m_virtualCursorBlockWidth(8),
       m_cursorBlockFg("#EEEEEE"),
       m_cursorBlockBg("#222222"),
@@ -232,14 +232,17 @@ void VTextDocumentLayout::draw(QPainter *p_painter, const PaintContext &p_contex
         bool drawCursor = p_context.cursorPosition >= blpos
                           && p_context.cursorPosition < blpos + bllen;
         int cursorWidth = m_cursorWidth;
-        if (drawCursor && m_cursorBlockMode) {
-            if (p_context.cursorPosition == blpos + bllen - 1) {
+        int cursorPosition = p_context.cursorPosition - blpos;
+        if (drawCursor && m_cursorBlockMode != CursorBlock::None) {
+            if (cursorPosition > 0 && m_cursorBlockMode == CursorBlock::LeftSide) {
+                --cursorPosition;
+            }
+
+            if (cursorPosition == bllen - 1) {
                 cursorWidth = m_virtualCursorBlockWidth;
             } else {
                 // Get the width of the selection to update cursor width.
-                cursorWidth = getTextWidthWithinTextLine(layout,
-                                                         p_context.cursorPosition - blpos,
-                                                         1);
+                cursorWidth = getTextWidthWithinTextLine(layout, cursorPosition, 1);
                 if (cursorWidth < m_cursorWidth) {
                     cursorWidth = m_cursorWidth;
                 }
@@ -263,16 +266,14 @@ void VTextDocumentLayout::draw(QPainter *p_painter, const PaintContext &p_contex
         if (drawCursor
             || (p_context.cursorPosition < -1
                 && !layout->preeditAreaText().isEmpty())) {
-            int cpos = p_context.cursorPosition;
-            if (cpos < -1) {
-                cpos = layout->preeditAreaPosition() - (cpos + 2);
-            } else {
-                cpos -= blpos;
+            if (p_context.cursorPosition < -1) {
+                cursorPosition = layout->preeditAreaPosition()
+                                 - (p_context.cursorPosition + 2);
             }
 
             layout->drawCursor(p_painter,
                                offset,
-                               cpos,
+                               cursorPosition,
                                cursorWidth);
         }
 
@@ -351,12 +352,6 @@ int VTextDocumentLayout::hitTest(const QPointF &p_point, Qt::HitTestAccuracy p_a
             off = line.xToCursor(pos.x(), QTextLine::CursorBetweenCharacters);
             break;
         }
-    }
-
-    if (m_cursorBlockMode
-        && off == block.length() - 1
-        && off != 0) {
-        --off;
     }
 
     return block.position() + off;

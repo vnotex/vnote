@@ -12,6 +12,7 @@ class VEditor;
 class QKeyEvent;
 class VEditConfig;
 class QKeyEvent;
+class QMouseEvent;
 
 enum class VimMode {
     Normal = 0,
@@ -163,7 +164,7 @@ public:
     VimMode getMode() const;
 
     // Set current mode.
-    void setMode(VimMode p_mode, bool p_clearSelection = true);
+    void setMode(VimMode p_mode, bool p_clearSelection = true, int p_position = -1);
 
     // Set current register.
     void setCurrentRegisterName(QChar p_reg);
@@ -218,9 +219,13 @@ signals:
     void commandLineTriggered(VVim::CommandLineType p_type);
 
 private slots:
-    // When user use mouse to select texts in Normal mode, we should change to
-    // Visual mode.
-    void selectionToVisualMode(bool p_hasText);
+    void handleMousePressed(QMouseEvent *p_event);
+
+    void handleMouseMoved(QMouseEvent *p_event);
+
+    // When we display cursor as block, it makes no sense to put cursor at the
+    // end of line.
+    void amendCursorPosition();
 
 private:
     // Struct for a key press.
@@ -805,6 +810,12 @@ private:
     Register &getRegister(QChar p_regName) const;
     void setRegister(QChar p_regName, const QString &p_val);
 
+    // May need to do these things:
+    // 1. Change the CursorBlock mode;
+    // 2. Alter the selection to assure the character in m_positionBeforeVisualMode
+    // is always selected.
+    void maintainSelectionInVisualMode(QTextCursor *p_cursor = NULL);
+
     VEditor *m_editor;
     const VEditConfig *m_editConfig;
     VimMode m_mode;
@@ -848,6 +859,11 @@ private:
 
     // Whether enter insert mode after a command.
     bool m_insertModeAfterCommand;
+
+    // Cursor position when entering Visual mode.
+    // After displaying cursor as block, we need to always select current character
+    // when entering Visual mode.
+    int m_positionBeforeVisualMode;
 
     static const QChar c_unnamedRegister;
     static const QChar c_blackHoleRegister;

@@ -106,7 +106,8 @@ VVim::VVim(VEditor *p_editor)
       m_leaderKey(Key(Qt::Key_Space)),
       m_replayLeaderSequence(false),
       m_registerPending(false),
-      m_insertModeAfterCommand(false)
+      m_insertModeAfterCommand(false),
+      m_positionBeforeVisualMode(0)
 {
     Q_ASSERT(m_editConfig->m_enableVimMode);
 
@@ -114,8 +115,10 @@ VVim::VVim(VEditor *p_editor)
 
     initRegisters();
 
-    connect(m_editor->object(), &VEditorObject::selectionChangedByMouse,
-            this, &VVim::selectionToVisualMode);
+    connect(m_editor->object(), &VEditorObject::mousePressed,
+            this, &VVim::handleMousePressed);
+    connect(m_editor->object(), &VEditorObject::mouseMoved,
+            this, &VVim::handleMouseMoved);
 }
 
 // Set @p_cursor's position specified by @p_positionInBlock.
@@ -1332,26 +1335,33 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
     case Qt::Key_Escape:
     {
         // Clear selection and enter normal mode.
+        int position = -1;
+        if (checkMode(VimMode::Visual)) {
+            QTextCursor cursor = m_editor->textCursorW();
+            if (cursor.position() > cursor.anchor()) {
+                position = cursor.position() - 1;
+            }
+        }
+
         bool ret = clearSelection();
         if (!ret && checkMode(VimMode::Normal)) {
             emit m_editor->object()->requestCloseFindReplaceDialog();
         }
 
-        setMode(VimMode::Normal);
+        setMode(VimMode::Normal, true, position);
         break;
     }
 
     case Qt::Key_V:
     {
         if (modifiers == Qt::NoModifier) {
-            // Toggle Visual Mode.
-            clearSelection();
-            VimMode mode = VimMode::Visual;
-            if (m_mode == VimMode::Visual) {
-                mode = VimMode::Normal;
+            if (checkMode(VimMode::Visual)) {
+                setMode(VimMode::Normal, true);
+            } else {
+                // Toggle Visual Mode.
+                setMode(VimMode::Visual);
+                maintainSelectionInVisualMode();
             }
-
-            setMode(mode);
         } else if (modifiers == Qt::ShiftModifier) {
             // Visual Line Mode.
             clearSelection();
@@ -2224,9 +2234,18 @@ VimMode VVim::getMode() const
     return m_mode;
 }
 
-void VVim::setMode(VimMode p_mode, bool p_clearSelection)
+void VVim::setMode(VimMode p_mode, bool p_clearSelection, int p_position)
 {
     if (m_mode != p_mode) {
+        QTextCursor cursor = m_editor->textCursorW();
+        int position = p_position;
+        if (position == -1
+            && m_mode == VimMode::Visual
+            && p_mode == VimMode::Normal
+            && cursor.position() > cursor.anchor()) {
+            position = cursor.position() - 1;
+        }
+
         if (p_clearSelection) {
             clearSelection();
         }
@@ -2240,7 +2259,26 @@ void VVim::setMode(VimMode p_mode, bool p_clearSelection)
         m_mode = p_mode;
         resetState();
 
-        m_editor->setCursorBlockEnabled(checkMode(VimMode::Normal));
+        switch (m_mode) {
+        case VimMode::Insert:
+            m_editor->setCursorBlockModeW(CursorBlock::None);
+            break;
+
+        case VimMode::Visual:
+            m_positionBeforeVisualMode = cursor.anchor();
+            V_FALLTHROUGH;
+
+        default:
+            m_editor->setCursorBlockModeW(CursorBlock::RightSide);
+            break;
+        }
+
+        if (position != -1) {
+            cursor.setPosition(position);
+            m_editor->setTextCursorW(cursor);
+        }
+
+        amendCursorPosition();
 
         emit modeChanged(m_mode);
         emit vimStatusUpdated(this);
@@ -2436,8 +2474,10 @@ void VVim::processMoveAction(QList<Token> &p_tokens)
             break;
         }
 
-        if (m_mode == VimMode::VisualLine) {
+        if (checkMode(VimMode::VisualLine)) {
             expandSelectionToWholeLines(cursor);
+        } else if (checkMode(VimMode::Visual)) {
+            maintainSelectionInVisualMode(&cursor);
         }
 
         m_editor->setTextCursorW(cursor);
@@ -4848,15 +4888,58 @@ int VVim::blockCountOfPageStep() const
     return pageLineCount;
 }
 
-void VVim::selectionToVisualMode(bool p_hasText)
+void VVim::maintainSelectionInVisualMode(QTextCursor *p_cursor)
 {
-    if (p_hasText) {
-        if (m_mode == VimMode::Normal) {
-            // Enter visual mode without clearing the selection.
-            setMode(VimMode::Visual, false);
+    // We need to always select the character on current position.
+    QTextCursor *cursor = p_cursor;
+    QTextCursor tmpCursor = m_editor->textCursorW();
+    if (!cursor) {
+        cursor = &tmpCursor;
+    }
+
+    bool hasChanged = false;
+    int pos = cursor->position();
+    int anchor = cursor->anchor();
+
+    if (pos > anchor) {
+        Q_ASSERT(pos > m_positionBeforeVisualMode);
+        if (anchor > m_positionBeforeVisualMode) {
+            // Re-select.
+            cursor->setPosition(m_positionBeforeVisualMode);
+            cursor->setPosition(pos, QTextCursor::KeepAnchor);
+            hasChanged = true;
         }
-    } else if (m_mode == VimMode::Visual || m_mode == VimMode::VisualLine) {
-        setMode(VimMode::Normal);
+
+        m_editor->setCursorBlockModeW(CursorBlock::LeftSide);
+    } else if (pos == anchor) {
+        Q_ASSERT(anchor >= m_positionBeforeVisualMode);
+        // Re-select.
+        if (anchor == m_positionBeforeVisualMode) {
+            cursor->setPosition(m_positionBeforeVisualMode + 1);
+            cursor->setPosition(pos, QTextCursor::KeepAnchor);
+            hasChanged = true;
+
+            m_editor->setCursorBlockModeW(CursorBlock::RightSide);
+        } else {
+            cursor->setPosition(m_positionBeforeVisualMode);
+            cursor->setPosition(pos, QTextCursor::KeepAnchor);
+            hasChanged = true;
+
+            m_editor->setCursorBlockModeW(CursorBlock::LeftSide);
+        }
+    } else {
+        // Re-select.
+        if (anchor <= m_positionBeforeVisualMode) {
+            cursor->setPosition(m_positionBeforeVisualMode + 1);
+            cursor->setPosition(pos, QTextCursor::KeepAnchor);
+            hasChanged = true;
+        }
+
+        m_editor->setCursorBlockModeW(CursorBlock::RightSide);
+    }
+
+    if (hasChanged && !p_cursor) {
+        m_editor->setTextCursorW(*cursor);
     }
 }
 
@@ -5827,4 +5910,63 @@ QString VVim::readRegister(int p_key, int p_modifiers)
     }
 
     return "";
+}
+
+void VVim::amendCursorPosition()
+{
+    if (checkMode(VimMode::Normal)) {
+        QTextCursor cursor = m_editor->textCursorW();
+        if (cursor.atBlockEnd() && !cursor.atBlockStart()) {
+            // Normal mode and cursor at the end of a non-empty block.
+            cursor.movePosition(QTextCursor::PreviousCharacter);
+            m_editor->setTextCursorW(cursor);
+            qDebug() << "vvim alter the cursor position one character left";
+        }
+    }
+}
+
+void VVim::handleMousePressed(QMouseEvent *p_event)
+{
+    Q_UNUSED(p_event);
+    QTextCursor cursor = m_editor->textCursorW();
+    if (checkMode(VimMode::Visual) || checkMode(VimMode::VisualLine)) {
+        setMode(VimMode::Normal);
+    } else if (checkMode(VimMode::Normal)) {
+        if (cursor.hasSelection()) {
+            setMode(VimMode::Visual, false);
+            maintainSelectionInVisualMode();
+        }
+    }
+}
+
+void VVim::handleMouseMoved(QMouseEvent *p_event)
+{
+    if (p_event->buttons() != Qt::LeftButton) {
+        return;
+    }
+
+    QTextCursor cursor = m_editor->textCursorW();
+    if (cursor.hasSelection()) {
+        if (checkMode(VimMode::Normal)) {
+            int pos = cursor.position();
+            int anchor = cursor.anchor();
+            QTextBlock block = cursor.document()->findBlock(anchor);
+            if (anchor > 0 && anchor == block.position() + block.length() - 1) {
+                // Move anchor left.
+                cursor.setPosition(anchor - 1);
+                cursor.setPosition(pos, QTextCursor::KeepAnchor);
+                m_editor->setTextCursorW(cursor);
+            }
+
+            setMode(VimMode::Visual, false);
+            maintainSelectionInVisualMode();
+        } else if (checkMode(VimMode::Visual)) {
+            // We need to assure we always select the character on m_positionBeforeVisualMode.
+            maintainSelectionInVisualMode();
+        }
+    } else if (checkMode(VimMode::Visual)) {
+        // User move cursor in Visual mode. Now the cursor and anchor
+        // are at the same position.
+        maintainSelectionInVisualMode();
+    }
 }

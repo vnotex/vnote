@@ -49,7 +49,7 @@ void VTextEdit::init()
 
     m_blockImageEnabled = false;
 
-    m_cursorBlockMode = false;
+    m_cursorBlockMode = CursorBlock::None;
 
     m_imageMgr = new VImageResourceManager2();
 
@@ -346,13 +346,14 @@ void VTextEdit::setImageLineColor(const QColor &p_color)
     getLayout()->setImageLineColor(p_color);
 }
 
-void VTextEdit::setCursorBlockMode(bool p_enabled)
+void VTextEdit::setCursorBlockMode(CursorBlock p_mode)
 {
-    if (p_enabled != m_cursorBlockMode) {
-        m_cursorBlockMode = p_enabled;
+    if (p_mode != m_cursorBlockMode) {
+        m_cursorBlockMode = p_mode;
         getLayout()->setCursorBlockMode(m_cursorBlockMode);
-
-        setCursorWidth(m_cursorBlockMode ? VIRTUAL_CURSOR_BLOCK_WIDTH : 1);
+        getLayout()->clearLastCursorBlockWidth();
+        setCursorWidth(m_cursorBlockMode != CursorBlock::None ? VIRTUAL_CURSOR_BLOCK_WIDTH
+                                                              : 1);
     }
 }
 

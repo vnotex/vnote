@@ -5,6 +5,7 @@
 #include <QVector>
 #include <QSize>
 #include <QSet>
+#include "vconstants.h"
 
 class VImageResourceManager2;
 struct VPreviewedImageInfo;
@@ -54,13 +55,15 @@ public:
 
     void setImageLineColor(const QColor &p_color);
 
-    void setCursorBlockMode(bool p_enabled);
+    void setCursorBlockMode(CursorBlock p_mode);
 
     void setCursorBlockFg(const QColor &p_color);
 
     void setCursorBlockBg(const QColor &p_color);
 
     void setVirtualCursorBlockWidth(int p_width);
+
+    void clearLastCursorBlockWidth();
 
 signals:
     // Emit to update current cursor block width if m_cursorBlockMode is enabled.
@@ -282,7 +285,7 @@ private:
     QColor m_imageLineColor;
 
     // Draw cursor as block.
-    bool m_cursorBlockMode;
+    CursorBlock m_cursorBlockMode;
 
     // Virtual cursor block: cursor block on no character.
     int m_virtualCursorBlockWidth;
@@ -313,9 +316,9 @@ inline void VTextDocumentLayout::scaleSize(QSize &p_size, int p_width, int p_hei
     }
 }
 
-inline void VTextDocumentLayout::setCursorBlockMode(bool p_enabled)
+inline void VTextDocumentLayout::setCursorBlockMode(CursorBlock p_mode)
 {
-    m_cursorBlockMode = p_enabled;
+    m_cursorBlockMode = p_mode;
 }
 
 inline void VTextDocumentLayout::setCursorBlockFg(const QColor &p_color)
@@ -331,5 +334,10 @@ inline void VTextDocumentLayout::setCursorBlockBg(const QColor &p_color)
 inline void VTextDocumentLayout::setVirtualCursorBlockWidth(int p_width)
 {
     m_virtualCursorBlockWidth = p_width;
+}
+
+inline void VTextDocumentLayout::clearLastCursorBlockWidth()
+{
+    m_lastCursorBlockWidth = -1;
 }
 #endif // VTEXTDOCUMENTLAYOUT_H

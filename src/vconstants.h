@@ -118,4 +118,14 @@ enum class StartupPageType
     Invalid
 };
 
+// Cursor block mode.
+enum class CursorBlock
+{
+    None = 0,
+    // Display a cursor block on the character on the right side of the cursor.
+    RightSide,
+    // Display a cursor block on the character on the left side of the cursor.
+    LeftSide
+};
+
 #endif

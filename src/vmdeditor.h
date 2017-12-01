@@ -59,9 +59,6 @@ public:
 
     void setContent(const QString &p_content, bool p_modified = false) Q_DECL_OVERRIDE;
 
-    // Whether display cursor as block.
-    void setCursorBlockEnabled(bool p_enabled) Q_DECL_OVERRIDE;
-
     // Set the cursor block's background and foreground.
     void setCursorBlockColor(const QColor &p_bg, const QColor &p_fg) Q_DECL_OVERRIDE;
 
@@ -148,6 +145,12 @@ public:
         redo();
     }
 
+    // Whether display cursor as block.
+    void setCursorBlockModeW(CursorBlock p_mode) Q_DECL_OVERRIDE
+    {
+        setCursorBlockMode(p_mode);
+    }
+
 signals:
     // Signal when headers change.
     void headersChanged(const QVector<VTableOfContentItem> &p_headers);
@@ -217,11 +220,6 @@ private:
 
     bool m_freshEdit;
 };
-
-inline void VMdEditor::setCursorBlockEnabled(bool p_enabled)
-{
-    setCursorBlockMode(p_enabled);
-}
 
 inline void VMdEditor::setCursorBlockColor(const QColor &p_bg, const QColor &p_fg)
 {

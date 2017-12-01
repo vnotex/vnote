@@ -302,7 +302,7 @@ void VMdEditor::mousePressEvent(QMouseEvent *p_event)
 
     VTextEdit::mousePressEvent(p_event);
 
-    emit m_object->selectionChangedByMouse(textCursor().hasSelection());
+    emit m_object->mousePressed(p_event);
 }
 
 void VMdEditor::mouseReleaseEvent(QMouseEvent *p_event)
@@ -322,7 +322,7 @@ void VMdEditor::mouseMoveEvent(QMouseEvent *p_event)
 
     VTextEdit::mouseMoveEvent(p_event);
 
-    emit m_object->selectionChangedByMouse(textCursor().hasSelection());
+    emit m_object->mouseMoved(p_event);
 }
 
 QVariant VMdEditor::inputMethodQuery(Qt::InputMethodQuery p_query) const
