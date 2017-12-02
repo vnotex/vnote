@@ -2241,11 +2241,18 @@ void VVim::setMode(VimMode p_mode, bool p_clearSelection, int p_position)
     if (m_mode != p_mode) {
         QTextCursor cursor = m_editor->textCursorW();
         int position = p_position;
-        if (position == -1
-            && m_mode == VimMode::Visual
-            && p_mode == VimMode::Normal
-            && cursor.position() > cursor.anchor()) {
-            position = cursor.position() - 1;
+        if (position == -1) {
+            if (m_mode == VimMode::Visual
+                && p_mode == VimMode::Normal
+                && cursor.position() > cursor.anchor()) {
+                position = cursor.position() - 1;
+            } else if (m_mode == VimMode::Insert
+                       && p_mode == VimMode::Normal) {
+                position = cursor.position() - 1;
+                if (position < 0) {
+                    position = 0;
+                }
+            }
         }
 
         if (p_clearSelection) {
