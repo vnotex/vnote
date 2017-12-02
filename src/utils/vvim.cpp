@@ -2196,6 +2196,8 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 clear_accept:
     resetState();
 
+    amendCursorPosition();
+
     if (m_insertModeAfterCommand
         && !checkMode(VimMode::Visual)
         && !checkMode(VimMode::VisualLine)) {
@@ -5920,7 +5922,6 @@ void VVim::amendCursorPosition()
             // Normal mode and cursor at the end of a non-empty block.
             cursor.movePosition(QTextCursor::PreviousCharacter);
             m_editor->setTextCursorW(cursor);
-            qDebug() << "vvim alter the cursor position one character left";
         }
     }
 }
