@@ -3987,8 +3987,6 @@ void VVim::processPasteAction(QList<Token> &p_tokens, bool p_pasteBefore)
 
             changed = true;
         }
-
-        setMode(VimMode::Normal);
     } else {
         // Normal mode.
         if (isBlock) {
@@ -4040,6 +4038,10 @@ void VVim::processPasteAction(QList<Token> &p_tokens, bool p_pasteBefore)
     }
 
     cursor.endEditBlock();
+
+    if (!checkMode(VimMode::Normal)) {
+        setMode(VimMode::Normal);
+    }
 
     if (changed) {
         m_editor->setTextCursorW(cursor);
