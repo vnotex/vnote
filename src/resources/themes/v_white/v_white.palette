@@ -7,15 +7,41 @@ qss_file=v_white.qss
 [phony]
 ; Abstract color attributes.
 base_fg=#000000
-base_color_1=#EEEEEE
-hover_color_1=#C4C4C4
-selected_color_1=#BEBEBE
-base_color_2=#E0E0E0
-separator_color=#E0E0E0
-border_color=#9E9E9E
-focus_color=#BDBDBD
-content_color=#FAFAFA
-selection_color=#64B5F6
+base_bg=#F5F5F5
+
+main_fg=#000000
+main_bg=#F5F5F5
+
+title_fg=#000000
+title_bg=#E3DEDE
+
+hover_fg=#000000
+hover_bg=#DCDCDC
+
+selected_fg=#000000
+selected_bg=#D3D3D3
+
+active_fg=#000000
+active_bg=#C0C0C0
+
+inactive_fg=#000000
+inactive_bg=#D0D0D0
+
+focus_fg=#000000
+focus_bg=#C0C0C0
+
+pressed_fg=#000000
+pressed_bg=#808080
+
+separator_bg=#C0C0C0
+
+border_bg=#C0C0C0
+
+content_fg=#000000
+content_bg=#FFFFFF
+
+selection_fg=#000000
+selection_bg=#64b5f6
 
 [widgets]
 ; Widget color attributes.
@@ -24,57 +50,57 @@ selection_color=#64B5F6
 widget_fg=@base_fg
 
 ; Separator of dock widgets.
-dock_separator_bg=@base_color_2
-dock_separator_hover_bg=@base_color_2
+dock_separator_bg=@title_bg
+dock_separator_hover_bg=@title_bg
 
 ; Menubar.
-menubar_bg=@base_color_1
-menubar_fg=@base_fg
-menubar_item_selected_bg=@selected_color_1
+menubar_bg=@main_bg
+menubar_fg=@main_fg
+menubar_item_selected_bg=@selected_bg
 
 ; Menu.
-menu_bg=@base_color_1
+menu_bg=@base_bg
 menu_fg=@base_fg
-menu_item_selected_bg=@selected_color_1
-menu_separator_bg=@separator_color
+menu_item_selected_bg=@selected_bg
+menu_separator_bg=@separator_bg
 
 ; Tooltip.
-tooltip_border=@base_color_2
-tooltip_bg=@base_color_1
+tooltip_border=@border_bg
+tooltip_bg=@base_bg
 tooltip_fg=@base_fg
 
 ; Toolbar.
-toolbar_bg=@base_color_1
-toolbutton_hover_bg=@hover_color_1
-toolbutton_pressed_bg=@selected_color_1
+toolbar_bg=@main_bg
+toolbutton_hover_bg=@hover_bg
+toolbutton_pressed_bg=@pressed_bg
 
 ; Dockwidget.
-dockwidget_title_bg=@base_color_2
-dockwidget_button_hover_bg=@hover_color_1
+dockwidget_title_bg=@title_bg
+dockwidget_button_hover_bg=@hover_bg
 
 ; PushButton.
 pushbutton_fg=@base_fg
 pushbutton_bg=transparent
-pushbutton_border=@border_color
-pushbutton_pressed_bg=@selected_color_1
-pushbutton_hover_bg=@hover_color_1
+pushbutton_border=@border_bg
+pushbutton_pressed_bg=@pressed_bg
+pushbutton_hover_bg=@hover_bg
 pushbutton_default_border=#424242
 
-pushbutton_cornerbtn_hover_bg=@hover_color_1
-pushbutton_cornerbtn_focus_bg=@focus_color
+pushbutton_cornerbtn_hover_bg=@hover_bg
+pushbutton_cornerbtn_focus_bg=@focus_bg
 
-pushbutton_statusbtn_hover_bg=@hover_color_1
-pushbutton_statusbtn_focus_bg=@focus_color
+pushbutton_statusbtn_hover_bg=@hover_bg
+pushbutton_statusbtn_focus_bg=@focus_bg
 
-pushbutton_flatbtn_hover_bg=@hover_color_1
-pushbutton_flatbtn_focus_bg=@focus_color
+pushbutton_flatbtn_hover_bg=@hover_bg
+pushbutton_flatbtn_focus_bg=@focus_bg
 
-pushbutton_selectionbtn_hover_bg=@hover_color_1
-pushbutton_selectionbtn_focus_bg=@focus_color
+pushbutton_selectionbtn_hover_bg=@hover_bg
+pushbutton_selectionbtn_focus_bg=@focus_bg
 
-pushbutton_titlebtn_bg=@base_color_2
-pushbutton_titlebtn_hover_bg=@hover_color_1
-pushbutton_titlebtn_focus_bg=@focus_color
+pushbutton_titlebtn_bg=@title_bg
+pushbutton_titlebtn_hover_bg=@hover_bg
+pushbutton_titlebtn_focus_bg=@focus_bg
 
 pushbutton_dangerbtn_fg=#FFF
 pushbutton_dangerbtn_border=#D43F3A
@@ -84,86 +110,86 @@ pushbutton_dangerbtn_hover_bg=#C9302C
 pushbutton_dangerbtn_hover_border=#AC2925
 
 ; ComboBox.
-combobox_border=@border_color
-combobox_fg=@base_fg
-combobox_bg=@content_color
-combobox_view_border=@border_color
-combobox_view_selected_bg=@selected_color_1
-combobox_view_selected_fg=@base_fg
-combobox_view_item_hover_fg=@base_fg
-combobox_view_item_hover_bg=@hover_color_1
-combobox_focus_bg=@focus_color
+combobox_border=@border_bg
+combobox_fg=@content_fg
+combobox_bg=@content_bg
+combobox_view_border=@border_bg
+combobox_view_selected_bg=@selected_bg
+combobox_view_selected_fg=@selected_fg
+combobox_view_item_hover_fg=@hover_fg
+combobox_view_item_hover_bg=@hover_bg
+combobox_focus_bg=@focus_bg
 
 ; Label.
 label_fg=@base_fg
-label_titlelabel_fg=@base_fg
-label_titlelabel_bg=@base_color_2
+label_titlelabel_fg=@title_fg
+label_titlelabel_bg=@title_bg
 
 ; LineEdit.
-lineedit_border=@border_color
-lineedit_fg=@base_fg
-lineedit_bg=@content_color
-lineedit_selection_fg=@base_fg
-lineedit_selection_bg=@selection_color
+lineedit_border=@border_bg
+lineedit_fg=@content_fg
+lineedit_bg=@content_bg
+lineedit_selection_fg=@selection_fg
+lineedit_selection_bg=@selection_bg
 
 ; TabWidget.
-tabwidget_pane_border=@selected_color_1
+tabwidget_pane_border=@selected_bg
 
 ; TabBar.
 tabbar_fg=@base_fg
-tabbar_bg=@base_color_1
-tabbar_border=@border_color
+tabbar_bg=@base_bg
+tabbar_border=@border_bg
 
-tabbar_selected_fg=@base_fg
-tabbar_selected_bg=@selected_color_1
-tabbar_selected_border=@border_color
+tabbar_selected_fg=@selected_fg
+tabbar_selected_bg=@selected_bg
+tabbar_selected_border=@border_bg
 
-tabbar_hover_fg=@base_fg
-tabbar_hover_bg=@hover_color_1
-tabbar_hover_border=@border_color
+tabbar_hover_fg=@hover_fg
+tabbar_hover_bg=@hover_bg
+tabbar_hover_border=@border_bg
 
-tabbar_closebutton_hover_bg=@hover_color_1
-tabbar_clostbutton_focus_bg=@focus_color
+tabbar_closebutton_hover_bg=@hover_bg
+tabbar_clostbutton_focus_bg=@focus_bg
 
 ; SelectorItem.
 selectoritem_border=@base_fg
 selectoritem_fg=@base_fg
-selectoritem_bg=@base_color_1
+selectoritem_bg=@base_bg
 
 ; InsertSelector.
-insertselector_bg=@base_color_1
+insertselector_bg=@base_bg
 
 ; TreeView.
-treeview_fg=@base_fg
-treeview_bg=@content_color
-treeview_item_hover_fg=@base_fg
-treeview_item_hover_bg=@hover_color_1
-treeview_item_selected_fg=@base_fg
-treeview_item_selected_bg=@selected_color_1
-treeview_item_selected_avtive_fg=@base_fg
-treeview_item_selected_avtive_bg=@selected_color_1
-treeview_item_selected_inactive_fg=@base_fg
-treeview_item_selected_inactive_bg=#D0D0D0
+treeview_fg=@content_fg
+treeview_bg=@content_bg
+treeview_item_hover_fg=@hover_fg
+treeview_item_hover_bg=@hover_bg
+treeview_item_selected_fg=@selected_fg
+treeview_item_selected_bg=@selected_bg
+treeview_item_selected_avtive_fg=@active_fg
+treeview_item_selected_avtive_bg=@active_bg
+treeview_item_selected_inactive_fg=@inactive_fg
+treeview_item_selected_inactive_bg=@inactive_bg
 
 ; ListView.
-listview_fg=@base_fg
-listview_bg=@content_color
-listview_item_hover_fg=@base_fg
-listview_item_hover_bg=@hover_color_1
-listview_item_selected_fg=@base_fg
-listview_item_selected_bg=@selected_color_1
-listview_item_selected_avtive_fg=@base_fg
-listview_item_selected_avtive_bg=@selected_color_1
-listview_item_selected_inactive_fg=@base_fg
-listview_item_selected_inactive_bg=#D0D0D0
+listview_fg=@content_fg
+listview_bg=@content_bg
+listview_item_hover_fg=@hover_fg
+listview_item_hover_bg=@hover_bg
+listview_item_selected_fg=@selected_fg
+listview_item_selected_bg=@selected_bg
+listview_item_selected_avtive_fg=@active_fg
+listview_item_selected_avtive_bg=@active_bg
+listview_item_selected_inactive_fg=@inactive_fg
+listview_item_selected_inactive_bg=@inactive_bg
 
 ; Splitter.
-splitter_handle_bg=@base_color_2
-splitter_mainsplitter_border=@base_color_2
+splitter_handle_bg=@title_bg
+splitter_mainsplitter_border=@title_bg
 
 ; StatusBar.
-statusbar_fg=@base_fg
-statusbar_bg=@base_color_1
+statusbar_fg=@main_fg
+statusbar_bg=@main_bg
 
 ; ScrollBar.
 scrollbar_bg=#EEEEEE

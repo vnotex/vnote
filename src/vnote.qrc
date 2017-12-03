@@ -146,5 +146,10 @@
         <file>resources/themes/v_white/float.svg</file>
         <file>resources/themes/v_white/v_white.palette</file>
         <file>resources/themes/v_white/v_white.qss</file>
+        <file>resources/themes/v_white/branch_closed.svg</file>
+        <file>resources/themes/v_white/branch_end.svg</file>
+        <file>resources/themes/v_white/branch_more.svg</file>
+        <file>resources/themes/v_white/branch_open.svg</file>
+        <file>resources/themes/v_white/line.svg</file>
     </qresource>
 </RCC>

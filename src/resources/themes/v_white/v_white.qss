@@ -461,7 +461,7 @@ VInsertSelector {
 QTreeView {
     color: @treeview_fg;
     background: @treeview_bg;
-    show-decoration-selected: 1;
+    show-decoration-selected: 0;
     padding-top: 3px;
     border: none;
 }
@@ -490,13 +490,37 @@ QTreeView::item:selected:!active {
     color: @treeview_item_selected_inactive_fg;
     background: @treeview_item_selected_inactive_bg;
 }
+
+QTreeView::branch:has-siblings:!adjoins-item {
+    border-image: url(line.svg) 0;
+}
+
+QTreeView::branch:has-siblings:adjoins-item {
+    border-image: url(branch_more.svg) 0;
+}
+
+QTreeView::branch:!has-children:!has-siblings:adjoins-item {
+    border-image: url(branch_end.svg) 0;
+}
+
+QTreeView::branch:has-children:!has-siblings:closed,
+QTreeView::branch:closed:has-children:has-siblings {
+    border-image: none;
+    image: url(branch_closed.svg);
+}
+
+QTreeView::branch:open:has-children:!has-siblings,
+QTreeView::branch:open:has-children:has-siblings  {
+    border-image: none;
+    image: url(branch_open.svg);
+}
 /* End QTreeView */
 
 /* QListView */
 QListView {
     color: @listview_fg;
     background: @listview_bg;
-    show-decoration-selected: 1;
+    show-decoration-selected: 0;
     padding-top: 3px;
     border: none;
 }
