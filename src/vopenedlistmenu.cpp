@@ -6,12 +6,16 @@
 #include <QTimer>
 #include <QString>
 #include <QStyleFactory>
+#include <QWidgetAction>
+#include <QLabel>
 
 #include "veditwindow.h"
 #include "vnotefile.h"
 #include "vedittab.h"
 #include "vdirectory.h"
 #include "utils/vutils.h"
+#include "vbuttonmenuitem.h"
+#include "utils/vimnavigationforwidget.h"
 
 static const int c_cmdTime = 1 * 1000;
 
@@ -51,14 +55,11 @@ static bool fileComp(const VOpenedListMenu::ItemInfo &a,
 }
 
 VOpenedListMenu::VOpenedListMenu(VEditWindow *p_editWin)
-    : QMenu(p_editWin), m_editWin(p_editWin), m_cmdNum(0)
+    : QMenu(p_editWin),
+      m_editWin(p_editWin),
+      m_cmdNum(0),
+      m_accepted(false)
 {
-    // Force to display separator text on Windows and macOS.
-    setStyle(QStyleFactory::create("Fusion"));
-    int separatorHeight = 20 * VUtils::calculateScaleFactor();
-    QString style = QString("::separator { color: #009688; height: %1px; padding-top: 3px; }").arg(separatorHeight);
-    setStyleSheet(style);
-
     setToolTipsVisible(true);
 
     m_cmdTimer = new QTimer(this);
@@ -78,6 +79,7 @@ void VOpenedListMenu::updateOpenedList()
     // Regenerate the opened list.
     m_seqActionMap.clear();
     clear();
+    m_accepted = false;
 
     int curTab = m_editWin->currentIndex();
     int nrTab = m_editWin->count();
@@ -87,12 +89,12 @@ void VOpenedListMenu::updateOpenedList()
         files[i].index = i;
     }
 
+    Q_ASSERT(!files.isEmpty());
+
     std::sort(files.begin(), files.end(), fileComp);
 
     QString notebook;
     const VDirectory *directory = NULL;
-    QFont sepFont;
-    sepFont.setItalic(true);
     for (int i = 0; i < nrTab; ++i) {
         QPointer<VFile> file = files[i].file;
         int index = files[i].index;
@@ -108,6 +110,7 @@ void VOpenedListMenu::updateOpenedList()
             curNotebook = "EXTERNAL_FILES";
         }
 
+        QString separatorText;
         if (curNotebook != notebook
             || curDirectory != directory) {
             notebook = curNotebook;
@@ -117,28 +120,42 @@ void VOpenedListMenu::updateOpenedList()
                 dirName = directory->getName();
             }
 
-            QString text;
             if (dirName.isEmpty()) {
-                text = QString("[%1]").arg(notebook);
+                separatorText = QString("[%1]").arg(notebook);
             } else {
-                text = QString("[%1] %2").arg(notebook).arg(dirName);
+                separatorText = QString("[%1] %2").arg(notebook).arg(dirName);
             }
 
-            QAction *sepAct = addSection(text);
-            sepAct->setFont(sepFont);
+            // Add label as separator.
+            QWidgetAction *wact = new QWidgetAction(this);
+            QLabel *label = new QLabel(separatorText);
+            label->setProperty("MenuSeparator", true);
+            wact->setDefaultWidget(label);
+            wact->setSeparator(true);
+            addAction(wact);
         }
 
-        QAction *action = new QAction(m_editWin->tabIcon(index),
-                                      m_editWin->tabText(index));
-        action->setToolTip(generateDescription(file));
-        action->setData(QVariant::fromValue(file));
+        // Append the separator text to the end of the first item as well.
+        QWidgetAction *wact = new QWidgetAction(this);
+        wact->setData(QVariant::fromValue(file));
+        VButtonMenuItem *w = new VButtonMenuItem(wact,
+                                                 m_editWin->tabIcon(index),
+                                                 m_editWin->tabText(index),
+                                                 separatorText,
+                                                 this);
+        w->setToolTip(generateDescription(file));
+        wact->setDefaultWidget(w);
+
         if (index == curTab) {
-            QFont boldFont;
+            QFont boldFont = w->font();
             boldFont.setBold(true);
-            action->setFont(boldFont);
+            w->setFont(boldFont);
+
+            w->setFocus();
         }
-        addAction(action);
-        m_seqActionMap[index + c_tabSequenceBase] = action;
+
+        addAction(wact);
+        m_seqActionMap[index + c_tabSequenceBase] = wact;
     }
 }
 
@@ -159,17 +176,27 @@ QString VOpenedListMenu::generateDescription(const VFile *p_file) const
 
 void VOpenedListMenu::handleItemTriggered(QAction *p_action)
 {
-    if (!p_action) {
-        return;
+    if (p_action) {
+        QPointer<VFile> file = p_action->data().value<QPointer<VFile>>();
+        if (file) {
+            m_accepted = true;
+            emit fileTriggered(file);
+        }
     }
-    QPointer<VFile> file = p_action->data().value<QPointer<VFile>>();
-    emit fileTriggered(file);
+
+    hide();
 }
 
 void VOpenedListMenu::keyPressEvent(QKeyEvent *p_event)
 {
+    if (VimNavigationForWidget::injectKeyPressEventForVim(this,
+                                                          p_event)) {
+        m_cmdTimer->stop();
+        m_cmdNum = 0;
+        return;
+    }
+
     int key = p_event->key();
-    int modifiers = p_event->modifiers();
     switch (key) {
     case Qt::Key_0:
     case Qt::Key_1:
@@ -184,93 +211,6 @@ void VOpenedListMenu::keyPressEvent(QKeyEvent *p_event)
     {
         addDigit(key - Qt::Key_0);
         return;
-    }
-
-    case Qt::Key_BracketLeft:
-    {
-        m_cmdTimer->stop();
-        m_cmdNum = 0;
-        if (modifiers == Qt::ControlModifier) {
-            hide();
-            return;
-        }
-
-        break;
-    }
-
-    case Qt::Key_J:
-    {
-        m_cmdTimer->stop();
-        m_cmdNum = 0;
-        if (VUtils::isControlModifierForVim(modifiers)) {
-            QList<QAction *> acts = actions();
-            if (acts.size() == 0) {
-                return;
-            }
-            int idx = 0;
-            QAction *act = activeAction();
-            if (act) {
-                for (int i = 0; i < acts.size(); ++i) {
-                    if (acts.at(i) == act) {
-                        idx = i + 1;
-                        break;
-                    }
-                }
-            }
-            while (true) {
-                if (idx >= acts.size()) {
-                    idx = 0;
-                }
-                act = acts.at(idx);
-                if (act->isSeparator() || !act->isVisible()) {
-                    ++idx;
-                } else {
-                    break;
-                }
-            }
-            setActiveAction(act);
-            return;
-        }
-
-        break;
-    }
-
-    case Qt::Key_K:
-    {
-        m_cmdTimer->stop();
-        m_cmdNum = 0;
-        if (VUtils::isControlModifierForVim(modifiers)) {
-            QList<QAction *> acts = actions();
-            if (acts.size() == 0) {
-                return;
-            }
-
-            int idx = acts.size() - 1;
-            QAction *act = activeAction();
-            if (act) {
-                for (int i = 0; i < acts.size(); ++i) {
-                    if (acts.at(i) == act) {
-                        idx = i - 1;
-                        break;
-                    }
-                }
-            }
-            while (true) {
-                if (idx < 0) {
-                    idx = acts.size() - 1;
-                }
-                act = acts.at(idx);
-                if (act->isSeparator() || !act->isVisible()) {
-                    --idx;
-                } else {
-                    break;
-                }
-            }
-            setActiveAction(act);
-            return;
-        }
-
-        break;
     }
 
     default:
@@ -304,13 +244,8 @@ void VOpenedListMenu::addDigit(int p_digit)
             m_cmdNum = 0;
             return;
         }
-        // Set active action to the candidate.
-        auto it = m_seqActionMap.find(m_cmdNum);
-        if (it != m_seqActionMap.end()) {
-            QAction *act = it.value();
-            setActiveAction(act);
-        }
     }
+
     m_cmdTimer->start();
 }
 

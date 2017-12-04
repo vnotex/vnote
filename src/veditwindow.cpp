@@ -702,6 +702,7 @@ void VEditWindow::tabListJump(VFile *p_file)
     int idx = findTabByFile(p_file);
     Q_ASSERT(idx >= 0);
     setCurrentIndex(idx);
+    focusWindow();
     updateTabStatus(idx);
 }
 
@@ -1004,8 +1005,10 @@ bool VEditWindow::showOpenedFileList()
     if (count() == 0) {
         return false;
     }
+
     leftBtn->showMenu();
-    return true;
+    VOpenedListMenu *menu = dynamic_cast<VOpenedListMenu *>(leftBtn->menu());
+    return menu->isAccepted();
 }
 
 bool VEditWindow::activateTab(int p_sequence)

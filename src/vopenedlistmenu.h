@@ -21,6 +21,8 @@ public:
 
     explicit VOpenedListMenu(VEditWindow *p_editWin);
 
+    bool isAccepted() const;
+
 protected:
     void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -39,10 +41,19 @@ private:
     void triggerItem(int p_seq);
 
     VEditWindow *m_editWin;
+
     // The number user pressed.
     int m_cmdNum;
+
     QTimer *m_cmdTimer;
     QMap<int, QAction*> m_seqActionMap;
+
+    // Whether the menu is accepted or rejected.
+    bool m_accepted;
 };
 
+inline bool VOpenedListMenu::isAccepted() const
+{
+    return m_accepted;
+}
 #endif // VOPENEDLISTMENU_H

@@ -412,6 +412,15 @@ QLabel[ColorTealLabel="true"] {
     border-radius: 2px;
     background-color: #00796B;
 }
+
+QLabel[MenuSeparator="true"] {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    margin-top: 3px;
+    font: italic;
+    border-top: 1px solid @menu_separator_bg
+}
+
 /* End QLabel */
 
 /* QLineEdit */

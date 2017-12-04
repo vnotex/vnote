@@ -851,6 +851,7 @@ void VEditUtils::insertTitleMark(QTextCursor &p_cursor,
                 // Remove all the prefix.
                 QRegExp prefixReg(VUtils::c_headerPrefixRegExp);
                 bool preMatched = prefixReg.exactMatch(text);
+                Q_UNUSED(preMatched);
                 Q_ASSERT(preMatched);
                 length = prefixReg.cap(1).length();
             }
