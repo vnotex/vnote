@@ -33,10 +33,13 @@
 #include "vsnippetlist.h"
 #include "vtoolbox.h"
 #include "vbuttonmenuitem.h"
+#include "vpalette.h"
 
 VMainWindow *g_mainWin;
 
 extern VConfigManager *g_config;
+
+extern VPalette *g_palette;
 
 VNote *g_vnote;
 
@@ -110,6 +113,17 @@ void VMainWindow::initCaptain()
     // VCaptain should be visible to accpet key focus. But VCaptain
     // may hide other widgets.
     m_captain = new VCaptain(this);
+    connect(m_captain, &VCaptain::captainModeChanged,
+            this, [this](bool p_captainMode) {
+                static QString normalBaseColor = m_avatar->getBaseColor();
+                static QString captainModeColor = g_palette->color("avatar_captain_mode_border_bg");
+
+                if (p_captainMode) {
+                    m_avatar->updateBaseColor(captainModeColor);
+                } else {
+                    m_avatar->updateBaseColor(normalBaseColor);
+                }
+            });
 }
 
 void VMainWindow::registerCaptainAndNavigationTargets()

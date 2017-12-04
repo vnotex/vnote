@@ -20,6 +20,7 @@ void VPalette::init(const QString &p_file)
     QSettings settings(p_file, QSettings::IniFormat);
     initMetaData(&settings, "metadata");
     initPaleteFromSettings(&settings, "phony");
+    initPaleteFromSettings(&settings, "soft_defined");
     initPaleteFromSettings(&settings, "widgets");
 }
 

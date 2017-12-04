@@ -43,6 +43,11 @@ content_bg=#FFFFFF
 selection_fg=#000000
 selection_bg=#64b5f6
 
+[soft_defined]
+; VAvatar.
+; The border background color of the avatar when Captain mode is triggered.
+avatar_captain_mode_border_bg=#6C6C6C
+
 [widgets]
 ; Widget color attributes.
 

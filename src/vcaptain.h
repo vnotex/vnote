@@ -43,6 +43,10 @@ public:
                                void *p_target,
                                CaptainFunc p_func);
 
+signals:
+    // Emit when mode changed.
+    void captainModeChanged(bool p_captainMode);
+
 protected:
     void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 

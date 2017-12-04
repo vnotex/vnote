@@ -199,7 +199,7 @@ void VCaptain::exitCaptainMode()
 
     restoreFocus();
 
-    qDebug() << "exit Captain mode";
+    emit captainModeChanged(false);
 }
 
 bool VCaptain::registerCaptainTarget(const QString &p_name,
@@ -255,13 +255,13 @@ bool VCaptain::navigationModeByCaptain(void *p_target, void *p_data)
 
 void VCaptain::triggerCaptainMode()
 {
-    qDebug() << "trigger Captain mode";
-
     m_widgetBeforeCaptain = QApplication::focusWidget();
 
     m_ignoreFocusChange = false;
 
     setMode(CaptainMode::Pending);
+
+    emit captainModeChanged(true);
 
     // Focus to listen pending key press.
     setFocus();
