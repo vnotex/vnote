@@ -202,8 +202,8 @@ void VMdTab::showFileEditMode()
 
     VMdEditor *mdEdit = getEditor();
 
-    mdEdit->beginEdit();
     m_stacks->setCurrentWidget(mdEdit);
+    mdEdit->beginEdit();
 
     // If editor is not init, we need to wait for it to init headers.
     // Generally, beginEdit() will generate the headers. Wait is needed when
