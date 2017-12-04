@@ -32,6 +32,7 @@
 #include "vfilesessioninfo.h"
 #include "vsnippetlist.h"
 #include "vtoolbox.h"
+#include "vbuttonmenuitem.h"
 
 VMainWindow *g_mainWin;
 
@@ -2731,48 +2732,71 @@ void VMainWindow::initHeadingButton(QToolBar *p_tb)
     m_headingBtn->setEnabled(false);
 
     QMenu *menu = new QMenu(this);
-    QAction *act = menu->addAction(tr("Heading 1\t%1").arg(VUtils::getShortcutText("Ctrl+1")));
-    QFont font = act->font();
-    int ps = font.pointSize();
-    font.setBold(true);
-    font.setPointSize(ps + 8);
-    act->setFont(font);
-    act->setData(1);
+    QString text(tr("Heading %1"));
+    QString tooltip(tr("Heading %1\t%2"));
+    QWidgetAction *wact = new QWidgetAction(menu);
+    wact->setData(1);
+    VButtonMenuItem *w = new VButtonMenuItem(wact, text.arg(1), this);
+    w->setToolTip(tooltip.arg(1).arg(VUtils::getShortcutText("Ctrl+1")));
+    w->setProperty("Heading1", true);
+    wact->setDefaultWidget(w);
+    menu->addAction(wact);
 
-    act = menu->addAction(tr("Heading 2\t%1").arg(VUtils::getShortcutText("Ctrl+2")));
-    font.setPointSize(ps + 6);
-    act->setFont(font);
-    act->setData(2);
+    wact = new QWidgetAction(menu);
+    wact->setData(2);
+    w = new VButtonMenuItem(wact, text.arg(2), this);
+    w->setToolTip(tooltip.arg(2).arg(VUtils::getShortcutText("Ctrl+2")));
+    w->setProperty("Heading2", true);
+    wact->setDefaultWidget(w);
+    menu->addAction(wact);
 
-    act = menu->addAction(tr("Heading 3\t%1").arg(VUtils::getShortcutText("Ctrl+3")));
-    font.setPointSize(ps + 4);
-    act->setFont(font);
-    act->setData(3);
+    wact = new QWidgetAction(menu);
+    wact->setData(3);
+    w = new VButtonMenuItem(wact, text.arg(3), this);
+    w->setToolTip(tooltip.arg(3).arg(VUtils::getShortcutText("Ctrl+3")));
+    w->setProperty("Heading3", true);
+    wact->setDefaultWidget(w);
+    menu->addAction(wact);
 
-    act = menu->addAction(tr("Heading 4\t%1").arg(VUtils::getShortcutText("Ctrl+4")));
-    font.setPointSize(ps + 2);
-    act->setFont(font);
-    act->setData(4);
+    wact = new QWidgetAction(menu);
+    wact->setData(4);
+    w = new VButtonMenuItem(wact, text.arg(4), this);
+    w->setToolTip(tooltip.arg(4).arg(VUtils::getShortcutText("Ctrl+4")));
+    w->setProperty("Heading4", true);
+    wact->setDefaultWidget(w);
+    menu->addAction(wact);
 
-    act = menu->addAction(tr("Heading 5\t%1").arg(VUtils::getShortcutText("Ctrl+5")));
-    font.setPointSize(ps + 2);
-    act->setFont(font);
-    act->setData(5);
+    wact = new QWidgetAction(menu);
+    wact->setData(5);
+    w = new VButtonMenuItem(wact, text.arg(5), this);
+    w->setToolTip(tooltip.arg(5).arg(VUtils::getShortcutText("Ctrl+5")));
+    w->setProperty("Heading5", true);
+    wact->setDefaultWidget(w);
+    menu->addAction(wact);
 
-    act = menu->addAction(tr("Heading 6\t%1").arg(VUtils::getShortcutText("Ctrl+6")));
-    font.setPointSize(ps + 2);
-    act->setFont(font);
-    act->setData(6);
+    wact = new QWidgetAction(menu);
+    wact->setData(6);
+    w = new VButtonMenuItem(wact, text.arg(6), this);
+    w->setToolTip(tooltip.arg(6).arg(VUtils::getShortcutText("Ctrl+6")));
+    w->setProperty("Heading6", true);
+    wact->setDefaultWidget(w);
+    menu->addAction(wact);
 
-    act = menu->addAction(tr("Clear\t%1").arg(VUtils::getShortcutText("Ctrl+7")));
-    act->setData(0);
+    wact = new QWidgetAction(menu);
+    wact->setData(0);
+    w = new VButtonMenuItem(wact, tr("Clear"), this);
+    w->setToolTip(tr("Clear\t%1").arg(VUtils::getShortcutText("Ctrl+7")));
+    wact->setDefaultWidget(w);
+    menu->addAction(wact);
 
     connect(menu, &QMenu::triggered,
-            this, [this](QAction *p_action) {
+            this, [this, menu](QAction *p_action) {
                 if (m_curTab) {
                     int level = p_action->data().toInt();
                     m_curTab->decorateText(TextDecoration::Heading, level);
                 }
+
+                menu->hide();
             });
 
     m_headingBtn->setMenu(menu);

@@ -99,7 +99,8 @@ SOURCES += main.cpp\
     vtoolbox.cpp \
     vinsertselector.cpp \
     utils/vclipboardutils.cpp \
-    vpalette.cpp
+    vpalette.cpp \
+    vbuttonmenuitem.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -185,7 +186,8 @@ HEADERS  += vmainwindow.h \
     vtoolbox.h \
     vinsertselector.h \
     utils/vclipboardutils.h \
-    vpalette.h
+    vpalette.h \
+    vbuttonmenuitem.h
 
 RESOURCES += \
     vnote.qrc \

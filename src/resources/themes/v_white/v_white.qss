@@ -49,7 +49,7 @@ QMenu::icon {
 
 QMenu::item {
     padding: 5px 30px 5px 30px;
-    background: 1px solid transparent;
+    border: 1px solid transparent;
 }
 
 QMenu::item:selected {
@@ -249,6 +249,47 @@ QPushButton[DangerBtn="true"]:hover {
     color: @pushbutton_dangerbtn_hover_fg;
     border-color: @pushbutton_dangerbtn_hover_border;
     background-color: @pushbutton_dangerbtn_hover_bg;
+}
+
+VButtonMenuItem {
+    padding: 5px;
+    padding-right: 30px;
+    border: 1px solid transparent;
+    background-color: transparent;
+    min-width: -1;
+    text-align: left;
+}
+
+VButtonMenuItem[Heading1="true"] {
+    font-size: 22pt;
+}
+
+VButtonMenuItem[Heading2="true"] {
+    font-size: 20pt;
+}
+
+VButtonMenuItem[Heading3="true"] {
+    font-size: 18pt;
+}
+
+VButtonMenuItem[Heading4="true"] {
+    font-size: 16pt;
+}
+
+VButtonMenuItem[Heading5="true"] {
+    font-size: 14pt;
+}
+
+VButtonMenuItem[Heading6="true"] {
+    font-size: 14pt;
+}
+
+VButtonMenuItem:hover {
+    background-color: @menubar_item_selected_bg;
+}
+
+VButtonMenuItem:focus {
+    background-color: @menubar_item_selected_bg;
 }
 /* End QPushButton*/
 
