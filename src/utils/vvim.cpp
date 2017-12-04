@@ -2247,7 +2247,8 @@ void VVim::setMode(VimMode p_mode, bool p_clearSelection, int p_position)
                 && cursor.position() > cursor.anchor()) {
                 position = cursor.position() - 1;
             } else if (m_mode == VimMode::Insert
-                       && p_mode == VimMode::Normal) {
+                       && p_mode == VimMode::Normal
+                       && !cursor.atBlockStart()) {
                 position = cursor.position() - 1;
                 if (position < 0) {
                     position = 0;
