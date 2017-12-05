@@ -54,8 +54,6 @@ class VMainWindow : public QMainWindow
 public:
     VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent = 0);
 
-    const QVector<QPair<QString, QString> > &getPalette() const;
-
     // Returns true if the location succeeds.
     bool locateFile(VFile *p_file);
 

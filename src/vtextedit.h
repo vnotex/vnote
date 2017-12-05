@@ -59,10 +59,6 @@ public:
 
     void setCursorBlockMode(CursorBlock p_mode);
 
-    void setCursorBlockFg(const QColor &p_color);
-
-    void setCursorBlockBg(const QColor &p_color);
-
 protected:
     void resizeEvent(QResizeEvent *p_event) Q_DECL_OVERRIDE;
 

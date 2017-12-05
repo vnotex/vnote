@@ -41,16 +41,8 @@ editor-current-line
 background: c5cae9
 # [VNote] Vim insert mode cursor line background
 vim-insert-background: c5cae9
-# [VNote] Vim insert mode cursor block background
-vim-insert-cursor-background: 4359e8
-# [VNote] Vim insert mode cursor block foreground
-vim-insert-cursor-foreground: eeeeee
 # [VNote] Vim normal mode cursor line background
 vim-normal-background: bcbcbc
-# [VNote] Vim normal mode cursor block background
-vim-normal-cursor-background: 3e3e3e
-# [VNote] Vim normal mode cursor block foreground
-vim-normal-cursor-foreground: eeeeee
 # [VNote] Vim visual mode cursor line background
 vim-visual-background: 90caf9
 # [VNote] Vim replace mode cursor line background

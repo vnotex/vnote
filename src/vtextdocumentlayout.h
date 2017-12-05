@@ -57,10 +57,6 @@ public:
 
     void setCursorBlockMode(CursorBlock p_mode);
 
-    void setCursorBlockFg(const QColor &p_color);
-
-    void setCursorBlockBg(const QColor &p_color);
-
     void setVirtualCursorBlockWidth(int p_width);
 
     void clearLastCursorBlockWidth();
@@ -290,12 +286,6 @@ private:
     // Virtual cursor block: cursor block on no character.
     int m_virtualCursorBlockWidth;
 
-    // Foreground of cursor block.
-    QColor m_cursorBlockFg;
-
-    // Background of cursor block.
-    QColor m_cursorBlockBg;
-
     int m_lastCursorBlockWidth;
 };
 
@@ -319,16 +309,6 @@ inline void VTextDocumentLayout::scaleSize(QSize &p_size, int p_width, int p_hei
 inline void VTextDocumentLayout::setCursorBlockMode(CursorBlock p_mode)
 {
     m_cursorBlockMode = p_mode;
-}
-
-inline void VTextDocumentLayout::setCursorBlockFg(const QColor &p_color)
-{
-    m_cursorBlockFg = p_color;
-}
-
-inline void VTextDocumentLayout::setCursorBlockBg(const QColor &p_color)
-{
-    m_cursorBlockBg = p_color;
 }
 
 inline void VTextDocumentLayout::setVirtualCursorBlockWidth(int p_width)

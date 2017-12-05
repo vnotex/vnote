@@ -146,9 +146,6 @@ public:
     // @p_modified: if true, delete the whole content and insert the new content.
     virtual void setContent(const QString &p_content, bool p_modified = false) = 0;
 
-    // Set the cursor block's background and foreground.
-    virtual void setCursorBlockColor(const QColor &p_bg, const QColor &p_fg) = 0;
-
 // Wrapper functions for QPlainTextEdit/QTextEdit.
 // Ends with W to distinguish it from the original interfaces.
 public:

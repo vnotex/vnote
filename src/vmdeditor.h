@@ -59,9 +59,6 @@ public:
 
     void setContent(const QString &p_content, bool p_modified = false) Q_DECL_OVERRIDE;
 
-    // Set the cursor block's background and foreground.
-    void setCursorBlockColor(const QColor &p_bg, const QColor &p_fg) Q_DECL_OVERRIDE;
-
 public slots:
     bool jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat) Q_DECL_OVERRIDE;
 
@@ -221,9 +218,4 @@ private:
     bool m_freshEdit;
 };
 
-inline void VMdEditor::setCursorBlockColor(const QColor &p_bg, const QColor &p_fg)
-{
-    setCursorBlockBg(p_bg);
-    setCursorBlockFg(p_fg);
-}
 #endif // VMDEDITOR_H

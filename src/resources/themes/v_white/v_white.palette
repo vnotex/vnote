@@ -45,8 +45,19 @@ selection_bg=#64b5f6
 
 [soft_defined]
 ; VAvatar.
+avatar_border_bg=@title_bg
+avatar_fg=@base_bg
+avatar_bg=@base_fg
 ; The border background color of the avatar when Captain mode is triggered.
 avatar_captain_mode_border_bg=#6C6C6C
+
+; Style of the label in Navigation mode.
+navigation_label_fg=#4D4D4D
+navigation_label_bg=#F4F4F4
+
+; Style of the bubble of VButtonWithWidget.
+bubble_fg=#FFFFFF
+bubble_bg=#6C6C6C
 
 [widgets]
 ; Widget color attributes.

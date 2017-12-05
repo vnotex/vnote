@@ -552,13 +552,7 @@ void VConfigManager::updateMarkdownEditStyle()
     static const QString defaultCurrentLineBackground = "#C5CAE9";
 
     static const QString defaultVimNormalBg = "#BCBCBC";
-    static const QString defaultVimNormalCursorBg = "#3E3E3E";
-    static const QString defaultVimNormalCursorFg = "#EEEEEE";
-
     static const QString defaultVimInsertBg = "#C5CAE9";
-    static const QString defaultVimInsertCursorBg = "#4359E8";
-    static const QString defaultVimInsertCursorFg = "#EEEEEE";
-
     static const QString defaultVimVisualBg = "#90CAF9";
     static const QString defaultVimReplaceBg = "#F8BBD0";
 
@@ -594,17 +588,11 @@ void VConfigManager::updateMarkdownEditStyle()
     m_codeBlockStyles = parser.fetchCodeBlockStyles(mdEditFont);
 
     m_editorCurrentLineBg = defaultCurrentLineBackground;
-
     m_editorVimInsertBg = defaultVimInsertBg;
-    m_editorVimInsertCursorBg = defaultVimInsertCursorBg;
-    m_editorVimInsertCursorFg = defaultVimInsertCursorFg;
-
     m_editorVimNormalBg = defaultVimNormalBg;
-    m_editorVimNormalCursorBg = defaultVimNormalCursorBg;
-    m_editorVimNormalCursorFg = defaultVimNormalCursorFg;
-
     m_editorVimVisualBg = defaultVimVisualBg;
     m_editorVimReplaceBg = defaultVimReplaceBg;
+
     auto editorCurrentLineIt = styles.find("editor-current-line");
     if (editorCurrentLineIt != styles.end()) {
         auto backgroundIt = editorCurrentLineIt->find("background");
@@ -618,29 +606,9 @@ void VConfigManager::updateMarkdownEditStyle()
             m_editorVimInsertBg = "#" + *vimBgIt;
         }
 
-        vimBgIt = editorCurrentLineIt->find("vim-insert-cursor-background");
-        if (vimBgIt != editorCurrentLineIt->end()) {
-            m_editorVimInsertCursorBg = "#" + *vimBgIt;
-        }
-
-        vimBgIt = editorCurrentLineIt->find("vim-insert-cursor-foreground");
-        if (vimBgIt != editorCurrentLineIt->end()) {
-            m_editorVimInsertCursorFg = "#" + *vimBgIt;
-        }
-
         vimBgIt = editorCurrentLineIt->find("vim-normal-background");
         if (vimBgIt != editorCurrentLineIt->end()) {
             m_editorVimNormalBg = "#" + *vimBgIt;
-        }
-
-        vimBgIt = editorCurrentLineIt->find("vim-normal-cursor-background");
-        if (vimBgIt != editorCurrentLineIt->end()) {
-            m_editorVimNormalCursorBg = "#" + *vimBgIt;
-        }
-
-        vimBgIt = editorCurrentLineIt->find("vim-normal-cursor-foreground");
-        if (vimBgIt != editorCurrentLineIt->end()) {
-            m_editorVimNormalCursorFg = "#" + *vimBgIt;
         }
 
         vimBgIt = editorCurrentLineIt->find("vim-visual-background");

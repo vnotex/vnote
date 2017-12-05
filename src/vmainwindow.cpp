@@ -61,7 +61,6 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
     setWindowIcon(QIcon(":/resources/icons/vnote.ico"));
     vnote = new VNote(this);
     g_vnote = vnote;
-    vnote->initPalette(palette());
     initPredefinedColorPixmaps();
 
     if (g_config->getEnableCompactMode()) {
@@ -560,6 +559,8 @@ void VMainWindow::initNoteToolBar(QSize p_iconSize)
                                             "",
                                             m_attachmentList,
                                             this);
+    m_attachmentBtn->setBubbleColor(g_palette->color("bubble_fg"),
+                                    g_palette->color("bubble_bg"));
     m_attachmentBtn->setToolTip(tr("Attachments (drag files here to add attachments)"));
     m_attachmentBtn->setProperty("CornerBtn", true);
     m_attachmentBtn->setFocusPolicy(Qt::NoFocus);
@@ -1256,8 +1257,9 @@ void VMainWindow::initAvatar()
 {
     m_avatar = new VAvatar(this);
     m_avatar->setAvatarPixmap(":/resources/icons/vnote.svg");
-    m_avatar->setColor(vnote->getColorFromPalette("base-color"), vnote->getColorFromPalette("Indigo4"),
-                       vnote->getColorFromPalette("Teal4"));
+    m_avatar->setColor(g_palette->color("avatar_border_bg"),
+                       g_palette->color("avatar_fg"),
+                       g_palette->color("avatar_bg"));
     m_avatar->hide();
 }
 
@@ -2177,11 +2179,6 @@ void VMainWindow::restoreStateAndGeometry()
     if (!naviSplitterState.isEmpty()) {
         m_naviSplitter->restoreState(naviSplitterState);
     }
-}
-
-const QVector<QPair<QString, QString> >& VMainWindow::getPalette() const
-{
-    return vnote->getPalette();
 }
 
 void VMainWindow::handleCurrentDirectoryChanged(const VDirectory *p_dir)

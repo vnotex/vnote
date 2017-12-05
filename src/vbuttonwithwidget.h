@@ -65,6 +65,9 @@ public:
     // @p_num: -1 to hide the bubble.
     void setBubbleNumber(int p_num);
 
+    // Set the foreground and background of the bubble.
+    void setBubbleColor(const QColor &p_fg, const QColor &p_bg);
+
 signals:
     // Emit when popup widget is about to show.
     void popupWidgetAboutToShow(QWidget *p_widget);
@@ -99,4 +102,9 @@ inline VButtonPopupWidget *VButtonWithWidget::getButtonPopupWidget() const
     return dynamic_cast<VButtonPopupWidget *>(m_popupWidget);
 }
 
+inline void VButtonWithWidget::setBubbleColor(const QColor &p_fg, const QColor &p_bg)
+{
+    m_bubbleFg = p_fg;
+    m_bubbleBg = p_bg;
+}
 #endif // VBUTTONWITHWIDGET_H

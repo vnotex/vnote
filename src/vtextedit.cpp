@@ -356,13 +356,3 @@ void VTextEdit::setCursorBlockMode(CursorBlock p_mode)
                                                               : 1);
     }
 }
-
-void VTextEdit::setCursorBlockFg(const QColor &p_color)
-{
-    getLayout()->setCursorBlockFg(p_color);
-}
-
-void VTextEdit::setCursorBlockBg(const QColor &p_color)
-{
-    getLayout()->setCursorBlockBg(p_color);
-}

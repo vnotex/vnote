@@ -34,8 +34,6 @@ VTextDocumentLayout::VTextDocumentLayout(QTextDocument *p_doc,
       m_imageLineColor("#9575CD"),
       m_cursorBlockMode(CursorBlock::None),
       m_virtualCursorBlockWidth(8),
-      m_cursorBlockFg("#EEEEEE"),
-      m_cursorBlockBg("#222222"),
       m_lastCursorBlockWidth(-1)
 {
 }

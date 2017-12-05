@@ -72,10 +72,7 @@ public:
     static const QString c_markdownGuideDocFile_en;
     static const QString c_markdownGuideDocFile_zh;
 
-    const QVector<QPair<QString, QString> > &getPalette() const;
-    void initPalette(QPalette palette);
-    QString getColorFromPalette(const QString &p_name) const;
-
+    // Get the label style in Navigation mode.
     QString getNavigationLabelStyle(const QString &p_str) const;
 
     // Given the path of a file, first try to open it as note file,
@@ -105,7 +102,6 @@ private:
 
     // Maintain all the notebooks. Other holder should use QPointer.
     QVector<VNotebook *> m_notebooks;
-    QVector<QPair<QString, QString> > m_palette;
 
     VMetaWordManager m_metaWordMgr;
 
@@ -113,10 +109,5 @@ private:
     // Need to clean up periodly.
     QList<VOrphanFile *> m_externalFiles;
 };
-
-inline const QVector<QPair<QString, QString> >& VNote::getPalette() const
-{
-    return m_palette;
-}
 
 #endif // VNOTE_H

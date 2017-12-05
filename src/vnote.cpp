@@ -13,12 +13,14 @@
 #include "vmainwindow.h"
 #include "vorphanfile.h"
 #include "vnotefile.h"
+#include "vpalette.h"
 
 extern VConfigManager *g_config;
 
+extern VPalette *g_palette;
+
 // Meta word manager.
 VMetaWordManager *g_mwMgr;
-
 
 QString VNote::s_markdownTemplate;
 QString VNote::s_markdownTemplatePDF;
@@ -66,104 +68,6 @@ VNote::VNote(QObject *parent)
     m_metaWordMgr.init();
 
     g_mwMgr = &m_metaWordMgr;
-}
-
-void VNote::initPalette(QPalette palette)
-{
-    m_palette.clear();
-
-    m_palette.append(QPair<QString, QString>("base-background",
-                                             palette.background().color().name()));
-    m_palette.append(QPair<QString, QString>("base-foreground",
-                                             palette.background().color().name()));
-    m_palette.append(QPair<QString, QString>("hover-color", "#42A5F5"));
-    m_palette.append(QPair<QString, QString>("base-color", "#BDBDBD"));
-    m_palette.append(QPair<QString, QString>("focus-color", "#75C5B5"));
-    m_palette.append(QPair<QString, QString>("logo-base", "#F4F4F4"));
-    m_palette.append(QPair<QString, QString>("logo-max", "#4D4D4D"));
-    m_palette.append(QPair<QString, QString>("logo-min", "#C69C6D"));
-
-    // Material Design Colors
-    m_palette.append(QPair<QString, QString>("Teal0", "#E0F2F1"));
-    m_palette.append(QPair<QString, QString>("Teal1", "#B2DFDB"));
-    m_palette.append(QPair<QString, QString>("Teal2", "#80CBC4"));
-    m_palette.append(QPair<QString, QString>("Teal3", "#4DB6AC"));
-    m_palette.append(QPair<QString, QString>("Teal4", "#26A69A"));
-    m_palette.append(QPair<QString, QString>("Teal5", "#009688"));
-    m_palette.append(QPair<QString, QString>("Teal6", "#00897B"));
-    m_palette.append(QPair<QString, QString>("Teal7", "#00796B"));
-    m_palette.append(QPair<QString, QString>("Teal8", "#00695C"));
-    m_palette.append(QPair<QString, QString>("Teal9", "#004D40"));
-
-    m_palette.append(QPair<QString, QString>("Indigo0", "#E8EAF6"));
-    m_palette.append(QPair<QString, QString>("Indigo1", "#C5CAE9"));
-    m_palette.append(QPair<QString, QString>("Indigo2", "#9FA8DA"));
-    m_palette.append(QPair<QString, QString>("Indigo3", "#7986CB"));
-    m_palette.append(QPair<QString, QString>("Indigo4", "#5C6BC0"));
-
-    m_palette.append(QPair<QString, QString>("Grey0", "#FAFAFA"));
-    m_palette.append(QPair<QString, QString>("Grey1", "#F5F5F5"));
-    m_palette.append(QPair<QString, QString>("Grey2", "#EEEEEE"));
-    m_palette.append(QPair<QString, QString>("Grey3", "#E0E0E0"));
-    m_palette.append(QPair<QString, QString>("Grey4", "#BDBDBD"));
-    m_palette.append(QPair<QString, QString>("Grey5", "#9E9E9E"));
-    m_palette.append(QPair<QString, QString>("Grey6", "#757575"));
-    m_palette.append(QPair<QString, QString>("Grey7", "#616161"));
-    m_palette.append(QPair<QString, QString>("Grey8", "#424242"));
-
-    m_palette.append(QPair<QString, QString>("Green0", "#E8F5E9"));
-    m_palette.append(QPair<QString, QString>("Green1", "#C8E6C9"));
-    m_palette.append(QPair<QString, QString>("Green2", "#A5D6A7"));
-    m_palette.append(QPair<QString, QString>("Green3", "#81C784"));
-    m_palette.append(QPair<QString, QString>("Green4", "#66BB6A"));
-    m_palette.append(QPair<QString, QString>("Green5", "#4CAF50"));
-    m_palette.append(QPair<QString, QString>("Green6", "#43A047"));
-    m_palette.append(QPair<QString, QString>("Green7", "#388E3C"));
-    m_palette.append(QPair<QString, QString>("Green8", "#2E7D32"));
-    m_palette.append(QPair<QString, QString>("Green9", "#1B5E20"));
-
-    m_palette.append(QPair<QString, QString>("DeepPurple0", "#EDE7F6"));
-    m_palette.append(QPair<QString, QString>("DeepPurple1", "#D1C4E9"));
-    m_palette.append(QPair<QString, QString>("DeepPurple2", "#B39DDB"));
-    m_palette.append(QPair<QString, QString>("DeepPurple3", "#9575CD"));
-    m_palette.append(QPair<QString, QString>("DeepPurple4", "#7E57C2"));
-    m_palette.append(QPair<QString, QString>("DeepPurple5", "#673AB7"));
-    m_palette.append(QPair<QString, QString>("DeepPurple6", "#5E35B1"));
-    m_palette.append(QPair<QString, QString>("DeepPurple7", "#512DA8"));
-    m_palette.append(QPair<QString, QString>("DeepPurple8", "#4527A0"));
-    m_palette.append(QPair<QString, QString>("DeepPurple9", "#311B92"));
-
-    m_palette.append(QPair<QString, QString>("Purple0", "#F3E5F5"));
-    m_palette.append(QPair<QString, QString>("Purple1", "#E1BEE7"));
-    m_palette.append(QPair<QString, QString>("Purple2", "#CE93D8"));
-    m_palette.append(QPair<QString, QString>("Purple3", "#BA68C8"));
-    m_palette.append(QPair<QString, QString>("Purple4", "#AB47BC"));
-    m_palette.append(QPair<QString, QString>("Purple5", "#9C27B0"));
-    m_palette.append(QPair<QString, QString>("Purple6", "#8E24AA"));
-    m_palette.append(QPair<QString, QString>("Purple7", "#7B1FA2"));
-    m_palette.append(QPair<QString, QString>("Purple8", "#6A1B9A"));
-    m_palette.append(QPair<QString, QString>("Purple9", "#4A148C"));
-
-    m_palette.append(QPair<QString, QString>("Red0", "#FFEBEE"));
-    m_palette.append(QPair<QString, QString>("Red1", "#FFCDD2"));
-    m_palette.append(QPair<QString, QString>("Red2", "#EF9A9A"));
-    m_palette.append(QPair<QString, QString>("Red3", "#E57373"));
-    m_palette.append(QPair<QString, QString>("Red4", "#EF5350"));
-    m_palette.append(QPair<QString, QString>("Red5", "#F44336"));
-    m_palette.append(QPair<QString, QString>("Red6", "#E53935"));
-    m_palette.append(QPair<QString, QString>("Red7", "#D32F2F"));
-    m_palette.append(QPair<QString, QString>("Red8", "#C62828"));
-    m_palette.append(QPair<QString, QString>("Red9", "#B71C1C"));
-}
-
-QString VNote::getColorFromPalette(const QString &p_name) const
-{
-    for (int i = 0; i < m_palette.size(); ++i) {
-        if (m_palette[i].first == p_name) {
-            return m_palette[i].second;
-        }
-    }
-    return "White";
 }
 
 void VNote::initTemplate()
@@ -242,7 +146,8 @@ QString VNote::getNavigationLabelStyle(const QString &p_str) const
 {
     static int lastLen = -1;
     static int pxWidth = 24;
-    int fontPt = 15;
+    const int fontPt = 15;
+
     QString fontFamily = getMonospacedFont();
 
     if (p_str.size() != lastLen) {
@@ -261,8 +166,8 @@ QString VNote::getNavigationLabelStyle(const QString &p_str) const
                    "border-radius: 3px;"
                    "min-width: %5px;"
                    "max-width: %5px;")
-                   .arg(getColorFromPalette("logo-base"))
-                   .arg(getColorFromPalette("logo-max"))
+                   .arg(g_palette->color("navigation_label_bg"))
+                   .arg(g_palette->color("navigation_label_fg"))
                    .arg(fontPt)
                    .arg(fontFamily)
                    .arg(pxWidth);

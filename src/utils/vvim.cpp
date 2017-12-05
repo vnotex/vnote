@@ -5940,7 +5940,8 @@ void VVim::handleMousePressed(QMouseEvent *p_event)
 {
     Q_UNUSED(p_event);
     QTextCursor cursor = m_editor->textCursorW();
-    if (checkMode(VimMode::Visual) || checkMode(VimMode::VisualLine)) {
+    if ((checkMode(VimMode::Visual) || checkMode(VimMode::VisualLine))
+        && p_event->buttons() != Qt::RightButton) {
         setMode(VimMode::Normal);
     } else if (checkMode(VimMode::Normal)) {
         if (cursor.hasSelection()) {
