@@ -552,7 +552,7 @@ QString VMdEdit::getPlainTextWithoutPreviewImage() const
         */
 
         // Iterate all the block to get positions for deletion.
-        QTextBlock block = document()->begin();
+        // QTextBlock block = document()->begin();
         bool tryAgain = false;
         /*
         while (block.isValid()) {

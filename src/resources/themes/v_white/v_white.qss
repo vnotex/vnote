@@ -17,6 +17,12 @@ QWidget[NotebookPanel="true"] {
 }
 /* End QWidget */
 
+/* QMainWindow */
+QMainWindow {
+    color: @base_fg;
+    background: @base_bg;
+}
+
 QMainWindow::separator {
     background: @dock_separator_bg;
     width: 2px;
@@ -26,6 +32,7 @@ QMainWindow::separator {
 QMainWindow::separator:hover {
     background: @dock_separator_hover_bg;
 }
+/* End QMainWindow */
 
 QMenuBar {
     border: none;
@@ -514,6 +521,8 @@ QTreeView {
     show-decoration-selected: 0;
     padding-top: 3px;
     border: none;
+    selection-background-color: transparent;
+    outline: none;
 }
 
 QTreeView::item {
@@ -573,6 +582,8 @@ QListView {
     show-decoration-selected: 0;
     padding-top: 3px;
     border: none;
+    selection-background-color: transparent;
+    outline: none;
 }
 
 QListView::item {
