@@ -5,6 +5,7 @@
 #include "vlineedit.h"
 #include "utils/vutils.h"
 #include "utils/vmetawordmanager.h"
+#include "utils/viconutils.h"
 
 extern VConfigManager *g_config;
 
@@ -56,8 +57,8 @@ void VNewFileDialog::setupUI(const QString &p_title,
     m_templateCB->setToolTip(tr("Choose a template (magic word supported)"));
     m_templateCB->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
-    QPushButton *templateBtn = new QPushButton(QIcon(":/resources/icons/manage_template.svg"),
-                                                 "");
+    QPushButton *templateBtn = new QPushButton(VIconUtils::buttonIcon(":/resources/icons/manage_template.svg"),
+                                               "");
     templateBtn->setToolTip(tr("Manage Templates"));
     templateBtn->setProperty("FlatBtn", true);
     connect(templateBtn, &QPushButton::clicked,

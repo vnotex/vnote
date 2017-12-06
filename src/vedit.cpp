@@ -11,6 +11,7 @@
 #include "veditoperations.h"
 #include "vedittab.h"
 #include "dialog/vinsertlinkdialog.h"
+#include "utils/viconutils.h"
 
 extern VConfigManager *g_config;
 
@@ -766,13 +767,13 @@ void VEdit::contextMenuEvent(QContextMenuEvent *p_event)
         VEditTab *editTab = dynamic_cast<VEditTab *>(parent());
         V_ASSERT(editTab);
         if (editTab->isEditMode()) {
-            QAction *saveExitAct = new QAction(QIcon(":/resources/icons/save_exit.svg"),
+            QAction *saveExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/save_exit.svg"),
                                                tr("&Save Changes And Read"), this);
             saveExitAct->setToolTip(tr("Save changes and exit edit mode"));
             connect(saveExitAct, &QAction::triggered,
                     this, &VEdit::handleSaveExitAct);
 
-            QAction *discardExitAct = new QAction(QIcon(":/resources/icons/discard_exit.svg"),
+            QAction *discardExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/discard_exit.svg"),
                                                   tr("&Discard Changes And Read"), this);
             discardExitAct->setToolTip(tr("Discard changes and exit edit mode"));
             connect(discardExitAct, &QAction::triggered,
@@ -785,7 +786,7 @@ void VEdit::contextMenuEvent(QContextMenuEvent *p_event)
             }
         } else if (m_file->isModifiable()) {
             // HTML.
-            QAction *editAct= new QAction(QIcon(":/resources/icons/edit_note.svg"),
+            QAction *editAct= new QAction(VIconUtils::menuIcon(":/resources/icons/edit_note.svg"),
                                           tr("&Edit"), this);
             editAct->setToolTip(tr("Edit current note"));
             connect(editAct, &QAction::triggered,

@@ -108,6 +108,10 @@ QToolButton::pressed {
     background: @toolbutton_pressed_bg;
 }
 
+QToolButton::checked {
+    background: @toolbutton_checked_bg;
+}
+
 /* the subcontrols below are used only in the MenuButtonPopup mode */
 QToolButton::menu-button {
     border: none;
@@ -145,6 +149,10 @@ QPushButton {
 
 QPushButton:pressed {
     background-color: @pushbutton_pressed_bg;
+}
+
+QPushButton:checked {
+    background-color: @pushbutton_checked_bg;
 }
 
 QPushButton:hover {
@@ -496,7 +504,7 @@ QTabBar::close-button:hover {
 
 QTabBar::close-button:focus {
     image: url(close.svg);
-    background-color: @tabbar_clostbutton_focus_bg;
+    background-color: @tabbar_closebutton_focus_bg;
 }
 /* End QTabBar */
 
@@ -643,4 +651,9 @@ QStatusBar {
 
 QWidget[MainEditor="true"] {
     border: none;
+}
+
+QDialog {
+    color: @base_fg;
+    background: @base_bg;
 }

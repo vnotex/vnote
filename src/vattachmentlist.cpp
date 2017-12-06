@@ -9,6 +9,7 @@
 #include "dialog/vconfirmdeletiondialog.h"
 #include "dialog/vsortdialog.h"
 #include "utils/vimnavigationforwidget.h"
+#include "utils/viconutils.h"
 
 extern VConfigManager *g_config;
 extern VMainWindow *g_mainWin;
@@ -25,14 +26,14 @@ VAttachmentList::VAttachmentList(QWidget *p_parent)
 
 void VAttachmentList::setupUI()
 {
-    m_addBtn = new QPushButton(QIcon(":/resources/icons/add_attachment.svg"), "");
+    m_addBtn = new QPushButton(VIconUtils::buttonIcon(":/resources/icons/add_attachment.svg"), "");
     m_addBtn->setToolTip(tr("Add"));
     m_addBtn->setProperty("FlatBtn", true);
     m_addBtn->setDefault(true);
     connect(m_addBtn, &QPushButton::clicked,
             this, &VAttachmentList::addAttachment);
 
-    m_clearBtn = new QPushButton(QIcon(":/resources/icons/clear_attachment.svg"), "");
+    m_clearBtn = new QPushButton(VIconUtils::buttonDangerIcon(":/resources/icons/clear_attachment.svg"), "");
     m_clearBtn->setToolTip(tr("Clear"));
     m_clearBtn->setProperty("FlatBtn", true);
     connect(m_clearBtn, &QPushButton::clicked,
@@ -76,7 +77,7 @@ void VAttachmentList::setupUI()
                 }
             });
 
-    m_locateBtn = new QPushButton(QIcon(":/resources/icons/locate_attachment.svg"), "");
+    m_locateBtn = new QPushButton(VIconUtils::buttonIcon(":/resources/icons/locate_attachment.svg"), "");
     m_locateBtn->setToolTip(tr("Open Folder"));
     m_locateBtn->setProperty("FlatBtn", true);
     connect(m_locateBtn, &QPushButton::clicked,
@@ -124,14 +125,14 @@ void VAttachmentList::initActions()
                 handleItemActivated(item);
             });
 
-    m_deleteAct = new QAction(QIcon(":/resources/icons/delete_attachment.svg"),
+    m_deleteAct = new QAction(VIconUtils::menuDangerIcon(":/resources/icons/delete_attachment.svg"),
                               tr("&Delete"),
                               this);
     m_deleteAct->setToolTip(tr("Delete selected attachments"));
     connect(m_deleteAct, &QAction::triggered,
             this, &VAttachmentList::deleteSelectedItems);
 
-    m_sortAct = new QAction(QIcon(":/resources/icons/sort.svg"),
+    m_sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
                             tr("&Sort"),
                             this);
     m_sortAct->setToolTip(tr("Sort attachments manually"));

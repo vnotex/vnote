@@ -22,6 +22,7 @@
 #include "vnofocusitemdelegate.h"
 #include "vmainwindow.h"
 #include "utils/vimnavigationforwidget.h"
+#include "utils/viconutils.h"
 
 extern VConfigManager *g_config;
 
@@ -57,13 +58,13 @@ VNotebookSelector::VNotebookSelector(QWidget *p_parent)
 
 void VNotebookSelector::initActions()
 {
-    m_deleteNotebookAct = new QAction(QIcon(":/resources/icons/delete_notebook.svg"),
+    m_deleteNotebookAct = new QAction(VIconUtils::menuDangerIcon(":/resources/icons/delete_notebook.svg"),
                                       tr("&Delete"), this);
     m_deleteNotebookAct->setToolTip(tr("Delete current notebook"));
     connect(m_deleteNotebookAct, SIGNAL(triggered(bool)),
             this, SLOT(deleteNotebook()));
 
-    m_notebookInfoAct = new QAction(QIcon(":/resources/icons/notebook_info.svg"),
+    m_notebookInfoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/notebook_info.svg"),
                                     tr("&Info"), this);
     m_notebookInfoAct->setToolTip(tr("View and edit current notebook's information"));
     connect(m_notebookInfoAct, SIGNAL(triggered(bool)),
@@ -84,7 +85,7 @@ void VNotebookSelector::initActions()
                 QDesktopServices::openUrl(url);
             });
 
-    m_recycleBinAct = new QAction(QIcon(":/resources/icons/recycle_bin.svg"),
+    m_recycleBinAct = new QAction(VIconUtils::menuIcon(":/resources/icons/recycle_bin.svg"),
                                   tr("&Recycle Bin"), this);
     m_recycleBinAct->setToolTip(tr("Open the recycle bin of this notebook"));
     connect(m_recycleBinAct, &QAction::triggered,
@@ -100,7 +101,7 @@ void VNotebookSelector::initActions()
                 QDesktopServices::openUrl(url);
             });
 
-    m_emptyRecycleBinAct = new QAction(QIcon(":/resources/icons/empty_recycle_bin.svg"),
+    m_emptyRecycleBinAct = new QAction(VIconUtils::menuDangerIcon(":/resources/icons/empty_recycle_bin.svg"),
                                        tr("&Empty Recycle Bin"), this);
     m_emptyRecycleBinAct->setToolTip(tr("Empty the recycle bin of this notebook"));
     connect(m_emptyRecycleBinAct, &QAction::triggered,
@@ -216,7 +217,7 @@ int VNotebookSelector::itemIndexOfNotebook(const VNotebook *p_notebook) const
 void VNotebookSelector::insertAddNotebookItem()
 {
     QListWidgetItem *item = new QListWidgetItem();
-    item->setIcon(QIcon(":/resources/icons/create_notebook.svg"));
+    item->setIcon(VIconUtils::comboBoxIcon(":/resources/icons/create_notebook.svg"));
     item->setText(tr("Add Notebook"));
     QFont font;
     font.setItalic(true);
@@ -447,7 +448,7 @@ void VNotebookSelector::fillItem(QListWidgetItem *p_item,
 {
     p_item->setText(p_notebook->getName());
     p_item->setToolTip(p_notebook->getName());
-    p_item->setIcon(QIcon(":/resources/icons/notebook_item.svg"));
+    p_item->setIcon(VIconUtils::comboBoxIcon(":/resources/icons/notebook_item.svg"));
     p_item->setData(Qt::UserRole, (qulonglong)p_notebook);
 }
 

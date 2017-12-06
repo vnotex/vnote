@@ -1,6 +1,8 @@
 #include "vfindreplacedialog.h"
 #include <QtWidgets>
 
+#include "utils/viconutils.h"
+
 VFindReplaceDialog::VFindReplaceDialog(QWidget *p_parent)
     : QWidget(p_parent), m_options(0), m_replaceAvailable(true)
 {
@@ -11,7 +13,7 @@ void VFindReplaceDialog::setupUI()
 {
     QLabel *titleLabel = new QLabel(tr("Find/Replace"));
     titleLabel->setProperty("TitleLabel", true);
-    m_closeBtn = new QPushButton(QIcon(":/resources/icons/close.svg"), "");
+    m_closeBtn = new QPushButton(VIconUtils::titleIcon(":/resources/icons/close.svg"), "");
     m_closeBtn->setProperty("TitleBtn", true);
     QHBoxLayout *titleLayout = new QHBoxLayout();
     titleLayout->addWidget(titleLabel);

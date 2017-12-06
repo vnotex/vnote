@@ -11,6 +11,7 @@
 #include "vmainwindow.h"
 #include "dialog/vsortdialog.h"
 #include "utils/vimnavigationforwidget.h"
+#include "utils/viconutils.h"
 
 extern VMainWindow *g_mainWin;
 
@@ -76,43 +77,43 @@ void VDirectoryTree::initShortcuts()
 
 void VDirectoryTree::initActions()
 {
-    newRootDirAct = new QAction(QIcon(":/resources/icons/create_rootdir.svg"),
+    newRootDirAct = new QAction(VIconUtils::menuIcon(":/resources/icons/create_rootdir.svg"),
                                 tr("New &Root Folder"), this);
     newRootDirAct->setToolTip(tr("Create a root folder in current notebook"));
     connect(newRootDirAct, &QAction::triggered,
             this, &VDirectoryTree::newRootDirectory);
 
-    newSubDirAct = new QAction(QIcon(":/resources/icons/create_subdir.svg"),
+    newSubDirAct = new QAction(VIconUtils::menuIcon(":/resources/icons/create_subdir.svg"),
                                tr("&New Subfolder"), this);
     newSubDirAct->setToolTip(tr("Create a subfolder"));
     connect(newSubDirAct, &QAction::triggered,
             this, &VDirectoryTree::newSubDirectory);
 
-    deleteDirAct = new QAction(QIcon(":/resources/icons/delete_dir.svg"),
+    deleteDirAct = new QAction(VIconUtils::menuDangerIcon(":/resources/icons/delete_dir.svg"),
                                tr("&Delete"), this);
     deleteDirAct->setToolTip(tr("Delete selected folder"));
     connect(deleteDirAct, &QAction::triggered,
             this, &VDirectoryTree::deleteSelectedDirectory);
 
-    dirInfoAct = new QAction(QIcon(":/resources/icons/dir_info.svg"),
+    dirInfoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/dir_info.svg"),
                              tr("&Info\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)), this);
     dirInfoAct->setToolTip(tr("View and edit current folder's information"));
     connect(dirInfoAct, &QAction::triggered,
             this, &VDirectoryTree::editDirectoryInfo);
 
-    copyAct = new QAction(QIcon(":/resources/icons/copy.svg"),
+    copyAct = new QAction(VIconUtils::menuIcon(":/resources/icons/copy.svg"),
                           tr("&Copy\t%1").arg(VUtils::getShortcutText(c_copyShortcutSequence)), this);
     copyAct->setToolTip(tr("Copy selected folders"));
     connect(copyAct, &QAction::triggered,
             this, &VDirectoryTree::copySelectedDirectories);
 
-    cutAct = new QAction(QIcon(":/resources/icons/cut.svg"),
+    cutAct = new QAction(VIconUtils::menuIcon(":/resources/icons/cut.svg"),
                          tr("C&ut\t%1").arg(VUtils::getShortcutText(c_cutShortcutSequence)), this);
     cutAct->setToolTip(tr("Cut selected folders"));
     connect(cutAct, &QAction::triggered,
             this, &VDirectoryTree::cutSelectedDirectories);
 
-    pasteAct = new QAction(QIcon(":/resources/icons/paste.svg"),
+    pasteAct = new QAction(VIconUtils::menuIcon(":/resources/icons/paste.svg"),
                            tr("&Paste\t%1").arg(VUtils::getShortcutText(c_pasteShortcutSequence)), this);
     pasteAct->setToolTip(tr("Paste folders in this folder"));
     connect(pasteAct, &QAction::triggered,
@@ -128,7 +129,7 @@ void VDirectoryTree::initActions()
     connect(m_reloadAct, &QAction::triggered,
             this, &VDirectoryTree::reloadFromDisk);
 
-    m_sortAct = new QAction(QIcon(":/resources/icons/sort.svg"),
+    m_sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
                             tr("&Sort"),
                             this);
     m_sortAct->setToolTip(tr("Sort folders in this folder/notebook manually"));
@@ -173,7 +174,7 @@ void VDirectoryTree::fillTreeItem(QTreeWidgetItem *p_item, VDirectory *p_directo
     p_item->setText(col, name);
     p_item->setToolTip(col, name);
     p_item->setData(col, Qt::UserRole, QVariant::fromValue(p_directory));
-    p_item->setIcon(col, QIcon(":/resources/icons/dir_item.svg"));
+    p_item->setIcon(col, VIconUtils::treeViewIcon(":/resources/icons/dir_item.svg"));
 }
 
 void VDirectoryTree::updateDirectoryTree()

@@ -18,6 +18,7 @@
 #include "vorphanfile.h"
 #include "vnotefile.h"
 #include "vpreviewmanager.h"
+#include "utils/viconutils.h"
 
 extern VConfigManager *g_config;
 
@@ -264,7 +265,7 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
         VEditTab *editTab = dynamic_cast<VEditTab *>(parent());
         Q_ASSERT(editTab);
         if (editTab->isEditMode()) {
-            QAction *saveExitAct = new QAction(QIcon(":/resources/icons/save_exit.svg"),
+            QAction *saveExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/save_exit.svg"),
                                                tr("&Save Changes And Read"),
                                                menu);
             saveExitAct->setToolTip(tr("Save changes and exit edit mode"));
@@ -273,7 +274,7 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
                         emit m_object->saveAndRead();
                     });
 
-            QAction *discardExitAct = new QAction(QIcon(":/resources/icons/discard_exit.svg"),
+            QAction *discardExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/discard_exit.svg"),
                                                   tr("&Discard Changes And Read"),
                                                   menu);
             discardExitAct->setToolTip(tr("Discard changes and exit edit mode"));

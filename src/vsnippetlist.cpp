@@ -9,6 +9,7 @@
 #include "dialog/vsortdialog.h"
 #include "dialog/vconfirmdeletiondialog.h"
 #include "vmainwindow.h"
+#include "utils/viconutils.h"
 
 extern VConfigManager *g_config;
 
@@ -42,13 +43,13 @@ VSnippetList::VSnippetList(QWidget *p_parent)
 
 void VSnippetList::setupUI()
 {
-    m_addBtn = new QPushButton(QIcon(":/resources/icons/add_snippet.svg"), "");
+    m_addBtn = new QPushButton(VIconUtils::buttonIcon(":/resources/icons/add_snippet.svg"), "");
     m_addBtn->setToolTip(tr("New Snippet"));
     m_addBtn->setProperty("FlatBtn", true);
     connect(m_addBtn, &QPushButton::clicked,
             this, &VSnippetList::newSnippet);
 
-    m_locateBtn = new QPushButton(QIcon(":/resources/icons/locate_snippet.svg"), "");
+    m_locateBtn = new QPushButton(VIconUtils::buttonIcon(":/resources/icons/locate_snippet.svg"), "");
     m_locateBtn->setToolTip(tr("Open Folder"));
     m_locateBtn->setProperty("FlatBtn", true);
     connect(m_locateBtn, &QPushButton::clicked,
@@ -86,7 +87,7 @@ void VSnippetList::setupUI()
 
 void VSnippetList::initActions()
 {
-    m_applyAct = new QAction(QIcon(":/resources/icons/apply_snippet.svg"),
+    m_applyAct = new QAction(VIconUtils::menuIcon(":/resources/icons/apply_snippet.svg"),
                              tr("&Apply"),
                              this);
     m_applyAct->setToolTip(tr("Insert this snippet in editor"));
@@ -96,21 +97,21 @@ void VSnippetList::initActions()
                 handleItemActivated(item);
             });
 
-    m_infoAct = new QAction(QIcon(":/resources/icons/snippet_info.svg"),
+    m_infoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/snippet_info.svg"),
                             tr("&Info\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)),
                             this);
     m_infoAct->setToolTip(tr("View and edit snippet's information"));
     connect(m_infoAct, &QAction::triggered,
             this, &VSnippetList::snippetInfo);
 
-    m_deleteAct = new QAction(QIcon(":/resources/icons/delete_snippet.svg"),
+    m_deleteAct = new QAction(VIconUtils::menuDangerIcon(":/resources/icons/delete_snippet.svg"),
                               tr("&Delete"),
                               this);
     m_deleteAct->setToolTip(tr("Delete selected snippets"));
     connect(m_deleteAct, &QAction::triggered,
             this, &VSnippetList::deleteSelectedItems);
 
-    m_sortAct = new QAction(QIcon(":/resources/icons/sort.svg"),
+    m_sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
                             tr("&Sort"),
                             this);
     m_sortAct->setToolTip(tr("Sort snippets manually"));

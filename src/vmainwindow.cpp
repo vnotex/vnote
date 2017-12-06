@@ -34,6 +34,7 @@
 #include "vtoolbox.h"
 #include "vbuttonmenuitem.h"
 #include "vpalette.h"
+#include "utils/viconutils.h"
 
 VMainWindow *g_mainWin;
 
@@ -332,7 +333,7 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
     }
 
     m_viewActGroup = new QActionGroup(this);
-    QAction *onePanelViewAct = new QAction(QIcon(":/resources/icons/one_panel.svg"),
+    QAction *onePanelViewAct = new QAction(VIconUtils::menuIcon(":/resources/icons/one_panel.svg"),
                                            tr("&Single Panel"),
                                            m_viewActGroup);
     onePanelViewAct->setStatusTip(tr("Display only the notes list panel"));
@@ -340,7 +341,7 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
     onePanelViewAct->setCheckable(true);
     onePanelViewAct->setData((int)PanelViewState::SinglePanel);
 
-    QAction *twoPanelViewAct = new QAction(QIcon(":/resources/icons/two_panels.svg"),
+    QAction *twoPanelViewAct = new QAction(VIconUtils::menuIcon(":/resources/icons/two_panels.svg"),
                                            tr("&Two Panels"),
                                            m_viewActGroup);
     twoPanelViewAct->setStatusTip(tr("Display both the folders and notes list panel"));
@@ -348,7 +349,7 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
     twoPanelViewAct->setCheckable(true);
     twoPanelViewAct->setData((int)PanelViewState::TwoPanels);
 
-    QAction *compactViewAct = new QAction(QIcon(":/resources/icons/compact_mode.svg"),
+    QAction *compactViewAct = new QAction(VIconUtils::menuIcon(":/resources/icons/compact_mode.svg"),
                                            tr("&Compact Mode"),
                                            m_viewActGroup);
     compactViewAct->setStatusTip(tr("Integrate the folders and notes list panel in one column"));
@@ -386,7 +387,7 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
     panelMenu->addAction(twoPanelViewAct);
     panelMenu->addAction(compactViewAct);
 
-    expandViewAct = new QAction(QIcon(":/resources/icons/expand.svg"),
+    expandViewAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/expand.svg"),
                                 tr("Expand"), this);
     expandViewAct->setStatusTip(tr("Expand the edit area"));
     expandViewAct->setCheckable(true);
@@ -422,7 +423,7 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
 
     m_editToolBar->addSeparator();
 
-    m_headingSequenceAct = new QAction(QIcon(":/resources/icons/heading_sequence.svg"),
+    m_headingSequenceAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/heading_sequence.svg"),
                                        tr("Heading Sequence"),
                                        this);
     m_headingSequenceAct->setStatusTip(tr("Enable heading sequence in current note in edit mode"));
@@ -440,7 +441,7 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
 
     initHeadingButton(m_editToolBar);
 
-    QAction *boldAct = new QAction(QIcon(":/resources/icons/bold.svg"),
+    QAction *boldAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/bold.svg"),
                                    tr("Bold\t%1").arg(VUtils::getShortcutText("Ctrl+B")),
                                    this);
     boldAct->setStatusTip(tr("Insert bold text or change selected text to bold"));
@@ -453,7 +454,7 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
 
     m_editToolBar->addAction(boldAct);
 
-    QAction *italicAct = new QAction(QIcon(":/resources/icons/italic.svg"),
+    QAction *italicAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/italic.svg"),
                                      tr("Italic\t%1").arg(VUtils::getShortcutText("Ctrl+I")),
                                      this);
     italicAct->setStatusTip(tr("Insert italic text or change selected text to italic"));
@@ -466,7 +467,7 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
 
     m_editToolBar->addAction(italicAct);
 
-    QAction *strikethroughAct = new QAction(QIcon(":/resources/icons/strikethrough.svg"),
+    QAction *strikethroughAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/strikethrough.svg"),
                                             tr("Strikethrough\t%1").arg(VUtils::getShortcutText("Ctrl+D")),
                                             this);
     strikethroughAct->setStatusTip(tr("Insert strikethrough text or change selected text to strikethroughed"));
@@ -479,7 +480,7 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
 
     m_editToolBar->addAction(strikethroughAct);
 
-    QAction *inlineCodeAct = new QAction(QIcon(":/resources/icons/inline_code.svg"),
+    QAction *inlineCodeAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/inline_code.svg"),
                                          tr("Inline Code\t%1").arg(VUtils::getShortcutText("Ctrl+K")),
                                          this);
     inlineCodeAct->setStatusTip(tr("Insert inline-code text or change selected text to inline-coded"));
@@ -492,7 +493,7 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
 
     m_editToolBar->addAction(inlineCodeAct);
 
-    QAction *codeBlockAct = new QAction(QIcon(":/resources/icons/code_block.svg"),
+    QAction *codeBlockAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/code_block.svg"),
                                         tr("Code Block\t%1").arg(VUtils::getShortcutText("Ctrl+M")),
                                         this);
     codeBlockAct->setStatusTip(tr("Insert fenced code block text or wrap selected text into a fenced code block"));
@@ -508,7 +509,7 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
     m_editToolBar->addSeparator();
 
     // Insert link.
-    QAction *insetLinkAct = new QAction(QIcon(":/resources/icons/link.svg"),
+    QAction *insetLinkAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/link.svg"),
                                         tr("Insert Link\t%1").arg(VUtils::getShortcutText("Ctrl+L")),
                                         this);
     insetLinkAct->setStatusTip(tr("Insert a link"));
@@ -522,7 +523,7 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
     m_editToolBar->addAction(insetLinkAct);
 
     // Insert image.
-    QAction *insertImageAct = new QAction(QIcon(":/resources/icons/insert_image.svg"),
+    QAction *insertImageAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/insert_image.svg"),
                                           tr("Insert Image"),
                                           this);
     insertImageAct->setStatusTip(tr("Insert an image from file or URL"));
@@ -555,7 +556,7 @@ void VMainWindow::initNoteToolBar(QSize p_iconSize)
 
     // Attachment.
     m_attachmentList = new VAttachmentList(this);
-    m_attachmentBtn = new VButtonWithWidget(QIcon(":/resources/icons/attachment.svg"),
+    m_attachmentBtn = new VButtonWithWidget(VIconUtils::toolButtonIcon(":/resources/icons/attachment.svg"),
                                             "",
                                             m_attachmentList,
                                             this);
@@ -566,7 +567,7 @@ void VMainWindow::initNoteToolBar(QSize p_iconSize)
     m_attachmentBtn->setFocusPolicy(Qt::NoFocus);
     m_attachmentBtn->setEnabled(false);
 
-    QAction *flashPageAct = new QAction(QIcon(":/resources/icons/flash_page.svg"),
+    QAction *flashPageAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/flash_page.svg"),
                                         tr("Flash Page"),
                                         this);
     flashPageAct->setStatusTip(tr("Open the Flash Page to edit"));
@@ -589,13 +590,14 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
         fileToolBar->setIconSize(p_iconSize);
     }
 
-    newRootDirAct = new QAction(QIcon(":/resources/icons/create_rootdir_tb.svg"),
-                                tr("New &Root Folder"), this);
+    newRootDirAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/create_rootdir_tb.svg"),
+                                tr("New &Root Folder"),
+                                this);
     newRootDirAct->setStatusTip(tr("Create a root folder in current notebook"));
     connect(newRootDirAct, &QAction::triggered,
             directoryTree, &VDirectoryTree::newRootDirectory);
 
-    newNoteAct = new QAction(QIcon(":/resources/icons/create_note_tb.svg"),
+    newNoteAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/create_note_tb.svg"),
                              tr("New &Note"), this);
     newNoteAct->setStatusTip(tr("Create a note in current folder"));
     QString keySeq = g_config->getShortcutKeySequence("NewNote");
@@ -604,19 +606,19 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     connect(newNoteAct, &QAction::triggered,
             m_fileList, &VFileList::newFile);
 
-    noteInfoAct = new QAction(QIcon(":/resources/icons/note_info_tb.svg"),
+    noteInfoAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/note_info_tb.svg"),
                               tr("Note &Info"), this);
     noteInfoAct->setStatusTip(tr("View and edit current note's information"));
     connect(noteInfoAct, &QAction::triggered,
             this, &VMainWindow::curEditFileInfo);
 
-    deleteNoteAct = new QAction(QIcon(":/resources/icons/delete_note_tb.svg"),
+    deleteNoteAct = new QAction(VIconUtils::toolButtonDangerIcon(":/resources/icons/delete_note_tb.svg"),
                                 tr("&Delete Note"), this);
     deleteNoteAct->setStatusTip(tr("Delete current note"));
     connect(deleteNoteAct, &QAction::triggered,
             this, &VMainWindow::deleteCurNote);
 
-    editNoteAct = new QAction(QIcon(":/resources/icons/edit_note.svg"),
+    editNoteAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/edit_note.svg"),
                               tr("&Edit"), this);
     editNoteAct->setStatusTip(tr("Edit current note"));
     keySeq = g_config->getShortcutKeySequence("EditNote");
@@ -625,7 +627,7 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     connect(editNoteAct, &QAction::triggered,
             editArea, &VEditArea::editFile);
 
-    discardExitAct = new QAction(QIcon(":/resources/icons/discard_exit.svg"),
+    discardExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/discard_exit.svg"),
                                  tr("Discard Changes And Read"), this);
     discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
     discardExitAct->setToolTip(tr("Discard Changes And Read"));
@@ -636,7 +638,7 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     exitEditMenu->setToolTipsVisible(true);
     exitEditMenu->addAction(discardExitAct);
 
-    saveExitAct = new QAction(QIcon(":/resources/icons/save_exit.svg"),
+    saveExitAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/save_exit.svg"),
                               tr("Save Changes And Read"), this);
     saveExitAct->setStatusTip(tr("Save changes and exit edit mode"));
     saveExitAct->setMenu(exitEditMenu);
@@ -646,7 +648,7 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     connect(saveExitAct, &QAction::triggered,
             editArea, &VEditArea::saveAndReadFile);
 
-    saveNoteAct = new QAction(QIcon(":/resources/icons/save_note.svg"),
+    saveNoteAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/save_note.svg"),
                               tr("Save"), this);
     saveNoteAct->setStatusTip(tr("Save changes to current note"));
     keySeq = g_config->getShortcutKeySequence("SaveNote");
@@ -911,7 +913,7 @@ void VMainWindow::initFileMenu()
     fileMenu->addAction(openAct);
 
     // Import notes from files.
-    m_importNoteAct = newAction(QIcon(":/resources/icons/import_note.svg"),
+    m_importNoteAct = newAction(VIconUtils::menuIcon(":/resources/icons/import_note.svg"),
                                 tr("&New Notes From Files"), this);
     m_importNoteAct->setToolTip(tr("Create notes from external files in current folder by copy"));
     connect(m_importNoteAct, &QAction::triggered,
@@ -934,7 +936,7 @@ void VMainWindow::initFileMenu()
     fileMenu->addSeparator();
 
     // Print.
-    m_printAct = new QAction(QIcon(":/resources/icons/print.svg"),
+    m_printAct = new QAction(VIconUtils::menuIcon(":/resources/icons/print.svg"),
                              tr("&Print"), this);
     m_printAct->setToolTip(tr("Print current note"));
     connect(m_printAct, &QAction::triggered,
@@ -945,7 +947,7 @@ void VMainWindow::initFileMenu()
     initThemeMenu(fileMenu);
 
     // Settings.
-    QAction *settingsAct = newAction(QIcon(":/resources/icons/settings.svg"),
+    QAction *settingsAct = newAction(VIconUtils::menuIcon(":/resources/icons/settings.svg"),
                                      tr("&Settings"), this);
     settingsAct->setToolTip(tr("View and change settings for VNote"));
     settingsAct->setMenuRole(QAction::PreferencesRole);
@@ -1017,7 +1019,7 @@ void VMainWindow::initEditMenu()
     editMenu->setToolTipsVisible(true);
 
     // Find/Replace.
-    m_findReplaceAct = newAction(QIcon(":/resources/icons/find_replace.svg"),
+    m_findReplaceAct = newAction(VIconUtils::menuIcon(":/resources/icons/find_replace.svg"),
                                  tr("Find/Replace"), this);
     m_findReplaceAct->setToolTip(tr("Open Find/Replace dialog to search in current note"));
     QString keySeq = g_config->getShortcutKeySequence("Find");
@@ -1239,10 +1241,10 @@ void VMainWindow::initDockWindows()
 
     m_toolBox = new VToolBox(this);
     m_toolBox->addItem(outline,
-                       QIcon(":/resources/icons/outline.svg"),
+                       VIconUtils::toolBoxIcon(":/resources/icons/outline.svg"),
                        tr("Outline"));
     m_toolBox->addItem(m_snippetList,
-                       QIcon(":/resources/icons/snippets.svg"),
+                       VIconUtils::toolBoxIcon(":/resources/icons/snippets.svg"),
                        tr("Snippets"));
 
     toolDock->setWidget(m_toolBox);
@@ -1562,7 +1564,7 @@ void VMainWindow::initRenderStyleMenu(QMenu *p_menu)
     connect(m_renderStyleActs, &QActionGroup::triggered,
             this, &VMainWindow::setRenderStyle);
 
-    QAction *addAct = newAction(QIcon(":/resources/icons/add_style.svg"),
+    QAction *addAct = newAction(VIconUtils::menuIcon(":/resources/icons/add_style.svg"),
                                 tr("&Add Style"),
                                 m_renderStyleActs);
     addAct->setToolTip(tr("Open the folder to add your custom CSS style files "
@@ -1615,7 +1617,7 @@ void VMainWindow::initCodeBlockStyleMenu(QMenu *p_menu)
     connect(m_codeBlockStyleActs, &QActionGroup::triggered,
             this, &VMainWindow::setCodeBlockStyle);
 
-    QAction *addAct = newAction(QIcon(":/resources/icons/add_style.svg"),
+    QAction *addAct = newAction(VIconUtils::menuIcon(":/resources/icons/add_style.svg"),
                                 tr("&Add Style"),
                                 m_codeBlockStyleActs);
     addAct->setToolTip(tr("Open the folder to add your custom CSS style files "
@@ -1762,7 +1764,7 @@ void VMainWindow::initEditorStyleMenu(QMenu *p_menu)
     connect(m_editorStyleActs, &QActionGroup::triggered,
             this, &VMainWindow::setEditorStyle);
 
-    QAction *addAct = newAction(QIcon(":/resources/icons/add_style.svg"),
+    QAction *addAct = newAction(VIconUtils::menuIcon(":/resources/icons/add_style.svg"),
                                 tr("&Add Style"), m_editorStyleActs);
     addAct->setToolTip(tr("Open the folder to add your custom MDHL style files"));
     addAct->setCheckable(true);
@@ -2734,9 +2736,9 @@ void VMainWindow::openFlashPage()
 
 void VMainWindow::initHeadingButton(QToolBar *p_tb)
 {
-    m_headingBtn = new QPushButton(QIcon(":/resources/icons/heading.svg"),
-                                              "",
-                                              this);
+    m_headingBtn = new QPushButton(VIconUtils::toolButtonIcon(":/resources/icons/heading.svg"),
+                                   "",
+                                   this);
     m_headingBtn->setToolTip(tr("Headings"));
     m_headingBtn->setProperty("CornerBtn", true);
     m_headingBtn->setFocusPolicy(Qt::NoFocus);

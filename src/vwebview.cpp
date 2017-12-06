@@ -12,6 +12,7 @@
 #include <QImage>
 #include "vfile.h"
 #include "utils/vclipboardutils.h"
+#include "utils/viconutils.h"
 
 // We set the property of the clipboard to mark that the URL copied in the
 // clipboard has been altered.
@@ -73,7 +74,7 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
     const QList<QAction *> actions = menu->actions();
 
     if (!hasSelection() && m_file && m_file->isModifiable()) {
-        QAction *editAct= new QAction(QIcon(":/resources/icons/edit_note.svg"),
+        QAction *editAct= new QAction(VIconUtils::menuIcon(":/resources/icons/edit_note.svg"),
                                       tr("&Edit"), menu);
         editAct->setToolTip(tr("Edit current note"));
         connect(editAct, &QAction::triggered,

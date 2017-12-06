@@ -16,7 +16,7 @@ title_fg=#000000
 title_bg=#DADBDB
 
 hover_fg=#000000
-hover_bg=#DCDCDC
+hover_bg=#BCBCBC
 
 selected_fg=#000000
 selected_bg=#D3D3D3
@@ -43,6 +43,9 @@ content_bg=#FFFFFF
 selection_fg=#000000
 selection_bg=#64b5f6
 
+danger_red=#C9302C
+icon_fg=#222222
+
 [soft_defined]
 ; VAvatar.
 avatar_border_bg=@title_bg
@@ -57,7 +60,12 @@ navigation_label_bg=#F4F4F4
 
 ; Style of the bubble of VButtonWithWidget.
 bubble_fg=#FFFFFF
-bubble_bg=#6C6C6C
+bubble_bg=#616161
+
+; Icons' foreground.
+danger_icon_fg=@danger_red
+item_icon_fg=@icon_fg
+title_icon_fg=@icon_fg
 
 [widgets]
 ; Widget color attributes.
@@ -79,6 +87,8 @@ menu_bg=@base_bg
 menu_fg=@base_fg
 menu_item_selected_bg=@selected_bg
 menu_separator_bg=@separator_bg
+menu_icon_fg=@icon_fg
+menu_icon_danger_fg=@danger_icon_fg
 
 ; Tooltip.
 tooltip_border=@border_bg
@@ -89,6 +99,12 @@ tooltip_fg=@base_fg
 toolbar_bg=@main_bg
 toolbutton_hover_bg=@hover_bg
 toolbutton_pressed_bg=@pressed_bg
+toolbutton_checked_bg=@selected_bg
+toolbutton_icon_fg=@icon_fg
+toolbutton_icon_danger_fg=@danger_icon_fg
+
+; Toolbox.
+toolbox_icon_fg=@icon_fg
 
 ; Dockwidget.
 dockwidget_title_bg=@title_bg
@@ -99,6 +115,7 @@ pushbutton_fg=@base_fg
 pushbutton_bg=transparent
 pushbutton_border=@border_bg
 pushbutton_pressed_bg=@pressed_bg
+pushbutton_checked_bg=@selected_bg
 pushbutton_hover_bg=@hover_bg
 pushbutton_default_border=#424242
 
@@ -125,6 +142,9 @@ pushbutton_dangerbtn_hover_fg=#FFF
 pushbutton_dangerbtn_hover_bg=#C9302C
 pushbutton_dangerbtn_hover_border=#AC2925
 
+button_icon_fg=@icon_fg
+button_icon_danger_fg=@danger_icon_fg
+
 ; ComboBox.
 combobox_border=@border_bg
 combobox_fg=@content_fg
@@ -135,6 +155,7 @@ combobox_view_selected_fg=@selected_fg
 combobox_view_item_hover_fg=@hover_fg
 combobox_view_item_hover_bg=@hover_bg
 combobox_focus_bg=@focus_bg
+combobox_item_icon_fg=@item_icon_fg
 
 ; Label.
 label_fg=@base_fg
@@ -165,7 +186,10 @@ tabbar_hover_bg=@hover_bg
 tabbar_hover_border=@border_bg
 
 tabbar_closebutton_hover_bg=@hover_bg
-tabbar_clostbutton_focus_bg=@focus_bg
+tabbar_closebutton_focus_bg=@focus_bg
+
+tabbar_icon_fg=@icon_fg
+tabbar_icon_special_fg=@danger_red
 
 ; SelectorItem.
 selectoritem_border=@base_fg
@@ -186,6 +210,7 @@ treeview_item_selected_avtive_fg=@active_fg
 treeview_item_selected_avtive_bg=@active_bg
 treeview_item_selected_inactive_fg=@inactive_fg
 treeview_item_selected_inactive_bg=@inactive_bg
+treeview_item_icon_fg=@item_icon_fg
 
 ; ListView.
 listview_fg=@content_fg
@@ -211,3 +236,7 @@ statusbar_bg=@main_bg
 scrollbar_bg=#EEEEEE
 scrollbar_handle_bg=#D0D0D0
 scrollbar_addline_bg=#E0E0E0
+
+; VEditWindow.
+editwindow_corner_icon_fg=@icon_fg
+editwindow_corner_icon_inactive_fg=#808080

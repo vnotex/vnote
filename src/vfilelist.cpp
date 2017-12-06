@@ -16,6 +16,7 @@
 #include "dialog/vsortdialog.h"
 #include "vmainwindow.h"
 #include "utils/vimnavigationforwidget.h"
+#include "utils/viconutils.h"
 
 extern VConfigManager *g_config;
 extern VNote *g_vnote;
@@ -86,7 +87,7 @@ void VFileList::initShortcuts()
 
 void VFileList::initActions()
 {
-    newFileAct = new QAction(QIcon(":/resources/icons/create_note.svg"),
+    newFileAct = new QAction(VIconUtils::menuIcon(":/resources/icons/create_note.svg"),
                              tr("&New Note"), this);
     QString shortcutStr = VUtils::getShortcutText(g_config->getShortcutKeySequence("NewNote"));
     if (!shortcutStr.isEmpty()) {
@@ -97,7 +98,7 @@ void VFileList::initActions()
     connect(newFileAct, SIGNAL(triggered(bool)),
             this, SLOT(newFile()));
 
-    m_openInReadAct = new QAction(QIcon(":/resources/icons/reading.svg"),
+    m_openInReadAct = new QAction(VIconUtils::menuIcon(":/resources/icons/reading.svg"),
                                   tr("&Open In Read Mode"), this);
     m_openInReadAct->setToolTip(tr("Open current note in read mode"));
     connect(m_openInReadAct, &QAction::triggered,
@@ -108,7 +109,7 @@ void VFileList::initActions()
                 }
             });
 
-    m_openInEditAct = new QAction(QIcon(":/resources/icons/editing.svg"),
+    m_openInEditAct = new QAction(VIconUtils::menuIcon(":/resources/icons/editing.svg"),
                                   tr("Open In &Edit Mode"), this);
     m_openInEditAct->setToolTip(tr("Open current note in edit mode"));
     connect(m_openInEditAct, &QAction::triggered,
@@ -119,31 +120,31 @@ void VFileList::initActions()
                 }
             });
 
-    deleteFileAct = new QAction(QIcon(":/resources/icons/delete_note.svg"),
+    deleteFileAct = new QAction(VIconUtils::menuDangerIcon(":/resources/icons/delete_note.svg"),
                                 tr("&Delete"), this);
     deleteFileAct->setToolTip(tr("Delete selected note"));
     connect(deleteFileAct, SIGNAL(triggered(bool)),
             this, SLOT(deleteSelectedFiles()));
 
-    fileInfoAct = new QAction(QIcon(":/resources/icons/note_info.svg"),
+    fileInfoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/note_info.svg"),
                               tr("&Info\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)), this);
     fileInfoAct->setToolTip(tr("View and edit current note's information"));
     connect(fileInfoAct, SIGNAL(triggered(bool)),
             this, SLOT(fileInfo()));
 
-    copyAct = new QAction(QIcon(":/resources/icons/copy.svg"),
+    copyAct = new QAction(VIconUtils::menuIcon(":/resources/icons/copy.svg"),
                           tr("&Copy\t%1").arg(VUtils::getShortcutText(c_copyShortcutSequence)), this);
     copyAct->setToolTip(tr("Copy selected notes"));
     connect(copyAct, &QAction::triggered,
             this, &VFileList::copySelectedFiles);
 
-    cutAct = new QAction(QIcon(":/resources/icons/cut.svg"),
+    cutAct = new QAction(VIconUtils::menuIcon(":/resources/icons/cut.svg"),
                          tr("C&ut\t%1").arg(VUtils::getShortcutText(c_cutShortcutSequence)), this);
     cutAct->setToolTip(tr("Cut selected notes"));
     connect(cutAct, &QAction::triggered,
             this, &VFileList::cutSelectedFiles);
 
-    pasteAct = new QAction(QIcon(":/resources/icons/paste.svg"),
+    pasteAct = new QAction(VIconUtils::menuIcon(":/resources/icons/paste.svg"),
                            tr("&Paste\t%1").arg(VUtils::getShortcutText(c_pasteShortcutSequence)), this);
     pasteAct->setToolTip(tr("Paste notes in current folder"));
     connect(pasteAct, &QAction::triggered,
@@ -154,7 +155,7 @@ void VFileList::initActions()
     connect(m_openLocationAct, &QAction::triggered,
             this, &VFileList::openFileLocation);
 
-    m_sortAct = new QAction(QIcon(":/resources/icons/sort.svg"),
+    m_sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
                             tr("&Sort"),
                             this);
     m_sortAct->setToolTip(tr("Sort notes in this folder manually"));

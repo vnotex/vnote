@@ -11,6 +11,7 @@
 #include "vhtmltab.h"
 #include "vfilelist.h"
 #include "vconfigmanager.h"
+#include "utils/viconutils.h"
 
 extern VConfigManager *g_config;
 extern VMainWindow *g_mainWin;
@@ -57,25 +58,25 @@ VEditWindow::VEditWindow(VEditArea *editArea, QWidget *parent)
 
 void VEditWindow::initTabActions()
 {
-    m_locateAct = new QAction(QIcon(":/resources/icons/locate_note.svg"),
+    m_locateAct = new QAction(VIconUtils::menuIcon(":/resources/icons/locate_note.svg"),
                               tr("Locate To Folder"), this);
     m_locateAct->setToolTip(tr("Locate the folder of current note"));
     connect(m_locateAct, &QAction::triggered,
             this, &VEditWindow::handleLocateAct);
 
-    m_moveLeftAct = new QAction(QIcon(":/resources/icons/move_tab_left.svg"),
+    m_moveLeftAct = new QAction(VIconUtils::menuIcon(":/resources/icons/move_tab_left.svg"),
                                 tr("Move One Split Left"), this);
     m_moveLeftAct->setToolTip(tr("Move current tab to the split on the left"));
     connect(m_moveLeftAct, &QAction::triggered,
             this, &VEditWindow::handleMoveLeftAct);
 
-    m_moveRightAct = new QAction(QIcon(":/resources/icons/move_tab_right.svg"),
+    m_moveRightAct = new QAction(VIconUtils::menuIcon(":/resources/icons/move_tab_right.svg"),
                                  tr("Move One Split Right"), this);
     m_moveRightAct->setToolTip(tr("Move current tab to the split on the right"));
     connect(m_moveRightAct, &QAction::triggered,
             this, &VEditWindow::handleMoveRightAct);
 
-    m_closeTabAct = new QAction(QIcon(":/resources/icons/close.svg"),
+    m_closeTabAct = new QAction(VIconUtils::menuIcon(":/resources/icons/close.svg"),
                                 tr("Close Tab"), this);
     m_closeTabAct->setToolTip(tr("Close current note tab"));
     connect(m_closeTabAct, &QAction::triggered,
@@ -125,7 +126,7 @@ void VEditWindow::initTabActions()
                 }
             });
 
-    m_noteInfoAct = new QAction(QIcon(":/resources/icons/note_info.svg"),
+    m_noteInfoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/note_info.svg"),
                                 tr("Note Info"), this);
     m_noteInfoAct->setToolTip(tr("View and edit information of the note"));
     connect(m_noteInfoAct, &QAction::triggered,
@@ -169,7 +170,7 @@ void VEditWindow::initTabActions()
                 editor->reloadFromDisk();
             });
 
-    m_recycleBinAct = new QAction(QIcon(":/resources/icons/recycle_bin.svg"),
+    m_recycleBinAct = new QAction(VIconUtils::menuIcon(":/resources/icons/recycle_bin.svg"),
                                   tr("&Recycle Bin"), this);
     m_recycleBinAct->setToolTip(tr("Open the recycle bin of this note"));
     connect(m_recycleBinAct, &QAction::triggered,
@@ -200,7 +201,7 @@ void VEditWindow::initTabActions()
 void VEditWindow::setupCornerWidget()
 {
     // Left button
-    leftBtn = new QPushButton(QIcon(":/resources/icons/corner_tablist.svg"),
+    leftBtn = new QPushButton(VIconUtils::editWindowCornerIcon(":/resources/icons/corner_tablist.svg"),
                               "", this);
     leftBtn->setProperty("CornerBtn", true);
     leftBtn->setToolTip(tr("Opened Notes List"));
@@ -212,7 +213,7 @@ void VEditWindow::setupCornerWidget()
 
     // Right button
     // Actions
-    splitAct = new QAction(QIcon(":/resources/icons/split_window.svg"),
+    splitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/split_window.svg"),
                            tr("Split"), this);
     splitAct->setToolTip(tr("Split current window vertically"));
     connect(splitAct, &QAction::triggered,
@@ -220,13 +221,13 @@ void VEditWindow::setupCornerWidget()
                 splitWindow(true);
             });
 
-    removeSplitAct = new QAction(QIcon(":/resources/icons/remove_split.svg"),
+    removeSplitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/remove_split.svg"),
                                  tr("Remove split"), this);
     removeSplitAct->setToolTip(tr("Remove current split window"));
     connect(removeSplitAct, &QAction::triggered,
             this, &VEditWindow::removeSplit);
 
-    rightBtn = new QPushButton(QIcon(":/resources/icons/corner_menu.svg"),
+    rightBtn = new QPushButton(VIconUtils::editWindowCornerIcon(":/resources/icons/corner_menu.svg"),
                                "", this);
     rightBtn->setProperty("CornerBtn", true);
     rightBtn->setToolTip(tr("Menu"));
@@ -522,16 +523,16 @@ void VEditWindow::updateTabInfo(int p_index)
     setTabText(p_index, generateTabText(p_index, editor));
     setTabToolTip(p_index, generateTooltip(file));
 
-    QString iconUrl;
+    QIcon icon;
     if (editMode) {
-        iconUrl = editor->isModified() ? ":/resources/icons/editing_modified.svg"
-                                       : ":/resources/icons/editing.svg";
+        icon = editor->isModified() ? VIconUtils::tabBarSpecialIcon(":/resources/icons/editing_modified.svg")
+                                    : VIconUtils::tabBarIcon(":/resources/icons/editing.svg");
     } else {
-        iconUrl = editor->isModified() ? ":/resources/icons/reading_modified.svg"
-                                       : ":/resources/icons/reading.svg";
+        icon = editor->isModified() ? VIconUtils::tabBarSpecialIcon(":/resources/icons/reading_modified.svg")
+                                    : VIconUtils::tabBarIcon(":/resources/icons/reading.svg");
     }
 
-    setTabIcon(p_index, QIcon(iconUrl));
+    setTabIcon(p_index, icon);
 }
 
 void VEditWindow::updateAllTabsSequence()
@@ -968,11 +969,11 @@ void VEditWindow::connectEditTab(const VEditTab *p_tab)
 void VEditWindow::setCurrentWindow(bool p_current)
 {
     if (p_current) {
-        rightBtn->setIcon(QIcon(":/resources/icons/corner_menu_cur.svg"));
-        leftBtn->setIcon(QIcon(":/resources/icons/corner_tablist_cur.svg"));
+        rightBtn->setIcon(VIconUtils::editWindowCornerIcon(":/resources/icons/corner_menu_cur.svg"));
+        leftBtn->setIcon(VIconUtils::editWindowCornerIcon(":/resources/icons/corner_tablist_cur.svg"));
     } else {
-        rightBtn->setIcon(QIcon(":/resources/icons/corner_menu.svg"));
-        leftBtn->setIcon(QIcon(":/resources/icons/corner_tablist.svg"));
+        rightBtn->setIcon(VIconUtils::editWindowCornerInactiveIcon(":/resources/icons/corner_menu.svg"));
+        leftBtn->setIcon(VIconUtils::editWindowCornerInactiveIcon(":/resources/icons/corner_tablist.svg"));
     }
 }
 
