@@ -16,19 +16,19 @@ title_fg=#000000
 title_bg=#DADBDB
 
 hover_fg=#000000
-hover_bg=#BCBCBC
+hover_bg=#C0C0C0
 
 selected_fg=#000000
-selected_bg=#D3D3D3
+selected_bg=#BCBCBC
 
 active_fg=#000000
 active_bg=#C0C0C0
 
 inactive_fg=#000000
-inactive_bg=#D0D0D0
+inactive_bg=#D3D3D3
 
 focus_fg=#000000
-focus_bg=#C0C0C0
+focus_bg=#A9A9A9
 
 pressed_fg=#000000
 pressed_bg=#808080
@@ -121,19 +121,24 @@ pushbutton_default_border=#424242
 
 pushbutton_cornerbtn_hover_bg=@hover_bg
 pushbutton_cornerbtn_focus_bg=@focus_bg
+pushbutton_cornerbtn_pressed_bg=@pressed_bg
 
 pushbutton_statusbtn_hover_bg=@hover_bg
 pushbutton_statusbtn_focus_bg=@focus_bg
+pushbutton_statusbtn_pressed_bg=@pressed_bg
 
 pushbutton_flatbtn_hover_bg=@hover_bg
 pushbutton_flatbtn_focus_bg=@focus_bg
+pushbutton_flatbtn_pressed_bg=@pressed_bg
 
 pushbutton_selectionbtn_hover_bg=@hover_bg
 pushbutton_selectionbtn_focus_bg=@focus_bg
+pushbutton_selectionbtn_pressed_bg=@pressed_bg
 
 pushbutton_titlebtn_bg=@title_bg
 pushbutton_titlebtn_hover_bg=@hover_bg
 pushbutton_titlebtn_focus_bg=@focus_bg
+pushbutton_titlebtn_pressed_bg=@pressed_bg
 
 pushbutton_dangerbtn_fg=#FFF
 pushbutton_dangerbtn_border=#D43F3A

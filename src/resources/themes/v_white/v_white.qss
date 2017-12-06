@@ -64,7 +64,7 @@ QMenu::item:selected {
 }
 
 QMenu::icon:checked { /* appearance of a 'checked' icon */
-    border: 2px solid @menu_item_selected_bg;
+    border: 2px solid @menu_fg;
 }
 
 QMenu::separator {
@@ -84,6 +84,7 @@ QToolBar {
     background: @toolbar_bg;
 }
 
+/* QToolButton */
 QToolButton {
     border: none;
     background: transparent;
@@ -104,12 +105,16 @@ QToolButton:hover {
     background: @toolbutton_hover_bg;
 }
 
-QToolButton::pressed {
+QToolButton:pressed {
     background: @toolbutton_pressed_bg;
 }
 
-QToolButton::checked {
+QToolButton:checked {
     background: @toolbutton_checked_bg;
+}
+
+QToolButton:checked:hover {
+    background: @toolbutton_hover_bg;
 }
 
 /* the subcontrols below are used only in the MenuButtonPopup mode */
@@ -117,6 +122,13 @@ QToolButton::menu-button {
     border: none;
     width: 16px;
 }
+
+QToolButton::menu-arrow {
+    image: url(arrow_dropdown.svg);
+    width: 16px;
+    height: 16px;
+}
+/* End QToolButton*/
 
 /* DockWidget */
 QDockWidget {
@@ -155,6 +167,10 @@ QPushButton:checked {
     background-color: @pushbutton_checked_bg;
 }
 
+QPushButton:checked:hover {
+    background-color: @pushbutton_hover_bg;
+}
+
 QPushButton:hover {
     background-color: @pushbutton_hover_bg;
 }
@@ -165,6 +181,12 @@ QPushButton:flat {
 
 QPushButton::default {
     border-color: @pushbutton_default_border;
+}
+
+QPushButton::menu-indicator {
+    image: url(arrow_dropdown.svg);
+    width: 16px;
+    height: 16px;
 }
 
 QPushButton[CornerBtn="true"] {
@@ -187,6 +209,10 @@ QPushButton[CornerBtn="true"]:focus {
     background-color: @pushbutton_cornerbtn_focus_bg;
 }
 
+QPushButton[CornerBtn="true"]:pressed {
+    background-color: @pushbutton_cornerbtn_pressed_bg;
+}
+
 QPushButton[StatusBtn="true"] {
     font: bold;
     padding: 0px 2px 0px 2px;
@@ -204,6 +230,10 @@ QPushButton[StatusBtn="true"]:focus {
     background-color: @pushbutton_statusbtn_focus_bg;;
 }
 
+QPushButton[StatusBtn="true"]:pressed {
+    background-color: @pushbutton_statusbtn_pressed_bg;
+}
+
 QPushButton[FlatBtn="true"] {
     padding: 4px;
     margin: 0px;
@@ -218,6 +248,10 @@ QPushButton[FlatBtn="true"]:hover {
 
 QPushButton[FlatBtn="true"]:focus {
     background-color: @pushbutton_flatbtn_focus_bg;
+}
+
+QPushButton[FlatBtn="true"]:focus {
+    background-color: @pushbutton_flatbtn_pressed_bg;
 }
 
 QPushButton[SelectionBtn="true"] {
@@ -237,6 +271,10 @@ QPushButton[SelectionBtn="true"]:focus {
     background-color: @pushbutton_selectionbtn_focus_bg;
 }
 
+QPushButton[SelectionBtn="true"]:focus {
+    background-color: @pushbutton_selectionbtn_pressed_bg;
+}
+
 QPushButton[TitleBtn="true"] {
     padding: 4px;
     margin: 0px;
@@ -251,6 +289,10 @@ QPushButton[TitleBtn="true"]:hover {
 
 QPushButton[TitleBtn="true"]:focus {
     background-color: @pushbutton_titlebtn_focus_bg;
+}
+
+QPushButton[TitleBtn="true"]:focus {
+    background-color: @pushbutton_titlebtn_pressed_bg;
 }
 
 QPushButton[DangerBtn="true"] {
