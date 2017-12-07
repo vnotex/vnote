@@ -2147,13 +2147,14 @@ void VMainWindow::saveStateAndGeometry()
     g_config->setMainWindowState(saveState());
     g_config->setToolsDockChecked(toolDock->isVisible());
 
-    // In one panel view, it will save the wrong state that the directory tree
-    // panel has a width of zero.
-    changePanelView(PanelViewState::TwoPanels);
-    g_config->setMainSplitterState(m_mainSplitter->saveState());
-
-    changePanelView(PanelViewState::CompactMode);
-    g_config->setNaviSplitterState(m_naviSplitter->saveState());
+    if (m_panelViewState == PanelViewState::CompactMode) {
+        g_config->setNaviSplitterState(m_naviSplitter->saveState());
+    } else {
+        // In one panel view, it will save the wrong state that the directory tree
+        // panel has a width of zero.
+        changePanelView(PanelViewState::TwoPanels);
+        g_config->setMainSplitterState(m_mainSplitter->saveState());
+    }
 }
 
 void VMainWindow::restoreStateAndGeometry()
