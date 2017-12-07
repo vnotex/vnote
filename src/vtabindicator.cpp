@@ -31,6 +31,7 @@ void VTabIndicator::setupUI()
     m_systemLabel->setProperty("ColorGreenLabel", true);
 
     m_cursorLabel = new QLabel(this);
+    m_cursorLabel->setProperty("TabIndicatorLabel", true);
 
     QHBoxLayout *mainLayout = new QHBoxLayout(this);
     mainLayout->addWidget(m_cursorLabel);

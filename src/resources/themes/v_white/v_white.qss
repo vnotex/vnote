@@ -132,6 +132,7 @@ QToolButton::menu-arrow {
 
 /* DockWidget */
 QDockWidget {
+    color: @dockwidget_title_fg;
     titlebar-close-icon: url(close.svg);
     titlebar-normal-icon: url(float.svg);
 }
@@ -481,7 +482,7 @@ QLabel[MenuSeparator="true"] {
 VVimIndicator QLabel[VimIndicatorKeyLabel="true"] {
     font: bold;
     color: @vim_indicator_key_label_fg;
-    background: @vim_indicator_key_label_bg;
+    background: transparent;
 }
 
 VVimIndicator QLabel[VimIndicatorModeLabel="true"] {
@@ -489,6 +490,11 @@ VVimIndicator QLabel[VimIndicatorModeLabel="true"] {
     font: bold;
     color: @vim_indicator_mode_label_fg;
     /* background color will be controlled by the code. */
+}
+
+VTabIndicator QLabel[TabIndicatorLabel="true"] {
+    color: @tab_indicator_label_fg;
+    background: transparent;
 }
 /* End QLabel */
 
