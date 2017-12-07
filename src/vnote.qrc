@@ -151,5 +151,13 @@
         <file>resources/themes/v_white/branch_more.svg</file>
         <file>resources/themes/v_white/branch_open.svg</file>
         <file>resources/themes/v_white/line.svg</file>
+        <file>resources/themes/v_white/down.svg</file>
+        <file>resources/themes/v_white/left.svg</file>
+        <file>resources/themes/v_white/right.svg</file>
+        <file>resources/themes/v_white/up.svg</file>
+        <file>resources/themes/v_white/left_disabled.svg</file>
+        <file>resources/themes/v_white/right_disabled.svg</file>
+        <file>resources/themes/v_white/down_disabled.svg</file>
+        <file>resources/themes/v_white/up_disabled.svg</file>
     </qresource>
 </RCC>

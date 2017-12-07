@@ -516,6 +516,11 @@ void VEditWindow::updateTabStatus(int p_index)
 
 void VEditWindow::updateTabInfo(int p_index)
 {
+    static QIcon editModified = VIconUtils::tabBarSpecialIcon(":/resources/icons/editing_modified.svg");
+    static QIcon edit = VIconUtils::tabBarIcon(":/resources/icons/editing.svg");
+    static QIcon readModified = VIconUtils::tabBarSpecialIcon(":/resources/icons/reading_modified.svg");
+    static QIcon read = VIconUtils::tabBarIcon(":/resources/icons/reading.svg");
+
     VEditTab *editor = getTab(p_index);
     const VFile *file = editor->getFile();
     bool editMode = editor->isEditMode();
@@ -525,11 +530,9 @@ void VEditWindow::updateTabInfo(int p_index)
 
     QIcon icon;
     if (editMode) {
-        icon = editor->isModified() ? VIconUtils::tabBarSpecialIcon(":/resources/icons/editing_modified.svg")
-                                    : VIconUtils::tabBarIcon(":/resources/icons/editing.svg");
+        icon = editor->isModified() ? editModified : edit;
     } else {
-        icon = editor->isModified() ? VIconUtils::tabBarSpecialIcon(":/resources/icons/reading_modified.svg")
-                                    : VIconUtils::tabBarIcon(":/resources/icons/reading.svg");
+        icon = editor->isModified() ? readModified : read;
     }
 
     setTabIcon(p_index, icon);
@@ -968,12 +971,17 @@ void VEditWindow::connectEditTab(const VEditTab *p_tab)
 
 void VEditWindow::setCurrentWindow(bool p_current)
 {
+    static QIcon menuCur = VIconUtils::editWindowCornerIcon(":/resources/icons/corner_menu_cur.svg");
+    static QIcon tablistCur = VIconUtils::editWindowCornerIcon(":/resources/icons/corner_tablist_cur.svg");
+    static QIcon menu = VIconUtils::editWindowCornerInactiveIcon(":/resources/icons/corner_menu.svg");
+    static QIcon tablist = VIconUtils::editWindowCornerInactiveIcon(":/resources/icons/corner_tablist.svg");
+
     if (p_current) {
-        rightBtn->setIcon(VIconUtils::editWindowCornerIcon(":/resources/icons/corner_menu_cur.svg"));
-        leftBtn->setIcon(VIconUtils::editWindowCornerIcon(":/resources/icons/corner_tablist_cur.svg"));
+        rightBtn->setIcon(menuCur);
+        leftBtn->setIcon(tablistCur);
     } else {
-        rightBtn->setIcon(VIconUtils::editWindowCornerInactiveIcon(":/resources/icons/corner_menu.svg"));
-        leftBtn->setIcon(VIconUtils::editWindowCornerInactiveIcon(":/resources/icons/corner_tablist.svg"));
+        rightBtn->setIcon(menu);
+        leftBtn->setIcon(tablist);
     }
 }
 

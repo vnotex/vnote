@@ -13,8 +13,11 @@
 #include "vconfigmanager.h"
 #include "vbuttonwithwidget.h"
 #include "vedittab.h"
+#include "vpalette.h"
 
 extern VConfigManager *g_config;
+
+extern VPalette *g_palette;
 
 VVimIndicator::VVimIndicator(QWidget *p_parent)
     : QWidget(p_parent), m_vim(NULL)
@@ -99,6 +102,7 @@ void VVimIndicator::setupUI()
     m_cmdLineEdit->hide();
 
     m_modeLabel = new QLabel(this);
+    m_modeLabel->setProperty("VimIndicatorModeLabel", true);
 
     QTreeWidget *regTree = new QTreeWidget(this);
     regTree->setColumnCount(2);
@@ -133,6 +137,7 @@ void VVimIndicator::setupUI()
             this, &VVimIndicator::updateMarksTree);
 
     m_keyLabel = new QLabel(this);
+    m_keyLabel->setProperty("VimIndicatorKeyLabel", true);
     QFontMetrics metric(font());
     m_keyLabel->setMinimumWidth(metric.width('A') * 5);
 
@@ -268,9 +273,7 @@ void VVimIndicator::update(const VVim *p_vim, const VEditTab *p_editTab)
         pendingKeys = p_vim->getPendingKeys();
     }
 
-    QString style = QString("QLabel { padding: 0px 2px 0px 2px; font: bold; background-color: %1; }")
-                           .arg(modeBackgroundColor(mode));
-    m_modeLabel->setStyleSheet(style);
+    m_modeLabel->setStyleSheet(QString("background: %1;").arg(modeBackgroundColor(mode)));
     m_modeLabel->setText(modeToString(mode));
 
     m_regBtn->setText(curRegName);
@@ -279,9 +282,7 @@ void VVimIndicator::update(const VVim *p_vim, const VEditTab *p_editTab)
                               .arg(lastUsedMark.isNull() ? QChar(' ') : lastUsedMark);
     m_markBtn->setText(markText);
 
-    QString keyText = QString("<span style=\"font-weight:bold; color: %1;\">%2</span>")
-                             .arg("#15AE67").arg(pendingKeys);
-    m_keyLabel->setText(keyText);
+    m_keyLabel->setText(pendingKeys);
 }
 
 void VVimIndicator::updateRegistersTree(QWidget *p_widget)
@@ -550,7 +551,7 @@ void VVimCmdLineEdit::setRegisterPending(bool p_pending)
 {
     if (p_pending && !m_registerPending) {
         // Going to pending.
-        setStyleSheet("QLineEdit { background: #D6EACE }");
+        setStyleSheet(QString("background: %1;").arg(g_palette->color("vim_indicator_cmd_edit_pending_bg")));
     } else if (!p_pending && m_registerPending) {
         // Leaving pending.
         setStyleSheet(m_originStyleSheet);

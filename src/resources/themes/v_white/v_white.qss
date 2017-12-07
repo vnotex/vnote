@@ -478,6 +478,18 @@ QLabel[MenuSeparator="true"] {
     border-top: 1px solid @menu_separator_bg
 }
 
+VVimIndicator QLabel[VimIndicatorKeyLabel="true"] {
+    font: bold;
+    color: @vim_indicator_key_label_fg;
+    background: @vim_indicator_key_label_bg;
+}
+
+VVimIndicator QLabel[VimIndicatorModeLabel="true"] {
+    padding: 0px 2px 0px 2px;
+    font: bold;
+    color: @vim_indicator_mode_label_fg;
+    /* background color will be controlled by the code. */
+}
 /* End QLabel */
 
 /* QLineEdit */
@@ -494,6 +506,8 @@ QLineEdit[VimCommandLine="true"] {
     padding: 0px;
     margin: 0px;
     border: none;
+    color: @lineedit_fg;
+    background: @lineedit_bg;
 }
 /* End QLineEdit */
 
@@ -547,6 +561,30 @@ QTabBar::close-button:hover {
 QTabBar::close-button:focus {
     image: url(close.svg);
     background-color: @tabbar_closebutton_focus_bg;
+}
+
+QTabBar::scroller {
+    width: 20px;
+}
+
+QTabBar QToolButton {
+    border: none;
+}
+
+QTabBar QToolButton::right-arrow:enabled {
+    image: url(right.svg);
+}
+
+QTabBar QToolButton::left-arrow:enabled {
+    image: url(left.svg);
+}
+
+QTabBar QToolButton::right-arrow:disabled {
+    image: url(right_disabled.svg);
+}
+
+QTabBar QToolButton::left-arrow:disabled {
+    image: url(left_disabled.svg);
 }
 /* End QTabBar */
 
@@ -699,3 +737,139 @@ QDialog {
     color: @base_fg;
     background: @base_bg;
 }
+
+/* QScrollBar */
+QScrollBar:vertical {
+    background: @scrollbar_bg;
+    width: 20px;
+    margin: 20px 0px 20px 0px;
+    padding: 0px 2px 0px 2px;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background: @scrollbar_handle_bg;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: @scrollbar_handle_hover_bg;
+}
+
+QScrollBar::handle:vertical:pressed {
+    background: @scrollbar_handle_pressed_bg;
+}
+
+QScrollBar::add-line:vertical {
+    border: none;
+    background: @scrollbar_bg;
+    width: 20px;
+    height: 20px;
+    subcontrol-position: bottom;
+    subcontrol-origin: margin;
+}
+
+QScrollBar::add-line:vertical:hover {
+    background: @scrollbar_handle_hover_bg;
+}
+
+QScrollBar::add-line:vertical:pressed {
+    background: @scrollbar_handle_pressed_bg;
+}
+
+QScrollBar::sub-line:vertical {
+    border: none;
+    background: @scrollbar_bg;
+    width: 20px;
+    height: 20px;
+    subcontrol-position: top;
+    subcontrol-origin: margin;
+}
+
+QScrollBar::sub-line:vertical:hover {
+    background: @scrollbar_handle_hover_bg;
+}
+
+QScrollBar::sub-line:vertical:pressed {
+    background: @scrollbar_handle_pressed_bg;
+}
+
+QScrollBar::down-arrow:vertical {
+    image: url(down.svg);
+    width: 20px;
+    height: 20px;
+}
+
+QScrollBar::up-arrow:vertical {
+    image: url(up.svg);
+    width: 20px;
+    height: 20px;
+}
+
+QScrollBar:horizontal {
+    background: @scrollbar_bg;
+    height: 20px;
+    margin: 0px 20px 0px 20px;
+    padding: 2px 0px 2px 0px;
+    border: none;
+}
+
+QScrollBar::handle:horizontal {
+    background: @scrollbar_handle_bg;
+    min-width: 20px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: @scrollbar_handle_hover_bg;
+}
+
+QScrollBar::handle:horizontal:pressed {
+    background: @scrollbar_handle_pressed_bg;
+}
+
+QScrollBar::add-line:horizontal {
+    border: none;
+    background: @scrollbar_bg;
+    width: 20px;
+    height: 20px;
+    subcontrol-position: right;
+    subcontrol-origin: margin;
+}
+
+QScrollBar::add-line:horizontal:hover {
+    background: @scrollbar_handle_hover_bg;
+}
+
+QScrollBar::add-line:horizontal:pressed {
+    background: @scrollbar_handle_pressed_bg;
+}
+
+QScrollBar::sub-line:horizontal {
+    border: none;
+    background: @scrollbar_bg;
+    width: 20px;
+    height: 20px;
+    subcontrol-position: left;
+    subcontrol-origin: margin;
+}
+
+QScrollBar::sub-line:horizontal:hover {
+    background: @scrollbar_handle_hover_bg;
+}
+
+QScrollBar::sub-line:horizontal:pressed {
+    background: @scrollbar_handle_pressed_bg;
+}
+
+QScrollBar::right-arrow:horizontal {
+    image: url(right.svg);
+    width: 20px;
+    height: 20px;
+}
+
+QScrollBar::left-arrow:horizontal {
+    image: url(left.svg);
+    width: 20px;
+    height: 20px;
+}
+/* End QScrollBar */

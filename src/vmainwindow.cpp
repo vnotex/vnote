@@ -506,8 +506,6 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
 
     m_editToolBar->addAction(codeBlockAct);
 
-    m_editToolBar->addSeparator();
-
     // Insert link.
     QAction *insetLinkAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/link.svg"),
                                         tr("Insert Link\t%1").arg(VUtils::getShortcutText("Ctrl+L")),
@@ -668,13 +666,11 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
 
     fileToolBar->addAction(newRootDirAct);
     fileToolBar->addAction(newNoteAct);
-    fileToolBar->addSeparator();
     fileToolBar->addAction(noteInfoAct);
     fileToolBar->addAction(deleteNoteAct);
     fileToolBar->addAction(editNoteAct);
     fileToolBar->addAction(saveExitAct);
     fileToolBar->addAction(saveNoteAct);
-    fileToolBar->addSeparator();
 }
 
 void VMainWindow::initMenuBar()
