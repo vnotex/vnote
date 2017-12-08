@@ -81,9 +81,10 @@ void VEditTab::wheelEvent(QWheelEvent *p_event)
     p_event->ignore();
 }
 
-VEditTabInfo VEditTab::fetchTabInfo() const
+VEditTabInfo VEditTab::fetchTabInfo(VEditTabInfo::InfoType p_type) const
 {
     VEditTabInfo info;
+    info.m_type = p_type;
     info.m_editTab = const_cast<VEditTab *>(this);
 
     return info;

@@ -80,7 +80,7 @@ public:
     }
 
     // Create a filled VEditTabInfo.
-    virtual VEditTabInfo fetchTabInfo() const;
+    virtual VEditTabInfo fetchTabInfo(VEditTabInfo::InfoType p_type = VEditTabInfo::InfoType::All) const;
 
     const VTableOfContent &getOutline() const;
 

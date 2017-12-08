@@ -51,6 +51,8 @@ void VTextEdit::init()
 
     m_cursorBlockMode = CursorBlock::None;
 
+    m_highlightCursorLineBlock = false;
+
     m_imageMgr = new VImageResourceManager2();
 
     QTextDocument *doc = document();
@@ -80,7 +82,14 @@ void VTextEdit::init()
     connect(verticalScrollBar(), &QScrollBar::valueChanged,
             this, &VTextEdit::updateLineNumberArea);
     connect(this, &QTextEdit::cursorPositionChanged,
-            this, &VTextEdit::updateLineNumberArea);
+            this, [this]() {
+                if (m_highlightCursorLineBlock) {
+                    QTextCursor cursor = textCursor();
+                    getLayout()->setCursorLineBlockNumber(cursor.block().blockNumber());
+                }
+
+                updateLineNumberArea();
+            });
 }
 
 VTextDocumentLayout *VTextEdit::getLayout() const
@@ -355,4 +364,22 @@ void VTextEdit::setCursorBlockMode(CursorBlock p_mode)
         setCursorWidth(m_cursorBlockMode != CursorBlock::None ? VIRTUAL_CURSOR_BLOCK_WIDTH
                                                               : 1);
     }
+}
+
+void VTextEdit::setHighlightCursorLineBlockEnabled(bool p_enabled)
+{
+    if (m_highlightCursorLineBlock != p_enabled) {
+        auto layout = getLayout();
+        m_highlightCursorLineBlock = p_enabled;
+        layout->setHighlightCursorLineBlockEnabled(p_enabled);
+        if (m_highlightCursorLineBlock) {
+            QTextCursor cursor = textCursor();
+            layout->setCursorLineBlockNumber(cursor.block().blockNumber());
+        }
+    }
+}
+
+void VTextEdit::setCursorLineBlockBg(const QColor &p_bg)
+{
+    getLayout()->setCursorLineBlockBg(p_bg);
 }

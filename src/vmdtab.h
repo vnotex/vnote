@@ -69,7 +69,7 @@ public:
     void decorateText(TextDecoration p_decoration, int p_level = -1) Q_DECL_OVERRIDE;
 
     // Create a filled VEditTabInfo.
-    VEditTabInfo fetchTabInfo() const Q_DECL_OVERRIDE;
+    VEditTabInfo fetchTabInfo(VEditTabInfo::InfoType p_type = VEditTabInfo::InfoType::All) const Q_DECL_OVERRIDE;
 
     // Enable or disable heading sequence.
     void enableHeadingSequence(bool p_enabled);
@@ -178,6 +178,9 @@ private:
     // Check if there exists backup file from previous session.
     // Return true if we could continue.
     bool checkPreviousBackupFile();
+
+    // updateStatus() with only cursor position information.
+    void updateCursorStatus();
 
     VMdEditor *m_editor;
     VWebView *m_webViewer;

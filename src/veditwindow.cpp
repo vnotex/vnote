@@ -766,8 +766,10 @@ void VEditWindow::handleTabStatusUpdated(const VEditTabInfo &p_info)
 {
     int idx = indexOf(dynamic_cast<QWidget *>(sender()));
 
-    updateTabInfo(idx);
-    updateAllTabsSequence();
+    if (p_info.m_type == VEditTabInfo::InfoType::All) {
+        updateTabInfo(idx);
+        updateAllTabsSequence();
+    }
 
     if (idx == currentIndex()) {
         // Current tab. Propogate its status.

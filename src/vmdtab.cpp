@@ -423,7 +423,7 @@ void VMdTab::setupMarkdownEditor()
     connect(m_editor, &VMdEditor::textChanged,
             this, &VMdTab::updateStatus);
     connect(m_editor, &VMdEditor::cursorPositionChanged,
-            this, &VMdTab::updateStatus);
+            this, &VMdTab::updateCursorStatus);
     connect(g_mainWin, &VMainWindow::editorConfigUpdated,
             m_editor, &VMdEditor::updateConfig);
     connect(m_editor->object(), &VEditorObject::saveAndRead,
@@ -702,9 +702,9 @@ void VMdTab::requestUpdateVimStatus()
     }
 }
 
-VEditTabInfo VMdTab::fetchTabInfo() const
+VEditTabInfo VMdTab::fetchTabInfo(VEditTabInfo::InfoType p_type) const
 {
-    VEditTabInfo info = VEditTab::fetchTabInfo();
+    VEditTabInfo info = VEditTab::fetchTabInfo(p_type);
 
     if (m_editor) {
         QTextCursor cursor = m_editor->textCursor();
@@ -971,4 +971,9 @@ bool VMdTab::checkPreviousBackupFile()
     VUtils::deleteFile(preFile);
 
     return true;
+}
+
+void VMdTab::updateCursorStatus()
+{
+    emit statusUpdated(fetchTabInfo(VEditTabInfo::InfoType::Cursor));
 }

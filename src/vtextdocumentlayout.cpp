@@ -34,7 +34,10 @@ VTextDocumentLayout::VTextDocumentLayout(QTextDocument *p_doc,
       m_imageLineColor("#9575CD"),
       m_cursorBlockMode(CursorBlock::None),
       m_virtualCursorBlockWidth(8),
-      m_lastCursorBlockWidth(-1)
+      m_lastCursorBlockWidth(-1),
+      m_highlightCursorLineBlock(false),
+      m_cursorLineBlockBg("#C0C0C0"),
+      m_cursorLineBlockNumber(-1)
 {
 }
 
@@ -219,7 +222,11 @@ void VTextDocumentLayout::draw(QPainter *p_painter, const PaintContext &p_contex
         QTextBlockFormat blockFormat = block.blockFormat();
         QBrush bg = blockFormat.background();
         if (bg != Qt::NoBrush) {
-            fillBackground(p_painter, rect, bg);
+            int x = offset.x();
+            int y = offset.y();
+            fillBackground(p_painter,
+                           rect.adjusted(x, y, x, y),
+                           bg);
         }
 
         auto selections = formatRangeFromSelection(block, p_context.selections);
@@ -250,6 +257,16 @@ void VTextDocumentLayout::draw(QPainter *p_painter, const PaintContext &p_contex
                 m_lastCursorBlockWidth = cursorWidth;
                 emit cursorBlockWidthUpdated(m_lastCursorBlockWidth);
             }
+        }
+
+        // Draw cursor line block.
+        if (m_highlightCursorLineBlock
+            && m_cursorLineBlockNumber == block.blockNumber()) {
+            int x = offset.x();
+            int y = offset.y();
+            fillBackground(p_painter,
+                           rect.adjusted(x, y, x, y),
+                           m_cursorLineBlockBg);
         }
 
         layout->draw(p_painter,
@@ -1089,4 +1106,16 @@ int VTextDocumentLayout::getTextWidthWithinTextLine(const QTextLayout *p_layout,
     Q_ASSERT(line.isValid());
     Q_ASSERT(p_pos + p_length <= line.textStart() + line.textLength());
     return line.cursorToX(p_pos + p_length) - line.cursorToX(p_pos);
+}
+
+void VTextDocumentLayout::updateBlockByNumber(int p_blockNumber)
+{
+    if (p_blockNumber == -1) {
+        return;
+    }
+
+    QTextBlock block = document()->findBlockByNumber(p_blockNumber);
+    if (block.isValid()) {
+        emit updateBlock(block);
+    }
 }

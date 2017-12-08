@@ -1880,32 +1880,35 @@ void VMainWindow::handleAreaTabStatusUpdated(const VEditTabInfo &p_info)
         m_curFile = NULL;
     }
 
-    updateActionsStateFromTab(m_curTab);
+    if (p_info.m_type == VEditTabInfo::InfoType::All) {
+        updateActionsStateFromTab(m_curTab);
 
-    m_attachmentList->setFile(dynamic_cast<VNoteFile *>(m_curFile.data()));
+        m_attachmentList->setFile(dynamic_cast<VNoteFile *>(m_curFile.data()));
 
-    QString title;
-    if (m_curFile) {
-        m_findReplaceDialog->updateState(m_curFile->getDocType(),
-                                         m_curTab->isEditMode());
+        QString title;
+        if (m_curFile) {
+            m_findReplaceDialog->updateState(m_curFile->getDocType(),
+                                             m_curTab->isEditMode());
 
-        if (m_curFile->getType() == FileType::Note) {
-            const VNoteFile *tmpFile = dynamic_cast<const VNoteFile *>((VFile *)m_curFile);
-            title = QString("[%1] %2").arg(tmpFile->getNotebookName()).arg(tmpFile->fetchPath());
-        } else {
-            title = QString("%1").arg(m_curFile->fetchPath());
+            if (m_curFile->getType() == FileType::Note) {
+                const VNoteFile *tmpFile = dynamic_cast<const VNoteFile *>((VFile *)m_curFile);
+                title = QString("[%1] %2").arg(tmpFile->getNotebookName()).arg(tmpFile->fetchPath());
+            } else {
+                title = QString("%1").arg(m_curFile->fetchPath());
+            }
+
+            if (!m_curFile->isModifiable()) {
+                title.append('#');
+            }
+
+            if (m_curTab->isModified()) {
+                title.append('*');
+            }
         }
 
-        if (!m_curFile->isModifiable()) {
-            title.append('#');
-        }
-
-        if (m_curTab->isModified()) {
-            title.append('*');
-        }
+        updateWindowTitle(title);
     }
 
-    updateWindowTitle(title);
     updateStatusInfo(p_info);
 }
 
@@ -2418,7 +2421,9 @@ void VMainWindow::updateStatusInfo(const VEditTabInfo &p_info)
         m_tabIndicator->show();
 
         if (m_curTab->isEditMode()) {
-            m_curTab->requestUpdateVimStatus();
+            if (p_info.m_type == VEditTabInfo::InfoType::All) {
+                m_curTab->requestUpdateVimStatus();
+            }
         } else {
             m_vimIndicator->hide();
         }

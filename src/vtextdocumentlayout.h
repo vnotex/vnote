@@ -61,6 +61,15 @@ public:
 
     void clearLastCursorBlockWidth();
 
+    void setHighlightCursorLineBlockEnabled(bool p_enabled);
+
+    void setCursorLineBlockBg(const QColor &p_bg);
+
+    void setCursorLineBlockNumber(int p_blockNumber);
+
+    // Request update block by block number.
+    void updateBlockByNumber(int p_blockNumber);
+
 signals:
     // Emit to update current cursor block width if m_cursorBlockMode is enabled.
     void cursorBlockWidthUpdated(int p_width);
@@ -287,6 +296,15 @@ private:
     int m_virtualCursorBlockWidth;
 
     int m_lastCursorBlockWidth;
+
+    // Whether highlight the block containing the cursor line.
+    bool m_highlightCursorLineBlock;
+
+    // The cursor line's block background color.
+    QColor m_cursorLineBlockBg;
+
+    // The block containing the cursor.
+    int m_cursorLineBlockNumber;
 };
 
 inline qreal VTextDocumentLayout::getLineLeading() const
@@ -319,5 +337,38 @@ inline void VTextDocumentLayout::setVirtualCursorBlockWidth(int p_width)
 inline void VTextDocumentLayout::clearLastCursorBlockWidth()
 {
     m_lastCursorBlockWidth = -1;
+}
+
+inline void VTextDocumentLayout::setHighlightCursorLineBlockEnabled(bool p_enabled)
+{
+    if (m_highlightCursorLineBlock != p_enabled) {
+        m_highlightCursorLineBlock = p_enabled;
+        if (!m_highlightCursorLineBlock) {
+            int pre = m_cursorLineBlockNumber;
+            m_cursorLineBlockNumber = -1;
+            updateBlockByNumber(pre);
+        }
+    }
+}
+
+inline void VTextDocumentLayout::setCursorLineBlockBg(const QColor &p_bg)
+{
+    if (p_bg != m_cursorLineBlockBg) {
+        m_cursorLineBlockBg = p_bg;
+        updateBlockByNumber(m_cursorLineBlockNumber);
+    }
+}
+
+inline void VTextDocumentLayout::setCursorLineBlockNumber(int p_blockNumber)
+{
+    if (p_blockNumber != m_cursorLineBlockNumber) {
+        int pre = m_cursorLineBlockNumber;
+        m_cursorLineBlockNumber = p_blockNumber;
+
+        if (m_highlightCursorLineBlock) {
+            updateBlockByNumber(pre);
+            updateBlockByNumber(m_cursorLineBlockNumber);
+        }
+    }
 }
 #endif // VTEXTDOCUMENTLAYOUT_H

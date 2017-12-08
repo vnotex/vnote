@@ -12,6 +12,7 @@
 #include "veditor.h"
 #include "utils/veditutils.h"
 #include "vconstants.h"
+#include "vmdeditor.h"
 
 extern VConfigManager *g_config;
 
@@ -2269,9 +2270,14 @@ void VVim::setMode(VimMode p_mode, bool p_clearSelection, int p_position)
         m_mode = p_mode;
         resetState();
 
+        VMdEditor *mdEditor = dynamic_cast<VMdEditor *>(m_editor);
         switch (m_mode) {
         case VimMode::Insert:
             m_editor->setCursorBlockModeW(CursorBlock::None);
+            if (mdEditor) {
+                mdEditor->setHighlightCursorLineBlockEnabled(false);
+            }
+
             break;
 
         case VimMode::Visual:
@@ -2280,6 +2286,18 @@ void VVim::setMode(VimMode p_mode, bool p_clearSelection, int p_position)
 
         default:
             m_editor->setCursorBlockModeW(CursorBlock::RightSide);
+            if (mdEditor) {
+                QString color;
+                if (m_mode == VimMode::Normal) {
+                    color = g_config->getEditorVimNormalBg();
+                } else {
+                    color = g_config->getEditorVimVisualBg();
+                }
+
+                mdEditor->setCursorLineBlockBg(color);
+                mdEditor->setHighlightCursorLineBlockEnabled(true);
+            }
+
             break;
         }
 

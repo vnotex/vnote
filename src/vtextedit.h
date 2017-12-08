@@ -59,6 +59,10 @@ public:
 
     void setCursorBlockMode(CursorBlock p_mode);
 
+    void setHighlightCursorLineBlockEnabled(bool p_enabled);
+
+    void setCursorLineBlockBg(const QColor &p_bg);
+
 protected:
     void resizeEvent(QResizeEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -83,6 +87,8 @@ private:
     bool m_blockImageEnabled;
 
     CursorBlock m_cursorBlockMode;
+
+    bool m_highlightCursorLineBlock;
 };
 
 inline void VTextEdit::setLineNumberType(LineNumberType p_type)
