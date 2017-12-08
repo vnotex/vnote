@@ -44,6 +44,7 @@ QMenuBar::item:selected {
     background: @menubar_item_selected_bg;
 }
 
+/* QMenu */
 QMenu {
     background: @menu_bg;
     color: @menu_fg;
@@ -59,7 +60,12 @@ QMenu::item {
     border: 1px solid transparent;
 }
 
+QMenu::item:disabled {
+    color: @menu_item_disabled_fg;
+}
+
 QMenu::item:selected {
+    color: @menu_item_selected_fg;
     background: @menu_item_selected_bg;
 }
 
@@ -78,6 +84,7 @@ QMenu::indicator {
     width: 20px;
     height: 20px;
 }
+/* End QMenu */
 
 QToolBar {
     border: none;
@@ -879,3 +886,81 @@ QScrollBar::left-arrow:horizontal {
     height: 20px;
 }
 /* End QScrollBar */
+
+/* QCheckBox */
+QCheckBox {
+    spacing: 5px;
+}
+
+QCheckBox::indicator {
+    width: 20px;
+    height: 20px;
+}
+
+QCheckBox::indicator:unchecked {
+    image: url(checkbox_unchecked.svg);
+}
+
+QCheckBox::indicator:unchecked:hover {
+    background: @checkbox_indicator_hover_bg;
+}
+
+QCheckBox::indicator:unchecked:pressed {
+    background: @checkbox_indicator_pressed_bg;
+}
+
+QCheckBox::indicator:checked {
+    image: url(checkbox_checked.svg);
+}
+
+QCheckBox::indicator:checked:hover {
+    background: @checkbox_indicator_hover_bg;
+}
+
+QCheckBox::indicator:checked:pressed {
+    background: @checkbox_indicator_pressed_bg;
+}
+
+QCheckBox::indicator:indeterminate:hover {
+    background: @checkbox_indicator_hover_bg;
+}
+
+QCheckBox::indicator:indeterminate:pressed {
+    background: @checkbox_indicator_pressed_bg;
+}
+/* End QCheckBox */
+
+/* QRadioButton */
+QRadioButton {
+    spacing: 5px;
+}
+
+QRadioButton::indicator {
+    width: 20px;
+    height: 20px;
+}
+
+QRadioButton::indicator:unchecked {
+    image: url(radiobutton_unchecked.svg);
+}
+
+QRadioButton::indicator:unchecked:hover {
+    background: @radiobutton_indicator_hover_bg;
+}
+
+QRadioButton::indicator:unchecked:pressed {
+    background: @radiobutton_indicator_pressed_bg;
+}
+
+QRadioButton::indicator:checked {
+    image: url(radiobutton_checked.svg);
+}
+
+QRadioButton::indicator:checked:hover {
+    background: @radiobutton_indicator_hover_bg;
+}
+
+QRadioButton::indicator:checked:pressed {
+    background: @radiobutton_indicator_pressed_bg;
+}
+/* End QRadioButton */

@@ -159,5 +159,9 @@
         <file>resources/themes/v_white/right_disabled.svg</file>
         <file>resources/themes/v_white/down_disabled.svg</file>
         <file>resources/themes/v_white/up_disabled.svg</file>
+        <file>resources/themes/v_white/checkbox_checked.svg</file>
+        <file>resources/themes/v_white/checkbox_unchecked.svg</file>
+        <file>resources/themes/v_white/radiobutton_checked.svg</file>
+        <file>resources/themes/v_white/radiobutton_unchecked.svg</file>
     </qresource>
 </RCC>

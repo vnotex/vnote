@@ -33,6 +33,8 @@ focus_bg=#A9A9A9
 pressed_fg=#000000
 pressed_bg=#808080
 
+disabled_fg=#BCBCBC
+
 separator_bg=#C0C0C0
 
 border_bg=#C0C0C0
@@ -93,6 +95,8 @@ menubar_item_selected_bg=@selected_bg
 ; Menu.
 menu_bg=@base_bg
 menu_fg=@base_fg
+menu_item_disabled_fg=@disabled_fg
+menu_item_selected_fg=@selected_fg
 menu_item_selected_bg=@selected_bg
 menu_separator_bg=@separator_bg
 menu_icon_fg=@icon_fg
@@ -255,3 +259,11 @@ scrollbar_handle_pressed_bg=@pressed_bg
 ; VEditWindow.
 editwindow_corner_icon_fg=@icon_fg
 editwindow_corner_icon_inactive_fg=#808080
+
+; CheckBox.
+checkbox_indicator_hover_bg=@hover_bg
+checkbox_indicator_pressed_bg=@pressed_bg
+
+; RadioButton.
+radiobutton_indicator_hover_bg=@hover_bg
+radiobutton_indicator_pressed_bg=@pressed_bg
