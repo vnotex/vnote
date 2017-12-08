@@ -42,6 +42,8 @@ void VPalette::initPaleteFromSettings(QSettings *p_settings, const QString &p_gr
     QRegExp reg("@(\\w+)");
 
     p_settings->beginGroup(p_group);
+    // Used to store undefined pairs.
+    QHash<QString, QString> undefined;
     QStringList keys = p_settings->childKeys();
     for (auto const & key : keys) {
         if (key.isEmpty()) {
@@ -54,12 +56,33 @@ void VPalette::initPaleteFromSettings(QSettings *p_settings, const QString &p_gr
             if (it != m_palette.end()) {
                 val = it.value();
             } else {
-                qWarning() << "non-defined reference attribute" << key << "in palette" << p_settings->fileName();
-                val.clear();
+                undefined.insert(key, reg.cap(1));
+                continue;
             }
         }
 
         m_palette.insert(key, val);
+    }
+
+    // Handle definition: a=@b b=@c c=red.
+    int iter = 0;
+    while (!undefined.isEmpty()) {
+        if (iter >= undefined.size()) {
+            qWarning() << "cyclic palette definitions found" << undefined;
+            break;
+        }
+
+        for (auto it = undefined.begin(); it != undefined.end();) {
+            auto pit = m_palette.find(it.value());
+            if (pit != m_palette.end()) {
+                m_palette.insert(it.key(), pit.value());
+                iter = 0;
+                it = undefined.erase(it);
+            } else {
+                ++iter;
+                ++it;
+            }
+        }
     }
 
     p_settings->endGroup();

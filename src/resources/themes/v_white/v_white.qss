@@ -620,7 +620,6 @@ QTreeView {
     color: @treeview_fg;
     background: @treeview_bg;
     show-decoration-selected: 0;
-    padding-top: 3px;
     border: none;
     selection-background-color: transparent;
     outline: none;
@@ -681,7 +680,6 @@ QListView {
     color: @listview_fg;
     background: @listview_bg;
     show-decoration-selected: 0;
-    padding-top: 3px;
     border: none;
     selection-background-color: transparent;
     outline: none;
