@@ -1053,3 +1053,7 @@ QHeaderView::up-arrow {
     image: url(up.svg);
 }
 /* End QHeaderView */
+
+QWidget#FindReplaceTitleWidget {
+    background: @title_bg;
+}

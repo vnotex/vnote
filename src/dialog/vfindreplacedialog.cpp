@@ -22,6 +22,9 @@ void VFindReplaceDialog::setupUI()
     titleLayout->setStretch(1, 0);
     titleLayout->setContentsMargins(0, 0, 0, 0);
     titleLayout->setSpacing(0);
+    QWidget *titleWidget = new QWidget();
+    titleWidget->setObjectName("FindReplaceTitleWidget");
+    titleWidget->setLayout(titleLayout);
 
     // Find
     QLabel *findLabel = new QLabel(tr("Find:"));
@@ -91,7 +94,7 @@ void VFindReplaceDialog::setupUI()
     gridLayout->setContentsMargins(margin);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
-    mainLayout->addLayout(titleLayout);
+    mainLayout->addWidget(titleWidget);
     mainLayout->addLayout(gridLayout);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
