@@ -112,6 +112,7 @@ void VSortDialog::setupUI(const QString &p_title, const QString &p_info)
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(m_btnBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+    m_btnBox->button(QDialogButtonBox::Ok)->setProperty("SpecialBtn", true);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     if (infoLabel) {

@@ -163,5 +163,28 @@
         <file>resources/themes/v_white/checkbox_unchecked.svg</file>
         <file>resources/themes/v_white/radiobutton_checked.svg</file>
         <file>resources/themes/v_white/radiobutton_unchecked.svg</file>
+        <file>resources/themes/v_pure/arrow_dropdown.svg</file>
+        <file>resources/themes/v_pure/branch_closed.svg</file>
+        <file>resources/themes/v_pure/branch_end.svg</file>
+        <file>resources/themes/v_pure/branch_more.svg</file>
+        <file>resources/themes/v_pure/branch_open.svg</file>
+        <file>resources/themes/v_pure/checkbox_checked.svg</file>
+        <file>resources/themes/v_pure/checkbox_unchecked.svg</file>
+        <file>resources/themes/v_pure/close.svg</file>
+        <file>resources/themes/v_pure/close_grey.svg</file>
+        <file>resources/themes/v_pure/down.svg</file>
+        <file>resources/themes/v_pure/down_disabled.svg</file>
+        <file>resources/themes/v_pure/float.svg</file>
+        <file>resources/themes/v_pure/left.svg</file>
+        <file>resources/themes/v_pure/left_disabled.svg</file>
+        <file>resources/themes/v_pure/line.svg</file>
+        <file>resources/themes/v_pure/radiobutton_checked.svg</file>
+        <file>resources/themes/v_pure/radiobutton_unchecked.svg</file>
+        <file>resources/themes/v_pure/right.svg</file>
+        <file>resources/themes/v_pure/right_disabled.svg</file>
+        <file>resources/themes/v_pure/up.svg</file>
+        <file>resources/themes/v_pure/up_disabled.svg</file>
+        <file>resources/themes/v_pure/v_pure.palette</file>
+        <file>resources/themes/v_pure/v_pure.qss</file>
     </qresource>
 </RCC>

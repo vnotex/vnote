@@ -81,6 +81,7 @@ void VExporter::setupUI()
     connect(m_openBtn, &QPushButton::clicked, this, &VExporter::openTargetPath);
 
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
+    okBtn->setProperty("SpecialBtn", true);
     m_pathEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
 
     QGridLayout *mainLayout = new QGridLayout();

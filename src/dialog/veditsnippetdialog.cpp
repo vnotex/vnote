@@ -79,6 +79,7 @@ void VEditSnippetDialog::setupUI(const QString &p_title, const QString &p_info)
 
     // Content.
     m_contentEdit = new QTextEdit();
+    m_contentEdit->setProperty("LineEdit", true);
     setContentEditByType();
 
     QFormLayout *topLayout = new QFormLayout();
@@ -100,6 +101,7 @@ void VEditSnippetDialog::setupUI(const QString &p_title, const QString &p_info)
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
+    okBtn->setProperty("SpecialBtn", true);
     m_nameEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();

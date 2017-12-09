@@ -111,6 +111,7 @@ void VNewFileDialog::setupUI(const QString &p_title,
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
+    okBtn->setProperty("SpecialBtn", true);
     m_templateCB->setMaximumWidth(okBtn->sizeHint().width() * 4);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();

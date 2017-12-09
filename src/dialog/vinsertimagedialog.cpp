@@ -59,6 +59,7 @@ void VInsertImageDialog::setupUI()
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(m_btnBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+    m_btnBox->button(QDialogButtonBox::Ok)->setProperty("SpecialBtn", true);
 
     imagePreviewLabel = new QLabel();
     imagePreviewLabel->setVisible(false);

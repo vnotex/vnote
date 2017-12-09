@@ -90,6 +90,7 @@ void VNewNotebookDialog::setupUI(const QString &p_title, const QString &p_info)
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
+    okBtn->setProperty("SpecialBtn", true);
     pathEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);

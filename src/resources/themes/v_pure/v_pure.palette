@@ -2,67 +2,74 @@
 ; Use @color_tag to reference a style.
 
 [metadata]
-qss_file=v_white.qss
+qss_file=v_pure.qss
 
 [phony]
 ; Abstract color attributes.
-base_fg=#000000
-base_bg=#F5F5F5
+master_fg=#F5F5F5
+master_bg=#556DE8
 
-main_fg=#000000
-main_bg=#F5F5F5
+base_fg=#222222
+base_bg=#EAEAEA
 
-title_fg=#000000
-title_bg=#DADBDB
+main_fg=@base_fg
+main_bg=#base_bg
 
-hover_fg=#000000
-hover_bg=#C0C0C0
+title_fg=@base_fg
+title_bg=@base_bg
 
-selected_fg=#000000
-selected_bg=#BCBCBC
+disabled_fg=#9E9E9E
 
-active_fg=#000000
-active_bg=#C0C0C0
+content_fg=@base_fg
+content_bg=@base_bg
 
-inactive_fg=#000000
+border_bg=#D3D3D3
+
+separator_bg=#D3D3D3
+
+hover_fg=@base_fg
+hover_bg=#D0D0D0
+
+selected_fg=@base_fg
+selected_bg=#BDBDBD
+
+active_fg=@selected_fg
+active_bg=@selected_bg
+
+inactive_fg=@selected_fg
 inactive_bg=#D3D3D3
 
-focus_fg=#000000
-focus_bg=#A9A9A9
+focus_fg=@selected_fg
+focus_bg=@selected_bg
 
-pressed_fg=#000000
-pressed_bg=#808080
+pressed_fg=@base_fg
+pressed_bg=#B2B2B2
 
-disabled_fg=#BCBCBC
-
-separator_bg=#C0C0C0
-
-border_bg=#C0C0C0
-
-content_fg=#000000
-content_bg=#FFFFFF
-
-selection_fg=#000000
-selection_bg=#64b5f6
+edit_fg=#222222
+edit_bg=#F5F5F5
+edit_focus_bg=#E8EAF6
+edit_focus_border=@master_bg
+edit_selection_fg=@edit_fg
+edit_selection_bg=#CBD2F9
 
 danger_red=#C9302C
 icon_fg=#222222
 
 [soft_defined]
 ; VAvatar.
-avatar_border_bg=@title_bg
+avatar_border_bg=@selected_bg
 avatar_fg=@base_bg
 avatar_bg=@base_fg
 ; The border background color of the avatar when Captain mode is triggered.
-avatar_captain_mode_border_bg=#6C6C6C
+avatar_captain_mode_border_bg=@master_bg
 
 ; Style of the label in Navigation mode.
-navigation_label_fg=#4D4D4D
-navigation_label_bg=#F4F4F4
+navigation_label_fg=@master_fg
+navigation_label_bg=@master_bg
 
 ; Style of the bubble of VButtonWithWidget.
-bubble_fg=#FFFFFF
-bubble_bg=#616161
+bubble_fg=@master_fg
+bubble_bg=@master_bg
 
 ; Icons' foreground.
 danger_icon_fg=@danger_red
@@ -84,8 +91,8 @@ tab_indicator_label_fg=@base_fg
 widget_fg=@base_fg
 
 ; Separator of dock widgets.
-dock_separator_bg=@title_bg
-dock_separator_hover_bg=@title_bg
+dock_separator_bg=@border_bg
+dock_separator_hover_bg=@border_bg
 
 ; Menubar.
 menubar_bg=@main_bg
@@ -103,9 +110,8 @@ menu_icon_fg=@icon_fg
 menu_icon_danger_fg=@danger_icon_fg
 
 ; Tooltip.
-tooltip_border=@border_bg
-tooltip_bg=@base_bg
-tooltip_fg=@base_fg
+tooltip_bg=@master_bg
+tooltip_fg=@master_fg
 
 ; Toolbar.
 toolbar_bg=@main_bg
@@ -130,7 +136,13 @@ pushbutton_border=@border_bg
 pushbutton_pressed_bg=@pressed_bg
 pushbutton_checked_bg=@selected_bg
 pushbutton_hover_bg=@hover_bg
-pushbutton_default_border=#424242
+pushbutton_default_border=@master_bg
+
+pushbutton_specialbtn_fg=@master_fg
+pushbutton_specialbtn_bg=@master_bg
+pushbutton_specialbtn_hover_bg=#3F51B5
+pushbutton_specialbtn_checked_bg=#3949AB
+pushbutton_specialbtn_pressed_bg=#303F9F
 
 pushbutton_cornerbtn_hover_bg=@hover_bg
 pushbutton_cornerbtn_focus_bg=@focus_bg
@@ -172,7 +184,8 @@ combobox_view_selected_bg=@selected_bg
 combobox_view_selected_fg=@selected_fg
 combobox_view_item_hover_fg=@hover_fg
 combobox_view_item_hover_bg=@hover_bg
-combobox_focus_bg=@focus_bg
+combobox_focus_bg=@edit_focus_bg
+combobox_focus_border=@edit_focus_border
 combobox_item_icon_fg=@item_icon_fg
 
 ; Label.
@@ -182,10 +195,12 @@ label_titlelabel_bg=@title_bg
 
 ; LineEdit.
 lineedit_border=@border_bg
-lineedit_fg=@content_fg
-lineedit_bg=@content_bg
-lineedit_selection_fg=@selection_fg
-lineedit_selection_bg=@selection_bg
+lineedit_fg=@edit_fg
+lineedit_bg=@edit_bg
+lineedit_focus_bg=@edit_focus_bg
+lineedit_focus_border=@edit_focus_border
+lineedit_selection_fg=@edit_selection_fg
+lineedit_selection_bg=@edit_selection_bg
 
 ; TabWidget.
 tabwidget_pane_border=@selected_bg
@@ -195,16 +210,12 @@ tabbar_fg=@base_fg
 tabbar_bg=@base_bg
 tabbar_border=@border_bg
 
-tabbar_selected_fg=@selected_fg
-tabbar_selected_bg=@selected_bg
+tabbar_selected_fg=@edit_fg
+tabbar_selected_bg=@edit_bg
 tabbar_selected_border=@border_bg
 
 tabbar_hover_fg=@hover_fg
 tabbar_hover_bg=@hover_bg
-tabbar_hover_border=@border_bg
-
-tabbar_closebutton_hover_bg=@hover_bg
-tabbar_closebutton_focus_bg=@focus_bg
 
 tabbar_icon_fg=@icon_fg
 tabbar_icon_special_fg=@danger_red
@@ -243,22 +254,22 @@ listview_item_selected_inactive_fg=@inactive_fg
 listview_item_selected_inactive_bg=@inactive_bg
 
 ; Splitter.
-splitter_handle_bg=@title_bg
-splitter_mainsplitter_border=@title_bg
+splitter_handle_bg=@border_bg
 
 ; StatusBar.
 statusbar_fg=@main_fg
 statusbar_bg=@main_bg
 
 ; ScrollBar.
-scrollbar_bg=#EEEEEE
-scrollbar_handle_bg=#D0D0D0
+scrollbar_bg=@base_bg
+scrollbar_page_bg=transparent
+scrollbar_handle_bg=#DADADA
 scrollbar_handle_hover_bg=@hover_bg
 scrollbar_handle_pressed_bg=@pressed_bg
 
 ; VEditWindow.
-editwindow_corner_icon_fg=@icon_fg
-editwindow_corner_icon_inactive_fg=#808080
+editwindow_corner_icon_fg=@master_bg
+editwindow_corner_icon_inactive_fg=#D3D3D3
 
 ; CheckBox.
 checkbox_indicator_hover_bg=@hover_bg
@@ -269,14 +280,18 @@ radiobutton_indicator_hover_bg=@hover_bg
 radiobutton_indicator_pressed_bg=@pressed_bg
 
 ; SpinBox.
-spinbox_fg=@content_fg
-spinbox_bg=@content_bg
+spinbox_fg=@edit_fg
+spinbox_bg=@edit_bg
 spinbox_border=@border_bg
+spinbox_selection_fg=@edit_selection_fg
+spinbox_selection_bg=@edit_selection_bg
+spinbox_focus_border=@edit_focus_border
+spinbox_focus_bg=@edit_focus_bg
 spinbox_button_hover_bg=@hover_bg
 spinbox_button_pressed_bg=@pressed_bg
 
 ; HeaderView.
-headerview_bg=@base_bg
+headerview_bg=#E0E0E0
 headerview_fg=@base_fg
 headerview_border=@border_bg
 headerview_checked_fg=@selected_fg

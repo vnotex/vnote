@@ -34,6 +34,7 @@ void VUpdater::setupUI()
     m_descriptionTb = new QTextBrowser();
 
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok);
+    m_btnBox->button(QDialogButtonBox::Ok)->setProperty("SpecialBtn", true);
     connect(m_btnBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
 
     QVBoxLayout *verLayout = new QVBoxLayout();

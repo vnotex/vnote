@@ -394,8 +394,13 @@ bool VUtils::copyDirectory(const QString &p_srcDirPath, const QString &p_destDir
     return true;
 }
 
-int VUtils::showMessage(QMessageBox::Icon p_icon, const QString &p_title, const QString &p_text, const QString &p_infoText,
-                        QMessageBox::StandardButtons p_buttons, QMessageBox::StandardButton p_defaultBtn, QWidget *p_parent,
+int VUtils::showMessage(QMessageBox::Icon p_icon,
+                        const QString &p_title,
+                        const QString &p_text,
+                        const QString &p_infoText,
+                        QMessageBox::StandardButtons p_buttons,
+                        QMessageBox::StandardButton p_defaultBtn,
+                        QWidget *p_parent,
                         MessageBoxType p_type)
 {
     QMessageBox msgBox(p_icon, p_title, p_text, p_buttons, p_parent);
@@ -405,7 +410,9 @@ int VUtils::showMessage(QMessageBox::Icon p_icon, const QString &p_title, const 
     if (p_type == MessageBoxType::Danger) {
         QPushButton *okBtn = dynamic_cast<QPushButton *>(msgBox.button(QMessageBox::Ok));
         if (okBtn) {
-            okBtn->setStyleSheet(g_config->c_dangerBtnStyle);
+            okBtn->setProperty("DangerBtn", true);
+            okBtn->style()->unpolish(okBtn);
+            okBtn->style()->polish(okBtn);
         }
     }
     return msgBox.exec();

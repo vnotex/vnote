@@ -1,6 +1,6 @@
 QToolTip
 {
-    border: 1px solid @tooltip_border;
+    border: none;
     background: @tooltip_bg;
     color: @tooltip_fg;
 }
@@ -14,6 +14,7 @@ QWidget
 QWidget[NotebookPanel="true"] {
     padding-left: 3px;
 }
+
 /* End QWidget */
 
 /* QMainWindow */
@@ -196,6 +197,27 @@ QPushButton::menu-indicator {
     height: 16px;
 }
 
+QPushButton[SpecialBtn="true"] {
+    color: @pushbutton_specialbtn_fg;
+    background: @pushbutton_specialbtn_bg;
+}
+
+QPushButton[SpecialBtn="true"]:pressed {
+    background-color: @pushbutton_specialbtn_pressed_bg;
+}
+
+QPushButton[SpecialBtn="true"]:checked {
+    background-color: @pushbutton_specialbtn_checked_bg;
+}
+
+QPushButton[SpecialBtn="true"]:checked:hover {
+    background-color: @pushbutton_specialbtn_hover_bg;
+}
+
+QPushButton[SpecialBtn="true"]:hover {
+    background-color: @pushbutton_specialbtn_hover_bg;
+}
+
 QPushButton[CornerBtn="true"] {
     padding: 4px -2px 4px -2px;
     margin: 0px;
@@ -365,8 +387,9 @@ QComboBox {
     border: 1px solid @combobox_border;
 }
 
-QComboBox:focus {
+QComboBox:focus, QComboBox:on {
     background-color: @combobox_focus_bg;
+    border: 2px solid @combobox_focus_border;
 }
 
 QComboBox::drop-down {
@@ -407,6 +430,11 @@ QComboBox#NotebookSelector {
     padding-top: 3px;
     padding-bottom: 3px;
     icon-size: 30px;
+}
+
+QComboBox#NotebookSelector:focus, QComboBox#NotebookSelector:on {
+    border: none;
+    background: @combobox_bg
 }
 
 QComboBox#NotebookSelector QListWidget {
@@ -514,6 +542,11 @@ QLineEdit {
     selection-background-color: @lineedit_selection_bg;
 }
 
+QLineEdit:focus {
+    border: 2px solid @lineedit_focus_border;
+    background: @lineedit_focus_bg;
+}
+
 QLineEdit[VimCommandLine="true"] {
     padding: 0px;
     margin: 0px;
@@ -523,6 +556,22 @@ QLineEdit[VimCommandLine="true"] {
 }
 /* End QLineEdit */
 
+/* QPlainTextEdit QTextEdit */
+QPlainTextEdit[LineEdit="true"], QTextEdit[LineEdit="true"] {
+    border: 1px solid @lineedit_border;
+    padding: 3px;
+    color: @lineedit_fg;
+    background: @lineedit_bg;
+    selection-color: @lineedit_selection_fg;
+    selection-background-color: @lineedit_selection_bg;
+}
+
+QPlainTextEdit[LineEdit="true"]:focus, QTextEdit[LineEdit="true"]:focus {
+    border: 2px solid @lineedit_focus_border;
+    background: @lineedit_focus_bg;
+}
+/* End QPlainTextEdit QTextEdit */
+
 /* QTabWidget */
 QTabWidget {
     border: none;
@@ -530,7 +579,6 @@ QTabWidget {
 
 QTabWidget::pane {
     border: none;
-    border-top: 3px solid @tabwidget_pane_border;
 }
 /* End QTabWidget */
 
@@ -540,25 +588,19 @@ QTabBar::tab {
     background: @tabbar_bg;
     border: 1px solid @tabbar_border;
     border-bottom: none;
+    border-top: none;
     padding: 2px;
 }
 
 QTabBar::tab:selected {
     color: @tabbar_selected_fg;
     background: @tabbar_selected_bg;
-    border: 1px solid @tabbar_selected_border;
-    border-bottom: none;
+    border-bottom: 3px solid @master_bg;
 }
 
 QTabBar::tab:hover {
     color: @tabbar_hover_fg;
     background: @tabbar_hover_bg;
-    border: 1px solid @tabbar_hover_border;
-    border-bottom: none;
-}
-
-QTabBar::tab:!selected {
-    margin-top: 2px; /* make non-selected tabs look smaller */
 }
 
 QTabBar::close-button {
@@ -567,12 +609,10 @@ QTabBar::close-button {
 
 QTabBar::close-button:hover {
     image: url(close.svg);
-    background-color: @tabbar_closebutton_hover_bg;
 }
 
 QTabBar::close-button:focus {
     image: url(close.svg);
-    background-color: @tabbar_closebutton_focus_bg;
 }
 
 QTabBar::scroller {
@@ -728,7 +768,7 @@ QSplitter::handle:horizontal {
 }
 
 QSplitter#MainSplitter {
-    border-top: 2px solid @splitter_mainsplitter_border;
+    border: none;
 }
 /* End QSplitter */
 
@@ -749,8 +789,8 @@ QDialog {
 }
 
 /* QScrollBar */
-QScrollBar::sub-page, QScrollBar::add-page {
-    background: transparent;
+QScrollBar::add-page, QScrollBar::sub-page {
+    background: @scrollbar_page_bg;
 }
 
 QScrollBar:vertical {
@@ -973,6 +1013,13 @@ QSpinBox, QDoubleSpinBox {
     background: @spinbox_bg;
     padding-right: 25px;
     min-height: 25px;
+    selection-color: @spinbox_selection_fg;
+    selection-background-color: @spinbox_selection_bg;
+}
+
+QSpinBox:focus, QDoubleSpinBox::focus {
+    border: 2px solid @spinbox_focus_border;
+    background: @spinbox_focus_bg;
 }
 
 QSpinBox::up-button, QDoubleSpinBox::up-button {

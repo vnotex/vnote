@@ -54,9 +54,6 @@ const QString VConfigManager::c_warningTextStyle = QString("color: red; font: bo
 
 const QString VConfigManager::c_dataTextStyle = QString("font: bold");
 
-const QString VConfigManager::c_dangerBtnStyle = QString("QPushButton {color: #fff; border-color: #d43f3a; background-color: #d9534f;}"
-                                                         "QPushButton::hover {color: #fff; border-color: #ac2925; background-color: #c9302c;}");
-
 const QString VConfigManager::c_vnoteNotebookFolderName = QString("vnote_notebooks");
 
 VConfigManager::VConfigManager(QObject *p_parent)
@@ -1367,6 +1364,7 @@ void VConfigManager::initThemes()
 
     // Built-in.
     m_themes.insert(tr("v_white"), ":/resources/themes/v_white/v_white.palette");
+    m_themes.insert(tr("v_pure"), ":/resources/themes/v_pure/v_pure.palette");
 
     // User theme folder.
     QDir dir(getThemeConfigFolder());

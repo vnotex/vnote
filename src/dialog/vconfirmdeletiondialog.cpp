@@ -122,7 +122,7 @@ void VConfirmDeletionDialog::setupUI(const QString &p_title,
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(m_btnBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
-    m_btnBox->button(QDialogButtonBox::Ok)->setStyleSheet(g_config->c_dangerBtnStyle);
+    m_btnBox->button(QDialogButtonBox::Ok)->setProperty("DangerBtn", true);
 
     QHBoxLayout *midLayout = new QHBoxLayout;
     midLayout->addWidget(m_listWidget);

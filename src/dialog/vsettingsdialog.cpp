@@ -18,6 +18,7 @@ VSettingsDialog::VSettingsDialog(QWidget *p_parent)
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(m_btnBox, &QDialogButtonBox::accepted, this, &VSettingsDialog::saveConfiguration);
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+    m_btnBox->button(QDialogButtonBox::Ok)->setProperty("SpecialBtn", true);
 
     QHBoxLayout *tabLayout = new QHBoxLayout();
     tabLayout->addWidget(m_tabList);
@@ -208,6 +209,7 @@ QLayout *VGeneralTab::setupStartupPagesLayout()
             });
 
     m_startupPagesEdit = new QPlainTextEdit(this);
+    m_startupPagesEdit->setProperty("LineEdit", true);
     m_startupPagesEdit->setToolTip(tr("Absolute path of the notes to open on startup (one note per line)"));
 
     m_startupPagesAddBtn = new QPushButton(tr("Browse"), this);

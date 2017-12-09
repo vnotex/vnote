@@ -53,6 +53,7 @@ void VDirInfoDialog::setupUI()
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
+    okBtn->setProperty("SpecialBtn", true);
     m_nameEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();

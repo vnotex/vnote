@@ -85,9 +85,6 @@ public:
     // CSS style for data in label.
     static const QString c_dataTextStyle;
 
-    // QStylesheet for danger button. Should keep identical with DangerBtn in QSS.
-    static const QString c_dangerBtnStyle;
-
     QFont getMdEditFont() const;
 
     QPalette getMdEditPalette() const;
