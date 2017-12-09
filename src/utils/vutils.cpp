@@ -415,6 +415,14 @@ int VUtils::showMessage(QMessageBox::Icon p_icon,
             okBtn->style()->polish(okBtn);
         }
     }
+
+    QPushButton *defaultBtn = dynamic_cast<QPushButton *>(msgBox.button(p_defaultBtn));
+    if (defaultBtn) {
+        defaultBtn->setProperty("SpecialBtn", true);
+        defaultBtn->style()->unpolish(defaultBtn);
+        defaultBtn->style()->polish(defaultBtn);
+    }
+
     return msgBox.exec();
 }
 
