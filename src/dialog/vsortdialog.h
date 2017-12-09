@@ -19,6 +19,7 @@ public:
     explicit VTreeWidget(QWidget *p_parent = 0)
         : QTreeWidget(p_parent)
     {
+        setAttribute(Qt::WA_MacShowFocusRect, false);
     }
 
 protected:

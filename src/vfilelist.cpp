@@ -41,6 +41,7 @@ void VFileList::setupUI()
     fileList->setContextMenuPolicy(Qt::CustomContextMenu);
     fileList->setSelectionMode(QAbstractItemView::ExtendedSelection);
     fileList->setObjectName("FileList");
+    fileList->setAttribute(Qt::WA_MacShowFocusRect, false);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(fileList);

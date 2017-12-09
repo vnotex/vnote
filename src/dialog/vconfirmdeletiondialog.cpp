@@ -93,6 +93,7 @@ void VConfirmDeletionDialog::setupUI(const QString &p_title,
     labelLayout->setContentsMargins(0, 0, 0, 0);
 
     m_listWidget = new QListWidget();
+    m_listWidget->setAttribute(Qt::WA_MacShowFocusRect, false);
     connect(m_listWidget, &QListWidget::currentRowChanged,
             this, &VConfirmDeletionDialog::currentFileChanged);
     connect(m_listWidget, &QListWidget::itemActivated,

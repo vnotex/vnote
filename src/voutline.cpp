@@ -18,6 +18,7 @@ VOutline::VOutline(QWidget *parent)
     setColumnCount(1);
     setHeaderHidden(true);
     setSelectionMode(QAbstractItemView::SingleSelection);
+    setAttribute(Qt::WA_MacShowFocusRect, false);
 
     // TODO: jump to the header when user click the same item twice.
     connect(this, &VOutline::currentItemChanged,

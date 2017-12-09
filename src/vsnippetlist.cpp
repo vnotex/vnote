@@ -69,6 +69,7 @@ void VSnippetList::setupUI()
     btnLayout->setContentsMargins(0, 0, 3, 0);
 
     m_snippetList = new QListWidget();
+    m_snippetList->setAttribute(Qt::WA_MacShowFocusRect, false);
     m_snippetList->setContextMenuPolicy(Qt::CustomContextMenu);
     m_snippetList->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_snippetList->setEditTriggers(QAbstractItemView::SelectedClicked);

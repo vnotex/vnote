@@ -30,6 +30,7 @@ VDirectoryTree::VDirectoryTree(QWidget *parent)
     setColumnCount(1);
     setHeaderHidden(true);
     setContextMenuPolicy(Qt::CustomContextMenu);
+    setAttribute(Qt::WA_MacShowFocusRect, false);
 
     initShortcuts();
     initActions();

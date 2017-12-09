@@ -3,7 +3,7 @@
 #include <QDebug>
 #include <QRegExp>
 #include <QByteArray>
-#include <QPixMap>
+#include <QPixmap>
 #include <QFileInfo>
 
 #include "vutils.h"
