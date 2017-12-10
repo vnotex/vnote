@@ -83,6 +83,22 @@ QMenu::indicator {
     width: 20px;
     height: 20px;
 }
+
+QMenu::indicator:non-exclusive:unchecked {
+    image: none;
+}
+
+QMenu::indicator:non-exclusive:checked {
+    image: url(menu_checkbox.svg);
+}
+
+QMenu::indicator:exclusive:unchecked {
+    image: none;
+}
+
+QMenu::indicator:exclusive:checked {
+    image: url(menu_radiobutton.svg);
+}
 /* End QMenu */
 
 QToolBar {

@@ -186,5 +186,9 @@
         <file>resources/themes/v_pure/up_disabled.svg</file>
         <file>resources/themes/v_pure/v_pure.palette</file>
         <file>resources/themes/v_pure/v_pure.qss</file>
+        <file>resources/themes/v_white/menu_checkbox.svg</file>
+        <file>resources/themes/v_white/menu_radiobutton.svg</file>
+        <file>resources/themes/v_pure/menu_checkbox.svg</file>
+        <file>resources/themes/v_pure/menu_radiobutton.svg</file>
     </qresource>
 </RCC>

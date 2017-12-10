@@ -84,6 +84,22 @@ QMenu::indicator {
     width: 20px;
     height: 20px;
 }
+
+QMenu::indicator:non-exclusive:unchecked {
+    image: none;
+}
+
+QMenu::indicator:non-exclusive:checked {
+    image: url(menu_checkbox.svg);
+}
+
+QMenu::indicator:exclusive:unchecked {
+    image: none;
+}
+
+QMenu::indicator:exclusive:checked {
+    image: url(menu_radiobutton.svg);
+}
 /* End QMenu */
 
 QToolBar {
@@ -595,7 +611,7 @@ QTabBar::tab {
 QTabBar::tab:selected {
     color: @tabbar_selected_fg;
     background: @tabbar_selected_bg;
-    border-bottom: 3px solid @master_bg;
+    border-top: 3px solid @master_bg;
 }
 
 QTabBar::tab:hover {
