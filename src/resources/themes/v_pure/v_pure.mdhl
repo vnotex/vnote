@@ -13,11 +13,12 @@ editor
 # Do not use "" to quote the name
 font-family: Hiragino Sans GB, 冬青黑体, Microsoft YaHei, 微软雅黑, Microsoft YaHei UI, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, STXihei, 华文细黑, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Helvetica, sans-serif, Tahoma, Arial, Verdana, Geneva, Georgia, Times New Roman
 font-size: 12
-foreground: 363636
+foreground: 222222
+background: f5f5f5
 # [VNote] Style for trailing space
 trailing-space: a8a8a8
 # [VNote] Style for line number
-line-number-background: bdbdbd
+line-number-background: eaeaea
 line-number-foreground: 424242
 # [VNote] Style for selected word highlight
 selected-word-background: dfdf00
@@ -42,39 +43,39 @@ background: c5cae9
 # [VNote] Vim insert mode cursor line background
 vim-insert-background: c5cae9
 # [VNote] Vim normal mode cursor line background
-vim-normal-background: bcbcbc
+vim-normal-background: bdbdbd
 # [VNote] Vim visual mode cursor line background
 vim-visual-background: 90caf9
 # [VNote] Vim replace mode cursor line background
 vim-replace-background: f8bbd0
 
 H1
-foreground: 363636
+foreground: 222222
 font-style: bold
 font-size: +8
 
 H2
-foreground: 363636
+foreground: 222222
 font-style: bold
 font-size: +6
 
 H3
-foreground: 363636
+foreground: 222222
 font-style: bold
 font-size: +4
 
 H4
-foreground: 363636
+foreground: 222222
 font-style: bold
 font-size: +2
 
 H5
-foreground: 363636
+foreground: 222222
 font-style: bold
 font-size: +2
 
 H6
-foreground: 363636
+foreground: 222222
 font-style: bold
 font-size: +2
 
@@ -128,40 +129,43 @@ foreground: 551a8b
 font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
 # [VNote] Codeblock sylte from HighlightJS (bold, italic, underlined, color)
 # The last occurence of the same attribute takes effect
-hljs-comment: 6c6c6c
-hljs-keyword: 0000ee
-hljs-attribute: 0000ee
-hljs-selector-tag: 0000ee
-hljs-meta-keyword: 0000ee
-hljs-doctag: 0000ee
-hljs-name: 0000ee
-hljs-type: 880000
-hljs-string: 880000
-hljs-number: 880000
-hljs-selector-id: 880000
-hljs-selector-class: 880000
-hljs-quote: 880000
-hljs-template-tag: 880000
-hljs-deletion: 880000
 # Could specify multiple attribute in one line
-hljs-title: bold, 880000
-hljs-section: bold, 880000
-hljs-regexp: bc6060
-hljs-symbol: bc6060
-hljs-variable: bc6060
-hljs-template-variable: bc6060
-hljs-link: bc6060
-hljs-selector-attr: bc6060
-hljs-selector-pseudo: bc6060
-hljs-literal: af00d7
-hljs-built_in: 008700
-hljs-bullet: 008700
-hljs-code: 008700
-hljs-addition: 008700
-hljs-meta: 1f7199
-hljs-meta-string: 4d99bf
+hljs-comment: italic, 898989
+hljs-quote: italic, 898989
+hljs-doctag: a626a4
+hljs-keyword: a626a4
+hljs-formula: a626a4
+hljs-section: e45649
+hljs-name: e45649
+hljs-selector-tag: e45649
+hljs-deletion: e45649
+hljs-subst: e45649
+hljs-literal: 0184bb
+hljs-string: 50a1f4
+hljs-regexp: 50a1f4
+hljs-addition: 50a1f4
+hljs-attribute: 50a1f4
+hljs-meta-string: 50a1f4
+hljs-built_in: c18401
+hljs-attr: 986801
+hljs-variable: 986801
+hljs-template-variable: 986801
+hljs-type: 986801
+hljs-selector-class: 986801
+hljs-selector-attr: 986801
+hljs-selector-pseudo: 986801
+hljs-number: 986801
+hljs-symbol: 4078f2
+hljs-bullet: 4078f2
+hljs-link: underlined, 4078f2
+hljs-meta: 4078f2
+hljs-selector-id: 4078f2
+hljs-title: 4078f2
 hljs-emphasis: italic
 hljs-strong: bold
+hljs-meta-keyword: 0000ee
+hljs-template-tag: 880000
+hljs-code: 008700
 
 BLOCKQUOTE
 foreground: 00af00

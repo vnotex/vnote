@@ -110,21 +110,6 @@ private slots:
     void setEditorBackgroundColor(QAction *action);
     void setRenderBackgroundColor(QAction *action);
 
-    void setRenderStyle(QAction *p_action);
-
-    void setEditorStyle(QAction *p_action);
-
-    // Set code block render style.
-    void setCodeBlockStyle(QAction *p_action);
-
-    // Update the render styles menu according to existing files.
-    void updateRenderStyleMenu();
-
-    void updateEditorStyleMenu();
-
-    // Update the code block styles menu according to existing files.
-    void updateCodeBlockStyleMenu();
-
     void changeHighlightCursorLine(bool p_checked);
     void changeHighlightSelectedWord(bool p_checked);
     void changeHighlightSearchedWord(bool p_checked);
@@ -353,8 +338,6 @@ private:
 
     // Act group for render styles.
     QActionGroup *m_renderStyleActs;
-
-    QActionGroup *m_editorStyleActs;
 
     // Act group for code block render styles.
     QActionGroup *m_codeBlockStyleActs;

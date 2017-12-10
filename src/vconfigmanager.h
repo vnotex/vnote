@@ -97,20 +97,19 @@ public:
 
     QString getLogFilePath() const;
 
-    QString getTemplateCssUrl();
+    // Get the css style URL for web view.
+    QString getCssStyleUrl() const;
 
-    QString getTemplateCodeBlockCssUrl();
-
-    QString getEditorStyleUrl();
-
-    const QString &getTemplateCss() const;
-    void setTemplateCss(const QString &p_css);
-
-    const QString &getTemplateCodeBlockCss() const;
-    void setTemplateCodeBlockCss(const QString &p_css);
+    QString getCodeBlockCssStyleUrl() const;
 
     const QString &getEditorStyle() const;
     void setEditorStyle(const QString &p_style);
+
+    const QString &getCssStyle() const;
+    void setCssStyle(const QString &p_style);
+
+    const QString &getCodeBlockCssStyle() const;
+    void setCodeBlockCssStyle(const QString &p_style);
 
     QFont getBaseEditFont() const;
     QPalette getBaseEditPalette() const;
@@ -308,9 +307,6 @@ public:
 
     bool getDoubleClickCloseTab() const;
 
-    // Whether user specify template_code_block_css_url directly.
-    bool getUserSpecifyTemplateCodeBlockCssUrl() const;
-
     bool getEnableCompactMode() const;
     void setEnableCompactMode(bool p_enabled);
 
@@ -357,22 +353,20 @@ public:
 
     const QString &getSnippetConfigFilePath() const;
 
-    QString getThemeFile() const;
-
-    // Read all available css files in c_styleConfigFolder.
-    QVector<QString> getCssStyles() const;
-
     // Read all available templates files in c_templateConfigFolder.
     QVector<QString> getNoteTemplates(DocType p_type = DocType::Unknown) const;
 
     // Get the folder c_codeBlockStyleConfigFolder in the config folder.
     const QString &getCodeBlockStyleConfigFolder() const;
 
-    // Read all available css files in c_codeBlockStyleConfigFolder.
-    QVector<QString> getCodeBlockCssStyles() const;
+    // All the editor styles.
+    QList<QString> getEditorStyles() const;
 
-    // Read all available mdhl files in c_styleConfigFolder.
-    QVector<QString> getEditorStyles() const;
+    // All the css styles.
+    QList<QString> getCssStyles() const;
+
+    // All the css styles.
+    QList<QString> getCodeBlockCssStyles() const;
 
     // Return the timer interval for checking file.
     int getFileTimerInterval() const;
@@ -400,6 +394,8 @@ public:
     const QString &getTheme() const;
 
     void setTheme(const QString &p_theme);
+
+    QString getThemeFile() const;
 
 private:
     // Look up a config from user and default settings.
@@ -445,13 +441,6 @@ private:
 
     void updateMarkdownEditStyle();
 
-    // Output pre-defined CSS styles to style folder.
-    bool outputDefaultCssStyle() const;
-
-    bool outputDefaultCodeBlockCssStyle() const;
-
-    bool outputDefaultEditorStyle() const;
-
     // See if the old c_obsoleteDirConfigFile exists. If so, rename it to
     // the new one; if not, use the c_dirConfigFile.
     static QString fetchDirConfigFilePath(const QString &p_path);
@@ -481,6 +470,15 @@ private:
     // Init the themes name-file mappings.
     void initThemes();
 
+    // Init the editor styles name-file mappings.
+    void initEditorStyles();
+
+    void initCssStyles();
+
+    void initCodeBlockCssStyles();
+
+    QString getEditorStyleFile() const;
+
     // Default font and palette.
     QFont m_defaultEditFont;
     QPalette m_defaultEditPalette;
@@ -497,18 +495,6 @@ private:
     QHash<QString, QTextCharFormat> m_codeBlockStyles;
 
     QString welcomePagePath;
-
-    // CSS style for Markdown template.
-    QString m_templateCss;
-
-    // Code block CSS style for Markdown template.
-    QString m_templateCodeBlockCss;
-
-    // Code block CSS style file URL for Markdown template.
-    // If not empty, VNote will ignore m_templateCodeBlockCss.
-    QString m_templateCodeBlockCssUrl;
-
-    QString m_editorStyle;
 
     // Index of current notebook.
     int curNotebookIndex;
@@ -762,6 +748,27 @@ private:
     // [name] -> [file path].
     QMap<QString, QString> m_themes;
 
+    // The editor style name.
+    QString m_editorStyle;
+
+    // All the editor styles.
+    // [name] -> [file path].
+    QMap<QString, QString> m_editorStyles;
+
+    // The web view css style name.
+    QString m_cssStyle;
+
+    // All the css styles.
+    // [name] -> [file path].
+    QMap<QString, QString> m_cssStyles;
+
+    // The web view code block css style name.
+    QString m_codeBlockCssStyle;
+
+    // All the css styles.
+    // [name] -> [file path].
+    QMap<QString, QString> m_codeBlockCssStyles;
+
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
     static const QString c_obsoleteDirConfigFile;
@@ -805,17 +812,6 @@ private:
 
     // The folder name of snippet files.
     static const QString c_snippetConfigFolder;
-
-    // Default CSS file in resource system.
-    static const QString c_defaultCssFile;
-
-    // Default code block CSS file in resource system.
-    static const QString c_defaultCodeBlockCssFile;
-
-    // MDHL files for editor styles.
-    static const QString c_defaultMdhlFile;
-    static const QString c_solarizedDarkMdhlFile;
-    static const QString c_solarizedLightMdhlFile;
 
     // The folder name to store all notebooks if user does not specify one.
     static const QString c_vnoteNotebookFolderName;
@@ -1761,41 +1757,6 @@ inline bool VConfigManager::getDoubleClickCloseTab() const
     return m_doubleClickCloseTab;
 }
 
-inline const QString &VConfigManager::getTemplateCss() const
-{
-    return m_templateCss;
-}
-
-inline void VConfigManager::setTemplateCss(const QString &p_css)
-{
-    if (m_templateCss == p_css) {
-        return;
-    }
-
-    m_templateCss = p_css;
-    setConfigToSettings("global", "template_css", m_templateCss);
-}
-
-inline const QString &VConfigManager::getTemplateCodeBlockCss() const
-{
-    return m_templateCodeBlockCss;
-}
-
-inline void VConfigManager::setTemplateCodeBlockCss(const QString &p_css)
-{
-    if (m_templateCodeBlockCss == p_css) {
-        return;
-    }
-
-    m_templateCodeBlockCss = p_css;
-    setConfigToSettings("global", "template_code_block_css", m_templateCodeBlockCss);
-}
-
-inline bool VConfigManager::getUserSpecifyTemplateCodeBlockCssUrl() const
-{
-    return !m_templateCodeBlockCssUrl.isEmpty();
-}
-
 inline bool VConfigManager::getEnableCompactMode() const
 {
     return m_enableCompactMode;
@@ -1884,6 +1845,70 @@ inline void VConfigManager::setTheme(const QString &p_theme)
 
     m_theme = p_theme;
     setConfigToSettings("global", "theme", m_theme);
+    setConfigToSettings("global", "editor_style", "");
+    setConfigToSettings("global", "css_style", "");
+    setConfigToSettings("global", "code_block_css_style", "");
+}
+
+inline QList<QString> VConfigManager::getEditorStyles() const
+{
+    return m_editorStyles.keys();
+}
+
+inline const QString &VConfigManager::getEditorStyle() const
+{
+    return m_editorStyle;
+}
+
+inline void VConfigManager::setEditorStyle(const QString &p_style)
+{
+    if (m_editorStyle == p_style) {
+        return;
+    }
+
+    m_editorStyle = p_style;
+    setConfigToSettings("global", "editor_style", m_editorStyle);
+    updateEditStyle();
+}
+
+inline QList<QString> VConfigManager::getCssStyles() const
+{
+    return m_cssStyles.keys();
+}
+
+inline const QString &VConfigManager::getCssStyle() const
+{
+    return m_cssStyle;
+}
+
+inline void VConfigManager::setCssStyle(const QString &p_style)
+{
+    if (m_cssStyle == p_style) {
+        return;
+    }
+
+    m_cssStyle = p_style;
+    setConfigToSettings("global", "css_style", m_cssStyle);
+}
+
+inline QList<QString> VConfigManager::getCodeBlockCssStyles() const
+{
+    return m_codeBlockCssStyles.keys();
+}
+
+inline const QString &VConfigManager::getCodeBlockCssStyle() const
+{
+    return m_codeBlockCssStyle;
+}
+
+inline void VConfigManager::setCodeBlockCssStyle(const QString &p_style)
+{
+    if (m_codeBlockCssStyle == p_style) {
+        return;
+    }
+
+    m_codeBlockCssStyle = p_style;
+    setConfigToSettings("global", "code_block_css_style", m_codeBlockCssStyle);
 }
 
 #endif // VCONFIGMANAGER_H

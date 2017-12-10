@@ -4,33 +4,6 @@
         <file>resources/qwebchannel.js</file>
         <file>utils/marked/marked.min.js</file>
         <file>utils/highlightjs/highlight.pack.js</file>
-        <file>utils/highlightjs/styles/androidstudio.css</file>
-        <file>utils/highlightjs/styles/atom-one-dark.css</file>
-        <file>utils/highlightjs/styles/atom-one-light.css</file>
-        <file>utils/highlightjs/styles/darcula.css</file>
-        <file>utils/highlightjs/styles/dark.css</file>
-        <file>utils/highlightjs/styles/darkula.css</file>
-        <file>utils/highlightjs/styles/default.css</file>
-        <file>utils/highlightjs/styles/github-gist.css</file>
-        <file>utils/highlightjs/styles/github.css</file>
-        <file>utils/highlightjs/styles/googlecode.css</file>
-        <file>utils/highlightjs/styles/gruvbox-dark.css</file>
-        <file>utils/highlightjs/styles/gruvbox-light.css</file>
-        <file>utils/highlightjs/styles/monokai-sublime.css</file>
-        <file>utils/highlightjs/styles/monokai.css</file>
-        <file>utils/highlightjs/styles/qtcreator_dark.css</file>
-        <file>utils/highlightjs/styles/qtcreator_light.css</file>
-        <file>utils/highlightjs/styles/rainbow.css</file>
-        <file>utils/highlightjs/styles/solarized-dark.css</file>
-        <file>utils/highlightjs/styles/solarized-light.css</file>
-        <file>utils/highlightjs/styles/tomorrow-night-blue.css</file>
-        <file>utils/highlightjs/styles/tomorrow-night-bright.css</file>
-        <file>utils/highlightjs/styles/tomorrow-night-eighties.css</file>
-        <file>utils/highlightjs/styles/tomorrow-night.css</file>
-        <file>utils/highlightjs/styles/tomorrow.css</file>
-        <file>resources/styles/default.mdhl</file>
-        <file>resources/styles/solarized-light.mdhl</file>
-        <file>resources/styles/solarized-dark.mdhl</file>
         <file>resources/vnote.ini</file>
         <file>resources/icons/create_note_tb.svg</file>
         <file>resources/icons/save_note.svg</file>
@@ -57,7 +30,6 @@
         <file>resources/icons/create_rootdir_tb.svg</file>
         <file>resources/icons/vnote.svg</file>
         <file>resources/icons/vnote.ico</file>
-        <file>resources/vnote.qss</file>
         <file>resources/icons/note_info_tb.svg</file>
         <file>resources/icons/delete_note_tb.svg</file>
         <file>resources/icons/copy.svg</file>
@@ -94,9 +66,6 @@
         <file>resources/icons/close_red.svg</file>
         <file>resources/docs/shortcuts_en.md</file>
         <file>resources/docs/shortcuts_zh.md</file>
-        <file>resources/styles/default.css</file>
-        <file>resources/icons/add_style.svg</file>
-        <file>utils/highlightjs/styles/vnote.css</file>
         <file>utils/showdown/showdown.min.js</file>
         <file>resources/showdown.js</file>
         <file>utils/showdown/showdown-headinganchor.js</file>
@@ -190,5 +159,11 @@
         <file>resources/themes/v_white/menu_radiobutton.svg</file>
         <file>resources/themes/v_pure/menu_checkbox.svg</file>
         <file>resources/themes/v_pure/menu_radiobutton.svg</file>
+        <file>resources/themes/v_pure/v_pure.mdhl</file>
+        <file>resources/themes/v_white/v_white.mdhl</file>
+        <file>resources/themes/v_white/v_white.css</file>
+        <file>resources/themes/v_pure/v_pure.css</file>
+        <file>resources/themes/v_pure/v_pure_codeblock.css</file>
+        <file>resources/themes/v_white/v_white_codeblock.css</file>
     </qresource>
 </RCC>

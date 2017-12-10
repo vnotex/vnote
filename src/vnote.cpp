@@ -111,8 +111,8 @@ void VNote::updateTemplate()
     s_markdownTemplate = VUtils::readFileFromDisk(c_markdownTemplatePath);
 
     // Must replace the code block holder first.
-    s_markdownTemplate.replace(codeBlockCssHolder, g_config->getTemplateCodeBlockCssUrl());
-    s_markdownTemplate.replace(cssHolder, g_config->getTemplateCssUrl());
+    s_markdownTemplate.replace(codeBlockCssHolder, g_config->getCodeBlockCssStyleUrl());
+    s_markdownTemplate.replace(cssHolder, g_config->getCssStyleUrl());
 
     s_markdownTemplatePDF = s_markdownTemplate;
 

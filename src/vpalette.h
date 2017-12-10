@@ -3,8 +3,27 @@
 
 #include <QString>
 #include <QHash>
+#include <QMap>
 
 class QSettings;
+
+struct VPaletteMetaData
+{
+    // These are all file PATH, not name.
+    QString m_qssFile;
+    QString m_mdhlFile;
+    QString m_cssFile;
+    QString m_codeBlockCssFile;
+
+    QString toString() const
+    {
+        return QString("palette metadata qss=%1 mdhl=%2 css=%3 codeBlockCss=%4")
+                      .arg(m_qssFile)
+                      .arg(m_mdhlFile)
+                      .arg(m_cssFile)
+                      .arg(m_codeBlockCssFile);
+    }
+};
 
 
 class VPalette
@@ -17,12 +36,33 @@ public:
     // Read QSS file.
     QString fetchQtStyleSheet() const;
 
+    // Read themes and return the mappings of editor styles.
+    static QMap<QString, QString> editorStylesFromThemes(const QList<QString> &p_themeFiles);
+
+    // Read themes and return the mappings of css styles.
+    static QMap<QString, QString> cssStylesFromThemes(const QList<QString> &p_themeFiles);
+
+    // Read themes and return the mappings of css styles.
+    static QMap<QString, QString> codeBlockCssStylesFromThemes(const QList<QString> &p_themeFiles);
+
+    static VPaletteMetaData getPaletteMetaData(const QString &p_paletteFile);
+
+    // Return the name of the theme.
+    static QString themeName(const QString &p_paletteFile);
+
+    // Return the name of the editor style of the theme.
+    static QString themeEditorStyle(const QString &p_paletteFile);
+
+    // Return the name of the css style of the theme.
+    static QString themeCssStyle(const QString &p_paletteFile);
+
+    // Return the name of the css style of the theme.
+    static QString themeCodeBlockCssStyle(const QString &p_paletteFile);
+
 private:
     void init(const QString &p_file);
 
     void initPaleteFromSettings(QSettings *p_settings, const QString &p_group);
-
-    void initMetaData(QSettings *p_settings, const QString &p_group);
 
     void fillStyle(QString &p_style) const;
 
@@ -33,7 +73,7 @@ private:
 
     QHash<QString, QString> m_palette;
 
-    QString m_qssFile;
+    VPaletteMetaData m_data;
 };
 
 #endif // VPALETTE_H

@@ -18,23 +18,12 @@ void VPalette::init(const QString &p_file)
     m_file = QFileInfo(p_file).absoluteFilePath();
 
     QSettings settings(p_file, QSettings::IniFormat);
-    initMetaData(&settings, "metadata");
+    m_data = getPaletteMetaData(m_file);
     initPaleteFromSettings(&settings, "phony");
     initPaleteFromSettings(&settings, "soft_defined");
     initPaleteFromSettings(&settings, "widgets");
-}
 
-void VPalette::initMetaData(QSettings *p_settings, const QString &p_group)
-{
-    p_settings->beginGroup(p_group);
-    // Qss file.
-    QString val = p_settings->value("qss_file").toString();
-    if (!val.isEmpty()) {
-        m_qssFile = QDir(VUtils::basePathFromPath(m_file)).filePath(val);
-        qDebug() << "theme file" << m_file << "qss file" << m_qssFile;
-    }
-
-    p_settings->endGroup();
+    qDebug() << "theme file" << m_file << m_data.toString();
 }
 
 void VPalette::initPaleteFromSettings(QSettings *p_settings, const QString &p_group)
@@ -124,7 +113,7 @@ void VPalette::fillStyle(QString &p_style) const
 
 QString VPalette::fetchQtStyleSheet() const
 {
-    QString style = VUtils::readFileFromDisk(m_qssFile);
+    QString style = VUtils::readFileFromDisk(m_data.m_qssFile);
     fillStyle(style);
     fillAbsoluteUrl(style);
 
@@ -150,4 +139,99 @@ void VPalette::fillAbsoluteUrl(QString &p_style) const
         pos = idx + reg.matchedLength() + abUrl.size() - url.size();
         p_style.replace(idx + reg.cap(1).size() + literalSize, url.size(), abUrl);
     }
+}
+
+QMap<QString, QString> VPalette::editorStylesFromThemes(const QList<QString> &p_themeFiles)
+{
+    QMap<QString, QString> styles;
+    for (auto const & theme : p_themeFiles) {
+        QString value = getPaletteMetaData(theme).m_mdhlFile;
+        if (!value.isEmpty()) {
+            styles.insert(themeName(theme) + "/" + QFileInfo(value).completeBaseName(), value);
+        }
+    }
+
+    return styles;
+}
+
+QMap<QString, QString> VPalette::cssStylesFromThemes(const QList<QString> &p_themeFiles)
+{
+    QMap<QString, QString> styles;
+    for (auto const & theme : p_themeFiles) {
+        QString value = getPaletteMetaData(theme).m_cssFile;
+        if (!value.isEmpty()) {
+            styles.insert(themeName(theme) + "/" + QFileInfo(value).completeBaseName(), value);
+        }
+    }
+
+    return styles;
+}
+
+QMap<QString, QString> VPalette::codeBlockCssStylesFromThemes(const QList<QString> &p_themeFiles)
+{
+    QMap<QString, QString> styles;
+    for (auto const & theme : p_themeFiles) {
+        QString value = getPaletteMetaData(theme).m_codeBlockCssFile;
+        if (!value.isEmpty()) {
+            styles.insert(themeName(theme) + "/" + QFileInfo(value).completeBaseName(), value);
+        }
+    }
+
+    return styles;
+}
+
+VPaletteMetaData VPalette::getPaletteMetaData(const QString &p_paletteFile)
+{
+    VPaletteMetaData data;
+
+    QSettings settings(p_paletteFile, QSettings::IniFormat);
+    QDir dir(VUtils::basePathFromPath(QFileInfo(p_paletteFile).absoluteFilePath()));
+
+    settings.beginGroup("metadata");
+    QString val = settings.value("qss_file").toString();
+    if (!val.isEmpty()) {
+        data.m_qssFile = dir.filePath(val);
+    }
+
+    val = settings.value("mdhl_file").toString();
+    if (!val.isEmpty()) {
+        data.m_mdhlFile = dir.filePath(val);
+    }
+
+    val = settings.value("css_file").toString();
+    if (!val.isEmpty()) {
+        data.m_cssFile = dir.filePath(val);
+    }
+
+    val = settings.value("codeblock_css_file").toString();
+    if (!val.isEmpty()) {
+        data.m_codeBlockCssFile = dir.filePath(val);
+    }
+
+    settings.endGroup();
+
+    return data;
+}
+
+QString VPalette::themeName(const QString &p_paletteFile)
+{
+    return QFileInfo(p_paletteFile).completeBaseName();
+}
+
+QString VPalette::themeEditorStyle(const QString &p_paletteFile)
+{
+    VPaletteMetaData data = getPaletteMetaData(p_paletteFile);
+    return themeName(p_paletteFile) + "/" + QFileInfo(data.m_mdhlFile).completeBaseName();
+}
+
+QString VPalette::themeCssStyle(const QString &p_paletteFile)
+{
+    VPaletteMetaData data = getPaletteMetaData(p_paletteFile);
+    return themeName(p_paletteFile) + "/" + QFileInfo(data.m_cssFile).completeBaseName();
+}
+
+QString VPalette::themeCodeBlockCssStyle(const QString &p_paletteFile)
+{
+    VPaletteMetaData data = getPaletteMetaData(p_paletteFile);
+    return themeName(p_paletteFile) + "/" + QFileInfo(data.m_codeBlockCssFile).completeBaseName();
 }
