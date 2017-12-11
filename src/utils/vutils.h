@@ -266,6 +266,8 @@ public:
     // Create and return a QComboBox.
     static QComboBox *getComboBox(QWidget *p_parent = nullptr);
 
+    static void setDynamicProperty(QWidget *p_widget, const char *p_prop, bool p_val = true);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
     // Captured texts (need to be trimmed):

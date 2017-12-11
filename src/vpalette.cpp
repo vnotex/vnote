@@ -87,14 +87,14 @@ QString VPalette::color(const QString &p_name) const
     return QString();
 }
 
-void VPalette::fillStyle(QString &p_style) const
+void VPalette::fillStyle(QString &p_text) const
 {
     // Cap(2) is the string to be replaced.
     QRegExp reg("(\\s|:)@(\\w+)(?=\\W)");
 
     int pos = 0;
-    while (pos < p_style.size()) {
-        int idx = p_style.indexOf(reg, pos);
+    while (pos < p_text.size()) {
+        int idx = p_text.indexOf(reg, pos);
         if (idx == -1) {
             break;
         }
@@ -106,7 +106,7 @@ void VPalette::fillStyle(QString &p_style) const
             pos = idx + reg.matchedLength();
         } else {
             pos = idx + reg.matchedLength() + val.size() - name.size() - 1;
-            p_style.replace(idx + reg.cap(1).size(), name.size() + 1, val);
+            p_text.replace(idx + reg.cap(1).size(), name.size() + 1, val);
         }
     }
 }

@@ -18,7 +18,7 @@ class VToolBox : public QWidget, public VNavigationMode
 public:
     explicit VToolBox(QWidget *p_parent = nullptr);
 
-    int addItem(QWidget *p_widget, const QIcon &p_iconSet, const QString &p_text);
+    int addItem(QWidget *p_widget, const QString &p_iconFile, const QString &p_text);
 
     void setCurrentIndex(int p_idx);
 
@@ -38,8 +38,14 @@ private:
 
         ItemInfo(QWidget *p_widget,
                  const QString &p_text,
-                 QPushButton *p_btn)
-            : m_widget(p_widget), m_text(p_text), m_btn(p_btn)
+                 QPushButton *p_btn,
+                 const QIcon &p_icon,
+                 const QIcon &p_activeIcon)
+            : m_widget(p_widget),
+              m_text(p_text),
+              m_btn(p_btn),
+              m_icon(p_icon),
+              m_activeIcon(p_activeIcon)
         {
         }
 
@@ -47,6 +53,8 @@ private:
         QString m_text;
 
         QPushButton *m_btn;
+        QIcon m_icon;
+        QIcon m_activeIcon;
     };
 
     void setupUI();

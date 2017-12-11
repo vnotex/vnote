@@ -40,6 +40,11 @@ public:
         return icon(p_file, g_palette->color("toolbox_icon_fg"));
     }
 
+    static QIcon toolBoxActiveIcon(const QString &p_file)
+    {
+        return icon(p_file, g_palette->color("toolbox_icon_active_fg"));
+    }
+
     static QIcon comboBoxIcon(const QString &p_file)
     {
         return icon(p_file, g_palette->color("combobox_item_icon_fg"));

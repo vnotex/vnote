@@ -36,6 +36,9 @@ public:
     // Read QSS file.
     QString fetchQtStyleSheet() const;
 
+    // Fill "@xxx" in @p_text with corresponding style.
+    void fillStyle(QString &p_text) const;
+
     // Read themes and return the mappings of editor styles.
     static QMap<QString, QString> editorStylesFromThemes(const QList<QString> &p_themeFiles);
 
@@ -63,8 +66,6 @@ private:
     void init(const QString &p_file);
 
     void initPaleteFromSettings(QSettings *p_settings, const QString &p_group);
-
-    void fillStyle(QString &p_style) const;
 
     void fillAbsoluteUrl(QString &p_style) const;
 

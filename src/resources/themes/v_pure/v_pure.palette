@@ -11,6 +11,9 @@ codeblock_css_file=v_pure_codeblock.css
 ; Abstract color attributes.
 master_fg=#F5F5F5
 master_bg=#556DE8
+master_focus_bg=#6A80F1
+master_hover_bg=#6A80F1
+master_pressed_bg=#4561ED
 
 base_fg=#222222
 base_bg=#EAEAEA
@@ -87,6 +90,10 @@ vim_indicator_cmd_edit_pending_bg=@selected_bg
 ; VTabIndicator.
 tab_indicator_label_fg=@base_fg
 
+; Html template.
+template_title_flash_light_fg=#A0ACE5
+template_title_flash_dark_fg=@master_bg
+
 [widgets]
 ; Widget color attributes.
 
@@ -125,7 +132,9 @@ toolbutton_icon_fg=@icon_fg
 toolbutton_icon_danger_fg=@danger_icon_fg
 
 ; Toolbox.
-toolbox_icon_fg=@icon_fg
+toolbox_icon_fg=@master_bg
+toolbox_icon_active_fg=@master_fg
+toolbox_title_border=@master_bg
 
 ; Dockwidget.
 dockwidget_title_fg=@title_fg
@@ -137,15 +146,19 @@ pushbutton_fg=@base_fg
 pushbutton_bg=transparent
 pushbutton_border=@border_bg
 pushbutton_pressed_bg=@pressed_bg
+pushbutton_focus_bg=@focus_bg
 pushbutton_checked_bg=@selected_bg
 pushbutton_hover_bg=@hover_bg
 pushbutton_default_border=@master_bg
+pushbutton_disabled_fg=@disabled_fg
+pushbutton_disabled_bg=@pushbutton_bg
 
 pushbutton_specialbtn_fg=@master_fg
 pushbutton_specialbtn_bg=@master_bg
-pushbutton_specialbtn_hover_bg=#3F51B5
-pushbutton_specialbtn_checked_bg=#3949AB
-pushbutton_specialbtn_pressed_bg=#303F9F
+pushbutton_specialbtn_focus_bg=@master_focus_bg
+pushbutton_specialbtn_hover_bg=@master_hover_bg
+pushbutton_specialbtn_checked_bg=#3F51B5
+pushbutton_specialbtn_pressed_bg=@master_pressed_bg
 
 pushbutton_cornerbtn_hover_bg=@hover_bg
 pushbutton_cornerbtn_focus_bg=@focus_bg
@@ -175,6 +188,12 @@ pushbutton_dangerbtn_hover_fg=#FFF
 pushbutton_dangerbtn_hover_bg=#C9302C
 pushbutton_dangerbtn_hover_border=#AC2925
 
+pushbutton_toolboxbtn_active_fg=@master_fg
+pushbutton_toolboxbtn_active_bg=@master_bg
+pushbutton_toolboxbtn_active_focus_bg=@master_focus_bg
+pushbutton_toolboxbtn_active_hover_bg=@master_hover_bg
+pushbutton_toolboxbtn_active_pressed_bg=@master_pressed_bg
+
 button_icon_fg=@icon_fg
 button_icon_danger_fg=@danger_icon_fg
 
@@ -190,6 +209,13 @@ combobox_view_item_hover_bg=@hover_bg
 combobox_focus_bg=@edit_focus_bg
 combobox_focus_border=@edit_focus_border
 combobox_item_icon_fg=@item_icon_fg
+
+combobox_notebookselector_fg=@master_fg
+combobox_notebookselector_bg=@master_bg
+combobox_notebookselector_hover_fg=@master_fg
+combobox_notebookselector_hover_bg=@master_hover_bg
+combobox_notebookselector_focus_fg=@master_fg
+combobox_notebookselector_focus_bg=@master_pressed_bg
 
 ; Label.
 label_fg=@base_fg

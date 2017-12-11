@@ -9,6 +9,7 @@
 
 #include "vnote.h"
 #include "utils/vutils.h"
+#include "utils/viconutils.h"
 
 extern VNote *g_vnote;
 
@@ -23,23 +24,29 @@ void VToolBox::setupUI()
 {
     m_btnLayout = new QHBoxLayout();
     m_btnLayout->addStretch();
+    m_btnLayout->setContentsMargins(0, 0, 0, 2);
+    m_btnLayout->setSpacing(0);
+    QWidget *wid = new QWidget();
+    wid->setProperty("ToolBoxTitle", true);
+    wid->setLayout(m_btnLayout);
 
     m_widgetLayout = new QStackedLayout();
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
-    mainLayout->addLayout(m_btnLayout);
+    mainLayout->addWidget(wid);
     mainLayout->addLayout(m_widgetLayout);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
     setLayout(mainLayout);
 }
 
-int VToolBox::addItem(QWidget *p_widget, const QIcon &p_iconSet, const QString &p_text)
+int VToolBox::addItem(QWidget *p_widget, const QString &p_iconFile, const QString &p_text)
 {
     int idx = m_items.size();
 
     // New a button.
-    QPushButton *btn = new QPushButton(p_iconSet, "");
+    QIcon icon = VIconUtils::toolBoxIcon(p_iconFile);
+    QPushButton *btn = new QPushButton(icon, "");
     btn->setToolTip(p_text);
     btn->setProperty("FlatBtn", true);
     connect(btn, &QPushButton::clicked,
@@ -58,7 +65,11 @@ int VToolBox::addItem(QWidget *p_widget, const QIcon &p_iconSet, const QString &
     // Insert widget to layout.
     m_widgetLayout->insertWidget(idx, p_widget);
 
-    m_items.push_back(ItemInfo(p_widget, p_text, btn));
+    m_items.push_back(ItemInfo(p_widget,
+                               p_text,
+                               btn,
+                               icon,
+                               VIconUtils::toolBoxActiveIcon(p_iconFile)));
 
     if (m_items.size() == 1) {
         setCurrentIndex(0);
@@ -104,14 +115,19 @@ void VToolBox::setCurrentButtonIndex(int p_idx)
     for (int i = 0; i < m_items.size(); ++i) {
         QPushButton *btn = m_items[i].m_btn;
         btn->setText("");
+        btn->setIcon(m_items[i].m_icon);
         btn->clearFocus();
+        VUtils::setDynamicProperty(btn, "ToolBoxActiveBtn", false);
     }
 
     if (p_idx < 0 || p_idx >= m_items.size()) {
         return;
     }
 
-    m_items[p_idx].m_btn->setText(m_items[p_idx].m_text);
+    QPushButton *curBtn = m_items[p_idx].m_btn;
+    curBtn->setText(m_items[p_idx].m_text);
+    curBtn->setIcon(m_items[p_idx].m_activeIcon);
+    VUtils::setDynamicProperty(curBtn, "ToolBoxActiveBtn", true);
 }
 
 void VToolBox::showNavigation()

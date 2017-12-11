@@ -97,12 +97,13 @@ void VMdEditor::updateFontAndPalette()
 {
     setFont(g_config->getMdEditFont());
     setPalette(g_config->getMdEditPalette());
+
+    // setPalette() won't change the foreground.
+    setTextColor(g_config->getMdEditPalette().color(QPalette::Text));
 }
 
 void VMdEditor::beginEdit()
 {
-    updateFontAndPalette();
-
     updateConfig();
 
     initInitImages();

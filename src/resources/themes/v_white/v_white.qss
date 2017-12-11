@@ -206,6 +206,11 @@ QPushButton:default {
     border-color: @pushbutton_default_border;
 }
 
+QPushButton:disabled {
+    color: @pushbutton_disabled_fg;
+    background-color: @pushbutton_disabled_bg;
+}
+
 QPushButton::menu-indicator {
     image: url(arrow_dropdown.svg);
     width: 16px;
@@ -236,6 +241,11 @@ QPushButton[CornerBtn="true"]:pressed {
     background-color: @pushbutton_cornerbtn_pressed_bg;
 }
 
+QPushButton[CornerBtn="true"]:disabled {
+    color: @pushbutton_disabled_fg;
+    background-color: @pushbutton_disabled_bg;
+}
+
 QPushButton[StatusBtn="true"] {
     font: bold;
     padding: 0px 2px 0px 2px;
@@ -257,6 +267,11 @@ QPushButton[StatusBtn="true"]:pressed {
     background-color: @pushbutton_statusbtn_pressed_bg;
 }
 
+QPushButton[StatusBtn="true"]:disabled {
+    color: @pushbutton_disabled_fg;
+    background-color: @pushbutton_disabled_bg;
+}
+
 QPushButton[FlatBtn="true"] {
     padding: 4px;
     margin: 0px;
@@ -273,8 +288,13 @@ QPushButton[FlatBtn="true"]:focus {
     background-color: @pushbutton_flatbtn_focus_bg;
 }
 
-QPushButton[FlatBtn="true"]:focus {
+QPushButton[FlatBtn="true"]:pressed {
     background-color: @pushbutton_flatbtn_pressed_bg;
+}
+
+QPushButton[FlatBtn="true"]:disabled {
+    color: @pushbutton_disabled_fg;
+    background-color: @pushbutton_disabled_bg;
 }
 
 QPushButton[SelectionBtn="true"] {
@@ -294,8 +314,13 @@ QPushButton[SelectionBtn="true"]:focus {
     background-color: @pushbutton_selectionbtn_focus_bg;
 }
 
-QPushButton[SelectionBtn="true"]:focus {
+QPushButton[SelectionBtn="true"]:pressed {
     background-color: @pushbutton_selectionbtn_pressed_bg;
+}
+
+QPushButton[SelectionBtn="true"]:disabled {
+    color: @pushbutton_disabled_fg;
+    background-color: @pushbutton_disabled_bg;
 }
 
 QPushButton[TitleBtn="true"] {
@@ -314,8 +339,13 @@ QPushButton[TitleBtn="true"]:focus {
     background-color: @pushbutton_titlebtn_focus_bg;
 }
 
-QPushButton[TitleBtn="true"]:focus {
+QPushButton[TitleBtn="true"]:pressed {
     background-color: @pushbutton_titlebtn_pressed_bg;
+}
+
+QPushButton[TitleBtn="true"]:disabled {
+    color: @pushbutton_disabled_fg;
+    background-color: @pushbutton_disabled_bg;
 }
 
 QPushButton[DangerBtn="true"] {
@@ -329,6 +359,11 @@ QPushButton[DangerBtn="true"]:hover {
     color: @pushbutton_dangerbtn_hover_fg;
     border-color: @pushbutton_dangerbtn_hover_border;
     background-color: @pushbutton_dangerbtn_hover_bg;
+}
+
+QPushButton[DangerBtn="true"]:disabled {
+    color: @pushbutton_disabled_fg;
+    background-color: @pushbutton_disabled_bg;
 }
 
 VButtonMenuItem {
@@ -370,6 +405,11 @@ VButtonMenuItem:hover {
 
 VButtonMenuItem:focus {
     background-color: @menubar_item_selected_bg;
+}
+
+VButtonMenuItem:disabled {
+    color: @pushbutton_disabled_fg;
+    background-color: @pushbutton_disabled_bg;
 }
 /* End QPushButton*/
 

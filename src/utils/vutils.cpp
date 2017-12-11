@@ -410,17 +410,13 @@ int VUtils::showMessage(QMessageBox::Icon p_icon,
     if (p_type == MessageBoxType::Danger) {
         QPushButton *okBtn = dynamic_cast<QPushButton *>(msgBox.button(QMessageBox::Ok));
         if (okBtn) {
-            okBtn->setProperty("DangerBtn", true);
-            okBtn->style()->unpolish(okBtn);
-            okBtn->style()->polish(okBtn);
+            setDynamicProperty(okBtn, "DangerBtn");
         }
     }
 
     QPushButton *defaultBtn = dynamic_cast<QPushButton *>(msgBox.button(p_defaultBtn));
     if (defaultBtn) {
-        defaultBtn->setProperty("SpecialBtn", true);
-        defaultBtn->style()->unpolish(defaultBtn);
-        defaultBtn->style()->polish(defaultBtn);
+        setDynamicProperty(defaultBtn, "SpecialBtn");
     }
 
     return msgBox.exec();
@@ -1099,4 +1095,11 @@ QComboBox *VUtils::getComboBox(QWidget *p_parent)
     box->setItemDelegate(itemDelegate);
 
     return box;
+}
+
+void VUtils::setDynamicProperty(QWidget *p_widget, const char *p_prop, bool p_val)
+{
+    p_widget->setProperty(p_prop, p_val);
+    p_widget->style()->unpolish(p_widget);
+    p_widget->style()->polish(p_widget);
 }

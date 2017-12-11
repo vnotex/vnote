@@ -80,6 +80,10 @@ vim_indicator_cmd_edit_pending_bg=@selected_bg
 ; VTabIndicator.
 tab_indicator_label_fg=@base_fg
 
+; Html template.
+template_title_flash_light_fg=#A0ACE5
+template_title_flash_dark_fg=#556DE8
+
 [widgets]
 ; Widget color attributes.
 
@@ -120,6 +124,7 @@ toolbutton_icon_danger_fg=@danger_icon_fg
 
 ; Toolbox.
 toolbox_icon_fg=@icon_fg
+toolbox_icon_active_fg=@icon_fg
 
 ; Dockwidget.
 dockwidget_title_fg=@title_fg
@@ -134,6 +139,8 @@ pushbutton_pressed_bg=@pressed_bg
 pushbutton_checked_bg=@selected_bg
 pushbutton_hover_bg=@hover_bg
 pushbutton_default_border=#424242
+pushbutton_disabled_fg=@disabled_fg
+pushbutton_disabled_bg=@pushbutton_bg
 
 pushbutton_cornerbtn_hover_bg=@hover_bg
 pushbutton_cornerbtn_focus_bg=@focus_bg

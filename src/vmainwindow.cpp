@@ -84,9 +84,9 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
 
     initAvatar();
 
-    restoreStateAndGeometry();
-
     changePanelView(m_panelViewState);
+
+    restoreStateAndGeometry();
 
     setContextMenuPolicy(Qt::NoContextMenu);
 
@@ -1237,10 +1237,10 @@ void VMainWindow::initDockWindows()
 
     m_toolBox = new VToolBox(this);
     m_toolBox->addItem(outline,
-                       VIconUtils::toolBoxIcon(":/resources/icons/outline.svg"),
+                       ":/resources/icons/outline.svg",
                        tr("Outline"));
     m_toolBox->addItem(m_snippetList,
-                       VIconUtils::toolBoxIcon(":/resources/icons/snippets.svg"),
+                       ":/resources/icons/snippets.svg",
                        tr("Snippets"));
 
     toolDock->setWidget(m_toolBox);
@@ -2045,6 +2045,7 @@ void VMainWindow::saveStateAndGeometry()
 
     if (m_panelViewState == PanelViewState::CompactMode) {
         g_config->setNaviSplitterState(m_naviSplitter->saveState());
+        g_config->setMainSplitterState(m_mainSplitter->saveState());
     } else {
         // In one panel view, it will save the wrong state that the directory tree
         // panel has a width of zero.

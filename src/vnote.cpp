@@ -109,6 +109,7 @@ void VNote::updateTemplate()
     const QString codeBlockCssHolder("HIGHLIGHTJS_CSS_PLACE_HOLDER");
 
     s_markdownTemplate = VUtils::readFileFromDisk(c_markdownTemplatePath);
+    g_palette->fillStyle(s_markdownTemplate);
 
     // Must replace the code block holder first.
     s_markdownTemplate.replace(codeBlockCssHolder, g_config->getCodeBlockCssStyleUrl());

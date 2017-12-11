@@ -8,12 +8,12 @@
 
     <style type="text/css">
         @keyframes flash {
-            0% { color: #75C5B5; }
-            10% { color: #15AE67; }
-            40% { color: #15AE67; }
-            50% { color: #75C5B5; }
-            60% { color: #15AE67; }
-            90% { color: #15AE67; }
+            0% { color: @template_title_flash_light_fg; }
+            10% { color: @template_title_flash_dark_fg; }
+            40% { color: @template_title_flash_dark_fg; }
+            50% { color: @template_title_flash_light_fg; }
+            60% { color: @template_title_flash_dark_fg; }
+            90% { color: @template_title_flash_dark_fg; }
         }
 
         .highlighted-anchor {

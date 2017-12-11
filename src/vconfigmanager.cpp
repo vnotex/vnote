@@ -41,7 +41,7 @@ const QString VConfigManager::c_templateConfigFolder = QString("templates");
 
 const QString VConfigManager::c_snippetConfigFolder = QString("snippets");
 
-const QString VConfigManager::c_warningTextStyle = QString("color: red; font: bold");
+const QString VConfigManager::c_warningTextStyle = QString("color: #C9302C; font: bold");
 
 const QString VConfigManager::c_dataTextStyle = QString("font: bold");
 
