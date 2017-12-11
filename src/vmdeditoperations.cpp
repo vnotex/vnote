@@ -39,11 +39,12 @@ bool VMdEditOperations::insertImageFromMimeData(const QMimeData *source)
     if (image.isNull()) {
         return false;
     }
+
     VInsertImageDialog dialog(tr("Insert Image From Clipboard"),
                               c_defaultImageTitle,
                               "",
+                              false,
                               m_editor->getEditor());
-    dialog.setBrowseable(false);
     dialog.setImage(image);
     if (dialog.exec() == QDialog::Accepted) {
         insertImageFromQImage(dialog.getImageTitleInput(),
@@ -51,6 +52,7 @@ bool VMdEditOperations::insertImageFromMimeData(const QMimeData *source)
                               m_file->getImageFolderInLink(),
                               image);
     }
+
     return true;
 }
 
@@ -157,9 +159,11 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
     }
 
 
-    VInsertImageDialog dialog(title, c_defaultImageTitle,
-                              imagePath, m_editor->getEditor());
-    dialog.setBrowseable(false, true);
+    VInsertImageDialog dialog(title,
+                              c_defaultImageTitle,
+                              imagePath,
+                              false,
+                              m_editor->getEditor());
     if (isLocal) {
         dialog.setImage(image);
     } else {
@@ -187,17 +191,32 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
 
 bool VMdEditOperations::insertImage()
 {
-    VInsertImageDialog dialog(tr("Insert Image From File"),
-                              c_defaultImageTitle, "", m_editor->getEditor());
+    // Use empty title and path to let the dialog auto complete.
+    VInsertImageDialog dialog(tr("Insert Image"),
+                              "",
+                              "",
+                              true,
+                              m_editor->getEditor());
     if (dialog.exec() == QDialog::Accepted) {
-        QString title = dialog.getImageTitleInput();
-        QString imagePath = dialog.getPathInput();
-        qDebug() << "insert image from" << imagePath << "as" << title;
-        insertImageFromPath(title,
-                            m_file->fetchImageFolderPath(),
-                            m_file->getImageFolderInLink(),
-                            imagePath);
+        VInsertImageDialog::ImageType type = dialog.getImageType();
+        if (type == VInsertImageDialog::ImageType::LocalFile) {
+            qDebug() << "insert image from local file" << dialog.getPathInput();
+            insertImageFromPath(dialog.getImageTitleInput(),
+                                m_file->fetchImageFolderPath(),
+                                m_file->getImageFolderInLink(),
+                                dialog.getPathInput());
+        } else {
+            QImage img = dialog.getImage();
+            if (!img.isNull()) {
+                qDebug() << "insert image from image data";
+                insertImageFromQImage(dialog.getImageTitleInput(),
+                                      m_file->fetchImageFolderPath(),
+                                      m_file->getImageFolderInLink(),
+                                      img);
+            }
+        }
     }
+
     return true;
 }
 
