@@ -522,7 +522,7 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
 
     // Insert image.
     QAction *insertImageAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/insert_image.svg"),
-                                          tr("Insert Image"),
+                                          tr("Insert Image\t%1").arg(VUtils::getShortcutText("Ctrl+'")),
                                           this);
     insertImageAct->setStatusTip(tr("Insert an image from file or URL"));
     connect(insertImageAct, &QAction::triggered,

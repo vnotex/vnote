@@ -11,44 +11,73 @@ class QLineEdit;
 class VLineEdit;
 class QPushButton;
 class QDialogButtonBox;
+class QTimer;
 
 class VInsertImageDialog : public QDialog
 {
     Q_OBJECT
 public:
-    VInsertImageDialog(const QString &title, const QString &defaultImageTitle,
-                       const QString &defaultPath,
-                       QWidget *parent = 0);
+    enum ImageType
+    {
+        LocalFile = 0,
+        ImageData
+    };
+
+    VInsertImageDialog(const QString &p_title,
+                       const QString &p_imageTitle,
+                       const QString &p_imagePath,
+                       bool p_browsable = true,
+                       QWidget *p_parent = nullptr);
+
     ~VInsertImageDialog();
+
     QString getImageTitleInput() const;
+
     QString getPathInput() const;
 
     void setImage(const QImage &image);
+
     QImage getImage() const;
-    void setBrowseable(bool browseable, bool visible = false);
+
+    VInsertImageDialog::ImageType getImageType() const;
 
 public slots:
     void imageDownloaded(const QByteArray &data);
 
 private slots:
     void handleInputChanged();
+
     void handleBrowseBtnClicked();
 
-private:
-    void setupUI();
+    void handlePathEditChanged();
 
-    QLabel *imageTitleLabel;
+private:
+    void setupUI(const QString &p_title,
+                 const QString &p_imageTitle,
+                 const QString &p_imagePath);
+
+    void fetchImageFromClipboard();
+
     VLineEdit *m_imageTitleEdit;
-    QLabel *pathLabel;
-    QLineEdit *pathEdit;
+    QLineEdit *m_pathEdit;
     QPushButton *browseBtn;
     QDialogButtonBox *m_btnBox;
     QLabel *imagePreviewLabel;
 
-    QString title;
-    QString defaultImageTitle;
-    QString defaultPath;
-    QImage *image;
+    QImage *m_image;
+
+    // Whether enable the browse action.
+    bool m_browsable;
+
+    ImageType m_imageType;
+
+    // Timer for path edit change.
+    QTimer *m_timer;
 };
+
+inline VInsertImageDialog::ImageType VInsertImageDialog::getImageType() const
+{
+    return m_imageType;
+}
 
 #endif // VINSERTIMAGEDIALOG_H

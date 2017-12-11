@@ -17,7 +17,10 @@ void VDownloader::handleDownloadFinished(QNetworkReply *reply)
 
 void VDownloader::download(const QUrl &p_url)
 {
-    Q_ASSERT(p_url.isValid());
+    if (!p_url.isValid()) {
+        return;
+    }
+
     QNetworkRequest request(p_url);
     webCtrl.get(request);
     qDebug() << "VDownloader get" << p_url.toString();
