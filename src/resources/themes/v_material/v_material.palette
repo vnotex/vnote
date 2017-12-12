@@ -1,0 +1,323 @@
+; File path could be absolute path or relative path (related to this file).
+; Use @color_tag to reference a style.
+
+[metadata]
+qss_file=v_material.qss
+mdhl_file=v_material.mdhl
+css_file=v_material.css
+codeblock_css_file=v_material_codeblock.css
+
+
+
+;选中1C252A
+
+;灰色背景263238
+;绿色前景80cbc4
+[phony]
+; Abstract color attributes.
+
+;提示信息等
+
+;按钮边框304348
+
+master_fg=#eeffff
+
+master_bg=#80cbc4
+
+base_fg=#80cbc4
+;文字前景
+base_bg=#263238
+;页面背景
+
+main_fg=@base_fg
+main_bg=#base_bg
+
+title_fg=@base_fg
+title_bg=@base_bg
+
+disabled_fg=#9E9E9E
+
+content_fg=@base_fg
+content_bg=@base_bg
+
+;边界背景
+border_bg=#212b30
+
+;分隔背景？
+separator_bg=#D3D3D3
+
+hover_fg=@base_fg
+hover_bg=#1a2227
+
+;选中的目录？
+selected_fg=@base_fg
+selected_bg=#1a2227
+;
+
+active_fg=@selected_fg
+active_bg=@selected_bg
+
+inactive_fg=@selected_fg
+inactive_bg=#1a2227
+
+focus_fg=@selected_fg
+focus_bg=@selected_bg
+
+pressed_fg=@base_fg
+;checkbox按下
+pressed_bg=#b2b2b2
+;ff0000
+
+edit_fg=#eeffff
+;标签页背景
+edit_bg=@base_bg
+edit_focus_bg=#1a2227
+edit_focus_border=@master_bg
+edit_selection_fg=@edit_fg
+edit_selection_bg=#31454a
+
+danger_red=#C9302C
+icon_fg=#eeffff
+
+[soft_defined]
+; VAvatar.
+avatar_border_bg=@selected_bg
+avatar_fg=@base_bg
+avatar_bg=@base_fg
+; The border background color of the avatar when Captain mode is triggered.
+avatar_captain_mode_border_bg=@master_bg
+
+; Style of the label in Navigation mode.
+navigation_label_fg=@master_fg
+navigation_label_bg=@master_bg
+
+; Style of the bubble of VButtonWithWidget.
+bubble_fg=@80cbc4
+bubble_bg=@master_bg
+
+; Icons' foreground.
+danger_icon_fg=@danger_red
+item_icon_fg=@icon_fg
+title_icon_fg=@icon_fg
+
+; VVimIndicator.
+vim_indicator_key_label_fg=@base_fg
+vim_indicator_mode_label_fg=@base_fg
+vim_indicator_cmd_edit_pending_bg=@selected_bg
+
+; VTabIndicator.
+tab_indicator_label_fg=@base_fg
+
+[widgets]
+; Widget color attributes.
+
+; QWidget.
+widget_fg=@base_fg
+
+; Separator of dock widgets.
+dock_separator_bg=@border_bg
+dock_separator_hover_bg=@border_bg
+
+; Menubar.
+menubar_bg=@main_bg
+menubar_fg=@main_fg
+menubar_item_selected_bg=@selected_bg
+
+; Menu.
+menu_bg=@base_bg
+menu_fg=@base_fg
+menu_item_disabled_fg=@disabled_fg
+menu_item_selected_fg=@selected_fg
+menu_item_selected_bg=@selected_bg
+menu_separator_bg=@separator_bg
+menu_icon_fg=@icon_fg
+menu_icon_danger_fg=@danger_icon_fg
+
+; Tooltip.
+tooltip_bg=@master_bg
+tooltip_fg=@master_fg
+
+; Toolbar.
+toolbar_bg=@main_bg
+toolbutton_hover_bg=@hover_bg
+toolbutton_pressed_bg=@pressed_bg
+toolbutton_checked_bg=@selected_bg
+toolbutton_icon_fg=@icon_fg
+toolbutton_icon_danger_fg=@danger_icon_fg
+
+; Toolbox.
+toolbox_icon_fg=@icon_fg
+
+; Dockwidget.
+dockwidget_title_fg=@title_fg
+dockwidget_title_bg=@title_bg
+dockwidget_button_hover_bg=@hover_bg
+
+; PushButton.
+pushbutton_fg=@base_fg
+pushbutton_bg=transparent
+pushbutton_border=@border_bg
+pushbutton_pressed_bg=@pressed_bg
+pushbutton_checked_bg=@selected_bg
+pushbutton_hover_bg=@hover_bg
+pushbutton_default_border=@master_bg
+
+pushbutton_specialbtn_fg=@master_fg
+pushbutton_specialbtn_bg=@master_bg
+pushbutton_specialbtn_hover_bg=#3F51B5
+pushbutton_specialbtn_checked_bg=#3949AB
+pushbutton_specialbtn_pressed_bg=#303F9F
+
+pushbutton_cornerbtn_hover_bg=@hover_bg
+pushbutton_cornerbtn_focus_bg=@focus_bg
+pushbutton_cornerbtn_pressed_bg=@pressed_bg
+
+pushbutton_statusbtn_hover_bg=@hover_bg
+pushbutton_statusbtn_focus_bg=@focus_bg
+pushbutton_statusbtn_pressed_bg=@pressed_bg
+
+pushbutton_flatbtn_hover_bg=@hover_bg
+pushbutton_flatbtn_focus_bg=@focus_bg
+pushbutton_flatbtn_pressed_bg=@pressed_bg
+
+pushbutton_selectionbtn_hover_bg=@hover_bg
+pushbutton_selectionbtn_focus_bg=@focus_bg
+pushbutton_selectionbtn_pressed_bg=@pressed_bg
+
+pushbutton_titlebtn_bg=@title_bg
+pushbutton_titlebtn_hover_bg=@hover_bg
+pushbutton_titlebtn_focus_bg=@focus_bg
+pushbutton_titlebtn_pressed_bg=@pressed_bg
+
+pushbutton_dangerbtn_fg=#FFF
+pushbutton_dangerbtn_border=#D43F3A
+pushbutton_dangerbtn_bg=#D9534F
+pushbutton_dangerbtn_hover_fg=#FFF
+pushbutton_dangerbtn_hover_bg=#C9302C
+pushbutton_dangerbtn_hover_border=#AC2925
+
+button_icon_fg=@icon_fg
+button_icon_danger_fg=@danger_icon_fg
+
+; ComboBox.
+combobox_border=@border_bg
+combobox_fg=@content_fg
+combobox_bg=@content_bg
+combobox_view_border=@border_bg
+combobox_view_selected_bg=@selected_bg
+combobox_view_selected_fg=@selected_fg
+combobox_view_item_hover_fg=@hover_fg
+combobox_view_item_hover_bg=@hover_bg
+combobox_focus_bg=@edit_focus_bg
+combobox_focus_border=@edit_focus_border
+combobox_item_icon_fg=@item_icon_fg
+
+; Label.
+label_fg=@base_fg
+label_titlelabel_fg=@title_fg
+label_titlelabel_bg=@title_bg
+
+; LineEdit.
+lineedit_border=@border_bg
+lineedit_fg=@edit_fg
+lineedit_bg=@edit_bg
+lineedit_focus_bg=@edit_focus_bg
+lineedit_focus_border=@edit_focus_border
+lineedit_selection_fg=@edit_selection_fg
+lineedit_selection_bg=@edit_selection_bg
+
+; TabWidget.
+tabwidget_pane_border=@selected_bg
+
+; TabBar.
+tabbar_fg=@base_fg
+tabbar_bg=@base_bg
+tabbar_border=@border_bg
+
+tabbar_selected_fg=@edit_fg
+tabbar_selected_bg=@edit_bg
+tabbar_selected_border=@border_bg
+
+tabbar_hover_fg=@hover_fg
+tabbar_hover_bg=@hover_bg
+
+tabbar_icon_fg=@icon_fg
+tabbar_icon_special_fg=@danger_red
+
+; SelectorItem.
+selectoritem_border=@base_fg
+selectoritem_fg=@base_fg
+selectoritem_bg=@base_bg
+
+; InsertSelector.
+insertselector_bg=@base_bg
+
+; TreeView.
+treeview_fg=@content_fg
+treeview_bg=@content_bg
+treeview_item_hover_fg=@hover_fg
+treeview_item_hover_bg=@hover_bg
+treeview_item_selected_fg=@selected_fg
+treeview_item_selected_bg=@selected_bg
+treeview_item_selected_avtive_fg=@active_fg
+treeview_item_selected_avtive_bg=@active_bg
+treeview_item_selected_inactive_fg=@inactive_fg
+treeview_item_selected_inactive_bg=@inactive_bg
+treeview_item_icon_fg=@item_icon_fg
+
+; ListView.
+listview_fg=@content_fg
+listview_bg=@content_bg
+listview_item_hover_fg=@hover_fg
+listview_item_hover_bg=@hover_bg
+listview_item_selected_fg=@selected_fg
+listview_item_selected_bg=@selected_bg
+listview_item_selected_avtive_fg=@active_fg
+listview_item_selected_avtive_bg=@active_bg
+listview_item_selected_inactive_fg=@inactive_fg
+listview_item_selected_inactive_bg=@inactive_bg
+
+; Splitter.
+splitter_handle_bg=@border_bg
+
+; StatusBar.
+statusbar_fg=@main_fg
+statusbar_bg=@main_bg
+
+
+; ScrollBar.
+scrollbar_bg=@base_bg
+scrollbar_page_bg=transparent
+scrollbar_handle_bg=#222c31
+scrollbar_handle_hover_bg=@hover_bg
+scrollbar_handle_pressed_bg=@pressed_bg
+
+; VEditWindow.
+editwindow_corner_icon_fg=@master_bg
+editwindow_corner_icon_inactive_fg=#D3D3D3
+
+; CheckBox.
+checkbox_indicator_hover_bg=@hover_bg
+checkbox_indicator_pressed_bg=@pressed_bg
+
+; RadioButton.
+radiobutton_indicator_hover_bg=@hover_bg
+radiobutton_indicator_pressed_bg=@pressed_bg
+
+; SpinBox.
+spinbox_fg=@edit_fg
+spinbox_bg=@edit_bg
+spinbox_border=@border_bg
+spinbox_selection_fg=@edit_selection_fg
+spinbox_selection_bg=@edit_selection_bg
+spinbox_focus_border=@edit_focus_border
+spinbox_focus_bg=@edit_focus_bg
+spinbox_button_hover_bg=@hover_bg
+spinbox_button_pressed_bg=@pressed_bg
+
+; HeaderView.
+headerview_bg=#E0E0E0
+headerview_fg=@base_fg
+headerview_border=@border_bg
+headerview_checked_fg=@selected_fg
+headerview_checked_bg=@selected_bg
