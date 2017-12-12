@@ -1170,6 +1170,8 @@ void VConfigManager::initThemes()
     m_themes.insert(VPalette::themeName(file), file);
     file = ":/resources/themes/v_pure/v_pure.palette";
     m_themes.insert(VPalette::themeName(file), file);
+    file = ":/resources/themes/v_material/v_material.palette";
+    m_themes.insert(VPalette::themeName(file), file);
 
     // User theme folder.
     QDir dir(getThemeConfigFolder());
