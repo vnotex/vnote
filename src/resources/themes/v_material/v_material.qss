@@ -815,7 +815,7 @@ QScrollBar::add-page, QScrollBar::sub-page {
 }
 
 QScrollBar:vertical {
-    background: @scrollbar_bg;
+    background: #ff0000;
     width: 16px;
     margin: 16px 0px 16px 0px;
     padding: 0px 2px 0px 2px;

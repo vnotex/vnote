@@ -7,27 +7,18 @@ mdhl_file=v_material.mdhl
 css_file=v_material.css
 codeblock_css_file=v_material_codeblock.css
 
-
-
-;选中1C252A
-
-;灰色背景263238
-;绿色前景80cbc4
 [phony]
 ; Abstract color attributes.
 
-;提示信息等
-
-;按钮边框304348
 
 master_fg=#eeffff
 
 master_bg=#80cbc4
 
 base_fg=#80cbc4
-;文字前景
+
 base_bg=#263238
-;页面背景
+
 
 main_fg=@base_fg
 main_bg=#base_bg
@@ -40,19 +31,15 @@ disabled_fg=#9E9E9E
 content_fg=@base_fg
 content_bg=@base_bg
 
-;边界背景
 border_bg=#212b30
 
-;分隔背景？
 separator_bg=#D3D3D3
 
 hover_fg=@base_fg
 hover_bg=#1a2227
 
-;选中的目录？
 selected_fg=@base_fg
 selected_bg=#1a2227
-;
 
 active_fg=@selected_fg
 active_bg=@selected_bg
@@ -64,12 +51,11 @@ focus_fg=@selected_fg
 focus_bg=@selected_bg
 
 pressed_fg=@base_fg
-;checkbox按下
+
 pressed_bg=#b2b2b2
-;ff0000
 
 edit_fg=#eeffff
-;标签页背景
+
 edit_bg=@base_bg
 edit_focus_bg=#1a2227
 edit_focus_border=@master_bg
