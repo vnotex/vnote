@@ -41,7 +41,7 @@ const QString VConfigManager::c_templateConfigFolder = QString("templates");
 
 const QString VConfigManager::c_snippetConfigFolder = QString("snippets");
 
-const QString VConfigManager::c_warningTextStyle = QString("color: #C9302C; font: bold");
+const QString VConfigManager::c_warningTextStyle = QString("color: red; font: bold");
 
 const QString VConfigManager::c_dataTextStyle = QString("font: bold");
 
@@ -1169,6 +1169,9 @@ void VConfigManager::initThemes()
     QString file(":/resources/themes/v_white/v_white.palette");
     m_themes.insert(VPalette::themeName(file), file);
     file = ":/resources/themes/v_pure/v_pure.palette";
+    m_themes.insert(VPalette::themeName(file), file);
+
+    file = ":/resources/themes/v_material/v_material.palette";
     m_themes.insert(VPalette::themeName(file), file);
 
     // User theme folder.

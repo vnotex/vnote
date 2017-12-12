@@ -165,6 +165,33 @@
         <file>resources/themes/v_pure/v_pure.css</file>
         <file>resources/themes/v_pure/v_pure_codeblock.css</file>
         <file>resources/themes/v_white/v_white_codeblock.css</file>
-        <file>resources/themes/v_pure/arrow_dropdown_white.svg</file>
+        <file>resources/themes/v_material/arrow_dropdown.svg</file>
+        <file>resources/themes/v_material/branch_closed.svg</file>
+        <file>resources/themes/v_material/branch_end.svg</file>
+        <file>resources/themes/v_material/branch_more.svg</file>
+        <file>resources/themes/v_material/branch_open.svg</file>
+        <file>resources/themes/v_material/checkbox_checked.svg</file>
+        <file>resources/themes/v_material/checkbox_unchecked.svg</file>
+        <file>resources/themes/v_material/close.svg</file>
+        <file>resources/themes/v_material/close_grey.svg</file>
+        <file>resources/themes/v_material/down.svg</file>
+        <file>resources/themes/v_material/down_disabled.svg</file>
+        <file>resources/themes/v_material/float.svg</file>
+        <file>resources/themes/v_material/left.svg</file>
+        <file>resources/themes/v_material/left_disabled.svg</file>
+        <file>resources/themes/v_material/line.svg</file>
+        <file>resources/themes/v_material/menu_checkbox.svg</file>
+        <file>resources/themes/v_material/menu_radiobutton.svg</file>
+        <file>resources/themes/v_material/radiobutton_checked.svg</file>
+        <file>resources/themes/v_material/radiobutton_unchecked.svg</file>
+        <file>resources/themes/v_material/right.svg</file>
+        <file>resources/themes/v_material/right_disabled.svg</file>
+        <file>resources/themes/v_material/up.svg</file>
+        <file>resources/themes/v_material/up_disabled.svg</file>
+        <file>resources/themes/v_material/v_material.css</file>
+        <file>resources/themes/v_material/v_material.mdhl</file>
+        <file>resources/themes/v_material/v_material.palette</file>
+        <file>resources/themes/v_material/v_material.qss</file>
+        <file>resources/themes/v_material/v_material_codeblock.css</file>
     </qresource>
 </RCC>
