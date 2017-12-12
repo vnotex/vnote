@@ -10,10 +10,10 @@ codeblock_css_file=v_pure_codeblock.css
 [phony]
 ; Abstract color attributes.
 master_fg=#F5F5F5
-master_bg=#556DE8
-master_focus_bg=#6A80F1
-master_hover_bg=#6A80F1
-master_pressed_bg=#4561ED
+master_bg=#00897B
+master_focus_bg=#009688
+master_hover_bg=#009688
+master_pressed_bg=#00796B
 
 base_fg=#222222
 base_bg=#EAEAEA
@@ -53,10 +53,10 @@ pressed_bg=#B2B2B2
 
 edit_fg=#222222
 edit_bg=#F5F5F5
-edit_focus_bg=#E8EAF6
+edit_focus_bg=#E0F2F1
 edit_focus_border=@master_bg
 edit_selection_fg=@edit_fg
-edit_selection_bg=#CBD2F9
+edit_selection_bg=#80CBC4
 
 icon_fg=#222222
 
@@ -96,7 +96,7 @@ vim_indicator_cmd_edit_pending_bg=@selected_bg
 tab_indicator_label_fg=@base_fg
 
 ; Html template.
-template_title_flash_light_fg=#A0ACE5
+template_title_flash_light_fg=#80CBC4
 template_title_flash_dark_fg=@master_bg
 
 [widgets]
@@ -214,12 +214,13 @@ combobox_focus_bg=@edit_focus_bg
 combobox_focus_border=@edit_focus_border
 combobox_item_icon_fg=@item_icon_fg
 
-combobox_notebookselector_fg=@master_fg
-combobox_notebookselector_bg=@master_bg
-combobox_notebookselector_hover_fg=@master_fg
-combobox_notebookselector_hover_bg=@master_hover_bg
-combobox_notebookselector_focus_fg=@master_fg
-combobox_notebookselector_focus_bg=@master_pressed_bg
+combobox_notebookselector_fg=@master_bg
+combobox_notebookselector_bg=@combobox_bg
+combobox_notebookselector_border=@master_bg
+combobox_notebookselector_hover_fg=@master_bg
+combobox_notebookselector_hover_bg=@hover_bg
+combobox_notebookselector_focus_fg=@master_bg
+combobox_notebookselector_focus_bg=@focus_bg
 
 ; Label.
 label_fg=@base_fg

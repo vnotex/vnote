@@ -527,28 +527,28 @@ QComboBox QAbstractItemView::item:hover {
 
 QComboBox#NotebookSelector {
     border: none;
+    border-bottom: 2px solid @combobox_notebookselector_border;
     font-size: 13pt;
     padding-top: 3px;
     padding-bottom: 3px;
     icon-size: 30px;
+    font-weight: bold;
     color: @combobox_notebookselector_fg;
     background: @combobox_notebookselector_bg;
 }
 
 QComboBox#NotebookSelector::down-arrow {
-    image: url(arrow_dropdown_white.svg);
+    image: url(arrow_dropdown.svg);
     width: 20px;
     height: 20px;
 }
 
 QComboBox#NotebookSelector:hover {
-    border: none;
     color: @combobox_notebookselector_hover_fg;
     background: @combobox_notebookselector_hover_bg;
 }
 
 QComboBox#NotebookSelector:focus, QComboBox#NotebookSelector:on {
-    border: none;
     color: @combobox_notebookselector_focus_fg;
     background: @combobox_notebookselector_focus_bg;
 }
@@ -557,6 +557,7 @@ QComboBox#NotebookSelector QListWidget {
     border: 1px solid @combobox_view_border;
     background-color: @combobox_bg;
     font-size: 13pt;
+    font-weight: normal;
     icon-size: 30px;
 }
 

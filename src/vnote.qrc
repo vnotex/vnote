@@ -165,6 +165,5 @@
         <file>resources/themes/v_pure/v_pure.css</file>
         <file>resources/themes/v_pure/v_pure_codeblock.css</file>
         <file>resources/themes/v_white/v_white_codeblock.css</file>
-        <file>resources/themes/v_pure/arrow_dropdown_white.svg</file>
     </qresource>
 </RCC>
