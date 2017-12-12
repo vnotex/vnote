@@ -1224,3 +1224,8 @@ QWidget#FindReplaceTitleWidget {
 QWidget[ToolBoxTitle="true"] {
     border-bottom: 2px solid @toolbox_title_border;
 }
+
+QAbstractScrollArea::corner {
+    background: @scrollbar_bg;
+    border: none;
+}

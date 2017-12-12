@@ -1119,3 +1119,8 @@ QHeaderView::up-arrow {
 QWidget#FindReplaceTitleWidget {
     background: @title_bg;
 }
+
+QAbstractScrollArea::corner {
+    background: @scrollbar_bg;
+    border: none;
+}
