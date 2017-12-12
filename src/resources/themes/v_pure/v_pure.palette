@@ -58,8 +58,13 @@ edit_focus_border=@master_bg
 edit_selection_fg=@edit_fg
 edit_selection_bg=#CBD2F9
 
-danger_red=#C9302C
 icon_fg=#222222
+
+danger_fg=#F5F5F5
+danger_bg=#C9302C
+danger_focus_bg=#D9534F
+danger_hover_bg=#D9534F
+danger_pressed_bg=#AC2925
 
 [soft_defined]
 ; VAvatar.
@@ -78,7 +83,7 @@ bubble_fg=@master_fg
 bubble_bg=@master_bg
 
 ; Icons' foreground.
-danger_icon_fg=@danger_red
+danger_icon_fg=@danger_bg
 item_icon_fg=@icon_fg
 title_icon_fg=@icon_fg
 
@@ -181,12 +186,11 @@ pushbutton_titlebtn_hover_bg=@hover_bg
 pushbutton_titlebtn_focus_bg=@focus_bg
 pushbutton_titlebtn_pressed_bg=@pressed_bg
 
-pushbutton_dangerbtn_fg=#FFF
-pushbutton_dangerbtn_border=#D43F3A
-pushbutton_dangerbtn_bg=#D9534F
-pushbutton_dangerbtn_hover_fg=#FFF
-pushbutton_dangerbtn_hover_bg=#C9302C
-pushbutton_dangerbtn_hover_border=#AC2925
+pushbutton_dangerbtn_fg=@danger_fg
+pushbutton_dangerbtn_bg=@danger_bg
+pushbutton_dangerbtn_hover_bg=@danger_hover_bg
+pushbutton_dangerbtn_focus_bg=@danger_focus_bg
+pushbutton_dangerbtn_pressed_bg=@danger_pressed_bg
 
 pushbutton_toolboxbtn_active_fg=@master_fg
 pushbutton_toolboxbtn_active_bg=@master_bg
@@ -247,7 +251,7 @@ tabbar_hover_fg=@hover_fg
 tabbar_hover_bg=@hover_bg
 
 tabbar_icon_fg=@icon_fg
-tabbar_icon_special_fg=@danger_red
+tabbar_icon_special_fg=@danger_bg
 
 ; SelectorItem.
 selectoritem_border=@base_fg
