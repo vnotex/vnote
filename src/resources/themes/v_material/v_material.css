@@ -24,7 +24,6 @@ h1, h2, h3, h4, h5 {
     font-weight: 400;
     margin-top: 1em;
     color: rgb(171, 232, 141);
-
 }
 
 h1, h2, h3, h4, h5, dl {
@@ -137,6 +136,7 @@ pre code {
 
     font-family: Consolas, Monaco, Andale Mono, monospace;
     border: 0;
+    background: rgb(26, 34, 38);
     display: inline;
     max-width: initial;
     padding: 0;
@@ -167,7 +167,7 @@ blockquote {
     font-style: italic;
     font-weight: 300;
     background: rgb(26, 34, 38);
-    border-left: 2px solid rgb(101, 115, 126);
+    border-left: 4px solid rgb(101, 115, 126);
     padding-left: 1em;
 
 }
@@ -222,3 +222,24 @@ table {
     padding: 5px 10px;
     font-weight: bold;
 }
+
+pre table {
+    border: 0;
+}
+
+::-webkit-scrollbar-track {
+    /*-webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);*/
+    background-color: #263238;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    background-color: #263238;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #1a2226;
+    border-radius: 10px;
+}
+
