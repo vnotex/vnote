@@ -816,6 +816,11 @@ private:
     // is always selected.
     void maintainSelectionInVisualMode(QTextCursor *p_cursor = NULL);
 
+    void setCursorBlockMode(VEditor *p_cursor, CursorBlock p_mode);
+
+    // Whether we should consider the left or right side of the cursor.
+    bool useLeftSideOfCursor(const QTextCursor &p_cursor);
+
     VEditor *m_editor;
     const VEditConfig *m_editConfig;
     VimMode m_mode;
@@ -881,5 +886,4 @@ inline void VVim::setRegister(QChar p_regName, const QString &p_val)
 {
     s_registers[p_regName].update(p_val);
 }
-
 #endif // VVIM_H

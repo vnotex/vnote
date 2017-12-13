@@ -2273,7 +2273,7 @@ void VVim::setMode(VimMode p_mode, bool p_clearSelection, int p_position)
         VMdEditor *mdEditor = dynamic_cast<VMdEditor *>(m_editor);
         switch (m_mode) {
         case VimMode::Insert:
-            m_editor->setCursorBlockModeW(CursorBlock::None);
+            setCursorBlockMode(m_editor, CursorBlock::None);
             if (mdEditor) {
                 mdEditor->setHighlightCursorLineBlockEnabled(false);
             }
@@ -2285,7 +2285,7 @@ void VVim::setMode(VimMode p_mode, bool p_clearSelection, int p_position)
             V_FALLTHROUGH;
 
         default:
-            m_editor->setCursorBlockModeW(CursorBlock::RightSide);
+            setCursorBlockMode(m_editor, CursorBlock::RightSide);
             if (mdEditor) {
                 QString color;
                 if (m_mode == VimMode::Normal) {
@@ -2777,7 +2777,24 @@ bool VVim::processMovement(QTextCursor &p_cursor,
             p_repeat = 1;
         }
 
-        p_cursor.movePosition(QTextCursor::NextWord, p_moveMode, p_repeat);
+        while (p_repeat) {
+            if (p_cursor.atEnd()) {
+                break;
+            }
+
+            p_cursor.movePosition(QTextCursor::NextWord, p_moveMode);
+            if (p_cursor.atBlockEnd() || VEditUtils::isSpaceBlock(p_cursor.block())) {
+                continue;
+            }
+
+            --p_repeat;
+        }
+
+        if (!p_cursor.atEnd() && useLeftSideOfCursor(p_cursor)) {
+            // Move one character forward.
+            p_cursor.movePosition(QTextCursor::NextCharacter, p_moveMode);
+        }
+
         hasMoved = true;
         break;
     }
@@ -2789,16 +2806,28 @@ bool VVim::processMovement(QTextCursor &p_cursor,
             p_repeat = 1;
         }
 
-        for (int i = 0; i < p_repeat; ++i) {
+        while (p_repeat) {
+            if (p_cursor.atEnd()) {
+                break;
+            }
+
             int start, end;
             // [start, end] is current WORD.
             VEditUtils::findCurrentWORD(p_cursor, start, end);
-
             // Move cursor to end of current WORD.
             p_cursor.setPosition(end, p_moveMode);
-
             // Skip spaces.
             moveCursorAcrossSpaces(p_cursor, p_moveMode, true);
+            if (p_cursor.atBlockEnd()) {
+                continue;
+            }
+
+            --p_repeat;
+        }
+
+        if (!p_cursor.atEnd() && useLeftSideOfCursor(p_cursor)) {
+            // Move one character forward.
+            p_cursor.movePosition(QTextCursor::NextCharacter, p_moveMode);
         }
 
         hasMoved = true;
@@ -2813,16 +2842,45 @@ bool VVim::processMovement(QTextCursor &p_cursor,
         }
 
         int pos = p_cursor.position();
+        bool leftSideBefore = useLeftSideOfCursor(p_cursor);
         // First move to the end of current word.
         p_cursor.movePosition(QTextCursor::EndOfWord, p_moveMode, 1);
-        if (pos != p_cursor.position()) {
-            // We did move.
-            p_repeat -= 1;
+        if (p_cursor.position() > pos) {
+            if (p_cursor.position() > pos + 1 || (leftSideBefore && useLeftSideOfCursor(p_cursor))) {
+                // We did move.
+                p_repeat -= 1;
+            }
         }
 
-        if (p_repeat) {
-            p_cursor.movePosition(QTextCursor::NextWord, p_moveMode, p_repeat);
+        while (p_repeat) {
+            if (p_cursor.atEnd()) {
+                break;
+            }
+
+            pos = p_cursor.position();
             p_cursor.movePosition(QTextCursor::EndOfWord, p_moveMode);
+            if (p_cursor.position() == pos) {
+                // Need to move to the start of next word.
+                p_cursor.movePosition(QTextCursor::NextWord, p_moveMode);
+                if (p_cursor.atBlockEnd()) {
+                    continue;
+                }
+
+                p_cursor.movePosition(QTextCursor::EndOfWord, p_moveMode);
+                if (p_cursor.atBlockStart()) {
+                    continue;
+                }
+            }
+
+            --p_repeat;
+        }
+
+        // Move one character back.
+        if (!p_cursor.atBlockStart()) {
+            if (p_moveMode == QTextCursor::MoveAnchor
+                || (checkMode(VimMode::Visual) && !useLeftSideOfCursor(p_cursor))) {
+                p_cursor.movePosition(QTextCursor::PreviousCharacter, p_moveMode);
+            }
         }
 
         hasMoved = true;
@@ -2836,9 +2894,18 @@ bool VVim::processMovement(QTextCursor &p_cursor,
             p_repeat = 1;
         }
 
-        for (int i = 0; i < p_repeat; ++i) {
+        int pos = p_cursor.position();
+        bool leftSideBefore = useLeftSideOfCursor(p_cursor);
+        while (p_repeat) {
+            if (p_cursor.atEnd()) {
+                break;
+            }
+
             // Skip spaces.
             moveCursorAcrossSpaces(p_cursor, p_moveMode, true);
+            if (p_cursor.atBlockEnd()) {
+                continue;
+            }
 
             int start, end;
             // [start, end] is current WORD.
@@ -2846,6 +2913,19 @@ bool VVim::processMovement(QTextCursor &p_cursor,
 
             // Move cursor to the end of current WORD.
             p_cursor.setPosition(end, p_moveMode);
+
+            if (p_cursor.position() > pos + 1
+                || (leftSideBefore && useLeftSideOfCursor(p_cursor))) {
+                --p_repeat;
+            }
+        }
+
+        // Move one character back.
+        if (!p_cursor.atBlockStart()) {
+            if (p_moveMode == QTextCursor::MoveAnchor
+                || (checkMode(VimMode::Visual) && !useLeftSideOfCursor(p_cursor))) {
+                p_cursor.movePosition(QTextCursor::PreviousCharacter, p_moveMode);
+            }
         }
 
         hasMoved = true;
@@ -2861,14 +2941,46 @@ bool VVim::processMovement(QTextCursor &p_cursor,
 
         int pos = p_cursor.position();
         // first move to the start of current word.
-        p_cursor.movePosition(QTextCursor::StartOfWord, p_moveMode, 1);
-        if (pos != p_cursor.position()) {
-            // We did move.
-            p_repeat -= 1;
+        p_cursor.movePosition(QTextCursor::StartOfWord, p_moveMode);
+        if (p_cursor.position() == pos && useLeftSideOfCursor(p_cursor)) {
+            // Cursor did not move and now is at the start of a word.
+            // Actually we are using the left side character so we need to move
+            // to previous word.
+            p_cursor.movePosition(QTextCursor::PreviousWord, p_moveMode);
         }
 
-        if (p_repeat) {
-            p_cursor.movePosition(QTextCursor::PreviousWord, p_moveMode, p_repeat);
+        if (p_cursor.position() < pos) {
+            if (p_cursor.position() < pos - 1 || !useLeftSideOfCursor(p_cursor)) {
+                // We did move.
+                p_repeat -= 1;
+            }
+        }
+
+        while (p_repeat) {
+            if (p_cursor.atStart()) {
+                break;
+            }
+
+            pos = p_cursor.position();
+            p_cursor.movePosition(QTextCursor::StartOfWord, p_moveMode);
+            if (p_cursor.position() == pos) {
+                // Need to move to the start of previous word.
+                p_cursor.movePosition(QTextCursor::PreviousWord, p_moveMode);
+                if (p_cursor.atBlockEnd()) {
+                    continue;
+                }
+
+                if (p_cursor.atBlockStart() && doc->characterAt(p_cursor.position()).isSpace()) {
+                    continue;
+                }
+            }
+
+            --p_repeat;
+        }
+
+        if (!p_cursor.atEnd() && useLeftSideOfCursor(p_cursor)) {
+            // Move one character forward.
+            p_cursor.movePosition(QTextCursor::NextCharacter, p_moveMode);
         }
 
         hasMoved = true;
@@ -2882,9 +2994,19 @@ bool VVim::processMovement(QTextCursor &p_cursor,
             p_repeat = 1;
         }
 
-        for (int i = 0; i < p_repeat; ++i) {
+        int pos = p_cursor.position();
+        while (p_repeat) {
+            if (p_cursor.atStart()) {
+                break;
+            }
+
             // Skip Spaces.
             moveCursorAcrossSpaces(p_cursor, p_moveMode, false);
+            if (p_cursor.atBlockStart()) {
+                continue;
+            }
+
+            p_cursor.movePosition(QTextCursor::PreviousCharacter, p_moveMode);
 
             int start, end;
             // [start, end] is current WORD.
@@ -2892,6 +3014,15 @@ bool VVim::processMovement(QTextCursor &p_cursor,
 
             // Move cursor to the start of current WORD.
             p_cursor.setPosition(start, p_moveMode);
+
+            if (p_cursor.position() < pos - 1 || !useLeftSideOfCursor(p_cursor)) {
+                --p_repeat;
+            }
+        }
+
+        if (!p_cursor.atEnd() && useLeftSideOfCursor(p_cursor)) {
+            // Move one character forward.
+            p_cursor.movePosition(QTextCursor::NextCharacter, p_moveMode);
         }
 
         hasMoved = true;
@@ -2905,13 +3036,55 @@ bool VVim::processMovement(QTextCursor &p_cursor,
             p_repeat = 1;
         }
 
-        int pib = p_cursor.positionInBlock();
-        if (!(pib > 0 && p_cursor.block().text()[pib -1].isSpace())) {
-            ++p_repeat;
+        if (useLeftSideOfCursor(p_cursor)) {
+            // Move one previous char.
+            p_cursor.movePosition(QTextCursor::PreviousCharacter, p_moveMode);
         }
 
-        p_cursor.movePosition(QTextCursor::PreviousWord, p_moveMode, p_repeat);
-        p_cursor.movePosition(QTextCursor::EndOfWord, p_moveMode, 1);
+        int pos = p_cursor.position();
+        // Move across spaces backward.
+        moveCursorAcrossSpaces(p_cursor, p_moveMode, false);
+        int start, end;
+        VEditUtils::findCurrentWord(p_cursor, start, end);
+        if (pos != p_cursor.position() || start == end || start == pos) {
+            // We are alreay at the end of previous word.
+            --p_repeat;
+
+            // Move it to the start of current word.
+            p_cursor.movePosition(QTextCursor::PreviousWord, p_moveMode);
+        } else {
+            p_cursor.movePosition(QTextCursor::StartOfWord, p_moveMode);
+        }
+
+        while (p_repeat) {
+            if (p_cursor.atStart()) {
+                break;
+            }
+
+            p_cursor.movePosition(QTextCursor::PreviousWord, p_moveMode);
+            if (p_cursor.atBlockEnd()) {
+                continue;
+            }
+
+            if (p_cursor.atBlockStart() && doc->characterAt(p_cursor.position()).isSpace()) {
+                continue;
+            }
+
+            --p_repeat;
+        }
+
+        // Move it to the end.
+        p_cursor.movePosition(QTextCursor::EndOfWord, p_moveMode);
+
+        // Move one character back.
+        if (!p_cursor.atBlockStart()) {
+            if (p_moveMode == QTextCursor::MoveAnchor
+                || (checkMode(VimMode::Visual) && !useLeftSideOfCursor(p_cursor))
+                || p_cursor.position() <= p_cursor.anchor()) {
+                p_cursor.movePosition(QTextCursor::PreviousCharacter, p_moveMode);
+            }
+        }
+
         hasMoved = true;
         break;
     }
@@ -2923,13 +3096,58 @@ bool VVim::processMovement(QTextCursor &p_cursor,
             p_repeat = 1;
         }
 
-        for (int i = 0; i < p_repeat; ++i) {
-            int start, end;
-            VEditUtils::findCurrentWORD(p_cursor, start, end);
+        if (useLeftSideOfCursor(p_cursor)) {
+            // Move one previous char.
+            p_cursor.movePosition(QTextCursor::PreviousCharacter, p_moveMode);
+        }
 
+        int pos = p_cursor.position();
+        // Move across spaces backward.
+        moveCursorAcrossSpaces(p_cursor, p_moveMode, false);
+        int start, end;
+        VEditUtils::findCurrentWORD(p_cursor, start, end);
+        if (pos != p_cursor.position() || start == end) {
+            // We are alreay at the end of previous WORD.
+            --p_repeat;
+
+            // Move it to the start of current WORD.
             p_cursor.setPosition(start, p_moveMode);
+        } else {
+            // Move it to the start of current WORD.
+            p_cursor.setPosition(start, p_moveMode);
+        }
+
+        while (p_repeat) {
+            if (p_cursor.atStart()) {
+                break;
+            }
 
             moveCursorAcrossSpaces(p_cursor, p_moveMode, false);
+            if (p_cursor.atBlockStart()) {
+                continue;
+            }
+
+            if (p_cursor.atBlockStart() && doc->characterAt(p_cursor.position()).isSpace()) {
+                continue;
+            }
+
+            VEditUtils::findCurrentWORD(p_cursor, start, end);
+            p_cursor.setPosition(start, p_moveMode);
+
+            --p_repeat;
+        }
+
+        // Move it to the end.
+        VEditUtils::findCurrentWORD(p_cursor, start, end);
+        p_cursor.setPosition(end, p_moveMode);
+
+        // Move one character back.
+        if (!p_cursor.atBlockStart()) {
+            if (p_moveMode == QTextCursor::MoveAnchor
+                || (checkMode(VimMode::Visual) && !useLeftSideOfCursor(p_cursor))
+                || p_cursor.position() <= p_cursor.anchor()) {
+                p_cursor.movePosition(QTextCursor::PreviousCharacter, p_moveMode);
+            }
         }
 
         hasMoved = true;
@@ -4940,7 +5158,7 @@ void VVim::maintainSelectionInVisualMode(QTextCursor *p_cursor)
             hasChanged = true;
         }
 
-        m_editor->setCursorBlockModeW(CursorBlock::LeftSide);
+        setCursorBlockMode(m_editor, CursorBlock::LeftSide);
     } else if (pos == anchor) {
         Q_ASSERT(anchor >= m_positionBeforeVisualMode);
         // Re-select.
@@ -4949,13 +5167,13 @@ void VVim::maintainSelectionInVisualMode(QTextCursor *p_cursor)
             cursor->setPosition(pos, QTextCursor::KeepAnchor);
             hasChanged = true;
 
-            m_editor->setCursorBlockModeW(CursorBlock::RightSide);
+            setCursorBlockMode(m_editor, CursorBlock::RightSide);
         } else {
             cursor->setPosition(m_positionBeforeVisualMode);
             cursor->setPosition(pos, QTextCursor::KeepAnchor);
             hasChanged = true;
 
-            m_editor->setCursorBlockModeW(CursorBlock::LeftSide);
+            setCursorBlockMode(m_editor, CursorBlock::LeftSide);
         }
     } else {
         // Re-select.
@@ -4965,7 +5183,7 @@ void VVim::maintainSelectionInVisualMode(QTextCursor *p_cursor)
             hasChanged = true;
         }
 
-        m_editor->setCursorBlockModeW(CursorBlock::RightSide);
+        setCursorBlockMode(m_editor, CursorBlock::RightSide);
     }
 
     if (hasChanged && !p_cursor) {
@@ -5999,4 +6217,19 @@ void VVim::handleMouseMoved(QMouseEvent *p_event)
         // are at the same position.
         maintainSelectionInVisualMode();
     }
+}
+
+void VVim::setCursorBlockMode(VEditor *p_cursor, CursorBlock p_mode)
+{
+    p_cursor->setCursorBlockModeW(p_mode);
+}
+
+bool VVim::useLeftSideOfCursor(const QTextCursor &p_cursor)
+{
+    if (!checkMode(VimMode::Visual)) {
+        return false;
+    }
+
+    Q_ASSERT(m_positionBeforeVisualMode >= 0);
+    return p_cursor.position() > m_positionBeforeVisualMode;
 }
