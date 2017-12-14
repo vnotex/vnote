@@ -159,6 +159,9 @@ QString VNote::getNavigationLabelStyle(const QString &p_str) const
         lastLen = p_str.size();
     }
 
+    QColor bg(g_palette->color("navigation_label_bg"));
+    bg.setAlpha(200);
+
     return QString("background-color: %1;"
                    "color: %2;"
                    "font-size: %3pt;"
@@ -167,7 +170,7 @@ QString VNote::getNavigationLabelStyle(const QString &p_str) const
                    "border-radius: 3px;"
                    "min-width: %5px;"
                    "max-width: %5px;")
-                   .arg(g_palette->color("navigation_label_bg"))
+                   .arg(bg.name(QColor::HexArgb))
                    .arg(g_palette->color("navigation_label_fg"))
                    .arg(fontPt)
                    .arg(fontFamily)
