@@ -671,6 +671,11 @@ QLineEdit[VimCommandLine="true"] {
     color: @lineedit_fg;
     background: @lineedit_bg;
 }
+
+QAbstractItemView QLineEdit {
+    padding: 0px;
+    margin: 0px;
+}
 /* End QLineEdit */
 
 /* QPlainTextEdit QTextEdit */
