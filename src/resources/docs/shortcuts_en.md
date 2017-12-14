@@ -64,6 +64,8 @@ Insert inline code. Press `Ctrl+K` again to exit. Current selected text will be 
 Insert fenced code block. Press `Ctrl+M` again to exit. Current selected text will be wrapped into a code block if exists.
 - `Ctrl+L`  
 Insert link.
+- `Ctrl+'`  
+Insert image.
 - `Ctrl+H`  
 Backspace. Delete a character backward.
 - `Ctrl+W`  
@@ -239,7 +241,7 @@ VNote supports following features of Vim:
 
 - `r`, `s`, `S`, `i`, `I`, `a`, `A`, `c`, `C`, `o`, and `O`;
 - Actions `d`, `c`, `y`, `p`, `<`, `>`, `gu`, `gU`, `J`, `gJ`, and `~`;
-- Movements `h/j/k/l`, `gj/gk`, `Ctrl+U`, `Ctrl+D`, `gg`, `G`, `0`, `^`, `{`, `}`, and `$`;
+- Movements `h/j/k/l`, `gj/gk/g0`, `Ctrl+U`, `Ctrl+D`, `gg`, `G`, `0`, `^`, `{`, `}`, and `$`;
 - Marks `a-z`;
 - Registers `"`, `_`, `+`, `a-z`(`A-Z`);
 - Jump locations list (`Ctrl+O` and `Ctrl+I`);

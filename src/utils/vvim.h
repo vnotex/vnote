@@ -396,6 +396,7 @@ private:
         PageDown,
         HalfPageUp,
         HalfPageDown,
+        StartOfVisualLine,
         StartOfLine,
         EndOfLine,
         FirstCharacter,

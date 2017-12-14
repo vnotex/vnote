@@ -647,20 +647,21 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
     {
         if (modifiers == Qt::NoModifier
             || modifiers == Qt::KeypadModifier) {
-            if (!m_keys.isEmpty()) {
+            if (checkPendingKey(Key(Qt::Key_G))) {
+                // StartOfVisualLine.
+                tryAddMoveAction();
+                m_tokens.append(Token(Movement::StartOfVisualLine));
+                processCommand(m_tokens);
+            } else if (m_keys.isEmpty()) {
+                // StartOfLine.
+                tryAddMoveAction();
+                m_tokens.append(Token(Movement::StartOfLine));
+                processCommand(m_tokens);
+            } else if (m_keys.last().isDigit()) {
                 // Repeat.
-                V_ASSERT(m_keys.last().isDigit());
-
                 m_keys.append(keyInfo);
                 resetPositionInBlock = false;
                 goto accept;
-            } else {
-                // StartOfLine.
-                tryAddMoveAction();
-
-                m_tokens.append(Token(Movement::StartOfLine));
-
-                processCommand(m_tokens);
             }
         }
 
@@ -2688,6 +2689,17 @@ bool VVim::processMovement(QTextCursor &p_cursor,
         // Start of the Line (block).
         if (!p_cursor.atBlockStart()) {
             p_cursor.movePosition(QTextCursor::StartOfBlock, p_moveMode, 1);
+            hasMoved = true;
+        }
+
+        break;
+    }
+
+    case Movement::StartOfVisualLine:
+    {
+        // Start of the visual line.
+        if (!p_cursor.atBlockStart()) {
+            p_cursor.movePosition(QTextCursor::StartOfLine, p_moveMode, 1);
             hasMoved = true;
         }
 
