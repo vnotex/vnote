@@ -105,6 +105,8 @@ void VVimIndicator::setupUI()
     m_modeLabel->setProperty("VimIndicatorModeLabel", true);
 
     QTreeWidget *regTree = new QTreeWidget(this);
+    regTree->setProperty("ItemBorder", true);
+    regTree->setRootIsDecorated(false);
     regTree->setColumnCount(2);
     regTree->header()->setStretchLastSection(true);
     QStringList headers;
@@ -121,6 +123,8 @@ void VVimIndicator::setupUI()
             this, &VVimIndicator::updateRegistersTree);
 
     QTreeWidget *markTree = new QTreeWidget(this);
+    markTree->setProperty("ItemBorder", true);
+    markTree->setRootIsDecorated(false);
     markTree->setColumnCount(4);
     markTree->header()->setStretchLastSection(true);
     headers.clear();

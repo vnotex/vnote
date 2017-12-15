@@ -234,6 +234,7 @@ insertselector_bg=@base_bg
 ; TreeView.
 treeview_fg=@content_fg
 treeview_bg=@content_bg
+treeview_item_border_bg=@border_bg
 treeview_item_hover_fg=@hover_fg
 treeview_item_hover_bg=@hover_bg
 treeview_item_selected_fg=@selected_fg
