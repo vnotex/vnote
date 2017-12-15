@@ -214,7 +214,7 @@ combobox_focus_bg=@edit_focus_bg
 combobox_focus_border=@edit_focus_border
 combobox_item_icon_fg=@item_icon_fg
 
-combobox_notebookselector_fg=@master_bg
+combobox_notebookselector_fg=@master_pressed_bg
 combobox_notebookselector_bg=@combobox_bg
 combobox_notebookselector_border=@master_bg
 combobox_notebookselector_hover_fg=@master_bg

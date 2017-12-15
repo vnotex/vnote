@@ -101,7 +101,8 @@ SOURCES += main.cpp\
     utils/vclipboardutils.cpp \
     vpalette.cpp \
     vbuttonmenuitem.cpp \
-    utils/viconutils.cpp
+    utils/viconutils.cpp \
+    lineeditdelegate.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -189,7 +190,8 @@ HEADERS  += vmainwindow.h \
     utils/vclipboardutils.h \
     vpalette.h \
     vbuttonmenuitem.h \
-    utils/viconutils.h
+    utils/viconutils.h \
+    lineeditdelegate.h
 
 RESOURCES += \
     vnote.qrc \

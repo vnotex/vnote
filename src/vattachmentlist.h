@@ -6,6 +6,7 @@
 #include <QStringList>
 #include "vnotefile.h"
 #include "vbuttonwithwidget.h"
+#include "lineeditdelegate.h"
 
 class QPushButton;
 class QListWidget;
@@ -13,6 +14,7 @@ class QListWidgetItem;
 class QLabel;
 class VNoteFile;
 class QAction;
+
 
 class VAttachmentList : public QWidget, public VButtonPopupWidget
 {
@@ -70,6 +72,7 @@ private:
     QPushButton *m_locateBtn;
     QLabel *m_numLabel;
 
+    LineEditDelegate m_listDelegate;
     QListWidget *m_attachmentList;
 
     QAction *m_openAct;

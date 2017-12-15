@@ -102,6 +102,7 @@ void VAttachmentList::setupUI()
     m_attachmentList->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_attachmentList->setEditTriggers(QAbstractItemView::SelectedClicked);
     m_attachmentList->setAttribute(Qt::WA_MacShowFocusRect, false);
+    m_attachmentList->setItemDelegate(&m_listDelegate);
     connect(m_attachmentList, &QListWidget::customContextMenuRequested,
             this, &VAttachmentList::handleContextMenuRequested);
     connect(m_attachmentList, &QListWidget::itemActivated,

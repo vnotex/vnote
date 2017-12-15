@@ -258,7 +258,6 @@ listview_item_selected_inactive_bg=@inactive_bg
 
 ; Splitter.
 splitter_handle_bg=@title_bg
-splitter_mainsplitter_border=@title_bg
 
 ; StatusBar.
 statusbar_fg=@main_fg

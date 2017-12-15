@@ -583,11 +583,6 @@ QLineEdit[VimCommandLine="true"] {
     color: @lineedit_fg;
     background: @lineedit_bg;
 }
-
-QAbstractItemView QLineEdit {
-    padding: 0px;
-    margin: 0px;
-}
 /* End QLineEdit */
 
 /* QTabWidget */
@@ -605,27 +600,23 @@ QTabWidget::pane {
 QTabBar::tab {
     color: @tabbar_fg;
     background: @tabbar_bg;
-    border: 1px solid @tabbar_border;
-    border-bottom: none;
+    border: none;
+    border-right: 1px solid @tabbar_border;
     padding: 2px;
 }
 
 QTabBar::tab:selected {
     color: @tabbar_selected_fg;
     background: @tabbar_selected_bg;
-    border: 1px solid @tabbar_selected_border;
-    border-bottom: none;
+    border: none;
+    border-right: 1px solid @tabbar_border;
 }
 
 QTabBar::tab:hover {
     color: @tabbar_hover_fg;
     background: @tabbar_hover_bg;
-    border: 1px solid @tabbar_hover_border;
-    border-bottom: none;
-}
-
-QTabBar::tab:!selected {
-    margin-top: 2px; /* make non-selected tabs look smaller */
+    border: none;
+    border-right: 1px solid @tabbar_border;
 }
 
 QTabBar::close-button {
@@ -792,10 +783,6 @@ QSplitter::handle:vertical {
 
 QSplitter::handle:horizontal {
     width: 2px;
-}
-
-QSplitter#MainSplitter {
-    border-top: 2px solid @splitter_mainsplitter_border;
 }
 /* End QSplitter */
 
