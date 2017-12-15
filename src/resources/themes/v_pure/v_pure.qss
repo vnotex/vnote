@@ -1260,3 +1260,16 @@ QAbstractScrollArea::corner {
     background: @scrollbar_bg;
     border: none;
 }
+
+/* QProgressBar */
+QProgressBar {
+    background: @progressbar_bg;
+    border: 1px solid @progressbar_border_bg;
+    text-align: center;
+}
+
+QProgressBar::chunk {
+    background-color: @progressbar_chunk_bg;
+    width: 20px;
+}
+/* End QProgressBar */
