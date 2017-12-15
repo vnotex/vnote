@@ -15,7 +15,7 @@ extern VConfigManager *g_config;
 extern VMainWindow *g_mainWin;
 
 VAttachmentList::VAttachmentList(QWidget *p_parent)
-    : QWidget(p_parent), m_file(NULL)
+    : QWidget(p_parent), VButtonPopupWidget(this), m_file(NULL)
 {
     setupUI();
 
@@ -616,4 +616,11 @@ void VAttachmentList::checkAttachments()
 
         updateContent();
     }
+}
+
+void VAttachmentList::showEvent(QShowEvent *p_event)
+{
+    QWidget::showEvent(p_event);
+
+    processShowEvent(p_event);
 }

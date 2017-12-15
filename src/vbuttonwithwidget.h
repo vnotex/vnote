@@ -9,6 +9,7 @@
 class QDragEnterEvent;
 class QDropEvent;
 class QPaintEvent;
+class QShowEvent;
 class VButtonWithWidget;
 
 // Abstract class for the widget used by VButtonWithWidget.
@@ -16,7 +17,8 @@ class VButtonWithWidget;
 class VButtonPopupWidget
 {
 public:
-    VButtonPopupWidget() : m_btn(NULL)
+    VButtonPopupWidget(QWidget *p_widget)
+        : m_widget(p_widget), m_btn(NULL)
     {
     }
 
@@ -35,7 +37,17 @@ public:
         return m_btn;
     }
 
+protected:
+    // **MUST** be called in subclass at the end of showEvent().
+    void processShowEvent(QShowEvent *p_event)
+    {
+        Q_UNUSED(p_event);
+        m_widget->activateWindow();
+    }
+
 private:
+    QWidget *m_widget;
+
     VButtonWithWidget *m_btn;
 };
 
