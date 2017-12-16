@@ -1,13 +1,14 @@
 body {
     margin: 0 auto;
     font-family: Helvetica, sans-serif, Tahoma, Arial, Verdana, Geneva, Georgia, Palatino, "Times New Roman", "Hiragino Sans GB", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体";
-    color: #363636;
+    color: #ABB2BF;
     line-height: 1;
     padding: 30px;
+    background: #282C34;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: #363636;
+    color: #E06C75;
     font-weight: bold;
     margin-bottom: 24px;
     padding: 0;
@@ -42,15 +43,15 @@ h6 {
 }
 
 a {
-    color: #0099ff;
+    color: #61AFEF;
     margin: 0;
     padding: 0;
     vertical-align: baseline;
+    text-decoration: none;
 }
 
 a:hover {
-    text-decoration: none;
-    color: #ff6600;
+    text-decoration: underline;
 }
 
 a:visited {
@@ -85,14 +86,14 @@ code {
     font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New;
     line-height: 1.5;
     font-size: 14px;
-    color: #4527A0;
+    color: #98C379;
 }
 
 pre code {
     margin: 0;
     padding: 0;
     border: none;
-    color: #363636;
+    color: #98C379;
 }
 
 aside {
@@ -102,14 +103,14 @@ aside {
 }
 
 blockquote {
-    color: #666;
-    border-left:.5em solid #7a7a7a;
+    color: #5C6370;
+    border-left:.5em solid #5C6370;
     padding: 0 2em;
     margin-left:0;
 }
 
 blockquote p {
-    color: #666;
+    color: #5C6370;
 }
 
 hr {
@@ -118,7 +119,7 @@ hr {
     margin: 1em 0;
     border: none;
     height: 2px;
-    background: #999;
+    background: #373E47;
 }
 
 table {
@@ -127,25 +128,20 @@ table {
 }
 
 table tr {
-   border-top: 1px solid #cccccc;
-   background-color: white;
+   border-top: 1px solid #373E47;
    margin: 0;
    padding: 0;
 }
 
-table tr:nth-child(2n) {
-   background-color: #f8f8f8;
-}
-
 table tr th {
    font-weight: bold;
-   border: 1px solid #cccccc;
+   border: 1px solid #373E47;
    margin: 0;
    padding: 6px 13px;
 }
 
 table tr td {
-   border: 1px solid #cccccc;
+   border: 1px solid #373E47;
    margin: 0;
    padding: 6px 13px;
 }
@@ -160,6 +156,8 @@ table tr th :last-child, table tr td :last-child {
 
 div.mermaid-diagram {
     overflow-y: hidden;
+    background: #7D879B;
+    color: #6C6C6C;
 }
 
 pre.mermaid-diagram {
@@ -168,6 +166,8 @@ pre.mermaid-diagram {
 
 div.flowchart-diagram {
     overflow-y: hidden;
+    background: #7D879B;
+    color: #6C6C6C;
 }
 
 pre.flowchart-diagram {
@@ -190,8 +190,8 @@ div.img-caption {
     display: inline-block;
     padding: 10px;
     margin: 0 auto;
-    border-bottom: 1px solid #c0c0c0;
-    color: #6c6c6c;
+    border-bottom: 1px solid #373E47;
+    color: #ABB2BF;
     text-align: center;
     line-height: 1.5;
 }
@@ -216,8 +216,8 @@ table.hljs-ln tr td.hljs-ln-numbers {
 	user-select: none;
 
 	text-align: center;
-	color: #AAA;
-	border-right: 1px solid #CCC;
+	color: #5C6370;
+	border-right: 1px solid #373E47;
 	vertical-align: top;
 	padding-right: 5px;
 }
@@ -227,48 +227,48 @@ table.hljs-ln tr td.hljs-ln-code {
 }
 
 ::-webkit-scrollbar {
-    background-color: #EEEEEE;
+    background-color: #21252B;
     width: 14px;
     height: 14px;
     border: none;
 }
 
 ::-webkit-scrollbar-corner {
-    background-color: #EEEEEE;
+    background-color: #21252B;
 }
 
 ::-webkit-scrollbar-button {
     /* This selector affects the styling of both the up & down and left & right buttons of a scrollbar */
     height: 14px;
     width: 14px;
-    background-color: #EEEEEE;
+    background-color: #21252B;
 }
 
 ::-webkit-scrollbar-button:hover {
-    background-color: #C0C0C0;
+    background-color: #424A56;
 }
 
 ::-webkit-scrollbar-button:active {
-    background-color: #808080;
+    background-color: #31363F;
 }
 
 ::-webkit-scrollbar-track {
     /* This selector affects the styling of the area in the scrollbar between the two buttons */
-    background-color: #EEEEEE;
+    background-color: #21252B;
 }
 
 ::-webkit-scrollbar-thumb {
     /* This selector affects the styling of draggable element of the scollbar */
     border: none;
-    background-color: #D0D0D0;
+    background-color: #353B45;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background-color: #C0C0C0;
+    background-color: #424A56;
 }
 
 ::-webkit-scrollbar-thumb:active {
-    background-color: #808080;
+    background-color: #31363F;
 }
 
 ::-webkit-scrollbar-button:horizontal:increment {

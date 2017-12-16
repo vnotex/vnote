@@ -13,7 +13,9 @@ class VIconUtils
 {
 public:
     // Get an icon from @p_file file. May change the foreground of the icon.
-    static QIcon icon(const QString &p_file, const QString &p_fg = QString());
+    static QIcon icon(const QString &p_file,
+                      const QString &p_fg = QString(),
+                      bool p_addDisabled = true);
 
     static QIcon toolButtonIcon(const QString &p_file)
     {

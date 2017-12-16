@@ -2,22 +2,23 @@
 ; Use @color_tag to reference a style.
 
 [metadata]
-qss_file=v_pure.qss
-mdhl_file=v_pure.mdhl
-css_file=v_pure.css
-codeblock_css_file=v_pure_codeblock.css
+qss_file=v_moonlight.qss
+mdhl_file=v_moonlight.mdhl
+css_file=v_moonlight.css
+codeblock_css_file=v_moonlight_codeblock.css
 
 [phony]
 ; Abstract color attributes.
-master_fg=#F5F5F5
-master_bg=#00897B
-master_light_bg=#80CBC4
-master_focus_bg=#009688
-master_hover_bg=#009688
-master_pressed_bg=#00796B
+master_fg=@edit_fg
+master_bg=#00695C
+master_light_bg=#4DB6AC
+master_drak_bg=#004D40
+master_focus_bg=#00796B
+master_hover_bg=#00796B
+master_pressed_bg=#004D40
 
-base_fg=#222222
-base_bg=#EAEAEA
+base_fg=#9DA5B4
+base_bg=#21252B
 
 main_fg=@base_fg
 main_bg=#base_bg
@@ -25,41 +26,41 @@ main_bg=#base_bg
 title_fg=@base_fg
 title_bg=@base_bg
 
-disabled_fg=#9E9E9E
+disabled_fg=#4D5765
 
 content_fg=@base_fg
 content_bg=@base_bg
 
-border_bg=#D3D3D3
+border_bg=#181A1F
 
-separator_bg=#D3D3D3
+separator_bg=#373E47
 
-hover_fg=@base_fg
-hover_bg=#D0D0D0
+hover_fg=#D7DAE0
+hover_bg=#31363F
 
-selected_fg=@base_fg
-selected_bg=#BDBDBD
+selected_fg=#FFFFFF
+selected_bg=#3A3F4B
 
 active_fg=@selected_fg
 active_bg=@selected_bg
 
-inactive_fg=@selected_fg
-inactive_bg=#D3D3D3
+inactive_fg=@hover_fg
+inactive_bg=#4D5465
 
-focus_fg=@selected_fg
-focus_bg=@selected_bg
+focus_fg=@hover_fg
+focus_bg=@hover_bg
 
-pressed_fg=@base_fg
-pressed_bg=#B2B2B2
+pressed_fg=@hover_fg
+pressed_bg=#2C303A
 
-edit_fg=#222222
-edit_bg=#F5F5F5
-edit_focus_bg=#E0F2F1
+edit_fg=#D7DAE0
+edit_bg=#282C34
+edit_focus_bg=#1B1D23
 edit_focus_border=@master_bg
 edit_selection_fg=@edit_fg
-edit_selection_bg=@master_light_bg
+edit_selection_bg=#4D5565
 
-icon_fg=#222222
+icon_fg=#9EA5B4
 icon_disabled_fg=@disabled_fg
 
 danger_fg=#F5F5F5
@@ -70,7 +71,7 @@ danger_pressed_bg=#AC2925
 
 [soft_defined]
 ; VAvatar.
-avatar_border_bg=@selected_bg
+avatar_border_bg=#7D879B
 avatar_fg=@base_bg
 avatar_bg=@base_fg
 ; The border background color of the avatar when Captain mode is triggered.
@@ -165,7 +166,7 @@ pushbutton_specialbtn_fg=@master_fg
 pushbutton_specialbtn_bg=@master_bg
 pushbutton_specialbtn_focus_bg=@master_focus_bg
 pushbutton_specialbtn_hover_bg=@master_hover_bg
-pushbutton_specialbtn_checked_bg=#3F51B5
+pushbutton_specialbtn_checked_bg=@master_focus_bg
 pushbutton_specialbtn_pressed_bg=@master_pressed_bg
 
 pushbutton_cornerbtn_hover_bg=@hover_bg
@@ -217,7 +218,7 @@ combobox_focus_bg=@edit_focus_bg
 combobox_focus_border=@edit_focus_border
 combobox_item_icon_fg=@item_icon_fg
 
-combobox_notebookselector_fg=@master_pressed_bg
+combobox_notebookselector_fg=@master_bg
 combobox_notebookselector_bg=@combobox_bg
 combobox_notebookselector_border=@master_bg
 combobox_notebookselector_hover_fg=@master_bg
@@ -297,17 +298,18 @@ splitter_handle_bg=@border_bg
 ; StatusBar.
 statusbar_fg=@main_fg
 statusbar_bg=@main_bg
+statusbar_border=@border_bg
 
 ; ScrollBar.
 scrollbar_bg=@base_bg
 scrollbar_page_bg=transparent
-scrollbar_handle_bg=#DADADA
-scrollbar_handle_hover_bg=@hover_bg
-scrollbar_handle_pressed_bg=@pressed_bg
+scrollbar_handle_bg=#353B45
+scrollbar_handle_hover_bg=#424A56
+scrollbar_handle_pressed_bg=@hover_bg
 
 ; VEditWindow.
 editwindow_corner_icon_fg=@master_bg
-editwindow_corner_icon_inactive_fg=#D3D3D3
+editwindow_corner_icon_inactive_fg=@icon_fg
 
 ; CheckBox.
 checkbox_indicator_hover_bg=@hover_bg
@@ -329,7 +331,7 @@ spinbox_button_hover_bg=@hover_bg
 spinbox_button_pressed_bg=@pressed_bg
 
 ; HeaderView.
-headerview_bg=#E0E0E0
+headerview_bg=#30333D
 headerview_fg=@base_fg
 headerview_border=@border_bg
 headerview_checked_fg=@selected_fg
@@ -338,4 +340,4 @@ headerview_checked_bg=@selected_bg
 ; ProgressBar.
 progressbar_bg=@edit_bg
 progressbar_border_bg=@border_bg
-progressbar_chunk_bg=@master_light_bg
+progressbar_chunk_bg=@master_drak_bg

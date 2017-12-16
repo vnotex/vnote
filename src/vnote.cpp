@@ -122,8 +122,8 @@ void VNote::updateTemplate()
     }
 
     // Shoudl not display scrollbar in PDF.
-    cssStyle += "pre code { white-space: pre-wrap !important; "
-                           "word-break: break-all !important; }\n";
+    cssStyle += "pre { white-space: pre-wrap !important; "
+                      "word-break: break-all !important; }\n";
     if (!g_config->getEnableImageConstraint()) {
         // Constain the image width by force in PDF, otherwise, the PDF will
         // be cut off.

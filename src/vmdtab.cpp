@@ -379,6 +379,9 @@ void VMdTab::setupMarkdownViewer()
     m_webViewer->setPage(page);
     m_webViewer->setZoomFactor(g_config->getWebZoomFactor());
 
+    // Avoid white flash before loading content.
+    page->setBackgroundColor(Qt::transparent);
+
     m_document = new VDocument(m_file, m_webViewer);
 
     QWebChannel *channel = new QWebChannel(m_webViewer);

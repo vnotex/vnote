@@ -1,0 +1,172 @@
+# This is the default markdown styles used for Peg-Markdown-Highlight
+# created by Le Tan(tamlokveer@gmail.com).
+# For a complete description of the syntax, please refer to the original
+# documentation of the style parser
+# [The Syntax of PEG Markdown Highlight Stylesheets](http://hasseg.org/peg-markdown-highlight/docs/stylesheet_syntax.html).
+# VNote adds some styles in the syntax which will be marked [VNote] in the comment.
+#
+# Note: Empty lines within a section is NOT allowed.
+# Note: Do NOT modify this file directly. Copy it and tune your own style!
+
+editor
+# QTextEdit just choose the first available font, so specify the Chinese fonts first
+# Do not use "" to quote the name
+font-family: Hiragino Sans GB, 冬青黑体, Microsoft YaHei, 微软雅黑, Microsoft YaHei UI, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, STXihei, 华文细黑, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Helvetica, sans-serif, Tahoma, Arial, Verdana, Geneva, Georgia, Times New Roman
+font-size: 12
+foreground: abb2bf
+background: 282c34
+# [VNote] Style for trailing space
+trailing-space: 636d81
+# [VNote] Style for line number
+line-number-background: 2c313a
+line-number-foreground: 5c6370
+# [VNote] Style for selected word highlight
+selected-word-background: 454bb2
+# [VNote] Style for searched word highlight
+searched-word-background: 424956
+# [VNote] Style for searched word under cursor highlight
+searched-word-cursor-background: 596173
+# [VNote] Style for incremental searched word highlight
+incremental-searched-word-background: 596173
+# [VNote] Style for color column in fenced code block
+color-column-background: c9302c
+color-column-foreground: eeeeee
+# [VNote} Style for preview image line
+preview-image-line-foreground: 6f5799
+
+editor-selection
+foreground: abb2bf
+background: 3e4451
+
+editor-current-line
+background: 353d49
+# [VNote] Vim insert mode cursor line background
+vim-insert-background: 353d49
+# [VNote] Vim normal mode cursor line background
+vim-normal-background: 373c47
+# [VNote] Vim visual mode cursor line background
+vim-visual-background: 105fa2
+# [VNote] Vim replace mode cursor line background
+vim-replace-background: 2f3377
+
+H1
+foreground: e06c75
+font-style: bold
+font-size: +8
+
+H2
+foreground: e06c75
+font-style: bold
+font-size: +6
+
+H3
+foreground: e06c75
+font-style: bold
+font-size: +4
+
+H4
+foreground: e06c75
+font-style: bold
+font-size: +2
+
+H5
+foreground: e06c75
+font-style: bold
+font-size: +2
+
+H6
+foreground: e06c75
+font-style: bold
+font-size: +2
+
+HRULE
+foreground: 8b90f3
+
+LIST_BULLET
+foreground: e06c75
+font-style: bold
+font-size: +2
+
+LIST_ENUMERATOR
+foreground: e06c75
+
+LINK
+foreground: 61afef
+font-style: underlined
+
+AUTO_LINK_URL
+foreground: 61afef
+font-style: underlined
+
+AUTO_LINK_EMAIL
+foreground: 61afef
+font-style: underlined
+
+IMAGE
+foreground: 4883b3
+
+REFERENCE
+foreground: 56b6c2
+
+CODE
+foreground: 98c379
+font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
+
+EMPH
+font-style: italic
+
+STRONG
+font-style: bold
+
+HTML_ENTITY
+foreground: abb2bf
+
+COMMENT
+foreground: 5c6370
+
+VERBATIM
+foreground: 98c379
+font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
+# [VNote] Codeblock sylte from HighlightJS (bold, italic, underlined, color)
+# The last occurence of the same attribute takes effect
+# Could specify multiple attribute in one line
+hljs-comment: 5c6370
+hljs-quote: 5c6370
+hljs-doctag: c678dd
+hljs-keyword: c678dd
+hljs-formula: c678dd
+hljs-section: e06c75
+hljs-name: e06c75
+hljs-selector-tag: e06c75
+hljs-deletion: e06c75
+hljs-subst: e06c75
+hljs-literal: 56b6c2
+hljs-string: 98c379
+hljs-regexp: 98c379
+hljs-addition: 98c379
+hljs-attribute: 98c379
+hljs-meta-string: 98c379
+hljs-built_in: e6c07b
+hljs-class: e6c07b
+hljs-attr: d19a66
+hljs-variable: d19a66
+hljs-template-variable: d19a66
+hljs-type: d19a66
+hljs-selector-class: d19a66
+hljs-selector-attr: d19a66
+hljs-selector-pseudo: d19a66
+hljs-number: d19a66
+hljs-symbol: 61aeee
+hljs-link: underlined, 61aeee
+hljs-bullet: 61aeee
+hljs-meta: 61aeee
+hljs-selector-id: 61aeee
+hljs-title: bold, 61aeee
+hljs-emphasis: italic
+hljs-strong: bold
+
+BLOCKQUOTE
+foreground: 5c6370
+
+STRIKE
+strike-color: 586e75

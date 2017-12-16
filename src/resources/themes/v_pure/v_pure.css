@@ -77,10 +77,9 @@ p, ul, ol {
 }
 
 pre {
-    background-color: #f8f8f8;
-    border-radius: 3px;
-    border: 1px solid #cccccc;
-    overflow: auto;
+    display: block;
+    overflow-y: hidden;
+    overflow-x: auto;
 }
 
 code {
@@ -94,8 +93,6 @@ pre code {
     margin: 0;
     padding: 0;
     border: none;
-    background: transparent;
-    overflow: auto;
     color: #363636;
 }
 
@@ -106,19 +103,10 @@ aside {
 }
 
 blockquote {
+    color: #666;
     border-left:.5em solid #7a7a7a;
     padding: 0 2em;
     margin-left:0;
-}
-
-blockquote  cite {
-    font-size:14px;
-    line-height:20px;
-    color:#bfbfbf;
-}
-
-blockquote cite:before {
-    content: '\2014 \00A0';
 }
 
 blockquote p {
@@ -126,9 +114,12 @@ blockquote p {
 }
 
 hr {
+    display: block;
     text-align: left;
     margin: 1em 0;
-    color: #999;
+    border: none;
+    height: 2px;
+    background: #999;
 }
 
 table {

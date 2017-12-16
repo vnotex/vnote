@@ -193,5 +193,30 @@
         <file>resources/themes/v_material/v_material.palette</file>
         <file>resources/themes/v_material/v_material.qss</file>
         <file>resources/themes/v_material/v_material_codeblock.css</file>
+        <file>resources/themes/v_moonlight/arrow_dropdown.svg</file>
+        <file>resources/themes/v_moonlight/branch_closed.svg</file>
+        <file>resources/themes/v_moonlight/branch_open.svg</file>
+        <file>resources/themes/v_moonlight/checkbox_checked.svg</file>
+        <file>resources/themes/v_moonlight/checkbox_unchecked.svg</file>
+        <file>resources/themes/v_moonlight/close.svg</file>
+        <file>resources/themes/v_moonlight/close_grey.svg</file>
+        <file>resources/themes/v_moonlight/down.svg</file>
+        <file>resources/themes/v_moonlight/down_disabled.svg</file>
+        <file>resources/themes/v_moonlight/float.svg</file>
+        <file>resources/themes/v_moonlight/left.svg</file>
+        <file>resources/themes/v_moonlight/left_disabled.svg</file>
+        <file>resources/themes/v_moonlight/menu_checkbox.svg</file>
+        <file>resources/themes/v_moonlight/menu_radiobutton.svg</file>
+        <file>resources/themes/v_moonlight/radiobutton_checked.svg</file>
+        <file>resources/themes/v_moonlight/radiobutton_unchecked.svg</file>
+        <file>resources/themes/v_moonlight/right.svg</file>
+        <file>resources/themes/v_moonlight/right_disabled.svg</file>
+        <file>resources/themes/v_moonlight/up.svg</file>
+        <file>resources/themes/v_moonlight/up_disabled.svg</file>
+        <file>resources/themes/v_moonlight/v_moonlight.css</file>
+        <file>resources/themes/v_moonlight/v_moonlight.mdhl</file>
+        <file>resources/themes/v_moonlight/v_moonlight.palette</file>
+        <file>resources/themes/v_moonlight/v_moonlight.qss</file>
+        <file>resources/themes/v_moonlight/v_moonlight_codeblock.css</file>
     </qresource>
 </RCC>
