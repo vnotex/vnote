@@ -63,6 +63,8 @@ public:
 
     void setCursorLineBlockBg(const QColor &p_bg);
 
+    void relayout();
+
 protected:
     void resizeEvent(QResizeEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -108,5 +110,4 @@ inline void VTextEdit::setLineNumberColor(const QColor &p_foreground,
     m_lineNumberArea->setForegroundColor(p_foreground);
     m_lineNumberArea->setBackgroundColor(p_background);
 }
-
 #endif // VTEXTEDIT_H

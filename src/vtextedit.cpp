@@ -383,3 +383,8 @@ void VTextEdit::setCursorLineBlockBg(const QColor &p_bg)
 {
     getLayout()->setCursorLineBlockBg(p_bg);
 }
+
+void VTextEdit::relayout()
+{
+    getLayout()->relayout();
+}

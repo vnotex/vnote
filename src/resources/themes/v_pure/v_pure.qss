@@ -679,6 +679,10 @@ QLineEdit[VimCommandLine="true"] {
     color: @lineedit_fg;
     background: @lineedit_bg;
 }
+
+QLineEdit[VimCommandLine="true"]:focus {
+    background: @lineedit_focus_bg;
+}
 /* End QLineEdit */
 
 /* QPlainTextEdit QTextEdit */

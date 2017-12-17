@@ -116,6 +116,7 @@ void VMdEditor::beginEdit()
 
     if (m_freshEdit) {
         m_mdHighlighter->updateHighlight();
+        relayout();
     } else {
         updateHeaders(m_mdHighlighter->getHeaderRegions());
     }
