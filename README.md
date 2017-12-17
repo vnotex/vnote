@@ -1,5 +1,5 @@
 # VNote
-[中文](./README_zh.md)
+[中文 Chinese](./README_zh.md)
 
 Designed specially for **Markdown**, **VNote** is a Vim-inspired note-taking application, which knows programmers and Markdown better.
 
@@ -35,9 +35,9 @@ There is an AppImage format standalone executable of VNote for major Linux distr
 
 VNote is **NOT** just a simple editor for Markdown. By providing notes management, VNote makes taking notes in Markdown simpler and more pleasant.
 
-Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS** (due to the quite different interaction logics on macOS, VNote is not fully tested on macOS and we need more feedbacks to help improving VNote).
+Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 
-![VNote](screenshots/vnote_001.png)
+![VNote](screenshots/_vnote_1513485003_1746530034.png)
 
 # Supports
 - [Github issues](https://github.com/tamlok/vnote/issues);
@@ -57,8 +57,7 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS** (due to t
 - Supports [Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/), and [MathJax](https://www.mathjax.org/);
 - Supports HiDPI;
 - Supports attachments of notes.
-
-![VNote Edit](screenshots/vnote_edit.gif)
+- Supports themes and dark mode.
 
 # Why VNote
 ## Markdown Editor & Notes Management
@@ -85,8 +84,6 @@ A notebook corresponds to a self-contained folder (called the *Root Folder* of t
 
 A notebook could have infinite levels of folders. VNote supports copying or moving folders or notes within or between notebooks.
 
-![VNote Folder and File Panel](screenshots/vnote_002.png)
-
 ## Simple Notes Management
 All your notes are managed by some plaintext configuration files and stored as plaintext files. You could access your notes without VNote. You could use external file synchronization services to synchronize your notes and import them on another machine.
 
@@ -97,34 +94,25 @@ VNote supports accurate syntax highlight for Markdown. Tuning the style of the h
 
 VNote also supports **syntax highlight for fenced code blocks** in edit mode in Markdown, which is **superior** than almost all current Markdown editors.
 
-![VNote Syntax Highlight](screenshots/vnote_003.png)
+![Syntax Highlight](screenshots/_1513485266_1616037517.png)
 
 ## Live Image Preview
 VNote supports previewing the image link in edit mode. With this, you could just stay in edit mode as much as possible.
 
-You could select the image to copy it.
-
-![VNote Live Image Preview](screenshots/vnote_004.png)
+![Live Image Preview](screenshots/_1513485934_140085443.png)
 
 ## Pleasant Image Experience
 Just paste your image into the Markdown note, VNote will manage all other stuffs. VNote stores images in a specified folder in the same folder with the note. VNote will pop up a window to preview the image when you insert an image. Furthermore, VNote will delete the useless image files automatically after you remove the image links.
 
-![VNote Image Insertion](screenshots/vnote_005.png)
+![](screenshots/_1513485753_394180887.png)
 
 ## Interactive Outline Viewer In Read & Edit Mode
 VNote provides a user-friendly outline viewer for both edit and view mode. The outline viewer is a responsive item tree instead of a segment of HTML.
-
-![VNote Outline Viewer](screenshots/vnote_006.png)
 
 ## Powerful Shortcuts
 VNote supports many pleasant and powerful shortcuts which facilitate your editing, including **Vim Mode**, **Captain Mode**, and **Navigation Mode** which enable you to work without the mouse.
 
 Please refer to the [shortcuts help](src/resources/docs/shortcuts_en.md) in the help menu for more details.
-
-## Window Split
-VNote supports infinite horizontal window splits, facilitating notes management and writing.
-
-![VNote Window Split](screenshots/vnote_007.png)
 
 ## Highly Configurable
 In VNote, almost everything is configurable, such as background color, font, and Markdown style. VNote uses a plaintext file to record all your configuration, so you could just copy that file to initialize a new VNote on another computer.

@@ -1,4 +1,16 @@
 # Changes History
+## v1.11
+- Support themes;
+    - Three built-in mordern themes;
+    - One dark mode theme;
+- Vim mode
+    - Support block cursor in Normal/Visual mode;
+    - `=` to auto-indent selected lines as the first line;
+- Support custom external editors to open notes;
+- Enable `Ctrl+C`/`Ctrl+V` in Vim mode to copy/paste;
+- Support Flash Page to record ideas quickly;
+- Support previewing inline images;
+
 ## v1.10
 - Migrate to Qt 5.9.1;
 - Support Compact mode in main window;

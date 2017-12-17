@@ -92,15 +92,12 @@ foreground: e06c75
 
 LINK
 foreground: 61afef
-font-style: underlined
 
 AUTO_LINK_URL
 foreground: 61afef
-font-style: underlined
 
 AUTO_LINK_EMAIL
 foreground: 61afef
-font-style: underlined
 
 IMAGE
 foreground: 4883b3

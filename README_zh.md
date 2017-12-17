@@ -1,5 +1,5 @@
 # VNote
-[English](./README.md)
+[英文 English](./README.md)
 
 **VNote** 是一个受Vim启发开发的专门为 **Markdown** 而优化、设计的笔记软件。VNote是一个更了解程序员和Markdown的笔记软件。
 
@@ -38,7 +38,7 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 
 基于Qt框架，VNote能够在主流操作系统上运行，包括 **Linux**, **Windows** 以及 **macOS**（由于macOS上很不一样的交互逻辑，VNote在macOS上并没有被充分测试，我们也希望得到更多的反馈以帮助改进VNote）。
 
-![VNote](screenshots/vnote_001.png)
+![VNote](screenshots/_vnote_1513485003_1746530034.png)
 
 # 支持
 - [Github issues](https://github.com/tamlok/vnote/issues)；
@@ -58,8 +58,7 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 - 支持[Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/) 和 [MathJax](https://www.mathjax.org/)；
 - 支持高分辨率；
 - 支持笔记附件。
-
-![VNote Edit](screenshots/vnote_edit.gif)
+- 支持主题以及深色模式;
 
 # 开发VNote的动机
 ## Markdown编辑器与笔记管理
@@ -86,8 +85,6 @@ VNote使用 **笔记本** 来管理笔记。类似于OneNote，一个笔记本�
 
 VNote支持一个笔记本中包含无限层级的文件夹。VNote支持在笔记本内或笔记本间拷贝或剪切文件夹和笔记。
 
-![VNote Folder and File Panel](screenshots/vnote_002.png)
-
 ## 直观的笔记管理
 所有笔记被保存为纯文本而且通过纯文本的配置文件进行管理。即使没有VNote，您也能方便访问您的数据。这样，您也可以使用第三方的文件同步服务来同步您的笔记，并在另一台计算机上导入到VNote中。
 
@@ -98,34 +95,27 @@ VNote支持精确的Markdown语法高亮。通过精心调试的高亮样式，V
 
 VNote还支持Markdown编辑模式中代码块的语法高亮。目前的Markdown编辑器中绝大部分都尚不支持该特性。
 
-![VNote Syntax Highlight](screenshots/vnote_003.png)
+![Syntax Highlight](screenshots/_1513485266_1616037517.png)
 
 ## 实时图片预览
 VNote支持在编辑时原地预览图片链接。这样一来，您就能尽可能地留在编辑模式，避免频繁切换。
 
 如果想要拷贝图片，可以选取该图片，然后复制。
 
-![VNote Live Image Preview](screenshots/vnote_004.png)
+![Live Image Preview](screenshots/_1513485934_140085443.png)
 
 ## 良好的图片体验
 编辑时，支持像其他富文本编辑器一样直接粘贴插入图片，VNote会帮您管理所插入的图片。VNote将这些图片保存在和笔记同一目录下的一个指定目录中。插入图片时，VNote会弹出一个窗口预览即将要插入的图片。另外，当您移除笔记中的图片链接时，VNote会自动删除对应的图片文件。
 
-![VNote Image Insertion](screenshots/vnote_005.png)
+![](screenshots/_1513485753_394180887.png)
 
 ## 编辑和阅读模式中的交互式大纲视图
 VNote为编辑和预览模式都提供了一个用户友好的大纲视图。该大纲视图是一个项目树，而不是简单地插入一段HTML。
-
-![VNote Outline Viewer](screenshots/vnote_006.png)
 
 ## 强大的快捷键
 VNote提供很多快捷键，从而提供一个愉悦的编辑体验。其中包括 **Vim模式**、**舰长模式** 和 **导航模式**，它们能让您完全摆脱鼠标进行操作。
 
 更多细节请参考帮助菜单中的[快捷键帮助](src/resources/docs/shortcuts_zh.md)。
-
-## 窗口分割
-VNote支持无限水平窗口分割，方便您进行笔记的整理和撰写。
-
-![VNote Window Split](screenshots/vnote_007.png)
 
 ## 高度可定制
 VNote中，几乎一切都是可以定制的，例如背景颜色、字体以及Markdown样式等。VNote使用一个纯文本文件来记录您的所有配置，因此通过拷贝该文件就能够很快地在另一台电脑上初始化一个新的VNote。
