@@ -2,8 +2,8 @@
 project_dir=$(pwd)
 
 brew update > /dev/null
-brew install qt@5.9
-QTDIR="/usr/local/opt/qt@5.9"
+brew install qt
+QTDIR="/usr/local/opt/qt"
 PATH="$QTDIR/bin:$PATH"
 LDFLAGS=-L$QTDIR/lib
 CPPFLAGS=-I$QTDIR/include
