@@ -75,7 +75,8 @@ public:
                   uint p_options,
                   bool p_forward,
                   QTextCursor *p_cursor = nullptr,
-                  QTextCursor::MoveMode p_moveMode = QTextCursor::MoveAnchor);
+                  QTextCursor::MoveMode p_moveMode = QTextCursor::MoveAnchor,
+                  bool p_useLeftSideOfCursor = false);
 
     void replaceText(const QString &p_text,
                      uint p_options,

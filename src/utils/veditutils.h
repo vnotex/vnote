@@ -89,17 +89,18 @@ public:
                                       QChar p_target,
                                       bool p_forward,
                                       bool p_inclusive,
+                                      bool p_leftSideOfCursor,
                                       int p_repeat);
 
     // Find th first occurence of a char in @p_targets within a block.
     // Returns the index of the found char in @p_targets if found.
     // Returns -1 if none of the @p_targets is found.
-    // Please pay attention to the one-step-forward/backward in KeepAnchor mode
-    // and exclusive case.
+    // Different from findTargetWithinBlock(), will not modify the ucrsor position
+    // even in KeepAnchor mode.
     static int findTargetsWithinBlock(QTextCursor &p_cursor,
-                                      QTextCursor::MoveMode p_mode,
                                       const QList<QChar> &p_targets,
                                       bool p_forward,
+                                      bool p_leftSideOfCursor,
                                       bool p_inclusive);
 
     // Find a pair target (@p_opening, @p_closing) containing current cursor and

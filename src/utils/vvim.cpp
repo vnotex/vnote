@@ -178,7 +178,8 @@ static void findCurrentSpace(const QTextCursor &p_cursor, int &p_start, int &p_e
 // Backward: wwww|ssssswwww
 static void moveCursorAcrossSpaces(QTextCursor &p_cursor,
                                    QTextCursor::MoveMode p_mode,
-                                   bool p_forward)
+                                   bool p_forward,
+                                   bool p_stopAtBoundary = false)
 {
     while (true) {
         QTextBlock block = p_cursor.block();
@@ -192,7 +193,7 @@ static void moveCursorAcrossSpaces(QTextCursor &p_cursor,
                 }
             }
 
-            if (pib == text.size()) {
+            if (pib == text.size() && !p_stopAtBoundary) {
                 // Move to next block.
                 p_cursor.movePosition(QTextCursor::Down, p_mode, 1);
                 if (block.blockNumber() == p_cursor.block().blockNumber()) {
@@ -218,7 +219,7 @@ static void moveCursorAcrossSpaces(QTextCursor &p_cursor,
                 }
             }
 
-            if (idx == -1) {
+            if (idx == -1 && !p_stopAtBoundary) {
                 // Move to previous block.
                 p_cursor.movePosition(QTextCursor::Up, p_mode, 1);
                 if (block.blockNumber() == p_cursor.block().blockNumber()) {
@@ -2551,6 +2552,13 @@ bool VVim::processMovement(QTextCursor &p_cursor,
             p_repeat = 1;
         }
 
+        if (checkMode(VimMode::Visual)) {
+            int pos = p_cursor.position();
+            if (pos == p_cursor.anchor() - 1 && pos == m_positionBeforeVisualMode) {
+                ++p_repeat;
+            }
+        }
+
         int pib = p_cursor.positionInBlock();
         int length = p_cursor.block().length();
         if (length - pib <= p_repeat) {
@@ -2730,6 +2738,12 @@ bool VVim::processMovement(QTextCursor &p_cursor,
         // If all the block is space, just move to the end of block; otherwise,
         // move to the first non-space character.
         VEditUtils::moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
+
+        if (!p_cursor.atEnd() && useLeftSideOfCursor(p_cursor)) {
+            // Move one character forward.
+            p_cursor.movePosition(QTextCursor::NextCharacter, p_moveMode);
+        }
+
         hasMoved = true;
         break;
     }
@@ -2752,6 +2766,11 @@ bool VVim::processMovement(QTextCursor &p_cursor,
         }
 
         VEditUtils::moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
+        if (!p_cursor.atEnd() && useLeftSideOfCursor(p_cursor)) {
+            // Move one character forward.
+            p_cursor.movePosition(QTextCursor::NextCharacter, p_moveMode);
+        }
+
         hasMoved = true;
         break;
     }
@@ -2766,6 +2785,11 @@ bool VVim::processMovement(QTextCursor &p_cursor,
 
         p_cursor.movePosition(QTextCursor::Start, p_moveMode, 1);
         VEditUtils::moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
+        if (!p_cursor.atEnd() && useLeftSideOfCursor(p_cursor)) {
+            // Move one character forward.
+            p_cursor.movePosition(QTextCursor::NextCharacter, p_moveMode);
+        }
+
         hasMoved = true;
         break;
     }
@@ -2780,6 +2804,11 @@ bool VVim::processMovement(QTextCursor &p_cursor,
 
         p_cursor.movePosition(QTextCursor::End, p_moveMode, 1);
         VEditUtils::moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
+        if (!p_cursor.atEnd() && useLeftSideOfCursor(p_cursor)) {
+            // Move one character forward.
+            p_cursor.movePosition(QTextCursor::NextCharacter, p_moveMode);
+        }
+
         hasMoved = true;
         break;
     }
@@ -2797,7 +2826,17 @@ bool VVim::processMovement(QTextCursor &p_cursor,
             }
 
             p_cursor.movePosition(QTextCursor::NextWord, p_moveMode);
-            if (p_cursor.atBlockEnd() || VEditUtils::isSpaceBlock(p_cursor.block())) {
+            if (p_cursor.atBlockEnd()) {
+                // dw/yw/cw will stop at the end of the line.
+                if (p_repeat == 1
+                    && checkMode(VimMode::Normal)
+                    && p_moveMode == QTextCursor::KeepAnchor) {
+                    --p_repeat;
+                }
+
+                continue;
+            } else if (doc->characterAt(p_cursor.position()).isSpace()
+                || VEditUtils::isSpaceBlock(p_cursor.block())) {
                 continue;
             }
 
@@ -2830,6 +2869,18 @@ bool VVim::processMovement(QTextCursor &p_cursor,
             VEditUtils::findCurrentWORD(p_cursor, start, end);
             // Move cursor to end of current WORD.
             p_cursor.setPosition(end, p_moveMode);
+
+            if (p_repeat == 1
+                && checkMode(VimMode::Normal)
+                && p_moveMode == QTextCursor::KeepAnchor) {
+                // dW/yW/cW will stop at the end of the line.
+                moveCursorAcrossSpaces(p_cursor, p_moveMode, true, true);
+                if (p_cursor.atBlockEnd()) {
+                    --p_repeat;
+                    continue;
+                }
+            }
+
             // Skip spaces.
             moveCursorAcrossSpaces(p_cursor, p_moveMode, true);
             if (p_cursor.atBlockEnd()) {
@@ -3193,6 +3244,7 @@ handle_target:
                                                          target,
                                                          forward,
                                                          inclusive,
+                                                         useLeftSideOfCursor(p_cursor),
                                                          p_repeat);
         }
 
@@ -3227,6 +3279,11 @@ handle_target:
                 VEditUtils::moveCursorFirstNonSpaceCharacter(p_cursor, p_moveMode);
             }
 
+            if (!p_cursor.atEnd() && useLeftSideOfCursor(p_cursor)) {
+                // Move one character forward.
+                p_cursor.movePosition(QTextCursor::NextCharacter, p_moveMode);
+            }
+
             hasMoved = true;
         }
 
@@ -3251,15 +3308,19 @@ handle_target:
         }
 
         // First check if current char hits the targets.
-        QChar ch = doc->characterAt(position);
+        bool useLeftSideBefore = useLeftSideOfCursor(p_cursor);
+        QChar ch = doc->characterAt(useLeftSideBefore ? position - 1
+                                                      : position);
         int idx = targets.indexOf(ch);
         if (idx == -1) {
-            // Use MoveAnchor to avoid the one-step-forward.
             idx = VEditUtils::findTargetsWithinBlock(p_cursor,
-                                                     QTextCursor::MoveAnchor,
                                                      targets,
                                                      true,
+                                                     useLeftSideOfCursor(p_cursor),
                                                      true);
+        } else if (useLeftSideBefore) {
+            // Move one character back to let p_cursor position at the pair.
+            p_cursor.movePosition(QTextCursor::PreviousCharacter, p_moveMode);
         }
 
         if (idx == -1) {
@@ -3294,6 +3355,12 @@ handle_target:
 
             p_cursor.setPosition(anchor);
             p_cursor.setPosition(target, p_moveMode);
+
+            if (!p_cursor.atEnd() && useLeftSideOfCursor(p_cursor)) {
+                // Move one character forward.
+                p_cursor.movePosition(QTextCursor::NextCharacter, p_moveMode);
+            }
+
             hasMoved = true;
             break;
         } else {
@@ -3323,11 +3390,27 @@ handle_target:
         // Record current location.
         m_locations.addLocation(p_cursor);
 
+        bool useLeftSideBefore = useLeftSideOfCursor(p_cursor);
         const SearchItem &item = m_searchHistory.lastItem();
         while (--p_repeat >= 0) {
-            hasMoved = m_editor->findText(item.m_text, item.m_options,
-                                          forward ? item.m_forward : !item.m_forward,
-                                          &p_cursor, p_moveMode);
+            bool found = m_editor->findText(item.m_text,
+                                            item.m_options,
+                                            forward ? item.m_forward : !item.m_forward,
+                                            &p_cursor,
+                                            p_moveMode,
+                                            useLeftSideBefore);
+            if (found) {
+                hasMoved = true;
+                useLeftSideBefore = false;
+            } else {
+                break;
+            }
+        }
+
+        if (hasMoved) {
+            if (!p_cursor.atEnd() && useLeftSideOfCursor(p_cursor)) {
+                p_cursor.movePosition(QTextCursor::NextCharacter, p_moveMode);
+            }
         }
 
         break;
@@ -3396,6 +3479,9 @@ handle_target:
         }
 
         Q_ASSERT(hasMoved);
+        if (!p_cursor.atEnd() && useLeftSideOfCursor(p_cursor)) {
+            p_cursor.movePosition(QTextCursor::NextCharacter, p_moveMode);
+        }
 
         break;
     }

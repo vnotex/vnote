@@ -424,7 +424,8 @@ bool VEditor::findText(const QString &p_text,
                        uint p_options,
                        bool p_forward,
                        QTextCursor *p_cursor,
-                       QTextCursor::MoveMode p_moveMode)
+                       QTextCursor::MoveMode p_moveMode,
+                       bool p_useLeftSideOfCursor)
 {
     clearIncrementalSearchedWordHighlight();
 
@@ -440,6 +441,10 @@ bool VEditor::findText(const QString &p_text,
     int start = p_forward ? cursor.position() + 1 : cursor.position();
     if (p_cursor) {
         start = p_forward ? p_cursor->position() + 1 : p_cursor->position();
+    }
+
+    if (p_useLeftSideOfCursor) {
+        --start;
     }
 
     bool found = findTextHelper(p_text, p_options, p_forward, start,
@@ -541,11 +546,12 @@ bool VEditor::findTextHelper(const QString &p_text,
         } else if (p_start > m_document->characterCount()) {
             p_start = m_document->characterCount();
         }
-
-        QTextCursor startCursor = cursor;
-        startCursor.setPosition(p_start);
-        setTextCursorW(startCursor);
     }
+
+    QTextCursor startCursor = cursor;
+    // Will clear the selection.
+    startCursor.setPosition(p_start);
+    setTextCursorW(startCursor);
 
     while (!found) {
         if (useRegExp) {

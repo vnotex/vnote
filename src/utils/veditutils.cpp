@@ -283,6 +283,7 @@ bool VEditUtils::findTargetWithinBlock(QTextCursor &p_cursor,
                                        QChar p_target,
                                        bool p_forward,
                                        bool p_inclusive,
+                                       bool p_leftSideOfCursor,
                                        int p_repeat)
 {
     if (p_repeat < 1) {
@@ -296,6 +297,9 @@ bool VEditUtils::findTargetWithinBlock(QTextCursor &p_cursor,
 
     // The index to start searching.
     int idx = pib + (p_inclusive ? delta : 2 * delta);
+    if (p_leftSideOfCursor) {
+        --idx;
+    }
 
     for (; idx < text.size() && idx >= 0; idx += delta) {
         if (text[idx] == p_target) {
@@ -322,9 +326,9 @@ bool VEditUtils::findTargetWithinBlock(QTextCursor &p_cursor,
 }
 
 int VEditUtils::findTargetsWithinBlock(QTextCursor &p_cursor,
-                                       QTextCursor::MoveMode p_mode,
                                        const QList<QChar> &p_targets,
                                        bool p_forward,
+                                       bool p_leftSideOfCursor,
                                        bool p_inclusive)
 {
     if (p_targets.isEmpty()) {
@@ -339,6 +343,9 @@ int VEditUtils::findTargetsWithinBlock(QTextCursor &p_cursor,
 
     // The index to start searching.
     int idx = pib + (p_inclusive ? delta : 2 * delta);
+    if (p_leftSideOfCursor) {
+        --idx;
+    }
 
     for (; idx < text.size() && idx >= 0; idx += delta) {
         int index = p_targets.indexOf(text[idx]);
@@ -353,14 +360,11 @@ int VEditUtils::findTargetsWithinBlock(QTextCursor &p_cursor,
     }
 
     // text[idx] is the target character.
-    if ((p_forward && p_inclusive && p_mode == QTextCursor::KeepAnchor)
-        || (!p_forward && !p_inclusive)) {
-        ++idx;
-    } else if (p_forward && !p_inclusive && p_mode == QTextCursor::MoveAnchor) {
+    if (p_forward && !p_inclusive) {
         --idx;
     }
 
-    p_cursor.setPosition(block.position() + idx, p_mode);
+    p_cursor.setPosition(block.position() + idx);
     return targetIdx;
 }
 
