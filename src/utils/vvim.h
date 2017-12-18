@@ -223,6 +223,8 @@ private slots:
 
     void handleMouseMoved(QMouseEvent *p_event);
 
+    void handleMouseReleased(QMouseEvent *p_event);
+
     // When we display cursor as block, it makes no sense to put cursor at the
     // end of line.
     void amendCursorPosition();

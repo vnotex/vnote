@@ -120,6 +120,8 @@ VVim::VVim(VEditor *p_editor)
             this, &VVim::handleMousePressed);
     connect(m_editor->object(), &VEditorObject::mouseMoved,
             this, &VVim::handleMouseMoved);
+    connect(m_editor->object(), &VEditorObject::mouseReleased,
+            this, &VVim::handleMouseReleased);
 }
 
 // Set @p_cursor's position specified by @p_positionInBlock.
@@ -6228,6 +6230,20 @@ void VVim::handleMouseMoved(QMouseEvent *p_event)
         // User move cursor in Visual mode. Now the cursor and anchor
         // are at the same position.
         maintainSelectionInVisualMode();
+    }
+}
+
+void VVim::handleMouseReleased(QMouseEvent *p_event)
+{
+    Q_UNUSED(p_event);
+
+    if (checkMode(VimMode::Normal)) {
+        QTextCursor cursor = m_editor->textCursorW();
+        if (cursor.hasSelection()) {
+            return;
+        }
+
+        amendCursorPosition();
     }
 }
 

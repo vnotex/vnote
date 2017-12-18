@@ -315,6 +315,8 @@ void VMdEditor::mouseReleaseEvent(QMouseEvent *p_event)
     }
 
     VTextEdit::mouseReleaseEvent(p_event);
+
+    emit m_object->mouseReleased(p_event);
 }
 
 void VMdEditor::mouseMoveEvent(QMouseEvent *p_event)
