@@ -3,10 +3,14 @@ var placeholder = document.getElementById('placeholder');
 // Use Marked to highlight code blocks in edit mode.
 marked.setOptions({
     highlight: function(code, lang) {
-        if (lang && hljs.getLanguage(lang)) {
-            return hljs.highlight(lang, code).value;
+        if (lang) {
+            if (hljs.getLanguage(lang)) {
+                return hljs.highlight(lang, code).value;
+            } else {
+                return hljs.highlightAuto(code).value;
+            }
         } else {
-            return hljs.highlightAuto(code).value;
+            return code;
         }
     }
 });
@@ -37,7 +41,9 @@ var updateHtml = function(html) {
                 }
             }
 
-            hljs.highlightBlock(code);
+            if (listContainsRegex(code.classList, /language-.*/)) {
+                hljs.highlightBlock(code);
+            }
         }
     }
 
@@ -63,4 +69,3 @@ var highlightText = function(text, id, timeStamp) {
     var html = marked(text);
     content.highlightTextCB(html, id, timeStamp);
 }
-

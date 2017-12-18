@@ -44,10 +44,14 @@ var mdit = window.markdownit({
     typographer: true,
     langPrefix: 'lang-',
     highlight: function(str, lang) {
-        if (lang && hljs.getLanguage(lang)) {
-            return hljs.highlight(lang, str).value;
+        if (lang) {
+            if (hljs.getLanguage(lang)) {
+                return hljs.highlight(lang, str).value;
+            } else {
+                return hljs.highlightAuto(str).value;
+            }
         } else {
-            return hljs.highlightAuto(str).value;
+            return str;
         }
     }
 });

@@ -844,3 +844,13 @@ var addClassToCodeBlock = function() {
         }
     }
 };
+
+var listContainsRegex = function(strs, exp) {
+    for (var i = 0, len = strs.length; i < len; ++i) {
+        if (exp.test(strs[i])) {
+            return true;
+        }
+    }
+
+    return false;
+}

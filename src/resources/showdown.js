@@ -60,7 +60,9 @@ var highlightCodeBlocks = function(doc, enableMermaid, enableFlowchart) {
             } if (enableFlowchart && code.classList.contains('language-flowchart')) {
                 // Flowchart code block.
                 continue;
-            } else {
+            }
+
+            if (listContainsRegex(code.classList, /language-.*/)) {
                 hljs.highlightBlock(code);
             }
         }
