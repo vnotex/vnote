@@ -85,6 +85,8 @@ public:
 
     void reload() Q_DECL_OVERRIDE;
 
+    void handleFileOrDirectoryChange(bool p_isFile, UpdateAction p_act) Q_DECL_OVERRIDE;
+
 public slots:
     // Enter edit mode.
     void editFile() Q_DECL_OVERRIDE;

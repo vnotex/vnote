@@ -51,7 +51,8 @@ var mdit = window.markdownit({
                 return hljs.highlightAuto(str).value;
             }
         } else {
-            return str;
+            // Use external default escaping.
+            return '';
         }
     }
 });
@@ -67,7 +68,7 @@ mdit = mdit.use(window.markdownitHeadingAnchor, {
         toc.push({
             level: getHeadingLevel(openToken.tag),
             anchor: anchor,
-            title: escapeHtml(inlineToken.content)
+            title: mdit.utils.escapeHtml(inlineToken.content)
         });
     }
 });

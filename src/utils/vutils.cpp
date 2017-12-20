@@ -216,6 +216,9 @@ QVector<ImageLink> VUtils::fetchImagesFromMarkdownFile(VFile *p_file,
         return images;
     }
 
+    // Used to de-duplicate the links. Url as the key.
+    QSet<QString> fetchedLinks;
+
     QVector<VElementRegion> regions = fetchImageRegionsUsingParser(text);
     QRegExp regExp(c_imageLinkRegExp);
     QString basePath = p_file->fetchBasePath();
@@ -231,6 +234,7 @@ QVector<ImageLink> VUtils::fetchImagesFromMarkdownFile(VFile *p_file,
         QString imageUrl = regExp.capturedTexts()[2].trimmed();
 
         ImageLink link;
+        link.m_url = imageUrl;
         QFileInfo info(basePath, imageUrl);
         if (info.exists()) {
             if (info.isNativePath()) {
@@ -254,8 +258,11 @@ QVector<ImageLink> VUtils::fetchImagesFromMarkdownFile(VFile *p_file,
         }
 
         if (link.m_type & p_type) {
-            images.push_back(link);
-            qDebug() << "fetch one image:" << link.m_type << link.m_path;
+            if (!fetchedLinks.contains(link.m_url)) {
+                fetchedLinks.insert(link.m_url);
+                images.push_back(link);
+                qDebug() << "fetch one image:" << link.m_type << link.m_path << link.m_url;
+            }
         }
     }
 
@@ -264,6 +271,24 @@ QVector<ImageLink> VUtils::fetchImagesFromMarkdownFile(VFile *p_file,
     }
 
     return images;
+}
+
+QString VUtils::imageLinkUrlToPath(const QString &p_basePath, const QString &p_url)
+{
+    QString path;
+    QFileInfo info(p_basePath, p_url);
+    if (info.exists()) {
+        if (info.isNativePath()) {
+            // Local file.
+            path = QDir::cleanPath(info.absoluteFilePath());
+        } else {
+            path = p_url;
+        }
+    } else {
+        path = QUrl(p_url).toString();
+    }
+
+    return path;
 }
 
 bool VUtils::makePath(const QString &p_path)

@@ -521,19 +521,19 @@ bool VEditArea::isFileOpened(const VFile *p_file)
     return !findTabsByFile(p_file).isEmpty();
 }
 
-void VEditArea::handleFileUpdated(const VFile *p_file)
+void VEditArea::handleFileUpdated(const VFile *p_file, UpdateAction p_act)
 {
     int nrWin = splitter->count();
     for (int i = 0; i < nrWin; ++i) {
-        getWindow(i)->updateFileInfo(p_file);
+        getWindow(i)->updateFileInfo(p_file, p_act);
     }
 }
 
-void VEditArea::handleDirectoryUpdated(const VDirectory *p_dir)
+void VEditArea::handleDirectoryUpdated(const VDirectory *p_dir, UpdateAction p_act)
 {
     int nrWin = splitter->count();
     for (int i = 0; i < nrWin; ++i) {
-        getWindow(i)->updateDirectoryInfo(p_dir);
+        getWindow(i)->updateDirectoryInfo(p_dir, p_act);
     }
 }
 

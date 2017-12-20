@@ -602,7 +602,7 @@ void VDirectoryTree::editDirectoryInfo()
 
         fillTreeItem(curItem, curDir);
 
-        emit directoryUpdated(curDir);
+        emit directoryUpdated(curDir, UpdateAction::InfoChanged);
     }
 }
 
@@ -856,7 +856,7 @@ void VDirectoryTree::pasteDirectories(VDirectory *p_destDir,
             }
 
             // Broadcast this update
-            emit directoryUpdated(destDir);
+            emit directoryUpdated(destDir, p_isCut ? UpdateAction::Moved : UpdateAction::InfoChanged);
         }
     }
 

@@ -45,7 +45,8 @@ public:
 
     // An image has been inserted. The image is relative.
     // @p_path is the absolute path of the inserted image.
-    void imageInserted(const QString &p_path);
+    // @p_url is the URL text within ().
+    void imageInserted(const QString &p_path, const QString &p_url);
 
     // Scroll to header @p_blockNumber.
     // Return true if @p_blockNumber is valid to scroll to.
@@ -58,6 +59,11 @@ public:
     QString getContent() const Q_DECL_OVERRIDE;
 
     void setContent(const QString &p_content, bool p_modified = false) Q_DECL_OVERRIDE;
+
+    void refreshPreview();
+
+    // Update m_initImages and m_insertedImages to handle the change of the note path.
+    void updateInitAndInsertedImages(bool p_fileChanged, UpdateAction p_act);
 
 public slots:
     bool jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat) Q_DECL_OVERRIDE;
@@ -217,5 +223,4 @@ private:
 
     bool m_freshEdit;
 };
-
 #endif // VMDEDITOR_H

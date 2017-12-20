@@ -188,3 +188,9 @@ void VEditTab::reloadFromDisk()
 void VEditTab::writeBackupFile()
 {
 }
+
+void VEditTab::handleFileOrDirectoryChange(bool p_isFile, UpdateAction p_act)
+{
+    Q_UNUSED(p_isFile);
+    Q_UNUSED(p_act);
+}

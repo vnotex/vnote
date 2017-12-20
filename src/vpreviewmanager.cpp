@@ -375,3 +375,14 @@ void VPreviewManager::clearBlockObsoletePreviewInfo(long long p_timeStamp,
 
     m_editor->relayout(affectedBlocks);
 }
+
+void VPreviewManager::refreshPreview()
+{
+    if (!m_previewEnabled) {
+        return;
+    }
+
+    clearPreview();
+
+    requestUpdateImageLinks();
+}

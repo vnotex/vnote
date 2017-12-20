@@ -982,3 +982,18 @@ void VMdTab::updateCursorStatus()
 {
     emit statusUpdated(fetchTabInfo(VEditTabInfo::InfoType::Cursor));
 }
+
+void VMdTab::handleFileOrDirectoryChange(bool p_isFile, UpdateAction p_act)
+{
+    // Reload the web view with new base URL.
+    m_headerFromEditMode = m_currentHeader;
+    m_webViewer->setHtml(VUtils::generateHtmlTemplate(m_mdConType, false),
+                         m_file->getBaseUrl());
+
+    if (m_editor) {
+        m_editor->updateInitAndInsertedImages(p_isFile, p_act);
+
+        // Refresh the previewed images in edit mode.
+        m_editor->refreshPreview();
+    }
+}

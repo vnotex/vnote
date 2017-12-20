@@ -247,7 +247,7 @@ void VFileList::fileInfo(VNoteFile *p_file)
             fillItem(item, p_file);
         }
 
-        emit fileUpdated(p_file);
+        emit fileUpdated(p_file, UpdateAction::InfoChanged);
     }
 }
 
@@ -800,7 +800,7 @@ void VFileList::pasteFiles(VDirectory *p_destDir,
 
         if (destFile) {
             ++nrPasted;
-            emit fileUpdated(destFile);
+            emit fileUpdated(destFile, p_isCut ? UpdateAction::Moved : UpdateAction::InfoChanged);
         }
     }
 

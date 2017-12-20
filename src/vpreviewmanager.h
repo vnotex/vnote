@@ -26,6 +26,9 @@ public:
     // Clear all the preview.
     void clearPreview();
 
+    // Refresh all the preview.
+    void refreshPreview();
+
 public slots:
     // Image links were updated from the highlighter.
     void imageLinksUpdated(const QVector<VElementRegion> &p_imageRegions);

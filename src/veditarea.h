@@ -115,8 +115,10 @@ public slots:
     // Scroll current tab to @p_header.
     void scrollToHeader(const VHeaderPointer &p_header);
 
-    void handleFileUpdated(const VFile *p_file);
-    void handleDirectoryUpdated(const VDirectory *p_dir);
+    void handleFileUpdated(const VFile *p_file, UpdateAction p_act);
+
+    void handleDirectoryUpdated(const VDirectory *p_dir, UpdateAction p_act);
+
     void handleNotebookUpdated(const VNotebook *p_notebook);
 
 private slots:

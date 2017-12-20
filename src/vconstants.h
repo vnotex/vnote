@@ -128,4 +128,13 @@ enum class CursorBlock
     LeftSide
 };
 
+enum class UpdateAction
+{
+    // The info of a file/directory has been changed.
+    InfoChanged = 0,
+
+    // The file/directory has been moved.
+    Moved
+};
+
 #endif

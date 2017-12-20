@@ -69,7 +69,7 @@ signals:
                      OpenFileMode p_mode = OpenFileMode::Read,
                      bool p_forceMode = false);
 
-    void fileUpdated(const VNoteFile *p_file);
+    void fileUpdated(const VNoteFile *p_file, UpdateAction p_act);
 
 private slots:
     void contextMenuRequested(QPoint pos);

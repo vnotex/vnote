@@ -43,8 +43,10 @@ public:
     // Scroll current tab to header @p_header.
     void scrollToHeader(const VHeaderPointer &p_header);
 
-    void updateFileInfo(const VFile *p_file);
-    void updateDirectoryInfo(const VDirectory *p_dir);
+    void updateFileInfo(const VFile *p_file, UpdateAction p_act);
+
+    void updateDirectoryInfo(const VDirectory *p_dir, UpdateAction p_act);
+
     void updateNotebookInfo(const VNotebook *p_notebook);
 
     VEditTab *getCurrentTab() const;

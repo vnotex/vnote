@@ -125,6 +125,7 @@ void VMdEditor::beginEdit()
 void VMdEditor::endEdit()
 {
     setReadOnlyAndHighlightCurrentLine(true);
+
     clearUnusedImages();
 }
 
@@ -138,6 +139,10 @@ void VMdEditor::saveFile()
 
     m_file->setContent(toPlainText());
     setModified(false);
+
+    clearUnusedImages();
+
+    initInitImages();
 }
 
 void VMdEditor::reloadFile()
@@ -544,7 +549,7 @@ void VMdEditor::clearUnusedImages()
     QVector<ImageLink> images = VUtils::fetchImagesFromMarkdownFile(m_file,
                                                                     ImageLink::LocalRelativeInternal);
 
-    QVector<QString> unusedImages;
+    QSet<QString> unusedImages;
 
     if (!m_insertedImages.isEmpty()) {
         for (int i = 0; i < m_insertedImages.size(); ++i) {
@@ -563,7 +568,7 @@ void VMdEditor::clearUnusedImages()
 
             // This inserted image is no longer in the file.
             if (j == images.size()) {
-                unusedImages.push_back(link.m_path);
+                unusedImages.insert(link.m_path);
             }
         }
 
@@ -584,7 +589,7 @@ void VMdEditor::clearUnusedImages()
 
         // Original local relative image is no longer in the file.
         if (j == images.size()) {
-            unusedImages.push_back(link.m_path);
+            unusedImages.insert(link.m_path);
         }
     }
 
@@ -621,27 +626,27 @@ void VMdEditor::clearUnusedImages()
                 g_config->setConfirmImagesCleanUp(dialog.getAskAgainEnabled());
 
                 for (auto const & item : items) {
-                    unusedImages.push_back(item.m_name);
+                    unusedImages.insert(item.m_name);
                 }
             }
         }
 
-        for (int i = 0; i < unusedImages.size(); ++i) {
+        for (auto const & item : unusedImages) {
             bool ret = false;
             if (m_file->getType() == FileType::Note) {
                 const VNoteFile *tmpFile = dynamic_cast<const VNoteFile *>((VFile *)m_file);
-                ret = VUtils::deleteFile(tmpFile->getNotebook(), unusedImages[i], false);
+                ret = VUtils::deleteFile(tmpFile->getNotebook(), item, false);
             } else if (m_file->getType() == FileType::Orphan) {
                 const VOrphanFile *tmpFile = dynamic_cast<const VOrphanFile *>((VFile *)m_file);
-                ret = VUtils::deleteFile(tmpFile, unusedImages[i], false);
+                ret = VUtils::deleteFile(tmpFile, item, false);
             } else {
                 Q_ASSERT(false);
             }
 
             if (!ret) {
-                qWarning() << "fail to delete unused original image" << unusedImages[i];
+                qWarning() << "fail to delete unused original image" << item;
             } else {
-                qDebug() << "delete unused image" << unusedImages[i];
+                qDebug() << "delete unused image" << item;
             }
         }
     }
@@ -731,10 +736,11 @@ void VMdEditor::insertFromMimeData(const QMimeData *p_source)
     VTextEdit::insertFromMimeData(p_source);
 }
 
-void VMdEditor::imageInserted(const QString &p_path)
+void VMdEditor::imageInserted(const QString &p_path, const QString &p_url)
 {
     ImageLink link;
     link.m_path = p_path;
+    link.m_url = p_url;
     if (m_file->useRelativeImageFolder()) {
         link.m_type = ImageLink::LocalRelativeInternal;
     } else {
@@ -905,5 +911,82 @@ void VMdEditor::setContent(const QString &p_content, bool p_modified)
         setTextCursor(cursor);
     } else {
         setPlainText(p_content);
+    }
+}
+
+void VMdEditor::refreshPreview()
+{
+    m_previewMgr->refreshPreview();
+}
+
+void VMdEditor::updateInitAndInsertedImages(bool p_fileChanged, UpdateAction p_act)
+{
+    if (p_fileChanged && p_act == UpdateAction::InfoChanged) {
+        return;
+    }
+
+    if (!isModified()) {
+        Q_ASSERT(m_insertedImages.isEmpty());
+        m_insertedImages.clear();
+
+        if (!m_initImages.isEmpty()) {
+            // Re-generate init images.
+            initInitImages();
+        }
+
+        return;
+    }
+
+    // Update init images.
+    QVector<ImageLink> tmp = m_initImages;
+    initInitImages();
+    Q_ASSERT(tmp.size() == m_initImages.size());
+
+    QDir dir(m_file->fetchBasePath());
+
+    // File has been moved.
+    if (p_fileChanged) {
+        // Since we clear unused images once user save the note, all images
+        // in m_initImages now are moved already.
+
+        // Update inserted images.
+        // Inserted images should be moved manually here. Then update all the
+        // paths.
+        for (auto & link : m_insertedImages) {
+            if (link.m_type == ImageLink::LocalAbsolute) {
+                continue;
+            }
+
+            QString newPath = QDir::cleanPath(dir.absoluteFilePath(link.m_url));
+            if (VUtils::equalPath(link.m_path, newPath)) {
+                continue;
+            }
+
+            if (!VUtils::copyFile(link.m_path, newPath, true)) {
+                VUtils::showMessage(QMessageBox::Warning,
+                                    tr("Warning"),
+                                    tr("Fail to move unsaved inserted image %1 to %2.")
+                                    .arg(link.m_path)
+                                    .arg(newPath),
+                                    tr("Please check it manually to avoid image loss."),
+                                    QMessageBox::Ok,
+                                    QMessageBox::Ok,
+                                    this);
+                continue;
+            }
+
+            link.m_path = newPath;
+        }
+    } else {
+        // Directory changed.
+        // Update inserted images.
+        for (auto & link : m_insertedImages) {
+            if (link.m_type == ImageLink::LocalAbsolute) {
+                continue;
+            }
+
+            QString newPath = QDir::cleanPath(dir.absoluteFilePath(link.m_url));
+            link.m_path = newPath;
+        }
     }
 }

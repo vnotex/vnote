@@ -86,14 +86,15 @@ void VMdEditOperations::insertImageFromQImage(const QString &title, const QStrin
         return;
     }
 
-    QString md = QString("![%1](%2/%3)").arg(title).arg(folderInLink).arg(fileName);
+    QString url = QString("%1/%2").arg(folderInLink).arg(fileName);
+    QString md = QString("![%1](%2)").arg(title).arg(url);
     insertTextAtCurPos(md);
 
     qDebug() << "insert image" << title << filePath;
 
     VMdEditor *mdEditor = dynamic_cast<VMdEditor *>(m_editor);
     Q_ASSERT(mdEditor);
-    mdEditor->imageInserted(filePath);
+    mdEditor->imageInserted(filePath, url);
 }
 
 void VMdEditOperations::insertImageFromPath(const QString &title, const QString &path,
@@ -126,14 +127,15 @@ void VMdEditOperations::insertImageFromPath(const QString &title, const QString 
         return;
     }
 
-    QString md = QString("![%1](%2/%3)").arg(title).arg(folderInLink).arg(fileName);
+    QString url = QString("%1/%2").arg(folderInLink).arg(fileName);
+    QString md = QString("![%1](%2)").arg(title).arg(url);
     insertTextAtCurPos(md);
 
     qDebug() << "insert image" << title << filePath;
 
     VMdEditor *mdEditor = dynamic_cast<VMdEditor *>(m_editor);
     Q_ASSERT(mdEditor);
-    mdEditor->imageInserted(filePath);
+    mdEditor->imageInserted(filePath, url);
 }
 
 bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)

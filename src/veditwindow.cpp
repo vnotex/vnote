@@ -793,18 +793,20 @@ void VEditWindow::handleTabVimStatusUpdated(const VVim *p_vim)
     }
 }
 
-void VEditWindow::updateFileInfo(const VFile *p_file)
+void VEditWindow::updateFileInfo(const VFile *p_file, UpdateAction p_act)
 {
     if (!p_file) {
         return;
     }
+
     int idx = findTabByFile(p_file);
     if (idx > -1) {
         updateTabStatus(idx);
+        getTab(idx)->handleFileOrDirectoryChange(true, p_act);
     }
 }
 
-void VEditWindow::updateDirectoryInfo(const VDirectory *p_dir)
+void VEditWindow::updateDirectoryInfo(const VDirectory *p_dir, UpdateAction p_act)
 {
     if (!p_dir) {
         return;
@@ -816,6 +818,7 @@ void VEditWindow::updateDirectoryInfo(const VDirectory *p_dir)
         QPointer<VFile> file = editor->getFile();
         if (p_dir->containsFile(file)) {
             updateTabStatus(i);
+            editor->handleFileOrDirectoryChange(false, p_act);
         }
     }
 }

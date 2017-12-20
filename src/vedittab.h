@@ -111,6 +111,9 @@ public:
     // Reload file from disk and reload the editor.
     void reloadFromDisk();
 
+    // Handle the change of file or directory, such as the file has been moved.
+    virtual void handleFileOrDirectoryChange(bool p_isFile, UpdateAction p_act);
+
 public slots:
     // Enter edit mode
     virtual void editFile() = 0;

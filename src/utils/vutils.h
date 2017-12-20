@@ -67,6 +67,10 @@ struct ImageLink
     };
 
     QString m_path;
+
+    // The url text in the link.
+    QString m_url;
+
     ImageLinkType m_type;
 };
 
@@ -120,6 +124,9 @@ public:
     // Need to open p_file and will close it if it is originally closed.
     static QVector<ImageLink> fetchImagesFromMarkdownFile(VFile *p_file,
                                                           ImageLink::ImageLinkType p_type = ImageLink::All);
+
+    // Return the absolute path of @p_url according to @p_basePath.
+    static QString imageLinkUrlToPath(const QString &p_basePath, const QString &p_url);
 
     // Create directories along the @p_path.
     // @p_path could be /home/tamlok/abc, /home/tamlok/abc/.

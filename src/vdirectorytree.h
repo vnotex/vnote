@@ -11,6 +11,7 @@
 #include "vdirectory.h"
 #include "vnotebook.h"
 #include "vnavigationmode.h"
+#include "vconstants.h"
 
 class VEditArea;
 class QLabel;
@@ -35,7 +36,7 @@ public:
 signals:
     void currentDirectoryChanged(VDirectory *p_directory);
 
-    void directoryUpdated(const VDirectory *p_directory);
+    void directoryUpdated(const VDirectory *p_directory, UpdateAction p_act);
 
 public slots:
     // Set directory tree to display a given notebook @p_notebook.

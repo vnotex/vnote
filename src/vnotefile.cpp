@@ -511,8 +511,15 @@ bool VNoteFile::copyFile(VDirectory *p_destDir,
 
     // Copy images.
     QDir parentDir(destFile->fetchBasePath());
+    QSet<QString> processedImages;
     for (int i = 0; i < images.size(); ++i) {
         const ImageLink &link = images[i];
+        if (processedImages.contains(link.m_path)) {
+            continue;
+        }
+
+        processedImages.insert(link.m_path);
+
         if (!QFileInfo::exists(link.m_path)) {
             VUtils::addErrMsg(p_errMsg, tr("Source image %1 does not exist.")
                                           .arg(link.m_path));
