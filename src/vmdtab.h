@@ -196,6 +196,9 @@ private:
     QTimer *m_backupTimer;
 
     bool m_backupFileChecked;
+
+    // Used to scroll to the header of edit mode in read mode.
+    VHeaderPointer m_headerFromEditMode;
 };
 
 inline VMdEditor *VMdTab::getEditor()

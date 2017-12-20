@@ -81,7 +81,8 @@ void VMdTab::showFileReadMode()
 {
     m_isEditMode = false;
 
-    VHeaderPointer header(m_currentHeader);
+    // Will recover the header when web side is ready.
+    m_headerFromEditMode = m_currentHeader;
 
     if (m_mdConType == MarkdownConverterType::Hoedown) {
         viewWebByConverter();
@@ -92,8 +93,6 @@ void VMdTab::showFileReadMode()
 
     m_stacks->setCurrentWidget(m_webViewer);
     clearSearchedWordHighlight();
-
-    scrollWebViewToHeader(header);
 
     updateStatus();
 }
@@ -395,6 +394,9 @@ void VMdTab::setupMarkdownViewer()
     connect(m_document, &VDocument::logicsFinished,
             this, [this]() {
                 if (m_ready & TabReady::ReadMode) {
+                    // Recover header from edit mode.
+                    scrollWebViewToHeader(m_headerFromEditMode);
+                    m_headerFromEditMode.clear();
                     return;
                 }
 
