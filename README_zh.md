@@ -17,12 +17,27 @@
 VNote不支持**XP**，因为QtWebEngineProcess无法在XP上运行。
 
 ## Linux
+
+### AppImage
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
 
 VNote当前为主要Linux发行版提供了一个AppImage格式的独立可执行文件。希望了解Linux系统下打包发布的开发人员能提供这方面进一步的帮助！
 
 - [Github releases](https://github.com/tamlok/vnote/releases)
 - master分支的最新构建：[ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
+
+### openSUSE
+目前 openSUSE Tumbleweed 可以通过 OBS 上的 `home:opensuse_zh` 源直接安装。您可以直接执行以下命令：
+
+```shell
+sudo zypper ar https://download.opensuse.org/repositories/home:/opensuse_zh/openSUSE_Tumbleweed/ home:opensuse_zh
+sudo zypper ref
+sudo zypper in vnote
+```
+
+其他架构请直接在 [software.opensuse.org](https://software.opensuse.org) 搜索 `vnote`。
+
+由于 Leap 42 及以下版本的 Qt 版本过低，我们无法在 OBS 上进行打包。请使用 AppImage 或自行构建。
 
 ## MacOS
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)

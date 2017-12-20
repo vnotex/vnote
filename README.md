@@ -17,12 +17,27 @@ Users from China can download the latest release of VNote from [Baidu Netdisk](h
 **NOT** supported in XP since QtWebEngineProcess used by VNote could not work in XP.
 
 ## Linux
+
+### AppImage
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
 
 There is an AppImage format standalone executable of VNote for major Linux distributions. **Any help for packaging and distribution on Linux is appreciated!**
 
 - [Github releases](https://github.com/tamlok/vnote/releases)
 - Latest builds on master: [ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
+
+### openSUSE
+Currently `vnote` on openSUSE Tumbleweed can be installed from `home:opensuse_zh` project on OBS. You can execute the following command directly:
+
+```shell
+sudo zypper ar https://download.opensuse.org/repositories/home:/opensuse_zh/openSUSE_Tumbleweed/ home:opensuse_zh
+sudo zypper ref
+sudo zypper in vnote
+```
+
+For other architectures, please search for `vnote` at [software.opensuse.org](https://software.opensuse.org).
+
+We don't support Leap 42 and below due to the Qt version. Please use AppImage or build it yourself.
 
 ## MacOS
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
