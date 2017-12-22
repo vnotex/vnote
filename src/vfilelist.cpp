@@ -1035,13 +1035,14 @@ void VFileList::handleOpenWithActionTriggered()
     if (item) {
         VNoteFile *file = getVFile(item);
         if (file
-            && (!editArea->isFileOpened(file) || editArea->closeFile(file, false))) {
+            && (!g_config->getCloseBeforeExternalEditor()
+                || !editArea->isFileOpened(file)
+                || editArea->closeFile(file, false))) {
             cmd.replace("%0", file->fetchPath());
             QProcess *process = new QProcess(this);
             connect(process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
                     process, &QProcess::deleteLater);
             process->start(cmd);
-            qDebug() << "open with" << cmd << "process" << process->processId();
         }
     }
 }

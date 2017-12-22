@@ -279,6 +279,9 @@ void VConfigManager::initialize()
 
     m_vimExemptionKeys = getConfigFromSettings("global",
                                                "vim_exemption_keys").toString();
+
+    m_closeBeforeExternalEditor = getConfigFromSettings("global",
+                                                        "close_before_external_editor").toBool();
 }
 
 void VConfigManager::initSettings()

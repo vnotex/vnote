@@ -397,6 +397,8 @@ public:
 
     QString getThemeFile() const;
 
+    bool getCloseBeforeExternalEditor() const;
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -768,6 +770,9 @@ private:
     // All the css styles.
     // [name] -> [file path].
     QMap<QString, QString> m_codeBlockCssStyles;
+
+    // Whether close note before open it via external editor.
+    bool m_closeBeforeExternalEditor;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1909,6 +1914,11 @@ inline void VConfigManager::setCodeBlockCssStyle(const QString &p_style)
 
     m_codeBlockCssStyle = p_style;
     setConfigToSettings("global", "code_block_css_style", m_codeBlockCssStyle);
+}
+
+inline bool VConfigManager::getCloseBeforeExternalEditor() const
+{
+    return m_closeBeforeExternalEditor;
 }
 
 #endif // VCONFIGMANAGER_H
