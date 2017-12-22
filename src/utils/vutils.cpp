@@ -23,11 +23,13 @@
 #include <QKeySequence>
 #include <QComboBox>
 #include <QStyledItemDelegate>
+#include <QWebEngineView>
 
 #include "vorphanfile.h"
 #include "vnote.h"
 #include "vnotebook.h"
 #include "hgmarkdownhighlighter.h"
+#include "vpreviewpage.h"
 
 extern VConfigManager *g_config;
 
@@ -564,6 +566,7 @@ QString VUtils::getLocale()
     if (locale == "System" || !isValidLanguage(locale)) {
         locale = QLocale::system().name();
     }
+
     return locale;
 }
 
@@ -596,6 +599,12 @@ DocType VUtils::docTypeFromName(const QString &p_name)
     }
 
     return DocType::Unknown;
+}
+
+QString VUtils::generateSimpleHtmlTemplate(const QString &p_body)
+{
+    QString html = VNote::s_simpleHtmlTemplate;
+    return html.replace(HtmlHolder::c_bodyHolder, p_body);
 }
 
 QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exportPdf)
@@ -684,9 +693,9 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exp
         htmlTemplate = VNote::s_markdownTemplate;
     }
 
-    htmlTemplate.replace(c_htmlJSHolder, jsFile);
+    htmlTemplate.replace(HtmlHolder::c_JSHolder, jsFile);
     if (!extraFile.isEmpty()) {
-        htmlTemplate.replace(c_htmlExtraHolder, extraFile);
+        htmlTemplate.replace(HtmlHolder::c_extraHolder, extraFile);
     }
 
     return htmlTemplate;
@@ -1127,4 +1136,37 @@ void VUtils::setDynamicProperty(QWidget *p_widget, const char *p_prop, bool p_va
     p_widget->setProperty(p_prop, p_val);
     p_widget->style()->unpolish(p_widget);
     p_widget->style()->polish(p_widget);
+}
+
+QWebEngineView *VUtils::getWebEngineView(QWidget *p_parent)
+{
+    QWebEngineView *viewer = new QWebEngineView(p_parent);
+    VPreviewPage *page = new VPreviewPage(viewer);
+    page->setBackgroundColor(Qt::transparent);
+    viewer->setPage(page);
+    viewer->setZoomFactor(g_config->getWebZoomFactor());
+
+    return viewer;
+}
+
+QString VUtils::getFileNameWithLocale(const QString &p_name)
+{
+    QString locale = getLocale();
+    locale = locale.split('_')[0];
+
+    QFileInfo fi(p_name);
+    QString baseName = fi.completeBaseName();
+    QString suffix = fi.suffix();
+
+    if (suffix.isEmpty()) {
+        return QString("%1_%2").arg(baseName).arg(locale);
+    } else {
+        return QString("%1_%2.%3").arg(baseName).arg(locale).arg(suffix);
+    }
+}
+
+QString VUtils::getDocFile(const QString &p_name)
+{
+    QDir dir(VNote::c_docFileFolder);
+    return dir.filePath(getFileNameWithLocale(p_name));
 }

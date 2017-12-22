@@ -6,7 +6,7 @@
 
 class QLabel;
 class QDialogButtonBox;
-class QTextBrowser;
+class QWebEngineView;
 class QProgressBar;
 class QShowEvent;
 
@@ -30,7 +30,7 @@ private:
     void checkUpdates();
 
     QLabel *m_versionLabel;
-    QTextBrowser *m_descriptionTb;
+    QWebEngineView *m_descriptionWV;
     QDialogButtonBox *m_btnBox;
 
     // Progress label and bar.

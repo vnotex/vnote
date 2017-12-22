@@ -161,6 +161,8 @@ private slots:
     // Open flash page in edit mode.
     void openFlashPage();
 
+    void customShortcut();
+
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
     void resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;

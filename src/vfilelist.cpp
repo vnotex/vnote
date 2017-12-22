@@ -17,6 +17,7 @@
 #include "vmainwindow.h"
 #include "utils/vimnavigationforwidget.h"
 #include "utils/viconutils.h"
+#include "dialog/vtipsdialog.h"
 
 extern VConfigManager *g_config;
 extern VNote *g_vnote;
@@ -1000,6 +1001,29 @@ void VFileList::initOpenWithMenu()
             });
 
     m_openWithMenu->addAction(defaultAct);
+
+    QAction *addAct = new QAction(VIconUtils::menuIcon(":/resources/icons/add_program.svg"),
+                                  tr("Add External Program"),
+                                  this);
+    addAct->setToolTip(tr("Add external program"));
+    connect(addAct, &QAction::triggered,
+            this, [this]() {
+                VTipsDialog dialog(VUtils::getDocFile("tips_external_program.md"),
+                                   tr("Add External Program"),
+                                   []() {
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+                                       // On macOS, it seems that we could not open that ini file directly.
+                                       QUrl url = QUrl::fromLocalFile(g_config->getConfigFolder());
+#else
+                                       QUrl url = QUrl::fromLocalFile(g_config->getConfigFilePath());
+#endif
+                                       QDesktopServices::openUrl(url);
+                                   },
+                                   this);
+                dialog.exec();
+            });
+
+    m_openWithMenu->addAction(addAct);
 }
 
 void VFileList::handleOpenWithActionTriggered()

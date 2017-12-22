@@ -22,8 +22,13 @@ extern VPalette *g_palette;
 // Meta word manager.
 VMetaWordManager *g_mwMgr;
 
+QString VNote::s_simpleHtmlTemplate;
+
 QString VNote::s_markdownTemplate;
+
 QString VNote::s_markdownTemplatePDF;
+
+QString VNote::s_sloganTemplate = "<div class=\"typewriter\"><h3>Hi Markdown, I'm VNote</h3></div>";
 
 const QString VNote::c_hoedownJsFile = ":/resources/hoedown.js";
 
@@ -52,11 +57,11 @@ const QString VNote::c_raphaelJsFile = ":/utils/flowchart.js/raphael.min.js";
 
 const QString VNote::c_highlightjsLineNumberExtraFile = ":/utils/highlightjs/highlightjs-line-numbers.min.js";
 
-const QString VNote::c_shortcutsDocFile_en = ":/resources/docs/shortcuts_en.md";
-const QString VNote::c_shortcutsDocFile_zh = ":/resources/docs/shortcuts_zh.md";
+const QString VNote::c_docFileFolder = ":/resources/docs";
 
-const QString VNote::c_markdownGuideDocFile_en = ":/resources/docs/markdown_guide_en.md";
-const QString VNote::c_markdownGuideDocFile_zh = ":/resources/docs/markdown_guide_zh.md";
+const QString VNote::c_shortcutsDocFile = "shortcuts.md";
+
+const QString VNote::c_markdownGuideDocFile = "markdown_guide.md";
 
 VNote::VNote(QObject *parent)
     : QObject(parent)
@@ -73,8 +78,22 @@ VNote::VNote(QObject *parent)
 void VNote::initTemplate()
 {
     if (s_markdownTemplate.isEmpty()) {
+        updateSimpletHtmlTemplate();
+
         updateTemplate();
     }
+}
+
+void VNote::updateSimpletHtmlTemplate()
+{
+    const QString c_simpleHtmlTemplatePath(":/resources/simple_template.html");
+
+    const QString cssHolder("CSS_PLACE_HOLDER");
+
+    s_simpleHtmlTemplate = VUtils::readFileFromDisk(c_simpleHtmlTemplatePath);
+    g_palette->fillStyle(s_simpleHtmlTemplate);
+
+    s_simpleHtmlTemplate.replace(cssHolder, g_config->getCssStyleUrl());
 }
 
 void VNote::updateTemplate()

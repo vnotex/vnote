@@ -17,6 +17,7 @@ class VOrphanFile;
 class VNotebook;
 class QWidget;
 class QComboBox;
+class QWebEngineView;
 
 #if !defined(V_ASSERT)
     #define V_ASSERT(cond) ((!(cond)) ? qt_assert(#cond, __FILE__, __LINE__) : qt_noop())
@@ -171,6 +172,8 @@ public:
     // Generate HTML template.
     static QString generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exportPdf);
 
+    static QString generateSimpleHtmlTemplate(const QString &p_body);
+
     // Get an available file name in @p_directory with base @p_baseFileName.
     // If there already exists a file named @p_baseFileName, try to add sequence
     // suffix to the name, such as _001.
@@ -273,7 +276,15 @@ public:
     // Create and return a QComboBox.
     static QComboBox *getComboBox(QWidget *p_parent = nullptr);
 
+    static QWebEngineView *getWebEngineView(QWidget *p_parent = nullptr);
+
     static void setDynamicProperty(QWidget *p_widget, const char *p_prop, bool p_val = true);
+
+    // Return a file name with locale.
+    static QString getFileNameWithLocale(const QString &p_name);
+
+    // Return a doc file path.
+    static QString getDocFile(const QString &p_name);
 
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )

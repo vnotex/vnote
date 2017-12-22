@@ -218,5 +218,17 @@
         <file>resources/themes/v_moonlight/v_moonlight.palette</file>
         <file>resources/themes/v_moonlight/v_moonlight.qss</file>
         <file>resources/themes/v_moonlight/v_moonlight_codeblock.css</file>
+        <file>resources/simple_template.html</file>
+        <file>resources/typewriter.css</file>
+        <file>resources/docs/tips_custom_shortcut_en.md</file>
+        <file>resources/docs/tips_custom_shortcut_zh.md</file>
+        <file>resources/icons/add_style.svg</file>
+        <file>resources/docs/tips_add_theme_en.md</file>
+        <file>resources/docs/tips_add_theme_zh.md</file>
+        <file>resources/docs/tips_add_style_en.md</file>
+        <file>resources/docs/tips_add_style_zh.md</file>
+        <file>resources/icons/add_program.svg</file>
+        <file>resources/docs/tips_external_program_en.md</file>
+        <file>resources/docs/tips_external_program_zh.md</file>
     </qresource>
 </RCC>

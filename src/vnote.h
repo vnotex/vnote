@@ -29,7 +29,12 @@ public:
 
     void initTemplate();
 
+    static QString s_sloganTemplate;
+
+    static QString s_simpleHtmlTemplate;
+
     static QString s_markdownTemplate;
+
     static QString s_markdownTemplatePDF;
 
     // Hoedown
@@ -66,11 +71,11 @@ public:
     // Highlight.js line number plugin
     static const QString c_highlightjsLineNumberExtraFile;
 
-    static const QString c_shortcutsDocFile_en;
-    static const QString c_shortcutsDocFile_zh;
+    static const QString c_docFileFolder;
 
-    static const QString c_markdownGuideDocFile_en;
-    static const QString c_markdownGuideDocFile_zh;
+    static const QString c_shortcutsDocFile;
+
+    static const QString c_markdownGuideDocFile;
 
     // Get the label style in Navigation mode.
     QString getNavigationLabelStyle(const QString &p_str) const;
@@ -96,6 +101,8 @@ public:
 
 public slots:
     void updateTemplate();
+
+    void updateSimpletHtmlTemplate();
 
 private:
     const QString &getMonospacedFont() const;

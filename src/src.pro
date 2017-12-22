@@ -102,7 +102,8 @@ SOURCES += main.cpp\
     vpalette.cpp \
     vbuttonmenuitem.cpp \
     utils/viconutils.cpp \
-    lineeditdelegate.cpp
+    lineeditdelegate.cpp \
+    dialog/vtipsdialog.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -191,7 +192,8 @@ HEADERS  += vmainwindow.h \
     vpalette.h \
     vbuttonmenuitem.h \
     utils/viconutils.h \
-    lineeditdelegate.h
+    lineeditdelegate.h \
+    dialog/vtipsdialog.h
 
 RESOURCES += \
     vnote.qrc \

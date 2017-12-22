@@ -90,9 +90,10 @@ code {
 }
 
 pre code {
-    margin: 0;
-    padding: 0;
-    border: none;
+    display: block;
+    overflow-x: auto;
+    padding: 0.5em;
+    border: 1px solid #373E47;
     color: #98C379;
 }
 

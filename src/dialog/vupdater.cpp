@@ -4,9 +4,13 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QTimer>
+#include <QWebEngineView>
 
 #include "vconfigmanager.h"
 #include "vdownloader.h"
+#include "vmarkdownconverter.h"
+#include "utils/vutils.h"
+#include "vnote.h"
 
 extern VConfigManager *g_config;
 
@@ -31,7 +35,8 @@ void VUpdater::setupUI()
     m_proBar = new QProgressBar();
     m_proBar->setTextVisible(false);
 
-    m_descriptionTb = new QTextBrowser();
+    m_descriptionWV = VUtils::getWebEngineView();
+    m_descriptionWV->setHtml(VUtils::generateSimpleHtmlTemplate(VNote::s_sloganTemplate));
 
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok);
     m_btnBox->button(QDialogButtonBox::Ok)->setProperty("SpecialBtn", true);
@@ -47,15 +52,17 @@ void VUpdater::setupUI()
     QHBoxLayout *topLayout = new QHBoxLayout();
     topLayout->addWidget(imgLabel);
     topLayout->addLayout(verLayout);
+    topLayout->addStretch();
 
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(topLayout);
-    mainLayout->addWidget(m_descriptionTb, 1);
+    mainLayout->addWidget(m_descriptionWV, 1);
     mainLayout->addWidget(m_btnBox);
 
     m_proLabel->hide();
     m_proBar->hide();
-    m_descriptionTb->hide();
+
+    m_descriptionWV->setMaximumSize(600, 400);
 
     setLayout(mainLayout);
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
@@ -64,7 +71,6 @@ void VUpdater::setupUI()
 
 void VUpdater::showEvent(QShowEvent *p_event)
 {
-    Q_UNUSED(p_event);
     QDialog::showEvent(p_event);
 
     QTimer *timer = new QTimer(this);
@@ -166,7 +172,13 @@ void VUpdater::parseResult(const QByteArray &p_data)
         m_proLabel->setText(tr("VNote is already the latest version."));
     }
 
-    m_descriptionTb->setText(releaseName + "\n==========\n" + body);
-    m_descriptionTb->show();
+    QString mdText = "# " + releaseName + "\n" + body;
+    VMarkdownConverter mdConverter;
+    QString toc;
+    QString html = mdConverter.generateHtml(mdText,
+                                            g_config->getMarkdownExtensions(),
+                                            toc);
+    html = VUtils::generateSimpleHtmlTemplate(html);
+    m_descriptionWV->setHtml(html);
     m_proBar->hide();
 }

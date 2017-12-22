@@ -35,6 +35,7 @@
 #include "vbuttonmenuitem.h"
 #include "vpalette.h"
 #include "utils/viconutils.h"
+#include "dialog/vtipsdialog.h"
 
 VMainWindow *g_mainWin;
 
@@ -706,13 +707,8 @@ void VMainWindow::initHelpMenu()
     mdGuideAct->setToolTip(tr("A quick guide of Markdown syntax"));
     connect(mdGuideAct, &QAction::triggered,
             this, [this](){
-                QString locale = VUtils::getLocale();
-                QString docName = VNote::c_markdownGuideDocFile_en;
-                if (locale == "zh_CN") {
-                    docName = VNote::c_markdownGuideDocFile_zh;
-                }
-
-                VFile *file = vnote->getOrphanFile(docName, false, true);
+                QString docFile = VUtils::getDocFile(VNote::c_markdownGuideDocFile);
+                VFile *file = vnote->getOrphanFile(docFile, false, true);
                 editArea->openFile(file, OpenFileMode::Read);
             });
 
@@ -965,28 +961,7 @@ void VMainWindow::initFileMenu()
     QAction *customShortcutAct = new QAction(tr("Custom Shortcuts"), this);
     customShortcutAct->setToolTip(tr("Custom some standard shortcuts"));
     connect(customShortcutAct, &QAction::triggered,
-            this, [this](){
-                int ret = VUtils::showMessage(QMessageBox::Information,
-                                              tr("Custom Shortcuts"),
-                                              tr("VNote supports customing some standard shorcuts by "
-                                                 "editing user's configuration file (vnote.ini). Please "
-                                                 "reference the shortcuts help documentation for more "
-                                                 "information."),
-                                              tr("Click \"OK\" to custom shortcuts."),
-                                              QMessageBox::Ok | QMessageBox::Cancel,
-                                              QMessageBox::Ok,
-                                              this);
-
-                if (ret == QMessageBox::Ok) {
-#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
-                    // On macOS, it seems that we could not open that ini file directly.
-                    QUrl url = QUrl::fromLocalFile(g_config->getConfigFolder());
-#else
-                    QUrl url = QUrl::fromLocalFile(g_config->getConfigFilePath());
-#endif
-                    QDesktopServices::openUrl(url);
-                }
-            });
+            this, &VMainWindow::customShortcut);
 
     fileMenu->addAction(customShortcutAct);
 
@@ -1523,6 +1498,24 @@ void VMainWindow::initRenderStyleMenu(QMenu *p_menu)
     QMenu *styleMenu = p_menu->addMenu(tr("Rendering &Style"));
     styleMenu->setToolTipsVisible(true);
 
+    QAction *addAct = newAction(VIconUtils::menuIcon(":/resources/icons/add_style.svg"),
+                                tr("Add Style"),
+                                styleMenu);
+    addAct->setToolTip(tr("Add custom style of read mode"));
+    connect(addAct, &QAction::triggered,
+            this, [this]() {
+                VTipsDialog dialog(VUtils::getDocFile("tips_add_style.md"),
+                                   tr("Add Style"),
+                                   []() {
+                                       QUrl url = QUrl::fromLocalFile(g_config->getStyleConfigFolder());
+                                       QDesktopServices::openUrl(url);
+                                   },
+                                   this);
+                dialog.exec();
+            });
+
+    styleMenu->addAction(addAct);
+
     QActionGroup *ag = new QActionGroup(this);
     connect(ag, &QActionGroup::triggered,
             this, [this](QAction *p_action) {
@@ -1557,6 +1550,24 @@ void VMainWindow::initCodeBlockStyleMenu(QMenu *p_menu)
 {
     QMenu *styleMenu = p_menu->addMenu(tr("Code Block Style"));
     styleMenu->setToolTipsVisible(true);
+
+    QAction *addAct = newAction(VIconUtils::menuIcon(":/resources/icons/add_style.svg"),
+                                tr("Add Style"),
+                                styleMenu);
+    addAct->setToolTip(tr("Add custom style of code block in read mode"));
+    connect(addAct, &QAction::triggered,
+            this, [this]() {
+                VTipsDialog dialog(VUtils::getDocFile("tips_add_style.md"),
+                                   tr("Add Style"),
+                                   []() {
+                                       QUrl url = QUrl::fromLocalFile(g_config->getCodeBlockStyleConfigFolder());
+                                       QDesktopServices::openUrl(url);
+                                   },
+                                   this);
+                dialog.exec();
+            });
+
+    styleMenu->addAction(addAct);
 
     QActionGroup *ag = new QActionGroup(this);
     connect(ag, &QActionGroup::triggered,
@@ -1683,6 +1694,24 @@ void VMainWindow::initEditorStyleMenu(QMenu *p_menu)
 {
     QMenu *styleMenu = p_menu->addMenu(tr("Editor &Style"));
     styleMenu->setToolTipsVisible(true);
+
+    QAction *addAct = newAction(VIconUtils::menuIcon(":/resources/icons/add_style.svg"),
+                                tr("Add Style"),
+                                styleMenu);
+    addAct->setToolTip(tr("Add custom style of editor"));
+    connect(addAct, &QAction::triggered,
+            this, [this]() {
+                VTipsDialog dialog(VUtils::getDocFile("tips_add_style.md"),
+                                   tr("Add Style"),
+                                   []() {
+                                       QUrl url = QUrl::fromLocalFile(g_config->getStyleConfigFolder());
+                                       QDesktopServices::openUrl(url);
+                                   },
+                                   this);
+                dialog.exec();
+            });
+
+    styleMenu->addAction(addAct);
 
     QActionGroup *ag = new QActionGroup(this);
     connect(ag, &QActionGroup::triggered,
@@ -2243,13 +2272,8 @@ void VMainWindow::enableImageCaption(bool p_checked)
 
 void VMainWindow::shortcutsHelp()
 {
-    QString locale = VUtils::getLocale();
-    QString docName = VNote::c_shortcutsDocFile_en;
-    if (locale == "zh_CN") {
-        docName = VNote::c_shortcutsDocFile_zh;
-    }
-
-    VFile *file = vnote->getOrphanFile(docName, false, true);
+    QString docFile = VUtils::getDocFile(VNote::c_shortcutsDocFile);
+    VFile *file = vnote->getOrphanFile(docFile, false, true);
     editArea->openFile(file, OpenFileMode::Read);
 }
 
@@ -2717,6 +2741,24 @@ void VMainWindow::initThemeMenu(QMenu *p_menu)
     QMenu *themeMenu = p_menu->addMenu(tr("Theme"));
     themeMenu->setToolTipsVisible(true);
 
+    QAction *addAct = newAction(VIconUtils::menuIcon(":/resources/icons/add_style.svg"),
+                                tr("Add Theme"),
+                                themeMenu);
+    addAct->setToolTip(tr("Add custom theme"));
+    connect(addAct, &QAction::triggered,
+            this, [this]() {
+                VTipsDialog dialog(VUtils::getDocFile("tips_add_theme.md"),
+                                   tr("Add Theme"),
+                                   []() {
+                                       QUrl url = QUrl::fromLocalFile(g_config->getThemeConfigFolder());
+                                       QDesktopServices::openUrl(url);
+                                   },
+                                   this);
+                dialog.exec();
+            });
+
+    themeMenu->addAction(addAct);
+
     QActionGroup *ag = new QActionGroup(this);
     connect(ag, &QActionGroup::triggered,
             this, [this](QAction *p_action) {
@@ -2743,4 +2785,21 @@ void VMainWindow::initThemeMenu(QMenu *p_menu)
             act->setChecked(true);
         }
     }
+}
+
+void VMainWindow::customShortcut()
+{
+    VTipsDialog dialog(VUtils::getDocFile("tips_custom_shortcut.md"),
+                       tr("Custom Shortcuts"),
+                       []() {
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+                           // On macOS, it seems that we could not open that ini file directly.
+                           QUrl url = QUrl::fromLocalFile(g_config->getConfigFolder());
+#else
+                           QUrl url = QUrl::fromLocalFile(g_config->getConfigFilePath());
+#endif
+                           QDesktopServices::openUrl(url);
+                       },
+                       this);
+    dialog.exec();
 }

@@ -32,8 +32,12 @@ static const qreal c_webZoomFactorMin = 0.25;
 static const int c_tabSequenceBase = 1;
 
 // HTML and JS.
-static const QString c_htmlJSHolder = "JS_PLACE_HOLDER";
-static const QString c_htmlExtraHolder = "<!-- EXTRA_PLACE_HOLDER -->";
+namespace HtmlHolder
+{
+    static const QString c_JSHolder = "JS_PLACE_HOLDER";
+    static const QString c_extraHolder = "<!-- EXTRA_PLACE_HOLDER -->";
+    static const QString c_bodyHolder = "<!-- BODY_PLACE_HOLDER -->";
+}
 
 // Directory Config file items.
 namespace DirConfig
