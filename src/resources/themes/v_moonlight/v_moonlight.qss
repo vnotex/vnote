@@ -441,6 +441,31 @@ QPushButton[ToolBoxActiveBtn="true"]:disabled {
     background-color: @pushbutton_disabled_bg;
 }
 
+QPushButton[AvatarBtn="true"] {
+    padding: 2px 4px 2px 4px;
+    margin: 0px;
+    border: none;
+    background-color: transparent;
+    min-width: -1;
+}
+
+QPushButton[AvatarBtn="true"]:hover {
+    background-color: @pushbutton_avatarbtn_hover_bg;
+}
+
+QPushButton[AvatarBtn="true"]:focus {
+    background-color: @pushbutton_avatarbtn_focus_bg;;
+}
+
+QPushButton[AvatarBtn="true"]:pressed {
+    background-color: @pushbutton_avatarbtn_pressed_bg;
+}
+
+QPushButton[AvatarBtn="true"]:disabled {
+    color: @pushbutton_disabled_fg;
+    background-color: @pushbutton_disabled_bg;
+}
+
 VButtonMenuItem {
     padding: 5px;
     padding-right: 30px;

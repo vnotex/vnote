@@ -12,7 +12,6 @@
 #include "veditarea.h"
 #include "voutline.h"
 #include "vnotebookselector.h"
-#include "vavatar.h"
 #include "dialog/vfindreplacedialog.h"
 #include "dialog/vsettingsdialog.h"
 #include "vcaptain.h"
@@ -83,8 +82,6 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
 
     initDockWindows();
 
-    initAvatar();
-
     changePanelView(m_panelViewState);
 
     restoreStateAndGeometry();
@@ -116,13 +113,15 @@ void VMainWindow::initCaptain()
     m_captain = new VCaptain(this);
     connect(m_captain, &VCaptain::captainModeChanged,
             this, [this](bool p_captainMode) {
-                static QString normalBaseColor = m_avatar->getBaseColor();
-                static QString captainModeColor = g_palette->color("avatar_captain_mode_border_bg");
+                static QString normalStyle = m_avatarBtn->styleSheet();
+                static QString captainStyle = QString("color: %1; background: %2;")
+                                                     .arg(g_palette->color("avatar_captain_mode_fg"))
+                                                     .arg(g_palette->color("avatar_captain_mode_bg"));
 
                 if (p_captainMode) {
-                    m_avatar->updateBaseColor(captainModeColor);
+                    m_avatarBtn->setStyleSheet(captainStyle);
                 } else {
-                    m_avatar->updateBaseColor(normalBaseColor);
+                    m_avatarBtn->setStyleSheet(normalStyle);
                 }
             });
 }
@@ -589,6 +588,10 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
         fileToolBar->setIconSize(p_iconSize);
     }
 
+    m_avatarBtn = new QPushButton("VNote", this);
+    m_avatarBtn->setProperty("AvatarBtn", true);
+    m_avatarBtn->setFocusPolicy(Qt::NoFocus);
+
     newRootDirAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/create_rootdir_tb.svg"),
                                 tr("New &Root Folder"),
                                 this);
@@ -665,6 +668,7 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     discardExitAct->setVisible(false);
     saveNoteAct->setEnabled(false);
 
+    fileToolBar->addWidget(m_avatarBtn);
     fileToolBar->addAction(newRootDirAct);
     fileToolBar->addAction(newNoteAct);
     fileToolBar->addAction(noteInfoAct);
@@ -1224,16 +1228,6 @@ void VMainWindow::initDockWindows()
     QAction *toggleAct = toolDock->toggleViewAction();
     toggleAct->setToolTip(tr("Toggle the tools dock widget"));
     viewMenu->addAction(toggleAct);
-}
-
-void VMainWindow::initAvatar()
-{
-    m_avatar = new VAvatar(this);
-    m_avatar->setAvatarPixmap(":/resources/icons/vnote.svg");
-    m_avatar->setColor(g_palette->color("avatar_border_bg"),
-                       g_palette->color("avatar_fg"),
-                       g_palette->color("avatar_bg"));
-    m_avatar->hide();
 }
 
 void VMainWindow::importNoteFromFile()
@@ -2117,12 +2111,6 @@ void VMainWindow::handleCurrentNotebookChanged(const VNotebook *p_notebook)
     newRootDirAct->setEnabled(p_notebook);
 }
 
-void VMainWindow::resizeEvent(QResizeEvent *event)
-{
-    repositionAvatar();
-    QMainWindow::resizeEvent(event);
-}
-
 void VMainWindow::keyPressEvent(QKeyEvent *event)
 {
     int key = event->key();
@@ -2135,17 +2123,6 @@ void VMainWindow::keyPressEvent(QKeyEvent *event)
         return;
     }
     QMainWindow::keyPressEvent(event);
-}
-
-void VMainWindow::repositionAvatar()
-{
-    int diameter = m_mainSplitter->pos().y();
-    int x = width() - diameter - 5;
-    int y = 0;
-    qDebug() << "avatar:" << diameter << x << y;
-    m_avatar->setDiameter(diameter);
-    m_avatar->move(x, y);
-    m_avatar->show();
 }
 
 bool VMainWindow::locateFile(VFile *p_file)

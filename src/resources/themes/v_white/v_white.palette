@@ -59,11 +59,10 @@ danger_pressed_bg=#AC2925
 
 [soft_defined]
 ; VAvatar.
-avatar_border_bg=@title_bg
-avatar_fg=@base_bg
-avatar_bg=@base_fg
-; The border background color of the avatar when Captain mode is triggered.
-avatar_captain_mode_border_bg=#6C6C6C
+; The foreground color of the avatar when Captain mode is triggered.
+avatar_captain_mode_fg=@base_bg
+; The background color of the avatar when Captain mode is triggered.
+avatar_captain_mode_bg=#6C6C6C
 
 ; Style of the label in Navigation mode.
 navigation_label_fg=#4D4D4D
@@ -155,6 +154,10 @@ pushbutton_cornerbtn_pressed_bg=@pressed_bg
 pushbutton_statusbtn_hover_bg=@hover_bg
 pushbutton_statusbtn_focus_bg=@focus_bg
 pushbutton_statusbtn_pressed_bg=@pressed_bg
+
+pushbutton_avatarbtn_hover_bg=@hover_bg
+pushbutton_avatarbtn_focus_bg=@focus_bg
+pushbutton_avatarbtn_pressed_bg=@pressed_bg
 
 pushbutton_flatbtn_hover_bg=@hover_bg
 pushbutton_flatbtn_focus_bg=@focus_bg

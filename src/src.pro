@@ -49,7 +49,6 @@ SOURCES += main.cpp\
     vfile.cpp \
     vnotebookselector.cpp \
     vnofocusitemdelegate.cpp \
-    vavatar.cpp \
     vmdedit.cpp \
     dialog/vfindreplacedialog.cpp \
     dialog/vsettingsdialog.cpp \
@@ -138,7 +137,6 @@ HEADERS  += vmainwindow.h \
     vfile.h \
     vnotebookselector.h \
     vnofocusitemdelegate.h \
-    vavatar.h \
     vmdedit.h \
     dialog/vfindreplacedialog.h \
     dialog/vsettingsdialog.h \

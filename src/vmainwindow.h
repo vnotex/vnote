@@ -26,7 +26,6 @@ class VEditArea;
 class VToolBox;
 class VOutline;
 class VNotebookSelector;
-class VAvatar;
 class VFindReplaceDialog;
 class VCaptain;
 class VVimIndicator;
@@ -165,7 +164,7 @@ private slots:
 
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
-    void resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
+
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 
     void changeEvent(QEvent *p_event) Q_DECL_OVERRIDE;
@@ -175,7 +174,9 @@ private:
     QWidget *setupDirectoryPanel();
 
     void initToolBar();
+
     void initFileToolBar(QSize p_iconSize = QSize());
+
     void initViewToolBar(QSize p_iconSize = QSize());
 
     void initNoteToolBar(QSize p_iconSize = QSize());
@@ -191,7 +192,6 @@ private:
     void initHelpMenu();
 
     void initDockWindows();
-    void initAvatar();
     void initPredefinedColorPixmaps();
     void initRenderBackgroundMenu(QMenu *menu);
 
@@ -214,7 +214,6 @@ private:
 
     void saveStateAndGeometry();
     void restoreStateAndGeometry();
-    void repositionAvatar();
 
     // Should init VCaptain before setupUI().
     void initCaptain();
@@ -304,7 +303,6 @@ private:
     // View and manage snippets.
     VSnippetList *m_snippetList;
 
-    VAvatar *m_avatar;
     VFindReplaceDialog *m_findReplaceDialog;
     VVimIndicator *m_vimIndicator;
     VTabIndicator *m_tabIndicator;
@@ -360,6 +358,8 @@ private:
     VAttachmentList *m_attachmentList;
 
     QPushButton *m_headingBtn;
+
+    QPushButton *m_avatarBtn;
 
     QVector<QPixmap> predefinedColorPixmaps;
 
