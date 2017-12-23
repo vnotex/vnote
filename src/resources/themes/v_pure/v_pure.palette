@@ -20,7 +20,7 @@ base_fg=#222222
 base_bg=#EAEAEA
 
 main_fg=@base_fg
-main_bg=#base_bg
+main_bg=@base_bg
 
 title_fg=@base_fg
 title_bg=@base_bg

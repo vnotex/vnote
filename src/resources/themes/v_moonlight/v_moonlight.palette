@@ -21,7 +21,7 @@ base_fg=#9DA5B4
 base_bg=#21252B
 
 main_fg=@base_fg
-main_bg=#base_bg
+main_bg=@base_bg
 
 title_fg=@base_fg
 title_bg=@base_bg
