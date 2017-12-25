@@ -223,7 +223,6 @@ sudo make install
 - [MathJax](https://www.mathjax.org/) (Apache-2.0)
 - [showdown](https://github.com/showdownjs/showdown) (Unknown)
 - [flowchart.js](https://github.com/adrai/flowchart.js) (MIT License)
-- 图标由九梦岛主(a326703305@qq.com)制作
 
 # 代码许可
 VNote使用[MIT许可](http://opensource.org/licenses/MIT)。

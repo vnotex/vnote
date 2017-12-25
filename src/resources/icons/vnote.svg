@@ -1,1 +1,76 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 82 82"><title>vnote</title><g id="图层_2" data-name="图层 2"><g id="图层_1-2" data-name="图层 1"><rect width="82" height="82" rx="11.76" ry="11.76" fill="#f2f2f2"/><path d="M50.29,12.74a1.52,1.52,0,0,1,1.52-1.52H62.73a.54.54,0,0,1,.38.92L51.21,24a.54.54,0,0,1-.92-.38Z" fill="#4d4d4d"/><path d="M19.23,28.27a1.52,1.52,0,0,1,1.52-1.52H31.66a.54.54,0,0,1,.38.92l-11.9,11.9a.54.54,0,0,1-.92-.38Z" fill="#4d4d4d"/><path d="M19.23,42.6a1.52,1.52,0,0,1,.45-1.08L32.79,28.41a.54.54,0,0,1,.92.38V40.9A1.52,1.52,0,0,1,33.26,42L20.15,55.1a.54.54,0,0,1-.92-.38Z" fill="#4d4d4d"/><rect x="19.23" y="11.21" width="14.48" height="14.48" rx="1.44" ry="1.44" fill="#c69c6d"/><path d="M34.76,43.8a1.52,1.52,0,0,1,1.52-1.52H62.73a.54.54,0,0,1,.38.92L35.68,70.63a.54.54,0,0,1-.92-.38Z" fill="#4d4d4d"/><path d="M36.8,41.23a.54.54,0,0,1-.38-.92L63.85,12.88a.54.54,0,0,1,.92.38V39.7a1.52,1.52,0,0,1-1.52,1.52Z" fill="#4d4d4d"/><path d="M20.52,58.36a1.52,1.52,0,0,1,0-2.16L32.79,43.94a.54.54,0,0,1,.92.38V70.25a.54.54,0,0,1-.92.38Z" fill="#4d4d4d"/></g></g></svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   id="svg8"
+   version="1.1"
+   viewBox="0 0 135.46666 135.46666"
+   height="512"
+   width="512">
+  <defs
+     id="defs2">
+    <clipPath
+       id="clipPath3757"
+       clipPathUnits="userSpaceOnUse">
+      <g
+         id="use3759"
+         style="fill:#00897b;fill-opacity:1">
+        <path
+           id="path4580"
+           d="M 26.458332,217.625 V 164.70834 H 0 v 79.375 z"
+           style="fill:#00897b;fill-opacity:1;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+      </g>
+    </clipPath>
+  </defs>
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="g881"
+     transform="translate(0,-161.53334)"
+     style="display:inline">
+    <path
+       style="fill:#00a392;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 53.181246,201.4854 V 175.0271 H 26.722914 v 26.45829 z"
+       id="path879" />
+  </g>
+  <g
+     style="display:inline"
+     transform="translate(0,-161.53334)"
+     id="g921">
+    <path
+       id="path941"
+       d="m 26.722914,204.13125 h 26.458332 v 79.37499 L 26.722914,257.04791 Z"
+       style="fill:#00897b;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+  </g>
+  <g
+     id="g889"
+     transform="translate(0,-161.53334)"
+     style="display:inline">
+    <path
+       id="path943"
+       d="M 108.74374,230.58958 55.827079,283.50624 V 230.58958 L 108.74374,177.67292 Z"
+       style="fill:#00897b;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+  </g>
+  <g
+     id="g901"
+     transform="translate(0,-161.53334)"
+     style="display:inline">
+    <path
+       style="fill:#00a392;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 108.74375,175.02723 H 82.285414 v 26.45833 z"
+       id="path899" />
+  </g>
+</svg>

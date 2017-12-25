@@ -1,1 +1,94 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 142 142"><title>vnote_cube</title><g id="图层_2" data-name="图层 2"><g id="图层_1-2" data-name="图层 1"><rect width="142" height="142" rx="11.76" ry="11.76" fill="#f2f2f2"/><path d="M12.6,13.8a1.88,1.88,0,0,1,1.88-1.87H64.66A1.87,1.87,0,0,1,66,15.12L15.8,65.31A1.88,1.88,0,0,1,12.6,64Z" fill="#4d4d4d"/><path d="M75.59,14.3a1.27,1.27,0,0,1,.9-2.18h48.42a1.27,1.27,0,0,1,.9,2.18L103.14,37a3.45,3.45,0,0,1-4.87,0Z" fill="#4d4d4d"/><path d="M42.1,46.41a1.27,1.27,0,0,1,2.18-.9L67,68.18a3.45,3.45,0,0,1,0,4.87L44.28,95.73a1.27,1.27,0,0,1-2.18-.9Z" fill="#4d4d4d"/><path d="M12.6,72.56a3.45,3.45,0,0,1,1-2.44L38.13,45.62a1.27,1.27,0,0,1,2.18.9V98.58a3.45,3.45,0,0,1-1,2.44L14.78,125.53a1.27,1.27,0,0,1-2.18-.9Z" fill="#4d4d4d"/><rect x="50.8" y="20.92" width="40" height="40" rx="3.45" ry="3.45" transform="translate(-8.2 62.05) rotate(-45)" fill="#c69c6d"/><path d="M17.09,128.92a1.27,1.27,0,0,1-.9-2.18L68.56,74.38a3.45,3.45,0,0,1,4.87,0l52.37,52.37a1.27,1.27,0,0,1-.9,2.18Z" fill="#4d4d4d"/><path d="M74.85,73a3.45,3.45,0,0,1,0-4.87l52.37-52.37a1.27,1.27,0,0,1,2.18.9V124.43a1.27,1.27,0,0,1-2.18.9Z" fill="#4d4d4d"/></g></g></svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   id="svg8"
+   version="1.1"
+   viewBox="0 0 135.46666 135.46666"
+   height="512"
+   width="512">
+  <defs
+     id="defs2">
+    <clipPath
+       id="clipPath3757"
+       clipPathUnits="userSpaceOnUse">
+      <g
+         id="use3759"
+         style="fill:#00897b;fill-opacity:1">
+        <path
+           id="path4580"
+           d="M 26.458332,217.625 V 164.70834 H 0 v 79.375 z"
+           style="fill:#00897b;fill-opacity:1;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+      </g>
+    </clipPath>
+  </defs>
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="g5077"
+     transform="translate(0,-161.53334)"
+     style="display:none">
+    <path
+       style="fill:#00897b;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 54.504164,229.26666 V 176.35 H 28.045832 v 79.375 l 26.458332,26.45833 z"
+       id="path5075" />
+  </g>
+  <g
+     style="display:none"
+     transform="translate(0,-161.53334)"
+     id="g5081">
+    <path
+       id="path5079"
+       d="m 80.962496,202.80833 -26.458332,26.45833 v 52.91667 L 107.42083,229.26666 V 176.35 Z"
+       style="fill:#00695c;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+  </g>
+  <g
+     style="display:none"
+     transform="translate(0,-161.53334)"
+     id="g5108">
+    <path
+       id="path5106"
+       d="M 54.504164,229.26666 V 176.35 H 28.045832 v 79.375 l 26.458332,26.45833 z"
+       style="fill:#00897b;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+  </g>
+  <g
+     id="g5085"
+     transform="translate(0,-161.53334)"
+     style="display:inline">
+    <path
+       style="fill:#26a69a;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 107.42083,176.35 H 80.962496 v 26.45833 z"
+       id="path5083" />
+  </g>
+  <g
+     id="g5112"
+     transform="translate(0,-161.53334)"
+     style="display:inline">
+    <path
+       style="fill:#009688;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 80.962496,202.80833 -26.458332,26.45833 v 52.91667 L 107.42083,229.26666 V 176.35 Z"
+       id="path5110" />
+  </g>
+  <g
+     id="g5116"
+     transform="translate(0,-161.53334)"
+     style="display:inline">
+    <path
+       style="fill:#4db6ac;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 54.504164,229.26666 V 176.35 H 28.045832 v 79.375 l 26.458332,26.45833 z"
+       id="path5114" />
+  </g>
+</svg>

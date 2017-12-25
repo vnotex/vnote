@@ -217,7 +217,6 @@ If you prefer command line on macOS, you could follow these steps.
 - [MathJax](https://www.mathjax.org/) (Apache-2.0)
 - [showdown](https://github.com/showdownjs/showdown) (Unknown)
 - [flowchart.js](https://github.com/adrai/flowchart.js) (MIT License)
-- Icons made by a326703305@qq.com
 
 # License
 VNote is licensed under the [MIT license](http://opensource.org/licenses/MIT).
