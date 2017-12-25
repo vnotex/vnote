@@ -18,6 +18,7 @@
 class QJsonObject;
 class QString;
 
+
 enum MarkdownConverterType
 {
     Hoedown = 0,
@@ -26,11 +27,23 @@ enum MarkdownConverterType
     Showdown
 };
 
+
 struct VColor
 {
     QString m_name;
     QString m_color; // #RGB or color name.
 };
+
+
+struct VExternalEditor
+{
+    QString m_name;
+
+    QString m_cmd;
+
+    QString m_shortcut;
+};
+
 
 struct MarkdownitOption
 {
@@ -390,7 +403,7 @@ public:
     bool getEnableBackupFile() const;
 
     // Get defined external editors.
-    QVector<QPair<QString, QString>> getExternalEditors() const;
+    QVector<VExternalEditor> getExternalEditors() const;
 
     const QString &getVimExemptionKeys() const;
 

@@ -975,18 +975,51 @@ void VFileList::initOpenWithMenu()
 
     auto programs = g_config->getExternalEditors();
     for (auto const & pa : programs) {
-        QAction *act = new QAction(pa.first, this);
-        act->setToolTip(tr("Open current note with %1").arg(pa.first));
-        act->setStatusTip(pa.second);
-        act->setData(pa.second);
+        QKeySequence seq = QKeySequence(pa.m_shortcut);
+        QString name = pa.m_name;
+        if (!seq.isEmpty()) {
+            name = QString("%1\t%2").arg(pa.m_name)
+                                    .arg(VUtils::getShortcutText(pa.m_shortcut));
+        }
+
+        QAction *act = new QAction(name, this);
+        act->setToolTip(tr("Open current note with %1").arg(pa.m_name));
+        act->setStatusTip(pa.m_cmd);
+        act->setData(pa.m_cmd);
+
+        if (!seq.isEmpty()) {
+            QShortcut *shortcut = new QShortcut(seq, this);
+            shortcut->setContext(Qt::WidgetWithChildrenShortcut);
+            connect(shortcut, &QShortcut::activated,
+                    this, [act](){
+                        act->trigger();
+                    });
+        }
+
         connect(act, &QAction::triggered,
                 this, &VFileList::handleOpenWithActionTriggered);
 
         m_openWithMenu->addAction(act);
     }
 
-    QAction *defaultAct = new QAction(tr("System's Default Program"), this);
+    QKeySequence seq(g_config->getShortcutKeySequence("OpenViaDefaultProgram"));
+    QString name = tr("System's Default Program");
+    if (!seq.isEmpty()) {
+        name = QString("%1\t%2").arg(name)
+                                .arg(VUtils::getShortcutText(g_config->getShortcutKeySequence("OpenViaDefaultProgram")));
+    }
+
+    QAction *defaultAct = new QAction(name, this);
     defaultAct->setToolTip(tr("Open current note with system's default program"));
+    if (!seq.isEmpty()) {
+        QShortcut *shortcut = new QShortcut(seq, this);
+        shortcut->setContext(Qt::WidgetWithChildrenShortcut);
+        connect(shortcut, &QShortcut::activated,
+                this, [defaultAct](){
+                    defaultAct->trigger();
+                });
+    }
+
     connect(defaultAct, &QAction::triggered,
             this, [this]() {
                 QListWidgetItem *item = fileList->currentItem();

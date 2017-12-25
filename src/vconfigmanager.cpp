@@ -1145,9 +1145,9 @@ QVector<VMagicWord> VConfigManager::getCustomMagicWords()
     return words;
 }
 
-QVector<QPair<QString, QString>> VConfigManager::getExternalEditors() const
+QVector<VExternalEditor> VConfigManager::getExternalEditors() const
 {
-    QVector<QPair<QString, QString>> ret;
+    QVector<VExternalEditor> ret;
     userSettings->beginGroup("external_editors");
     QStringList keys = userSettings->childKeys();
     for (auto const & key : keys) {
@@ -1155,7 +1155,24 @@ QVector<QPair<QString, QString>> VConfigManager::getExternalEditors() const
             continue;
         }
 
-        ret.push_back(QPair<QString, QString>(key, userSettings->value(key).toString()));
+        QStringList val = userSettings->value(key).toStringList();
+        if (val.size() > 2
+            || val.isEmpty()) {
+            continue;
+        }
+
+        VExternalEditor editor;
+        editor.m_name = key;
+        editor.m_cmd = val[0].trimmed();
+        if (editor.m_cmd.isEmpty()) {
+            continue;
+        }
+
+        if (val.size() == 2) {
+            editor.m_shortcut = val[1].trimmed();
+        }
+
+        ret.push_back(editor);
     }
 
     userSettings->endGroup();
