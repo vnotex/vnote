@@ -66,7 +66,9 @@ public:
     void focusNextTab(bool p_right);
     // Return true if the file list is shown.
     bool showOpenedFileList();
+
     bool activateTab(int p_sequence);
+
     // Switch to previous activated tab.
     bool alternateTab();
 

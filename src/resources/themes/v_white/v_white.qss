@@ -628,7 +628,7 @@ QTabBar::tab {
     background: @tabbar_bg;
     border: none;
     border-right: 1px solid @tabbar_border;
-    padding: 2px;
+    padding: 2px 0px 2px 0px;
 }
 
 QTabBar::tab:selected {

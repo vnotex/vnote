@@ -1027,10 +1027,16 @@ bool VEditWindow::showOpenedFileList()
 
 bool VEditWindow::activateTab(int p_sequence)
 {
-    if (p_sequence < c_tabSequenceBase || p_sequence >= (c_tabSequenceBase + count())) {
+    if (p_sequence < c_tabSequenceBase
+        || p_sequence >= (c_tabSequenceBase + count())) {
         return false;
     }
-    setCurrentIndex(p_sequence - c_tabSequenceBase);
+
+    int idx = p_sequence - c_tabSequenceBase;
+    setCurrentIndex(idx);
+    // Always need to focus to this tab to meet the requirement of Captain mode.
+    getTab(idx)->focusTab();
+
     return true;
 }
 

@@ -743,7 +743,7 @@ QTabBar::tab {
     border: none;
     border-top: 2px solid transparent;
     border-right: 1px solid @tabbar_border;
-    padding: 2px;
+    padding: 2px 0px 2px 0px;
 }
 
 QTabBar::tab:selected {
