@@ -92,7 +92,8 @@ void VConfigManager::initialize()
     m_autoIndent = getConfigFromSettings("global", "auto_indent").toBool();
     m_autoList = getConfigFromSettings("global", "auto_list").toBool();
 
-    readPredefinedColorsFromSettings();
+    readCustomColors();
+
     curBackgroundColor = getConfigFromSettings("global", "current_background_color").toString();
 
     updateEditStyle();
@@ -337,20 +338,26 @@ void VConfigManager::initFromSessionSettings()
                                                        "navi_splitter_state").toByteArray();
 }
 
-void VConfigManager::readPredefinedColorsFromSettings()
+void VConfigManager::readCustomColors()
 {
-    predefinedColors.clear();
-    int size = defaultSettings->beginReadArray("predefined_colors");
-    for (int i = 0; i < size; ++i) {
-        defaultSettings->setArrayIndex(i);
+    m_customColors.clear();
+    QStringList str = getConfigFromSettings("global", "custom_colors").toStringList();
+
+    for (auto const & item : str) {
+        QStringList parts = item.split(':', QString::SkipEmptyParts);
+        if (parts.size() != 2) {
+            continue;
+        }
+
+        if (!QColor(parts[1]).isValid()) {
+            continue;
+        }
+
         VColor color;
-        color.name = defaultSettings->value("name").toString();
-        color.rgb = defaultSettings->value("rgb").toString();
-        predefinedColors.append(color);
+        color.m_name = parts[0];
+        color.m_color = parts[1];
+        m_customColors.append(color);
     }
-    defaultSettings->endArray();
-    qDebug() << "read" << predefinedColors.size()
-             << "pre-defined colors from [predefined_colors] section";
 }
 
 void VConfigManager::readNotebookFromSettings(QSettings *p_settings,
@@ -690,14 +697,10 @@ void VConfigManager::updateEditStyle()
     QColor newColor = defaultColor;
     bool force = false;
     if (curBackgroundColor != "System") {
-        for (int i = 0; i < predefinedColors.size(); ++i) {
-            if (predefinedColors[i].name == curBackgroundColor) {
-                QString rgb = predefinedColors[i].rgb;
-                if (!rgb.isEmpty()) {
-                    newColor = QColor(VUtils::QRgbFromString(rgb));
-                    force = true;
-                }
-
+        for (int i = 0; i < m_customColors.size(); ++i) {
+            if (m_customColors[i].m_name == curBackgroundColor) {
+                newColor = QColor(m_customColors[i].m_color);
+                force = true;
                 break;
             }
         }
@@ -1040,17 +1043,27 @@ void VConfigManager::initDocSuffixes()
 {
     m_docSuffixes.clear();
 
-    QString mdSuffix = getConfigFromSettings("global",
-                                             "markdown_suffix").toString();
+    QStringList mdSuffix = getConfigFromSettings("global",
+                                                 "markdown_suffix").toStringList();
     if (mdSuffix.isEmpty()) {
         mdSuffix = getDefaultConfig("global",
-                                    "markdown_suffix").toString();
+                                    "markdown_suffix").toStringList();
+    }
+
+    for (auto it = mdSuffix.begin(); it != mdSuffix.end();) {
+        if (it->isEmpty()) {
+            it = mdSuffix.erase(it);
+        } else {
+            *it = it->toLower();
+            ++it;
+        }
     }
 
     Q_ASSERT(!mdSuffix.isEmpty());
-    QList<QString> md = mdSuffix.toLower().split(':', QString::SkipEmptyParts);
-    md.removeDuplicates();
-    m_docSuffixes[(int)DocType::Markdown] = md;
+
+    mdSuffix.removeDuplicates();
+
+    m_docSuffixes[(int)DocType::Markdown] = mdSuffix;
 
     QList<QString> list;
     list << "ls" << "list";

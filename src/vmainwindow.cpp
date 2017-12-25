@@ -50,6 +50,8 @@ const int VMainWindow::c_sharedMemTimerInterval = 1000;
 extern QFile g_logFile;
 #endif
 
+#define COLOR_PIXMAP_ICON_SIZE 64
+
 
 VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
     : QMainWindow(p_parent), m_guard(p_guard),
@@ -62,7 +64,6 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
     setWindowIcon(QIcon(":/resources/icons/vnote.ico"));
     vnote = new VNote(this);
     g_vnote = vnote;
-    initPredefinedColorPixmaps();
 
     if (g_config->getEnableCompactMode()) {
         m_panelViewState = PanelViewState::CompactMode;
@@ -1335,20 +1336,6 @@ void VMainWindow::setEditorBackgroundColor(QAction *action)
     g_config->setCurBackgroundColor(action->data().toString());
 }
 
-void VMainWindow::initPredefinedColorPixmaps()
-{
-    const QVector<VColor> &bgColors = g_config->getPredefinedColors();
-    predefinedColorPixmaps.clear();
-    int size = 256;
-    for (int i = 0; i < bgColors.size(); ++i) {
-        // Generate QPixmap filled in this color
-        QColor color(VUtils::QRgbFromString(bgColors[i].rgb));
-        QPixmap pixmap(size, size);
-        pixmap.fill(color);
-        predefinedColorPixmaps.append(pixmap);
-    }
-}
-
 void VMainWindow::initConverterMenu(QMenu *p_menu)
 {
     QMenu *converterMenu = p_menu->addMenu(tr("&Converter"));
@@ -1468,18 +1455,21 @@ void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
     }
     renderBgMenu->addAction(tmpAct);
 
-    const QVector<VColor> &bgColors = g_config->getPredefinedColors();
+    const QVector<VColor> &bgColors = g_config->getCustomColors();
     for (int i = 0; i < bgColors.size(); ++i) {
-        tmpAct = new QAction(bgColors[i].name, renderBackgroundAct);
+        tmpAct = new QAction(bgColors[i].m_name, renderBackgroundAct);
         tmpAct->setToolTip(tr("Set as the background color for Markdown rendering"));
         tmpAct->setCheckable(true);
-        tmpAct->setData(bgColors[i].name);
+        tmpAct->setData(bgColors[i].m_name);
 
 #if !defined(Q_OS_MACOS) && !defined(Q_OS_MAC)
-        tmpAct->setIcon(QIcon(predefinedColorPixmaps[i]));
+        QColor color(bgColors[i].m_color);
+        QPixmap pixmap(COLOR_PIXMAP_ICON_SIZE, COLOR_PIXMAP_ICON_SIZE);
+        pixmap.fill(color);
+        tmpAct->setIcon(QIcon(pixmap));
 #endif
 
-        if (curBgColor == bgColors[i].name) {
+        if (curBgColor == bgColors[i].m_name) {
             tmpAct->setChecked(true);
         }
 
@@ -1612,16 +1602,21 @@ void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
         tmpAct->setChecked(true);
     }
     backgroundColorMenu->addAction(tmpAct);
-    const QVector<VColor> &bgColors = g_config->getPredefinedColors();
+    const QVector<VColor> &bgColors = g_config->getCustomColors();
     for (int i = 0; i < bgColors.size(); ++i) {
-        tmpAct = new QAction(bgColors[i].name, backgroundColorAct);
+        tmpAct = new QAction(bgColors[i].m_name, backgroundColorAct);
         tmpAct->setToolTip(tr("Set as the background color for editor"));
         tmpAct->setCheckable(true);
-        tmpAct->setData(bgColors[i].name);
+        tmpAct->setData(bgColors[i].m_name);
+
 #if !defined(Q_OS_MACOS) && !defined(Q_OS_MAC)
-        tmpAct->setIcon(QIcon(predefinedColorPixmaps[i]));
+        QColor color(bgColors[i].m_color);
+        QPixmap pixmap(COLOR_PIXMAP_ICON_SIZE, COLOR_PIXMAP_ICON_SIZE);
+        pixmap.fill(color);
+        tmpAct->setIcon(QIcon(pixmap));
 #endif
-        if (curBgColor == bgColors[i].name) {
+
+        if (curBgColor == bgColors[i].m_name) {
             tmpAct->setChecked(true);
         }
 

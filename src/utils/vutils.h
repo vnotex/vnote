@@ -86,9 +86,6 @@ public:
 
     static QJsonObject readJsonFromDisk(const QString &p_filePath);
 
-    // Transform FFFFFF string to QRgb
-    static QRgb QRgbFromString(const QString &str);
-
     static QString generateImageFileName(const QString &path, const QString &title,
                                          const QString &format = "png");
 

@@ -101,21 +101,21 @@ void VNote::updateTemplate()
     const QString c_markdownTemplatePath(":/resources/markdown_template.html");
 
     // Get background color
-    QString rgb;
+    QString color;
     const QString &curRenderBg = g_config->getCurRenderBackgroundColor();
-    const QVector<VColor> &predefinedColors = g_config->getPredefinedColors();
+    const QVector<VColor> &customColors = g_config->getCustomColors();
     if (curRenderBg != "System") {
-        for (int i = 0; i < predefinedColors.size(); ++i) {
-            if (predefinedColors[i].name == curRenderBg) {
-                rgb = predefinedColors[i].rgb;
+        for (int i = 0; i < customColors.size(); ++i) {
+            if (customColors[i].m_name == curRenderBg) {
+                color = customColors[i].m_color;
                 break;
             }
         }
     }
 
     QString cssStyle;
-    if (!rgb.isEmpty()) {
-        cssStyle += "body { background-color: #" + rgb + " !important; }\n";
+    if (!color.isEmpty()) {
+        cssStyle += "body { background-color: " + color + " !important; }\n";
     }
 
     if (g_config->getEnableImageConstraint()) {

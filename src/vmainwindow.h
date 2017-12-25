@@ -192,7 +192,7 @@ private:
     void initHelpMenu();
 
     void initDockWindows();
-    void initPredefinedColorPixmaps();
+
     void initRenderBackgroundMenu(QMenu *menu);
 
     void initRenderStyleMenu(QMenu *p_menu);
@@ -360,8 +360,6 @@ private:
     QPushButton *m_headingBtn;
 
     QPushButton *m_avatarBtn;
-
-    QVector<QPixmap> predefinedColorPixmaps;
 
     // Single instance guard.
     VSingleInstanceGuard *m_guard;

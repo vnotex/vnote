@@ -28,8 +28,8 @@ enum MarkdownConverterType
 
 struct VColor
 {
-    QString name;
-    QString rgb; // 'FFFFFF', without '#'
+    QString m_name;
+    QString m_color; // #RGB or color name.
 };
 
 struct MarkdownitOption
@@ -147,7 +147,7 @@ public:
     bool getAutoList() const;
     void setAutoList(bool p_autoList);
 
-    const QVector<VColor> &getPredefinedColors() const;
+    const QVector<VColor> &getCustomColors() const;
 
     const QString &getCurBackgroundColor() const;
     void setCurBackgroundColor(const QString &colorName);
@@ -435,7 +435,7 @@ private:
     void writeNotebookToSettings(QSettings *p_settings,
                                  const QVector<VNotebook *> &p_notebooks);
 
-    void readPredefinedColorsFromSettings();
+    void readCustomColors();
 
     // 1. Update styles common in HTML and Markdown;
     // 2. Update styles for Markdown.
@@ -526,8 +526,10 @@ private:
     bool m_autoList;
 
     // App defined color
-    QVector<VColor> predefinedColors;
+    QVector<VColor> m_customColors;
+
     QString curBackgroundColor;
+
     QString curRenderBackgroundColor;
 
     bool m_toolsDockChecked;
@@ -1020,9 +1022,9 @@ inline void VConfigManager::setAutoList(bool p_autoList)
                         m_autoList);
 }
 
-inline const QVector<VColor>& VConfigManager::getPredefinedColors() const
+inline const QVector<VColor>& VConfigManager::getCustomColors() const
 {
-    return predefinedColors;
+    return m_customColors;
 }
 
 inline const QString& VConfigManager::getCurBackgroundColor() const

@@ -116,28 +116,6 @@ QJsonObject VUtils::readJsonFromDisk(const QString &p_filePath)
     return QJsonDocument::fromJson(file.readAll()).object();
 }
 
-QRgb VUtils::QRgbFromString(const QString &str)
-{
-    Q_ASSERT(str.length() == 6);
-    QString rStr = str.left(2);
-    QString gStr = str.mid(2, 2);
-    QString bStr = str.right(2);
-
-    bool ok, ret = true;
-    int red = rStr.toInt(&ok, 16);
-    ret = ret && ok;
-    int green = gStr.toInt(&ok, 16);
-    ret = ret && ok;
-    int blue = bStr.toInt(&ok, 16);
-    ret = ret && ok;
-
-    if (ret) {
-        return qRgb(red, green, blue);
-    }
-    qWarning() << "fail to construct QRgb from string" << str;
-    return QRgb();
-}
-
 QString VUtils::generateImageFileName(const QString &path,
                                       const QString &title,
                                       const QString &format)
