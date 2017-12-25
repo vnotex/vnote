@@ -199,10 +199,19 @@ public:
     bool isCustomWebZoomFactor();
 
     const QString &getEditorCurrentLineBg() const;
+
     const QString &getEditorTrailingSpaceBg() const;
+
+    const QString &getEditorSelectedWordFg() const;
     const QString &getEditorSelectedWordBg() const;
+
+    const QString &getEditorSearchedWordFg() const;
     const QString &getEditorSearchedWordBg() const;
+
+    const QString &getEditorSearchedWordCursorFg() const;
     const QString &getEditorSearchedWordCursorBg() const;
+
+    const QString &getEditorIncrementalSearchedWordFg() const;
     const QString &getEditorIncrementalSearchedWordBg() const;
 
     const QString &getEditorVimNormalBg() const;
@@ -578,16 +587,24 @@ private:
     // Trailing space background color in editor.
     QString m_editorTrailingSpaceBg;
 
-    // Background color of selected word in editor.
+    // Foreground and background color of selected word in editor.
+    QString m_editorSelectedWordFg;
+
     QString m_editorSelectedWordBg;
 
-    // Background color of searched word in editor.
+    // Foreground and background color of searched word in editor.
+    QString m_editorSearchedWordFg;
+
     QString m_editorSearchedWordBg;
 
-    // Background color of searched word under cursor in editor.
+    // Foreground and background color of searched word under cursor in editor.
+    QString m_editorSearchedWordCursorFg;
+
     QString m_editorSearchedWordCursorBg;
 
-    // Background color of incremental searched word in editor.
+    // Foreground and background color of incremental searched word in editor.
+    QString m_editorIncrementalSearchedWordFg;
+
     QString m_editorIncrementalSearchedWordBg;
 
     // Enable colde block syntax highlight.
@@ -1260,9 +1277,19 @@ inline const QString &VConfigManager::getEditorTrailingSpaceBg() const
     return m_editorTrailingSpaceBg;
 }
 
+inline const QString &VConfigManager::getEditorSelectedWordFg() const
+{
+    return m_editorSelectedWordFg;
+}
+
 inline const QString &VConfigManager::getEditorSelectedWordBg() const
 {
     return m_editorSelectedWordBg;
+}
+
+inline const QString &VConfigManager::getEditorSearchedWordFg() const
+{
+    return m_editorSearchedWordFg;
 }
 
 inline const QString &VConfigManager::getEditorSearchedWordBg() const
@@ -1270,9 +1297,19 @@ inline const QString &VConfigManager::getEditorSearchedWordBg() const
     return m_editorSearchedWordBg;
 }
 
+inline const QString &VConfigManager::getEditorSearchedWordCursorFg() const
+{
+    return m_editorSearchedWordCursorFg;
+}
+
 inline const QString &VConfigManager::getEditorSearchedWordCursorBg() const
 {
     return m_editorSearchedWordCursorBg;
+}
+
+inline const QString &VConfigManager::getEditorIncrementalSearchedWordFg() const
+{
+    return m_editorIncrementalSearchedWordFg;
 }
 
 inline const QString &VConfigManager::getEditorIncrementalSearchedWordBg() const

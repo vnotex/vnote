@@ -21,13 +21,17 @@ trailing-space: 636d81
 line-number-background: 2c313a
 line-number-foreground: 5c6370
 # [VNote] Style for selected word highlight
-selected-word-background: 454bb2
+selected-word-foreground: 222222
+selected-word-background: dfdf00
 # [VNote] Style for searched word highlight
-searched-word-background: 424956
+searched-word-foreground: 222222
+searched-word-background: 4db6ac
 # [VNote] Style for searched word under cursor highlight
-searched-word-cursor-background: 596173
+searched-word-cursor-foreground: 222222
+searched-word-cursor-background: 66bb6a
 # [VNote] Style for incremental searched word highlight
-incremental-searched-word-background: 596173
+incremental-searched-word-foreground: 222222
+incremental-searched-word-background: ce93d8
 # [VNote] Style for color column in fenced code block
 color-column-background: c9302c
 color-column-foreground: eeeeee

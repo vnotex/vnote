@@ -276,10 +276,18 @@ private:
     // Selections are indexed by SelectionId.
     QVector<QList<QTextEdit::ExtraSelection> > m_extraSelections;
 
-    QColor m_selectedWordColor;
-    QColor m_searchedWordColor;
-    QColor m_searchedWordCursorColor;
-    QColor m_incrementalSearchedWordColor;
+    QColor m_selectedWordFg;
+    QColor m_selectedWordBg;
+
+    QColor m_searchedWordFg;
+    QColor m_searchedWordBg;
+
+    QColor m_searchedWordCursorFg;
+    QColor m_searchedWordCursorBg;
+
+    QColor m_incrementalSearchedWordFg;
+    QColor m_incrementalSearchedWordBg;
+
     QColor m_trailingSpaceColor;
 
     // Timer for extra selections highlight.

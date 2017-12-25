@@ -548,23 +548,7 @@ QString VConfigManager::getLogFilePath() const
 
 void VConfigManager::updateMarkdownEditStyle()
 {
-    static const QString defaultCurrentLineBackground = "#C5CAE9";
-
-    static const QString defaultVimNormalBg = "#BCBCBC";
-    static const QString defaultVimInsertBg = "#C5CAE9";
-    static const QString defaultVimVisualBg = "#90CAF9";
-    static const QString defaultVimReplaceBg = "#F8BBD0";
-
-    static const QString defaultTrailingSpaceBg = "#A8A8A8";
-    static const QString defaultSelectedWordBg = "#DFDF00";
-    static const QString defaultSearchedWordBg = "#81C784";
-    static const QString defaultSearchedWordCursorBg = "#4DB6AC";
-    static const QString defaultIncrementalSearchedWordBg = "#CE93D8";
-    static const QString defaultLineNumberBg = "#BDBDBD";
-    static const QString defaultLineNumberFg = "#424242";
-    static const QString defaultColorColumnBg = "#DD0000";
-    static const QString defaultColorColumnFg = "#FFFF00";
-    static const QString defaultPreviewImageLineFg = "#9575CD";
+    static const QString defaultColor = "#00897B";
 
     // Read style file .mdhl
     QString file(getEditorStyleFile());
@@ -588,11 +572,11 @@ void VConfigManager::updateMarkdownEditStyle()
     mdHighlightingStyles = parser.fetchMarkdownStyles(mdEditFont);
     m_codeBlockStyles = parser.fetchCodeBlockStyles(mdEditFont);
 
-    m_editorCurrentLineBg = defaultCurrentLineBackground;
-    m_editorVimInsertBg = defaultVimInsertBg;
-    m_editorVimNormalBg = defaultVimNormalBg;
-    m_editorVimVisualBg = defaultVimVisualBg;
-    m_editorVimReplaceBg = defaultVimReplaceBg;
+    m_editorCurrentLineBg = defaultColor;
+    m_editorVimInsertBg = defaultColor;
+    m_editorVimNormalBg = defaultColor;
+    m_editorVimVisualBg = defaultColor;
+    m_editorVimReplaceBg = defaultColor;
 
     auto editorCurrentLineIt = styles.find("editor-current-line");
     if (editorCurrentLineIt != styles.end()) {
@@ -623,16 +607,21 @@ void VConfigManager::updateMarkdownEditStyle()
         }
     }
 
-    m_editorTrailingSpaceBg = defaultTrailingSpaceBg;
-    m_editorSelectedWordBg = defaultSelectedWordBg;
-    m_editorSearchedWordBg = defaultSearchedWordBg;
-    m_editorSearchedWordCursorBg = defaultSearchedWordCursorBg;
-    m_editorIncrementalSearchedWordBg = defaultIncrementalSearchedWordBg;
-    m_editorLineNumberBg = defaultLineNumberBg;
-    m_editorLineNumberFg = defaultLineNumberFg;
-    m_editorColorColumnBg = defaultColorColumnBg;
-    m_editorColorColumnFg = defaultColorColumnFg;
-    m_editorPreviewImageLineFg = defaultPreviewImageLineFg;
+    m_editorTrailingSpaceBg = defaultColor;
+    m_editorSelectedWordFg = defaultColor;
+    m_editorSelectedWordBg = defaultColor;
+    m_editorSearchedWordFg = defaultColor;
+    m_editorSearchedWordBg = defaultColor;
+    m_editorSearchedWordCursorFg = defaultColor;
+    m_editorSearchedWordCursorBg = defaultColor;
+    m_editorIncrementalSearchedWordFg = defaultColor;
+    m_editorIncrementalSearchedWordBg = defaultColor;
+    m_editorLineNumberBg = defaultColor;
+    m_editorLineNumberFg = defaultColor;
+    m_editorColorColumnBg = defaultColor;
+    m_editorColorColumnFg = defaultColor;
+    m_editorPreviewImageLineFg = defaultColor;
+
     auto editorIt = styles.find("editor");
     if (editorIt != styles.end()) {
         auto it = editorIt->find("trailing-space");
@@ -650,9 +639,19 @@ void VConfigManager::updateMarkdownEditStyle()
             m_editorLineNumberFg = "#" + *it;
         }
 
+        it = editorIt->find("selected-word-foreground");
+        if (it != editorIt->end()) {
+            m_editorSelectedWordFg = "#" + *it;
+        }
+
         it = editorIt->find("selected-word-background");
         if (it != editorIt->end()) {
             m_editorSelectedWordBg = "#" + *it;
+        }
+
+        it = editorIt->find("searched-word-foreground");
+        if (it != editorIt->end()) {
+            m_editorSearchedWordFg = "#" + *it;
         }
 
         it = editorIt->find("searched-word-background");
@@ -660,9 +659,19 @@ void VConfigManager::updateMarkdownEditStyle()
             m_editorSearchedWordBg = "#" + *it;
         }
 
+        it = editorIt->find("searched-word-cursor-foreground");
+        if (it != editorIt->end()) {
+            m_editorSearchedWordCursorFg = "#" + *it;
+        }
+
         it = editorIt->find("searched-word-cursor-background");
         if (it != editorIt->end()) {
             m_editorSearchedWordCursorBg = "#" + *it;
+        }
+
+        it = editorIt->find("incremental-searched-word-foreground");
+        if (it != editorIt->end()) {
+            m_editorIncrementalSearchedWordFg = "#" + *it;
         }
 
         it = editorIt->find("incremental-searched-word-background");

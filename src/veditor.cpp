@@ -37,10 +37,18 @@ void VEditor::init()
 
     m_document = documentW();
 
-    m_selectedWordColor = QColor(g_config->getEditorSelectedWordBg());
-    m_searchedWordColor = QColor(g_config->getEditorSearchedWordBg());
-    m_searchedWordCursorColor = QColor(g_config->getEditorSearchedWordCursorBg());
-    m_incrementalSearchedWordColor = QColor(g_config->getEditorIncrementalSearchedWordBg());
+    m_selectedWordFg = QColor(g_config->getEditorSelectedWordFg());
+    m_selectedWordBg = QColor(g_config->getEditorSelectedWordBg());
+
+    m_searchedWordFg = QColor(g_config->getEditorSearchedWordFg());
+    m_searchedWordBg = QColor(g_config->getEditorSearchedWordBg());
+
+    m_searchedWordCursorFg = QColor(g_config->getEditorSearchedWordCursorFg());
+    m_searchedWordCursorBg = QColor(g_config->getEditorSearchedWordCursorBg());
+
+    m_incrementalSearchedWordFg = QColor(g_config->getEditorIncrementalSearchedWordFg());
+    m_incrementalSearchedWordBg = QColor(g_config->getEditorIncrementalSearchedWordBg());
+
     m_trailingSpaceColor = QColor(g_config->getEditorTrailingSpaceBg());
 
     QPixmap wrapPixmap(":/resources/icons/search_wrap.svg");
@@ -314,7 +322,8 @@ void VEditor::highlightSelectedWord()
     }
 
     QTextCharFormat format;
-    format.setBackground(m_selectedWordColor);
+    format.setForeground(m_selectedWordFg);
+    format.setBackground(m_selectedWordBg);
     highlightTextAll(text,
                      FindOption::CaseSensitive,
                      SelectionId::SelectedWord,
@@ -494,7 +503,8 @@ void VEditor::highlightIncrementalSearchedWord(const QTextCursor &p_cursor)
 
     selects.clear();
     QTextEdit::ExtraSelection select;
-    select.format.setBackground(m_incrementalSearchedWordColor);
+    select.format.setForeground(m_incrementalSearchedWordFg);
+    select.format.setBackground(m_incrementalSearchedWordBg);
     select.cursor = p_cursor;
     selects.append(select);
 
@@ -657,7 +667,8 @@ void VEditor::highlightSearchedWord(const QString &p_text, uint p_options)
     }
 
     QTextCharFormat format;
-    format.setBackground(m_searchedWordColor);
+    format.setForeground(m_searchedWordFg);
+    format.setBackground(m_searchedWordBg);
     highlightTextAll(p_text, p_options, SelectionId::SearchedKeyword, format);
 }
 
@@ -675,7 +686,8 @@ void VEditor::highlightSearchedWordUnderCursor(const QTextCursor &p_cursor)
 
     selects.clear();
     QTextEdit::ExtraSelection select;
-    select.format.setBackground(m_searchedWordCursorColor);
+    select.format.setForeground(m_searchedWordCursorFg);
+    select.format.setBackground(m_searchedWordCursorBg);
     select.cursor = p_cursor;
     selects.append(select);
 
