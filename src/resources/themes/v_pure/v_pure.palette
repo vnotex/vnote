@@ -12,6 +12,7 @@ codeblock_css_file=v_pure_codeblock.css
 master_fg=#F5F5F5
 master_bg=#00897B
 master_light_bg=#80CBC4
+master_dark_bg=#00796B
 master_focus_bg=#009688
 master_hover_bg=#009688
 master_pressed_bg=#00796B
@@ -207,6 +208,8 @@ pushbutton_toolboxbtn_active_pressed_bg=@master_pressed_bg
 button_icon_fg=@icon_fg
 button_icon_danger_fg=@danger_icon_fg
 
+buttonmenuitem_decoration_text_fg=@master_dark_bg
+
 ; ComboBox.
 combobox_border=@border_bg
 combobox_fg=@content_fg
@@ -220,7 +223,7 @@ combobox_focus_bg=@edit_focus_bg
 combobox_focus_border=@edit_focus_border
 combobox_item_icon_fg=@item_icon_fg
 
-combobox_notebookselector_fg=@master_pressed_bg
+combobox_notebookselector_fg=@master_dark_bg
 combobox_notebookselector_bg=@combobox_bg
 combobox_notebookselector_border=@master_bg
 combobox_notebookselector_hover_fg=@master_bg

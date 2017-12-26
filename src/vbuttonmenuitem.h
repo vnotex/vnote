@@ -2,6 +2,8 @@
 #define VBUTTONMENUITEM_H
 
 #include <QPushButton>
+#include <QColor>
+#include <QFontMetrics>
 
 class QAction;
 class QPaintEvent;
@@ -19,6 +21,7 @@ public:
                     const QIcon &p_icon,
                     const QString &p_text,
                     const QString &p_decorationText = QString(),
+                    const QString &p_decorationTextFg = QString(),
                     QWidget *p_parent = nullptr);
 
     QSize sizeHint() const Q_DECL_OVERRIDE;
@@ -34,8 +37,13 @@ private:
     // Decoration text drawn at the right end.
     QString m_decorationText;
 
+    // Decoration text foreground.
+    QColor m_decorationTextFg;
+
     // Width in pixels of the decoration text.
     int m_decorationWidth;
+
+    QFontMetrics m_decorationFM;
 };
 
 #endif // VBUTTONMENUITEM_H

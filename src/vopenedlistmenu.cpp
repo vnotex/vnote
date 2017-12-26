@@ -16,6 +16,9 @@
 #include "utils/vutils.h"
 #include "vbuttonmenuitem.h"
 #include "utils/vimnavigationforwidget.h"
+#include "vpalette.h"
+
+extern VPalette *g_palette;
 
 static const int c_cmdTime = 1 * 1000;
 
@@ -126,22 +129,17 @@ void VOpenedListMenu::updateOpenedList()
                 separatorText = QString("[%1] %2").arg(notebook).arg(dirName);
             }
 
-            // Add label as separator.
-            QWidgetAction *wact = new QWidgetAction(this);
-            QLabel *label = new QLabel(separatorText);
-            label->setProperty("MenuSeparator", true);
-            wact->setDefaultWidget(label);
-            wact->setSeparator(true);
-            addAction(wact);
+            addSeparator();
         }
 
-        // Append the separator text to the end of the first item as well.
+        // Append the separator text to the end of the first item.
         QWidgetAction *wact = new QWidgetAction(this);
         wact->setData(QVariant::fromValue(file));
         VButtonMenuItem *w = new VButtonMenuItem(wact,
                                                  m_editWin->tabIcon(index),
                                                  m_editWin->tabText(index),
                                                  separatorText,
+                                                 g_palette->color("buttonmenuitem_decoration_text_fg"),
                                                  this);
         w->setToolTip(generateDescription(file));
         wact->setDefaultWidget(w);

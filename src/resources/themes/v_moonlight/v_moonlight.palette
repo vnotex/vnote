@@ -12,7 +12,7 @@ codeblock_css_file=v_moonlight_codeblock.css
 master_fg=@edit_fg
 master_bg=#00695C
 master_light_bg=#4DB6AC
-master_drak_bg=#004D40
+master_dark_bg=#004D40
 master_focus_bg=#00796B
 master_hover_bg=#00796B
 master_pressed_bg=#004D40
@@ -138,6 +138,8 @@ toolbutton_pressed_bg=@pressed_bg
 toolbutton_checked_bg=@selected_bg
 toolbutton_icon_fg=@icon_fg
 toolbutton_icon_danger_fg=@danger_icon_fg
+
+buttonmenuitem_decoration_text_fg=@master_light_bg
 
 ; Toolbox.
 toolbox_icon_fg=@master_bg
@@ -343,4 +345,4 @@ headerview_checked_bg=@selected_bg
 ; ProgressBar.
 progressbar_bg=@edit_bg
 progressbar_border_bg=@border_bg
-progressbar_chunk_bg=@master_drak_bg
+progressbar_chunk_bg=@master_dark_bg

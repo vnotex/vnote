@@ -181,6 +181,8 @@ pushbutton_dangerbtn_pressed_bg=@danger_pressed_bg
 button_icon_fg=@icon_fg
 button_icon_danger_fg=@danger_icon_fg
 
+buttonmenuitem_decoration_text_fg=#00796B
+
 ; ComboBox.
 combobox_border=@border_bg
 combobox_fg=@content_fg
