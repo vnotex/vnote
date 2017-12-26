@@ -15,10 +15,19 @@ VSettingsDialog::VSettingsDialog(QWidget *p_parent)
 
     m_tabs = new QStackedLayout();
 
+    // Reset VNote.
+    m_resetVNoteBtn = new QPushButton(tr("Reset VNote"), this);
+    m_resetVNoteBtn->setProperty("DangerBtn", true);
+    m_resetVNoteBtn->setToolTip(tr("Reset all the configurations of VNote"));
+    connect(m_resetVNoteBtn, &QPushButton::clicked,
+            this, &VSettingsDialog::resetVNote);
+
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(m_btnBox, &QDialogButtonBox::accepted, this, &VSettingsDialog::saveConfiguration);
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
     m_btnBox->button(QDialogButtonBox::Ok)->setProperty("SpecialBtn", true);
+
+    m_btnBox->addButton(m_resetVNoteBtn, QDialogButtonBox::ResetRole);
 
     QHBoxLayout *tabLayout = new QHBoxLayout();
     tabLayout->addWidget(m_tabList);
@@ -55,6 +64,36 @@ VSettingsDialog::VSettingsDialog(QWidget *p_parent)
     m_tabList->setCurrentRow(0);
 
     loadConfiguration();
+}
+
+void VSettingsDialog::resetVNote()
+{
+    int ret = VUtils::showMessage(QMessageBox::Warning,
+                                  tr("Warning"),
+                                  tr("Are you sure to reset VNote?"),
+                                  tr("All configurations (except notebooks information) "
+                                     "will be reset to default values. "
+                                     "It is UNRECOVERABLE!"),
+                                  QMessageBox::Ok | QMessageBox::Cancel,
+                                  QMessageBox::Cancel,
+                                  this,
+                                  MessageBoxType::Danger);
+
+    if (ret == QMessageBox::Cancel) {
+        return;
+    }
+
+    g_config->resetConfigurations();
+
+    VUtils::showMessage(QMessageBox::Information,
+                        tr("Information"),
+                        tr("Please restart VNote to make it work."),
+                        tr("Any change to VNote before restart will be lost!"),
+                        QMessageBox::Ok,
+                        QMessageBox::Ok,
+                        this);
+
+    reject();
 }
 
 void VSettingsDialog::addTab(QWidget *p_widget, const QString &p_label)

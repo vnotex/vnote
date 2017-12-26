@@ -51,7 +51,8 @@ VConfigManager::VConfigManager(QObject *p_parent)
     : QObject(p_parent),
       userSettings(NULL),
       defaultSettings(NULL),
-      m_sessionSettings(NULL)
+      m_sessionSettings(NULL),
+      m_hasReset(false)
 {
 }
 
@@ -433,6 +434,10 @@ QVariant VConfigManager::getConfigFromSettings(const QString &section, const QSt
 
 void VConfigManager::setConfigToSettings(const QString &section, const QString &key, const QVariant &value)
 {
+    if (m_hasReset) {
+        return;
+    }
+
     // Set the user-scoped config file
     setConfigToSettingsBySectionKey(userSettings, section, key, value);
     qDebug() << "set user config:" << (section + "/" + key) << value;
@@ -465,6 +470,10 @@ void VConfigManager::setConfigToSessionSettings(const QString &p_section,
                                                 const QString &p_key,
                                                 const QVariant &p_value)
 {
+    if (m_hasReset) {
+        return;
+    }
+
     setConfigToSettingsBySectionKey(m_sessionSettings,
                                     p_section,
                                     p_key,
@@ -1107,6 +1116,10 @@ QVector<VFileSessionInfo> VConfigManager::getLastOpenedFiles()
 
 void VConfigManager::setLastOpenedFiles(const QVector<VFileSessionInfo> &p_files)
 {
+    if (m_hasReset) {
+        return;
+    }
+
     const QString section("last_opened_files");
 
     // Clear it first
@@ -1311,4 +1324,23 @@ void VConfigManager::initCodeBlockCssStyles()
         QFileInfo fi(item);
         m_codeBlockCssStyles.insert(fi.completeBaseName(), dir.filePath(item));
     }
+}
+
+void VConfigManager::resetConfigurations()
+{
+    // Clear userSettings.
+    userSettings->clear();
+
+    // Clear m_sessionSettings except the notebooks information.
+    clearGroupOfSettings(m_sessionSettings, "last_opened_files");
+    clearGroupOfSettings(m_sessionSettings, "geometry");
+
+    m_hasReset = true;
+}
+
+void VConfigManager::clearGroupOfSettings(QSettings *p_settings, const QString &p_group)
+{
+    p_settings->beginGroup(p_group);
+    p_settings->remove("");
+    p_settings->endGroup();
 }

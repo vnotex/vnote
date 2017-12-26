@@ -150,6 +150,8 @@ public:
 private slots:
     void saveConfiguration();
 
+    void resetVNote();
+
 private:
     void loadConfiguration();
 
@@ -158,6 +160,9 @@ private:
     QStackedLayout *m_tabs;
     QListWidget *m_tabList;
     QDialogButtonBox *m_btnBox;
+
+    // Reset all the configuration of VNote.
+    QPushButton *m_resetVNoteBtn;
 };
 
 #endif // VSETTINGSDIALOG_H

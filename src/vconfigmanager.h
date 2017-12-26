@@ -81,7 +81,9 @@ public:
     static QJsonObject readDirectoryConfig(const QString &path);
 
     static bool writeDirectoryConfig(const QString &path, const QJsonObject &configJson);
+
     static bool directoryConfigExist(const QString &path);
+
     static bool deleteDirectoryConfig(const QString &path);
 
     // Get the path of the folder used to store default notebook.
@@ -97,6 +99,9 @@ public:
 
     // CSS style for data in label.
     static const QString c_dataTextStyle;
+
+    // Reset the configuratio files.
+    void resetConfigurations();
 
     QFont getMdEditFont() const;
 
@@ -441,6 +446,8 @@ private:
     void setConfigToSessionSettings(const QString &p_section,
                                     const QString &p_key,
                                     const QVariant &p_value);
+
+    void clearGroupOfSettings(QSettings *p_settings, const QString &p_group);
 
     // Init defaultSettings, userSettings, and m_sessionSettings.
     void initSettings();
@@ -805,6 +812,9 @@ private:
 
     // Whether close note before open it via external editor.
     bool m_closeBeforeExternalEditor;
+
+    // Whether user has reset the configurations.
+    bool m_hasReset;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
