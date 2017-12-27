@@ -230,5 +230,6 @@
         <file>resources/icons/add_program.svg</file>
         <file>resources/docs/tips_external_program_en.md</file>
         <file>resources/docs/tips_external_program_zh.md</file>
+        <file>translations/widgets_zh_CN.qm</file>
     </qresource>
 </RCC>
