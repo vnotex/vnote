@@ -49,10 +49,10 @@ const QString VConfigManager::c_vnoteNotebookFolderName = QString("vnote_noteboo
 
 VConfigManager::VConfigManager(QObject *p_parent)
     : QObject(p_parent),
+      m_hasReset(false),
       userSettings(NULL),
       defaultSettings(NULL),
-      m_sessionSettings(NULL),
-      m_hasReset(false)
+      m_sessionSettings(NULL)
 {
 }
 
