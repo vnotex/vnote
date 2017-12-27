@@ -4,6 +4,7 @@
 #include <QWebEngineView>
 
 class VFile;
+class QMenu;
 
 class VWebView : public QWebEngineView
 {
@@ -21,15 +22,27 @@ protected:
 private slots:
     void handleEditAction();
 
+    void handleCopyImageUrlAction();
+
+    void handleCopyAction();
+
     // Copy the clicked image.
     // Used to replace the default CopyImageToClipboard action.
     void copyImage();
 
 private:
+    void hideUnusedActions(QMenu *p_menu);
+
+    // pageAction() may not return exactly the action in use.
+    QAction *getPageAction(const QList<QAction *> &p_actions,
+                           QWebEnginePage::WebAction p_webAction);
+
     VFile *m_file;
 
     // Whether this view has hooked the Copy Image Url action.
-    bool m_actionHooked;
+    bool m_copyImageUrlActionHooked;
+
+    bool m_copyActionHooked;
 };
 
 #endif // VWEBVIEW_H
