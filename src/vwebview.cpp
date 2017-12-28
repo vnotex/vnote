@@ -108,7 +108,7 @@ void VWebView::copyImage()
         QString imgPath;
         if (mimeData->hasUrls()) {
             QList<QUrl> urls = mimeData->urls();
-            if (urls[0].isLocalFile()) {
+            if (!urls.isEmpty() && urls[0].isLocalFile()) {
                 imgPath = urls[0].toLocalFile();
             }
         }
@@ -149,7 +149,7 @@ void VWebView::handleCopyImageUrlAction()
                 QMimeData *data = new QMimeData();
                 data->setUrls(urls);
                 data->setText(spaceOnlyText);
-                clipboard->setMimeData(data);
+                VClipboardUtils::setMimeDataToClipboard(clipboard, data, QClipboard::Clipboard);
 
                 clipboard->setProperty(c_ClipboardPropertyMark.toLatin1(), true);
                 qDebug() << "clipboard copy image URL altered" << spaceOnlyText;
@@ -160,15 +160,16 @@ void VWebView::handleCopyImageUrlAction()
 
 void VWebView::hideUnusedActions(QMenu *p_menu)
 {
-    const QList<QAction *> actions = p_menu->actions();
-
     QList<QAction *> unusedActions;
 
     // QWebEnginePage uses different actions of Back/Forward/Reload.
     // [Woboq](https://code.woboq.org/qt5/qtwebengine/src/webenginewidgets/api/qwebenginepage.cpp.html#1652)
     // We tell these three actions by name.
-    static const QStringList actionNames({QWebEnginePage::tr("&Back"), QWebEnginePage::tr("&Forward"), QWebEnginePage::tr("&Reload")});
+   const QStringList actionNames({QWebEnginePage::tr("&Back"),
+                                  QWebEnginePage::tr("&Forward"),
+                                  QWebEnginePage::tr("&Reload")});
 
+    const QList<QAction *> actions = p_menu->actions();
     for (auto it : actions) {
         if (actionNames.contains(it->text())) {
             unusedActions.append(it);
@@ -224,7 +225,7 @@ void VWebView::handleCopyAction()
             data->setText(mimeData->text());
         }
 
-        clipboard->setMimeData(data);
+        VClipboardUtils::setMimeDataToClipboard(clipboard, data, QClipboard::Clipboard);
         clipboard->setProperty(c_ClipboardPropertyMark.toLatin1(), true);
         qDebug() << "clipboard copy Html altered" << html;
     }
