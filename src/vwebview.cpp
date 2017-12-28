@@ -40,7 +40,7 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
         // and the URL as URLs. If the URL contains Chinese, OneNote or Word could not
         // recognize it.
         // We need to change it to only-space-encoded text.
-        QAction *copyImageUrlAct = getPageAction(actions, QWebEnginePage::CopyImageUrlToClipboard);
+        QAction *copyImageUrlAct = pageAction(QWebEnginePage::CopyImageUrlToClipboard);
         if (actions.contains(copyImageUrlAct)) {
             connect(copyImageUrlAct, &QAction::triggered,
                     this, &VWebView::handleCopyImageUrlAction);
@@ -69,8 +69,8 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
     // the fully-encoded URL to fetch the image while Windows seems to not
     // recognize it.
 #if defined(Q_OS_WIN)
-    QAction *defaultCopyImageAct = getPageAction(actions, QWebEnginePage::CopyImageToClipboard);
-    if (defaultCopyImageAct && actions.contains(defaultCopyImageAct)) {
+    QAction *defaultCopyImageAct = pageAction(QWebEnginePage::CopyImageToClipboard);
+    if (actions.contains(defaultCopyImageAct)) {
         QAction *copyImageAct = new QAction(defaultCopyImageAct->text(), menu);
         copyImageAct->setToolTip(defaultCopyImageAct->toolTip());
         connect(copyImageAct, &QAction::triggered,
@@ -164,24 +164,27 @@ void VWebView::hideUnusedActions(QMenu *p_menu)
 
     QList<QAction *> unusedActions;
 
-    // Back.
-    QAction *act = getPageAction(actions, QWebEnginePage::Back);
-    unusedActions.append(act);
+    // QWebEnginePage uses different actions of Back/Forward/Reload.
+    // [Woboq](https://code.woboq.org/qt5/qtwebengine/src/webenginewidgets/api/qwebenginepage.cpp.html#1652)
+    // We tell these three actions by name.
+    static const QStringList actionNames({QWebEnginePage::tr("&Back"), QWebEnginePage::tr("&Forward"), QWebEnginePage::tr("&Reload")});
 
-    // Forward.
-    act = getPageAction(actions, QWebEnginePage::Forward);
-    unusedActions.append(act);
-
-    // Reload.
-    act = getPageAction(actions, QWebEnginePage::Reload);
-    unusedActions.append(act);
+    for (auto it : actions) {
+        if (actionNames.contains(it->text())) {
+            unusedActions.append(it);
+        }
+    }
 
     // ViewSource.
-    act = getPageAction(actions, QWebEnginePage::ViewSource);
+    QAction *act = pageAction(QWebEnginePage::ViewSource);
     unusedActions.append(act);
 
     // DownloadImageToDisk.
-    act = getPageAction(actions, QWebEnginePage::DownloadImageToDisk);
+    act = pageAction(QWebEnginePage::DownloadImageToDisk);
+    unusedActions.append(act);
+
+    // DownloadLinkToDisk.
+    act = pageAction(QWebEnginePage::DownloadLinkToDisk);
     unusedActions.append(act);
 
     for (auto it : unusedActions) {
@@ -225,21 +228,4 @@ void VWebView::handleCopyAction()
         clipboard->setProperty(c_ClipboardPropertyMark.toLatin1(), true);
         qDebug() << "clipboard copy Html altered" << html;
     }
-}
-
-QAction *VWebView::getPageAction(const QList<QAction *> &p_actions,
-                                 QWebEnginePage::WebAction p_webAction)
-{
-    QAction *act = pageAction(p_webAction);
-    if (act && !p_actions.contains(act)) {
-        QString text = act->text();
-        for (auto it : p_actions) {
-            if (it->text().endsWith(text)) {
-                act = it;
-                break;
-            }
-        }
-    }
-
-    return act;
 }

@@ -33,10 +33,6 @@ private slots:
 private:
     void hideUnusedActions(QMenu *p_menu);
 
-    // pageAction() may not return exactly the action in use.
-    QAction *getPageAction(const QList<QAction *> &p_actions,
-                           QWebEnginePage::WebAction p_webAction);
-
     VFile *m_file;
 
     // Whether this view has hooked the Copy Image Url action.

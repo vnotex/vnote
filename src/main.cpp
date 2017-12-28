@@ -153,19 +153,29 @@ int main(int argc, char *argv[])
     qDebug() << "openSSL" << QSslSocket::sslLibraryBuildVersionString()
              << QSslSocket::sslLibraryVersionNumber();
 
-    // Load missing translation for Qt.
+    // Load missing translation for Qt (QTextEdit/QPlainTextEdit/QTextBrowser).
     QTranslator qtTranslator1;
     if (qtTranslator1.load("widgets_" + locale, ":/translations")) {
         app.installTranslator(&qtTranslator1);
     }
 
-    // Load translation for Qt.
     QTranslator qtTranslator2;
-    if (!qtTranslator2.load("qt_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath))) {
-        qtTranslator2.load("qt_" + locale, "translations");
+    if (qtTranslator2.load("qdialogbuttonbox_" + locale, ":/translations")) {
+        app.installTranslator(&qtTranslator2);
     }
 
-    app.installTranslator(&qtTranslator2);
+    QTranslator qtTranslator3;
+    if (qtTranslator3.load("qwebengine_" + locale, ":/translations")) {
+        app.installTranslator(&qtTranslator3);
+    }
+
+    // Load translation for Qt.
+    QTranslator qtTranslator;
+    if (!qtTranslator.load("qt_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath))) {
+        qtTranslator.load("qt_" + locale, "translations");
+    }
+
+    app.installTranslator(&qtTranslator);
 
     // Load translation for vnote.
     QTranslator translator;
