@@ -2,6 +2,7 @@
 #define VWEBVIEW_H
 
 #include <QWebEngineView>
+#include <QClipboard>
 
 class VFile;
 class QMenu;
@@ -24,21 +25,27 @@ private slots:
 
     void handleCopyImageUrlAction();
 
-    void handleCopyAction();
+    void handleCopyWithoutBackgroundAction();
 
     // Copy the clicked image.
     // Used to replace the default CopyImageToClipboard action.
     void copyImage();
 
+    void handleClipboardChanged(QClipboard::Mode p_mode);
+
 private:
     void hideUnusedActions(QMenu *p_menu);
+
+    void alterHtmlMimeData(QClipboard *p_clipboard,
+                           const QMimeData *p_mimeData,
+                           bool p_removeBackground);
 
     VFile *m_file;
 
     // Whether this view has hooked the Copy Image Url action.
     bool m_copyImageUrlActionHooked;
 
-    bool m_copyActionHooked;
+    bool m_needRemoveBackground;
 };
 
 #endif // VWEBVIEW_H

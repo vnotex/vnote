@@ -47,7 +47,7 @@ void VClipboardUtils::setMimeDataToClipboard(QClipboard *p_clipboard,
 #endif
 }
 
-static QMimeData *cloneMimeData(const QMimeData *p_mimeData)
+QMimeData *VClipboardUtils::cloneMimeData(const QMimeData *p_mimeData)
 {
     QMimeData *da = new QMimeData();
     if (p_mimeData->hasUrls()) {

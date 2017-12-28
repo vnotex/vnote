@@ -18,6 +18,8 @@ public:
                                        QMimeData *p_mimeData,
                                        QClipboard::Mode p_mode = QClipboard::Clipboard);
 
+    static QMimeData *cloneMimeData(const QMimeData *p_mimeData);
+
 private:
     VClipboardUtils()
     {

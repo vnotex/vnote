@@ -10,6 +10,7 @@
 #include <QMimeData>
 #include <QApplication>
 #include <QImage>
+#include <QRegExp>
 #include "vfile.h"
 #include "utils/vclipboardutils.h"
 #include "utils/viconutils.h"
@@ -22,9 +23,12 @@ VWebView::VWebView(VFile *p_file, QWidget *p_parent)
     : QWebEngineView(p_parent),
       m_file(p_file),
       m_copyImageUrlActionHooked(false),
-      m_copyActionHooked(false)
+      m_needRemoveBackground(false)
 {
     setAcceptDrops(false);
+
+    connect(QApplication::clipboard(), &QClipboard::changed,
+            this, &VWebView::handleClipboardChanged);
 }
 
 void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
@@ -63,6 +67,18 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
         if (!actions.isEmpty()) {
             menu->insertSeparator(actions[0]);
         }
+    }
+
+    // Add Copy without Background action.
+    QAction *copyAct = pageAction(QWebEnginePage::Copy);
+    if (actions.contains(copyAct)) {
+        QAction *copyWithoutBgAct = new QAction(tr("Copy &without Background"), menu);
+        copyWithoutBgAct->setToolTip(tr("Copy selected content without background styles"));
+        connect(copyWithoutBgAct, &QAction::triggered,
+                this, &VWebView::handleCopyWithoutBackgroundAction);
+        menu->insertAction(copyAct, copyWithoutBgAct);
+        menu->removeAction(copyAct);
+        menu->insertAction(copyWithoutBgAct, copyAct);
     }
 
     // We need to replace the "Copy Image" action, because the default one use
@@ -195,38 +211,69 @@ void VWebView::hideUnusedActions(QMenu *p_menu)
     }
 }
 
-void VWebView::handleCopyAction()
+static bool removeBackgroundColor(QString &p_html)
 {
-    // To avoid failure of setting clipboard mime data.
-    QCoreApplication::processEvents();
+    QRegExp reg("(\\s|\")background(-color)?:[^;]+;");
+    int size = p_html.size();
+    p_html.replace(reg, "\\1");
+    return p_html.size() != size;
+}
+
+void VWebView::handleCopyWithoutBackgroundAction()
+{
+    m_needRemoveBackground = true;
+
+    QAction *copyAct = pageAction(QWebEnginePage::Copy);
+    copyAct->trigger();
+}
+
+void VWebView::handleClipboardChanged(QClipboard::Mode p_mode)
+{
+    bool removeBackground = m_needRemoveBackground;
+    m_needRemoveBackground = false;
+
+    if (!hasFocus()
+        || p_mode != QClipboard::Clipboard) {
+        return;
+    }
 
     QClipboard *clipboard = QApplication::clipboard();
     const QMimeData *mimeData = clipboard->mimeData();
-    clipboard->setProperty(c_ClipboardPropertyMark.toLatin1(), false);
-    qDebug() << clipboard->ownsClipboard() << mimeData->hasHtml();
-    if (clipboard->ownsClipboard()
-        && mimeData->hasHtml()) {
-        QString html = mimeData->html();
-        if (html.startsWith("<html>")) {
-            return;
-        }
-
-        html = QString("<html><body><!--StartFragment-->%1<!--EndFragment--></body></html>").arg(html);
-
-        // Set new mime data.
-        QMimeData *data = new QMimeData();
-        data->setHtml(html);
-
-        if (mimeData->hasUrls()) {
-            data->setUrls(mimeData->urls());
-        }
-
-        if (mimeData->hasText()) {
-            data->setText(mimeData->text());
-        }
-
-        VClipboardUtils::setMimeDataToClipboard(clipboard, data, QClipboard::Clipboard);
-        clipboard->setProperty(c_ClipboardPropertyMark.toLatin1(), true);
-        qDebug() << "clipboard copy Html altered" << html;
+    if (!clipboard->ownsClipboard()) {
+        return;
     }
+
+    alterHtmlMimeData(clipboard, mimeData, removeBackground);
+}
+
+void VWebView::alterHtmlMimeData(QClipboard *p_clipboard,
+                                 const QMimeData *p_mimeData,
+                                 bool p_removeBackground)
+{
+    if (!p_mimeData->hasHtml()) {
+        return;
+    }
+
+    bool altered = false;
+    QString html = p_mimeData->html();
+
+    if (!html.startsWith("<html>")) {
+        altered = true;
+        html = QString("<html><body>%1</body></html>").arg(html);
+    }
+
+    if (p_removeBackground && removeBackgroundColor(html)) {
+        altered = true;
+    }
+
+    if (!altered) {
+        return;
+    }
+
+    // Set new mime data.
+    QMimeData *data = VClipboardUtils::cloneMimeData(p_mimeData);
+    data->setHtml(html);
+
+    VClipboardUtils::setMimeDataToClipboard(p_clipboard, data, QClipboard::Clipboard);
+    qDebug() << "altered clipboard's Html";
 }

@@ -3,13 +3,14 @@ body {
     font-family: Helvetica, sans-serif, Tahoma, Arial, Verdana, Geneva, Georgia, Palatino, "Times New Roman", "Hiragino Sans GB", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体";
     color: #363636;
     line-height: 1;
-    padding: 30px;
+    padding: 15px;
 }
 
 h1, h2, h3, h4, h5, h6 {
     color: #363636;
     font-weight: bold;
-    margin-bottom: 24px;
+    margin-top: 20px;
+    margin-bottom: 10px;
     padding: 0;
 }
 
@@ -92,8 +93,8 @@ pre code {
     display: block;
     overflow-x: auto;
     padding: 0.5em;
-    border: 1px solid #C0C0C0;
     color: #363636;
+    background-color: #E0E0E0;
 }
 
 aside {
