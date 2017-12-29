@@ -169,13 +169,17 @@ int main(int argc, char *argv[])
         app.installTranslator(&qtTranslator3);
     }
 
-    // Load translation for Qt.
+    // Load translation for Qt from resource.
     QTranslator qtTranslator;
-    if (!qtTranslator.load("qt_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath))) {
-        qtTranslator.load("qt_" + locale, "translations");
+    if (qtTranslator.load("qt_" + locale, ":/translations")) {
+        app.installTranslator(&qtTranslator);
     }
 
-    app.installTranslator(&qtTranslator);
+    // Load translation for Qt from env.
+    QTranslator qtTranslatorEnv;
+    if (qtTranslatorEnv.load("qt_" + locale, "translations")) {
+        app.installTranslator(&qtTranslatorEnv);
+    }
 
     // Load translation for vnote.
     QTranslator translator;
