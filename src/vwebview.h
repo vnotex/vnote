@@ -27,6 +27,8 @@ private slots:
 
     void handleCopyWithoutBackgroundAction();
 
+    void handleCopyAllWithoutBackgroundAction();
+
     // Copy the clicked image.
     // Used to replace the default CopyImageToClipboard action.
     void copyImage();

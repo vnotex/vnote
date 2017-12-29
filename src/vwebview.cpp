@@ -101,6 +101,15 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
     }
 #endif
 
+    // Add Copy All without Background action.
+    QAction *copyAllWithoutBgAct = new QAction(tr("Copy &All without Background"), menu);
+    copyAllWithoutBgAct->setToolTip(tr("Copy all contents without background styles"));
+    connect(copyAllWithoutBgAct, &QAction::triggered,
+            this, &VWebView::handleCopyAllWithoutBackgroundAction);
+    // Add it to the back.
+    menu->addSeparator();
+    menu->addAction(copyAllWithoutBgAct);
+
     hideUnusedActions(menu);
 
     menu->exec(p_event->globalPos());
@@ -228,8 +237,17 @@ void VWebView::handleCopyWithoutBackgroundAction()
 {
     m_needRemoveBackground = true;
 
-    QAction *copyAct = pageAction(QWebEnginePage::Copy);
-    copyAct->trigger();
+    triggerPageAction(QWebEnginePage::Copy);
+}
+
+void VWebView::handleCopyAllWithoutBackgroundAction()
+{
+    triggerPageAction(QWebEnginePage::SelectAll);
+
+    m_needRemoveBackground = true;
+    triggerPageAction(QWebEnginePage::Copy);
+
+    triggerPageAction(QWebEnginePage::Unselect);
 }
 
 void VWebView::handleClipboardChanged(QClipboard::Mode p_mode)
@@ -337,5 +355,5 @@ void VWebView::alterHtmlMimeData(QClipboard *p_clipboard,
     data->setHtml(html);
 
     VClipboardUtils::setMimeDataToClipboard(p_clipboard, data, QClipboard::Clipboard);
-    qDebug() << "altered clipboard's Html" << html;
+    qDebug() << "altered clipboard's Html";
 }
