@@ -36,6 +36,7 @@ void VUpdater::setupUI()
     m_proBar->setTextVisible(false);
 
     m_descriptionWV = VUtils::getWebEngineView();
+    m_descriptionWV->setContextMenuPolicy(Qt::NoContextMenu);
     m_descriptionWV->setHtml(VUtils::generateSimpleHtmlTemplate(VNote::s_sloganTemplate));
 
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok);

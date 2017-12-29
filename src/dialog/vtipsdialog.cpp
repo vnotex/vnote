@@ -24,6 +24,7 @@ VTipsDialog::VTipsDialog(const QString &p_tipFile,
 void VTipsDialog::setupUI(const QString &p_actionText)
 {
     m_viewer = VUtils::getWebEngineView();
+    m_viewer->setContextMenuPolicy(Qt::NoContextMenu);
 
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok);
     connect(m_btnBox, &QDialogButtonBox::accepted, this, &QDialog::accept);

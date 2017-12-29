@@ -11,9 +11,13 @@
 #include <QApplication>
 #include <QImage>
 #include <QRegExp>
+#include <QFileInfo>
 #include "vfile.h"
 #include "utils/vclipboardutils.h"
 #include "utils/viconutils.h"
+#include "vconfigmanager.h"
+
+extern VConfigManager *g_config;
 
 // We set the property of the clipboard to mark that the URL copied in the
 // clipboard has been altered.
@@ -23,7 +27,8 @@ VWebView::VWebView(VFile *p_file, QWidget *p_parent)
     : QWebEngineView(p_parent),
       m_file(p_file),
       m_copyImageUrlActionHooked(false),
-      m_needRemoveBackground(false)
+      m_needRemoveBackground(false),
+      m_fixImgSrc(g_config->getFixImageSrcInWebWhenCopied())
 {
     setAcceptDrops(false);
 
@@ -246,6 +251,56 @@ void VWebView::handleClipboardChanged(QClipboard::Mode p_mode)
     alterHtmlMimeData(clipboard, mimeData, removeBackground);
 }
 
+bool VWebView::fixImgSrc(QString &p_html)
+{
+    bool changed = false;
+
+#if defined(Q_OS_WIN)
+    QUrl::ComponentFormattingOption strOpt = QUrl::EncodeSpaces;
+#else
+    QUrl::ComponentFormattingOption strOpt = QUrl::FullyEncoded;
+#endif
+
+    QRegExp reg("(<img src=\")([^\"]+)\"");
+    QUrl baseUrl(url());
+
+    int pos = 0;
+    while (pos < p_html.size()) {
+        int idx = p_html.indexOf(reg, pos);
+        if (idx == -1) {
+            break;
+        }
+
+        QString urlStr = reg.cap(2);
+        QUrl imgUrl(urlStr);
+
+        QString fixedStr;
+        if (imgUrl.isRelative()) {
+            fixedStr = baseUrl.resolved(imgUrl).toString(strOpt);
+        } else if (imgUrl.isLocalFile()) {
+            fixedStr = imgUrl.toString(strOpt);
+        } else if (imgUrl.scheme() != "https" && imgUrl.scheme() != "http") {
+            QString tmp = imgUrl.toString();
+            if (QFileInfo::exists(tmp)) {
+                fixedStr = QUrl::fromLocalFile(tmp).toString(strOpt);
+            }
+        }
+
+        pos = idx + reg.matchedLength();
+        if (!fixedStr.isEmpty() && urlStr != fixedStr) {
+            qDebug() << "fix img url" << urlStr << fixedStr;
+            // Insert one more space to avoid fix the url twice.
+            pos = pos + fixedStr.size() + 1 - urlStr.size();
+            p_html.replace(idx,
+                           reg.matchedLength(),
+                           QString("<img  src=\"%1\"").arg(fixedStr));
+            changed = true;
+        }
+    }
+
+    return changed;
+}
+
 void VWebView::alterHtmlMimeData(QClipboard *p_clipboard,
                                  const QMimeData *p_mimeData,
                                  bool p_removeBackground)
@@ -257,12 +312,19 @@ void VWebView::alterHtmlMimeData(QClipboard *p_clipboard,
     bool altered = false;
     QString html = p_mimeData->html();
 
+    // Add surrounded tags.
     if (!html.startsWith("<html>")) {
         altered = true;
         html = QString("<html><body>%1</body></html>").arg(html);
     }
 
+    // Remove background color.
     if (p_removeBackground && removeBackgroundColor(html)) {
+        altered = true;
+    }
+
+    // Fix local relative images.
+    if (m_fixImgSrc && fixImgSrc(html)) {
         altered = true;
     }
 
@@ -275,5 +337,5 @@ void VWebView::alterHtmlMimeData(QClipboard *p_clipboard,
     data->setHtml(html);
 
     VClipboardUtils::setMimeDataToClipboard(p_clipboard, data, QClipboard::Clipboard);
-    qDebug() << "altered clipboard's Html";
+    qDebug() << "altered clipboard's Html" << html;
 }

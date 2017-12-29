@@ -426,6 +426,8 @@ public:
 
     bool getCloseBeforeExternalEditor() const;
 
+    bool getFixImageSrcInWebWhenCopied() const;
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -815,6 +817,9 @@ private:
 
     // Whether user has reset the configurations.
     bool m_hasReset;
+
+    // Whether fix the local relative image src in read mode when copied.
+    bool m_fixImageSrcInWebWhenCopied;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1981,6 +1986,11 @@ inline void VConfigManager::setCodeBlockCssStyle(const QString &p_style)
 inline bool VConfigManager::getCloseBeforeExternalEditor() const
 {
     return m_closeBeforeExternalEditor;
+}
+
+inline bool VConfigManager::getFixImageSrcInWebWhenCopied() const
+{
+    return m_fixImageSrcInWebWhenCopied;
 }
 
 #endif // VCONFIGMANAGER_H

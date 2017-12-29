@@ -40,12 +40,16 @@ private:
                            const QMimeData *p_mimeData,
                            bool p_removeBackground);
 
+    bool fixImgSrc(QString &p_html);
+
     VFile *m_file;
 
     // Whether this view has hooked the Copy Image Url action.
     bool m_copyImageUrlActionHooked;
 
     bool m_needRemoveBackground;
+
+    bool m_fixImgSrc;
 };
 
 #endif // VWEBVIEW_H
