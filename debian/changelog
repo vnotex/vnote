@@ -1,6 +1,0 @@
-vnote (1.8-0ubuntu1) zesty; urgency=medium
-
-  * Initial release
-  * Adjusted the Makefile to fix $(DESTDIR) problems.
-
- -- Le Tan <tamlokveer@gmail.com>  Sun, 20 Aug 2017 09:32:22 +0800

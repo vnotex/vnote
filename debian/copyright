@@ -1,7 +1,0 @@
-Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: vnote
-Source: https://tamlok.github.io/vnote
-
-Files: *
-Copyright: 2017 Le Tan <tamlokveer@gmail.com>
-License: MIT License
