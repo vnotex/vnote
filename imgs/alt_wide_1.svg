@@ -26,7 +26,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.40941483"
-     inkscape:cx="929.26686"
+     inkscape:cx="409.01213"
      inkscape:cy="1409.8927"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
@@ -46,7 +46,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -61,27 +61,7 @@
        id="path1212-5-0-8"
        inkscape:connector-curvature="0" />
     <g
-       aria-label="# 1. VNote
-A note-taking application with both **notes management**
-and **pleasant Markdown experience**.
-
-- Cross platform: **Linux**, **Windows**, and **Mac**;
-- Simple, powerful, and efficient;
-- Minimized gap between reading and editing Markdown;
-
-## 1.1. Code Block Highlight
-```cpp
-#include &lt;iostream&gt;
-
-using namespace std;
-
-int main()
-{
-    string name = &quot;VNote&quot;;
-    cout &lt;&lt; name &lt;&lt; endl;
-    return 0;
-}
-```"
+       aria-label="# 1. VNote A note-taking application with both **notes management** and **pleasant Markdown experience**.  - Cross platform: **Linux**, **Windows**, and **Mac**; - Simple, powerful, and efficient; - Minimized gap between reading and editing Markdown;  ## 1.1. Code Block Highlight ```cpp #include &lt;iostream&gt;  using namespace std;  int main() {     string name = &quot;VNote&quot;;     cout &lt;&lt; name &lt;&lt; endl;     return 0; } ```"
        transform="matrix(0.80986988,-0.64555225,0.6018423,0.75503407,14.616268,33.581438)"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.44158936px;line-height:1.25;font-family:'Noto Sans Mono';-inkscape-font-specification:'Noto Sans Mono';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.21103974"
        id="text823">
@@ -1782,12 +1762,6 @@ int main()
        id="path1647"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccc" />
-    <path
-       style="fill:#00897b;fill-opacity:1;stroke:none;stroke-width:0.26283333px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="M 551.11916,156.31642 647.06297,136.85131 344.1096,-232.16668 Z"
-       id="path819"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cccc" />
     <path
        style="fill:#00897b;fill-opacity:1;stroke:none;stroke-width:0.28466234px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="M 174.625,298.37088 796.03482,54.259626 V 298.37088 Z"
