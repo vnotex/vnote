@@ -64,6 +64,14 @@ __This text will be bold__
 4. Item 4
 ```
 
+### 表格
+```md
+| col 1 | col 2 | col 3 |
+| --- | --- | --- |
+| cell1 | cell2 | cell3 |
+| cell4 | cell5 | cell6 |
+```
+
 ### 图片和链接
 ```md
 ![Image Alt Text](/url/to/images.png)

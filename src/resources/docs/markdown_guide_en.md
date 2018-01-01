@@ -63,6 +63,14 @@ Notice that the sequence number is irrelevant. Markdown will change the sequence
 4. Item 4
 ```
 
+### Tables
+```md
+| col 1 | col 2 | col 3 |
+| --- | --- | --- |
+| cell1 | cell2 | cell3 |
+| cell4 | cell5 | cell6 |
+```
+
 ### Images and Links
 ```md
 ![Image Alt Text](/url/to/images.png)
