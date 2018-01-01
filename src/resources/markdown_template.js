@@ -781,8 +781,8 @@ var jumpTitle = function(forward, relativeLevel, repeat) {
         if (targetLevel == -1 || level == targetLevel) {
             if (targetIdx == currentHeaderIdx) {
                 // If current header is visible, skip it.
-                content.setLog("scroll " + scrollTop + " " + headers[targetIdx].offsetTop);
-                if (forward || scrollTop <= headers[targetIdx].offsetTop) {
+                // Minus 2 to tolerate some margin.
+                if (forward || scrollTop  - 2 <= headers[targetIdx].offsetTop) {
                     continue;
                 }
             }
