@@ -44,6 +44,9 @@ private:
 
     bool fixImgSrc(QString &p_html);
 
+    void removeHtmlFromImageData(QClipboard *p_clipboard,
+                                 const QMimeData *p_mimeData);
+
     VFile *m_file;
 
     // Whether this view has hooked the Copy Image Url action.
@@ -52,6 +55,9 @@ private:
     bool m_needRemoveBackground;
 
     bool m_fixImgSrc;
+
+    // Whether it is after copy image action.
+    bool m_afterCopyImage;
 };
 
 #endif // VWEBVIEW_H

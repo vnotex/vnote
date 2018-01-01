@@ -28,7 +28,8 @@ VWebView::VWebView(VFile *p_file, QWidget *p_parent)
       m_file(p_file),
       m_copyImageUrlActionHooked(false),
       m_needRemoveBackground(false),
-      m_fixImgSrc(g_config->getFixImageSrcInWebWhenCopied())
+      m_fixImgSrc(g_config->getFixImageSrcInWebWhenCopied()),
+      m_afterCopyImage(false)
 {
     setAcceptDrops(false);
 
@@ -86,10 +87,10 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
         menu->insertAction(copyWithoutBgAct, copyAct);
     }
 
-    // We need to replace the "Copy Image" action, because the default one use
-    // the fully-encoded URL to fetch the image while Windows seems to not
-    // recognize it.
-#if defined(Q_OS_WIN)
+    // We need to replace the "Copy Image" action:
+    // - the default one use the fully-encoded URL to fetch the image while
+    // Windows seems to not recognize it.
+    // - We need to remove the html to let it be recognized by some web pages.
     QAction *defaultCopyImageAct = pageAction(QWebEnginePage::CopyImageToClipboard);
     if (actions.contains(defaultCopyImageAct)) {
         QAction *copyImageAct = new QAction(defaultCopyImageAct->text(), menu);
@@ -99,7 +100,6 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
         menu->insertAction(defaultCopyImageAct, copyImageAct);
         defaultCopyImageAct->setVisible(false);
     }
-#endif
 
     // Add Copy All without Background action.
     QAction *copyAllWithoutBgAct = new QAction(tr("Copy &All without Background"), menu);
@@ -123,8 +123,10 @@ void VWebView::handleEditAction()
 
 void VWebView::copyImage()
 {
-    Q_ASSERT(m_copyImageUrlActionHooked);
+    m_afterCopyImage = true;
 
+#if defined(Q_OS_WIN)
+    Q_ASSERT(m_copyImageUrlActionHooked);
     // triggerPageAction(QWebEnginePage::CopyImageUrlToClipboard) will not really
     // trigger the corresponding action. It just do the stuff directly.
     QAction *copyImageUrlAct = pageAction(QWebEnginePage::CopyImageUrlToClipboard);
@@ -146,12 +148,14 @@ void VWebView::copyImage()
         if (!imgPath.isEmpty()) {
             QImage img(imgPath);
             if (!img.isNull()) {
+                m_afterCopyImage = false;
                 VClipboardUtils::setImageToClipboard(clipboard, img, QClipboard::Clipboard);
                 qDebug() << "clipboard copy image via URL" << imgPath;
                 return;
             }
         }
     }
+#endif
 
     // Fall back.
     triggerPageAction(QWebEnginePage::CopyImageToClipboard);
@@ -255,6 +259,9 @@ void VWebView::handleClipboardChanged(QClipboard::Mode p_mode)
     bool removeBackground = m_needRemoveBackground;
     m_needRemoveBackground = false;
 
+    bool afterCopyImage = m_afterCopyImage;
+    m_afterCopyImage = false;
+
     if (!hasFocus()
         || p_mode != QClipboard::Clipboard) {
         return;
@@ -266,7 +273,11 @@ void VWebView::handleClipboardChanged(QClipboard::Mode p_mode)
         return;
     }
 
-    alterHtmlMimeData(clipboard, mimeData, removeBackground);
+    if (afterCopyImage) {
+        removeHtmlFromImageData(clipboard, mimeData);
+    } else {
+        alterHtmlMimeData(clipboard, mimeData, removeBackground);
+    }
 }
 
 bool VWebView::fixImgSrc(QString &p_html)
@@ -323,7 +334,7 @@ void VWebView::alterHtmlMimeData(QClipboard *p_clipboard,
                                  const QMimeData *p_mimeData,
                                  bool p_removeBackground)
 {
-    if (!p_mimeData->hasHtml()) {
+    if (!p_mimeData->hasHtml() || p_mimeData->hasImage()) {
         return;
     }
 
@@ -356,4 +367,19 @@ void VWebView::alterHtmlMimeData(QClipboard *p_clipboard,
 
     VClipboardUtils::setMimeDataToClipboard(p_clipboard, data, QClipboard::Clipboard);
     qDebug() << "altered clipboard's Html";
+}
+
+void VWebView::removeHtmlFromImageData(QClipboard *p_clipboard,
+                                       const QMimeData *p_mimeData)
+{
+    if (!p_mimeData->hasImage()) {
+        return;
+    }
+
+    if (p_mimeData->hasHtml()) {
+        qDebug() << "remove html from image data" << p_mimeData->html();
+        QMimeData *data = new QMimeData();
+        data->setImageData(p_mimeData->imageData());
+        VClipboardUtils::setMimeDataToClipboard(p_clipboard, data, QClipboard::Clipboard);
+    }
 }
