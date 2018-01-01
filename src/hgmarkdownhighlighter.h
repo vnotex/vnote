@@ -8,6 +8,8 @@
 #include <QSet>
 #include <QString>
 
+#include "vtextblockdata.h"
+
 extern "C" {
 #include <pmh_parser.h>
 }
@@ -255,6 +257,10 @@ private:
 
     // Check if [p_pos, p_end) is a valid header.
     bool isValidHeader(unsigned long p_pos, unsigned long p_end);
+
+    VTextBlockData *currentBlockData() const;
+
+    VTextBlockData *previousBlockData() const;
 };
 
 inline const QVector<VElementRegion> &HGMarkdownHighlighter::getHeaderRegions() const
@@ -272,5 +278,20 @@ inline void HGMarkdownHighlighter::clearPossiblePreviewBlocks(const QVector<int>
     for (auto i : p_blocksToClear) {
         m_possiblePreviewBlocks.remove(i);
     }
+}
+
+inline VTextBlockData *HGMarkdownHighlighter::currentBlockData() const
+{
+    return static_cast<VTextBlockData *>(currentBlockUserData());
+}
+
+inline VTextBlockData *HGMarkdownHighlighter::previousBlockData() const
+{
+    QTextBlock block = currentBlock().previous();
+    if (!block.isValid()) {
+        return NULL;
+    }
+
+    return static_cast<VTextBlockData *>(block.userData());
 }
 #endif

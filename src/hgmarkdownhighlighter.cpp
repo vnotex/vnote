@@ -5,7 +5,6 @@
 #include "hgmarkdownhighlighter.h"
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
-#include "vtextblockdata.h"
 
 extern VConfigManager *g_config;
 
@@ -98,7 +97,7 @@ void HGMarkdownHighlighter::updateBlockUserData(int p_blockNum, const QString &p
 {
     Q_UNUSED(p_text);
 
-    VTextBlockData *blockData = dynamic_cast<VTextBlockData *>(currentBlockUserData());
+    VTextBlockData *blockData = currentBlockData();
     if (!blockData) {
         blockData = new VTextBlockData();
         setCurrentBlockUserData(blockData);
@@ -109,6 +108,8 @@ void HGMarkdownHighlighter::updateBlockUserData(int p_blockNum, const QString &p
     } else {
         m_possiblePreviewBlocks.insert(p_blockNum);
     }
+
+    blockData->setCodeBlockIndentation(-1);
 }
 
 void HGMarkdownHighlighter::highlightBlock(const QString &text)
@@ -377,7 +378,9 @@ void HGMarkdownHighlighter::initBlockHighlihgtOne(unsigned long pos,
 
 void HGMarkdownHighlighter::highlightCodeBlock(const QString &text)
 {
-    static int startLeadingSpaces = -1;
+    VTextBlockData *blockData = currentBlockData();
+    Q_ASSERT(blockData);
+
     int length = 0;
     int index = -1;
     int preState = previousBlockState();
@@ -393,14 +396,21 @@ void HGMarkdownHighlighter::highlightCodeBlock(const QString &text)
             state = HighlightBlockState::CodeBlockStart;
 
             // The leading spaces of code block start and end must be identical.
-            startLeadingSpaces = codeBlockStartExp.capturedTexts()[1].size();
+            int startLeadingSpaces = codeBlockStartExp.capturedTexts()[1].size();
+            blockData->setCodeBlockIndentation(startLeadingSpaces);
         } else {
             // A normal block.
-            startLeadingSpaces = -1;
+            blockData->setCodeBlockIndentation(-1);
             return;
         }
     } else {
         // Need to find a code block end.
+        int startLeadingSpaces = 0;
+        VTextBlockData *preBlockData = previousBlockData();
+        if (preBlockData) {
+            startLeadingSpaces = preBlockData->getCodeBlockIndentation();
+        }
+
         index = codeBlockEndExp.indexIn(text);
 
         // The closing ``` should have the same indentation as the open ```.
@@ -415,6 +425,8 @@ void HGMarkdownHighlighter::highlightCodeBlock(const QString &text)
             length = text.length();
             state = HighlightBlockState::CodeBlock;
         }
+
+        blockData->setCodeBlockIndentation(startLeadingSpaces);
     }
 
     setCurrentBlockState(state);
@@ -428,6 +440,14 @@ void HGMarkdownHighlighter::highlightCodeBlockColorColumn(const QString &p_text)
         return;
     }
 
+    VTextBlockData *blockData = currentBlockData();
+    Q_ASSERT(blockData);
+    int indent = blockData->getCodeBlockIndentation();
+    if (indent == -1) {
+        return;
+    }
+
+    cc += indent;
     if (p_text.size() < cc) {
         return;
     }

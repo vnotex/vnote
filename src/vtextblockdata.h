@@ -147,12 +147,19 @@ public:
     // Return true if there have obsolete preview being deleted.
     bool clearObsoletePreview(long long p_timeStamp, PreviewSource p_source);
 
+    int getCodeBlockIndentation() const;
+
+    void setCodeBlockIndentation(int p_indent);
+
 private:
     // Check the order of elements.
     bool checkOrder() const;
 
     // Sorted by m_imageInfo.m_startPos, with no two element's position intersected.
     QVector<VPreviewInfo *> m_previews;
+
+    // Indentation of the this code block if this block is a fenced code block.
+    int m_codeBlockIndentation;
 };
 
 inline const QVector<VPreviewInfo *> &VTextBlockData::getPreviews() const
@@ -160,4 +167,13 @@ inline const QVector<VPreviewInfo *> &VTextBlockData::getPreviews() const
     return m_previews;
 }
 
+inline int VTextBlockData::getCodeBlockIndentation() const
+{
+    return m_codeBlockIndentation;
+}
+
+inline void VTextBlockData::setCodeBlockIndentation(int p_indent)
+{
+    m_codeBlockIndentation = p_indent;
+}
 #endif // VTEXTBLOCKDATA_H

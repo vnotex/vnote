@@ -3,7 +3,8 @@
 #include <QDebug>
 
 VTextBlockData::VTextBlockData()
-    : QTextBlockUserData()
+    : QTextBlockUserData(),
+      m_codeBlockIndentation(-1)
 {
 }
 
