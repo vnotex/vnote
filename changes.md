@@ -1,4 +1,13 @@
 # Changes History
+## v1.11.1
+- Refine copy function in read mode. Better support for copying and pasting into OneNote or WeChat editor;
+- Do not highlight code blocks without language specified by default;
+- Refine themes and styles;
+- Support foreground for selected/searched word in MDHL style;
+- Support shortcuts for external programs;
+- Support resetting VNote;
+- Cover more scenarios for Chinese translations;
+
 ## v1.11
 - Support themes;
     - Three built-in mordern themes;
