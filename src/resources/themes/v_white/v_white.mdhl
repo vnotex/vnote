@@ -46,9 +46,9 @@ background: c5cae9
 # [VNote] Vim insert mode cursor line background
 vim-insert-background: c5cae9
 # [VNote] Vim normal mode cursor line background
-vim-normal-background: c0c0c0
+vim-normal-background: e0e0e0
 # [VNote] Vim visual mode cursor line background
-vim-visual-background: 90caf9
+vim-visual-background: bbdefb
 # [VNote] Vim replace mode cursor line background
 vim-replace-background: f8bbd0
 
@@ -109,7 +109,7 @@ REFERENCE
 foreground: b58900
 
 CODE
-foreground: 551a8b
+foreground: 8e24aa
 font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
 
 EMPH
@@ -125,7 +125,7 @@ COMMENT
 foreground: 93a1a1
 
 VERBATIM
-foreground: 551a8b
+foreground: 673ab7
 font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
 # [VNote] Codeblock sylte from HighlightJS (bold, italic, underlined, color)
 # The last occurence of the same attribute takes effect
