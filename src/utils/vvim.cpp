@@ -2290,7 +2290,7 @@ void VVim::setMode(VimMode p_mode, bool p_clearSelection, int p_position)
 
         default:
             setCursorBlockMode(m_editor, CursorBlock::RightSide);
-            if (mdEditor) {
+            if (mdEditor && g_config->getHighlightCursorLine()) {
                 QString color;
                 if (m_mode == VimMode::Normal) {
                     color = g_config->getEditorVimNormalBg();
