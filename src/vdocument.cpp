@@ -77,10 +77,25 @@ void VDocument::highlightTextCB(const QString &p_html, int p_id, int p_timeStamp
     emit textHighlighted(p_html, p_id, p_timeStamp);
 }
 
+void VDocument::textToHtmlAsync(const QString &p_text)
+{
+    emit requestTextToHtml(p_text);
+}
+
+void VDocument::textToHtmlCB(const QString &p_text, const QString &p_html)
+{
+    emit textToHtmlFinished(p_text, p_html);
+}
+
 void VDocument::noticeReadyToHighlightText()
 {
     m_readyToHighlight = true;
     emit readyToHighlightText();
+}
+
+void VDocument::noticeReadyToTextToHtml()
+{
+    m_readyToTextToHtml = true;
 }
 
 void VDocument::setFile(const VFile *p_file)

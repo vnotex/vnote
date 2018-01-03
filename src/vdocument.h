@@ -29,9 +29,14 @@ public:
     // Use p_id to identify the result.
     void highlightTextAsync(const QString &p_text, int p_id, int p_timeStamp);
 
+    // Request to convert @p_text to HTML.
+    void textToHtmlAsync(const QString &p_text);
+
     void setFile(const VFile *p_file);
 
     bool isReadyToHighlight() const;
+
+    bool isReadyToTextToHtml() const;
 
 public slots:
     // Will be called in the HTML side
@@ -49,8 +54,14 @@ public slots:
     void setLog(const QString &p_log);
     void keyPressEvent(int p_key, bool p_ctrl, bool p_shift);
     void updateText();
+
     void highlightTextCB(const QString &p_html, int p_id, int p_timeStamp);
+
     void noticeReadyToHighlightText();
+
+    void textToHtmlCB(const QString &p_text, const QString &p_html);
+
+    void noticeReadyToTextToHtml();
 
     // Web-side handle logics (MathJax etc.) is finished.
     // But the page may not finish loading, such as images.
@@ -65,13 +76,24 @@ signals:
 
     // @anchor is the id of that anchor, without '#'.
     void headerChanged(const QString &anchor);
+
     void htmlChanged(const QString &html);
+
     void logChanged(const QString &p_log);
+
     void keyPressed(int p_key, bool p_ctrl, bool p_shift);
+
     void requestHighlightText(const QString &p_text, int p_id, int p_timeStamp);
+
     void textHighlighted(const QString &p_html, int p_id, int p_timeStamp);
+
     void readyToHighlightText();
+
     void logicsFinished();
+
+    void requestTextToHtml(const QString &p_text);
+
+    void textToHtmlFinished(const QString &p_text, const QString &p_html);
 
 private:
     QString m_toc;
@@ -87,10 +109,18 @@ private:
 
     // Whether the web side is ready to handle highlight text request.
     bool m_readyToHighlight;
+
+    // Whether the web side is ready to convert text to html.
+    bool m_readyToTextToHtml;
 };
 
 inline bool VDocument::isReadyToHighlight() const
 {
     return m_readyToHighlight;
+}
+
+inline bool VDocument::isReadyToTextToHtml() const
+{
+    return m_readyToTextToHtml;
 }
 #endif // VDOCUMENT_H

@@ -102,7 +102,10 @@ SOURCES += main.cpp\
     vbuttonmenuitem.cpp \
     utils/viconutils.cpp \
     lineeditdelegate.cpp \
-    dialog/vtipsdialog.cpp
+    dialog/vtipsdialog.cpp \
+    dialog/vcopytextashtmldialog.cpp \
+    vwaitingwidget.cpp \
+    utils/vwebutils.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -191,7 +194,10 @@ HEADERS  += vmainwindow.h \
     vbuttonmenuitem.h \
     utils/viconutils.h \
     lineeditdelegate.h \
-    dialog/vtipsdialog.h
+    dialog/vtipsdialog.h \
+    dialog/vcopytextashtmldialog.h \
+    vwaitingwidget.h \
+    utils/vwebutils.h
 
 RESOURCES += \
     vnote.qrc \

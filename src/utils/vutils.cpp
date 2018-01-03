@@ -664,6 +664,8 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exp
                      "<script>var VEnableHighlightLineNumber = true;</script>\n";
     }
 
+    extraFile += "<script>var VStylesToInline = '" + g_config->getStylesToInlineWhenCopied() + "';</script>\n";
+
     QString htmlTemplate;
     if (p_exportPdf) {
         htmlTemplate = VNote::s_markdownTemplatePDF;

@@ -413,6 +413,11 @@ void VMdTab::setupMarkdownViewer()
 
                 tabIsReady(TabReady::ReadMode);
             });
+    connect(m_document, &VDocument::textToHtmlFinished,
+            this, [this](const QString &p_text, const QString &p_html) {
+                Q_ASSERT(m_editor);
+                m_editor->textToHtmlFinished(p_text, m_webViewer->url(), p_html);
+            });
 
     page->setWebChannel(channel);
 
@@ -464,6 +469,8 @@ void VMdTab::setupMarkdownEditor()
 
                 tabIsReady(TabReady::EditMode);
             });
+    connect(m_editor, &VMdEditor::requestTextToHtml,
+            this, &VMdTab::textToHtmlViaWebView);
 
     enableHeadingSequence(m_enableHeadingSequence);
     m_editor->reloadFile();
@@ -1005,4 +1012,21 @@ void VMdTab::handleFileOrDirectoryChange(bool p_isFile, UpdateAction p_act)
         // Refresh the previewed images in edit mode.
         m_editor->refreshPreview();
     }
+}
+
+void VMdTab::textToHtmlViaWebView(const QString &p_text)
+{
+    int maxRetry = 50;
+    while (!m_document->isReadyToTextToHtml() && maxRetry > 0) {
+        qDebug() << "wait for web side ready to convert text to HTML";
+        VUtils::sleepWait(100);
+        --maxRetry;
+    }
+
+    if (maxRetry == 0) {
+        qWarning() << "web side is not ready to convert text to HTML";
+        return;
+    }
+
+    m_document->textToHtmlAsync(p_text);
 }

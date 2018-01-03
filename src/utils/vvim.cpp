@@ -6321,9 +6321,7 @@ void VVim::handleMouseMoved(QMouseEvent *p_event)
 
 void VVim::handleMouseReleased(QMouseEvent *p_event)
 {
-    Q_UNUSED(p_event);
-
-    if (checkMode(VimMode::Normal)) {
+    if (checkMode(VimMode::Normal) && p_event->button() == Qt::LeftButton) {
         QTextCursor cursor = m_editor->textCursorW();
         if (cursor.hasSelection()) {
             return;

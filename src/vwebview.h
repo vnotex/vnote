@@ -3,6 +3,7 @@
 
 #include <QWebEngineView>
 #include <QClipboard>
+#include <QRegExp>
 
 class VFile;
 class QMenu;
@@ -42,10 +43,10 @@ private:
                            const QMimeData *p_mimeData,
                            bool p_removeBackground);
 
-    bool fixImgSrc(QString &p_html);
-
     void removeHtmlFromImageData(QClipboard *p_clipboard,
                                  const QMimeData *p_mimeData);
+
+    bool removeStyles(QString &p_html);
 
     VFile *m_file;
 

@@ -428,6 +428,10 @@ public:
 
     bool getFixImageSrcInWebWhenCopied() const;
 
+    const QStringList &getStylesToRemoveWhenCopied() const;
+
+    const QString &getStylesToInlineWhenCopied() const;
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -820,6 +824,12 @@ private:
 
     // Whether fix the local relative image src in read mode when copied.
     bool m_fixImageSrcInWebWhenCopied;
+
+    // Styles to be removed when copied in read mode.
+    QStringList m_stylesToRemoveWhenCopied;
+
+    // The string containing styles to inline when copied in edit mode.
+    QString m_stylesToInlineWhenCopied;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1993,4 +2003,13 @@ inline bool VConfigManager::getFixImageSrcInWebWhenCopied() const
     return m_fixImageSrcInWebWhenCopied;
 }
 
+inline const QStringList &VConfigManager::getStylesToRemoveWhenCopied() const
+{
+    return m_stylesToRemoveWhenCopied;
+}
+
+inline const QString &VConfigManager::getStylesToInlineWhenCopied() const
+{
+    return m_stylesToInlineWhenCopied;
+}
 #endif // VCONFIGMANAGER_H

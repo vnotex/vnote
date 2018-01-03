@@ -10,12 +10,12 @@
 #include <QMimeData>
 #include <QApplication>
 #include <QImage>
-#include <QRegExp>
 #include <QFileInfo>
 #include "vfile.h"
 #include "utils/vclipboardutils.h"
 #include "utils/viconutils.h"
 #include "vconfigmanager.h"
+#include "utils/vwebutils.h"
 
 extern VConfigManager *g_config;
 
@@ -231,10 +231,48 @@ void VWebView::hideUnusedActions(QMenu *p_menu)
 
 static bool removeBackgroundColor(QString &p_html)
 {
-    QRegExp reg("(\\s|\")background(-color)?:[^;]+;");
+    QRegExp reg("(<[^>]+\\sstyle=[^>]*(\\s|\"))background(-color)?:[^;]+;([^>]*>)");
     int size = p_html.size();
-    p_html.replace(reg, "\\1");
+    p_html.replace(reg, "\\1\\4");
     return p_html.size() != size;
+}
+
+bool VWebView::removeStyles(QString &p_html)
+{
+    bool changed = false;
+
+    const QStringList &styles = g_config->getStylesToRemoveWhenCopied();
+    if (styles.isEmpty()) {
+        return changed;
+    }
+
+    QRegExp tagReg("(<[^>]+\\sstyle=[^>]*>)");
+
+    int pos = 0;
+    while (pos < p_html.size()) {
+        int idx = p_html.indexOf(tagReg, pos);
+        if (idx == -1) {
+            break;
+        }
+
+        QString styleStr = tagReg.cap(1);
+        QString alteredStyleStr = styleStr;
+
+        QString regPatt("(\\s|\")%1:[^;]+;");
+        for (auto const & sty : styles) {
+            QRegExp reg(regPatt.arg(sty));
+            alteredStyleStr.replace(reg, "\\1");
+        }
+
+        pos = idx + tagReg.matchedLength();
+        if (styleStr != alteredStyleStr) {
+            pos = pos + alteredStyleStr.size() - styleStr.size();
+            p_html.replace(idx, tagReg.matchedLength(), alteredStyleStr);
+            changed = true;
+        }
+    }
+
+    return changed;
 }
 
 void VWebView::handleCopyWithoutBackgroundAction()
@@ -280,56 +318,6 @@ void VWebView::handleClipboardChanged(QClipboard::Mode p_mode)
     }
 }
 
-bool VWebView::fixImgSrc(QString &p_html)
-{
-    bool changed = false;
-
-#if defined(Q_OS_WIN)
-    QUrl::ComponentFormattingOption strOpt = QUrl::EncodeSpaces;
-#else
-    QUrl::ComponentFormattingOption strOpt = QUrl::FullyEncoded;
-#endif
-
-    QRegExp reg("(<img src=\")([^\"]+)\"");
-    QUrl baseUrl(url());
-
-    int pos = 0;
-    while (pos < p_html.size()) {
-        int idx = p_html.indexOf(reg, pos);
-        if (idx == -1) {
-            break;
-        }
-
-        QString urlStr = reg.cap(2);
-        QUrl imgUrl(urlStr);
-
-        QString fixedStr;
-        if (imgUrl.isRelative()) {
-            fixedStr = baseUrl.resolved(imgUrl).toString(strOpt);
-        } else if (imgUrl.isLocalFile()) {
-            fixedStr = imgUrl.toString(strOpt);
-        } else if (imgUrl.scheme() != "https" && imgUrl.scheme() != "http") {
-            QString tmp = imgUrl.toString();
-            if (QFileInfo::exists(tmp)) {
-                fixedStr = QUrl::fromLocalFile(tmp).toString(strOpt);
-            }
-        }
-
-        pos = idx + reg.matchedLength();
-        if (!fixedStr.isEmpty() && urlStr != fixedStr) {
-            qDebug() << "fix img url" << urlStr << fixedStr;
-            // Insert one more space to avoid fix the url twice.
-            pos = pos + fixedStr.size() + 1 - urlStr.size();
-            p_html.replace(idx,
-                           reg.matchedLength(),
-                           QString("<img  src=\"%1\"").arg(fixedStr));
-            changed = true;
-        }
-    }
-
-    return changed;
-}
-
 void VWebView::alterHtmlMimeData(QClipboard *p_clipboard,
                                  const QMimeData *p_mimeData,
                                  bool p_removeBackground)
@@ -353,7 +341,12 @@ void VWebView::alterHtmlMimeData(QClipboard *p_clipboard,
     }
 
     // Fix local relative images.
-    if (m_fixImgSrc && fixImgSrc(html)) {
+    if (m_fixImgSrc && VWebUtils::fixImageSrcInHtml(url(), html)) {
+        altered = true;
+    }
+
+    // Fix margin and padding.
+    if (removeStyles(html)) {
         altered = true;
     }
 

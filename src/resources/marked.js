@@ -75,3 +75,14 @@ var highlightText = function(text, id, timeStamp) {
     content.highlightTextCB(html, id, timeStamp);
 }
 
+var textToHtml = function(text) {
+    var html = marked(text);
+    var container = document.getElementById('text-to-html-div');
+    container.innerHTML = html;
+
+    html = getHtmlWithInlineStyles(container);
+
+    container.innerHTML = "";
+
+    content.textToHtmlCB(text, html);
+}

@@ -184,6 +184,8 @@ private:
     // updateStatus() with only cursor position information.
     void updateCursorStatus();
 
+    void textToHtmlViaWebView(const QString &p_text);
+
     VMdEditor *m_editor;
     VWebView *m_webViewer;
     VDocument *m_document;

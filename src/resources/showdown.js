@@ -109,3 +109,23 @@ var highlightText = function(text, id, timeStamp) {
     content.highlightTextCB(html, id, timeStamp);
 }
 
+var textToHtml = function(text) {
+    var html = renderer.makeHtml(text);
+
+    var parser = new DOMParser();
+    var htmlDoc = parser.parseFromString("<div id=\"showdown-container\">" + html + "</div>", 'text/html');
+    highlightCodeBlocks(htmlDoc, false, false);
+
+    html = htmlDoc.getElementById('showdown-container').innerHTML;
+
+    delete parser;
+
+    var container = document.getElementById('text-to-html-div');
+    container.innerHTML = html;
+
+    html = getHtmlWithInlineStyles(container);
+
+    container.innerHTML = "";
+
+    content.textToHtmlCB(text, html);
+}

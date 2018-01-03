@@ -19,6 +19,7 @@
 #include "vnotefile.h"
 #include "vpreviewmanager.h"
 #include "utils/viconutils.h"
+#include "dialog/vcopytextashtmldialog.h"
 
 extern VConfigManager *g_config;
 
@@ -29,7 +30,8 @@ VMdEditor::VMdEditor(VFile *p_file,
     : VTextEdit(p_parent),
       VEditor(p_file, this),
       m_mdHighlighter(NULL),
-      m_freshEdit(true)
+      m_freshEdit(true),
+      m_textToHtmlDialog(NULL)
 {
     Q_ASSERT(p_file->getDocType() == DocType::Markdown);
 
@@ -266,12 +268,19 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
     QMenu *menu = createStandardContextMenu();
     menu->setToolTipsVisible(true);
 
-    const QList<QAction *> actions = menu->actions();
+    VEditTab *editTab = dynamic_cast<VEditTab *>(parent());
+    Q_ASSERT(editTab);
+    if (editTab->isEditMode()) {
+        const QList<QAction *> actions = menu->actions();
 
-    if (!textCursor().hasSelection()) {
-        VEditTab *editTab = dynamic_cast<VEditTab *>(parent());
-        Q_ASSERT(editTab);
-        if (editTab->isEditMode()) {
+        if (textCursor().hasSelection()) {
+            QAction *copyAsHtmlAct = new QAction(tr("Copy As &HTML without Background"), menu);
+            copyAsHtmlAct->setToolTip(tr("Copy selected contents as HTML without background styles"));
+            connect(copyAsHtmlAct, &QAction::triggered,
+                    this, &VMdEditor::handleCopyAsHtmlAction);
+
+            menu->insertAction(actions.isEmpty() ? NULL : actions[0], copyAsHtmlAct);
+        } else {
             QAction *saveExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/save_exit.svg"),
                                                tr("&Save Changes And Read"),
                                                menu);
@@ -292,9 +301,10 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
 
             menu->insertAction(actions.isEmpty() ? NULL : actions[0], discardExitAct);
             menu->insertAction(discardExitAct, saveExitAct);
-            if (!actions.isEmpty()) {
-                menu->insertSeparator(actions[0]);
-            }
+        }
+
+        if (!actions.isEmpty()) {
+            menu->insertSeparator(actions[0]);
         }
     }
 
@@ -988,5 +998,34 @@ void VMdEditor::updateInitAndInsertedImages(bool p_fileChanged, UpdateAction p_a
             QString newPath = QDir::cleanPath(dir.absoluteFilePath(link.m_url));
             link.m_path = newPath;
         }
+    }
+}
+
+void VMdEditor::handleCopyAsHtmlAction()
+{
+    QTextCursor cursor = textCursor();
+    Q_ASSERT(cursor.hasSelection());
+
+    QString text = VEditUtils::selectedText(cursor);
+    Q_ASSERT(!text.isEmpty());
+
+    Q_ASSERT(!m_textToHtmlDialog);
+    m_textToHtmlDialog = new VCopyTextAsHtmlDialog(text, this);
+
+    // For Hoedown, we use marked.js to convert the text to have a general interface.
+    emit requestTextToHtml(text);
+
+    m_textToHtmlDialog->exec();
+
+    delete m_textToHtmlDialog;
+    m_textToHtmlDialog = NULL;
+}
+
+void VMdEditor::textToHtmlFinished(const QString &p_text,
+                                   const QUrl &p_baseUrl,
+                                   const QString &p_html)
+{
+    if (m_textToHtmlDialog && m_textToHtmlDialog->getText() == p_text) {
+        m_textToHtmlDialog->setConvertedHtml(p_baseUrl, p_html);
     }
 }

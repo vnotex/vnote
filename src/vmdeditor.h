@@ -5,6 +5,7 @@
 #include <QString>
 #include <QClipboard>
 #include <QImage>
+#include <QUrl>
 
 #include "vtextedit.h"
 #include "veditor.h"
@@ -17,6 +18,7 @@ class HGMarkdownHighlighter;
 class VCodeBlockHighlightHelper;
 class VDocument;
 class VPreviewManager;
+class VCopyTextAsHtmlDialog;
 
 class VMdEditor : public VTextEdit, public VEditor
 {
@@ -67,6 +69,8 @@ public:
 
 public slots:
     bool jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat) Q_DECL_OVERRIDE;
+
+    void textToHtmlFinished(const QString &p_text, const QUrl &p_baseUrl, const QString &p_html);
 
 // Wrapper functions for QPlainTextEdit/QTextEdit.
 public:
@@ -165,6 +169,9 @@ signals:
     // Will be emitted by VImagePreviewer for now.
     void statusChanged();
 
+    // Request to convert @p_text to Html.
+    void requestTextToHtml(const QString &p_text);
+
 protected:
     void updateFontAndPalette() Q_DECL_OVERRIDE;
 
@@ -190,6 +197,9 @@ private slots:
     // Update current header according to cursor position.
     // When there is no header in current cursor, will signal an invalid header.
     void updateCurrentHeader();
+
+    // Copy selected text as HTML.
+    void handleCopyAsHtmlAction();
 
 private:
     // Update the config of VTextEdit according to global configurations.
@@ -222,5 +232,7 @@ private:
     QVector<VTableOfContentItem> m_headers;
 
     bool m_freshEdit;
+
+    VCopyTextAsHtmlDialog *m_textToHtmlDialog;
 };
 #endif // VMDEDITOR_H

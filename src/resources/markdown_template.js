@@ -28,6 +28,10 @@ if (typeof VEnableHighlightLineNumber == 'undefined') {
     VEnableHighlightLineNumber = false;
 }
 
+if (typeof VStylesToInline == 'undefined') {
+    VStylesToInline = '';
+}
+
 // Add a caption (using alt text) under the image.
 var VImageCenterClass = 'img-center';
 var VImageCaptionClass = 'img-caption';
@@ -52,6 +56,11 @@ new QWebChannel(qt.webChannelTransport,
         if (typeof highlightText == "function") {
             content.requestHighlightText.connect(highlightText);
             content.noticeReadyToHighlightText();
+        }
+
+        if (typeof textToHtml == "function") {
+            content.requestTextToHtml.connect(textToHtml);
+            content.noticeReadyToTextToHtml();
         }
     });
 
@@ -853,4 +862,68 @@ var listContainsRegex = function(strs, exp) {
     }
 
     return false;
-}
+};
+
+var StylesToInline = null;
+
+var initStylesToInline = function() {
+    console.log('initStylesToInline');
+    StylesToInline = new Map();
+
+    if (VStylesToInline.length == 0) {
+        return;
+    }
+
+    var rules = VStylesToInline.split(',');
+    for (var i = 0; i < rules.length; ++i) {
+        var vals = rules[i].split('$');
+        if (vals.length != 2) {
+            continue;
+        }
+
+        var tags = vals[0].split(':');
+        var pros = vals[1].split(':');
+        for (var j = 0; j < tags.length; ++j) {
+            StylesToInline.set(tags[j].toLowerCase(), pros);
+        }
+    }
+};
+
+// Embed the CSS styles of @ele and all its children.
+var embedInlineStyles = function(ele) {
+    var tagName = ele.tagName.toLowerCase();
+    var props = StylesToInline.get(tagName);
+    if (!props) {
+        props = StylesToInline.get('all');
+
+        if (!props) {
+            return;
+        }
+    }
+
+    // Embed itself.
+    var style = window.getComputedStyle(ele, null);
+    for (var i = 0; i < props.length; ++i) {
+        var pro = props[i];
+        ele.style.setProperty(pro, style.getPropertyValue(pro));
+    }
+
+    // Embed children.
+    var children = ele.children;
+    for (var i = 0; i < children.length; ++i) {
+        embedInlineStyles(children[i]);
+    }
+};
+
+var getHtmlWithInlineStyles = function(container) {
+    if (!StylesToInline) {
+        initStylesToInline();
+    }
+
+    var children = container.children;
+    for (var i = 0; i < children.length; ++i) {
+        embedInlineStyles(children[i]);
+    }
+
+    return container.innerHTML;
+};
