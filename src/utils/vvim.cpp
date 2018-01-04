@@ -3346,11 +3346,19 @@ handle_target:
                 second = tmp;
             }
 
-            --second;
+            if (!(checkMode(VimMode::Normal) && p_moveMode == QTextCursor::KeepAnchor)) {
+                --second;
+            }
 
             int target = first;
             if (first == pairPosition) {
                 target = second;
+            }
+
+            if (anchor > target
+                && !p_cursor.atEnd()
+                && !useLeftSideOfCursor(p_cursor)) {
+                ++anchor;
             }
 
             p_cursor.setPosition(anchor);
