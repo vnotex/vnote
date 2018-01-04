@@ -74,8 +74,10 @@ mdit = mdit.use(window.markdownitHeadingAnchor, {
 });
 
 mdit = mdit.use(window.markdownitTaskLists);
+/*
 mdit = mdit.use(window.markdownitSub);
 mdit = mdit.use(window.markdownitSup);
+*/
 mdit = mdit.use(window.markdownitFootnote);
 
 var mdHasTocSection = function(markdown) {

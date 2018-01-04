@@ -128,13 +128,6 @@ Here is a ~~text~~ with strikethrough.
 - [ ] this is an incomplete item.
 ```
 
-### 上标和下标
-```md
-This is a text with subscript H~2~o.
-
-This is a text with superscript 29^th^.
-```
-
 ### 脚注
 ```md
 This is a footnote [^1].
