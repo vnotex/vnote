@@ -40,7 +40,7 @@ void VInsertLinkDialog::setupUI(const QString &p_title,
     m_linkTextEdit = new VMetaWordLineEdit(p_linkText);
     m_linkTextEdit->selectAll();
 
-    m_linkUrlEdit = new QLineEdit(p_linkUrl);
+    m_linkUrlEdit = new VLineEdit(p_linkUrl);
     m_linkUrlEdit->setToolTip(tr("Absolute or relative path of the link"));
 
     QFormLayout *inputLayout = new QFormLayout();
@@ -71,9 +71,9 @@ void VInsertLinkDialog::setupUI(const QString &p_title,
     setLayout(mainLayout);
     setWindowTitle(p_title);
 
-    connect(m_linkTextEdit, &QLineEdit::textChanged,
+    connect(m_linkTextEdit, &VMetaWordLineEdit::textChanged,
             this, &VInsertLinkDialog::handleInputChanged);
-    connect(m_linkUrlEdit, &QLineEdit::textChanged,
+    connect(m_linkUrlEdit, &VLineEdit::textChanged,
             this, &VInsertLinkDialog::handleInputChanged);
 }
 

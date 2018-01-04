@@ -4,6 +4,7 @@
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
 #include "vconstants.h"
+#include "vlineedit.h"
 
 extern VConfigManager *g_config;
 
@@ -440,7 +441,7 @@ VNoteManagementTab::VNoteManagementTab(QWidget *p_parent)
     connect(m_customImageFolder, &QCheckBox::stateChanged,
             this, &VNoteManagementTab::customImageFolderChanged);
 
-    m_imageFolderEdit = new QLineEdit(this);
+    m_imageFolderEdit = new VLineEdit(this);
     m_imageFolderEdit->setPlaceholderText(tr("Name of the image folder"));
     m_imageFolderEdit->setToolTip(m_customImageFolder->toolTip());
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp), this);
@@ -457,7 +458,7 @@ VNoteManagementTab::VNoteManagementTab(QWidget *p_parent)
     connect(m_customAttachmentFolder, &QCheckBox::stateChanged,
             this, &VNoteManagementTab::customAttachmentFolderChanged);
 
-    m_attachmentFolderEdit = new QLineEdit(this);
+    m_attachmentFolderEdit = new VLineEdit(this);
     m_attachmentFolderEdit->setPlaceholderText(tr("Name of the attachment folder"));
     m_attachmentFolderEdit->setToolTip(m_customAttachmentFolder->toolTip());
     validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp), this);
@@ -483,7 +484,7 @@ VNoteManagementTab::VNoteManagementTab(QWidget *p_parent)
     connect(m_customImageFolderExt, &QCheckBox::stateChanged,
             this, &VNoteManagementTab::customImageFolderExtChanged);
 
-    m_imageFolderEditExt = new QLineEdit(this);
+    m_imageFolderEditExt = new VLineEdit(this);
     m_imageFolderEditExt->setToolTip(m_customImageFolderExt->toolTip());
     m_imageFolderEditExt->setPlaceholderText(tr("Name of the image folder"));
 
@@ -689,7 +690,7 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     zoomFactorLayout->addWidget(m_webZoomFactorSpin);
 
     // Color column.
-    m_colorColumnEdit = new QLineEdit();
+    m_colorColumnEdit = new VLineEdit();
     m_colorColumnEdit->setToolTip(tr("Specify the screen column in fenced code block "
                                      "which will be highlighted"));
     QValidator *validator = new QRegExpValidator(QRegExp("\\d+"), this);

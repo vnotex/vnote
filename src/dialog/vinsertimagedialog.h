@@ -7,7 +7,7 @@
 #include <QByteArray>
 
 class QLabel;
-class QLineEdit;
+class VLineEdit;
 class VMetaWordLineEdit;
 class QPushButton;
 class QDialogButtonBox;
@@ -59,7 +59,7 @@ private:
     void fetchImageFromClipboard();
 
     VMetaWordLineEdit *m_imageTitleEdit;
-    QLineEdit *m_pathEdit;
+    VLineEdit *m_pathEdit;
     QPushButton *browseBtn;
     QDialogButtonBox *m_btnBox;
     QLabel *imagePreviewLabel;

@@ -9,13 +9,13 @@ extern VMetaWordManager *g_mwMgr;
 
 
 VMetaWordLineEdit::VMetaWordLineEdit(QWidget *p_parent)
-    : QLineEdit(p_parent)
+    : VLineEdit(p_parent)
 {
     init();
 }
 
 VMetaWordLineEdit::VMetaWordLineEdit(const QString &p_contents, QWidget *p_parent)
-    : QLineEdit(p_contents, p_parent)
+    : VLineEdit(p_contents, p_parent)
 {
     init();
 }
@@ -37,7 +37,7 @@ void VMetaWordLineEdit::init()
 {
     m_evaluatedText = g_mwMgr->evaluate(text());
 
-    connect(this, &QLineEdit::textChanged,
+    connect(this, &VLineEdit::textChanged,
             this, &VMetaWordLineEdit::handleTextChanged);
 }
 

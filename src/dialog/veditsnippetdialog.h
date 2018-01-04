@@ -7,7 +7,7 @@
 #include "vsnippet.h"
 
 class VMetaWordLineEdit;
-class QLineEdit;
+class VLineEdit;
 class QLabel;
 class QDialogButtonBox;
 class QComboBox;
@@ -54,8 +54,8 @@ private:
     VMetaWordLineEdit *m_nameEdit;
     QComboBox *m_typeCB;
     QComboBox *m_shortcutCB;
-    QLineEdit *m_cursorMarkEdit;
-    QLineEdit *m_selectionMarkEdit;
+    VLineEdit *m_cursorMarkEdit;
+    VLineEdit *m_selectionMarkEdit;
     QCheckBox *m_autoIndentCB;
     QTextEdit *m_contentEdit;
 

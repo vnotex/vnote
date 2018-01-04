@@ -5,7 +5,7 @@
 #include <QString>
 #include "vconstants.h"
 
-class QLineEdit;
+class VLineEdit;
 class QPushButton;
 class QCheckBox;
 
@@ -52,8 +52,8 @@ private:
     uint m_options;
     bool m_replaceAvailable;
 
-    QLineEdit *m_findEdit;
-    QLineEdit *m_replaceEdit;
+    VLineEdit *m_findEdit;
+    VLineEdit *m_replaceEdit;
     QPushButton *m_findNextBtn;
     QPushButton *m_findPrevBtn;
     QPushButton *m_replaceBtn;

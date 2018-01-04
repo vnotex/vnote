@@ -2,6 +2,7 @@
 #include <QtWidgets>
 
 #include "utils/viconutils.h"
+#include "vlineedit.h"
 
 VFindReplaceDialog::VFindReplaceDialog(QWidget *p_parent)
     : QWidget(p_parent), m_options(0), m_replaceAvailable(true)
@@ -28,7 +29,7 @@ void VFindReplaceDialog::setupUI()
 
     // Find
     QLabel *findLabel = new QLabel(tr("Find:"));
-    m_findEdit = new QLineEdit();
+    m_findEdit = new VLineEdit();
     m_findEdit->setPlaceholderText(tr("Enter text to search"));
     findLabel->setBuddy(m_findEdit);
     m_findNextBtn = new QPushButton(tr("Find &Next"));
@@ -39,7 +40,7 @@ void VFindReplaceDialog::setupUI()
 
     // Replace
     QLabel *replaceLabel = new QLabel(tr("&Replace with:"));
-    m_replaceEdit = new QLineEdit();
+    m_replaceEdit = new VLineEdit();
     m_replaceEdit->setPlaceholderText(tr("Enter text to replace with"));
     replaceLabel->setBuddy(m_replaceEdit);
     m_replaceBtn = new QPushButton(tr("Replace"));
@@ -121,7 +122,7 @@ void VFindReplaceDialog::setupUI()
     // Signals
     connect(m_closeBtn, &QPushButton::clicked,
             this, &VFindReplaceDialog::closeDialog);
-    connect(m_findEdit, &QLineEdit::textChanged,
+    connect(m_findEdit, &VLineEdit::textChanged,
             this, &VFindReplaceDialog::handleFindTextChanged);
     connect(m_advancedBtn, &QPushButton::toggled,
             this, &VFindReplaceDialog::advancedBtnToggled);

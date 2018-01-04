@@ -10,7 +10,7 @@ class QComboBox;
 class QGroupBox;
 class QDoubleSpinBox;
 class QCheckBox;
-class QLineEdit;
+class VLineEdit;
 class QStackedLayout;
 class QListWidget;
 class QPlainTextEdit;
@@ -79,15 +79,15 @@ public:
 
     // Image folder.
     QCheckBox *m_customImageFolder;
-    QLineEdit *m_imageFolderEdit;
+    VLineEdit *m_imageFolderEdit;
 
     // Image folder of External File.
     QCheckBox *m_customImageFolderExt;
-    QLineEdit *m_imageFolderEditExt;
+    VLineEdit *m_imageFolderEditExt;
 
     // Attachment folder.
     QCheckBox *m_customAttachmentFolder;
-    QLineEdit *m_attachmentFolderEdit;
+    VLineEdit *m_attachmentFolderEdit;
 
 private slots:
     void customImageFolderChanged(int p_state);
@@ -125,7 +125,7 @@ public:
     QDoubleSpinBox *m_webZoomFactorSpin;
 
     // Color column in code block.
-    QLineEdit *m_colorColumnEdit;
+    VLineEdit *m_colorColumnEdit;
 
 private:
     bool loadOpenMode();

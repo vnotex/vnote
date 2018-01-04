@@ -5,7 +5,7 @@
 #include <QVector>
 
 class QLabel;
-class QLineEdit;
+class VLineEdit;
 class VMetaWordLineEdit;
 class QDialogButtonBox;
 class QString;
@@ -40,10 +40,10 @@ private:
     const VNotebook *m_notebook;
 
     VMetaWordLineEdit *m_nameEdit;
-    QLineEdit *m_pathEdit;
-    QLineEdit *m_imageFolderEdit;
+    VLineEdit *m_pathEdit;
+    VLineEdit *m_imageFolderEdit;
     // Read-only.
-    QLineEdit *m_attachmentFolderEdit;
+    VLineEdit *m_attachmentFolderEdit;
     QLabel *m_warnLabel;
     QDialogButtonBox *m_btnBox;
     const QVector<VNotebook *> &m_notebooks;

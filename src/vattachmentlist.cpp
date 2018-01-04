@@ -10,6 +10,7 @@
 #include "dialog/vsortdialog.h"
 #include "utils/vimnavigationforwidget.h"
 #include "utils/viconutils.h"
+#include "vlineedit.h"
 
 extern VConfigManager *g_config;
 extern VMainWindow *g_mainWin;
@@ -413,7 +414,7 @@ void VAttachmentList::sortItems()
 
 void VAttachmentList::handleListItemCommitData(QWidget *p_itemEdit)
 {
-    QString text = reinterpret_cast<QLineEdit *>(p_itemEdit)->text();
+    QString text = reinterpret_cast<VLineEdit *>(p_itemEdit)->text();
     QListWidgetItem *item = m_attachmentList->currentItem();
     Q_ASSERT(item && item->text() == text);
 

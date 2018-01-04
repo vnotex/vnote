@@ -17,7 +17,7 @@ VNotebookInfoDialog::VNotebookInfoDialog(const QString &p_title,
 {
     setupUI(p_title, p_info);
 
-    connect(m_nameEdit, &QLineEdit::textChanged,
+    connect(m_nameEdit, &VMetaWordLineEdit::textChanged,
             this, &VNotebookInfoDialog::handleInputChanged);
 
     handleInputChanged();
@@ -36,11 +36,11 @@ void VNotebookInfoDialog::setupUI(const QString &p_title, const QString &p_info)
     m_nameEdit->setValidator(validator);
     m_nameEdit->selectAll();
 
-    m_pathEdit = new QLineEdit(m_notebook->getPath());
+    m_pathEdit = new VLineEdit(m_notebook->getPath());
     m_pathEdit->setReadOnly(true);
 
     // Image folder.
-    m_imageFolderEdit = new QLineEdit(m_notebook->getImageFolderConfig());
+    m_imageFolderEdit = new VLineEdit(m_notebook->getImageFolderConfig());
     m_imageFolderEdit->setPlaceholderText(tr("Use global configuration (%1)")
                                             .arg(g_config->getImageFolder()));
     m_imageFolderEdit->setToolTip(tr("Set the name of the folder to hold images of all the notes in this notebook "
@@ -50,14 +50,14 @@ void VNotebookInfoDialog::setupUI(const QString &p_title, const QString &p_info)
 
     // Attachment folder.
     Q_ASSERT(!m_notebook->getAttachmentFolder().isEmpty());
-    m_attachmentFolderEdit = new QLineEdit(m_notebook->getAttachmentFolder());
+    m_attachmentFolderEdit = new VLineEdit(m_notebook->getAttachmentFolder());
     m_attachmentFolderEdit->setPlaceholderText(tr("Use global configuration (%1)")
                                                  .arg(g_config->getAttachmentFolder()));
     m_attachmentFolderEdit->setToolTip(tr("The folder to hold attachments of all the notes in this notebook"));
     m_attachmentFolderEdit->setReadOnly(true);
 
     // Recycle bin folder.
-    QLineEdit *recycleBinFolderEdit = new QLineEdit(m_notebook->getRecycleBinFolder());
+    VLineEdit *recycleBinFolderEdit = new VLineEdit(m_notebook->getRecycleBinFolder());
     recycleBinFolderEdit->setReadOnly(true);
     recycleBinFolderEdit->setToolTip(tr("The folder to hold deleted files from within VNote of all the notes in this notebook"));
 

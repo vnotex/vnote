@@ -19,8 +19,8 @@ VNewNotebookDialog::VNewNotebookDialog(const QString &title, const QString &info
 {
     setupUI(title, info);
 
-    connect(m_nameEdit, &QLineEdit::textChanged, this, &VNewNotebookDialog::handleInputChanged);
-    connect(pathEdit, &QLineEdit::textChanged, this, &VNewNotebookDialog::handleInputChanged);
+    connect(m_nameEdit, &VMetaWordLineEdit::textChanged, this, &VNewNotebookDialog::handleInputChanged);
+    connect(pathEdit, &VLineEdit::textChanged, this, &VNewNotebookDialog::handleInputChanged);
     connect(browseBtn, &QPushButton::clicked, this, &VNewNotebookDialog::handleBrowseBtnClicked);
 
     handleInputChanged();
@@ -42,12 +42,12 @@ void VNewNotebookDialog::setupUI(const QString &p_title, const QString &p_info)
     nameLabel->setBuddy(m_nameEdit);
 
     QLabel *pathLabel = new QLabel(tr("Notebook &root folder:"));
-    pathEdit = new QLineEdit(defaultPath);
+    pathEdit = new VLineEdit(defaultPath);
     pathLabel->setBuddy(pathEdit);
     browseBtn = new QPushButton(tr("&Browse"));
 
     QLabel *imageFolderLabel = new QLabel(tr("&Image folder:"));
-    m_imageFolderEdit = new QLineEdit();
+    m_imageFolderEdit = new VLineEdit();
     imageFolderLabel->setBuddy(m_imageFolderEdit);
     m_imageFolderEdit->setPlaceholderText(tr("Use global configuration (%1)")
                                             .arg(g_config->getImageFolder()));
@@ -58,7 +58,7 @@ void VNewNotebookDialog::setupUI(const QString &p_title, const QString &p_info)
     m_imageFolderEdit->setValidator(validator);
 
     QLabel *attachmentFolderLabel = new QLabel(tr("&Attachment folder:"));
-    m_attachmentFolderEdit = new QLineEdit();
+    m_attachmentFolderEdit = new VLineEdit();
     attachmentFolderLabel->setBuddy(m_attachmentFolderEdit);
     m_attachmentFolderEdit->setPlaceholderText(tr("Use global configuration (%1)")
                                                  .arg(g_config->getAttachmentFolder()));

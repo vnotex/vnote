@@ -7,6 +7,7 @@
 #include "utils/vutils.h"
 #include "vmetawordlineedit.h"
 #include "vdownloader.h"
+#include "vlineedit.h"
 
 VInsertImageDialog::VInsertImageDialog(const QString &p_title,
                                        const QString &p_imageTitle,
@@ -20,7 +21,7 @@ VInsertImageDialog::VInsertImageDialog(const QString &p_title,
 {
     setupUI(p_title, p_imageTitle, p_imagePath);
 
-    connect(m_imageTitleEdit, &QLineEdit::textChanged,
+    connect(m_imageTitleEdit, &VMetaWordLineEdit::textChanged,
             this, &VInsertImageDialog::handleInputChanged);
 
     if (m_browsable) {
@@ -30,7 +31,7 @@ VInsertImageDialog::VInsertImageDialog(const QString &p_title,
         connect(m_timer, &QTimer::timeout,
                 this, &VInsertImageDialog::handlePathEditChanged);
 
-        connect(m_pathEdit, &QLineEdit::textChanged,
+        connect(m_pathEdit, &VLineEdit::textChanged,
                 this, [this]() {
                     m_timer->stop();
 
@@ -64,7 +65,7 @@ void VInsertImageDialog::setupUI(const QString &p_title,
                                  const QString &p_imagePath)
 {
     QLabel *pathLabel = new QLabel(tr("&From:"));
-    m_pathEdit = new QLineEdit(p_imagePath);
+    m_pathEdit = new VLineEdit(p_imagePath);
     pathLabel->setBuddy(m_pathEdit);
     browseBtn = new QPushButton(tr("&Browse"));
     m_pathEdit->setReadOnly(!m_browsable);

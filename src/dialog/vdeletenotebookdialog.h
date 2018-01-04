@@ -5,7 +5,6 @@
 #include <QMessageBox>
 
 class QLabel;
-class QLineEdit;
 class QString;
 class QCheckBox;
 class QDialogButtonBox;

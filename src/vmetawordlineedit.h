@@ -1,11 +1,11 @@
 #ifndef VMETAWORDLINEEDIT_H
 #define VMETAWORDLINEEDIT_H
 
-#include <QLineEdit>
+#include "vlineedit.h"
 
 
-// QLineEdit with meta word support.
-class VMetaWordLineEdit : public QLineEdit
+// VLineEdit with meta word support.
+class VMetaWordLineEdit : public VLineEdit
 {
     Q_OBJECT
 public:

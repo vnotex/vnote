@@ -17,7 +17,7 @@ VNewDirDialog::VNewDirDialog(const QString &title,
 {
     setupUI();
 
-    connect(m_nameEdit, &QLineEdit::textChanged, this, &VNewDirDialog::handleInputChanged);
+    connect(m_nameEdit, &VMetaWordLineEdit::textChanged, this, &VNewDirDialog::handleInputChanged);
 
     handleInputChanged();
 }

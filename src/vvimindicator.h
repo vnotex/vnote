@@ -2,9 +2,9 @@
 #define VVIMINDICATOR_H
 
 #include <QWidget>
-#include <QLineEdit>
 #include <QPointer>
 #include "utils/vvim.h"
+#include "vlineedit.h"
 
 class QLabel;
 class VButtonWithWidget;
@@ -12,7 +12,7 @@ class QKeyEvent;
 class QFocusEvent;
 class VEditTab;
 
-class VVimCmdLineEdit : public QLineEdit
+class VVimCmdLineEdit : public VLineEdit
 {
     Q_OBJECT
 

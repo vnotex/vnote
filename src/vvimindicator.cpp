@@ -341,7 +341,7 @@ void VVimIndicator::triggerCommandLine(VVim::CommandLineType p_type)
 }
 
 VVimCmdLineEdit::VVimCmdLineEdit(QWidget *p_parent)
-    : QLineEdit(p_parent), m_type(VVim::CommandLineType::Invalid),
+    : VLineEdit(p_parent), m_type(VVim::CommandLineType::Invalid),
       m_registerPending(false), m_enableInputMethod(true)
 {
     // When user delete all the text, cancel command input.
@@ -432,7 +432,7 @@ QVariant VVimCmdLineEdit::inputMethodQuery(Qt::InputMethodQuery p_query) const
         return m_enableInputMethod;
     }
 
-    return QLineEdit::inputMethodQuery(p_query);
+    return VLineEdit::inputMethodQuery(p_query);
 }
 
 // See if @p_modifiers is Control which is different on macOs and Windows.
@@ -531,7 +531,7 @@ void VVimCmdLineEdit::keyPressEvent(QKeyEvent *p_event)
     }
 
 exit:
-    QLineEdit::keyPressEvent(p_event);
+    VLineEdit::keyPressEvent(p_event);
 }
 
 void VVimCmdLineEdit::focusOutEvent(QFocusEvent *p_event)

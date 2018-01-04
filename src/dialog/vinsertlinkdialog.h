@@ -5,7 +5,7 @@
 #include <QString>
 
 class VMetaWordLineEdit;
-class QLineEdit;
+class VLineEdit;
 class QDialogButtonBox;
 class QShowEvent;
 
@@ -42,7 +42,7 @@ private:
 
     VMetaWordLineEdit *m_linkTextEdit;
 
-    QLineEdit *m_linkUrlEdit;
+    VLineEdit *m_linkUrlEdit;
 
     QDialogButtonBox *m_btnBox;
 };

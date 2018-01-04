@@ -5,7 +5,7 @@
 
 class VOrphanFile;
 class QDialogButtonBox;
-class QLineEdit;
+class VLineEdit;
 
 class VOrphanFileInfoDialog : public QDialog
 {
@@ -28,7 +28,7 @@ private:
     const VOrphanFile *m_file;
 
     QDialogButtonBox *m_btnBox;
-    QLineEdit *m_imageFolderEdit;
+    VLineEdit *m_imageFolderEdit;
 };
 
 #endif // VORPHANFILEINFODIALOG_H

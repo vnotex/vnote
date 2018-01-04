@@ -22,6 +22,7 @@
 #include "vnote.h"
 #include "vmarkdownconverter.h"
 #include "vdocument.h"
+#include "vlineedit.h"
 
 extern VConfigManager *g_config;
 
@@ -51,7 +52,7 @@ void VExporter::setupUI()
 
     // Target file path.
     QLabel *pathLabel = new QLabel(tr("Target &path:"));
-    m_pathEdit = new QLineEdit();
+    m_pathEdit = new VLineEdit();
     pathLabel->setBuddy(m_pathEdit);
     m_browseBtn = new QPushButton(tr("&Browse"));
     connect(m_browseBtn, &QPushButton::clicked,

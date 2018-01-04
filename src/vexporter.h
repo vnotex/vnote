@@ -8,7 +8,7 @@
 
 class VWebView;
 class VFile;
-class QLineEdit;
+class VLineEdit;
 class QLabel;
 class QDialogButtonBox;
 class QPushButton;
@@ -99,7 +99,7 @@ private:
     ExportState m_state;
 
     QLabel *m_infoLabel;
-    QLineEdit *m_pathEdit;
+    VLineEdit *m_pathEdit;
     QPushButton *m_browseBtn;
     QLabel *m_layoutLabel;
     QPushButton *m_layoutBtn;

@@ -1,6 +1,6 @@
 #include "lineeditdelegate.h"
 
-#include <QLineEdit>
+#include "vlineedit.h"
 
 
 LineEditDelegate::LineEditDelegate(QObject *p_parent)
@@ -15,7 +15,7 @@ QWidget *LineEditDelegate::createEditor(QWidget *p_parent,
     Q_UNUSED(p_option);
     Q_UNUSED(p_index);
 
-    QLineEdit *edit = new QLineEdit(p_parent);
+    VLineEdit *edit = new VLineEdit(p_parent);
     return edit;
 }
 
@@ -23,7 +23,7 @@ void LineEditDelegate::setEditorData(QWidget *p_editor, const QModelIndex &p_ind
 {
     QString text = p_index.model()->data(p_index, Qt::EditRole).toString();
 
-    QLineEdit *edit = static_cast<QLineEdit *>(p_editor);
+    VLineEdit *edit = static_cast<VLineEdit *>(p_editor);
     edit->setText(text);
 }
 
@@ -31,7 +31,7 @@ void LineEditDelegate::setModelData(QWidget *p_editor,
                                     QAbstractItemModel *p_model,
                                     const QModelIndex &p_index) const
 {
-    QLineEdit *edit = static_cast<QLineEdit *>(p_editor);
+    VLineEdit *edit = static_cast<VLineEdit *>(p_editor);
 
     p_model->setData(p_index, edit->text(), Qt::EditRole);
 }

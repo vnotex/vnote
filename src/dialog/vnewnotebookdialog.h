@@ -5,7 +5,7 @@
 #include <QVector>
 
 class QLabel;
-class QLineEdit;
+class VLineEdit;
 class VMetaWordLineEdit;
 class QPushButton;
 class QDialogButtonBox;
@@ -54,11 +54,11 @@ private:
     bool autoComplete();
 
     VMetaWordLineEdit *m_nameEdit;
-    QLineEdit *pathEdit;
+    VLineEdit *pathEdit;
     QPushButton *browseBtn;
     QLabel *m_warnLabel;
-    QLineEdit *m_imageFolderEdit;
-    QLineEdit *m_attachmentFolderEdit;
+    VLineEdit *m_imageFolderEdit;
+    VLineEdit *m_attachmentFolderEdit;
     QDialogButtonBox *m_btnBox;
 
     QString defaultName;

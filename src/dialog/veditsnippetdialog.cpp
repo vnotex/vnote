@@ -5,6 +5,7 @@
 #include "vmetawordlineedit.h"
 #include "vconfigmanager.h"
 #include "utils/vmetawordmanager.h"
+#include "vlineedit.h"
 
 extern VMetaWordManager *g_mwMgr;
 
@@ -65,11 +66,11 @@ void VEditSnippetDialog::setupUI(const QString &p_title, const QString &p_info)
     }
 
     // Cursor mark.
-    m_cursorMarkEdit = new QLineEdit(m_snippet.getCursorMark());
+    m_cursorMarkEdit = new VLineEdit(m_snippet.getCursorMark());
     m_cursorMarkEdit->setToolTip(tr("String in the content to mark the cursor position"));
 
     // Selection mark.
-    m_selectionMarkEdit = new QLineEdit(m_snippet.getSelectionMark());
+    m_selectionMarkEdit = new VLineEdit(m_snippet.getSelectionMark());
     m_selectionMarkEdit->setToolTip(tr("String in the content to be replaced with selected text"));
 
     // Auto Indent.
@@ -117,16 +118,16 @@ void VEditSnippetDialog::setupUI(const QString &p_title, const QString &p_info)
 
     setWindowTitle(p_title);
 
-    connect(m_nameEdit, &QLineEdit::textChanged,
+    connect(m_nameEdit, &VMetaWordLineEdit::textChanged,
             this, &VEditSnippetDialog::handleInputChanged);
 
     connect(m_typeCB, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &VEditSnippetDialog::handleInputChanged);
 
-    connect(m_cursorMarkEdit, &QLineEdit::textChanged,
+    connect(m_cursorMarkEdit, &VLineEdit::textChanged,
             this, &VEditSnippetDialog::handleInputChanged);
 
-    connect(m_selectionMarkEdit, &QLineEdit::textChanged,
+    connect(m_selectionMarkEdit, &VLineEdit::textChanged,
             this, &VEditSnippetDialog::handleInputChanged);
 
     connect(m_contentEdit, &QTextEdit::textChanged,

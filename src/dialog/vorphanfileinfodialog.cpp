@@ -4,6 +4,7 @@
 #include "vorphanfile.h"
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
+#include "vlineedit.h"
 
 extern VConfigManager *g_config;
 
@@ -12,7 +13,7 @@ VOrphanFileInfoDialog::VOrphanFileInfoDialog(const VOrphanFile *p_file, QWidget 
 {
     setupUI();
 
-    connect(m_imageFolderEdit, &QLineEdit::textChanged,
+    connect(m_imageFolderEdit, &VLineEdit::textChanged,
             this, &VOrphanFileInfoDialog::handleInputChanged);
 
     handleInputChanged();
@@ -25,7 +26,7 @@ void VOrphanFileInfoDialog::setupUI()
     QLabel *fileLabel = new QLabel(m_file->fetchPath());
     topLayout->addRow(tr("File:"), fileLabel);
 
-    m_imageFolderEdit = new QLineEdit(m_file->getImageFolder());
+    m_imageFolderEdit = new VLineEdit(m_file->getImageFolder());
     m_imageFolderEdit->setPlaceholderText(tr("Use global configuration (%1)")
                                             .arg(g_config->getImageFolderExt()));
     QString imgFolderTip = tr("Set the path of the image folder to store images "

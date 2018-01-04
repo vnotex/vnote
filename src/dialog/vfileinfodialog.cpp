@@ -17,7 +17,7 @@ VFileInfoDialog::VFileInfoDialog(const QString &title,
 {
     setupUI(title, info);
 
-    connect(m_nameEdit, &QLineEdit::textChanged, this, &VFileInfoDialog::handleInputChanged);
+    connect(m_nameEdit, &VMetaWordLineEdit::textChanged, this, &VFileInfoDialog::handleInputChanged);
 
     handleInputChanged();
 }
@@ -45,7 +45,7 @@ void VFileInfoDialog::setupUI(const QString &p_title, const QString &p_info)
     m_nameEdit->setSelection(baseStart, baseLength);
 
     // Attachment folder.
-    QLineEdit *attachmentFolderEdit = new QLineEdit(m_file->getAttachmentFolder());
+    VLineEdit *attachmentFolderEdit = new VLineEdit(m_file->getAttachmentFolder());
     attachmentFolderEdit->setPlaceholderText(tr("Will be assigned when adding attachments"));
     attachmentFolderEdit->setToolTip(tr("The folder to hold attachments of this note"));
     attachmentFolderEdit->setReadOnly(true);
