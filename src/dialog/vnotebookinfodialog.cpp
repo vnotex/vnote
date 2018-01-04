@@ -3,7 +3,7 @@
 #include "vnotebook.h"
 #include "utils/vutils.h"
 #include "vconfigmanager.h"
-#include "vlineedit.h"
+#include "vmetawordlineedit.h"
 
 extern VConfigManager *g_config;
 
@@ -30,7 +30,7 @@ void VNotebookInfoDialog::setupUI(const QString &p_title, const QString &p_info)
         infoLabel = new QLabel(p_info);
     }
 
-    m_nameEdit = new VLineEdit(m_notebook->getName());
+    m_nameEdit = new VMetaWordLineEdit(m_notebook->getName());
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp),
                                                  m_nameEdit);
     m_nameEdit->setValidator(validator);

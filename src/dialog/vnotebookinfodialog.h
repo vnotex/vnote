@@ -6,7 +6,7 @@
 
 class QLabel;
 class QLineEdit;
-class VLineEdit;
+class VMetaWordLineEdit;
 class QDialogButtonBox;
 class QString;
 class VNotebook;
@@ -39,7 +39,7 @@ private:
 
     const VNotebook *m_notebook;
 
-    VLineEdit *m_nameEdit;
+    VMetaWordLineEdit *m_nameEdit;
     QLineEdit *m_pathEdit;
     QLineEdit *m_imageFolderEdit;
     // Read-only.

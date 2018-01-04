@@ -5,7 +5,7 @@
 #include <QTimer>
 #include "vinsertimagedialog.h"
 #include "utils/vutils.h"
-#include "vlineedit.h"
+#include "vmetawordlineedit.h"
 #include "vdownloader.h"
 
 VInsertImageDialog::VInsertImageDialog(const QString &p_title,
@@ -71,7 +71,7 @@ void VInsertImageDialog::setupUI(const QString &p_title,
     browseBtn->setEnabled(m_browsable);
 
     QLabel *imageTitleLabel = new QLabel(tr("&Image title:"));
-    m_imageTitleEdit = new VLineEdit(p_imageTitle);
+    m_imageTitleEdit = new VMetaWordLineEdit(p_imageTitle);
     m_imageTitleEdit->selectAll();
     imageTitleLabel->setBuddy(m_imageTitleEdit);
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_imageTitleRegExp),

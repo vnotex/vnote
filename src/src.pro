@@ -79,7 +79,7 @@ SOURCES += main.cpp\
     vfilesessioninfo.cpp \
     vtableofcontent.cpp \
     utils/vmetawordmanager.cpp \
-    vlineedit.cpp \
+    vmetawordlineedit.cpp \
     dialog/vinsertlinkdialog.cpp \
     vplaintextedit.cpp \
     vimageresourcemanager.cpp \
@@ -171,7 +171,7 @@ HEADERS  += vmainwindow.h \
     vfilesessioninfo.h \
     vtableofcontent.h \
     utils/vmetawordmanager.h \
-    vlineedit.h \
+    vmetawordlineedit.h \
     dialog/vinsertlinkdialog.h \
     vplaintextedit.h \
     vimageresourcemanager.h \

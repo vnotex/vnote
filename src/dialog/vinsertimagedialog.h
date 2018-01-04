@@ -8,7 +8,7 @@
 
 class QLabel;
 class QLineEdit;
-class VLineEdit;
+class VMetaWordLineEdit;
 class QPushButton;
 class QDialogButtonBox;
 class QTimer;
@@ -58,7 +58,7 @@ private:
 
     void fetchImageFromClipboard();
 
-    VLineEdit *m_imageTitleEdit;
+    VMetaWordLineEdit *m_imageTitleEdit;
     QLineEdit *m_pathEdit;
     QPushButton *browseBtn;
     QDialogButtonBox *m_btnBox;

@@ -6,7 +6,7 @@
 #include "vconstants.h"
 
 class QLabel;
-class VLineEdit;
+class VMetaWordLineEdit;
 class QDialogButtonBox;
 class QCheckBox;
 class VDirectory;
@@ -50,7 +50,7 @@ private:
 
     void tryToSelectLastTemplate();
 
-    VLineEdit *m_nameEdit;
+    VMetaWordLineEdit *m_nameEdit;
 
     QComboBox *m_templateCB;
 

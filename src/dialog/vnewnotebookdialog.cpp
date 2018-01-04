@@ -4,7 +4,7 @@
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
 #include "vnotebook.h"
-#include "vlineedit.h"
+#include "vmetawordlineedit.h"
 
 extern VConfigManager *g_config;
 
@@ -35,7 +35,7 @@ void VNewNotebookDialog::setupUI(const QString &p_title, const QString &p_info)
     }
 
     QLabel *nameLabel = new QLabel(tr("Notebook &name:"));
-    m_nameEdit = new VLineEdit(defaultName);
+    m_nameEdit = new VMetaWordLineEdit(defaultName);
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp),
                                                  m_nameEdit);
     m_nameEdit->setValidator(validator);

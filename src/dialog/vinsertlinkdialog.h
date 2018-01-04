@@ -4,7 +4,7 @@
 #include <QDialog>
 #include <QString>
 
-class VLineEdit;
+class VMetaWordLineEdit;
 class QLineEdit;
 class QDialogButtonBox;
 class QShowEvent;
@@ -40,7 +40,7 @@ private:
     // Infer link text/url from clipboard only when text and url are both empty.
     void fetchLinkFromClipboard();
 
-    VLineEdit *m_linkTextEdit;
+    VMetaWordLineEdit *m_linkTextEdit;
 
     QLineEdit *m_linkUrlEdit;
 

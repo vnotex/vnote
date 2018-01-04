@@ -1,17 +1,17 @@
-#ifndef VLINEEDIT_H
-#define VLINEEDIT_H
+#ifndef VMETAWORDLINEEDIT_H
+#define VMETAWORDLINEEDIT_H
 
 #include <QLineEdit>
 
 
 // QLineEdit with meta word support.
-class VLineEdit : public QLineEdit
+class VMetaWordLineEdit : public QLineEdit
 {
     Q_OBJECT
 public:
-    explicit VLineEdit(QWidget *p_parent = nullptr);
+    explicit VMetaWordLineEdit(QWidget *p_parent = nullptr);
 
-    VLineEdit(const QString &p_contents, QWidget *p_parent = Q_NULLPTR);
+    VMetaWordLineEdit(const QString &p_contents, QWidget *p_parent = Q_NULLPTR);
 
     // Return the evaluated text.
     const QString &getEvaluatedText() const;
@@ -26,4 +26,4 @@ private:
     QString m_evaluatedText;
 };
 
-#endif // VLINEEDIT_H
+#endif // VMETAWORDLINEEDIT_H

@@ -1,4 +1,4 @@
-#include "vlineedit.h"
+#include "vmetawordlineedit.h"
 
 #include <QDebug>
 #include <QToolTip>
@@ -8,22 +8,21 @@
 extern VMetaWordManager *g_mwMgr;
 
 
-VLineEdit::VLineEdit(QWidget *p_parent)
+VMetaWordLineEdit::VMetaWordLineEdit(QWidget *p_parent)
     : QLineEdit(p_parent)
 {
     init();
 }
 
-VLineEdit::VLineEdit(const QString &p_contents, QWidget *p_parent)
+VMetaWordLineEdit::VMetaWordLineEdit(const QString &p_contents, QWidget *p_parent)
     : QLineEdit(p_contents, p_parent)
 {
     init();
 }
 
-void VLineEdit::handleTextChanged(const QString &p_text)
+void VMetaWordLineEdit::handleTextChanged(const QString &p_text)
 {
     m_evaluatedText = g_mwMgr->evaluate(p_text);
-    qDebug() << "evaluate text:" << m_evaluatedText;
 
     if (m_evaluatedText == p_text) {
         return;
@@ -34,15 +33,15 @@ void VLineEdit::handleTextChanged(const QString &p_text)
     QToolTip::showText(pos, m_evaluatedText, this);
 }
 
-void VLineEdit::init()
+void VMetaWordLineEdit::init()
 {
     m_evaluatedText = g_mwMgr->evaluate(text());
 
     connect(this, &QLineEdit::textChanged,
-            this, &VLineEdit::handleTextChanged);
+            this, &VMetaWordLineEdit::handleTextChanged);
 }
 
-const QString &VLineEdit::getEvaluatedText() const
+const QString &VMetaWordLineEdit::getEvaluatedText() const
 {
     return m_evaluatedText;
 }

@@ -2,7 +2,7 @@
 #include "vnewdirdialog.h"
 #include "vdirectory.h"
 #include "vconfigmanager.h"
-#include "vlineedit.h"
+#include "vmetawordlineedit.h"
 #include "utils/vutils.h"
 
 extern VConfigManager *g_config;
@@ -31,7 +31,7 @@ void VNewDirDialog::setupUI()
     }
 
     QLabel *nameLabel = new QLabel(tr("Folder &name:"));
-    m_nameEdit = new VLineEdit(defaultName);
+    m_nameEdit = new VMetaWordLineEdit(defaultName);
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp),
                                                  m_nameEdit);
     m_nameEdit->setValidator(validator);

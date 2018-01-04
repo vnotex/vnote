@@ -2,7 +2,7 @@
 #include "vnewfiledialog.h"
 #include "vconfigmanager.h"
 #include "vdirectory.h"
-#include "vlineedit.h"
+#include "vmetawordlineedit.h"
 #include "utils/vutils.h"
 #include "utils/vmetawordmanager.h"
 #include "utils/viconutils.h"
@@ -25,7 +25,7 @@ VNewFileDialog::VNewFileDialog(const QString &p_title,
 {
     setupUI(p_title, p_info, p_defaultName);
 
-    connect(m_nameEdit, &VLineEdit::textChanged, this, &VNewFileDialog::handleInputChanged);
+    connect(m_nameEdit, &VMetaWordLineEdit::textChanged, this, &VNewFileDialog::handleInputChanged);
 
     connect(m_templateCB, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &VNewFileDialog::handleCurrentTemplateChanged);
@@ -45,7 +45,7 @@ void VNewFileDialog::setupUI(const QString &p_title,
     }
 
     // Name.
-    m_nameEdit = new VLineEdit(p_defaultName);
+    m_nameEdit = new VMetaWordLineEdit(p_defaultName);
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp),
                                                  m_nameEdit);
     m_nameEdit->setValidator(validator);

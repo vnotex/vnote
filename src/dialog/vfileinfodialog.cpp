@@ -4,7 +4,7 @@
 #include "vnotefile.h"
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
-#include "vlineedit.h"
+#include "vmetawordlineedit.h"
 
 extern VConfigManager *g_config;
 
@@ -31,7 +31,7 @@ void VFileInfoDialog::setupUI(const QString &p_title, const QString &p_info)
 
     // File name.
     QString name = m_file->getName();
-    m_nameEdit = new VLineEdit(name);
+    m_nameEdit = new VMetaWordLineEdit(name);
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp),
                                                  m_nameEdit);
     m_nameEdit->setValidator(validator);

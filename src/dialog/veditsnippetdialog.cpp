@@ -2,7 +2,7 @@
 #include <QtWidgets>
 
 #include "utils/vutils.h"
-#include "vlineedit.h"
+#include "vmetawordlineedit.h"
 #include "vconfigmanager.h"
 #include "utils/vmetawordmanager.h"
 
@@ -33,7 +33,7 @@ void VEditSnippetDialog::setupUI(const QString &p_title, const QString &p_info)
     }
 
     // Name.
-    m_nameEdit = new VLineEdit(m_snippet.getName());
+    m_nameEdit = new VMetaWordLineEdit(m_snippet.getName());
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp),
                                                  m_nameEdit);
     m_nameEdit->setValidator(validator);

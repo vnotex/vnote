@@ -6,7 +6,7 @@
 
 #include "vsnippet.h"
 
-class VLineEdit;
+class VMetaWordLineEdit;
 class QLineEdit;
 class QLabel;
 class QDialogButtonBox;
@@ -51,7 +51,7 @@ private:
 
     QVector<QChar> getAvailableShortcuts() const;
 
-    VLineEdit *m_nameEdit;
+    VMetaWordLineEdit *m_nameEdit;
     QComboBox *m_typeCB;
     QComboBox *m_shortcutCB;
     QLineEdit *m_cursorMarkEdit;

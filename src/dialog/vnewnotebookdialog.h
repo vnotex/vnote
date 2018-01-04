@@ -6,7 +6,7 @@
 
 class QLabel;
 class QLineEdit;
-class VLineEdit;
+class VMetaWordLineEdit;
 class QPushButton;
 class QDialogButtonBox;
 class VNotebook;
@@ -53,7 +53,7 @@ private:
     // Returns true if name or path is modified.
     bool autoComplete();
 
-    VLineEdit *m_nameEdit;
+    VMetaWordLineEdit *m_nameEdit;
     QLineEdit *pathEdit;
     QPushButton *browseBtn;
     QLabel *m_warnLabel;

@@ -2,7 +2,7 @@
 #include "vdirinfodialog.h"
 #include "vdirectory.h"
 #include "vconfigmanager.h"
-#include "vlineedit.h"
+#include "vmetawordlineedit.h"
 #include "utils/vutils.h"
 
 extern VConfigManager *g_config;
@@ -29,7 +29,7 @@ void VDirInfoDialog::setupUI()
         infoLabel = new QLabel(info);
     }
 
-    m_nameEdit = new VLineEdit(m_directory->getName());
+    m_nameEdit = new VMetaWordLineEdit(m_directory->getName());
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp),
                                                  m_nameEdit);
     m_nameEdit->setValidator(validator);

@@ -146,6 +146,9 @@ window.onscroll = function() {
     content.setHeader(curHeader ? curHeader : "");
 };
 
+// Used to record the repeat token of user input.
+var repeatToken = 0;
+
 document.onkeydown = function(e) {
     // Need to clear pending kyes.
     var clear = true;
@@ -174,20 +177,73 @@ document.onkeydown = function(e) {
         clear = false;
         break;
 
+    // 0 - 9.
+    case 48:
+    case 49:
+    case 50:
+    case 51:
+    case 52:
+    case 53:
+    case 54:
+    case 55:
+    case 56:
+    case 57:
+    case 96:
+    case 97:
+    case 98:
+    case 99:
+    case 100:
+    case 101:
+    case 102:
+    case 103:
+    case 104:
+    case 105:
+    {
+        if (pendingKeys.length != 0) {
+            accept = false;
+            break;
+        }
+
+        var num = key >= 96 ? key - 96 : key - 48;
+        repeatToken = repeatToken * 10 + num;
+        clear = false;
+        break;
+    }
+
     case 74: // J
-        window.scrollBy(0, 100);
+        if (!ctrl && !shift) {
+            window.scrollBy(0, 100);
+            break;
+        }
+
+        accept = false;
         break;
 
     case 75: // K
-        window.scrollBy(0, -100);
+        if (!ctrl && !shift) {
+            window.scrollBy(0, -100);
+            break;
+        }
+
+        accept = false;
         break;
 
     case 72: // H
-        window.scrollBy(-100, 0);
+        if (!ctrl && !shift) {
+            window.scrollBy(-100, 0);
+            break;
+        }
+
+        accept = false;
         break;
 
     case 76: // L
-        window.scrollBy(100, 0);
+        if (!ctrl && !shift) {
+            window.scrollBy(100, 0);
+            break;
+        }
+
+        accept = false;
         break;
 
     case 71: // G
@@ -198,7 +254,7 @@ document.onkeydown = function(e) {
                 window.scrollTo(scrollLeft, scrollHeight);
                 break;
             }
-        } else {
+        } else if (!ctrl) {
             if (pendingKeys.length == 0) {
                 // First g, pend it.
                 pendingKeys.push({
@@ -245,17 +301,19 @@ document.onkeydown = function(e) {
         break;
 
     case 219: // [ or {
+    {
+        var repeat = repeatToken < 1 ? 1 : repeatToken;
         if (shift) {
             // {
             if (pendingKeys.length == 1) {
                 var pendKey = pendingKeys[0];
                 if (pendKey.key == key && !pendKey.shift && !pendKey.ctrl) {
                     // [{, jump to previous title at a higher level.
-                    jumpTitle(false, -1, 1);
+                    jumpTitle(false, -1, repeat);
                     break;
                 }
             }
-        } else {
+        } else if (!ctrl) {
             // [
             if (pendingKeys.length == 0) {
                 // First [, pend it.
@@ -271,11 +329,11 @@ document.onkeydown = function(e) {
                 var pendKey = pendingKeys[0];
                 if (pendKey.key == key && !pendKey.shift && !pendKey.ctrl) {
                     // [[, jump to previous title.
-                    jumpTitle(false, 1, 1);
+                    jumpTitle(false, 1, repeat);
                     break;
                 } else if (pendKey.key == 221 && !pendKey.shift && !pendKey.ctrl) {
                     // ][, jump to next title at the same level.
-                    jumpTitle(true, 0, 1);
+                    jumpTitle(true, 0, repeat);
                     break;
                 }
             }
@@ -283,19 +341,22 @@ document.onkeydown = function(e) {
 
         accept = false;
         break;
+    }
 
     case 221: // ] or }
+    {
+        var repeat = repeatToken < 1 ? 1 : repeatToken;
         if (shift) {
             // }
             if (pendingKeys.length == 1) {
                 var pendKey = pendingKeys[0];
                 if (pendKey.key == key && !pendKey.shift && !pendKey.ctrl) {
                     // ]}, jump to next title at a higher level.
-                    jumpTitle(true, -1, 1);
+                    jumpTitle(true, -1, repeat);
                     break;
                 }
             }
-        } else {
+        } else if (!ctrl) {
             // ]
             if (pendingKeys.length == 0) {
                 // First ], pend it.
@@ -311,11 +372,11 @@ document.onkeydown = function(e) {
                 var pendKey = pendingKeys[0];
                 if (pendKey.key == key && !pendKey.shift && !pendKey.ctrl) {
                     // ]], jump to next title.
-                    jumpTitle(true, 1, 1);
+                    jumpTitle(true, 1, repeat);
                     break;
                 } else if (pendKey.key == 219 && !pendKey.shift && !pendKey.ctrl) {
                     // [], jump to previous title at the same level.
-                    jumpTitle(false, 0, 1);
+                    jumpTitle(false, 0, repeat);
                     break;
                 }
             }
@@ -323,6 +384,7 @@ document.onkeydown = function(e) {
 
         accept = false;
         break;
+    }
 
     default:
         accept = false;
@@ -330,6 +392,7 @@ document.onkeydown = function(e) {
     }
 
     if (clear) {
+        repeatToken = 0;
         pendingKeys = [];
     }
 

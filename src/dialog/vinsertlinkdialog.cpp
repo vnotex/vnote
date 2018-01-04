@@ -2,7 +2,7 @@
 
 #include <QtWidgets>
 
-#include "vlineedit.h"
+#include "vmetawordlineedit.h"
 
 VInsertLinkDialog::VInsertLinkDialog(const QString &p_title,
                                      const QString &p_text,
@@ -37,7 +37,7 @@ void VInsertLinkDialog::setupUI(const QString &p_title,
         infoLabel->setWordWrap(true);
     }
 
-    m_linkTextEdit = new VLineEdit(p_linkText);
+    m_linkTextEdit = new VMetaWordLineEdit(p_linkText);
     m_linkTextEdit->selectAll();
 
     m_linkUrlEdit = new QLineEdit(p_linkUrl);
@@ -108,6 +108,7 @@ void VInsertLinkDialog::fetchLinkFromClipboard()
     }
 
     QString text = mimeData->text();
+    text = text.trimmed();
     if (text.isEmpty()) {
         return;
     }

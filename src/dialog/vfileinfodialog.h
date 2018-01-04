@@ -4,7 +4,7 @@
 #include <QDialog>
 
 class QLabel;
-class VLineEdit;
+class VMetaWordLineEdit;
 class QDialogButtonBox;
 class QString;
 class VDirectory;
@@ -29,7 +29,7 @@ private slots:
 private:
     void setupUI(const QString &p_title, const QString &p_info);
 
-    VLineEdit *m_nameEdit;
+    VMetaWordLineEdit *m_nameEdit;
     QLabel *m_warnLabel;
     QDialogButtonBox *m_btnBox;
 
