@@ -180,6 +180,19 @@ QMap<QString, QString> VPalette::codeBlockCssStylesFromThemes(const QList<QStrin
     return styles;
 }
 
+static QString translateColorValue(const QString &p_col)
+{
+    QString tmp = p_col.trimmed().toLower();
+    if (tmp.startsWith('#')) {
+        QColor col(tmp);
+        int r, g, b;
+        col.getRgb(&r, &g, &b);
+        return QString("rgb(%1, %2, %3)").arg(r).arg(g).arg(b);
+    } else {
+        return tmp;
+    }
+}
+
 VPaletteMetaData VPalette::getPaletteMetaData(const QString &p_paletteFile)
 {
     VPaletteMetaData data;
@@ -206,6 +219,20 @@ VPaletteMetaData VPalette::getPaletteMetaData(const QString &p_paletteFile)
     val = settings.value("codeblock_css_file").toString();
     if (!val.isEmpty()) {
         data.m_codeBlockCssFile = dir.filePath(val);
+    }
+
+    QStringList mapping = settings.value("css_color_mapping").toStringList();
+    if (!mapping.isEmpty()) {
+        for (auto const & m : mapping) {
+            QStringList vals = m.split(':');
+            if (vals.size() != 2) {
+                continue;
+            }
+
+            // Translate the #aabbcc into rgb(aa, bb, cc) format.
+            data.m_colorMapping.insert(translateColorValue(vals[0]),
+                                       translateColorValue(vals[1]));
+        }
     }
 
     settings.endGroup();

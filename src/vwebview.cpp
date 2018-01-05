@@ -229,14 +229,6 @@ void VWebView::hideUnusedActions(QMenu *p_menu)
     }
 }
 
-static bool removeBackgroundColor(QString &p_html)
-{
-    QRegExp reg("(<[^>]+\\sstyle=[^>]*(\\s|\"))background(-color)?:[^;]+;([^>]*>)");
-    int size = p_html.size();
-    p_html.replace(reg, "\\1\\4");
-    return p_html.size() != size;
-}
-
 bool VWebView::removeStyles(QString &p_html)
 {
     bool changed = false;
@@ -336,8 +328,14 @@ void VWebView::alterHtmlMimeData(QClipboard *p_clipboard,
     }
 
     // Remove background color.
-    if (p_removeBackground && removeBackgroundColor(html)) {
-        altered = true;
+    if (p_removeBackground) {
+        if (VWebUtils::removeBackgroundColor(html)) {
+            altered = true;
+        }
+
+        if (VWebUtils::translateColors(html)) {
+            altered = true;
+        }
     }
 
     // Fix local relative images.

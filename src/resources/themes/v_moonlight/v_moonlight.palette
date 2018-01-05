@@ -7,6 +7,12 @@ mdhl_file=v_moonlight.mdhl
 css_file=v_moonlight.css
 codeblock_css_file=v_moonlight_codeblock.css
 
+; This mapping will be used to translate colors when the content of HTML is copied
+; without background. You could just specify the foreground colors mapping here.
+; It is useful for dark mode theme. '#aabbcc' or 'red' formats are supported.
+; col1:col1_new,col2:col2_new
+css_color_mapping=#abb2bf:#363636,#282c34:#f5f5f5,#61afef:#0099ff,#98c379:#8e24aa,#2c313a:#e0e0e0,#5c6370:#666666,#373e47:#999999,#6c6c6c:#444444,#c678dd:#0000ee,#e06c75:#880000,#56b6c2:#af00d7,#e6c07b:#008700,#d19a66:#bc6060,#61aeee:#bc6060
+
 [phony]
 ; Abstract color attributes.
 master_fg=@edit_fg

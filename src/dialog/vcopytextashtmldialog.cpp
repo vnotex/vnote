@@ -65,6 +65,8 @@ void VCopyTextAsHtmlDialog::setConvertedHtml(const QUrl &p_baseUrl,
     m_htmlViewer->setHtml(html, p_baseUrl);
     setHtmlVisible(true);
 
+    VWebUtils::translateColors(html);
+
     // Fix image source.
     if (g_config->getFixImageSrcInWebWhenCopied()) {
         VWebUtils::fixImageSrcInHtml(p_baseUrl, html);

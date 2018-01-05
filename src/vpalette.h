@@ -15,13 +15,18 @@ struct VPaletteMetaData
     QString m_cssFile;
     QString m_codeBlockCssFile;
 
+    // Color mapping when copied.
+    // All lower-case.
+    QHash<QString, QString> m_colorMapping;
+
     QString toString() const
     {
-        return QString("palette metadata qss=%1 mdhl=%2 css=%3 codeBlockCss=%4")
+        return QString("palette metadata qss=%1 mdhl=%2 css=%3 codeBlockCss=%4 colorMappingSize=%5")
                       .arg(m_qssFile)
                       .arg(m_mdhlFile)
                       .arg(m_cssFile)
-                      .arg(m_codeBlockCssFile);
+                      .arg(m_codeBlockCssFile)
+                      .arg(m_colorMapping.size());
     }
 };
 
@@ -38,6 +43,8 @@ public:
 
     // Fill "@xxx" in @p_text with corresponding style.
     void fillStyle(QString &p_text) const;
+
+    const QHash<QString, QString> &getColorMapping() const;
 
     // Read themes and return the mappings of editor styles.
     static QMap<QString, QString> editorStylesFromThemes(const QList<QString> &p_themeFiles);
@@ -76,5 +83,10 @@ private:
 
     VPaletteMetaData m_data;
 };
+
+inline const QHash<QString, QString> &VPalette::getColorMapping() const
+{
+    return m_data.m_colorMapping;
+}
 
 #endif // VPALETTE_H
