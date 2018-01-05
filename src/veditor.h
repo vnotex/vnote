@@ -186,6 +186,10 @@ public:
     // Whether display cursor as block.
     virtual void setCursorBlockModeW(CursorBlock p_mode) = 0;
 
+    virtual void zoomInW(int p_range = 1) = 0;
+
+    virtual void zoomOutW(int p_range = 1) = 0;
+
 protected:
     void init();
 
@@ -215,6 +219,8 @@ protected:
 
     bool handleInputMethodQuery(Qt::InputMethodQuery p_query,
                                 QVariant &p_var) const;
+
+    bool handleWheelEvent(QWheelEvent *p_event);
 
     QWidget *m_editor;
 

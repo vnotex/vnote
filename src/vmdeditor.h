@@ -158,6 +158,16 @@ public:
         setCursorBlockMode(p_mode);
     }
 
+    void zoomInW(int p_range = 1) Q_DECL_OVERRIDE
+    {
+        zoomPage(true, p_range);
+    }
+
+    void zoomOutW(int p_range = 1) Q_DECL_OVERRIDE
+    {
+        zoomPage(false, p_range);
+    }
+
 signals:
     // Signal when headers change.
     void headersChanged(const QVector<VTableOfContentItem> &p_headers);
@@ -190,6 +200,8 @@ protected:
 
     void insertFromMimeData(const QMimeData *p_source) Q_DECL_OVERRIDE;
 
+    void wheelEvent(QWheelEvent *p_event) Q_DECL_OVERRIDE;
+
 private slots:
     // Update m_headers according to elements.
     void updateHeaders(const QVector<VElementRegion> &p_headerRegions);
@@ -216,6 +228,10 @@ private:
     // Index in m_headers of current header which contains the cursor.
     int indexOfCurrentHeader() const;
 
+    // Zoom in/out.
+    // We need to maintain the styles font size.
+    void zoomPage(bool p_zoomIn, int p_range = 1);
+
     HGMarkdownHighlighter *m_mdHighlighter;
 
     VCodeBlockHighlightHelper *m_cbHighlighter;
@@ -234,5 +250,7 @@ private:
     bool m_freshEdit;
 
     VCopyTextAsHtmlDialog *m_textToHtmlDialog;
+
+    int m_zoomDelta;
 };
 #endif // VMDEDITOR_H

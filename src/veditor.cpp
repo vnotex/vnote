@@ -878,6 +878,47 @@ bool VEditor::handleMouseMoveEvent(QMouseEvent *p_event)
     return false;
 }
 
+bool VEditor::handleWheelEvent(QWheelEvent *p_event)
+{
+    Qt::KeyboardModifiers modifiers = p_event->modifiers();
+    if (modifiers == Qt::ShiftModifier) {
+        // Scroll horizontally.
+        QPoint numPixels = p_event->pixelDelta();
+        QPoint numDegrees = p_event->angleDelta() / 8;
+
+        QScrollBar *horBar = horizontalScrollBarW();
+        int steps = 0;
+        if (!numPixels.isNull()) {
+            steps = numPixels.y();
+        } else if (!numDegrees.isNull()) {
+            QPoint numSteps = numDegrees / 15;
+            steps = numSteps.y() * horBar->singleStep();
+        }
+
+        if (horBar->minimum() != horBar->maximum()) {
+            horBar->setValue(horBar->value() - steps);
+        }
+
+        p_event->accept();
+        return true;
+    } else if (modifiers == Qt::ControlModifier) {
+        // Zoom in/out.
+        QPoint angle = p_event->angleDelta();
+        if (!angle.isNull() && (angle.y() != 0)) {
+            if (angle.y() > 0) {
+                zoomInW();
+            } else {
+                zoomOutW();
+            }
+        }
+
+        p_event->accept();
+        return true;
+    }
+
+    return false;
+}
+
 void VEditor::requestUpdateVimStatus()
 {
     if (m_editOps) {

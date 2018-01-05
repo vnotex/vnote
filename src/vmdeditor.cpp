@@ -31,7 +31,8 @@ VMdEditor::VMdEditor(VFile *p_file,
       VEditor(p_file, this),
       m_mdHighlighter(NULL),
       m_freshEdit(true),
-      m_textToHtmlDialog(NULL)
+      m_textToHtmlDialog(NULL),
+      m_zoomDelta(0)
 {
     Q_ASSERT(p_file->getDocType() == DocType::Markdown);
 
@@ -666,6 +667,46 @@ void VMdEditor::clearUnusedImages()
 
 void VMdEditor::keyPressEvent(QKeyEvent *p_event)
 {
+    int modifiers = p_event->modifiers();
+    switch (p_event->key()) {
+    case Qt::Key_Minus:
+    case Qt::Key_Underscore:
+        // Zoom out.
+        if (modifiers & Qt::ControlModifier) {
+            zoomPage(false);
+            return;
+        }
+
+        break;
+
+    case Qt::Key_Plus:
+    case Qt::Key_Equal:
+        // Zoom in.
+        if (modifiers & Qt::ControlModifier) {
+            zoomPage(true);
+            return;
+        }
+
+        break;
+
+    case Qt::Key_0:
+        // Restore zoom.
+        if (modifiers & Qt::ControlModifier) {
+            if (m_zoomDelta > 0) {
+                zoomPage(false, m_zoomDelta);
+            } else if (m_zoomDelta < 0) {
+                zoomPage(true, -m_zoomDelta);
+            }
+
+            return;
+        }
+
+        break;
+
+    default:
+        break;
+    }
+
     if (m_editOps && m_editOps->handleKeyPressEvent(p_event)) {
         return;
     }
@@ -1028,4 +1069,63 @@ void VMdEditor::textToHtmlFinished(const QString &p_text,
     if (m_textToHtmlDialog && m_textToHtmlDialog->getText() == p_text) {
         m_textToHtmlDialog->setConvertedHtml(p_baseUrl, p_html);
     }
+}
+
+void VMdEditor::wheelEvent(QWheelEvent *p_event)
+{
+    if (handleWheelEvent(p_event)) {
+        return;
+    }
+
+    VTextEdit::wheelEvent(p_event);
+}
+
+void VMdEditor::zoomPage(bool p_zoomIn, int p_range)
+{
+    int delta;
+    const int minSize = 2;
+
+    if (p_zoomIn) {
+        delta = p_range;
+        zoomIn(p_range);
+    } else {
+        delta = -p_range;
+        zoomOut(p_range);
+    }
+
+    m_zoomDelta += delta;
+
+    QVector<HighlightingStyle> &styles = m_mdHighlighter->getHighlightingStyles();
+    for (auto & it : styles) {
+        int size = it.format.fontPointSize();
+        if (size == 0) {
+            // It contains no font size format.
+            continue;
+        }
+
+        size += delta;
+        if (size < minSize) {
+            size = minSize;
+        }
+
+        it.format.setFontPointSize(size);
+    }
+
+    QHash<QString, QTextCharFormat> &cbStyles = m_mdHighlighter->getCodeBlockStyles();
+    for (auto it = cbStyles.begin(); it != cbStyles.end(); ++it) {
+        int size = it.value().fontPointSize();
+        if (size == 0) {
+            // It contains no font size format.
+            continue;
+        }
+
+        size += delta;
+        if (size < minSize) {
+            size = minSize;
+        }
+
+        it.value().setFontPointSize(size);
+    }
+
+    m_mdHighlighter->rehighlight();
 }

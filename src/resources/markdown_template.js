@@ -199,7 +199,7 @@ document.onkeydown = function(e) {
     case 104:
     case 105:
     {
-        if (pendingKeys.length != 0) {
+        if (pendingKeys.length != 0 || ctrl || shift) {
             accept = false;
             break;
         }

@@ -68,17 +68,18 @@ void VEditTab::handleFocusChanged(QWidget * /* p_old */, QWidget *p_now)
 
 void VEditTab::wheelEvent(QWheelEvent *p_event)
 {
-    QPoint angle = p_event->angleDelta();
-    Qt::KeyboardModifiers modifiers = p_event->modifiers();
-    if (!angle.isNull() && (angle.y() != 0) && (modifiers & Qt::ControlModifier)) {
-        // Zoom in/out current tab.
-        zoom(angle.y() > 0);
+    if (p_event->modifiers() & Qt::ControlModifier) {
+        QPoint angle = p_event->angleDelta();
+        if (!angle.isNull() && (angle.y() != 0)) {
+            // Zoom in/out current tab.
+            zoom(angle.y() > 0);
+        }
 
         p_event->accept();
         return;
     }
 
-    p_event->ignore();
+    QWidget::wheelEvent(p_event);
 }
 
 VEditTabInfo VEditTab::fetchTabInfo(VEditTabInfo::InfoType p_type) const

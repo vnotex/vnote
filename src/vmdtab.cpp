@@ -677,9 +677,9 @@ void VMdTab::handleWebKeyPressed(int p_key, bool p_ctrl, bool /* p_shift */)
 
 void VMdTab::zoom(bool p_zoomIn, qreal p_step)
 {
-    if (m_isEditMode) {
-        // TODO
-    } else {
+    // Editor will handle it itself.
+    Q_ASSERT(!m_isEditMode);
+    if (!m_isEditMode) {
         zoomWebPage(p_zoomIn, p_step);
     }
 }

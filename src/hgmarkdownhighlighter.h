@@ -133,6 +133,10 @@ public:
     // Parse and only update the highlight results for rehighlight().
     void updateHighlightFast();
 
+    QHash<QString, QTextCharFormat> &getCodeBlockStyles();
+
+    QVector<HighlightingStyle> &getHighlightingStyles();
+
 signals:
     void highlightCompleted();
 
@@ -167,8 +171,11 @@ private:
     QTextCharFormat m_colorColumnFormat;
 
     QTextDocument *document;
+
     QVector<HighlightingStyle> highlightingStyles;
+
     QHash<QString, QTextCharFormat> m_codeBlockStyles;
+
     QVector<QVector<HLUnit> > blockHighlights;
 
     // Use another member to store the codeblocks highlights, because the highlight
@@ -294,4 +301,15 @@ inline VTextBlockData *HGMarkdownHighlighter::previousBlockData() const
 
     return static_cast<VTextBlockData *>(block.userData());
 }
+
+inline QHash<QString, QTextCharFormat> &HGMarkdownHighlighter::getCodeBlockStyles()
+{
+    return m_codeBlockStyles;
+}
+
+inline QVector<HighlightingStyle> &HGMarkdownHighlighter::getHighlightingStyles()
+{
+    return highlightingStyles;
+}
+
 #endif
