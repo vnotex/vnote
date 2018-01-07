@@ -39,6 +39,9 @@ var updateHtml = function(html) {
                     --i;
                     continue;
                 }
+            } else if (VEnableMathjax && code.classList.contains('language-mathjax')) {
+                // Mathjax code block.
+                continue;
             }
 
             if (listContainsRegex(code.classList, /language-.*/)) {
@@ -55,7 +58,7 @@ var updateHtml = function(html) {
     // MathJax may be not loaded for now.
     if (VEnableMathjax && (typeof MathJax != "undefined")) {
         try {
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder, finishLogics]);
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder, postProcessMathJax]);
         } catch (err) {
             content.setLog("err: " + err);
             finishLogics();

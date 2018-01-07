@@ -890,7 +890,12 @@ var renderCodeBlockLineNumber = function() {
     var codes = document.getElementsByTagName('code');
     for (var i = 0; i < codes.length; ++i) {
         var code = codes[i];
-        if (code.parentElement.tagName.toLowerCase() == 'pre') {
+        var pare = code.parentElement;
+        if (pare.tagName.toLowerCase() == 'pre') {
+            if (VEnableMathjax && pare.classList.contains("lang-mathjax")) {
+                continue;
+            }
+
             hljs.lineNumbersBlock(code);
         }
     }
@@ -911,8 +916,17 @@ var addClassToCodeBlock = function() {
     var codes = document.getElementsByTagName('code');
     for (var i = 0; i < codes.length; ++i) {
         var code = codes[i];
-        if (code.parentElement.tagName.toLowerCase() == 'pre') {
+        var pare = code.parentElement;
+        if (pare.tagName.toLowerCase() == 'pre') {
             code.classList.add(hljsClass);
+
+            if (VEnableMathjax
+                && (code.classList.contains("lang-mathjax")
+                    || code.classList.contains("language-mathjax"))) {
+                // Add the class to pre.
+                pare.classList.add("lang-mathjax");
+                pare.classList.add("language-mathjax");
+            }
         }
     }
 };
@@ -989,4 +1003,18 @@ var getHtmlWithInlineStyles = function(container) {
     }
 
     return container.innerHTML;
+};
+
+// Will be called after MathJax rendering finished.
+var postProcessMathJax = function() {
+    var all = MathJax.Hub.getAllJax();
+    for (var i = 0; i < all.length; ++i) {
+        var node = all[i].SourceElement().parentNode;
+        if (node.tagName.toLowerCase() == 'code') {
+            node.classList.remove('hljs');
+            node.classList.add('mathjax-code');
+        }
+    }
+
+    finishLogics();
 };

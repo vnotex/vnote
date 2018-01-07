@@ -44,16 +44,19 @@ var mdit = window.markdownit({
     typographer: true,
     langPrefix: 'lang-',
     highlight: function(str, lang) {
-        if (lang) {
+        if (lang
+            && (!VEnableMathjax || lang != 'mathjax')
+            && (!VEnableMermaid || lang != 'mermaid')
+            && (!VEnableFlowchart || lang != 'flowchart')) {
             if (hljs.getLanguage(lang)) {
                 return hljs.highlight(lang, str).value;
             } else {
                 return hljs.highlightAuto(str).value;
             }
-        } else {
-            // Use external default escaping.
-            return '';
         }
+
+        // Use external default escaping.
+        return '';
     }
 });
 
@@ -111,7 +114,7 @@ var updateText = function(text) {
     // finishLoading logic.
     if (VEnableMathjax) {
         try {
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder, finishLogics]);
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder, postProcessMathJax]);
         } catch (err) {
             content.setLog("err: " + err);
             finishLogics();

@@ -649,7 +649,9 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exp
     if (g_config->getEnableMathjax()) {
         extraFile += "<script type=\"text/x-mathjax-config\">"
                      "MathJax.Hub.Config({\n"
-                     "                    tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']]},\n"
+                     "                    tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']],\n"
+                                                   "processEscapes: true,\n"
+                                                   "processClass: \"tex2jax_process|language-mathjax|lang-mathjax\"},\n"
                      "                    showProcessingMessages: false,\n"
                      "                    messageStyle: \"none\"});\n"
                      "</script>\n"

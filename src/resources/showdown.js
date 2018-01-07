@@ -49,7 +49,7 @@ var mdHasTocSection = function(markdown) {
     return n != -1;
 };
 
-var highlightCodeBlocks = function(doc, enableMermaid, enableFlowchart) {
+var highlightCodeBlocks = function(doc, enableMermaid, enableFlowchart, enableMathJax) {
     var codes = doc.getElementsByTagName('code');
     for (var i = 0; i < codes.length; ++i) {
         var code = codes[i];
@@ -57,8 +57,11 @@ var highlightCodeBlocks = function(doc, enableMermaid, enableFlowchart) {
             if (enableMermaid && code.classList.contains('language-mermaid')) {
                 // Mermaid code block.
                 continue;
-            } if (enableFlowchart && code.classList.contains('language-flowchart')) {
+            } else if (enableFlowchart && code.classList.contains('language-flowchart')) {
                 // Flowchart code block.
+                continue;
+            } else if (enableMathJax && code.classList.contains('language-mathjax')) {
+                // MathJax code block.
                 continue;
             }
 
@@ -75,7 +78,7 @@ var updateText = function(text) {
     placeholder.innerHTML = html;
     handleToc(needToc);
     insertImageCaption();
-    highlightCodeBlocks(document, VEnableMermaid, VEnableFlowchart);
+    highlightCodeBlocks(document, VEnableMermaid, VEnableFlowchart, VEnableMathjax);
     renderMermaid('language-mermaid');
     renderFlowchart('language-flowchart');
     addClassToCodeBlock();
@@ -85,7 +88,7 @@ var updateText = function(text) {
     // finishLoading logic.
     if (VEnableMathjax) {
         try {
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder, finishLogics]);
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder, postProcessMathJax]);
         } catch (err) {
             content.setLog("err: " + err);
             finishLogics();
@@ -100,7 +103,7 @@ var highlightText = function(text, id, timeStamp) {
 
     var parser = new DOMParser();
     var htmlDoc = parser.parseFromString("<div id=\"showdown-container\">" + html + "</div>", 'text/html');
-    highlightCodeBlocks(htmlDoc, false, false);
+    highlightCodeBlocks(htmlDoc, false, false, false);
 
     html = htmlDoc.getElementById('showdown-container').innerHTML;
 
@@ -114,7 +117,7 @@ var textToHtml = function(text) {
 
     var parser = new DOMParser();
     var htmlDoc = parser.parseFromString("<div id=\"showdown-container\">" + html + "</div>", 'text/html');
-    highlightCodeBlocks(htmlDoc, false, false);
+    highlightCodeBlocks(htmlDoc, false, false, false);
 
     html = htmlDoc.getElementById('showdown-container').innerHTML;
 

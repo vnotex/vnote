@@ -97,6 +97,17 @@ pre code {
     background-color: #E0E0E0;
 }
 
+code.mathjax-code {
+    display: inherit;
+    overflow-x: inherit;
+    padding: inherit;
+    color: inherit;
+    background: inherit;
+    font-size: 100%;
+    font-family: inherit;
+    line-height: inherit;
+}
+
 aside {
     display: block;
     float: right;
