@@ -84,8 +84,7 @@ pre {
 
 code {
     font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New;
-    line-height: 1.5;
-    font-size: 14px;
+    font-size: 16px;
     color: #8E24AA;
 }
 
@@ -95,17 +94,21 @@ pre code {
     padding: 0.5em;
     color: #363636;
     background-color: #E0E0E0;
+    line-height: 1.5;
 }
 
 code.mathjax-code {
-    display: inherit;
+    display: block;
     overflow-x: inherit;
-    padding: inherit;
+    margin: 0;
+    padding: 0;
     color: inherit;
     background: inherit;
-    font-size: 100%;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 16px;
     font-family: inherit;
-    line-height: inherit;
+    line-height: 24px;
 }
 
 aside {
