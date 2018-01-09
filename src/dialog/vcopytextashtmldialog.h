@@ -15,7 +15,9 @@ class VCopyTextAsHtmlDialog : public QDialog
 {
     Q_OBJECT
 public:
-    VCopyTextAsHtmlDialog(const QString &p_text, QWidget *p_parent = nullptr);
+    VCopyTextAsHtmlDialog(const QString &p_text,
+                          const QString &p_copyTarget,
+                          QWidget *p_parent = nullptr);
 
     void setConvertedHtml(const QUrl &p_baseUrl, const QString &p_html);
 
@@ -37,6 +39,8 @@ private:
     QDialogButtonBox *m_btnBox;
 
     QString m_text;
+
+    QString m_copyTarget;
 };
 
 inline const QString &VCopyTextAsHtmlDialog::getText() const

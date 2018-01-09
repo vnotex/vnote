@@ -5,14 +5,79 @@
 #include <QDebug>
 
 #include "vpalette.h"
+#include "vconfigmanager.h"
 
 extern VPalette *g_palette;
+
+extern VConfigManager *g_config;
 
 VWebUtils::VWebUtils()
 {
 }
 
-bool VWebUtils::fixImageSrcInHtml(const QUrl &p_baseUrl, QString &p_html)
+void VWebUtils::init()
+{
+    m_stylesToRemoveWhenCopied = g_config->getStylesToRemoveWhenCopied();
+
+    m_styleOfSpanForMark = g_config->getStyleOfSpanForMark();
+
+    m_tagReg = QRegExp("<([^>/\\s]+)([^>]*)>");
+
+    m_styleTagReg = QRegExp("<([^>\\s]+)([^>]*\\s)style=\"([^\">]+)\"([^>]*)>");
+
+    initCopyTargets(g_config->getCopyTargets());
+}
+
+void VWebUtils::initCopyTargets(const QStringList &p_str)
+{
+    Q_ASSERT(m_copyTargets.isEmpty());
+    // cap(1): action;
+    // cap(3): arguments;
+    QRegExp actReg("([0-9a-zA-Z])(\\(([^\\)]*)\\))?");
+
+    for (auto const & str : p_str) {
+        auto vals = str.split('$');
+        if (vals.size() != 2) {
+            continue;
+        }
+
+        CopyTarget tar;
+        tar.m_name = vals[0];
+        if (tar.m_name.isEmpty()) {
+            continue;
+        }
+
+        auto acts = vals[1].split(':');
+        for (auto const & it : acts) {
+            if (it.isEmpty()) {
+                continue;
+            }
+
+            if (!actReg.exactMatch(it)) {
+                continue;
+            }
+
+            if (actReg.cap(1).size() != 1) {
+                continue;
+            }
+
+            CopyTargetAction act;
+            act.m_act = actReg.cap(1)[0];
+
+            if (!actReg.cap(3).isEmpty()) {
+                act.m_args = actReg.cap(3).toLower().split('|');
+            }
+
+            tar.m_actions.append(act);
+        }
+
+        m_copyTargets.append(tar);
+    }
+
+    qDebug() << "init" << m_copyTargets.size() << "copy targets";
+}
+
+bool VWebUtils::fixImageSrc(const QUrl &p_baseUrl, QString &p_html)
 {
     bool changed = false;
 
@@ -61,15 +126,142 @@ bool VWebUtils::fixImageSrcInHtml(const QUrl &p_baseUrl, QString &p_html)
     return changed;
 }
 
-bool VWebUtils::removeBackgroundColor(QString &p_html)
+QStringList VWebUtils::getCopyTargetsName() const
 {
-    QRegExp reg("(<[^>]+\\sstyle=[^>]*(\\s|\"))background(-color)?:[^;]+;([^>]*>)");
-    int size = p_html.size();
-    p_html.replace(reg, "\\1\\4");
-    return p_html.size() != size;
+    QStringList names;
+    for (auto const & it : m_copyTargets) {
+        names << it.m_name;
+    }
+
+    return names;
 }
 
-bool VWebUtils::translateColors(QString &p_html)
+bool VWebUtils::alterHtmlAsTarget(const QUrl &p_baseUrl, QString &p_html, const QString &p_target) const
+{
+    int idx = targetIndex(p_target);
+    if (idx == -1) {
+        return false;
+    }
+
+    bool altered = false;
+    for (auto const & act : m_copyTargets[idx].m_actions) {
+        if (const_cast<VWebUtils *>(this)->alterHtmlByTargetAction(p_baseUrl, p_html, act)) {
+            altered = true;
+        }
+    }
+
+    return altered;
+}
+
+int VWebUtils::targetIndex(const QString &p_target) const
+{
+    if (p_target.isEmpty()) {
+        return -1;
+    }
+
+    for (int i = 0; i < m_copyTargets.size(); ++i) {
+        if (m_copyTargets[i].m_name == p_target) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+bool VWebUtils::alterHtmlByTargetAction(const QUrl &p_baseUrl, QString &p_html, const CopyTargetAction &p_action)
+{
+    bool altered = false;
+    switch (p_action.m_act.toLatin1()) {
+    case 's':
+        if (!p_html.startsWith("<html>")) {
+            p_html = "<html><body>" + p_html + "</body></html>";
+            altered = true;
+        }
+
+        break;
+
+    case 'b':
+        altered = removeBackgroundColor(p_html, p_action.m_args);
+        break;
+
+    case 'c':
+        altered = translateColors(p_html, p_action.m_args);
+        break;
+
+    case 'i':
+        altered = fixImageSrc(p_baseUrl, p_html);
+        break;
+
+    case 'm':
+        altered = removeMarginPadding(p_html, p_action.m_args);
+        break;
+
+    case 'x':
+        altered = removeStylesToRemoveWhenCopied(p_html, p_action.m_args);
+        break;
+
+    case 'r':
+        altered = removeAllStyles(p_html, p_action.m_args);
+        break;
+
+    case 'a':
+        altered = transformMarkToSpan(p_html);
+        break;
+
+    case 'p':
+        altered = replacePreBackgroundColorWithCode(p_html);
+        break;
+
+    default:
+        break;
+    }
+
+    return altered;
+}
+
+static int skipToTagEnd(const QString &p_html, int p_pos, const QString &p_tag)
+{
+    QRegExp beginReg(QString("<%1 ").arg(p_tag));
+    QRegExp endReg(QString("</%1>").arg(p_tag));
+
+    int pos = p_pos;
+    int nBegin = p_html.indexOf(beginReg, pos);
+    int nEnd = p_html.indexOf(endReg, pos);
+    if (nBegin > -1 && nBegin < nEnd) {
+        // Nested tag.
+        pos = skipToTagEnd(p_html, nBegin + beginReg.matchedLength(), p_tag);
+        nEnd = p_html.indexOf(endReg, pos);
+    }
+
+    if (nEnd > -1) {
+        pos = nEnd + endReg.matchedLength();
+    }
+
+    return pos;
+}
+
+// @p_html is the style string.
+static bool removeStylesInStyleString(QString &p_html, const QStringList &p_styles)
+{
+    if (p_styles.isEmpty()) {
+        return false;
+    }
+
+    int size = p_html.size();
+    QRegExp reg(QString("(\\s|^)(%1):[^:]+;").arg(p_styles.join('|')));
+    p_html.remove(reg);
+
+    return size != p_html.size();
+}
+
+bool VWebUtils::removeBackgroundColor(QString &p_html, const QStringList &p_skipTags)
+{
+    QStringList styles({"background", "background-color"});
+
+    return removeStyles(p_html, p_skipTags, styles);
+}
+
+bool VWebUtils::translateColors(QString &p_html, const QStringList &p_skipTags)
 {
     bool changed = false;
 
@@ -78,20 +270,34 @@ bool VWebUtils::translateColors(QString &p_html)
         return changed;
     }
 
-    QRegExp tagReg("(<[^>]+\\sstyle=[^>]*>)");
     // Won't mixed up with background-color.
-    QRegExp colorReg("(\\s|\")color:([^;]+);");
+    QRegExp colorReg("(\\s|^)color:([^;]+);");
 
     int pos = 0;
     while (pos < p_html.size()) {
-        int idx = p_html.indexOf(tagReg, pos);
-        if (idx == -1) {
+        int tagIdx = p_html.indexOf(m_tagReg, pos);
+        if (tagIdx == -1) {
             break;
         }
 
-        QString styleStr = tagReg.cap(1);
-        QString alteredStyleStr = styleStr;
+        QString tagName = m_tagReg.cap(1);
+        if (p_skipTags.contains(tagName.toLower())) {
+            // Skip this tag.
+            pos = skipToTagEnd(p_html, tagIdx + m_tagReg.matchedLength(), tagName);
+            continue;
+        }
 
+        pos = tagIdx;
+        int idx = p_html.indexOf(m_styleTagReg, pos);
+        if (idx == -1) {
+            break;
+        } else if (idx != tagIdx) {
+            pos = tagIdx + m_tagReg.matchedLength();
+            continue;
+        }
+
+        QString styleStr = m_styleTagReg.cap(3);
+        QString alteredStyleStr = styleStr;
         int posb = 0;
         while (posb < alteredStyleStr.size()) {
             int idxb = alteredStyleStr.indexOf(colorReg, posb);
@@ -108,19 +314,280 @@ bool VWebUtils::translateColors(QString &p_html)
 
             // Replace the color.
             QString newCol = it.value();
-            // Add one extra space between color and :.
-            QString newStr = QString("%1color : %2;").arg(colorReg.cap(1)).arg(newCol);
+            // Should not add extra space before :.
+            QString newStr = QString("%1color: %2;").arg(colorReg.cap(1)).arg(newCol);
             alteredStyleStr.replace(idxb, colorReg.matchedLength(), newStr);
             posb = idxb + newStr.size();
             changed = true;
         }
 
-        pos = idx + tagReg.matchedLength();
         if (changed) {
-            pos = pos + alteredStyleStr.size() - styleStr.size();
-            p_html.replace(idx, tagReg.matchedLength(), alteredStyleStr);
+            QString newTag = QString("<%1%2style=\"%3\"%4>").arg(m_styleTagReg.cap(1))
+                                                            .arg(m_styleTagReg.cap(2))
+                                                            .arg(alteredStyleStr)
+                                                            .arg(m_styleTagReg.cap(4));
+
+            p_html.replace(idx, m_styleTagReg.matchedLength(), newTag);
+
+            pos = idx + newTag.size();
+        } else {
+            pos = idx + m_styleTagReg.matchedLength();
         }
     }
 
     return changed;
+}
+
+bool VWebUtils::removeMarginPadding(QString &p_html, const QStringList &p_skipTags)
+{
+    QStringList styles({"margin", "margin-left", "margin-right",
+                        "padding", "padding-left", "padding-right"});
+
+    return removeStyles(p_html, p_skipTags, styles);
+}
+
+bool VWebUtils::removeStyles(QString &p_html, const QStringList &p_skipTags, const QStringList &p_styles)
+{
+    if (p_styles.isEmpty()) {
+        return false;
+    }
+
+    bool altered = false;
+    int pos = 0;
+
+    while (pos < p_html.size()) {
+        int tagIdx = p_html.indexOf(m_tagReg, pos);
+        if (tagIdx == -1) {
+            break;
+        }
+
+        QString tagName = m_tagReg.cap(1);
+        if (p_skipTags.contains(tagName.toLower())) {
+            // Skip this tag.
+            pos = skipToTagEnd(p_html, tagIdx + m_tagReg.matchedLength(), tagName);
+            continue;
+        }
+
+        pos = tagIdx;
+        int idx = p_html.indexOf(m_styleTagReg, pos);
+        if (idx == -1) {
+            break;
+        } else if (idx != tagIdx) {
+            pos = tagIdx + m_tagReg.matchedLength();
+            continue;
+        }
+
+        QString styleStr = m_styleTagReg.cap(3);
+        if (removeStylesInStyleString(styleStr, p_styles)) {
+            QString newTag = QString("<%1%2style=\"%3\"%4>").arg(m_styleTagReg.cap(1))
+                                                            .arg(m_styleTagReg.cap(2))
+                                                            .arg(styleStr)
+                                                            .arg(m_styleTagReg.cap(4));
+            p_html.replace(idx, m_styleTagReg.matchedLength(), newTag);
+
+            pos = idx + newTag.size();
+
+            altered = true;
+        } else {
+            pos = idx + m_styleTagReg.matchedLength();
+        }
+    }
+
+    return altered;
+}
+
+bool VWebUtils::removeStylesToRemoveWhenCopied(QString &p_html, const QStringList &p_skipTags)
+{
+    return removeStyles(p_html, p_skipTags, m_stylesToRemoveWhenCopied);
+}
+
+bool VWebUtils::removeAllStyles(QString &p_html, const QStringList &p_skipTags)
+{
+    bool altered = false;
+    int pos = 0;
+
+    while (pos < p_html.size()) {
+        int tagIdx = p_html.indexOf(m_tagReg, pos);
+        if (tagIdx == -1) {
+            break;
+        }
+
+        QString tagName = m_tagReg.cap(1);
+        if (p_skipTags.contains(tagName.toLower())) {
+            // Skip this tag.
+            pos = skipToTagEnd(p_html, tagIdx + m_tagReg.matchedLength(), tagName);
+            continue;
+        }
+
+        pos = tagIdx;
+        int idx = p_html.indexOf(m_styleTagReg, pos);
+        if (idx == -1) {
+            break;
+        } else if (idx != tagIdx) {
+            pos = tagIdx + m_tagReg.matchedLength();
+            continue;
+        }
+
+        QString newTag = QString("<%1%2%3>").arg(m_styleTagReg.cap(1))
+                                            .arg(m_styleTagReg.cap(2))
+                                            .arg(m_styleTagReg.cap(4));
+        p_html.replace(idx, m_styleTagReg.matchedLength(), newTag);
+
+        pos = idx + newTag.size();
+
+        altered = true;
+    }
+
+    return altered;
+}
+
+bool VWebUtils::transformMarkToSpan(QString &p_html)
+{
+    bool altered = false;
+    int pos = 0;
+
+    while (pos < p_html.size()) {
+        int tagIdx = p_html.indexOf(m_tagReg, pos);
+        if (tagIdx == -1) {
+            break;
+        }
+
+        QString tagName = m_tagReg.cap(1);
+        if (tagName.toLower() != "mark") {
+            pos = tagIdx + m_tagReg.matchedLength();
+            continue;
+        }
+
+        pos = tagIdx;
+        int idx = p_html.indexOf(m_styleTagReg, pos);
+        if (idx == -1 || idx != tagIdx) {
+            // <mark> without "style".
+            QString newTag = QString("<span style=\"%1\" %2>").arg(m_styleOfSpanForMark)
+                                                              .arg(m_tagReg.cap(2));
+            p_html.replace(tagIdx, m_tagReg.matchedLength(), newTag);
+
+            pos = tagIdx + newTag.size();
+
+            altered = true;
+            continue;
+        }
+
+        QString newTag = QString("<span%1style=\"%2\"%3>").arg(m_styleTagReg.cap(2))
+                                                          .arg(m_styleTagReg.cap(3) + m_styleOfSpanForMark)
+                                                          .arg(m_styleTagReg.cap(4));
+        p_html.replace(idx, m_styleTagReg.matchedLength(), newTag);
+
+        pos = idx + newTag.size();
+
+        altered = true;
+    }
+
+    if (altered) {
+        // Replace all </mark> with </span>.
+        p_html.replace("</mark>", "</span>");
+    }
+
+    return altered;
+}
+
+bool VWebUtils::replacePreBackgroundColorWithCode(QString &p_html)
+{
+    if (p_html.isEmpty()) {
+        return false;
+    }
+
+    bool altered = false;
+    int pos = 0;
+
+    QRegExp bgReg("(\\s|^)(background(-color)?:[^;]+;)");
+
+    while (pos < p_html.size()) {
+        int tagIdx = p_html.indexOf(m_tagReg, pos);
+        if (tagIdx == -1) {
+            break;
+        }
+
+        QString tagName = m_tagReg.cap(1);
+        pos = tagIdx + m_tagReg.matchedLength();
+        if (tagName.toLower() != "pre") {
+            continue;
+        }
+
+        int preEnd = skipToTagEnd(p_html, pos, tagName);
+
+        HtmlTag nextTag = readNextTag(p_html, pos);
+        if (nextTag.m_name != "code"
+            || nextTag.m_start >= preEnd
+            || nextTag.m_style.isEmpty()) {
+            continue;
+        }
+
+        // Get the background style of <code>.
+        int idx = nextTag.m_style.indexOf(bgReg);
+        if (idx == -1) {
+            continue;
+        }
+
+        QString bgStyle = bgReg.cap(2);
+
+        pos = tagIdx;
+        idx = p_html.indexOf(m_styleTagReg, pos);
+        if (idx == -1 || idx != tagIdx) {
+            // <pre> without "style".
+            QString newTag = QString("<%1 style=\"%2\" %3>").arg(m_tagReg.cap(1))
+                                                            .arg(bgStyle)
+                                                            .arg(m_tagReg.cap(2));
+            p_html.replace(tagIdx, m_tagReg.matchedLength(), newTag);
+
+            pos = tagIdx + newTag.size();
+
+            altered = true;
+            continue;
+        }
+
+        QString newTag;
+        if (m_styleTagReg.cap(3).indexOf(bgReg) == -1) {
+            // No background style specified.
+            newTag = QString("<%1%2style=\"%3\"%4>").arg(m_styleTagReg.cap(1))
+                                                    .arg(m_styleTagReg.cap(2))
+                                                    .arg(m_styleTagReg.cap(3) + bgStyle)
+                                                    .arg(m_styleTagReg.cap(4));
+        } else {
+            // Replace background style.
+            newTag = QString("<%1%2style=\"%3\"%4>").arg(m_styleTagReg.cap(1))
+                                                    .arg(m_styleTagReg.cap(2))
+                                                    .arg(m_styleTagReg.cap(3).replace(bgReg, " " + bgStyle))
+                                                    .arg(m_styleTagReg.cap(4));
+        }
+
+        p_html.replace(idx, m_styleTagReg.matchedLength(), newTag);
+
+        pos = idx + newTag.size();
+
+        altered = true;
+    }
+
+    return altered;
+}
+
+VWebUtils::HtmlTag VWebUtils::readNextTag(const QString &p_html, int p_pos)
+{
+    HtmlTag tag;
+
+    int tagIdx = p_html.indexOf(m_tagReg, p_pos);
+    if (tagIdx == -1) {
+        return tag;
+    }
+
+    tag.m_name = m_tagReg.cap(1);
+    tag.m_start = tagIdx;
+    tag.m_end = skipToTagEnd(p_html, tagIdx + m_tagReg.matchedLength(), tag.m_name);
+
+    int idx = p_html.indexOf(m_styleTagReg, tagIdx);
+    if (idx == -1 || idx != tagIdx) {
+        return tag;
+    }
+
+    tag.m_style = m_styleTagReg.cap(3);
+    return tag;
 }

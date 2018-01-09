@@ -19,6 +19,8 @@
 
 extern VConfigManager *g_config;
 
+extern VWebUtils *g_webUtils;
+
 // We set the property of the clipboard to mark that the URL copied in the
 // clipboard has been altered.
 static const QString c_ClipboardPropertyMark = "CopiedImageURLAltered";
@@ -27,8 +29,6 @@ VWebView::VWebView(VFile *p_file, QWidget *p_parent)
     : QWebEngineView(p_parent),
       m_file(p_file),
       m_copyImageUrlActionHooked(false),
-      m_needRemoveBackground(false),
-      m_fixImgSrc(g_config->getFixImageSrcInWebWhenCopied()),
       m_afterCopyImage(false)
 {
     setAcceptDrops(false);
@@ -75,16 +75,10 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
         }
     }
 
-    // Add Copy without Background action.
+    // Add Copy As menu.
     QAction *copyAct = pageAction(QWebEnginePage::Copy);
     if (actions.contains(copyAct)) {
-        QAction *copyWithoutBgAct = new QAction(tr("Copy &without Background"), menu);
-        copyWithoutBgAct->setToolTip(tr("Copy selected content without background styles"));
-        connect(copyWithoutBgAct, &QAction::triggered,
-                this, &VWebView::handleCopyWithoutBackgroundAction);
-        menu->insertAction(copyAct, copyWithoutBgAct);
-        menu->removeAction(copyAct);
-        menu->insertAction(copyWithoutBgAct, copyAct);
+        initCopyAsMenu(copyAct, menu);
     }
 
     // We need to replace the "Copy Image" action:
@@ -101,14 +95,8 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
         defaultCopyImageAct->setVisible(false);
     }
 
-    // Add Copy All without Background action.
-    QAction *copyAllWithoutBgAct = new QAction(tr("Copy &All without Background"), menu);
-    copyAllWithoutBgAct->setToolTip(tr("Copy all contents without background styles"));
-    connect(copyAllWithoutBgAct, &QAction::triggered,
-            this, &VWebView::handleCopyAllWithoutBackgroundAction);
-    // Add it to the back.
-    menu->addSeparator();
-    menu->addAction(copyAllWithoutBgAct);
+    // Add Copy All As menu.
+    initCopyAllAsMenu(menu);
 
     hideUnusedActions(menu);
 
@@ -267,27 +255,10 @@ bool VWebView::removeStyles(QString &p_html)
     return changed;
 }
 
-void VWebView::handleCopyWithoutBackgroundAction()
-{
-    m_needRemoveBackground = true;
-
-    triggerPageAction(QWebEnginePage::Copy);
-}
-
-void VWebView::handleCopyAllWithoutBackgroundAction()
-{
-    triggerPageAction(QWebEnginePage::SelectAll);
-
-    m_needRemoveBackground = true;
-    triggerPageAction(QWebEnginePage::Copy);
-
-    triggerPageAction(QWebEnginePage::Unselect);
-}
-
 void VWebView::handleClipboardChanged(QClipboard::Mode p_mode)
 {
-    bool removeBackground = m_needRemoveBackground;
-    m_needRemoveBackground = false;
+    QString copyTarget = m_copyTarget;
+    m_copyTarget.clear();
 
     bool afterCopyImage = m_afterCopyImage;
     m_afterCopyImage = false;
@@ -306,49 +277,22 @@ void VWebView::handleClipboardChanged(QClipboard::Mode p_mode)
     if (afterCopyImage) {
         removeHtmlFromImageData(clipboard, mimeData);
     } else {
-        alterHtmlMimeData(clipboard, mimeData, removeBackground);
+        alterHtmlMimeData(clipboard, mimeData, copyTarget);
     }
 }
 
 void VWebView::alterHtmlMimeData(QClipboard *p_clipboard,
                                  const QMimeData *p_mimeData,
-                                 bool p_removeBackground)
+                                 const QString &p_copyTarget)
 {
-    if (!p_mimeData->hasHtml() || p_mimeData->hasImage()) {
+    if (!p_mimeData->hasHtml()
+        || p_mimeData->hasImage()
+        || p_copyTarget.isEmpty()) {
         return;
     }
 
-    bool altered = false;
     QString html = p_mimeData->html();
-
-    // Add surrounded tags.
-    if (!html.startsWith("<html>")) {
-        altered = true;
-        html = QString("<html><body>%1</body></html>").arg(html);
-    }
-
-    // Remove background color.
-    if (p_removeBackground) {
-        if (VWebUtils::removeBackgroundColor(html)) {
-            altered = true;
-        }
-
-        if (VWebUtils::translateColors(html)) {
-            altered = true;
-        }
-    }
-
-    // Fix local relative images.
-    if (m_fixImgSrc && VWebUtils::fixImageSrcInHtml(url(), html)) {
-        altered = true;
-    }
-
-    // Fix margin and padding.
-    if (removeStyles(html)) {
-        altered = true;
-    }
-
-    if (!altered) {
+    if (!g_webUtils->alterHtmlAsTarget(url(), html, p_copyTarget)) {
         return;
     }
 
@@ -374,3 +318,79 @@ void VWebView::removeHtmlFromImageData(QClipboard *p_clipboard,
         VClipboardUtils::setMimeDataToClipboard(p_clipboard, data, QClipboard::Clipboard);
     }
 }
+
+void VWebView::initCopyAsMenu(QAction *p_after, QMenu *p_menu)
+{
+    QStringList targets = g_webUtils->getCopyTargetsName();
+    if (targets.isEmpty()) {
+        return;
+    }
+
+    QMenu *subMenu = new QMenu(tr("Copy As"), p_menu);
+    subMenu->setToolTipsVisible(true);
+    for (auto const & target : targets) {
+        QAction *act = new QAction(target, subMenu);
+        act->setData(target);
+        act->setToolTip(tr("Copy selected content using rules specified by target %1").arg(target));
+
+        subMenu->addAction(act);
+    }
+
+    connect(subMenu, &QMenu::triggered,
+            this, &VWebView::handleCopyAsAction);
+
+    QAction *menuAct = p_menu->insertMenu(p_after, subMenu);
+    p_menu->removeAction(p_after);
+    p_menu->insertAction(menuAct, p_after);
+}
+
+void VWebView::handleCopyAsAction(QAction *p_act)
+{
+    if (!p_act) {
+        return;
+    }
+
+    m_copyTarget = p_act->data().toString();
+
+    triggerPageAction(QWebEnginePage::Copy);
+}
+
+void VWebView::initCopyAllAsMenu(QMenu *p_menu)
+{
+    QStringList targets = g_webUtils->getCopyTargetsName();
+    if (targets.isEmpty()) {
+        return;
+    }
+
+    QMenu *subMenu = new QMenu(tr("Copy All As"), p_menu);
+    subMenu->setToolTipsVisible(true);
+    for (auto const & target : targets) {
+        QAction *act = new QAction(target, subMenu);
+        act->setData(target);
+        act->setToolTip(tr("Copy all content using rules specified by target %1").arg(target));
+
+        subMenu->addAction(act);
+    }
+
+    connect(subMenu, &QMenu::triggered,
+            this, &VWebView::handleCopyAllAsAction);
+
+    p_menu->addSeparator();
+    p_menu->addMenu(subMenu);
+}
+
+void VWebView::handleCopyAllAsAction(QAction *p_act)
+{
+    if (!p_act) {
+        return;
+    }
+
+    triggerPageAction(QWebEnginePage::SelectAll);
+
+    m_copyTarget = p_act->data().toString();
+
+    triggerPageAction(QWebEnginePage::Copy);
+
+    triggerPageAction(QWebEnginePage::Unselect);
+}
+

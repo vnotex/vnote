@@ -8,6 +8,7 @@
 #include <QString>
 #include "vfile.h"
 #include "vedittab.h"
+#include "utils/vwebutils.h"
 
 class QLabel;
 class QComboBox;
@@ -375,6 +376,8 @@ private:
 
     // Whether user request VNote to quit.
     bool m_requestQuit;
+
+    VWebUtils m_webUtils;
 
     // Interval of the shared memory timer in ms.
     static const int c_sharedMemTimerInterval;

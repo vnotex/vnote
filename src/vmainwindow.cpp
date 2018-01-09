@@ -36,13 +36,15 @@
 #include "utils/viconutils.h"
 #include "dialog/vtipsdialog.h"
 
-VMainWindow *g_mainWin;
-
 extern VConfigManager *g_config;
 
 extern VPalette *g_palette;
 
+VMainWindow *g_mainWin;
+
 VNote *g_vnote;
+
+VWebUtils *g_webUtils;
 
 const int VMainWindow::c_sharedMemTimerInterval = 1000;
 
@@ -62,8 +64,12 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
     g_mainWin = this;
 
     setWindowIcon(QIcon(":/resources/icons/vnote.ico"));
+
     vnote = new VNote(this);
     g_vnote = vnote;
+
+    m_webUtils.init();
+    g_webUtils = &m_webUtils;
 
     if (g_config->getEnableCompactMode()) {
         m_panelViewState = PanelViewState::CompactMode;

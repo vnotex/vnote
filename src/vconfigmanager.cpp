@@ -285,12 +285,6 @@ void VConfigManager::initialize()
     m_closeBeforeExternalEditor = getConfigFromSettings("global",
                                                         "close_before_external_editor").toBool();
 
-    m_fixImageSrcInWebWhenCopied = getConfigFromSettings("web",
-                                                         "fix_img_src_when_copied").toBool();
-
-    m_stylesToRemoveWhenCopied = getConfigFromSettings("web",
-                                                       "styles_to_remove_when_copied").toStringList();
-
     m_stylesToInlineWhenCopied = getConfigFromSettings("web",
                                                        "styles_to_inline_when_copied").toStringList().join(",");
 }

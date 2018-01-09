@@ -211,7 +211,7 @@ private slots:
     void updateCurrentHeader();
 
     // Copy selected text as HTML.
-    void handleCopyAsHtmlAction();
+    void handleCopyAsAction(QAction *p_act);
 
 private:
     // Update the config of VTextEdit according to global configurations.
@@ -231,6 +231,8 @@ private:
     // Zoom in/out.
     // We need to maintain the styles font size.
     void zoomPage(bool p_zoomIn, int p_range = 1);
+
+    void initCopyAsMenu(QAction *p_before, QMenu *p_menu);
 
     HGMarkdownHighlighter *m_mdHighlighter;
 

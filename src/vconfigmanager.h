@@ -426,11 +426,14 @@ public:
 
     bool getCloseBeforeExternalEditor() const;
 
-    bool getFixImageSrcInWebWhenCopied() const;
-
-    const QStringList &getStylesToRemoveWhenCopied() const;
+    QStringList getStylesToRemoveWhenCopied() const;
 
     const QString &getStylesToInlineWhenCopied() const;
+
+    QString getStyleOfSpanForMark() const;
+
+    // Return [web]/copy_targets.
+    QStringList getCopyTargets() const;
 
 private:
     // Look up a config from user and default settings.
@@ -821,12 +824,6 @@ private:
 
     // Whether user has reset the configurations.
     bool m_hasReset;
-
-    // Whether fix the local relative image src in read mode when copied.
-    bool m_fixImageSrcInWebWhenCopied;
-
-    // Styles to be removed when copied in read mode.
-    QStringList m_stylesToRemoveWhenCopied;
 
     // The string containing styles to inline when copied in edit mode.
     QString m_stylesToInlineWhenCopied;
@@ -1998,18 +1995,27 @@ inline bool VConfigManager::getCloseBeforeExternalEditor() const
     return m_closeBeforeExternalEditor;
 }
 
-inline bool VConfigManager::getFixImageSrcInWebWhenCopied() const
+inline QStringList VConfigManager::getStylesToRemoveWhenCopied() const
 {
-    return m_fixImageSrcInWebWhenCopied;
-}
+    return  getConfigFromSettings("web",
+                                  "styles_to_remove_when_copied").toStringList();
 
-inline const QStringList &VConfigManager::getStylesToRemoveWhenCopied() const
-{
-    return m_stylesToRemoveWhenCopied;
 }
 
 inline const QString &VConfigManager::getStylesToInlineWhenCopied() const
 {
     return m_stylesToInlineWhenCopied;
+}
+
+inline QStringList VConfigManager::getCopyTargets() const
+{
+    return getConfigFromSettings("web",
+                                 "copy_targets").toStringList();
+}
+
+inline QString VConfigManager::getStyleOfSpanForMark() const
+{
+    return getConfigFromSettings("web",
+                                 "style_of_span_for_mark").toString();
 }
 #endif // VCONFIGMANAGER_H

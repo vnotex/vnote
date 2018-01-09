@@ -20,6 +20,9 @@
 #include "vpreviewmanager.h"
 #include "utils/viconutils.h"
 #include "dialog/vcopytextashtmldialog.h"
+#include "utils/vwebutils.h"
+
+extern VWebUtils *g_webUtils;
 
 extern VConfigManager *g_config;
 
@@ -275,12 +278,7 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
         const QList<QAction *> actions = menu->actions();
 
         if (textCursor().hasSelection()) {
-            QAction *copyAsHtmlAct = new QAction(tr("Copy As &HTML without Background"), menu);
-            copyAsHtmlAct->setToolTip(tr("Copy selected contents as HTML without background styles"));
-            connect(copyAsHtmlAct, &QAction::triggered,
-                    this, &VMdEditor::handleCopyAsHtmlAction);
-
-            menu->insertAction(actions.isEmpty() ? NULL : actions[0], copyAsHtmlAct);
+            initCopyAsMenu(actions.isEmpty() ? NULL : actions.last(), menu);
         } else {
             QAction *saveExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/save_exit.svg"),
                                                tr("&Save Changes And Read"),
@@ -1042,7 +1040,7 @@ void VMdEditor::updateInitAndInsertedImages(bool p_fileChanged, UpdateAction p_a
     }
 }
 
-void VMdEditor::handleCopyAsHtmlAction()
+void VMdEditor::handleCopyAsAction(QAction *p_act)
 {
     QTextCursor cursor = textCursor();
     Q_ASSERT(cursor.hasSelection());
@@ -1051,7 +1049,7 @@ void VMdEditor::handleCopyAsHtmlAction()
     Q_ASSERT(!text.isEmpty());
 
     Q_ASSERT(!m_textToHtmlDialog);
-    m_textToHtmlDialog = new VCopyTextAsHtmlDialog(text, this);
+    m_textToHtmlDialog = new VCopyTextAsHtmlDialog(text, p_act->data().toString(), this);
 
     // For Hoedown, we use marked.js to convert the text to have a general interface.
     emit requestTextToHtml(text);
@@ -1128,4 +1126,32 @@ void VMdEditor::zoomPage(bool p_zoomIn, int p_range)
     }
 
     m_mdHighlighter->rehighlight();
+}
+
+void VMdEditor::initCopyAsMenu(QAction *p_before, QMenu *p_menu)
+{
+    QStringList targets = g_webUtils->getCopyTargetsName();
+    if (targets.isEmpty()) {
+        return;
+    }
+
+    QMenu *subMenu = new QMenu(tr("Copy HTML As"), p_menu);
+    subMenu->setToolTipsVisible(true);
+    for (auto const & target : targets) {
+        QAction *act = new QAction(target, subMenu);
+        act->setData(target);
+        act->setToolTip(tr("Copy selected content as HTML using rules specified by target %1").arg(target));
+
+        subMenu->addAction(act);
+    }
+
+    connect(subMenu, &QMenu::triggered,
+            this, &VMdEditor::handleCopyAsAction);
+
+    QAction *menuAct = p_menu->insertMenu(p_before, subMenu);
+    if (p_before) {
+        p_menu->removeAction(p_before);
+        p_menu->insertAction(menuAct, p_before);
+        p_menu->insertSeparator(menuAct);
+    }
 }

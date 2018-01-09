@@ -13,8 +13,12 @@
 
 extern VConfigManager *g_config;
 
-VCopyTextAsHtmlDialog::VCopyTextAsHtmlDialog(const QString &p_text, QWidget *p_parent)
-    : QDialog(p_parent), m_text(p_text)
+extern VWebUtils *g_webUtils;
+
+VCopyTextAsHtmlDialog::VCopyTextAsHtmlDialog(const QString &p_text,
+                                             const QString &p_copyTarget,
+                                             QWidget *p_parent)
+    : QDialog(p_parent), m_text(p_text), m_copyTarget(p_copyTarget)
 {
     setupUI();
 }
@@ -47,7 +51,7 @@ void VCopyTextAsHtmlDialog::setupUI()
     mainLayout->addWidget(m_btnBox);
 
     setLayout(mainLayout);
-    setWindowTitle(tr("Copy Text As HTML"));
+    setWindowTitle(tr("Copy Text As HTML (%1)").arg(m_copyTarget));
 
     setHtmlVisible(false);
 }
@@ -61,16 +65,11 @@ void VCopyTextAsHtmlDialog::setHtmlVisible(bool p_visible)
 void VCopyTextAsHtmlDialog::setConvertedHtml(const QUrl &p_baseUrl,
                                              const QString &p_html)
 {
-    QString html = QString("<html><body>%1</body></html>").arg(p_html);
-    m_htmlViewer->setHtml(html, p_baseUrl);
+    QString html = p_html;
+    m_htmlViewer->setHtml("<html><body>" + html + "</body></html>", p_baseUrl);
     setHtmlVisible(true);
 
-    VWebUtils::translateColors(html);
-
-    // Fix image source.
-    if (g_config->getFixImageSrcInWebWhenCopied()) {
-        VWebUtils::fixImageSrcInHtml(p_baseUrl, html);
-    }
+    g_webUtils->alterHtmlAsTarget(p_baseUrl, html, m_copyTarget);
 
     QClipboard *clipboard = QApplication::clipboard();
     QMimeData *data = new QMimeData();
