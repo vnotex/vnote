@@ -91,6 +91,12 @@ private:
 
     VWebUtils::HtmlTag readNextTag(const QString &p_html, int p_pos);
 
+    // Replace \n with <br> in <pre>.
+    bool replaceNewLineWithBR(QString &p_html);
+
+    // Replace local absolute/relative <img> tag with a warning label.
+    bool replaceLocalImgWithWarningLabel(QString &p_html);
+
     QVector<CopyTarget> m_copyTargets;
 
     // Custom styles to remove when copied.

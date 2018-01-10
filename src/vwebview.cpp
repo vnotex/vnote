@@ -111,8 +111,6 @@ void VWebView::handleEditAction()
 
 void VWebView::copyImage()
 {
-    m_afterCopyImage = true;
-
 #if defined(Q_OS_WIN)
     Q_ASSERT(m_copyImageUrlActionHooked);
     // triggerPageAction(QWebEnginePage::CopyImageUrlToClipboard) will not really
@@ -144,6 +142,8 @@ void VWebView::copyImage()
         }
     }
 #endif
+
+    m_afterCopyImage = true;
 
     // Fall back.
     triggerPageAction(QWebEnginePage::CopyImageToClipboard);

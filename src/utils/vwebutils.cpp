@@ -2,6 +2,7 @@
 
 #include <QRegExp>
 #include <QFileInfo>
+#include <QObject>
 #include <QDebug>
 
 #include "vpalette.h"
@@ -87,7 +88,7 @@ bool VWebUtils::fixImageSrc(const QUrl &p_baseUrl, QString &p_html)
     QUrl::ComponentFormattingOption strOpt = QUrl::FullyEncoded;
 #endif
 
-    QRegExp reg("(<img src=\")([^\"]+)\"");
+    QRegExp reg("<img src=\"([^\"]+)\"");
 
     int pos = 0;
     while (pos < p_html.size()) {
@@ -96,7 +97,7 @@ bool VWebUtils::fixImageSrc(const QUrl &p_baseUrl, QString &p_html)
             break;
         }
 
-        QString urlStr = reg.cap(2);
+        QString urlStr = reg.cap(1);
         QUrl imgUrl(urlStr);
 
         QString fixedStr;
@@ -210,6 +211,14 @@ bool VWebUtils::alterHtmlByTargetAction(const QUrl &p_baseUrl, QString &p_html, 
 
     case 'p':
         altered = replacePreBackgroundColorWithCode(p_html);
+        break;
+
+    case 'n':
+        altered = replaceNewLineWithBR(p_html);
+        break;
+
+    case 'g':
+        altered = replaceLocalImgWithWarningLabel(p_html);
         break;
 
     default:
@@ -590,4 +599,79 @@ VWebUtils::HtmlTag VWebUtils::readNextTag(const QString &p_html, int p_pos)
 
     tag.m_style = m_styleTagReg.cap(3);
     return tag;
+}
+
+bool VWebUtils::replaceNewLineWithBR(QString &p_html)
+{
+    if (p_html.isEmpty()) {
+        return false;
+    }
+
+    bool altered = false;
+    int pos = 0;
+
+    while (pos < p_html.size()) {
+        int tagIdx = p_html.indexOf(m_tagReg, pos);
+        if (tagIdx == -1) {
+            break;
+        }
+
+        QString tagName = m_tagReg.cap(1);
+        pos = tagIdx + m_tagReg.matchedLength();
+        if (tagName.toLower() != "pre") {
+            continue;
+        }
+
+        int preEnd = skipToTagEnd(p_html, pos, tagName);
+
+        // Replace '\n' in [pos, preEnd).
+        while (pos < preEnd) {
+            int idx = p_html.indexOf('\n', pos);
+            if (idx == -1 || idx >= preEnd) {
+                break;
+            }
+
+            QString br("<br>");
+            p_html.replace(idx, 1, br);
+            pos = idx + br.size() - 1;
+            preEnd = preEnd + br.size() - 1;
+
+            altered = true;
+        }
+
+        pos = preEnd;
+    }
+
+    return altered;
+}
+
+bool VWebUtils::replaceLocalImgWithWarningLabel(QString &p_html)
+{
+    bool altered = false;
+
+    QRegExp reg("<img src=\"([^\"]+)\"[^>]*>");
+
+    QString label = QString("<span style=\"font-weight: bold; color: #FFFFFF; background-color: #EE0000;\">%1</span>")
+                           .arg(QObject::tr("Insert_Image_HERE"));
+
+    int pos = 0;
+    while (pos < p_html.size()) {
+        int idx = p_html.indexOf(reg, pos);
+        if (idx == -1) {
+            break;
+        }
+
+        QString urlStr = reg.cap(1);
+        QUrl imgUrl(urlStr);
+
+        if (imgUrl.scheme() == "https" || imgUrl.scheme() == "http") {
+            pos = idx + reg.matchedLength();
+            continue;
+        }
+
+        p_html.replace(idx, reg.matchedLength(), label);
+        pos = idx + label.size();
+    }
+
+    return altered;
 }
