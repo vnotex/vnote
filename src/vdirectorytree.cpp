@@ -74,6 +74,16 @@ void VDirectoryTree::initShortcuts()
             this, [this](){
                 pasteDirectoriesFromClipboard();
             });
+
+    QKeySequence seq = QKeySequence(g_config->getShortcutKeySequence("NewSubfolder"));
+    if (!seq.isEmpty()) {
+        QShortcut *newSubDirShortcut = new QShortcut(seq, this);
+        newSubDirShortcut->setContext(Qt::ApplicationShortcut);
+        connect(newSubDirShortcut, &QShortcut::activated,
+                this, [this](){
+                    newSubDirectory();
+                });
+    }
 }
 
 void VDirectoryTree::initActions()
@@ -87,6 +97,11 @@ void VDirectoryTree::initActions()
     newSubDirAct = new QAction(VIconUtils::menuIcon(":/resources/icons/create_subdir.svg"),
                                tr("&New Subfolder"), this);
     newSubDirAct->setToolTip(tr("Create a subfolder"));
+    QString shortcutStr = VUtils::getShortcutText(g_config->getShortcutKeySequence("NewSubfolder"));
+    if (!shortcutStr.isEmpty()) {
+        newSubDirAct->setText(tr("&New Subfolder\t%1").arg(shortcutStr));
+    }
+
     connect(newSubDirAct, &QAction::triggered,
             this, &VDirectoryTree::newSubDirectory);
 
