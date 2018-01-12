@@ -51,14 +51,15 @@ sudo zypper in vnote
 
 VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，VNote使得编写Markdown笔记更简单和舒适！
 
-基于Qt框架，VNote能够在主流操作系统上运行，包括 **Linux**, **Windows** 以及 **macOS**（由于macOS上很不一样的交互逻辑，VNote在macOS上并没有被充分测试，我们也希望得到更多的反馈以帮助改进VNote）。
+基于Qt框架，VNote能够在主流操作系统上运行，包括 **Linux**, **Windows** 以及 **macOS** 。
 
 ![VNote](screenshots/_vnote_1513485003_1746530034.png)
 
 # 支持
 - [Github issues](https://github.com/tamlok/vnote/issues)；
 - 邮箱: tamlokveer at gmail.com；
-- QQ群: 487756074；
+- QQ群: 487756074；  
+![VNote QQ](screenshots/vnote_qq.jpg)
 - 微信公众号: VNote笔记（vnote_md）；  
 ![VNote WeChat](screenshots/vnote_md.jpg)
 

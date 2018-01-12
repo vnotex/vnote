@@ -57,7 +57,8 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 # Supports
 - [Github issues](https://github.com/tamlok/vnote/issues);
 - Email: tamlokveer at gmail.com;
-- QQ group: 487756074;
+- QQ group: 487756074;  
+![VNote QQ](screenshots/vnote_qq.jpg)
 - WeChat Public Account: VNote笔记 (vnote_md);  
 ![VNote WeChat](screenshots/vnote_md.jpg)
 
