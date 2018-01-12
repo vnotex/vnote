@@ -283,6 +283,8 @@ public:
     // Return a doc file path.
     static QString getDocFile(const QString &p_name);
 
+    static QString getCaptainShortcutSequenceText(const QString &p_operation);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
     // Captured texts (need to be trimmed):

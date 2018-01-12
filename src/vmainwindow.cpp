@@ -341,23 +341,31 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
 
     m_viewActGroup = new QActionGroup(this);
     QAction *onePanelViewAct = new QAction(VIconUtils::menuIcon(":/resources/icons/one_panel.svg"),
-                                           tr("&Single Panel"),
+                                           tr("Single Panel"),
                                            m_viewActGroup);
+    QString keyText = VUtils::getCaptainShortcutSequenceText("OnePanelView");
+    if (!keyText.isEmpty()) {
+        onePanelViewAct->setText(tr("Single Panel\t%1").arg(keyText));
+    }
+
     onePanelViewAct->setStatusTip(tr("Display only the notes list panel"));
-    onePanelViewAct->setToolTip(tr("Single Panel"));
     onePanelViewAct->setCheckable(true);
     onePanelViewAct->setData((int)PanelViewState::SinglePanel);
 
     QAction *twoPanelViewAct = new QAction(VIconUtils::menuIcon(":/resources/icons/two_panels.svg"),
-                                           tr("&Two Panels"),
+                                           tr("Two Panels"),
                                            m_viewActGroup);
+    keyText = VUtils::getCaptainShortcutSequenceText("OnePanelView");
+    if (!keyText.isEmpty()) {
+        twoPanelViewAct->setText(tr("Two Panels\t%1").arg(keyText));
+    }
+
     twoPanelViewAct->setStatusTip(tr("Display both the folders and notes list panel"));
-    twoPanelViewAct->setToolTip(tr("Two Panels"));
     twoPanelViewAct->setCheckable(true);
     twoPanelViewAct->setData((int)PanelViewState::TwoPanels);
 
     QAction *compactViewAct = new QAction(VIconUtils::menuIcon(":/resources/icons/compact_mode.svg"),
-                                           tr("&Compact Mode"),
+                                           tr("Compact Mode"),
                                            m_viewActGroup);
     compactViewAct->setStatusTip(tr("Integrate the folders and notes list panel in one column"));
     compactViewAct->setCheckable(true);
@@ -396,6 +404,11 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
 
     expandViewAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/expand.svg"),
                                 tr("Expand"), this);
+    keyText = VUtils::getCaptainShortcutSequenceText("ExpandMode");
+    if (!keyText.isEmpty()) {
+        expandViewAct->setText(tr("Expand\t%1").arg(keyText));
+    }
+
     expandViewAct->setStatusTip(tr("Expand the edit area"));
     expandViewAct->setCheckable(true);
     expandViewAct->setMenu(panelMenu);
@@ -577,8 +590,12 @@ void VMainWindow::initNoteToolBar(QSize p_iconSize)
                                         this);
     flashPageAct->setStatusTip(tr("Open the Flash Page to edit"));
     QString keySeq = g_config->getShortcutKeySequence("FlashPage");
-    qDebug() << "set FlashPage shortcut to" << keySeq;
-    flashPageAct->setShortcut(QKeySequence(keySeq));
+    QKeySequence seq(keySeq);
+    if (!seq.isEmpty()) {
+        flashPageAct->setText(tr("Flash Page\t%1").arg(VUtils::getShortcutText(keySeq)));
+        flashPageAct->setShortcut(seq);
+    }
+
     connect(flashPageAct, &QAction::triggered,
             this, &VMainWindow::openFlashPage);
 
@@ -598,48 +615,61 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     m_avatarBtn = new QPushButton("VNote", this);
     m_avatarBtn->setProperty("AvatarBtn", true);
     m_avatarBtn->setFocusPolicy(Qt::NoFocus);
+    m_avatarBtn->setToolTip(tr("Log In (Not Implemented Yet)"));
 
     newRootDirAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/create_rootdir_tb.svg"),
-                                tr("New &Root Folder"),
+                                tr("New Root Folder"),
                                 this);
     newRootDirAct->setStatusTip(tr("Create a root folder in current notebook"));
     connect(newRootDirAct, &QAction::triggered,
             directoryTree, &VDirectoryTree::newRootDirectory);
 
     newNoteAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/create_note_tb.svg"),
-                             tr("New &Note"), this);
+                             tr("New Note"), this);
     newNoteAct->setStatusTip(tr("Create a note in current folder"));
     QString keySeq = g_config->getShortcutKeySequence("NewNote");
-    qDebug() << "set NewNote shortcut to" << keySeq;
-    newNoteAct->setShortcut(QKeySequence(keySeq));
+    QKeySequence seq(keySeq);
+    if (!seq.isEmpty()) {
+        newNoteAct->setText(tr("New Note\t%1").arg(VUtils::getShortcutText(keySeq)));
+        newNoteAct->setShortcut(seq);
+    }
+
     connect(newNoteAct, &QAction::triggered,
             m_fileList, &VFileList::newFile);
 
     noteInfoAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/note_info_tb.svg"),
-                              tr("Note &Info"), this);
+                              tr("Note Info"), this);
     noteInfoAct->setStatusTip(tr("View and edit current note's information"));
     connect(noteInfoAct, &QAction::triggered,
             this, &VMainWindow::curEditFileInfo);
 
     deleteNoteAct = new QAction(VIconUtils::toolButtonDangerIcon(":/resources/icons/delete_note_tb.svg"),
-                                tr("&Delete Note"), this);
+                                tr("Delete Note"), this);
     deleteNoteAct->setStatusTip(tr("Delete current note"));
     connect(deleteNoteAct, &QAction::triggered,
             this, &VMainWindow::deleteCurNote);
 
     editNoteAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/edit_note.svg"),
-                              tr("&Edit"), this);
+                              tr("Edit"), this);
     editNoteAct->setStatusTip(tr("Edit current note"));
     keySeq = g_config->getShortcutKeySequence("EditNote");
-    qDebug() << "set EditNote shortcut to" << keySeq;
-    editNoteAct->setShortcut(QKeySequence(keySeq));
+    seq = QKeySequence(keySeq);
+    if (!seq.isEmpty()) {
+        editNoteAct->setText(tr("Edit\t%1").arg(VUtils::getShortcutText(keySeq)));
+        editNoteAct->setShortcut(seq);
+    }
+
     connect(editNoteAct, &QAction::triggered,
             editArea, &VEditArea::editFile);
 
     discardExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/discard_exit.svg"),
                                  tr("Discard Changes And Read"), this);
+    QString keyText = VUtils::getCaptainShortcutSequenceText("DiscardAndRead");
+    if (!keyText.isEmpty()) {
+        discardExitAct->setText(tr("Discard Changes And Read\t%1").arg(keyText));
+    }
+
     discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
-    discardExitAct->setToolTip(tr("Discard Changes And Read"));
     connect(discardExitAct, &QAction::triggered,
             editArea, &VEditArea::readFile);
 
@@ -652,8 +682,12 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     saveExitAct->setStatusTip(tr("Save changes and exit edit mode"));
     saveExitAct->setMenu(exitEditMenu);
     keySeq = g_config->getShortcutKeySequence("SaveAndRead");
-    qDebug() << "set SaveAndRead shortcut to" << keySeq;
-    saveExitAct->setShortcut(QKeySequence(keySeq));
+    seq = QKeySequence(keySeq);
+    if (!seq.isEmpty()) {
+        saveExitAct->setText(tr("Save Changes And Read\t%1").arg(VUtils::getShortcutText(keySeq)));
+        saveExitAct->setShortcut(seq);
+    }
+
     connect(saveExitAct, &QAction::triggered,
             editArea, &VEditArea::saveAndReadFile);
 
@@ -661,8 +695,12 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
                               tr("Save"), this);
     saveNoteAct->setStatusTip(tr("Save changes to current note"));
     keySeq = g_config->getShortcutKeySequence("SaveNote");
-    qDebug() << "set SaveNote shortcut to" << keySeq;
-    saveNoteAct->setShortcut(QKeySequence(keySeq));
+    seq = QKeySequence(keySeq);
+    if (!seq.isEmpty()) {
+        saveNoteAct->setText(tr("Save\t%1").arg(VUtils::getShortcutText(keySeq)));
+        saveNoteAct->setShortcut(seq);
+    }
+
     connect(saveNoteAct, &QAction::triggered,
             editArea, &VEditArea::saveFile);
 
@@ -678,8 +716,8 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     fileToolBar->addWidget(m_avatarBtn);
     fileToolBar->addAction(newRootDirAct);
     fileToolBar->addAction(newNoteAct);
-    fileToolBar->addAction(noteInfoAct);
     fileToolBar->addAction(deleteNoteAct);
+    fileToolBar->addAction(noteInfoAct);
     fileToolBar->addAction(editNoteAct);
     fileToolBar->addAction(saveExitAct);
     fileToolBar->addAction(saveNoteAct);

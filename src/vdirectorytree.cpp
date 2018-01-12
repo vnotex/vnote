@@ -12,6 +12,7 @@
 #include "dialog/vsortdialog.h"
 #include "utils/vimnavigationforwidget.h"
 #include "utils/viconutils.h"
+#include "vfilelist.h"
 
 extern VMainWindow *g_mainWin;
 
@@ -88,6 +89,19 @@ void VDirectoryTree::initShortcuts()
 
 void VDirectoryTree::initActions()
 {
+    m_newNoteAct = new QAction(VIconUtils::menuIcon(":/resources/icons/create_note_tb.svg"),
+                             tr("New &Note"), this);
+    QString shortcutStr = VUtils::getShortcutText(g_config->getShortcutKeySequence("NewNote"));
+    if (!shortcutStr.isEmpty()) {
+        m_newNoteAct->setText(tr("New &Note\t%1").arg(shortcutStr));
+    }
+
+    m_newNoteAct->setToolTip(tr("Create a note in selected folder"));
+    connect(m_newNoteAct, &QAction::triggered,
+            this, [this]() {
+                g_mainWin->getFileList()->newFile();
+            });
+
     newRootDirAct = new QAction(VIconUtils::menuIcon(":/resources/icons/create_rootdir.svg"),
                                 tr("New &Root Folder"), this);
     newRootDirAct->setToolTip(tr("Create a root folder in current notebook"));
@@ -95,9 +109,9 @@ void VDirectoryTree::initActions()
             this, &VDirectoryTree::newRootDirectory);
 
     newSubDirAct = new QAction(VIconUtils::menuIcon(":/resources/icons/create_subdir.svg"),
-                               tr("&New Subfolder"), this);
+                               tr("New &Subfolder"), this);
     newSubDirAct->setToolTip(tr("Create a subfolder"));
-    QString shortcutStr = VUtils::getShortcutText(g_config->getShortcutKeySequence("NewSubfolder"));
+    shortcutStr = VUtils::getShortcutText(g_config->getShortcutKeySequence("NewSubfolder"));
     if (!shortcutStr.isEmpty()) {
         newSubDirAct->setText(tr("&New Subfolder\t%1").arg(shortcutStr));
     }
@@ -389,6 +403,8 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
         }
     } else {
         // Context menu on a QTreeWidgetItem
+        menu.addAction(m_newNoteAct);
+
         if (item->parent()) {
             // Low-level item
             menu.addAction(newSubDirAct);

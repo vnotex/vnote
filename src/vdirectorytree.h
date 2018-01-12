@@ -161,9 +161,12 @@ private:
     int m_magicForClipboard;
 
     // Actions
+    QAction *m_newNoteAct;
+
     QAction *newRootDirAct;
-    QAction *newSiblingDirAct;
+
     QAction *newSubDirAct;
+
     QAction *deleteDirAct;
     QAction *dirInfoAct;
     QAction *copyAct;

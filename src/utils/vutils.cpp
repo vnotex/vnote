@@ -1154,3 +1154,16 @@ QString VUtils::getDocFile(const QString &p_name)
     QDir dir(VNote::c_docFileFolder);
     return dir.filePath(getFileNameWithLocale(p_name));
 }
+
+QString VUtils::getCaptainShortcutSequenceText(const QString &p_operation)
+{
+    QString capKey = g_config->getShortcutKeySequence("CaptainMode");
+    QString sec = g_config->getCaptainShortcutKeySequence(p_operation);
+
+    QKeySequence seq(capKey + "," + sec);
+    if (!seq.isEmpty()) {
+        return seq.toString(QKeySequence::NativeText);
+    }
+
+    return QString();
+}
