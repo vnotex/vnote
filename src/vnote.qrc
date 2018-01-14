@@ -234,5 +234,8 @@
         <file>translations/qdialogbuttonbox_zh_CN.qm</file>
         <file>translations/qwebengine_zh_CN.qm</file>
         <file>translations/qt_zh_CN.qm</file>
+        <file>resources/icons/clear_cart.svg</file>
+        <file>resources/icons/cart.svg</file>
+        <file>resources/icons/delete_cart_item.svg</file>
     </qresource>
 </RCC>

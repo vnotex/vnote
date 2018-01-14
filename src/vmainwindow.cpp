@@ -35,6 +35,7 @@
 #include "vpalette.h"
 #include "utils/viconutils.h"
 #include "dialog/vtipsdialog.h"
+#include "vcart.h"
 
 extern VConfigManager *g_config;
 
@@ -1259,6 +1260,9 @@ void VMainWindow::initDockWindows()
     // Snippets.
     m_snippetList = new VSnippetList(this);
 
+    // Cart.
+    m_cart = new VCart(this);
+
     m_toolBox = new VToolBox(this);
     m_toolBox->addItem(outline,
                        ":/resources/icons/outline.svg",
@@ -1266,6 +1270,9 @@ void VMainWindow::initDockWindows()
     m_toolBox->addItem(m_snippetList,
                        ":/resources/icons/snippets.svg",
                        tr("Snippets"));
+    m_toolBox->addItem(m_cart,
+                       ":/resources/icons/cart.svg",
+                       tr("Cart"));
 
     toolDock->setWidget(m_toolBox);
     addDockWidget(Qt::RightDockWidgetArea, toolDock);

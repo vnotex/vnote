@@ -37,6 +37,7 @@ class QSystemTrayIcon;
 class VButtonWithWidget;
 class VAttachmentList;
 class VSnippetList;
+class VCart;
 
 enum class PanelViewState
 {
@@ -62,6 +63,8 @@ public:
     VEditArea *getEditArea() const;
 
     VSnippetList *getSnippetList() const;
+
+    VCart *getCart() const;
 
     // View and edit the information of @p_file, which is an orphan file.
     void editOrphanFileInfo(VFile *p_file);
@@ -304,6 +307,9 @@ private:
     // View and manage snippets.
     VSnippetList *m_snippetList;
 
+    // View and manage cart.
+    VCart *m_cart;
+
     VFindReplaceDialog *m_findReplaceDialog;
     VVimIndicator *m_vimIndicator;
     VTabIndicator *m_tabIndicator;
@@ -411,6 +417,11 @@ inline VEditTab *VMainWindow::getCurrentTab() const
 inline VSnippetList *VMainWindow::getSnippetList() const
 {
     return m_snippetList;
+}
+
+inline VCart *VMainWindow::getCart() const
+{
+    return m_cart;
 }
 
 #endif // VMAINWINDOW_H

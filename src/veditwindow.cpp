@@ -1,5 +1,6 @@
 #include <QtWidgets>
 #include <QtDebug>
+
 #include "veditwindow.h"
 #include "vedittab.h"
 #include "utils/vutils.h"
@@ -12,6 +13,7 @@
 #include "vfilelist.h"
 #include "vconfigmanager.h"
 #include "utils/viconutils.h"
+#include "vcart.h"
 
 extern VConfigManager *g_config;
 extern VMainWindow *g_mainWin;
@@ -90,7 +92,7 @@ void VEditWindow::initTabActions()
     m_closeOthersAct->setToolTip(tr("Close all other note tabs"));
     connect(m_closeOthersAct, &QAction::triggered,
             this, [this](){
-                int tab = this->m_closeTabAct->data().toInt();
+                int tab = this->m_closeOthersAct->data().toInt();
                 Q_ASSERT(tab != -1);
 
                 for (int i = tab - 1; i >= 0; --i) {
@@ -114,7 +116,7 @@ void VEditWindow::initTabActions()
     m_closeRightAct->setToolTip(tr("Close all the note tabs to the right of current tab"));
     connect(m_closeRightAct, &QAction::triggered,
             this, [this](){
-                int tab = this->m_closeTabAct->data().toInt();
+                int tab = this->m_closeRightAct->data().toInt();
                 Q_ASSERT(tab != -1);
 
                 for (int i = tab + 1; i < this->count();) {
@@ -131,7 +133,7 @@ void VEditWindow::initTabActions()
     m_noteInfoAct->setToolTip(tr("View and edit information of the note"));
     connect(m_noteInfoAct, &QAction::triggered,
             this, [this](){
-                int tab = this->m_closeTabAct->data().toInt();
+                int tab = this->m_noteInfoAct->data().toInt();
                 Q_ASSERT(tab != -1);
 
                 VEditTab *editor = getTab(tab);
@@ -145,11 +147,25 @@ void VEditWindow::initTabActions()
                 }
             });
 
+    m_addToCartAct = new QAction(tr("Add To Cart"), this);
+    m_addToCartAct->setToolTip(tr("Add this note to Cart for further processing"));
+    connect(m_addToCartAct, &QAction::triggered,
+            this, [this](){
+                int tab = this->m_addToCartAct->data().toInt();
+                Q_ASSERT(tab != -1);
+
+                VEditTab *editor = getTab(tab);
+                QPointer<VFile> file = editor->getFile();
+                Q_ASSERT(file);
+                g_mainWin->getCart()->addFile(file->fetchPath());
+                g_mainWin->showStatusMessage(tr("1 note added to Cart"));
+            });
+
     m_openLocationAct = new QAction(tr("Open Note Location"), this);
     m_openLocationAct->setToolTip(tr("Open the folder containing this note in operating system"));
     connect(m_openLocationAct, &QAction::triggered,
             this, [this](){
-                int tab = this->m_closeTabAct->data().toInt();
+                int tab = this->m_openLocationAct->data().toInt();
                 Q_ASSERT(tab != -1);
 
                 VEditTab *editor = getTab(tab);
@@ -163,7 +179,7 @@ void VEditWindow::initTabActions()
     m_reloadAct->setToolTip(tr("Reload the content of this note from disk"));
     connect(m_reloadAct, &QAction::triggered,
             this, [this](){
-                int tab = this->m_closeTabAct->data().toInt();
+                int tab = this->m_reloadAct->data().toInt();
                 Q_ASSERT(tab != -1);
 
                 VEditTab *editor = getTab(tab);
@@ -175,7 +191,7 @@ void VEditWindow::initTabActions()
     m_recycleBinAct->setToolTip(tr("Open the recycle bin of this note"));
     connect(m_recycleBinAct, &QAction::triggered,
             this, [this]() {
-                int tab = this->m_closeTabAct->data().toInt();
+                int tab = this->m_recycleBinAct->data().toInt();
                 Q_ASSERT(tab != -1);
 
                 VEditTab *editor = getTab(tab);
@@ -647,6 +663,9 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
         m_reloadAct->setData(tab);
         menu.addAction(m_reloadAct);
 
+        m_addToCartAct->setData(tab);
+        menu.addAction(m_addToCartAct);
+
         m_noteInfoAct->setData(tab);
         menu.addAction(m_noteInfoAct);
     } else if (file->getType() == FileType::Orphan
@@ -659,6 +678,9 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
 
         m_reloadAct->setData(tab);
         menu.addAction(m_reloadAct);
+
+        m_addToCartAct->setData(tab);
+        menu.addAction(m_addToCartAct);
 
         m_noteInfoAct->setData(tab);
         menu.addAction(m_noteInfoAct);

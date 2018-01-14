@@ -106,7 +106,8 @@ SOURCES += main.cpp\
     dialog/vcopytextashtmldialog.cpp \
     vwaitingwidget.cpp \
     utils/vwebutils.cpp \
-    vlineedit.cpp
+    vlineedit.cpp \
+    vcart.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -199,7 +200,8 @@ HEADERS  += vmainwindow.h \
     dialog/vcopytextashtmldialog.h \
     vwaitingwidget.h \
     utils/vwebutils.h \
-    vlineedit.h
+    vlineedit.h \
+    vcart.h
 
 RESOURCES += \
     vnote.qrc \

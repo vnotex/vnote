@@ -18,6 +18,7 @@
 #include "utils/vimnavigationforwidget.h"
 #include "utils/viconutils.h"
 #include "dialog/vtipsdialog.h"
+#include "vcart.h"
 
 extern VConfigManager *g_config;
 extern VNote *g_vnote;
@@ -157,6 +158,11 @@ void VFileList::initActions()
     connect(m_openLocationAct, &QAction::triggered,
             this, &VFileList::openFileLocation);
 
+    m_addToCartAct = new QAction(tr("Add To Cart"), this);
+    m_addToCartAct->setToolTip(tr("Add selected notes to Cart for further processing"));
+    connect(m_addToCartAct, &QAction::triggered,
+            this, &VFileList::addFileToCart);
+
     m_sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
                             tr("&Sort"),
                             this);
@@ -218,6 +224,20 @@ void VFileList::openFileLocation() const
         QUrl url = QUrl::fromLocalFile(getVFile(items[0])->fetchBasePath());
         QDesktopServices::openUrl(url);
     }
+}
+
+void VFileList::addFileToCart() const
+{
+    QList<QListWidgetItem *> items = fileList->selectedItems();
+    VCart *cart = g_mainWin->getCart();
+
+    for (int i = 0; i < items.size(); ++i) {
+        cart->addFile(getVFile(items[i])->fetchPath());
+    }
+
+    g_mainWin->showStatusMessage(tr("%1 %2 added to Cart")
+                                   .arg(items.size())
+                                   .arg(items.size() > 1 ? tr("notes") : tr("note")));
 }
 
 void VFileList::fileInfo(VNoteFile *p_file)
@@ -522,7 +542,9 @@ void VFileList::contextMenuRequested(QPoint pos)
         return;
     }
 
-    if (item && fileList->selectedItems().size() == 1) {
+    int selectedSize = fileList->selectedItems().size();
+
+    if (item && selectedSize == 1) {
         VNoteFile *file = getVFile(item);
         if (file) {
             if (file->getDocType() == DocType::Markdown) {
@@ -558,9 +580,13 @@ void VFileList::contextMenuRequested(QPoint pos)
 
     if (item) {
         menu.addSeparator();
-        menu.addAction(m_openLocationAct);
+        if (selectedSize == 1) {
+            menu.addAction(m_openLocationAct);
+        }
 
-        if (fileList->selectedItems().size() == 1) {
+        menu.addAction(m_addToCartAct);
+
+        if (selectedSize == 1) {
             menu.addAction(fileInfoAct);
         }
     }

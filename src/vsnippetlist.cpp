@@ -72,7 +72,6 @@ void VSnippetList::setupUI()
     m_snippetList->setAttribute(Qt::WA_MacShowFocusRect, false);
     m_snippetList->setContextMenuPolicy(Qt::CustomContextMenu);
     m_snippetList->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    m_snippetList->setEditTriggers(QAbstractItemView::SelectedClicked);
     connect(m_snippetList, &QListWidget::customContextMenuRequested,
             this, &VSnippetList::handleContextMenuRequested);
     connect(m_snippetList, &QListWidget::itemActivated,

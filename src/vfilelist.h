@@ -83,6 +83,9 @@ private slots:
     // Valid only when there is only one selected file.
     void openFileLocation() const;
 
+    // Add selected files to Cart.
+    void addFileToCart() const;
+
     // Copy selected files to clipboard.
     // Will put a Json string into the clipboard which contains the information
     // about copied files.
@@ -174,8 +177,12 @@ private:
     QAction *copyAct;
     QAction *cutAct;
     QAction *pasteAct;
+
     QAction *m_openLocationAct;
+
     QAction *m_sortAct;
+
+    QAction *m_addToCartAct;
 
     // Context sub-menu of Open With.
     QMenu *m_openWithMenu;

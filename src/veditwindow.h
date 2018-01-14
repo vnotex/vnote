@@ -205,6 +205,9 @@ private:
     // View and edit info about this note.
     QAction *m_noteInfoAct;
 
+    // Add this note to Cart.
+    QAction *m_addToCartAct;
+
     // Open the location (the folder containing this file) of this note.
     QAction *m_openLocationAct;
 
