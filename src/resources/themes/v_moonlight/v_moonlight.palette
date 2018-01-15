@@ -6,6 +6,7 @@ qss_file=v_moonlight.qss
 mdhl_file=v_moonlight.mdhl
 css_file=v_moonlight.css
 codeblock_css_file=v_moonlight_codeblock.css
+version=1
 
 ; This mapping will be used to translate colors when the content of HTML is copied
 ; without background. You could just specify the foreground colors mapping here.

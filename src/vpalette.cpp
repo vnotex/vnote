@@ -202,6 +202,8 @@ VPaletteMetaData VPalette::getPaletteMetaData(const QString &p_paletteFile)
     QDir dir(VUtils::basePathFromPath(QFileInfo(p_paletteFile).absoluteFilePath()));
 
     settings.beginGroup("metadata");
+    data.m_version = settings.value("version").toInt();
+
     QString val = settings.value("qss_file").toString();
     if (!val.isEmpty()) {
         data.m_qssFile = dir.filePath(val);
@@ -262,6 +264,11 @@ QString VPalette::themeCodeBlockCssStyle(const QString &p_paletteFile)
 {
     VPaletteMetaData data = getPaletteMetaData(p_paletteFile);
     return themeName(p_paletteFile) + "/" + QFileInfo(data.m_codeBlockCssFile).completeBaseName();
+}
+
+int VPalette::getPaletteVersion(const QString &p_paletteFile)
+{
+    return getPaletteMetaData(p_paletteFile).m_version;
 }
 
 void VPalette::fillFontFamily(QString &p_text) const

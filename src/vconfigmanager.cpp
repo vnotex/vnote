@@ -1236,8 +1236,11 @@ void VConfigManager::initThemes()
     m_themes.insert(VPalette::themeName(file), file);
     */
 
+    outputBuiltInThemes();
+
     // User theme folder.
     QDir dir(getThemeConfigFolder());
+    Q_ASSERT(dir.exists());
     if (!dir.exists()) {
         dir.mkpath(getThemeConfigFolder());
         return;
@@ -1254,6 +1257,53 @@ void VConfigManager::initThemes()
 
         QFileInfo fi(files[0]);
         m_themes.insert(VPalette::themeName(files[0]), themeDir.filePath(files[0]));
+    }
+}
+
+void VConfigManager::outputBuiltInThemes()
+{
+    QDir dir(getThemeConfigFolder());
+    if (!dir.exists()) {
+        dir.mkpath(getThemeConfigFolder());
+    }
+
+    QStringList suffix({"*.palette"});
+
+    for (auto it = m_themes.begin(); it != m_themes.end(); ++it) {
+        QString file = it.value();
+        QString srcDir = VUtils::basePathFromPath(file);
+        QString folder = VUtils::directoryNameFromPath(srcDir);
+
+        bool needOutput = false;
+        if (dir.exists(folder)) {
+            QString folderPath = dir.filePath(folder);
+            QDir tmpDir(folderPath);
+            QStringList files = tmpDir.entryList(suffix);
+            if (files.size() == 1) {
+                int newVer = VPalette::getPaletteVersion(file);
+                int curVer = VPalette::getPaletteVersion(tmpDir.filePath(files[0]));
+                if (newVer != curVer) {
+                    needOutput = true;
+                }
+            } else {
+                needOutput = true;
+            }
+
+            if (needOutput) {
+                // Delete the folder.
+                bool ret = VUtils::deleteDirectory(folderPath);
+                VUtils::sleepWait(100);
+                Q_UNUSED(ret);
+                qDebug() << "delete obsolete theme" << folderPath << ret;
+            }
+        } else {
+            needOutput = true;
+        }
+
+        if (needOutput) {
+            qDebug() << "output built-in theme" << file << folder;
+            VUtils::copyDirectory(srcDir, dir.filePath(folder), false);
+        }
     }
 }
 

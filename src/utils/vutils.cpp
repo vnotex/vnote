@@ -878,6 +878,16 @@ bool VUtils::deleteDirectory(const VNotebook *p_notebook,
     }
 }
 
+bool VUtils::deleteDirectory(const QString &p_path)
+{
+    if (p_path.isEmpty()) {
+        return true;
+    }
+
+    QDir dir(p_path);
+    return dir.removeRecursively();
+}
+
 bool VUtils::emptyDirectory(const VNotebook *p_notebook,
                             const QString &p_path,
                             bool p_skipRecycleBin)

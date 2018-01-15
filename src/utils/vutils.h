@@ -221,6 +221,8 @@ public:
                                 const QString &p_path,
                                 bool p_skipRecycleBin = false);
 
+    static bool deleteDirectory(const QString &p_path);
+
     // Empty all files in directory recursively specified by @p_path.
     // Will just move files to the recycle bin of @p_notebook if
     // @p_skipRecycleBin is false.

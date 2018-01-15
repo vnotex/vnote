@@ -9,6 +9,8 @@ class QSettings;
 
 struct VPaletteMetaData
 {
+    int m_version;
+
     // These are all file PATH, not name.
     QString m_qssFile;
     QString m_mdhlFile;
@@ -21,7 +23,8 @@ struct VPaletteMetaData
 
     QString toString() const
     {
-        return QString("palette metadata qss=%1 mdhl=%2 css=%3 codeBlockCss=%4 colorMappingSize=%5")
+        return QString("palette metadata version=%1 qss=%2 mdhl=%3 css=%4 codeBlockCss=%5 colorMappingSize=%6")
+                      .arg(m_version)
                       .arg(m_qssFile)
                       .arg(m_mdhlFile)
                       .arg(m_cssFile)
@@ -58,6 +61,8 @@ public:
 
     // Read themes and return the mappings of css styles.
     static QMap<QString, QString> codeBlockCssStylesFromThemes(const QList<QString> &p_themeFiles);
+
+    static int getPaletteVersion(const QString &p_paletteFile);
 
     static VPaletteMetaData getPaletteMetaData(const QString &p_paletteFile);
 

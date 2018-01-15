@@ -510,6 +510,10 @@ private:
     // Init the themes name-file mappings.
     void initThemes();
 
+    // Output built-in themes to user theme folder if there does not exists folders
+    // with the same name.
+    void outputBuiltInThemes();
+
     // Init the editor styles name-file mappings.
     void initEditorStyles();
 
