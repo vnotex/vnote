@@ -177,7 +177,14 @@ sudo make install
 For details, you could reference [.travis_linux.sh](.travis_linux.sh) in the source root.
 
 ## MacOS
-If you prefer command line on macOS, you could follow these steps.
+
+You can install via [homebrew](https://brew.sh/) [cask](https://caskroom.github.io/):
+
+```
+homebrew cask install vnote
+```
+
+If you prefer to build via command line on macOS, you could follow these steps.
 
 1. Install Xcode and Homebrew;
 2. Install Qt 5.9.1 via Homebrew:
