@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>VNote</title>
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0" />
+
+  <link rel="icon" type="image/png" href="imgs/img_logo.png" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,100i,300,300i,400,400i,500,500i,700,700i,900,900i" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css">
+
+  <link type="text/css" rel="stylesheet" href="./css/froala_blocks.css">
+
+  <style>
+    #navigator {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    #navigator .navbar-toggler-icon {
+    	background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(0, 0, 0, 0.5)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+    }
+
+    @media (max-width: 720px) {
+      #navigator {
+        border-bottom: 1px solid #ccc;
+      }
+    }
+
+    #navigator a {
+      font-size: 14px;
+    }
+
+    #navigator + section {
+      padding: 250px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="container">
+      <nav class="navbar navbar-expand-md">
+        <a class="navbar-brand" href="https://tamlok.github.io/vnote">
+          <img src="./imgs/img_logo.png" height="30" alt="logo">
+        </a>
+
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav1" aria-controls="navbarNav1" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav1">
+          <ul class="navbar-nav mr-auto">
+            <li class="nav-item active">
+              <a class="nav-link" href="https://tamlok.github.io/vnote">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#features">Features</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="gallery.html">Screenshots <span class="sr-only">(current)</span></a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="http://vnote.readthedocs.io">Documentation</a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <section class="fdb-block" style="background-image: url(imgs/alt_wide_1.svg);">
+    <div class="container">
+      <div class="row justify-content-start">
+        <div class="col-12 col-sm-10 col-md-8 text-center text-sm-left">
+          <img alt="image" width="200" src="./imgs/img_logo.png"/>
+          <h1>VNote</h1>
+          <p class="text-h3">A note-taking application with Markdown, which knows programmers and Markdown better.</p>
+          <p class="mt-4">
+            <a class="btn btn-black mr-3 mr-sm-0" href="https://github.com/tamlok/vnote"><i class="fa fa-github"></i> Github Project</a>
+            <a class="btn ml-sm-3 mr-3 mr-sm-0 mt-3 mt-sm-0" href="https://github.com/tamlok/vnote#downloads">Download</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="fdb-block">
+    <div class="container">
+      <div class="row">
+        <div class="col text-center">
+          <h2>Light Theme</h2>
+          <img alt="image" class="img-fluid mt-5" src="./imgs/img_main_light.png">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="fdb-block">
+    <div class="container">
+      <div class="row">
+        <div class="col text-center">
+          <h2>Dark Theme</h2>
+          <img alt="image" class="img-fluid mt-5" src="./imgs/img_main_dark.png">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="fdb-block">
+    <div class="container">
+      <div class="row">
+        <div class="col text-center">
+          <h2>Edit Mode with Syntax Highlights</h2>
+          <img alt="image" class="img-fluid mt-5" src="./imgs/img_edit_mode.png">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="fdb-block">
+    <div class="container">
+      <div class="row">
+        <div class="col text-center">
+          <h2>Insert Image From Clipboard</h2>
+          <img alt="image" class="img-fluid mt-5" src="./imgs/img_insert_image.png">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="fdb-block">
+    <div class="container">
+      <div class="row">
+        <div class="col text-center">
+          <h2>Image In-Place Preview</h2>
+          <img alt="image" class="img-fluid mt-5" src="./imgs/img_image_preview.png">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="fdb-block footer-large">
+    <div class="container">
+      <div class="row align-items-top text-center">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 text-sm-left">
+          <h3><strong>About VNote</strong></h3>
+          <nav class="nav flex-column">
+            <p>Developed from 2016/10/01</p>
+            <p>QQ Group: 487756074</p>
+            <p>WeChat Public Account: vnote_md</p>
+          </nav>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mt-5 mt-sm-0 text-sm-left">
+          <h3><strong>About Me</strong></h3>
+          <nav class="nav flex-column">
+          <p><a href="https://github.com/tamlok">tamlok@github</a></p>
+          <p><a href="mailto:tamlokveer@gmail.com">tamlokveer@gmail.com</a></p>
+          </nav>
+        </div>
+      </div>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+</body>
+</html>
