@@ -73,7 +73,6 @@ void VTextEdit::init()
     m_lineNumberArea = new VLineNumberArea(this,
                                            document(),
                                            fontMetrics().width(QLatin1Char('8')),
-                                           fontMetrics().height(),
                                            this);
     connect(doc, &QTextDocument::blockCountChanged,
             this, &VTextEdit::updateLineNumberAreaMargin);
@@ -140,7 +139,7 @@ void VTextEdit::paintLineNumberArea(QPaintEvent *p_event)
     int bottom = top + (int)rect.height();
     int eventTop = p_event->rect().top();
     int eventBtm = p_event->rect().bottom();
-    const int digitHeight = m_lineNumberArea->getDigitHeight();
+    const int digitHeight = painter.fontMetrics().height();
     const int curBlockNumber = textCursor().block().blockNumber();
     painter.setPen(m_lineNumberArea->getForegroundColor());
     const int leading = (int)layout->getLineLeading();
@@ -187,7 +186,7 @@ void VTextEdit::paintLineNumberArea(QPaintEvent *p_event)
                                      top + leading,
                                      m_lineNumberArea->width(),
                                      digitHeight,
-                                     Qt::AlignRight,
+                                     Qt::AlignRight | Qt::AlignTop,
                                      numberStr);
                 }
 
@@ -233,7 +232,7 @@ void VTextEdit::paintLineNumberArea(QPaintEvent *p_event)
                              top + leading,
                              m_lineNumberArea->width(),
                              digitHeight,
-                             Qt::AlignRight,
+                             Qt::AlignRight | Qt::AlignTop,
                              numberStr);
 
             if (currentLine) {

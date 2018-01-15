@@ -6,7 +6,6 @@
 VLineNumberArea::VLineNumberArea(VTextEditWithLineNumber *p_editor,
                                  const QTextDocument *p_document,
                                  int p_digitWidth,
-                                 int p_digitHeight,
                                  QWidget *p_parent)
     : QWidget(p_parent),
       m_editor(p_editor),
@@ -14,7 +13,6 @@ VLineNumberArea::VLineNumberArea(VTextEditWithLineNumber *p_editor,
       m_width(0),
       m_blockCount(-1),
       m_digitWidth(p_digitWidth),
-      m_digitHeight(p_digitHeight),
       m_foregroundColor("black"),
       m_backgroundColor("grey")
 {

@@ -285,6 +285,8 @@ public:
 
     static QString getCaptainShortcutSequenceText(const QString &p_operation);
 
+    static QString getAvailableFontFamily(const QStringList &p_families);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
     // Captured texts (need to be trimmed):

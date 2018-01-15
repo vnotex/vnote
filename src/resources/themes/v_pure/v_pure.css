@@ -68,8 +68,8 @@ li {
     line-height: 24px;
 }
 
-li ul, li ul {
-    margin-left: 24px;
+li ul, li ol {
+    margin-left: 16px;
 }
 
 p, ul, ol {

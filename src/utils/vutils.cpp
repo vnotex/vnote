@@ -1167,3 +1167,28 @@ QString VUtils::getCaptainShortcutSequenceText(const QString &p_operation)
 
     return QString();
 }
+
+QString VUtils::getAvailableFontFamily(const QStringList &p_families)
+{
+    QStringList availFamilies = QFontDatabase().families();
+
+    for (int i = 0; i < p_families.size(); ++i) {
+        QString family = p_families[i].trimmed();
+        if (family.isEmpty()) {
+            continue;
+        }
+
+        for (int j = 0; j < availFamilies.size(); ++j) {
+            QString availFamily = availFamilies[j];
+            availFamily.remove(QRegExp("\\[.*\\]"));
+            availFamily = availFamily.trimmed();
+            if (family == availFamily
+                || family.toLower() == availFamily.toLower()) {
+                qDebug() << "matched font family" << availFamilies[j];
+                return availFamilies[j];
+            }
+        }
+    }
+
+    return QString();
+}

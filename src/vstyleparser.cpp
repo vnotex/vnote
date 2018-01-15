@@ -10,6 +10,8 @@
 #include <QtDebug>
 #include <QStringList>
 
+#include "utils/vutils.h"
+
 VStyleParser::VStyleParser()
 {
     markdownStyles = NULL;
@@ -73,7 +75,7 @@ QTextCharFormat VStyleParser::QTextCharFormatFromAttrs(pmh_style_attribute *attr
         case pmh_attr_type_font_family:
         {
             QString familyList(attrs->value->font_family);
-            QString finalFamily = filterAvailableFontFamily(familyList);
+            QString finalFamily = VUtils::getAvailableFontFamily(familyList.split(','));
             if (!finalFamily.isEmpty()) {
                 format.setFontFamily(finalFamily);
             }
@@ -211,7 +213,7 @@ void VStyleParser::fetchMarkdownEditorStyles(QPalette &palette, QFont &font,
         case pmh_attr_type_font_family:
         {
             QString familyList(editorStyles->value->font_family);
-            QString finalFamily = filterAvailableFontFamily(familyList);
+            QString finalFamily = VUtils::getAvailableFontFamily(familyList.split(','));
             if (!finalFamily.isEmpty()) {
                 font.setFamily(finalFamily);
             }
@@ -298,28 +300,4 @@ void VStyleParser::fetchMarkdownEditorStyles(QPalette &palette, QFont &font,
         }
         selStyles = selStyles->next;
     }
-}
-
-// @familyList is a comma separated string
-QString VStyleParser::filterAvailableFontFamily(const QString &familyList) const
-{
-    QStringList families = familyList.split(',', QString::SkipEmptyParts);
-    QStringList availFamilies = QFontDatabase().families();
-
-    qDebug() << "family:" << familyList;
-    for (int i = 0; i < families.size(); ++i) {
-        QString family = families[i].trimmed();
-        for (int j = 0; j < availFamilies.size(); ++j) {
-            QString availFamily = availFamilies[j];
-            availFamily.remove(QRegExp("\\[.*\\]"));
-            availFamily = availFamily.trimmed();
-            if (family == availFamily
-                || family.toLower() == availFamily.toLower()) {
-                qDebug() << "matched family:" << availFamilies[j];
-                return availFamilies[j];
-            }
-        }
-    }
-
-    return QString();
 }

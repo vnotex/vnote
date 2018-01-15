@@ -44,6 +44,10 @@ public:
     // Fill "@xxx" in @p_text with corresponding style.
     void fillStyle(QString &p_text) const;
 
+    // QSS seems not to recognize multiple font-family values.
+    // We will choose the first existing one.
+    void fillFontFamily(QString &p_text) const;
+
     const QHash<QString, QString> &getColorMapping() const;
 
     // Read themes and return the mappings of editor styles.

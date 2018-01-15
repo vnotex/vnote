@@ -116,6 +116,7 @@ QString VPalette::fetchQtStyleSheet() const
     QString style = VUtils::readFileFromDisk(m_data.m_qssFile);
     fillStyle(style);
     fillAbsoluteUrl(style);
+    fillFontFamily(style);
 
     return style;
 }
@@ -261,4 +262,33 @@ QString VPalette::themeCodeBlockCssStyle(const QString &p_paletteFile)
 {
     VPaletteMetaData data = getPaletteMetaData(p_paletteFile);
     return themeName(p_paletteFile) + "/" + QFileInfo(data.m_codeBlockCssFile).completeBaseName();
+}
+
+void VPalette::fillFontFamily(QString &p_text) const
+{
+    QRegExp reg("(\\s|^)font-family:([^;]+);");
+
+    int pos = 0;
+    while (pos < p_text.size()) {
+        int idx = p_text.indexOf(reg, pos);
+        if (idx == -1) {
+            break;
+        }
+
+        QString familyList = reg.cap(2).trimmed();
+        familyList.remove('"');
+        QString family = VUtils::getAvailableFontFamily(familyList.split(','));
+        if (!family.isEmpty() && family != familyList) {
+            if (family.contains(' ')) {
+                family = "\"" + family + "\"";
+            }
+
+            QString str = QString("%1font-family: %2;").arg(reg.cap(1)).arg(family);
+            p_text.replace(idx, reg.matchedLength(), str);
+
+            pos = idx + str.size();
+        } else {
+            pos = idx + reg.matchedLength();
+        }
+    }
 }

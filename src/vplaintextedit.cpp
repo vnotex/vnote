@@ -64,7 +64,6 @@ void VPlainTextEdit::init()
     m_lineNumberArea = new VLineNumberArea(this,
                                            document(),
                                            fontMetrics().width(QLatin1Char('8')),
-                                           fontMetrics().height(),
                                            this);
     connect(document(), &QTextDocument::blockCountChanged,
             this, &VPlainTextEdit::updateLineNumberAreaMargin);
@@ -393,7 +392,7 @@ void VPlainTextEdit::paintLineNumberArea(QPaintEvent *p_event)
     int bottom = top + (int)rect.height();
     int eventTop = p_event->rect().top();
     int eventBtm = p_event->rect().bottom();
-    const int digitHeight = m_lineNumberArea->getDigitHeight();
+    const int digitHeight = painter.fontMetrics().height();
     const int curBlockNumber = textCursor().block().blockNumber();
     painter.setPen(m_lineNumberArea->getForegroundColor());
 
