@@ -45,6 +45,12 @@ We don't support Leap 42 and below due to the Qt version. Please use AppImage or
 - [Github releases](https://github.com/tamlok/vnote/releases)
 - Latest builds on master: [ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
 
+You can also install using homebrew, through the cask tap:
+
+```
+brew cask install vnote
+```
+
 # Description
 **VNote** is a Qt-based, free and open source note-taking application, focusing on Markdown. VNote is designed to provide comfortable edit experience.
 
