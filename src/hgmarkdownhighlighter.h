@@ -178,6 +178,9 @@ private:
 
     QVector<QVector<HLUnit> > blockHighlights;
 
+    // Used for cache, [0, 6].
+    QVector<QTextCharFormat> m_headerStyles;
+
     // Use another member to store the codeblocks highlights, because the highlight
     // sequence is blockHighlights, regular-expression-based highlihgts, and then
     // codeBlockHighlights.
@@ -196,6 +199,9 @@ private:
     // May contains illegal elements.
     // Sorted by start position.
     QVector<VElementRegion> m_headerRegions;
+
+    // [block number] -> header level based on 0
+    QHash<int, int> m_headerBlocks;
 
     // Timer to signal highlightCompleted().
     QTimer *m_completeTimer;
@@ -265,9 +271,15 @@ private:
     // Check if [p_pos, p_end) is a valid header.
     bool isValidHeader(unsigned long p_pos, unsigned long p_end);
 
+    bool isValidHeader(const QString &p_text);
+
     VTextBlockData *currentBlockData() const;
 
     VTextBlockData *previousBlockData() const;
+
+    // Highlight headers using regular expression first instead of waiting for
+    // another parse.
+    void highlightHeaderFast(int p_blockNumber, const QString &p_text);
 };
 
 inline const QVector<VElementRegion> &HGMarkdownHighlighter::getHeaderRegions() const

@@ -58,6 +58,13 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
     m_colorColumnFormat.setForeground(QColor(g_config->getEditorColorColumnFg()));
     m_colorColumnFormat.setBackground(QColor(g_config->getEditorColorColumnBg()));
 
+    m_headerStyles.resize(6);
+    for (auto const & it : highlightingStyles) {
+        if (it.type >= pmh_H1 && it.type <= pmh_H6) {
+            m_headerStyles[it.type - pmh_H1] = it.format;
+        }
+    }
+
     resizeBuffer(initCapacity);
     document = parent;
 
@@ -145,35 +152,39 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
     // fix this.
     // highlightLinkWithSpacesInURL(text);
 
+    highlightHeaderFast(blockNum, text);
+
     // Highlight CodeBlock using VCodeBlockHighlightHelper.
     if (m_codeBlockHighlights.size() > blockNum) {
         const QVector<HLUnitStyle> &units = m_codeBlockHighlights[blockNum];
-        // Manually simply merge the format of all the units within the same block.
-        // Using QTextCursor to get the char format after setFormat() seems
-        // not to work.
-        QVector<QTextCharFormat> formats;
-        formats.reserve(units.size());
-        // formatIndex[i] is the index in @formats which is the format of the
-        // ith character.
-        QVector<int> formatIndex(currentBlock().length(), -1);
-        for (int i = 0; i < units.size(); ++i) {
-            const HLUnitStyle &unit = units[i];
-            auto it = m_codeBlockStyles.find(unit.style);
-            if (it != m_codeBlockStyles.end()) {
-                QTextCharFormat newFormat;
-                if (unit.start < (unsigned int)formatIndex.size() && formatIndex[unit.start] != -1) {
-                    newFormat = formats[formatIndex[unit.start]];
-                    newFormat.merge(*it);
-                } else {
-                    newFormat = *it;
-                }
-                setFormat(unit.start, unit.length, newFormat);
+        if (!units.isEmpty()) {
+            // Manually simply merge the format of all the units within the same block.
+            // Using QTextCursor to get the char format after setFormat() seems
+            // not to work.
+            QVector<QTextCharFormat> formats;
+            formats.reserve(units.size());
+            // formatIndex[i] is the index in @formats which is the format of the
+            // ith character.
+            QVector<int> formatIndex(currentBlock().length(), -1);
+            for (int i = 0; i < units.size(); ++i) {
+                const HLUnitStyle &unit = units[i];
+                auto it = m_codeBlockStyles.find(unit.style);
+                if (it != m_codeBlockStyles.end()) {
+                    QTextCharFormat newFormat;
+                    if (unit.start < (unsigned int)formatIndex.size() && formatIndex[unit.start] != -1) {
+                        newFormat = formats[formatIndex[unit.start]];
+                        newFormat.merge(*it);
+                    } else {
+                        newFormat = *it;
+                    }
+                    setFormat(unit.start, unit.length, newFormat);
 
-                formats.append(newFormat);
-                int idx = formats.size() - 1;
-                unsigned int endIdx = unit.length + unit.start;
-                for (unsigned int i = unit.start; i < endIdx && i < (unsigned int)formatIndex.size(); ++i) {
-                    formatIndex[i] = idx;
+                    formats.append(newFormat);
+                    int idx = formats.size() - 1;
+                    unsigned int endIdx = unit.length + unit.start;
+                    for (unsigned int i = unit.start; i < endIdx && i < (unsigned int)formatIndex.size(); ++i) {
+                        formatIndex[i] = idx;
+                    }
                 }
             }
         }
@@ -294,6 +305,8 @@ void HGMarkdownHighlighter::initImageRegionsFromResult()
 
 void HGMarkdownHighlighter::initHeaderRegionsFromResult()
 {
+    m_headerBlocks.clear();
+
     if (!result) {
         // From Qt5.7, the capacity is preserved.
         m_headerRegions.clear();
@@ -322,6 +335,11 @@ void HGMarkdownHighlighter::initHeaderRegionsFromResult()
                 }
             } else {
                 m_headerRegions.push_back(VElementRegion(elem->pos, elem->end));
+            }
+
+            QTextBlock block = document->findBlock(elem->pos);
+            if (block.isValid()) {
+                m_headerBlocks.insert(block.blockNumber(), i);
             }
 
             ++idx;
@@ -747,7 +765,7 @@ bool HGMarkdownHighlighter::isValidHeader(unsigned long p_pos, unsigned long p_e
     for (unsigned long i = p_pos; i < p_end; ++i) {
         QChar ch = document->characterAt(i);
         if (ch.isSpace()) {
-            return true;
+            return nrNumberSign > 0;
         } else if (ch == QChar('#')) {
             if (++nrNumberSign > 6) {
                 return false;
@@ -758,4 +776,42 @@ bool HGMarkdownHighlighter::isValidHeader(unsigned long p_pos, unsigned long p_e
     }
 
     return false;
+}
+
+bool HGMarkdownHighlighter::isValidHeader(const QString &p_text)
+{
+    // There must exist spaces after #s.
+    // No more than 6 #s.
+    int nrNumberSign = 0;
+    for (int i = 0; i < p_text.size(); ++i) {
+        QChar ch = p_text[i];
+        if (ch.isSpace()) {
+            return nrNumberSign > 0;
+        } else if (ch == QChar('#')) {
+            if (++nrNumberSign > 6) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    return false;
+}
+
+void HGMarkdownHighlighter::highlightHeaderFast(int p_blockNumber, const QString &p_text)
+{
+    if (currentBlockState() != HighlightBlockState::Normal) {
+        return;
+    }
+
+    auto it = m_headerBlocks.find(p_blockNumber);
+    if (it != m_headerBlocks.end()) {
+        if (isValidHeader(p_text)) {
+            setFormat(0, p_text.size(), m_headerStyles[it.value()]);
+        } else {
+            // Set an empty format to clear formats. It seems to work.
+            setFormat(0, p_text.size(), QTextCharFormat());
+        }
+    }
 }
