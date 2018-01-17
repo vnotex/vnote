@@ -922,7 +922,12 @@ QString VConfigManager::getEditorStyleFile() const
 
 QString VConfigManager::getVnoteNotebookFolderPath()
 {
-    return QDir::home().filePath(c_vnoteNotebookFolderName);
+    QStringList folders = QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation);
+    if (folders.isEmpty()) {
+        return QDir::home().filePath(c_vnoteNotebookFolderName);
+    } else {
+        return QDir(folders[0]).filePath(c_vnoteNotebookFolderName);
+    }
 }
 
 QHash<QString, QString> VConfigManager::readShortcutsFromSettings(QSettings *p_settings,
