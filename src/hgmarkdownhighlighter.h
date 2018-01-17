@@ -163,6 +163,20 @@ private slots:
     void startParseAndHighlight(bool p_fast = false);
 
 private:
+    struct HeaderBlockInfo
+    {
+        HeaderBlockInfo(int p_level = -1, int p_length = 0)
+            : m_level(p_level), m_length(p_length)
+        {
+        }
+
+        // Header level based on 0.
+        int m_level;
+
+        // Block length;
+        int m_length;
+    };
+
     QRegExp codeBlockStartExp;
     QRegExp codeBlockEndExp;
     QTextCharFormat codeBlockFormat;
@@ -176,7 +190,7 @@ private:
 
     QHash<QString, QTextCharFormat> m_codeBlockStyles;
 
-    QVector<QVector<HLUnit> > blockHighlights;
+    QVector<QVector<HLUnit> > m_blockHighlights;
 
     // Used for cache, [0, 6].
     QVector<QTextCharFormat> m_headerStyles;
@@ -200,8 +214,8 @@ private:
     // Sorted by start position.
     QVector<VElementRegion> m_headerRegions;
 
-    // [block number] -> header level based on 0
-    QHash<int, int> m_headerBlocks;
+    // Indexed by block number.
+    QHash<int, HeaderBlockInfo> m_headerBlocks;
 
     // Timer to signal highlightCompleted().
     QTimer *m_completeTimer;

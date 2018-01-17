@@ -122,12 +122,35 @@ void HGMarkdownHighlighter::updateBlockUserData(int p_blockNum, const QString &p
 void HGMarkdownHighlighter::highlightBlock(const QString &text)
 {
     int blockNum = currentBlock().blockNumber();
-    if (m_blockHLResultReady && blockHighlights.size() > blockNum) {
-        const QVector<HLUnit> &units = blockHighlights[blockNum];
-        for (int i = 0; i < units.size(); ++i) {
-            // TODO: merge two format within the same range
-            const HLUnit &unit = units[i];
-            setFormat(unit.start, unit.length, highlightingStyles[unit.styleIndex].format);
+    if (m_blockHLResultReady && m_blockHighlights.size() > blockNum) {
+        // units are sorted by start position and length.
+        const QVector<HLUnit> &units = m_blockHighlights[blockNum];
+        if (!units.isEmpty()) {
+            for (int i = 0; i < units.size(); ++i) {
+                const HLUnit &unit = units[i];
+                if (i == 0) {
+                    // No need to merge format.
+                    setFormat(unit.start,
+                              unit.length,
+                              highlightingStyles[unit.styleIndex].format);
+                } else {
+                    QTextCharFormat newFormat = highlightingStyles[unit.styleIndex].format;
+                    for (int j = i - 1; j >= 0; --j) {
+                        if (units[j].start + units[j].length <= unit.start) {
+                            // It won't affect current unit.
+                            continue;
+                        } else {
+                            // Merge the format.
+                            QTextCharFormat tmpFormat(newFormat);
+                            newFormat = highlightingStyles[units[j].styleIndex].format;
+                            // tmpFormat takes precedence.
+                            newFormat.merge(tmpFormat);
+                        }
+                    }
+
+                    setFormat(unit.start, unit.length, newFormat);
+                }
+            }
         }
     }
 
@@ -158,33 +181,37 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
     if (m_codeBlockHighlights.size() > blockNum) {
         const QVector<HLUnitStyle> &units = m_codeBlockHighlights[blockNum];
         if (!units.isEmpty()) {
-            // Manually simply merge the format of all the units within the same block.
-            // Using QTextCursor to get the char format after setFormat() seems
-            // not to work.
-            QVector<QTextCharFormat> formats;
-            formats.reserve(units.size());
-            // formatIndex[i] is the index in @formats which is the format of the
-            // ith character.
-            QVector<int> formatIndex(currentBlock().length(), -1);
+            QVector<QTextCharFormat *> formats(units.size(), NULL);
             for (int i = 0; i < units.size(); ++i) {
                 const HLUnitStyle &unit = units[i];
                 auto it = m_codeBlockStyles.find(unit.style);
-                if (it != m_codeBlockStyles.end()) {
-                    QTextCharFormat newFormat;
-                    if (unit.start < (unsigned int)formatIndex.size() && formatIndex[unit.start] != -1) {
-                        newFormat = formats[formatIndex[unit.start]];
-                        newFormat.merge(*it);
-                    } else {
-                        newFormat = *it;
-                    }
-                    setFormat(unit.start, unit.length, newFormat);
+                if (it == m_codeBlockStyles.end()) {
+                    continue;
+                }
 
-                    formats.append(newFormat);
-                    int idx = formats.size() - 1;
-                    unsigned int endIdx = unit.length + unit.start;
-                    for (unsigned int i = unit.start; i < endIdx && i < (unsigned int)formatIndex.size(); ++i) {
-                        formatIndex[i] = idx;
+                formats[i] = &(*it);
+
+                if (i == 0) {
+                    // No need to merge format.
+                    setFormat(unit.start, unit.length, *it);
+                } else {
+                    QTextCharFormat newFormat = *it;
+                    for (int j = i - 1; j >= 0; --j) {
+                        if (units[j].start + units[j].length <= unit.start) {
+                            // It won't affect current unit.
+                            continue;
+                        } else {
+                            // Merge the format.
+                            if (formats[j]) {
+                                QTextCharFormat tmpFormat(newFormat);
+                                newFormat = *(formats[j]);
+                                // tmpFormat takes precedence.
+                                newFormat.merge(tmpFormat);
+                            }
+                        }
                     }
+
+                    setFormat(unit.start, unit.length, newFormat);
                 }
             }
         }
@@ -196,11 +223,22 @@ exit:
     highlightChanged();
 }
 
+static bool compHLUnit(const HLUnit &p_a, const HLUnit &p_b)
+{
+    if (p_a.start < p_b.start) {
+        return true;
+    } else if (p_a.start == p_b.start) {
+        return p_a.length >= p_b.length;
+    } else {
+        return false;
+    }
+}
+
 void HGMarkdownHighlighter::initBlockHighlightFromResult(int nrBlocks)
 {
-    blockHighlights.resize(nrBlocks);
-    for (int i = 0; i < blockHighlights.size(); ++i) {
-        blockHighlights[i].clear();
+    m_blockHighlights.resize(nrBlocks);
+    for (int i = 0; i < m_blockHighlights.size(); ++i) {
+        m_blockHighlights[i].clear();
     }
 
     if (!result) {
@@ -233,6 +271,13 @@ void HGMarkdownHighlighter::initBlockHighlightFromResult(int nrBlocks)
 
             initBlockHighlihgtOne(elem_cursor->pos, elem_cursor->end, i);
             elem_cursor = elem_cursor->next;
+        }
+    }
+
+    // Sort m_blockHighlights.
+    for (int i = 0; i < m_blockHighlights.size(); ++i) {
+        if (m_blockHighlights[i].size() > 1) {
+            std::sort(m_blockHighlights[i].begin(), m_blockHighlights[i].end(), compHLUnit);
         }
     }
 }
@@ -339,7 +384,8 @@ void HGMarkdownHighlighter::initHeaderRegionsFromResult()
 
             QTextBlock block = document->findBlock(elem->pos);
             if (block.isValid()) {
-                m_headerBlocks.insert(block.blockNumber(), i);
+                // Header element will contain the new line character.
+                m_headerBlocks.insert(block.blockNumber(), HeaderBlockInfo(i, elem->end - elem->pos - 1));
             }
 
             ++idx;
@@ -390,7 +436,7 @@ void HGMarkdownHighlighter::initBlockHighlihgtOne(unsigned long pos,
         }
         unit.styleIndex = styleIndex;
 
-        blockHighlights[i].append(unit);
+        m_blockHighlights[i].append(unit);
     }
 }
 
@@ -663,12 +709,12 @@ bool HGMarkdownHighlighter::updateCodeBlocks()
     }
 }
 
-static bool HLUnitStyleComp(const HLUnitStyle &a, const HLUnitStyle &b)
+static bool compHLUnitStyle(const HLUnitStyle &a, const HLUnitStyle &b)
 {
     if (a.start < b.start) {
         return true;
     } else if (a.start == b.start) {
-        return a.length > b.length;
+        return a.length >= b.length;
     } else {
         return false;
     }
@@ -720,7 +766,10 @@ void HGMarkdownHighlighter::setCodeBlockHighlights(const QVector<HLUnitPos> &p_u
     for (int i = 0; i < highlights.size(); ++i) {
         QVector<HLUnitStyle> &units = highlights[i];
         if (!units.isEmpty()) {
-            std::sort(units.begin(), units.end(), HLUnitStyleComp);
+            if (units.size() > 1) {
+                std::sort(units.begin(), units.end(), compHLUnitStyle);
+            }
+
             m_codeBlockHighlights[i].append(units);
         }
     }
@@ -807,11 +856,12 @@ void HGMarkdownHighlighter::highlightHeaderFast(int p_blockNumber, const QString
 
     auto it = m_headerBlocks.find(p_blockNumber);
     if (it != m_headerBlocks.end()) {
-        if (isValidHeader(p_text)) {
-            setFormat(0, p_text.size(), m_headerStyles[it.value()]);
-        } else {
+        const HeaderBlockInfo &info = it.value();
+        if (!isValidHeader(p_text)) {
             // Set an empty format to clear formats. It seems to work.
             setFormat(0, p_text.size(), QTextCharFormat());
+        } else if (info.m_length < p_text.size()) {
+            setFormat(info.m_length, p_text.size() - info.m_length, m_headerStyles[info.m_level]);
         }
     }
 }
