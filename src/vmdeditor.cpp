@@ -665,8 +665,9 @@ void VMdEditor::clearUnusedImages()
 
 void VMdEditor::keyPressEvent(QKeyEvent *p_event)
 {
+    int key = p_event->key();
     int modifiers = p_event->modifiers();
-    switch (p_event->key()) {
+    switch (key) {
     case Qt::Key_Minus:
     case Qt::Key_Underscore:
         // Zoom out.
@@ -706,6 +707,12 @@ void VMdEditor::keyPressEvent(QKeyEvent *p_event)
     }
 
     if (m_editOps && m_editOps->handleKeyPressEvent(p_event)) {
+        return;
+    }
+
+    // Esc to exit edit mode when Vim is disabled.
+    if (key == Qt::Key_Escape) {
+        emit m_object->discardAndRead();
         return;
     }
 
