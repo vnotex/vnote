@@ -411,6 +411,25 @@ VReadEditTab::VReadEditTab(QWidget *p_parent)
     m_readBox = new QGroupBox(tr("Read Mode (For Markdown Only)"));
     m_editBox = new QGroupBox(tr("Edit Mode"));
 
+    // Web Zoom Factor.
+    m_customWebZoom = new QCheckBox(tr("Custom Web zoom factor"));
+    m_customWebZoom->setToolTip(tr("Set the zoom factor of the Web page when reading"));
+    m_webZoomFactorSpin = new QDoubleSpinBox();
+    m_webZoomFactorSpin->setMaximum(c_webZoomFactorMax);
+    m_webZoomFactorSpin->setMinimum(c_webZoomFactorMin);
+    m_webZoomFactorSpin->setSingleStep(0.25);
+    connect(m_customWebZoom, &QCheckBox::stateChanged,
+            this, [this](int p_state){
+                this->m_webZoomFactorSpin->setEnabled(p_state == Qt::Checked);
+            });
+    QHBoxLayout *zoomFactorLayout = new QHBoxLayout();
+    zoomFactorLayout->addWidget(m_customWebZoom);
+    zoomFactorLayout->addWidget(m_webZoomFactorSpin);
+
+    QVBoxLayout *readLayout = new QVBoxLayout();
+    readLayout->addLayout(zoomFactorLayout);
+    m_readBox->setLayout(readLayout);
+
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addWidget(m_readBox);
     mainLayout->addWidget(m_editBox);
@@ -419,11 +438,49 @@ VReadEditTab::VReadEditTab(QWidget *p_parent)
 
 bool VReadEditTab::loadConfiguration()
 {
+    if (!loadWebZoomFactor()) {
+        return false;
+    }
+
     return true;
 }
 
 bool VReadEditTab::saveConfiguration()
 {
+    if (!saveWebZoomFactor()) {
+        return false;
+    }
+
+    return true;
+}
+
+bool VReadEditTab::loadWebZoomFactor()
+{
+    qreal factor = g_config->getWebZoomFactor();
+    bool customFactor = g_config->isCustomWebZoomFactor();
+    if (customFactor) {
+        if (factor < c_webZoomFactorMin || factor > c_webZoomFactorMax) {
+            factor = 1;
+        }
+        m_customWebZoom->setChecked(true);
+        m_webZoomFactorSpin->setValue(factor);
+    } else {
+        m_customWebZoom->setChecked(false);
+        m_webZoomFactorSpin->setValue(factor);
+        m_webZoomFactorSpin->setEnabled(false);
+    }
+
+    return true;
+}
+
+bool VReadEditTab::saveWebZoomFactor()
+{
+    if (m_customWebZoom->isChecked()) {
+        g_config->setWebZoomFactor(m_webZoomFactorSpin->value());
+    } else {
+        g_config->setWebZoomFactor(-1);
+    }
+
     return true;
 }
 
@@ -674,21 +731,6 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     headingSequenceLayout->addWidget(m_headingSequenceTypeCombo);
     headingSequenceLayout->addWidget(m_headingSequenceLevelCombo);
 
-    // Web Zoom Factor.
-    m_customWebZoom = new QCheckBox(tr("Custom Web zoom factor"), this);
-    m_customWebZoom->setToolTip(tr("Set the zoom factor of the Web page when reading"));
-    m_webZoomFactorSpin = new QDoubleSpinBox(this);
-    m_webZoomFactorSpin->setMaximum(c_webZoomFactorMax);
-    m_webZoomFactorSpin->setMinimum(c_webZoomFactorMin);
-    m_webZoomFactorSpin->setSingleStep(0.25);
-    connect(m_customWebZoom, &QCheckBox::stateChanged,
-            this, [this](int p_state){
-                this->m_webZoomFactorSpin->setEnabled(p_state == Qt::Checked);
-            });
-    QHBoxLayout *zoomFactorLayout = new QHBoxLayout();
-    zoomFactorLayout->addWidget(m_customWebZoom);
-    zoomFactorLayout->addWidget(m_webZoomFactorSpin);
-
     // Color column.
     m_colorColumnEdit = new VLineEdit();
     m_colorColumnEdit->setToolTip(tr("Specify the screen column in fenced code block "
@@ -702,7 +744,6 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     QFormLayout *mainLayout = new QFormLayout();
     mainLayout->addRow(tr("Note open mode:"), m_openModeCombo);
     mainLayout->addRow(tr("Heading sequence:"), headingSequenceLayout);
-    mainLayout->addRow(zoomFactorLayout);
     mainLayout->addRow(colorColumnLabel, m_colorColumnEdit);
 
     setLayout(mainLayout);
@@ -715,10 +756,6 @@ bool VMarkdownTab::loadConfiguration()
     }
 
     if (!loadHeadingSequence()) {
-        return false;
-    }
-
-    if (!loadWebZoomFactor()) {
         return false;
     }
 
@@ -736,10 +773,6 @@ bool VMarkdownTab::saveConfiguration()
     }
 
     if (!saveHeadingSequence()) {
-        return false;
-    }
-
-    if (!saveWebZoomFactor()) {
         return false;
     }
 
@@ -796,36 +829,6 @@ bool VMarkdownTab::saveHeadingSequence()
     Q_ASSERT(typeData.isValid());
     g_config->setHeadingSequenceType((HeadingSequenceType)typeData.toInt());
     g_config->setHeadingSequenceBaseLevel(m_headingSequenceLevelCombo->currentData().toInt());
-
-    return true;
-}
-
-bool VMarkdownTab::loadWebZoomFactor()
-{
-    qreal factor = g_config->getWebZoomFactor();
-    bool customFactor = g_config->isCustomWebZoomFactor();
-    if (customFactor) {
-        if (factor < c_webZoomFactorMin || factor > c_webZoomFactorMax) {
-            factor = 1;
-        }
-        m_customWebZoom->setChecked(true);
-        m_webZoomFactorSpin->setValue(factor);
-    } else {
-        m_customWebZoom->setChecked(false);
-        m_webZoomFactorSpin->setValue(factor);
-        m_webZoomFactorSpin->setEnabled(false);
-    }
-
-    return true;
-}
-
-bool VMarkdownTab::saveWebZoomFactor()
-{
-    if (m_customWebZoom->isChecked()) {
-        g_config->setWebZoomFactor(m_webZoomFactorSpin->value());
-    } else {
-        g_config->setWebZoomFactor(-1);
-    }
 
     return true;
 }

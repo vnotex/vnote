@@ -62,6 +62,14 @@ public:
     bool loadConfiguration();
     bool saveConfiguration();
 
+private:
+    bool loadWebZoomFactor();
+    bool saveWebZoomFactor();
+
+    // Web zoom factor.
+    QCheckBox *m_customWebZoom;
+    QDoubleSpinBox *m_webZoomFactorSpin;
+
     QGroupBox *m_readBox;
     QGroupBox *m_editBox;
 };
@@ -73,21 +81,6 @@ public:
     explicit VNoteManagementTab(QWidget *p_parent = 0);
     bool loadConfiguration();
     bool saveConfiguration();
-
-    QGroupBox *m_noteBox;
-    QGroupBox *m_externalBox;
-
-    // Image folder.
-    QCheckBox *m_customImageFolder;
-    VLineEdit *m_imageFolderEdit;
-
-    // Image folder of External File.
-    QCheckBox *m_customImageFolderExt;
-    VLineEdit *m_imageFolderEditExt;
-
-    // Attachment folder.
-    QCheckBox *m_customAttachmentFolder;
-    VLineEdit *m_attachmentFolderEdit;
 
 private slots:
     void customImageFolderChanged(int p_state);
@@ -103,6 +96,21 @@ private:
 
     bool loadAttachmentFolder();
     bool saveAttachmentFolder();
+
+    QGroupBox *m_noteBox;
+    QGroupBox *m_externalBox;
+
+    // Image folder.
+    QCheckBox *m_customImageFolder;
+    VLineEdit *m_imageFolderEdit;
+
+    // Image folder of External File.
+    QCheckBox *m_customImageFolderExt;
+    VLineEdit *m_imageFolderEditExt;
+
+    // Attachment folder.
+    QCheckBox *m_customAttachmentFolder;
+    VLineEdit *m_attachmentFolderEdit;
 };
 
 class VMarkdownTab : public QWidget
@@ -113,20 +121,6 @@ public:
     bool loadConfiguration();
     bool saveConfiguration();
 
-    // Default note open mode for markdown.
-    QComboBox *m_openModeCombo;
-
-    // Whether enable heading sequence.
-    QComboBox *m_headingSequenceTypeCombo;
-    QComboBox *m_headingSequenceLevelCombo;
-
-    // Web zoom factor.
-    QCheckBox *m_customWebZoom;
-    QDoubleSpinBox *m_webZoomFactorSpin;
-
-    // Color column in code block.
-    VLineEdit *m_colorColumnEdit;
-
 private:
     bool loadOpenMode();
     bool saveOpenMode();
@@ -134,11 +128,18 @@ private:
     bool loadHeadingSequence();
     bool saveHeadingSequence();
 
-    bool loadWebZoomFactor();
-    bool saveWebZoomFactor();
-
     bool loadColorColumn();
     bool saveColorColumn();
+
+    // Default note open mode for markdown.
+    QComboBox *m_openModeCombo;
+
+    // Whether enable heading sequence.
+    QComboBox *m_headingSequenceTypeCombo;
+    QComboBox *m_headingSequenceLevelCombo;
+
+    // Color column in code block.
+    VLineEdit *m_colorColumnEdit;
 };
 
 class VSettingsDialog : public QDialog
