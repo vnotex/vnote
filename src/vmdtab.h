@@ -215,6 +215,8 @@ private:
 
     // Used to scroll to the header of edit mode in read mode.
     VHeaderPointer m_headerFromEditMode;
+
+    VVim::SearchItem m_lastSearchItem;
 };
 
 inline VMdEditor *VMdTab::getEditor()

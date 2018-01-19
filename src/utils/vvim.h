@@ -155,6 +155,26 @@ public:
         Invalid
     };
 
+    // Search item including the searched text and options.
+    struct SearchItem
+    {
+        SearchItem() : m_options(0), m_forward(true) {}
+
+        bool isEmpty() const
+        {
+            return m_text.isEmpty();
+        }
+
+        // The user raw input.
+        QString m_rawStr;
+
+        // The string used to search.
+        QString m_text;
+
+        uint m_options;
+        bool m_forward;
+    };
+
     // Handle key press event.
     // @p_autoIndentPos: the cursor position of last auto indent.
     // Returns true if the event is consumed and need no more handling.
@@ -204,6 +224,12 @@ public:
     // Read the register content.
     // Returns empty string if it is not a valid register.
     QString readRegister(int p_key, int p_modifiers);
+
+    // Fetch the searched string and options from @p_type and @p_cmd.
+    // \C for case-sensitive;
+    // Case-insensitive by default.
+    // Regular-expression by default.
+    static VVim::SearchItem fetchSearchItem(VVim::CommandLineType p_type, const QString &p_cmd);
 
 signals:
     // Emit when current mode has been changed.
@@ -282,21 +308,6 @@ private:
         {
             return p_key.m_key == m_key && p_key.m_modifiers == m_modifiers;
         }
-    };
-
-    // Search item including the searched text and options.
-    struct SearchItem
-    {
-        SearchItem() : m_options(0), m_forward(true) {}
-
-        // The user raw input.
-        QString m_rawStr;
-
-        // The string used to search.
-        QString m_text;
-
-        uint m_options;
-        bool m_forward;
     };
 
     class SearchHistory
@@ -799,12 +810,6 @@ private:
     // Jump across titles.
     // [[, ]], [], ][, [{, ]}.
     void processTitleJump(const QList<Token> &p_tokens, bool p_forward, int p_relativeLevel);
-
-    // Fetch the searched string and options from @p_type and @p_cmd.
-    // \C for case-sensitive;
-    // Case-insensitive by default.
-    // Regular-expression by default.
-    VVim::SearchItem fetchSearchItem(VVim::CommandLineType p_type, const QString &p_cmd);
 
     // Clear search highlight.
     void clearSearchHighlight();
