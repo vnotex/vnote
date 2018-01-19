@@ -118,6 +118,18 @@ public slots:
     // Enter edit mode
     virtual void editFile() = 0;
 
+    virtual void handleVimCmdCommandCancelled();
+
+    virtual void handleVimCmdCommandFinished(VVim::CommandLineType p_type, const QString &p_cmd);
+
+    virtual void handleVimCmdCommandChanged(VVim::CommandLineType p_type, const QString &p_cmd);
+
+    virtual QString handleVimCmdRequestNextCommand(VVim::CommandLineType p_type, const QString &p_cmd);
+
+    virtual QString handleVimCmdRequestPreviousCommand(VVim::CommandLineType p_type, const QString &p_cmd);
+
+    virtual QString handleVimCmdRequestRegister(int p_key, int p_modifiers);
+
 protected:
     void wheelEvent(QWheelEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -179,6 +191,9 @@ signals:
 
     // Request to close itself.
     void closeRequested(VEditTab *p_tab);
+
+    // Request main window to show Vim cmd line.
+    void triggerVimCmd(VVim::CommandLineType p_type);
 
 private slots:
     // Called when app focus changed.

@@ -195,3 +195,44 @@ void VEditTab::handleFileOrDirectoryChange(bool p_isFile, UpdateAction p_act)
     Q_UNUSED(p_isFile);
     Q_UNUSED(p_act);
 }
+
+void VEditTab::handleVimCmdCommandCancelled()
+{
+
+}
+
+void VEditTab::handleVimCmdCommandFinished(VVim::CommandLineType p_type, const QString &p_cmd)
+{
+    Q_UNUSED(p_type);
+    Q_UNUSED(p_cmd);
+}
+
+void VEditTab::handleVimCmdCommandChanged(VVim::CommandLineType p_type, const QString &p_cmd)
+{
+    Q_UNUSED(p_type);
+    Q_UNUSED(p_cmd);
+}
+
+QString VEditTab::handleVimCmdRequestNextCommand(VVim::CommandLineType p_type, const QString &p_cmd)
+{
+    Q_UNUSED(p_type);
+    Q_UNUSED(p_cmd);
+
+    return QString();
+}
+
+QString VEditTab::handleVimCmdRequestPreviousCommand(VVim::CommandLineType p_type, const QString &p_cmd)
+{
+    Q_UNUSED(p_type);
+    Q_UNUSED(p_cmd);
+
+    return QString();
+}
+
+QString VEditTab::handleVimCmdRequestRegister(int p_key, int p_modifiers)
+{
+    Q_UNUSED(p_key);
+    Q_UNUSED(p_modifiers);
+
+    return QString();
+}

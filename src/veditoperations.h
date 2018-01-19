@@ -47,6 +47,8 @@ public:
     // Set Vim mode if not NULL.
     void setVimMode(VimMode p_mode);
 
+    VVim *getVim() const;
+
 signals:
     // Want to display a template message in status bar.
     void statusMessage(const QString &p_msg);

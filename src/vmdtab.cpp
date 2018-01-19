@@ -472,6 +472,15 @@ void VMdTab::setupMarkdownEditor()
     connect(m_editor, &VMdEditor::requestTextToHtml,
             this, &VMdTab::textToHtmlViaWebView);
 
+    if (m_editor->getVim()) {
+        connect(m_editor->getVim(), &VVim::commandLineTriggered,
+                this, [this](VVim::CommandLineType p_type) {
+                    if (m_isEditMode) {
+                        emit triggerVimCmd(p_type);
+                    }
+                });
+    }
+
     enableHeadingSequence(m_enableHeadingSequence);
     m_editor->reloadFile();
     m_stacks->addWidget(m_editor);
@@ -1029,4 +1038,78 @@ void VMdTab::textToHtmlViaWebView(const QString &p_text)
     }
 
     m_document->textToHtmlAsync(p_text);
+}
+
+void VMdTab::handleVimCmdCommandCancelled()
+{
+    if (m_isEditMode) {
+        VVim *vim = getEditor()->getVim();
+        if (vim) {
+            vim->processCommandLineCancelled();
+        }
+    }
+}
+
+void VMdTab::handleVimCmdCommandFinished(VVim::CommandLineType p_type, const QString &p_cmd)
+{
+    if (m_isEditMode) {
+        VVim *vim = getEditor()->getVim();
+        if (vim) {
+            vim->processCommandLine(p_type, p_cmd);
+        }
+    }
+}
+
+void VMdTab::handleVimCmdCommandChanged(VVim::CommandLineType p_type, const QString &p_cmd)
+{
+    Q_UNUSED(p_type);
+    Q_UNUSED(p_cmd);
+    if (m_isEditMode) {
+        VVim *vim = getEditor()->getVim();
+        if (vim) {
+            vim->processCommandLineChanged(p_type, p_cmd);
+        }
+    }
+}
+
+QString VMdTab::handleVimCmdRequestNextCommand(VVim::CommandLineType p_type, const QString &p_cmd)
+{
+    Q_UNUSED(p_type);
+    Q_UNUSED(p_cmd);
+    if (m_isEditMode) {
+        VVim *vim = getEditor()->getVim();
+        if (vim) {
+            return vim->getNextCommandHistory(p_type, p_cmd);
+        }
+    }
+
+    return QString();
+}
+
+QString VMdTab::handleVimCmdRequestPreviousCommand(VVim::CommandLineType p_type, const QString &p_cmd)
+{
+    Q_UNUSED(p_type);
+    Q_UNUSED(p_cmd);
+    if (m_isEditMode) {
+        VVim *vim = getEditor()->getVim();
+        if (vim) {
+            return vim->getPreviousCommandHistory(p_type, p_cmd);
+        }
+    }
+
+    return QString();
+}
+
+QString VMdTab::handleVimCmdRequestRegister(int p_key, int p_modifiers)
+{
+    Q_UNUSED(p_key);
+    Q_UNUSED(p_modifiers);
+    if (m_isEditMode) {
+        VVim *vim = getEditor()->getVim();
+        if (vim) {
+            return vim->readRegister(p_key, p_modifiers);
+        }
+    }
+
+    return QString();
 }

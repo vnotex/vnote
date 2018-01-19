@@ -30,6 +30,7 @@ class VNotebookSelector;
 class VFindReplaceDialog;
 class VCaptain;
 class VVimIndicator;
+class VVimCmdLineEdit;
 class VTabIndicator;
 class VSingleInstanceGuard;
 class QTimer;
@@ -213,6 +214,8 @@ private:
     void initEditorStyleMenu(QMenu *p_emnu);
     void updateWindowTitle(const QString &str);
 
+    void initVimCmd();
+
     // Update state of actions according to @p_tab.
     void updateActionsStateFromTab(const VEditTab *p_tab);
 
@@ -311,7 +314,11 @@ private:
     VCart *m_cart;
 
     VFindReplaceDialog *m_findReplaceDialog;
+
+    VVimCmdLineEdit *m_vimCmd;
+
     VVimIndicator *m_vimIndicator;
+
     VTabIndicator *m_tabIndicator;
 
     // SinglePanel, TwoPanels, CompactMode.

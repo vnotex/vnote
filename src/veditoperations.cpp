@@ -100,3 +100,8 @@ void VEditOperations::setVimMode(VimMode p_mode)
         m_vim->setMode(p_mode);
     }
 }
+
+VVim *VEditOperations::getVim() const
+{
+    return m_vim;
+}

@@ -20,6 +20,7 @@
 #include "vexporter.h"
 #include "vmdtab.h"
 #include "vvimindicator.h"
+#include "vvimcmdlineedit.h"
 #include "vtabindicator.h"
 #include "dialog/vupdater.h"
 #include "vorphanfile.h"
@@ -240,6 +241,8 @@ void VMainWindow::setupUI()
 
     setCentralWidget(m_mainSplitter);
 
+    initVimCmd();
+
     m_vimIndicator = new VVimIndicator(this);
     m_vimIndicator->hide();
 
@@ -247,6 +250,7 @@ void VMainWindow::setupUI()
     m_tabIndicator->hide();
 
     // Create and show the status bar
+    statusBar()->addPermanentWidget(m_vimCmd);
     statusBar()->addPermanentWidget(m_vimIndicator);
     statusBar()->addPermanentWidget(m_tabIndicator);
 
@@ -1835,7 +1839,25 @@ void VMainWindow::updateActionsStateFromTab(const VEditTab *p_tab)
 
 void VMainWindow::handleAreaTabStatusUpdated(const VEditTabInfo &p_info)
 {
-    m_curTab = p_info.m_editTab;
+    if (m_curTab != p_info.m_editTab) {
+        if (m_curTab) {
+            if (m_vimCmd->isVisible()) {
+                m_curTab->handleVimCmdCommandCancelled();
+            }
+
+            // Disconnect the trigger signal from edit tab.
+            disconnect(m_curTab, 0, m_vimCmd, 0);
+        }
+
+        m_curTab = p_info.m_editTab;
+        if (m_curTab) {
+            connect(m_curTab, &VEditTab::triggerVimCmd,
+                    m_vimCmd, &VVimCmdLineEdit::reset);
+        }
+
+        m_vimCmd->hide();
+    }
+
     if (m_curTab) {
         m_curFile = m_curTab->getFile();
     } else {
@@ -2376,7 +2398,7 @@ void VMainWindow::updateStatusInfo(const VEditTabInfo &p_info)
 
 void VMainWindow::handleVimStatusUpdated(const VVim *p_vim)
 {
-    m_vimIndicator->update(p_vim, m_curTab);
+    m_vimIndicator->update(p_vim);
     if (!p_vim || !m_curTab || !m_curTab->isEditMode()) {
         m_vimIndicator->hide();
     } else {
@@ -2825,4 +2847,81 @@ void VMainWindow::customShortcut()
                        },
                        this);
     dialog.exec();
+}
+
+void VMainWindow::initVimCmd()
+{
+    m_vimCmd = new VVimCmdLineEdit(this);
+    m_vimCmd->setProperty("VimCommandLine", true);
+
+    connect(m_vimCmd, &VVimCmdLineEdit::commandCancelled,
+            this, [this]() {
+                if (m_curTab) {
+                    m_curTab->focusTab();
+                }
+
+                // NOTICE: should not hide before setting focus to edit tab.
+                m_vimCmd->hide();
+
+                if (m_curTab) {
+                    m_curTab->handleVimCmdCommandCancelled();
+                }
+            });
+
+    connect(m_vimCmd, &VVimCmdLineEdit::commandFinished,
+            this, [this](VVim::CommandLineType p_type, const QString &p_cmd) {
+                if (m_curTab) {
+                    m_curTab->focusTab();
+                }
+
+                m_vimCmd->hide();
+
+                // Hide the cmd line edit before execute the command.
+                // If we execute the command first, we will get Chinese input
+                // method enabled after returning to read mode.
+                if (m_curTab) {
+                    m_curTab->handleVimCmdCommandFinished(p_type, p_cmd);
+                }
+            });
+
+    connect(m_vimCmd, &VVimCmdLineEdit::commandChanged,
+            this, [this](VVim::CommandLineType p_type, const QString &p_cmd) {
+                if (m_curTab) {
+                    m_curTab->handleVimCmdCommandChanged(p_type, p_cmd);
+                }
+            });
+
+    connect(m_vimCmd, &VVimCmdLineEdit::requestNextCommand,
+            this, [this](VVim::CommandLineType p_type, const QString &p_cmd) {
+                if (m_curTab) {
+                    QString cmd = m_curTab->handleVimCmdRequestNextCommand(p_type, p_cmd);
+                    if (!cmd.isNull()) {
+                        m_vimCmd->setCommand(cmd);
+                    } else {
+                        m_vimCmd->restoreUserLastInput();
+                    }
+                }
+            });
+
+    connect(m_vimCmd, &VVimCmdLineEdit::requestPreviousCommand,
+            this, [this](VVim::CommandLineType p_type, const QString &p_cmd) {
+                if (m_curTab) {
+                    QString cmd = m_curTab->handleVimCmdRequestPreviousCommand(p_type, p_cmd);
+                    if (!cmd.isNull()) {
+                        m_vimCmd->setCommand(cmd);
+                    }
+                }
+            });
+
+    connect(m_vimCmd, &VVimCmdLineEdit::requestRegister,
+            this, [this](int p_key, int p_modifiers){
+                if (m_curTab) {
+                    QString val = m_curTab->handleVimCmdRequestRegister(p_key, p_modifiers);
+                    if (!val.isEmpty()) {
+                        m_vimCmd->setText(m_vimCmd->text() + val);
+                    }
+                }
+            });
+
+    m_vimCmd->hide();
 }

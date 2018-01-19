@@ -142,6 +142,8 @@ public:
 
     void setVimMode(VimMode p_mode);
 
+    VVim *getVim() const;
+
     virtual QString getContent() const = 0;
 
     // @p_modified: if true, delete the whole content and insert the new content.

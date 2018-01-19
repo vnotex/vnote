@@ -970,3 +970,12 @@ void VEditor::setVimMode(VimMode p_mode)
         m_editOps->setVimMode(p_mode);
     }
 }
+
+VVim *VEditor::getVim() const
+{
+    if (m_editOps) {
+        return m_editOps->getVim();
+    }
+
+    return NULL;
+}

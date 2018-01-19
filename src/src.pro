@@ -107,7 +107,8 @@ SOURCES += main.cpp\
     vwaitingwidget.cpp \
     utils/vwebutils.cpp \
     vlineedit.cpp \
-    vcart.cpp
+    vcart.cpp \
+    vvimcmdlineedit.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -201,7 +202,8 @@ HEADERS  += vmainwindow.h \
     vwaitingwidget.h \
     utils/vwebutils.h \
     vlineedit.h \
-    vcart.h
+    vcart.h \
+    vvimcmdlineedit.h
 
 RESOURCES += \
     vnote.qrc \
