@@ -172,7 +172,7 @@ table tr th :last-child, table tr td :last-child {
 
 div.mermaid-diagram {
     overflow-y: hidden;
-    background: #7D879B;
+    background: #B0BEC5;
     color: #6C6C6C;
 }
 
@@ -182,7 +182,7 @@ pre.mermaid-diagram {
 
 div.flowchart-diagram {
     overflow-y: hidden;
-    background: #7D879B;
+    background: #B0BEC5;
     color: #6C6C6C;
 }
 

@@ -60,7 +60,8 @@ void VTipsDialog::readFile(const QString &p_tipFile)
                                             g_config->getMarkdownExtensions(),
                                             toc);
     html = VUtils::generateSimpleHtmlTemplate(html);
-    m_viewer->setHtml(html);
+    // Add a base URL to enable it to access local style files.
+    m_viewer->setHtml(html, QUrl("qrc:/resources"));
 }
 
 void VTipsDialog::showEvent(QShowEvent *p_event)
