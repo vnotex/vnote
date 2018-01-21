@@ -257,24 +257,23 @@ bool VWebView::removeStyles(QString &p_html)
 
 void VWebView::handleClipboardChanged(QClipboard::Mode p_mode)
 {
-    QString copyTarget = m_copyTarget;
-    m_copyTarget.clear();
-
-    bool afterCopyImage = m_afterCopyImage;
-    m_afterCopyImage = false;
-
     if (!hasFocus()
         || p_mode != QClipboard::Clipboard) {
         return;
     }
 
     QClipboard *clipboard = QApplication::clipboard();
-    const QMimeData *mimeData = clipboard->mimeData();
     if (!clipboard->ownsClipboard()) {
         return;
     }
 
-    if (afterCopyImage) {
+    const QMimeData *mimeData = clipboard->mimeData();
+
+    QString copyTarget = m_copyTarget;
+    m_copyTarget.clear();
+
+    if (m_afterCopyImage) {
+        m_afterCopyImage = false;
         removeHtmlFromImageData(clipboard, mimeData);
     } else {
         alterHtmlMimeData(clipboard, mimeData, copyTarget);
