@@ -58,8 +58,11 @@ extern QFile g_logFile;
 
 
 VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
-    : QMainWindow(p_parent), m_guard(p_guard),
-      m_windowOldState(Qt::WindowNoState), m_requestQuit(false)
+    : QMainWindow(p_parent),
+      m_guard(p_guard),
+      m_windowOldState(Qt::WindowNoState),
+      m_requestQuit(false),
+      m_printer(NULL)
 {
     qsrand(QDateTime::currentDateTime().toTime_t());
 
@@ -979,8 +982,6 @@ void VMainWindow::initFileMenu()
 
     fileMenu->addAction(m_exportAsPDFAct);
 
-    fileMenu->addSeparator();
-
     // Print.
     m_printAct = new QAction(VIconUtils::menuIcon(":/resources/icons/print.svg"),
                              tr("&Print"), this);
@@ -988,6 +989,10 @@ void VMainWindow::initFileMenu()
     connect(m_printAct, &QAction::triggered,
             this, &VMainWindow::printNote);
     m_printAct->setEnabled(false);
+
+    fileMenu->addAction(m_printAct);
+
+    fileMenu->addSeparator();
 
     // Themes.
     initThemeMenu(fileMenu);
@@ -2324,25 +2329,36 @@ void VMainWindow::shortcutsHelp()
 
 void VMainWindow::printNote()
 {
-    QPrinter printer;
-    QPrintDialog dialog(&printer, this);
+    if (m_printer
+        || !m_curFile
+        || m_curFile->getDocType() != DocType::Markdown) {
+        return;
+    }
+
+    m_printer = new QPrinter();
+    QPrintDialog dialog(m_printer, this);
     dialog.setWindowTitle(tr("Print Note"));
 
     V_ASSERT(m_curTab);
 
-    if (m_curFile->getDocType() == DocType::Markdown) {
-        VMdTab *mdTab = dynamic_cast<VMdTab *>((VEditTab *)m_curTab);
-        VWebView *webView = mdTab->getWebViewer();
+    VMdTab *mdTab = dynamic_cast<VMdTab *>((VEditTab *)m_curTab);
+    VWebView *webView = mdTab->getWebViewer();
 
-        V_ASSERT(webView);
+    V_ASSERT(webView);
 
-        if (webView->hasSelection()) {
-            dialog.addEnabledOption(QAbstractPrintDialog::PrintSelection);
-        }
+    if (webView->hasSelection()) {
+        dialog.addEnabledOption(QAbstractPrintDialog::PrintSelection);
+    }
 
-        if (dialog.exec() != QDialog::Accepted) {
-            return;
-        }
+    if (dialog.exec() == QDialog::Accepted) {
+        webView->page()->print(m_printer, [this](bool p_succ) {
+                    qDebug() << "print web page callback" << p_succ;
+                    delete m_printer;
+                    m_printer = NULL;
+                });
+    } else {
+        delete m_printer;
+        m_printer = NULL;
     }
 }
 

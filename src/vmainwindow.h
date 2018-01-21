@@ -39,6 +39,7 @@ class VButtonWithWidget;
 class VAttachmentList;
 class VSnippetList;
 class VCart;
+class QPrinter;
 
 enum class PanelViewState
 {
@@ -391,6 +392,8 @@ private:
     bool m_requestQuit;
 
     VWebUtils m_webUtils;
+
+    QPrinter *m_printer;
 
     // Interval of the shared memory timer in ms.
     static const int c_sharedMemTimerInterval;
