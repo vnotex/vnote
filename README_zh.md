@@ -1,6 +1,10 @@
 # VNote
 [英文 English](./README.md)
 
+[VNote主页](https://tamlok.github.io/vnote)
+
+[文档](http://vnote.readthedocs.io/en/latest/)
+
 **VNote** 是一个受Vim启发开发的专门为 **Markdown** 而优化、设计的笔记软件。VNote是一个更了解程序员和Markdown的笔记软件。
 
 ![VNote](screenshots/vnote.png)
@@ -73,8 +77,6 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 # 支持
 - [Github issues](https://github.com/tamlok/vnote/issues)；
 - 邮箱: tamlokveer at gmail.com；
-- QQ群: 487756074；  
-![VNote QQ](screenshots/vnote_qq.jpg)
 - 微信公众号: VNote笔记（vnote_md）；  
 ![VNote WeChat](screenshots/vnote_md.jpg)
 
@@ -158,72 +160,6 @@ VNote还支持其他很多的功能，比如：
 - 高亮所选择的文本；
 - 强大的页内查找；
 - 自动缩进和自动列表；
-
-# 构建与开发
-VNote需要5.9.1版本以上的Qt进行构建。
-
-1. 克隆代码仓库
-    ```
-    git clone https://github.com/tamlok/vnote.git vnote.git
-    cd vnote.git
-    git submodule update --init
-    ```
-2. 下载Qt  
-下载[Qt 5.9.1](http://info.qt.io/download-qt-for-application-development)，导入`VNote.pro`创建一个工程。
-
-## Linux
-如果您的Linux发行版不提供5.9.1以上版本的Qt，那么您需要从其他来源获取Qt。在Ubuntu中，您可以执行以下步骤：
-
-```
-sudo add-apt-repository ppa:beineri/opt-qt591-trusty -y
-sudo apt-get update -qq
-sudo apt-get -y install qt59base qt59webengine qt59webchannel qt59svg qt59location qt59tools qt59translations
-source /opt/qt*/bin/qt*-env.sh
-```
-
-当Qt和相关的模块准备就绪后，您可以执行以下命令来编译和安装：
-
-```
-cd vnote.git
-mkdir build
-cd build
-qmake ../VNote.pro
-make
-sudo make install
-```
-
-更多细节，您可以参考源代码根目录下的 [.travis_linux.sh](.travis_linux.sh) 。
-
-## MacOS
-在macOS下，您可以执行以下步骤来编译：
-
-1. 安装Xcode和Homebrew：
-2. 通过Homebrew安装Qt5.9.1：
-
-    ```
-    brew install qt@5.9.1
-    ```
-3. 在VNote源码根目录下，新建一个文件`build_macos.sh`：
-
-    ```sh
-    QTDIR="/usr/local/opt/qt@5.9.1"
-    PATH="$QTDIR/bin:$PATH"
-    LDFLAGS=-L$QTDIR/lib
-    CPPFLAGS=-I$QTDIR/include
-
-    mkdir -p build
-    cd build
-    qmake -v
-    qmake CONFIG-=debug CONFIG+=release ../VNote.pro
-    make -j2
-    ```
-4. 修改`build_macos.sh`的执行权限，并执行：
-
-    ```sh
-    chmod +x build_macos.sh
-    ./build_macos.sh
-    ```
-5. 此时得到VNote的Bundle `path/to/project/build/src/VNote.app`，打开即可。
 
 # 依赖
 - [Qt 5.9](http://qt-project.org) (L-GPL v3)

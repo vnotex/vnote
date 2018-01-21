@@ -1,6 +1,10 @@
 # VNote
 [中文 Chinese](./README_zh.md)
 
+[VNote Homepage](https://tamlok.github.io/vnote)
+
+[Documentation](http://vnote.readthedocs.io/en/latest/)
+
 Designed specially for **Markdown**, **VNote** is a Vim-inspired note-taking application, which knows programmers and Markdown better.
 
 ![VNote](screenshots/vnote.png)
@@ -72,8 +76,6 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 # Supports
 - [Github issues](https://github.com/tamlok/vnote/issues);
 - Email: tamlokveer at gmail.com;
-- QQ group: 487756074;  
-![VNote QQ](screenshots/vnote_qq.jpg)
 - WeChat Public Account: VNote笔记 (vnote_md);  
 ![VNote WeChat](screenshots/vnote_md.jpg)
 
@@ -95,11 +97,11 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 VNote tries to be a powerful Markdown editor with notes management, or a note-taking application with pleasant Markdown support. If you are a fan of Markdown and enjoy writing Markdown notes for study, work, and life, VNote is the right tool for you.
 
 ## Pleasant Markdown Experience
-### Insight About Markdown
+### Insights About Markdown
 Markdown, as a simple mark language, unlike rich text, was born with a **gap between edit and read**. There are about three ways to handle this gap:
 
-1. As one extreme, some editors just tread Markdown as **plain text**. Users may lose themselves in the messy black characters. It is hard to keep track of the information of the note.
-2. Most Markdown editors use two panels to **edit and preview Markdown notes simultaneously**. It makes things easier since users could see a pleasant typesetting and layout while editing the text. However, two panels may occupy the whole screen and users keep moving eyes left and righti which will be a big distraction.
+1. As one extreme, some editors just treat Markdown as **plain text**. Users may lose themselves in the messy black characters. It is hard to keep track of the information of the note.
+2. Most Markdown editors use two panels to **edit and preview Markdown notes simultaneously**. It makes things easier since users could see a pleasant typesetting and layout while editing the text. However, two panels may occupy the whole screen and users keep moving eyes left and right which will be a big distraction.
 3. As another extreme, some editors convert the Markdown elements in place immediately after the typing, which makes editing Markdown just like editing rich text document in Word.
 
 Since most editors choose the second way to handle the gap, people always think of preview when it comes to Markdown. It may be a misunderstanding about Markdown. Designed as a simple mark language, Markdown is intended to help to keep track of the information of the text when editing and provide a beautiful typesetting when reading after being converted to HTML.
@@ -155,69 +157,6 @@ VNote also supports many other features, like:
 - Highlight selected text;
 - Powerful search within the note;
 - Auto indent and auto list;
-
-# Build & Development
-VNote needs Qt 5.9.1 or above to build.
-
-1. Clone & Init
-    ```
-    git clone https://github.com/tamlok/vnote.git vnote.git
-    cd vnote.git
-    git submodule update --init
-    ```
-2. Download Qt & Have Fun  
-Download [Qt 5.9.1](http://info.qt.io/download-qt-for-application-development) and open `VNote.pro` as a project.
-
-## Linux
-If your distribution does not have Qt 5.9.1 or above, you need to add it from other sources. In Ubuntu, you could do this:
-
-```
-sudo add-apt-repository ppa:beineri/opt-qt591-trusty -y
-sudo apt-get update -qq
-sudo apt-get -y install qt59base qt59webengine qt59webchannel qt59svg qt59location qt59tools qt59translations
-source /opt/qt*/bin/qt*-env.sh
-```
-
-After Qt and some necessary modules are ready, you could follow these steps to build VNote
-
-```
-cd vnote.git
-mkdir build
-cd build
-qmake ../VNote.pro
-make
-sudo make install
-```
-
-For details, you could reference [.travis_linux.sh](.travis_linux.sh) in the source root.
-
-## MacOS
-If you prefer command line on macOS, you could follow these steps.
-
-1. Install Xcode and Homebrew;
-2. Install Qt 5.9.1 via Homebrew:
-    ```
-    brew install qt@5.9.1
-    ```
-3. In the project directory, create `build_macos.sh` like this:
-    ```sh
-    QTDIR="/usr/local/opt/qt@5.9.1"
-    PATH="$QTDIR/bin:$PATH"
-    LDFLAGS=-L$QTDIR/lib
-    CPPFLAGS=-I$QTDIR/include
-
-    mkdir -p build
-    cd build
-    qmake -v
-    qmake CONFIG-=debug CONFIG+=release ../VNote.pro
-    make -j2
-    ```
-4. Make `build_macos.sh` executable and run it:
-    ```sh
-    chmod +x build_macos.sh
-    ./build_macos.sh
-    ```
-5. Now you got the bundle `path/to/project/build/src/VNote.app`. Enjoy yourself!
 
 # Dependencies
 - [Qt 5.9](http://qt-project.org) (L-GPL v3)
