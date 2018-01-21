@@ -611,21 +611,28 @@ QListWidgetItem* VFileList::findItem(const VNoteFile *p_file)
     return NULL;
 }
 
-void VFileList::handleItemClicked(QListWidgetItem *currentItem)
+void VFileList::handleItemClicked(QListWidgetItem *p_item)
+{
+    activateItem(p_item);
+
+    fileList->setFocus();
+}
+
+void VFileList::activateItem(QListWidgetItem *p_item)
 {
     Qt::KeyboardModifiers modifiers = QGuiApplication::keyboardModifiers();
     if (modifiers != Qt::NoModifier) {
         return;
     }
 
-    if (!currentItem) {
+    if (!p_item) {
         emit fileClicked(NULL);
         return;
     }
 
     // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
     fileList->update();
-    emit fileClicked(getVFile(currentItem), g_config->getNoteOpenMode());
+    emit fileClicked(getVFile(p_item), g_config->getNoteOpenMode());
 }
 
 bool VFileList::importFiles(const QStringList &p_files, QString *p_errMsg)
@@ -852,7 +859,7 @@ void VFileList::keyPressEvent(QKeyEvent *p_event)
     if (p_event->key() == Qt::Key_Return) {
         QListWidgetItem *item = fileList->currentItem();
         if (item) {
-            handleItemClicked(item);
+            activateItem(item);
         }
     }
 

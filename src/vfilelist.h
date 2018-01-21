@@ -73,7 +73,8 @@ signals:
 
 private slots:
     void contextMenuRequested(QPoint pos);
-    void handleItemClicked(QListWidgetItem *currentItem);
+
+    void handleItemClicked(QListWidgetItem *p_item);
 
     // View and edit information of selected file.
     // Valid only when there is only one selected file.
@@ -160,6 +161,8 @@ private:
 
     // Init Open With menu.
     void initOpenWithMenu();
+
+    void activateItem(QListWidgetItem *p_item);
 
     VEditArea *editArea;
     QListWidget *fileList;
