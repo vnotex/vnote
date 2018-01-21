@@ -198,6 +198,8 @@ private:
 
     void textToHtmlViaWebView(const QString &p_text);
 
+    bool executeVimCommandInWebView(const QString &p_cmd);
+
     VMdEditor *m_editor;
     VWebView *m_webViewer;
     VDocument *m_document;

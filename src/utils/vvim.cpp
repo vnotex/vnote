@@ -5835,7 +5835,7 @@ bool VVim::executeCommand(const QString &p_cmd)
     Q_ASSERT(m_tokens.isEmpty() && m_keys.isEmpty());
     if (p_cmd.isEmpty()) {
         return true;
-    }else if (p_cmd.size() == 1) {
+    } else if (p_cmd.size() == 1) {
         if (p_cmd == "w") {
             // :w, save current file.
             emit m_editor->object()->saveNote();
@@ -5864,7 +5864,7 @@ bool VVim::executeCommand(const QString &p_cmd)
         } else {
             validCommand = false;
         }
-    } else if (p_cmd == "nohlsearch") {
+    } else if (p_cmd == "nohlsearch" || p_cmd == "noh") {
         // :nohlsearch, clear highlight search.
         clearSearchHighlight();
     } else {

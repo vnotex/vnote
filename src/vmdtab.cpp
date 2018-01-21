@@ -696,6 +696,16 @@ void VMdTab::handleWebKeyPressed(int p_key, bool p_ctrl, bool p_shift)
 
         break;
 
+    // :
+    case 186:
+        if (!p_ctrl && p_shift) {
+            VVim::CommandLineType type = VVim::CommandLineType::Command;
+
+            emit triggerVimCmd(type);
+        }
+
+        break;
+
     // n or N
     case 78:
         if (!p_ctrl) {
@@ -1078,8 +1088,6 @@ void VMdTab::handleVimCmdCommandCancelled()
         if (vim) {
             vim->processCommandLineCancelled();
         }
-    } else {
-        m_webViewer->findText("");
     }
 }
 
@@ -1091,13 +1099,16 @@ void VMdTab::handleVimCmdCommandFinished(VVim::CommandLineType p_type, const QSt
             vim->processCommandLine(p_type, p_cmd);
         }
     } else {
-        Q_ASSERT(p_type == VVim::CommandLineType::SearchForward
-                 || p_type == VVim::CommandLineType::SearchBackward);
-        m_lastSearchItem = VVim::fetchSearchItem(p_type, p_cmd);
-        findTextInWebView(m_lastSearchItem.m_text,
-                          m_lastSearchItem.m_options,
-                          false,
-                          m_lastSearchItem.m_forward);
+        if (p_type == VVim::CommandLineType::SearchForward
+            || p_type == VVim::CommandLineType::SearchBackward) {
+            m_lastSearchItem = VVim::fetchSearchItem(p_type, p_cmd);
+            findTextInWebView(m_lastSearchItem.m_text,
+                              m_lastSearchItem.m_options,
+                              false,
+                              m_lastSearchItem.m_forward);
+        } else {
+            executeVimCommandInWebView(p_cmd);
+        }
     }
 }
 
@@ -1111,10 +1122,11 @@ void VMdTab::handleVimCmdCommandChanged(VVim::CommandLineType p_type, const QStr
             vim->processCommandLineChanged(p_type, p_cmd);
         }
     } else {
-        Q_ASSERT(p_type == VVim::CommandLineType::SearchForward
-                 || p_type == VVim::CommandLineType::SearchBackward);
-        VVim::SearchItem item = VVim::fetchSearchItem(p_type, p_cmd);
-        findTextInWebView(item.m_text, item.m_options, true, item.m_forward);
+        if (p_type == VVim::CommandLineType::SearchForward
+            || p_type == VVim::CommandLineType::SearchBackward) {
+            VVim::SearchItem item = VVim::fetchSearchItem(p_type, p_cmd);
+            findTextInWebView(item.m_text, item.m_options, true, item.m_forward);
+        }
     }
 }
 
@@ -1158,4 +1170,31 @@ QString VMdTab::handleVimCmdRequestRegister(int p_key, int p_modifiers)
     }
 
     return QString();
+}
+
+bool VMdTab::executeVimCommandInWebView(const QString &p_cmd)
+{
+    bool validCommand = true;
+    QString msg;
+
+    if (p_cmd.isEmpty()) {
+        return true;
+    } else if (p_cmd == "q") {
+        // :q, close the note.
+        emit closeRequested(this);
+        msg = tr("Quit");
+    } else if (p_cmd == "nohlsearch" || p_cmd == "noh") {
+        // :nohlsearch, clear highlight search.
+        m_webViewer->findText("");
+    } else {
+        validCommand = false;
+    }
+
+    if (!validCommand) {
+        g_mainWin->showStatusMessage(tr("Not an editor command: %1").arg(p_cmd));
+    } else {
+        g_mainWin->showStatusMessage(msg);
+    }
+
+    return validCommand;
 }

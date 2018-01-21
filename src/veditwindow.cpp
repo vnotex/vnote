@@ -285,7 +285,9 @@ void VEditWindow::removeEditTab(int p_index)
     Q_ASSERT(p_index > -1 && p_index < tabBar()->count());
 
     VEditTab *editor = getTab(p_index);
+
     removeTab(p_index);
+
     delete editor;
 }
 

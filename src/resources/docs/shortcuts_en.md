@@ -38,18 +38,30 @@ Zoom in/out the page through the mouse scroll.
 - `Ctrl+0`  
 Recover the page zoom factor to 100%.
 - Jump between titles
-    - `[[`: jump to previous title;
-    - `]]`: jump to next title;
-    - `[]`: jump to previous title at the same level;
-    - `][`: jump to next title at the same level;
-    - `[{`: jump to previous title at a higher level;
-    - `]}`: jump to next title at a higher level;
+    - `<N>[[`: jump to previous `N` title;
+    - `<N>]]`: jump to next `N` title;
+    - `<N>[]`: jump to previous `N` title at the same level;
+    - `<N>][`: jump to next `N` title at the same level;
+    - `<N>[{`: jump to previous `N` title at a higher level;
+    - `<N>]}`: jump to next `N` title at a higher level;
+- `/` or `?` to search forward or backward
+    - `N`: find next match;
+    - `Shift+N`: find previous match;
+- `:` for Vim command
+    - `:q`: close current note;
+    - `:noh[lsearch]`: clear search highlights;
 
 ### Edit Mode
 - `Ctrl+S`  
 Save current changes.
 - `Ctrl+T`  
 Save current changes and exit edit mode.
+- `Ctrl + +/-`    
+Zoom in/out the page.
+- `Ctrl+Wheel`    
+Zoom in/out the page through the mouse scroll.
+- `Ctrl+0`  
+Recover the page zoom factor to 100%.
 
 #### Text Editing
 - `Ctrl+B`  
@@ -252,7 +264,7 @@ VNote supports following features of Vim:
 - `zz`, `zb`, `zt`;
 - `u` and `Ctrl+R` for undo and redo;
 - Text objects `i/a`: word, WORD, `''`, `""`, `` ` ` ``, `()`, `[]`, `<>`, and `{}`;
-- Command line `:w`, `:wq`, `:x`, `:q`, `:q!`, and `:nohlsearch`;
+- Command line `:w`, `:wq`, `:x`, `:q`, `:q!`, and `:noh[lsearch]`;
 - Jump between titles
     - `[[`: jump to previous title;
     - `]]`: jump to next title;
