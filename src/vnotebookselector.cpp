@@ -583,10 +583,12 @@ bool VNotebookSelector::handleKeyNavigation(int p_key, bool &p_succeed)
         // Hit.
         p_succeed = true;
         ret = true;
+        setFocus();
         if (m_naviLabel) {
             showPopup();
         }
     }
+
     return ret;
 }
 
