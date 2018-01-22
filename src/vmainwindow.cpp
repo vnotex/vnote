@@ -428,6 +428,32 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
             });
 
     viewToolBar->addAction(expandViewAct);
+
+    m_fullScreenAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/fullscreen.svg"),
+                                  tr("Full Screen"),
+                                  this);
+    QString keySeq = g_config->getShortcutKeySequence("FullScreen");
+    QKeySequence seq(keySeq);
+    if (!seq.isEmpty()) {
+        m_fullScreenAct->setText(tr("Full Screen\t%1").arg(VUtils::getShortcutText(keySeq)));
+        m_fullScreenAct->setShortcut(seq);
+    }
+
+    m_fullScreenAct->setStatusTip(tr("Toggle full screen"));
+    connect(m_fullScreenAct, &QAction::triggered,
+            this, [this]() {
+                if (windowState() & Qt::WindowFullScreen) {
+                    if (m_windowOldState & Qt::WindowMaximized) {
+                        showMaximized();
+                    } else {
+                        showNormal();
+                    }
+                } else {
+                    showFullScreen();
+                }
+            });
+
+    viewToolBar->addAction(m_fullScreenAct);
 }
 
 // Enable/disable all actions of @p_widget.

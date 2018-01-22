@@ -237,5 +237,6 @@
         <file>resources/icons/clear_cart.svg</file>
         <file>resources/icons/cart.svg</file>
         <file>resources/icons/delete_cart_item.svg</file>
+        <file>resources/icons/fullscreen.svg</file>
     </qresource>
 </RCC>

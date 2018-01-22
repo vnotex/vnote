@@ -334,12 +334,19 @@ private:
     QAction *saveNoteAct;
     QAction *saveExitAct;
     QAction *discardExitAct;
+
     QAction *expandViewAct;
+
+    QAction *m_fullScreenAct;
+
     QAction *m_importNoteAct;
+
     QAction *m_printAct;
+
     QAction *m_exportAsPDFAct;
 
     QAction *m_findReplaceAct;
+
     QAction *m_findNextAct;
     QAction *m_findPreviousAct;
     QAction *m_replaceAct;
