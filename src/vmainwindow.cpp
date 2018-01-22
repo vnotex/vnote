@@ -429,18 +429,35 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
 
     viewToolBar->addAction(expandViewAct);
 
-    m_fullScreenAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/fullscreen.svg"),
-                                  tr("Full Screen"),
-                                  this);
+    QAction *menuBarAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/menubar.svg"),
+                                      tr("Menu Bar"),
+                                      this);
+    menuBarAct->setStatusTip(tr("Toggle menu bar"));
+    menuBarAct->setCheckable(true);
+    menuBarAct->setChecked(g_config->getMenuBarChecked());
+    connect(menuBarAct, &QAction::triggered,
+            this, [this](bool p_checked) {
+                menuBar()->setVisible(p_checked);
+                g_config->setMenuBarChecked(p_checked);
+            });
+
+    QMenu *screenMenu = new QMenu(this);
+    screenMenu->setToolTipsVisible(true);
+    screenMenu->addAction(menuBarAct);
+
+    QAction *fullScreenAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/fullscreen.svg"),
+                                         tr("Full Screen"),
+                                         this);
     QString keySeq = g_config->getShortcutKeySequence("FullScreen");
     QKeySequence seq(keySeq);
     if (!seq.isEmpty()) {
-        m_fullScreenAct->setText(tr("Full Screen\t%1").arg(VUtils::getShortcutText(keySeq)));
-        m_fullScreenAct->setShortcut(seq);
+        fullScreenAct->setText(tr("Full Screen\t%1").arg(VUtils::getShortcutText(keySeq)));
+        fullScreenAct->setShortcut(seq);
     }
 
-    m_fullScreenAct->setStatusTip(tr("Toggle full screen"));
-    connect(m_fullScreenAct, &QAction::triggered,
+    fullScreenAct->setStatusTip(tr("Toggle full screen"));
+    fullScreenAct->setMenu(screenMenu);
+    connect(fullScreenAct, &QAction::triggered,
             this, [this]() {
                 if (windowState() & Qt::WindowFullScreen) {
                     if (m_windowOldState & Qt::WindowMaximized) {
@@ -453,7 +470,7 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
                 }
             });
 
-    viewToolBar->addAction(m_fullScreenAct);
+    viewToolBar->addAction(fullScreenAct);
 }
 
 // Enable/disable all actions of @p_widget.
@@ -764,6 +781,8 @@ void VMainWindow::initMenuBar()
     initViewMenu();
     initMarkdownMenu();
     initHelpMenu();
+
+    menuBar()->setVisible(g_config->getMenuBarChecked());
 }
 
 void VMainWindow::initHelpMenu()
@@ -1877,12 +1896,12 @@ void VMainWindow::handleAreaTabStatusUpdated(const VEditTabInfo &p_info)
             }
 
             // Disconnect the trigger signal from edit tab.
-            disconnect(m_curTab, 0, m_vimCmd, 0);
+            disconnect((VEditTab *)m_curTab, 0, m_vimCmd, 0);
         }
 
         m_curTab = p_info.m_editTab;
         if (m_curTab) {
-            connect(m_curTab, &VEditTab::triggerVimCmd,
+            connect((VEditTab *)m_curTab, &VEditTab::triggerVimCmd,
                     m_vimCmd, &VVimCmdLineEdit::reset);
         }
 

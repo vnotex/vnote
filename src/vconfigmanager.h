@@ -435,6 +435,9 @@ public:
     // Return [web]/copy_targets.
     QStringList getCopyTargets() const;
 
+    bool getMenuBarChecked() const;
+    void setMenuBarChecked(bool p_checked);
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -2021,5 +2024,16 @@ inline QString VConfigManager::getStyleOfSpanForMark() const
 {
     return getConfigFromSettings("web",
                                  "style_of_span_for_mark").toString();
+}
+
+inline bool VConfigManager::getMenuBarChecked() const
+{
+    return getConfigFromSettings("global",
+                                 "menu_bar_checked").toBool();
+}
+
+inline void VConfigManager::setMenuBarChecked(bool p_checked)
+{
+    setConfigToSettings("global", "menu_bar_checked", p_checked);
 }
 #endif // VCONFIGMANAGER_H

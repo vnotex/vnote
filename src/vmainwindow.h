@@ -337,8 +337,6 @@ private:
 
     QAction *expandViewAct;
 
-    QAction *m_fullScreenAct;
-
     QAction *m_importNoteAct;
 
     QAction *m_printAct;
