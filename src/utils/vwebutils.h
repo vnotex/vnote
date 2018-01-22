@@ -97,6 +97,12 @@ private:
     // Replace local absolute/relative <img> tag with a warning label.
     bool replaceLocalImgWithWarningLabel(QString &p_html);
 
+    // Add <span> inside <code> not in <pre>.
+    bool addSpanInsideCode(QString &p_html);
+
+    // Replace &quot; in font-family with '.
+    bool replaceQuoteInFontFamily(QString &p_html);
+
     QVector<CopyTarget> m_copyTargets;
 
     // Custom styles to remove when copied.

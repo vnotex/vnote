@@ -221,6 +221,14 @@ bool VWebUtils::alterHtmlByTargetAction(const QUrl &p_baseUrl, QString &p_html, 
         altered = replaceLocalImgWithWarningLabel(p_html);
         break;
 
+    case 'd':
+        altered = addSpanInsideCode(p_html);
+        break;
+
+    case 'f':
+        altered = replaceQuoteInFontFamily(p_html);
+        break;
+
     default:
         break;
     }
@@ -228,7 +236,10 @@ bool VWebUtils::alterHtmlByTargetAction(const QUrl &p_baseUrl, QString &p_html, 
     return altered;
 }
 
-static int skipToTagEnd(const QString &p_html, int p_pos, const QString &p_tag)
+static int skipToTagEnd(const QString &p_html,
+                        int p_pos,
+                        const QString &p_tag,
+                        int *p_endTagIdx = NULL)
 {
     QRegExp beginReg(QString("<%1 ").arg(p_tag));
     QRegExp endReg(QString("</%1>").arg(p_tag));
@@ -243,7 +254,13 @@ static int skipToTagEnd(const QString &p_html, int p_pos, const QString &p_tag)
     }
 
     if (nEnd > -1) {
+        if (p_endTagIdx) {
+            *p_endTagIdx = nEnd;
+        }
+
         pos = nEnd + endReg.matchedLength();
+    } else if (p_endTagIdx) {
+        *p_endTagIdx = -1;
     }
 
     return pos;
@@ -671,6 +688,99 @@ bool VWebUtils::replaceLocalImgWithWarningLabel(QString &p_html)
 
         p_html.replace(idx, reg.matchedLength(), label);
         pos = idx + label.size();
+    }
+
+    return altered;
+}
+
+bool VWebUtils::addSpanInsideCode(QString &p_html)
+{
+    bool altered = false;
+    int pos = 0;
+
+    while (pos < p_html.size()) {
+        int tagIdx = p_html.indexOf(m_tagReg, pos);
+        if (tagIdx == -1) {
+            break;
+        }
+
+        QString tagName = m_tagReg.cap(1);
+        QString lowerName = tagName.toLower();
+        if (lowerName == "pre") {
+            // Skip <pre>.
+            pos = skipToTagEnd(p_html, tagIdx + m_tagReg.matchedLength(), tagName);
+            continue;
+        }
+
+        if (lowerName != "code") {
+            pos = tagIdx + m_tagReg.matchedLength();
+            continue;
+        }
+
+        int idx = tagIdx + m_tagReg.matchedLength() - 1;
+        Q_ASSERT(p_html[idx] == '>');
+        QString span = QString("><span%1>").arg(m_tagReg.cap(2));
+        p_html.replace(idx, 1, span);
+
+        int codeEnd = skipToTagEnd(p_html, idx + span.size(), tagName, &idx);
+        Q_ASSERT(idx > -1);
+        Q_ASSERT(codeEnd - idx == 7);
+        Q_ASSERT(p_html[idx] == '<');
+        p_html.replace(idx, 1, "</span><");
+
+        pos = codeEnd;
+
+        altered = true;
+    }
+
+    return altered;
+}
+
+// @p_html is the style string.
+static bool replaceQuoteInFontFamilyInStyleString(QString &p_html)
+{
+    QRegExp reg("font-family:((&quot;)|[^;])+;");
+    int idx = p_html.indexOf(reg);
+    if (idx == -1) {
+        return false;
+    }
+
+    QString quote("&quot;");
+    QString family = reg.cap(0);
+    if (family.indexOf(quote) == -1) {
+        return false;
+    }
+
+    QString newFamily = family.replace(quote, "'");
+    p_html.replace(idx, reg.matchedLength(), newFamily);
+    return true;
+}
+
+bool VWebUtils::replaceQuoteInFontFamily(QString &p_html)
+{
+    bool altered = false;
+    int pos = 0;
+
+    while (pos < p_html.size()) {
+        int idx = p_html.indexOf(m_styleTagReg, pos);
+        if (idx == -1) {
+            break;
+        }
+
+        QString styleStr = m_styleTagReg.cap(3);
+        if (replaceQuoteInFontFamilyInStyleString(styleStr)) {
+            QString newTag = QString("<%1%2style=\"%3\"%4>").arg(m_styleTagReg.cap(1))
+                                                            .arg(m_styleTagReg.cap(2))
+                                                            .arg(styleStr)
+                                                            .arg(m_styleTagReg.cap(4));
+            p_html.replace(idx, m_styleTagReg.matchedLength(), newTag);
+
+            pos = idx + newTag.size();
+
+            altered = true;
+        } else {
+            pos = idx + m_styleTagReg.matchedLength();
+        }
     }
 
     return altered;
