@@ -112,6 +112,19 @@ void VEditWindow::initTabActions()
                 }
             });
 
+    m_closeAllAct = new QAction(tr("Close All Tabs"), this);
+    m_closeAllAct->setToolTip(tr("Close all the note tabs"));
+    connect(m_closeAllAct, &QAction::triggered,
+            this, [this](){
+                for (int i = 0; i < this->count();) {
+                    this->setCurrentIndex(i);
+                    this->updateTabStatus(i);
+                    if (!this->closeTab(i)) {
+                        ++i;
+                    }
+                }
+            });
+
     m_closeRightAct = new QAction(tr("Close Tabs To The Right"), this);
     m_closeRightAct->setToolTip(tr("Close all the note tabs to the right of current tab"));
     connect(m_closeRightAct, &QAction::triggered,
@@ -710,11 +723,14 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
     if (count() > 1) {
         m_closeOthersAct->setData(tab);
         menu.addAction(m_closeOthersAct);
+
         if (tab < count() - 1) {
             m_closeRightAct->setData(tab);
             menu.addAction(m_closeRightAct);
         }
     }
+
+    menu.addAction(m_closeAllAct);
 
     if (!menu.actions().isEmpty()) {
         menu.exec(bar->mapToGlobal(p_pos));

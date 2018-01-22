@@ -202,6 +202,9 @@ private:
     // Close tabs to the right in tab menu.
     QAction *m_closeRightAct;
 
+    // Close all tabs.
+    QAction *m_closeAllAct;
+
     // View and edit info about this note.
     QAction *m_noteInfoAct;
 
