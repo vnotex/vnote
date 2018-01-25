@@ -1,6 +1,8 @@
 #include <QtDebug>
 #include <QtWidgets>
 #include <QUrl>
+#include <QTimer>
+
 #include "vfilelist.h"
 #include "vconfigmanager.h"
 #include "dialog/vnewfiledialog.h"
@@ -30,11 +32,31 @@ const QString VFileList::c_cutShortcutSequence = "Ctrl+X";
 const QString VFileList::c_pasteShortcutSequence = "Ctrl+V";
 
 VFileList::VFileList(QWidget *parent)
-    : QWidget(parent), VNavigationMode()
+    : QWidget(parent),
+      VNavigationMode(),
+      m_itemClicked(NULL),
+      m_fileToCloseInSingleClick(NULL)
 {
     setupUI();
     initShortcuts();
     initActions();
+
+    m_clickTimer = new QTimer(this);
+    m_clickTimer->setSingleShot(true);
+    m_clickTimer->setInterval(QApplication::doubleClickInterval());
+    // When timer timeouts, we need to close the previous tab to simulate the
+    // effect as opening file in current tab.
+    connect(m_clickTimer, &QTimer::timeout,
+            this, [this]() {
+                m_itemClicked = NULL;
+                VFile *file = m_fileToCloseInSingleClick;
+                m_fileToCloseInSingleClick = NULL;
+
+                if (file) {
+                    editArea->closeFile(file, false);
+                    fileList->setFocus();
+                }
+            });
 }
 
 void VFileList::setupUI()
@@ -613,18 +635,62 @@ QListWidgetItem* VFileList::findItem(const VNoteFile *p_file)
 
 void VFileList::handleItemClicked(QListWidgetItem *p_item)
 {
-    activateItem(p_item);
+    Q_ASSERT(p_item);
 
-    fileList->setFocus();
-}
-
-void VFileList::activateItem(QListWidgetItem *p_item)
-{
     Qt::KeyboardModifiers modifiers = QGuiApplication::keyboardModifiers();
     if (modifiers != Qt::NoModifier) {
         return;
     }
 
+    m_clickTimer->stop();
+    if (m_itemClicked) {
+        // Timer will not trigger.
+        if (m_itemClicked == p_item) {
+            // Double clicked.
+            m_itemClicked = NULL;
+            m_fileToCloseInSingleClick = NULL;
+            return;
+        } else {
+            // Handle previous clicked item as single click.
+            m_itemClicked = NULL;
+            if (m_fileToCloseInSingleClick) {
+                editArea->closeFile(m_fileToCloseInSingleClick, false);
+                m_fileToCloseInSingleClick = NULL;
+            }
+        }
+    }
+
+    // Pending @p_item.
+    bool singleClickClose = g_config->getSingleClickClosePreviousTab();
+    if (singleClickClose) {
+        VFile *file = getVFile(p_item);
+        Q_ASSERT(file);
+        if (editArea->isFileOpened(file)) {
+            // File already opened.
+            activateItem(p_item, true);
+            return;
+        }
+
+        // Get current tab which will be closed if click timer timeouts.
+        VEditTab *tab = editArea->getCurrentTab();
+        if (tab) {
+            m_fileToCloseInSingleClick = tab->getFile();
+        } else {
+            m_fileToCloseInSingleClick = NULL;
+        }
+    }
+
+    // Activate it.
+    activateItem(p_item, true);
+
+    if (singleClickClose) {
+        m_itemClicked = p_item;
+        m_clickTimer->start();
+    }
+}
+
+void VFileList::activateItem(QListWidgetItem *p_item, bool p_restoreFocus)
+{
     if (!p_item) {
         emit fileClicked(NULL);
         return;
@@ -633,6 +699,10 @@ void VFileList::activateItem(QListWidgetItem *p_item)
     // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
     fileList->update();
     emit fileClicked(getVFile(p_item), g_config->getNoteOpenMode());
+
+    if (p_restoreFocus) {
+        fileList->setFocus();
+    }
 }
 
 bool VFileList::importFiles(const QStringList &p_files, QString *p_errMsg)
@@ -859,7 +929,23 @@ void VFileList::keyPressEvent(QKeyEvent *p_event)
     if (p_event->key() == Qt::Key_Return) {
         QListWidgetItem *item = fileList->currentItem();
         if (item) {
-            activateItem(item);
+            VFile *fileToClose = NULL;
+            if (!(p_event->modifiers() & Qt::ControlModifier)) {
+                VFile *file = getVFile(item);
+                Q_ASSERT(file);
+                if (!editArea->isFileOpened(file)) {
+                    VEditTab *tab = editArea->getCurrentTab();
+                    if (tab) {
+                        fileToClose = tab->getFile();
+                    }
+                }
+
+            }
+
+            activateItem(item, false);
+            if (fileToClose) {
+                editArea->closeFile(fileToClose, false);
+            }
         }
     }
 

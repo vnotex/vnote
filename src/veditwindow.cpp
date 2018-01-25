@@ -313,11 +313,6 @@ int VEditWindow::insertEditTab(int p_index, VFile *p_file, QWidget *p_page)
     return idx;
 }
 
-int VEditWindow::appendEditTab(VFile *p_file, QWidget *p_page)
-{
-    return insertEditTab(count(), p_file, p_page);
-}
-
 int VEditWindow::openFile(VFile *p_file, OpenFileMode p_mode)
 {
     qDebug() << "open" << p_file->getName();
@@ -326,6 +321,7 @@ int VEditWindow::openFile(VFile *p_file, OpenFileMode p_mode)
     if (idx > -1) {
         goto out;
     }
+
     idx = openFileInTab(p_file, p_mode);
 
 out:
@@ -459,8 +455,9 @@ int VEditWindow::openFileInTab(VFile *p_file, OpenFileMode p_mode)
     // Connect the signals.
     connectEditTab(editor);
 
-    int idx = appendEditTab(p_file, editor);
-    return idx;
+    // Insert right after current tab.
+    // VFileList will depends on this behavior.
+    return insertEditTab(currentIndex() + 1, p_file, editor);
 }
 
 int VEditWindow::findTabByFile(const VFile *p_file) const
@@ -990,7 +987,7 @@ bool VEditWindow::addEditTab(QWidget *p_widget)
     // Connect the signals.
     connectEditTab(editor);
 
-    int idx = appendEditTab(editor->getFile(), editor);
+    int idx = insertEditTab(currentIndex() + 1, editor->getFile(), editor);
     setCurrentIndex(idx);
     updateTabStatus(idx);
     return true;

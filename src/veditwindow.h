@@ -149,8 +149,9 @@ private:
     void initTabActions();
     void setupCornerWidget();
     void removeEditTab(int p_index);
+
     int insertEditTab(int p_index, VFile *p_file, QWidget *p_page);
-    int appendEditTab(VFile *p_file, QWidget *p_page);
+
     int openFileInTab(VFile *p_file, OpenFileMode p_mode);
 
     QString generateTooltip(const VFile *p_file) const;

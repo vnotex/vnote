@@ -438,6 +438,8 @@ public:
     bool getMenuBarChecked() const;
     void setMenuBarChecked(bool p_checked);
 
+    bool getSingleClickClosePreviousTab() const;
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -834,6 +836,9 @@ private:
 
     // The string containing styles to inline when copied in edit mode.
     QString m_stylesToInlineWhenCopied;
+
+    // Single click to open file and then close previous tab.
+    bool m_singleClickClosePreviousTab;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -2035,5 +2040,10 @@ inline bool VConfigManager::getMenuBarChecked() const
 inline void VConfigManager::setMenuBarChecked(bool p_checked)
 {
     setConfigToSettings("global", "menu_bar_checked", p_checked);
+}
+
+inline bool VConfigManager::getSingleClickClosePreviousTab() const
+{
+    return m_singleClickClosePreviousTab;
 }
 #endif // VCONFIGMANAGER_H

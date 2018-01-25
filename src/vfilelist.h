@@ -22,6 +22,7 @@ class VEditArea;
 class QFocusEvent;
 class QLabel;
 class QMenu;
+class QTimer;
 
 class VFileList : public QWidget, public VNavigationMode
 {
@@ -162,7 +163,7 @@ private:
     // Init Open With menu.
     void initOpenWithMenu();
 
-    void activateItem(QListWidgetItem *p_item);
+    void activateItem(QListWidgetItem *p_item, bool p_restoreFocus = false);
 
     VEditArea *editArea;
     QListWidget *fileList;
@@ -189,6 +190,12 @@ private:
 
     // Context sub-menu of Open With.
     QMenu *m_openWithMenu;
+
+    QTimer *m_clickTimer;
+
+    QListWidgetItem *m_itemClicked;
+
+    VFile *m_fileToCloseInSingleClick;
 
     static const QString c_infoShortcutSequence;
     static const QString c_copyShortcutSequence;

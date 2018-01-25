@@ -287,6 +287,9 @@ void VConfigManager::initialize()
 
     m_stylesToInlineWhenCopied = getConfigFromSettings("web",
                                                        "styles_to_inline_when_copied").toStringList().join(",");
+
+    m_singleClickClosePreviousTab = getConfigFromSettings("global",
+                                                          "single_click_close_previous_tab").toBool();
 }
 
 void VConfigManager::initSettings()
