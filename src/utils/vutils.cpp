@@ -1143,9 +1143,9 @@ QWebEngineView *VUtils::getWebEngineView(QWidget *p_parent)
     return viewer;
 }
 
-QString VUtils::getFileNameWithLocale(const QString &p_name)
+QString VUtils::getFileNameWithLocale(const QString &p_name, const QString &p_locale)
 {
-    QString locale = getLocale();
+    QString locale = p_locale.isEmpty() ? getLocale() : p_locale;
     locale = locale.split('_')[0];
 
     QFileInfo fi(p_name);
@@ -1162,7 +1162,12 @@ QString VUtils::getFileNameWithLocale(const QString &p_name)
 QString VUtils::getDocFile(const QString &p_name)
 {
     QDir dir(VNote::c_docFileFolder);
-    return dir.filePath(getFileNameWithLocale(p_name));
+    QString name(getFileNameWithLocale(p_name));
+    if (!dir.exists(name)) {
+        name = getFileNameWithLocale(p_name, "en_US");
+    }
+
+    return dir.filePath(name);
 }
 
 QString VUtils::getCaptainShortcutSequenceText(const QString &p_operation)
