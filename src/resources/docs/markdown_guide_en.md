@@ -107,6 +107,34 @@ As VNote suggests:
 
 - `lang` is optional to specify the language of the code;
 
+### Diagrams
+VNote supports [Flowchart.js](http://flowchart.js.org/) and [Mermaid](https://mermaidjs.github.io/) to draw diagrams such as *flowchart* and *sequence diagram*. You should use `flowchart` and `mermaid` specified as the language of the fenced code block and write the definition of your diagram within it.
+
+    ```flowchart
+    st=>start: Start:>http://www.google.com[blank]
+    e=>end:>http://www.google.com
+    op1=>operation: My Operation
+    sub1=>subroutine: My Subroutine
+    cond=>condition: Yes
+    or No?:>http://www.google.com
+    io=>inputoutput: catch something...
+
+    st->op1->cond
+    cond(yes)->io->e
+    cond(no)->sub1(right)->op1
+    ```
+
+### Math Formulas
+VNote supports math formulas via [MathJax](https://www.mathjax.org/). The default math delimiters are `$$...$$` and `\[...\]` for **displayed mathematics**, and `$...$` for **inline mathematics**. Sometimes you may need to *escape* some characters via `\`.
+
+VNote also supports displayed mathematics via fenced code block with language `mathjax` specified. The benifit of using code block is you do not have to escape most characters.
+
+    ```mathjax
+    $$
+    J(\theta) = \frac 1 2 \sum_{i=1}^m (h_\theta(x^{(i)})-y^{(i)})^2
+    $$
+    ```
+
 ### Inline Code
 ```md
 Here is a `inline code`.

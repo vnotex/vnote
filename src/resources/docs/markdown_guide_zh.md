@@ -108,6 +108,34 @@ As VNote suggests:
 
 - `lang`用于指定代码块的代码语言，可选；
 
+### 图表
+VNote支持 [Flowchart.js](http://flowchart.js.org/) 和 [Mermaid](https://mermaidjs.github.io/) 来实现诸如*流程图*和*序列图*等图表。您需要使用代码块，并标明语言为`flowchart`或`mermaid`，然后在代码块里面定义图表。
+
+    ```flowchart
+    st=>start: Start:>http://www.google.com[blank]
+    e=>end:>http://www.google.com
+    op1=>operation: My Operation
+    sub1=>subroutine: My Subroutine
+    cond=>condition: Yes
+    or No?:>http://www.google.com
+    io=>inputoutput: catch something...
+
+    st->op1->cond
+    cond(yes)->io->e
+    cond(no)->sub1(right)->op1
+    ```
+
+### 数学公式
+VNote通过 [MathJax](https://www.mathjax.org/) 来支持数学公式。默认的**块公式**的分隔符是`$$...$$$`和`\[...\]`，**行内公式**的分隔符是`$...$`。有时候，您需要使用`\`来*转义*某些字符。
+
+VNote也可以使用标明语言`mathjax`的代码块来实现块公式。使用代码块的一个好处是大多数情况下无需转义字符。
+
+    ```mathjax
+    $$
+    J(\theta) = \frac 1 2 \sum_{i=1}^m (h_\theta(x^{(i)})-y^{(i)})^2
+    $$
+    ```
+
 ### 行内代码
 ```md
 Here is a `inline code`.
