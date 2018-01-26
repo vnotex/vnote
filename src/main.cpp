@@ -22,6 +22,9 @@ VPalette *g_palette;
 // 5MB log size.
 #define MAX_LOG_SIZE 5 * 1024 * 1024
 
+// Whether print debug log in RELEASE mode.
+bool g_debugLog = false;
+
 QFile g_logFile;
 
 static void initLogFile(const QString &p_file)
@@ -37,6 +40,12 @@ static void initLogFile(const QString &p_file)
 
 void VLogger(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
+#if defined(QT_NO_DEBUG)
+    if (!g_debugLog && type == QtDebugMsg) {
+        return;
+    }
+#endif
+
     QByteArray localMsg = msg.toUtf8();
     QString header;
 
@@ -59,6 +68,9 @@ void VLogger(QtMsgType type, const QMessageLogContext &context, const QString &m
 
     case QtFatalMsg:
         header = "Fatal:";
+
+    default:
+        break;
     }
 
 #if defined(QT_NO_DEBUG)
@@ -72,7 +84,6 @@ void VLogger(QtMsgType type, const QMessageLogContext &context, const QString &m
         g_logFile.close();
         abort();
     }
-
 #else
     std::string fileStr = QFileInfo(context.file).fileName().toStdString();
     const char *file = fileStr.c_str();
@@ -135,6 +146,12 @@ int main(int argc, char *argv[])
     g_config = &vconfig;
 
 #if defined(QT_NO_DEBUG)
+    for (int i = 1; i < argc; ++i) {
+        if (!qstrcmp(argv[i], "-d")) {
+            g_debugLog = true;
+        }
+    }
+
     initLogFile(vconfig.getLogFilePath());
 #endif
 

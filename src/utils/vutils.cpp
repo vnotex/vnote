@@ -1065,6 +1065,10 @@ QStringList VUtils::filterFilePathsToOpen(const QStringList &p_files)
 {
     QStringList paths;
     for (int i = 0; i < p_files.size(); ++i) {
+        if (p_files[i].startsWith('-')) {
+            continue;
+        }
+
         QString path = validFilePathToOpen(p_files[i]);
         if (!path.isEmpty()) {
             paths.append(path);
