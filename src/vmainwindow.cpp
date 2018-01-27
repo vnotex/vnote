@@ -890,7 +890,7 @@ void VMainWindow::initMarkdownMenu()
 
     initCodeBlockStyleMenu(markdownMenu);
 
-    QAction *constrainImageAct = new QAction(tr("Constrain The Width of Images"), this);
+    QAction *constrainImageAct = new QAction(tr("Constrain The Width Of Images"), this);
     constrainImageAct->setToolTip(tr("Constrain the width of images to the window in read mode (re-open current tabs to make it work)"));
     constrainImageAct->setCheckable(true);
     connect(constrainImageAct, &QAction::triggered,

@@ -153,13 +153,16 @@ VNote提供很多快捷键，从而提供一个愉悦的编辑体验。其中包
 ## 高度可定制
 VNote中，几乎一切都是可以定制的，例如背景颜色、字体以及Markdown样式等。VNote使用一个纯文本文件来记录您的所有配置，因此通过拷贝该文件就能够很快地在另一台电脑上初始化一个新的VNote。
 
-## 其他
-VNote还支持其他很多的功能，比如：
+# 捐赠
+您可以通过很多途径帮助VNote的开发。
 
-- 高亮当前行；
-- 高亮所选择的文本；
-- 强大的页内查找；
-- 自动缩进和自动列表；
+- 持续关注VNote并反馈；
+- 向您的朋友们推广和传播VNote。普及度是驱动开发者的一股强大力量。
+- 参与到VNote的开发中，发送PullRequest来帮助VNote变得更完美。
+- 最后，非常感谢您的捐赠如果您觉得VNote真的帮助到您并且想回馈VNote。
+    - PayPal: [PayPal.Me/tamlok](https://paypal.me/tamlok)
+    - 支付宝: tamlokveer@gmail.com  
+    ![Alipay](screenshots/alipay.png)
 
 # 依赖
 - [Qt 5.9](http://qt-project.org) (L-GPL v3)

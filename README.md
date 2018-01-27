@@ -150,13 +150,16 @@ Please refer to the [shortcuts help](src/resources/docs/shortcuts_en.md) in the 
 ## Highly Configurable
 In VNote, almost everything is configurable, such as background color, font, and Markdown style. VNote uses a plaintext file to record all your configuration, so you could just copy that file to initialize a new VNote on another computer.
 
-## Others
-VNote also supports many other features, like:
+# Donate
+You could help VNote's development in may ways.
 
-- Highlight current cursor line;
-- Highlight selected text;
-- Powerful search within the note;
-- Auto indent and auto list;
+- Keep monitoring VNote and sending feedback for improvement.
+- Spread and promote VNote to your friends. Popularity is a strong power to drive developers.
+- Participate in the development of VNote and send PullRequest to make VNote perfect.
+- Last, really appreciate your donate to VNote if you think VNote really helps you and you want to help VNote.
+    - PayPal: [PayPal.Me/tamlok](https://paypal.me/tamlok)
+    - Alipay: tamlokveer@gmail.com  
+    ![Alipay](screenshots/alipay.png)
 
 # Dependencies
 - [Qt 5.9](http://qt-project.org) (L-GPL v3)
