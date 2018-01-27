@@ -91,17 +91,17 @@ public slots:
     // Enter edit mode.
     void editFile() Q_DECL_OVERRIDE;
 
-    void handleVimCmdCommandCancelled();
+    void handleVimCmdCommandCancelled() Q_DECL_OVERRIDE;
 
-    void handleVimCmdCommandFinished(VVim::CommandLineType p_type, const QString &p_cmd);
+    void handleVimCmdCommandFinished(VVim::CommandLineType p_type, const QString &p_cmd) Q_DECL_OVERRIDE;
 
-    void handleVimCmdCommandChanged(VVim::CommandLineType p_type, const QString &p_cmd);
+    void handleVimCmdCommandChanged(VVim::CommandLineType p_type, const QString &p_cmd) Q_DECL_OVERRIDE;
 
-    QString handleVimCmdRequestNextCommand(VVim::CommandLineType p_type, const QString &p_cmd);
+    QString handleVimCmdRequestNextCommand(VVim::CommandLineType p_type, const QString &p_cmd) Q_DECL_OVERRIDE;
 
-    QString handleVimCmdRequestPreviousCommand(VVim::CommandLineType p_type, const QString &p_cmd);
+    QString handleVimCmdRequestPreviousCommand(VVim::CommandLineType p_type, const QString &p_cmd) Q_DECL_OVERRIDE;
 
-    QString handleVimCmdRequestRegister(int p_key, int p_modifiers);
+    QString handleVimCmdRequestRegister(int p_key, int p_modifiers) Q_DECL_OVERRIDE;
 
 protected:
     void writeBackupFile() Q_DECL_OVERRIDE;
