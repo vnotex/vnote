@@ -157,7 +157,6 @@ You could help VNote's development in may ways.
 - Spread and promote VNote to your friends. Popularity is a strong power to drive developers.
 - Participate in the development of VNote and send PullRequest to make VNote perfect.
 - Last, really appreciate your donate to VNote if you think VNote really helps you and you want to help VNote.
-    - PayPal: [PayPal.Me/tamlok](https://paypal.me/tamlok)
     - Alipay: tamlokveer@gmail.com  
     ![Alipay](screenshots/alipay.png)
 
