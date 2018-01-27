@@ -13,6 +13,7 @@
 #include "vdirectory.h"
 #include "vnotefile.h"
 #include "vnavigationmode.h"
+#include "vlistwidget.h"
 
 class QAction;
 class VNote;
@@ -166,7 +167,7 @@ private:
     void activateItem(QListWidgetItem *p_item, bool p_restoreFocus = false);
 
     VEditArea *editArea;
-    QListWidget *fileList;
+    VListWidget *fileList;
     QPointer<VDirectory> m_directory;
 
     // Magic number for clipboard operations.

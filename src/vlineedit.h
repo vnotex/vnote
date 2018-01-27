@@ -12,7 +12,6 @@ public:
 
     VLineEdit(const QString &p_contents, QWidget *p_parent = nullptr);
 
-protected:
     void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 };
 
