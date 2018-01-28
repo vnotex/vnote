@@ -61,7 +61,7 @@ VFileList::VFileList(QWidget *parent)
 
 void VFileList::setupUI()
 {
-    fileList = new QListWidget(this);
+    fileList = new VListWidget(this);
     fileList->setContextMenuPolicy(Qt::CustomContextMenu);
     fileList->setSelectionMode(QAbstractItemView::ExtendedSelection);
     fileList->setObjectName("FileList");
@@ -229,6 +229,7 @@ void VFileList::updateFileList()
         VNoteFile *file = files[i];
         insertFileListItem(file);
     }
+    fileList->refresh();
 }
 
 void VFileList::fileInfo()
@@ -698,6 +699,7 @@ void VFileList::activateItem(QListWidgetItem *p_item, bool p_restoreFocus)
 
     // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
     fileList->update();
+    fileList->exitSearchMode(false);
     emit fileClicked(getVFile(p_item), g_config->getNoteOpenMode());
 
     if (p_restoreFocus) {
