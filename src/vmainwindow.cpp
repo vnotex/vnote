@@ -1209,7 +1209,7 @@ void VMainWindow::initEditMenu()
             this, &VMainWindow::changeHighlightSelectedWord);
 
     // Highlight trailing space.
-    QAction *trailingSapceAct = new QAction(tr("Highlight Trailing Sapces"), this);
+    QAction *trailingSapceAct = new QAction(tr("Highlight Trailing Spaces"), this);
     trailingSapceAct->setToolTip(tr("Highlight all the spaces at the end of a line"));
     trailingSapceAct->setCheckable(true);
     connect(trailingSapceAct, &QAction::triggered,
