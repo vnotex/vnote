@@ -101,7 +101,8 @@ struct VElementRegion
         if (m_startPos < p_other.m_startPos) {
             return true;
         } else if (m_startPos == p_other.m_startPos) {
-            return m_endPos <= p_other.m_endPos;
+            // If a < b is true, then b < a must be false.
+            return m_endPos < p_other.m_endPos;
         } else {
             return false;
         }

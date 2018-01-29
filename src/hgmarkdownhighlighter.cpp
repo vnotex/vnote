@@ -228,7 +228,7 @@ static bool compHLUnit(const HLUnit &p_a, const HLUnit &p_b)
     if (p_a.start < p_b.start) {
         return true;
     } else if (p_a.start == p_b.start) {
-        return p_a.length >= p_b.length;
+        return p_a.length > p_b.length;
     } else {
         return false;
     }
@@ -308,15 +308,14 @@ void HGMarkdownHighlighter::initHtmlCommentRegionsFromResult()
 
 void HGMarkdownHighlighter::initImageRegionsFromResult()
 {
+    // From Qt5.7, the capacity is preserved.
+    m_imageRegions.clear();
+
     if (!result) {
-        // From Qt5.7, the capacity is preserved.
-        m_imageRegions.clear();
         emit imageLinksUpdated(m_imageRegions);
         return;
     }
 
-    int idx = 0;
-    int oriSize = m_imageRegions.size();
     pmh_element *elem = result[pmh_IMAGE];
     while (elem != NULL) {
         if (elem->end <= elem->pos) {
@@ -324,23 +323,8 @@ void HGMarkdownHighlighter::initImageRegionsFromResult()
             continue;
         }
 
-        if (idx < oriSize) {
-            // Try to reuse the original element.
-            VElementRegion &reg = m_imageRegions[idx];
-            if ((int)elem->pos != reg.m_startPos || (int)elem->end != reg.m_endPos) {
-                reg.m_startPos = (int)elem->pos;
-                reg.m_endPos = (int)elem->end;
-            }
-        } else {
-            m_imageRegions.push_back(VElementRegion(elem->pos, elem->end));
-        }
-
-        ++idx;
+        m_imageRegions.push_back(VElementRegion(elem->pos, elem->end));
         elem = elem->next;
-    }
-
-    if (idx < oriSize) {
-        m_imageRegions.resize(idx);
     }
 
     qDebug() << "highlighter: parse" << m_imageRegions.size() << "image regions";
@@ -350,17 +334,15 @@ void HGMarkdownHighlighter::initImageRegionsFromResult()
 
 void HGMarkdownHighlighter::initHeaderRegionsFromResult()
 {
+    // From Qt5.7, the capacity is preserved.
     m_headerBlocks.clear();
+    m_headerRegions.clear();
 
     if (!result) {
-        // From Qt5.7, the capacity is preserved.
-        m_headerRegions.clear();
         emit headersUpdated(m_headerRegions);
         return;
     }
 
-    int idx = 0;
-    int oriSize = m_headerRegions.size();
     pmh_element_type hx[6] = {pmh_H1, pmh_H2, pmh_H3, pmh_H4, pmh_H5, pmh_H6};
     for (int i = 0; i < 6; ++i) {
         pmh_element *elem = result[hx[i]];
@@ -371,16 +353,7 @@ void HGMarkdownHighlighter::initHeaderRegionsFromResult()
                 continue;
             }
 
-            if (idx < oriSize) {
-                // Try to reuse the original element.
-                VElementRegion &reg = m_headerRegions[idx];
-                if ((int)elem->pos != reg.m_startPos || (int)elem->end != reg.m_endPos) {
-                    reg.m_startPos = (int)elem->pos;
-                    reg.m_endPos = (int)elem->end;
-                }
-            } else {
-                m_headerRegions.push_back(VElementRegion(elem->pos, elem->end));
-            }
+            m_headerRegions.push_back(VElementRegion(elem->pos, elem->end));
 
             QTextBlock block = document->findBlock(elem->pos);
             if (block.isValid()) {
@@ -388,13 +361,8 @@ void HGMarkdownHighlighter::initHeaderRegionsFromResult()
                 m_headerBlocks.insert(block.blockNumber(), HeaderBlockInfo(i, elem->end - elem->pos - 1));
             }
 
-            ++idx;
             elem = elem->next;
         }
-    }
-
-    if (idx < oriSize) {
-        m_headerRegions.resize(idx);
     }
 
     std::sort(m_headerRegions.begin(), m_headerRegions.end());
@@ -714,7 +682,7 @@ static bool compHLUnitStyle(const HLUnitStyle &a, const HLUnitStyle &b)
     if (a.start < b.start) {
         return true;
     } else if (a.start == b.start) {
-        return a.length >= b.length;
+        return a.length > b.length;
     } else {
         return false;
     }
