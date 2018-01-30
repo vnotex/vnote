@@ -1,19 +1,28 @@
 #include "vlistwidget.h"
+
 #include <QVBoxLayout>
 #include <QKeyEvent>
 #include <QCoreApplication>
 #include <QDebug>
 #include <QLabel>
+
+#include "vlineedit.h"
 #include "utils/vutils.h"
 
 const QString searchPrefix("Search for: ");
+
 //TODO: make the style configuable
 const QString c_searchKeyStyle("border:none; background:#eaeaea; color:%1;");
+
 const QString c_colorNotMatch("#fd676b");
+
 const QString c_colorMatch("grey");
 
-VListWidget::VListWidget(QWidget *parent):QListWidget(parent), m_isInSearch(false),
-    m_curItemIdx(-1), m_curItem(nullptr)
+VListWidget::VListWidget(QWidget *parent)
+        : QListWidget(parent),
+          m_isInSearch(false),
+          m_curItemIdx(-1),
+          m_curItem(nullptr)
 {
     m_label = new QLabel(searchPrefix, this);
     //TODO: make the style configuable
@@ -122,13 +131,15 @@ void VListWidget::keyPressEvent(QKeyEvent *p_event)
     }
 }
 
-void VListWidget::enterSearchMode() {
+void VListWidget::enterSearchMode()
+{
     m_label->show();
     m_searchKey->show();
     setSelectionMode(QAbstractItemView::SingleSelection);
 }
 
-void VListWidget::exitSearchMode(bool restoreSelection) {
+void VListWidget::exitSearchMode(bool restoreSelection)
+{
     m_searchKey->clear();
     m_label->hide();
     m_searchKey->hide();
@@ -138,8 +149,8 @@ void VListWidget::exitSearchMode(bool restoreSelection) {
     }
 }
 
-
-void VListWidget::refresh() {
+void VListWidget::refresh()
+{
     m_isInSearch = false;
     m_hitItems = findItems("", Qt::MatchContains);
     m_hitCount = m_hitItems.count();
@@ -160,7 +171,8 @@ void VListWidget::refresh() {
     }
 }
 
-void VListWidget::clear() {
+void VListWidget::clear()
+{
     QListWidget::clear();
     m_hitCount = 0;
     m_hitItems.clear();
@@ -170,7 +182,8 @@ void VListWidget::clear() {
     exitSearchMode();
 }
 
-void VListWidget::selectItem(QListWidgetItem *item) {
+void VListWidget::selectItem(QListWidgetItem *item)
+{
     if (item) {
         for(const auto& it : selectedItems()) {
             it->setSelected(false);
