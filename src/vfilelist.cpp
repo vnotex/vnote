@@ -17,7 +17,6 @@
 #include "dialog/vconfirmdeletiondialog.h"
 #include "dialog/vsortdialog.h"
 #include "vmainwindow.h"
-#include "utils/vimnavigationforwidget.h"
 #include "utils/viconutils.h"
 #include "dialog/vtipsdialog.h"
 #include "vcart.h"
@@ -202,7 +201,7 @@ void VFileList::setDirectory(VDirectory *p_directory)
     // be NULL.
     if (m_directory == p_directory) {
         if (!m_directory) {
-            fileList->clear();
+            fileList->clearAll();
         }
 
         return;
@@ -210,7 +209,7 @@ void VFileList::setDirectory(VDirectory *p_directory)
 
     m_directory = p_directory;
     if (!m_directory) {
-        fileList->clear();
+        fileList->clearAll();
         return;
     }
 
@@ -219,7 +218,7 @@ void VFileList::setDirectory(VDirectory *p_directory)
 
 void VFileList::updateFileList()
 {
-    fileList->clear();
+    fileList->clearAll();
     if (!m_directory->open()) {
         return;
     }
@@ -229,7 +228,6 @@ void VFileList::updateFileList()
         VNoteFile *file = files[i];
         insertFileListItem(file);
     }
-    fileList->refresh();
 }
 
 void VFileList::fileInfo()
@@ -699,7 +697,6 @@ void VFileList::activateItem(QListWidgetItem *p_item, bool p_restoreFocus)
 
     // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
     fileList->update();
-    fileList->exitSearchMode(false);
     emit fileClicked(getVFile(p_item), g_config->getNoteOpenMode());
 
     if (p_restoreFocus) {
@@ -923,11 +920,6 @@ void VFileList::pasteFiles(VDirectory *p_destDir,
 
 void VFileList::keyPressEvent(QKeyEvent *p_event)
 {
-    if (VimNavigationForWidget::injectKeyPressEventForVim(fileList,
-                                                          p_event)) {
-        return;
-    }
-
     if (p_event->key() == Qt::Key_Return) {
         QListWidgetItem *item = fileList->currentItem();
         if (item) {

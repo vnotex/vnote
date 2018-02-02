@@ -6,7 +6,7 @@ qss_file=v_pure.qss
 mdhl_file=v_pure.mdhl
 css_file=v_pure.css
 codeblock_css_file=v_pure_codeblock.css
-version=1
+version=2
 
 [phony]
 ; Abstract color attributes.
@@ -101,6 +101,10 @@ tab_indicator_label_fg=@base_fg
 ; Html template.
 template_title_flash_light_fg=@master_light_bg
 template_title_flash_dark_fg=@master_bg
+
+; Search hit items in list or tree view.
+search_hit_item_fg=@selected_fg
+search_hit_item_bg=@master_light_bg
 
 [widgets]
 ; Widget color attributes.

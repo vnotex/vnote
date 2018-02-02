@@ -17,9 +17,9 @@ public:
                       const QString &p_fg = QString(),
                       bool p_addDisabled = true);
 
-    static QIcon toolButtonIcon(const QString &p_file)
+    static QIcon toolButtonIcon(const QString &p_file, bool p_addDisabled = true)
     {
-        return icon(p_file, g_palette->color("toolbutton_icon_fg"));
+        return icon(p_file, g_palette->color("toolbutton_icon_fg"), p_addDisabled);
     }
 
     static QIcon toolButtonDangerIcon(const QString &p_file)

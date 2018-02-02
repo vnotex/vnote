@@ -109,7 +109,9 @@ SOURCES += main.cpp\
     vlineedit.cpp \
     vcart.cpp \
     vvimcmdlineedit.cpp \
-    vlistwidget.cpp
+    vlistwidget.cpp \
+    vsimplesearchinput.cpp \
+    vstyleditemdelegate.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -205,7 +207,9 @@ HEADERS  += vmainwindow.h \
     vlineedit.h \
     vcart.h \
     vvimcmdlineedit.h \
-    vlistwidget.h
+    vlistwidget.h \
+    vsimplesearchinput.h \
+    vstyleditemdelegate.h
 
 RESOURCES += \
     vnote.qrc \
