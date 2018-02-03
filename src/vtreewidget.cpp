@@ -23,7 +23,6 @@ VTreeWidget::VTreeWidget(QWidget *p_parent)
     setAttribute(Qt::WA_MacShowFocusRect, false);
 
     m_searchInput = new VSimpleSearchInput(this, this);
-    m_searchInput->setNavigationKeyEnabled(true);
     connect(m_searchInput, &VSimpleSearchInput::triggered,
             this, &VTreeWidget::handleSearchModeTriggered);
     connect(m_searchInput, &VSimpleSearchInput::inputTextChanged,
@@ -109,13 +108,6 @@ void VTreeWidget::handleSearchModeTriggered(bool p_inSearchMode)
         clearItemsHighlight();
 
         setFocus();
-
-        QTreeWidgetItem *item = currentItem();
-        if (item) {
-            setCurrentItem(item);
-        } else if (topLevelItemCount() > 0) {
-            setCurrentItem(topLevelItem(0));
-        }
     }
 }
 
@@ -185,8 +177,7 @@ void VTreeWidget::clearItemsHighlight()
 
 void VTreeWidget::selectHitItem(void *p_item)
 {
-    setCurrentItem(static_cast<QTreeWidgetItem *>(p_item),
-                   QItemSelectionModel::ClearAndSelect);
+    setCurrentItem(static_cast<QTreeWidgetItem *>(p_item));
 }
 
 // Count the total number of tree @p_item.
