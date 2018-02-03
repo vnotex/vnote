@@ -161,6 +161,8 @@ You could help VNote's development in may ways.
     - Alipay: `tamlokveer@gmail.com`  
     ![Alipay](screenshots/alipay.png)
 
+Thanks very much to [them](https://github.com/tamlok/vnote/wiki/Donate-List) who donated to VNote!
+
 # Dependencies
 - [Qt 5.9](http://qt-project.org) (L-GPL v3)
 - [PEG Markdown Highlight](http://hasseg.org/peg-markdown-highlight/) (MIT License)

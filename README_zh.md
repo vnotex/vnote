@@ -164,6 +164,8 @@ VNote中，几乎一切都是可以定制的，例如背景颜色、字体以及
     - 支付宝: `tamlokveer@gmail.com`  
     ![Alipay](screenshots/alipay.png)
 
+非常感谢这些对VNote的 [捐赠者](https://github.com/tamlok/vnote/wiki/Donate-List) !
+
 # 依赖
 - [Qt 5.9](http://qt-project.org) (L-GPL v3)
 - [PEG Markdown Highlight](http://hasseg.org/peg-markdown-highlight/) (MIT License)
