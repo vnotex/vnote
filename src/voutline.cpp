@@ -11,14 +11,13 @@
 extern VNote *g_vnote;
 
 VOutline::VOutline(QWidget *parent)
-    : QTreeWidget(parent),
+    : VTreeWidget(parent),
       VNavigationMode(),
       m_muted(false)
 {
     setColumnCount(1);
     setHeaderHidden(true);
     setSelectionMode(QAbstractItemView::SingleSelection);
-    setAttribute(Qt::WA_MacShowFocusRect, false);
 
     // TODO: jump to the header when user click the same item twice.
     connect(this, &VOutline::currentItemChanged,
@@ -219,7 +218,7 @@ void VOutline::keyPressEvent(QKeyEvent *event)
         break;
     }
 
-    QTreeWidget::keyPressEvent(event);
+    VTreeWidget::keyPressEvent(event);
 }
 
 void VOutline::showNavigation()

@@ -1,10 +1,11 @@
 #ifndef VOUTLINE_H
 #define VOUTLINE_H
 
-#include <QTreeWidget>
 #include <QVector>
 #include <QMap>
 #include <QChar>
+
+#include "vtreewidget.h"
 #include "vtableofcontent.h"
 #include "vnavigationmode.h"
 
@@ -12,7 +13,7 @@ class QLabel;
 
 // Display table of content as a tree and enable user to click an item to
 // jump to that header.
-class VOutline : public QTreeWidget, public VNavigationMode
+class VOutline : public VTreeWidget, public VNavigationMode
 {
     Q_OBJECT
 public:

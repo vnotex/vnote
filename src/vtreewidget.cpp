@@ -5,7 +5,6 @@
 #include <QCoreApplication>
 #include <QSet>
 #include <QScrollBar>
-#include <QDebug>
 #include <QGraphicsOpacityEffect>
 #include <QTimer>
 
