@@ -104,8 +104,6 @@ public:
     static QString generateCopiedDirName(const QString &p_parentDirPath,
                                          const QString &p_dirName);
 
-    static void processStyle(QString &style, const QVector<QPair<QString, QString> > &varMap);
-
     // Return the last directory name of @p_path.
     static QString directoryNameFromPath(const QString& p_path);
 

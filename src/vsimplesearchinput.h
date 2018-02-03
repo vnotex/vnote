@@ -26,6 +26,9 @@ public:
 
     // Get the total number of all the items.
     virtual int totalNumberOfItems() = 0;
+
+    // Select next item.
+    virtual void selectNextItem(bool p_forward) = 0;
 };
 
 
@@ -42,9 +45,13 @@ public:
     // Return true if @p_event is consumed and do not need further process.
     bool tryHandleKeyPressEvent(QKeyEvent *p_event);
 
+    void setNavigationKeyEnabled(bool p_enabled);
+
 signals:
     // Search mode is triggered.
     void triggered(bool p_inSearchMode);
+
+    void inputTextChanged(const QString &p_text);
 
 protected:
     bool eventFilter(QObject *p_watched, QEvent *p_event) Q_DECL_OVERRIDE;
@@ -76,6 +83,9 @@ private:
     Qt::MatchFlags m_matchFlags;
 
     bool m_wildCardEnabled;
+
+    // Down/Up/Ctrl+J/Ctrl+K to navigate.
+    bool m_navigationKeyEnabled;
 };
 
 inline void *VSimpleSearchInput::currentItem() const
@@ -85,5 +95,10 @@ inline void *VSimpleSearchInput::currentItem() const
     }
 
     return NULL;
+}
+
+inline void VSimpleSearchInput::setNavigationKeyEnabled(bool p_enabled)
+{
+    m_navigationKeyEnabled = p_enabled;
 }
 #endif // VSIMPLESEARCHINPUT_H

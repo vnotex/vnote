@@ -1,6 +1,5 @@
 #include "vlistwidget.h"
 
-#include <QVBoxLayout>
 #include <QKeyEvent>
 #include <QCoreApplication>
 #include <QSet>
@@ -49,12 +48,12 @@ void VListWidget::setSearchInputVisible(bool p_visible)
 {
     m_searchInput->setVisible(p_visible);
 
-    int topMargin = 0;
+    int bottomMargin = 0;
     if (p_visible) {
-        topMargin = m_searchInput->height();
+        bottomMargin = m_searchInput->height();
     }
 
-    setViewportMargins(0, topMargin, 0, 0);
+    setViewportMargins(0, 0, 0, bottomMargin);
 }
 
 void VListWidget::resizeEvent(QResizeEvent *p_event)
@@ -68,8 +67,14 @@ void VListWidget::resizeEvent(QResizeEvent *p_event)
         width -= vbar->width();
     }
 
+    int y = rect.bottom() - m_searchInput->height();
+    QScrollBar *hbar = horizontalScrollBar();
+    if (hbar && (hbar->minimum() != hbar->maximum())) {
+        y -= hbar->height();
+    }
+
     m_searchInput->setGeometry(QRect(rect.left(),
-                                     rect.top(),
+                                     y,
                                      width,
                                      m_searchInput->height()));
 }
@@ -130,4 +135,10 @@ void VListWidget::selectHitItem(void *p_item)
 int VListWidget::totalNumberOfItems()
 {
     return count();
+}
+
+void VListWidget::selectNextItem(bool p_forward)
+{
+    Q_UNUSED(p_forward);
+    Q_ASSERT(false);
 }

@@ -1,13 +1,14 @@
 #ifndef VDIRECTORYTREE_H
 #define VDIRECTORYTREE_H
 
-#include <QTreeWidget>
 #include <QJsonObject>
 #include <QPointer>
 #include <QVector>
 #include <QMap>
 #include <QList>
 #include <QHash>
+
+#include "vtreewidget.h"
 #include "vdirectory.h"
 #include "vnotebook.h"
 #include "vnavigationmode.h"
@@ -16,7 +17,7 @@
 class VEditArea;
 class QLabel;
 
-class VDirectoryTree : public QTreeWidget, public VNavigationMode
+class VDirectoryTree : public VTreeWidget, public VNavigationMode
 {
     Q_OBJECT
 public:

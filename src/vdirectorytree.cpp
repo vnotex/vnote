@@ -25,13 +25,13 @@ const QString VDirectoryTree::c_cutShortcutSequence = "Ctrl+X";
 const QString VDirectoryTree::c_pasteShortcutSequence = "Ctrl+V";
 
 VDirectoryTree::VDirectoryTree(QWidget *parent)
-    : QTreeWidget(parent), VNavigationMode(),
+    : VTreeWidget(parent),
+      VNavigationMode(),
       m_editArea(NULL)
 {
     setColumnCount(1);
     setHeaderHidden(true);
     setContextMenuPolicy(Qt::CustomContextMenu);
-    setAttribute(Qt::WA_MacShowFocusRect, false);
 
     initShortcuts();
     initActions();
@@ -939,15 +939,11 @@ void VDirectoryTree::mousePressEvent(QMouseEvent *event)
         setCurrentItem(NULL);
     }
 
-    QTreeWidget::mousePressEvent(event);
+    VTreeWidget::mousePressEvent(event);
 }
 
 void VDirectoryTree::keyPressEvent(QKeyEvent *event)
 {
-    if (VimNavigationForWidget::injectKeyPressEventForVim(this, event)) {
-        return;
-    }
-
     int key = event->key();
     int modifiers = event->modifiers();
 
@@ -980,7 +976,7 @@ void VDirectoryTree::keyPressEvent(QKeyEvent *event)
         break;
     }
 
-    QTreeWidget::keyPressEvent(event);
+    VTreeWidget::keyPressEvent(event);
 }
 
 QTreeWidgetItem *VDirectoryTree::findVDirectory(const VDirectory *p_dir, bool *p_widget)

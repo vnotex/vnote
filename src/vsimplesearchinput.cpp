@@ -18,7 +18,8 @@ VSimpleSearchInput::VSimpleSearchInput(ISimpleSearch *p_obj, QWidget *p_parent)
       m_obj(p_obj),
       m_inSearchMode(false),
       m_currentIdx(-1),
-      m_wildCardEnabled(g_config->getEnableWildCardInSimpleSearch())
+      m_wildCardEnabled(g_config->getEnableWildCardInSimpleSearch()),
+      m_navigationKeyEnabled(false)
 {
     if (m_wildCardEnabled) {
         m_matchFlags = Qt::MatchWildcard | Qt::MatchWrap | Qt::MatchRecursive;
@@ -151,6 +152,23 @@ bool VSimpleSearchInput::tryHandleKeyPressEvent(QKeyEvent *p_event)
         return true;
     }
 
+    // Up/Down Ctrl+K/J to navigate to next item.
+    // QTreeWidget may not response to the key event if it does not have the focus.
+    if (m_inSearchMode && m_navigationKeyEnabled) {
+        if (key == Qt::Key_Down
+            || key == Qt::Key_Up
+            || (VUtils::isControlModifierForVim(modifiers)
+                && (key == Qt::Key_J || key == Qt::Key_K))) {
+            bool forward = true;
+            if (key == Qt::Key_Up || key == Qt::Key_K) {
+                forward = false;
+            }
+
+            m_obj->selectNextItem(forward);
+            return true;
+        }
+    }
+
     return false;
 }
 
@@ -181,13 +199,13 @@ bool VSimpleSearchInput::eventFilter(QObject *p_watched, QEvent *p_event)
 void VSimpleSearchInput::handleEditTextChanged(const QString &p_text)
 {
     if (!m_inSearchMode) {
-        return;
+        goto exit;
     }
 
     if (p_text.isEmpty()) {
         clearSearch();
         m_obj->selectHitItem(NULL);
-        return;
+        goto exit;
     }
 
     if (m_wildCardEnabled) {
@@ -208,6 +226,9 @@ void VSimpleSearchInput::handleEditTextChanged(const QString &p_text)
     m_currentIdx = m_hitItems.isEmpty() ? -1 : 0;
 
     m_obj->selectHitItem(currentItem());
+
+exit:
+    emit inputTextChanged(p_text);
 }
 
 void VSimpleSearchInput::updateInfoLabel(int p_nrHit, int p_total)

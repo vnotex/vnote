@@ -29,6 +29,8 @@ public:
 
     virtual int totalNumberOfItems() Q_DECL_OVERRIDE;
 
+    virtual void selectNextItem(bool p_forward) Q_DECL_OVERRIDE;
+
 private slots:
     void handleSearchModeTriggered(bool p_inSearchMode);
 

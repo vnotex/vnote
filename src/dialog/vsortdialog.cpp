@@ -2,33 +2,6 @@
 
 #include <QtWidgets>
 
-void VTreeWidget::dropEvent(QDropEvent *p_event)
-{
-    QList<QTreeWidgetItem *> dragItems = selectedItems();
-
-    int first = -1, last = -1;
-    QTreeWidgetItem *firstItem = NULL;
-    for (int i = 0; i < dragItems.size(); ++i) {
-        int row = indexFromItem(dragItems[i]).row();
-        if (row > last) {
-            last = row;
-        }
-
-        if (first == -1 || row < first) {
-            first = row;
-            firstItem = dragItems[i];
-        }
-    }
-
-    Q_ASSERT(firstItem);
-
-    QTreeWidget::dropEvent(p_event);
-
-    int target = indexFromItem(firstItem).row();
-    emit rowsMoved(first, last, target);
-}
-
-
 VSortDialog::VSortDialog(const QString &p_title,
                          const QString &p_info,
                          QWidget *p_parent)

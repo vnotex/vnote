@@ -3,33 +3,11 @@
 
 #include <QDialog>
 #include <QVector>
-#include <QTreeWidget>
+
+#include "vtreewidget.h"
 
 class QPushButton;
 class QDialogButtonBox;
-class QTreeWidget;
-class QDropEvent;
-
-// QTreeWidget won't emit the rowsMoved() signal after drag-and-drop.
-// VTreeWidget will emit rowsMoved() signal.
-class VTreeWidget : public QTreeWidget
-{
-    Q_OBJECT
-public:
-    explicit VTreeWidget(QWidget *p_parent = 0)
-        : QTreeWidget(p_parent)
-    {
-        setAttribute(Qt::WA_MacShowFocusRect, false);
-    }
-
-protected:
-    void dropEvent(QDropEvent *p_event) Q_DECL_OVERRIDE;
-
-signals:
-    // Rows [@p_first, @p_last] were moved to @p_row.
-    void rowsMoved(int p_first, int p_last, int p_row);
-
-};
 
 class VSortDialog : public QDialog
 {

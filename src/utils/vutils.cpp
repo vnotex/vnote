@@ -149,15 +149,6 @@ QString VUtils::generateImageFileName(const QString &path,
     return imageName;
 }
 
-void VUtils::processStyle(QString &style, const QVector<QPair<QString, QString> > &varMap)
-{
-    // Process style
-    for (int i = 0; i < varMap.size(); ++i) {
-        const QPair<QString, QString> &map = varMap[i];
-        style.replace("@" + map.first, map.second);
-    }
-}
-
 QString VUtils::fileNameFromPath(const QString &p_path)
 {
     if (p_path.isEmpty()) {
