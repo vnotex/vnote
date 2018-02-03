@@ -206,6 +206,8 @@ void VVimCmdLineEdit::focusOutEvent(QFocusEvent *p_event)
     if (p_event->reason() != Qt::ActiveWindowFocusReason) {
         emit commandCancelled();
     }
+
+    VLineEdit::focusOutEvent(p_event);
 }
 
 void VVimCmdLineEdit::setCommand(const QString &p_cmd)

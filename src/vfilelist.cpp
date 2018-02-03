@@ -17,7 +17,6 @@
 #include "dialog/vconfirmdeletiondialog.h"
 #include "dialog/vsortdialog.h"
 #include "vmainwindow.h"
-#include "utils/vimnavigationforwidget.h"
 #include "utils/viconutils.h"
 #include "dialog/vtipsdialog.h"
 #include "vcart.h"
@@ -61,7 +60,7 @@ VFileList::VFileList(QWidget *parent)
 
 void VFileList::setupUI()
 {
-    fileList = new QListWidget(this);
+    fileList = new VListWidget(this);
     fileList->setContextMenuPolicy(Qt::CustomContextMenu);
     fileList->setSelectionMode(QAbstractItemView::ExtendedSelection);
     fileList->setObjectName("FileList");
@@ -202,7 +201,7 @@ void VFileList::setDirectory(VDirectory *p_directory)
     // be NULL.
     if (m_directory == p_directory) {
         if (!m_directory) {
-            fileList->clear();
+            fileList->clearAll();
         }
 
         return;
@@ -210,7 +209,7 @@ void VFileList::setDirectory(VDirectory *p_directory)
 
     m_directory = p_directory;
     if (!m_directory) {
-        fileList->clear();
+        fileList->clearAll();
         return;
     }
 
@@ -219,7 +218,7 @@ void VFileList::setDirectory(VDirectory *p_directory)
 
 void VFileList::updateFileList()
 {
-    fileList->clear();
+    fileList->clearAll();
     if (!m_directory->open()) {
         return;
     }
@@ -921,11 +920,6 @@ void VFileList::pasteFiles(VDirectory *p_destDir,
 
 void VFileList::keyPressEvent(QKeyEvent *p_event)
 {
-    if (VimNavigationForWidget::injectKeyPressEventForVim(fileList,
-                                                          p_event)) {
-        return;
-    }
-
     if (p_event->key() == Qt::Key_Return) {
         QListWidgetItem *item = fileList->currentItem();
         if (item) {

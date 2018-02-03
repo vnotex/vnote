@@ -440,6 +440,8 @@ public:
 
     bool getSingleClickClosePreviousTab() const;
 
+    bool getEnableWildCardInSimpleSearch() const;
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -2045,5 +2047,11 @@ inline void VConfigManager::setMenuBarChecked(bool p_checked)
 inline bool VConfigManager::getSingleClickClosePreviousTab() const
 {
     return m_singleClickClosePreviousTab;
+}
+
+inline bool VConfigManager::getEnableWildCardInSimpleSearch() const
+{
+    return getConfigFromSettings("global",
+                                 "enable_wildcard_in_simple_search").toBool();
 }
 #endif // VCONFIGMANAGER_H
