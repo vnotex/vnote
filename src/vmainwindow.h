@@ -168,6 +168,8 @@ private slots:
 
     void customShortcut();
 
+    void toggleEditReadMode();
+
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 
@@ -257,6 +259,8 @@ private:
 
     void initThemeMenu(QMenu *p_emnu);
 
+    void updateEditReadAct(const VEditTab *p_tab);
+
     // Captain mode functions.
 
     // Popup the attachment list if it is enabled.
@@ -329,11 +333,15 @@ private:
     QAction *newRootDirAct;
     QAction *newNoteAct;
     QAction *noteInfoAct;
+
     QAction *deleteNoteAct;
-    QAction *editNoteAct;
+
+    // Toggle read and edit note.
+    QAction *m_editReadAct;
+
     QAction *saveNoteAct;
-    QAction *saveExitAct;
-    QAction *discardExitAct;
+
+    QAction *m_discardExitAct;
 
     QAction *expandViewAct;
 

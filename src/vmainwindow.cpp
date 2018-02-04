@@ -700,47 +700,23 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     connect(deleteNoteAct, &QAction::triggered,
             this, &VMainWindow::deleteCurNote);
 
-    editNoteAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/edit_note.svg"),
-                              tr("Edit"), this);
-    editNoteAct->setStatusTip(tr("Edit current note"));
-    keySeq = g_config->getShortcutKeySequence("EditNote");
-    seq = QKeySequence(keySeq);
-    if (!seq.isEmpty()) {
-        editNoteAct->setText(tr("Edit\t%1").arg(VUtils::getShortcutText(keySeq)));
-        editNoteAct->setShortcut(seq);
+    m_editReadAct = new QAction(this);
+    connect(m_editReadAct, &QAction::triggered,
+            this, &VMainWindow::toggleEditReadMode);
+
+    m_discardExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/discard_exit.svg"),
+                                   tr("Discard Changes And Read"),
+                                   this);
+    keySeq = VUtils::getCaptainShortcutSequenceText("DiscardAndRead");
+    if (!keySeq.isEmpty()) {
+        m_discardExitAct->setText(tr("Discard Changes And Read\t%1").arg(keySeq));
     }
 
-    connect(editNoteAct, &QAction::triggered,
-            editArea, &VEditArea::editFile);
-
-    discardExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/discard_exit.svg"),
-                                 tr("Discard Changes And Read"), this);
-    QString keyText = VUtils::getCaptainShortcutSequenceText("DiscardAndRead");
-    if (!keyText.isEmpty()) {
-        discardExitAct->setText(tr("Discard Changes And Read\t%1").arg(keyText));
-    }
-
-    discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
-    connect(discardExitAct, &QAction::triggered,
+    m_discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
+    connect(m_discardExitAct, &QAction::triggered,
             editArea, &VEditArea::readFile);
 
-    QMenu *exitEditMenu = new QMenu(this);
-    exitEditMenu->setToolTipsVisible(true);
-    exitEditMenu->addAction(discardExitAct);
-
-    saveExitAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/save_exit.svg"),
-                              tr("Save Changes And Read"), this);
-    saveExitAct->setStatusTip(tr("Save changes and exit edit mode"));
-    saveExitAct->setMenu(exitEditMenu);
-    keySeq = g_config->getShortcutKeySequence("SaveAndRead");
-    seq = QKeySequence(keySeq);
-    if (!seq.isEmpty()) {
-        saveExitAct->setText(tr("Save Changes And Read\t%1").arg(VUtils::getShortcutText(keySeq)));
-        saveExitAct->setShortcut(seq);
-    }
-
-    connect(saveExitAct, &QAction::triggered,
-            editArea, &VEditArea::saveAndReadFile);
+    updateEditReadAct(NULL);
 
     saveNoteAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/save_note.svg"),
                               tr("Save"), this);
@@ -759,9 +735,8 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     newNoteAct->setEnabled(false);
     noteInfoAct->setEnabled(false);
     deleteNoteAct->setEnabled(false);
-    editNoteAct->setEnabled(false);
-    saveExitAct->setVisible(false);
-    discardExitAct->setVisible(false);
+    m_editReadAct->setEnabled(false);
+    m_discardExitAct->setEnabled(false);
     saveNoteAct->setEnabled(false);
 
     fileToolBar->addWidget(m_avatarBtn);
@@ -769,8 +744,8 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     fileToolBar->addAction(newNoteAct);
     fileToolBar->addAction(deleteNoteAct);
     fileToolBar->addAction(noteInfoAct);
-    fileToolBar->addAction(editNoteAct);
-    fileToolBar->addAction(saveExitAct);
+    fileToolBar->addAction(m_editReadAct);
+    fileToolBar->addAction(m_discardExitAct);
     fileToolBar->addAction(saveNoteAct);
 }
 
@@ -1855,10 +1830,8 @@ void VMainWindow::updateActionsStateFromTab(const VEditTab *p_tab)
     m_printAct->setEnabled(file && file->getDocType() == DocType::Markdown);
     m_exportAsPDFAct->setEnabled(file && file->getDocType() == DocType::Markdown);
 
-    discardExitAct->setVisible(file && editMode);
-    saveExitAct->setVisible(file && editMode);
-    editNoteAct->setEnabled(file && !editMode);
-    editNoteAct->setVisible(!saveExitAct->isVisible());
+    updateEditReadAct(p_tab);
+
     saveNoteAct->setEnabled(file && editMode && file->isModifiable());
     deleteNoteAct->setEnabled(file && file->getType() == FileType::Note);
     noteInfoAct->setEnabled(file && !systemFile);
@@ -2679,7 +2652,7 @@ bool VMainWindow::discardAndReadByCaptain(void *p_target, void *p_data)
     Q_UNUSED(p_data);
     VMainWindow *obj = static_cast<VMainWindow *>(p_target);
     if (obj->m_curTab) {
-        obj->discardExitAct->trigger();
+        obj->m_discardExitAct->trigger();
         obj->m_curTab->setFocus();
 
         return false;
@@ -2985,4 +2958,60 @@ void VMainWindow::initVimCmd()
             });
 
     m_vimCmd->hide();
+}
+
+void VMainWindow::toggleEditReadMode()
+{
+    if (!m_curTab) {
+        return;
+    }
+
+    if (m_curTab->isEditMode()) {
+        // Save changes and read.
+        editArea->saveAndReadFile();
+    } else {
+        // Edit.
+        editArea->editFile();
+    }
+}
+
+void VMainWindow::updateEditReadAct(const VEditTab *p_tab)
+{
+    static QIcon editIcon = VIconUtils::toolButtonIcon(":/resources/icons/edit_note.svg");
+    static QString editText;
+    static QIcon readIcon = VIconUtils::toolButtonIcon(":/resources/icons/save_exit.svg");
+    static QString readText;
+
+    if (editText.isEmpty()) {
+        QString keySeq = g_config->getShortcutKeySequence("EditReadNote");
+        QKeySequence seq(keySeq);
+        if (!seq.isEmpty()) {
+            QString shortcutText = VUtils::getShortcutText(keySeq);
+            editText = tr("Edit\t%1").arg(shortcutText);
+            readText = tr("Save Changes And Read\t%1").arg(shortcutText);
+
+            m_editReadAct->setShortcut(seq);
+        } else {
+            editText = tr("Edit");
+            readText = tr("Save Changes And Read");
+        }
+    }
+
+    if (!p_tab || !p_tab->isEditMode()) {
+        // Edit.
+        m_editReadAct->setIcon(editIcon);
+        m_editReadAct->setText(editText);
+        m_editReadAct->setStatusTip(tr("Edit current note"));
+
+        m_discardExitAct->setEnabled(false);
+    } else {
+        // Read.
+        m_editReadAct->setIcon(readIcon);
+        m_editReadAct->setText(readText);
+        m_editReadAct->setStatusTip(tr("Save changes and exit edit mode"));
+
+        m_discardExitAct->setEnabled(true);
+    }
+
+    m_editReadAct->setEnabled(p_tab);
 }

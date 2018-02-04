@@ -19,10 +19,10 @@
 恢复上一个关闭的文件。
 - `Ctrl+Alt+L`  
 打开灵犀页。
+- `Ctrl+T`  
+编辑当前笔记或保存更改并退出编辑模式。
 
 ### 阅读模式
-- `Ctrl+W`  
-编辑当前笔记。
 - `H`/`J`/`K`/`L`  
 导航，对应于左/下/上/右方向键。
 - `Ctrl+U`  
@@ -54,8 +54,6 @@
 ### 编辑模式
 - `Ctrl+S`  
 保存当前更改。
-- `Ctrl+T`  
-保存当前更改并退出编辑模式。
 - `Ctrl + +/-`    
 放大/缩小页面。
 - `Ctrl+Wheel`    
@@ -122,10 +120,6 @@ CaptainMode=Ctrl+E
 NewNote=Ctrl+Alt+N
 ; Save current note
 SaveNote=Ctrl+S
-; Save changes and enter read mode
-SaveAndRead=Ctrl+T
-; Edit current note
-EditNote=Ctrl+W
 ; Close current note
 CloseNote=
 ; Open file/replace dialog

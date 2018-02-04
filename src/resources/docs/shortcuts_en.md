@@ -19,10 +19,10 @@ Scroll in all directions.
 Recover last closed file.
 - `Ctrl+Alt+L`  
 Open Flash Page.
+- `Ctrl+T`  
+Edit current note or save changes and exit edit mode.
 
 ### Read Mode
-- `Ctrl+W`  
-Edit current note.
 - `H`/`J`/`K`/`L`  
 Navigation, corresponding to Left/Down/Up/Right arrow keys.
 - `Ctrl+U`  
@@ -54,8 +54,6 @@ Recover the page zoom factor to 100%.
 ### Edit Mode
 - `Ctrl+S`  
 Save current changes.
-- `Ctrl+T`  
-Save current changes and exit edit mode.
 - `Ctrl + +/-`    
 Zoom in/out the page.
 - `Ctrl+Wheel`    
@@ -121,10 +119,6 @@ CaptainMode=Ctrl+E
 NewNote=Ctrl+Alt+N
 ; Save current note
 SaveNote=Ctrl+S
-; Save changes and enter read mode
-SaveAndRead=Ctrl+T
-; Edit current note
-EditNote=Ctrl+W
 ; Close current note
 CloseNote=
 ; Open file/replace dialog
