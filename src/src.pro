@@ -283,6 +283,9 @@ unix:!macx {
 
     target.path = $${PREFIX}/bin
 
-    INSTALLS += target desktop icon16 icon32 icon48 icon64 icon128 icon256 iconsvg
+    lntarget.path = $${PREFIX}/bin
+    lntarget.extra = $(SYMLINK) $(QMAKE_TARGET) $(INSTALL_ROOT)$${PREFIX}/bin/vnote
+
+    INSTALLS += target lntarget desktop icon16 icon32 icon48 icon64 icon128 icon256 iconsvg
     message("VNote will be installed in prefix $${PREFIX}")
 }
