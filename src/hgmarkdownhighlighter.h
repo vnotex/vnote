@@ -180,7 +180,7 @@ private:
 
     QRegExp codeBlockStartExp;
     QRegExp codeBlockEndExp;
-    QTextCharFormat codeBlockFormat;
+    QTextCharFormat m_codeBlockFormat;
     QTextCharFormat m_linkFormat;
     QTextCharFormat m_imageFormat;
     QTextCharFormat m_colorColumnFormat;

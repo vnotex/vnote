@@ -42,11 +42,11 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
     codeBlockStartExp = QRegExp(VUtils::c_fencedCodeBlockStartRegExp);
     codeBlockEndExp = QRegExp(VUtils::c_fencedCodeBlockEndRegExp);
 
-    codeBlockFormat.setForeground(QBrush(Qt::darkYellow));
+    m_codeBlockFormat.setForeground(QBrush(Qt::darkYellow));
     for (int index = 0; index < styles.size(); ++index) {
         const pmh_element_type &eleType = styles[index].type;
         if (eleType == pmh_VERBATIM) {
-            codeBlockFormat = styles[index].format;
+            m_codeBlockFormat = styles[index].format;
         } else if (eleType == pmh_LINK) {
             m_linkFormat = styles[index].format;
         } else if (eleType == pmh_IMAGE) {
@@ -54,7 +54,7 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
         }
     }
 
-    m_colorColumnFormat = codeBlockFormat;
+    m_colorColumnFormat = m_codeBlockFormat;
     m_colorColumnFormat.setForeground(QColor(g_config->getEditorColorColumnFg()));
     m_colorColumnFormat.setBackground(QColor(g_config->getEditorColorColumnBg()));
 
@@ -191,28 +191,24 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
 
                 formats[i] = &(*it);
 
-                if (i == 0) {
-                    // No need to merge format.
-                    setFormat(unit.start, unit.length, *it);
-                } else {
-                    QTextCharFormat newFormat = *it;
-                    for (int j = i - 1; j >= 0; --j) {
-                        if (units[j].start + units[j].length <= unit.start) {
-                            // It won't affect current unit.
-                            continue;
-                        } else {
-                            // Merge the format.
-                            if (formats[j]) {
-                                QTextCharFormat tmpFormat(newFormat);
-                                newFormat = *(formats[j]);
-                                // tmpFormat takes precedence.
-                                newFormat.merge(tmpFormat);
-                            }
+                QTextCharFormat newFormat = m_codeBlockFormat;
+                newFormat.merge(*it);
+                for (int j = i - 1; j >= 0; --j) {
+                    if (units[j].start + units[j].length <= unit.start) {
+                        // It won't affect current unit.
+                        continue;
+                    } else {
+                        // Merge the format.
+                        if (formats[j]) {
+                            QTextCharFormat tmpFormat(newFormat);
+                            newFormat = *(formats[j]);
+                            // tmpFormat takes precedence.
+                            newFormat.merge(tmpFormat);
                         }
                     }
-
-                    setFormat(unit.start, unit.length, newFormat);
                 }
+
+                setFormat(unit.start, unit.length, newFormat);
             }
         }
     }
@@ -462,7 +458,7 @@ void HGMarkdownHighlighter::highlightCodeBlock(const QString &text)
     }
 
     setCurrentBlockState(state);
-    setFormat(index, length, codeBlockFormat);
+    setFormat(index, length, m_codeBlockFormat);
 }
 
 void HGMarkdownHighlighter::highlightCodeBlockColorColumn(const QString &p_text)
