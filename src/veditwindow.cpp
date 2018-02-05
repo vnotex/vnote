@@ -1157,6 +1157,14 @@ void VEditWindow::checkFileChangeOutside()
     }
 }
 
+void VEditWindow::saveAll()
+{
+    int nrTab = count();
+    for (int i = 0; i < nrTab; ++i) {
+        getTab(i)->saveFile();
+    }
+}
+
 void VEditWindow::tabRequestToClose(VEditTab *p_tab)
 {
     bool ok = p_tab->closeFile(false);

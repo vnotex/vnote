@@ -276,9 +276,6 @@ void VConfigManager::initialize()
         m_backupExtension = ".";
     }
 
-    m_enableBackupFile = getConfigFromSettings("global",
-                                               "enable_backup_file").toBool();
-
     m_vimExemptionKeys = getConfigFromSettings("global",
                                                "vim_exemption_keys").toString();
 

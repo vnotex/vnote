@@ -66,9 +66,23 @@ private:
     bool loadWebZoomFactor();
     bool saveWebZoomFactor();
 
+    bool loadSwapFile();
+    bool saveSwapFile();
+
+    bool loadAutoSave();
+    bool saveAutoSave();
+
+    void showTipsAboutAutoSave();
+
     // Web zoom factor.
     QCheckBox *m_customWebZoom;
     QDoubleSpinBox *m_webZoomFactorSpin;
+
+    // Swap file.
+    QCheckBox *m_swapFile;
+
+    // Auto save.
+    QCheckBox *m_autoSave;
 
     QGroupBox *m_readBox;
     QGroupBox *m_editBox;

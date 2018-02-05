@@ -406,6 +406,7 @@ public:
 
     // Whether backup file is enabled.
     bool getEnableBackupFile() const;
+    void setEnableBackupFile(bool p_enabled);
 
     // Get defined external editors.
     QVector<VExternalEditor> getExternalEditors() const;
@@ -441,6 +442,9 @@ public:
     bool getSingleClickClosePreviousTab() const;
 
     bool getEnableWildCardInSimpleSearch() const;
+
+    bool getEnableAutoSave() const;
+    void setEnableAutoSave(bool p_enabled);
 
 private:
     // Look up a config from user and default settings.
@@ -790,9 +794,6 @@ private:
 
     // Extension of the backup file.
     QString m_backupExtension;
-
-    // Whether enable backup file.
-    bool m_enableBackupFile;
 
     // Skipped keys in Vim mode.
     // c: Ctrl+C
@@ -1912,7 +1913,13 @@ inline const QString &VConfigManager::getBackupExtension() const
 
 inline bool VConfigManager::getEnableBackupFile() const
 {
-    return m_enableBackupFile;
+    return getConfigFromSettings("global",
+                                 "enable_backup_file").toBool();
+}
+
+inline void VConfigManager::setEnableBackupFile(bool p_enabled)
+{
+    setConfigToSettings("global", "enable_backup_file", p_enabled);
 }
 
 inline const QString &VConfigManager::getVimExemptionKeys() const
@@ -2053,5 +2060,16 @@ inline bool VConfigManager::getEnableWildCardInSimpleSearch() const
 {
     return getConfigFromSettings("global",
                                  "enable_wildcard_in_simple_search").toBool();
+}
+
+inline bool VConfigManager::getEnableAutoSave() const
+{
+    return getConfigFromSettings("global",
+                                 "enable_auto_save").toBool();
+}
+
+inline void VConfigManager::setEnableAutoSave(bool p_enabled)
+{
+    setConfigToSettings("global", "enable_auto_save", p_enabled);
 }
 #endif // VCONFIGMANAGER_H

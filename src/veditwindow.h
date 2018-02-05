@@ -80,6 +80,9 @@ public:
     // Check whether opened files have been changed outside.
     void checkFileChangeOutside();
 
+    // Auto save file.
+    void saveAll();
+
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
 

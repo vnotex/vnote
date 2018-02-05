@@ -172,11 +172,7 @@ private:
     // Init targets for Captain mode.
     void registerCaptainTargets();
 
-    // Check whether opened files have been changed outside.
-    void checkFileChangeOutside();
-
     // Captain mode functions.
-
     // Activate tab @p_idx.
     static bool activateTabByCaptain(void *p_target, void *p_data, int p_idx);
 
@@ -216,6 +212,9 @@ private:
 
     // Last closed files stack.
     QStack<VFileSessionInfo> m_lastClosedFiles;
+
+    // Whether auto save files.
+    bool m_autoSave;
 };
 
 inline VEditWindow* VEditArea::getWindow(int windowIndex) const

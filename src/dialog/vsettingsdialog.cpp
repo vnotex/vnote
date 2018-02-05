@@ -1,6 +1,8 @@
 #include "vsettingsdialog.h"
 #include <QtWidgets>
 #include <QRegExp>
+#include <QToolTip>
+
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
 #include "vconstants.h"
@@ -419,16 +421,33 @@ VReadEditTab::VReadEditTab(QWidget *p_parent)
     m_webZoomFactorSpin->setMinimum(c_webZoomFactorMin);
     m_webZoomFactorSpin->setSingleStep(0.25);
     connect(m_customWebZoom, &QCheckBox::stateChanged,
-            this, [this](int p_state){
+            this, [this](int p_state) {
                 this->m_webZoomFactorSpin->setEnabled(p_state == Qt::Checked);
             });
     QHBoxLayout *zoomFactorLayout = new QHBoxLayout();
     zoomFactorLayout->addWidget(m_customWebZoom);
     zoomFactorLayout->addWidget(m_webZoomFactorSpin);
 
+    // Swap file.
+    m_swapFile = new QCheckBox(tr("Swap file"));
+    m_swapFile->setToolTip(tr("Automatically save changes to a swap file for backup"));
+    connect(m_swapFile, &QCheckBox::stateChanged,
+            this, &VReadEditTab::showTipsAboutAutoSave);
+
+    // Auto save.
+    m_autoSave = new QCheckBox(tr("Auto save"));
+    m_autoSave->setToolTip(tr("Automatically save the note when editing"));
+    connect(m_autoSave, &QCheckBox::stateChanged,
+            this, &VReadEditTab::showTipsAboutAutoSave);
+
     QVBoxLayout *readLayout = new QVBoxLayout();
     readLayout->addLayout(zoomFactorLayout);
     m_readBox->setLayout(readLayout);
+
+    QFormLayout *editLayout = new QFormLayout();
+    editLayout->addRow(m_swapFile);
+    editLayout->addRow(m_autoSave);
+    m_editBox->setLayout(editLayout);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addWidget(m_readBox);
@@ -436,9 +455,29 @@ VReadEditTab::VReadEditTab(QWidget *p_parent)
     setLayout(mainLayout);
 }
 
+void VReadEditTab::showTipsAboutAutoSave()
+{
+    if (m_autoSave->isChecked() && m_swapFile->isChecked()) {
+        // Show a tooltip.
+        QPoint pos = m_editBox->mapToGlobal(QPoint(0, 0));
+        QToolTip::showText(pos,
+                           tr("It's recommended to enable \"Swap file\" "
+                              "or \"Auto save\", not both"),
+                            m_editBox);
+    }
+}
+
 bool VReadEditTab::loadConfiguration()
 {
     if (!loadWebZoomFactor()) {
+        return false;
+    }
+
+    if (!loadSwapFile()) {
+        return false;
+    }
+
+    if (!loadAutoSave()) {
         return false;
     }
 
@@ -448,6 +487,14 @@ bool VReadEditTab::loadConfiguration()
 bool VReadEditTab::saveConfiguration()
 {
     if (!saveWebZoomFactor()) {
+        return false;
+    }
+
+    if (!saveSwapFile()) {
+        return false;
+    }
+
+    if (!saveAutoSave()) {
         return false;
     }
 
@@ -481,6 +528,30 @@ bool VReadEditTab::saveWebZoomFactor()
         g_config->setWebZoomFactor(-1);
     }
 
+    return true;
+}
+
+bool VReadEditTab::loadSwapFile()
+{
+    m_swapFile->setChecked(g_config->getEnableBackupFile());
+    return true;
+}
+
+bool VReadEditTab::saveSwapFile()
+{
+    g_config->setEnableBackupFile(m_swapFile->isChecked());
+    return true;
+}
+
+bool VReadEditTab::loadAutoSave()
+{
+    m_autoSave->setChecked(g_config->getEnableAutoSave());
+    return true;
+}
+
+bool VReadEditTab::saveAutoSave()
+{
+    g_config->setEnableAutoSave(m_autoSave->isChecked());
     return true;
 }
 

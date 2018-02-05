@@ -62,6 +62,8 @@ VEditArea::VEditArea(QWidget *parent)
             this, &VEditArea::handleFileTimerTimeout);
 
     timer->start();
+
+    m_autoSave = g_config->getEnableAutoSave();
 }
 
 void VEditArea::setupUI()
@@ -183,6 +185,9 @@ VEditTab *VEditArea::openFile(VFile *p_file, OpenFileMode p_mode, bool p_forceMo
     if (!p_file) {
         return NULL;
     }
+
+    // Update auto save settings.
+    m_autoSave = g_config->getEnableAutoSave();
 
     // If it is DocType::Unknown, open it using system default method.
     if (p_file->getDocType() == DocType::Unknown) {
@@ -1075,13 +1080,14 @@ void VEditArea::recordClosedFile(const VFileSessionInfo &p_file)
 
 void VEditArea::handleFileTimerTimeout()
 {
-    checkFileChangeOutside();
-}
-
-void VEditArea::checkFileChangeOutside()
-{
     int nrWin = splitter->count();
     for (int i = 0; i < nrWin; ++i) {
-        getWindow(i)->checkFileChangeOutside();
+        // Check whether opened files have been changed outside.
+        VEditWindow *win = getWindow(i);
+        win->checkFileChangeOutside();
+
+        if (m_autoSave) {
+            win->saveAll();
+        }
     }
 }
