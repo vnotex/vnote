@@ -167,6 +167,8 @@ private slots:
 
     void resetVNote();
 
+    void resetLayout();
+
 private:
     void loadConfiguration();
 
@@ -178,6 +180,9 @@ private:
 
     // Reset all the configuration of VNote.
     QPushButton *m_resetVNoteBtn;
+
+    // Reset the layout.
+    QPushButton *m_resetLayoutBtn;
 };
 
 #endif // VSETTINGSDIALOG_H

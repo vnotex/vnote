@@ -1396,6 +1396,17 @@ void VConfigManager::resetConfigurations()
     m_hasReset = true;
 }
 
+void VConfigManager::resetLayoutConfigurations()
+{
+    resetDefaultConfig("global", "tools_dock_checked");
+    resetDefaultConfig("global", "menu_bar_checked");
+    resetDefaultConfig("global", "enable_compact_mode");
+
+    clearGroupOfSettings(m_sessionSettings, "geometry");
+
+    m_hasReset = true;
+}
+
 void VConfigManager::clearGroupOfSettings(QSettings *p_settings, const QString &p_group)
 {
     p_settings->beginGroup(p_group);

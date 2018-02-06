@@ -25,12 +25,19 @@ VSettingsDialog::VSettingsDialog(QWidget *p_parent)
     connect(m_resetVNoteBtn, &QPushButton::clicked,
             this, &VSettingsDialog::resetVNote);
 
+    // Reset Layout.
+    m_resetLayoutBtn = new QPushButton(tr("Reset Layout"), this);
+    m_resetLayoutBtn->setToolTip(tr("Reset layout of VNote"));
+    connect(m_resetLayoutBtn, &QPushButton::clicked,
+            this, &VSettingsDialog::resetLayout);
+
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(m_btnBox, &QDialogButtonBox::accepted, this, &VSettingsDialog::saveConfiguration);
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
     m_btnBox->button(QDialogButtonBox::Ok)->setProperty("SpecialBtn", true);
 
     m_btnBox->addButton(m_resetVNoteBtn, QDialogButtonBox::ResetRole);
+    m_btnBox->addButton(m_resetLayoutBtn, QDialogButtonBox::ResetRole);
 
     QHBoxLayout *tabLayout = new QHBoxLayout();
     tabLayout->addWidget(m_tabList);
@@ -87,6 +94,35 @@ void VSettingsDialog::resetVNote()
     }
 
     g_config->resetConfigurations();
+
+    VUtils::showMessage(QMessageBox::Information,
+                        tr("Information"),
+                        tr("Please restart VNote to make it work."),
+                        tr("Any change to VNote before restart will be lost!"),
+                        QMessageBox::Ok,
+                        QMessageBox::Ok,
+                        this);
+
+    reject();
+}
+
+void VSettingsDialog::resetLayout()
+{
+    int ret = VUtils::showMessage(QMessageBox::Warning,
+                                  tr("Warning"),
+                                  tr("Are you sure to reset the layout of VNote?"),
+                                  tr("The view and layout mode will be reset. "
+                                     "It is UNRECOVERABLE!"),
+                                  QMessageBox::Ok | QMessageBox::Cancel,
+                                  QMessageBox::Cancel,
+                                  this,
+                                  MessageBoxType::Danger);
+
+    if (ret == QMessageBox::Cancel) {
+        return;
+    }
+
+    g_config->resetLayoutConfigurations();
 
     VUtils::showMessage(QMessageBox::Information,
                         tr("Information"),

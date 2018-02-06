@@ -103,6 +103,9 @@ public:
     // Reset the configuratio files.
     void resetConfigurations();
 
+    // Reset the layout.
+    void resetLayoutConfigurations();
+
     QFont getMdEditFont() const;
 
     QPalette getMdEditPalette() const;
