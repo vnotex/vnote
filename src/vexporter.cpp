@@ -1,206 +1,111 @@
 #include "vexporter.h"
 
-#include <QtWidgets>
-#include <QFileInfo>
-#include <QDir>
-#include <QWebChannel>
 #include <QDebug>
-#include <QVBoxLayout>
-#include <QShowEvent>
-
-#ifndef QT_NO_PRINTER
-#include <QPrinter>
-#include <QPageSetupDialog>
-#endif
+#include <QWidget>
+#include <QWebChannel>
 
 #include "vconfigmanager.h"
-#include "utils/vutils.h"
 #include "vfile.h"
 #include "vwebview.h"
+#include "utils/vutils.h"
 #include "vpreviewpage.h"
 #include "vconstants.h"
-#include "vnote.h"
 #include "vmarkdownconverter.h"
 #include "vdocument.h"
-#include "vlineedit.h"
 
 extern VConfigManager *g_config;
 
-QString VExporter::s_defaultPathDir = QDir::homePath();
-
-VExporter::VExporter(MarkdownConverterType p_mdType, QWidget *p_parent)
-    : QDialog(p_parent), m_webViewer(NULL), m_mdType(p_mdType),
-      m_file(NULL), m_type(ExportType::PDF), m_source(ExportSource::Invalid),
-      m_noteState(NoteState::NotReady), m_state(ExportState::Idle),
-      m_pageLayout(QPageLayout(QPageSize(QPageSize::A4), QPageLayout::Portrait, QMarginsF(0.0, 0.0, 0.0, 0.0))),
-      m_exported(false)
+VExporter::VExporter(QWidget *p_parent)
+    : QObject(p_parent),
+      m_webViewer(NULL),
+      m_state(ExportState::Idle)
 {
-    initMarkdownTemplate();
-
-    setupUI();
 }
 
-void VExporter::initMarkdownTemplate()
+void VExporter::prepareExport(const ExportOption &p_opt)
 {
-    m_htmlTemplate = VUtils::generateHtmlTemplate(m_mdType, true);
+    m_htmlTemplate = VUtils::generateHtmlTemplate(p_opt.m_renderer, true);
+    m_pageLayout = *(p_opt.m_layout);
 }
 
-void VExporter::setupUI()
+bool VExporter::exportPDF(VFile *p_file,
+                          const ExportOption &p_opt,
+                          const QString &p_outputFile,
+                          QString *p_errMsg)
 {
-    m_infoLabel = new QLabel();
-    m_infoLabel->setWordWrap(true);
+    Q_UNUSED(p_errMsg);
 
-    // Target file path.
-    QLabel *pathLabel = new QLabel(tr("Target &path:"));
-    m_pathEdit = new VLineEdit();
-    pathLabel->setBuddy(m_pathEdit);
-    m_browseBtn = new QPushButton(tr("&Browse"));
-    connect(m_browseBtn, &QPushButton::clicked,
-            this, &VExporter::handleBrowseBtnClicked);
+    bool ret = false;
 
-    // Page layout.
-    QLabel *layoutLabel = new QLabel(tr("Page layout:"));
-    m_layoutLabel = new QLabel();
-    m_layoutBtn = new QPushButton(tr("&Settings"));
+    bool isOpened = p_file->isOpened();
+    if (!isOpened && !p_file->open()) {
+        goto exit;
+    }
 
-#ifndef QT_NO_PRINTER
-    connect(m_layoutBtn, &QPushButton::clicked,
-            this, &VExporter::handleLayoutBtnClicked);
-#else
-    m_layoutBtn->hide();
-#endif
+    Q_ASSERT(m_state == ExportState::Idle);
+    m_state = ExportState::Busy;
 
-    // Progress.
-    m_proLabel = new QLabel(this);
-    m_proBar = new QProgressBar(this);
+    clearNoteState();
 
-    // Ok is the default button.
-    m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    m_openBtn = m_btnBox->addButton(tr("Open File Location"), QDialogButtonBox::ActionRole);
-    connect(m_btnBox, &QDialogButtonBox::accepted, this, &VExporter::startExport);
-    connect(m_btnBox, &QDialogButtonBox::rejected, this, &VExporter::cancelExport);
-    connect(m_openBtn, &QPushButton::clicked, this, &VExporter::openTargetPath);
+    initWebViewer(p_file, p_opt);
 
-    QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
-    okBtn->setProperty("SpecialBtn", true);
-    m_pathEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
+    while (!isNoteStateReady()) {
+        VUtils::sleepWait(100);
 
-    QGridLayout *mainLayout = new QGridLayout();
-    mainLayout->addWidget(m_infoLabel, 0, 0, 1, 3);
-    mainLayout->addWidget(pathLabel, 1, 0);
-    mainLayout->addWidget(m_pathEdit, 1, 1);
-    mainLayout->addWidget(m_browseBtn, 1, 2);
-    mainLayout->addWidget(layoutLabel, 2, 0);
-    mainLayout->addWidget(m_layoutLabel, 2, 1);
-    mainLayout->addWidget(m_layoutBtn, 2, 2);
-    mainLayout->addWidget(m_proLabel, 3, 1, 1, 2);
-    mainLayout->addWidget(m_proBar, 4, 1, 1, 2);
-    mainLayout->addWidget(m_btnBox, 5, 1, 1, 2);
+        if (m_state == ExportState::Cancelled) {
+            goto exit;
+        }
 
-    m_proLabel->hide();
-    m_proBar->hide();
+        if (isNoteStateFailed()) {
+            m_state = ExportState::Failed;
+            goto exit;
+        }
+    }
 
-    setLayout(mainLayout);
-    mainLayout->setSizeConstraint(QLayout::SetFixedSize);
-    setWindowTitle(tr("Export Note"));
+    // Wait to ensure Web side is really ready.
+    VUtils::sleepWait(200);
 
-    m_openBtn->hide();
+    if (m_state == ExportState::Cancelled) {
+        goto exit;
+    }
 
-    updatePageLayoutLabel();
-}
+    {
+    bool exportRet = exportToPDF(m_webViewer,
+                                 p_outputFile,
+                                 m_pageLayout);
 
-static QString exportTypeStr(ExportType p_type)
-{
-    if (p_type == ExportType::PDF) {
-        return "PDF";
+    clearNoteState();
+
+    if (!isOpened) {
+        p_file->close();
+    }
+
+    if (exportRet) {
+        m_state = ExportState::Successful;
     } else {
-        return "HTML";
+        m_state = ExportState::Failed;
     }
-}
-
-void VExporter::handleBrowseBtnClicked()
-{
-    QFileInfo fi(getFilePath());
-    QString fileType = m_type == ExportType::PDF ?
-                       tr("Portable Document Format (*.pdf)") :
-                       tr("WebPage, Complete (*.html)");
-    QString path = QFileDialog::getSaveFileName(this, tr("Export As"),
-                                                fi.absoluteFilePath(),
-                                                fileType);
-    if (path.isEmpty()) {
-        return;
     }
 
-    setFilePath(path);
-    s_defaultPathDir = VUtils::basePathFromPath(path);
+exit:
+    clearWebViewer();
 
-    m_openBtn->hide();
-}
-
-void VExporter::handleLayoutBtnClicked()
-{
-#ifndef QT_NO_PRINTER
-    QPrinter printer;
-    printer.setPageLayout(m_pageLayout);
-
-    QPageSetupDialog dlg(&printer, this);
-    if (dlg.exec() != QDialog::Accepted) {
-        return;
+    if (m_state == ExportState::Successful) {
+        ret = true;
     }
 
-    m_pageLayout.setPageSize(printer.pageLayout().pageSize());
-    m_pageLayout.setOrientation(printer.pageLayout().orientation());
+    m_state = ExportState::Idle;
 
-    updatePageLayoutLabel();
-#endif
+    return ret;
 }
 
-void VExporter::updatePageLayoutLabel()
+void VExporter::initWebViewer(VFile *p_file, const ExportOption &p_opt)
 {
-    m_layoutLabel->setText(QString("%1, %2").arg(m_pageLayout.pageSize().name())
-                                            .arg(m_pageLayout.orientation() == QPageLayout::Portrait ?
-                                                 tr("Portrait") : tr("Landscape")));
-}
+    Q_ASSERT(!m_webViewer);
 
-QString VExporter::getFilePath() const
-{
-    return QDir::cleanPath(m_pathEdit->text());
-}
-
-void VExporter::setFilePath(const QString &p_path)
-{
-    m_pathEdit->setText(QDir::toNativeSeparators(p_path));
-}
-
-void VExporter::exportNote(VFile *p_file, ExportType p_type)
-{
-    m_file = p_file;
-    m_type = p_type;
-    m_source = ExportSource::Note;
-
-    if (!m_file || m_file->getDocType() != DocType::Markdown) {
-        // Do not support non-Markdown note now.
-        m_btnBox->button(QDialogButtonBox::Ok)->setEnabled(false);
-        return;
-    }
-
-    m_infoLabel->setText(tr("Export note <span style=\"%1\">%2</span> as %3.")
-                            .arg(g_config->c_dataTextStyle)
-                            .arg(m_file->getName())
-                            .arg(exportTypeStr(p_type)));
-
-    setWindowTitle(tr("Export As %1").arg(exportTypeStr(p_type)));
-
-    setFilePath(QDir(s_defaultPathDir).filePath(QFileInfo(p_file->fetchPath()).baseName() +
-                                                "." + exportTypeStr(p_type).toLower()));
-}
-
-void VExporter::initWebViewer(VFile *p_file)
-{
-    V_ASSERT(!m_webViewer);
-
-    m_webViewer = new VWebView(p_file, this);
+    m_webViewer = new VWebView(p_file, static_cast<QWidget *>(parent()));
     m_webViewer->hide();
+
     VPreviewPage *page = new VPreviewPage(m_webViewer);
     m_webViewer->setPage(page);
 
@@ -216,7 +121,7 @@ void VExporter::initWebViewer(VFile *p_file)
     page->setWebChannel(channel);
 
     // Need to generate HTML using Hoedown.
-    if (m_mdType == MarkdownConverterType::Hoedown) {
+    if (p_opt.m_renderer == MarkdownConverterType::Hoedown) {
         VMarkdownConverter mdConverter;
         QString toc;
         QString html = mdConverter.generateHtml(p_file->getContent(),
@@ -226,14 +131,6 @@ void VExporter::initWebViewer(VFile *p_file)
     }
 
     m_webViewer->setHtml(m_htmlTemplate, p_file->getBaseUrl());
-}
-
-void VExporter::clearWebViewer()
-{
-    if (m_webViewer) {
-        delete m_webViewer;
-        m_webViewer = NULL;
-    }
 }
 
 void VExporter::handleLogicsFinished()
@@ -252,130 +149,16 @@ void VExporter::handleLoadFinished(bool p_ok)
     }
 }
 
-void VExporter::clearNoteState()
+void VExporter::clearWebViewer()
 {
-    m_noteState = NoteState::NotReady;
-}
-
-bool VExporter::isNoteStateReady() const
-{
-    return m_noteState == NoteState::Ready;
-}
-
-bool VExporter::isNoteStateFailed() const
-{
-    return m_noteState & NoteState::Failed;
-}
-
-void VExporter::startExport()
-{
-    QPushButton *cancelBtn = m_btnBox->button(QDialogButtonBox::Cancel);
-
-    if (m_exported) {
-        cancelBtn->show();
-        m_exported = false;
-        accept();
-    }
-
-    int exportedNum = 0;
-    enableUserInput(false);
-    V_ASSERT(m_state == ExportState::Idle);
-    m_state = ExportState::Busy;
-
-    m_openBtn->hide();
-
-    if (m_source == ExportSource::Note) {
-        V_ASSERT(m_file);
-        bool isOpened = m_file->isOpened();
-        if (!isOpened && !m_file->open()) {
-            goto exit;
-        }
-
-        clearNoteState();
-        initWebViewer(m_file);
-
-        // Update progress info.
-        m_proLabel->setText(tr("Exporting %1").arg(m_file->getName()));
-        m_proBar->setEnabled(true);
-        m_proBar->setMinimum(0);
-        m_proBar->setMaximum(100);
-        m_proBar->reset();
-        m_proLabel->show();
-        m_proBar->show();
-
-        while (!isNoteStateReady()) {
-            VUtils::sleepWait(100);
-            if (m_proBar->value() < 70) {
-                m_proBar->setValue(m_proBar->value() + 1);
-            }
-
-            if (m_state == ExportState::Cancelled) {
-                goto exit;
-            }
-
-            if (isNoteStateFailed()) {
-                m_state = ExportState::Failed;
-                goto exit;
-            }
-        }
-
-        // Wait to ensure Web side is really ready.
-        VUtils::sleepWait(200);
-
-        if (m_state == ExportState::Cancelled) {
-            goto exit;
-        }
-
-        m_proBar->setValue(80);
-
-        bool exportRet = exportToPDF(m_webViewer, getFilePath(), m_pageLayout);
-
-        clearNoteState();
-
-        if (!isOpened) {
-            m_file->close();
-        }
-
-        if (exportRet) {
-            m_proBar->setValue(100);
-            m_state = ExportState::Successful;
-            exportedNum++;
-        } else {
-            m_proBar->setEnabled(false);
-            m_state = ExportState::Failed;
-        }
-    }
-
-exit:
-    clearWebViewer();
-
-    m_proLabel->setText("");
-    m_proLabel->hide();
-    enableUserInput(true);
-
-    if (m_state == ExportState::Cancelled) {
-        reject();
-    }
-
-    if (exportedNum) {
-        m_exported = true;
-        m_openBtn->show();
-        cancelBtn->hide();
-    }
-
-    m_state = ExportState::Idle;
-}
-
-void VExporter::cancelExport()
-{
-    if (m_state == ExportState::Idle) {
-        reject();
-    } else {
-        m_state = ExportState::Cancelled;
+    if (m_webViewer) {
+        delete m_webViewer;
+        m_webViewer = NULL;
     }
 }
 
-bool VExporter::exportToPDF(VWebView *p_webViewer, const QString &p_filePath,
+bool VExporter::exportToPDF(VWebView *p_webViewer,
+                            const QString &p_filePath,
                             const QPageLayout &p_layout)
 {
     int pdfPrinted = 0;
@@ -411,16 +194,3 @@ bool VExporter::exportToPDF(VWebView *p_webViewer, const QString &p_filePath,
     return pdfPrinted == 1;
 }
 
-void VExporter::enableUserInput(bool p_enabled)
-{
-    m_btnBox->button(QDialogButtonBox::Ok)->setEnabled(p_enabled);
-    m_pathEdit->setEnabled(p_enabled);
-    m_browseBtn->setEnabled(p_enabled);
-    m_layoutBtn->setEnabled(p_enabled);
-}
-
-void VExporter::openTargetPath() const
-{
-    QUrl url = QUrl::fromLocalFile(VUtils::basePathFromPath(getFilePath()));
-    QDesktopServices::openUrl(url);
-}

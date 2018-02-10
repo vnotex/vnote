@@ -8,7 +8,6 @@ class QLabel;
 class VLineEdit;
 class VMetaWordLineEdit;
 class QDialogButtonBox;
-class QString;
 class VNotebook;
 
 class VNotebookInfoDialog : public QDialog

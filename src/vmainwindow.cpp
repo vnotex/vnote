@@ -37,6 +37,7 @@
 #include "utils/viconutils.h"
 #include "dialog/vtipsdialog.h"
 #include "vcart.h"
+#include "dialog/vexportdialog.h"
 
 extern VConfigManager *g_config;
 
@@ -994,13 +995,12 @@ void VMainWindow::initFileMenu()
     fileMenu->addSeparator();
 
     // Export as PDF.
-    m_exportAsPDFAct = new QAction(tr("Export As &PDF"), this);
-    m_exportAsPDFAct->setToolTip(tr("Export current note as PDF file"));
-    connect(m_exportAsPDFAct, &QAction::triggered,
-            this, &VMainWindow::exportAsPDF);
-    m_exportAsPDFAct->setEnabled(false);
+    m_exportAct = new QAction(tr("E&xport"), this);
+    m_exportAct->setToolTip(tr("Export notes"));
+    connect(m_exportAct, &QAction::triggered,
+            this, &VMainWindow::handleExportAct);
 
-    fileMenu->addAction(m_exportAsPDFAct);
+    fileMenu->addAction(m_exportAct);
 
     // Print.
     m_printAct = new QAction(VIconUtils::menuIcon(":/resources/icons/print.svg"),
@@ -1349,8 +1349,6 @@ void VMainWindow::changeMarkdownConverter(QAction *action)
 
     MarkdownConverterType type = (MarkdownConverterType)action->data().toInt();
 
-    qDebug() << "switch to converter" << type;
-
     g_config->setMarkdownConverterType(type);
 }
 
@@ -1418,7 +1416,7 @@ void VMainWindow::setEditorBackgroundColor(QAction *action)
 
 void VMainWindow::initConverterMenu(QMenu *p_menu)
 {
-    QMenu *converterMenu = p_menu->addMenu(tr("&Converter"));
+    QMenu *converterMenu = p_menu->addMenu(tr("&Renderer"));
     converterMenu->setToolTipsVisible(true);
 
     QActionGroup *converterAct = new QActionGroup(this);
@@ -1828,7 +1826,6 @@ void VMainWindow::updateActionsStateFromTab(const VEditTab *p_tab)
                       && dynamic_cast<const VOrphanFile *>(file)->isSystemFile();
 
     m_printAct->setEnabled(file && file->getDocType() == DocType::Markdown);
-    m_exportAsPDFAct->setEnabled(file && file->getDocType() == DocType::Markdown);
 
     updateEditReadAct(p_tab);
 
@@ -2377,19 +2374,6 @@ void VMainWindow::printNote()
     } else {
         delete m_printer;
         m_printer = NULL;
-    }
-}
-
-void VMainWindow::exportAsPDF()
-{
-    V_ASSERT(m_curTab);
-    V_ASSERT(m_curFile);
-
-    if (m_curFile->getDocType() == DocType::Markdown) {
-        VMdTab *mdTab = dynamic_cast<VMdTab *>((VEditTab *)m_curTab);
-        VExporter exporter(mdTab->getMarkdownConverterType(), this);
-        exporter.exportNote(m_curFile, ExportType::PDF);
-        exporter.exec();
     }
 }
 
@@ -3014,4 +2998,20 @@ void VMainWindow::updateEditReadAct(const VEditTab *p_tab)
     }
 
     m_editReadAct->setEnabled(p_tab);
+}
+
+void VMainWindow::handleExportAct()
+{
+    VExportDialog dialog(notebookSelector->currentNotebook(),
+                         directoryTree->currentDirectory(),
+                         m_curFile,
+                         m_cart,
+                         g_config->getMdConverterType(),
+                         this);
+    dialog.exec();
+}
+
+VNotebook *VMainWindow::getCurrentNotebook() const
+{
+    return notebookSelector->currentNotebook();
 }

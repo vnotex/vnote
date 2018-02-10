@@ -99,6 +99,8 @@ public:
     // Otherwise, returns NULL.
     VDirectory *getInternalDirectory(const QString &p_path);
 
+    void freeOrphanFiles();
+
 public slots:
     void updateTemplate();
 

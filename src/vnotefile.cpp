@@ -8,7 +8,6 @@
 #include <QJsonArray>
 #include <QDebug>
 
-#include "utils/vutils.h"
 #include "vdirectory.h"
 
 VNoteFile::VNoteFile(VDirectory *p_directory,
@@ -510,42 +509,12 @@ bool VNoteFile::copyFile(VDirectory *p_destDir,
     }
 
     // Copy images.
-    QDir parentDir(destFile->fetchBasePath());
-    QSet<QString> processedImages;
-    for (int i = 0; i < images.size(); ++i) {
-        const ImageLink &link = images[i];
-        if (processedImages.contains(link.m_path)) {
-            continue;
-        }
-
-        processedImages.insert(link.m_path);
-
-        if (!QFileInfo::exists(link.m_path)) {
-            VUtils::addErrMsg(p_errMsg, tr("Source image %1 does not exist.")
-                                          .arg(link.m_path));
-            ret = false;
-            continue;
-        }
-
-        QString imageFolder = VUtils::directoryNameFromPath(VUtils::basePathFromPath(link.m_path));
-        QString destImagePath = QDir(parentDir.filePath(imageFolder)).filePath(VUtils::fileNameFromPath(link.m_path));
-
-        if (VUtils::equalPath(link.m_path, destImagePath)) {
-            VUtils::addErrMsg(p_errMsg, tr("Skip image with the same source and target path %1.")
-                                          .arg(link.m_path));
-            ret = false;
-            continue;
-        }
-
-        if (!VUtils::copyFile(link.m_path, destImagePath, p_isCut)) {
-            VUtils::addErrMsg(p_errMsg, tr("Fail to %1 image %2 to %3. "
-                                           "Please manually %1 it and modify the note.")
-                                          .arg(opStr).arg(link.m_path).arg(destImagePath));
-            ret = false;
-        } else {
-            ++nrImageCopied;
-            qDebug() << opStr << "image" << link.m_path << "to" << destImagePath;
-        }
+    if (!copyInternalImages(images,
+                            destFile->fetchBasePath(),
+                            p_isCut,
+                            &nrImageCopied,
+                            p_errMsg)) {
+        ret = false;
     }
 
     // Copy attachment folder.
@@ -587,3 +556,53 @@ bool VNoteFile::copyFile(VDirectory *p_destDir,
     return ret;
 }
 
+bool VNoteFile::copyInternalImages(const QVector<ImageLink> &p_images,
+                                   const QString &p_destDirPath,
+                                   bool p_isCut,
+                                   int *p_nrImageCopied,
+                                   QString *p_errMsg)
+{
+    bool ret = true;
+    QDir parentDir(p_destDirPath);
+    QSet<QString> processedImages;
+    QString opStr = p_isCut ? tr("cut") : tr("copy");
+    int nrImageCopied = 0;
+    for (int i = 0; i < p_images.size(); ++i) {
+        const ImageLink &link = p_images[i];
+        if (processedImages.contains(link.m_path)) {
+            continue;
+        }
+
+        processedImages.insert(link.m_path);
+
+        if (!QFileInfo::exists(link.m_path)) {
+            VUtils::addErrMsg(p_errMsg, tr("Source image %1 does not exist.")
+                                          .arg(link.m_path));
+            ret = false;
+            continue;
+        }
+
+        QString imageFolder = VUtils::directoryNameFromPath(VUtils::basePathFromPath(link.m_path));
+        QString destImagePath = QDir(parentDir.filePath(imageFolder)).filePath(VUtils::fileNameFromPath(link.m_path));
+
+        if (VUtils::equalPath(link.m_path, destImagePath)) {
+            VUtils::addErrMsg(p_errMsg, tr("Skip image with the same source and target path %1.")
+                                          .arg(link.m_path));
+            ret = false;
+            continue;
+        }
+
+        if (!VUtils::copyFile(link.m_path, destImagePath, p_isCut)) {
+            VUtils::addErrMsg(p_errMsg, tr("Fail to %1 image %2 to %3. "
+                                           "Please manually %1 it and modify the note.")
+                                          .arg(opStr).arg(link.m_path).arg(destImagePath));
+            ret = false;
+        } else {
+            ++nrImageCopied;
+            qDebug() << opStr << "image" << link.m_path << "to" << destImagePath;
+        }
+    }
+
+    *p_nrImageCopied = nrImageCopied;
+    return ret;
+}

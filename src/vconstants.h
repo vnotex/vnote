@@ -141,4 +141,12 @@ enum class UpdateAction
     Moved
 };
 
+enum MarkdownConverterType
+{
+    Hoedown = 0,
+    Marked,
+    MarkdownIt,
+    Showdown
+};
+
 #endif

@@ -14,19 +14,8 @@
 #include "vfilesessioninfo.h"
 #include "utils/vmetawordmanager.h"
 
-
 class QJsonObject;
 class QString;
-
-
-enum MarkdownConverterType
-{
-    Hoedown = 0,
-    Marked,
-    MarkdownIt,
-    Showdown
-};
-
 
 struct VColor
 {
@@ -57,6 +46,7 @@ struct MarkdownitOption
     bool m_linkify;
 };
 
+
 // Type of heading sequence.
 enum class HeadingSequenceType
 {
@@ -68,6 +58,7 @@ enum class HeadingSequenceType
 
     Invalid
 };
+
 
 class VConfigManager : public QObject
 {
@@ -88,6 +79,11 @@ public:
 
     // Get the path of the folder used to store default notebook.
     static QString getVnoteNotebookFolderPath();
+
+    // Get the path of the default export folder.
+    static QString getExportFolderPath();
+
+    static QString getDocumentPathOrHomePath();
 
     // Constants
     static const QString orgName;
@@ -892,6 +888,9 @@ private:
 
     // The folder name to store all notebooks if user does not specify one.
     static const QString c_vnoteNotebookFolderName;
+
+    // The default export output folder name.
+    static const QString c_exportFolderName;
 };
 
 

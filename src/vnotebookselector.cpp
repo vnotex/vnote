@@ -621,3 +621,8 @@ VNotebook *VNotebookSelector::getNotebook(const QListWidgetItem *p_item) const
 
     return NULL;
 }
+
+VNotebook *VNotebookSelector::currentNotebook() const
+{
+    return getNotebook(currentIndex());
+}

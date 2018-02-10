@@ -60,7 +60,6 @@ SOURCES += main.cpp\
     vorphanfile.cpp \
     vcodeblockhighlighthelper.cpp \
     vwebview.cpp \
-    vexporter.cpp \
     vmdtab.cpp \
     vhtmltab.cpp \
     utils/vvim.cpp \
@@ -112,7 +111,9 @@ SOURCES += main.cpp\
     vlistwidget.cpp \
     vsimplesearchinput.cpp \
     vstyleditemdelegate.cpp \
-    vtreewidget.cpp
+    vtreewidget.cpp \
+    dialog/vexportdialog.cpp \
+    vexporter.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -158,7 +159,6 @@ HEADERS  += vmainwindow.h \
     vorphanfile.h \
     vcodeblockhighlighthelper.h \
     vwebview.h \
-    vexporter.h \
     vmdtab.h \
     vhtmltab.h \
     utils/vvim.h \
@@ -211,7 +211,9 @@ HEADERS  += vmainwindow.h \
     vlistwidget.h \
     vsimplesearchinput.h \
     vstyleditemdelegate.h \
-    vtreewidget.h
+    vtreewidget.h \
+    dialog/vexportdialog.h \
+    vexporter.h
 
 RESOURCES += \
     vnote.qrc \

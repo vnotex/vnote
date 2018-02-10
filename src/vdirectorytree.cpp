@@ -1207,3 +1207,13 @@ void VDirectoryTree::sortItems(VDirectory *p_dir)
         updateItemDirectChildren(findVDirectory(p_dir));
     }
 }
+
+VDirectory *VDirectoryTree::currentDirectory() const
+{
+    QTreeWidgetItem *item = currentItem();
+    if (item) {
+        return getVDirectory(item);
+    }
+
+    return NULL;
+}

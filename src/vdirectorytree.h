@@ -30,6 +30,8 @@ public:
 
     const VNotebook *currentNotebook() const;
 
+    VDirectory *currentDirectory() const;
+
     // Implementations for VNavigationMode.
     void showNavigation() Q_DECL_OVERRIDE;
     bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE;

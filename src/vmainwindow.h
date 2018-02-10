@@ -97,6 +97,8 @@ public:
 
     VEditTab *getCurrentTab() const;
 
+    VNotebook *getCurrentNotebook() const;
+
 signals:
     // Emit when editor related configurations were changed by user.
     void editorConfigUpdated();
@@ -139,7 +141,9 @@ private slots:
     void enableImageConstraint(bool p_checked);
     void enableImageCaption(bool p_checked);
     void printNote();
-    void exportAsPDF();
+
+    // Open export dialog.
+    void handleExportAct();
 
     // Set the panel view properly.
     void enableCompactMode(bool p_enabled);
@@ -349,7 +353,7 @@ private:
 
     QAction *m_printAct;
 
-    QAction *m_exportAsPDFAct;
+    QAction *m_exportAct;
 
     QAction *m_findReplaceAct;
 

@@ -191,3 +191,19 @@ QString VCart::getFilePath(const QListWidgetItem *p_item) const
 {
     return p_item->data(Qt::UserRole).toString();
 }
+
+int VCart::count() const
+{
+    return m_itemList->count();
+}
+
+QVector<QString> VCart::getFiles() const
+{
+    QVector<QString> files;
+    int cnt = m_itemList->count();
+    for (int i = 0; i < cnt; ++i) {
+        files.append(getFilePath(m_itemList->item(i)));
+    }
+
+    return files;
+}

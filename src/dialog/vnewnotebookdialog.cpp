@@ -143,7 +143,7 @@ void VNewNotebookDialog::handleBrowseBtnClicked()
     if (defaultPath.isEmpty()) {
         defaultPath = g_config->getVnoteNotebookFolderPath();
         if (!QFileInfo::exists(defaultPath)) {
-            defaultPath = QDir::homePath();
+            defaultPath = g_config->getDocumentPathOrHomePath();
         }
     }
 

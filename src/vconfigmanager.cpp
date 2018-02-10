@@ -47,6 +47,8 @@ const QString VConfigManager::c_dataTextStyle = QString("font: bold");
 
 const QString VConfigManager::c_vnoteNotebookFolderName = QString("vnote_notebooks");
 
+const QString VConfigManager::c_exportFolderName = QString("vnote_exports");
+
 VConfigManager::VConfigManager(QObject *p_parent)
     : QObject(p_parent),
       m_hasReset(false),
@@ -927,6 +929,26 @@ QString VConfigManager::getVnoteNotebookFolderPath()
         return QDir::home().filePath(c_vnoteNotebookFolderName);
     } else {
         return QDir(folders[0]).filePath(c_vnoteNotebookFolderName);
+    }
+}
+
+QString VConfigManager::getExportFolderPath()
+{
+    QStringList folders = QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation);
+    if (folders.isEmpty()) {
+        return QDir::home().filePath(c_exportFolderName);
+    } else {
+        return QDir(folders[0]).filePath(c_exportFolderName);
+    }
+}
+
+QString VConfigManager::getDocumentPathOrHomePath()
+{
+    QStringList folders = QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation);
+    if (folders.isEmpty()) {
+        return QDir::homePath();
+    } else {
+        return folders[0];
     }
 }
 

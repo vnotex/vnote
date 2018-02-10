@@ -1,51 +1,32 @@
 #ifndef VEXPORTER_H
 #define VEXPORTER_H
 
-#include <QDialog>
+#include <QObject>
 #include <QPageLayout>
-#include <QString>
-#include "vconfigmanager.h"
 
+#include "dialog/vexportdialog.h"
+
+class QWidget;
 class VWebView;
-class VFile;
-class VLineEdit;
-class QLabel;
-class QDialogButtonBox;
-class QPushButton;
-class QProgressBar;
 
-enum class ExportType
+class VExporter : public QObject
 {
-    PDF = 0,
-    HTML
-};
-
-class VExporter : public QDialog
-{
-    Q_OBJECT
 public:
-    explicit VExporter(MarkdownConverterType p_mdType = MarkdownIt, QWidget *p_parent = 0);
+    explicit VExporter(QWidget *p_parent = nullptr);
 
-    void exportNote(VFile *p_file, ExportType p_type);
+    void prepareExport(const ExportOption &p_opt);
+
+    bool exportPDF(VFile *p_file,
+                   const ExportOption &p_opt,
+                   const QString &p_outputFile,
+                   QString *p_errMsg = NULL);
 
 private slots:
-    void handleBrowseBtnClicked();
-    void handleLayoutBtnClicked();
-    void startExport();
-    void cancelExport();
     void handleLogicsFinished();
+
     void handleLoadFinished(bool p_ok);
-    void openTargetPath() const;
 
 private:
-    enum class ExportSource
-    {
-        Note = 0,
-        Directory,
-        Notebook,
-        Invalid
-    };
-
     enum class ExportState
     {
         Idle = 0,
@@ -54,6 +35,7 @@ private:
         Failed,
         Successful
     };
+
 
     enum NoteState
     {
@@ -64,59 +46,46 @@ private:
         Failed = 0x4
     };
 
-    void setupUI();
 
-    void initMarkdownTemplate();
-
-    void updatePageLayoutLabel();
-
-    void setFilePath(const QString &p_path);
-
-    QString getFilePath() const;
-
-    void initWebViewer(VFile *p_file);
+    void initWebViewer(VFile *p_file, const ExportOption &p_opt);
 
     void clearWebViewer();
 
-    void enableUserInput(bool p_enabled);
-
-    bool exportToPDF(VWebView *p_webViewer, const QString &p_filePath, const QPageLayout &p_layout);
-
     void clearNoteState();
+
     bool isNoteStateReady() const;
+
     bool isNoteStateFailed() const;
+
+    bool exportToPDF(VWebView *p_webViewer,
+                     const QString &p_filePath,
+                     const QPageLayout &p_layout);
+
+    QPageLayout m_pageLayout;
 
     // Will be allocated and free for each conversion.
     VWebView *m_webViewer;
 
-    MarkdownConverterType m_mdType;
     QString m_htmlTemplate;
-    VFile *m_file;
-    ExportType m_type;
-    ExportSource m_source;
+
     NoteState m_noteState;
 
     ExportState m_state;
-
-    QLabel *m_infoLabel;
-    VLineEdit *m_pathEdit;
-    QPushButton *m_browseBtn;
-    QLabel *m_layoutLabel;
-    QPushButton *m_layoutBtn;
-    QDialogButtonBox *m_btnBox;
-    QPushButton *m_openBtn;
-
-    // Progress label and bar.
-    QLabel *m_proLabel;
-    QProgressBar *m_proBar;
-
-    QPageLayout m_pageLayout;
-
-    // Whether a PDF has been exported.
-    bool m_exported;
-
-    // The default directory.
-    static QString s_defaultPathDir;
 };
+
+inline void VExporter::clearNoteState()
+{
+    m_noteState = NoteState::NotReady;
+}
+
+inline bool VExporter::isNoteStateReady() const
+{
+    return m_noteState == NoteState::Ready;
+}
+
+inline bool VExporter::isNoteStateFailed() const
+{
+    return m_noteState & NoteState::Failed;
+}
 
 #endif // VEXPORTER_H

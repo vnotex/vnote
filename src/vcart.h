@@ -22,6 +22,10 @@ public:
 
     void addFile(const QString &p_filePath);
 
+    int count() const;
+
+    QVector<QString> getFiles() const;
+
 private slots:
     void handleContextMenuRequested(QPoint p_pos);
 

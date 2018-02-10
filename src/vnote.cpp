@@ -10,7 +10,6 @@
 #include "vnote.h"
 #include "utils/vutils.h"
 #include "vconfigmanager.h"
-#include "vmainwindow.h"
 #include "vorphanfile.h"
 #include "vnotefile.h"
 #include "vpalette.h"
@@ -238,15 +237,7 @@ VOrphanFile *VNote::getOrphanFile(const QString &p_path, bool p_modifiable, bool
         }
     }
 
-    for (int i = 0; i < m_externalFiles.size(); ++i) {
-        VOrphanFile *file = m_externalFiles[i];
-        if (!file->isOpened()) {
-            qDebug() << "release orphan file" << file;
-            m_externalFiles.removeAt(i);
-            delete file;
-            --i;
-        }
-    }
+    freeOrphanFiles();
 
     // Create a VOrphanFile for path.
     VOrphanFile *file = new VOrphanFile(this, path, p_modifiable, p_systemFile);
@@ -295,4 +286,18 @@ VDirectory *VNote::getInternalDirectory(const QString &p_path)
 
     return dir;
 
+}
+
+void VNote::freeOrphanFiles()
+{
+    for (int i = 0; i < m_externalFiles.size();) {
+        VOrphanFile *file = m_externalFiles[i];
+        if (!file->isOpened()) {
+            qDebug() << "release orphan file" << file;
+            m_externalFiles.removeAt(i);
+            delete file;
+        } else {
+            ++i;
+        }
+    }
 }

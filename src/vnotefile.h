@@ -5,6 +5,7 @@
 #include <QString>
 
 #include "vfile.h"
+#include "utils/vutils.h"
 
 class VDirectory;
 class VNotebook;
@@ -128,6 +129,13 @@ public:
                          bool p_isCut,
                          VNoteFile **p_targetFile,
                          QString *p_errMsg = NULL);
+
+    // Copy images @p_images of a file to @p_destDirPath.
+    static bool copyInternalImages(const QVector<ImageLink> &p_images,
+                                   const QString &p_destDirPath,
+                                   bool p_isCut,
+                                   int *p_nrImageCopied,
+                                   QString *p_errMsg = NULL);
 
 private:
     // Delete internal images of this file.

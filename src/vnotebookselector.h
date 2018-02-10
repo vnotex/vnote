@@ -27,6 +27,8 @@ public:
     // Add notebook on popup if no notebooks currently.
     void showPopup() Q_DECL_OVERRIDE;
 
+    VNotebook *currentNotebook() const;
+
     // Implementations for VNavigationMode.
     void registerNavigation(QChar p_majorKey) Q_DECL_OVERRIDE;
     void showNavigation() Q_DECL_OVERRIDE;
