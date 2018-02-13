@@ -36,9 +36,7 @@ VTextEdit::VTextEdit(const QString &p_text, QWidget *p_parent)
 
 VTextEdit::~VTextEdit()
 {
-    if (m_imageMgr) {
-        delete m_imageMgr;
-    }
+    delete m_imageMgr;
 }
 
 void VTextEdit::init()

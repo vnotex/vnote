@@ -54,10 +54,8 @@ VInsertImageDialog::VInsertImageDialog(const QString &p_title,
 
 VInsertImageDialog::~VInsertImageDialog()
 {
-    if (m_image) {
-        delete m_image;
-        m_image = NULL;
-    }
+    delete m_image;
+    m_image = NULL;
 }
 
 void VInsertImageDialog::setupUI(const QString &p_title,
@@ -152,10 +150,8 @@ void VInsertImageDialog::setImage(const QImage &image)
 {
     if (image.isNull()) {
         imagePreviewLabel->setVisible(false);
-        if (m_image) {
-            delete m_image;
-            m_image = NULL;
-        }
+        delete m_image;
+        m_image = NULL;
 
         handleInputChanged();
         return;
