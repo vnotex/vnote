@@ -557,6 +557,11 @@ int VExportDialog::doExportPDF(VFile *p_file,
         return 0;
     }
 
+    if (!VUtils::makePath(p_outputFolder)) {
+        LOGERR(tr("Fail to create directory %1.").arg(p_outputFolder));
+        return 0;
+    }
+
     // Get output file.
     QString suffix = ".pdf";
     QString name = VUtils::getFileNameWithSequence(p_outputFolder,

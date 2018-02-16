@@ -156,10 +156,10 @@ VNote中，几乎一切都是可以定制的，例如背景颜色、字体以及
 # 捐赠
 您可以通过很多途径帮助VNote的开发。
 
-- 持续关注VNote并反馈；
+- 持续关注VNote并反馈。
 - 向您的朋友们推广和传播VNote。普及度是驱动开发者的一股强大力量。
 - 参与到VNote的开发中，发送PullRequest来帮助VNote变得更完美。
-- 最后，非常感谢您的捐赠如果您觉得VNote真的帮助到您并且想回馈VNote。
+- 最后，如果您觉得VNote真的帮助到您并且想回馈VNote，非常感谢您的捐赠。
     - PayPal: [PayPal.Me/vnotemd](https://www.paypal.me/vnotemd)
     - 支付宝: `tamlokveer@gmail.com`  
     ![Alipay](screenshots/alipay.png)
