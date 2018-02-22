@@ -22,7 +22,7 @@ marked.setOptions({
             && (!VEnableMermaid || lang != 'mermaid')
             && (!VEnableFlowchart || lang != 'flowchart')) {
             if (hljs.getLanguage(lang)) {
-                return hljs.highlight(lang, code).value;
+                return hljs.highlight(lang, code, true).value;
             } else {
                 return hljs.highlightAuto(code).value;
             }

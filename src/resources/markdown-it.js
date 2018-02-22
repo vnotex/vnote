@@ -49,7 +49,7 @@ var mdit = window.markdownit({
             && (!VEnableMermaid || lang != 'mermaid')
             && (!VEnableFlowchart || lang != 'flowchart')) {
             if (hljs.getLanguage(lang)) {
-                return hljs.highlight(lang, str).value;
+                return hljs.highlight(lang, str, true).value;
             } else {
                 return hljs.highlightAuto(str).value;
             }

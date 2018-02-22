@@ -5,7 +5,7 @@ marked.setOptions({
     highlight: function(code, lang) {
         if (lang) {
             if (hljs.getLanguage(lang)) {
-                return hljs.highlight(lang, code).value;
+                return hljs.highlight(lang, code, true).value;
             } else {
                 return hljs.highlightAuto(code).value;
             }
