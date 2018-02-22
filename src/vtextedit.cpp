@@ -354,12 +354,15 @@ void VTextEdit::setImageLineColor(const QColor &p_color)
 
 void VTextEdit::setCursorBlockMode(CursorBlock p_mode)
 {
+    VTextDocumentLayout *layout = getLayout();
+
     if (p_mode != m_cursorBlockMode) {
         m_cursorBlockMode = p_mode;
-        getLayout()->setCursorBlockMode(m_cursorBlockMode);
-        getLayout()->clearLastCursorBlockWidth();
+        layout->setCursorBlockMode(m_cursorBlockMode);
+        layout->clearLastCursorBlockWidth();
         setCursorWidth(m_cursorBlockMode != CursorBlock::None ? VIRTUAL_CURSOR_BLOCK_WIDTH
                                                               : 1);
+        layout->updateBlockByNumber(textCursor().blockNumber());
     }
 }
 
