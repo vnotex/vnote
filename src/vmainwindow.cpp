@@ -606,10 +606,6 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
 
     m_editToolBar->addAction(insertImageAct);
 
-    QAction *toggleAct = m_editToolBar->toggleViewAction();
-    toggleAct->setToolTip(tr("Toggle the edit toolbar"));
-    viewMenu->addAction(toggleAct);
-
     setActionsEnabled(m_editToolBar, false);
 }
 
@@ -790,11 +786,19 @@ void VMainWindow::initHelpMenu()
                 editArea->openFile(file, OpenFileMode::Read);
             });
 
-    QAction *wikiAct = new QAction(tr("&Wiki"), this);
-    wikiAct->setToolTip(tr("View VNote's wiki on Github"));
-    connect(wikiAct, &QAction::triggered,
+    QAction *docAct = new QAction(tr("&Documentation"), this);
+    docAct->setToolTip(tr("View VNote's documentation"));
+    connect(docAct, &QAction::triggered,
             this, [this]() {
-                QString url("https://github.com/tamlok/vnote/wiki");
+                QString url("http://vnote.readthedocs.io");
+                QDesktopServices::openUrl(url);
+            });
+
+    QAction *donateAct = new QAction(tr("Do&nate"), this);
+    donateAct->setToolTip(tr("Donate to VNote or view the donate list"));
+    connect(donateAct, &QAction::triggered,
+            this, [this]() {
+                QString url("https://github.com/tamlok/vnote#donate");
                 QDesktopServices::openUrl(url);
             });
 
@@ -836,7 +840,8 @@ void VMainWindow::initHelpMenu()
 
     helpMenu->addAction(shortcutAct);
     helpMenu->addAction(mdGuideAct);
-    helpMenu->addAction(wikiAct);
+    helpMenu->addAction(docAct);
+    helpMenu->addAction(donateAct);
     helpMenu->addAction(updateAct);
     helpMenu->addAction(starAct);
     helpMenu->addAction(feedbackAct);
@@ -951,8 +956,8 @@ void VMainWindow::initMarkdownMenu()
 
 void VMainWindow::initViewMenu()
 {
-    viewMenu = menuBar()->addMenu(tr("&View"));
-    viewMenu->setToolTipsVisible(true);
+    m_viewMenu = menuBar()->addMenu(tr("&View"));
+    m_viewMenu->setToolTipsVisible(true);
 }
 
 void VMainWindow::initFileMenu()
@@ -1308,7 +1313,7 @@ void VMainWindow::initDockWindows()
 
     QAction *toggleAct = toolDock->toggleViewAction();
     toggleAct->setToolTip(tr("Toggle the tools dock widget"));
-    viewMenu->addAction(toggleAct);
+    m_viewMenu->addAction(toggleAct);
 }
 
 void VMainWindow::importNoteFromFile()

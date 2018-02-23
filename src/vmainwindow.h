@@ -378,7 +378,7 @@ private:
     QActionGroup *m_viewActGroup;
 
     // Menus
-    QMenu *viewMenu;
+    QMenu *m_viewMenu;
 
     // Edit Toolbar.
     QToolBar *m_editToolBar;

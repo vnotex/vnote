@@ -151,11 +151,6 @@ bool VWebUtils::alterHtmlAsTarget(const QUrl &p_baseUrl, QString &p_html, const 
         }
     }
 
-    if (altered) {
-        qDebug() << "==html==";
-        qDebug() << p_html;
-    }
-
     return altered;
 }
 
