@@ -1,6 +1,5 @@
 #include "vwebutils.h"
 
-#include <QRegExp>
 #include <QFileInfo>
 #include <QObject>
 #include <QDebug>
@@ -25,6 +24,8 @@ void VWebUtils::init()
     m_tagReg = QRegExp("<([^>/\\s]+)([^>]*)>");
 
     m_styleTagReg = QRegExp("<([^>\\s]+)([^>]*\\s)style=\"([^\">]+)\"([^>]*)>");
+
+    m_imgTagReg = QRegExp("<img src=\"([^\"]+)\"[^>]*>");
 
     initCopyTargets(g_config->getCopyTargets());
 }
@@ -115,11 +116,10 @@ bool VWebUtils::fixImageSrc(const QUrl &p_baseUrl, QString &p_html)
         pos = idx + reg.matchedLength();
         if (!fixedStr.isEmpty() && urlStr != fixedStr) {
             qDebug() << "fix img url" << urlStr << fixedStr;
-            // Insert one more space to avoid fix the url twice.
             pos = pos + fixedStr.size() + 1 - urlStr.size();
             p_html.replace(idx,
                            reg.matchedLength(),
-                           QString("<img  src=\"%1\"").arg(fixedStr));
+                           QString("<img src=\"%1\"").arg(fixedStr));
             changed = true;
         }
     }
@@ -151,6 +151,11 @@ bool VWebUtils::alterHtmlAsTarget(const QUrl &p_baseUrl, QString &p_html, const 
         }
     }
 
+    if (altered) {
+        qDebug() << "==html==";
+        qDebug() << p_html;
+    }
+
     return altered;
 }
 
@@ -176,6 +181,14 @@ bool VWebUtils::alterHtmlByTargetAction(const QUrl &p_baseUrl, QString &p_html, 
     case 's':
         if (!p_html.startsWith("<html>")) {
             p_html = "<html><body>" + p_html + "</body></html>";
+            altered = true;
+        }
+
+        break;
+
+    case 'e':
+        if (!p_html.startsWith("<html>")) {
+            p_html = "<html><body><!--StartFragment-->" + p_html + "<!--EndFragment--></body></html>";
             altered = true;
         }
 
@@ -227,6 +240,14 @@ bool VWebUtils::alterHtmlByTargetAction(const QUrl &p_baseUrl, QString &p_html, 
 
     case 'f':
         altered = replaceQuoteInFontFamily(p_html);
+        break;
+
+    case 'h':
+        altered = replaceHeadingWithSpan(p_html);
+        break;
+
+    case 'j':
+        altered = fixXHtmlTags(p_html);
         break;
 
     default:
@@ -626,6 +647,7 @@ bool VWebUtils::replaceNewLineWithBR(QString &p_html)
 
     bool altered = false;
     int pos = 0;
+    const QString brTag("<br/>");
 
     while (pos < p_html.size()) {
         int tagIdx = p_html.indexOf(m_tagReg, pos);
@@ -648,10 +670,9 @@ bool VWebUtils::replaceNewLineWithBR(QString &p_html)
                 break;
             }
 
-            QString br("<br>");
-            p_html.replace(idx, 1, br);
-            pos = idx + br.size() - 1;
-            preEnd = preEnd + br.size() - 1;
+            p_html.replace(idx, 1, brTag);
+            pos = idx + brTag.size() - 1;
+            preEnd = preEnd + brTag.size() - 1;
 
             altered = true;
         }
@@ -666,28 +687,28 @@ bool VWebUtils::replaceLocalImgWithWarningLabel(QString &p_html)
 {
     bool altered = false;
 
-    QRegExp reg("<img src=\"([^\"]+)\"[^>]*>");
-
     QString label = QString("<span style=\"font-weight: bold; color: #FFFFFF; background-color: #EE0000;\">%1</span>")
                            .arg(QObject::tr("Insert_Image_HERE"));
 
     int pos = 0;
     while (pos < p_html.size()) {
-        int idx = p_html.indexOf(reg, pos);
+        int idx = p_html.indexOf(m_imgTagReg, pos);
         if (idx == -1) {
             break;
         }
 
-        QString urlStr = reg.cap(1);
+        QString urlStr = m_imgTagReg.cap(1);
         QUrl imgUrl(urlStr);
 
         if (imgUrl.scheme() == "https" || imgUrl.scheme() == "http") {
-            pos = idx + reg.matchedLength();
+            pos = idx + m_imgTagReg.matchedLength();
             continue;
         }
 
-        p_html.replace(idx, reg.matchedLength(), label);
+        p_html.replace(idx, m_imgTagReg.matchedLength(), label);
         pos = idx + label.size();
+
+        altered = true;
     }
 
     return altered;
@@ -781,6 +802,96 @@ bool VWebUtils::replaceQuoteInFontFamily(QString &p_html)
         } else {
             pos = idx + m_styleTagReg.matchedLength();
         }
+    }
+
+    return altered;
+}
+
+static bool isHeadingTag(const QString &p_tagName)
+{
+    QString tag = p_tagName.toLower();
+    if (!tag.startsWith('h') || tag.size() != 2) {
+        return false;
+    }
+
+    return tag == "h1"
+           || tag == "h2"
+           || tag == "h3"
+           || tag == "h4"
+           || tag == "h5"
+           || tag == "h6";
+}
+
+bool VWebUtils::replaceHeadingWithSpan(QString &p_html)
+{
+    bool altered = false;
+    int pos = 0;
+    QString spanTag("span");
+
+    while (pos < p_html.size()) {
+        int tagIdx = p_html.indexOf(m_tagReg, pos);
+        if (tagIdx == -1) {
+            break;
+        }
+
+        QString tagName = m_tagReg.cap(1);
+        if (!isHeadingTag(tagName)) {
+            pos = tagIdx + m_tagReg.matchedLength();
+            continue;
+        }
+
+        p_html.replace(tagIdx + 1, 2, spanTag);
+
+        pos = tagIdx + m_tagReg.matchedLength() + spanTag.size() - 2;
+
+        pos = skipToTagEnd(p_html, pos, tagName);
+
+        Q_ASSERT(pos != -1);
+
+        Q_ASSERT(p_html.mid(pos - 3, 2) == tagName);
+
+        p_html.replace(pos - 3, 2, spanTag);
+
+        pos = pos + spanTag.size() - 2;
+
+        altered = true;
+    }
+
+    return altered;
+}
+
+bool VWebUtils::fixXHtmlTags(QString &p_html)
+{
+    bool altered = false;
+
+    // <img>.
+    int pos = 0;
+    const QString legalTag("/>");
+    while (pos < p_html.size()) {
+        int idx = p_html.indexOf(m_imgTagReg, pos);
+        if (idx == -1) {
+            break;
+        }
+
+        pos = idx + m_imgTagReg.matchedLength();
+
+        Q_ASSERT(p_html[pos - 1] == '>');
+
+        if (p_html.mid(pos - 2, 2) == legalTag) {
+            continue;
+        }
+
+        p_html.replace(pos - 1, 1, legalTag);
+        pos = pos + legalTag.size() - 1;
+
+        altered = true;
+    }
+
+    // <br>.
+    int size = p_html.size();
+    p_html.replace("<br>", "<br/>");
+    if (!altered && size != p_html.size()) {
+        altered = true;
     }
 
     return altered;

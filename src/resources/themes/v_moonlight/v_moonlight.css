@@ -5,6 +5,7 @@ body {
     line-height: 1;
     padding: 15px;
     background: #282C34;
+    font-size: 16px;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -96,6 +97,8 @@ pre code {
     color: #98C379;
     background-color: #2C313A;
     line-height: 1.5;
+    font-family: Consolas, Monaco, Monospace, Courier;
+    white-space: pre;
 }
 
 code.mathjax-code {

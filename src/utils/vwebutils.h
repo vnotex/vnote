@@ -103,6 +103,12 @@ private:
     // Replace &quot; in font-family with '.
     bool replaceQuoteInFontFamily(QString &p_html);
 
+    // Replace headings with span.
+    bool replaceHeadingWithSpan(QString &p_html);
+
+    // Fix tags as XHTML like <img> and <br>.
+    bool fixXHtmlTags(QString &p_html);
+
     QVector<CopyTarget> m_copyTargets;
 
     // Custom styles to remove when copied.
@@ -124,5 +130,10 @@ private:
     // 3. Text inside 'style=""';
     // 4. Text after 'style=""' and before '>';
     QRegExp m_styleTagReg;
+
+    // <Img> tag.
+    // Captured texts:
+    // 1. Src string without ";
+    QRegExp m_imgTagReg;
 };
 #endif // VWEBUTILS_H
