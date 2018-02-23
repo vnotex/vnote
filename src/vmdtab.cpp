@@ -421,7 +421,7 @@ void VMdTab::setupMarkdownViewer()
 
     page->setWebChannel(channel);
 
-    m_webViewer->setHtml(VUtils::generateHtmlTemplate(m_mdConType, false),
+    m_webViewer->setHtml(VUtils::generateHtmlTemplate(m_mdConType),
                          m_file->getBaseUrl());
 
     m_stacks->addWidget(m_webViewer);
@@ -1053,7 +1053,7 @@ void VMdTab::handleFileOrDirectoryChange(bool p_isFile, UpdateAction p_act)
 {
     // Reload the web view with new base URL.
     m_headerFromEditMode = m_currentHeader;
-    m_webViewer->setHtml(VUtils::generateHtmlTemplate(m_mdConType, false),
+    m_webViewer->setHtml(VUtils::generateHtmlTemplate(m_mdConType),
                          m_file->getBaseUrl());
 
     if (m_editor) {

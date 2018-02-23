@@ -151,7 +151,7 @@ ToolsDock=T
 ; Close current note
 CloseNote=X
 ; Show shortcuts help document
-ShortcutsHelp=?
+ShortcutsHelp=Shift+?
 ; Flush the log file
 FlushLogFile=";"
 ; Show opened files list
@@ -235,7 +235,9 @@ RemoveSplit=R
 编辑模式中，将当前光标所在词或者所选文本进行幻词解析。
 - `S`  
 在编辑模式中应用片段。
-- `?`   
+- `O`  
+导出笔记。
+- `Shift+?`   
 显示本快捷键说明。
 
 ## 展览模式

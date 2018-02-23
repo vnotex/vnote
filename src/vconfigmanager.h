@@ -117,7 +117,11 @@ public:
     // Get the css style URL for web view.
     QString getCssStyleUrl() const;
 
+    QString getCssStyleUrl(const QString &p_style) const;
+
     QString getCodeBlockCssStyleUrl() const;
+
+    QString getCodeBlockCssStyleUrl(const QString &p_style) const;
 
     const QString &getEditorStyle() const;
     void setEditorStyle(const QString &p_style);
@@ -171,6 +175,9 @@ public:
 
     const QString &getCurRenderBackgroundColor() const;
     void setCurRenderBackgroundColor(const QString &colorName);
+
+    // Return the color string of background @p_bgName.
+    QString getRenderBackgroundColor(const QString &p_bgName) const;
 
     bool getToolsDockChecked() const;
     void setToolsDockChecked(bool p_checked);

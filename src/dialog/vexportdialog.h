@@ -42,10 +42,16 @@ struct ExportOption
     ExportOption(ExportSource p_source,
                  ExportFormat p_format,
                  MarkdownConverterType p_renderer,
+                 const QString &p_renderBg,
+                 const QString &p_renderStyle,
+                 const QString &p_renderCodeBlockStyle,
                  QPageLayout *p_layout)
         : m_source(p_source),
           m_format(p_format),
           m_renderer(p_renderer),
+          m_renderBg(p_renderBg),
+          m_renderStyle(p_renderStyle),
+          m_renderCodeBlockStyle(p_renderCodeBlockStyle),
           m_layout(p_layout)
     {
     }
@@ -53,6 +59,12 @@ struct ExportOption
     ExportSource m_source;
     ExportFormat m_format;
     MarkdownConverterType m_renderer;
+
+    // Background name.
+    QString m_renderBg;
+
+    QString m_renderStyle;
+    QString m_renderCodeBlockStyle;
     QPageLayout *m_layout;
 };
 
@@ -132,6 +144,12 @@ private:
 
     QComboBox *m_rendererCB;
 
+    QComboBox *m_renderBgCB;
+
+    QComboBox *m_renderStyleCB;
+
+    QComboBox *m_renderCodeBlockStyleCB;
+
     VLineEdit *m_outputEdit;
 
     QPushButton *m_browseBtn;
@@ -175,6 +193,9 @@ private:
 
     // Last output folder path.
     static QString s_lastOutputFolder;
+
+    // Last export format.
+    static ExportFormat s_lastExportFormat;
 };
 
 #endif // VEXPORTDIALOG_H

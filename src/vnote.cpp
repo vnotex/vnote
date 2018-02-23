@@ -25,8 +25,6 @@ QString VNote::s_simpleHtmlTemplate;
 
 QString VNote::s_markdownTemplate;
 
-QString VNote::s_markdownTemplatePDF;
-
 QString VNote::s_sloganTemplate = "<div class=\"typewriter\"><h3>Hi Markdown, I'm VNote</h3></div>";
 
 const QString VNote::c_hoedownJsFile = ":/resources/hoedown.js";
@@ -95,26 +93,16 @@ void VNote::updateSimpletHtmlTemplate()
     s_simpleHtmlTemplate.replace(cssHolder, g_config->getCssStyleUrl());
 }
 
-void VNote::updateTemplate()
+QString VNote::generateHtmlTemplate(const QString &p_renderBg,
+                                    const QString &p_renderStyleUrl,
+                                    const QString &p_codeBlockStyleUrl,
+                                    bool p_isPDF)
 {
     const QString c_markdownTemplatePath(":/resources/markdown_template.html");
 
-    // Get background color
-    QString color;
-    const QString &curRenderBg = g_config->getCurRenderBackgroundColor();
-    const QVector<VColor> &customColors = g_config->getCustomColors();
-    if (curRenderBg != "System") {
-        for (int i = 0; i < customColors.size(); ++i) {
-            if (customColors[i].m_name == curRenderBg) {
-                color = customColors[i].m_color;
-                break;
-            }
-        }
-    }
-
     QString cssStyle;
-    if (!color.isEmpty()) {
-        cssStyle += "body { background-color: " + color + " !important; }\n";
+    if (!p_renderBg.isEmpty()) {
+        cssStyle += "body { background-color: " + p_renderBg + " !important; }\n";
     }
 
     if (g_config->getEnableImageConstraint()) {
@@ -126,29 +114,42 @@ void VNote::updateTemplate()
     const QString cssHolder("CSS_PLACE_HOLDER");
     const QString codeBlockCssHolder("HIGHLIGHTJS_CSS_PLACE_HOLDER");
 
-    s_markdownTemplate = VUtils::readFileFromDisk(c_markdownTemplatePath);
-    g_palette->fillStyle(s_markdownTemplate);
+    QString templ = VUtils::readFileFromDisk(c_markdownTemplatePath);
+    g_palette->fillStyle(templ);
 
     // Must replace the code block holder first.
-    s_markdownTemplate.replace(codeBlockCssHolder, g_config->getCodeBlockCssStyleUrl());
-    s_markdownTemplate.replace(cssHolder, g_config->getCssStyleUrl());
+    templ.replace(codeBlockCssHolder, p_codeBlockStyleUrl);
+    templ.replace(cssHolder, p_renderStyleUrl);
 
-    s_markdownTemplatePDF = s_markdownTemplate;
+    if (p_isPDF) {
+        // Shoudl not display scrollbar in PDF.
+        cssStyle += "pre { white-space: pre-wrap !important; "
+                          "word-break: break-all !important; }\n"
+                    "pre code { white-space: pre-wrap !important; "
+                               "word-break: break-all !important; }\n"
+                    "code { word-break: break-all !important; }\n";
+        if (!g_config->getEnableImageConstraint()) {
+            // Constain the image width by force in PDF, otherwise, the PDF will
+            // be cut off.
+            cssStyle += "img { max-width: 100% !important; height: auto !important; }\n";
+        }
+    }
 
     if (!cssStyle.isEmpty()) {
-        s_markdownTemplate.replace(styleHolder, cssStyle);
+        templ.replace(styleHolder, cssStyle);
     }
 
-    // Shoudl not display scrollbar in PDF.
-    cssStyle += "pre { white-space: pre-wrap !important; "
-                      "word-break: break-all !important; }\n";
-    if (!g_config->getEnableImageConstraint()) {
-        // Constain the image width by force in PDF, otherwise, the PDF will
-        // be cut off.
-        cssStyle += "img { max-width: 100% !important; height: auto !important; }\n";
-    }
+    return templ;
+}
 
-    s_markdownTemplatePDF.replace(styleHolder, cssStyle);
+void VNote::updateTemplate()
+{
+    QString renderBg = g_config->getRenderBackgroundColor(g_config->getCurRenderBackgroundColor());
+
+    s_markdownTemplate = generateHtmlTemplate(renderBg,
+                                              g_config->getCssStyleUrl(),
+                                              g_config->getCodeBlockCssStyleUrl(),
+                                              false);
 }
 
 const QVector<VNotebook *> &VNote::getNotebooks() const

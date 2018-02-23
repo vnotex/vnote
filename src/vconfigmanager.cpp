@@ -859,8 +859,22 @@ QString VConfigManager::getCssStyleUrl() const
         const_cast<VConfigManager *>(this)->m_cssStyle = VPalette::themeCssStyle(getThemeFile());
     }
 
+    QString cssPath = getCssStyleUrl(m_cssStyle);
+    qDebug() << "use css style file" << cssPath;
+    return cssPath;
+}
+
+QString VConfigManager::getCssStyleUrl(const QString &p_style) const
+{
+    Q_ASSERT(!m_themes.isEmpty());
+    Q_ASSERT(!m_cssStyles.isEmpty());
+
+    if (p_style.isEmpty()) {
+        return QString();
+    }
+
     QString cssPath;
-    auto it = m_cssStyles.find(m_cssStyle);
+    auto it = m_cssStyles.find(p_style);
     if (it != m_cssStyles.end()) {
         cssPath = it.value();
     }
@@ -872,7 +886,6 @@ QString VConfigManager::getCssStyleUrl() const
         cssPath = cssUrl.toString();
     }
 
-    qDebug() << "use css style file" << cssPath;
     return cssPath;
 }
 
@@ -887,8 +900,22 @@ QString VConfigManager::getCodeBlockCssStyleUrl() const
             VPalette::themeCodeBlockCssStyle(getThemeFile());
     }
 
+    QString cssPath = getCodeBlockCssStyleUrl(m_codeBlockCssStyle);
+    qDebug() << "use code block css style file" << cssPath;
+    return cssPath;
+}
+
+QString VConfigManager::getCodeBlockCssStyleUrl(const QString &p_style) const
+{
+    Q_ASSERT(!m_themes.isEmpty());
+    Q_ASSERT(!m_codeBlockCssStyles.isEmpty());
+
+    if (p_style.isEmpty()) {
+        return QString();
+    }
+
     QString cssPath;
-    auto it = m_codeBlockCssStyles.find(m_codeBlockCssStyle);
+    auto it = m_codeBlockCssStyles.find(p_style);
     if (it != m_codeBlockCssStyles.end()) {
         cssPath = it.value();
     }
@@ -900,7 +927,6 @@ QString VConfigManager::getCodeBlockCssStyleUrl() const
         cssPath = cssUrl.toString();
     }
 
-    qDebug() << "use code block css style file" << cssPath;
     return cssPath;
 }
 
@@ -1435,3 +1461,17 @@ void VConfigManager::clearGroupOfSettings(QSettings *p_settings, const QString &
     p_settings->remove("");
     p_settings->endGroup();
 }
+
+QString VConfigManager::getRenderBackgroundColor(const QString &p_bgName) const
+{
+    if (p_bgName != "System") {
+        for (int i = 0; i < m_customColors.size(); ++i) {
+            if (m_customColors[i].m_name == p_bgName) {
+                return m_customColors[i].m_color;
+            }
+        }
+    }
+
+    return QString();
+}
+

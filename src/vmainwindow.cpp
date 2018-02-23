@@ -186,6 +186,10 @@ void VMainWindow::registerCaptainAndNavigationTargets()
                                      g_config->getCaptainShortcutKeySequence("FlushLogFile"),
                                      this,
                                      flushLogFileByCaptain);
+    m_captain->registerCaptainTarget(tr("Export"),
+                                     g_config->getCaptainShortcutKeySequence("Export"),
+                                     this,
+                                     exportByCaptain);
 }
 
 void VMainWindow::setupUI()
@@ -774,6 +778,11 @@ void VMainWindow::initHelpMenu()
 
     QAction *shortcutAct = new QAction(tr("&Shortcuts Help"), this);
     shortcutAct->setToolTip(tr("View information about shortcut keys"));
+    QString keyText = VUtils::getCaptainShortcutSequenceText("ShortcutsHelp");
+    if (!keyText.isEmpty()) {
+        shortcutAct->setText(tr("&Shortcuts Help\t%1").arg(keyText));
+    }
+
     connect(shortcutAct, &QAction::triggered,
             this, &VMainWindow::shortcutsHelp);
 
@@ -1002,6 +1011,10 @@ void VMainWindow::initFileMenu()
     // Export as PDF.
     m_exportAct = new QAction(tr("E&xport"), this);
     m_exportAct->setToolTip(tr("Export notes"));
+    QString keyText = VUtils::getCaptainShortcutSequenceText("Export");
+    if (!keyText.isEmpty()) {
+        m_exportAct->setText(tr("E&xport\t%1").arg(keyText));
+    }
     connect(m_exportAct, &QAction::triggered,
             this, &VMainWindow::handleExportAct);
 
@@ -1313,6 +1326,11 @@ void VMainWindow::initDockWindows()
 
     QAction *toggleAct = toolDock->toggleViewAction();
     toggleAct->setToolTip(tr("Toggle the tools dock widget"));
+    QString keyText = VUtils::getCaptainShortcutSequenceText("ToolsDock");
+    if (!keyText.isEmpty()) {
+        toggleAct->setText(tr("%1\t%2").arg(toggleAct->text()).arg(keyText));
+    }
+
     m_viewMenu->addAction(toggleAct);
 }
 
@@ -2691,6 +2709,16 @@ bool VMainWindow::flushLogFileByCaptain(void *p_target, void *p_data)
     // Flush g_logFile.
     g_logFile.flush();
 #endif
+
+    return true;
+}
+
+bool VMainWindow::exportByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+
+    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    QTimer::singleShot(50, obj, SLOT(handleExportAct()));
 
     return true;
 }

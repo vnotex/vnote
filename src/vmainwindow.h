@@ -286,6 +286,8 @@ private:
 
     static bool flushLogFileByCaptain(void *p_target, void *p_data);
 
+    static bool exportByCaptain(void *p_target, void *p_data);
+
     // End Captain mode functions.
 
     VNote *vnote;

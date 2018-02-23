@@ -150,7 +150,7 @@ ToolsDock=T
 ; Close current note
 CloseNote=X
 ; Show shortcuts help document
-ShortcutsHelp=?
+ShortcutsHelp=Shift+?
 ; Flush the log file
 FlushLogFile=";"
 ; Show opened files list
@@ -234,7 +234,9 @@ Move current tab one split window right.
 Evaluate current cursor word or selected text as magic words.
 - `S`  
 Apply a snippet in edit mode.
-- `?`   
+- `O`  
+Export notes.
+- `Shift+?`   
 Display shortcuts documentation.
 
 ## Navigation Mode

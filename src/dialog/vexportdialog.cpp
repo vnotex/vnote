@@ -25,6 +25,8 @@ extern VNote *g_vnote;
 
 QString VExportDialog::s_lastOutputFolder;
 
+ExportFormat VExportDialog::s_lastExportFormat = ExportFormat::Markdown;
+
 #define LOGERR(x) do { QString msg = (x); \
                        VUtils::addErrMsg(p_errMsg, msg); \
                        appendLogLine(msg); \
@@ -79,6 +81,18 @@ void VExportDialog::setupUI()
     m_rendererCB->setToolTip(tr("Choose converter to render Markdown"));
     m_rendererCB->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
+    // Markdown rendering background.
+    m_renderBgCB = VUtils::getComboBox();
+    m_renderBgCB->setToolTip(tr("Choose rendering background color for Markdown"));
+
+    // Markdown rendering style.
+    m_renderStyleCB = VUtils::getComboBox();
+    m_renderStyleCB->setToolTip(tr("Choose rendering style for Markdown"));
+
+    // Markdown rendering code block style.
+    m_renderCodeBlockStyleCB = VUtils::getComboBox();
+    m_renderCodeBlockStyleCB->setToolTip(tr("Choose rendering code block style for Markdown"));
+
     // Output directory.
     m_outputEdit = new VLineEdit(s_lastOutputFolder);
     connect(m_outputEdit, &QLineEdit::textChanged,
@@ -128,6 +142,9 @@ void VExportDialog::setupUI()
     basicLayout->addRow(tr("Notes to export:"), m_srcCB);
     basicLayout->addRow(tr("Target format:"), m_formatCB);
     basicLayout->addRow(tr("Markdown renderer:"), m_rendererCB);
+    basicLayout->addRow(tr("Markdown rendering background:"), m_renderBgCB);
+    basicLayout->addRow(tr("Markdown rendering style:"), m_renderStyleCB);
+    basicLayout->addRow(tr("Markdown rendering code block style:"), m_renderCodeBlockStyleCB);
     basicLayout->addRow(tr("Output directory:"), outputLayout);
 
     m_basicBox->setLayout(basicLayout);
@@ -209,6 +226,7 @@ void VExportDialog::initUIFields(MarkdownConverterType p_renderer)
     m_formatCB->addItem(tr("Markdown"), (int)ExportFormat::Markdown);
     m_formatCB->addItem(tr("HTML"), (int)ExportFormat::HTML);
     m_formatCB->addItem(tr("PDF"), (int)ExportFormat::PDF);
+    m_formatCB->setCurrentIndex(m_formatCB->findData((int)s_lastExportFormat));
 
     // Markdown renderer.
     m_rendererCB->addItem(tr("Hoedown"), MarkdownConverterType::Hoedown);
@@ -216,6 +234,34 @@ void VExportDialog::initUIFields(MarkdownConverterType p_renderer)
     m_rendererCB->addItem(tr("Markdown-it"), MarkdownConverterType::MarkdownIt);
     m_rendererCB->addItem(tr("Showdown"), MarkdownConverterType::Showdown);
     m_rendererCB->setCurrentIndex(m_rendererCB->findData(p_renderer));
+
+    // Markdown rendering background.
+    m_renderBgCB->addItem(tr("System"), "System");
+    const QVector<VColor> &bgColors = g_config->getCustomColors();
+    for (int i = 0; i < bgColors.size(); ++i) {
+        m_renderBgCB->addItem(bgColors[i].m_name, bgColors[i].m_name);
+    }
+
+    m_renderBgCB->setCurrentIndex(
+        m_renderBgCB->findData(g_config->getCurRenderBackgroundColor()));
+
+    // Markdown rendering style.
+    QList<QString> styles = g_config->getCssStyles();
+    for (auto const &style : styles) {
+        m_renderStyleCB->addItem(style, style);
+    }
+
+    m_renderStyleCB->setCurrentIndex(
+        m_renderStyleCB->findData(g_config->getCssStyle()));
+
+    // Markdown rendering code block style.
+    QList<QString> cbStyles = g_config->getCodeBlockCssStyles();
+    for (auto const &style : cbStyles) {
+        m_renderCodeBlockStyleCB->addItem(style, style);
+    }
+
+    m_renderCodeBlockStyleCB->setCurrentIndex(
+        m_renderCodeBlockStyleCB->findData(g_config->getCodeBlockCssStyle()));
 }
 
 void VExportDialog::startExport()
@@ -233,7 +279,12 @@ void VExportDialog::startExport()
     ExportOption opt((ExportSource)m_srcCB->currentData().toInt(),
                      (ExportFormat)m_formatCB->currentData().toInt(),
                      (MarkdownConverterType)m_rendererCB->currentData().toInt(),
+                     m_renderBgCB->currentData().toString(),
+                     m_renderStyleCB->currentData().toString(),
+                     m_renderCodeBlockStyleCB->currentData().toString(),
                      &m_pageLayout);
+
+    s_lastExportFormat = opt.m_format;
 
     m_consoleEdit->clear();
     appendLogLine(tr("Export to %1.").arg(outputFolder));

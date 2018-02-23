@@ -24,7 +24,11 @@ VExporter::VExporter(QWidget *p_parent)
 
 void VExporter::prepareExport(const ExportOption &p_opt)
 {
-    m_htmlTemplate = VUtils::generateHtmlTemplate(p_opt.m_renderer, true);
+    m_htmlTemplate = VUtils::generateHtmlTemplate(p_opt.m_renderer,
+                                                  p_opt.m_renderBg,
+                                                  p_opt.m_renderStyle,
+                                                  p_opt.m_renderCodeBlockStyle,
+                                                  p_opt.m_format == ExportFormat::PDF);
     m_pageLayout = *(p_opt.m_layout);
 }
 

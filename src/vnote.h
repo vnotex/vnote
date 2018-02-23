@@ -35,8 +35,6 @@ public:
 
     static QString s_markdownTemplate;
 
-    static QString s_markdownTemplatePDF;
-
     // Hoedown
     static const QString c_hoedownJsFile;
 
@@ -100,6 +98,12 @@ public:
     VDirectory *getInternalDirectory(const QString &p_path);
 
     void freeOrphanFiles();
+
+    // @p_renderBg: background color, empty to not specify given color.
+    static QString generateHtmlTemplate(const QString &p_renderBg,
+                                        const QString &p_renderStyleUrl,
+                                        const QString &p_codeBlockStyleUrl,
+                                        bool p_isPDF);
 
 public slots:
     void updateTemplate();

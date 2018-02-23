@@ -572,11 +572,31 @@ DocType VUtils::docTypeFromName(const QString &p_name)
 
 QString VUtils::generateSimpleHtmlTemplate(const QString &p_body)
 {
-    QString html = VNote::s_simpleHtmlTemplate;
+    QString html(VNote::s_simpleHtmlTemplate);
     return html.replace(HtmlHolder::c_bodyHolder, p_body);
 }
 
-QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exportPdf)
+QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType)
+{
+    return generateHtmlTemplate(VNote::s_markdownTemplate, p_conType);
+}
+
+QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType,
+                                     const QString &p_renderBg,
+                                     const QString &p_renderStyle,
+                                     const QString &p_renderCodeBlockStyle,
+                                     bool p_isPDF)
+{
+    QString templ = VNote::generateHtmlTemplate(g_config->getRenderBackgroundColor(p_renderBg),
+                                                g_config->getCssStyleUrl(p_renderStyle),
+                                                g_config->getCodeBlockCssStyleUrl(p_renderCodeBlockStyle),
+                                                p_isPDF);
+
+    return generateHtmlTemplate(templ, p_conType);
+}
+
+QString VUtils::generateHtmlTemplate(const QString &p_template,
+                                     MarkdownConverterType p_conType)
 {
     QString jsFile, extraFile;
     switch (p_conType) {
@@ -661,13 +681,7 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exp
 
     extraFile += "<script>var VStylesToInline = '" + g_config->getStylesToInlineWhenCopied() + "';</script>\n";
 
-    QString htmlTemplate;
-    if (p_exportPdf) {
-        htmlTemplate = VNote::s_markdownTemplatePDF;
-    } else {
-        htmlTemplate = VNote::s_markdownTemplate;
-    }
-
+    QString htmlTemplate(p_template);
     htmlTemplate.replace(HtmlHolder::c_JSHolder, jsFile);
     if (!extraFile.isEmpty()) {
         htmlTemplate.replace(HtmlHolder::c_extraHolder, extraFile);

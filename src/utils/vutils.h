@@ -165,7 +165,14 @@ public:
     static DocType docTypeFromName(const QString &p_name);
 
     // Generate HTML template.
-    static QString generateHtmlTemplate(MarkdownConverterType p_conType, bool p_exportPdf);
+    static QString generateHtmlTemplate(MarkdownConverterType p_conType);
+
+    // @p_renderBg is the background name.
+    static QString generateHtmlTemplate(MarkdownConverterType p_conType,
+                                        const QString &p_renderBg,
+                                        const QString &p_renderStyle,
+                                        const QString &p_renderCodeBlockStyle,
+                                        bool p_isPDF);
 
     static QString generateSimpleHtmlTemplate(const QString &p_body);
 
@@ -337,6 +344,9 @@ private:
     // folder @p_recycleBinFolderPath.
     static bool deleteFile(const QString &p_recycleBinFolderPath,
                            const QString &p_path);
+
+    static QString generateHtmlTemplate(const QString &p_template,
+                                        MarkdownConverterType p_conType);
 
     // <value, name>
     static QVector<QPair<QString, QString>> s_availableLanguages;
