@@ -127,7 +127,7 @@ var updateText = function(text) {
 var highlightText = function(text, id, timeStamp) {
     var html = mdit.render(text);
     content.highlightTextCB(html, id, timeStamp);
-}
+};
 
 var textToHtml = function(text) {
     var html = mdit.render(text);
@@ -139,4 +139,4 @@ var textToHtml = function(text) {
     container.innerHTML = "";
 
     content.textToHtmlCB(text, html);
-}
+};

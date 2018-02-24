@@ -8,6 +8,7 @@
 
 class QWidget;
 class VWebView;
+class VDocument;
 
 class VExporter : public QObject
 {
@@ -20,6 +21,11 @@ public:
                    const ExportOption &p_opt,
                    const QString &p_outputFile,
                    QString *p_errMsg = NULL);
+
+    bool exportHTML(VFile *p_file,
+                    const ExportOption &p_opt,
+                    const QString &p_outputFile,
+                    QString *p_errMsg = NULL);
 
 private slots:
     void handleLogicsFinished();
@@ -57,16 +63,30 @@ private:
 
     bool isNoteStateFailed() const;
 
+    bool exportViaWebView(VFile *p_file,
+                          const ExportOption &p_opt,
+                          const QString &p_outputFile,
+                          QString *p_errMsg = NULL);
+
     bool exportToPDF(VWebView *p_webViewer,
                      const QString &p_filePath,
                      const QPageLayout &p_layout);
+
+    bool exportToHTML(VWebView *p_webViewer,
+                      VDocument *p_webDocument,
+                      const QString &p_filePath);
 
     QPageLayout m_pageLayout;
 
     // Will be allocated and free for each conversion.
     VWebView *m_webViewer;
 
+    VDocument *m_webDocument;
+
     QString m_htmlTemplate;
+
+    // Template to hold the export HTML result.
+    QString m_exportHtmlTemplate;
 
     NoteState m_noteState;
 

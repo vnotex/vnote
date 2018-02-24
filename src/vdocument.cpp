@@ -82,6 +82,11 @@ void VDocument::textToHtmlAsync(const QString &p_text)
     emit requestTextToHtml(p_text);
 }
 
+void VDocument::getHtmlContentAsync()
+{
+    emit requestHtmlContent();
+}
+
 void VDocument::textToHtmlCB(const QString &p_text, const QString &p_html)
 {
     emit textToHtmlFinished(p_text, p_html);
@@ -107,4 +112,9 @@ void VDocument::finishLogics()
 {
     qDebug() << "Web side finished logics";
     emit logicsFinished();
+}
+
+void VDocument::htmlContentCB(const QString &p_head, const QString &p_body)
+{
+    emit htmlContentFinished(p_head, p_body);
 }

@@ -174,6 +174,9 @@ public:
                                         const QString &p_renderCodeBlockStyle,
                                         bool p_isPDF);
 
+    // @p_renderBg is the background name.
+    static QString generateExportHtmlTemplate(const QString &p_renderBg);
+
     static QString generateSimpleHtmlTemplate(const QString &p_body);
 
     // Get an available file name in @p_directory with base @p_baseFileName.

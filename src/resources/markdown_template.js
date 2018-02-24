@@ -40,6 +40,26 @@ if (typeof VEnableImageCaption == 'undefined') {
     VEnableImageCaption = false;
 }
 
+var headContent = function() {
+    var styles = "<style type=\"text/css\">\n";
+
+    for (var i = 0; i < document.styleSheets.length; ++i) {
+        var styleSheet = document.styleSheets[i];
+        if (styleSheet.cssRules) {
+            for (var j = 0; j < styleSheet.cssRules.length; ++j) {
+                styles = styles + styleSheet.cssRules[j].cssText + "\n";
+            }
+        }
+    }
+
+    var styles = styles + "</style>";
+    return styles;
+};
+
+var htmlContent = function() {
+    content.htmlContentCB(headContent(), placeholder.innerHTML);
+};
+
 new QWebChannel(qt.webChannelTransport,
     function(channel) {
         content = channel.objects.content;
@@ -61,6 +81,10 @@ new QWebChannel(qt.webChannelTransport,
         if (typeof textToHtml == "function") {
             content.requestTextToHtml.connect(textToHtml);
             content.noticeReadyToTextToHtml();
+        }
+
+        if (typeof htmlContent == "function") {
+            content.requestHtmlContent.connect(htmlContent);
         }
     });
 
@@ -447,7 +471,7 @@ var renderMermaidOne = function(code) {
     mermaidIdx++;
     try {
         // Do not increment mermaidIdx here.
-        var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx, code.innerText, function(){});
+        var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx, code.textContent, function(){});
     } catch (err) {
         content.setLog("err: " + err);
         return false;
@@ -493,7 +517,7 @@ var renderFlowchartOne = function(code) {
     // Flowchart code block.
     flowchartIdx++;
     try {
-        var graph = flowchart.parse(code.innerText);
+        var graph = flowchart.parse(code.textContent);
     } catch (err) {
         content.setLog("err: " + err);
         return false;
@@ -525,7 +549,7 @@ var renderFlowchartOne = function(code) {
 
 var isImageBlock = function(img) {
     var pn = img.parentNode;
-    return (pn.children.length == 1) && (pn.innerText == '');
+    return (pn.children.length == 1) && (pn.textContent == '');
 };
 
 var isImageWithBr = function(img) {
@@ -617,7 +641,7 @@ var insertImageCaption = function() {
         // Add caption.
         var captionDiv = document.createElement('div');
         captionDiv.classList.add(VImageCaptionClass);
-        captionDiv.innerText = img.alt;
+        captionDiv.textContent = img.alt;
         img.insertAdjacentElement('afterend', captionDiv);
     }
 }

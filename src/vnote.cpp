@@ -110,7 +110,7 @@ QString VNote::generateHtmlTemplate(const QString &p_renderBg,
         cssStyle += "img { max-width: 100% !important; height: auto !important; }\n";
     }
 
-    const QString styleHolder("<!-- BACKGROUND_PLACE_HOLDER -->");
+    const QString styleHolder("/* BACKGROUND_PLACE_HOLDER */");
     const QString cssHolder("CSS_PLACE_HOLDER");
     const QString codeBlockCssHolder("HIGHLIGHTJS_CSS_PLACE_HOLDER");
 
@@ -134,6 +134,32 @@ QString VNote::generateHtmlTemplate(const QString &p_renderBg,
             cssStyle += "img { max-width: 100% !important; height: auto !important; }\n";
         }
     }
+
+    if (!cssStyle.isEmpty()) {
+        templ.replace(styleHolder, cssStyle);
+    }
+
+    return templ;
+}
+
+QString VNote::generateExportHtmlTemplate(const QString &p_renderBg)
+{
+    const QString c_exportTemplatePath(":/resources/export_template.html");
+
+    QString cssStyle;
+    if (!p_renderBg.isEmpty()) {
+        cssStyle += "body { background-color: " + p_renderBg + " !important; }\n";
+    }
+
+    if (g_config->getEnableImageConstraint()) {
+        // Constain the image width.
+        cssStyle += "img { max-width: 100% !important; height: auto !important; }\n";
+    }
+
+    const QString styleHolder("/* BACKGROUND_PLACE_HOLDER */");
+
+    QString templ = VUtils::readFileFromDisk(c_exportTemplatePath);
+    g_palette->fillStyle(templ);
 
     if (!cssStyle.isEmpty()) {
         templ.replace(styleHolder, cssStyle);

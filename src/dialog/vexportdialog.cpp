@@ -289,7 +289,8 @@ void VExportDialog::startExport()
     m_consoleEdit->clear();
     appendLogLine(tr("Export to %1.").arg(outputFolder));
 
-    if (opt.m_format == ExportFormat::PDF) {
+    if (opt.m_format == ExportFormat::PDF
+        || opt.m_format == ExportFormat::HTML) {
         m_exporter->prepareExport(opt);
     }
 
@@ -404,6 +405,10 @@ int VExportDialog::doExport(VFile *p_file,
 
     case (int)ExportFormat::PDF:
         ret = doExportPDF(p_file, p_opt, p_outputFolder, p_errMsg);
+        break;
+
+    case (int)ExportFormat::HTML:
+        ret = doExportHTML(p_file, p_opt, p_outputFolder, p_errMsg);
         break;
 
     default:
@@ -620,6 +625,40 @@ int VExportDialog::doExportPDF(VFile *p_file,
     QString outputPath = QDir(p_outputFolder).filePath(name);
 
     if (m_exporter->exportPDF(p_file, p_opt, outputPath, p_errMsg)) {
+        appendLogLine(tr("Note %1 exported to %2.").arg(srcFilePath).arg(outputPath));
+        return 1;
+    } else {
+        appendLogLine(tr("Fail to export note %1.").arg(srcFilePath));
+        return 0;
+    }
+}
+
+int VExportDialog::doExportHTML(VFile *p_file,
+                                const ExportOption &p_opt,
+                                const QString &p_outputFolder,
+                                QString *p_errMsg)
+{
+    Q_UNUSED(p_opt);
+
+    QString srcFilePath(p_file->fetchPath());
+
+    if (p_file->getDocType() != DocType::Markdown) {
+        LOGERR(tr("Skip exporting non-Markdown file %1 as HTML.").arg(srcFilePath));
+        return 0;
+    }
+
+    if (!VUtils::makePath(p_outputFolder)) {
+        LOGERR(tr("Fail to create directory %1.").arg(p_outputFolder));
+        return 0;
+    }
+
+    // Get output file.
+    QString suffix = ".html";
+    QString name = VUtils::getFileNameWithSequence(p_outputFolder,
+                                                   QFileInfo(p_file->getName()).completeBaseName() + suffix);
+    QString outputPath = QDir(p_outputFolder).filePath(name);
+
+    if (m_exporter->exportHTML(p_file, p_opt, outputPath, p_errMsg)) {
         appendLogLine(tr("Note %1 exported to %2.").arg(srcFilePath).arg(outputPath));
         return 1;
     } else {

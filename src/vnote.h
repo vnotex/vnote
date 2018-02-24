@@ -105,6 +105,9 @@ public:
                                         const QString &p_codeBlockStyleUrl,
                                         bool p_isPDF);
 
+    // @p_renderBg: background color, empty to not specify given color.
+    static QString generateExportHtmlTemplate(const QString &p_renderBg);
+
 public slots:
     void updateTemplate();
 

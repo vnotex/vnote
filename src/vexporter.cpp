@@ -29,6 +29,9 @@ void VExporter::prepareExport(const ExportOption &p_opt)
                                                   p_opt.m_renderStyle,
                                                   p_opt.m_renderCodeBlockStyle,
                                                   p_opt.m_format == ExportFormat::PDF);
+
+    m_exportHtmlTemplate = VUtils::generateExportHtmlTemplate(p_opt.m_renderBg);
+
     m_pageLayout = *(p_opt.m_layout);
 }
 
@@ -37,70 +40,15 @@ bool VExporter::exportPDF(VFile *p_file,
                           const QString &p_outputFile,
                           QString *p_errMsg)
 {
-    Q_UNUSED(p_errMsg);
+    return exportViaWebView(p_file, p_opt, p_outputFile, p_errMsg);
+}
 
-    bool ret = false;
-
-    bool isOpened = p_file->isOpened();
-    if (!isOpened && !p_file->open()) {
-        goto exit;
-    }
-
-    Q_ASSERT(m_state == ExportState::Idle);
-    m_state = ExportState::Busy;
-
-    clearNoteState();
-
-    initWebViewer(p_file, p_opt);
-
-    while (!isNoteStateReady()) {
-        VUtils::sleepWait(100);
-
-        if (m_state == ExportState::Cancelled) {
-            goto exit;
-        }
-
-        if (isNoteStateFailed()) {
-            m_state = ExportState::Failed;
-            goto exit;
-        }
-    }
-
-    // Wait to ensure Web side is really ready.
-    VUtils::sleepWait(200);
-
-    if (m_state == ExportState::Cancelled) {
-        goto exit;
-    }
-
-    {
-    bool exportRet = exportToPDF(m_webViewer,
-                                 p_outputFile,
-                                 m_pageLayout);
-
-    clearNoteState();
-
-    if (!isOpened) {
-        p_file->close();
-    }
-
-    if (exportRet) {
-        m_state = ExportState::Successful;
-    } else {
-        m_state = ExportState::Failed;
-    }
-    }
-
-exit:
-    clearWebViewer();
-
-    if (m_state == ExportState::Successful) {
-        ret = true;
-    }
-
-    m_state = ExportState::Idle;
-
-    return ret;
+bool VExporter::exportHTML(VFile *p_file,
+                           const ExportOption &p_opt,
+                           const QString &p_outputFile,
+                           QString *p_errMsg)
+{
+    return exportViaWebView(p_file, p_opt, p_outputFile, p_errMsg);
 }
 
 void VExporter::initWebViewer(VFile *p_file, const ExportOption &p_opt)
@@ -116,12 +64,12 @@ void VExporter::initWebViewer(VFile *p_file, const ExportOption &p_opt)
     connect(page, &VPreviewPage::loadFinished,
             this, &VExporter::handleLoadFinished);
 
-    VDocument *document = new VDocument(p_file, m_webViewer);
-    connect(document, &VDocument::logicsFinished,
+    m_webDocument = new VDocument(p_file, m_webViewer);
+    connect(m_webDocument, &VDocument::logicsFinished,
             this, &VExporter::handleLogicsFinished);
 
     QWebChannel *channel = new QWebChannel(m_webViewer);
-    channel->registerObject(QStringLiteral("content"), document);
+    channel->registerObject(QStringLiteral("content"), m_webDocument);
     page->setWebChannel(channel);
 
     // Need to generate HTML using Hoedown.
@@ -131,7 +79,7 @@ void VExporter::initWebViewer(VFile *p_file, const ExportOption &p_opt)
         QString html = mdConverter.generateHtml(p_file->getContent(),
                                                 g_config->getMarkdownExtensions(),
                                                 toc);
-        document->setHtml(html);
+        m_webDocument->setHtml(html);
     }
 
     m_webViewer->setHtml(m_htmlTemplate, p_file->getBaseUrl());
@@ -155,10 +103,10 @@ void VExporter::handleLoadFinished(bool p_ok)
 
 void VExporter::clearWebViewer()
 {
-    if (m_webViewer) {
-        delete m_webViewer;
-        m_webViewer = NULL;
-    }
+    // m_webDocument will be freeed by QObject.
+    delete m_webViewer;
+    m_webViewer = NULL;
+    m_webDocument = NULL;
 }
 
 bool VExporter::exportToPDF(VWebView *p_webViewer,
@@ -198,3 +146,135 @@ bool VExporter::exportToPDF(VWebView *p_webViewer,
     return pdfPrinted == 1;
 }
 
+bool VExporter::exportViaWebView(VFile *p_file,
+                                 const ExportOption &p_opt,
+                                 const QString &p_outputFile,
+                                 QString *p_errMsg)
+{
+    Q_UNUSED(p_errMsg);
+
+    bool ret = false;
+
+    bool isOpened = p_file->isOpened();
+    if (!isOpened && !p_file->open()) {
+        goto exit;
+    }
+
+    Q_ASSERT(m_state == ExportState::Idle);
+    m_state = ExportState::Busy;
+
+    clearNoteState();
+
+    initWebViewer(p_file, p_opt);
+
+    while (!isNoteStateReady()) {
+        VUtils::sleepWait(100);
+
+        if (m_state == ExportState::Cancelled) {
+            goto exit;
+        }
+
+        if (isNoteStateFailed()) {
+            m_state = ExportState::Failed;
+            goto exit;
+        }
+    }
+
+    // Wait to ensure Web side is really ready.
+    VUtils::sleepWait(200);
+
+    if (m_state == ExportState::Cancelled) {
+        goto exit;
+    }
+
+    {
+
+    bool exportRet = false;
+    switch (p_opt.m_format) {
+    case ExportFormat::PDF:
+        exportRet = exportToPDF(m_webViewer,
+                                p_outputFile,
+                                m_pageLayout);
+        break;
+
+    case ExportFormat::HTML:
+        exportRet = exportToHTML(m_webViewer,
+                                 m_webDocument,
+                                 p_outputFile);
+        break;
+
+    default:
+        break;
+    }
+
+    clearNoteState();
+
+    if (!isOpened) {
+        p_file->close();
+    }
+
+    if (exportRet) {
+        m_state = ExportState::Successful;
+    } else {
+        m_state = ExportState::Failed;
+    }
+
+    }
+
+exit:
+    clearWebViewer();
+
+    if (m_state == ExportState::Successful) {
+        ret = true;
+    }
+
+    m_state = ExportState::Idle;
+
+    return ret;
+}
+
+bool VExporter::exportToHTML(VWebView *p_webViewer,
+                             VDocument *p_webDocument,
+                             const QString &p_filePath)
+{
+    Q_UNUSED(p_webViewer);
+    int htmlExported = 0;
+
+    connect(p_webDocument, &VDocument::htmlContentFinished,
+            this, [&, this](const QString &p_headContent, const QString &p_bodyContent) {
+                if (p_bodyContent.isEmpty() || this->m_state == ExportState::Cancelled) {
+                    htmlExported = -1;
+                    return;
+                }
+
+                Q_ASSERT(!p_filePath.isEmpty());
+
+                QFile file(p_filePath);
+
+                if (!file.open(QFile::WriteOnly)) {
+                    htmlExported = -1;
+                    return;
+                }
+
+                QString html(m_exportHtmlTemplate);
+                html.replace(HtmlHolder::c_headHolder, p_headContent);
+                html.replace(HtmlHolder::c_bodyHolder, p_bodyContent);
+
+                file.write(html.toUtf8());
+                file.close();
+
+                htmlExported = 1;
+            });
+
+    p_webDocument->getHtmlContentAsync();
+
+    while (htmlExported == 0) {
+        VUtils::sleepWait(100);
+
+        if (m_state == ExportState::Cancelled) {
+            break;
+        }
+    }
+
+    return htmlExported == 1;
+}

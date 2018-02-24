@@ -239,5 +239,6 @@
         <file>resources/icons/delete_cart_item.svg</file>
         <file>resources/icons/fullscreen.svg</file>
         <file>resources/icons/menubar.svg</file>
+        <file>resources/export_template.html</file>
     </qresource>
 </RCC>

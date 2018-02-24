@@ -38,6 +38,9 @@ public:
 
     bool isReadyToTextToHtml() const;
 
+    // Request to get the HTML content.
+    void getHtmlContentAsync();
+
 public slots:
     // Will be called in the HTML side
 
@@ -67,6 +70,8 @@ public slots:
     // But the page may not finish loading, such as images.
     void finishLogics();
 
+    void htmlContentCB(const QString &p_head, const QString &p_body);
+
 signals:
     void textChanged(const QString &text);
 
@@ -94,6 +99,11 @@ signals:
     void requestTextToHtml(const QString &p_text);
 
     void textToHtmlFinished(const QString &p_text, const QString &p_html);
+
+    void requestHtmlContent();
+
+    void htmlContentFinished(const QString &p_headContent,
+                             const QString &p_bodyContent);
 
 private:
     QString m_toc;

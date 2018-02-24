@@ -133,6 +133,11 @@ private:
                     const QString &p_outputFolder,
                     QString *p_errMsg = NULL);
 
+    int doExportHTML(VFile *p_file,
+                     const ExportOption &p_opt,
+                     const QString &p_outputFolder,
+                     QString *p_errMsg = NULL);
+
     // Return false if we could not continue.
     bool checkUserAction();
 

@@ -690,6 +690,11 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
     return htmlTemplate;
 }
 
+QString VUtils::generateExportHtmlTemplate(const QString &p_renderBg)
+{
+    return VNote::generateExportHtmlTemplate(g_config->getRenderBackgroundColor(p_renderBg));
+}
+
 QString VUtils::getFileNameWithSequence(const QString &p_directory,
                                         const QString &p_baseFileName,
                                         bool p_completeBaseName)
