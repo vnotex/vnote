@@ -74,6 +74,7 @@ private:
 
     bool exportToHTML(VWebView *p_webViewer,
                       VDocument *p_webDocument,
+                      bool p_embedCssStyle,
                       const QString &p_filePath);
 
     QPageLayout m_pageLayout;

@@ -70,7 +70,9 @@ public slots:
     // But the page may not finish loading, such as images.
     void finishLogics();
 
-    void htmlContentCB(const QString &p_head, const QString &p_body);
+    void htmlContentCB(const QString &p_head,
+                       const QString &p_style,
+                       const QString &p_body);
 
 signals:
     void textChanged(const QString &text);
@@ -103,6 +105,7 @@ signals:
     void requestHtmlContent();
 
     void htmlContentFinished(const QString &p_headContent,
+                             const QString &p_styleContent,
                              const QString &p_bodyContent);
 
 private:

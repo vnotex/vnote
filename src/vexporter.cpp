@@ -200,6 +200,7 @@ bool VExporter::exportViaWebView(VFile *p_file,
     case ExportFormat::HTML:
         exportRet = exportToHTML(m_webViewer,
                                  m_webDocument,
+                                 p_opt.m_embedCssStyle,
                                  p_outputFile);
         break;
 
@@ -235,13 +236,16 @@ exit:
 
 bool VExporter::exportToHTML(VWebView *p_webViewer,
                              VDocument *p_webDocument,
+                             bool p_embedCssStyle,
                              const QString &p_filePath)
 {
     Q_UNUSED(p_webViewer);
     int htmlExported = 0;
 
     connect(p_webDocument, &VDocument::htmlContentFinished,
-            this, [&, this](const QString &p_headContent, const QString &p_bodyContent) {
+            this, [&, this](const QString &p_headContent,
+                            const QString &p_styleContent,
+                            const QString &p_bodyContent) {
                 if (p_bodyContent.isEmpty() || this->m_state == ExportState::Cancelled) {
                     htmlExported = -1;
                     return;
@@ -257,7 +261,14 @@ bool VExporter::exportToHTML(VWebView *p_webViewer,
                 }
 
                 QString html(m_exportHtmlTemplate);
-                html.replace(HtmlHolder::c_headHolder, p_headContent);
+                if (!p_styleContent.isEmpty() && p_embedCssStyle) {
+                    html.replace(HtmlHolder::c_styleHolder, p_styleContent);
+                }
+
+                if (!p_headContent.isEmpty()) {
+                    html.replace(HtmlHolder::c_headHolder, p_headContent);
+                }
+
                 html.replace(HtmlHolder::c_bodyHolder, p_bodyContent);
 
                 file.write(html.toUtf8());

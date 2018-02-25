@@ -114,7 +114,9 @@ void VDocument::finishLogics()
     emit logicsFinished();
 }
 
-void VDocument::htmlContentCB(const QString &p_head, const QString &p_body)
+void VDocument::htmlContentCB(const QString &p_head,
+                              const QString &p_style,
+                              const QString &p_body)
 {
-    emit htmlContentFinished(p_head, p_body);
+    emit htmlContentFinished(p_head, p_style, p_body);
 }

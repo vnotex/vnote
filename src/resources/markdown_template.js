@@ -40,9 +40,8 @@ if (typeof VEnableImageCaption == 'undefined') {
     VEnableImageCaption = false;
 }
 
-var headContent = function() {
-    var styles = "<style type=\"text/css\">\n";
-
+var styleContent = function() {
+    var styles = "";
     for (var i = 0; i < document.styleSheets.length; ++i) {
         var styleSheet = document.styleSheets[i];
         if (styleSheet.cssRules) {
@@ -52,12 +51,11 @@ var headContent = function() {
         }
     }
 
-    var styles = styles + "</style>";
     return styles;
-};
+}
 
 var htmlContent = function() {
-    content.htmlContentCB(headContent(), placeholder.innerHTML);
+    content.htmlContentCB("", styleContent(), placeholder.innerHTML);
 };
 
 new QWebChannel(qt.webChannelTransport,

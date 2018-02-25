@@ -18,6 +18,7 @@ class VDirectory;
 class VFile;
 class VCart;
 class VExporter;
+class QCheckBox;
 
 
 enum class ExportSource
@@ -45,14 +46,16 @@ struct ExportOption
                  const QString &p_renderBg,
                  const QString &p_renderStyle,
                  const QString &p_renderCodeBlockStyle,
-                 QPageLayout *p_layout)
+                 QPageLayout *p_layout,
+                 bool p_embedCssStyle)
         : m_source(p_source),
           m_format(p_format),
           m_renderer(p_renderer),
           m_renderBg(p_renderBg),
           m_renderStyle(p_renderStyle),
           m_renderCodeBlockStyle(p_renderCodeBlockStyle),
-          m_layout(p_layout)
+          m_layout(p_layout),
+          m_embedCssStyle(p_embedCssStyle)
     {
     }
 
@@ -66,6 +69,8 @@ struct ExportOption
     QString m_renderStyle;
     QString m_renderCodeBlockStyle;
     QPageLayout *m_layout;
+
+    bool m_embedCssStyle;
 };
 
 
@@ -95,6 +100,8 @@ private:
     void setupUI();
 
     QWidget *setupPDFAdvancedSettings();
+
+    QWidget *setupHTMLAdvancedSettings();
 
     void initUIFields(MarkdownConverterType p_renderer);
 
@@ -165,6 +172,8 @@ private:
 
     QWidget *m_pdfSettings;
 
+    QWidget *m_htmlSettings;
+
     QPlainTextEdit *m_consoleEdit;
 
     QDialogButtonBox *m_btnBox;
@@ -175,7 +184,7 @@ private:
 
     QLabel *m_layoutLabel;
 
-    QPushButton *m_layoutBtn;
+    QCheckBox *m_embedStyleCB;
 
     VNotebook *m_notebook;
 

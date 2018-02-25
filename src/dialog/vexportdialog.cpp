@@ -150,9 +150,11 @@ void VExportDialog::setupUI()
     m_basicBox->setLayout(basicLayout);
 
     // Settings box.
+    m_htmlSettings = setupHTMLAdvancedSettings();
     m_pdfSettings = setupPDFAdvancedSettings();
 
     QVBoxLayout *advLayout = new QVBoxLayout();
+    advLayout->addWidget(m_htmlSettings);
     advLayout->addWidget(m_pdfSettings);
 
     m_settingBox->setLayout(advLayout);
@@ -172,24 +174,42 @@ QWidget *VExportDialog::setupPDFAdvancedSettings()
 {
     // Page layout settings.
     m_layoutLabel = new QLabel();
-    m_layoutBtn = new QPushButton(tr("Settings"));
+    QPushButton *layoutBtn = new QPushButton(tr("Settings"));
 
 #ifndef QT_NO_PRINTER
-    connect(m_layoutBtn, &QPushButton::clicked,
+    connect(layoutBtn, &QPushButton::clicked,
             this, &VExportDialog::handleLayoutBtnClicked);
 #else
-    m_layoutBtn->hide();
+    layoutBtn->hide();
 #endif
 
     updatePageLayoutLabel();
 
     QHBoxLayout *layoutLayout = new QHBoxLayout();
     layoutLayout->addWidget(m_layoutLabel);
-    layoutLayout->addWidget(m_layoutBtn);
+    layoutLayout->addWidget(layoutBtn);
     layoutLayout->addStretch();
 
     QFormLayout *advLayout = new QFormLayout();
     advLayout->addRow(tr("Page layout:"), layoutLayout);
+
+    advLayout->setContentsMargins(0, 0, 0, 0);
+
+    QWidget *wid = new QWidget();
+    wid->setLayout(advLayout);
+
+    return wid;
+}
+
+QWidget *VExportDialog::setupHTMLAdvancedSettings()
+{
+    // Embed CSS styles.
+    m_embedStyleCB = new QCheckBox(tr("Embed CSS styles"), this);
+    m_embedStyleCB->setToolTip(tr("Embed CSS styles in HTML file"));
+    m_embedStyleCB->setChecked(true);
+
+    QFormLayout *advLayout = new QFormLayout();
+    advLayout->addRow(m_embedStyleCB);
 
     advLayout->setContentsMargins(0, 0, 0, 0);
 
@@ -282,7 +302,8 @@ void VExportDialog::startExport()
                      m_renderBgCB->currentData().toString(),
                      m_renderStyleCB->currentData().toString(),
                      m_renderCodeBlockStyleCB->currentData().toString(),
-                     &m_pageLayout);
+                     &m_pageLayout,
+                     m_embedStyleCB->isChecked());
 
     s_lastExportFormat = opt.m_format;
 
@@ -709,11 +730,16 @@ void VExportDialog::updatePageLayoutLabel()
 void VExportDialog::handleCurrentFormatChanged(int p_index)
 {
     bool pdfEnabled = false;
+    bool htmlEnabled = false;
 
     if (p_index >= 0) {
         switch (m_formatCB->currentData().toInt()) {
         case (int)ExportFormat::PDF:
             pdfEnabled = true;
+            break;
+
+        case (int)ExportFormat::HTML:
+            htmlEnabled = true;
             break;
 
         default:
@@ -722,4 +748,5 @@ void VExportDialog::handleCurrentFormatChanged(int p_index)
     }
 
     m_pdfSettings->setVisible(pdfEnabled);
+    m_htmlSettings->setVisible(htmlEnabled);
 }
