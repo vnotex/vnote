@@ -16,6 +16,7 @@ struct VPaletteMetaData
     QString m_mdhlFile;
     QString m_cssFile;
     QString m_codeBlockCssFile;
+    QString m_mermaidCssFile;
 
     // Color mapping when copied.
     // All lower-case.
@@ -23,12 +24,14 @@ struct VPaletteMetaData
 
     QString toString() const
     {
-        return QString("palette metadata version=%1 qss=%2 mdhl=%3 css=%4 codeBlockCss=%5 colorMappingSize=%6")
+        return QString("palette metadata version=%1 qss=%2 mdhl=%3 css=%4 "
+                       "codeBlockCss=%5 mermaidCss=%6 colorMappingSize=%7")
                       .arg(m_version)
                       .arg(m_qssFile)
                       .arg(m_mdhlFile)
                       .arg(m_cssFile)
                       .arg(m_codeBlockCssFile)
+                      .arg(m_mermaidCssFile)
                       .arg(m_colorMapping.size());
     }
 };

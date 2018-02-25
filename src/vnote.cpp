@@ -45,8 +45,6 @@ const QString VNote::c_showdownExtraFile = ":/utils/showdown/showdown.min.js";
 const QString VNote::c_showdownAnchorExtraFile = ":/utils/showdown/showdown-headinganchor.js";
 
 const QString VNote::c_mermaidApiJsFile = ":/utils/mermaid/mermaidAPI.min.js";
-const QString VNote::c_mermaidCssFile = ":/utils/mermaid/mermaid.css";
-const QString VNote::c_mermaidDarkCssFile = ":/utils/mermaid/mermaid.dark.css";
 const QString VNote::c_mermaidForestCssFile = ":/utils/mermaid/mermaid.forest.css";
 
 const QString VNote::c_flowchartJsFile = ":/utils/flowchart.js/flowchart.min.js";

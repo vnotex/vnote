@@ -2,84 +2,84 @@
 /* Sequence Diagram variables */
 /* Gantt chart variables */
 .mermaid .label {
-  color: #323D47;
+  color: #333;
 }
 .node rect,
 .node circle,
 .node ellipse,
 .node polygon {
-  fill: #BDD5EA;
-  stroke: #81B1DB;
+  fill: #ECECFF;
+  stroke: #CCCCFF;
   stroke-width: 1px;
 }
 .edgePath .path {
-  stroke: lightgrey;
+  stroke: #333333;
 }
 .edgeLabel {
   background-color: #e8e8e8;
 }
 .cluster rect {
-  fill: #6D6D65 !important;
+  fill: #ffffde !important;
   rx: 4 !important;
-  stroke: rgba(255, 255, 255, 0.25) !important;
+  stroke: #aaaa33 !important;
   stroke-width: 1px !important;
 }
 .cluster text {
-  fill: #F9FFFE;
+  fill: #333;
 }
 .actor {
-  stroke: #81B1DB;
-  fill: #BDD5EA;
+  stroke: #CCCCFF;
+  fill: #ECECFF;
 }
 text.actor {
   fill: black;
   stroke: none;
 }
 .actor-line {
-  stroke: lightgrey;
+  stroke: grey;
 }
 .messageLine0 {
   stroke-width: 1.5;
   stroke-dasharray: "2 2";
   marker-end: "url(#arrowhead)";
-  stroke: lightgrey;
+  stroke: #333;
 }
 .messageLine1 {
   stroke-width: 1.5;
   stroke-dasharray: "2 2";
-  stroke: lightgrey;
+  stroke: #333;
 }
 #arrowhead {
-  fill: lightgrey !important;
+  fill: #333;
 }
 #crosshead path {
-  fill: lightgrey !important;
-  stroke: lightgrey !important;
+  fill: #333 !important;
+  stroke: #333 !important;
 }
 .messageText {
-  fill: lightgrey;
+  fill: #333;
   stroke: none;
 }
 .labelBox {
-  stroke: #81B1DB;
-  fill: #BDD5EA;
+  stroke: #CCCCFF;
+  fill: #ECECFF;
 }
 .labelText {
-  fill: #323D47;
+  fill: black;
   stroke: none;
 }
 .loopText {
-  fill: lightgrey;
+  fill: black;
   stroke: none;
 }
 .loopLine {
   stroke-width: 2;
   stroke-dasharray: "2 2";
   marker-end: "url(#arrowhead)";
-  stroke: #81B1DB;
+  stroke: #CCCCFF;
 }
 .note {
-  stroke: rgba(255, 255, 255, 0.25);
+  stroke: #aaaa33;
   fill: #fff5ad;
 }
 .noteText {
@@ -94,10 +94,10 @@ text.actor {
   opacity: 0.2;
 }
 .section0 {
-  fill: rgba(255, 255, 255, 0.3);
+  fill: rgba(102, 102, 255, 0.49);
 }
 .section2 {
-  fill: #EAE8B9;
+  fill: #fff400;
 }
 .section1,
 .section3 {
@@ -105,16 +105,16 @@ text.actor {
   opacity: 0.2;
 }
 .sectionTitle0 {
-  fill: #F9FFFE;
+  fill: #333;
 }
 .sectionTitle1 {
-  fill: #F9FFFE;
+  fill: #333;
 }
 .sectionTitle2 {
-  fill: #F9FFFE;
+  fill: #333;
 }
 .sectionTitle3 {
-  fill: #F9FFFE;
+  fill: #333;
 }
 .sectionTitle {
   text-anchor: start;
@@ -123,13 +123,9 @@ text.actor {
 }
 /* Grid and axis */
 .grid .tick {
-  stroke: rgba(255, 255, 255, 0.3);
+  stroke: lightgrey;
   opacity: 0.3;
   shape-rendering: crispEdges;
-}
-.grid .tick text {
-  fill: lightgrey;
-  opacity: 0.5;
 }
 .grid path {
   stroke-width: 0;
@@ -137,25 +133,25 @@ text.actor {
 /* Today line */
 .today {
   fill: none;
-  stroke: #DB5757;
+  stroke: red;
   stroke-width: 2px;
 }
 /* Task styling */
 /* Default task */
 .task {
-  stroke-width: 1;
+  stroke-width: 2;
 }
 .taskText {
   text-anchor: middle;
   font-size: 11px;
 }
 .taskTextOutsideRight {
-  fill: #323D47;
+  fill: black;
   text-anchor: start;
   font-size: 11px;
 }
 .taskTextOutsideLeft {
-  fill: #323D47;
+  fill: black;
   text-anchor: end;
   font-size: 11px;
 }
@@ -164,74 +160,76 @@ text.actor {
 .taskText1,
 .taskText2,
 .taskText3 {
-  fill: #323D47;
+  fill: white;
 }
 .task0,
 .task1,
 .task2,
 .task3 {
-  fill: #BDD5EA;
-  stroke: rgba(255, 255, 255, 0.5);
+  fill: #8a90dd;
+  stroke: #534fbc;
 }
 .taskTextOutside0,
 .taskTextOutside2 {
-  fill: lightgrey;
+  fill: black;
 }
 .taskTextOutside1,
 .taskTextOutside3 {
-  fill: lightgrey;
+  fill: black;
 }
 /* Active task */
 .active0,
 .active1,
 .active2,
 .active3 {
-  fill: #81B1DB;
-  stroke: rgba(255, 255, 255, 0.5);
+  fill: #bfc7ff;
+  stroke: #534fbc;
 }
 .activeText0,
 .activeText1,
 .activeText2,
 .activeText3 {
-  fill: #323D47 !important;
+  fill: black !important;
 }
 /* Completed task */
 .done0,
 .done1,
 .done2,
 .done3 {
+  stroke: grey;
   fill: lightgrey;
+  stroke-width: 2;
 }
 .doneText0,
 .doneText1,
 .doneText2,
 .doneText3 {
-  fill: #323D47 !important;
+  fill: black !important;
 }
 /* Tasks on the critical line */
 .crit0,
 .crit1,
 .crit2,
 .crit3 {
-  stroke: #E83737;
-  fill: #E83737;
+  stroke: #ff8888;
+  fill: red;
   stroke-width: 2;
 }
 .activeCrit0,
 .activeCrit1,
 .activeCrit2,
 .activeCrit3 {
-  stroke: #E83737;
-  fill: #81B1DB;
+  stroke: #ff8888;
+  fill: #bfc7ff;
   stroke-width: 2;
 }
 .doneCrit0,
 .doneCrit1,
 .doneCrit2,
 .doneCrit3 {
-  stroke: #E83737;
+  stroke: #ff8888;
   fill: lightgrey;
-  stroke-width: 1;
+  stroke-width: 2;
   cursor: pointer;
   shape-rendering: crispEdges;
 }
@@ -239,18 +237,18 @@ text.actor {
 .doneCritText1,
 .doneCritText2,
 .doneCritText3 {
-  fill: lightgrey !important;
+  fill: black !important;
 }
 .activeCritText0,
 .activeCritText1,
 .activeCritText2,
 .activeCritText3 {
-  fill: #323D47 !important;
+  fill: black !important;
 }
 .titleText {
   text-anchor: middle;
   font-size: 18px;
-  fill: lightgrey;
+  fill: black;
 }
 /*
 
@@ -267,8 +265,8 @@ div.mermaidTooltip {
   padding: 2px;
   font-family: 'trebuchet ms', verdana, arial;
   font-size: 12px;
-  background: #6D6D65;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: #ffffde;
+  border: 1px solid #aaaa33;
   border-radius: 2px;
   pointer-events: none;
   z-index: 100;

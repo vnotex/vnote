@@ -6,7 +6,8 @@ qss_file=v_white.qss
 mdhl_file=v_white.mdhl
 css_file=v_white.css
 codeblock_css_file=v_white_codeblock.css
-version=3
+mermaid_css_file=v_white_mermaid.css
+version=4
 
 [phony]
 ; Abstract color attributes.

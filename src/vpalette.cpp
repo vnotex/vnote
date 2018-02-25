@@ -224,6 +224,11 @@ VPaletteMetaData VPalette::getPaletteMetaData(const QString &p_paletteFile)
         data.m_codeBlockCssFile = dir.filePath(val);
     }
 
+    val = settings.value("mermaid_css_file").toString();
+    if (!val.isEmpty()) {
+        data.m_mermaidCssFile = dir.filePath(val);
+    }
+
     QStringList mapping = settings.value("css_color_mapping").toStringList();
     if (!mapping.isEmpty()) {
         for (auto const & m : mapping) {

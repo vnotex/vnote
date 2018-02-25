@@ -59,9 +59,6 @@
         <file>utils/markdown-it/markdown-it.min.js</file>
         <file>utils/markdown-it/markdown-it-headinganchor.js</file>
         <file>utils/markdown-it/markdown-it-task-lists.min.js</file>
-        <file>utils/mermaid/mermaid.css</file>
-        <file>utils/mermaid/mermaid.dark.css</file>
-        <file>utils/mermaid/mermaid.forest.css</file>
         <file>utils/mermaid/mermaidAPI.min.js</file>
         <file>resources/icons/close_red.svg</file>
         <file>resources/docs/shortcuts_en.md</file>
@@ -240,5 +237,8 @@
         <file>resources/icons/fullscreen.svg</file>
         <file>resources/icons/menubar.svg</file>
         <file>resources/export_template.html</file>
+        <file>resources/themes/v_pure/v_pure_mermaid.css</file>
+        <file>resources/themes/v_white/v_white_mermaid.css</file>
+        <file>resources/themes/v_moonlight/v_moonlight_mermaid.css</file>
     </qresource>
 </RCC>

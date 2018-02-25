@@ -58,8 +58,6 @@ public:
 
     // Mermaid
     static const QString c_mermaidApiJsFile;
-    static const QString c_mermaidCssFile;
-    static const QString c_mermaidDarkCssFile;
     static const QString c_mermaidForestCssFile;
 
     // flowchart.js

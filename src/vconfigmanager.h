@@ -123,6 +123,8 @@ public:
 
     QString getCodeBlockCssStyleUrl(const QString &p_style) const;
 
+    QString getMermaidCssStyleUrl() const;
+
     const QString &getEditorStyle() const;
     void setEditorStyle(const QString &p_style);
 

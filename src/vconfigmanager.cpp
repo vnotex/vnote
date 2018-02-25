@@ -930,6 +930,29 @@ QString VConfigManager::getCodeBlockCssStyleUrl(const QString &p_style) const
     return cssPath;
 }
 
+QString VConfigManager::getMermaidCssStyleUrl() const
+{
+    Q_ASSERT(!m_themes.isEmpty());
+    Q_ASSERT(!m_theme.isEmpty());
+
+    static QString mermaidCssPath;
+
+    if (mermaidCssPath.isEmpty()) {
+        VPaletteMetaData data = VPalette::getPaletteMetaData(getThemeFile());
+        mermaidCssPath = data.m_mermaidCssFile;
+        if (mermaidCssPath.startsWith(":")) {
+            mermaidCssPath = "qrc" + mermaidCssPath;
+        } else {
+            QUrl cssUrl = QUrl::fromLocalFile(mermaidCssPath);
+            mermaidCssPath = cssUrl.toString();
+        }
+
+        qDebug() << "use mermaid css style file" << mermaidCssPath;
+    }
+
+    return mermaidCssPath;
+}
+
 QString VConfigManager::getEditorStyleFile() const
 {
     Q_ASSERT(!m_themes.isEmpty());
