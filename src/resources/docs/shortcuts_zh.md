@@ -279,3 +279,7 @@ VNote支持以下几个Vim的特性：
 VNote目前暂时不支持Vim的宏和重复(`.`)特性。
 
 在VNote上享受Vim的美好时光吧！
+
+# 其他
+- `Ctrl+J` 和 `Ctrl+K` 浏览导航；
+- 在列表中，`Ctrl+N` 和 `Ctrl+P` 在搜索结果中导航；

@@ -63,24 +63,31 @@ void VEditWindow::initTabActions()
     m_locateAct = new QAction(VIconUtils::menuIcon(":/resources/icons/locate_note.svg"),
                               tr("Locate To Folder"), this);
     m_locateAct->setToolTip(tr("Locate the folder of current note"));
+    VUtils::fixTextWithCaptainShortcut(m_locateAct, "LocateCurrentFile");
     connect(m_locateAct, &QAction::triggered,
             this, &VEditWindow::handleLocateAct);
 
     m_moveLeftAct = new QAction(VIconUtils::menuIcon(":/resources/icons/move_tab_left.svg"),
                                 tr("Move One Split Left"), this);
     m_moveLeftAct->setToolTip(tr("Move current tab to the split on the left"));
+    VUtils::fixTextWithCaptainShortcut(m_moveLeftAct, "MoveTabSplitLeft");
     connect(m_moveLeftAct, &QAction::triggered,
             this, &VEditWindow::handleMoveLeftAct);
 
     m_moveRightAct = new QAction(VIconUtils::menuIcon(":/resources/icons/move_tab_right.svg"),
                                  tr("Move One Split Right"), this);
     m_moveRightAct->setToolTip(tr("Move current tab to the split on the right"));
+    VUtils::fixTextWithCaptainShortcut(m_moveRightAct, "MoveTabSplitRight");
     connect(m_moveRightAct, &QAction::triggered,
             this, &VEditWindow::handleMoveRightAct);
 
     m_closeTabAct = new QAction(VIconUtils::menuIcon(":/resources/icons/close.svg"),
                                 tr("Close Tab"), this);
     m_closeTabAct->setToolTip(tr("Close current note tab"));
+    if (!VUtils::fixTextWithShortcut(m_closeTabAct, "CloseNote")) {
+        VUtils::fixTextWithCaptainShortcut(m_closeTabAct, "CloseNote");
+    }
+
     connect(m_closeTabAct, &QAction::triggered,
             this, [this](){
                 int tab = this->m_closeTabAct->data().toInt();
@@ -234,6 +241,11 @@ void VEditWindow::setupCornerWidget()
                               "", this);
     leftBtn->setProperty("CornerBtn", true);
     leftBtn->setToolTip(tr("Opened Notes List"));
+    QString keyText = VUtils::getCaptainShortcutSequenceText("OpenedFileList");
+    if (!keyText.isEmpty()) {
+        leftBtn->setToolTip(QString("%1\t%2").arg(leftBtn->toolTip()).arg(keyText));
+    }
+
     VOpenedListMenu *leftMenu = new VOpenedListMenu(this);
     leftMenu->setToolTipsVisible(true);
     connect(leftMenu, &VOpenedListMenu::fileTriggered,
@@ -245,6 +257,7 @@ void VEditWindow::setupCornerWidget()
     splitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/split_window.svg"),
                            tr("Split"), this);
     splitAct->setToolTip(tr("Split current window vertically"));
+    VUtils::fixTextWithCaptainShortcut(splitAct, "VerticalSplit");
     connect(splitAct, &QAction::triggered,
             this, [this](){
                 splitWindow(true);
@@ -253,6 +266,7 @@ void VEditWindow::setupCornerWidget()
     removeSplitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/remove_split.svg"),
                                  tr("Remove split"), this);
     removeSplitAct->setToolTip(tr("Remove current split window"));
+    VUtils::fixTextWithCaptainShortcut(removeSplitAct, "RemoveSplit");
     connect(removeSplitAct, &QAction::triggered,
             this, &VEditWindow::removeSplit);
 

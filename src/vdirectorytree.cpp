@@ -91,11 +91,7 @@ void VDirectoryTree::initActions()
 {
     m_newNoteAct = new QAction(VIconUtils::menuIcon(":/resources/icons/create_note_tb.svg"),
                              tr("New &Note"), this);
-    QString shortcutStr = VUtils::getShortcutText(g_config->getShortcutKeySequence("NewNote"));
-    if (!shortcutStr.isEmpty()) {
-        m_newNoteAct->setText(tr("New &Note\t%1").arg(shortcutStr));
-    }
-
+    VUtils::fixTextWithShortcut(m_newNoteAct, "NewNote");
     m_newNoteAct->setToolTip(tr("Create a note in selected folder"));
     connect(m_newNoteAct, &QAction::triggered,
             this, [this]() {
@@ -111,11 +107,7 @@ void VDirectoryTree::initActions()
     newSubDirAct = new QAction(VIconUtils::menuIcon(":/resources/icons/create_subdir.svg"),
                                tr("New &Subfolder"), this);
     newSubDirAct->setToolTip(tr("Create a subfolder"));
-    shortcutStr = VUtils::getShortcutText(g_config->getShortcutKeySequence("NewSubfolder"));
-    if (!shortcutStr.isEmpty()) {
-        newSubDirAct->setText(tr("&New Subfolder\t%1").arg(shortcutStr));
-    }
-
+    VUtils::fixTextWithShortcut(newSubDirAct, "NewSubfolder");
     connect(newSubDirAct, &QAction::triggered,
             this, &VDirectoryTree::newSubDirectory);
 

@@ -277,3 +277,7 @@ VNote supports following features of Vim:
 For now, VNote does **NOT** support the macro and repeat(`.`) features of Vim.
 
 Enjoy Vim in VNote!
+
+# Others
+- `Ctrl+J` and `Ctrl+K` to navigate through items;
+- `Ctrl+N` and `Ctrl+P` to navigate through search results in list;

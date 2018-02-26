@@ -356,11 +356,7 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
     QAction *onePanelViewAct = new QAction(VIconUtils::menuIcon(":/resources/icons/one_panel.svg"),
                                            tr("Single Panel"),
                                            m_viewActGroup);
-    QString keyText = VUtils::getCaptainShortcutSequenceText("OnePanelView");
-    if (!keyText.isEmpty()) {
-        onePanelViewAct->setText(tr("Single Panel\t%1").arg(keyText));
-    }
-
+    VUtils::fixTextWithCaptainShortcut(onePanelViewAct, "OnePanelView");
     onePanelViewAct->setStatusTip(tr("Display only the notes list panel"));
     onePanelViewAct->setCheckable(true);
     onePanelViewAct->setData((int)PanelViewState::SinglePanel);
@@ -368,11 +364,7 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
     QAction *twoPanelViewAct = new QAction(VIconUtils::menuIcon(":/resources/icons/two_panels.svg"),
                                            tr("Two Panels"),
                                            m_viewActGroup);
-    keyText = VUtils::getCaptainShortcutSequenceText("OnePanelView");
-    if (!keyText.isEmpty()) {
-        twoPanelViewAct->setText(tr("Two Panels\t%1").arg(keyText));
-    }
-
+    VUtils::fixTextWithCaptainShortcut(twoPanelViewAct, "OnePanelView");
     twoPanelViewAct->setStatusTip(tr("Display both the folders and notes list panel"));
     twoPanelViewAct->setCheckable(true);
     twoPanelViewAct->setData((int)PanelViewState::TwoPanels);
@@ -417,11 +409,7 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
 
     expandViewAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/expand.svg"),
                                 tr("Expand"), this);
-    keyText = VUtils::getCaptainShortcutSequenceText("ExpandMode");
-    if (!keyText.isEmpty()) {
-        expandViewAct->setText(tr("Expand\t%1").arg(keyText));
-    }
-
+    VUtils::fixTextWithCaptainShortcut(expandViewAct, "ExpandMode");
     expandViewAct->setStatusTip(tr("Expand the edit area"));
     expandViewAct->setCheckable(true);
     expandViewAct->setMenu(panelMenu);
@@ -708,11 +696,7 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     m_discardExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/discard_exit.svg"),
                                    tr("Discard Changes And Read"),
                                    this);
-    keySeq = VUtils::getCaptainShortcutSequenceText("DiscardAndRead");
-    if (!keySeq.isEmpty()) {
-        m_discardExitAct->setText(tr("Discard Changes And Read\t%1").arg(keySeq));
-    }
-
+    VUtils::fixTextWithCaptainShortcut(m_discardExitAct, "DiscardAndRead");
     m_discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
     connect(m_discardExitAct, &QAction::triggered,
             editArea, &VEditArea::readFile);
@@ -778,11 +762,7 @@ void VMainWindow::initHelpMenu()
 
     QAction *shortcutAct = new QAction(tr("&Shortcuts Help"), this);
     shortcutAct->setToolTip(tr("View information about shortcut keys"));
-    QString keyText = VUtils::getCaptainShortcutSequenceText("ShortcutsHelp");
-    if (!keyText.isEmpty()) {
-        shortcutAct->setText(tr("&Shortcuts Help\t%1").arg(keyText));
-    }
-
+    VUtils::fixTextWithCaptainShortcut(shortcutAct, "ShortcutsHelp");
     connect(shortcutAct, &QAction::triggered,
             this, &VMainWindow::shortcutsHelp);
 
@@ -1011,10 +991,7 @@ void VMainWindow::initFileMenu()
     // Export as PDF.
     m_exportAct = new QAction(tr("E&xport"), this);
     m_exportAct->setToolTip(tr("Export notes"));
-    QString keyText = VUtils::getCaptainShortcutSequenceText("Export");
-    if (!keyText.isEmpty()) {
-        m_exportAct->setText(tr("E&xport\t%1").arg(keyText));
-    }
+    VUtils::fixTextWithCaptainShortcut(m_exportAct, "Export");
     connect(m_exportAct, &QAction::triggered,
             this, &VMainWindow::handleExportAct);
 
@@ -1326,10 +1303,7 @@ void VMainWindow::initDockWindows()
 
     QAction *toggleAct = toolDock->toggleViewAction();
     toggleAct->setToolTip(tr("Toggle the tools dock widget"));
-    QString keyText = VUtils::getCaptainShortcutSequenceText("ToolsDock");
-    if (!keyText.isEmpty()) {
-        toggleAct->setText(tr("%1\t%2").arg(toggleAct->text()).arg(keyText));
-    }
+    VUtils::fixTextWithCaptainShortcut(toggleAct, "ToolsDock");
 
     m_viewMenu->addAction(toggleAct);
 }

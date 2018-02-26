@@ -113,11 +113,7 @@ void VFileList::initActions()
 {
     newFileAct = new QAction(VIconUtils::menuIcon(":/resources/icons/create_note.svg"),
                              tr("&New Note"), this);
-    QString shortcutStr = VUtils::getShortcutText(g_config->getShortcutKeySequence("NewNote"));
-    if (!shortcutStr.isEmpty()) {
-        newFileAct->setText(tr("&New Note\t%1").arg(shortcutStr));
-    }
-
+    VUtils::fixTextWithShortcut(newFileAct, "NewNote");
     newFileAct->setToolTip(tr("Create a note in current folder"));
     connect(newFileAct, SIGNAL(triggered(bool)),
             this, SLOT(newFile()));

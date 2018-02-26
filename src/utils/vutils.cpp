@@ -24,6 +24,7 @@
 #include <QComboBox>
 #include <QStyledItemDelegate>
 #include <QWebEngineView>
+#include <QAction>
 
 #include "vorphanfile.h"
 #include "vnote.h"
@@ -1235,4 +1236,26 @@ QString VUtils::getAvailableFontFamily(const QStringList &p_families)
     }
 
     return QString();
+}
+
+bool VUtils::fixTextWithShortcut(QAction *p_act, const QString &p_shortcut)
+{
+    QString keySeq = g_config->getShortcutKeySequence(p_shortcut);
+    if (!keySeq.isEmpty()) {
+        p_act->setText(QString("%1\t%2").arg(p_act->text()).arg(VUtils::getShortcutText(keySeq)));
+        return true;
+    }
+
+    return false;
+}
+
+bool VUtils::fixTextWithCaptainShortcut(QAction *p_act, const QString &p_shortcut)
+{
+    QString keyText = VUtils::getCaptainShortcutSequenceText(p_shortcut);
+    if (!keyText.isEmpty()) {
+        p_act->setText(QString("%1\t%2").arg(p_act->text()).arg(keyText));
+        return true;
+    }
+
+    return false;
 }

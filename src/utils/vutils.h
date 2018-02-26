@@ -18,6 +18,7 @@ class VNotebook;
 class QWidget;
 class QComboBox;
 class QWebEngineView;
+class QAction;
 
 #if !defined(V_ASSERT)
     #define V_ASSERT(cond) ((!(cond)) ? qt_assert(#cond, __FILE__, __LINE__) : qt_noop())
@@ -300,6 +301,10 @@ public:
     static QString getCaptainShortcutSequenceText(const QString &p_operation);
 
     static QString getAvailableFontFamily(const QStringList &p_families);
+
+    static bool fixTextWithShortcut(QAction *p_act, const QString &p_shortcut);
+
+    static bool fixTextWithCaptainShortcut(QAction *p_act, const QString &p_shortcut);
 
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
