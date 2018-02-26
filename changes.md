@@ -1,4 +1,23 @@
 # Changes History
+## v1.12
+- Combine `EditNote` and `SaveExitNote` as `EditReadNote` (`Ctrl+T`);
+- Support exporting notes as Markdown, HTML, and PDF;
+- Support simple search in directory tree, file list, and outline;
+- Support copying selected text as HTML in edit mode;
+- Support copying text to Evernote, OneNote, Word, WeChat Public Account editor and so on;
+- Support auto-save;
+- Support fullscreen mode and hiding menu bar;
+- Support `Ctrl+H/W/U` to delete text in most line edits;
+- Support zooming in/out in edit mode;
+- Support MathJax in fenced code block with language `mathjax` specified;
+- More shortcuts;
+- Add **Cart** to collect notes for further processing;
+- Output built-in themes on start of VNote;
+- `Esc` to exit edit mode when Vim mode is disabled;
+- Support Vim command line for search in read mode;
+- Support printing;
+- Single click in file list to open file in current tab, double clicks to open in a new tab;
+
 ## v1.11.1
 - Refine copy function in read mode. Better support for copying and pasting into OneNote or WeChat editor;
 - Do not highlight code blocks without language specified by default;
