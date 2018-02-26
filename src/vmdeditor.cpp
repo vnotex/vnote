@@ -732,6 +732,15 @@ void VMdEditor::insertFromMimeData(const QMimeData *p_source)
     dialog.addSelection(tr("Insert As Image"), 0);
     dialog.addSelection(tr("Insert As Text"), 1);
 
+    if (p_source->hasHtml()) {
+        // Handle <img>.
+        QRegExp reg("<img ([^>]*)src=\"([^\"]+)\"([^>]*)>");
+        if (reg.indexIn(p_source->html()) != -1) {
+            m_editOps->insertImageFromURL(QUrl(reg.cap(2)));
+            return;
+        }
+    }
+
     if (p_source->hasImage()) {
         // Image data in the clipboard
         if (p_source->hasText()) {
@@ -749,7 +758,9 @@ void VMdEditor::insertFromMimeData(const QMimeData *p_source)
 
         m_editOps->insertImageFromMimeData(p_source);
         return;
-    } else if (p_source->hasUrls()) {
+    }
+
+    if (p_source->hasUrls()) {
         QList<QUrl> urls = p_source->urls();
         if (urls.size() == 1 && VUtils::isImageURL(urls[0])) {
             if (dialog.exec() == QDialog::Accepted) {
@@ -768,7 +779,9 @@ void VMdEditor::insertFromMimeData(const QMimeData *p_source)
                 return;
             }
         }
-    } else if (p_source->hasText()) {
+    }
+
+    if (p_source->hasText()) {
         QString text = p_source->text();
         if (VUtils::isImageURLText(text)) {
             // The text is a URL to an image.
