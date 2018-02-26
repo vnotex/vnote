@@ -112,7 +112,7 @@ bool VFile::isInternalImageFolder(const QString &p_path) const
 bool VFile::isChangedOutside() const
 {
     QDateTime lm = QFileInfo(fetchPath()).lastModified();
-    return  lm != m_lastModified;
+    return lm.toSecsSinceEpoch() != m_lastModified.toSecsSinceEpoch();
 }
 
 void VFile::reload()

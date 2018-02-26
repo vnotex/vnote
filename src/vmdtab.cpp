@@ -339,6 +339,7 @@ bool VMdTab::saveFile()
                             QMessageBox::Ok, QMessageBox::Ok, this);
         ret = false;
     } else {
+        m_checkFileChange = false;
         m_editor->saveFile();
         ret = m_file->save();
         if (!ret) {
