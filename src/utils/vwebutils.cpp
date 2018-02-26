@@ -3,9 +3,13 @@
 #include <QFileInfo>
 #include <QObject>
 #include <QDebug>
+#include <QDir>
+#include <QUrl>
 
 #include "vpalette.h"
 #include "vconfigmanager.h"
+#include "utils/vutils.h"
+#include "vdownloader.h"
 
 extern VPalette *g_palette;
 
@@ -890,4 +894,33 @@ bool VWebUtils::fixXHtmlTags(QString &p_html)
     }
 
     return altered;
+}
+
+QString VWebUtils::copyResource(const QUrl &p_url, const QString &p_folder) const
+{
+    Q_ASSERT(!p_url.isRelative());
+
+    QDir dir(p_folder);
+    if (!dir.exists()) {
+        VUtils::makePath(p_folder);
+    }
+
+    QString file = p_url.isLocalFile() ? p_url.toLocalFile() : p_url.toString();
+    QString fileName = VUtils::fileNameFromPath(file);
+    fileName = VUtils::getFileNameWithSequence(p_folder, fileName, true);
+    QString targetFile = dir.absoluteFilePath(fileName);
+
+    bool succ = false;
+    if (p_url.scheme() == "https" || p_url.scheme() == "http") {
+        // Download it.
+        QByteArray data = VDownloader::downloadSync(p_url);
+        if (!data.isEmpty()) {
+            succ = VUtils::writeFileToDisk(targetFile, data);
+        }
+    } else if (QFileInfo::exists(file)) {
+        // Do a copy.
+        succ = VUtils::copyFile(file, targetFile, false);
+    }
+
+    return succ ? targetFile : QString();
 }

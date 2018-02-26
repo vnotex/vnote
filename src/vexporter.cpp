@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QWidget>
 #include <QWebChannel>
+#include <QRegExp>
 
 #include "vconfigmanager.h"
 #include "vfile.h"
@@ -12,8 +13,11 @@
 #include "vconstants.h"
 #include "vmarkdownconverter.h"
 #include "vdocument.h"
+#include "utils/vwebutils.h"
 
 extern VConfigManager *g_config;
+
+extern VWebUtils *g_webUtils;
 
 VExporter::VExporter(QWidget *p_parent)
     : QObject(p_parent),
@@ -82,7 +86,8 @@ void VExporter::initWebViewer(VFile *p_file, const ExportOption &p_opt)
         m_webDocument->setHtml(html);
     }
 
-    m_webViewer->setHtml(m_htmlTemplate, p_file->getBaseUrl());
+    m_baseUrl = p_file->getBaseUrl();
+    m_webViewer->setHtml(m_htmlTemplate, m_baseUrl);
 }
 
 void VExporter::handleLogicsFinished()
@@ -107,6 +112,7 @@ void VExporter::clearWebViewer()
     delete m_webViewer;
     m_webViewer = NULL;
     m_webDocument = NULL;
+    m_baseUrl.clear();
 }
 
 bool VExporter::exportToPDF(VWebView *p_webViewer,
@@ -122,15 +128,10 @@ bool VExporter::exportToPDF(VWebView *p_webViewer,
 
         V_ASSERT(!p_filePath.isEmpty());
 
-        QFile file(p_filePath);
-
-        if (!file.open(QFile::WriteOnly)) {
+        if (!VUtils::writeFileToDisk(p_filePath, p_result)) {
             pdfPrinted = -1;
             return;
         }
-
-        file.write(p_result.data(), p_result.size());
-        file.close();
 
         pdfPrinted = 1;
     }, p_layout);
@@ -201,6 +202,7 @@ bool VExporter::exportViaWebView(VFile *p_file,
         exportRet = exportToHTML(m_webViewer,
                                  m_webDocument,
                                  p_opt.m_embedCssStyle,
+                                 p_opt.m_completeHTML,
                                  p_outputFile);
         break;
 
@@ -237,6 +239,7 @@ exit:
 bool VExporter::exportToHTML(VWebView *p_webViewer,
                              VDocument *p_webDocument,
                              bool p_embedCssStyle,
+                             bool p_completeHTML,
                              const QString &p_filePath)
 {
     Q_UNUSED(p_webViewer);
@@ -260,19 +263,39 @@ bool VExporter::exportToHTML(VWebView *p_webViewer,
                     return;
                 }
 
+                QString resFolder = QFileInfo(p_filePath).completeBaseName() + "_files";
+                QString resFolderPath = QDir(VUtils::basePathFromPath(p_filePath)).filePath(resFolder);
+
+                qDebug() << "HTML files folder" << resFolderPath;
+
                 QString html(m_exportHtmlTemplate);
                 if (!p_styleContent.isEmpty() && p_embedCssStyle) {
-                    html.replace(HtmlHolder::c_styleHolder, p_styleContent);
+                    QString content(p_styleContent);
+                    fixStyleResources(resFolderPath, content);
+                    html.replace(HtmlHolder::c_styleHolder, content);
                 }
 
                 if (!p_headContent.isEmpty()) {
                     html.replace(HtmlHolder::c_headHolder, p_headContent);
                 }
 
-                html.replace(HtmlHolder::c_bodyHolder, p_bodyContent);
+                if (p_completeHTML) {
+                    QString content(p_bodyContent);
+                    fixBodyResources(m_baseUrl, resFolderPath, content);
+                    html.replace(HtmlHolder::c_bodyHolder, content);
+                } else {
+                    html.replace(HtmlHolder::c_bodyHolder, p_bodyContent);
+                }
 
                 file.write(html.toUtf8());
                 file.close();
+
+                // Delete empty resource folder.
+                QDir dir(resFolderPath);
+                if (dir.isEmpty()) {
+                    dir.cdUp();
+                    dir.rmdir(resFolder);
+                }
 
                 htmlExported = 1;
             });
@@ -288,4 +311,81 @@ bool VExporter::exportToHTML(VWebView *p_webViewer,
     }
 
     return htmlExported == 1;
+}
+
+bool VExporter::fixStyleResources(const QString &p_folder,
+                                  QString &p_html)
+{
+    bool altered = false;
+    QRegExp reg("\\burl\\(\"((file|qrc):[^\"\\)]+)\"\\);");
+
+    int pos = 0;
+    while (pos < p_html.size()) {
+        int idx = p_html.indexOf(reg, pos);
+        if (idx == -1) {
+            break;
+        }
+
+        QString targetFile = g_webUtils->copyResource(QUrl(reg.cap(1)), p_folder);
+        if (targetFile.isEmpty()) {
+            pos = idx + reg.matchedLength();
+        } else {
+            // Replace the url string in html.
+            QString newUrl = QString("url(\"%1\");").arg(getResourceRelativePath(targetFile));
+            p_html.replace(idx, reg.matchedLength(), newUrl);
+            pos = idx + newUrl.size();
+            altered = true;
+        }
+    }
+
+    return altered;
+}
+
+bool VExporter::fixBodyResources(const QUrl &p_baseUrl,
+                                 const QString &p_folder,
+                                 QString &p_html)
+{
+    bool altered = false;
+    if (p_baseUrl.isEmpty()) {
+        return altered;
+    }
+
+    QRegExp reg("<img ([^>]*)src=\"([^\"]+)\"([^>]*)>");
+
+    int pos = 0;
+    while (pos < p_html.size()) {
+        int idx = p_html.indexOf(reg, pos);
+        if (idx == -1) {
+            break;
+        }
+
+        if (reg.cap(2).isEmpty()) {
+            pos = idx + reg.matchedLength();
+            continue;
+        }
+
+        QUrl srcUrl(p_baseUrl.resolved(reg.cap(2)));
+        QString targetFile = g_webUtils->copyResource(srcUrl, p_folder);
+        if (targetFile.isEmpty()) {
+            pos = idx + reg.matchedLength();
+        } else {
+            // Replace the url string in html.
+            QString newUrl = QString("<img %1src=\"%2\"%3>").arg(reg.cap(1))
+                                                            .arg(getResourceRelativePath(targetFile))
+                                                            .arg(reg.cap(3));
+            p_html.replace(idx, reg.matchedLength(), newUrl);
+            pos = idx + newUrl.size();
+            altered = true;
+        }
+    }
+
+    return altered;
+}
+
+QString VExporter::getResourceRelativePath(const QString &p_file)
+{
+    int idx = p_file.lastIndexOf('/');
+    int idx2 = p_file.lastIndexOf('/', idx - 1);
+    Q_ASSERT(idx > 0 && idx2 < idx);
+    return "." + p_file.mid(idx2);
 }

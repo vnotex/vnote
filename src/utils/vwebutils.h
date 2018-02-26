@@ -21,6 +21,10 @@ public:
     // Returns true if @p_html is modified.
     bool alterHtmlAsTarget(const QUrl &p_baseUrl, QString &p_html, const QString &p_target) const;
 
+    // Download or copy @p_url to @p_folder.
+    // Return the target file path on success or empty string on failure.
+    QString copyResource(const QUrl &p_url, const QString &p_folder) const;
+
 private:
     struct CopyTargetAction
     {

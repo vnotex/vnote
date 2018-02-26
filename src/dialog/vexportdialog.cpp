@@ -208,8 +208,16 @@ QWidget *VExportDialog::setupHTMLAdvancedSettings()
     m_embedStyleCB->setToolTip(tr("Embed CSS styles in HTML file"));
     m_embedStyleCB->setChecked(true);
 
+    // Complete HTML.
+    m_completeHTMLCB = new QCheckBox(tr("Complete page"), this);
+    m_completeHTMLCB->setToolTip(tr("Export the whole web page along with pictures "
+                                    "which may not keep the HTML link structure of "
+                                    "the original page"));
+    m_completeHTMLCB->setChecked(true);
+
     QFormLayout *advLayout = new QFormLayout();
     advLayout->addRow(m_embedStyleCB);
+    advLayout->addRow(m_completeHTMLCB);
 
     advLayout->setContentsMargins(0, 0, 0, 0);
 
@@ -303,7 +311,8 @@ void VExportDialog::startExport()
                      m_renderStyleCB->currentData().toString(),
                      m_renderCodeBlockStyleCB->currentData().toString(),
                      &m_pageLayout,
-                     m_embedStyleCB->isChecked());
+                     m_embedStyleCB->isChecked(),
+                     m_completeHTMLCB->isChecked());
 
     s_lastExportFormat = opt.m_format;
 

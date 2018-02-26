@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QPageLayout>
+#include <QUrl>
 
 #include "dialog/vexportdialog.h"
 
@@ -75,7 +76,21 @@ private:
     bool exportToHTML(VWebView *p_webViewer,
                       VDocument *p_webDocument,
                       bool p_embedCssStyle,
+                      bool p_completeHTML,
                       const QString &p_filePath);
+
+    // Fix @p_html's resources like url("...") with "file" or "qrc" schema.
+    // Copy the resource to @p_folder and fix the url string.
+    static bool fixStyleResources(const QString &p_folder,
+                                  QString &p_html);
+
+    // Fix @p_html's resources like <img>.
+    // Copy the resource to @p_folder and fix the url string.
+    static bool fixBodyResources(const QUrl &p_baseUrl,
+                                 const QString &p_folder,
+                                 QString &p_html);
+
+    static QString getResourceRelativePath(const QString &p_file);
 
     QPageLayout m_pageLayout;
 
@@ -83,6 +98,9 @@ private:
     VWebView *m_webViewer;
 
     VDocument *m_webDocument;
+
+    // Base URL of VWebView.
+    QUrl m_baseUrl;
 
     QString m_htmlTemplate;
 

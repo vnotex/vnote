@@ -80,7 +80,9 @@ class VUtils
 public:
     static QString readFileFromDisk(const QString &filePath);
 
-    static bool writeFileToDisk(const QString &filePath, const QString &text);
+    static bool writeFileToDisk(const QString &p_filePath, const QString &p_text);
+
+    static bool writeFileToDisk(const QString &p_filePath, const QByteArray &p_data);
 
     static bool writeJsonToDisk(const QString &p_filePath, const QJsonObject &p_json);
 

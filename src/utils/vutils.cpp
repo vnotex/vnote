@@ -74,17 +74,32 @@ QString VUtils::readFileFromDisk(const QString &filePath)
     return fileText;
 }
 
-bool VUtils::writeFileToDisk(const QString &filePath, const QString &text)
+bool VUtils::writeFileToDisk(const QString &p_filePath, const QString &p_text)
 {
-    QFile file(filePath);
+    QFile file(p_filePath);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        qWarning() << "fail to open file" << filePath << "to write";
+        qWarning() << "fail to open file" << p_filePath << "to write";
         return false;
     }
+
     QTextStream stream(&file);
-    stream << text;
+    stream << p_text;
     file.close();
-    qDebug() << "write file content:" << filePath;
+    qDebug() << "write file content:" << p_filePath;
+    return true;
+}
+
+bool VUtils::writeFileToDisk(const QString &p_filePath, const QByteArray &p_data)
+{
+    QFile file(p_filePath);
+    if (!file.open(QIODevice::WriteOnly)) {
+        qWarning() << "fail to open file" << p_filePath << "to write";
+        return false;
+    }
+
+    file.write(p_data);
+    file.close();
+    qDebug() << "write file content:" << p_filePath;
     return true;
 }
 

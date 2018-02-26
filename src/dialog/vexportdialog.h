@@ -47,7 +47,8 @@ struct ExportOption
                  const QString &p_renderStyle,
                  const QString &p_renderCodeBlockStyle,
                  QPageLayout *p_layout,
-                 bool p_embedCssStyle)
+                 bool p_embedCssStyle,
+                 bool p_completeHTML)
         : m_source(p_source),
           m_format(p_format),
           m_renderer(p_renderer),
@@ -55,7 +56,8 @@ struct ExportOption
           m_renderStyle(p_renderStyle),
           m_renderCodeBlockStyle(p_renderCodeBlockStyle),
           m_layout(p_layout),
-          m_embedCssStyle(p_embedCssStyle)
+          m_embedCssStyle(p_embedCssStyle),
+          m_completeHTML(p_completeHTML)
     {
     }
 
@@ -71,6 +73,7 @@ struct ExportOption
     QPageLayout *m_layout;
 
     bool m_embedCssStyle;
+    bool m_completeHTML;
 };
 
 
@@ -185,6 +188,8 @@ private:
     QLabel *m_layoutLabel;
 
     QCheckBox *m_embedStyleCB;
+
+    QCheckBox *m_completeHTMLCB;;
 
     VNotebook *m_notebook;
 

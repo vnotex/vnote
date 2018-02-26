@@ -15,6 +15,8 @@ public:
     explicit VDownloader(QObject *parent = 0);
     void download(const QUrl &p_url);
 
+    static QByteArray downloadSync(const QUrl &p_url);
+
 signals:
     void downloadFinished(const QByteArray &data, const QString &url);
 

@@ -40,19 +40,56 @@ if (typeof VEnableImageCaption == 'undefined') {
     VEnableImageCaption = false;
 }
 
+var getUrlScheme = function(url) {
+    var idx = url.indexOf(':');
+    if (idx > -1) {
+        return url.substr(0, idx);
+    } else {
+        return null;
+    }
+};
+
+var replaceCssUrl = function(baseUrl, match, p1, offset, str) {
+    if (getUrlScheme(p1)) {
+        return match;
+    }
+
+    var url = baseUrl + '/' + p1;
+    return "url(\"" + url + "\");";
+};
+
+var translateCssUrlToAbsolute = function(baseUrl, css) {
+    return css.replace(/\burl\(\"([^\"\)]+)\"\);/g, replaceCssUrl.bind(undefined, baseUrl));
+};
+
 var styleContent = function() {
     var styles = "";
     for (var i = 0; i < document.styleSheets.length; ++i) {
         var styleSheet = document.styleSheets[i];
         if (styleSheet.cssRules) {
+            var baseUrl = null;
+            if (styleSheet.href) {
+                var scheme = getUrlScheme(styleSheet.href);
+                // We only translate local resources.
+                if (scheme == 'file' || scheme == 'qrc') {
+                    baseUrl = styleSheet.href.substr(0, styleSheet.href.lastIndexOf('/'));
+                }
+            }
+
             for (var j = 0; j < styleSheet.cssRules.length; ++j) {
-                styles = styles + styleSheet.cssRules[j].cssText + "\n";
+                var css = styleSheet.cssRules[j].cssText;
+                if (baseUrl) {
+                    // Try to replace the url() with absolute path.
+                    css = translateCssUrlToAbsolute(baseUrl, css);
+                }
+
+                styles = styles + css + "\n";
             }
         }
     }
 
     return styles;
-}
+};
 
 var htmlContent = function() {
     content.htmlContentCB("", styleContent(), placeholder.innerHTML);
