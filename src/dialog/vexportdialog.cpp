@@ -236,7 +236,7 @@ void VExportDialog::initUIFields(MarkdownConverterType p_renderer)
     }
 
     if (m_directory) {
-        m_srcCB->addItem(tr("Current Directory (%1)").arg(m_directory->getName()),
+        m_srcCB->addItem(tr("Current Folder (%1)").arg(m_directory->getName()),
                          (int)ExportSource::CurrentDirectory);
     }
 
