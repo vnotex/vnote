@@ -1,0 +1,9 @@
+- English is preferred;
+- Make the title as meaningful as possible;
+- One issue for only one thing, since large issues are difficult to remember and handle;
+- When reporting problems, elaborate it as detailed as possible like:
+    - Version of VNote, which operating system;
+    - What is the symptoms;
+    - What action triggered it;
+    - How to reproduce it;
+- Please delete all these text and put whatever you want below. :)
