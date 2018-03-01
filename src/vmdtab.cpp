@@ -2,6 +2,7 @@
 #include <QWebChannel>
 #include <QFileInfo>
 #include <QCoreApplication>
+#include <QWebEngineProfile>
 #include "vmdtab.h"
 #include "vdocument.h"
 #include "vnote.h"
@@ -383,10 +384,14 @@ void VMdTab::setupMarkdownViewer()
     m_webViewer = new VWebView(m_file, this);
     connect(m_webViewer, &VWebView::editNote,
             this, &VMdTab::editFile);
+    connect(m_webViewer, &VWebView::requestSavePage,
+            this, &VMdTab::handleSavePageRequested);
 
     VPreviewPage *page = new VPreviewPage(m_webViewer);
     m_webViewer->setPage(page);
     m_webViewer->setZoomFactor(g_config->getWebZoomFactor());
+    connect(page->profile(), &QWebEngineProfile::downloadRequested,
+            this, &VMdTab::handleDownloadRequested);
 
     // Avoid white flash before loading content.
     page->setBackgroundColor(Qt::transparent);
@@ -1198,4 +1203,57 @@ bool VMdTab::executeVimCommandInWebView(const QString &p_cmd)
     }
 
     return validCommand;
+}
+
+void VMdTab::handleDownloadRequested(QWebEngineDownloadItem *p_item)
+{
+    connect(p_item, &QWebEngineDownloadItem::stateChanged,
+            this, [p_item, this](QWebEngineDownloadItem::DownloadState p_state) {
+                QString msg;
+                switch (p_state) {
+                case QWebEngineDownloadItem::DownloadCompleted:
+                    emit statusMessage(tr("Page saved to %1").arg(p_item->path()));
+                    break;
+
+                case QWebEngineDownloadItem::DownloadCancelled:
+                case QWebEngineDownloadItem::DownloadInterrupted:
+                    emit statusMessage(tr("Fail to save page to %1").arg(p_item->path()));
+                    break;
+
+                default:
+                    break;
+                }
+            });
+}
+
+void VMdTab::handleSavePageRequested()
+{
+    static QString lastPath = g_config->getDocumentPathOrHomePath();
+
+    QStringList filters;
+    filters << tr("Single HTML (*.html)") << tr("Complete HTML (*.html)") << tr("MIME HTML (*.mht)");
+    QList<QWebEngineDownloadItem::SavePageFormat> formats;
+    formats << QWebEngineDownloadItem::SingleHtmlSaveFormat
+            << QWebEngineDownloadItem::CompleteHtmlSaveFormat
+            << QWebEngineDownloadItem::MimeHtmlSaveFormat;
+
+    QString selectedFilter = filters[1];
+    QString fileName = QFileDialog::getSaveFileName(this,
+                                                    tr("Save Page"),
+                                                    lastPath,
+                                                    filters.join(";;"),
+                                                    &selectedFilter);
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    lastPath = QFileInfo(fileName).path();
+
+    QWebEngineDownloadItem::SavePageFormat format = formats.at(filters.indexOf(selectedFilter));
+
+    qDebug() << "save page as" << format << "to" << fileName;
+
+    emit statusMessage(tr("Saving page to %1").arg(fileName));
+
+    m_webViewer->page()->save(fileName, format);
 }

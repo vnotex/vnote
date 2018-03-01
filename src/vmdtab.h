@@ -14,6 +14,7 @@ class VDocument;
 class VMdEditor;
 class VInsertSelector;
 class QTimer;
+class QWebEngineDownloadItem;
 
 class VMdTab : public VEditTab
 {
@@ -131,6 +132,12 @@ private slots:
 
     // Restore from m_infoToRestore.
     void restoreFromTabInfo();
+
+    // Handle download request from web page.
+    void handleDownloadRequested(QWebEngineDownloadItem *p_item);
+
+    // Handle save page request.
+    void handleSavePageRequested();
 
 private:
     enum TabReady { None = 0, ReadMode = 0x1, EditMode = 0x2 };

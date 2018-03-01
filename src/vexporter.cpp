@@ -398,6 +398,8 @@ bool VExporter::exportToMHTML(VWebView *p_webViewer,
                               const ExportHTMLOption &p_opt,
                               const QString &p_filePath)
 {
+    Q_UNUSED(p_opt);
+
     m_downloadState = QWebEngineDownloadItem::DownloadRequested;
 
     p_webViewer->page()->save(p_filePath, QWebEngineDownloadItem::MimeHtmlSaveFormat);

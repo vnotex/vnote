@@ -95,6 +95,13 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
         defaultCopyImageAct->setVisible(false);
     }
 
+    if (!hasSelection()) {
+        QAction *savePageAct = new QAction(QWebEnginePage::tr("Save &Page"), menu);
+        connect(savePageAct, &QAction::triggered,
+                this, &VWebView::requestSavePage);
+        menu->addAction(savePageAct);
+    }
+
     // Add Copy All As menu.
     initCopyAllAsMenu(menu);
 

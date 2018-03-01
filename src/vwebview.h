@@ -18,6 +18,8 @@ public:
 signals:
     void editNote();
 
+    void requestSavePage();
+
 protected:
     void contextMenuEvent(QContextMenuEvent *p_event);
 
