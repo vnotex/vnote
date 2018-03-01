@@ -7,7 +7,7 @@ mdhl_file=v_pure.mdhl
 css_file=v_pure.css
 codeblock_css_file=v_pure_codeblock.css
 mermaid_css_file=v_pure_mermaid.css
-version=4
+version=5
 
 [phony]
 ; Abstract color attributes.
@@ -322,6 +322,7 @@ editwindow_corner_icon_fg=@master_bg
 editwindow_corner_icon_inactive_fg=#D3D3D3
 
 ; CheckBox.
+checkbox_disabled_fg=@disabled_fg
 checkbox_indicator_hover_bg=@hover_bg
 checkbox_indicator_pressed_bg=@pressed_bg
 

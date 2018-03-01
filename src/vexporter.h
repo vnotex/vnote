@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QPageLayout>
 #include <QUrl>
+#include <QWebEngineDownloadItem>
 
 #include "dialog/vexportdialog.h"
 
@@ -32,6 +33,8 @@ private slots:
     void handleLogicsFinished();
 
     void handleLoadFinished(bool p_ok);
+
+    void handleDownloadRequested(QWebEngineDownloadItem *p_item);
 
 private:
     enum class ExportState
@@ -73,11 +76,14 @@ private:
                      const QString &p_filePath,
                      const QPageLayout &p_layout);
 
-    bool exportToHTML(VWebView *p_webViewer,
-                      VDocument *p_webDocument,
-                      bool p_embedCssStyle,
-                      bool p_completeHTML,
+    bool exportToHTML(VDocument *p_webDocument,
+                      const ExportHTMLOption &p_opt,
                       const QString &p_filePath);
+
+    bool exportToMHTML(VWebView *p_webViewer,
+                       const ExportHTMLOption &p_opt,
+                       const QString &p_filePath);
+
 
     // Fix @p_html's resources like url("...") with "file" or "qrc" schema.
     // Copy the resource to @p_folder and fix the url string.
@@ -110,6 +116,9 @@ private:
     NoteState m_noteState;
 
     ExportState m_state;
+
+    // Download state used for MIME HTML.
+    QWebEngineDownloadItem::DownloadState m_downloadState;
 };
 
 inline void VExporter::clearNoteState()

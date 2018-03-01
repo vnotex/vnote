@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QWidget>
 #include <QWebChannel>
+#include <QWebEngineProfile>
 #include <QRegExp>
 
 #include "vconfigmanager.h"
@@ -64,9 +65,10 @@ void VExporter::initWebViewer(VFile *p_file, const ExportOption &p_opt)
 
     VPreviewPage *page = new VPreviewPage(m_webViewer);
     m_webViewer->setPage(page);
-
     connect(page, &VPreviewPage::loadFinished,
             this, &VExporter::handleLoadFinished);
+    connect(page->profile(), &QWebEngineProfile::downloadRequested,
+            this, &VExporter::handleDownloadRequested);
 
     m_webDocument = new VDocument(p_file, m_webViewer);
     connect(m_webDocument, &VDocument::logicsFinished,
@@ -199,11 +201,16 @@ bool VExporter::exportViaWebView(VFile *p_file,
         break;
 
     case ExportFormat::HTML:
-        exportRet = exportToHTML(m_webViewer,
-                                 m_webDocument,
-                                 p_opt.m_embedCssStyle,
-                                 p_opt.m_completeHTML,
-                                 p_outputFile);
+        if (p_opt.m_htmlOpt.m_mimeHTML) {
+            exportRet = exportToMHTML(m_webViewer,
+                                      p_opt.m_htmlOpt,
+                                      p_outputFile);
+        } else {
+            exportRet = exportToHTML(m_webDocument,
+                                     p_opt.m_htmlOpt,
+                                     p_outputFile);
+        }
+
         break;
 
     default:
@@ -236,13 +243,10 @@ exit:
     return ret;
 }
 
-bool VExporter::exportToHTML(VWebView *p_webViewer,
-                             VDocument *p_webDocument,
-                             bool p_embedCssStyle,
-                             bool p_completeHTML,
+bool VExporter::exportToHTML(VDocument *p_webDocument,
+                             const ExportHTMLOption &p_opt,
                              const QString &p_filePath)
 {
-    Q_UNUSED(p_webViewer);
     int htmlExported = 0;
 
     connect(p_webDocument, &VDocument::htmlContentFinished,
@@ -269,7 +273,7 @@ bool VExporter::exportToHTML(VWebView *p_webViewer,
                 qDebug() << "HTML files folder" << resFolderPath;
 
                 QString html(m_exportHtmlTemplate);
-                if (!p_styleContent.isEmpty() && p_embedCssStyle) {
+                if (!p_styleContent.isEmpty() && p_opt.m_embedCssStyle) {
                     QString content(p_styleContent);
                     fixStyleResources(resFolderPath, content);
                     html.replace(HtmlHolder::c_styleHolder, content);
@@ -279,7 +283,7 @@ bool VExporter::exportToHTML(VWebView *p_webViewer,
                     html.replace(HtmlHolder::c_headHolder, p_headContent);
                 }
 
-                if (p_completeHTML) {
+                if (p_opt.m_completeHTML) {
                     QString content(p_bodyContent);
                     fixBodyResources(m_baseUrl, resFolderPath, content);
                     html.replace(HtmlHolder::c_bodyHolder, content);
@@ -388,4 +392,30 @@ QString VExporter::getResourceRelativePath(const QString &p_file)
     int idx2 = p_file.lastIndexOf('/', idx - 1);
     Q_ASSERT(idx > 0 && idx2 < idx);
     return "." + p_file.mid(idx2);
+}
+
+bool VExporter::exportToMHTML(VWebView *p_webViewer,
+                              const ExportHTMLOption &p_opt,
+                              const QString &p_filePath)
+{
+    m_downloadState = QWebEngineDownloadItem::DownloadRequested;
+
+    p_webViewer->page()->save(p_filePath, QWebEngineDownloadItem::MimeHtmlSaveFormat);
+
+    while (m_downloadState == QWebEngineDownloadItem::DownloadRequested
+           || m_downloadState == QWebEngineDownloadItem::DownloadInProgress) {
+        VUtils::sleepWait(100);
+    }
+
+    return m_downloadState == QWebEngineDownloadItem::DownloadCompleted;
+}
+
+void VExporter::handleDownloadRequested(QWebEngineDownloadItem *p_item)
+{
+    if (p_item->savePageFormat() == QWebEngineDownloadItem::MimeHtmlSaveFormat) {
+        connect(p_item, &QWebEngineDownloadItem::stateChanged,
+                this, [this](QWebEngineDownloadItem::DownloadState p_state) {
+                    m_downloadState = p_state;
+                });
+    }
 }

@@ -38,6 +38,23 @@ enum class ExportFormat
 };
 
 
+struct ExportHTMLOption
+{
+    ExportHTMLOption(bool p_embedCssStyle,
+                     bool p_completeHTML,
+                     bool p_mimeHTML)
+        : m_embedCssStyle(p_embedCssStyle),
+          m_completeHTML(p_completeHTML),
+          m_mimeHTML(p_mimeHTML)
+    {
+    }
+
+    bool m_embedCssStyle;
+    bool m_completeHTML;
+    bool m_mimeHTML;
+};
+
+
 struct ExportOption
 {
     ExportOption(ExportSource p_source,
@@ -47,8 +64,7 @@ struct ExportOption
                  const QString &p_renderStyle,
                  const QString &p_renderCodeBlockStyle,
                  QPageLayout *p_layout,
-                 bool p_embedCssStyle,
-                 bool p_completeHTML)
+                 const ExportHTMLOption &p_htmlOpt)
         : m_source(p_source),
           m_format(p_format),
           m_renderer(p_renderer),
@@ -56,8 +72,7 @@ struct ExportOption
           m_renderStyle(p_renderStyle),
           m_renderCodeBlockStyle(p_renderCodeBlockStyle),
           m_layout(p_layout),
-          m_embedCssStyle(p_embedCssStyle),
-          m_completeHTML(p_completeHTML)
+          m_htmlOpt(p_htmlOpt)
     {
     }
 
@@ -72,8 +87,7 @@ struct ExportOption
     QString m_renderCodeBlockStyle;
     QPageLayout *m_layout;
 
-    bool m_embedCssStyle;
-    bool m_completeHTML;
+    ExportHTMLOption m_htmlOpt;
 };
 
 
@@ -190,6 +204,8 @@ private:
     QCheckBox *m_embedStyleCB;
 
     QCheckBox *m_completeHTMLCB;;
+
+    QCheckBox *m_mimeHTMLCB;
 
     VNotebook *m_notebook;
 

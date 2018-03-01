@@ -215,9 +215,20 @@ QWidget *VExportDialog::setupHTMLAdvancedSettings()
                                     "the original page"));
     m_completeHTMLCB->setChecked(true);
 
+    // Mime HTML.
+    m_mimeHTMLCB = new QCheckBox(tr("MIME HTML"), this);
+    m_mimeHTMLCB->setToolTip(tr("Export as a complete web page in MIME HTML format"));
+    connect(m_mimeHTMLCB, &QCheckBox::stateChanged,
+            this, [this](int p_state) {
+                bool checked = p_state == Qt::Checked;
+                m_embedStyleCB->setEnabled(!checked);
+                m_completeHTMLCB->setEnabled(!checked);
+            });
+
     QFormLayout *advLayout = new QFormLayout();
     advLayout->addRow(m_embedStyleCB);
     advLayout->addRow(m_completeHTMLCB);
+    advLayout->addRow(m_mimeHTMLCB);
 
     advLayout->setContentsMargins(0, 0, 0, 0);
 
@@ -311,8 +322,9 @@ void VExportDialog::startExport()
                      m_renderStyleCB->currentData().toString(),
                      m_renderCodeBlockStyleCB->currentData().toString(),
                      &m_pageLayout,
-                     m_embedStyleCB->isChecked(),
-                     m_completeHTMLCB->isChecked());
+                     ExportHTMLOption(m_embedStyleCB->isChecked(),
+                                      m_completeHTMLCB->isChecked(),
+                                      m_mimeHTMLCB->isChecked()));
 
     s_lastExportFormat = opt.m_format;
 
@@ -683,7 +695,7 @@ int VExportDialog::doExportHTML(VFile *p_file,
     }
 
     // Get output file.
-    QString suffix = ".html";
+    QString suffix = p_opt.m_htmlOpt.m_mimeHTML ? ".mht" : ".html";
     QString name = VUtils::getFileNameWithSequence(p_outputFolder,
                                                    QFileInfo(p_file->getName()).completeBaseName() + suffix);
     QString outputPath = QDir(p_outputFolder).filePath(name);

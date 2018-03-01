@@ -7,7 +7,7 @@ mdhl_file=v_moonlight.mdhl
 css_file=v_moonlight.css
 codeblock_css_file=v_moonlight_codeblock.css
 mermaid_css_file=v_moonlight_mermaid.css
-version=4
+version=5
 
 ; This mapping will be used to translate colors when the content of HTML is copied
 ; without background. You could just specify the foreground colors mapping here.
@@ -329,6 +329,7 @@ editwindow_corner_icon_fg=@master_bg
 editwindow_corner_icon_inactive_fg=@icon_fg
 
 ; CheckBox.
+checkbox_disabled_fg=@disabled_fg
 checkbox_indicator_hover_bg=@hover_bg
 checkbox_indicator_pressed_bg=@pressed_bg
 

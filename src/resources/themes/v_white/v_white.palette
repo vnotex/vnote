@@ -7,7 +7,7 @@ mdhl_file=v_white.mdhl
 css_file=v_white.css
 codeblock_css_file=v_white_codeblock.css
 mermaid_css_file=v_white_mermaid.css
-version=4
+version=5
 
 [phony]
 ; Abstract color attributes.
@@ -287,6 +287,7 @@ editwindow_corner_icon_fg=@icon_fg
 editwindow_corner_icon_inactive_fg=#808080
 
 ; CheckBox.
+checkbox_disabled_fg=@disabled_fg
 checkbox_indicator_hover_bg=@hover_bg
 checkbox_indicator_pressed_bg=@pressed_bg
 
