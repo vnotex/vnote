@@ -5,6 +5,7 @@
 #include <QPageLayout>
 #include <QUrl>
 #include <QWebEngineDownloadItem>
+#include <QStringList>
 
 #include "dialog/vexportdialog.h"
 
@@ -14,6 +15,7 @@ class VDocument;
 
 class VExporter : public QObject
 {
+    Q_OBJECT
 public:
     explicit VExporter(QWidget *p_parent = nullptr);
 
@@ -28,6 +30,10 @@ public:
                     const ExportOption &p_opt,
                     const QString &p_outputFile,
                     QString *p_errMsg = NULL);
+
+signals:
+    // Request to output log.
+    void outputLog(const QString &p_log);
 
 private slots:
     void handleLogicsFinished();
@@ -76,6 +82,11 @@ private:
                      const QString &p_filePath,
                      const QPageLayout &p_layout);
 
+    bool exportToPDFViaWK(VDocument *p_webDocument,
+                          const ExportPDFOption &p_opt,
+                          const QString &p_filePath,
+                          QString *p_errMsg = NULL);
+
     bool exportToHTML(VDocument *p_webDocument,
                       const ExportHTMLOption &p_opt,
                       const QString &p_filePath);
@@ -84,6 +95,12 @@ private:
                        const ExportHTMLOption &p_opt,
                        const QString &p_filePath);
 
+    bool htmlToPDFViaWK(const QString &p_htmlFile,
+                        const QString &p_filePath,
+                        const ExportPDFOption &p_opt,
+                        QString *p_errMsg = NULL);
+
+    void prepareWKArguments(const ExportPDFOption &p_opt);
 
     // Fix @p_html's resources like url("...") with "file" or "qrc" schema.
     // Copy the resource to @p_folder and fix the url string.
@@ -119,6 +136,9 @@ private:
 
     // Download state used for MIME HTML.
     QWebEngineDownloadItem::DownloadState m_downloadState;
+
+    // Arguments for wkhtmltopdf.
+    QStringList m_wkArgs;
 };
 
 inline void VExporter::clearNoteState()

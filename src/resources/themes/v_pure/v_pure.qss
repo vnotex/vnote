@@ -521,6 +521,10 @@ QComboBox {
     border: 1px solid @combobox_border;
 }
 
+QComboBox:disabled {
+    color: @combobox_disabled_fg;
+}
+
 QComboBox:focus, QComboBox:on {
     background-color: @combobox_focus_bg;
     border: 2px solid @combobox_focus_border;
@@ -536,6 +540,12 @@ QComboBox::drop-down {
 
 QComboBox::down-arrow {
     image: url(arrow_dropdown.svg);
+    width: 20px;
+    height: 20px;
+}
+
+QComboBox::down-arrow:disabled {
+    image: url(arrow_dropdown_disabled.svg);
     width: 20px;
     height: 20px;
 }
@@ -695,6 +705,10 @@ QLineEdit {
 QLineEdit:focus {
     border: 2px solid @lineedit_focus_border;
     background: @lineedit_focus_bg;
+}
+
+QLineEdit:disabled {
+    color: @lineedit_disabled_fg;
 }
 
 QLineEdit[VimCommandLine="true"] {

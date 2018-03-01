@@ -193,6 +193,7 @@ buttonmenuitem_decoration_text_fg=#00796B
 combobox_border=@border_bg
 combobox_fg=@content_fg
 combobox_bg=@content_bg
+combobox_disabled_fg=@disabled_fg
 combobox_view_border=@border_bg
 combobox_view_selected_bg=@selected_bg
 combobox_view_selected_fg=@selected_fg
@@ -210,6 +211,7 @@ label_titlelabel_bg=@title_bg
 lineedit_border=@border_bg
 lineedit_fg=@content_fg
 lineedit_bg=@content_bg
+lineedit_disabled_fg=@disabled_fg
 lineedit_selection_fg=@selection_fg
 lineedit_selection_bg=@selection_bg
 

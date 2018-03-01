@@ -19,12 +19,13 @@ class VFile;
 class VCart;
 class VExporter;
 class QCheckBox;
+class VLineEdit;
 
 
 enum class ExportSource
 {
     CurrentNote = 0,
-    CurrentDirectory,
+    CurrentFolder,
     CurrentNotebook,
     Cart
 };
@@ -38,8 +39,24 @@ enum class ExportFormat
 };
 
 
+enum class ExportPageNumber
+{
+    None = 0,
+    Left,
+    Center,
+    Right
+};
+
+
 struct ExportHTMLOption
 {
+    ExportHTMLOption()
+        : m_embedCssStyle(true),
+          m_completeHTML(true),
+          m_mimeHTML(false)
+    {
+    }
+
     ExportHTMLOption(bool p_embedCssStyle,
                      bool p_completeHTML,
                      bool p_mimeHTML)
@@ -55,15 +72,62 @@ struct ExportHTMLOption
 };
 
 
+struct ExportPDFOption
+{
+    ExportPDFOption()
+        : m_layout(NULL),
+          m_wkhtmltopdf(false),
+          m_wkEnableBackground(true),
+          m_wkEnableTableOfContents(false),
+          m_wkPageNumber(ExportPageNumber::None)
+    {
+    }
+
+    ExportPDFOption(QPageLayout *p_layout,
+                    bool p_wkhtmltopdf,
+                    const QString &p_wkPath,
+                    bool p_wkEnableBackground,
+                    bool p_wkEnableTableOfContents,
+                    ExportPageNumber p_wkPageNumber,
+                    const QString &p_wkExtraArgs)
+        : m_layout(p_layout),
+          m_wkhtmltopdf(p_wkhtmltopdf),
+          m_wkPath(p_wkPath),
+          m_wkEnableBackground(p_wkEnableBackground),
+          m_wkEnableTableOfContents(p_wkEnableTableOfContents),
+          m_wkPageNumber(p_wkPageNumber),
+          m_wkExtraArgs(p_wkExtraArgs)
+    {
+    }
+
+    QPageLayout *m_layout;
+    bool m_wkhtmltopdf;
+    QString m_wkPath;
+    bool m_wkEnableBackground;
+    bool m_wkEnableTableOfContents;
+    ExportPageNumber m_wkPageNumber;
+    QString m_wkExtraArgs;
+};
+
+
 struct ExportOption
 {
+    ExportOption()
+        : m_source(ExportSource::CurrentNote),
+          m_format(ExportFormat::Markdown),
+          m_renderer(MarkdownConverterType::MarkdownIt),
+          m_processSubfolders(false)
+    {
+    }
+
     ExportOption(ExportSource p_source,
                  ExportFormat p_format,
                  MarkdownConverterType p_renderer,
                  const QString &p_renderBg,
                  const QString &p_renderStyle,
                  const QString &p_renderCodeBlockStyle,
-                 QPageLayout *p_layout,
+                 bool p_processSubfolders,
+                 const ExportPDFOption &p_pdfOpt,
                  const ExportHTMLOption &p_htmlOpt)
         : m_source(p_source),
           m_format(p_format),
@@ -71,7 +135,8 @@ struct ExportOption
           m_renderBg(p_renderBg),
           m_renderStyle(p_renderStyle),
           m_renderCodeBlockStyle(p_renderCodeBlockStyle),
-          m_layout(p_layout),
+          m_processSubfolders(p_processSubfolders),
+          m_pdfOpt(p_pdfOpt),
           m_htmlOpt(p_htmlOpt)
     {
     }
@@ -85,7 +150,11 @@ struct ExportOption
 
     QString m_renderStyle;
     QString m_renderCodeBlockStyle;
-    QPageLayout *m_layout;
+
+    // Whether process subfolders recursively when source is CurrentFolder.
+    bool m_processSubfolders;
+
+    ExportPDFOption m_pdfOpt;
 
     ExportHTMLOption m_htmlOpt;
 };
@@ -105,7 +174,9 @@ public:
 private slots:
     void startExport();
 
-    void handleBrowseBtnClicked();
+    void handleOutputBrowseBtnClicked();
+
+    void handleWkPathBrowseBtnClicked();
 
     void handleInputChanged();
 
@@ -113,12 +184,16 @@ private slots:
 
     void handleCurrentFormatChanged(int p_index);
 
+    void handleCurrentSrcChanged(int p_index);
+
 private:
     void setupUI();
 
     QWidget *setupPDFAdvancedSettings();
 
     QWidget *setupHTMLAdvancedSettings();
+
+    QWidget *setupGeneralAdvancedSettings();
 
     void initUIFields(MarkdownConverterType p_renderer);
 
@@ -167,6 +242,8 @@ private:
 
     void updatePageLayoutLabel();
 
+    bool checkWkhtmltopdfExecutable(const QString &p_file);
+
     QComboBox *m_srcCB;
 
     QComboBox *m_formatCB;
@@ -181,8 +258,6 @@ private:
 
     VLineEdit *m_outputEdit;
 
-    QPushButton *m_browseBtn;
-
     QGroupBox *m_basicBox;
 
     QGroupBox *m_settingBox;
@@ -190,6 +265,8 @@ private:
     QWidget *m_pdfSettings;
 
     QWidget *m_htmlSettings;
+
+    QWidget *m_generalSettings;
 
     QPlainTextEdit *m_consoleEdit;
 
@@ -201,11 +278,27 @@ private:
 
     QLabel *m_layoutLabel;
 
+    QCheckBox *m_wkhtmltopdfCB;
+
+    VLineEdit *m_wkPathEdit;
+
+    QPushButton *m_wkPathBrowseBtn;
+
+    QCheckBox *m_wkBackgroundCB;
+
+    QCheckBox *m_wkTableOfContentsCB;
+
+    QComboBox *m_wkPageNumberCB;
+
+    VLineEdit *m_wkExtraArgsEdit;
+
     QCheckBox *m_embedStyleCB;
 
     QCheckBox *m_completeHTMLCB;;
 
     QCheckBox *m_mimeHTMLCB;
+
+    QCheckBox *m_subfolderCB;
 
     VNotebook *m_notebook;
 
@@ -229,8 +322,7 @@ private:
     // Last output folder path.
     static QString s_lastOutputFolder;
 
-    // Last export format.
-    static ExportFormat s_lastExportFormat;
+    static ExportOption s_opt;
 };
 
 #endif // VEXPORTDIALOG_H

@@ -240,5 +240,8 @@
         <file>resources/themes/v_pure/v_pure_mermaid.css</file>
         <file>resources/themes/v_white/v_white_mermaid.css</file>
         <file>resources/themes/v_moonlight/v_moonlight_mermaid.css</file>
+        <file>resources/themes/v_moonlight/arrow_dropdown_disabled.svg</file>
+        <file>resources/themes/v_pure/arrow_dropdown_disabled.svg</file>
+        <file>resources/themes/v_white/arrow_dropdown_disabled.svg</file>
     </qresource>
 </RCC>

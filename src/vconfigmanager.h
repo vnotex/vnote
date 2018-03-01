@@ -454,6 +454,12 @@ public:
     bool getEnableAutoSave() const;
     void setEnableAutoSave(bool p_enabled);
 
+    QString getWkhtmltopdfPath() const;
+    void setWkhtmltopdfPath(const QString &p_path);
+
+    QString getWkhtmltopdfArgs() const;
+    void setWkhtmltopdfArgs(const QString &p_args);
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -2082,5 +2088,27 @@ inline bool VConfigManager::getEnableAutoSave() const
 inline void VConfigManager::setEnableAutoSave(bool p_enabled)
 {
     setConfigToSettings("global", "enable_auto_save", p_enabled);
+}
+
+inline QString VConfigManager::getWkhtmltopdfPath() const
+{
+    return getConfigFromSettings("export",
+                                 "wkhtmltopdf").toString();
+}
+
+inline void VConfigManager::setWkhtmltopdfPath(const QString &p_file)
+{
+    setConfigToSettings("export", "wkhtmltopdf", p_file);
+}
+
+inline QString VConfigManager::getWkhtmltopdfArgs() const
+{
+    return getConfigFromSettings("export",
+                                 "wkhtmltopdfArgs").toString();
+}
+
+inline void VConfigManager::setWkhtmltopdfArgs(const QString &p_file)
+{
+    setConfigToSettings("export", "wkhtmltopdfArgs", p_file);
 }
 #endif // VCONFIGMANAGER_H

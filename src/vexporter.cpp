@@ -5,6 +5,7 @@
 #include <QWebChannel>
 #include <QWebEngineProfile>
 #include <QRegExp>
+#include <QProcess>
 
 #include "vconfigmanager.h"
 #include "vfile.h"
@@ -27,6 +28,11 @@ VExporter::VExporter(QWidget *p_parent)
 {
 }
 
+static QString marginToStrMM(qreal p_margin)
+{
+    return QString("%1mm").arg(p_margin);
+}
+
 void VExporter::prepareExport(const ExportOption &p_opt)
 {
     m_htmlTemplate = VUtils::generateHtmlTemplate(p_opt.m_renderer,
@@ -37,7 +43,100 @@ void VExporter::prepareExport(const ExportOption &p_opt)
 
     m_exportHtmlTemplate = VUtils::generateExportHtmlTemplate(p_opt.m_renderBg);
 
-    m_pageLayout = *(p_opt.m_layout);
+    m_pageLayout = *(p_opt.m_pdfOpt.m_layout);
+
+    prepareWKArguments(p_opt.m_pdfOpt);
+}
+
+// From QProcess code.
+static QStringList parseCombinedArgString(const QString &program)
+{
+    QStringList args;
+    QString tmp;
+    int quoteCount = 0;
+    bool inQuote = false;
+
+    // handle quoting. tokens can be surrounded by double quotes
+    // "hello world". three consecutive double quotes represent
+    // the quote character itself.
+    for (int i = 0; i < program.size(); ++i) {
+        if (program.at(i) == QLatin1Char('"')) {
+            ++quoteCount;
+            if (quoteCount == 3) {
+                // third consecutive quote
+                quoteCount = 0;
+                tmp += program.at(i);
+            }
+            continue;
+        }
+        if (quoteCount) {
+            if (quoteCount == 1)
+                inQuote = !inQuote;
+            quoteCount = 0;
+        }
+        if (!inQuote && program.at(i).isSpace()) {
+            if (!tmp.isEmpty()) {
+                args += tmp;
+                tmp.clear();
+            }
+        } else {
+            tmp += program.at(i);
+        }
+    }
+    if (!tmp.isEmpty())
+        args += tmp;
+
+    return args;
+}
+
+void VExporter::prepareWKArguments(const ExportPDFOption &p_opt)
+{
+    m_wkArgs.clear();
+    m_wkArgs << "--quiet";
+    m_wkArgs << "--encoding" << "utf-8";
+    m_wkArgs << "--page-size" << m_pageLayout.pageSize().key();
+    m_wkArgs << "--orientation"
+             << (m_pageLayout.orientation() == QPageLayout::Portrait ? "Portrait" : "Landscape");
+
+    QMarginsF marginsMM = m_pageLayout.margins(QPageLayout::Millimeter);
+    m_wkArgs << "--margin-bottom" << marginToStrMM(marginsMM.bottom());
+    m_wkArgs << "--margin-left" << marginToStrMM(marginsMM.left());
+    m_wkArgs << "--margin-right" << marginToStrMM(marginsMM.right());
+    m_wkArgs << "--margin-top" << marginToStrMM(marginsMM.top());
+
+    m_wkArgs << (p_opt.m_wkEnableBackground ? "--background" : "--no-background");
+
+    QString footer;
+    switch (p_opt.m_wkPageNumber) {
+    case ExportPageNumber::Left:
+        footer = "--footer-left";
+        break;
+
+    case ExportPageNumber::Center:
+        footer = "--footer-center";
+        break;
+
+    case ExportPageNumber::Right:
+        footer = "--footer-right";
+        break;
+
+    default:
+        break;
+    }
+
+    if (!footer.isEmpty()) {
+        m_wkArgs << footer << "[page]"
+                 << "--footer-spacing" << QString::number(marginsMM.bottom() / 3, 'f', 2);
+    }
+
+    // Append additional arguments.
+    if (!p_opt.m_wkExtraArgs.isEmpty()) {
+        m_wkArgs.append(parseCombinedArgString(p_opt.m_wkExtraArgs));
+    }
+
+    if (p_opt.m_wkEnableTableOfContents) {
+        m_wkArgs << "toc" << "--toc-text-size-shrink" << "1.0";
+    }
 }
 
 bool VExporter::exportPDF(VFile *p_file,
@@ -149,6 +248,81 @@ bool VExporter::exportToPDF(VWebView *p_webViewer,
     return pdfPrinted == 1;
 }
 
+bool VExporter::exportToPDFViaWK(VDocument *p_webDocument,
+                                 const ExportPDFOption &p_opt,
+                                 const QString &p_filePath,
+                                 QString *p_errMsg)
+{
+    int pdfExported = 0;
+
+    connect(p_webDocument, &VDocument::htmlContentFinished,
+            this, [&, this](const QString &p_headContent,
+                            const QString &p_styleContent,
+                            const QString &p_bodyContent) {
+                if (p_bodyContent.isEmpty() || this->m_state == ExportState::Cancelled) {
+                    pdfExported = -1;
+                    return;
+                }
+
+                Q_ASSERT(!p_filePath.isEmpty());
+                QString htmlPath = p_filePath + ".vnote.html";
+
+                QFile file(htmlPath);
+                if (!file.open(QFile::WriteOnly)) {
+                    pdfExported = -1;
+                    return;
+                }
+
+                QString resFolder = QFileInfo(htmlPath).completeBaseName() + "_files";
+                QString resFolderPath = QDir(VUtils::basePathFromPath(htmlPath)).filePath(resFolder);
+
+                qDebug() << "temp HTML files folder" << resFolderPath;
+
+                QString html(m_exportHtmlTemplate);
+                if (!p_styleContent.isEmpty()) {
+                    QString content(p_styleContent);
+                    fixStyleResources(resFolderPath, content);
+                    html.replace(HtmlHolder::c_styleHolder, content);
+                }
+
+                if (!p_headContent.isEmpty()) {
+                    html.replace(HtmlHolder::c_headHolder, p_headContent);
+                }
+
+                QString content(p_bodyContent);
+                fixBodyResources(m_baseUrl, resFolderPath, content);
+                html.replace(HtmlHolder::c_bodyHolder, content);
+
+                file.write(html.toUtf8());
+                file.close();
+
+                // Convert vis wkhtmltopdf.
+                if (!htmlToPDFViaWK(htmlPath, p_filePath, p_opt, p_errMsg)) {
+                    pdfExported = -1;
+                }
+
+                // Clean up.
+                VUtils::deleteFile(htmlPath);
+                VUtils::deleteDirectory(resFolderPath);
+
+                if (pdfExported == 0) {
+                    pdfExported = 1;
+                }
+            });
+
+    p_webDocument->getHtmlContentAsync();
+
+    while (pdfExported == 0) {
+        VUtils::sleepWait(100);
+
+        if (m_state == ExportState::Cancelled) {
+            break;
+        }
+    }
+
+    return pdfExported == 1;
+}
+
 bool VExporter::exportViaWebView(VFile *p_file,
                                  const ExportOption &p_opt,
                                  const QString &p_outputFile,
@@ -195,9 +369,17 @@ bool VExporter::exportViaWebView(VFile *p_file,
     bool exportRet = false;
     switch (p_opt.m_format) {
     case ExportFormat::PDF:
-        exportRet = exportToPDF(m_webViewer,
-                                p_outputFile,
-                                m_pageLayout);
+        if (p_opt.m_pdfOpt.m_wkhtmltopdf) {
+            exportRet = exportToPDFViaWK(m_webDocument,
+                                         p_opt.m_pdfOpt,
+                                         p_outputFile,
+                                         p_errMsg);
+        } else {
+            exportRet = exportToPDF(m_webViewer,
+                                    p_outputFile,
+                                    m_pageLayout);
+        }
+
         break;
 
     case ExportFormat::HTML:
@@ -261,7 +443,6 @@ bool VExporter::exportToHTML(VDocument *p_webDocument,
                 Q_ASSERT(!p_filePath.isEmpty());
 
                 QFile file(p_filePath);
-
                 if (!file.open(QFile::WriteOnly)) {
                     htmlExported = -1;
                     return;
@@ -420,4 +601,56 @@ void VExporter::handleDownloadRequested(QWebEngineDownloadItem *p_item)
                     m_downloadState = p_state;
                 });
     }
+}
+
+static QString combineArgs(QStringList &p_args)
+{
+    QString str;
+    for (const QString &arg : p_args) {
+        QString tmp;
+        if (arg.contains(' ')) {
+            tmp = '"' + arg + '"';
+        } else {
+            tmp = arg;
+        }
+
+        if (str.isEmpty()) {
+            str = tmp;
+        } else {
+            str = str + ' ' + tmp;
+        }
+    }
+
+    return str;
+}
+
+bool VExporter::htmlToPDFViaWK(const QString &p_htmlFile,
+                               const QString &p_filePath,
+                               const ExportPDFOption &p_opt,
+                               QString *p_errMsg)
+{
+    // Note: system's locale settings (Language for non-Unicode programs) is important to wkhtmltopdf.
+    // Input file could be encoded via QUrl::fromLocalFile(p_htmlFile).toString(QUrl::EncodeUnicode) to
+    // handle non-ASCII path.
+    QStringList args(m_wkArgs);
+    args << QDir::toNativeSeparators(p_htmlFile);
+    args << QDir::toNativeSeparators(p_filePath);
+    QString cmd = p_opt.m_wkPath + " " + combineArgs(args);
+    emit outputLog(cmd);
+    int ret = QProcess::execute(p_opt.m_wkPath, args);
+    qDebug() << "wkhtmltopdf returned" << ret << cmd;
+    switch (ret) {
+    case -2:
+        VUtils::addErrMsg(p_errMsg, tr("Fail to start wkhtmltopdf (%1).").arg(cmd));
+        break;
+
+    case -1:
+        VUtils::addErrMsg(p_errMsg, tr("wkhtmltopdf crashed (%1).").arg(cmd));
+        break;
+
+    default:
+        break;
+    }
+
+    return ret == 0;
 }
