@@ -50,6 +50,7 @@ a {
     padding: 0;
     vertical-align: baseline;
     text-decoration: none;
+    word-break: break-all;
 }
 
 a:hover {

@@ -49,10 +49,12 @@ a {
     margin: 0;
     padding: 0;
     vertical-align: baseline;
+    text-decoration: none;
+    word-break: break-all;
 }
 
 a:hover {
-    text-decoration: none;
+    text-decoration: underline;
     color: #ff6600;
 }
 

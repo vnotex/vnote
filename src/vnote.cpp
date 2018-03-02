@@ -125,7 +125,8 @@ QString VNote::generateHtmlTemplate(const QString &p_renderBg,
                           "word-break: break-all !important; }\n"
                     "pre code { white-space: pre-wrap !important; "
                                "word-break: break-all !important; }\n"
-                    "code { word-break: break-all !important; }\n";
+                    "code { word-break: break-all !important; }\n"
+                    "a { word-break: break-all !important; }\n";
         if (!g_config->getEnableImageConstraint()) {
             // Constain the image width by force in PDF, otherwise, the PDF will
             // be cut off.
