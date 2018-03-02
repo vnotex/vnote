@@ -695,6 +695,10 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
                      "<script>var VEnableHighlightLineNumber = true;</script>\n";
     }
 
+    if (g_config->getEnableFlashAnchor()) {
+        extraFile += "<script>var VEnableFlashAnchor = true;</script>\n";
+    }
+
     extraFile += "<script>var VStylesToInline = '" + g_config->getStylesToInlineWhenCopied() + "';</script>\n";
 
     QString htmlTemplate(p_template);

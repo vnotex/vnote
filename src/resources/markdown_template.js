@@ -40,6 +40,10 @@ if (typeof VEnableImageCaption == 'undefined') {
     VEnableImageCaption = false;
 }
 
+if (typeof VEnableFlashAnchor == 'undefined') {
+    VEnableFlashAnchor = false;
+}
+
 var getUrlScheme = function(url) {
     var idx = url.indexOf(':');
     if (idx > -1) {
@@ -132,7 +136,11 @@ var clearHighlightedAnchor = function() {
     }
 };
 
-var highlightAnchor = function(anchor) {
+var flashAnchor = function(anchor) {
+    if (!VEnableFlashAnchor) {
+        return;
+    }
+
     clearHighlightedAnchor();
     anchor.classList.add(VHighlightedAnchorClass);
 };
@@ -151,7 +159,7 @@ var scrollToAnchor = function(anchor) {
     var anc = document.getElementById(anchor);
     if (anc != null) {
         anc.scrollIntoView();
-        highlightAnchor(anc);
+        flashAnchor(anc);
 
         var headers = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
         for (var i = 0; i < headers.length; ++i) {
@@ -935,7 +943,7 @@ var jumpTitle = function(forward, relativeLevel, repeat) {
     // Disable scroll temporarily.
     g_muteScroll = true;
     headers[targetIdx].scrollIntoView();
-    highlightAnchor(headers[targetIdx]);
+    flashAnchor(headers[targetIdx]);
     currentHeaderIdx = targetIdx;
     content.setHeader(headers[targetIdx].getAttribute("id"));
     setTimeout("g_muteScroll = false", 100);

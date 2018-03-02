@@ -460,6 +460,9 @@ public:
     QString getWkhtmltopdfArgs() const;
     void setWkhtmltopdfArgs(const QString &p_args);
 
+    bool getEnableFlashAnchor() const;
+    void setEnableFlashAnchor(bool p_enabled);
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -856,6 +859,9 @@ private:
 
     // Single click to open file and then close previous tab.
     bool m_singleClickClosePreviousTab;
+
+    // Whether flash anchor in read mode.
+    bool m_enableFlashAnchor;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -2110,5 +2116,20 @@ inline QString VConfigManager::getWkhtmltopdfArgs() const
 inline void VConfigManager::setWkhtmltopdfArgs(const QString &p_file)
 {
     setConfigToSettings("export", "wkhtmltopdfArgs", p_file);
+}
+
+inline bool VConfigManager::getEnableFlashAnchor() const
+{
+    return m_enableFlashAnchor;
+}
+
+inline void VConfigManager::setEnableFlashAnchor(bool p_enabled)
+{
+    if (p_enabled == m_enableFlashAnchor) {
+        return;
+    }
+
+    m_enableFlashAnchor = p_enabled;
+    setConfigToSettings("web", "enable_flash_anchor", m_enableFlashAnchor);
 }
 #endif // VCONFIGMANAGER_H

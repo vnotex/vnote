@@ -74,9 +74,15 @@ private:
 
     void showTipsAboutAutoSave();
 
+    bool loadFlashAnchor();
+    bool saveFlashAnchor();
+
     // Web zoom factor.
     QCheckBox *m_customWebZoom;
     QDoubleSpinBox *m_webZoomFactorSpin;
+
+    // Web flash anchor.
+    QCheckBox *m_flashAnchor;
 
     // Swap file.
     QCheckBox *m_swapFile;

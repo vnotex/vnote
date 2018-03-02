@@ -289,6 +289,9 @@ void VConfigManager::initialize()
 
     m_singleClickClosePreviousTab = getConfigFromSettings("global",
                                                           "single_click_close_previous_tab").toBool();
+
+    m_enableFlashAnchor = getConfigFromSettings("web",
+                                                "enable_flash_anchor").toBool();
 }
 
 void VConfigManager::initSettings()

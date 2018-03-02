@@ -464,6 +464,10 @@ VReadEditTab::VReadEditTab(QWidget *p_parent)
     zoomFactorLayout->addWidget(m_customWebZoom);
     zoomFactorLayout->addWidget(m_webZoomFactorSpin);
 
+    // Web flash anchor.
+    m_flashAnchor = new QCheckBox(tr("Flash current heading"));
+    m_flashAnchor->setToolTip(tr("Flash current heading on change"));
+
     // Swap file.
     m_swapFile = new QCheckBox(tr("Swap file"));
     m_swapFile->setToolTip(tr("Automatically save changes to a swap file for backup"));
@@ -478,6 +482,7 @@ VReadEditTab::VReadEditTab(QWidget *p_parent)
 
     QVBoxLayout *readLayout = new QVBoxLayout();
     readLayout->addLayout(zoomFactorLayout);
+    readLayout->addWidget(m_flashAnchor);
     m_readBox->setLayout(readLayout);
 
     QFormLayout *editLayout = new QFormLayout();
@@ -509,6 +514,10 @@ bool VReadEditTab::loadConfiguration()
         return false;
     }
 
+    if (!loadFlashAnchor()) {
+        return false;
+    }
+
     if (!loadSwapFile()) {
         return false;
     }
@@ -523,6 +532,10 @@ bool VReadEditTab::loadConfiguration()
 bool VReadEditTab::saveConfiguration()
 {
     if (!saveWebZoomFactor()) {
+        return false;
+    }
+
+    if (!saveFlashAnchor()) {
         return false;
     }
 
@@ -564,6 +577,18 @@ bool VReadEditTab::saveWebZoomFactor()
         g_config->setWebZoomFactor(-1);
     }
 
+    return true;
+}
+
+bool VReadEditTab::loadFlashAnchor()
+{
+    m_flashAnchor->setChecked(g_config->getEnableFlashAnchor());
+    return true;
+}
+
+bool VReadEditTab::saveFlashAnchor()
+{
+    g_config->setEnableFlashAnchor(m_flashAnchor->isChecked());
     return true;
 }
 
