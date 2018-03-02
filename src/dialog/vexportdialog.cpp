@@ -120,7 +120,7 @@ void VExportDialog::setupUI()
 
     m_consoleEdit = new QPlainTextEdit();
     m_consoleEdit->setReadOnly(true);
-    m_consoleEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
+    m_consoleEdit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
     m_consoleEdit->setProperty("LineEdit", true);
     m_consoleEdit->setPlaceholderText(tr("Output logs will be shown here"));
 
@@ -147,6 +147,15 @@ void VExportDialog::setupUI()
                 QUrl url = QUrl::fromLocalFile(getOutputDirectory());
                 QDesktopServices::openUrl(url);
             });
+
+    // Progress bar.
+    m_proBar = new QProgressBar();
+    m_proBar->setRange(0, 0);
+    m_proBar->hide();
+
+    QHBoxLayout *btnLayout = new QHBoxLayout();
+    btnLayout->addWidget(m_proBar);
+    btnLayout->addWidget(m_btnBox);
 
     QFormLayout *basicLayout = new QFormLayout();
     basicLayout->addRow(tr("Notes to export:"), m_srcCB);
@@ -175,7 +184,7 @@ void VExportDialog::setupUI()
     mainLayout->addWidget(m_basicBox);
     mainLayout->addWidget(m_settingBox);
     mainLayout->addWidget(m_consoleEdit);
-    mainLayout->addWidget(m_btnBox);
+    mainLayout->addLayout(btnLayout);
 
     setLayout(mainLayout);
 
@@ -258,8 +267,8 @@ QWidget *VExportDialog::setupPDFAdvancedSettings()
 
     // wkhtmltopdf extra argumnets.
     m_wkExtraArgsEdit = new VLineEdit();
-    m_wkExtraArgsEdit->setToolTip(tr("Additional arguments passed to wkhtmltopdf"));
-    m_wkExtraArgsEdit->setPlaceholderText(tr("Use \" to enclose arguments containing space"));
+    m_wkExtraArgsEdit->setToolTip(tr("Additional global options passed to wkhtmltopdf"));
+    m_wkExtraArgsEdit->setPlaceholderText(tr("Use \" to enclose options containing spaces"));
     m_wkExtraArgsEdit->setEnabled(m_wkhtmltopdfCB->isChecked());
 
     QGridLayout *advLayout = new QGridLayout();
@@ -286,7 +295,7 @@ QWidget *VExportDialog::setupPDFAdvancedSettings()
     advLayout->addWidget(new QLabel(tr("Page number:")), 5, 0);
     advLayout->addWidget(m_wkPageNumberCB, 5, 1, 1, 2);
 
-    advLayout->addWidget(new QLabel(tr("Additional global options:")), 6, 0);
+    advLayout->addWidget(new QLabel(tr("Additional options:")), 6, 0);
     advLayout->addWidget(m_wkExtraArgsEdit, 6, 1, 1, 5);
 
     advLayout->setContentsMargins(0, 0, 0, 0);
@@ -478,6 +487,7 @@ void VExportDialog::startExport()
     }
 
     m_exportBtn->setEnabled(false);
+    m_proBar->show();
     m_askedToStop = false;
     m_inExport = true;
 
@@ -523,6 +533,7 @@ void VExportDialog::startExport()
             if (!checkWkhtmltopdfExecutable(s_opt.m_pdfOpt.m_wkPath)) {
                 m_inExport = false;
                 m_exportBtn->setEnabled(true);
+                m_proBar->hide();
                 return;
             }
         }
@@ -616,6 +627,7 @@ exit:
 
     m_inExport = false;
     m_exportBtn->setEnabled(true);
+    m_proBar->hide();
 }
 
 QString VExportDialog::getOutputDirectory() const
@@ -686,7 +698,8 @@ void VExportDialog::handleInputChanged()
 
 void VExportDialog::appendLogLine(const QString &p_text)
 {
-    m_consoleEdit->appendPlainText(p_text);
+    m_consoleEdit->appendPlainText(">>> " + p_text);
+    m_consoleEdit->ensureCursorVisible();
     QCoreApplication::sendPostedEvents();
 }
 

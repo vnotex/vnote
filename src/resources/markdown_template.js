@@ -44,6 +44,10 @@ if (typeof VEnableFlashAnchor == 'undefined') {
     VEnableFlashAnchor = false;
 }
 
+if (typeof VRemoveMathjaxScript == 'undefined') {
+    VRemoveMathjaxScript = false;
+}
+
 var getUrlScheme = function(url) {
     var idx = url.indexOf(':');
     if (idx > -1) {
@@ -1078,6 +1082,11 @@ var postProcessMathJax = function() {
     var all = MathJax.Hub.getAllJax();
     for (var i = 0; i < all.length; ++i) {
         var node = all[i].SourceElement().parentNode;
+        if (VRemoveMathjaxScript) {
+            // Remove the SourceElement.
+            node.removeChild(all[i].SourceElement());
+        }
+
         if (node.tagName.toLowerCase() == 'code') {
             var pre = node.parentNode;
             var p = document.createElement('p');

@@ -171,14 +171,16 @@ public:
     static QString generateHtmlTemplate(MarkdownConverterType p_conType);
 
     // @p_renderBg is the background name.
+    // @p_wkhtmltopdf: whether this template is used for wkhtmltopdf.
     static QString generateHtmlTemplate(MarkdownConverterType p_conType,
                                         const QString &p_renderBg,
                                         const QString &p_renderStyle,
                                         const QString &p_renderCodeBlockStyle,
-                                        bool p_isPDF);
+                                        bool p_isPDF,
+                                        bool p_wkhtmltopdf = false);
 
     // @p_renderBg is the background name.
-    static QString generateExportHtmlTemplate(const QString &p_renderBg);
+    static QString generateExportHtmlTemplate(const QString &p_renderBg, bool p_includeMathJax);
 
     static QString generateSimpleHtmlTemplate(const QString &p_body);
 
@@ -356,7 +358,8 @@ private:
                            const QString &p_path);
 
     static QString generateHtmlTemplate(const QString &p_template,
-                                        MarkdownConverterType p_conType);
+                                        MarkdownConverterType p_conType,
+                                        bool p_wkhtmltopdf = false);
 
     // <value, name>
     static QVector<QPair<QString, QString>> s_availableLanguages;

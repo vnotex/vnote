@@ -43,9 +43,11 @@ void VExporter::prepareExport(const ExportOption &p_opt)
                                                   p_opt.m_renderBg,
                                                   p_opt.m_renderStyle,
                                                   p_opt.m_renderCodeBlockStyle,
-                                                  isPdf);
+                                                  isPdf,
+                                                  isPdf && p_opt.m_pdfOpt.m_wkhtmltopdf);
 
-    m_exportHtmlTemplate = VUtils::generateExportHtmlTemplate(p_opt.m_renderBg);
+    m_exportHtmlTemplate = VUtils::generateExportHtmlTemplate(p_opt.m_renderBg,
+                                                              isPdf && p_opt.m_pdfOpt.m_wkhtmltopdf);
 
     m_pageLayout = *(p_opt.m_pdfOpt.m_layout);
 
@@ -96,8 +98,6 @@ static QStringList parseCombinedArgString(const QString &program)
 void VExporter::prepareWKArguments(const ExportPDFOption &p_opt)
 {
     m_wkArgs.clear();
-    m_wkArgs << "--quiet";
-    m_wkArgs << "--encoding" << "utf-8";
     m_wkArgs << "--page-size" << m_pageLayout.pageSize().key();
     m_wkArgs << "--orientation"
              << (m_pageLayout.orientation() == QPageLayout::Portrait ? "Portrait" : "Landscape");
@@ -107,8 +107,6 @@ void VExporter::prepareWKArguments(const ExportPDFOption &p_opt)
     m_wkArgs << "--margin-left" << marginToStrMM(marginsMM.left());
     m_wkArgs << "--margin-right" << marginToStrMM(marginsMM.right());
     m_wkArgs << "--margin-top" << marginToStrMM(marginsMM.top());
-
-    m_wkArgs << (p_opt.m_wkEnableBackground ? "--background" : "--no-background");
 
     QString footer;
     switch (p_opt.m_wkPageNumber) {
@@ -138,11 +136,20 @@ void VExporter::prepareWKArguments(const ExportPDFOption &p_opt)
         m_wkArgs << "--title" << p_opt.m_wkTitle;
     }
 
-    // Append additional arguments.
+    m_wkArgs << "--encoding" << "utf-8";
+    m_wkArgs << (p_opt.m_wkEnableBackground ? "--background" : "--no-background");
+
+    // Delay for MathJax.
+    if (p_opt.m_wkhtmltopdf) {
+        m_wkArgs << "--javascript-delay" << "10000";
+    }
+
+    // Append additional global option.
     if (!p_opt.m_wkExtraArgs.isEmpty()) {
         m_wkArgs.append(parseCombinedArgString(p_opt.m_wkExtraArgs));
     }
 
+    // TOC option.
     if (p_opt.m_wkEnableTableOfContents) {
         m_wkArgs << "toc" << "--toc-text-size-shrink" << "1.0";
     }
@@ -658,8 +665,9 @@ bool VExporter::htmlsToPDFViaWK(const QList<QString> &p_htmlFiles,
 
     QString cmd = p_opt.m_wkPath + " " + combineArgs(args);
     emit outputLog(cmd);
+    qDebug() << "wkhtmltopdf cmd:" << cmd;
     int ret = QProcess::execute(p_opt.m_wkPath, args);
-    qDebug() << "wkhtmltopdf returned" << ret << cmd;
+    qDebug() << "wkhtmltopdf returned" << ret;
     switch (ret) {
     case -2:
         VUtils::addErrMsg(p_errMsg, tr("Fail to start wkhtmltopdf (%1).").arg(cmd));

@@ -21,6 +21,7 @@ class VCart;
 class VExporter;
 class QCheckBox;
 class VLineEdit;
+class QProgressBar;
 
 
 enum class ExportSource
@@ -335,6 +336,8 @@ private:
     VFile *m_file;
 
     VCart *m_cart;
+
+    QProgressBar *m_proBar;
 
     QPageLayout m_pageLayout;
 

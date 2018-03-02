@@ -601,18 +601,22 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType,
                                      const QString &p_renderBg,
                                      const QString &p_renderStyle,
                                      const QString &p_renderCodeBlockStyle,
-                                     bool p_isPDF)
+                                     bool p_isPDF,
+                                     bool p_wkhtmltopdf)
 {
+    Q_ASSERT((p_isPDF && p_wkhtmltopdf) || !p_wkhtmltopdf);
+
     QString templ = VNote::generateHtmlTemplate(g_config->getRenderBackgroundColor(p_renderBg),
                                                 g_config->getCssStyleUrl(p_renderStyle),
                                                 g_config->getCodeBlockCssStyleUrl(p_renderCodeBlockStyle),
                                                 p_isPDF);
 
-    return generateHtmlTemplate(templ, p_conType);
+    return generateHtmlTemplate(templ, p_conType, p_wkhtmltopdf);
 }
 
 QString VUtils::generateHtmlTemplate(const QString &p_template,
-                                     MarkdownConverterType p_conType)
+                                     MarkdownConverterType p_conType,
+                                     bool p_wkhtmltopdf)
 {
     QString jsFile, extraFile;
     switch (p_conType) {
@@ -674,6 +678,14 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
     }
 
     if (g_config->getEnableMathjax()) {
+        QString mj = g_config->getMathjaxJavascript();
+        if (p_wkhtmltopdf) {
+            // Chante MathJax to be rendered as SVG.
+            // If rendered as HTML, it will make the font of <code> messy.
+            QRegExp reg("(Mathjax\\.js\\?config=)\\S+", Qt::CaseInsensitive);
+            mj.replace(reg, QString("\\1%1").arg("TeX-MML-AM_SVG"));
+        }
+
         extraFile += "<script type=\"text/x-mathjax-config\">"
                      "MathJax.Hub.Config({\n"
                      "                    tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']],\n"
@@ -682,8 +694,12 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
                      "                    showProcessingMessages: false,\n"
                      "                    messageStyle: \"none\"});\n"
                      "</script>\n"
-                     "<script type=\"text/javascript\" async src=\"" + g_config->getMathjaxJavascript() + "\"></script>\n" +
+                     "<script type=\"text/javascript\" async src=\"" + mj + "\"></script>\n" +
                      "<script>var VEnableMathjax = true;</script>\n";
+
+        if (p_wkhtmltopdf) {
+            extraFile += "<script>var VRemoveMathjaxScript = true;</script>\n";
+        }
     }
 
     if (g_config->getEnableImageCaption()) {
@@ -710,9 +726,39 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
     return htmlTemplate;
 }
 
-QString VUtils::generateExportHtmlTemplate(const QString &p_renderBg)
+QString VUtils::generateExportHtmlTemplate(const QString &p_renderBg, bool p_includeMathJax)
 {
-    return VNote::generateExportHtmlTemplate(g_config->getRenderBackgroundColor(p_renderBg));
+    QString templ = VNote::generateExportHtmlTemplate(g_config->getRenderBackgroundColor(p_renderBg));
+    QString extra;
+    if (p_includeMathJax) {
+        extra += "<script type=\"text/x-mathjax-config\">\n"
+                         "MathJax.Hub.Config({\n"
+                             "showProcessingMessages: false,\n"
+                             "messageStyle: \"none\",\n"
+                             "SVG: {\n"
+                                 "minScaleAdjust: 100,\n"
+                                 "styles: {\n"
+                                   "\".MathJax_SVG\": {\n"
+                                        "\"font-size\": \"2em !important\"\n"
+                                   "}\n"
+                                 "}\n"
+                             "}\n"
+                         "});\n"
+                 "</script>\n";
+
+        QString mj = g_config->getMathjaxJavascript();
+        // Chante MathJax to be rendered as SVG.
+        QRegExp reg("(Mathjax\\.js\\?config=)\\S+", Qt::CaseInsensitive);
+        mj.replace(reg, QString("\\1%1").arg("TeX-MML-AM_SVG"));
+
+        extra += "<script type=\"text/javascript\" async src=\"" + mj + "\"></script>\n";
+    }
+
+    if (!extra.isEmpty()) {
+        templ.replace(HtmlHolder::c_extraHolder, extra);
+    }
+
+    return templ;
 }
 
 QString VUtils::getFileNameWithSequence(const QString &p_directory,
