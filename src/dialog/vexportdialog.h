@@ -116,7 +116,7 @@ struct ExportOption
         : m_source(ExportSource::CurrentNote),
           m_format(ExportFormat::Markdown),
           m_renderer(MarkdownConverterType::MarkdownIt),
-          m_processSubfolders(false)
+          m_processSubfolders(true)
     {
     }
 

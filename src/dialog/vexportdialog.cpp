@@ -319,7 +319,6 @@ QWidget *VExportDialog::setupGeneralAdvancedSettings()
     // Include subfolders.
     m_subfolderCB = new QCheckBox(tr("Process subfolders"));
     m_subfolderCB->setToolTip(tr("Process subfolders recursively"));
-    m_subfolderCB->setChecked(true);
 
     QFormLayout *advLayout = new QFormLayout();
     advLayout->addRow(m_subfolderCB);
@@ -354,6 +353,8 @@ void VExportDialog::initUIFields(MarkdownConverterType p_renderer)
         m_srcCB->addItem(tr("Cart (%1)").arg(m_cart->count()),
                          (int)ExportSource::Cart);
     }
+
+    m_subfolderCB->setChecked(s_opt.m_processSubfolders);
 
     // Export format.
     m_formatCB->addItem(tr("Markdown"), (int)ExportFormat::Markdown);
