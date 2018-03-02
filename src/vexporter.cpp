@@ -6,6 +6,7 @@
 #include <QWebEngineProfile>
 #include <QRegExp>
 #include <QProcess>
+#include <QTemporaryDir>
 
 #include "vconfigmanager.h"
 #include "vfile.h"
@@ -39,7 +40,8 @@ void VExporter::prepareExport(const ExportOption &p_opt)
                                                   p_opt.m_renderBg,
                                                   p_opt.m_renderStyle,
                                                   p_opt.m_renderCodeBlockStyle,
-                                                  p_opt.m_format == ExportFormat::PDF);
+                                                  p_opt.m_format == ExportFormat::PDF
+                                                  || p_opt.m_format == ExportFormat::OnePDF);
 
     m_exportHtmlTemplate = VUtils::generateExportHtmlTemplate(p_opt.m_renderBg);
 
@@ -127,6 +129,11 @@ void VExporter::prepareWKArguments(const ExportPDFOption &p_opt)
     if (!footer.isEmpty()) {
         m_wkArgs << footer << "[page]"
                  << "--footer-spacing" << QString::number(marginsMM.bottom() / 3, 'f', 2);
+    }
+
+    // Title.
+    if (!p_opt.m_wkTitle.isEmpty()) {
+        m_wkArgs << "--title" << p_opt.m_wkTitle;
     }
 
     // Append additional arguments.
@@ -265,7 +272,15 @@ bool VExporter::exportToPDFViaWK(VDocument *p_webDocument,
                 }
 
                 Q_ASSERT(!p_filePath.isEmpty());
-                QString htmlPath = p_filePath + ".vnote.html";
+
+                // Save HTML to a temp dir.
+                QTemporaryDir tmpDir;
+                if (!tmpDir.isValid()) {
+                    pdfExported = -1;
+                    return;
+                }
+
+                QString htmlPath = tmpDir.filePath("vnote_tmp.html");
 
                 QFile file(htmlPath);
                 if (!file.open(QFile::WriteOnly)) {
@@ -296,16 +311,12 @@ bool VExporter::exportToPDFViaWK(VDocument *p_webDocument,
                 file.write(html.toUtf8());
                 file.close();
 
-                // Convert vis wkhtmltopdf.
-                if (!htmlToPDFViaWK(htmlPath, p_filePath, p_opt, p_errMsg)) {
+                // Convert via wkhtmltopdf.
+                QList<QString> files;
+                files.append(htmlPath);
+                if (!htmlsToPDFViaWK(files, p_filePath, p_opt, p_errMsg)) {
                     pdfExported = -1;
-                }
-
-                // Clean up.
-                VUtils::deleteFile(htmlPath);
-                VUtils::deleteDirectory(resFolderPath);
-
-                if (pdfExported == 0) {
+                } else {
                     pdfExported = 1;
                 }
             });
@@ -369,6 +380,8 @@ bool VExporter::exportViaWebView(VFile *p_file,
     bool exportRet = false;
     switch (p_opt.m_format) {
     case ExportFormat::PDF:
+        V_FALLTHROUGH;
+    case ExportFormat::OnePDF:
         if (p_opt.m_pdfOpt.m_wkhtmltopdf) {
             exportRet = exportToPDFViaWK(m_webDocument,
                                          p_opt.m_pdfOpt,
@@ -624,17 +637,23 @@ static QString combineArgs(QStringList &p_args)
     return str;
 }
 
-bool VExporter::htmlToPDFViaWK(const QString &p_htmlFile,
-                               const QString &p_filePath,
-                               const ExportPDFOption &p_opt,
-                               QString *p_errMsg)
+bool VExporter::htmlsToPDFViaWK(const QList<QString> &p_htmlFiles,
+                                const QString &p_filePath,
+                                const ExportPDFOption &p_opt,
+                                QString *p_errMsg)
 {
     // Note: system's locale settings (Language for non-Unicode programs) is important to wkhtmltopdf.
     // Input file could be encoded via QUrl::fromLocalFile(p_htmlFile).toString(QUrl::EncodeUnicode) to
     // handle non-ASCII path.
+
     QStringList args(m_wkArgs);
-    args << QDir::toNativeSeparators(p_htmlFile);
+
+    for (auto const & it : p_htmlFiles) {
+        args << QDir::toNativeSeparators(it);
+    }
+
     args << QDir::toNativeSeparators(p_filePath);
+
     QString cmd = p_opt.m_wkPath + " " + combineArgs(args);
     emit outputLog(cmd);
     int ret = QProcess::execute(p_opt.m_wkPath, args);
@@ -653,4 +672,16 @@ bool VExporter::htmlToPDFViaWK(const QString &p_htmlFile,
     }
 
     return ret == 0;
+}
+
+int VExporter::exportPDFInOne(const QList<QString> &p_htmlFiles,
+                              const ExportOption &p_opt,
+                              const QString &p_outputFile,
+                              QString *p_errMsg)
+{
+    if (!htmlsToPDFViaWK(p_htmlFiles, p_outputFile, p_opt.m_pdfOpt, p_errMsg)) {
+        return 0;
+    }
+
+    return p_htmlFiles.size();
 }

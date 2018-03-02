@@ -3,13 +3,14 @@
 
 #include <QDialog>
 #include <QPageLayout>
+#include <QList>
+#include <QComboBox>
 
 #include "vconstants.h"
 
 class QLabel;
 class VLineEdit;
 class QDialogButtonBox;
-class QComboBox;
 class QPushButton;
 class QGroupBox;
 class QPlainTextEdit;
@@ -35,7 +36,8 @@ enum class ExportFormat
 {
     Markdown = 0,
     HTML,
-    PDF
+    PDF,
+    OnePDF
 };
 
 
@@ -88,6 +90,8 @@ struct ExportPDFOption
                     const QString &p_wkPath,
                     bool p_wkEnableBackground,
                     bool p_wkEnableTableOfContents,
+                    const QString &p_wkTitle,
+                    const QString &p_wkTargetFileName,
                     ExportPageNumber p_wkPageNumber,
                     const QString &p_wkExtraArgs)
         : m_layout(p_layout),
@@ -95,6 +99,8 @@ struct ExportPDFOption
           m_wkPath(p_wkPath),
           m_wkEnableBackground(p_wkEnableBackground),
           m_wkEnableTableOfContents(p_wkEnableTableOfContents),
+          m_wkTitle(p_wkTitle),
+          m_wkTargetFileName(p_wkTargetFileName),
           m_wkPageNumber(p_wkPageNumber),
           m_wkExtraArgs(p_wkExtraArgs)
     {
@@ -105,6 +111,8 @@ struct ExportPDFOption
     QString m_wkPath;
     bool m_wkEnableBackground;
     bool m_wkEnableTableOfContents;
+    QString m_wkTitle;
+    QString m_wkTargetFileName;
     ExportPageNumber m_wkPageNumber;
     QString m_wkExtraArgs;
 };
@@ -205,37 +213,49 @@ private:
     int doExport(VFile *p_file,
                  const ExportOption &p_opt,
                  const QString &p_outputFolder,
-                 QString *p_errMsg = NULL);
+                 QString *p_errMsg = NULL,
+                 QList<QString> *p_outputFiles = NULL);
 
     int doExport(VDirectory *p_directory,
                  const ExportOption &p_opt,
                  const QString &p_outputFolder,
-                 QString *p_errMsg = NULL);
+                 QString *p_errMsg = NULL,
+                 QList<QString> *p_outputFiles = NULL);
 
     int doExport(VNotebook *p_notebook,
                  const ExportOption &p_opt,
                  const QString &p_outputFolder,
-                 QString *p_errMsg = NULL);
+                 QString *p_errMsg = NULL,
+                 QList<QString> *p_outputFiles = NULL);
 
     int doExport(VCart *p_cart,
                  const ExportOption &p_opt,
                  const QString &p_outputFolder,
-                 QString *p_errMsg = NULL);
+                 QString *p_errMsg = NULL,
+                 QList<QString> *p_outputFiles = NULL);
 
     int doExportMarkdown(VFile *p_file,
                          const ExportOption &p_opt,
                          const QString &p_outputFolder,
-                         QString *p_errMsg = NULL);
+                         QString *p_errMsg = NULL,
+                         QList<QString> *p_outputFiles = NULL);
 
     int doExportPDF(VFile *p_file,
                     const ExportOption &p_opt,
                     const QString &p_outputFolder,
-                    QString *p_errMsg = NULL);
+                    QString *p_errMsg = NULL,
+                    QList<QString> *p_outputFiles = NULL);
 
     int doExportHTML(VFile *p_file,
                      const ExportOption &p_opt,
                      const QString &p_outputFolder,
-                     QString *p_errMsg = NULL);
+                     QString *p_errMsg = NULL,
+                     QList<QString> *p_outputFiles = NULL);
+
+    int doExportPDFAllInOne(const QList<QString> &p_files,
+                            const ExportOption &p_opt,
+                            const QString &p_outputFolder,
+                            QString *p_errMsg = NULL);
 
     // Return false if we could not continue.
     bool checkUserAction();
@@ -243,6 +263,10 @@ private:
     void updatePageLayoutLabel();
 
     bool checkWkhtmltopdfExecutable(const QString &p_file);
+
+    ExportSource currentSource() const;
+
+    ExportFormat currentFormat() const;
 
     QComboBox *m_srcCB;
 
@@ -283,6 +307,10 @@ private:
     VLineEdit *m_wkPathEdit;
 
     QPushButton *m_wkPathBrowseBtn;
+
+    VLineEdit *m_wkTitleEdit;
+
+    VLineEdit *m_wkTargetFileNameEdit;
 
     QCheckBox *m_wkBackgroundCB;
 
@@ -325,4 +353,13 @@ private:
     static ExportOption s_opt;
 };
 
+inline ExportSource VExportDialog::currentSource() const
+{
+    return (ExportSource)m_srcCB->currentData().toInt();
+}
+
+inline ExportFormat VExportDialog::currentFormat() const
+{
+    return (ExportFormat)m_formatCB->currentData().toInt();
+}
 #endif // VEXPORTDIALOG_H
