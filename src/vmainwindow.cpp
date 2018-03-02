@@ -1528,6 +1528,17 @@ void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
     if (curBgColor == "System") {
         tmpAct->setChecked(true);
     }
+
+    renderBgMenu->addAction(tmpAct);
+
+    tmpAct = new QAction(tr("Transparent"), renderBackgroundAct);
+    tmpAct->setToolTip(tr("Use a transparent background for Markdown rendering"));
+    tmpAct->setCheckable(true);
+    tmpAct->setData("Transparent");
+    if (curBgColor == "Transparent") {
+        tmpAct->setChecked(true);
+    }
+
     renderBgMenu->addAction(tmpAct);
 
     const QVector<VColor> &bgColors = g_config->getCustomColors();
@@ -1810,6 +1821,7 @@ void VMainWindow::setRenderBackgroundColor(QAction *action)
     if (!action) {
         return;
     }
+
     g_config->setCurRenderBackgroundColor(action->data().toString());
     vnote->updateTemplate();
 }

@@ -1487,7 +1487,9 @@ void VConfigManager::clearGroupOfSettings(QSettings *p_settings, const QString &
 
 QString VConfigManager::getRenderBackgroundColor(const QString &p_bgName) const
 {
-    if (p_bgName != "System") {
+    if (p_bgName == "Transparent") {
+        return "transparent";
+    } else if (p_bgName != "System") {
         for (int i = 0; i < m_customColors.size(); ++i) {
             if (m_customColors[i].m_name == p_bgName) {
                 return m_customColors[i].m_color;

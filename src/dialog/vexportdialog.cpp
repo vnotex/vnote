@@ -370,6 +370,7 @@ void VExportDialog::initUIFields(MarkdownConverterType p_renderer)
 
     // Markdown rendering background.
     m_renderBgCB->addItem(tr("System"), "System");
+    m_renderBgCB->addItem(tr("Transparent"), "Transparent");
     const QVector<VColor> &bgColors = g_config->getCustomColors();
     for (int i = 0; i < bgColors.size(); ++i) {
         m_renderBgCB->addItem(bgColors[i].m_name, bgColors[i].m_name);
