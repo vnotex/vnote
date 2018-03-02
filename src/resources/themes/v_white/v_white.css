@@ -103,20 +103,6 @@ pre code {
     white-space: pre;
 }
 
-code.mathjax-code {
-    display: block;
-    overflow-x: inherit;
-    margin: 0;
-    padding: 0;
-    color: inherit;
-    background: inherit;
-    font-style: normal;
-    font-weight: normal;
-    font-size: 16px;
-    font-family: inherit;
-    line-height: 24px;
-}
-
 aside {
     display: block;
     float: right;

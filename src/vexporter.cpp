@@ -36,12 +36,14 @@ static QString marginToStrMM(qreal p_margin)
 
 void VExporter::prepareExport(const ExportOption &p_opt)
 {
+    bool isPdf = p_opt.m_format == ExportFormat::PDF
+                 || p_opt.m_format == ExportFormat::OnePDF;
+
     m_htmlTemplate = VUtils::generateHtmlTemplate(p_opt.m_renderer,
                                                   p_opt.m_renderBg,
                                                   p_opt.m_renderStyle,
                                                   p_opt.m_renderCodeBlockStyle,
-                                                  p_opt.m_format == ExportFormat::PDF
-                                                  || p_opt.m_format == ExportFormat::OnePDF);
+                                                  isPdf);
 
     m_exportHtmlTemplate = VUtils::generateExportHtmlTemplate(p_opt.m_renderBg);
 

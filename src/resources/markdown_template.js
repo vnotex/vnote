@@ -1073,13 +1073,16 @@ var getHtmlWithInlineStyles = function(container) {
 };
 
 // Will be called after MathJax rendering finished.
+// Make <pre><code>math</code></pre> to <p>math</p>
 var postProcessMathJax = function() {
     var all = MathJax.Hub.getAllJax();
     for (var i = 0; i < all.length; ++i) {
         var node = all[i].SourceElement().parentNode;
         if (node.tagName.toLowerCase() == 'code') {
-            node.classList.remove('hljs');
-            node.classList.add('mathjax-code');
+            var pre = node.parentNode;
+            var p = document.createElement('p');
+            p.innerHTML = node.innerHTML;
+            pre.parentNode.replaceChild(p, pre);
         }
     }
 
