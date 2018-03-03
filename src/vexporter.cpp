@@ -378,6 +378,11 @@ bool VExporter::exportViaWebView(VFile *p_file,
             m_state = ExportState::Failed;
             goto exit;
         }
+
+        if (m_askedToStop) {
+            m_state = ExportState::Cancelled;
+            goto exit;
+        }
     }
 
     // Wait to ensure Web side is really ready.

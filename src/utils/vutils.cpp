@@ -738,9 +738,11 @@ QString VUtils::generateExportHtmlTemplate(const QString &p_renderBg, bool p_inc
                              "SVG: {\n"
                                  "minScaleAdjust: 100,\n"
                                  "styles: {\n"
+#if defined(Q_OS_WIN)
                                    "\".MathJax_SVG\": {\n"
                                         "\"font-size\": \"2em !important\"\n"
                                    "}\n"
+#endif
                                  "}\n"
                              "}\n"
                          "});\n"
