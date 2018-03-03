@@ -36,6 +36,8 @@ public:
                        const QString &p_outputFile,
                        QString *p_errMsg = NULL);
 
+    void setAskedToStop(bool p_askedToStop);
+
 signals:
     // Request to output log.
     void outputLog(const QString &p_log);
@@ -107,6 +109,8 @@ private:
 
     void prepareWKArguments(const ExportPDFOption &p_opt);
 
+    int startProcess(const QString &p_program, const QStringList &p_args);
+
     // Fix @p_html's resources like url("...") with "file" or "qrc" schema.
     // Copy the resource to @p_folder and fix the url string.
     static bool fixStyleResources(const QString &p_folder,
@@ -144,6 +148,8 @@ private:
 
     // Arguments for wkhtmltopdf.
     QStringList m_wkArgs;
+
+    bool m_askedToStop;
 };
 
 inline void VExporter::clearNoteState()
@@ -161,4 +167,8 @@ inline bool VExporter::isNoteStateFailed() const
     return m_noteState & NoteState::Failed;
 }
 
+inline void VExporter::setAskedToStop(bool p_askedToStop)
+{
+    m_askedToStop = p_askedToStop;
+}
 #endif // VEXPORTER_H

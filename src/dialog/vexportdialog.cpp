@@ -133,6 +133,8 @@ void VExportDialog::setupUI()
                 if (m_inExport) {
                     // Just cancel the export. Do not exit.
                     m_askedToStop = true;
+                    m_exporter->setAskedToStop(true);
+                    appendLogLine(tr("Cancelling the export..."));
                 } else {
                     QDialog::reject();
                 }
@@ -489,6 +491,7 @@ void VExportDialog::startExport()
     m_exportBtn->setEnabled(false);
     m_proBar->show();
     m_askedToStop = false;
+    m_exporter->setAskedToStop(false);
     m_inExport = true;
 
     QString outputFolder = QDir::cleanPath(QDir(getOutputDirectory()).absolutePath());
@@ -579,6 +582,11 @@ void VExportDialog::startExport()
 
         s_opt.m_format = ExportFormat::OnePDF;
 
+        if (m_askedToStop) {
+            ret = 0;
+            goto exit;
+        }
+
         Q_ASSERT(ret == files.size());
         if (!files.isEmpty()) {
             ret = doExportPDFAllInOne(files, s_opt, outputFolder, &msg);
@@ -611,6 +619,7 @@ exit:
     if (m_askedToStop) {
         appendLogLine(tr("User cancelled the export. Aborted!"));
         m_askedToStop = false;
+        m_exporter->setAskedToStop(false);
     }
 
     if (!msg.isEmpty()) {

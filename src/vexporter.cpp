@@ -7,6 +7,8 @@
 #include <QRegExp>
 #include <QProcess>
 #include <QTemporaryDir>
+#include <QScopedPointer>
+#include <QCoreApplication>
 
 #include "vconfigmanager.h"
 #include "vfile.h"
@@ -25,7 +27,8 @@ extern VWebUtils *g_webUtils;
 VExporter::VExporter(QWidget *p_parent)
     : QObject(p_parent),
       m_webViewer(NULL),
-      m_state(ExportState::Idle)
+      m_state(ExportState::Idle),
+      m_askedToStop(false)
 {
 }
 
@@ -666,8 +669,12 @@ bool VExporter::htmlsToPDFViaWK(const QList<QString> &p_htmlFiles,
     QString cmd = p_opt.m_wkPath + " " + combineArgs(args);
     emit outputLog(cmd);
     qDebug() << "wkhtmltopdf cmd:" << cmd;
-    int ret = QProcess::execute(p_opt.m_wkPath, args);
+    int ret = startProcess(p_opt.m_wkPath, args);
     qDebug() << "wkhtmltopdf returned" << ret;
+    if (m_askedToStop) {
+        return ret == 0;
+    }
+
     switch (ret) {
     case -2:
         VUtils::addErrMsg(p_errMsg, tr("Fail to start wkhtmltopdf (%1).").arg(cmd));
@@ -694,4 +701,78 @@ int VExporter::exportPDFInOne(const QList<QString> &p_htmlFiles,
     }
 
     return p_htmlFiles.size();
+}
+
+int VExporter::startProcess(const QString &p_program, const QStringList &p_args)
+{
+    int ret = 0;
+    QScopedPointer<QProcess> process(new QProcess(this));
+    process->start(p_program, p_args);
+    bool finished = false;
+    bool started = false;
+    while (true) {
+        QProcess::ProcessError err = process->error();
+        if (err == QProcess::FailedToStart
+            || err == QProcess::Crashed) {
+            emit outputLog(tr("QProcess error %1.").arg(err));
+            if (err == QProcess::FailedToStart) {
+                ret = -2;
+            } else {
+                ret = -1;
+            }
+
+            break;
+        }
+
+        if (started) {
+            if (process->state() == QProcess::NotRunning) {
+                finished = true;
+            }
+        } else {
+            if (process->state() != QProcess::NotRunning) {
+                started = true;
+            }
+        }
+
+        if (process->waitForFinished(500)) {
+            // Finished.
+            finished = true;
+        }
+
+        QByteArray outBa = process->readAllStandardOutput();
+        QByteArray errBa = process->readAllStandardError();
+        QString msg;
+        if (!outBa.isEmpty()) {
+            msg += QString::fromLocal8Bit(outBa);
+        }
+
+        if (!errBa.isEmpty()) {
+            msg += QString::fromLocal8Bit(errBa);
+        }
+
+        if (!msg.isEmpty()) {
+            emit outputLog(msg);
+        }
+
+        if (finished) {
+            QProcess::ExitStatus sta = process->exitStatus();
+            if (sta == QProcess::CrashExit) {
+                ret = -1;
+                break;
+            }
+
+            ret = process->exitCode();
+            break;
+        }
+
+        QCoreApplication::processEvents();
+
+        if (m_askedToStop) {
+            process->kill();
+            ret = -1;
+            break;
+        }
+    }
+
+    return ret;
 }
