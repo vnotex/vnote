@@ -48,6 +48,10 @@ if (typeof VRemoveMathjaxScript == 'undefined') {
     VRemoveMathjaxScript = false;
 }
 
+if (typeof VAddTOC == 'undefined') {
+    VAddTOC = false;
+}
+
 var getUrlScheme = function(url) {
     var idx = url.indexOf(':');
     if (idx > -1) {
@@ -805,11 +809,17 @@ var handleToc = function(needToc) {
     var tocTree = tocToTree(toPerfectToc(toc, baseLevel), baseLevel);
     content.setToc(tocTree, baseLevel);
 
+    var removeToc = toc.length == 0;
+
     // Add it to html
     if (needToc) {
         var eles = document.getElementsByClassName('vnote-toc');
         for (var i = 0; i < eles.length; ++i) {
-            eles[i].innerHTML = tocTree;
+            if (removeToc) {
+                eles[i].parentNode.removeChild(eles[i]);
+            } else {
+                eles[i].innerHTML = tocTree;
+            }
         }
     }
 };

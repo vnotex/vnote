@@ -177,7 +177,8 @@ public:
                                         const QString &p_renderStyle,
                                         const QString &p_renderCodeBlockStyle,
                                         bool p_isPDF,
-                                        bool p_wkhtmltopdf = false);
+                                        bool p_wkhtmltopdf = false,
+                                        bool p_addToc = false);
 
     // @p_renderBg is the background name.
     static QString generateExportHtmlTemplate(const QString &p_renderBg, bool p_includeMathJax);
@@ -359,7 +360,8 @@ private:
 
     static QString generateHtmlTemplate(const QString &p_template,
                                         MarkdownConverterType p_conType,
-                                        bool p_wkhtmltopdf = false);
+                                        bool p_wkhtmltopdf = false,
+                                        bool p_addToc = false);
 
     // <value, name>
     static QVector<QPair<QString, QString>> s_availableLanguages;

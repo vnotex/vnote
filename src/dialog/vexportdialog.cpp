@@ -208,6 +208,10 @@ QWidget *VExportDialog::setupPDFAdvancedSettings()
 
     updatePageLayoutLabel();
 
+    // Enable table of contents.
+    m_tableOfContentsCB = new QCheckBox(tr("Enable Table Of Contents"));
+    m_tableOfContentsCB->setToolTip(tr("Add a table of contents to the document"));
+
     // Use wkhtmltopdf.
     m_wkhtmltopdfCB = new QCheckBox(tr("Use wkhtmltopdf"));
     m_wkhtmltopdfCB->setToolTip(tr("Use wkhtmltopdf tool to generate PDF (wkhtmltopdf needed to be installed)"));
@@ -217,7 +221,6 @@ QWidget *VExportDialog::setupPDFAdvancedSettings()
                 m_wkPathEdit->setEnabled(checked);
                 m_wkPathBrowseBtn->setEnabled(checked);
                 m_wkBackgroundCB->setEnabled(checked);
-                m_wkTableOfContentsCB->setEnabled(checked);
                 m_wkPageNumberCB->setEnabled(checked);
                 m_wkExtraArgsEdit->setEnabled(checked);
             });
@@ -257,11 +260,6 @@ QWidget *VExportDialog::setupPDFAdvancedSettings()
     m_wkBackgroundCB->setToolTip(tr("Enable background when printing"));
     m_wkBackgroundCB->setEnabled(m_wkhtmltopdfCB->isChecked());
 
-    // wkhtmltopdf enable table of contents.
-    m_wkTableOfContentsCB = new QCheckBox(tr("Enable Table Of Contents"));
-    m_wkTableOfContentsCB->setToolTip(tr("Add a table of contents to the document"));
-    m_wkTableOfContentsCB->setEnabled(m_wkhtmltopdfCB->isChecked());
-
     // wkhtmltopdf page number.
     m_wkPageNumberCB = VUtils::getComboBox();
     m_wkPageNumberCB->setToolTip(tr("Append page number as footer"));
@@ -277,6 +275,7 @@ QWidget *VExportDialog::setupPDFAdvancedSettings()
     advLayout->addWidget(new QLabel(tr("Page layout:")), 0, 0);
     advLayout->addWidget(m_layoutLabel, 0, 1);
     advLayout->addWidget(layoutBtn, 0, 2);
+    advLayout->addWidget(m_tableOfContentsCB, 0, 4, 1, 2);
 
     advLayout->addWidget(m_wkhtmltopdfCB, 1, 1, 1, 2);
     advLayout->addWidget(wkBtn, 1, 4, 1, 2);
@@ -291,14 +290,12 @@ QWidget *VExportDialog::setupPDFAdvancedSettings()
     advLayout->addWidget(new QLabel(tr("Output file name:")), 3, 3);
     advLayout->addWidget(m_wkTargetFileNameEdit, 3, 4, 1, 2);
 
-    advLayout->addWidget(m_wkBackgroundCB, 4, 1, 1, 2);
-    advLayout->addWidget(m_wkTableOfContentsCB, 4, 4, 1, 2);
+    advLayout->addWidget(new QLabel(tr("Page number:")), 4, 0);
+    advLayout->addWidget(m_wkPageNumberCB, 4, 1, 1, 2);
+    advLayout->addWidget(m_wkBackgroundCB, 4, 4, 1, 2);
 
-    advLayout->addWidget(new QLabel(tr("Page number:")), 5, 0);
-    advLayout->addWidget(m_wkPageNumberCB, 5, 1, 1, 2);
-
-    advLayout->addWidget(new QLabel(tr("Additional options:")), 6, 0);
-    advLayout->addWidget(m_wkExtraArgsEdit, 6, 1, 1, 5);
+    advLayout->addWidget(new QLabel(tr("Additional options:")), 5, 0);
+    advLayout->addWidget(m_wkExtraArgsEdit, 5, 1, 1, 5);
 
     advLayout->setContentsMargins(0, 0, 0, 0);
 
@@ -437,14 +434,14 @@ void VExportDialog::initUIFields(MarkdownConverterType p_renderer)
 
     m_mimeHTMLCB->setChecked(s_opt.m_htmlOpt.m_mimeHTML);
 
+    m_tableOfContentsCB->setChecked(s_opt.m_pdfOpt.m_enableTableOfContents);
+
     m_wkhtmltopdfCB->setChecked(s_opt.m_pdfOpt.m_wkhtmltopdf);
 
     // wkhtmltopdf path.
     m_wkPathEdit->setText(g_config->getWkhtmltopdfPath());
 
     m_wkBackgroundCB->setChecked(s_opt.m_pdfOpt.m_wkEnableBackground);
-
-    m_wkTableOfContentsCB->setChecked(s_opt.m_pdfOpt.m_wkEnableTableOfContents);
 
     // wkhtmltopdf page number.
     m_wkPageNumberCB->addItem(tr("None"), (int)ExportPageNumber::None);
@@ -507,7 +504,7 @@ void VExportDialog::startExport()
                                          m_wkhtmltopdfCB->isChecked(),
                                          QDir::toNativeSeparators(m_wkPathEdit->text()),
                                          m_wkBackgroundCB->isChecked(),
-                                         m_wkTableOfContentsCB->isChecked(),
+                                         m_tableOfContentsCB->isChecked(),
                                          m_wkTitleEdit->text(),
                                          m_wkTargetFileNameEdit->text(),
                                          (ExportPageNumber)m_wkPageNumberCB->currentData().toInt(),

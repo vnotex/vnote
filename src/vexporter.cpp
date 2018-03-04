@@ -41,13 +41,17 @@ void VExporter::prepareExport(const ExportOption &p_opt)
 {
     bool isPdf = p_opt.m_format == ExportFormat::PDF
                  || p_opt.m_format == ExportFormat::OnePDF;
+    bool extraToc = isPdf
+                    && !p_opt.m_pdfOpt.m_wkhtmltopdf
+                    && p_opt.m_pdfOpt.m_enableTableOfContents;
 
     m_htmlTemplate = VUtils::generateHtmlTemplate(p_opt.m_renderer,
                                                   p_opt.m_renderBg,
                                                   p_opt.m_renderStyle,
                                                   p_opt.m_renderCodeBlockStyle,
                                                   isPdf,
-                                                  isPdf && p_opt.m_pdfOpt.m_wkhtmltopdf);
+                                                  isPdf && p_opt.m_pdfOpt.m_wkhtmltopdf,
+                                                  extraToc);
 
     m_exportHtmlTemplate = VUtils::generateExportHtmlTemplate(p_opt.m_renderBg,
                                                               isPdf && p_opt.m_pdfOpt.m_wkhtmltopdf);
@@ -153,7 +157,7 @@ void VExporter::prepareWKArguments(const ExportPDFOption &p_opt)
     }
 
     // TOC option.
-    if (p_opt.m_wkEnableTableOfContents) {
+    if (p_opt.m_enableTableOfContents) {
         m_wkArgs << "toc" << "--toc-text-size-shrink" << "1.0";
     }
 }
@@ -203,6 +207,17 @@ void VExporter::initWebViewer(VFile *p_file, const ExportOption &p_opt)
         QString html = mdConverter.generateHtml(p_file->getContent(),
                                                 g_config->getMarkdownExtensions(),
                                                 toc);
+        bool isPdf = p_opt.m_format == ExportFormat::PDF
+                     || p_opt.m_format == ExportFormat::OnePDF;
+        bool extraToc = isPdf
+                        && !p_opt.m_pdfOpt.m_wkhtmltopdf
+                        && p_opt.m_pdfOpt.m_enableTableOfContents;
+        if (extraToc && !toc.isEmpty()) {
+            // Add toc to html.
+            QString div = "<div class=\"vnote-toc\">" + toc + "</div>\n";
+            html = div + html;
+        }
+
         m_webDocument->setHtml(html);
     }
 

@@ -73,6 +73,10 @@ var highlightCodeBlocks = function(doc, enableMermaid, enableFlowchart, enableMa
 };
 
 var updateText = function(text) {
+    if (VAddTOC) {
+        text = "[TOC]\n\n" + text;
+    }
+
     var needToc = mdHasTocSection(text);
     var html = markdownToHtml(text, needToc);
     placeholder.innerHTML = html;

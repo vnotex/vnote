@@ -81,7 +81,7 @@ struct ExportPDFOption
         : m_layout(NULL),
           m_wkhtmltopdf(false),
           m_wkEnableBackground(true),
-          m_wkEnableTableOfContents(false),
+          m_enableTableOfContents(false),
           m_wkPageNumber(ExportPageNumber::None)
     {
     }
@@ -90,7 +90,7 @@ struct ExportPDFOption
                     bool p_wkhtmltopdf,
                     const QString &p_wkPath,
                     bool p_wkEnableBackground,
-                    bool p_wkEnableTableOfContents,
+                    bool p_enableTableOfContents,
                     const QString &p_wkTitle,
                     const QString &p_wkTargetFileName,
                     ExportPageNumber p_wkPageNumber,
@@ -99,7 +99,7 @@ struct ExportPDFOption
           m_wkhtmltopdf(p_wkhtmltopdf),
           m_wkPath(p_wkPath),
           m_wkEnableBackground(p_wkEnableBackground),
-          m_wkEnableTableOfContents(p_wkEnableTableOfContents),
+          m_enableTableOfContents(p_enableTableOfContents),
           m_wkTitle(p_wkTitle),
           m_wkTargetFileName(p_wkTargetFileName),
           m_wkPageNumber(p_wkPageNumber),
@@ -111,7 +111,7 @@ struct ExportPDFOption
     bool m_wkhtmltopdf;
     QString m_wkPath;
     bool m_wkEnableBackground;
-    bool m_wkEnableTableOfContents;
+    bool m_enableTableOfContents;;
     QString m_wkTitle;
     QString m_wkTargetFileName;
     ExportPageNumber m_wkPageNumber;
@@ -315,7 +315,7 @@ private:
 
     QCheckBox *m_wkBackgroundCB;
 
-    QCheckBox *m_wkTableOfContentsCB;
+    QCheckBox *m_tableOfContentsCB;
 
     QComboBox *m_wkPageNumberCB;
 

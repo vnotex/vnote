@@ -602,7 +602,8 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType,
                                      const QString &p_renderStyle,
                                      const QString &p_renderCodeBlockStyle,
                                      bool p_isPDF,
-                                     bool p_wkhtmltopdf)
+                                     bool p_wkhtmltopdf,
+                                     bool p_addToc)
 {
     Q_ASSERT((p_isPDF && p_wkhtmltopdf) || !p_wkhtmltopdf);
 
@@ -611,12 +612,13 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType,
                                                 g_config->getCodeBlockCssStyleUrl(p_renderCodeBlockStyle),
                                                 p_isPDF);
 
-    return generateHtmlTemplate(templ, p_conType, p_wkhtmltopdf);
+    return generateHtmlTemplate(templ, p_conType, p_wkhtmltopdf, p_addToc);
 }
 
 QString VUtils::generateHtmlTemplate(const QString &p_template,
                                      MarkdownConverterType p_conType,
-                                     bool p_wkhtmltopdf)
+                                     bool p_wkhtmltopdf,
+                                     bool p_addToc)
 {
     QString jsFile, extraFile;
     switch (p_conType) {
@@ -713,6 +715,17 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
 
     if (g_config->getEnableFlashAnchor()) {
         extraFile += "<script>var VEnableFlashAnchor = true;</script>\n";
+    }
+
+    if (p_addToc) {
+        extraFile += "<script>var VAddTOC = true;</script>\n";
+        extraFile += "<style type=\"text/css\">\n"
+                     "    @media print {\n"
+                     "        .vnote-toc {\n"
+                     "            page-break-after: always;\n"
+                     "         }\n"
+                     "    }\n"
+                     "</style>";
     }
 
     extraFile += "<script>var VStylesToInline = '" + g_config->getStylesToInlineWhenCopied() + "';</script>\n";

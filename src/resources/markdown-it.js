@@ -100,6 +100,10 @@ var markdownToHtml = function(markdown, needToc) {
 };
 
 var updateText = function(text) {
+    if (VAddTOC) {
+        text = "[TOC]\n\n" + text;
+    }
+
     var needToc = mdHasTocSection(text);
     var html = markdownToHtml(text, needToc);
     placeholder.innerHTML = html;
