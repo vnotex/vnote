@@ -216,7 +216,7 @@ QPushButton:flat {
 }
 
 QPushButton:default {
-    border-color: @pushbutton_default_border;
+    border: 1px solid @pushbutton_default_border;
 }
 
 QPushButton:disabled {
@@ -260,6 +260,11 @@ QPushButton[SpecialBtn="true"]:disabled {
     background-color: @pushbutton_disabled_bg;
 }
 
+QPushButton[SpecialBtn="true"]:default {
+    border: 1px solid @pushbutton_default_border;
+    background-color: @pushbutton_specialbtn_bg;
+}
+
 QPushButton[CornerBtn="true"] {
     padding: 4px -2px 4px -2px;
     margin: 0px;
@@ -289,6 +294,11 @@ QPushButton[CornerBtn="true"]:disabled {
     background-color: @pushbutton_disabled_bg;
 }
 
+QPushButton[CornerBtn="true"]:default {
+    border: 1px solid @pushbutton_default_border;
+    background-color: transparent;
+}
+
 QPushButton[StatusBtn="true"] {
     font: bold;
     padding: 0px 2px 0px 2px;
@@ -315,6 +325,11 @@ QPushButton[StatusBtn="true"]:disabled {
     background-color: @pushbutton_disabled_bg;
 }
 
+QPushButton[StatusBtn="true"]:default {
+    border: 1px solid @pushbutton_default_border;
+    background-color: transparent;
+}
+
 QPushButton[FlatBtn="true"] {
     padding: 4px;
     margin: 0px;
@@ -338,6 +353,11 @@ QPushButton[FlatBtn="true"]:pressed {
 QPushButton[FlatBtn="true"]:disabled {
     color: @pushbutton_disabled_fg;
     background-color: @pushbutton_disabled_bg;
+}
+
+QPushButton[FlatBtn="true"]:default {
+    border: 1px solid @pushbutton_default_border;
+    background-color: transparent;
 }
 
 QPushButton[SelectionBtn="true"] {
@@ -366,6 +386,11 @@ QPushButton[SelectionBtn="true"]:disabled {
     background-color: @pushbutton_disabled_bg;
 }
 
+QPushButton[SelectionBtn="true"]:default {
+    border: 1px solid @pushbutton_default_border;
+    background-color: transparent;
+}
+
 QPushButton[TitleBtn="true"] {
     padding: 4px;
     margin: 0px;
@@ -391,6 +416,11 @@ QPushButton[TitleBtn="true"]:disabled {
     background-color: @pushbutton_disabled_bg;
 }
 
+QPushButton[TitleBtn="true"]:default {
+    border: 1px solid @pushbutton_default_border;
+    background-color: @pushbutton_titlebtn_bg;
+}
+
 QPushButton[DangerBtn="true"] {
     color: @pushbutton_dangerbtn_fg;
     border: none;
@@ -408,6 +438,11 @@ QPushButton[DangerBtn="true"]:focus {
 
 QPushButton[DangerBtn="true"]:pressed {
     background-color: @pushbutton_dangerbtn_pressed_bg;
+}
+
+QPushButton[DangerBtn="true"]:default {
+    border: 1px solid @pushbutton_default_border;
+    background-color: @pushbutton_dangerbtn_bg;
 }
 
 QPushButton[DangerBtn="true"]:disabled {
@@ -441,6 +476,11 @@ QPushButton[ToolBoxActiveBtn="true"]:disabled {
     background-color: @pushbutton_disabled_bg;
 }
 
+QPushButton[ToolBoxActiveBtn="true"]:default {
+    border: 1px solid @pushbutton_default_border;
+    background-color: @pushbutton_toolboxbtn_active_bg;
+}
+
 QPushButton[AvatarBtn="true"] {
     padding: 2px 4px 2px 4px;
     margin: 0px;
@@ -464,6 +504,11 @@ QPushButton[AvatarBtn="true"]:pressed {
 QPushButton[AvatarBtn="true"]:disabled {
     color: @pushbutton_disabled_fg;
     background-color: @pushbutton_disabled_bg;
+}
+
+QPushButton[AvatarBtn="true"]:default {
+    border: 1px solid @pushbutton_default_border;
+    background-color: transparent;
 }
 
 VButtonMenuItem {

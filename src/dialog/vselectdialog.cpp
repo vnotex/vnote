@@ -1,5 +1,9 @@
 #include <QtWidgets>
+
 #include "vselectdialog.h"
+#include "utils/vimnavigationforwidget.h"
+
+#define CANCEL_ID -1
 
 VSelectDialog::VSelectDialog(const QString &p_title, QWidget *p_parent)
     : QDialog(p_parent), m_choice(-1)
@@ -9,16 +13,26 @@ VSelectDialog::VSelectDialog(const QString &p_title, QWidget *p_parent)
 
 void VSelectDialog::setupUI(const QString &p_title)
 {
-    m_mainLayout = new QVBoxLayout();
+    m_list = new QListWidget();
+    m_list->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_list->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_list->setAttribute(Qt::WA_MacShowFocusRect, false);
+    connect(m_list, &QListWidget::itemActivated,
+            this, &VSelectDialog::selectionChosen);
 
-    QPushButton *cancelBtn = new QPushButton(tr("Cancel"));
-    cancelBtn->setProperty("SelectionBtn", true);
-    connect(cancelBtn, &QPushButton::clicked,
-            this, &VSelectDialog::reject);
-    m_mainLayout->addWidget(cancelBtn);
+    // Add cancel item.
+    QListWidgetItem *cancelItem = new QListWidgetItem(tr("Cancel"));
+    cancelItem->setData(Qt::UserRole, CANCEL_ID);
 
-    setLayout(m_mainLayout);
-    m_mainLayout->setSizeConstraint(QLayout::SetFixedSize);
+    m_list->addItem(cancelItem);
+    m_list->setCurrentRow(0);
+
+    QVBoxLayout *layout = new QVBoxLayout();
+    layout->addWidget(m_list);
+
+    layout->setContentsMargins(0, 0, 0, 0);
+
+    setLayout(layout);
     setWindowTitle(p_title);
 }
 
@@ -26,29 +40,58 @@ void VSelectDialog::addSelection(const QString &p_selectStr, int p_selectID)
 {
     Q_ASSERT(p_selectID >= 0);
 
-    QPushButton *btn = new QPushButton(p_selectStr);
-    btn->setProperty("SelectionBtn", true);
-    if (m_selections.isEmpty()) {
-        btn->setDefault(true);
-        btn->setAutoDefault(true);
-    }
-    connect(btn, &QPushButton::clicked,
-            this, &VSelectDialog::selectionChosen);
-    m_selections.insert(btn, p_selectID);
-    m_mainLayout->insertWidget(m_selections.size() - 1, btn);
+    QListWidgetItem *item = new QListWidgetItem(p_selectStr);
+    item->setData(Qt::UserRole, p_selectID);
+    m_list->insertItem(m_list->count() - 1, item);
+
+    m_list->setCurrentRow(0);
 }
 
-void VSelectDialog::selectionChosen()
+void VSelectDialog::selectionChosen(QListWidgetItem *p_item)
 {
-    QPushButton *btn = dynamic_cast<QPushButton *>(sender());
-    Q_ASSERT(btn);
-    auto it = m_selections.find(btn);
-    Q_ASSERT(it != m_selections.end());
-    m_choice = *it;
-    accept();
+    m_choice = p_item->data(Qt::UserRole).toInt();
+    if (m_choice == CANCEL_ID) {
+        reject();
+    } else {
+        accept();
+    }
 }
 
 int VSelectDialog::getSelection() const
 {
     return m_choice;
 }
+
+void VSelectDialog::updateSize()
+{
+    Q_ASSERT(m_list->count() > 0);
+
+    int height = 0;
+    for (int i = 0; i < m_list->count(); ++i) {
+        height += m_list->sizeHintForRow(i);
+    }
+
+    height += 2 * m_list->count();
+    int wid = width();
+    m_list->resize(wid, height);
+    resize(wid, height);
+}
+
+void VSelectDialog::showEvent(QShowEvent *p_event)
+{
+    QDialog::showEvent(p_event);
+
+    updateSize();
+}
+
+void VSelectDialog::keyPressEvent(QKeyEvent *p_event)
+{
+    if (VimNavigationForWidget::injectKeyPressEventForVim(m_list,
+                                                          p_event,
+                                                          this)) {
+        return;
+    }
+
+    QDialog::keyPressEvent(p_event);
+}
+
