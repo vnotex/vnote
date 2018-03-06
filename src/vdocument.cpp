@@ -120,3 +120,15 @@ void VDocument::htmlContentCB(const QString &p_head,
 {
     emit htmlContentFinished(p_head, p_style, p_body);
 }
+
+void VDocument::updateWordCountInfo(int p_wordCount,
+                                    int p_charWithoutSpacesCount,
+                                    int p_charWithSpacesCount)
+{
+    m_wordCountInfo.m_mode = VWordCountInfo::Read;
+    m_wordCountInfo.m_wordCount = p_wordCount;
+    m_wordCountInfo.m_charWithoutSpacesCount = p_charWithoutSpacesCount;
+    m_wordCountInfo.m_charWithSpacesCount = p_charWithSpacesCount;
+
+    emit wordCountInfoUpdated();
+}

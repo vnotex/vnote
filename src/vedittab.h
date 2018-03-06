@@ -8,6 +8,7 @@
 #include "vfile.h"
 #include "utils/vvim.h"
 #include "vedittabinfo.h"
+#include "vwordcountinfo.h"
 
 class VEditArea;
 class VSnippet;
@@ -113,6 +114,9 @@ public:
 
     // Handle the change of file or directory, such as the file has been moved.
     virtual void handleFileOrDirectoryChange(bool p_isFile, UpdateAction p_act);
+
+    // Fetch tab stat info.
+    virtual VWordCountInfo fetchWordCountInfo(bool p_editMode) const;
 
 public slots:
     // Enter edit mode

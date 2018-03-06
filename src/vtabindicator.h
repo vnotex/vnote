@@ -5,6 +5,9 @@
 #include "vedittabinfo.h"
 
 class QLabel;
+class VButtonWithWidget;
+class VEditTab;
+class VWordCountPanel;
 
 class VTabIndicator : public QWidget
 {
@@ -16,8 +19,13 @@ public:
     // Update indicator.
     void update(const VEditTabInfo &p_info);
 
+private slots:
+    void updateWordCountInfo(QWidget *p_widget);
+
 private:
     void setupUI();
+
+    void updateWordCountBtn(const VEditTabInfo &p_info);
 
     // Indicate the doc type.
     QLabel *m_docTypeLabel;
@@ -33,6 +41,13 @@ private:
 
     // Indicate the position of current cursor.
     QLabel *m_cursorLabel;
+
+    // Indicate the word count.
+    VButtonWithWidget *m_wordCountBtn;
+
+    VEditTab *m_editTab;
+
+    VWordCountPanel *m_wordCountPanel;
 };
 
 #endif // VTABINDICATOR_H

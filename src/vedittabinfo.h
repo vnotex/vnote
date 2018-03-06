@@ -1,6 +1,8 @@
 #ifndef VEDITTABINFO_H
 #define VEDITTABINFO_H
 
+#include "vwordcountinfo.h"
+
 class VEditTab;
 
 struct VEditTabInfo
@@ -31,6 +33,7 @@ struct VEditTabInfo
         m_cursorBlockNumber = -1;
         m_cursorPositionInBlock = -1;
         m_blockCount = -1;
+        m_wordCountInfo.clear();
         m_headerIndex = -1;
     }
 
@@ -42,6 +45,8 @@ struct VEditTabInfo
     int m_cursorBlockNumber;
     int m_cursorPositionInBlock;
     int m_blockCount;
+
+    VWordCountInfo m_wordCountInfo;
 
     // Header index in outline.
     int m_headerIndex;

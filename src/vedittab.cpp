@@ -236,3 +236,10 @@ QString VEditTab::handleVimCmdRequestRegister(int p_key, int p_modifiers)
 
     return QString();
 }
+
+VWordCountInfo VEditTab::fetchWordCountInfo(bool p_editMode) const
+{
+    Q_UNUSED(p_editMode);
+
+    return VWordCountInfo();
+}

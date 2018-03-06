@@ -67,6 +67,8 @@ public:
     // Update m_initImages and m_insertedImages to handle the change of the note path.
     void updateInitAndInsertedImages(bool p_fileChanged, UpdateAction p_act);
 
+    VWordCountInfo fetchWordCountInfo() const Q_DECL_OVERRIDE;
+
 public slots:
     bool jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat) Q_DECL_OVERRIDE;
 

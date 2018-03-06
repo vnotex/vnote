@@ -1233,3 +1233,45 @@ void VMdEditor::insertImageLink(const QString &p_text, const QString &p_url)
     }
 }
 
+VWordCountInfo VMdEditor::fetchWordCountInfo() const
+{
+    VWordCountInfo info;
+    QTextDocument *doc = document();
+
+    // Char without spaces.
+    int cns = 0;
+    int wc = 0;
+    // Remove th ending new line.
+    int cc = doc->characterCount() - 1;
+    // 0 - not in word;
+    // 1 - in English word;
+    // 2 - in non-English word;
+    int state = 0;
+
+    for (int i = 0; i < cc; ++i) {
+        QChar ch = doc->characterAt(i);
+        if (ch.isSpace()) {
+            if (state) {
+                state = 0;
+            }
+
+            continue;
+        } else if (ch.unicode() < 128) {
+            if (state != 1) {
+                state = 1;
+                ++wc;
+            }
+        } else {
+            state = 2;
+            ++wc;
+        }
+
+        ++cns;
+    }
+
+    info.m_mode = VWordCountInfo::Edit;
+    info.m_wordCount = wc;
+    info.m_charWithoutSpacesCount = cns;
+    info.m_charWithSpacesCount = cc;
+    return info;
+}

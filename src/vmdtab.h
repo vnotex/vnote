@@ -88,6 +88,9 @@ public:
 
     void handleFileOrDirectoryChange(bool p_isFile, UpdateAction p_act) Q_DECL_OVERRIDE;
 
+    // Fetch tab stat info.
+    VWordCountInfo fetchWordCountInfo(bool p_editMode) const Q_DECL_OVERRIDE;
+
 public slots:
     // Enter edit mode.
     void editFile() Q_DECL_OVERRIDE;
@@ -206,6 +209,9 @@ private:
     void textToHtmlViaWebView(const QString &p_text);
 
     bool executeVimCommandInWebView(const QString &p_cmd);
+
+    // Update web view by current content.
+    void updateWebView();
 
     VMdEditor *m_editor;
     VWebView *m_webViewer;

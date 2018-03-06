@@ -85,17 +85,22 @@ void VMdTab::showFileReadMode()
     // Will recover the header when web side is ready.
     m_headerFromEditMode = m_currentHeader;
 
+    updateWebView();
+
+    m_stacks->setCurrentWidget(m_webViewer);
+    clearSearchedWordHighlight();
+
+    updateStatus();
+}
+
+void VMdTab::updateWebView()
+{
     if (m_mdConType == MarkdownConverterType::Hoedown) {
         viewWebByConverter();
     } else {
         m_document->updateText();
         updateOutlineFromHtml(m_document->getToc());
     }
-
-    m_stacks->setCurrentWidget(m_webViewer);
-    clearSearchedWordHighlight();
-
-    updateStatus();
 }
 
 bool VMdTab::scrollWebViewToHeader(const VHeaderPointer &p_header)
@@ -423,6 +428,15 @@ void VMdTab::setupMarkdownViewer()
             this, [this](const QString &p_text, const QString &p_html) {
                 Q_ASSERT(m_editor);
                 m_editor->textToHtmlFinished(p_text, m_webViewer->url(), p_html);
+            });
+    connect(m_document, &VDocument::wordCountInfoUpdated,
+            this, [this]() {
+                VEditTabInfo info = fetchTabInfo(VEditTabInfo::InfoType::All);
+                if (m_isEditMode) {
+                    info.m_wordCountInfo = m_document->getWordCountInfo();
+                }
+
+                emit statusUpdated(info);
             });
 
     page->setWebChannel(channel);
@@ -788,6 +802,16 @@ VEditTabInfo VMdTab::fetchTabInfo(VEditTabInfo::InfoType p_type) const
         info.m_cursorBlockNumber = cursor.block().blockNumber();
         info.m_cursorPositionInBlock = cursor.positionInBlock();
         info.m_blockCount = m_editor->document()->blockCount();
+    }
+
+    if (m_isEditMode) {
+        if (m_editor) {
+            // We do not get the full word count info in edit mode.
+            info.m_wordCountInfo.m_mode = VWordCountInfo::Edit;
+            info.m_wordCountInfo.m_charWithSpacesCount = m_editor->document()->characterCount() - 1;
+        }
+    } else {
+        info.m_wordCountInfo = m_document->getWordCountInfo();
     }
 
     info.m_headerIndex = m_currentHeader.m_index;
@@ -1256,4 +1280,22 @@ void VMdTab::handleSavePageRequested()
     emit statusMessage(tr("Saving page to %1").arg(fileName));
 
     m_webViewer->page()->save(fileName, format);
+}
+
+VWordCountInfo VMdTab::fetchWordCountInfo(bool p_editMode) const
+{
+    if (p_editMode) {
+        if (m_editor) {
+            return m_editor->fetchWordCountInfo();
+        }
+    } else {
+        // Request to update with current text.
+        if (m_isEditMode) {
+            const_cast<VMdTab *>(this)->updateWebView();
+        }
+
+        return m_document->getWordCountInfo();
+    }
+
+    return VWordCountInfo();
 }

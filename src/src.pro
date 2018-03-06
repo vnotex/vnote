@@ -213,7 +213,8 @@ HEADERS  += vmainwindow.h \
     vstyleditemdelegate.h \
     vtreewidget.h \
     dialog/vexportdialog.h \
-    vexporter.h
+    vexporter.h \
+    vwordcountinfo.h
 
 RESOURCES += \
     vnote.qrc \

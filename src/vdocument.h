@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QString>
 
+#include "vwordcountinfo.h"
+
 class VFile;
 
 class VDocument : public QObject
@@ -41,6 +43,8 @@ public:
     // Request to get the HTML content.
     void getHtmlContentAsync();
 
+    const VWordCountInfo &getWordCountInfo() const;
+
 public slots:
     // Will be called in the HTML side
 
@@ -73,6 +77,10 @@ public slots:
     void htmlContentCB(const QString &p_head,
                        const QString &p_style,
                        const QString &p_body);
+
+    void updateWordCountInfo(int p_wordCount,
+                             int p_charWithoutSpacesCount,
+                             int p_charWithSpacesCount);
 
 signals:
     void textChanged(const QString &text);
@@ -108,6 +116,8 @@ signals:
                              const QString &p_styleContent,
                              const QString &p_bodyContent);
 
+    void wordCountInfoUpdated();
+
 private:
     QString m_toc;
     QString m_header;
@@ -125,6 +135,8 @@ private:
 
     // Whether the web side is ready to convert text to html.
     bool m_readyToTextToHtml;
+
+    VWordCountInfo m_wordCountInfo;
 };
 
 inline bool VDocument::isReadyToHighlight() const
@@ -136,4 +148,10 @@ inline bool VDocument::isReadyToTextToHtml() const
 {
     return m_readyToTextToHtml;
 }
+
+inline const VWordCountInfo &VDocument::getWordCountInfo() const
+{
+    return m_wordCountInfo;
+}
+
 #endif // VDOCUMENT_H

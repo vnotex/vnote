@@ -701,6 +701,8 @@ var insertImageCaption = function() {
 // markdown-specifi handle logics, such as Mermaid, MathJax.
 var finishLogics = function() {
     content.finishLogics();
+
+    calculateWordCount();
 };
 
 // Escape @text to Html.
@@ -1106,4 +1108,53 @@ var postProcessMathJax = function() {
     }
 
     finishLogics();
+};
+
+function getNodeText(el) {
+    ret = "";
+    var length = el.childNodes.length;
+    for(var i = 0; i < length; i++) {
+        var node = el.childNodes[i];
+        if(node.nodeType != 8) {
+            ret += node.nodeType != 1 ? node.nodeValue : getNodeText(node);
+        }
+    }
+
+    return ret;
+}
+
+var calculateWordCount = function() {
+    var words = getNodeText(placeholder);
+
+    // Char without spaces.
+    var cns = 0;
+    var wc = 0;
+    var cc = words.length;
+    // 0 - not in word;
+    // 1 - in English word;
+    // 2 - in non-English word;
+    var state = 0;
+
+    for (var i = 0; i < cc; ++i) {
+        var ch = words[i];
+        if (/\s/.test(ch)) {
+            if (state != 0) {
+                state = 0;
+            }
+
+            continue;
+        } else if (ch.charCodeAt() < 128) {
+            if (state != 1) {
+                state = 1;
+                ++wc;
+            }
+        } else {
+            state = 2;
+            ++wc;
+        }
+
+        ++cns;
+    }
+
+    content.updateWordCountInfo(wc, cns, cc);
 };

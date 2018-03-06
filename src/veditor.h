@@ -10,6 +10,7 @@
 #include "veditconfig.h"
 #include "vconstants.h"
 #include "vfile.h"
+#include "vwordcountinfo.h"
 
 class QWidget;
 class VEditorObject;
@@ -148,6 +149,8 @@ public:
 
     // @p_modified: if true, delete the whole content and insert the new content.
     virtual void setContent(const QString &p_content, bool p_modified = false) = 0;
+
+    virtual VWordCountInfo fetchWordCountInfo() const = 0;
 
 // Wrapper functions for QPlainTextEdit/QTextEdit.
 // Ends with W to distinguish it from the original interfaces.
