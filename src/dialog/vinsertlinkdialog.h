@@ -18,6 +18,7 @@ public:
                       const QString &p_info,
                       const QString &p_linkText,
                       const QString &p_linkUrl,
+                      bool p_linkTextEmptyAllowed,
                       QWidget *p_parent = nullptr);
 
     QString getLinkText() const;
@@ -45,6 +46,8 @@ private:
     VLineEdit *m_linkUrlEdit;
 
     QDialogButtonBox *m_btnBox;
+
+    bool m_linkTextEmptyAllowed;
 };
 
 #endif // VINSERTLINKDIALOG_H

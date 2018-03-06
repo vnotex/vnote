@@ -32,6 +32,8 @@ public:
     // If it is Vim Normal mode, change to Insert mode first.
     void decorateText(TextDecoration p_decoration, int p_level = -1) Q_DECL_OVERRIDE;
 
+    bool insertImageLink(const QString &p_linkText, const QString &p_linkUrl);
+
 private:
     // Insert image from @oriImagePath as @path.
     // @folderInLink: the folder part in the image link.

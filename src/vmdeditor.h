@@ -234,6 +234,8 @@ private:
 
     void initCopyAsMenu(QAction *p_before, QMenu *p_menu);
 
+    void insertImageLink(const QString &p_text, const QString &p_url);
+
     HGMarkdownHighlighter *m_mdHighlighter;
 
     VCodeBlockHighlightHelper *m_cbHighlighter;

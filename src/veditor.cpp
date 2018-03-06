@@ -394,6 +394,7 @@ void VEditor::insertLink()
                              "",
                              linkText,
                              linkUrl,
+                             false,
                              m_editor);
     if (dialog.exec() == QDialog::Accepted) {
         linkText = dialog.getLinkText();

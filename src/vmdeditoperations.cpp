@@ -1050,3 +1050,16 @@ bool VMdEditOperations::insertLink(const QString &p_linkText,
 
     return true;
 }
+
+bool VMdEditOperations::insertImageLink(const QString &p_linkText,
+                                        const QString &p_linkUrl)
+{
+    QString link = QString("![%1](%2)").arg(p_linkText).arg(p_linkUrl);
+    QTextCursor cursor = m_editor->textCursorW();
+    cursor.insertText(link);
+    m_editor->setTextCursorW(cursor);
+
+    setVimMode(VimMode::Insert);
+
+    return true;
+}

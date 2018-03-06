@@ -21,6 +21,7 @@
 #include "utils/viconutils.h"
 #include "dialog/vcopytextashtmldialog.h"
 #include "utils/vwebutils.h"
+#include "dialog/vinsertlinkdialog.h"
 
 extern VWebUtils *g_webUtils;
 
@@ -728,27 +729,56 @@ bool VMdEditor::canInsertFromMimeData(const QMimeData *p_source) const
 
 void VMdEditor::insertFromMimeData(const QMimeData *p_source)
 {
-    VSelectDialog dialog(tr("Insert From Clipboard"), this);
-    dialog.addSelection(tr("Insert As Image"), 0);
-    dialog.addSelection(tr("Insert As Text"), 1);
-
     if (p_source->hasHtml()) {
         // Handle <img>.
         QRegExp reg("<img ([^>]*)src=\"([^\"]+)\"([^>]*)>");
         if (reg.indexIn(p_source->html()) != -1) {
+            if (p_source->hasImage()) {
+                // Both image data and URL are embedded.
+                VSelectDialog dialog(tr("Insert From Clipboard"), this);
+                dialog.addSelection(tr("Insert From URL"), 0);
+                dialog.addSelection(tr("Insert From Image Data"), 1);
+                dialog.addSelection(tr("Insert As Image Link"), 2);
+
+                if (dialog.exec() == QDialog::Accepted) {
+                    int selection = dialog.getSelection();
+                    if (selection == 1) {
+                        // Insert from image data.
+                        m_editOps->insertImageFromMimeData(p_source);
+                        return;
+                    } else if (selection == 2) {
+                        // Insert as link.
+                        insertImageLink("", reg.cap(2));
+                        return;
+                    }
+                } else {
+                    return;
+                }
+            }
+
             m_editOps->insertImageFromURL(QUrl(reg.cap(2)));
             return;
         }
     }
 
+    VSelectDialog dialog(tr("Insert From Clipboard"), this);
+    dialog.addSelection(tr("Insert As Image"), 0);
+    dialog.addSelection(tr("Insert As Text"), 1);
+    dialog.addSelection(tr("Insert As Image Link"), 2);
+
     if (p_source->hasImage()) {
         // Image data in the clipboard
         if (p_source->hasText()) {
             if (dialog.exec() == QDialog::Accepted) {
-                if (dialog.getSelection() == 1) {
+                int selection = dialog.getSelection();
+                if (selection == 1) {
                     // Insert as text.
                     Q_ASSERT(p_source->hasText() && p_source->hasImage());
                     VTextEdit::insertFromMimeData(p_source);
+                    return;
+                } else if (selection == 2) {
+                    // Insert as link.
+                    insertImageLink("", p_source->text());
                     return;
                 }
             } else {
@@ -765,9 +795,14 @@ void VMdEditor::insertFromMimeData(const QMimeData *p_source)
         if (urls.size() == 1 && VUtils::isImageURL(urls[0])) {
             if (dialog.exec() == QDialog::Accepted) {
                 // FIXME: After calling dialog.exec(), p_source->hasUrl() returns false.
-                if (dialog.getSelection() == 0) {
+                int selection = dialog.getSelection();
+                if (selection == 0) {
                     // Insert as image.
                     m_editOps->insertImageFromURL(urls[0]);
+                    return;
+                } else if (selection == 2) {
+                    // Insert as link.
+                    insertImageLink("", urls[0].toString(QUrl::FullyEncoded));
                     return;
                 }
 
@@ -786,12 +821,18 @@ void VMdEditor::insertFromMimeData(const QMimeData *p_source)
         if (VUtils::isImageURLText(text)) {
             // The text is a URL to an image.
             if (dialog.exec() == QDialog::Accepted) {
-                if (dialog.getSelection() == 0) {
+                int selection = dialog.getSelection();
+                if (selection == 0) {
                     // Insert as image.
                     QUrl url(text);
                     if (url.isValid()) {
                         m_editOps->insertImageFromURL(QUrl(text));
                     }
+
+                    return;
+                } else if (selection == 2) {
+                    // Insert as link.
+                    insertImageLink("", text);
                     return;
                 }
             } else {
@@ -1175,3 +1216,20 @@ void VMdEditor::initCopyAsMenu(QAction *p_before, QMenu *p_menu)
         p_menu->insertSeparator(menuAct);
     }
 }
+
+void VMdEditor::insertImageLink(const QString &p_text, const QString &p_url)
+{
+    VInsertLinkDialog dialog(tr("Insert Image Link"),
+                             "",
+                             "",
+                             p_text,
+                             p_url,
+                             true,
+                             this);
+    if (dialog.exec() == QDialog::Accepted) {
+        QString linkText = dialog.getLinkText();
+        QString linkUrl = dialog.getLinkUrl();
+        static_cast<VMdEditOperations *>(m_editOps)->insertImageLink(linkText, linkUrl);
+    }
+}
+

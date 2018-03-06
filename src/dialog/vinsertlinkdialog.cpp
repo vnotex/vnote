@@ -9,8 +9,10 @@ VInsertLinkDialog::VInsertLinkDialog(const QString &p_title,
                                      const QString &p_info,
                                      const QString &p_linkText,
                                      const QString &p_linkUrl,
+                                     bool p_linkTextEmptyAllowed,
                                      QWidget *p_parent)
-    : QDialog(p_parent)
+    : QDialog(p_parent),
+      m_linkTextEmptyAllowed(p_linkTextEmptyAllowed)
 {
     setupUI(p_title, p_text, p_info, p_linkText, p_linkUrl);
 
@@ -80,7 +82,8 @@ void VInsertLinkDialog::setupUI(const QString &p_title,
 void VInsertLinkDialog::handleInputChanged()
 {
     bool textOk = true;
-    if (m_linkTextEdit->getEvaluatedText().isEmpty()) {
+    if (m_linkTextEdit->getEvaluatedText().isEmpty()
+        && !m_linkTextEmptyAllowed) {
         textOk = false;
     }
 
