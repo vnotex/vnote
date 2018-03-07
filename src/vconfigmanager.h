@@ -463,6 +463,9 @@ public:
     bool getEnableFlashAnchor() const;
     void setEnableFlashAnchor(bool p_enabled);
 
+    QStringList getCustomExport() const;
+    void setCustomExport(const QStringList &p_exp);
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -2131,5 +2134,16 @@ inline void VConfigManager::setEnableFlashAnchor(bool p_enabled)
 
     m_enableFlashAnchor = p_enabled;
     setConfigToSettings("web", "enable_flash_anchor", m_enableFlashAnchor);
+}
+
+inline QStringList VConfigManager::getCustomExport() const
+{
+    return getConfigFromSettings("export",
+                                 "custom_export").toStringList();
+}
+
+inline void VConfigManager::setCustomExport(const QStringList &p_exp)
+{
+    setConfigToSettings("export", "custom_export", p_exp);
 }
 #endif // VCONFIGMANAGER_H

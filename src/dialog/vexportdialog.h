@@ -38,7 +38,8 @@ enum class ExportFormat
     Markdown = 0,
     HTML,
     PDF,
-    OnePDF
+    OnePDF,
+    Custom
 };
 
 
@@ -119,6 +120,87 @@ struct ExportPDFOption
 };
 
 
+struct ExportCustomOption
+{
+#if defined(Q_OS_WIN)
+    #define DEFAULT_SEP ";"
+#else
+    #define DEFAULT_SEP ":"
+#endif
+
+    enum SourceFormat
+    {
+        Markdown = 0,
+        HTML
+    };
+
+    ExportCustomOption()
+        : m_srcFormat(SourceFormat::Markdown),
+          m_allInOne(false),
+          m_folderSep(DEFAULT_SEP)
+    {
+    }
+
+    ExportCustomOption(const QStringList &p_config)
+        : m_srcFormat(SourceFormat::Markdown),
+          m_allInOne(false),
+          m_folderSep(DEFAULT_SEP)
+    {
+        if (p_config.size() < 3) {
+            return;
+        }
+
+        if (p_config.at(0).trimmed() != "0") {
+            m_srcFormat = SourceFormat::HTML;
+        }
+
+        m_outputSuffix = p_config.at(1).trimmed();
+
+        m_cmd = p_config.at(2).trimmed();
+    }
+
+    ExportCustomOption(ExportCustomOption::SourceFormat p_srcFormat,
+                       const QString &p_outputSuffix,
+                       const QString &p_cmd,
+                       const QString &p_cssUrl,
+                       bool p_allInOne,
+                       const QString &p_folderSep,
+                       const QString &p_targetFileName)
+        : m_srcFormat(p_srcFormat),
+          m_outputSuffix(p_outputSuffix),
+          m_cssUrl(p_cssUrl),
+          m_allInOne(p_allInOne),
+          m_folderSep(p_folderSep),
+          m_targetFileName(p_targetFileName)
+    {
+        QStringList cmds = p_cmd.split('\n');
+        if (!cmds.isEmpty()) {
+            m_cmd = cmds.first();
+        }
+    }
+
+    QStringList toConfig() const
+    {
+        QStringList config;
+        config << QString::number((int)m_srcFormat);
+        config << m_outputSuffix;
+        config << m_cmd;
+
+        return config;
+    }
+
+    SourceFormat m_srcFormat;
+    QString m_outputSuffix;
+    QString m_cmd;
+
+    QString m_cssUrl;
+    bool m_allInOne;
+
+    QString m_folderSep;
+    QString m_targetFileName;
+};
+
+
 struct ExportOption
 {
     ExportOption()
@@ -137,7 +219,8 @@ struct ExportOption
                  const QString &p_renderCodeBlockStyle,
                  bool p_processSubfolders,
                  const ExportPDFOption &p_pdfOpt,
-                 const ExportHTMLOption &p_htmlOpt)
+                 const ExportHTMLOption &p_htmlOpt,
+                 const ExportCustomOption &p_customOpt)
         : m_source(p_source),
           m_format(p_format),
           m_renderer(p_renderer),
@@ -146,7 +229,8 @@ struct ExportOption
           m_renderCodeBlockStyle(p_renderCodeBlockStyle),
           m_processSubfolders(p_processSubfolders),
           m_pdfOpt(p_pdfOpt),
-          m_htmlOpt(p_htmlOpt)
+          m_htmlOpt(p_htmlOpt),
+          m_customOpt(p_customOpt)
     {
     }
 
@@ -166,6 +250,8 @@ struct ExportOption
     ExportPDFOption m_pdfOpt;
 
     ExportHTMLOption m_htmlOpt;
+
+    ExportCustomOption m_customOpt;
 };
 
 
@@ -203,6 +289,8 @@ private:
     QWidget *setupHTMLAdvancedSettings();
 
     QWidget *setupGeneralAdvancedSettings();
+
+    QWidget *setupCustomAdvancedSettings();
 
     void initUIFields(MarkdownConverterType p_renderer);
 
@@ -258,6 +346,17 @@ private:
                             const QString &p_outputFolder,
                             QString *p_errMsg = NULL);
 
+    int doExportCustomAllInOne(const QList<QString> &p_files,
+                               const ExportOption &p_opt,
+                               const QString &p_outputFolder,
+                               QString *p_errMsg = NULL);
+
+    int doExportCustom(VFile *p_file,
+                       const ExportOption &p_opt,
+                       const QString &p_outputFolder,
+                       QString *p_errMsg = NULL,
+                       QList<QString> *p_outputFiles = NULL);
+
     // Return false if we could not continue.
     bool checkUserAction();
 
@@ -268,6 +367,13 @@ private:
     ExportSource currentSource() const;
 
     ExportFormat currentFormat() const;
+
+    int outputAsHTML(QString &p_outputFolder,
+                     QString *p_errMsg = NULL,
+                     QList<QString> *p_outputFiles = NULL);
+
+    // Collect files to be handled.
+    QList<QString> collectFiles(QString *p_errMsg = NULL);
 
     QComboBox *m_srcCB;
 
@@ -292,6 +398,8 @@ private:
     QWidget *m_htmlSettings;
 
     QWidget *m_generalSettings;
+
+    QWidget *m_customSettings;
 
     QPlainTextEdit *m_consoleEdit;
 
@@ -328,6 +436,18 @@ private:
     QCheckBox *m_mimeHTMLCB;
 
     QCheckBox *m_subfolderCB;
+
+    QComboBox *m_customSrcFormatCB;
+
+    VLineEdit *m_customSuffixEdit;
+
+    QCheckBox *m_customAllInOneCB;
+
+    QPlainTextEdit *m_customCmdEdit;
+
+    VLineEdit *m_customFolderSepEdit;
+
+    VLineEdit *m_customTargetFileNameEdit;
 
     VNotebook *m_notebook;
 

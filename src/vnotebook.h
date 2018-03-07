@@ -95,6 +95,8 @@ public:
 
     bool isValid() const;
 
+    QList<QString> collectFiles();
+
 private:
     // Serialize current instance to json.
     QJsonObject toConfigJson() const;

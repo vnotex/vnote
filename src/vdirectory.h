@@ -114,6 +114,9 @@ public:
     // Reorder sub-directories in m_subDirs by index.
     bool sortSubDirectories(const QVector<int> &p_sortedIdx);
 
+    // Return path of files in this directory recursively.
+    QList<QString> collectFiles();
+
     // Delete directory @p_dir.
     static bool deleteDirectory(VDirectory *p_dir,
                                 bool p_skipRecycleBin = false,

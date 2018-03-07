@@ -31,10 +31,20 @@ public:
                     const QString &p_outputFile,
                     QString *p_errMsg = NULL);
 
+    bool exportCustom(VFile *p_file,
+                      const ExportOption &p_opt,
+                      const QString &p_outputFile,
+                      QString *p_errMsg = NULL);
+
     int exportPDFInOne(const QList<QString> &p_htmlFiles,
                        const ExportOption &p_opt,
                        const QString &p_outputFile,
                        QString *p_errMsg = NULL);
+
+    int exportCustomInOne(const QList<QString> &p_files,
+                          const ExportOption &p_opt,
+                          const QString &p_outputFile,
+                          QString *p_errMsg = NULL);
 
     void setAskedToStop(bool p_askedToStop);
 
@@ -94,6 +104,11 @@ private:
                           const QString &p_filePath,
                           QString *p_errMsg = NULL);
 
+    bool exportToCustom(VDocument *p_webDocument,
+                        const ExportCustomOption &p_opt,
+                        const QString &p_filePath,
+                        QString *p_errMsg = NULL);
+
     bool exportToHTML(VDocument *p_webDocument,
                       const ExportHTMLOption &p_opt,
                       const QString &p_filePath);
@@ -107,9 +122,23 @@ private:
                          const ExportPDFOption &p_opt,
                          QString *p_errMsg = NULL);
 
+    bool convertFilesViaCustom(const QList<QString> &p_files,
+                               const QString &p_filePath,
+                               const ExportCustomOption &p_opt,
+                               QString *p_errMsg = NULL);
+
     void prepareWKArguments(const ExportPDFOption &p_opt);
 
     int startProcess(const QString &p_program, const QStringList &p_args);
+
+    int startProcess(const QString &p_cmd);
+
+    bool outputToHTMLFile(const QString &p_file,
+                          const QString &p_headContent,
+                          const QString &p_styleContent,
+                          const QString &p_bodyContent,
+                          bool p_embedCssStyle,
+                          bool p_completeHTML);
 
     // Fix @p_html's resources like url("...") with "file" or "qrc" schema.
     // Copy the resource to @p_folder and fix the url string.

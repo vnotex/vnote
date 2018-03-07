@@ -367,3 +367,22 @@ QString VNotebook::getRecycleBinFolderPath() const
         return QDir(m_path).filePath(m_recycleBinFolder);
     }
 }
+
+QList<QString> VNotebook::collectFiles()
+{
+    QList<QString> files;
+
+    bool opened = isOpened();
+    if (!opened && !open()) {
+        qWarning() << "fail to open notebook %1" << m_path;
+        return files;
+    }
+
+    files = m_rootDir->collectFiles();
+
+    if (!opened) {
+        close();
+    }
+
+    return files;
+}

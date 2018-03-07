@@ -174,11 +174,13 @@ void VExportDialog::setupUI()
     m_generalSettings = setupGeneralAdvancedSettings();
     m_htmlSettings = setupHTMLAdvancedSettings();
     m_pdfSettings = setupPDFAdvancedSettings();
+    m_customSettings = setupCustomAdvancedSettings();
 
     QVBoxLayout *advLayout = new QVBoxLayout();
     advLayout->addWidget(m_generalSettings);
     advLayout->addWidget(m_htmlSettings);
     advLayout->addWidget(m_pdfSettings);
+    advLayout->addWidget(m_customSettings);
 
     m_settingBox->setLayout(advLayout);
 
@@ -235,41 +237,41 @@ QWidget *VExportDialog::setupPDFAdvancedSettings()
     // wkhtmltopdf Path.
     m_wkPathEdit = new VLineEdit();
     m_wkPathEdit->setToolTip(tr("Tell VNote where to find wkhtmltopdf tool"));
-    m_wkPathEdit->setEnabled(m_wkhtmltopdfCB->isChecked());
+    m_wkPathEdit->setEnabled(false);
 
     m_wkPathBrowseBtn = new QPushButton(tr("&Browse"));
-    m_wkPathBrowseBtn->setEnabled(m_wkhtmltopdfCB->isChecked());
     connect(m_wkPathBrowseBtn, &QPushButton::clicked,
             this, &VExportDialog::handleWkPathBrowseBtnClicked);
+    m_wkPathBrowseBtn->setEnabled(false);
 
     m_wkTitleEdit = new VLineEdit();
-    m_wkTitleEdit->setPlaceholderText(tr("Use the name of the first source note"));
+    m_wkTitleEdit->setPlaceholderText(tr("Empty to use the name of the first source file"));
     m_wkTitleEdit->setToolTip(tr("Title of the generated PDF file"));
-    m_wkTitleEdit->setEnabled(m_wkhtmltopdfCB->isChecked());
+    m_wkTitleEdit->setEnabled(false);
 
     m_wkTargetFileNameEdit = new VLineEdit();
-    m_wkTargetFileNameEdit->setPlaceholderText(tr("Use the name of the first source note"));
+    m_wkTargetFileNameEdit->setPlaceholderText(tr("Empty to use the name of the first source file"));
     m_wkTargetFileNameEdit->setToolTip(tr("Name of the generated PDF file"));
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp),
                                                  m_wkTargetFileNameEdit);
     m_wkTargetFileNameEdit->setValidator(validator);
-    m_wkTargetFileNameEdit->setEnabled(m_wkhtmltopdfCB->isChecked());
+    m_wkTargetFileNameEdit->setEnabled(false);
 
     // wkhtmltopdf enable background.
     m_wkBackgroundCB = new QCheckBox(tr("Enable background"));
     m_wkBackgroundCB->setToolTip(tr("Enable background when printing"));
-    m_wkBackgroundCB->setEnabled(m_wkhtmltopdfCB->isChecked());
+    m_wkBackgroundCB->setEnabled(false);
 
     // wkhtmltopdf page number.
     m_wkPageNumberCB = VUtils::getComboBox();
     m_wkPageNumberCB->setToolTip(tr("Append page number as footer"));
-    m_wkPageNumberCB->setEnabled(m_wkhtmltopdfCB->isChecked());
+    m_wkPageNumberCB->setEnabled(false);
 
     // wkhtmltopdf extra argumnets.
     m_wkExtraArgsEdit = new VLineEdit();
     m_wkExtraArgsEdit->setToolTip(tr("Additional global options passed to wkhtmltopdf"));
     m_wkExtraArgsEdit->setPlaceholderText(tr("Use \" to enclose options containing spaces"));
-    m_wkExtraArgsEdit->setEnabled(m_wkhtmltopdfCB->isChecked());
+    m_wkExtraArgsEdit->setEnabled(false);
 
     QGridLayout *advLayout = new QGridLayout();
     advLayout->addWidget(new QLabel(tr("Page layout:")), 0, 0);
@@ -387,6 +389,7 @@ void VExportDialog::initUIFields(MarkdownConverterType p_renderer)
     m_formatCB->addItem(tr("HTML"), (int)ExportFormat::HTML);
     m_formatCB->addItem(tr("PDF"), (int)ExportFormat::PDF);
     m_formatCB->addItem(tr("PDF (All In One)"), (int)ExportFormat::OnePDF);
+    m_formatCB->addItem(tr("Custom"), (int)ExportFormat::Custom);
     m_formatCB->setCurrentIndex(m_formatCB->findData((int)s_opt.m_format));
 
     // Markdown renderer.
@@ -451,6 +454,22 @@ void VExportDialog::initUIFields(MarkdownConverterType p_renderer)
     m_wkPageNumberCB->setCurrentIndex(m_wkPageNumberCB->findData((int)s_opt.m_pdfOpt.m_wkPageNumber));
 
     m_wkExtraArgsEdit->setText(g_config->getWkhtmltopdfArgs());
+
+    // Custom export.
+    // Read from config every time.
+    ExportCustomOption customOpt(g_config->getCustomExport());
+
+    m_customSrcFormatCB->addItem(tr("Markdown"), (int)ExportCustomOption::SourceFormat::Markdown);
+    m_customSrcFormatCB->addItem(tr("HTML"), (int)ExportCustomOption::SourceFormat::HTML);
+    m_customSrcFormatCB->setCurrentIndex(m_customSrcFormatCB->findData((int)customOpt.m_srcFormat));
+
+    m_customSuffixEdit->setText(customOpt.m_outputSuffix);
+
+    m_customCmdEdit->setPlainText(customOpt.m_cmd);
+
+    m_customAllInOneCB->setChecked(s_opt.m_customOpt.m_allInOne);
+
+    m_customFolderSepEdit->setText(s_opt.m_customOpt.m_folderSep);
 }
 
 bool VExportDialog::checkWkhtmltopdfExecutable(const QString &p_file)
@@ -493,11 +512,14 @@ void VExportDialog::startExport()
 
     QString outputFolder = QDir::cleanPath(QDir(getOutputDirectory()).absolutePath());
 
+    QString renderStyle = m_renderStyleCB->currentData().toString();
+    QString cssUrl = g_config->getCssStyleUrl(renderStyle);
+
     s_opt = ExportOption(currentSource(),
                          currentFormat(),
                          (MarkdownConverterType)m_rendererCB->currentData().toInt(),
                          m_renderBgCB->currentData().toString(),
-                         m_renderStyleCB->currentData().toString(),
+                         renderStyle,
                          m_renderCodeBlockStyleCB->currentData().toString(),
                          m_subfolderCB->isChecked(),
                          ExportPDFOption(&m_pageLayout,
@@ -507,11 +529,20 @@ void VExportDialog::startExport()
                                          m_tableOfContentsCB->isChecked(),
                                          m_wkTitleEdit->text(),
                                          m_wkTargetFileNameEdit->text(),
-                                         (ExportPageNumber)m_wkPageNumberCB->currentData().toInt(),
+                                         (ExportPageNumber)
+                                         m_wkPageNumberCB->currentData().toInt(),
                                          m_wkExtraArgsEdit->text()),
                          ExportHTMLOption(m_embedStyleCB->isChecked(),
                                           m_completeHTMLCB->isChecked(),
-                                          m_mimeHTMLCB->isChecked()));
+                                          m_mimeHTMLCB->isChecked()),
+                         ExportCustomOption((ExportCustomOption::SourceFormat)
+                                            m_customSrcFormatCB->currentData().toInt(),
+                                            m_customSuffixEdit->text(),
+                                            m_customCmdEdit->toPlainText(),
+                                            cssUrl,
+                                            m_customAllInOneCB->isChecked(),
+                                            m_customFolderSepEdit->text(),
+                                            m_customTargetFileNameEdit->text()));
 
     m_consoleEdit->clear();
     appendLogLine(tr("Export to %1.").arg(outputFolder));
@@ -521,7 +552,6 @@ void VExportDialog::startExport()
         || s_opt.m_format == ExportFormat::HTML) {
         if (s_opt.m_format != ExportFormat::OnePDF) {
             s_opt.m_pdfOpt.m_wkTitle.clear();
-            s_opt.m_pdfOpt.m_wkTargetFileName.clear();
         }
 
         if ((s_opt.m_format == ExportFormat::PDF
@@ -539,6 +569,24 @@ void VExportDialog::startExport()
         }
 
         m_exporter->prepareExport(s_opt);
+    } else if (s_opt.m_format == ExportFormat::Custom) {
+        const ExportCustomOption &opt = s_opt.m_customOpt;
+        if (opt.m_srcFormat == ExportCustomOption::HTML) {
+            m_exporter->prepareExport(s_opt);
+        }
+
+        // Save it to config.
+        g_config->setCustomExport(opt.toConfig());
+
+        if (opt.m_outputSuffix.isEmpty()
+            || opt.m_cmd.isEmpty()
+            || opt.m_allInOne && opt.m_folderSep.isEmpty()) {
+            appendLogLine(tr("Invalid configurations for custom export."));
+            m_inExport = false;
+            m_exportBtn->setEnabled(true);
+            m_proBar->hide();
+            return;
+        }
     }
 
     int ret = 0;
@@ -546,39 +594,13 @@ void VExportDialog::startExport()
 
     if (s_opt.m_format == ExportFormat::OnePDF) {
         QList<QString> files;
-
         // Output HTMLs to a tmp folder.
         QTemporaryDir tmpDir;
         if (!tmpDir.isValid()) {
             goto exit;
         }
 
-        qDebug() << "output HTMLs to temporary dir" << tmpDir.path();
-
-        s_opt.m_format = ExportFormat::HTML;
-        switch (s_opt.m_source) {
-        case ExportSource::CurrentNote:
-            ret = doExport(m_file, s_opt, tmpDir.path(), &msg, &files);
-            break;
-
-        case ExportSource::CurrentFolder:
-            ret = doExport(m_directory, s_opt, tmpDir.path(), &msg, &files);
-            break;
-
-        case ExportSource::CurrentNotebook:
-            ret = doExport(m_notebook, s_opt, tmpDir.path(), &msg, &files);
-            break;
-
-        case ExportSource::Cart:
-            ret = doExport(m_cart, s_opt, tmpDir.path(), &msg, &files);
-            break;
-
-        default:
-            break;
-        }
-
-        s_opt.m_format = ExportFormat::OnePDF;
-
+        ret = outputAsHTML(tmpDir.path(), &msg, &files);
         if (m_askedToStop) {
             ret = 0;
             goto exit;
@@ -587,6 +609,31 @@ void VExportDialog::startExport()
         Q_ASSERT(ret == files.size());
         if (!files.isEmpty()) {
             ret = doExportPDFAllInOne(files, s_opt, outputFolder, &msg);
+        }
+    } else if (s_opt.m_format == ExportFormat::Custom
+               && s_opt.m_customOpt.m_allInOne) {
+        QList<QString> files;
+        QTemporaryDir tmpDir;
+        if (!tmpDir.isValid()) {
+            goto exit;
+        }
+
+        if (s_opt.m_customOpt.m_srcFormat == ExportCustomOption::HTML) {
+            // Output HTMLs to a tmp folder.
+            ret = outputAsHTML(tmpDir.path(), &msg, &files);
+            if (m_askedToStop) {
+                ret = 0;
+                goto exit;
+            }
+
+            Q_ASSERT(ret == files.size());
+        } else {
+            // Collect all markdown files.
+            files = collectFiles(&msg);
+        }
+
+        if (!files.isEmpty()) {
+            ret = doExportCustomAllInOne(files, s_opt, outputFolder, &msg);
         }
     } else {
         switch (s_opt.m_source) {
@@ -733,6 +780,10 @@ int VExportDialog::doExport(VFile *p_file,
 
     case ExportFormat::HTML:
         ret = doExportHTML(p_file, p_opt, p_outputFolder, p_errMsg, p_outputFiles);
+        break;
+
+    case ExportFormat::Custom:
+        ret = doExportCustom(p_file, p_opt, p_outputFolder, p_errMsg, p_outputFiles);
         break;
 
     default:
@@ -1011,6 +1062,45 @@ int VExportDialog::doExportHTML(VFile *p_file,
     }
 }
 
+int VExportDialog::doExportCustom(VFile *p_file,
+                                  const ExportOption &p_opt,
+                                  const QString &p_outputFolder,
+                                  QString *p_errMsg,
+                                  QList<QString> *p_outputFiles)
+{
+    Q_UNUSED(p_opt);
+
+    QString srcFilePath(p_file->fetchPath());
+
+    if (p_file->getDocType() != DocType::Markdown) {
+        LOGERR(tr("Skip exporting non-Markdown file %1.").arg(srcFilePath));
+        return 0;
+    }
+
+    if (!VUtils::makePath(p_outputFolder)) {
+        LOGERR(tr("Fail to create directory %1.").arg(p_outputFolder));
+        return 0;
+    }
+
+    // Get output file.
+    QString suffix = "." + p_opt.m_customOpt.m_outputSuffix;
+    QString name = VUtils::getFileNameWithSequence(p_outputFolder,
+                                                   QFileInfo(p_file->getName()).completeBaseName() + suffix);
+    QString outputPath = QDir(p_outputFolder).filePath(name);
+
+    if (m_exporter->exportCustom(p_file, p_opt, outputPath, p_errMsg)) {
+        if (p_outputFiles) {
+            p_outputFiles->append(outputPath);
+        }
+
+        appendLogLine(tr("Note %1 exported to %2.").arg(srcFilePath).arg(outputPath));
+        return 1;
+    } else {
+        appendLogLine(tr("Fail to export note %1.").arg(srcFilePath));
+        return 0;
+    }
+}
+
 bool VExportDialog::checkUserAction()
 {
     if (m_askedToStop) {
@@ -1054,6 +1144,7 @@ void VExportDialog::handleCurrentFormatChanged(int p_index)
     bool pdfEnabled = false;
     bool htmlEnabled = false;
     bool pdfTitleNameEnabled = false;
+    bool customEnabled = false;
 
     if (p_index >= 0) {
         switch (currentFormat()) {
@@ -1073,6 +1164,10 @@ void VExportDialog::handleCurrentFormatChanged(int p_index)
             m_wkhtmltopdfCB->setEnabled(false);
             break;
 
+        case ExportFormat::Custom:
+            customEnabled = true;
+            break;
+
         default:
             break;
         }
@@ -1080,6 +1175,7 @@ void VExportDialog::handleCurrentFormatChanged(int p_index)
 
     m_pdfSettings->setVisible(pdfEnabled);
     m_htmlSettings->setVisible(htmlEnabled);
+    m_customSettings->setVisible(customEnabled);
 
     m_wkTitleEdit->setEnabled(pdfTitleNameEnabled);
     m_wkTargetFileNameEdit->setEnabled(pdfTitleNameEnabled);
@@ -1129,8 +1225,6 @@ int VExportDialog::doExportPDFAllInOne(const QList<QString> &p_files,
 
     QString outputPath = QDir(p_outputFolder).filePath(name);
 
-    qDebug() << "output" << p_files.size() << "HTML files as PDF to" << outputPath;
-
     int ret = m_exporter->exportPDFInOne(p_files, p_opt, outputPath, p_errMsg);
     if (ret > 0) {
         appendLogLine(tr("%1 notes exported to %2.").arg(ret).arg(outputPath));
@@ -1139,4 +1233,184 @@ int VExportDialog::doExportPDFAllInOne(const QList<QString> &p_files,
     }
 
     return ret;
+}
+
+int VExportDialog::doExportCustomAllInOne(const QList<QString> &p_files,
+                                          const ExportOption &p_opt,
+                                          const QString &p_outputFolder,
+                                          QString *p_errMsg)
+{
+    if (p_files.isEmpty()) {
+        return 0;
+    }
+
+    if (!VUtils::makePath(p_outputFolder)) {
+        LOGERR(tr("Fail to create directory %1.").arg(p_outputFolder));
+        return 0;
+    }
+
+    // Get output file.
+    QString suffix = "." + p_opt.m_customOpt.m_outputSuffix;
+    QString name = p_opt.m_customOpt.m_targetFileName;
+    if (name.isEmpty()) {
+        name = VUtils::getFileNameWithSequence(p_outputFolder,
+                                               QFileInfo(p_files.first()).completeBaseName() + suffix);
+    } else if (!name.endsWith(suffix)) {
+        name += suffix;
+    }
+
+    QString outputPath = QDir(p_outputFolder).filePath(name);
+
+    int ret = m_exporter->exportCustomInOne(p_files, p_opt, outputPath, p_errMsg);
+    if (ret > 0) {
+        appendLogLine(tr("%1 notes exported to %2.").arg(ret).arg(outputPath));
+    } else {
+        appendLogLine(tr("Fail to export %1 notes in one.").arg(p_files.size()));
+    }
+
+    return ret;
+}
+
+QWidget *VExportDialog::setupCustomAdvancedSettings()
+{
+    // Source format.
+    m_customSrcFormatCB = VUtils::getComboBox();
+    m_customSrcFormatCB->setToolTip(tr("Choose format of the input"));
+
+    // Output suffix.
+    m_customSuffixEdit = new VLineEdit();
+    m_customSuffixEdit->setPlaceholderText(tr("Without the preceding dot"));
+    m_customSuffixEdit->setToolTip(tr("Suffix of the output file without the preceding dot"));
+    QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp),
+                                                 m_customSuffixEdit);
+    m_customSuffixEdit->setValidator(validator);
+
+    QLabel *tipsLabel = new QLabel(tr("<span><span style=\"font-weight:bold;\">%0</span> for the input file; "
+                                      "<span style=\"font-weight:bold;\">%1</span> for the output file; "
+                                      "<span style=\"font-weight:bold;\">%2</span> for the rendering CSS style file; "
+                                      "<span style=\"font-weight:bold;\">%3</span> for the input file directory.</span>"));
+    tipsLabel->setWordWrap(true);
+
+    // Enable All In One.
+    m_customAllInOneCB = new QCheckBox(tr("Enable All In One"));
+    m_customAllInOneCB->setToolTip(tr("Pass a list of input files to the custom command"));
+    connect(m_customAllInOneCB, &QCheckBox::stateChanged,
+            this, [this](int p_state) {
+                bool checked = p_state == Qt::Checked;
+                m_customFolderSepEdit->setEnabled(checked);
+                m_customTargetFileNameEdit->setEnabled(checked);
+            });
+
+    // Input directory separator.
+    m_customFolderSepEdit = new VLineEdit();
+    m_customFolderSepEdit->setPlaceholderText(tr("Separator to concatenate input files directories"));
+    m_customFolderSepEdit->setToolTip(tr("Separator to concatenate input files directories"));
+    m_customFolderSepEdit->setEnabled(false);
+
+    // Target file name for all in one.
+    m_customTargetFileNameEdit = new VLineEdit();
+    m_customTargetFileNameEdit->setPlaceholderText(tr("Empty to use the name of the first source file"));
+    m_customTargetFileNameEdit->setToolTip(tr("Name of the generated All-In-One file"));
+    validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp),
+                                                 m_customTargetFileNameEdit);
+    m_customTargetFileNameEdit->setValidator(validator);
+    m_customTargetFileNameEdit->setEnabled(false);
+
+    // Cmd edit.
+    m_customCmdEdit = new QPlainTextEdit();
+    m_customCmdEdit->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+    QString cmdExamp("pandoc --resource-path=.:\"%3\" --css=\"%2\" -s -o \"%1\" \"%0\"");
+    m_customCmdEdit->setPlaceholderText(cmdExamp);
+    m_customCmdEdit->setToolTip(tr("Custom command to be executed"));
+    m_customCmdEdit->setProperty("LineEdit", true);
+
+    QGridLayout *advLayout = new QGridLayout();
+    advLayout->addWidget(new QLabel(tr("Source format:")), 0, 0);
+    advLayout->addWidget(m_customSrcFormatCB, 0, 1, 1, 2);
+
+    advLayout->addWidget(new QLabel(tr("Output suffix:")), 0, 3);
+    advLayout->addWidget(m_customSuffixEdit, 0, 4, 1, 2);
+
+    advLayout->addWidget(m_customAllInOneCB, 1, 1, 1, 2);
+
+    advLayout->addWidget(new QLabel(tr("Output file name:")), 2, 0);
+    advLayout->addWidget(m_customTargetFileNameEdit, 2, 1, 1, 2);
+
+    advLayout->addWidget(new QLabel(tr("Input directories separator:")), 2, 3);
+    advLayout->addWidget(m_customFolderSepEdit, 2, 4, 1, 2);
+
+    advLayout->addWidget(tipsLabel, 3, 0, 1, 6);
+
+    advLayout->addWidget(m_customCmdEdit, 4, 0, 1, 6);
+
+    advLayout->setContentsMargins(0, 0, 0, 0);
+
+    QWidget *wid = new QWidget();
+    wid->setLayout(advLayout);
+
+    m_customCmdEdit->setMaximumHeight(100);
+
+    return wid;
+}
+
+int VExportDialog::outputAsHTML(QString &p_outputFolder,
+                                QString *p_errMsg,
+                                QList<QString> *p_outputFiles)
+{
+    int ret = 0;
+    ExportFormat fmt = s_opt.m_format;
+    s_opt.m_format = ExportFormat::HTML;
+    switch (s_opt.m_source) {
+    case ExportSource::CurrentNote:
+        ret = doExport(m_file, s_opt, p_outputFolder, p_errMsg, p_outputFiles);
+        break;
+
+    case ExportSource::CurrentFolder:
+        ret = doExport(m_directory, s_opt, p_outputFolder, p_errMsg, p_outputFiles);
+        break;
+
+    case ExportSource::CurrentNotebook:
+        ret = doExport(m_notebook, s_opt, p_outputFolder, p_errMsg, p_outputFiles);
+        break;
+
+    case ExportSource::Cart:
+        ret = doExport(m_cart, s_opt, p_outputFolder, p_errMsg, p_outputFiles);
+        break;
+
+    default:
+        break;
+    }
+
+    s_opt.m_format = fmt;
+
+    return ret;
+}
+
+QList<QString> VExportDialog::collectFiles(QString *p_errMsg)
+{
+    Q_UNUSED(p_errMsg);
+
+    QList<QString> files;
+    switch (s_opt.m_source) {
+    case ExportSource::CurrentNote:
+        files.append(m_file->fetchPath());
+        break;
+
+    case ExportSource::CurrentFolder:
+        files = m_directory->collectFiles();
+        break;
+
+    case ExportSource::CurrentNotebook:
+        files = m_notebook->collectFiles();
+        break;
+
+    case ExportSource::Cart:
+        files = m_cart->getFiles().toList();
+        break;
+
+    default:
+        break;
+    }
+
+    return files;
 }

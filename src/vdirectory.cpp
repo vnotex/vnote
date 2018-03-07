@@ -716,3 +716,29 @@ bool VDirectory::sortSubDirectories(const QVector<int> &p_sortedIdx)
 
     return ret;
 }
+
+QList<QString> VDirectory::collectFiles()
+{
+    QList<QString> files;
+    bool opened = isOpened();
+    if (!opened && !open()) {
+        qWarning() << "fail to open directory" << fetchPath();
+        return files;
+    }
+
+    // Files.
+    for (auto const & file : m_files) {
+        files.append(file->fetchPath());
+    }
+
+    // Subfolders.
+    for (auto const & dir : m_subDirs) {
+        files.append(dir->collectFiles());
+    }
+
+    if (!opened) {
+        close();
+    }
+
+    return files;
+}
