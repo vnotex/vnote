@@ -695,6 +695,47 @@ void VEditor::highlightSearchedWordUnderCursor(const QTextCursor &p_cursor)
     highlightExtraSelections(true);
 }
 
+static void fillReplaceTextWithBackReference(QString &p_replaceText,
+                                             const QString &p_text,
+                                             const QRegExp &p_exp)
+{
+    int idx = p_exp.indexIn(p_text);
+    if (idx != 0) {
+        return;
+    }
+
+    QStringList caps = p_exp.capturedTexts();
+    if (caps.size() < 2) {
+        return;
+    }
+
+    QChar sla('\\');
+    int pos = 0;
+    while (pos < p_replaceText.size()) {
+        int idx = p_replaceText.indexOf(sla, pos);
+        if (idx == -1 || idx == p_replaceText.size() - 1) {
+            break;
+        }
+
+        QChar ne(p_replaceText[idx + 1]);
+        if (ne == sla) {
+            // \\ to \.
+            p_replaceText.remove(idx, 1);
+        } else if (ne.isDigit()) {
+            // TODO: for now, we only support 1 - 9.
+            int num = ne.digitValue();
+            if (num > 0 && num < caps.size()) {
+                // Replace it.
+                p_replaceText.replace(idx, 2, caps[num]);
+                pos = idx + caps[num].size() - 2;
+                continue;
+            }
+        }
+
+        pos = idx + 1;
+    }
+}
+
 void VEditor::replaceText(const QString &p_text,
                           uint p_options,
                           const QString &p_replaceText,
@@ -703,16 +744,32 @@ void VEditor::replaceText(const QString &p_text,
     QTextCursor cursor = textCursorW();
     bool wrapped = false;
     QTextCursor retCursor;
+    QString newText(p_replaceText);
+    bool useRegExp = p_options & FindOption::RegularExpression;
+    QRegExp exp;
+    if (useRegExp) {
+        exp = QRegExp(p_text,
+                      p_options & FindOption::CaseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive);
+    }
+
     bool found = findTextHelper(p_text,
-                                p_options, true,
+                                p_options,
+                                true,
                                 cursor.position(),
                                 wrapped,
                                 retCursor);
     if (found) {
         if (retCursor.selectionStart() == cursor.position()) {
             // Matched.
+            if (useRegExp) {
+                // Handle \1, \2 in replace text.
+                fillReplaceTextWithBackReference(newText,
+                                                 VEditUtils::selectedText(retCursor),
+                                                 exp);
+            }
+
             retCursor.beginEditBlock();
-            retCursor.insertText(p_replaceText);
+            retCursor.insertText(newText);
             retCursor.endEditBlock();
             setTextCursorW(retCursor);
         }
@@ -734,6 +791,17 @@ void VEditor::replaceTextAll(const QString &p_text,
     tmpCursor.setPosition(0);
     setTextCursorW(tmpCursor);
     int start = tmpCursor.position();
+
+    QString newText;
+    bool useRegExp = p_options & FindOption::RegularExpression;
+    QRegExp exp;
+    if (useRegExp) {
+        exp = QRegExp(p_text,
+                      p_options & FindOption::CaseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive);
+    } else {
+        newText = p_replaceText;
+    }
+
     while (true) {
         bool wrapped = false;
         QTextCursor retCursor;
@@ -751,9 +819,16 @@ void VEditor::replaceTextAll(const QString &p_text,
                 break;
             }
 
+            if (useRegExp) {
+                newText = p_replaceText;
+                fillReplaceTextWithBackReference(newText,
+                                                 VEditUtils::selectedText(retCursor),
+                                                 exp);
+            }
+
             nrReplaces++;
             retCursor.beginEditBlock();
-            retCursor.insertText(p_replaceText);
+            retCursor.insertText(newText);
             retCursor.endEditBlock();
             setTextCursorW(retCursor);
             start = retCursor.position();

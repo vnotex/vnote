@@ -41,7 +41,7 @@ void VFindReplaceDialog::setupUI()
     // Replace
     QLabel *replaceLabel = new QLabel(tr("&Replace with:"));
     m_replaceEdit = new VLineEdit();
-    m_replaceEdit->setPlaceholderText(tr("Enter text to replace with"));
+    m_replaceEdit->setPlaceholderText(tr("\\1, \\2 for back reference in regular expression"));
     replaceLabel->setBuddy(m_replaceEdit);
     m_replaceBtn = new QPushButton(tr("Replace"));
     m_replaceBtn->setProperty("FlatBtn", true);
