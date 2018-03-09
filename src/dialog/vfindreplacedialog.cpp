@@ -49,7 +49,7 @@ void VFindReplaceDialog::setupUI()
     m_replaceFindBtn->setProperty("FlatBtn", true);
     m_replaceAllBtn = new QPushButton(tr("Replace A&ll"));
     m_replaceAllBtn->setProperty("FlatBtn", true);
-    m_advancedBtn = new QPushButton(tr("&Advanced >>"));
+    m_advancedBtn = new QPushButton(tr("&Advanced >>>"));
     m_advancedBtn->setProperty("FlatBtn", true);
     m_advancedBtn->setCheckable(true);
 
@@ -199,9 +199,9 @@ void VFindReplaceDialog::handleFindTextChanged(const QString &p_text)
 void VFindReplaceDialog::advancedBtnToggled(bool p_checked)
 {
     if (p_checked) {
-        m_advancedBtn->setText("B&asic <<");
+        m_advancedBtn->setText(tr("B&asic <<<"));
     } else {
-        m_advancedBtn->setText("&Advanced <<");
+        m_advancedBtn->setText(tr("&Advanced >>>"));
     }
 
     m_caseSensitiveCheck->setVisible(p_checked);

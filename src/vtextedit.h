@@ -65,6 +65,8 @@ public:
 
     void relayout();
 
+    void setDisplayScaleFactor(qreal p_factor);
+
 protected:
     void resizeEvent(QResizeEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -91,6 +93,8 @@ private:
     CursorBlock m_cursorBlockMode;
 
     bool m_highlightCursorLineBlock;
+
+    int m_defaultCursorWidth;
 };
 
 inline void VTextEdit::setLineNumberType(LineNumberType p_type)

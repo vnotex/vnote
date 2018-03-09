@@ -314,6 +314,17 @@ VDirectory *VNote::getInternalDirectory(const QString &p_path)
 
 }
 
+VNotebook *VNote::getNotebook(const QString &p_path)
+{
+    for (auto & nb : m_notebooks) {
+        if (VUtils::equalPath(nb->getPath(), p_path)) {
+            return nb;
+        }
+    }
+
+    return NULL;
+}
+
 void VNote::freeOrphanFiles()
 {
     for (int i = 0; i < m_externalFiles.size();) {

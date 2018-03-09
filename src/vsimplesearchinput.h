@@ -47,6 +47,10 @@ public:
 
     void setNavigationKeyEnabled(bool p_enabled);
 
+    void setMatchFlags(Qt::MatchFlags p_flags);
+
+    Qt::MatchFlags getMatchFlags() const;
+
 signals:
     // Search mode is triggered.
     void triggered(bool p_inSearchMode);
@@ -100,5 +104,15 @@ inline void *VSimpleSearchInput::currentItem() const
 inline void VSimpleSearchInput::setNavigationKeyEnabled(bool p_enabled)
 {
     m_navigationKeyEnabled = p_enabled;
+}
+
+inline void VSimpleSearchInput::setMatchFlags(Qt::MatchFlags p_flags)
+{
+    m_matchFlags = p_flags;
+}
+
+inline Qt::MatchFlags VSimpleSearchInput::getMatchFlags() const
+{
+    return m_matchFlags;
 }
 #endif // VSIMPLESEARCHINPUT_H

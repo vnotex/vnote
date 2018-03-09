@@ -95,6 +95,10 @@ public:
     // Otherwise, returns NULL.
     VDirectory *getInternalDirectory(const QString &p_path);
 
+    // Given the path of a file, try to find it in all notebooks.
+    // Returns a VNotebook struct if it is the root folder of a notebook.
+    VNotebook *getNotebook(const QString &p_path);
+
     void freeOrphanFiles();
 
     // @p_renderBg: background color, empty to not specify given color.

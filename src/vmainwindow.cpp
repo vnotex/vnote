@@ -38,6 +38,7 @@
 #include "dialog/vtipsdialog.h"
 #include "vcart.h"
 #include "dialog/vexportdialog.h"
+#include "vsearcher.h"
 
 extern VConfigManager *g_config;
 
@@ -148,6 +149,7 @@ void VMainWindow::registerCaptainAndNavigationTargets()
     m_captain->registerNavigationTarget(m_toolBox);
     m_captain->registerNavigationTarget(outline);
     m_captain->registerNavigationTarget(m_snippetList);
+    m_captain->registerNavigationTarget(m_searcher);
 
     // Register Captain mode targets.
     m_captain->registerCaptainTarget(tr("AttachmentList"),
@@ -174,6 +176,10 @@ void VMainWindow::registerCaptainAndNavigationTargets()
                                      g_config->getCaptainShortcutKeySequence("ToolsDock"),
                                      this,
                                      toggleToolsDockByCaptain);
+    m_captain->registerCaptainTarget(tr("SearchDock"),
+                                     g_config->getCaptainShortcutKeySequence("SearchDock"),
+                                     this,
+                                     toggleSearchDockByCaptain);
     m_captain->registerCaptainTarget(tr("CloseNote"),
                                      g_config->getCaptainShortcutKeySequence("CloseNote"),
                                      this,
@@ -1073,6 +1079,17 @@ void VMainWindow::initEditMenu()
     connect(m_findReplaceAct, &QAction::triggered,
             this, &VMainWindow::openFindDialog);
 
+    QAction *advFindAct = new QAction(tr("Advanced Find"), this);
+    advFindAct->setToolTip(tr("Advanced find within VNote"));
+    keySeq = g_config->getShortcutKeySequence("AdvancedFind");
+    qDebug() << "set AdvancedFind shortcut to" << keySeq;
+    advFindAct->setShortcut(QKeySequence(keySeq));
+    connect(advFindAct, &QAction::triggered,
+            this, [this]() {
+                m_searchDock->setVisible(true);
+                m_searcher->focusToSearch();
+            });
+
     m_findNextAct = new QAction(tr("Find Next"), this);
     m_findNextAct->setToolTip(tr("Find next occurence"));
     keySeq = g_config->getShortcutKeySequence("FindNext");
@@ -1188,6 +1205,8 @@ void VMainWindow::initEditMenu()
     QMenu *findReplaceMenu = editMenu->addMenu(tr("Find/Replace"));
     findReplaceMenu->setToolTipsVisible(true);
     findReplaceMenu->addAction(m_findReplaceAct);
+    findReplaceMenu->addAction(advFindAct);
+    findReplaceMenu->addSeparator();
     findReplaceMenu->addAction(m_findNextAct);
     findReplaceMenu->addAction(m_findPreviousAct);
     findReplaceMenu->addAction(m_replaceAct);
@@ -1268,9 +1287,22 @@ void VMainWindow::initEditMenu()
 
 void VMainWindow::initDockWindows()
 {
-    toolDock = new QDockWidget(tr("Tools"), this);
-    toolDock->setObjectName("ToolsDock");
-    toolDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    setTabPosition(Qt::LeftDockWidgetArea, QTabWidget::West);
+    setTabPosition(Qt::RightDockWidgetArea, QTabWidget::East);
+    setTabPosition(Qt::TopDockWidgetArea, QTabWidget::North);
+    setTabPosition(Qt::BottomDockWidgetArea, QTabWidget::South);
+
+    setDockNestingEnabled(true);
+
+    initToolsDock();
+    initSearchDock();
+}
+
+void VMainWindow::initToolsDock()
+{
+    m_toolDock = new QDockWidget(tr("Tools"), this);
+    m_toolDock->setObjectName("ToolsDock");
+    m_toolDock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
     // Outline tree.
     outline = new VOutline(this);
@@ -1298,12 +1330,31 @@ void VMainWindow::initDockWindows()
                        ":/resources/icons/cart.svg",
                        tr("Cart"));
 
-    toolDock->setWidget(m_toolBox);
-    addDockWidget(Qt::RightDockWidgetArea, toolDock);
+    m_toolDock->setWidget(m_toolBox);
+    addDockWidget(Qt::RightDockWidgetArea, m_toolDock);
 
-    QAction *toggleAct = toolDock->toggleViewAction();
+    QAction *toggleAct = m_toolDock->toggleViewAction();
     toggleAct->setToolTip(tr("Toggle the tools dock widget"));
     VUtils::fixTextWithCaptainShortcut(toggleAct, "ToolsDock");
+
+    m_viewMenu->addAction(toggleAct);
+}
+
+void VMainWindow::initSearchDock()
+{
+    m_searchDock = new QDockWidget(tr("Search"), this);
+    m_searchDock->setObjectName("SearchDock");
+    m_searchDock->setAllowedAreas(Qt::AllDockWidgetAreas);
+
+    m_searcher = new VSearcher(this);
+
+    m_searchDock->setWidget(m_searcher);
+
+    addDockWidget(Qt::RightDockWidgetArea, m_searchDock);
+
+    QAction *toggleAct = m_searchDock->toggleViewAction();
+    toggleAct->setToolTip(tr("Toggle the search dock widget"));
+    VUtils::fixTextWithCaptainShortcut(toggleAct, "SearchDock");
 
     m_viewMenu->addAction(toggleAct);
 }
@@ -2162,7 +2213,8 @@ void VMainWindow::saveStateAndGeometry()
 {
     g_config->setMainWindowGeometry(saveGeometry());
     g_config->setMainWindowState(saveState());
-    g_config->setToolsDockChecked(toolDock->isVisible());
+    g_config->setToolsDockChecked(m_toolDock->isVisible());
+    g_config->setSearchDockChecked(m_searchDock->isVisible());
 
     if (m_panelViewState == PanelViewState::CompactMode) {
         g_config->setNaviSplitterState(m_naviSplitter->saveState());
@@ -2181,11 +2233,14 @@ void VMainWindow::restoreStateAndGeometry()
     if (!geometry.isEmpty()) {
         restoreGeometry(geometry);
     }
+
     const QByteArray &state = g_config->getMainWindowState();
     if (!state.isEmpty()) {
         restoreState(state);
     }
-    toolDock->setVisible(g_config->getToolsDockChecked());
+
+    m_toolDock->setVisible(g_config->getToolsDockChecked());
+    m_searchDock->setVisible(g_config->getSearchDockChecked());
 
     const QByteArray &splitterState = g_config->getMainSplitterState();
     if (!splitterState.isEmpty()) {
@@ -2248,6 +2303,32 @@ bool VMainWindow::locateFile(VFile *p_file)
                 m_fileList->setFocus();
             }
         }
+    }
+
+    // Open the directory and file panels after location.
+    if (m_panelViewState == PanelViewState::CompactMode) {
+        compactModeView();
+    } else {
+        twoPanelView();
+    }
+
+    return ret;
+}
+
+bool VMainWindow::locateDirectory(VDirectory *p_directory)
+{
+    bool ret = false;
+    if (!p_directory) {
+        return ret;
+    }
+
+    VNotebook *notebook = p_directory->getNotebook();
+    if (notebookSelector->locateNotebook(notebook)) {
+        while (directoryTree->currentNotebook() != notebook) {
+            QCoreApplication::sendPostedEvents();
+        }
+
+        ret = directoryTree->locateDirectory(p_directory);
     }
 
     // Open the directory and file panels after location.
@@ -2659,7 +2740,21 @@ bool VMainWindow::toggleToolsDockByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
     VMainWindow *obj = static_cast<VMainWindow *>(p_target);
-    obj->toolDock->setVisible(!obj->toolDock->isVisible());
+    obj->m_toolDock->setVisible(!obj->m_toolDock->isVisible());
+    return true;
+}
+
+bool VMainWindow::toggleSearchDockByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    bool visible = obj->m_searchDock->isVisible();
+    obj->m_searchDock->setVisible(!visible);
+    if (!visible) {
+        obj->m_searcher->focusToSearch();
+        return false;
+    }
+
     return true;
 }
 

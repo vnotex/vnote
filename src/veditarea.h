@@ -44,6 +44,9 @@ public:
     // Return the @p_tabIdx tab in the @p_winIdx window.
     VEditTab *getTab(int p_winIdx, int p_tabIdx) const;
 
+    // Return the tab for @p_file file.
+    VEditTab *getTab(const VFile *p_file) const;
+
     // Return VEditTabInfo of all edit tabs.
     QVector<VEditTabInfo> getAllTabsInfo() const;
 

@@ -188,6 +188,7 @@ void VEdit::insertLink()
                              "",
                              linkText,
                              linkUrl,
+                             false,
                              this);
     if (dialog.exec() == QDialog::Accepted) {
         linkText = dialog.getLinkText();

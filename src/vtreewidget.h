@@ -21,6 +21,10 @@ public:
     // Clear tree widget as well as other data.
     void clearAll();
 
+    void setSimpleSearchMatchFlags(Qt::MatchFlags p_flags);
+
+    Qt::MatchFlags getSimpleSearchMatchFlags() const;
+
     // Implement ISimpleSearch.
     virtual QList<void *> searchItems(const QString &p_text,
                                       Qt::MatchFlags p_flags) const Q_DECL_OVERRIDE;
@@ -65,4 +69,14 @@ private:
 
     QTimer *m_searchColdTimer;
 };
+
+inline void VTreeWidget::setSimpleSearchMatchFlags(Qt::MatchFlags p_flags)
+{
+    m_searchInput->setMatchFlags(p_flags);
+}
+
+inline Qt::MatchFlags VTreeWidget::getSimpleSearchMatchFlags() const
+{
+    return m_searchInput->getMatchFlags();
+}
 #endif // VTREEWIDGET_H

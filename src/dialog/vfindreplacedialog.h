@@ -48,6 +48,7 @@ private slots:
 
 private:
     void setupUI();
+
     // Bit OR of FindOption
     uint m_options;
     bool m_replaceAvailable;

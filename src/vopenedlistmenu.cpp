@@ -7,7 +7,6 @@
 #include <QString>
 #include <QStyleFactory>
 #include <QWidgetAction>
-#include <QLabel>
 
 #include "veditwindow.h"
 #include "vnotefile.h"

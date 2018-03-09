@@ -522,13 +522,18 @@ bool VUtils::isImageURLText(const QString &p_url)
 
 qreal VUtils::calculateScaleFactor()
 {
-    // const qreal refHeight = 1152;
-    // const qreal refWidth = 2048;
-    const qreal refDpi = 96;
+    static qreal factor = -1;
 
-    qreal dpi = QGuiApplication::primaryScreen()->logicalDotsPerInch();
-    qreal factor = dpi / refDpi;
-    return factor < 1 ? 1 : factor;
+    if (factor < 0) {
+        const qreal refDpi = 96;
+        qreal dpi = QGuiApplication::primaryScreen()->logicalDotsPerInch();
+        factor = dpi / refDpi;
+        if (factor < 1) {
+            factor = 1;
+        }
+    }
+
+    return factor;
 }
 
 bool VUtils::realEqual(qreal p_a, qreal p_b)

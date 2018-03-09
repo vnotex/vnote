@@ -570,6 +570,20 @@ VEditTab *VEditArea::getTab(int p_winIdx, int p_tabIdx) const
     return win->getTab(p_tabIdx);
 }
 
+VEditTab *VEditArea::getTab(const VFile *p_file) const
+{
+    int nrWin = splitter->count();
+    for (int winIdx = 0; winIdx < nrWin; ++winIdx) {
+        VEditWindow *win = getWindow(winIdx);
+        int tabIdx = win->findTabByFile(p_file);
+        if (tabIdx != -1) {
+            return win->getTab(tabIdx);
+        }
+    }
+
+    return NULL;
+}
+
 QVector<VEditTabInfo> VEditArea::getAllTabsInfo() const
 {
     QVector<VEditTabInfo> tabs;

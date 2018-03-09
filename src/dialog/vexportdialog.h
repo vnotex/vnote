@@ -368,7 +368,7 @@ private:
 
     ExportFormat currentFormat() const;
 
-    int outputAsHTML(QString &p_outputFolder,
+    int outputAsHTML(const QString &p_outputFolder,
                      QString *p_errMsg = NULL,
                      QList<QString> *p_outputFiles = NULL);
 

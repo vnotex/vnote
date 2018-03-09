@@ -43,6 +43,8 @@ void VTextEdit::init()
 {
     setAcceptRichText(false);
 
+    m_defaultCursorWidth = 1;
+
     m_lineNumberType = LineNumberType::None;
 
     m_blockImageEnabled = false;
@@ -59,6 +61,8 @@ void VTextEdit::init()
     doc->setDocumentLayout(docLayout);
 
     docLayout->setVirtualCursorBlockWidth(VIRTUAL_CURSOR_BLOCK_WIDTH);
+
+    docLayout->setCursorWidth(m_defaultCursorWidth);
 
     connect(docLayout, &VTextDocumentLayout::cursorBlockWidthUpdated,
             this, [this](int p_width) {
@@ -361,7 +365,7 @@ void VTextEdit::setCursorBlockMode(CursorBlock p_mode)
         layout->setCursorBlockMode(m_cursorBlockMode);
         layout->clearLastCursorBlockWidth();
         setCursorWidth(m_cursorBlockMode != CursorBlock::None ? VIRTUAL_CURSOR_BLOCK_WIDTH
-                                                              : 1);
+                                                              : m_defaultCursorWidth);
         layout->updateBlockByNumber(textCursor().blockNumber());
     }
 }
@@ -387,4 +391,13 @@ void VTextEdit::setCursorLineBlockBg(const QColor &p_bg)
 void VTextEdit::relayout()
 {
     getLayout()->relayout();
+}
+
+void VTextEdit::setDisplayScaleFactor(qreal p_factor)
+{
+    m_defaultCursorWidth = p_factor + 0.5;
+
+    setCursorWidth(m_cursorBlockMode != CursorBlock::None ? VIRTUAL_CURSOR_BLOCK_WIDTH
+                                                          : m_defaultCursorWidth);
+    getLayout()->setCursorWidth(m_defaultCursorWidth);
 }

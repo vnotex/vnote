@@ -95,6 +95,8 @@ VMdEditor::VMdEditor(VFile *p_file,
     connect(this, &VTextEdit::cursorPositionChanged,
             this, &VMdEditor::updateCurrentHeader);
 
+    setDisplayScaleFactor(VUtils::calculateScaleFactor());
+
     updateFontAndPalette();
 
     updateConfig();

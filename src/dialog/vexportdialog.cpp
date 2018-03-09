@@ -75,7 +75,7 @@ void VExportDialog::setupUI()
     // Notes to export.
     m_srcCB = VUtils::getComboBox();
     m_srcCB->setToolTip(tr("Choose notes to export"));
-    m_srcCB->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    m_srcCB->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     connect(m_srcCB, SIGNAL(currentIndexChanged(int)),
             this, SLOT(handleCurrentSrcChanged(int)));
 
@@ -580,7 +580,7 @@ void VExportDialog::startExport()
 
         if (opt.m_outputSuffix.isEmpty()
             || opt.m_cmd.isEmpty()
-            || opt.m_allInOne && opt.m_folderSep.isEmpty()) {
+            || (opt.m_allInOne && opt.m_folderSep.isEmpty())) {
             appendLogLine(tr("Invalid configurations for custom export."));
             m_inExport = false;
             m_exportBtn->setEnabled(true);
@@ -1274,11 +1274,11 @@ int VExportDialog::doExportCustomAllInOne(const QList<QString> &p_files,
 QWidget *VExportDialog::setupCustomAdvancedSettings()
 {
     // Source format.
-    m_customSrcFormatCB = VUtils::getComboBox();
+    m_customSrcFormatCB = VUtils::getComboBox(this);
     m_customSrcFormatCB->setToolTip(tr("Choose format of the input"));
 
     // Output suffix.
-    m_customSuffixEdit = new VLineEdit();
+    m_customSuffixEdit = new VLineEdit(this);
     m_customSuffixEdit->setPlaceholderText(tr("Without the preceding dot"));
     m_customSuffixEdit->setToolTip(tr("Suffix of the output file without the preceding dot"));
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp),
@@ -1288,11 +1288,12 @@ QWidget *VExportDialog::setupCustomAdvancedSettings()
     QLabel *tipsLabel = new QLabel(tr("<span><span style=\"font-weight:bold;\">%0</span> for the input file; "
                                       "<span style=\"font-weight:bold;\">%1</span> for the output file; "
                                       "<span style=\"font-weight:bold;\">%2</span> for the rendering CSS style file; "
-                                      "<span style=\"font-weight:bold;\">%3</span> for the input file directory.</span>"));
+                                      "<span style=\"font-weight:bold;\">%3</span> for the input file directory.</span>"),
+                                   this);
     tipsLabel->setWordWrap(true);
 
     // Enable All In One.
-    m_customAllInOneCB = new QCheckBox(tr("Enable All In One"));
+    m_customAllInOneCB = new QCheckBox(tr("Enable All In One"), this);
     m_customAllInOneCB->setToolTip(tr("Pass a list of input files to the custom command"));
     connect(m_customAllInOneCB, &QCheckBox::stateChanged,
             this, [this](int p_state) {
@@ -1302,13 +1303,13 @@ QWidget *VExportDialog::setupCustomAdvancedSettings()
             });
 
     // Input directory separator.
-    m_customFolderSepEdit = new VLineEdit();
+    m_customFolderSepEdit = new VLineEdit(this);
     m_customFolderSepEdit->setPlaceholderText(tr("Separator to concatenate input files directories"));
     m_customFolderSepEdit->setToolTip(tr("Separator to concatenate input files directories"));
     m_customFolderSepEdit->setEnabled(false);
 
     // Target file name for all in one.
-    m_customTargetFileNameEdit = new VLineEdit();
+    m_customTargetFileNameEdit = new VLineEdit(this);
     m_customTargetFileNameEdit->setPlaceholderText(tr("Empty to use the name of the first source file"));
     m_customTargetFileNameEdit->setToolTip(tr("Name of the generated All-In-One file"));
     validator = new QRegExpValidator(QRegExp(VUtils::c_fileNameRegExp),
@@ -1317,7 +1318,7 @@ QWidget *VExportDialog::setupCustomAdvancedSettings()
     m_customTargetFileNameEdit->setEnabled(false);
 
     // Cmd edit.
-    m_customCmdEdit = new QPlainTextEdit();
+    m_customCmdEdit = new QPlainTextEdit(this);
     m_customCmdEdit->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
     QString cmdExamp("pandoc --resource-path=.:\"%3\" --css=\"%2\" -s -o \"%1\" \"%0\"");
     m_customCmdEdit->setPlaceholderText(cmdExamp);
@@ -1348,12 +1349,12 @@ QWidget *VExportDialog::setupCustomAdvancedSettings()
     QWidget *wid = new QWidget();
     wid->setLayout(advLayout);
 
-    m_customCmdEdit->setMaximumHeight(100);
+    m_customCmdEdit->setMaximumHeight(m_customSrcFormatCB->height() * 3);
 
     return wid;
 }
 
-int VExportDialog::outputAsHTML(QString &p_outputFolder,
+int VExportDialog::outputAsHTML(const QString &p_outputFolder,
                                 QString *p_errMsg,
                                 QList<QString> *p_outputFiles)
 {

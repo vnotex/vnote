@@ -191,12 +191,14 @@ void VDirectoryTree::setNotebook(VNotebook *p_notebook)
 
 void VDirectoryTree::fillTreeItem(QTreeWidgetItem *p_item, VDirectory *p_directory)
 {
+    static QIcon itemIcon = VIconUtils::treeViewIcon(":/resources/icons/dir_item.svg");
+
     int col = 0;
     QString name = p_directory->getName();
     p_item->setText(col, name);
     p_item->setToolTip(col, name);
     p_item->setData(col, Qt::UserRole, QVariant::fromValue(p_directory));
-    p_item->setIcon(col, VIconUtils::treeViewIcon(":/resources/icons/dir_item.svg"));
+    p_item->setIcon(col, itemIcon);
 }
 
 void VDirectoryTree::updateDirectoryTree()

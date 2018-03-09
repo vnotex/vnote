@@ -39,6 +39,7 @@ class VButtonWithWidget;
 class VAttachmentList;
 class VSnippetList;
 class VCart;
+class VSearcher;
 class QPrinter;
 
 enum class PanelViewState
@@ -60,6 +61,9 @@ public:
     // Returns true if the location succeeds.
     bool locateFile(VFile *p_file);
 
+    // Returns true if the location succeeds.
+    bool locateDirectory(VDirectory *p_directory);
+
     VFileList *getFileList() const;
 
     VEditArea *getEditArea() const;
@@ -67,6 +71,10 @@ public:
     VSnippetList *getSnippetList() const;
 
     VCart *getCart() const;
+
+    VDirectoryTree *getDirectoryTree() const;
+
+    VNotebookSelector *getNotebookSelector() const;
 
     // View and edit the information of @p_file, which is an orphan file.
     void editOrphanFileInfo(VFile *p_file);
@@ -205,6 +213,10 @@ private:
 
     void initDockWindows();
 
+    void initToolsDock();
+
+    void initSearchDock();
+
     void initRenderBackgroundMenu(QMenu *menu);
 
     void initRenderStyleMenu(QMenu *p_menu);
@@ -280,6 +292,8 @@ private:
 
     static bool toggleToolsDockByCaptain(void *p_target, void *p_data);
 
+    static bool toggleSearchDockByCaptain(void *p_target, void *p_data);
+
     static bool closeFileByCaptain(void *p_target, void *p_data);
 
     static bool shortcutsHelpByCaptain(void *p_target, void *p_data);
@@ -311,7 +325,9 @@ private:
 
     VEditArea *editArea;
 
-    QDockWidget *toolDock;
+    QDockWidget *m_toolDock;
+
+    QDockWidget *m_searchDock;
 
     // Tool box in the dock widget.
     VToolBox *m_toolBox;
@@ -323,6 +339,9 @@ private:
 
     // View and manage cart.
     VCart *m_cart;
+
+    // Advanced search.
+    VSearcher *m_searcher;
 
     VFindReplaceDialog *m_findReplaceDialog;
 
@@ -453,4 +472,13 @@ inline VCart *VMainWindow::getCart() const
     return m_cart;
 }
 
+inline VDirectoryTree *VMainWindow::getDirectoryTree() const
+{
+    return directoryTree;
+}
+
+inline VNotebookSelector *VMainWindow::getNotebookSelector() const
+{
+    return notebookSelector;
+}
 #endif // VMAINWINDOW_H

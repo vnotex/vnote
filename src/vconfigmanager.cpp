@@ -104,8 +104,6 @@ void VConfigManager::initialize()
     curRenderBackgroundColor = getConfigFromSettings("global",
                                                      "current_render_background_color").toString();
 
-    m_toolsDockChecked = getConfigFromSettings("global", "tools_dock_checked").toBool();
-
     m_findCaseSensitive = getConfigFromSettings("global",
                                                 "find_case_sensitive").toBool();
     m_findWholeWordOnly = getConfigFromSettings("global",
@@ -498,11 +496,9 @@ QString VConfigManager::fetchDirConfigFilePath(const QString &p_path)
         if (!dir.rename(c_obsoleteDirConfigFile, c_dirConfigFile)) {
             fileName = c_obsoleteDirConfigFile;
         }
-        qDebug() << "rename old directory config file:" << fileName;
     }
 
     QString filePath = QDir::cleanPath(dir.filePath(fileName));
-    qDebug() << "use directory config file:" << filePath;
     return filePath;
 }
 
@@ -1473,6 +1469,7 @@ void VConfigManager::resetConfigurations()
 void VConfigManager::resetLayoutConfigurations()
 {
     resetDefaultConfig("global", "tools_dock_checked");
+    resetDefaultConfig("global", "search_dock_checked");
     resetDefaultConfig("global", "menu_bar_checked");
     resetDefaultConfig("global", "enable_compact_mode");
 
