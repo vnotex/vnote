@@ -2151,6 +2151,7 @@ void VMainWindow::closeEvent(QCloseEvent *event)
         }
 
         QMainWindow::closeEvent(event);
+        qApp->quit();
     } else {
         hide();
         event->ignore();
