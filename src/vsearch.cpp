@@ -136,15 +136,13 @@ void VSearch::searchFirstPhase(VFile *p_file,
     Q_ASSERT(testTarget(VSearchConfig::Note));
 
     QString name = p_file->getName();
-    if (!m_patternReg.isEmpty()) {
-        if (!matchOneLine(name, m_patternReg)) {
-            return;
-        }
+    if (!matchPattern(name)) {
+        return;
     }
 
     QString filePath = p_file->fetchPath();
     if (testObject(VSearchConfig::Name)) {
-        if (matchOneLine(name, m_searchReg)) {
+        if (matchNonContent(name)) {
             VSearchResultItem *item = new VSearchResultItem(VSearchResultItem::Note,
                                                             VSearchResultItem::LineNumber,
                                                             name,
@@ -195,7 +193,7 @@ void VSearch::searchFirstPhase(VDirectory *p_directory,
     if (testTarget(VSearchConfig::Folder)
         && testObject(VSearchConfig::Name)) {
         QString text = p_directory->getName();
-        if (matchOneLine(text, m_searchReg)) {
+        if (matchNonContent(text)) {
             VSearchResultItem *item = new VSearchResultItem(VSearchResultItem::Folder,
                                                             VSearchResultItem::LineNumber,
                                                             text,
@@ -248,7 +246,7 @@ void VSearch::searchFirstPhase(VNotebook *p_notebook,
     if (testTarget(VSearchConfig::Notebook)
         && testObject(VSearchConfig::Name)) {
         QString text = p_notebook->getName();
-        if (matchOneLine(text, m_searchReg)) {
+        if (matchNonContent(text)) {
             VSearchResultItem *item = new VSearchResultItem(VSearchResultItem::Notebook,
                                                             VSearchResultItem::LineNumber,
                                                             text,
@@ -295,7 +293,7 @@ VSearchResultItem *VSearch::searchForOutline(const VFile *p_file) const
             continue;
         }
 
-        if (!matchOneLine(it.m_name, m_searchReg)) {
+        if (!matchNonContent(it.m_name)) {
             continue;
         }
 
@@ -326,8 +324,14 @@ VSearchResultItem *VSearch::searchForContent(const VFile *p_file) const
     int pos = 0;
     int size = content.size();
     QRegExp newLineReg = QRegExp("\\n|\\r\\n|\\r");
-    Qt::CaseSensitivity cs = testOption(VSearchConfig::CaseSensitive)
-                             ? Qt::CaseSensitive : Qt::CaseInsensitive;
+    VSearchToken &contentToken = m_config->m_contentToken;
+    bool singleToken = contentToken.tokenSize() == 1;
+    if (!singleToken) {
+        contentToken.startBatchMode();
+    }
+
+    bool allMatched = false;
+
     while (pos < size) {
         int idx = content.indexOf(newLineReg, pos);
         if (idx == -1) {
@@ -337,10 +341,10 @@ VSearchResultItem *VSearch::searchForContent(const VFile *p_file) const
         if (idx > pos) {
             QString lineText = content.mid(pos, idx - pos);
             bool matched = false;
-            if (m_contentSearchReg.isEmpty()) {
-                matched = lineText.contains(m_config->m_keyword, cs);
+            if (singleToken) {
+                matched = contentToken.matched(lineText);
             } else {
-                matched = (m_contentSearchReg.indexIn(lineText) != -1);
+                matched = contentToken.matchBatchMode(lineText);
             }
 
             if (matched) {
@@ -360,8 +364,23 @@ VSearchResultItem *VSearch::searchForContent(const VFile *p_file) const
             break;
         }
 
+        if (!singleToken && contentToken.readyToEndBatchMode(allMatched)) {
+            break;
+        }
+
         pos = idx + newLineReg.matchedLength();
         ++lineNum;
+    }
+
+    if (!singleToken) {
+        contentToken.readyToEndBatchMode(allMatched);
+        contentToken.endBatchMode();
+
+        if (!allMatched && item) {
+            // This file does not meet all the tokens.
+            delete item;
+            item = NULL;
+        }
     }
 
     return item;

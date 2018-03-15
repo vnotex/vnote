@@ -14,14 +14,10 @@ VSearchEngineWorker::VSearchEngineWorker(QObject *p_parent)
 }
 
 void VSearchEngineWorker::setData(const QStringList &p_files,
-                                  const QRegExp &p_reg,
-                                  const QString &p_keyword,
-                                  Qt::CaseSensitivity p_cs)
+                                  const VSearchToken &p_token)
 {
     m_files = p_files;
-    m_reg = p_reg;
-    m_keyword = p_keyword;
-    m_caseSensitivity = p_cs;
+    m_token = p_token;
 }
 
 void VSearchEngineWorker::stop()
@@ -71,6 +67,14 @@ VSearchResultItem *VSearchEngineWorker::searchFile(const QString &p_fileName)
     VSearchResultItem *item = NULL;
     QString line;
     QTextStream in(&file);
+
+    bool singleToken = m_token.tokenSize() == 1;
+    if (!singleToken) {
+        m_token.startBatchMode();
+    }
+
+    bool allMatched = false;
+
     while (!in.atEnd()) {
         if (m_stop.load() == 1) {
             m_state = VSearchState::Cancelled;
@@ -78,14 +82,12 @@ VSearchResultItem *VSearchEngineWorker::searchFile(const QString &p_fileName)
             break;
         }
 
-        bool matched = false;
         line = in.readLine();
-        if (m_reg.isEmpty()) {
-            if (line.contains(m_keyword, m_caseSensitivity)) {
-                matched = true;
-            }
-        } else if (m_reg.indexIn(line) != -1) {
-            matched = true;
+        bool matched = false;
+        if (singleToken) {
+            matched = m_token.matched(line);
+        } else {
+            matched = m_token.matchBatchMode(line);
         }
 
         if (matched) {
@@ -100,7 +102,21 @@ VSearchResultItem *VSearchEngineWorker::searchFile(const QString &p_fileName)
             item->m_matches.append(sitem);
         }
 
+        if (!singleToken && m_token.readyToEndBatchMode(allMatched)) {
+            break;
+        }
+
         ++lineNum;
+    }
+
+    if (!singleToken) {
+        m_token.readyToEndBatchMode(allMatched);
+        m_token.endBatchMode();
+
+        if (!allMatched && item) {
+            delete item;
+            item = NULL;
+        }
     }
 
     return item;
@@ -129,23 +145,14 @@ void VSearchEngine::search(const QSharedPointer<VSearchConfig> &p_config,
 
     m_result = p_result;
 
-    QRegExp reg = compileRegExpFromConfig(p_config);
-    Qt::CaseSensitivity cs = (p_config->m_option & VSearchConfig::CaseSensitive)
-                             ? Qt::CaseSensitive : Qt::CaseInsensitive;
-
     clearAllWorkers();
     m_workers.reserve(numThread);
     m_finishedWorkers = 0;
     int totalSize = m_result->m_secondPhaseItems.size();
     int step = totalSize / numThread;
     int remain = totalSize % numThread;
-
-    for (int i = 0; i < numThread; ++i) {
-        int start = i * step;
-        if (start >= totalSize) {
-            break;
-        }
-
+    int start = 0;
+    for (int i = 0; i < numThread && start < totalSize; ++i) {
         int len = step;
         if (remain) {
             ++len;
@@ -158,9 +165,7 @@ void VSearchEngine::search(const QSharedPointer<VSearchConfig> &p_config,
 
         VSearchEngineWorker *th = new VSearchEngineWorker(this);
         th->setData(m_result->m_secondPhaseItems.mid(start, len),
-                    reg,
-                    p_config->m_keyword,
-                    cs);
+                    p_config->m_contentToken);
         connect(th, &VSearchEngineWorker::finished,
                 this, &VSearchEngine::handleWorkerFinished);
         connect(th, &VSearchEngineWorker::resultItemReady,
@@ -170,25 +175,11 @@ void VSearchEngine::search(const QSharedPointer<VSearchConfig> &p_config,
 
         m_workers.append(th);
         th->start();
+
+        start += len;
     }
 
     qDebug() << "schedule tasks to threads" << m_workers.size() << totalSize << step;
-}
-
-QRegExp VSearchEngine::compileRegExpFromConfig(const QSharedPointer<VSearchConfig> &p_config) const
-{
-    const QString &keyword = p_config->m_keyword;
-    Qt::CaseSensitivity cs = (p_config->m_option & VSearchConfig::CaseSensitive)
-                             ? Qt::CaseSensitive : Qt::CaseInsensitive;
-    if (p_config->m_option & VSearchConfig::RegularExpression) {
-        return QRegExp(keyword, cs);
-    } else if (p_config->m_option & VSearchConfig::WholeWordOnly) {
-        QString pattern = QRegExp::escape(keyword);
-        pattern = "\\b" + pattern + "\\b";
-        return QRegExp(pattern, cs);
-    } else {
-        return QRegExp();
-    }
 }
 
 void VSearchEngine::stop()

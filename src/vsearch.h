@@ -64,7 +64,9 @@ private:
 
     bool testOption(VSearchConfig::Option p_option) const;
 
-    bool matchOneLine(const QString &p_text, const QRegExp &p_reg) const;
+    bool matchNonContent(const QString &p_text) const;
+
+    bool matchPattern(const QString &p_name) const;
 
     VSearchResultItem *searchForOutline(const VFile *p_file) const;
 
@@ -77,13 +79,6 @@ private:
     QSharedPointer<VSearchConfig> m_config;
 
     ISearchEngine *m_engine;
-
-    // Search reg used for name, outline, tag.
-    QRegExp m_searchReg;
-
-    // Search reg used for content.
-    // We use raw string to speed up if it is empty.
-    QRegExp m_contentSearchReg;
 
     // Wildcard reg to for file name pattern.
     QRegExp m_patternReg;
@@ -98,40 +93,6 @@ inline bool VSearch::askedToStop() const
 inline void VSearch::setConfig(QSharedPointer<VSearchConfig> p_config)
 {
     m_config = p_config;
-
-    // Compile reg.
-    const QString &keyword = m_config->m_keyword;
-    m_contentSearchReg = QRegExp();
-    if (keyword.isEmpty()) {
-        m_searchReg = QRegExp();
-        return;
-    }
-
-    Qt::CaseSensitivity cs = testOption(VSearchConfig::CaseSensitive)
-                             ? Qt::CaseSensitive : Qt::CaseInsensitive;
-    if (testOption(VSearchConfig::RegularExpression)) {
-        m_searchReg = QRegExp(keyword, cs);
-        m_contentSearchReg = QRegExp(keyword, cs);
-    } else {
-        if (testOption(VSearchConfig::Fuzzy)) {
-            QString wildcardText(keyword.size() * 2 + 1, '*');
-            for (int i = 0, j = 1; i < keyword.size(); ++i, j += 2) {
-                wildcardText[j] = keyword[i];
-            }
-
-            m_searchReg = QRegExp(wildcardText, cs, QRegExp::Wildcard);
-        } else {
-            QString pattern = QRegExp::escape(keyword);
-            if (testOption(VSearchConfig::WholeWordOnly)) {
-                pattern = "\\b" + pattern + "\\b";
-
-                // We only use m_contentSearchReg when WholeWordOnly is checked.
-                m_contentSearchReg = QRegExp(pattern, cs);
-            }
-
-            m_searchReg = QRegExp(pattern, cs);
-        }
-    }
 
     if (m_config->m_pattern.isEmpty()) {
         m_patternReg = QRegExp();
@@ -155,8 +116,17 @@ inline bool VSearch::testOption(VSearchConfig::Option p_option) const
     return p_option & m_config->m_option;
 }
 
-inline bool VSearch::matchOneLine(const QString &p_text, const QRegExp &p_reg) const
+inline bool VSearch::matchNonContent(const QString &p_text) const
 {
-    return p_reg.indexIn(p_text) != -1;
+    return m_config->m_token.matched(p_text);
+}
+
+inline bool VSearch::matchPattern(const QString &p_name) const
+{
+    if (m_patternReg.isEmpty()) {
+        return true;
+    }
+
+    return p_name.contains(m_patternReg);
 }
 #endif // VSEARCH_H

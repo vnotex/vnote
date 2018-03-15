@@ -62,47 +62,6 @@ void VExporter::prepareExport(const ExportOption &p_opt)
     prepareWKArguments(p_opt.m_pdfOpt);
 }
 
-// From QProcess code.
-static QStringList parseCombinedArgString(const QString &program)
-{
-    QStringList args;
-    QString tmp;
-    int quoteCount = 0;
-    bool inQuote = false;
-
-    // handle quoting. tokens can be surrounded by double quotes
-    // "hello world". three consecutive double quotes represent
-    // the quote character itself.
-    for (int i = 0; i < program.size(); ++i) {
-        if (program.at(i) == QLatin1Char('"')) {
-            ++quoteCount;
-            if (quoteCount == 3) {
-                // third consecutive quote
-                quoteCount = 0;
-                tmp += program.at(i);
-            }
-            continue;
-        }
-        if (quoteCount) {
-            if (quoteCount == 1)
-                inQuote = !inQuote;
-            quoteCount = 0;
-        }
-        if (!inQuote && program.at(i).isSpace()) {
-            if (!tmp.isEmpty()) {
-                args += tmp;
-                tmp.clear();
-            }
-        } else {
-            tmp += program.at(i);
-        }
-    }
-    if (!tmp.isEmpty())
-        args += tmp;
-
-    return args;
-}
-
 void VExporter::prepareWKArguments(const ExportPDFOption &p_opt)
 {
     m_wkArgs.clear();
@@ -154,7 +113,7 @@ void VExporter::prepareWKArguments(const ExportPDFOption &p_opt)
 
     // Append additional global option.
     if (!p_opt.m_wkExtraArgs.isEmpty()) {
-        m_wkArgs.append(parseCombinedArgString(p_opt.m_wkExtraArgs));
+        m_wkArgs.append(VUtils::parseCombinedArgString(p_opt.m_wkExtraArgs));
     }
 
     // TOC option.
@@ -929,7 +888,7 @@ int VExporter::startProcess(const QString &p_program, const QStringList &p_args)
 
 int VExporter::startProcess(const QString &p_cmd)
 {
-    QStringList args = parseCombinedArgString(p_cmd);
+    QStringList args = VUtils::parseCombinedArgString(p_cmd);
     if (args.isEmpty()) {
         return -2;
     }

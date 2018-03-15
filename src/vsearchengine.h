@@ -1,10 +1,13 @@
 #ifndef VSEARCHENGINE_H
 #define VSEARCHENGINE_H
 
+#include "isearchengine.h"
+
 #include <QThread>
 #include <QRegExp>
 #include <QAtomicInt>
-#include "isearchengine.h"
+
+#include "vsearchconfig.h"
 
 class VSearchEngineWorker : public QThread
 {
@@ -16,9 +19,7 @@ public:
     explicit VSearchEngineWorker(QObject *p_parent = nullptr);
 
     void setData(const QStringList &p_files,
-                 const QRegExp &p_reg,
-                 const QString &p_keyword,
-                 Qt::CaseSensitivity p_cs);
+                 const VSearchToken &p_token);
 
 public slots:
     void stop();
@@ -38,11 +39,7 @@ private:
 
     QStringList m_files;
 
-    QRegExp m_reg;
-
-    QString m_keyword;
-
-    Qt::CaseSensitivity m_caseSensitivity;
+    VSearchToken m_token;
 
     VSearchState m_state;
 
@@ -76,9 +73,6 @@ private slots:
     void handleWorkerFinished();
 
 private:
-    // Returns an empty object if raw string is preferred.
-    QRegExp compileRegExpFromConfig(const QSharedPointer<VSearchConfig> &p_config) const;
-
     void clearAllWorkers();
 
     int m_finishedWorkers;

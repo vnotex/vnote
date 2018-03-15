@@ -4,6 +4,185 @@
 #include <QString>
 #include <QStringList>
 #include <QSharedPointer>
+#include <QVector>
+#include <QRegExp>
+
+#include "utils/vutils.h"
+
+
+struct VSearchToken
+{
+    enum Type
+    {
+        RawString = 0,
+        RegularExpression
+    };
+
+    enum Operator
+    {
+        And = 0,
+        Or
+    };
+
+    VSearchToken()
+        : m_type(Type::RawString),
+          m_op(Operator::And),
+          m_caseSensitivity(Qt::CaseSensitive)
+    {
+    }
+
+    void clear()
+    {
+        m_keywords.clear();
+        m_regs.clear();
+    }
+
+    void append(const QString &p_rawStr)
+    {
+        m_keywords.append(p_rawStr);
+    }
+
+    void append(const QRegExp &p_reg)
+    {
+        m_regs.append(p_reg);
+    }
+
+    QString toString() const
+    {
+        return QString("token %1 %2 %3 %4 %5").arg(m_type)
+                                              .arg(m_op)
+                                              .arg(m_caseSensitivity)
+                                              .arg(m_keywords.size())
+                                              .arg(m_regs.size());
+    }
+
+    // Whether @p_text match all the constraint.
+    bool matched(const QString &p_text) const
+    {
+        int size = m_keywords.size();
+        if (m_type == Type::RegularExpression) {
+            size = m_regs.size();
+        }
+
+        if (size == 0) {
+            return false;
+        }
+
+        bool ret = m_op == Operator::And ? true : false;
+        for (int i = 0; i < size; ++i) {
+            bool tmp = false;
+            if (m_type == Type::RawString) {
+                tmp = p_text.contains(m_keywords[i], m_caseSensitivity);
+            } else {
+                tmp = p_text.contains(m_regs[i]);
+            }
+
+            if (tmp) {
+                if (m_op == Operator::Or) {
+                    ret = true;
+                    break;
+                }
+            } else {
+                if (m_op == Operator::And) {
+                    ret = false;
+                    break;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    void startBatchMode()
+    {
+        int size = m_type == Type::RawString ? m_keywords.size() : m_regs.size();
+        m_matchesInBatch.resize(size);
+        m_matchesInBatch.fill(false);
+        m_numOfMatches = 0;
+    }
+
+    // Match one string in batch mode.
+    // Returns true if @p_text matches one.
+    bool matchBatchMode(const QString &p_text)
+    {
+        bool ret = false;
+        int size = m_matchesInBatch.size();
+        for (int i = 0; i < size; ++i) {
+            if (m_matchesInBatch[i]) {
+                continue;
+            }
+
+            bool tmp = false;
+            if (m_type == Type::RawString) {
+                tmp = p_text.contains(m_keywords[i], m_caseSensitivity);
+            } else {
+                tmp = p_text.contains(m_regs[i]);
+            }
+
+            if (tmp) {
+                m_matchesInBatch[i] = true;
+                ++m_numOfMatches;
+                ret = true;
+            }
+        }
+
+        return ret;
+    }
+
+    // Whether it is OK to finished batch mode.
+    // @p_matched: the overall match result.
+    bool readyToEndBatchMode(bool &p_matched) const
+    {
+        if (m_op == VSearchToken::And) {
+            // We need all the tokens matched.
+            if (m_numOfMatches == m_matchesInBatch.size()) {
+                p_matched = true;
+                return true;
+            } else {
+                p_matched = false;
+                return false;
+            }
+        } else {
+            // We only need one match.
+            if (m_numOfMatches > 0) {
+                p_matched = true;
+                return true;
+            } else {
+                p_matched = false;
+                return false;
+            }
+        }
+    }
+
+    void endBatchMode()
+    {
+        m_matchesInBatch.clear();
+        m_numOfMatches = 0;
+    }
+
+    int tokenSize() const
+    {
+        return m_type == Type::RawString ? m_keywords.size() : m_regs.size();
+    }
+
+    VSearchToken::Type m_type;
+
+    VSearchToken::Operator m_op;
+
+    Qt::CaseSensitivity m_caseSensitivity;
+
+    // Valid at RawString.
+    QVector<QString> m_keywords;
+
+    // Valid at RegularExpression.
+    QVector<QRegExp> m_regs;
+
+    // Bitmap for batch mode.
+    // True if m_regs[i] or m_keywords[i] has been matched.
+    QVector<bool> m_matchesInBatch;
+
+    int m_numOfMatches;
+};
 
 
 struct VSearchConfig
@@ -49,6 +228,7 @@ struct VSearchConfig
         RegularExpression = 0x8UL
     };
 
+
     VSearchConfig()
         : VSearchConfig(Scope::NoneScope,
                         Object::NoneObject,
@@ -73,9 +253,88 @@ struct VSearchConfig
           m_target(p_target),
           m_engine(p_engine),
           m_option(p_option),
-          m_keyword(p_keyword),
           m_pattern(p_pattern)
     {
+        compileToken(p_keyword);
+    }
+
+    void compileToken(const QString &p_keyword)
+    {
+        m_token.clear();
+        m_contentToken.clear();
+        if (p_keyword.isEmpty()) {
+            return;
+        }
+
+        Qt::CaseSensitivity cs = m_option & VSearchConfig::CaseSensitive
+                                 ? Qt::CaseSensitive : Qt::CaseInsensitive;
+        bool useReg = m_option & VSearchConfig::RegularExpression;
+        bool wwo = m_option & VSearchConfig::WholeWordOnly;
+        bool fuzzy = m_option & VSearchConfig::Fuzzy;
+
+        m_token.m_caseSensitivity = cs;
+        m_contentToken.m_caseSensitivity = cs;
+
+        if (useReg) {
+            m_token.m_type = VSearchToken::RegularExpression;
+            m_contentToken.m_type = VSearchToken::RegularExpression;
+        } else {
+            if (fuzzy) {
+                m_token.m_type = VSearchToken::RegularExpression;
+                m_contentToken.m_type = VSearchToken::RawString;
+            } else if (wwo) {
+                m_token.m_type = VSearchToken::RegularExpression;
+                m_contentToken.m_type = VSearchToken::RegularExpression;
+            } else {
+                m_token.m_type = VSearchToken::RawString;
+                m_contentToken.m_type = VSearchToken::RawString;
+            }
+        }
+
+        VSearchToken::Operator op = VSearchToken::And;
+
+        // """ to input a ";
+        // && for AND, || for OR;
+        QStringList args = VUtils::parseCombinedArgString(p_keyword);
+        for (auto const & arg : args) {
+            if (arg == QStringLiteral("&&")) {
+                op = VSearchToken::And;
+                continue;
+            } else if (arg == QStringLiteral("||")) {
+                op = VSearchToken::Or;
+                continue;
+            }
+
+            if (useReg) {
+                QRegExp reg(arg, cs);
+                m_token.append(reg);
+                m_contentToken.append(reg);
+            } else {
+                if (fuzzy) {
+                    QString wildcardText(arg.size() * 2 + 1, '*');
+                    for (int i = 0, j = 1; i < arg.size(); ++i, j += 2) {
+                        wildcardText[j] = arg[i];
+                    }
+
+                    QRegExp reg(wildcardText, cs, QRegExp::Wildcard);
+                    m_token.append(reg);
+                    m_contentToken.append(arg);
+                } else if (wwo) {
+                    QString pattern = QRegExp::escape(arg);
+                    pattern = "\\b" + pattern + "\\b";
+
+                    QRegExp reg(pattern, cs);
+                    m_token.append(reg);
+                    m_contentToken.append(reg);
+                } else {
+                    m_token.append(arg);
+                    m_contentToken.append(arg);
+                }
+            }
+        }
+
+        m_token.m_op = op;
+        m_contentToken.m_op = op;
     }
 
     QStringList toConfig() const
@@ -114,10 +373,14 @@ struct VSearchConfig
     int m_engine;
     int m_option;
 
-    QString m_keyword;
-
     // Wildcard pattern to filter file.
     QString m_pattern;
+
+    // Token for name, outline, and tag.
+    VSearchToken m_token;
+
+    // Token for content.
+    VSearchToken m_contentToken;
 };
 
 

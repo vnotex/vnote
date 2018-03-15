@@ -309,6 +309,9 @@ public:
 
     static bool fixTextWithCaptainShortcut(QAction *p_act, const QString &p_shortcut);
 
+    // From QProcess code.
+    static QStringList parseCombinedArgString(const QString &p_program);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
     // Captured texts (need to be trimmed):
