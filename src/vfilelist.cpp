@@ -551,13 +551,13 @@ void VFileList::deleteFiles(const QVector<VNoteFile *> &p_files)
 
 void VFileList::contextMenuRequested(QPoint pos)
 {
-    QListWidgetItem *item = fileList->itemAt(pos);
-    QMenu menu(this);
-    menu.setToolTipsVisible(true);
-
     if (!m_directory) {
         return;
     }
+
+    QListWidgetItem *item = fileList->itemAt(pos);
+    QMenu menu(this);
+    menu.setToolTipsVisible(true);
 
     int selectedSize = fileList->selectedItems().size();
 

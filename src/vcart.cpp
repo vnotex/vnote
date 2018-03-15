@@ -75,7 +75,7 @@ void VCart::initActions()
             this, &VCart::openSelectedItems);
 
     m_locateAct = new QAction(VIconUtils::menuIcon(":/resources/icons/locate_note.svg"),
-                              tr("Locate To Folder"),
+                              tr("&Locate To Folder"),
                               this);
     m_locateAct->setToolTip(tr("Locate the folder of current note"));
     connect(m_locateAct, &QAction::triggered,
