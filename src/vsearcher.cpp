@@ -99,6 +99,7 @@ void VSearcher::setupUI()
     m_keywordCB->setEditable(true);
     m_keywordCB->setLineEdit(new VLineEdit(this));
     m_keywordCB->setToolTip(tr("Keywords to search for"));
+    m_keywordCB->lineEdit()->setPlaceholderText(tr("Supports space, &&, and ||"));
     connect(m_keywordCB, &QComboBox::currentTextChanged,
             this, &VSearcher::handleInputChanged);
     connect(m_keywordCB->lineEdit(), &QLineEdit::returnPressed,

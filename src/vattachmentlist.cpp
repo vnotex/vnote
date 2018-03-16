@@ -378,13 +378,11 @@ void VAttachmentList::sortItems()
     QTreeWidget *tree = dialog.getTreeWidget();
     tree->clear();
     tree->setColumnCount(1);
-    QStringList headers;
-    headers << tr("Name");
+    QStringList headers(tr("Name"));
     tree->setHeaderLabels(headers);
 
     for (int i = 0; i < attas.size(); ++i) {
         QTreeWidgetItem *item = new QTreeWidgetItem(tree, QStringList(attas[i].m_name));
-
         item->setData(0, Qt::UserRole, i);
     }
 

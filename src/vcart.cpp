@@ -7,6 +7,8 @@
 #include "vmainwindow.h"
 #include "vnote.h"
 #include "vnotefile.h"
+#include "vlistwidget.h"
+#include "dialog/vsortdialog.h"
 
 extern VMainWindow *g_mainWin;
 
@@ -54,6 +56,7 @@ void VCart::setupUI()
     m_itemList->setAttribute(Qt::WA_MacShowFocusRect, false);
     m_itemList->setContextMenuPolicy(Qt::CustomContextMenu);
     m_itemList->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    m_itemList->setDragDropMode(QAbstractItemView::InternalMove);
     connect(m_itemList, &QListWidget::customContextMenuRequested,
             this, &VCart::handleContextMenuRequested);
     connect(m_itemList, &QListWidget::itemActivated,
@@ -87,6 +90,13 @@ void VCart::initActions()
     m_deleteAct->setToolTip(tr("Delete selected items from Cart"));
     connect(m_deleteAct, &QAction::triggered,
             this, &VCart::deleteSelectedItems);
+
+    m_sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
+                            tr("&Sort"),
+                            this);
+    m_sortAct->setToolTip(tr("Sort items in Cart"));
+    connect(m_sortAct, &QAction::triggered,
+            this, &VCart::sortItems);
 }
 
 void VCart::handleContextMenuRequested(QPoint p_pos)
@@ -105,9 +115,17 @@ void VCart::handleContextMenuRequested(QPoint p_pos)
         menu.addAction(m_deleteAct);
     }
 
-    if (!menu.actions().isEmpty()) {
-        menu.exec(m_itemList->mapToGlobal(p_pos));
+    if (m_itemList->count() == 0) {
+        return;
     }
+
+    if (!menu.actions().isEmpty()) {
+        menu.addSeparator();
+    }
+
+    menu.addAction(m_sortAct);
+
+    menu.exec(m_itemList->mapToGlobal(p_pos));
 }
 
 void VCart::addFile(const QString &p_filePath)
@@ -206,4 +224,42 @@ QVector<QString> VCart::getFiles() const
     }
 
     return files;
+}
+
+void VCart::sortItems()
+{
+    if (m_itemList->count() < 2) {
+        return;
+    }
+
+    VSortDialog dialog(tr("Sort Cart"),
+                       tr("Sort items in Cart."),
+                       this);
+    QTreeWidget *tree = dialog.getTreeWidget();
+    tree->clear();
+    tree->setColumnCount(1);
+    QStringList headers(tr("Name"));
+    tree->setHeaderLabels(headers);
+
+    int cnt = m_itemList->count();
+    for (int i = 0; i < cnt; ++i) {
+        QListWidgetItem *it = m_itemList->item(i);
+        QTreeWidgetItem *item = new QTreeWidgetItem(tree,
+                                                    QStringList(it->text()));
+        item->setToolTip(0, getFilePath(it));
+        item->setData(0, Qt::UserRole, i);
+    }
+
+    dialog.treeUpdated();
+
+    if (dialog.exec()) {
+        QVector<QVariant> data = dialog.getSortedData();
+        Q_ASSERT(data.size() == cnt);
+        QVector<int> sortedIdx(data.size(), -1);
+        for (int i = 0; i < data.size(); ++i) {
+            sortedIdx[i] = data[i].toInt();
+        }
+
+        VListWidget::sortListWidget(m_itemList, sortedIdx);
+    }
 }

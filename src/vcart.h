@@ -37,6 +37,8 @@ private slots:
 
     void locateCurrentItem();
 
+    void sortItems();
+
 private:
     void setupUI();
 
@@ -56,6 +58,7 @@ private:
     QAction *m_openAct;
     QAction *m_locateAct;
     QAction *m_deleteAct;
+    QAction *m_sortAct;
 };
 
 #endif // VCART_H

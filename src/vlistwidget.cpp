@@ -142,3 +142,19 @@ void VListWidget::selectNextItem(bool p_forward)
     Q_UNUSED(p_forward);
     Q_ASSERT(false);
 }
+
+void VListWidget::sortListWidget(QListWidget *p_list, const QVector<int> &p_sortedIdx)
+{
+    int cnt = p_list->count();
+    Q_ASSERT(cnt == p_sortedIdx.size());
+
+    QVector<QListWidgetItem *> sortedItems(cnt);
+    for (int i = 0; i < cnt; ++i) {
+        sortedItems[i] = p_list->item(p_sortedIdx[i]);
+    }
+
+    for (int i = 0; i < cnt; ++i) {
+        QListWidgetItem *it = p_list->takeItem(p_list->row(sortedItems[i]));
+        p_list->insertItem(i, it);
+    }
+}

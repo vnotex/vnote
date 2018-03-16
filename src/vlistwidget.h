@@ -2,6 +2,7 @@
 #define VLISTWIDGET_H
 
 #include <QListWidget>
+#include <QVector>
 
 #include "vsimplesearchinput.h"
 
@@ -30,6 +31,9 @@ public:
     virtual int totalNumberOfItems() Q_DECL_OVERRIDE;
 
     virtual void selectNextItem(bool p_forward) Q_DECL_OVERRIDE;
+
+    // Sort @p_list according to @p_sortedIdx.
+    static void sortListWidget(QListWidget *p_list, const QVector<int> &p_sortedIdx);
 
 private slots:
     void handleSearchModeTriggered(bool p_inSearchMode);
