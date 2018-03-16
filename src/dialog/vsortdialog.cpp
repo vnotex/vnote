@@ -117,6 +117,9 @@ void VSortDialog::treeUpdated()
         QTreeWidgetItem *item = m_treeWidget->topLevelItem(i);
         item->setFlags(item->flags() & ~Qt::ItemIsDropEnabled);
     }
+
+    m_treeWidget->sortByColumn(-1);
+    m_treeWidget->setSortingEnabled(true);
 }
 
 void VSortDialog::handleMoveOperation(MoveOperation p_op)

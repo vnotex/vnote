@@ -1119,10 +1119,13 @@ QVector<VElementRegion> VUtils::fetchImageRegionsUsingParser(const QString &p_co
     return regs;
 }
 
-QString VUtils::displayDateTime(const QDateTime &p_dateTime)
+QString VUtils::displayDateTime(const QDateTime &p_dateTime,
+                                bool p_uniformNum)
 {
-    QString res = p_dateTime.date().toString(Qt::DefaultLocaleLongDate);
-    res += " " + p_dateTime.time().toString();
+    QString res = p_dateTime.date().toString(p_uniformNum ? Qt::ISODate
+                                                          : Qt::DefaultLocaleLongDate);
+    res += " " + p_dateTime.time().toString(p_uniformNum ? Qt::ISODate
+                                                         : Qt::TextDate);
     return res;
 }
 

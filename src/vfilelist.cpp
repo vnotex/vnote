@@ -1041,8 +1041,8 @@ void VFileList::sortItems()
 
     for (int i = 0; i < files.size(); ++i) {
         const VNoteFile *file = files[i];
-        QString createdTime = VUtils::displayDateTime(file->getCreatedTimeUtc().toLocalTime());
-        QString modifiedTime = VUtils::displayDateTime(file->getModifiedTimeUtc().toLocalTime());
+        QString createdTime = VUtils::displayDateTime(file->getCreatedTimeUtc().toLocalTime(), true);
+        QString modifiedTime = VUtils::displayDateTime(file->getModifiedTimeUtc().toLocalTime(), true);
         QStringList cols;
         cols << file->getName() << createdTime << modifiedTime;
         QTreeWidgetItem *item = new QTreeWidgetItem(tree, cols);

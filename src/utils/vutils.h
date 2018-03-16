@@ -261,7 +261,9 @@ public:
     // Delete file specified by @p_path.
     static bool deleteFile(const QString &p_path);
 
-    static QString displayDateTime(const QDateTime &p_dateTime);
+    // @p_uniformNum: if true, we use YYYY/MM/DD HH:mm:ss form, which is good for
+    // sorting.
+    static QString displayDateTime(const QDateTime &p_dateTime, bool p_uniformNum = false);
 
     // Check if file @p_name exists in @p_dir.
     // @p_forceCaseInsensitive: if true, will check the name ignoring the case.

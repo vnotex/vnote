@@ -1166,7 +1166,7 @@ void VDirectoryTree::sortItems(VDirectory *p_dir)
     for (int i = 0; i < dirs.size(); ++i) {
         const VDirectory *dir = dirs[i];
         Q_ASSERT(dir->isOpened());
-        QString createdTime = VUtils::displayDateTime(dir->getCreatedTimeUtc().toLocalTime());
+        QString createdTime = VUtils::displayDateTime(dir->getCreatedTimeUtc().toLocalTime(), true);
         QStringList cols;
         cols << dir->getName() << createdTime;
         QTreeWidgetItem *item = new QTreeWidgetItem(tree, cols);
