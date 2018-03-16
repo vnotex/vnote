@@ -169,18 +169,10 @@ div.mermaid-diagram {
     color: #6C6C6C;
 }
 
-pre.mermaid-diagram {
-    overflow-y: hidden;
-}
-
 div.flowchart-diagram {
     overflow-y: hidden;
     background: #B0BEC5;
     color: #6C6C6C;
-}
-
-pre.flowchart-diagram {
-    overflow-y: hidden;
 }
 
 .img-package {

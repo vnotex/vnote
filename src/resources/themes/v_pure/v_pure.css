@@ -173,15 +173,7 @@ div.mermaid-diagram {
     overflow-y: hidden;
 }
 
-pre.mermaid-diagram {
-    overflow-y: hidden;
-}
-
 div.flowchart-diagram {
-    overflow-y: hidden;
-}
-
-pre.flowchart-diagram {
     overflow-y: hidden;
 }
 

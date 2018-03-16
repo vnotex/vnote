@@ -536,8 +536,7 @@ var renderMermaidOne = function(code) {
     graphDiv.classList.add(VMermaidDivClass);
     graphDiv.innerHTML = graph;
     var preNode = code.parentNode;
-    preNode.classList.add(VMermaidDivClass);
-    preNode.replaceChild(graphDiv, code);
+    preNode.parentNode.replaceChild(graphDiv, preNode);
     return true;
 };
 
@@ -582,19 +581,19 @@ var renderFlowchartOne = function(code) {
     graphDiv.id = 'flowchart-diagram-' + flowchartIdx;
     graphDiv.classList.add(VFlowchartDivClass);
     var preNode = code.parentNode;
-    preNode.replaceChild(graphDiv, code);
+    var preParentNode = preNode.parentNode;
+    preParentNode.replaceChild(graphDiv, preNode);
 
     // Draw on it after adding it to page.
     try {
         graph.drawSVG(graphDiv.id);
     } catch (err) {
         content.setLog("err: " + err);
-        preNode.replaceChild(code, graphDiv);
+        preParentNode.replaceChild(preNode, graphDiv);
         delete graphDiv;
         return false;
     }
 
-    preNode.classList.add(VMermaidDivClass);
     return true;
 };
 
