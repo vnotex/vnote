@@ -32,7 +32,9 @@ var updateHtml = function(html) {
                     --i;
                     continue;
                 }
-            } else if (VEnableFlowchart && code.classList.contains('language-flowchart')) {
+            } else if (VEnableFlowchart
+                       && (code.classList.contains('language-flowchart')
+                           || code.classList.contains('language-flow'))) {
                 // Flowchart code block.
                 if (renderFlowchartOne(code)) {
                     // replaceChild() will decrease codes.length.

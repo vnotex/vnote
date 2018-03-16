@@ -543,7 +543,7 @@ var renderMermaidOne = function(code) {
 var flowchartIdx = 0;
 
 // @className, the class name of the flowchart code block, such as 'lang-flowchart'.
-var renderFlowchart = function(className) {
+var renderFlowchart = function(classNames) {
     if (!VEnableFlowchart) {
         return;
     }
@@ -552,7 +552,15 @@ var renderFlowchart = function(className) {
     flowchartIdx = 0;
     for (var i = 0; i < codes.length; ++i) {
         var code = codes[i];
-        if (code.classList.contains(className)) {
+        var matched = false;
+        for (var j = 0; j < classNames.length; ++j) {
+            if (code.classList.contains(classNames[j])) {
+                matched = true;
+                break;
+            }
+        }
+
+        if (matched) {
             if (renderFlowchartOne(code, flowchartIdx)) {
                 // replaceChild() will decrease codes.length.
                 --i;
@@ -1156,4 +1164,11 @@ var calculateWordCount = function() {
     }
 
     content.updateWordCountInfo(wc, cns, cc);
+};
+
+// Whether it is a special code block, such as MathJax, Mermaid, or Flowchart.
+var specialCodeBlock = function(lang) {
+    return (VEnableMathjax && lang == 'mathjax')
+           || (VEnableMermaid && lang == 'mermaid')
+           || (VEnableFlowchart && (lang == 'flowchart' || lang == 'flow'));
 };

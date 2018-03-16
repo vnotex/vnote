@@ -17,10 +17,7 @@ renderer.heading = function(text, level) {
 // Highlight.js to highlight code block
 marked.setOptions({
     highlight: function(code, lang) {
-        if (lang
-            && (!VEnableMathjax || lang != 'mathjax')
-            && (!VEnableMermaid || lang != 'mermaid')
-            && (!VEnableFlowchart || lang != 'flowchart')) {
+        if (lang && !specialCodeBlock(lang)) {
             if (hljs.getLanguage(lang)) {
                 return hljs.highlight(lang, code, true).value;
             } else {
@@ -59,7 +56,7 @@ var updateText = function(text) {
     handleToc(needToc);
     insertImageCaption();
     renderMermaid('lang-mermaid');
-    renderFlowchart('lang-flowchart');
+    renderFlowchart(['lang-flowchart', 'lang-flow']);
     addClassToCodeBlock();
     renderCodeBlockLineNumber();
 

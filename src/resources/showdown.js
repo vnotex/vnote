@@ -57,7 +57,9 @@ var highlightCodeBlocks = function(doc, enableMermaid, enableFlowchart, enableMa
             if (enableMermaid && code.classList.contains('language-mermaid')) {
                 // Mermaid code block.
                 continue;
-            } else if (enableFlowchart && code.classList.contains('language-flowchart')) {
+            } else if (enableFlowchart
+                       && (code.classList.contains('language-flowchart')
+                           || code.classList.contains('language-flow'))) {
                 // Flowchart code block.
                 continue;
             } else if (enableMathJax && code.classList.contains('language-mathjax')) {
@@ -84,7 +86,7 @@ var updateText = function(text) {
     insertImageCaption();
     highlightCodeBlocks(document, VEnableMermaid, VEnableFlowchart, VEnableMathjax);
     renderMermaid('language-mermaid');
-    renderFlowchart('language-flowchart');
+    renderFlowchart(['language-flowchart', 'language-flow']);
     addClassToCodeBlock();
     renderCodeBlockLineNumber();
 
