@@ -189,6 +189,12 @@ public:
     static void insertBlock(QTextCursor &p_cursor,
                             bool p_above);
 
+    // Insert @p_str in the front of each line of @p_text.
+    static void insertBeforeEachLine(QString &p_text, const QString &p_str);
+
+    // Whether @p_block is empty.
+    static bool isEmptyBlock(const QTextBlock &p_block);
+
 private:
     VEditUtils() {}
 };

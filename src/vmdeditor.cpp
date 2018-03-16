@@ -3,6 +3,8 @@
 #include <QtWidgets>
 #include <QMenu>
 #include <QDebug>
+#include <QScopedPointer>
+#include <QClipboard>
 
 #include "vdocument.h"
 #include "utils/veditutils.h"
@@ -272,7 +274,7 @@ void VMdEditor::makeBlockVisible(const QTextBlock &p_block)
 
 void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
 {
-    QMenu *menu = createStandardContextMenu();
+    QScopedPointer<QMenu> menu(createStandardContextMenu());
     menu->setToolTipsVisible(true);
 
     VEditTab *editTab = dynamic_cast<VEditTab *>(parent());
@@ -281,11 +283,11 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
         const QList<QAction *> actions = menu->actions();
 
         if (textCursor().hasSelection()) {
-            initCopyAsMenu(actions.isEmpty() ? NULL : actions.last(), menu);
+            initCopyAsMenu(actions.isEmpty() ? NULL : actions.last(), menu.data());
         } else {
             QAction *saveExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/save_exit.svg"),
                                                tr("&Save Changes And Read"),
-                                               menu);
+                                               menu.data());
             saveExitAct->setToolTip(tr("Save changes and exit edit mode"));
             connect(saveExitAct, &QAction::triggered,
                     this, [this]() {
@@ -294,7 +296,7 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
 
             QAction *discardExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/discard_exit.svg"),
                                                   tr("&Discard Changes And Read"),
-                                                  menu);
+                                                  menu.data());
             discardExitAct->setToolTip(tr("Discard changes and exit edit mode"));
             connect(discardExitAct, &QAction::triggered,
                     this, [this]() {
@@ -303,15 +305,20 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
 
             menu->insertAction(actions.isEmpty() ? NULL : actions[0], discardExitAct);
             menu->insertAction(discardExitAct, saveExitAct);
+
+            if (!actions.isEmpty()) {
+                menu->insertSeparator(actions[0]);
+            }
         }
 
-        if (!actions.isEmpty()) {
-            menu->insertSeparator(actions[0]);
+        QClipboard *clipboard = QApplication::clipboard();
+        const QMimeData *mimeData = clipboard->mimeData();
+        if (mimeData->hasText()) {
+            initPasteAsBlockQuoteMenu(menu.data());
         }
     }
 
     menu->exec(p_event->globalPos());
-    delete menu;
 }
 
 void VMdEditor::mousePressEvent(QMouseEvent *p_event)
@@ -1217,6 +1224,44 @@ void VMdEditor::initCopyAsMenu(QAction *p_before, QMenu *p_menu)
         p_menu->insertAction(menuAct, p_before);
         p_menu->insertSeparator(menuAct);
     }
+}
+
+void VMdEditor::initPasteAsBlockQuoteMenu(QMenu *p_menu)
+{
+    QAction *pbqAct = new QAction(tr("Paste As Block &Quote"), p_menu);
+    pbqAct->setToolTip(tr("Paste text from clipboard as block quote"));
+    connect(pbqAct, &QAction::triggered,
+            this, [this]() {
+                QClipboard *clipboard = QApplication::clipboard();
+                const QMimeData *mimeData = clipboard->mimeData();
+                QString text = mimeData->text();
+
+                QTextCursor cursor = textCursor();
+                cursor.removeSelectedText();
+                QTextBlock block = cursor.block();
+                QString indent = VEditUtils::fetchIndentSpaces(block);
+
+                // Insert '> ' in front of each line.
+                VEditUtils::insertBeforeEachLine(text, indent + QStringLiteral("> "));
+
+                if (VEditUtils::isSpaceBlock(block)) {
+                    if (!indent.isEmpty()) {
+                        // Remove the indent.
+                        cursor.movePosition(QTextCursor::StartOfBlock);
+                        cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+                        cursor.removeSelectedText();
+                    }
+                } else {
+                    // Insert a new block.
+                    VEditUtils::insertBlock(cursor, false);
+                }
+
+                cursor.insertText(text);
+                setTextCursor(cursor);
+            });
+
+    p_menu->addSeparator();
+    p_menu->addAction(pbqAct);
 }
 
 void VMdEditor::insertImageLink(const QString &p_text, const QString &p_url)
