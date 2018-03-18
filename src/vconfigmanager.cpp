@@ -1299,7 +1299,7 @@ void VConfigManager::initThemes()
     m_themes.clear();
 
     // Built-in.
-    QString file(":/resources/themes/v_white/v_white.palette");
+    QString file(":/resources/themes/v_native/v_native.palette");
     m_themes.insert(VPalette::themeName(file), file);
     file = ":/resources/themes/v_pure/v_pure.palette";
     m_themes.insert(VPalette::themeName(file), file);

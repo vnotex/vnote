@@ -106,29 +106,6 @@
         <file>resources/icons/reading_modified.svg</file>
         <file>resources/icons/flash_page.svg</file>
         <file>resources/icons/heading.svg</file>
-        <file>resources/themes/v_white/arrow_dropdown.svg</file>
-        <file>resources/themes/v_white/close.svg</file>
-        <file>resources/themes/v_white/close_grey.svg</file>
-        <file>resources/themes/v_white/float.svg</file>
-        <file>resources/themes/v_white/v_white.palette</file>
-        <file>resources/themes/v_white/v_white.qss</file>
-        <file>resources/themes/v_white/branch_closed.svg</file>
-        <file>resources/themes/v_white/branch_end.svg</file>
-        <file>resources/themes/v_white/branch_more.svg</file>
-        <file>resources/themes/v_white/branch_open.svg</file>
-        <file>resources/themes/v_white/line.svg</file>
-        <file>resources/themes/v_white/down.svg</file>
-        <file>resources/themes/v_white/left.svg</file>
-        <file>resources/themes/v_white/right.svg</file>
-        <file>resources/themes/v_white/up.svg</file>
-        <file>resources/themes/v_white/left_disabled.svg</file>
-        <file>resources/themes/v_white/right_disabled.svg</file>
-        <file>resources/themes/v_white/down_disabled.svg</file>
-        <file>resources/themes/v_white/up_disabled.svg</file>
-        <file>resources/themes/v_white/checkbox_checked.svg</file>
-        <file>resources/themes/v_white/checkbox_unchecked.svg</file>
-        <file>resources/themes/v_white/radiobutton_checked.svg</file>
-        <file>resources/themes/v_white/radiobutton_unchecked.svg</file>
         <file>resources/themes/v_pure/arrow_dropdown.svg</file>
         <file>resources/themes/v_pure/branch_closed.svg</file>
         <file>resources/themes/v_pure/branch_end.svg</file>
@@ -152,16 +129,11 @@
         <file>resources/themes/v_pure/up_disabled.svg</file>
         <file>resources/themes/v_pure/v_pure.palette</file>
         <file>resources/themes/v_pure/v_pure.qss</file>
-        <file>resources/themes/v_white/menu_checkbox.svg</file>
-        <file>resources/themes/v_white/menu_radiobutton.svg</file>
         <file>resources/themes/v_pure/menu_checkbox.svg</file>
         <file>resources/themes/v_pure/menu_radiobutton.svg</file>
         <file>resources/themes/v_pure/v_pure.mdhl</file>
-        <file>resources/themes/v_white/v_white.mdhl</file>
-        <file>resources/themes/v_white/v_white.css</file>
         <file>resources/themes/v_pure/v_pure.css</file>
         <file>resources/themes/v_pure/v_pure_codeblock.css</file>
-        <file>resources/themes/v_white/v_white_codeblock.css</file>
         <file>resources/themes/v_material/arrow_dropdown.svg</file>
         <file>resources/themes/v_material/branch_closed.svg</file>
         <file>resources/themes/v_material/branch_end.svg</file>
@@ -238,15 +210,24 @@
         <file>resources/icons/menubar.svg</file>
         <file>resources/export_template.html</file>
         <file>resources/themes/v_pure/v_pure_mermaid.css</file>
-        <file>resources/themes/v_white/v_white_mermaid.css</file>
         <file>resources/themes/v_moonlight/v_moonlight_mermaid.css</file>
         <file>resources/themes/v_moonlight/arrow_dropdown_disabled.svg</file>
         <file>resources/themes/v_pure/arrow_dropdown_disabled.svg</file>
-        <file>resources/themes/v_white/arrow_dropdown_disabled.svg</file>
         <file>resources/icons/clear_search.svg</file>
         <file>resources/icons/search.svg</file>
         <file>resources/icons/search_advanced.svg</file>
         <file>resources/icons/search_console.svg</file>
         <file>resources/icons/note_item.svg</file>
+        <file>resources/themes/v_native/arrow_dropdown.svg</file>
+        <file>resources/themes/v_native/arrow_dropdown_disabled.svg</file>
+        <file>resources/themes/v_native/close.svg</file>
+        <file>resources/themes/v_native/close_grey.svg</file>
+        <file>resources/themes/v_native/float.svg</file>
+        <file>resources/themes/v_native/v_native.css</file>
+        <file>resources/themes/v_native/v_native.mdhl</file>
+        <file>resources/themes/v_native/v_native.palette</file>
+        <file>resources/themes/v_native/v_native.qss</file>
+        <file>resources/themes/v_native/v_native_codeblock.css</file>
+        <file>resources/themes/v_native/v_native_mermaid.css</file>
     </qresource>
 </RCC>

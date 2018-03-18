@@ -166,7 +166,7 @@ void VSearcher::setupUI()
     advLayout->addRow(m_wholeWordOnlyCB);
     advLayout->addRow(m_fuzzyCB);
     advLayout->addRow(m_regularExpressionCB);
-    advLayout->setContentsMargins(0, 0, 0, 0);
+    advLayout->setContentsMargins(0, 0, 3, 0);
 
     m_advWidget = new QWidget(this);
     m_advWidget->setLayout(advLayout);
@@ -194,7 +194,7 @@ void VSearcher::setupUI()
     QHBoxLayout *proLayout = new QHBoxLayout();
     proLayout->addWidget(m_proBar);
     proLayout->addWidget(m_cancelBtn);
-    proLayout->setContentsMargins(0, 0, 0, 0);
+    proLayout->setContentsMargins(0, 0, 3, 0);
 
     // Console.
     m_consoleEdit = new QPlainTextEdit(this);
@@ -219,7 +219,7 @@ void VSearcher::setupUI()
     formLayout->addRow(tr("Scope:"), m_searchScopeCB);
     formLayout->addRow(tr("Object:"), m_searchObjectCB);
     formLayout->addRow(tr("Target:"), m_searchTargetCB);
-    formLayout->setContentsMargins(0, 0, 0, 0);
+    formLayout->setContentsMargins(0, 0, 3, 0);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(btnLayout);
@@ -228,6 +228,7 @@ void VSearcher::setupUI()
     mainLayout->addLayout(proLayout);
     mainLayout->addWidget(m_consoleEdit);
     mainLayout->addWidget(m_results);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
 
     setLayout(mainLayout);
 }
