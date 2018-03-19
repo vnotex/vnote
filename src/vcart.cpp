@@ -50,7 +50,7 @@ void VCart::setupUI()
     btnLayout->addWidget(m_clearBtn);
     btnLayout->addStretch();
     btnLayout->addWidget(m_numLabel);
-    btnLayout->setContentsMargins(0, 0, 3, 0);
+    btnLayout->setContentsMargins(0, 0, 0, 0);
 
     m_itemList = new QListWidget();
     m_itemList->setAttribute(Qt::WA_MacShowFocusRect, false);
@@ -65,7 +65,7 @@ void VCart::setupUI()
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(btnLayout);
     mainLayout->addWidget(m_itemList);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setContentsMargins(3, 0, 3, 0);
 
     setLayout(mainLayout);
 }

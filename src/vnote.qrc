@@ -229,5 +229,13 @@
         <file>resources/themes/v_native/v_native.qss</file>
         <file>resources/themes/v_native/v_native_codeblock.css</file>
         <file>resources/themes/v_native/v_native_mermaid.css</file>
+        <file>resources/themes/v_pure/checkbox_checked_disabled.svg</file>
+        <file>resources/themes/v_pure/checkbox_unchecked_disabled.svg</file>
+        <file>resources/themes/v_pure/radiobutton_checked_disabled.svg</file>
+        <file>resources/themes/v_pure/radiobutton_unchecked_disabled.svg</file>
+        <file>resources/themes/v_moonlight/checkbox_checked_disabled.svg</file>
+        <file>resources/themes/v_moonlight/checkbox_unchecked_disabled.svg</file>
+        <file>resources/themes/v_moonlight/radiobutton_checked_disabled.svg</file>
+        <file>resources/themes/v_moonlight/radiobutton_unchecked_disabled.svg</file>
     </qresource>
 </RCC>

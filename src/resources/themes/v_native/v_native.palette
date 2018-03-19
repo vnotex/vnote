@@ -7,15 +7,12 @@ mdhl_file=v_native.mdhl
 css_file=v_native.css
 codeblock_css_file=v_native_codeblock.css
 mermaid_css_file=v_native_mermaid.css
-version=5
+version=6
 
 [phony]
 ; Abstract color attributes.
 base_fg=#000000
 base_bg=#F5F5F5
-
-main_fg=#000000
-main_bg=#F5F5F5
 
 title_fg=#000000
 title_bg=#DADBDB
@@ -25,12 +22,6 @@ hover_bg=#C0C0C0
 
 selected_fg=#000000
 selected_bg=#BCBCBC
-
-active_fg=#000000
-active_bg=#C0C0C0
-
-inactive_fg=#000000
-inactive_bg=#D3D3D3
 
 focus_fg=#000000
 focus_bg=#A9A9A9
@@ -46,9 +37,6 @@ border_bg=#C0C0C0
 
 content_fg=#000000
 content_bg=#FFFFFF
-
-selection_fg=#000000
-selection_bg=#64b5f6
 
 icon_fg=#222222
 icon_disabled_fg=@disabled_fg

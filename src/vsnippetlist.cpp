@@ -66,7 +66,7 @@ void VSnippetList::setupUI()
     btnLayout->addWidget(m_locateBtn);
     btnLayout->addStretch();
     btnLayout->addWidget(m_numLabel);
-    btnLayout->setContentsMargins(0, 0, 3, 0);
+    btnLayout->setContentsMargins(0, 0, 0, 0);
 
     m_snippetList = new QListWidget();
     m_snippetList->setAttribute(Qt::WA_MacShowFocusRect, false);
@@ -80,7 +80,7 @@ void VSnippetList::setupUI()
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(btnLayout);
     mainLayout->addWidget(m_snippetList);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setContentsMargins(3, 0, 3, 0);
 
     setLayout(mainLayout);
 }
