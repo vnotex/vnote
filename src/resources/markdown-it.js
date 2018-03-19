@@ -36,7 +36,7 @@ var getHeadingLevel = function(h) {
 }
 
 // There is a VMarkdownitOption struct passed in.
-// var VMarkdownitOption = { html, breaks, linkify };
+// var VMarkdownitOption = { html, breaks, linkify, sub, sup };
 var mdit = window.markdownit({
     html: VMarkdownitOption.html,
     breaks: VMarkdownitOption.breaks,
@@ -74,10 +74,15 @@ mdit = mdit.use(window.markdownitHeadingAnchor, {
 });
 
 mdit = mdit.use(window.markdownitTaskLists);
-/*
-mdit = mdit.use(window.markdownitSub);
-mdit = mdit.use(window.markdownitSup);
-*/
+
+if (VMarkdownitOption.sub) {
+    mdit = mdit.use(window.markdownitSub);
+}
+
+if (VMarkdownitOption.sup) {
+    mdit = mdit.use(window.markdownitSup);
+}
+
 mdit = mdit.use(window.markdownitFootnote);
 
 var mdHasTocSection = function(markdown) {

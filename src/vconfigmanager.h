@@ -34,19 +34,6 @@ struct VExternalEditor
 };
 
 
-struct MarkdownitOption
-{
-    MarkdownitOption(bool p_html, bool p_breaks, bool p_linkify)
-        : m_html(p_html), m_breaks(p_breaks), m_linkify(p_linkify)
-    {
-    }
-
-    bool m_html;
-    bool m_breaks;
-    bool m_linkify;
-};
-
-
 // Type of heading sequence.
 enum class HeadingSequenceType
 {
@@ -328,7 +315,7 @@ public:
 
     int getToolBarIconSize() const;
 
-    MarkdownitOption getMarkdownitOption() const;
+    const MarkdownitOption &getMarkdownitOption() const;
     void setMarkdownitOption(const MarkdownitOption &p_opt);
 
     const QString &getRecycleBinFolder() const;
@@ -774,14 +761,8 @@ private:
     // Icon size of tool bar in pixels.
     int m_toolBarIconSize;
 
-    // Eanble HTML tags in source.
-    bool m_markdownitOptHtml;
-
-    // Convert '\n' in paragraphs into <br>.
-    bool m_markdownitOptBreaks;
-
-    // Auto-convert URL-like text to links.
-    bool m_markdownitOptLinkify;
+    // Markdown-it option.
+    MarkdownitOption m_markdownItOpt;
 
     // Default name of the recycle bin folder of notebook.
     QString m_recycleBinFolder;
@@ -1808,35 +1789,19 @@ inline int VConfigManager::getToolBarIconSize() const
     return m_toolBarIconSize;
 }
 
-inline MarkdownitOption VConfigManager::getMarkdownitOption() const
+inline const MarkdownitOption &VConfigManager::getMarkdownitOption() const
 {
-    return MarkdownitOption(m_markdownitOptHtml,
-                            m_markdownitOptBreaks,
-                            m_markdownitOptLinkify);
+    return m_markdownItOpt;
 }
 
 inline void VConfigManager::setMarkdownitOption(const MarkdownitOption &p_opt)
 {
-    if (m_markdownitOptHtml != p_opt.m_html) {
-        m_markdownitOptHtml = p_opt.m_html;
-        setConfigToSettings("global",
-                            "markdownit_opt_html",
-                            m_markdownitOptHtml);
+    if (m_markdownItOpt == p_opt) {
+        return;
     }
 
-    if (m_markdownitOptBreaks != p_opt.m_breaks) {
-        m_markdownitOptBreaks = p_opt.m_breaks;
-        setConfigToSettings("global",
-                            "markdownit_opt_breaks",
-                            m_markdownitOptBreaks);
-    }
-
-    if (m_markdownitOptLinkify != p_opt.m_linkify) {
-        m_markdownitOptLinkify = p_opt.m_linkify;
-        setConfigToSettings("global",
-                            "markdownit_opt_linkify",
-                            m_markdownitOptLinkify);
-    }
+    m_markdownItOpt = p_opt;
+    setConfigToSettings("web", "markdownit_opt", m_markdownItOpt.toConfig());
 }
 
 inline const QString &VConfigManager::getRecycleBinFolder() const

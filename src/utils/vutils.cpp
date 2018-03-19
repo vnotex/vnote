@@ -644,19 +644,30 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
         extraFile = "<script src=\"qrc" + VNote::c_markdownitExtraFile + "\"></script>\n" +
                     "<script src=\"qrc" + VNote::c_markdownitAnchorExtraFile + "\"></script>\n" +
                     "<script src=\"qrc" + VNote::c_markdownitTaskListExtraFile + "\"></script>\n" +
-                    /*
-                    "<script src=\"qrc" + VNote::c_markdownitSubExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_markdownitSupExtraFile + "\"></script>\n" +
-                    */
                     "<script src=\"qrc" + VNote::c_markdownitFootnoteExtraFile + "\"></script>\n";
 
-        MarkdownitOption opt = g_config->getMarkdownitOption();
+        const MarkdownitOption &opt = g_config->getMarkdownitOption();
+
+        if (opt.m_sup) {
+            extraFile += "<script src=\"qrc" + VNote::c_markdownitSupExtraFile + "\"></script>\n";
+        }
+
+        if (opt.m_sub) {
+            extraFile += "<script src=\"qrc" + VNote::c_markdownitSubExtraFile + "\"></script>\n";
+        }
+
         QString optJs = QString("<script>var VMarkdownitOption = {"
-                                "html: %1, breaks: %2, linkify: %3};"
+                                "html: %1,\n"
+                                "breaks: %2,\n"
+                                "linkify: %3,\n"
+                                "sub: %4,\n"
+                                "sup: %5 };\n"
                                 "</script>\n")
-                               .arg(opt.m_html ? "true" : "false")
-                               .arg(opt.m_breaks ? "true" : "false")
-                               .arg(opt.m_linkify ? "true" : "false");
+                               .arg(opt.m_html ? QStringLiteral("true") : QStringLiteral("false"))
+                               .arg(opt.m_breaks ? QStringLiteral("true") : QStringLiteral("false"))
+                               .arg(opt.m_linkify ? QStringLiteral("true") : QStringLiteral("false"))
+                               .arg(opt.m_sub ? QStringLiteral("true") : QStringLiteral("false"))
+                               .arg(opt.m_sup ? QStringLiteral("true") : QStringLiteral("false"));
         extraFile += optJs;
         break;
     }

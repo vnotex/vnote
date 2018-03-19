@@ -1523,7 +1523,7 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
     QMenu *optMenu = p_menu->addMenu(tr("Markdown-it Options"));
     optMenu->setToolTipsVisible(true);
 
-    MarkdownitOption opt = g_config->getMarkdownitOption();
+    const MarkdownitOption &opt = g_config->getMarkdownitOption();
 
     QAction *htmlAct = new QAction(tr("HTML"), this);
     htmlAct->setToolTip(tr("Enable HTML tags in source"));
@@ -1558,9 +1558,33 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
                 g_config->setMarkdownitOption(opt);
             });
 
+    QAction *supAct = new QAction(tr("Superscript"), this);
+    supAct->setToolTip(tr("Enable superscript via ^^"));
+    supAct->setCheckable(true);
+    supAct->setChecked(opt.m_sup);
+    connect(supAct, &QAction::triggered,
+            this, [this](bool p_checked) {
+                MarkdownitOption opt = g_config->getMarkdownitOption();
+                opt.m_sup = p_checked;
+                g_config->setMarkdownitOption(opt);
+            });
+
+    QAction *subAct = new QAction(tr("Subscript"), this);
+    subAct->setToolTip(tr("Enable subscript via ~~"));
+    subAct->setCheckable(true);
+    subAct->setChecked(opt.m_sub);
+    connect(subAct, &QAction::triggered,
+            this, [this](bool p_checked) {
+                MarkdownitOption opt = g_config->getMarkdownitOption();
+                opt.m_sub = p_checked;
+                g_config->setMarkdownitOption(opt);
+            });
+
     optMenu->addAction(htmlAct);
     optMenu->addAction(breaksAct);
     optMenu->addAction(linkifyAct);
+    optMenu->addAction(supAct);
+    optMenu->addAction(subAct);
 }
 
 void VMainWindow::initRenderBackgroundMenu(QMenu *menu)

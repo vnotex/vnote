@@ -217,14 +217,8 @@ void VConfigManager::initialize()
     m_toolBarIconSize = getConfigFromSettings("global",
                                               "tool_bar_icon_size").toInt();
 
-    m_markdownitOptHtml = getConfigFromSettings("global",
-                                                "markdownit_opt_html").toBool();
-
-    m_markdownitOptBreaks = getConfigFromSettings("global",
-                                                  "markdownit_opt_breaks").toBool();
-
-    m_markdownitOptLinkify = getConfigFromSettings("global",
-                                                   "markdownit_opt_linkify").toBool();
+    m_markdownItOpt = MarkdownitOption::fromConfig(getConfigFromSettings("web",
+                                                                         "markdownit_opt").toStringList());
 
     m_recycleBinFolder = getConfigFromSettings("global",
                                                "recycle_bin_folder").toString();
