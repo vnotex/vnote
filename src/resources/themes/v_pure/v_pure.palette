@@ -47,7 +47,7 @@ active_fg=@selected_fg
 active_bg=@selected_bg
 
 inactive_fg=@selected_fg
-inactive_bg=#B2DFDB
+inactive_bg=#99CFCA
 
 focus_fg=@base_fg
 focus_bg=#BDBDBD
@@ -107,7 +107,7 @@ template_title_flash_dark_fg=@master_bg
 
 ; Search hit items in list or tree view.
 search_hit_item_fg=@selected_fg
-search_hit_item_bg=@master_light_bg
+search_hit_item_bg=#CCE7E4
 
 [widgets]
 ; Widget color attributes.

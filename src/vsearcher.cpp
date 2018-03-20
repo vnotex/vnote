@@ -248,7 +248,6 @@ void VSearcher::initUIFields()
     // Object.
     m_searchObjectCB->addItem(tr("Name"), VSearchConfig::Name);
     m_searchObjectCB->addItem(tr("Content"), VSearchConfig::Content);
-    m_searchObjectCB->addItem(tr("Outline"), VSearchConfig::Outline);
     m_searchObjectCB->setCurrentIndex(m_searchObjectCB->findData(config.m_object));
 
     // Target.
