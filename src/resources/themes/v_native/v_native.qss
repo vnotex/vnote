@@ -309,7 +309,7 @@ QComboBox#NotebookSelector {
     font-size: 13pt;
     padding-top: 3px;
     padding-bottom: 3px;
-    icon-size: 30px;
+    icon-size: $30px;
     background: @combobox_bg;
 }
 
@@ -320,33 +320,33 @@ QComboBox#NotebookSelector:focus {
 QComboBox#NotebookSelector::drop-down {
     subcontrol-origin: padding;
     subcontrol-position: top right;
-    width: 20px;
+    width: $20px;
     border: none;
     background: transparent;
 }
 
 QComboBox#NotebookSelector::down-arrow {
     image: url(arrow_dropdown.svg);
-    width: 20px;
-    height: 20px;
+    width: $20px;
+    height: $20px;
 }
 
 QComboBox#NotebookSelector::down-arrow:disabled {
     image: url(arrow_dropdown_disabled.svg);
-    width: 20px;
-    height: 20px;
+    width: $20px;
+    height: $20px;
 }
 
 QComboBox#NotebookSelector QListWidget {
     border: 1px solid @combobox_view_border;
     background-color: @combobox_bg;
     font-size: 13pt;
-    icon-size: 30px;
+    icon-size: $30px;
 }
 
 QComboBox#NotebookSelector QListWidget::item {
-    padding-top: 10px;
-    padding-bottom: 10px;
+    padding-top: $10px;
+    padding-bottom: $10px;
 }
 
 QComboBox#NotebookSelector QListWidget::item:hover {
@@ -454,7 +454,7 @@ QTabBar::close-button:hover {
 
 VSelectorItemWidget QLabel[SelectorItemShortcutLabel="true"] {
     font: bold;
-    border: 2px solid @selectoritem_border;
+    border: $2px solid @selectoritem_border;
     padding: 3px;
     border-radius: 5px;
     background-color: @selectoritem_bg;
@@ -498,11 +498,11 @@ QSplitter::handle {
 }
 
 QSplitter::handle:vertical {
-    height: 2px;
+    height: $2px;
 }
 
 QSplitter::handle:horizontal {
-    width: 2px;
+    width: $2px;
 }
 /* End QSplitter */
 

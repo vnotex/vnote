@@ -117,6 +117,7 @@ QString VPalette::fetchQtStyleSheet() const
     fillStyle(style);
     fillAbsoluteUrl(style);
     fillFontFamily(style);
+    fillScaledSize(style);
 
     return style;
 }
@@ -302,5 +303,33 @@ void VPalette::fillFontFamily(QString &p_text) const
         } else {
             pos = idx + reg.matchedLength();
         }
+    }
+}
+
+void VPalette::fillScaledSize(QString &p_text) const
+{
+    // Cap(2) is the number string.
+    QRegExp reg("(\\s|:)\\$(\\d+)(?=\\D)");
+    const qreal factor = VUtils::calculateScaleFactor();
+
+    int pos = 0;
+    while (pos < p_text.size()) {
+        int idx = p_text.indexOf(reg, pos);
+        if (idx == -1) {
+            break;
+        }
+
+        QString str = reg.cap(2);
+        bool ok;
+        int val = str.toInt(&ok);
+        if (!ok) {
+            pos = idx + reg.matchedLength();
+            continue;
+        }
+
+        val = val * factor + 0.5;
+        QString newStr = QString("%1%2").arg(reg.cap(1)).arg(val);
+        p_text.replace(idx, reg.matchedLength(), newStr);
+        pos = idx + newStr.size();
     }
 }

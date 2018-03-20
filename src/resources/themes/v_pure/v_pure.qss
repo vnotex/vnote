@@ -15,7 +15,7 @@ QWidget#FindReplaceTitleWidget {
 }
 
 QWidget[ToolBoxTitle="true"] {
-    border-bottom: 2px solid @toolbox_title_border;
+    border-bottom: $2px solid @toolbox_title_border;
 }
 
 QWidget[MainEditor="true"] {
@@ -37,8 +37,8 @@ QMainWindow {
 
 QMainWindow::separator {
     background: @dock_separator_bg;
-    width: 2px;
-    height: 2px;
+    width: $2px;
+    height: $2px;
 }
 
 QMainWindow::separator:hover {
@@ -132,11 +132,11 @@ QToolBar::separator {
 
 /* QToolButton */
 QToolButton[popupMode="1"] { /* only for MenuButtonPopup */
-    padding-right: 16px; /* make way for the popup button */
+    padding-right: $16px; /* make way for the popup button */
 }
 
 QToolButton[popupMode="2"] { /* only for InstantPopup */
-    padding-right: 10px; /* make way for the popup button */
+    padding-right: $10px; /* make way for the popup button */
 }
 
 QToolButton {
@@ -162,13 +162,13 @@ QToolButton:pressed {
 /* the subcontrols below are used only in the MenuButtonPopup mode */
 QToolButton::menu-button {
     border: none;
-    width: 16px;
+    width: $16px;
 }
 
 QToolButton::menu-arrow {
     image: url(arrow_dropdown.svg);
-    width: 16px;
-    height: 16px;
+    width: $16px;
+    height: $16px;
 }
 /* End QToolButton*/
 
@@ -426,11 +426,11 @@ VButtonMenuItem:disabled {
 /* QComboBox */
 QComboBox#NotebookSelector {
     border: none;
-    border-bottom: 2px solid @combobox_notebookselector_border;
+    border-bottom: $2px solid @combobox_notebookselector_border;
     font-size: 13pt;
     padding-top: 3px;
     padding-bottom: 3px;
-    icon-size: 30px;
+    icon-size: $30px;
     font-weight: bold;
     color: @combobox_notebookselector_fg;
     background: @combobox_notebookselector_bg;
@@ -451,12 +451,12 @@ QComboBox#NotebookSelector QListWidget {
     background-color: @combobox_bg;
     font-size: 13pt;
     font-weight: normal;
-    icon-size: 30px;
+    icon-size: $30px;
 }
 
 QComboBox#NotebookSelector QListWidget::item {
-    padding-top: 10px;
-    padding-bottom: 10px;
+    padding-top: $10px;
+    padding-bottom: $10px;
 }
 
 QComboBox#NotebookSelector QListWidget::item:hover {
@@ -488,21 +488,21 @@ QComboBox:disabled {
 QComboBox::drop-down {
     subcontrol-origin: padding;
     subcontrol-position: top right;
-    width: 20px;
+    width: $20px;
     border: none;
     background: transparent;
 }
 
 QComboBox::down-arrow {
     image: url(arrow_dropdown.svg);
-    width: 20px;
-    height: 20px;
+    width: $20px;
+    height: $20px;
 }
 
 QComboBox::down-arrow:disabled {
     image: url(arrow_dropdown_disabled.svg);
-    width: 20px;
-    height: 20px;
+    width: $20px;
+    height: $20px;
 }
 
 QComboBox QAbstractItemView {
@@ -680,8 +680,8 @@ QTabBar::tab {
     color: @tabbar_fg;
     background: @tabbar_bg;
     border: none;
-    border-top: 2px solid transparent;
-    border-right: 1px solid @tabbar_border;
+    border-top: $2px solid transparent;
+    border-right: $1px solid @tabbar_border;
     padding: 2px 0px 2px 0px;
 }
 
@@ -693,7 +693,7 @@ QTabBar::tab:hover {
 QTabBar::tab:selected {
     color: @tabbar_selected_fg;
     background: @tabbar_selected_bg;
-    border-top: 2px solid @master_bg;
+    border-top: $2px solid @master_bg;
 }
 
 QTabBar::close-button {
@@ -709,7 +709,7 @@ QTabBar::close-button:hover {
 }
 
 QTabBar::scroller {
-    width: 20px;
+    width: $20px;
 }
 
 QTabBar QToolButton {
@@ -735,7 +735,7 @@ QTabBar QToolButton::left-arrow:disabled {
 
 VSelectorItemWidget QLabel[SelectorItemShortcutLabel="true"] {
     font: bold;
-    border: 2px solid @selectoritem_border;
+    border: $2px solid @selectoritem_border;
     padding: 3px;
     border-radius: 5px;
     background-color: @selectoritem_bg;
@@ -751,7 +751,7 @@ VInsertSelector {
 QTreeView[ItemBorder="true"]::item {
     padding-top: 5px;
     padding-bottom: 5px;
-    border-bottom: 1px solid @treeview_item_border_bg;
+    border-bottom: $1px solid @treeview_item_border_bg;
 }
 
 QTreeView[PlainTree="true"]::branch:has-siblings:!adjoins-item {
@@ -891,11 +891,11 @@ QSplitter::handle:pressed {
 }
 
 QSplitter::handle:vertical {
-    height: 2px;
+    height: $2px;
 }
 
 QSplitter::handle:horizontal {
-    width: 2px;
+    width: $2px;
 }
 /* End QSplitter */
 
@@ -918,15 +918,15 @@ QScrollBar::add-page, QScrollBar::sub-page {
 
 QScrollBar:vertical {
     background: @scrollbar_bg;
-    width: 16px;
-    margin: 16px 0px 16px 0px;
-    padding: 0px 2px 0px 2px;
+    width: $16px;
+    margin: $16px 0px $16px 0px;
+    padding: 0px $2px 0px $2px;
     border: none;
 }
 
 QScrollBar::handle:vertical {
     background: @scrollbar_handle_bg;
-    min-height: 16px;
+    min-height: $16px;
 }
 
 QScrollBar::handle:vertical:hover {
@@ -940,8 +940,8 @@ QScrollBar::handle:vertical:pressed {
 QScrollBar::add-line:vertical {
     border: none;
     background: @scrollbar_bg;
-    width: 16px;
-    height: 16px;
+    width: $16px;
+    height: $16px;
     subcontrol-position: bottom;
     subcontrol-origin: margin;
 }
@@ -957,8 +957,8 @@ QScrollBar::add-line:vertical:pressed {
 QScrollBar::sub-line:vertical {
     border: none;
     background: @scrollbar_bg;
-    width: 16px;
-    height: 16px;
+    width: $16px;
+    height: $16px;
     subcontrol-position: top;
     subcontrol-origin: margin;
 }
@@ -973,27 +973,27 @@ QScrollBar::sub-line:vertical:pressed {
 
 QScrollBar::down-arrow:vertical {
     image: url(down.svg);
-    width: 16px;
-    height: 16px;
+    width: $16px;
+    height: $16px;
 }
 
 QScrollBar::up-arrow:vertical {
     image: url(up.svg);
-    width: 16px;
-    height: 16px;
+    width: $16px;
+    height: $16px;
 }
 
 QScrollBar:horizontal {
     background: @scrollbar_bg;
-    height: 16px;
-    margin: 0px 16px 0px 16px;
-    padding: 2px 0px 2px 0px;
+    height: $16px;
+    margin: 0px $16px 0px $16px;
+    padding: $2px 0px $2px 0px;
     border: none;
 }
 
 QScrollBar::handle:horizontal {
     background: @scrollbar_handle_bg;
-    min-width: 16px;
+    min-width: $16px;
 }
 
 QScrollBar::handle:horizontal:hover {
@@ -1007,8 +1007,8 @@ QScrollBar::handle:horizontal:pressed {
 QScrollBar::add-line:horizontal {
     border: none;
     background: @scrollbar_bg;
-    width: 16px;
-    height: 16px;
+    width: $16px;
+    height: $16px;
     subcontrol-position: right;
     subcontrol-origin: margin;
 }
@@ -1024,8 +1024,8 @@ QScrollBar::add-line:horizontal:pressed {
 QScrollBar::sub-line:horizontal {
     border: none;
     background: @scrollbar_bg;
-    width: 16px;
-    height: 16px;
+    width: $16px;
+    height: $16px;
     subcontrol-position: left;
     subcontrol-origin: margin;
 }
@@ -1040,20 +1040,20 @@ QScrollBar::sub-line:horizontal:pressed {
 
 QScrollBar::right-arrow:horizontal {
     image: url(right.svg);
-    width: 16px;
-    height: 16px;
+    width: $16px;
+    height: $16px;
 }
 
 QScrollBar::left-arrow:horizontal {
     image: url(left.svg);
-    width: 16px;
-    height: 16px;
+    width: $16px;
+    height: $16px;
 }
 /* End QScrollBar */
 
 /* QCheckBox */
 QCheckBox {
-    spacing: 5px;
+    spacing: $5px;
 }
 
 QCheckBox:disabled {
@@ -1077,8 +1077,8 @@ QCheckBox::indicator:checked:disabled {
 }
 
 QCheckBox::indicator {
-    width: 20px;
-    height: 20px;
+    width: $20px;
+    height: $20px;
 }
 
 QCheckBox::indicator:focus {
@@ -1096,7 +1096,7 @@ QCheckBox::indicator:pressed {
 
 /* QRadioButton */
 QRadioButton {
-    spacing: 5px;
+    spacing: $5px;
 }
 
 QRadioButton:disabled {
@@ -1120,8 +1120,8 @@ QRadioButton::indicator:checked:disabled {
 }
 
 QRadioButton::indicator {
-    width: 20px;
-    height: 20px;
+    width: $20px;
+    height: $20px;
 }
 
 QRadioButton::indicator:focus {
@@ -1142,8 +1142,8 @@ QSpinBox, QDoubleSpinBox {
     border: 1px solid @spinbox_border;
     color: @spinbox_fg;
     background: @spinbox_bg;
-    padding-right: 25px;
-    min-height: 25px;
+    padding-right: $25px;
+    min-height: $25px;
     selection-color: @spinbox_selection_fg;
     selection-background-color: @spinbox_selection_bg;
 }
@@ -1161,7 +1161,7 @@ QSpinBox:hover, QDoubleSpinBox::hover {
 QSpinBox::up-button, QDoubleSpinBox::up-button {
     subcontrol-origin: border;
     subcontrol-position: top right; /* position at the top right corner */
-    width: 25px;
+    width: $25px;
     border: none;
     background: transparent;
 }
@@ -1176,8 +1176,8 @@ QSpinBox::up-button:pressed, QDoubleSpinBox::up-button:pressed {
 
 QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
     image: url(up.svg);
-    width: 12px;
-    height: 12px;
+    width: $12px;
+    height: $12px;
 }
 
 QSpinBox::up-arrow:disabled, QSpinBox::up-arrow:off, QDoubleSpinBox::up-arrow:disabled, QDoubleSpinBox::up-arrow:off  {
@@ -1187,7 +1187,7 @@ QSpinBox::up-arrow:disabled, QSpinBox::up-arrow:off, QDoubleSpinBox::up-arrow:di
 QSpinBox::down-button, QDoubleSpinBox::down-button {
     subcontrol-origin: border;
     subcontrol-position: bottom right; /* position at the top right corner */
-    width: 25px;
+    width: $25px;
     border: none;
     background: transparent;
 }
@@ -1202,8 +1202,8 @@ QSpinBox::down-button:pressed, QDoubleSpinBox::down-button:pressed {
 
 QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
     image: url(down.svg);
-    width: 12px;
-    height: 12px;
+    width: $12px;
+    height: $12px;
 }
 
 QSpinBox::down-arrow:disabled, QSpinBox::down-arrow:off, QDoubleSpinBox::down-arrow:disabled, QDoubleSpinBox::down-arrow:off {
@@ -1230,14 +1230,14 @@ QHeaderView::section:checked
 /* style the sort indicator */
 QHeaderView::down-arrow {
     image: url(down.svg);
-    width: 12px;
-    height: 12px;
+    width: $12px;
+    height: $12px;
 }
 
 QHeaderView::up-arrow {
     image: url(up.svg);
-    width: 12px;
-    height: 12px;
+    width: $12px;
+    height: $12px;
 }
 /* End QHeaderView */
 
@@ -1249,12 +1249,12 @@ QAbstractScrollArea::corner {
 /* QProgressBar */
 QProgressBar {
     background: @progressbar_bg;
-    border: 1px solid @progressbar_border_bg;
+    border: $1px solid @progressbar_border_bg;
     text-align: center;
 }
 
 QProgressBar::chunk {
     background-color: @progressbar_chunk_bg;
-    width: 20px;
+    width: $20px;
 }
 /* End QProgressBar */
