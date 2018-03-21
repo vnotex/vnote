@@ -7,104 +7,89 @@
 #include "vbuttonwithwidget.h"
 #include "vwordcountinfo.h"
 
-class VWordCountPanel : public QWidget
+VWordCountPanel::VWordCountPanel(QWidget *p_parent)
+    : QWidget(p_parent)
 {
-public:
-    VWordCountPanel(QWidget *p_parent)
-        : QWidget(p_parent)
-    {
-        m_wordLabel = new QLabel();
-        m_wordLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-        m_charWithoutSpacesLabel = new QLabel();
-        m_charWithoutSpacesLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-        m_charWithSpacesLabel = new QLabel();
-        m_charWithSpacesLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_wordLabel = new QLabel();
+    m_wordLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_charWithoutSpacesLabel = new QLabel();
+    m_charWithoutSpacesLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_charWithSpacesLabel = new QLabel();
+    m_charWithSpacesLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
-        QFormLayout *readLayout = new QFormLayout();
-        readLayout->addRow(tr("Words"), m_wordLabel);
-        readLayout->addRow(tr("Characters (no spaces)"), m_charWithoutSpacesLabel);
-        readLayout->addRow(tr("Characters (with spaces)"), m_charWithSpacesLabel);
-        m_readBox = new QGroupBox(tr("Read"));
-        m_readBox->setLayout(readLayout);
+    QFormLayout *readLayout = new QFormLayout();
+    readLayout->addRow(tr("Words"), m_wordLabel);
+    readLayout->addRow(tr("Characters (no spaces)"), m_charWithoutSpacesLabel);
+    readLayout->addRow(tr("Characters (with spaces)"), m_charWithSpacesLabel);
+    m_readBox = new QGroupBox(tr("Read"));
+    m_readBox->setLayout(readLayout);
 
-        m_wordEditLabel = new QLabel();
-        m_wordEditLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-        m_charWithoutSpacesEditLabel = new QLabel();
-        m_charWithoutSpacesEditLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-        m_charWithSpacesEditLabel = new QLabel();
-        m_charWithSpacesEditLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_wordEditLabel = new QLabel();
+    m_wordEditLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_charWithoutSpacesEditLabel = new QLabel();
+    m_charWithoutSpacesEditLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_charWithSpacesEditLabel = new QLabel();
+    m_charWithSpacesEditLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
-        QLabel *cwsLabel = new QLabel(tr("Characters (with spaces)"));
-        cwsLabel->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
+    QLabel *cwsLabel = new QLabel(tr("Characters (with spaces)"));
+    cwsLabel->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
 
-        QFormLayout *editLayout = new QFormLayout();
-        editLayout->addRow(tr("Words"), m_wordEditLabel);
-        editLayout->addRow(tr("Characters (no spaces)"), m_charWithoutSpacesEditLabel);
-        editLayout->addRow(cwsLabel, m_charWithSpacesEditLabel);
-        m_editBox = new QGroupBox(tr("Edit"));
-        m_editBox->setLayout(editLayout);
+    QFormLayout *editLayout = new QFormLayout();
+    editLayout->addRow(tr("Words"), m_wordEditLabel);
+    editLayout->addRow(tr("Characters (no spaces)"), m_charWithoutSpacesEditLabel);
+    editLayout->addRow(cwsLabel, m_charWithSpacesEditLabel);
+    m_editBox = new QGroupBox(tr("Edit"));
+    m_editBox->setLayout(editLayout);
 
-        QLabel *titleLabel = new QLabel(tr("Word Count"));
-        titleLabel->setProperty("TitleLabel", true);
-        QVBoxLayout *mainLayout = new QVBoxLayout();
-        mainLayout->addWidget(titleLabel);
-        mainLayout->addWidget(m_readBox);
-        mainLayout->addWidget(m_editBox);
+    QLabel *titleLabel = new QLabel(tr("Word Count"));
+    titleLabel->setProperty("TitleLabel", true);
+    QVBoxLayout *mainLayout = new QVBoxLayout();
+    mainLayout->addWidget(titleLabel);
+    mainLayout->addWidget(m_readBox);
+    mainLayout->addWidget(m_editBox);
 
-        setLayout(mainLayout);
+    setLayout(mainLayout);
 
-        setMinimumWidth(300);
-    }
+    setMinimumWidth(300);
+}
 
-    void updateReadInfo(const VWordCountInfo &p_readInfo)
-    {
-        if (p_readInfo.isNull()) {
-            m_wordLabel->clear();
-            m_charWithoutSpacesLabel->clear();
-            m_charWithSpacesLabel->clear();
-        } else {
-            m_wordLabel->setText(QString::number(p_readInfo.m_wordCount));
-            m_charWithoutSpacesLabel->setText(QString::number(p_readInfo.m_charWithoutSpacesCount));
-            m_charWithSpacesLabel->setText(QString::number(p_readInfo.m_charWithSpacesCount));
-        }
-    }
-
-    void updateEditInfo(const VWordCountInfo &p_editInfo)
-    {
-        if (p_editInfo.isNull()) {
-            m_wordEditLabel->clear();
-            m_charWithoutSpacesEditLabel->clear();
-            m_charWithSpacesEditLabel->clear();
-        } else {
-            m_wordEditLabel->setText(QString::number(p_editInfo.m_wordCount));
-            m_charWithoutSpacesEditLabel->setText(QString::number(p_editInfo.m_charWithoutSpacesCount));
-            m_charWithSpacesEditLabel->setText(QString::number(p_editInfo.m_charWithSpacesCount));
-        }
-    }
-
-    void clear()
-    {
+void VWordCountPanel::updateReadInfo(const VWordCountInfo &p_readInfo)
+{
+    if (p_readInfo.isNull()) {
         m_wordLabel->clear();
         m_charWithoutSpacesLabel->clear();
         m_charWithSpacesLabel->clear();
+    } else {
+        m_wordLabel->setText(QString::number(p_readInfo.m_wordCount));
+        m_charWithoutSpacesLabel->setText(QString::number(p_readInfo.m_charWithoutSpacesCount));
+        m_charWithSpacesLabel->setText(QString::number(p_readInfo.m_charWithSpacesCount));
+    }
+}
 
+void VWordCountPanel::updateEditInfo(const VWordCountInfo &p_editInfo)
+{
+    if (p_editInfo.isNull()) {
         m_wordEditLabel->clear();
         m_charWithoutSpacesEditLabel->clear();
         m_charWithSpacesEditLabel->clear();
+    } else {
+        m_wordEditLabel->setText(QString::number(p_editInfo.m_wordCount));
+        m_charWithoutSpacesEditLabel->setText(QString::number(p_editInfo.m_charWithoutSpacesCount));
+        m_charWithSpacesEditLabel->setText(QString::number(p_editInfo.m_charWithSpacesCount));
     }
+}
 
-private:
-    QLabel *m_wordLabel;
-    QLabel *m_charWithoutSpacesLabel;
-    QLabel *m_charWithSpacesLabel;
+void VWordCountPanel::clear()
+{
+    m_wordLabel->clear();
+    m_charWithoutSpacesLabel->clear();
+    m_charWithSpacesLabel->clear();
 
-    QLabel *m_wordEditLabel;
-    QLabel *m_charWithoutSpacesEditLabel;
-    QLabel *m_charWithSpacesEditLabel;
+    m_wordEditLabel->clear();
+    m_charWithoutSpacesEditLabel->clear();
+    m_charWithSpacesEditLabel->clear();
+}
 
-    QGroupBox *m_readBox;
-    QGroupBox *m_editBox;
-};
 
 VTabIndicator::VTabIndicator(QWidget *p_parent)
     : QWidget(p_parent),

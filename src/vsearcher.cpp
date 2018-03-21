@@ -185,7 +185,7 @@ void VSearcher::setupUI()
     connect(m_cancelBtn, &QPushButton::clicked,
             this, [this]() {
                 if (m_inSearch) {
-                    appendLogLine(tr("Cancelling the export..."));
+                    appendLogLine(tr("Cancelling the search..."));
                     m_askedToStop = true;
                     m_search.stop();
                 }

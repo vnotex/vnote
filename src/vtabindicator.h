@@ -8,6 +8,33 @@ class QLabel;
 class VButtonWithWidget;
 class VEditTab;
 class VWordCountPanel;
+class QGroupBox;
+
+class VWordCountPanel : public QWidget
+{
+    Q_OBJECT
+public:
+    VWordCountPanel(QWidget *p_parent = nullptr);
+
+    void updateReadInfo(const VWordCountInfo &p_readInfo);
+
+    void updateEditInfo(const VWordCountInfo &p_editInfo);
+
+    void clear();
+
+private:
+    QLabel *m_wordLabel;
+    QLabel *m_charWithoutSpacesLabel;
+    QLabel *m_charWithSpacesLabel;
+
+    QLabel *m_wordEditLabel;
+    QLabel *m_charWithoutSpacesEditLabel;
+    QLabel *m_charWithSpacesEditLabel;
+
+    QGroupBox *m_readBox;
+    QGroupBox *m_editBox;
+};
+
 
 class VTabIndicator : public QWidget
 {
