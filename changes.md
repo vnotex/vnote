@@ -1,4 +1,22 @@
 # Changes History
+## v1.13
+- Replace **v_white** theme with **v_native**, which behaves more like native applications;
+- Support **full-text search**;
+    - Support `&&` and `||` logics (space-separated keywords are treated as AND);
+- Enhanced export;
+    - Support MHTML format;
+    - Support All-In-One PDF via tool *wkhtmltopdf*;
+    - Support *pandoc* and random tool for custom export;
+- Support **Word Count** information in both read and edit mode;
+- Support SavePage action in read mode;
+- Support *back reference* in replace text via `\1`, `\2`, and so on;
+- Support sorting in Cart;
+- Support sorting notes and folders via name or modification date;
+- Support both `flow` and `flowchart` as the language of *flowchart.js* diagram;
+- Add ParsteAsBlockQuote menu action to parste text as block quote from clipboard;
+- Add options for Markdown-it to support subscript and superscript;
+- Better support for 4K display;
+
 ## v1.12
 - Combine `EditNote` and `SaveExitNote` as `EditReadNote` (`Ctrl+T`);
 - Support exporting notes as Markdown, HTML, and PDF;
