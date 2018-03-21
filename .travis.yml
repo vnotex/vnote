@@ -39,8 +39,8 @@ script:
 - if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then ./.travis_macos.sh ; fi
 
 deploy:
-  skip_cleanup: true
   - provider: bintray
+    skip_cleanup: true
     file: "./.linux_bintray.json"
     user: tamlok
     key:
@@ -50,6 +50,7 @@ deploy:
       condition: $TRAVIS_OS_NAME = linux
       branch: master
   - provider: bintray
+    skip_cleanup: true
     file: "./.macos_bintray.json"
     user: tamlok
     key:
