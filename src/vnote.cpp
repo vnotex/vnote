@@ -128,7 +128,9 @@ QString VNote::generateHtmlTemplate(const QString &p_renderBg,
                     "code { word-break: break-all !important; }\n"
                     "div.flowchart-diagram { overflow: hidden !important; }\n"
                     "div.mermaid-diagram { overflow: hidden !important; }\n"
-                    "a { word-break: break-all !important; }\n";
+                    "a { word-break: break-all !important; }\n"
+                    "td.hljs-ln-code { white-space: pre-wrap !important; "
+                                      "word-break: break-all !important; }\n";
         if (!g_config->getEnableImageConstraint()) {
             // Constain the image width by force in PDF, otherwise, the PDF will
             // be cut off.
