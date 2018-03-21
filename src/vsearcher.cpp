@@ -313,9 +313,9 @@ void VSearcher::handleInputChanged()
     readyToSearch = !keyword.isEmpty();
 
     if (readyToSearch) {
-        // Other targets are only available for Name.
+        // Other targets are only available for Name and Path.
         int obj = m_searchObjectCB->currentData().toInt();
-        if (obj != VSearchConfig::Name) {
+        if (obj != VSearchConfig::Name && obj != VSearchConfig::Path) {
             int target = m_searchTargetCB->currentData().toInt();
             if (!(target & VSearchConfig::Note)) {
                 readyToSearch = false;

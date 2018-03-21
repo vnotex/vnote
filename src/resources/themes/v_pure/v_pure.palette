@@ -41,7 +41,7 @@ hover_fg=@base_fg
 hover_bg=#D0D0D0
 
 selected_fg=@base_fg
-selected_bg=#80CBC4
+selected_bg=#7BBAB9
 
 active_fg=@selected_fg
 active_bg=@selected_bg

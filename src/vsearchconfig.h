@@ -203,7 +203,8 @@ struct VSearchConfig
         Name = 0x1UL,
         Content = 0x2UL,
         Outline = 0x4UL,
-        Tag = 0x8UL
+        Tag = 0x8UL,
+        Path = 0x10UL
     };
 
     enum Target

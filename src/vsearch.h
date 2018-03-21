@@ -74,6 +74,8 @@ private:
 
     void searchSecondPhase(const QSharedPointer<VSearchResult> &p_result);
 
+    void removeSlashFromPath(QString &p_path);
+
     bool m_askedToStop;
 
     QSharedPointer<VSearchConfig> m_config;
@@ -82,6 +84,9 @@ private:
 
     // Wildcard reg to for file name pattern.
     QRegExp m_patternReg;
+
+    // Remove slashes.
+    QRegExp m_slashReg;
 };
 
 inline bool VSearch::askedToStop() const
@@ -128,5 +133,10 @@ inline bool VSearch::matchPattern(const QString &p_name) const
     }
 
     return p_name.contains(m_patternReg);
+}
+
+inline void VSearch::removeSlashFromPath(QString &p_path)
+{
+    p_path.remove(m_slashReg);
 }
 #endif // VSEARCH_H

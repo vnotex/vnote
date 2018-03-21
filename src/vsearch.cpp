@@ -1,7 +1,7 @@
 #include "vsearch.h"
 
 #include "utils/vutils.h"
-#include "vfile.h"
+#include "vnotefile.h"
 #include "vdirectory.h"
 #include "vnotebook.h"
 #include "veditarea.h"
@@ -16,6 +16,7 @@ VSearch::VSearch(QObject *p_parent)
       m_askedToStop(false),
       m_engine(NULL)
 {
+    m_slashReg = QRegExp("[\\/]");
 }
 
 QSharedPointer<VSearchResult> VSearch::search(const QVector<VFile *> &p_files)
@@ -152,6 +153,25 @@ void VSearch::searchFirstPhase(VFile *p_file,
         }
     }
 
+    if (testObject(VSearchConfig::Path)) {
+        QString normFilePath;
+        if (p_file->getType() == FileType::Note) {
+            normFilePath = static_cast<VNoteFile *>(p_file)->fetchRelativePath();
+        } else {
+            normFilePath = filePath;
+        }
+
+        removeSlashFromPath(normFilePath);
+        if (matchNonContent(normFilePath)) {
+            VSearchResultItem *item = new VSearchResultItem(VSearchResultItem::Note,
+                                                            VSearchResultItem::LineNumber,
+                                                            name,
+                                                            filePath);
+            QSharedPointer<VSearchResultItem> pitem(item);
+            emit resultItemAdded(pitem);
+        }
+    }
+
     if (testObject(VSearchConfig::Outline)) {
         VSearchResultItem *item = searchForOutline(p_file);
         if (item) {
@@ -190,16 +210,31 @@ void VSearch::searchFirstPhase(VDirectory *p_directory,
         return;
     }
 
-    if (testTarget(VSearchConfig::Folder)
-        && testObject(VSearchConfig::Name)) {
-        QString text = p_directory->getName();
-        if (matchNonContent(text)) {
-            VSearchResultItem *item = new VSearchResultItem(VSearchResultItem::Folder,
-                                                            VSearchResultItem::LineNumber,
-                                                            text,
-                                                            p_directory->fetchPath());
-            QSharedPointer<VSearchResultItem> pitem(item);
-            emit resultItemAdded(pitem);
+    if (testTarget(VSearchConfig::Folder)) {
+        QString name = p_directory->getName();
+        QString dirPath = p_directory->fetchPath();
+        if (testObject(VSearchConfig::Name)) {
+            if (matchNonContent(name)) {
+                VSearchResultItem *item = new VSearchResultItem(VSearchResultItem::Folder,
+                                                                VSearchResultItem::LineNumber,
+                                                                name,
+                                                                dirPath);
+                QSharedPointer<VSearchResultItem> pitem(item);
+                emit resultItemAdded(pitem);
+            }
+        }
+
+        if (testObject(VSearchConfig::Path)) {
+            QString normPath(p_directory->fetchRelativePath());
+            removeSlashFromPath(normPath);
+            if (matchNonContent(normPath)) {
+                VSearchResultItem *item = new VSearchResultItem(VSearchResultItem::Folder,
+                                                                VSearchResultItem::LineNumber,
+                                                                name,
+                                                                dirPath);
+                QSharedPointer<VSearchResultItem> pitem(item);
+                emit resultItemAdded(pitem);
+            }
         }
     }
 
