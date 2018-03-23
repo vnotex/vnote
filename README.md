@@ -5,6 +5,8 @@
 
 [Documentation](http://vnote.readthedocs.io/en/latest/)
 
+[Screenshots](https://tamlok.github.io/vnote/gallery.html)
+
 Designed specially for **Markdown**, **VNote** is a Vim-inspired note-taking application, which knows programmers and Markdown better.
 
 ![VNote](screenshots/vnote.png)
