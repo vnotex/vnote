@@ -72,7 +72,7 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 
 基于Qt框架，VNote能够在主流操作系统上运行，包括 **Linux**, **Windows** 以及 **macOS** 。
 
-![VNote](screenshots/_vnote_1513485003_1746530034.png)
+![VNote Main Interface](screenshots/_vnotemaini_1521763751_1643978501.png)
 
 # 支持
 - [Github issues](https://github.com/tamlok/vnote/issues)；
@@ -81,17 +81,19 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 ![VNote WeChat](screenshots/vnote_md.jpg)
 
 # 亮点
-- 支持直接从剪切板插入图片；
-- 支持编辑和阅读模式下代码块的语法高亮；
-- 支持编辑和阅读模式下的大纲；
-- 支持自定义编辑和阅读模式的样式；
-- 支持Vim模式以及一系列强大的快捷键；
-- 支持无限层级的文件夹；
-- 支持多个标签页和窗口分割；
-- 支持[Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/) 和 [MathJax](https://www.mathjax.org/)；
+- 直接从剪切板插入图片；
+- 编辑和阅读模式下代码块的语法高亮；
+- 编辑和阅读模式下的大纲；
+- 自定义编辑和阅读模式的样式；
+- Vim模式以及一系列强大的快捷键；
+- 无限层级的文件夹；
+- 多个标签页和窗口分割；
+- [Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/) 和 [MathJax](https://www.mathjax.org/)；
 - 支持高分辨率；
-- 支持笔记附件。
-- 支持主题以及深色模式;
+- 笔记附件；
+- 主题以及深色模式；
+- 丰富、可扩展的导出，包括HTML，PDF，和PDF（多合一）；
+- 强大的**全文搜索**；
 
 # 开发VNote的动机
 ## Markdown编辑器与笔记管理

@@ -71,7 +71,7 @@ VNote is **NOT** just a simple editor for Markdown. By providing notes managemen
 
 Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 
-![VNote](screenshots/_vnote_1513485003_1746530034.png)
+![VNote Main Interface](screenshots/_vnotemaini_1521763751_1643978501.png)
 
 # Supports
 - [Github issues](https://github.com/tamlok/vnote/issues);
@@ -80,17 +80,19 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 ![VNote WeChat](screenshots/vnote_md.jpg)
 
 # Highlights
-- Supports inserting images directly from clipboard;
-- Supports syntax highlights of fenced code blocks in both **edit** and **read** mode;
-- Supports outline in both edit and read mode;
-- Supports custom styles in both edit and read mode;
-- Supports Vim mode and a set of powerful shortcuts;
-- Supports infinite levels of folders;
-- Supports multiple tabs and splitting windows;
-- Supports [Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/), and [MathJax](https://www.mathjax.org/);
+- Inserting images directly from clipboard;
+- Syntax highlights of fenced code blocks in both **edit** and **read** mode;
+- Outline in both edit and read mode;
+- Custom styles in both edit and read mode;
+- Vim mode and a set of powerful shortcuts;
+- Infinite levels of folders;
+- Multiple tabs and splitting windows;
+- [Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/), and [MathJax](https://www.mathjax.org/);
 - Supports HiDPI;
-- Supports attachments of notes.
-- Supports themes and dark mode.
+- Attachments of notes;
+- Themes and dark mode;
+- Rich and extensible export, such as HTML, PDF, and PDF (All In One);
+- Powerful **full-text search**.
 
 # Why VNote
 ## Markdown Editor & Notes Management
