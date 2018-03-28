@@ -51,7 +51,7 @@ signals:
     void rowsMoved(int p_first, int p_last, int p_row);
 
 private slots:
-    void handleSearchModeTriggered(bool p_inSearchMode);
+    void handleSearchModeTriggered(bool p_inSearchMode, bool p_focus);
 
     void handleSearchInputTextChanged(const QString &p_text);
 

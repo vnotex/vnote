@@ -1010,7 +1010,10 @@ bool VEditWindow::addEditTab(QWidget *p_widget)
 void VEditWindow::connectEditTab(const VEditTab *p_tab)
 {
     connect(p_tab, &VEditTab::getFocused,
-            this, &VEditWindow::getFocused);
+            this, [this]() {
+                setCurrentWidget(static_cast<VEditTab *>(sender()));
+                emit getFocused();
+            });
     connect(p_tab, &VEditTab::outlineChanged,
             this, &VEditWindow::handleTabOutlineChanged);
     connect(p_tab, &VEditTab::currentHeaderChanged,
@@ -1195,4 +1198,23 @@ void VEditWindow::tabRequestToClose(VEditTab *p_tab)
 int VEditWindow::tabBarHeight() const
 {
     return tabBar()->height();
+}
+
+QVector<TabNavigationInfo> VEditWindow::getTabsNavigationInfo() const
+{
+    QVector<TabNavigationInfo> infos;
+    QTabBar *bar = tabBar();
+    for (int i = 0; i < bar->count(); ++i) {
+        QPoint tl = bar->tabRect(i).topLeft();
+        if (tl.x() < 0 || tl.x() >= bar->width()) {
+            continue;
+        }
+
+        TabNavigationInfo info;
+        info.m_topLeft = bar->mapToParent(tl);
+        info.m_tab = getTab(i);
+        infos.append(info);
+    }
+
+    return infos;
 }

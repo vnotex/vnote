@@ -123,9 +123,9 @@ bool VNavigationMode::handleKeyNavigation(QListWidget *p_widget,
     if (p_secondKey && !keyChar.isNull()) {
         p_secondKey = false;
         p_succeed = true;
-        ret = true;
         auto it = m_keyMap.find(keyChar);
         if (it != m_keyMap.end()) {
+            ret = true;
             p_widget->setCurrentItem(static_cast<QListWidgetItem *>(it.value()),
                                      QItemSelectionModel::ClearAndSelect);
             p_widget->setFocus();
@@ -189,9 +189,9 @@ bool VNavigationMode::handleKeyNavigation(QTreeWidget *p_widget,
     if (p_secondKey && !keyChar.isNull()) {
         p_secondKey = false;
         p_succeed = true;
-        ret = true;
         auto it = m_keyMap.find(keyChar);
         if (it != m_keyMap.end()) {
+            ret = true;
             p_widget->setCurrentItem(static_cast<QTreeWidgetItem *>(it.value()));
             p_widget->setFocus();
         }

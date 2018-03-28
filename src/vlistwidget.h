@@ -36,7 +36,7 @@ public:
     static void sortListWidget(QListWidget *p_list, const QVector<int> &p_sortedIdx);
 
 private slots:
-    void handleSearchModeTriggered(bool p_inSearchMode);
+    void handleSearchModeTriggered(bool p_inSearchMode, bool p_focus);
 
 protected:
     void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;

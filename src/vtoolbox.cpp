@@ -164,9 +164,9 @@ bool VToolBox::handleKeyNavigation(int p_key, bool &p_succeed)
     if (secondKey && !keyChar.isNull()) {
         secondKey = false;
         p_succeed = true;
-        ret = true;
         auto it = m_keyMap.find(keyChar);
         if (it != m_keyMap.end()) {
+            ret = true;
             QWidget *widget = static_cast<QWidget *>(it.value());
             setCurrentWidget(widget);
         }

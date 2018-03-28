@@ -103,7 +103,7 @@ bool VSimpleSearchInput::tryHandleKeyPressEvent(QKeyEvent *p_event)
         }
 
         if (m_inSearchMode) {
-            emit triggered(m_inSearchMode);
+            emit triggered(m_inSearchMode, false);
 
             clearSearch();
             m_searchEdit->setFocus();
@@ -120,7 +120,7 @@ bool VSimpleSearchInput::tryHandleKeyPressEvent(QKeyEvent *p_event)
             || (key == Qt::Key_BracketLeft
                 && VUtils::isControlModifierForVim(modifiers))) {
             m_inSearchMode = false;
-            emit triggered(m_inSearchMode);
+            emit triggered(m_inSearchMode, true);
             return true;
         }
     }
@@ -132,7 +132,7 @@ bool VSimpleSearchInput::tryHandleKeyPressEvent(QKeyEvent *p_event)
 
         if (!m_inSearchMode) {
             m_inSearchMode = true;
-            emit triggered(m_inSearchMode);
+            emit triggered(m_inSearchMode, false);
             m_searchEdit->setFocus();
 
             m_obj->highlightHitItems(m_hitItems);
@@ -189,7 +189,7 @@ bool VSimpleSearchInput::eventFilter(QObject *p_watched, QEvent *p_event)
         QFocusEvent *eve = static_cast<QFocusEvent *>(p_event);
         if (eve->reason() != Qt::ActiveWindowFocusReason) {
             m_inSearchMode = false;
-            emit triggered(m_inSearchMode);
+            emit triggered(m_inSearchMode, false);
         }
     }
 

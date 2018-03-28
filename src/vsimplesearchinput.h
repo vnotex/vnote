@@ -53,7 +53,8 @@ public:
 
 signals:
     // Search mode is triggered.
-    void triggered(bool p_inSearchMode);
+    // @p_focus: whether the widget containing this input should get focus.
+    void triggered(bool p_inSearchMode, bool p_focus);
 
     void inputTextChanged(const QString &p_text);
 

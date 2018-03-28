@@ -254,7 +254,7 @@ void VSearcher::initUIFields()
     m_searchTargetCB->addItem(tr("Note"), VSearchConfig::Note);
     m_searchTargetCB->addItem(tr("Folder"), VSearchConfig::Folder);
     m_searchTargetCB->addItem(tr("Notebook"), VSearchConfig::Notebook);
-    m_searchTargetCB->addItem(tr("All"),
+    m_searchTargetCB->addItem(tr("Note/Folder/Notebook"),
                               VSearchConfig::Note
                               | VSearchConfig:: Folder
                               | VSearchConfig::Notebook);

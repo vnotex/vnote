@@ -743,23 +743,28 @@ void VEditArea::showNavigation()
     for (auto label : m_naviLabels) {
         delete label;
     }
+
     m_naviLabels.clear();
 
     if (!isVisible()) {
         return;
     }
 
-    // Generate labels for VEditWindow.
-    for (int i = 0; i < 26 && i < splitter->count(); ++i) {
-        QChar key('a' + i);
-        m_keyMap[key] = getWindow(i);
-
-        QString str = QString(m_majorKey) + key;
-        QLabel *label = new QLabel(str, this);
-        label->setStyleSheet(g_vnote->getNavigationLabelStyle(str));
-        label->move(getWindow(i)->geometry().topLeft());
-        label->show();
-        m_naviLabels.append(label);
+    // Generate labels for VEDitTab.
+    int charIdx = 0;
+    for (int i = 0; charIdx < 26 && i < splitter->count(); ++i) {
+        VEditWindow *win = getWindow(i);
+        QVector<TabNavigationInfo> tabInfos = win->getTabsNavigationInfo();
+        for (int j = 0; charIdx < 26 && j < tabInfos.size(); ++j, ++charIdx) {
+            QChar key('a' + charIdx);
+            m_keyMap[key] = tabInfos[j].m_tab;
+            QString str = QString(m_majorKey) + key;
+            QLabel *label = new QLabel(str, win);
+            label->setStyleSheet(g_vnote->getNavigationLabelStyle(str));
+            label->show();
+            label->move(tabInfos[j].m_topLeft);
+            m_naviLabels.append(label);
+        }
     }
 }
 
@@ -769,6 +774,7 @@ void VEditArea::hideNavigation()
     for (auto label : m_naviLabels) {
         delete label;
     }
+
     m_naviLabels.clear();
 }
 
@@ -781,11 +787,10 @@ bool VEditArea::handleKeyNavigation(int p_key, bool &p_succeed)
     if (secondKey && !keyChar.isNull()) {
         secondKey = false;
         p_succeed = true;
-        ret = true;
         auto it = m_keyMap.find(keyChar);
         if (it != m_keyMap.end()) {
-            setCurrentWindow(splitter->indexOf(static_cast<VEditWindow *>(it.value())),
-                                               true);
+            ret = true;
+            static_cast<VEditTab *>(it.value())->focusTab();
         }
     } else if (keyChar == m_majorKey) {
         // Major key pressed.
@@ -797,6 +802,7 @@ bool VEditArea::handleKeyNavigation(int p_key, bool &p_succeed)
         }
         ret = true;
     }
+
     return ret;
 }
 

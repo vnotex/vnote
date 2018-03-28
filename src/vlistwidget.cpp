@@ -79,11 +79,14 @@ void VListWidget::resizeEvent(QResizeEvent *p_event)
                                      m_searchInput->height()));
 }
 
-void VListWidget::handleSearchModeTriggered(bool p_inSearchMode)
+void VListWidget::handleSearchModeTriggered(bool p_inSearchMode, bool p_focus)
 {
     setSearchInputVisible(p_inSearchMode);
     if (!p_inSearchMode) {
         clearItemsHighlight();
+    }
+
+    if (p_focus) {
         setFocus();
     }
 }

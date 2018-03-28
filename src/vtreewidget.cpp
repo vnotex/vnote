@@ -101,12 +101,14 @@ void VTreeWidget::resizeEvent(QResizeEvent *p_event)
                                      m_searchInput->height()));
 }
 
-void VTreeWidget::handleSearchModeTriggered(bool p_inSearchMode)
+void VTreeWidget::handleSearchModeTriggered(bool p_inSearchMode, bool p_focus)
 {
     setSearchInputVisible(p_inSearchMode);
     if (!p_inSearchMode) {
         clearItemsHighlight();
+    }
 
+    if (p_focus) {
         setFocus();
     }
 }

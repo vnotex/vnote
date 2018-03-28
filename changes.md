@@ -13,7 +13,7 @@
 - Support sorting in Cart;
 - Support sorting notes and folders via name or modification date;
 - Support both `flow` and `flowchart` as the language of *flowchart.js* diagram;
-- Add ParsteAsBlockQuote menu action to parste text as block quote from clipboard;
+- Add PasteAsBlockQuote menu action to paste text as block quote from clipboard;
 - Add options for Markdown-it to support subscript and superscript;
 - Better support for 4K display;
 

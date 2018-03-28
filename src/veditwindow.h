@@ -15,6 +15,16 @@ class QPushButton;
 class QActionGroup;
 class VEditArea;
 
+// Tab info for navigation mode.
+struct TabNavigationInfo
+{
+    // Top left of the tab relative to edit window.
+    QPoint m_topLeft;
+
+    VEditTab *m_tab;
+};
+
+
 class VEditWindow : public QTabWidget
 {
     Q_OBJECT
@@ -84,6 +94,8 @@ public:
     void saveAll();
 
     int tabBarHeight() const;
+
+    QVector<TabNavigationInfo> getTabsNavigationInfo() const;
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
