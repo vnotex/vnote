@@ -1105,3 +1105,14 @@ void VEditArea::handleFileTimerTimeout()
         }
     }
 }
+
+QRect VEditArea::editAreaRect() const
+{
+    QRect rt = rect();
+    int nrWin = splitter->count();
+    if (nrWin > 0) {
+        rt.setTopLeft(QPoint(0, getWindow(0)->tabBarHeight()));
+    }
+
+    return rt;
+}

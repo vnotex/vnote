@@ -117,7 +117,8 @@ SOURCES += main.cpp\
     vsearcher.cpp \
     vsearch.cpp \
     vsearchresulttree.cpp \
-    vsearchengine.cpp
+    vsearchengine.cpp \
+    vuniversalentry.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -224,7 +225,8 @@ HEADERS  += vmainwindow.h \
     vsearchresulttree.h \
     isearchengine.h \
     vsearchconfig.h \
-    vsearchengine.h
+    vsearchengine.h \
+    vuniversalentry.h
 
 RESOURCES += \
     vnote.qrc \

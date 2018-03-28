@@ -29,10 +29,10 @@ VCaptain::VCaptain(QWidget *p_parent)
 
     // Register Captain mode leader key.
     // This can fix the Input Method blocking issue.
-    QShortcut *shortcut = new QShortcut(QKeySequence(g_config->getShortcutKeySequence("CaptainMode")),
-                                        this);
-    shortcut->setContext(Qt::ApplicationShortcut);
-    connect(shortcut, &QShortcut::activated,
+    m_captainModeShortcut = new QShortcut(QKeySequence(g_config->getShortcutKeySequence("CaptainMode")),
+                                          this);
+    m_captainModeShortcut->setContext(Qt::ApplicationShortcut);
+    connect(m_captainModeShortcut, &QShortcut::activated,
             this, &VCaptain::trigger);
 
     // Register Navigation mode as Captain mode target.
@@ -279,4 +279,9 @@ bool VCaptain::handleKeyPressCaptainMode(int p_key,
     }
 
     return true;
+}
+
+void VCaptain::setCaptainModeEnabled(bool p_enabled)
+{
+    m_captainModeShortcut->setEnabled(p_enabled);
 }

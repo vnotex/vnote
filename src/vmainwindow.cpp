@@ -39,6 +39,7 @@
 #include "vcart.h"
 #include "dialog/vexportdialog.h"
 #include "vsearcher.h"
+#include "vuniversalentry.h"
 
 extern VConfigManager *g_config;
 
@@ -64,7 +65,8 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
       m_guard(p_guard),
       m_windowOldState(Qt::WindowNoState),
       m_requestQuit(false),
-      m_printer(NULL)
+      m_printer(NULL),
+      m_ue(NULL)
 {
     qsrand(QDateTime::currentDateTime().toTime_t());
 
@@ -145,7 +147,7 @@ void VMainWindow::registerCaptainAndNavigationTargets()
     m_captain->registerNavigationTarget(notebookSelector);
     m_captain->registerNavigationTarget(directoryTree);
     m_captain->registerNavigationTarget(m_fileList);
-    m_captain->registerNavigationTarget(editArea);
+    m_captain->registerNavigationTarget(m_editArea);
     m_captain->registerNavigationTarget(m_toolBox);
     m_captain->registerNavigationTarget(outline);
     m_captain->registerNavigationTarget(m_snippetList);
@@ -205,11 +207,11 @@ void VMainWindow::setupUI()
     m_fileList = new VFileList();
     m_fileList->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
-    editArea = new VEditArea();
-    editArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    m_findReplaceDialog = editArea->getFindReplaceDialog();
-    m_fileList->setEditArea(editArea);
-    directoryTree->setEditArea(editArea);
+    m_editArea = new VEditArea();
+    m_editArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_findReplaceDialog = m_editArea->getFindReplaceDialog();
+    m_fileList->setEditArea(m_editArea);
+    directoryTree->setEditArea(m_editArea);
 
     // Main Splitter
     m_mainSplitter = new QSplitter();
@@ -217,7 +219,7 @@ void VMainWindow::setupUI()
     m_mainSplitter->addWidget(directoryPanel);
     m_mainSplitter->addWidget(m_fileList);
     setTabOrder(directoryTree, m_fileList->getContentWidget());
-    m_mainSplitter->addWidget(editArea);
+    m_mainSplitter->addWidget(m_editArea);
     m_mainSplitter->setStretchFactor(0, 0);
     m_mainSplitter->setStretchFactor(1, 0);
     m_mainSplitter->setStretchFactor(2, 1);
@@ -226,10 +228,10 @@ void VMainWindow::setupUI()
     connect(directoryTree, &VDirectoryTree::currentDirectoryChanged,
             m_fileList, &VFileList::setDirectory);
     connect(directoryTree, &VDirectoryTree::directoryUpdated,
-            editArea, &VEditArea::handleDirectoryUpdated);
+            m_editArea, &VEditArea::handleDirectoryUpdated);
 
     connect(notebookSelector, &VNotebookSelector::notebookUpdated,
-            editArea, &VEditArea::handleNotebookUpdated);
+            m_editArea, &VEditArea::handleNotebookUpdated);
     connect(notebookSelector, &VNotebookSelector::notebookCreated,
             directoryTree, [this](const QString &p_name, bool p_import) {
                 Q_UNUSED(p_name);
@@ -239,16 +241,16 @@ void VMainWindow::setupUI()
             });
 
     connect(m_fileList, &VFileList::fileClicked,
-            editArea, &VEditArea::openFile);
+            m_editArea, &VEditArea::openFile);
     connect(m_fileList, &VFileList::fileCreated,
-            editArea, &VEditArea::openFile);
+            m_editArea, &VEditArea::openFile);
     connect(m_fileList, &VFileList::fileUpdated,
-            editArea, &VEditArea::handleFileUpdated);
-    connect(editArea, &VEditArea::tabStatusUpdated,
+            m_editArea, &VEditArea::handleFileUpdated);
+    connect(m_editArea, &VEditArea::tabStatusUpdated,
             this, &VMainWindow::handleAreaTabStatusUpdated);
-    connect(editArea, &VEditArea::statusMessage,
+    connect(m_editArea, &VEditArea::statusMessage,
             this, &VMainWindow::showStatusMessage);
-    connect(editArea, &VEditArea::vimStatusUpdated,
+    connect(m_editArea, &VEditArea::vimStatusUpdated,
             this, &VMainWindow::handleVimStatusUpdated);
     connect(m_findReplaceDialog, &VFindReplaceDialog::findTextChanged,
             this, &VMainWindow::handleFindDialogTextChanged);
@@ -705,7 +707,7 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     VUtils::fixTextWithCaptainShortcut(m_discardExitAct, "DiscardAndRead");
     m_discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
     connect(m_discardExitAct, &QAction::triggered,
-            editArea, &VEditArea::readFile);
+            m_editArea, &VEditArea::readFile);
 
     updateEditReadAct(NULL);
 
@@ -720,7 +722,7 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     }
 
     connect(saveNoteAct, &QAction::triggered,
-            editArea, &VEditArea::saveFile);
+            m_editArea, &VEditArea::saveFile);
 
     newRootDirAct->setEnabled(false);
     newNoteAct->setEnabled(false);
@@ -778,7 +780,7 @@ void VMainWindow::initHelpMenu()
             this, [this](){
                 QString docFile = VUtils::getDocFile(VNote::c_markdownGuideDocFile);
                 VFile *file = vnote->getOrphanFile(docFile, false, true);
-                editArea->openFile(file, OpenFileMode::Read);
+                m_editArea->openFile(file, OpenFileMode::Read);
             });
 
     QAction *docAct = new QAction(tr("&Documentation"), this);
@@ -1306,12 +1308,12 @@ void VMainWindow::initToolsDock()
 
     // Outline tree.
     outline = new VOutline(this);
-    connect(editArea, &VEditArea::outlineChanged,
+    connect(m_editArea, &VEditArea::outlineChanged,
             outline, &VOutline::updateOutline);
-    connect(editArea, &VEditArea::currentHeaderChanged,
+    connect(m_editArea, &VEditArea::currentHeaderChanged,
             outline, &VOutline::updateCurrentHeader);
     connect(outline, &VOutline::outlineItemActivated,
-            editArea, &VEditArea::scrollToHeader);
+            m_editArea, &VEditArea::scrollToHeader);
 
     // Snippets.
     m_snippetList = new VSnippetList(this);
@@ -2196,7 +2198,7 @@ void VMainWindow::closeEvent(QCloseEvent *event)
         QVector<VFileSessionInfo> fileInfos;
         QVector<VEditTabInfo> tabs;
         if (saveOpenedNotes) {
-            tabs = editArea->getAllTabsInfo();
+            tabs = m_editArea->getAllTabsInfo();
 
             fileInfos.reserve(tabs.size());
 
@@ -2215,7 +2217,7 @@ void VMainWindow::closeEvent(QCloseEvent *event)
             }
         }
 
-        if (!editArea->closeAllFiles(false)) {
+        if (!m_editArea->closeAllFiles(false)) {
             // Fail to close all the opened files, cancel closing app.
             event->ignore();
             return;
@@ -2380,7 +2382,7 @@ void VMainWindow::handleFindDialogTextChanged(const QString &p_text, uint /* p_o
 
 void VMainWindow::openFindDialog()
 {
-    m_findReplaceDialog->openDialog(editArea->getSelectedText());
+    m_findReplaceDialog->openDialog(m_editArea->getSelectedText());
 }
 
 void VMainWindow::viewSettings()
@@ -2392,7 +2394,7 @@ void VMainWindow::viewSettings()
 void VMainWindow::closeCurrentFile()
 {
     if (m_curFile) {
-        editArea->closeFile(m_curFile, false);
+        m_editArea->closeFile(m_curFile, false);
     }
 }
 
@@ -2454,7 +2456,7 @@ void VMainWindow::shortcutsHelp()
 {
     QString docFile = VUtils::getDocFile(VNote::c_shortcutsDocFile);
     VFile *file = vnote->getOrphanFile(docFile, false, true);
-    editArea->openFile(file, OpenFileMode::Read);
+    m_editArea->openFile(file, OpenFileMode::Read);
 }
 
 void VMainWindow::printNote()
@@ -2549,7 +2551,7 @@ bool VMainWindow::tryOpenInternalFile(const QString &p_filePath)
         VFile *file = vnote->getInternalFile(p_filePath);
 
         if (file) {
-            editArea->openFile(file, OpenFileMode::Read);
+            m_editArea->openFile(file, OpenFileMode::Read);
             return true;
         }
     }
@@ -2572,7 +2574,7 @@ void VMainWindow::openFiles(const QStringList &p_files,
             file = vnote->getOrphanFile(p_files[i], true);
         }
 
-        editArea->openFile(file, p_mode, p_forceMode);
+        m_editArea->openFile(file, p_mode, p_forceMode);
     }
 }
 
@@ -2667,7 +2669,7 @@ void VMainWindow::openStartupPages()
     {
         QVector<VFileSessionInfo> files = g_config->getLastOpenedFiles();
         qDebug() << "open" << files.size() << "last opened files";
-        editArea->openFiles(files);
+        m_editArea->openFiles(files);
         break;
     }
 
@@ -2788,7 +2790,7 @@ bool VMainWindow::closeFileByCaptain(void *p_target, void *p_data)
     VMainWindow *obj = static_cast<VMainWindow *>(p_target);
     obj->closeCurrentFile();
 
-    QWidget *nextFocus = obj->editArea->getCurrentTab();
+    QWidget *nextFocus = obj->m_editArea->getCurrentTab();
     if (nextFocus) {
         nextFocus->setFocus();
     } else {
@@ -2845,6 +2847,15 @@ void VMainWindow::initShortcuts()
         closeNoteShortcut->setContext(Qt::WidgetWithChildrenShortcut);
         connect(closeNoteShortcut, &QShortcut::activated,
                 this, &VMainWindow::closeCurrentFile);
+    }
+
+    keySeq = g_config->getShortcutKeySequence("UniversalEntry");
+    qDebug() << "set UniversalEntry shortcut to" << keySeq;
+    if (!keySeq.isEmpty()) {
+        QShortcut *ueShortcut = new QShortcut(QKeySequence(keySeq), this);
+        ueShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+        connect(ueShortcut, &QShortcut::activated,
+                this, &VMainWindow::activateUniversalEntry);
     }
 }
 
@@ -3091,10 +3102,10 @@ void VMainWindow::toggleEditReadMode()
 
     if (m_curTab->isEditMode()) {
         // Save changes and read.
-        editArea->saveAndReadFile();
+        m_editArea->saveAndReadFile();
     } else {
         // Edit.
-        editArea->editFile();
+        m_editArea->editFile();
     }
 }
 
@@ -3153,4 +3164,35 @@ void VMainWindow::handleExportAct()
 VNotebook *VMainWindow::getCurrentNotebook() const
 {
     return notebookSelector->currentNotebook();
+}
+
+void VMainWindow::activateUniversalEntry()
+{
+    if (!m_ue) {
+        m_ue = new VUniversalEntry(this);
+        m_ue->hide();
+        m_ue->setWindowFlags(Qt::Popup
+                             | Qt::FramelessWindowHint
+                             | Qt::NoDropShadowWindowHint);
+        connect(m_ue, &VUniversalEntry::exited,
+                this, [this]() {
+                    m_captain->setCaptainModeEnabled(true);
+                });
+    }
+
+    m_captain->setCaptainModeEnabled(false);
+
+    // Move it to the top left corner of edit area.
+    QPoint topLeft = m_editArea->mapToGlobal(QPoint(0, 0));
+    QRect eaRect = m_editArea->editAreaRect();
+    topLeft += eaRect.topLeft();
+
+    // Use global position.
+    m_ue->move(topLeft);
+
+    eaRect.moveTop(0);
+    m_ue->setAvailableRect(eaRect);
+
+    m_ue->show();
+    m_ue->raise();
 }

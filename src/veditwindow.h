@@ -83,6 +83,8 @@ public:
     // Auto save file.
     void saveAll();
 
+    int tabBarHeight() const;
+
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
 

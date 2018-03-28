@@ -83,6 +83,9 @@ public:
     // Record a closed file in the stack.
     void recordClosedFile(const VFileSessionInfo &p_file);
 
+    // Return the rect not containing the tab bar.
+    QRect editAreaRect() const;
+
 signals:
     // Emit when current window's tab status updated.
     void tabStatusUpdated(const VEditTabInfo &p_info);

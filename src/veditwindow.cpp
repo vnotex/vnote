@@ -1191,3 +1191,8 @@ void VEditWindow::tabRequestToClose(VEditTab *p_tab)
         p_tab->deleteLater();
     }
 }
+
+int VEditWindow::tabBarHeight() const
+{
+    return tabBar()->height();
+}

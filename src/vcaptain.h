@@ -43,6 +43,8 @@ public:
                                void *p_target,
                                CaptainFunc p_func);
 
+    void setCaptainModeEnabled(bool p_enabled);
+
 signals:
     // Emit when mode changed.
     void captainModeChanged(bool p_captainMode);
@@ -171,6 +173,8 @@ private:
 
     // Ignore focus change during handling Captain and Navigation target actions.
     bool m_ignoreFocusChange;
+
+    QShortcut *m_captainModeShortcut;
 };
 
 inline void VCaptain::setMode(CaptainMode p_mode)
@@ -182,5 +186,4 @@ inline bool VCaptain::checkMode(CaptainMode p_mode) const
 {
     return m_mode == p_mode;
 }
-
 #endif // VCAPTAIN_H

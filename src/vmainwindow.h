@@ -41,6 +41,7 @@ class VSnippetList;
 class VCart;
 class VSearcher;
 class QPrinter;
+class VUniversalEntry;
 
 enum class PanelViewState
 {
@@ -182,6 +183,9 @@ private slots:
 
     void toggleEditReadMode();
 
+    // Activate Universal Entry.
+    void activateUniversalEntry();
+
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 
@@ -231,6 +235,7 @@ private:
     void initEditorLineNumberMenu(QMenu *p_menu);
 
     void initEditorStyleMenu(QMenu *p_emnu);
+
     void updateWindowTitle(const QString &str);
 
     void initVimCmd();
@@ -323,7 +328,7 @@ private:
     // Move directory and file panel in one compact vertical split.
     QSplitter *m_naviSplitter;
 
-    VEditArea *editArea;
+    VEditArea *m_editArea;
 
     QDockWidget *m_toolDock;
 
@@ -433,6 +438,8 @@ private:
 
     QPrinter *m_printer;
 
+    VUniversalEntry *m_ue;
+
     // Interval of the shared memory timer in ms.
     static const int c_sharedMemTimerInterval;
 };
@@ -444,7 +451,7 @@ inline VFileList *VMainWindow::getFileList() const
 
 inline VEditArea *VMainWindow::getEditArea() const
 {
-    return editArea;
+    return m_editArea;
 }
 
 inline VCaptain *VMainWindow::getCaptain() const
