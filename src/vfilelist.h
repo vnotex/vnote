@@ -166,8 +166,14 @@ private:
 
     void activateItem(QListWidgetItem *p_item, bool p_restoreFocus = false);
 
+    void updateNumberLabel() const;
+
     VEditArea *editArea;
+
     VListWidget *fileList;
+
+    QLabel *m_numLabel;
+
     QPointer<VDirectory> m_directory;
 
     // Magic number for clipboard operations.

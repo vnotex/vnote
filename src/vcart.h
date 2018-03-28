@@ -51,6 +51,8 @@ private:
 
     QString getFilePath(const QListWidgetItem *p_item) const;
 
+    void updateNumberLabel() const;
+
     QPushButton *m_clearBtn;
     QLabel *m_numLabel;
     QListWidget *m_itemList;

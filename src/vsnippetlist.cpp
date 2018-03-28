@@ -39,6 +39,8 @@ VSnippetList::VSnippetList(QWidget *p_parent)
     }
 
     updateContent();
+
+    updateNumberLabel();
 }
 
 void VSnippetList::setupUI()
@@ -394,13 +396,12 @@ void VSnippetList::updateContent()
 
     int cnt = m_snippetList->count();
     if (cnt > 0) {
-        m_numLabel->setText(tr("%1 %2").arg(cnt)
-                                       .arg(cnt > 1 ? tr("Snippets") : tr("Snippet")));
         m_snippetList->setFocus();
     } else {
-        m_numLabel->setText("");
         m_addBtn->setFocus();
     }
+
+    updateNumberLabel();
 }
 
 bool VSnippetList::addSnippet(const VSnippet &p_snippet, QString *p_errMsg)
@@ -622,4 +623,11 @@ void VSnippetList::focusInEvent(QFocusEvent *p_event)
     } else {
         m_snippetList->setFocus();
     }
+}
+
+void VSnippetList::updateNumberLabel() const
+{
+    int cnt = m_snippetList->count();
+    m_numLabel->setText(tr("%1 %2").arg(cnt)
+                                   .arg(cnt > 1 ? tr("Items") : tr("Item")));
 }

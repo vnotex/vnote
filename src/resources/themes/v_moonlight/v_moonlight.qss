@@ -6,10 +6,6 @@ QToolTip
 }
 
 /* QWidget */
-QWidget[NotebookPanel="true"] {
-    padding-left: 3px;
-}
-
 QWidget#FindReplaceTitleWidget {
     background: @title_bg;
 }

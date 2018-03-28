@@ -56,10 +56,24 @@ VFileList::VFileList(QWidget *parent)
                     fileList->setFocus();
                 }
             });
+
+    updateNumberLabel();
 }
 
 void VFileList::setupUI()
 {
+    QLabel *titleLabel = new QLabel(tr("Notes"), this);
+    titleLabel->setProperty("TitleLabel", true);
+
+    m_numLabel = new QLabel(this);
+
+    QHBoxLayout *titleLayout = new QHBoxLayout();
+    titleLayout->addWidget(titleLabel);
+    titleLayout->addStretch();
+    titleLayout->addWidget(m_numLabel);
+
+    titleLayout->setContentsMargins(0, 0, 0, 0);
+
     fileList = new VListWidget(this);
     fileList->setContextMenuPolicy(Qt::CustomContextMenu);
     fileList->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -67,6 +81,7 @@ void VFileList::setupUI()
     fileList->setAttribute(Qt::WA_MacShowFocusRect, false);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->addLayout(titleLayout);
     mainLayout->addWidget(fileList);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
@@ -198,6 +213,7 @@ void VFileList::setDirectory(VDirectory *p_directory)
     if (m_directory == p_directory) {
         if (!m_directory) {
             fileList->clearAll();
+            updateNumberLabel();
         }
 
         return;
@@ -206,6 +222,7 @@ void VFileList::setDirectory(VDirectory *p_directory)
     m_directory = p_directory;
     if (!m_directory) {
         fileList->clearAll();
+        updateNumberLabel();
         return;
     }
 
@@ -224,6 +241,8 @@ void VFileList::updateFileList()
         VNoteFile *file = files[i];
         insertFileListItem(file);
     }
+
+    updateNumberLabel();
 }
 
 void VFileList::fileInfo()
@@ -1187,4 +1206,11 @@ void VFileList::handleOpenWithActionTriggered()
             process->start(cmd);
         }
     }
+}
+
+void VFileList::updateNumberLabel() const
+{
+    int cnt = fileList->count();
+    m_numLabel->setText(tr("%1 %2").arg(cnt)
+                                   .arg(cnt > 1 ? tr("Items") : tr("Item")));
 }

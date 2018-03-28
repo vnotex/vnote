@@ -87,6 +87,8 @@ private:
 
     bool deleteSnippetFile(const VSnippet &p_snippet, QString *p_errMsg = nullptr);
 
+    void updateNumberLabel() const;
+
     QPushButton *m_addBtn;
     QPushButton *m_locateBtn;
     QLabel *m_numLabel;

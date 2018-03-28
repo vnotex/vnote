@@ -315,8 +315,6 @@ private:
 
     VCaptain *m_captain;
 
-    QLabel *notebookLabel;
-    QLabel *directoryLabel;
     VNotebookSelector *notebookSelector;
     VFileList *m_fileList;
     VDirectoryTree *directoryTree;

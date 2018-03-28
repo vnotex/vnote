@@ -276,22 +276,18 @@ void VMainWindow::setupUI()
 QWidget *VMainWindow::setupDirectoryPanel()
 {
     // Notebook selector.
-    notebookLabel = new QLabel(tr("Notebooks"));
+    QLabel *notebookLabel = new QLabel(tr("Notebooks"));
     notebookLabel->setProperty("TitleLabel", true);
-    notebookLabel->setProperty("NotebookPanel", true);
 
     notebookSelector = new VNotebookSelector();
     notebookSelector->setObjectName("NotebookSelector");
-    notebookSelector->setProperty("NotebookPanel", true);
     notebookSelector->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
 
     // Navigation panel.
-    directoryLabel = new QLabel(tr("Folders"));
+    QLabel *directoryLabel = new QLabel(tr("Folders"));
     directoryLabel->setProperty("TitleLabel", true);
-    directoryLabel->setProperty("NotebookPanel", true);
 
     directoryTree = new VDirectoryTree;
-    directoryTree->setProperty("NotebookPanel", true);
 
     QVBoxLayout *naviLayout = new QVBoxLayout;
     naviLayout->addWidget(directoryLabel);
@@ -318,10 +314,9 @@ QWidget *VMainWindow::setupDirectoryPanel()
     nbLayout->addWidget(notebookLabel);
     nbLayout->addWidget(notebookSelector);
     nbLayout->addWidget(m_naviSplitter);
-    nbLayout->setContentsMargins(0, 0, 0, 0);
+    nbLayout->setContentsMargins(3, 0, 0, 0);
     nbLayout->setSpacing(0);
     QWidget *nbContainer = new QWidget();
-    nbContainer->setObjectName("NotebookPanel");
     nbContainer->setLayout(nbLayout);
     nbContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 

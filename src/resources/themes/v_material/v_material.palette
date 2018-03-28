@@ -6,7 +6,7 @@ qss_file=v_material.qss
 mdhl_file=v_material.mdhl
 css_file=v_material.css
 codeblock_css_file=v_material_codeblock.css
-vsersion=1
+version=2
 
 [phony]
 ; Abstract color attributes.

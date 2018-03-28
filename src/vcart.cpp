@@ -19,6 +19,8 @@ VCart::VCart(QWidget *p_parent)
 {
     setupUI();
 
+    updateNumberLabel();
+
     initActions();
 }
 
@@ -40,6 +42,7 @@ void VCart::setupUI()
                                                   MessageBoxType::Danger);
                     if (ret == QMessageBox::Ok) {
                         m_itemList->clear();
+                        updateNumberLabel();
                     }
                 }
             });
@@ -158,14 +161,7 @@ void VCart::addItem(const QString &p_path)
     item->setData(Qt::UserRole, p_path);
 
     m_itemList->addItem(item);
-
-    int cnt = m_itemList->count();
-    if (cnt > 0) {
-        m_numLabel->setText(tr("%1 %2").arg(cnt)
-                                       .arg(cnt > 1 ? tr("Items") : tr("Item")));
-    } else {
-        m_numLabel->setText("");
-    }
+    updateNumberLabel();
 }
 
 void VCart::deleteSelectedItems()
@@ -262,4 +258,11 @@ void VCart::sortItems()
 
         VListWidget::sortListWidget(m_itemList, sortedIdx);
     }
+}
+
+void VCart::updateNumberLabel() const
+{
+    int cnt = m_itemList->count();
+    m_numLabel->setText(tr("%1 %2").arg(cnt)
+                                   .arg(cnt > 1 ? tr("Items") : tr("Item")));
 }
