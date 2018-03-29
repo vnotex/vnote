@@ -29,6 +29,8 @@ VSearcher::VSearcher(QWidget *p_parent)
       m_askedToStop(false),
       m_search(this)
 {
+    qRegisterMetaType<QList<QSharedPointer<VSearchResultItem>>>("QList<QSharedPointer<VSearchResultItem>>");
+
     setupUI();
 
     initUIFields();
@@ -36,7 +38,17 @@ VSearcher::VSearcher(QWidget *p_parent)
     handleInputChanged();
 
     connect(&m_search, &VSearch::resultItemAdded,
-            m_results, &VSearchResultTree::addResultItem);
+            this, [this](const QSharedPointer<VSearchResultItem> &p_item) {
+                // Not sure if it works.
+                QCoreApplication::sendPostedEvents(NULL, QEvent::MouseButtonRelease);
+                m_results->addResultItem(p_item);
+            });
+    connect(&m_search, &VSearch::resultItemsAdded,
+            this, [this](const QList<QSharedPointer<VSearchResultItem> > &p_items) {
+                // Not sure if it works.
+                QCoreApplication::sendPostedEvents(NULL, QEvent::MouseButtonRelease);
+                m_results->addResultItems(p_items);
+            });
     connect(&m_search, &VSearch::finished,
             this, &VSearcher::handleSearchFinished);
 }
@@ -351,6 +363,8 @@ void VSearcher::startSearch()
 
     updateItemToComboBox(m_keywordCB);
     updateItemToComboBox(m_filePatternCB);
+
+    m_search.clear();
 
     QSharedPointer<VSearchConfig> config(new VSearchConfig(m_searchScopeCB->currentData().toInt(),
                                                            m_searchObjectCB->currentData().toInt(),

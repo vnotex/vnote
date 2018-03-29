@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QVector>
+#include <QList>
 
 #include "vsearchconfig.h"
 
@@ -16,6 +17,11 @@ public:
     {
     }
 
+    virtual ~ISearchEngine()
+    {
+        m_result.clear();
+    }
+
     virtual void search(const QSharedPointer<VSearchConfig> &p_config,
                         const QSharedPointer<VSearchResult> &p_result) = 0;
 
@@ -26,7 +32,7 @@ public:
 signals:
     void finished(const QSharedPointer<VSearchResult> &p_result);
 
-    void resultItemAdded(const QSharedPointer<VSearchResultItem> &p_item);
+    void resultItemsAdded(const QList<QSharedPointer<VSearchResultItem> > &p_items);
 
 protected:
     QSharedPointer<VSearchResult> m_result;

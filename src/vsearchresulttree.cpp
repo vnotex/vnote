@@ -78,6 +78,15 @@ void VSearchResultTree::addResultItem(const QSharedPointer<VSearchResultItem> &p
     emit countChanged(topLevelItemCount());
 }
 
+void VSearchResultTree::addResultItems(const QList<QSharedPointer<VSearchResultItem> > &p_items)
+{
+    for (auto const & it : p_items) {
+        appendItem(it);
+    }
+
+    emit countChanged(topLevelItemCount());
+}
+
 void VSearchResultTree::clearResults()
 {
     clearAll();

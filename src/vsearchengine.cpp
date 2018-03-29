@@ -32,6 +32,8 @@ void VSearchEngineWorker::run()
     QMimeDatabase mimeDatabase;
     m_state = VSearchState::Busy;
 
+    m_results.clear();
+    int nr = 0;
     for (auto const & fileName : m_files) {
         if (m_stop.load() == 1) {
             m_state = VSearchState::Cancelled;
@@ -47,9 +49,16 @@ void VSearchEngineWorker::run()
 
         VSearchResultItem *item = searchFile(fileName);
         if (item) {
-            emit resultItemReady(item);
+            m_results.append(QSharedPointer<VSearchResultItem>(item));
+        }
+
+        if (++nr >= BATCH_ITEM_SIZE) {
+            nr = 0;
+            postAndClearResults();
         }
     }
+
+    postAndClearResults();
 
     if (m_state == VSearchState::Busy) {
         m_state = VSearchState::Success;
@@ -122,11 +131,25 @@ VSearchResultItem *VSearchEngineWorker::searchFile(const QString &p_fileName)
     return item;
 }
 
+void VSearchEngineWorker::postAndClearResults()
+{
+    if (!m_results.isEmpty()) {
+        emit resultItemsReady(m_results);
+        m_results.clear();
+    }
+}
+
 
 VSearchEngine::VSearchEngine(QObject *p_parent)
     : ISearchEngine(p_parent),
       m_finishedWorkers(0)
 {
+}
+
+VSearchEngine::~VSearchEngine()
+{
+    stop();
+    clear();
 }
 
 void VSearchEngine::search(const QSharedPointer<VSearchConfig> &p_config,
@@ -168,9 +191,9 @@ void VSearchEngine::search(const QSharedPointer<VSearchConfig> &p_config,
                     p_config->m_contentToken);
         connect(th, &VSearchEngineWorker::finished,
                 this, &VSearchEngine::handleWorkerFinished);
-        connect(th, &VSearchEngineWorker::resultItemReady,
-                this, [this](VSearchResultItem *p_item) {
-                    emit resultItemAdded(QSharedPointer<VSearchResultItem>(p_item));
+        connect(th, &VSearchEngineWorker::resultItemsReady,
+                this, [this](const QList<QSharedPointer<VSearchResultItem> > &p_items) {
+                    emit resultItemsAdded(p_items);
                 });
 
         m_workers.append(th);

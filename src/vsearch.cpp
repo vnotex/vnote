@@ -442,8 +442,8 @@ void VSearch::searchSecondPhase(const QSharedPointer<VSearchResult> &p_result)
     if (m_engine) {
         connect(m_engine, &ISearchEngine::finished,
                 this, &VSearch::finished);
-        connect(m_engine, &ISearchEngine::resultItemAdded,
-                this, &VSearch::resultItemAdded);
+        connect(m_engine, &ISearchEngine::resultItemsAdded,
+                this, &VSearch::resultItemsAdded);
     }
 }
 

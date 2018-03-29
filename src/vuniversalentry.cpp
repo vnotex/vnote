@@ -102,6 +102,8 @@ void VUniversalEntry::setupUI()
 {
     m_cmdEdit = new VMetaWordLineEdit(this);
     m_cmdEdit->setPlaceholderText(tr("Welcome to Universal Entry"));
+    m_cmdEdit->setCtrlKEnabled(false);
+    m_cmdEdit->setCtrlEEnabled(false);
     connect(m_cmdEdit, &VMetaWordLineEdit::textEdited,
             this, [this]() {
                 m_cmdTimer->stop();
@@ -135,6 +137,9 @@ void VUniversalEntry::hideEvent(QHideEvent *p_event)
 void VUniversalEntry::showEvent(QShowEvent *p_event)
 {
     QWidget::showEvent(p_event);
+
+    // Fix Chinese input method issue.
+    activateWindow();
 
     m_cmdEdit->setFocus();
 }
@@ -293,6 +298,18 @@ void VUniversalEntry::keyPressEvent(QKeyEvent *p_event)
                 processCommand();
                 return;
             }
+        }
+
+        break;
+
+    case Qt::Key_D:
+        if (VUtils::isControlModifierForVim(modifiers)) {
+            // Ctrl+D to cancel current command.
+            m_pendingCommand = false;
+            if (m_lastEntry) {
+                m_lastEntry->m_entry->askToStop(m_lastEntry->m_id);
+            }
+            return;
         }
 
         break;

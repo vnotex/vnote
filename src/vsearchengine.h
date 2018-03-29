@@ -6,8 +6,11 @@
 #include <QThread>
 #include <QRegExp>
 #include <QAtomicInt>
+#include <QList>
 
 #include "vsearchconfig.h"
+
+#define BATCH_ITEM_SIZE 100
 
 class VSearchEngineWorker : public QThread
 {
@@ -25,7 +28,7 @@ public slots:
     void stop();
 
 signals:
-    void resultItemReady(VSearchResultItem *p_item);
+    void resultItemsReady(const QList<QSharedPointer<VSearchResultItem> > &p_items);
 
 protected:
     void run() Q_DECL_OVERRIDE;
@@ -34,6 +37,8 @@ private:
     void appendError(const QString &p_err);
 
     VSearchResultItem *searchFile(const QString &p_fileName);
+
+    void postAndClearResults();
 
     QAtomicInt m_stop;
 
@@ -44,6 +49,8 @@ private:
     VSearchState m_state;
 
     QString m_error;
+
+    QList<QSharedPointer<VSearchResultItem> > m_results;
 };
 
 inline void VSearchEngineWorker::appendError(const QString &p_err)
@@ -61,6 +68,8 @@ class VSearchEngine : public ISearchEngine
     Q_OBJECT
 public:
     explicit VSearchEngine(QObject *p_parent = nullptr);
+
+    ~VSearchEngine();
 
     void search(const QSharedPointer<VSearchConfig> &p_config,
                 const QSharedPointer<VSearchResult> &p_result) Q_DECL_OVERRIDE;

@@ -55,6 +55,8 @@ protected:
 private slots:
     void handleSearchItemAdded(const QSharedPointer<VSearchResultItem> &p_item);
 
+    void handleSearchItemsAdded(const QList<QSharedPointer<VSearchResultItem> > &p_items);
+
     void handleSearchFinished(const QSharedPointer<VSearchResult> &p_result);
 
     void activateItem(QListWidgetItem *p_item);
@@ -80,6 +82,9 @@ private:
     const QSharedPointer<VSearchResultItem> &itemResultData(const QListWidgetItem *p_item) const;
 
     const QSharedPointer<VSearchResultItem> &itemResultData(const QTreeWidgetItem *p_item) const;
+
+    // Update geometry of widget.
+    void updateWidget();
 
     VSearch *m_search;
 

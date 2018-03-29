@@ -22,6 +22,8 @@ public:
 public slots:
     void addResultItem(const QSharedPointer<VSearchResultItem> &p_item);
 
+    void addResultItems(const QList<QSharedPointer<VSearchResultItem> > &p_items);
+
     void handleContextMenuRequested(QPoint p_pos);
 
 signals:

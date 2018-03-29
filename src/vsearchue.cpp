@@ -18,6 +18,8 @@ extern VNote *g_vnote;
 
 extern VMainWindow *g_mainWin;
 
+#define ITEM_NUM_TO_UPDATE_WIDGET 20
+
 VSearchUE::VSearchUE(QObject *p_parent)
     : IUniversalEntry(p_parent),
       m_search(NULL),
@@ -59,6 +61,8 @@ void VSearchUE::init()
     m_search = new VSearch(this);
     connect(m_search, &VSearch::resultItemAdded,
             this, &VSearchUE::handleSearchItemAdded);
+    connect(m_search, &VSearch::resultItemsAdded,
+            this, &VSearchUE::handleSearchItemsAdded);
     connect(m_search, &VSearch::finished,
             this, &VSearchUE::handleSearchFinished);
 
@@ -132,7 +136,23 @@ void VSearchUE::processCommand(int p_id, const QString &p_cmd)
         break;
     }
 
-    widget(p_id)->updateGeometry();
+    updateWidget();
+}
+
+void VSearchUE::updateWidget()
+{
+    QWidget *wid = widget(m_id);
+    if (wid == m_treeWidget) {
+        if (m_treeWidget->topLevelItemCount() > 0) {
+            m_treeWidget->resizeColumnToContents(0);
+        } else {
+            QTreeWidgetItem *item = new QTreeWidgetItem(m_treeWidget, QStringList("test"));
+            m_treeWidget->resizeColumnToContents(0);
+            delete item;
+        }
+    }
+
+    wid->updateGeometry();
     emit widgetUpdated();
 }
 
@@ -153,6 +173,7 @@ void VSearchUE::searchNameOfAllNotebooks(const QString &p_cmd)
         emit stateUpdated(State::Success);
     } else {
         // Do a fuzzy search against the name of the notebooks.
+        m_search->clear();
         VSearchConfig::Option opt = VSearchConfig::Fuzzy;
         QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::AllNotebooks,
                                                                VSearchConfig::Name,
@@ -175,6 +196,7 @@ void VSearchUE::searchNameOfFolderNoteInAllNotebooks(const QString &p_cmd)
         m_inSearch = false;
         emit stateUpdated(State::Success);
     } else {
+        m_search->clear();
         VSearchConfig::Option opt = VSearchConfig::NoneOption;
         QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::AllNotebooks,
                                                                VSearchConfig::Name,
@@ -196,6 +218,7 @@ void VSearchUE::searchContentOfNoteInAllNotebooks(const QString &p_cmd)
         m_inSearch = false;
         emit stateUpdated(State::Success);
     } else {
+        m_search->clear();
         VSearchConfig::Option opt = VSearchConfig::NoneOption;
         QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::AllNotebooks,
                                                                VSearchConfig::Content,
@@ -227,15 +250,67 @@ void VSearchUE::entryHidden(int p_id)
 
 void VSearchUE::handleSearchItemAdded(const QSharedPointer<VSearchResultItem> &p_item)
 {
+    static int itemAdded = 0;
+    ++itemAdded;
+
+    QCoreApplication::sendPostedEvents(NULL, QEvent::KeyPress);
+
     switch (m_id) {
     case ID::Name_Notebook_AllNotebook:
     case ID::Name_FolderNote_AllNotebook:
         appendItemToList(p_item);
+        if (itemAdded > 50) {
+            itemAdded = 0;
+            m_listWidget->updateGeometry();
+            emit widgetUpdated();
+        }
+
         break;
 
     case ID::Content_Note_AllNotebook:
         appendItemToTree(p_item);
+        if (itemAdded > 50) {
+            itemAdded = 0;
+            m_treeWidget->resizeColumnToContents(0);
+            m_treeWidget->updateGeometry();
+            emit widgetUpdated();
+        }
+
         break;
+
+    default:
+        break;
+    }
+}
+
+void VSearchUE::handleSearchItemsAdded(const QList<QSharedPointer<VSearchResultItem> > &p_items)
+{
+    QCoreApplication::sendPostedEvents(NULL, QEvent::KeyPress);
+
+    switch (m_id) {
+    case ID::Name_Notebook_AllNotebook:
+    case ID::Name_FolderNote_AllNotebook:
+    {
+        for (auto const & it : p_items) {
+            appendItemToList(it);
+        }
+
+        m_listWidget->updateGeometry();
+        emit widgetUpdated();
+        break;
+    }
+
+    case ID::Content_Note_AllNotebook:
+    {
+        for (auto const & it : p_items) {
+            appendItemToTree(it);
+        }
+
+        m_treeWidget->resizeColumnToContents(0);
+        m_treeWidget->updateGeometry();
+        emit widgetUpdated();
+        break;
+    }
 
     default:
         break;
@@ -244,7 +319,6 @@ void VSearchUE::handleSearchItemAdded(const QSharedPointer<VSearchResultItem> &p
 
 void VSearchUE::appendItemToList(const QSharedPointer<VSearchResultItem> &p_item)
 {
-    static int itemAdded = 0;
     m_data.append(p_item);
 
     QString first, second;
@@ -277,21 +351,13 @@ void VSearchUE::appendItemToList(const QSharedPointer<VSearchResultItem> &p_item
     item->setData(Qt::UserRole, m_data.size() - 1);
     item->setToolTip(p_item->m_path);
 
-    ++itemAdded;
     if (m_listWidget->currentRow() == -1) {
         m_listWidget->setCurrentRow(0);
-        m_listWidget->updateGeometry();
-        emit widgetUpdated();
-    } else if (itemAdded >= 20) {
-        itemAdded = 0;
-        m_listWidget->updateGeometry();
-        emit widgetUpdated();
     }
 }
 
 void VSearchUE::appendItemToTree(const QSharedPointer<VSearchResultItem> &p_item)
 {
-    static int itemAdded = 0;
     m_data.append(p_item);
 
     QTreeWidgetItem *item = new QTreeWidgetItem(m_treeWidget);
@@ -329,16 +395,8 @@ void VSearchUE::appendItemToTree(const QSharedPointer<VSearchResultItem> &p_item
         subItem->setToolTip(0, it.m_text);
     }
 
-    ++itemAdded;
     if (!m_treeWidget->currentItem()) {
         m_treeWidget->setCurrentItem(item);
-        m_treeWidget->resizeColumnToContents(0);
-        m_treeWidget->updateGeometry();
-        emit widgetUpdated();
-    } else if (itemAdded >= 20) {
-        itemAdded = 0;
-        m_treeWidget->updateGeometry();
-        emit widgetUpdated();
     }
 }
 
@@ -383,13 +441,7 @@ void VSearchUE::handleSearchFinished(const QSharedPointer<VSearchResult> &p_resu
         m_inSearch = false;
     }
 
-    QWidget *wid = widget(m_id);
-    if (wid == m_treeWidget) {
-        m_treeWidget->resizeColumnToContents(0);
-    }
-
-    wid->updateGeometry();
-    emit widgetUpdated();
+    updateWidget();
 
     emit stateUpdated(state);
 }
@@ -525,5 +577,7 @@ void VSearchUE::activate(int p_id)
 void VSearchUE::askToStop(int p_id)
 {
     Q_UNUSED(p_id);
-    m_search->stop();
+    if (m_inSearch) {
+        m_search->stop();
+    }
 }

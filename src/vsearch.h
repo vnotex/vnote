@@ -41,6 +41,8 @@ signals:
     // Emitted when a new item added as result.
     void resultItemAdded(const QSharedPointer<VSearchResultItem> &p_item);
 
+    void resultItemsAdded(const QList<QSharedPointer<VSearchResultItem> > &p_items);
+
     // Emitted when async task finished.
     void finished(const QSharedPointer<VSearchResult> &p_result);
 
