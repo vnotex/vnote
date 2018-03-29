@@ -118,7 +118,10 @@ SOURCES += main.cpp\
     vsearch.cpp \
     vsearchresulttree.cpp \
     vsearchengine.cpp \
-    vuniversalentry.cpp
+    vuniversalentry.cpp \
+    vlistwidgetdoublerows.cpp \
+    vdoublerowitemwidget.cpp \
+    vsearchue.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -226,7 +229,11 @@ HEADERS  += vmainwindow.h \
     isearchengine.h \
     vsearchconfig.h \
     vsearchengine.h \
-    vuniversalentry.h
+    vuniversalentry.h \
+    iuniversalentry.h \
+    vlistwidgetdoublerows.h \
+    vdoublerowitemwidget.h \
+    vsearchue.h
 
 RESOURCES += \
     vnote.qrc \

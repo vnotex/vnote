@@ -16,6 +16,8 @@ public:
     // Return the evaluated text.
     const QString &getEvaluatedText() const;
 
+    QString evaluateText(const QString &p_text) const;
+
 private slots:
     void handleTextChanged(const QString &p_text);
 

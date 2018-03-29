@@ -40,6 +40,7 @@
 #include "dialog/vexportdialog.h"
 #include "vsearcher.h"
 #include "vuniversalentry.h"
+#include "vsearchue.h"
 
 extern VConfigManager *g_config;
 
@@ -3164,15 +3165,7 @@ VNotebook *VMainWindow::getCurrentNotebook() const
 void VMainWindow::activateUniversalEntry()
 {
     if (!m_ue) {
-        m_ue = new VUniversalEntry(this);
-        m_ue->hide();
-        m_ue->setWindowFlags(Qt::Popup
-                             | Qt::FramelessWindowHint
-                             | Qt::NoDropShadowWindowHint);
-        connect(m_ue, &VUniversalEntry::exited,
-                this, [this]() {
-                    m_captain->setCaptainModeEnabled(true);
-                });
+        initUniversalEntry();
     }
 
     m_captain->setCaptainModeEnabled(false);
@@ -3190,4 +3183,22 @@ void VMainWindow::activateUniversalEntry()
 
     m_ue->show();
     m_ue->raise();
+}
+
+void VMainWindow::initUniversalEntry()
+{
+    m_ue = new VUniversalEntry(this);
+    m_ue->hide();
+    m_ue->setWindowFlags(Qt::Popup
+                         | Qt::FramelessWindowHint
+                         | Qt::NoDropShadowWindowHint);
+    connect(m_ue, &VUniversalEntry::exited,
+            this, [this]() {
+                m_captain->setCaptainModeEnabled(true);
+            });
+
+    // Register entries.
+    VSearchUE *searchUE = new VSearchUE(this);
+    m_ue->registerEntry('q', searchUE, VSearchUE::Name_Notebook_AllNotebook);
+    m_ue->registerEntry('a', searchUE, VSearchUE::Name_FolderNote_AllNotebook);
 }

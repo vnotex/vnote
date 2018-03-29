@@ -83,6 +83,10 @@ template_title_flash_dark_fg=#00897B
 search_hit_item_fg=@selected_fg
 search_hit_item_bg=#80CBC4
 
+; Universal Entry CMD Edit border color
+ue_cmd_busy_border=#3F51B5
+ue_cmd_fail_border=@danger_bg
+
 [widgets]
 ; Widget color attributes.
 

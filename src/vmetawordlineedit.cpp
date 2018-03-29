@@ -45,3 +45,8 @@ const QString &VMetaWordLineEdit::getEvaluatedText() const
 {
     return m_evaluatedText;
 }
+
+QString VMetaWordLineEdit::evaluateText(const QString &p_text) const
+{
+    return g_mwMgr->evaluate(p_text);
+}

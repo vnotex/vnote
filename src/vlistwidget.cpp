@@ -9,9 +9,10 @@
 #include "utils/vimnavigationforwidget.h"
 #include "vstyleditemdelegate.h"
 
-VListWidget::VListWidget(QWidget *parent)
-    : QListWidget(parent),
-      ISimpleSearch()
+VListWidget::VListWidget(QWidget *p_parent)
+    : QListWidget(p_parent),
+      ISimpleSearch(),
+      m_fitContent(false)
 {
     m_searchInput = new VSimpleSearchInput(this, this);
     connect(m_searchInput, &VSimpleSearchInput::triggered,
@@ -142,8 +143,19 @@ int VListWidget::totalNumberOfItems()
 
 void VListWidget::selectNextItem(bool p_forward)
 {
-    Q_UNUSED(p_forward);
-    Q_ASSERT(false);
+    if (count() == 0) {
+        return;
+    }
+
+    int cur = currentRow();
+    cur = cur + (p_forward ? 1 : -1);
+    if (cur < 0) {
+        cur = 0;
+    } else if (cur >= count()) {
+        cur = count() - 1;
+    }
+
+    setCurrentRow(cur);
 }
 
 void VListWidget::sortListWidget(QListWidget *p_list, const QVector<int> &p_sortedIdx)
@@ -161,3 +173,34 @@ void VListWidget::sortListWidget(QListWidget *p_list, const QVector<int> &p_sort
         p_list->insertItem(i, it);
     }
 }
+
+QSize VListWidget::sizeHint() const
+{
+    if (count() == 0 || !m_fitContent) {
+        return QListWidget::sizeHint();
+    } else {
+        // Adjust size to content.
+        int cnt = count();
+        int hei = 0;
+        int wid = sizeHintForColumn(0) + 10;
+        for (int i = 0; i < cnt; ++i) {
+            hei += sizeHintForRow(i);
+        }
+
+        hei += 2 * cnt;
+
+        // Scrollbar.
+        QScrollBar *verBar = verticalScrollBar();
+        QScrollBar *horBar = horizontalScrollBar();
+        if (verBar && (verBar->minimum() != verBar->maximum())) {
+            wid += verBar->width();
+        }
+
+        if (horBar && (horBar->minimum() != horBar->maximum())) {
+            hei += horBar->height();
+        }
+
+        return QSize(wid, hei);
+    }
+}
+

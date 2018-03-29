@@ -282,6 +282,8 @@ private:
 
     void updateEditReadAct(const VEditTab *p_tab);
 
+    void initUniversalEntry();
+
     // Captain mode functions.
 
     // Popup the attachment list if it is enabled.

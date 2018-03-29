@@ -382,6 +382,7 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
 
     case Qt::Key_Enter:
         // Fall through.
+        V_FALLTHROUGH;
     case Qt::Key_Return:
     {
         if (handleKeyReturn(p_event)) {

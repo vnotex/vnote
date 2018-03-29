@@ -115,6 +115,10 @@ template_title_flash_dark_fg=@master_bg
 search_hit_item_fg=@selected_fg
 search_hit_item_bg=@master_dark_bg
 
+; Universal Entry CMD Edit border color
+ue_cmd_busy_border=#3F51B5
+ue_cmd_fail_border=@danger_bg
+
 [widgets]
 ; Widget color attributes.
 
@@ -351,3 +355,7 @@ headerview_checked_bg=@selected_bg
 progressbar_bg=@edit_bg
 progressbar_border_bg=@border_bg
 progressbar_chunk_bg=@master_dark_bg
+
+universalentry_border_bg=@border_bg
+
+doublerowitem_second_row_label_fg=#6C6C6C

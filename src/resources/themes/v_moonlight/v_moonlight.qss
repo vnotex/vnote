@@ -590,6 +590,15 @@ VTabIndicator QLabel[TabIndicatorLabel="true"] {
     background: transparent;
 }
 
+VDoubleRowItemWidget QLabel[FirstRowLabel="true"] {
+    font-size: 10pt;
+}
+
+VDoubleRowItemWidget QLabel[SecondRowLabel="true"] {
+    font-size: 8pt;
+    color: @doublerowitem_second_row_label_fg;
+}
+
 QLabel {
     border: none;
     color: @label_fg;
@@ -1255,3 +1264,8 @@ QProgressBar::chunk {
     width: $20px;
 }
 /* End QProgressBar */
+
+VUniversalEntry {
+    background: transparent;
+    border: 1px solid @universalentry_border_bg;
+}
