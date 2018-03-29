@@ -3201,4 +3201,5 @@ void VMainWindow::initUniversalEntry()
     VSearchUE *searchUE = new VSearchUE(this);
     m_ue->registerEntry('q', searchUE, VSearchUE::Name_Notebook_AllNotebook);
     m_ue->registerEntry('a', searchUE, VSearchUE::Name_FolderNote_AllNotebook);
+    m_ue->registerEntry('z', searchUE, VSearchUE::Content_Note_AllNotebook);
 }

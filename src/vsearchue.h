@@ -10,6 +10,8 @@
 
 class VListWidgetDoubleRows;
 class QListWidgetItem;
+class VTreeWidget;
+class QTreeWidgetItem;
 
 
 // Universal Entry to list and search all the notebooks.
@@ -23,7 +25,10 @@ public:
         Name_Notebook_AllNotebook = 0,
 
         // Search the name of the folder/note in all the notebooks.
-        Name_FolderNote_AllNotebook
+        Name_FolderNote_AllNotebook,
+
+        // Search content of the note in all the notebooks.
+        Content_Note_AllNotebook,
     };
 
     explicit VSearchUE(QObject *p_parent = nullptr);
@@ -52,19 +57,29 @@ private slots:
 
     void handleSearchFinished(const QSharedPointer<VSearchResult> &p_result);
 
+    void activateItem(QListWidgetItem *p_item);
+
+    void activateItem(QTreeWidgetItem *p_item, int p_col);
+
 private:
     void searchNameOfAllNotebooks(const QString &p_cmd);
 
     void searchNameOfFolderNoteInAllNotebooks(const QString &p_cmd);
+
+    void searchContentOfNoteInAllNotebooks(const QString &p_cmd);
 
     // Stop the search synchronously.
     void stopSearch();
 
     void appendItemToList(const QSharedPointer<VSearchResultItem> &p_item);
 
-    void activateItem(const QListWidgetItem *p_item);
+    void appendItemToTree(const QSharedPointer<VSearchResultItem> &p_item);
+
+    void activateItem(const QSharedPointer<VSearchResultItem> &p_item);
 
     const QSharedPointer<VSearchResultItem> &itemResultData(const QListWidgetItem *p_item) const;
+
+    const QSharedPointer<VSearchResultItem> &itemResultData(const QTreeWidgetItem *p_item) const;
 
     VSearch *m_search;
 
@@ -80,6 +95,8 @@ private:
     QIcon m_notebookIcon;
 
     VListWidgetDoubleRows *m_listWidget;
+
+    VTreeWidget *m_treeWidget;
 };
 
 #endif // VSEARCHUE_H

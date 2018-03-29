@@ -32,7 +32,7 @@ public:
 
     virtual void selectNextItem(bool p_forward) Q_DECL_OVERRIDE;
 
-    QSize sizeHint() const Q_DECL_OVERRIDE;
+    virtual QSize sizeHint() const Q_DECL_OVERRIDE;
 
     // Sort @p_list according to @p_sortedIdx.
     static void sortListWidget(QListWidget *p_list, const QVector<int> &p_sortedIdx);

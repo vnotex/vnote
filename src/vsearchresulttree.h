@@ -39,8 +39,6 @@ private:
 
     VSearchResultItem::ItemType itemResultType(const QTreeWidgetItem *p_item) const;
 
-    const QTreeWidgetItem *topLevelItem(const QTreeWidgetItem *p_item) const;
-
     void activateItem(const QTreeWidgetItem *p_item) const;
 
     const QSharedPointer<VSearchResultItem> &itemResultData(const QTreeWidgetItem *p_item) const;
@@ -58,16 +56,4 @@ private:
     QAction *m_addToCartAct;
 };
 
-inline const QTreeWidgetItem *VSearchResultTree::topLevelItem(const QTreeWidgetItem *p_item) const
-{
-    if (!p_item) {
-        return NULL;
-    }
-
-    if (p_item->parent()) {
-        return p_item->parent();
-    } else {
-        return p_item;
-    }
-}
 #endif // VSEARCHRESULTTREE_H

@@ -39,6 +39,8 @@ public:
 
     virtual void selectNextItem(bool p_forward) Q_DECL_OVERRIDE;
 
+    void setFitContent(bool p_enabled);
+
 protected:
     void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -63,11 +65,16 @@ private:
 
     QTreeWidgetItem *nextSibling(QTreeWidgetItem *p_item, bool p_forward);
 
+    // Next visible item.
+    QTreeWidgetItem *nextItem(QTreeWidgetItem *p_item, bool p_forward);
+
     VSimpleSearchInput *m_searchInput;
 
     VStyledItemDelegate *m_delegate;
 
     QTimer *m_searchColdTimer;
+
+    bool m_fitContent;
 };
 
 inline void VTreeWidget::setSimpleSearchMatchFlags(Qt::MatchFlags p_flags)
@@ -78,5 +85,12 @@ inline void VTreeWidget::setSimpleSearchMatchFlags(Qt::MatchFlags p_flags)
 inline Qt::MatchFlags VTreeWidget::getSimpleSearchMatchFlags() const
 {
     return m_searchInput->getMatchFlags();
+}
+
+inline void VTreeWidget::setFitContent(bool p_enabled)
+{
+    m_fitContent = p_enabled;
+    setSizeAdjustPolicy(m_fitContent ? QAbstractScrollArea::AdjustToContents
+                                     : QAbstractScrollArea::AdjustIgnored);
 }
 #endif // VTREEWIDGET_H

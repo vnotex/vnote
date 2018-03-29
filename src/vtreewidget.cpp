@@ -18,7 +18,8 @@
 
 VTreeWidget::VTreeWidget(QWidget *p_parent)
     : QTreeWidget(p_parent),
-      ISimpleSearch()
+      ISimpleSearch(),
+      m_fitContent(false)
 {
     setAttribute(Qt::WA_MacShowFocusRect, false);
 
@@ -45,6 +46,13 @@ VTreeWidget::VTreeWidget(QWidget *p_parent)
 
     m_delegate = new VStyledItemDelegate(this);
     setItemDelegate(m_delegate);
+
+    connect(this, &VTreeWidget::itemExpanded,
+            this, [this]() {
+                if (m_fitContent) {
+                    resizeColumnToContents(0);
+                }
+            });
 }
 
 void VTreeWidget::keyPressEvent(QKeyEvent *p_event)
@@ -288,26 +296,32 @@ void VTreeWidget::selectNextItem(bool p_forward)
         return;
     }
 
-    QTreeWidgetItem *nextItem = NULL;
+    QTreeWidgetItem *nItem = nextItem(item, p_forward);
+    if (nItem) {
+        setCurrentItem(nItem);
+    }
+}
+
+QTreeWidgetItem *VTreeWidget::nextItem(QTreeWidgetItem *p_item, bool p_forward)
+{
+    QTreeWidgetItem *nItem = NULL;
     if (p_forward) {
-        if (item->isExpanded()) {
-            nextItem = item->child(0);
+        if (p_item->isExpanded()) {
+            nItem = p_item->child(0);
         } else {
-            while (!nextItem && item) {
-                nextItem = nextSibling(item, true);
-                item = item->parent();
+            while (!nItem && p_item) {
+                nItem = nextSibling(p_item, true);
+                p_item = p_item->parent();
             }
         }
     } else {
-        nextItem = nextSibling(item, false);
-        if (!nextItem) {
-            nextItem = item->parent();
+        nItem = nextSibling(p_item, false);
+        if (!nItem) {
+            nItem = p_item->parent();
         } else {
-            nextItem = lastItemOfTree(nextItem);
+            nItem = lastItemOfTree(nItem);
         }
     }
 
-    if (nextItem) {
-        setCurrentItem(nextItem);
-    }
+    return nItem;
 }

@@ -3,6 +3,7 @@
 #include <QAction>
 #include <QMenu>
 
+#include "utils/vutils.h"
 #include "utils/viconutils.h"
 #include "vnote.h"
 #include "vmainwindow.h"
@@ -43,7 +44,7 @@ void VSearchResultTree::initActions()
     m_openAct->setToolTip(tr("Open selected notes"));
     connect(m_openAct, &QAction::triggered,
             this, [this]() {
-                activateItem(topLevelItem(currentItem()));
+                activateItem(currentItem());
             });
 
     m_locateAct = new QAction(VIconUtils::menuIcon(":/resources/icons/locate_note.svg"),
@@ -207,7 +208,7 @@ VSearchResultItem::ItemType VSearchResultTree::itemResultType(const QTreeWidgetI
 const QSharedPointer<VSearchResultItem> &VSearchResultTree::itemResultData(const QTreeWidgetItem *p_item) const
 {
     Q_ASSERT(p_item);
-    const QTreeWidgetItem *topItem = topLevelItem(p_item);
+    const QTreeWidgetItem *topItem = VUtils::topLevelTreeItem(p_item);
     int idx = topItem->data(0, Qt::UserRole).toInt();
     Q_ASSERT(idx >= 0 && idx < m_data.size());
     return m_data[idx];

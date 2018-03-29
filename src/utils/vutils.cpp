@@ -25,6 +25,7 @@
 #include <QStyledItemDelegate>
 #include <QWebEngineView>
 #include <QAction>
+#include <QTreeWidgetItem>
 
 #include "vorphanfile.h"
 #include "vnote.h"
@@ -1389,4 +1390,17 @@ QStringList VUtils::parseCombinedArgString(const QString &p_program)
     }
 
     return args;
+}
+
+const QTreeWidgetItem *VUtils::topLevelTreeItem(const QTreeWidgetItem *p_item)
+{
+    if (!p_item) {
+        return NULL;
+    }
+
+    if (p_item->parent()) {
+        return p_item->parent();
+    } else {
+        return p_item;
+    }
 }

@@ -259,6 +259,16 @@ struct VSearchConfig
         compileToken(p_keyword);
     }
 
+    // We support some magic switch in the keyword which will suppress the specified
+    // options:
+    // \c: Case insensitive;
+    // \C: Case sensitive;
+    // \r: Turn off regular expression;
+    // \R: Turn on regular expression;
+    // \f: Turn off fuzzy search;
+    // \F: Turn on fuzzy search (invalid when searching content);
+    // \w: Turn off whole word only;
+    // \W: Turn on whole word only;
     void compileToken(const QString &p_keyword)
     {
         m_token.clear();
@@ -267,11 +277,47 @@ struct VSearchConfig
             return;
         }
 
+        // """ to input a ";
+        // && for AND, || for OR;
+        QStringList args = VUtils::parseCombinedArgString(p_keyword);
+
         Qt::CaseSensitivity cs = m_option & VSearchConfig::CaseSensitive
                                  ? Qt::CaseSensitive : Qt::CaseInsensitive;
         bool useReg = m_option & VSearchConfig::RegularExpression;
         bool wwo = m_option & VSearchConfig::WholeWordOnly;
         bool fuzzy = m_option & VSearchConfig::Fuzzy;
+
+        // Read magic switch from keyword.
+        for (int i = 0; i < args.size();) {
+            const QString &arg = args[i];
+            if (arg.size() != 2 || arg[0] != '\\') {
+                ++i;
+                continue;
+            }
+
+            if (arg == "\\c") {
+                cs = Qt::CaseInsensitive;
+            } else if (arg == "\\C") {
+                cs = Qt::CaseSensitive;
+            } else if (arg == "\\r") {
+                useReg = false;
+            } else if (arg == "\\R") {
+                useReg = true;
+            } else if (arg == "\\f") {
+                fuzzy = false;
+            } else if (arg == "\\F") {
+                fuzzy = true;
+            } else if (arg == "\\w") {
+                wwo = false;
+            } else if (arg == "\\W") {
+                wwo = true;
+            } else {
+                ++i;
+                continue;
+            }
+
+            args.removeAt(i);
+        }
 
         m_token.m_caseSensitivity = cs;
         m_contentToken.m_caseSensitivity = cs;
@@ -293,10 +339,6 @@ struct VSearchConfig
         }
 
         VSearchToken::Operator op = VSearchToken::And;
-
-        // """ to input a ";
-        // && for AND, || for OR;
-        QStringList args = VUtils::parseCombinedArgString(p_keyword);
         for (auto const & arg : args) {
             if (arg == QStringLiteral("&&")) {
                 op = VSearchToken::And;

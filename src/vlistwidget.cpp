@@ -176,11 +176,11 @@ void VListWidget::sortListWidget(QListWidget *p_list, const QVector<int> &p_sort
 
 QSize VListWidget::sizeHint() const
 {
-    if (count() == 0 || !m_fitContent) {
+    int cnt = count();
+    if (cnt == 0 || !m_fitContent) {
         return QListWidget::sizeHint();
     } else {
         // Adjust size to content.
-        int cnt = count();
         int hei = 0;
         int wid = sizeHintForColumn(0) + 10;
         for (int i = 0; i < cnt; ++i) {

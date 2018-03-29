@@ -19,6 +19,7 @@ class QWidget;
 class QComboBox;
 class QWebEngineView;
 class QAction;
+class QTreeWidgetItem;
 
 #if !defined(V_ASSERT)
     #define V_ASSERT(cond) ((!(cond)) ? qt_assert(#cond, __FILE__, __LINE__) : qt_noop())
@@ -313,6 +314,8 @@ public:
 
     // From QProcess code.
     static QStringList parseCombinedArgString(const QString &p_program);
+
+    static const QTreeWidgetItem *topLevelTreeItem(const QTreeWidgetItem *p_item);
 
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
