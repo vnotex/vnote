@@ -29,6 +29,33 @@ public:
 
         // Search content of the note in all the notebooks.
         Content_Note_AllNotebook,
+
+        // Search the name of the folder/note in current notebook.
+        Name_FolderNote_CurrentNotebook,
+
+        // Search content of the note in current notebook.
+        Content_Note_CurrentNotebook,
+
+        // Search the name of the folder/note in current folder.
+        Name_FolderNote_CurrentFolder,
+
+        // Search content of the note in current folder.
+        Content_Note_CurrentFolder,
+
+        // List and search the name of opened notes in buffer.
+        Name_Note_Buffer,
+
+        // Search content of opened notes in buffer.
+        Content_Note_Buffer,
+
+        // Search outline of opened notes in buffer.
+        Outline_Note_Buffer,
+
+        // Search path of folder/note in all the notebooks.
+        Path_FolderNote_AllNotebook,
+
+        // Search path of folder/note in current notebook.
+        Path_FolderNote_CurrentNotebook
     };
 
     explicit VSearchUE(QObject *p_parent = nullptr);
@@ -68,7 +95,25 @@ private:
 
     void searchNameOfFolderNoteInAllNotebooks(const QString &p_cmd);
 
+    void searchNameOfFolderNoteInCurrentNotebook(const QString &p_cmd);
+
+    void searchNameOfFolderNoteInCurrentFolder(const QString &p_cmd);
+
     void searchContentOfNoteInAllNotebooks(const QString &p_cmd);
+
+    void searchContentOfNoteInCurrentNotebook(const QString &p_cmd);
+
+    void searchContentOfNoteInCurrentFolder(const QString &p_cmd);
+
+    void searchNameOfBuffer(const QString &p_cmd);
+
+    void searchContentOfBuffer(const QString &p_cmd);
+
+    void searchOutlineOfBuffer(const QString &p_cmd);
+
+    void searchPathOfFolderNoteInAllNotebooks(const QString &p_cmd);
+
+    void searchPathOfFolderNoteInCurrentNotebook(const QString &p_cmd);
 
     // Stop the search synchronously.
     void stopSearch();

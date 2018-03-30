@@ -21,6 +21,7 @@
 #define MINIMUM_WIDTH 200
 
 #define CMD_EDIT_INTERVAL 500
+#define CMD_EDIT_IDLE_INTERVAL 200
 
 extern VPalette *g_palette;
 
@@ -105,9 +106,13 @@ void VUniversalEntry::setupUI()
     m_cmdEdit->setCtrlKEnabled(false);
     m_cmdEdit->setCtrlEEnabled(false);
     connect(m_cmdEdit, &VMetaWordLineEdit::textEdited,
-            this, [this]() {
+            this, [this](const QString &p_text) {
                 m_cmdTimer->stop();
-                m_cmdTimer->start();
+                if (p_text.isEmpty() || p_text.size() == 1) {
+                    m_cmdTimer->start(CMD_EDIT_IDLE_INTERVAL);
+                } else {
+                    m_cmdTimer->start(CMD_EDIT_INTERVAL);
+                }
             });
 
     m_container = new VUniversalEntryContainer(this);
@@ -293,8 +298,8 @@ void VUniversalEntry::keyPressEvent(QKeyEvent *p_event)
             // Ctrl+E to eliminate input except the command key.
             QString cmd = m_cmdEdit->getEvaluatedText();
             if (!cmd.isEmpty()) {
-                m_cmdEdit->setText(cmd.left(1));
                 m_cmdTimer->stop();
+                m_cmdEdit->setText(cmd.left(1));
                 processCommand();
                 return;
             }

@@ -13,6 +13,9 @@
 #include "vmainwindow.h"
 #include "vnotebookselector.h"
 #include "vnotefile.h"
+#include "vdirectory.h"
+#include "vdirectorytree.h"
+#include "veditarea.h"
 
 extern VNote *g_vnote;
 
@@ -34,13 +37,40 @@ QString VSearchUE::description(int p_id) const
 {
     switch (p_id) {
     case ID::Name_Notebook_AllNotebook:
-        return tr("List and search all notebooks");
+        return tr("List and search all the notebooks");
 
     case ID::Name_FolderNote_AllNotebook:
-        return tr("Search the name of folders/notes in all notebooks");
+        return tr("Search the name of folders/notes in all the notebooks");
 
     case ID::Content_Note_AllNotebook:
-        return tr("Search the content of notes in all notebooks");
+        return tr("Search the content of notes in all the notebooks");
+
+    case ID::Name_FolderNote_CurrentNotebook:
+        return tr("Search the name of folders/notes in current notebook");
+
+    case ID::Content_Note_CurrentNotebook:
+        return tr("Search the content of notes in current notebook");
+
+    case ID::Name_FolderNote_CurrentFolder:
+        return tr("Search the name of folders/notes in current folder");
+
+    case ID::Content_Note_CurrentFolder:
+        return tr("Search the content of notes in current folder");
+
+    case ID::Name_Note_Buffer:
+        return tr("List and search buffer (opened notes)");
+
+    case ID::Content_Note_Buffer:
+        return tr("Search the content of opened notes in buffer");
+
+    case ID::Outline_Note_Buffer:
+        return tr("Search the outline of opened notes in buffer");
+
+    case ID::Path_FolderNote_AllNotebook:
+        return tr("Search the path of folders/notes in all the notebooks");
+
+    case ID::Path_FolderNote_CurrentNotebook:
+        return tr("Search the path of folders/notes in current notebook");
 
     default:
         Q_ASSERT(false);
@@ -96,9 +126,18 @@ QWidget *VSearchUE::widget(int p_id)
     switch (p_id) {
     case ID::Name_Notebook_AllNotebook:
     case ID::Name_FolderNote_AllNotebook:
+    case ID::Name_FolderNote_CurrentNotebook:
+    case ID::Name_FolderNote_CurrentFolder:
+    case ID::Name_Note_Buffer:
+    case ID::Path_FolderNote_AllNotebook:
+    case ID::Path_FolderNote_CurrentNotebook:
         return m_listWidget;
 
     case ID::Content_Note_AllNotebook:
+    case ID::Content_Note_CurrentNotebook:
+    case ID::Content_Note_CurrentFolder:
+    case ID::Content_Note_Buffer:
+    case ID::Outline_Note_Buffer:
         return m_treeWidget;
 
     default:
@@ -129,6 +168,42 @@ void VSearchUE::processCommand(int p_id, const QString &p_cmd)
 
     case ID::Content_Note_AllNotebook:
         searchContentOfNoteInAllNotebooks(p_cmd);
+        break;
+
+    case ID::Name_FolderNote_CurrentNotebook:
+        searchNameOfFolderNoteInCurrentNotebook(p_cmd);
+        break;
+
+    case ID::Content_Note_CurrentNotebook:
+        searchContentOfNoteInCurrentNotebook(p_cmd);
+        break;
+
+    case ID::Name_FolderNote_CurrentFolder:
+        searchNameOfFolderNoteInCurrentFolder(p_cmd);
+        break;
+
+    case ID::Content_Note_CurrentFolder:
+        searchContentOfNoteInCurrentFolder(p_cmd);
+        break;
+
+    case ID::Name_Note_Buffer:
+        searchNameOfBuffer(p_cmd);
+        break;
+
+    case ID::Content_Note_Buffer:
+        searchContentOfBuffer(p_cmd);
+        break;
+
+    case ID::Outline_Note_Buffer:
+        searchOutlineOfBuffer(p_cmd);
+        break;
+
+    case ID::Path_FolderNote_AllNotebook:
+        searchPathOfFolderNoteInAllNotebooks(p_cmd);
+        break;
+
+    case ID::Path_FolderNote_CurrentNotebook:
+        searchPathOfFolderNoteInCurrentNotebook(p_cmd);
         break;
 
     default:
@@ -191,7 +266,6 @@ void VSearchUE::searchNameOfAllNotebooks(const QString &p_cmd)
 
 void VSearchUE::searchNameOfFolderNoteInAllNotebooks(const QString &p_cmd)
 {
-    const QVector<VNotebook *> &notebooks = g_vnote->getNotebooks();
     if (p_cmd.isEmpty()) {
         m_inSearch = false;
         emit stateUpdated(State::Success);
@@ -206,14 +280,13 @@ void VSearchUE::searchNameOfFolderNoteInAllNotebooks(const QString &p_cmd)
                                                                p_cmd,
                                                                QString()));
         m_search->setConfig(config);
-        QSharedPointer<VSearchResult> result = m_search->search(notebooks);
+        QSharedPointer<VSearchResult> result = m_search->search(g_vnote->getNotebooks());
         handleSearchFinished(result);
     }
 }
 
 void VSearchUE::searchContentOfNoteInAllNotebooks(const QString &p_cmd)
 {
-    const QVector<VNotebook *> &notebooks = g_vnote->getNotebooks();
     if (p_cmd.isEmpty()) {
         m_inSearch = false;
         emit stateUpdated(State::Success);
@@ -223,6 +296,225 @@ void VSearchUE::searchContentOfNoteInAllNotebooks(const QString &p_cmd)
         QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::AllNotebooks,
                                                                VSearchConfig::Content,
                                                                VSearchConfig::Note,
+                                                               VSearchConfig::Internal,
+                                                               opt,
+                                                               p_cmd,
+                                                               QString()));
+        m_search->setConfig(config);
+        QSharedPointer<VSearchResult> result = m_search->search(g_vnote->getNotebooks());
+        handleSearchFinished(result);
+    }
+}
+
+void VSearchUE::searchNameOfFolderNoteInCurrentNotebook(const QString &p_cmd)
+{
+    if (p_cmd.isEmpty()) {
+        m_inSearch = false;
+        emit stateUpdated(State::Success);
+    } else {
+        QVector<VNotebook *> notebooks;
+        notebooks.append(g_mainWin->getNotebookSelector()->currentNotebook());
+        m_search->clear();
+        VSearchConfig::Option opt = VSearchConfig::NoneOption;
+        QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::CurrentNotebook,
+                                                               VSearchConfig::Name,
+                                                               VSearchConfig::Folder | VSearchConfig::Note,
+                                                               VSearchConfig::Internal,
+                                                               opt,
+                                                               p_cmd,
+                                                               QString()));
+        m_search->setConfig(config);
+        QSharedPointer<VSearchResult> result = m_search->search(notebooks);
+        handleSearchFinished(result);
+    }
+}
+
+void VSearchUE::searchContentOfNoteInCurrentNotebook(const QString &p_cmd)
+{
+    if (p_cmd.isEmpty()) {
+        m_inSearch = false;
+        emit stateUpdated(State::Success);
+    } else {
+        QVector<VNotebook *> notebooks;
+        notebooks.append(g_mainWin->getNotebookSelector()->currentNotebook());
+        m_search->clear();
+        VSearchConfig::Option opt = VSearchConfig::NoneOption;
+        QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::CurrentNotebook,
+                                                               VSearchConfig::Content,
+                                                               VSearchConfig::Note,
+                                                               VSearchConfig::Internal,
+                                                               opt,
+                                                               p_cmd,
+                                                               QString()));
+        m_search->setConfig(config);
+        QSharedPointer<VSearchResult> result = m_search->search(notebooks);
+        handleSearchFinished(result);
+    }
+}
+
+void VSearchUE::searchNameOfFolderNoteInCurrentFolder(const QString &p_cmd)
+{
+    if (p_cmd.isEmpty()) {
+        m_inSearch = false;
+        emit stateUpdated(State::Success);
+    } else {
+        VDirectory *dir = g_mainWin->getDirectoryTree()->currentDirectory();
+        m_search->clear();
+        VSearchConfig::Option opt = VSearchConfig::NoneOption;
+        QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::CurrentFolder,
+                                                               VSearchConfig::Name,
+                                                               VSearchConfig::Folder | VSearchConfig::Note,
+                                                               VSearchConfig::Internal,
+                                                               opt,
+                                                               p_cmd,
+                                                               QString()));
+        m_search->setConfig(config);
+        QSharedPointer<VSearchResult> result = m_search->search(dir);
+        handleSearchFinished(result);
+    }
+}
+
+void VSearchUE::searchContentOfNoteInCurrentFolder(const QString &p_cmd)
+{
+    if (p_cmd.isEmpty()) {
+        m_inSearch = false;
+        emit stateUpdated(State::Success);
+    } else {
+        VDirectory *dir = g_mainWin->getDirectoryTree()->currentDirectory();
+        m_search->clear();
+        VSearchConfig::Option opt = VSearchConfig::NoneOption;
+        QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::CurrentFolder,
+                                                               VSearchConfig::Content,
+                                                               VSearchConfig::Note,
+                                                               VSearchConfig::Internal,
+                                                               opt,
+                                                               p_cmd,
+                                                               QString()));
+        m_search->setConfig(config);
+        QSharedPointer<VSearchResult> result = m_search->search(dir);
+        handleSearchFinished(result);
+    }
+}
+
+QVector<VFile *> getFilesInBuffer()
+{
+    QVector<VEditTabInfo> tabs = g_mainWin->getEditArea()->getAllTabsInfo();
+    QVector<VFile *> files;
+    files.reserve(tabs.size());
+    for (auto const & ta : tabs) {
+        files.append(ta.m_editTab->getFile());
+    }
+
+    return files;
+}
+
+void VSearchUE::searchNameOfBuffer(const QString &p_cmd)
+{
+    QVector<VFile *> files = getFilesInBuffer();
+    if (p_cmd.isEmpty()) {
+        // List all the notes.
+        for (auto const & fi : files) {
+            QSharedPointer<VSearchResultItem> item(new VSearchResultItem(VSearchResultItem::Note,
+                                                                         VSearchResultItem::LineNumber,
+                                                                         fi->getName(),
+                                                                         fi->fetchPath()));
+            handleSearchItemAdded(item);
+        }
+
+        m_inSearch = false;
+        emit stateUpdated(State::Success);
+    } else {
+        m_search->clear();
+        VSearchConfig::Option opt = VSearchConfig::NoneOption;
+        QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::OpenedNotes,
+                                                               VSearchConfig::Name,
+                                                               VSearchConfig::Note,
+                                                               VSearchConfig::Internal,
+                                                               opt,
+                                                               p_cmd,
+                                                               QString()));
+        m_search->setConfig(config);
+        QSharedPointer<VSearchResult> result = m_search->search(files);
+        handleSearchFinished(result);
+    }
+}
+
+void VSearchUE::searchContentOfBuffer(const QString &p_cmd)
+{
+    if (p_cmd.isEmpty()) {
+        m_inSearch = false;
+        emit stateUpdated(State::Success);
+    } else {
+        m_search->clear();
+        VSearchConfig::Option opt = VSearchConfig::NoneOption;
+        QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::OpenedNotes,
+                                                               VSearchConfig::Content,
+                                                               VSearchConfig::Note,
+                                                               VSearchConfig::Internal,
+                                                               opt,
+                                                               p_cmd,
+                                                               QString()));
+        m_search->setConfig(config);
+        QSharedPointer<VSearchResult> result = m_search->search(getFilesInBuffer());
+        handleSearchFinished(result);
+    }
+}
+
+void VSearchUE::searchOutlineOfBuffer(const QString &p_cmd)
+{
+    if (p_cmd.isEmpty()) {
+        m_inSearch = false;
+        emit stateUpdated(State::Success);
+    } else {
+        m_search->clear();
+        VSearchConfig::Option opt = VSearchConfig::NoneOption;
+        QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::OpenedNotes,
+                                                               VSearchConfig::Outline,
+                                                               VSearchConfig::Note,
+                                                               VSearchConfig::Internal,
+                                                               opt,
+                                                               p_cmd,
+                                                               QString()));
+        m_search->setConfig(config);
+        QSharedPointer<VSearchResult> result = m_search->search(getFilesInBuffer());
+        handleSearchFinished(result);
+    }
+}
+
+void VSearchUE::searchPathOfFolderNoteInAllNotebooks(const QString &p_cmd)
+{
+    if (p_cmd.isEmpty()) {
+        m_inSearch = false;
+        emit stateUpdated(State::Success);
+    } else {
+        m_search->clear();
+        VSearchConfig::Option opt = VSearchConfig::NoneOption;
+        QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::AllNotebooks,
+                                                               VSearchConfig::Path,
+                                                               VSearchConfig::Folder | VSearchConfig::Note,
+                                                               VSearchConfig::Internal,
+                                                               opt,
+                                                               p_cmd,
+                                                               QString()));
+        m_search->setConfig(config);
+        QSharedPointer<VSearchResult> result = m_search->search(g_vnote->getNotebooks());
+        handleSearchFinished(result);
+    }
+}
+
+void VSearchUE::searchPathOfFolderNoteInCurrentNotebook(const QString &p_cmd)
+{
+    if (p_cmd.isEmpty()) {
+        m_inSearch = false;
+        emit stateUpdated(State::Success);
+    } else {
+        QVector<VNotebook *> notebooks;
+        notebooks.append(g_mainWin->getNotebookSelector()->currentNotebook());
+        m_search->clear();
+        VSearchConfig::Option opt = VSearchConfig::NoneOption;
+        QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::CurrentNotebook,
+                                                               VSearchConfig::Path,
+                                                               VSearchConfig::Folder | VSearchConfig::Note,
                                                                VSearchConfig::Internal,
                                                                opt,
                                                                p_cmd,
@@ -258,6 +550,11 @@ void VSearchUE::handleSearchItemAdded(const QSharedPointer<VSearchResultItem> &p
     switch (m_id) {
     case ID::Name_Notebook_AllNotebook:
     case ID::Name_FolderNote_AllNotebook:
+    case ID::Name_FolderNote_CurrentNotebook:
+    case ID::Name_FolderNote_CurrentFolder:
+    case ID::Name_Note_Buffer:
+    case ID::Path_FolderNote_AllNotebook:
+    case ID::Path_FolderNote_CurrentNotebook:
         appendItemToList(p_item);
         if (itemAdded > 50) {
             itemAdded = 0;
@@ -268,6 +565,10 @@ void VSearchUE::handleSearchItemAdded(const QSharedPointer<VSearchResultItem> &p
         break;
 
     case ID::Content_Note_AllNotebook:
+    case ID::Content_Note_CurrentNotebook:
+    case ID::Content_Note_CurrentFolder:
+    case ID::Content_Note_Buffer:
+    case ID::Outline_Note_Buffer:
         appendItemToTree(p_item);
         if (itemAdded > 50) {
             itemAdded = 0;
@@ -290,6 +591,11 @@ void VSearchUE::handleSearchItemsAdded(const QList<QSharedPointer<VSearchResultI
     switch (m_id) {
     case ID::Name_Notebook_AllNotebook:
     case ID::Name_FolderNote_AllNotebook:
+    case ID::Name_FolderNote_CurrentNotebook:
+    case ID::Name_FolderNote_CurrentFolder:
+    case ID::Name_Note_Buffer:
+    case ID::Path_FolderNote_AllNotebook:
+    case ID::Path_FolderNote_CurrentNotebook:
     {
         for (auto const & it : p_items) {
             appendItemToList(it);
@@ -301,6 +607,10 @@ void VSearchUE::handleSearchItemsAdded(const QList<QSharedPointer<VSearchResultI
     }
 
     case ID::Content_Note_AllNotebook:
+    case ID::Content_Note_CurrentNotebook:
+    case ID::Content_Note_CurrentFolder:
+    case ID::Content_Note_Buffer:
+    case ID::Outline_Note_Buffer:
     {
         for (auto const & it : p_items) {
             appendItemToTree(it);
@@ -536,6 +846,11 @@ void VSearchUE::selectNextItem(int p_id, bool p_forward)
     switch (p_id) {
     case ID::Name_Notebook_AllNotebook:
     case ID::Name_FolderNote_AllNotebook:
+    case ID::Name_FolderNote_CurrentNotebook:
+    case ID::Name_FolderNote_CurrentFolder:
+    case ID::Name_Note_Buffer:
+    case ID::Path_FolderNote_AllNotebook:
+    case ID::Path_FolderNote_CurrentNotebook:
     {
         // Could not use postEvent method here which will induce infinite recursion.
         m_listWidget->selectNextItem(p_forward);
@@ -543,6 +858,10 @@ void VSearchUE::selectNextItem(int p_id, bool p_forward)
     }
 
     case ID::Content_Note_AllNotebook:
+    case ID::Content_Note_CurrentNotebook:
+    case ID::Content_Note_CurrentFolder:
+    case ID::Content_Note_Buffer:
+    case ID::Outline_Note_Buffer:
     {
         m_treeWidget->selectNextItem(p_forward);
         break;
@@ -558,12 +877,21 @@ void VSearchUE::activate(int p_id)
     switch (p_id) {
     case ID::Name_Notebook_AllNotebook:
     case ID::Name_FolderNote_AllNotebook:
+    case ID::Name_FolderNote_CurrentNotebook:
+    case ID::Name_FolderNote_CurrentFolder:
+    case ID::Name_Note_Buffer:
+    case ID::Path_FolderNote_AllNotebook:
+    case ID::Path_FolderNote_CurrentNotebook:
     {
         activateItem(m_listWidget->currentItem());
         break;
     }
 
     case ID::Content_Note_AllNotebook:
+    case ID::Content_Note_CurrentNotebook:
+    case ID::Content_Note_CurrentFolder:
+    case ID::Content_Note_Buffer:
+    case ID::Outline_Note_Buffer:
     {
         activateItem(m_treeWidget->currentItem(), 0);
         break;
