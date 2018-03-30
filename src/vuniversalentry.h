@@ -93,6 +93,8 @@ private:
 
     void updateState(IUniversalEntry::State p_state);
 
+    QString getCommandFromEdit() const;
+
     VMetaWordLineEdit *m_cmdEdit;
 
     VUniversalEntryContainer *m_container;

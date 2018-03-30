@@ -35,48 +35,50 @@ void VOutline::updateOutline(const VTableOfContent &p_outline)
 
     m_outline = p_outline;
 
-    updateTreeFromOutline();
+    updateTreeFromOutline(this, m_outline);
 
     expandTree();
 }
 
-void VOutline::updateTreeFromOutline()
+void VOutline::updateTreeFromOutline(QTreeWidget *p_treeWidget,
+                                     const VTableOfContent &p_outline)
 {
-    clear();
+    p_treeWidget->clear();
 
-    if (m_outline.isEmpty()) {
+    if (p_outline.isEmpty()) {
         return;
     }
 
-    const QVector<VTableOfContentItem> &headers = m_outline.getTable();
+    const QVector<VTableOfContentItem> &headers = p_outline.getTable();
     int idx = 0;
-    updateTreeByLevel(headers, idx, NULL, NULL, 1);
+    updateTreeByLevel(p_treeWidget, headers, idx, NULL, NULL, 1);
 }
 
-void VOutline::updateTreeByLevel(const QVector<VTableOfContentItem> &headers,
-                                 int &index,
-                                 QTreeWidgetItem *parent,
-                                 QTreeWidgetItem *last,
-                                 int level)
+void VOutline::updateTreeByLevel(QTreeWidget *p_treeWidget,
+                                 const QVector<VTableOfContentItem> &p_headers,
+                                 int &p_index,
+                                 QTreeWidgetItem *p_parent,
+                                 QTreeWidgetItem *p_last,
+                                 int p_level)
 {
-    while (index < headers.size()) {
-        const VTableOfContentItem &header = headers[index];
+    while (p_index < p_headers.size()) {
+        const VTableOfContentItem &header = p_headers[p_index];
         QTreeWidgetItem *item;
-        if (header.m_level == level) {
-            if (parent) {
-                item = new QTreeWidgetItem(parent);
+        if (header.m_level == p_level) {
+            if (p_parent) {
+                item = new QTreeWidgetItem(p_parent);
             } else {
-                item = new QTreeWidgetItem(this);
+                item = new QTreeWidgetItem(p_treeWidget);
             }
 
             fillItem(item, header);
 
-            last = item;
-            ++index;
-        } else if (header.m_level < level) {
+            p_last = item;
+            ++p_index;
+        } else if (header.m_level < p_level) {
             return;
         } else {
-            updateTreeByLevel(headers, index, last, NULL, level + 1);
+            updateTreeByLevel(p_treeWidget, p_headers, p_index, p_last, NULL, p_level + 1);
         }
     }
 }
@@ -110,7 +112,7 @@ void VOutline::handleCurrentItemChanged(QTreeWidgetItem *p_curItem,
         return;
     }
 
-    const VTableOfContentItem *header = getHeaderFromItem(p_curItem);
+    const VTableOfContentItem *header = getHeaderFromItem(p_curItem, m_outline);
     Q_ASSERT(header);
     m_currentHeader.update(m_outline.getFile(), header->m_index);
 
@@ -129,45 +131,50 @@ void VOutline::updateCurrentHeader(const VHeaderPointer &p_header)
     // Item change should not emit the signal.
     m_muted = true;
     m_currentHeader = p_header;
-    selectHeader(m_currentHeader);
+    selectHeader(this, m_outline, m_currentHeader);
     m_muted = false;
 }
 
-void VOutline::selectHeader(const VHeaderPointer &p_header)
+void VOutline::selectHeader(QTreeWidget *p_treeWidget,
+                            const VTableOfContent &p_outline,
+                            const VHeaderPointer &p_header)
 {
-    setCurrentItem(NULL);
+    p_treeWidget->setCurrentItem(NULL);
 
-    if (!m_outline.getItem(p_header)) {
+    if (!p_outline.getItem(p_header)) {
         return;
     }
 
-    int nrTop = topLevelItemCount();
+    int nrTop = p_treeWidget->topLevelItemCount();
     for (int i = 0; i < nrTop; ++i) {
-        if (selectHeaderOne(topLevelItem(i), p_header)) {
+        if (selectHeaderOne(p_treeWidget, p_treeWidget->topLevelItem(i), p_outline, p_header)) {
             return;
         }
     }
 }
 
-bool VOutline::selectHeaderOne(QTreeWidgetItem *p_item, const VHeaderPointer &p_header)
+bool VOutline::selectHeaderOne(QTreeWidget *p_treeWidget,
+                               QTreeWidgetItem *p_item,
+                               const VTableOfContent &p_outline,
+                               const VHeaderPointer &p_header)
 {
     if (!p_item) {
         return false;
     }
 
-    const VTableOfContentItem *header = getHeaderFromItem(p_item);
+    const VTableOfContentItem *header = getHeaderFromItem(p_item, p_outline);
     if (!header) {
         return false;
     }
 
     if (header->isMatched(p_header)) {
-        setCurrentItem(p_item);
+        p_treeWidget->setCurrentItem(p_item);
         return true;
     }
 
     int nrChild = p_item->childCount();
     for (int i = 0; i < nrChild; ++i) {
-        if (selectHeaderOne(p_item->child(i), p_header)) {
+        if (selectHeaderOne(p_treeWidget, p_item->child(i), p_outline, p_header)) {
             return true;
         }
     }
@@ -235,8 +242,9 @@ bool VOutline::handleKeyNavigation(int p_key, bool &p_succeed)
                                                 p_succeed);
 }
 
-const VTableOfContentItem *VOutline::getHeaderFromItem(QTreeWidgetItem *p_item) const
+const VTableOfContentItem *VOutline::getHeaderFromItem(QTreeWidgetItem *p_item,
+                                                       const VTableOfContent &p_outline)
 {
     int index = p_item->data(0, Qt::UserRole).toInt();
-    return m_outline.getItem(index);
+    return p_outline.getItem(index);
 }

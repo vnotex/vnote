@@ -235,8 +235,7 @@ QGraphicsOpacityEffect *VTreeWidget::getSearchInputEffect() const
 
 static QTreeWidgetItem *lastItemOfTree(QTreeWidgetItem *p_item)
 {
-    if (p_item->isExpanded()) {
-        Q_ASSERT(p_item->childCount() > 0);
+    if (p_item->isExpanded() && p_item->childCount() > 0) {
         return p_item->child(p_item->childCount() - 1);
     } else {
         return p_item;
@@ -306,7 +305,7 @@ QTreeWidgetItem *VTreeWidget::nextItem(QTreeWidgetItem *p_item, bool p_forward)
 {
     QTreeWidgetItem *nItem = NULL;
     if (p_forward) {
-        if (p_item->isExpanded()) {
+        if (p_item->isExpanded() && p_item->childCount() > 0) {
             nItem = p_item->child(0);
         } else {
             while (!nItem && p_item) {

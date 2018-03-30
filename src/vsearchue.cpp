@@ -58,7 +58,7 @@ QString VSearchUE::description(int p_id) const
         return tr("Search the content of notes in current folder");
 
     case ID::Name_Note_Buffer:
-        return tr("List and search buffer (opened notes)");
+        return tr("List and search the name of opened notes in buffer");
 
     case ID::Content_Note_Buffer:
         return tr("Search the content of opened notes in buffer");
@@ -110,7 +110,6 @@ void VSearchUE::init()
     m_treeWidget->setColumnCount(1);
     m_treeWidget->setHeaderHidden(true);
     m_treeWidget->setExpandsOnDoubleClick(false);
-    m_treeWidget->setSimpleSearchMatchFlags(m_treeWidget->getSimpleSearchMatchFlags() & ~Qt::MatchRecursive);
     m_treeWidget->setFitContent(true);
     m_treeWidget->hide();
     connect(m_treeWidget, SIGNAL(itemActivated(QTreeWidgetItem *, int)),
@@ -249,12 +248,11 @@ void VSearchUE::searchNameOfAllNotebooks(const QString &p_cmd)
     } else {
         // Do a fuzzy search against the name of the notebooks.
         m_search->clear();
-        VSearchConfig::Option opt = VSearchConfig::Fuzzy;
         QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::AllNotebooks,
                                                                VSearchConfig::Name,
                                                                VSearchConfig::Notebook,
                                                                VSearchConfig::Internal,
-                                                               opt,
+                                                               VSearchConfig::Fuzzy,
                                                                p_cmd,
                                                                QString()));
         m_search->setConfig(config);
@@ -271,12 +269,11 @@ void VSearchUE::searchNameOfFolderNoteInAllNotebooks(const QString &p_cmd)
         emit stateUpdated(State::Success);
     } else {
         m_search->clear();
-        VSearchConfig::Option opt = VSearchConfig::NoneOption;
         QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::AllNotebooks,
                                                                VSearchConfig::Name,
                                                                VSearchConfig::Folder | VSearchConfig::Note,
                                                                VSearchConfig::Internal,
-                                                               opt,
+                                                               VSearchConfig::NoneOption,
                                                                p_cmd,
                                                                QString()));
         m_search->setConfig(config);
@@ -292,12 +289,11 @@ void VSearchUE::searchContentOfNoteInAllNotebooks(const QString &p_cmd)
         emit stateUpdated(State::Success);
     } else {
         m_search->clear();
-        VSearchConfig::Option opt = VSearchConfig::NoneOption;
         QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::AllNotebooks,
                                                                VSearchConfig::Content,
                                                                VSearchConfig::Note,
                                                                VSearchConfig::Internal,
-                                                               opt,
+                                                               VSearchConfig::NoneOption,
                                                                p_cmd,
                                                                QString()));
         m_search->setConfig(config);
@@ -315,12 +311,11 @@ void VSearchUE::searchNameOfFolderNoteInCurrentNotebook(const QString &p_cmd)
         QVector<VNotebook *> notebooks;
         notebooks.append(g_mainWin->getNotebookSelector()->currentNotebook());
         m_search->clear();
-        VSearchConfig::Option opt = VSearchConfig::NoneOption;
         QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::CurrentNotebook,
                                                                VSearchConfig::Name,
                                                                VSearchConfig::Folder | VSearchConfig::Note,
                                                                VSearchConfig::Internal,
-                                                               opt,
+                                                               VSearchConfig::NoneOption,
                                                                p_cmd,
                                                                QString()));
         m_search->setConfig(config);
@@ -338,12 +333,11 @@ void VSearchUE::searchContentOfNoteInCurrentNotebook(const QString &p_cmd)
         QVector<VNotebook *> notebooks;
         notebooks.append(g_mainWin->getNotebookSelector()->currentNotebook());
         m_search->clear();
-        VSearchConfig::Option opt = VSearchConfig::NoneOption;
         QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::CurrentNotebook,
                                                                VSearchConfig::Content,
                                                                VSearchConfig::Note,
                                                                VSearchConfig::Internal,
-                                                               opt,
+                                                               VSearchConfig::NoneOption,
                                                                p_cmd,
                                                                QString()));
         m_search->setConfig(config);
@@ -360,12 +354,11 @@ void VSearchUE::searchNameOfFolderNoteInCurrentFolder(const QString &p_cmd)
     } else {
         VDirectory *dir = g_mainWin->getDirectoryTree()->currentDirectory();
         m_search->clear();
-        VSearchConfig::Option opt = VSearchConfig::NoneOption;
         QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::CurrentFolder,
                                                                VSearchConfig::Name,
                                                                VSearchConfig::Folder | VSearchConfig::Note,
                                                                VSearchConfig::Internal,
-                                                               opt,
+                                                               VSearchConfig::NoneOption,
                                                                p_cmd,
                                                                QString()));
         m_search->setConfig(config);
@@ -382,12 +375,11 @@ void VSearchUE::searchContentOfNoteInCurrentFolder(const QString &p_cmd)
     } else {
         VDirectory *dir = g_mainWin->getDirectoryTree()->currentDirectory();
         m_search->clear();
-        VSearchConfig::Option opt = VSearchConfig::NoneOption;
         QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::CurrentFolder,
                                                                VSearchConfig::Content,
                                                                VSearchConfig::Note,
                                                                VSearchConfig::Internal,
-                                                               opt,
+                                                               VSearchConfig::NoneOption,
                                                                p_cmd,
                                                                QString()));
         m_search->setConfig(config);
@@ -425,12 +417,11 @@ void VSearchUE::searchNameOfBuffer(const QString &p_cmd)
         emit stateUpdated(State::Success);
     } else {
         m_search->clear();
-        VSearchConfig::Option opt = VSearchConfig::NoneOption;
         QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::OpenedNotes,
                                                                VSearchConfig::Name,
                                                                VSearchConfig::Note,
                                                                VSearchConfig::Internal,
-                                                               opt,
+                                                               VSearchConfig::NoneOption,
                                                                p_cmd,
                                                                QString()));
         m_search->setConfig(config);
@@ -446,12 +437,11 @@ void VSearchUE::searchContentOfBuffer(const QString &p_cmd)
         emit stateUpdated(State::Success);
     } else {
         m_search->clear();
-        VSearchConfig::Option opt = VSearchConfig::NoneOption;
         QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::OpenedNotes,
                                                                VSearchConfig::Content,
                                                                VSearchConfig::Note,
                                                                VSearchConfig::Internal,
-                                                               opt,
+                                                               VSearchConfig::NoneOption,
                                                                p_cmd,
                                                                QString()));
         m_search->setConfig(config);
@@ -467,12 +457,11 @@ void VSearchUE::searchOutlineOfBuffer(const QString &p_cmd)
         emit stateUpdated(State::Success);
     } else {
         m_search->clear();
-        VSearchConfig::Option opt = VSearchConfig::NoneOption;
         QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::OpenedNotes,
                                                                VSearchConfig::Outline,
                                                                VSearchConfig::Note,
                                                                VSearchConfig::Internal,
-                                                               opt,
+                                                               VSearchConfig::NoneOption,
                                                                p_cmd,
                                                                QString()));
         m_search->setConfig(config);
@@ -488,12 +477,11 @@ void VSearchUE::searchPathOfFolderNoteInAllNotebooks(const QString &p_cmd)
         emit stateUpdated(State::Success);
     } else {
         m_search->clear();
-        VSearchConfig::Option opt = VSearchConfig::NoneOption;
         QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::AllNotebooks,
                                                                VSearchConfig::Path,
                                                                VSearchConfig::Folder | VSearchConfig::Note,
                                                                VSearchConfig::Internal,
-                                                               opt,
+                                                               VSearchConfig::NoneOption,
                                                                p_cmd,
                                                                QString()));
         m_search->setConfig(config);
@@ -511,12 +499,11 @@ void VSearchUE::searchPathOfFolderNoteInCurrentNotebook(const QString &p_cmd)
         QVector<VNotebook *> notebooks;
         notebooks.append(g_mainWin->getNotebookSelector()->currentNotebook());
         m_search->clear();
-        VSearchConfig::Option opt = VSearchConfig::NoneOption;
         QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::CurrentNotebook,
                                                                VSearchConfig::Path,
                                                                VSearchConfig::Folder | VSearchConfig::Note,
                                                                VSearchConfig::Internal,
-                                                               opt,
+                                                               VSearchConfig::NoneOption,
                                                                p_cmd,
                                                                QString()));
         m_search->setConfig(config);
@@ -533,11 +520,6 @@ void VSearchUE::clear(int p_id)
     m_data.clear();
     m_listWidget->clearAll();
     m_treeWidget->clearAll();
-}
-
-void VSearchUE::entryHidden(int p_id)
-{
-    Q_UNUSED(p_id);
 }
 
 void VSearchUE::handleSearchItemAdded(const QSharedPointer<VSearchResultItem> &p_item)

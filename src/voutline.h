@@ -23,6 +23,18 @@ public:
     void showNavigation() Q_DECL_OVERRIDE;
     bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE;
 
+    // Update tree according to outline.
+    static void updateTreeFromOutline(QTreeWidget *p_treeWidget, const VTableOfContent &p_outline);
+
+    // Set the item corresponding to @p_header as current item.
+    static void selectHeader(QTreeWidget *p_treeWidget,
+                             const VTableOfContent &p_outline,
+                             const VHeaderPointer &p_header);
+
+    // Return NULL if no corresponding header in outline.
+    static const VTableOfContentItem *getHeaderFromItem(QTreeWidgetItem *p_item,
+                                                        const VTableOfContent &p_outline);
+
 signals:
     // Emit when current item changed by user and header of that item is not empty.
     // Do not worry about infinite recursion.
@@ -46,28 +58,23 @@ private slots:
     void handleCurrentItemChanged(QTreeWidgetItem *p_curItem, QTreeWidgetItem *p_preItem);
 
 private:
-    // Update tree according to outline.
-    void updateTreeFromOutline();
-
     // @index: the index in @headers.
-    void updateTreeByLevel(const QVector<VTableOfContentItem> &headers,
-                           int &index,
-                           QTreeWidgetItem *parent,
-                           QTreeWidgetItem *last,
-                           int level);
+    static void updateTreeByLevel(QTreeWidget *p_treeWidget,
+                                  const QVector<VTableOfContentItem> &p_headers,
+                                  int &p_index,
+                                  QTreeWidgetItem *p_parent,
+                                  QTreeWidgetItem *p_last,
+                                  int p_level);
+
+    // Fill the info of @p_item.
+    static void fillItem(QTreeWidgetItem *p_item, const VTableOfContentItem &p_header);
 
     void expandTree();
 
-    // Set the item corresponding to @p_header as current item.
-    void selectHeader(const VHeaderPointer &p_header);
-
-    bool selectHeaderOne(QTreeWidgetItem *p_item, const VHeaderPointer &p_header);
-
-    // Fill the info of @p_item.
-    void fillItem(QTreeWidgetItem *p_item, const VTableOfContentItem &p_header);
-
-    // Return NULL if no corresponding header in outline.
-    const VTableOfContentItem *getHeaderFromItem(QTreeWidgetItem *p_item) const;
+    static bool selectHeaderOne(QTreeWidget *p_treeWidget,
+                                QTreeWidgetItem *p_item,
+                                const VTableOfContent &p_outline,
+                                const VHeaderPointer &p_header);
 
     VTableOfContent m_outline;
 

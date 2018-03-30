@@ -147,6 +147,11 @@ void VUniversalEntry::showEvent(QShowEvent *p_event)
     activateWindow();
 
     m_cmdEdit->setFocus();
+    m_cmdEdit->selectAll();
+
+    if (m_lastEntry) {
+        m_lastEntry->m_entry->entryShown(m_lastEntry->m_id, getCommandFromEdit());
+    }
 }
 
 void VUniversalEntry::setAvailableRect(const QRect &p_rect)
@@ -168,7 +173,12 @@ void VUniversalEntry::registerEntry(QChar p_key, IUniversalEntry *p_entry, int p
     p_entry->setWidgetParent(this);
     connect(p_entry, &IUniversalEntry::widgetUpdated,
             this, [this]() {
-                m_container->adjustSizeByWidget();
+                if (m_lastEntry) {
+                    m_container->setWidget(m_lastEntry->m_entry->widget(m_lastEntry->m_id));
+                } else {
+                    m_container->adjustSizeByWidget();
+                }
+
                 adjustSize();
             });
     connect(p_entry, &IUniversalEntry::stateUpdated,
@@ -357,4 +367,10 @@ void VUniversalEntry::updateState(IUniversalEntry::State p_state)
     } else {
         m_cmdEdit->setStyleSheet(QString("border-color: %1;").arg(fg));
     }
+}
+
+QString VUniversalEntry::getCommandFromEdit() const
+{
+    QString cmd = m_cmdEdit->getEvaluatedText();
+    return cmd.mid(1);
 }

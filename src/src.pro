@@ -121,7 +121,8 @@ SOURCES += main.cpp\
     vuniversalentry.cpp \
     vlistwidgetdoublerows.cpp \
     vdoublerowitemwidget.cpp \
-    vsearchue.cpp
+    vsearchue.cpp \
+    voutlineue.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -233,7 +234,8 @@ HEADERS  += vmainwindow.h \
     iuniversalentry.h \
     vlistwidgetdoublerows.h \
     vdoublerowitemwidget.h \
-    vsearchue.h
+    vsearchue.h \
+    voutlineue.h
 
 RESOURCES += \
     vnote.qrc \

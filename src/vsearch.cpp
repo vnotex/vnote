@@ -25,7 +25,8 @@ QSharedPointer<VSearchResult> VSearch::search(const QVector<VFile *> &p_files)
 
     QSharedPointer<VSearchResult> result(new VSearchResult(this));
 
-    if (p_files.isEmpty()) {
+    if (p_files.isEmpty() || m_config->isEmpty()) {
+        result->m_state = VSearchState::Success;
         return result;
     }
 
@@ -64,7 +65,8 @@ QSharedPointer<VSearchResult> VSearch::search(VDirectory *p_directory)
 
     QSharedPointer<VSearchResult> result(new VSearchResult(this));
 
-    if (!p_directory) {
+    if (!p_directory || m_config->isEmpty()) {
+        result->m_state = VSearchState::Success;
         return result;
     }
 
@@ -95,7 +97,8 @@ QSharedPointer<VSearchResult> VSearch::search(const QVector<VNotebook *> &p_note
 
     QSharedPointer<VSearchResult> result(new VSearchResult(this));
 
-    if (p_notebooks.isEmpty()) {
+    if (p_notebooks.isEmpty() || m_config->isEmpty()) {
+        result->m_state = VSearchState::Success;
         return result;
     }
 

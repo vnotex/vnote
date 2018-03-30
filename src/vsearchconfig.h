@@ -319,6 +319,10 @@ struct VSearchConfig
             args.removeAt(i);
         }
 
+        if (args.isEmpty()) {
+            return;
+        }
+
         m_token.m_caseSensitivity = cs;
         m_contentToken.m_caseSensitivity = cs;
 
@@ -378,6 +382,11 @@ struct VSearchConfig
 
         m_token.m_op = op;
         m_contentToken.m_op = op;
+    }
+
+    bool isEmpty() const
+    {
+        return m_token.tokenSize() == 0;
     }
 
     QStringList toConfig() const

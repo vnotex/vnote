@@ -39,7 +39,17 @@ public:
     virtual void clear(int p_id) = 0;
 
     // UE is hidden by the user.
-    virtual void entryHidden(int p_id) = 0;
+    virtual void entryHidden(int p_id)
+    {
+        Q_UNUSED(p_id);
+    }
+
+    // UE is shown by the user.
+    virtual void entryShown(int p_id, const QString &p_cmd)
+    {
+        Q_UNUSED(p_id);
+        Q_UNUSED(p_cmd);
+    }
 
     // Select next item.
     virtual void selectNextItem(int p_id, bool p_forward) = 0;
