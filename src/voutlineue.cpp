@@ -89,6 +89,12 @@ void VOutlineUE::processCommand(int p_id, const QString &p_cmd)
         if (tab) {
             const VTableOfContent &outline = tab->getOutline();
             VOutline::updateTreeFromOutline(m_treeWidget, outline);
+
+            // expandAll() has some bugs with the first item. Fix it.
+            if (m_treeWidget->topLevelItemCount() > 0) {
+                m_treeWidget->topLevelItem(0)->setExpanded(true);
+            }
+
             m_treeWidget->expandAll();
 
             const VHeaderPointer &header = tab->getCurrentHeader();
@@ -194,11 +200,6 @@ void VOutlineUE::activate(int p_id)
     }
 }
 
-void VOutlineUE::askToStop(int p_id)
-{
-    Q_UNUSED(p_id);
-}
-
 void VOutlineUE::activateItem(QListWidgetItem *p_item)
 {
     if (!p_item) {
@@ -230,5 +231,24 @@ void VOutlineUE::activateItem(QTreeWidgetItem *p_item, int p_col)
 
         VHeaderPointer hp(outline.getFile(), header->m_index);
         g_mainWin->getEditArea()->scrollToHeader(hp);
+    }
+}
+
+void VOutlineUE::selectParentItem(int p_id)
+{
+    Q_UNUSED(p_id);
+    if (m_listOutline) {
+        m_treeWidget->selectParentItem();
+    }
+}
+
+void VOutlineUE::toggleItemExpanded(int p_id)
+{
+    Q_UNUSED(p_id);
+    if (m_listOutline) {
+        QTreeWidgetItem *item = m_treeWidget->currentItem();
+        if (item) {
+            item->setExpanded(!item->isExpanded());
+        }
     }
 }

@@ -39,6 +39,8 @@ public:
 
     virtual void selectNextItem(bool p_forward) Q_DECL_OVERRIDE;
 
+    virtual void selectParentItem();
+
     void setFitContent(bool p_enabled);
 
 protected:

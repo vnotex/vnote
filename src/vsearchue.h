@@ -69,9 +69,13 @@ public:
 
     void selectNextItem(int p_id, bool p_forward) Q_DECL_OVERRIDE;
 
+    void selectParentItem(int p_id) Q_DECL_OVERRIDE;
+
     void activate(int p_id) Q_DECL_OVERRIDE;
 
     void askToStop(int p_id) Q_DECL_OVERRIDE;
+
+    void toggleItemExpanded(int p_id) Q_DECL_OVERRIDE;
 
 protected:
     void init() Q_DECL_OVERRIDE;

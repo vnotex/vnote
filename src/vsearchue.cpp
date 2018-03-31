@@ -891,3 +891,41 @@ void VSearchUE::askToStop(int p_id)
         m_search->stop();
     }
 }
+
+void VSearchUE::selectParentItem(int p_id)
+{
+    switch (p_id) {
+    case ID::Content_Note_AllNotebook:
+    case ID::Content_Note_CurrentNotebook:
+    case ID::Content_Note_CurrentFolder:
+    case ID::Content_Note_Buffer:
+    case ID::Outline_Note_Buffer:
+        m_treeWidget->selectParentItem();
+        break;
+
+    default:
+        break;
+    }
+}
+
+void VSearchUE::toggleItemExpanded(int p_id)
+{
+    switch (p_id) {
+    case ID::Content_Note_AllNotebook:
+    case ID::Content_Note_CurrentNotebook:
+    case ID::Content_Note_CurrentFolder:
+    case ID::Content_Note_Buffer:
+    case ID::Outline_Note_Buffer:
+    {
+        QTreeWidgetItem *item = m_treeWidget->currentItem();
+        if (item) {
+            item->setExpanded(!item->isExpanded());
+        }
+
+        break;
+    }
+
+    default:
+        break;
+    }
+}

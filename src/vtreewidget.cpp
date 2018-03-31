@@ -324,3 +324,14 @@ QTreeWidgetItem *VTreeWidget::nextItem(QTreeWidgetItem *p_item, bool p_forward)
 
     return nItem;
 }
+
+void VTreeWidget::selectParentItem()
+{
+    QTreeWidgetItem *item = currentItem();
+    if (item) {
+        QTreeWidgetItem *pitem = item->parent();
+        if (pitem) {
+            setCurrentItem(pitem);
+        }
+    }
+}

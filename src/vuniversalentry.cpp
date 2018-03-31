@@ -311,8 +311,9 @@ void VUniversalEntry::keyPressEvent(QKeyEvent *p_event)
                 m_cmdTimer->stop();
                 m_cmdEdit->setText(cmd.left(1));
                 processCommand();
-                return;
             }
+
+            return;
         }
 
         break;
@@ -324,6 +325,31 @@ void VUniversalEntry::keyPressEvent(QKeyEvent *p_event)
             if (m_lastEntry) {
                 m_lastEntry->m_entry->askToStop(m_lastEntry->m_id);
             }
+
+            return;
+        }
+
+        break;
+
+    case Qt::Key_R:
+        if (VUtils::isControlModifierForVim(modifiers)) {
+            // Ctrl+R to go up a level.
+            if (m_lastEntry) {
+                m_lastEntry->m_entry->selectParentItem(m_lastEntry->m_id);
+            }
+
+            return;
+        }
+
+        break;
+
+    case Qt::Key_T:
+        if (VUtils::isControlModifierForVim(modifiers)) {
+            // Ctrl+T to expand or collapse an item.
+            if (m_lastEntry) {
+                m_lastEntry->m_entry->toggleItemExpanded(m_lastEntry->m_id);
+            }
+
             return;
         }
 

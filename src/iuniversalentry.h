@@ -54,11 +54,25 @@ public:
     // Select next item.
     virtual void selectNextItem(int p_id, bool p_forward) = 0;
 
+    // Select parent item.
+    virtual void selectParentItem(int p_id)
+    {
+        Q_UNUSED(p_id);
+    }
+
     // Activate current item.
     virtual void activate(int p_id) = 0;
 
     // Ask the UE to stop asynchronously.
-    virtual void askToStop(int p_id) = 0;
+    virtual void askToStop(int p_id)
+    {
+        Q_UNUSED(p_id);
+    }
+
+    virtual void toggleItemExpanded(int p_id)
+    {
+        Q_UNUSED(p_id);
+    }
 
     void setWidgetParent(QWidget *p_parent)
     {
