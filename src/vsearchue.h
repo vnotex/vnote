@@ -77,6 +77,8 @@ public:
 
     void toggleItemExpanded(int p_id) Q_DECL_OVERRIDE;
 
+    void sort(int p_id) Q_DECL_OVERRIDE;
+
 protected:
     void init() Q_DECL_OVERRIDE;
 

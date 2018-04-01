@@ -642,7 +642,7 @@ void VSearchUE::appendItemToList(const QSharedPointer<VSearchResultItem> &p_item
         break;
     }
 
-    QListWidgetItem *item = m_listWidget->insertItem(row, *icon, first, second);
+    QListWidgetItem *item = m_listWidget->insertDoubleRowsItem(row, *icon, first, second);
     item->setData(Qt::UserRole, m_data.size() - 1);
     item->setToolTip(p_item->m_path);
 
@@ -925,6 +925,55 @@ void VSearchUE::toggleItemExpanded(int p_id)
             item->setExpanded(!item->isExpanded());
         }
 
+        break;
+    }
+
+    default:
+        break;
+    }
+}
+
+void VSearchUE::sort(int p_id)
+{
+    static bool noteFirst = false;
+
+    switch (p_id) {
+    case ID::Name_Notebook_AllNotebook:
+    case ID::Name_FolderNote_AllNotebook:
+    case ID::Name_FolderNote_CurrentNotebook:
+    case ID::Name_FolderNote_CurrentFolder:
+    case ID::Name_Note_Buffer:
+    case ID::Path_FolderNote_AllNotebook:
+    case ID::Path_FolderNote_CurrentNotebook:
+    {
+        int cnt = m_listWidget->count();
+        if (noteFirst) {
+            int idx = cnt - 1;
+            while (true) {
+                if (itemResultData(m_listWidget->item(idx))->m_type != VSearchResultItem::Note) {
+                    // Move it to the first row.
+                    m_listWidget->moveItem(idx, 0);
+                } else {
+                    break;
+                }
+            }
+        } else {
+            int idx = 0;
+            while (true) {
+                if (itemResultData(m_listWidget->item(idx))->m_type != VSearchResultItem::Note) {
+                    // Move it to the last row.
+                    m_listWidget->moveItem(idx, cnt - 1);
+                } else {
+                    break;
+                }
+            }
+        }
+
+        if (cnt) {
+            m_listWidget->setCurrentRow(0);
+        }
+
+        noteFirst = !noteFirst;
         break;
     }
 

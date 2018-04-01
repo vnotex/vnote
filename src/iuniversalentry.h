@@ -74,6 +74,11 @@ public:
         Q_UNUSED(p_id);
     }
 
+    virtual void sort(int p_id)
+    {
+        Q_UNUSED(p_id);
+    }
+
     void setWidgetParent(QWidget *p_parent)
     {
         m_widgetParent = p_parent;

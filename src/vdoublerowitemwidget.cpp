@@ -35,3 +35,12 @@ void VDoubleRowItemWidget::setText(const QString &p_firstText,
         m_secondLabel->hide();
     }
 }
+
+VDoubleRowItemWidget *VDoubleRowItemWidget::cloneWidget(VDoubleRowItemWidget *p_widget,
+                                                        QWidget *p_parent)
+{
+    VDoubleRowItemWidget *widget = new VDoubleRowItemWidget(p_parent);
+    widget->setText(p_widget->m_firstLabel->text(), p_widget->m_secondLabel->text());
+
+    return widget;
+}

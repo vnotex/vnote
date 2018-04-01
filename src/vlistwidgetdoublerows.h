@@ -14,14 +14,12 @@ class VListWidgetDoubleRows : public VListWidget
 public:
     explicit VListWidgetDoubleRows(QWidget *p_parent = nullptr);
 
-    QListWidgetItem *addItem(const QIcon &p_icon,
-                             const QString &p_firstRow,
-                             const QString &p_secondRow);
+    QListWidgetItem *insertDoubleRowsItem(int p_row,
+                                          const QIcon &p_icon,
+                                          const QString &p_firstRow,
+                                          const QString &p_secondRow);
 
-    QListWidgetItem *insertItem(int p_row,
-                                const QIcon &p_icon,
-                                const QString &p_firstRow,
-                                const QString &p_secondRow);
+    void moveItem(int p_srcRow, int p_destRow);
 
     void clearAll() Q_DECL_OVERRIDE;
 };
