@@ -353,6 +353,8 @@ void VUniversalEntry::keyPressEvent(QKeyEvent *p_event)
             return;
         }
 
+        break;
+
     case Qt::Key_S:
         if (VUtils::isControlModifierForVim(modifiers)) {
             // Ctrl+S to sort the items.

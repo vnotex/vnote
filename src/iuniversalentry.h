@@ -27,6 +27,10 @@ public:
     {
     }
 
+    virtual ~IUniversalEntry()
+    {
+    }
+
     // Return a description string for the entry.
     virtual QString description(int p_id) const = 0;
 
@@ -52,7 +56,11 @@ public:
     }
 
     // Select next item.
-    virtual void selectNextItem(int p_id, bool p_forward) = 0;
+    virtual void selectNextItem(int p_id, bool p_forward)
+    {
+        Q_UNUSED(p_id);
+        Q_UNUSED(p_forward);
+    }
 
     // Select parent item.
     virtual void selectParentItem(int p_id)
@@ -61,7 +69,10 @@ public:
     }
 
     // Activate current item.
-    virtual void activate(int p_id) = 0;
+    virtual void activate(int p_id)
+    {
+        Q_UNUSED(p_id);
+    }
 
     // Ask the UE to stop asynchronously.
     virtual void askToStop(int p_id)

@@ -64,10 +64,7 @@ void VUpdater::setupUI()
     m_proLabel->hide();
     m_proBar->hide();
 
-    m_descriptionWV->setMaximumSize(600, 400);
-
     setLayout(mainLayout);
-    mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     setWindowTitle(tr("VNote Update"));
 }
 

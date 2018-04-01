@@ -42,6 +42,7 @@
 #include "vuniversalentry.h"
 #include "vsearchue.h"
 #include "voutlineue.h"
+#include "vhelpue.h"
 
 extern VConfigManager *g_config;
 
@@ -3213,4 +3214,5 @@ void VMainWindow::initUniversalEntry()
     m_ue->registerEntry('y', new VOutlineUE(this), 0);
     m_ue->registerEntry('h', searchUE, VSearchUE::Path_FolderNote_AllNotebook);
     m_ue->registerEntry('n', searchUE, VSearchUE::Path_FolderNote_CurrentNotebook);
+    m_ue->registerEntry('?', new VHelpUE(this), 0);
 }
