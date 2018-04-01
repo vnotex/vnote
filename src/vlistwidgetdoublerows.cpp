@@ -14,6 +14,14 @@ QListWidgetItem *VListWidgetDoubleRows::addItem(const QIcon &p_icon,
                                                 const QString &p_firstRow,
                                                 const QString &p_secondRow)
 {
+    return VListWidgetDoubleRows::insertItem(count(), p_icon, p_firstRow, p_secondRow);
+}
+
+QListWidgetItem *VListWidgetDoubleRows::insertItem(int p_row,
+                                                   const QIcon &p_icon,
+                                                   const QString &p_firstRow,
+                                                   const QString &p_secondRow)
+{
     VDoubleRowItemWidget *itemWidget = new VDoubleRowItemWidget(this);
     itemWidget->setText(p_firstRow, p_secondRow);
     QSize sz = itemWidget->sizeHint();
@@ -34,7 +42,7 @@ QListWidgetItem *VListWidgetDoubleRows::addItem(const QIcon &p_icon,
 
     item->setSizeHint(sz);
 
-    VListWidget::addItem(item);
+    VListWidget::insertItem(p_row, item);
     VListWidget::setItemWidget(item, itemWidget);
     return item;
 }

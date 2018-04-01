@@ -622,8 +622,11 @@ void VSearchUE::appendItemToList(const QSharedPointer<VSearchResultItem> &p_item
     }
 
     QIcon *icon = NULL;
+    // We put notebook and folder before note.
+    int row = 0;
     switch (p_item->m_type) {
     case VSearchResultItem::Note:
+        row = m_listWidget->count();
         icon = &m_noteIcon;
         break;
 
@@ -639,11 +642,11 @@ void VSearchUE::appendItemToList(const QSharedPointer<VSearchResultItem> &p_item
         break;
     }
 
-    QListWidgetItem *item = m_listWidget->addItem(*icon, first, second);
+    QListWidgetItem *item = m_listWidget->insertItem(row, *icon, first, second);
     item->setData(Qt::UserRole, m_data.size() - 1);
     item->setToolTip(p_item->m_path);
 
-    if (m_listWidget->currentRow() == -1) {
+    if (row == 0) {
         m_listWidget->setCurrentRow(0);
     }
 }

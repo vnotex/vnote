@@ -18,6 +18,11 @@ public:
                              const QString &p_firstRow,
                              const QString &p_secondRow);
 
+    QListWidgetItem *insertItem(int p_row,
+                                const QIcon &p_icon,
+                                const QString &p_firstRow,
+                                const QString &p_secondRow);
+
     void clearAll() Q_DECL_OVERRIDE;
 };
 
