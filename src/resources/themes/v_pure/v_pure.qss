@@ -5,26 +5,6 @@ QToolTip
     color: @tooltip_fg;
 }
 
-/* QWidget */
-QWidget#FindReplaceTitleWidget {
-    background: @title_bg;
-}
-
-QWidget[ToolBoxTitle="true"] {
-    border-bottom: $2px solid @toolbox_title_border;
-}
-
-QWidget[MainEditor="true"] {
-    border: none;
-}
-
-QWidget
-{
-    color: @widget_fg;
-    font-family: "Hiragino Sans GB", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", "Dengxian", "等线体", "STXihei", "华文细黑", "Liberation Sans", "Droid Sans", "NSimSun", "新宋体", "SimSun", "宋体", "Helvetica", "sans-serif", "Tahoma", "Arial", "Verdana", "Geneva", "Georgia", "Times New Roman";
-}
-/* End QWidget */
-
 /* QMainWindow */
 QMainWindow {
     color: @base_fg;
@@ -590,12 +570,21 @@ VTabIndicator QLabel[TabIndicatorLabel="true"] {
     background: transparent;
 }
 
+VSelectorItemWidget QLabel[SelectorItemShortcutLabel="true"] {
+    font: bold;
+    border: $2px solid @selectoritem_border;
+    padding: 3px;
+    border-radius: 5px;
+    background-color: @selectoritem_bg;
+    color: @selectoritem_fg;
+}
+
 VDoubleRowItemWidget QLabel[FirstRowLabel="true"] {
     font-size: 10pt;
 }
 
 VDoubleRowItemWidget QLabel[SecondRowLabel="true"] {
-    font-size: 8pt;
+    font-size: 9pt;
     color: @doublerowitem_second_row_label_fg;
 }
 
@@ -737,20 +726,6 @@ QTabBar QToolButton::left-arrow:disabled {
     image: url(left_disabled.svg);
 }
 /* End QTabBar */
-
-VSelectorItemWidget QLabel[SelectorItemShortcutLabel="true"] {
-    font: bold;
-    border: $2px solid @selectoritem_border;
-    padding: 3px;
-    border-radius: 5px;
-    background-color: @selectoritem_bg;
-    color: @selectoritem_fg;
-}
-
-VInsertSelector {
-    border: none;
-    background: @insertselector_bg;
-}
 
 /* QTreeView */
 QTreeView[ItemBorder="true"]::item {
@@ -1264,7 +1239,32 @@ QProgressBar::chunk {
 }
 /* End QProgressBar */
 
+/* QWidget */
+QWidget#FindReplaceTitleWidget {
+    background: @title_bg;
+}
+
+QWidget[ToolBoxTitle="true"] {
+    border-bottom: $2px solid @toolbox_title_border;
+}
+
+QWidget[MainEditor="true"] {
+    border: none;
+}
+
+QWidget
+{
+    color: @widget_fg;
+    font-family: "Hiragino Sans GB", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", "Dengxian", "等线体", "STXihei", "华文细黑", "Liberation Sans", "Droid Sans", "NSimSun", "新宋体", "SimSun", "宋体", "Helvetica", "sans-serif", "Tahoma", "Arial", "Verdana", "Geneva", "Georgia", "Times New Roman";
+}
+
+VInsertSelector {
+    border: none;
+    background: @insertselector_bg;
+}
+
 VUniversalEntry {
-    background: transparent;
+    background: @universalentry_bg;
     border: 1px solid @universalentry_border_bg;
 }
+/* End QWidget */

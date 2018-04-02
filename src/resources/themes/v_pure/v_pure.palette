@@ -7,7 +7,7 @@ mdhl_file=v_pure.mdhl
 css_file=v_pure.css
 codeblock_css_file=v_pure_codeblock.css
 mermaid_css_file=v_pure_mermaid.css
-version=7
+version=8
 
 [phony]
 ; Abstract color attributes.
@@ -349,6 +349,7 @@ progressbar_bg=@edit_bg
 progressbar_border_bg=@border_bg
 progressbar_chunk_bg=@master_light_bg
 
+universalentry_bg=@base_bg
 universalentry_border_bg=@border_bg
 
 doublerowitem_second_row_label_fg=#6C6C6C
