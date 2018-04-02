@@ -1023,6 +1023,14 @@ bool VMdTab::checkPreviousBackupFile()
         return true;
     }
 
+    QString backupContent = m_file->readBackupFile(preFile);
+    if (m_file->getContent() == backupContent) {
+        // Found backup file with identical content.
+        // Just discard the backup file.
+        VUtils::deleteFile(preFile);
+        return true;
+    }
+
     QMessageBox box(QMessageBox::Warning,
                     tr("Backup File Found"),
                     tr("Found backup file <span style=\"%1\">%2</span> "
@@ -1032,17 +1040,13 @@ bool VMdTab::checkPreviousBackupFile()
                       .arg(m_file->fetchPath()),
                     QMessageBox::NoButton,
                     this);
-    QString backupContent = m_file->readBackupFile(preFile);
     QString info = tr("VNote may crash while editing this note before.<br/>"
                       "Please choose to recover from the backup file or delete it.<br/><br/>"
                       "Note file last modified: <span style=\"%1\">%2</span><br/>"
-                      "Backup file last modified: <span style=\"%1\">%3</span><br/>"
-                      "Content comparison: <span style=\"%1\">%4</span>")
+                      "Backup file last modified: <span style=\"%1\">%3</span>")
                      .arg(g_config->c_dataTextStyle)
                      .arg(VUtils::displayDateTime(QFileInfo(m_file->fetchPath()).lastModified()))
-                     .arg(VUtils::displayDateTime(QFileInfo(preFile).lastModified()))
-                     .arg(m_file->getContent() == backupContent ? tr("Identical")
-                                                                : tr("Different"));
+                     .arg(VUtils::displayDateTime(QFileInfo(preFile).lastModified()));
     box.setInformativeText(info);
     QPushButton *recoverBtn = box.addButton(tr("Recover From Backup File"), QMessageBox::YesRole);
     box.addButton(tr("Discard Backup File"), QMessageBox::NoRole);
