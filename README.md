@@ -82,6 +82,8 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 ![VNote WeChat](screenshots/vnote_md.jpg)
 
 # Highlights
+- Powerful **full-text search**;
+- **Universal Entry** to reach anything just by typing;
 - Inserting images directly from clipboard;
 - Syntax highlights of fenced code blocks in both **edit** and **read** mode;
 - Outline in both edit and read mode;
@@ -94,7 +96,19 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 - Attachments of notes;
 - Themes and dark mode;
 - Rich and extensible export, such as HTML, PDF, and PDF (All In One);
-- Powerful **full-text search**.
+
+# Donate
+You could help VNote's development in may ways.
+
+- Keep monitoring VNote and sending feedback for improvement.
+- Spread and promote VNote to your friends. Popularity is a strong power to drive developers.
+- Participate in the development of VNote and send PullRequest to make VNote perfect.
+- Last, really appreciate your donate to VNote if you think VNote really helps you and you want to help VNote.
+    - PayPal: [PayPal.Me/vnotemd](https://www.paypal.me/vnotemd)
+    - Alipay: `tamlokveer@gmail.com`  
+    ![Alipay](screenshots/alipay.png)
+
+Thanks very much to [them](https://github.com/tamlok/vnote/wiki/Donate-List) who donated to VNote!
 
 # Why VNote
 ## Markdown Editor & Notes Management
@@ -153,19 +167,6 @@ Please refer to the [shortcuts help](src/resources/docs/shortcuts_en.md) in the 
 
 ## Highly Configurable
 In VNote, almost everything is configurable, such as background color, font, and Markdown style. VNote uses a plaintext file to record all your configuration, so you could just copy that file to initialize a new VNote on another computer.
-
-# Donate
-You could help VNote's development in may ways.
-
-- Keep monitoring VNote and sending feedback for improvement.
-- Spread and promote VNote to your friends. Popularity is a strong power to drive developers.
-- Participate in the development of VNote and send PullRequest to make VNote perfect.
-- Last, really appreciate your donate to VNote if you think VNote really helps you and you want to help VNote.
-    - PayPal: [PayPal.Me/vnotemd](https://www.paypal.me/vnotemd)
-    - Alipay: `tamlokveer@gmail.com`  
-    ![Alipay](screenshots/alipay.png)
-
-Thanks very much to [them](https://github.com/tamlok/vnote/wiki/Donate-List) who donated to VNote!
 
 # Dependencies
 - [Qt 5.9](http://qt-project.org) (L-GPL v3)

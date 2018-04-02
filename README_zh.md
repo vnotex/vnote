@@ -83,6 +83,8 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 ![VNote WeChat](screenshots/vnote_md.jpg)
 
 # 亮点
+- 强大的**全文搜索**；
+- **通用入口**，通过按键操控一切；
 - 直接从剪切板插入图片；
 - 编辑和阅读模式下代码块的语法高亮；
 - 编辑和阅读模式下的大纲；
@@ -95,7 +97,19 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 - 笔记附件；
 - 主题以及深色模式；
 - 丰富、可扩展的导出，包括HTML，PDF，和PDF（多合一）；
-- 强大的**全文搜索**；
+
+# 捐赠
+您可以通过很多途径帮助VNote的开发。
+
+- 持续关注VNote并反馈。
+- 向您的朋友们推广和传播VNote。普及度是驱动开发者的一股强大力量。
+- 参与到VNote的开发中，发送PullRequest来帮助VNote变得更完美。
+- 最后，如果您觉得VNote真的帮助到您并且想回馈VNote，非常感谢您的捐赠。
+    - PayPal: [PayPal.Me/vnotemd](https://www.paypal.me/vnotemd)
+    - 支付宝: `tamlokveer@gmail.com`  
+    ![Alipay](screenshots/alipay.png)
+
+非常感谢这些对VNote的 [捐赠者](https://github.com/tamlok/vnote/wiki/Donate-List) !
 
 # 开发VNote的动机
 ## Markdown编辑器与笔记管理
@@ -156,19 +170,6 @@ VNote提供很多快捷键，从而提供一个愉悦的编辑体验。其中包
 
 ## 高度可定制
 VNote中，几乎一切都是可以定制的，例如背景颜色、字体以及Markdown样式等。VNote使用一个纯文本文件来记录您的所有配置，因此通过拷贝该文件就能够很快地在另一台电脑上初始化一个新的VNote。
-
-# 捐赠
-您可以通过很多途径帮助VNote的开发。
-
-- 持续关注VNote并反馈。
-- 向您的朋友们推广和传播VNote。普及度是驱动开发者的一股强大力量。
-- 参与到VNote的开发中，发送PullRequest来帮助VNote变得更完美。
-- 最后，如果您觉得VNote真的帮助到您并且想回馈VNote，非常感谢您的捐赠。
-    - PayPal: [PayPal.Me/vnotemd](https://www.paypal.me/vnotemd)
-    - 支付宝: `tamlokveer@gmail.com`  
-    ![Alipay](screenshots/alipay.png)
-
-非常感谢这些对VNote的 [捐赠者](https://github.com/tamlok/vnote/wiki/Donate-List) !
 
 # 依赖
 - [Qt 5.9](http://qt-project.org) (L-GPL v3)
