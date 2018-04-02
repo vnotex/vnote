@@ -1299,8 +1299,6 @@ void VConfigManager::initThemes()
     m_themes.insert(VPalette::themeName(file), file);
     file = ":/resources/themes/v_moonlight/v_moonlight.palette";
     m_themes.insert(VPalette::themeName(file), file);
-    file = ":/resources/themes/v_material/v_material.palette";
-    m_themes.insert(VPalette::themeName(file), file);
 
     outputBuiltInThemes();
 
