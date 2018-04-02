@@ -935,11 +935,15 @@ void VFileList::pasteFiles(VDirectory *p_destDir,
 
 void VFileList::keyPressEvent(QKeyEvent *p_event)
 {
-    if (p_event->key() == Qt::Key_Return) {
+    switch (p_event->key()) {
+    case Qt::Key_Enter:
+    case Qt::Key_Return:
+    {
         QListWidgetItem *item = fileList->currentItem();
         if (item) {
             VFile *fileToClose = NULL;
-            if (!(p_event->modifiers() & Qt::ControlModifier)) {
+            if (!(p_event->modifiers() & Qt::ControlModifier)
+                && g_config->getSingleClickClosePreviousTab()) {
                 VFile *file = getVFile(item);
                 Q_ASSERT(file);
                 if (!editArea->isFileOpened(file)) {
@@ -956,6 +960,12 @@ void VFileList::keyPressEvent(QKeyEvent *p_event)
                 editArea->closeFile(fileToClose, false);
             }
         }
+
+        break;
+    }
+
+    default:
+        break;
     }
 
     QWidget::keyPressEvent(p_event);

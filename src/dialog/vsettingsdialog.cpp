@@ -657,9 +657,15 @@ VNoteManagementTab::VNoteManagementTab(QWidget *p_parent)
     attachmentFolderLayout->addWidget(m_customAttachmentFolder);
     attachmentFolderLayout->addWidget(m_attachmentFolderEdit);
 
+    // Single click open.
+    m_singleClickOpen = new QCheckBox(tr("Single click to open a note in current tab"), this);
+    m_singleClickOpen->setToolTip(tr("Single click a note in the notes list to open it in current tab, "
+                                     "double click to open it in a new tab"));
+
     QFormLayout *noteLayout = new QFormLayout();
     noteLayout->addRow(imageFolderLayout);
     noteLayout->addRow(attachmentFolderLayout);
+    noteLayout->addRow(m_singleClickOpen);
     m_noteBox->setLayout(noteLayout);
 
     // External File.
@@ -706,6 +712,10 @@ bool VNoteManagementTab::loadConfiguration()
         return false;
     }
 
+    if (!loadSingleClickOpen()) {
+        return false;
+    }
+
     return true;
 }
 
@@ -720,6 +730,10 @@ bool VNoteManagementTab::saveConfiguration()
     }
 
     if (!saveImageFolderExt()) {
+        return false;
+    }
+
+    if (!saveSingleClickOpen()) {
         return false;
     }
 
@@ -823,6 +837,18 @@ void VNoteManagementTab::customImageFolderExtChanged(int p_state)
     } else {
         m_imageFolderEditExt->setEnabled(false);
     }
+}
+
+bool VNoteManagementTab::loadSingleClickOpen()
+{
+    m_singleClickOpen->setChecked(g_config->getSingleClickClosePreviousTab());
+    return true;
+}
+
+bool VNoteManagementTab::saveSingleClickOpen()
+{
+    g_config->setSingleClickClosePreviousTab(m_singleClickOpen->isChecked());
+    return true;
 }
 
 VMarkdownTab::VMarkdownTab(QWidget *p_parent)

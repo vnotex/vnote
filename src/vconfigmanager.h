@@ -438,6 +438,7 @@ public:
     void setMenuBarChecked(bool p_checked);
 
     bool getSingleClickClosePreviousTab() const;
+    void setSingleClickClosePreviousTab(bool p_enabled);
 
     bool getEnableWildCardInSimpleSearch() const;
 
@@ -2061,6 +2062,16 @@ inline void VConfigManager::setMenuBarChecked(bool p_checked)
 inline bool VConfigManager::getSingleClickClosePreviousTab() const
 {
     return m_singleClickClosePreviousTab;
+}
+
+inline void VConfigManager::setSingleClickClosePreviousTab(bool p_enabled)
+{
+    if (m_singleClickClosePreviousTab == p_enabled) {
+        return;
+    }
+
+    m_singleClickClosePreviousTab = p_enabled;
+    setConfigToSettings("global", "single_click_close_previous_tab", m_singleClickClosePreviousTab);
 }
 
 inline bool VConfigManager::getEnableWildCardInSimpleSearch() const

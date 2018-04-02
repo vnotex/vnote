@@ -117,6 +117,9 @@ private:
     bool loadAttachmentFolder();
     bool saveAttachmentFolder();
 
+    bool loadSingleClickOpen();
+    bool saveSingleClickOpen();
+
     QGroupBox *m_noteBox;
     QGroupBox *m_externalBox;
 
@@ -131,6 +134,9 @@ private:
     // Attachment folder.
     QCheckBox *m_customAttachmentFolder;
     VLineEdit *m_attachmentFolderEdit;
+
+    // Single click to open note in current tab.
+    QCheckBox *m_singleClickOpen;
 };
 
 class VMarkdownTab : public QWidget
