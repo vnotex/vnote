@@ -123,7 +123,8 @@ SOURCES += main.cpp\
     vdoublerowitemwidget.cpp \
     vsearchue.cpp \
     voutlineue.cpp \
-    vhelpue.cpp
+    vhelpue.cpp \
+    vlistfolderue.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -237,7 +238,8 @@ HEADERS  += vmainwindow.h \
     vdoublerowitemwidget.h \
     vsearchue.h \
     voutlineue.h \
-    vhelpue.h
+    vhelpue.h \
+    vlistfolderue.h
 
 RESOURCES += \
     vnote.qrc \

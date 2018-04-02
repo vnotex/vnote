@@ -114,6 +114,9 @@ private:
     // Last used Entry.
     const Entry *m_lastEntry;
 
+    // Entry to list folder content.
+    QChar m_listEntryKey;
+
     // The CMD edit's original style sheet.
     QString m_cmdStyleSheet;
 

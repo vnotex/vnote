@@ -90,6 +90,14 @@ public:
         Q_UNUSED(p_id);
     }
 
+    // Ask the UE to return current item folder path or the folder containing current
+    // item note.
+    virtual QString currentItemFolder(int p_id)
+    {
+        Q_UNUSED(p_id);
+        return QString();
+    }
+
     void setWidgetParent(QWidget *p_parent)
     {
         m_widgetParent = p_parent;

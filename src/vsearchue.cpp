@@ -981,3 +981,62 @@ void VSearchUE::sort(int p_id)
         break;
     }
 }
+
+QString VSearchUE::currentItemFolder(int p_id)
+{
+    QString folder;
+    QSharedPointer<VSearchResultItem> resItem;
+
+    switch (p_id) {
+    case ID::Name_Notebook_AllNotebook:
+    case ID::Name_FolderNote_AllNotebook:
+    case ID::Name_FolderNote_CurrentNotebook:
+    case ID::Name_FolderNote_CurrentFolder:
+    case ID::Name_Note_Buffer:
+    case ID::Path_FolderNote_AllNotebook:
+    case ID::Path_FolderNote_CurrentNotebook:
+    {
+        QListWidgetItem *item = m_listWidget->currentItem();
+        if (item) {
+            resItem = itemResultData(item);
+        }
+
+        break;
+    }
+
+    case ID::Content_Note_AllNotebook:
+    case ID::Content_Note_CurrentNotebook:
+    case ID::Content_Note_CurrentFolder:
+    case ID::Content_Note_Buffer:
+    case ID::Outline_Note_Buffer:
+    {
+        QTreeWidgetItem *item = m_treeWidget->currentItem();
+        if (item) {
+            resItem = itemResultData(item);
+        }
+
+        break;
+    }
+
+    default:
+        Q_ASSERT(false);
+    }
+
+    if (!resItem.isNull()) {
+        switch (resItem->m_type) {
+        case VSearchResultItem::Note:
+            folder = VUtils::basePathFromPath(resItem->m_path);
+            break;
+
+        case VSearchResultItem::Folder:
+        case VSearchResultItem::Notebook:
+            folder = resItem->m_path;
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    return folder;
+}

@@ -14,6 +14,10 @@ class VListWidgetDoubleRows : public VListWidget
 public:
     explicit VListWidgetDoubleRows(QWidget *p_parent = nullptr);
 
+    QListWidgetItem *addDoubleRowsItem(const QIcon &p_icon,
+                                       const QString &p_firstRow,
+                                       const QString &p_secondRow);
+
     QListWidgetItem *insertDoubleRowsItem(int p_row,
                                           const QIcon &p_icon,
                                           const QString &p_firstRow,

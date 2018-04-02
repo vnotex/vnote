@@ -106,15 +106,15 @@ void VOutlineUE::processCommand(int p_id, const QString &p_cmd)
         // Search the outline.
         m_listOutline = false;
 
-        VSearchConfig config(VSearchConfig::CurrentNote,
-                             VSearchConfig::Content,
-                             VSearchConfig::Note,
-                             VSearchConfig::Internal,
-                             VSearchConfig::NoneOption,
-                             p_cmd,
-                             QString());
-
         if (tab) {
+            VSearchConfig config(VSearchConfig::CurrentNote,
+                                 VSearchConfig::Content,
+                                 VSearchConfig::Note,
+                                 VSearchConfig::Internal,
+                                 VSearchConfig::NoneOption,
+                                 p_cmd,
+                                 QString());
+
             const VTableOfContent &outline = tab->getOutline();
             const QVector<VTableOfContentItem> &table = outline.getTable();
             for (auto const & it : table) {

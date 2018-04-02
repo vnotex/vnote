@@ -79,6 +79,10 @@ public:
 
     void sort(int p_id) Q_DECL_OVERRIDE;
 
+    QString currentItemFolder(int p_id) Q_DECL_OVERRIDE;
+
+    static void activateItem(const QSharedPointer<VSearchResultItem> &p_item);
+
 protected:
     void init() Q_DECL_OVERRIDE;
 
@@ -124,8 +128,6 @@ private:
     void appendItemToList(const QSharedPointer<VSearchResultItem> &p_item);
 
     void appendItemToTree(const QSharedPointer<VSearchResultItem> &p_item);
-
-    void activateItem(const QSharedPointer<VSearchResultItem> &p_item);
 
     const QSharedPointer<VSearchResultItem> &itemResultData(const QListWidgetItem *p_item) const;
 

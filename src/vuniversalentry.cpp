@@ -17,11 +17,12 @@
 #include "utils/vutils.h"
 #include "vlistwidget.h"
 #include "vpalette.h"
+#include "vlistfolderue.h"
 
 #define MINIMUM_WIDTH 200
 
 #define CMD_EDIT_INTERVAL 500
-#define CMD_EDIT_IDLE_INTERVAL 200
+#define CMD_EDIT_IDLE_INTERVAL 100
 
 extern VPalette *g_palette;
 
@@ -108,7 +109,7 @@ void VUniversalEntry::setupUI()
     connect(m_cmdEdit, &VMetaWordLineEdit::textEdited,
             this, [this](const QString &p_text) {
                 m_cmdTimer->stop();
-                if (p_text.isEmpty() || p_text.size() == 1) {
+                if (p_text.size() <= 1) {
                     m_cmdTimer->start(CMD_EDIT_IDLE_INTERVAL);
                 } else {
                     m_cmdTimer->start(CMD_EDIT_INTERVAL);
@@ -190,6 +191,12 @@ void VUniversalEntry::registerEntry(QChar p_key, IUniversalEntry *p_entry, int p
     m_infoWidget->addItem(QString("%1: %2").arg(p_key)
                                            .arg(p_entry->description(p_id)));
     m_infoWidget->updateGeometry();
+
+    if (m_listEntryKey.isNull()) {
+        if (dynamic_cast<VListFolderUE *>(p_entry)) {
+            m_listEntryKey = p_key;
+        }
+    }
 }
 
 void VUniversalEntry::processCommand()
@@ -361,6 +368,27 @@ void VUniversalEntry::keyPressEvent(QKeyEvent *p_event)
             // UE could just alternate among all the sort modes.
             if (m_lastEntry) {
                 m_lastEntry->m_entry->sort(m_lastEntry->m_id);
+            }
+
+            return;
+        }
+
+        break;
+
+    case Qt::Key_M:
+        if (VUtils::isControlModifierForVim(modifiers)) {
+            // Ctrl+M to browse current item folder or the folder containing current
+            // item.
+            if (m_lastEntry && !m_listEntryKey.isNull()) {
+                QString folderPath = m_lastEntry->m_entry->currentItemFolder(m_lastEntry->m_id);
+                if (!folderPath.isEmpty()) {
+                    m_cmdTimer->stop();
+                    Q_ASSERT(m_entries.contains(m_listEntryKey));
+                    const Entry &entry = m_entries[m_listEntryKey];
+                    static_cast<VListFolderUE *>(entry.m_entry)->setFolderPath(folderPath);
+                    m_cmdEdit->setText(m_listEntryKey);
+                    processCommand();
+                }
             }
 
             return;

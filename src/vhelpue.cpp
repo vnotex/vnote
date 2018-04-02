@@ -63,12 +63,13 @@ bool VHelpUE::initListWidget()
         m_listWidget->addItem(tr("Esc/Ctrl+[: Hide Universal Entry"));
         m_listWidget->addItem(tr("Ctrl+U: Clear the command input"));
         m_listWidget->addItem(tr("Ctrl+E: Clear the command input except the entry key"));
-        m_listWidget->addItem(tr("Ctrl+J: Select next item"));
-        m_listWidget->addItem(tr("Ctrl+K: Select previous item"));
-        m_listWidget->addItem(tr("Enter: Activate current item"));
-        m_listWidget->addItem(tr("Ctrl+R: Select current item's parent item"));
+        m_listWidget->addItem(tr("Ctrl+J: Go to next item"));
+        m_listWidget->addItem(tr("Ctrl+K: Go to previous item"));
+        m_listWidget->addItem(tr("Ctrl+R: Go to current item's parent item"));
         m_listWidget->addItem(tr("Ctrl+T: Expand/Collapse current item"));
-        m_listWidget->addItem(tr("Ctrl+S: Sort the items"));
+        m_listWidget->addItem(tr("Ctrl+S: Sort items"));
+        m_listWidget->addItem(tr("Enter: Activate current item"));
+        m_listWidget->addItem(tr("Ctrl+M: Browse current item folder or the folder containing current item"));
 
         return true;
     }

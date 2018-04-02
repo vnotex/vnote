@@ -11,6 +11,16 @@ VListWidgetDoubleRows::VListWidgetDoubleRows(QWidget *p_parent)
 {
 }
 
+QListWidgetItem *VListWidgetDoubleRows::addDoubleRowsItem(const QIcon &p_icon,
+                                                          const QString &p_firstRow,
+                                                          const QString &p_secondRow)
+{
+    return insertDoubleRowsItem(count(),
+                                p_icon,
+                                p_firstRow,
+                                p_secondRow);
+}
+
 QListWidgetItem *VListWidgetDoubleRows::insertDoubleRowsItem(int p_row,
                                                              const QIcon &p_icon,
                                                              const QString &p_firstRow,
