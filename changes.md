@@ -1,4 +1,10 @@
 # Changes History
+## v1.14
+- Support **Universal Entry** by `Ctrl+G`;
+- Single click a note in note list to open it in a new tab by default;
+- Translate `Ctrl` in default shortcuts to `Meta` on macOS;
+- Do not copy files when import if they locate in current folder;
+
 ## v1.13
 - Replace **v_white** theme with **v_native**, which behaves more like native applications;
 - Support **full-text search**;
