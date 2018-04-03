@@ -987,7 +987,8 @@ void VMainWindow::initFileMenu()
     // Import notes from files.
     m_importNoteAct = newAction(VIconUtils::menuIcon(":/resources/icons/import_note.svg"),
                                 tr("&New Notes From Files"), this);
-    m_importNoteAct->setToolTip(tr("Create notes from external files in current folder by copy"));
+    m_importNoteAct->setToolTip(tr("Create notes from external files in current folder "
+                                   "(will copy files if they do not locate in current folder)"));
     connect(m_importNoteAct, &QAction::triggered,
             this, &VMainWindow::importNoteFromFile);
     m_importNoteAct->setEnabled(false);

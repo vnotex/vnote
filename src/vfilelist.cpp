@@ -744,15 +744,27 @@ bool VFileList::importFiles(const QStringList &p_files, QString *p_errMsg)
 
         QString name = VUtils::fileNameFromPath(file);
         Q_ASSERT(!name.isEmpty());
-        name = VUtils::getFileNameWithSequence(dirPath, name, true);
-        QString targetFilePath = dir.filePath(name);
-        bool ret = VUtils::copyFile(file, targetFilePath, false);
-        if (!ret) {
-            VUtils::addErrMsg(p_errMsg, tr("Fail to copy file %1 as %2.")
-                                          .arg(file)
-                                          .arg(targetFilePath));
-            ret = false;
-            continue;
+
+        bool copyNeeded = true;
+        if (VUtils::equalPath(dirPath, fi.absolutePath())) {
+            qDebug() << "skip cpoy file" << file << "locates in" << dirPath;
+            copyNeeded = false;
+        }
+
+        QString targetFilePath;
+        if (copyNeeded) {
+            name = VUtils::getFileNameWithSequence(dirPath, name, true);
+            targetFilePath = dir.filePath(name);
+            bool ret = VUtils::copyFile(file, targetFilePath, false);
+            if (!ret) {
+                VUtils::addErrMsg(p_errMsg, tr("Fail to copy file %1 as %2.")
+                                              .arg(file)
+                                              .arg(targetFilePath));
+                ret = false;
+                continue;
+            }
+        } else {
+            targetFilePath = file;
         }
 
         VNoteFile *destFile = m_directory->addFile(name, -1);
