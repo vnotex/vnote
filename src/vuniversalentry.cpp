@@ -325,6 +325,20 @@ void VUniversalEntry::keyPressEvent(QKeyEvent *p_event)
 
         break;
 
+    case Qt::Key_F:
+        if (VUtils::isControlModifierForVim(modifiers)) {
+            // Ctrl+F to select the command key.
+            QString cmd = m_cmdEdit->getEvaluatedText();
+            if (!cmd.isEmpty()) {
+                m_cmdTimer->stop();
+                m_cmdEdit->setSelection(0, 1);
+            }
+
+            return;
+        }
+
+        break;
+
     case Qt::Key_D:
         if (VUtils::isControlModifierForVim(modifiers)) {
             // Ctrl+D to cancel current command.

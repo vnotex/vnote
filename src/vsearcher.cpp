@@ -250,7 +250,6 @@ void VSearcher::initUIFields()
     VSearchConfig config = VSearchConfig::fromConfig(g_config->getSearchOptions());
 
     // Scope.
-    m_searchScopeCB->addItem(tr("Current Note"), VSearchConfig::CurrentNote);
     m_searchScopeCB->addItem(tr("Opened Notes"), VSearchConfig::OpenedNotes);
     m_searchScopeCB->addItem(tr("Current Folder"), VSearchConfig::CurrentFolder);
     m_searchScopeCB->addItem(tr("Current Notebook"), VSearchConfig::CurrentNotebook);
