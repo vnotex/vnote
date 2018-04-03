@@ -44,7 +44,10 @@ public:
     VDirectory *tryLoadDirectory(const QString &p_path);
 
     const QString &getName() const;
+
     const QString &getPath() const;
+
+    void updatePath(const QString &p_path);
 
     VDirectory *getRootDir() const;
 

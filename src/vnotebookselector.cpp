@@ -160,8 +160,6 @@ void VNotebookSelector::updateComboBox()
 {
     m_muted = true;
 
-    int index = g_config->getCurNotebookIndex();
-
     clear();
 
     m_listWidget->clear();
@@ -179,16 +177,24 @@ void VNotebookSelector::updateComboBox()
     if (m_notebooks.isEmpty()) {
         g_config->setCurNotebookIndex(-1);
         setCurrentIndex(0);
-    } else {
-        const VNotebook *nb = NULL;
-        if (index >= 0 && index < m_notebooks.size()) {
-            nb = m_notebooks[index];
-        }
+    }
+}
 
-        setCurrentItemToNotebook(nb);
+void VNotebookSelector::restoreCurrentNotebook()
+{
+    int index = g_config->getCurNotebookIndex();
+    if (index < 0 || index >= m_notebooks.size()) {
+        index = 0;
     }
 
-    qDebug() << "notebooks" << m_notebooks.size() << "current index" << index;
+    const VNotebook *nb = NULL;
+    if (index < m_notebooks.size()) {
+        nb = m_notebooks[index];
+    }
+
+    if (nb) {
+        setCurrentItemToNotebook(nb);
+    }
 }
 
 void VNotebookSelector::setCurrentItemToNotebook(const VNotebook *p_notebook)

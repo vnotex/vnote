@@ -15,7 +15,7 @@ VNotebook::VNotebook(const QString &name, const QString &path, QObject *parent)
     m_recycleBinFolder = g_config->getRecycleBinFolder();
     m_rootDir = new VDirectory(this,
                                NULL,
-                               VUtils::directoryNameFromPath(path),
+                               VUtils::directoryNameFromPath(m_path),
                                QDateTime::currentDateTimeUtc());
 }
 
@@ -132,6 +132,10 @@ void VNotebook::close()
 
 bool VNotebook::open()
 {
+    if (!m_valid) {
+        return false;
+    }
+
     QString recycleBinPath = getRecycleBinFolderPath();
     if (!QFileInfo::exists(recycleBinPath)) {
         QDir dir(m_path);
@@ -385,4 +389,18 @@ QList<QString> VNotebook::collectFiles()
     }
 
     return files;
+}
+
+void VNotebook::updatePath(const QString &p_path)
+{
+    Q_ASSERT(!isOpened());
+    m_valid = false;
+    m_path = QDir::cleanPath(p_path);
+    delete m_rootDir;
+    m_rootDir = new VDirectory(this,
+                               NULL,
+                               VUtils::directoryNameFromPath(m_path),
+                               QDateTime::currentDateTimeUtc());
+
+    readConfigNotebook();
 }

@@ -29,6 +29,8 @@ public:
 
     VNotebook *currentNotebook() const;
 
+    void restoreCurrentNotebook();
+
     // Implementations for VNavigationMode.
     void registerNavigation(QChar p_majorKey) Q_DECL_OVERRIDE;
     void showNavigation() Q_DECL_OVERRIDE;

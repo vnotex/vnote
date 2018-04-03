@@ -102,6 +102,9 @@ public:
     // Prompt user for new notebook if there is no notebook.
     void promptNewNotebookIfEmpty();
 
+    // Check invalid notebooks. Set current notebook according to config.
+    void checkNotebooks();
+
     VFile *getCurrentFile() const;
 
     VEditTab *getCurrentTab() const;
@@ -317,7 +320,7 @@ private:
 
     VCaptain *m_captain;
 
-    VNotebookSelector *notebookSelector;
+    VNotebookSelector *m_notebookSelector;
     VFileList *m_fileList;
     VDirectoryTree *directoryTree;
 
@@ -486,6 +489,6 @@ inline VDirectoryTree *VMainWindow::getDirectoryTree() const
 
 inline VNotebookSelector *VMainWindow::getNotebookSelector() const
 {
-    return notebookSelector;
+    return m_notebookSelector;
 }
 #endif // VMAINWINDOW_H

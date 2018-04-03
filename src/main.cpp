@@ -216,11 +216,13 @@ int main(int argc, char *argv[])
 
     w.show();
 
+    w.checkNotebooks();
+
+    w.promptNewNotebookIfEmpty();
+
     w.openStartupPages();
 
     w.openFiles(filePaths);
-
-    w.promptNewNotebookIfEmpty();
 
     return app.exec();
 }

@@ -44,6 +44,7 @@
 #include "voutlineue.h"
 #include "vhelpue.h"
 #include "vlistfolderue.h"
+#include "dialog/vfixnotebookdialog.h"
 
 extern VConfigManager *g_config;
 
@@ -108,7 +109,7 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
 
     setContextMenuPolicy(Qt::NoContextMenu);
 
-    notebookSelector->update();
+    m_notebookSelector->update();
 
     initSharedMemoryWatcher();
 
@@ -148,7 +149,7 @@ void VMainWindow::initCaptain()
 
 void VMainWindow::registerCaptainAndNavigationTargets()
 {
-    m_captain->registerNavigationTarget(notebookSelector);
+    m_captain->registerNavigationTarget(m_notebookSelector);
     m_captain->registerNavigationTarget(directoryTree);
     m_captain->registerNavigationTarget(m_fileList);
     m_captain->registerNavigationTarget(m_editArea);
@@ -234,9 +235,9 @@ void VMainWindow::setupUI()
     connect(directoryTree, &VDirectoryTree::directoryUpdated,
             m_editArea, &VEditArea::handleDirectoryUpdated);
 
-    connect(notebookSelector, &VNotebookSelector::notebookUpdated,
+    connect(m_notebookSelector, &VNotebookSelector::notebookUpdated,
             m_editArea, &VEditArea::handleNotebookUpdated);
-    connect(notebookSelector, &VNotebookSelector::notebookCreated,
+    connect(m_notebookSelector, &VNotebookSelector::notebookCreated,
             directoryTree, [this](const QString &p_name, bool p_import) {
                 Q_UNUSED(p_name);
                 if (!p_import) {
@@ -283,9 +284,9 @@ QWidget *VMainWindow::setupDirectoryPanel()
     QLabel *notebookLabel = new QLabel(tr("Notebooks"));
     notebookLabel->setProperty("TitleLabel", true);
 
-    notebookSelector = new VNotebookSelector();
-    notebookSelector->setObjectName("NotebookSelector");
-    notebookSelector->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    m_notebookSelector = new VNotebookSelector();
+    m_notebookSelector->setObjectName("NotebookSelector");
+    m_notebookSelector->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
 
     // Navigation panel.
     QLabel *directoryLabel = new QLabel(tr("Folders"));
@@ -316,7 +317,7 @@ QWidget *VMainWindow::setupDirectoryPanel()
 
     QVBoxLayout *nbLayout = new QVBoxLayout;
     nbLayout->addWidget(notebookLabel);
-    nbLayout->addWidget(notebookSelector);
+    nbLayout->addWidget(m_notebookSelector);
     nbLayout->addWidget(m_naviSplitter);
     nbLayout->setContentsMargins(3, 0, 0, 0);
     nbLayout->setSpacing(0);
@@ -324,13 +325,13 @@ QWidget *VMainWindow::setupDirectoryPanel()
     nbContainer->setLayout(nbLayout);
     nbContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
-    connect(notebookSelector, &VNotebookSelector::curNotebookChanged,
+    connect(m_notebookSelector, &VNotebookSelector::curNotebookChanged,
             this, [this](VNotebook *p_notebook) {
                 directoryTree->setNotebook(p_notebook);
                 directoryTree->setFocus();
             });
 
-    connect(notebookSelector, &VNotebookSelector::curNotebookChanged,
+    connect(m_notebookSelector, &VNotebookSelector::curNotebookChanged,
             this, &VMainWindow::handleCurrentNotebookChanged);
 
     connect(directoryTree, &VDirectoryTree::currentDirectoryChanged,
@@ -2312,7 +2313,7 @@ bool VMainWindow::locateFile(VFile *p_file)
 
     VNoteFile *file = dynamic_cast<VNoteFile *>(p_file);
     VNotebook *notebook = file->getNotebook();
-    if (notebookSelector->locateNotebook(notebook)) {
+    if (m_notebookSelector->locateNotebook(notebook)) {
         while (directoryTree->currentNotebook() != notebook) {
             QCoreApplication::sendPostedEvents();
         }
@@ -2348,7 +2349,7 @@ bool VMainWindow::locateDirectory(VDirectory *p_directory)
     }
 
     VNotebook *notebook = p_directory->getNotebook();
-    if (notebookSelector->locateNotebook(notebook)) {
+    if (m_notebookSelector->locateNotebook(notebook)) {
         while (directoryTree->currentNotebook() != notebook) {
             QCoreApplication::sendPostedEvents();
         }
@@ -2833,7 +2834,7 @@ bool VMainWindow::exportByCaptain(void *p_target, void *p_data)
 void VMainWindow::promptNewNotebookIfEmpty()
 {
     if (vnote->getNotebooks().isEmpty()) {
-        notebookSelector->newNotebook();
+        m_notebookSelector->newNotebook();
     }
 }
 
@@ -3151,7 +3152,7 @@ void VMainWindow::updateEditReadAct(const VEditTab *p_tab)
 
 void VMainWindow::handleExportAct()
 {
-    VExportDialog dialog(notebookSelector->currentNotebook(),
+    VExportDialog dialog(m_notebookSelector->currentNotebook(),
                          directoryTree->currentDirectory(),
                          m_curFile,
                          m_cart,
@@ -3162,7 +3163,7 @@ void VMainWindow::handleExportAct()
 
 VNotebook *VMainWindow::getCurrentNotebook() const
 {
-    return notebookSelector->currentNotebook();
+    return m_notebookSelector->currentNotebook();
 }
 
 void VMainWindow::activateUniversalEntry()
@@ -3217,4 +3218,35 @@ void VMainWindow::initUniversalEntry()
     m_ue->registerEntry('n', searchUE, VSearchUE::Path_FolderNote_CurrentNotebook);
     m_ue->registerEntry('m', new VListFolderUE(this), 0);
     m_ue->registerEntry('?', new VHelpUE(this), 0);
+}
+
+void VMainWindow::checkNotebooks()
+{
+    bool updated = false;
+    QVector<VNotebook *> &notebooks = g_vnote->getNotebooks();
+    for (int i = 0; i < notebooks.size(); ++i) {
+        VNotebook *nb = notebooks[i];
+        if (nb->isValid()) {
+            continue;
+        }
+
+        VFixNotebookDialog dialog(nb, notebooks, this);
+        if (dialog.exec()) {
+            qDebug() << "fix path of notebook" << nb->getName() << "to" << dialog.getPathInput();
+            nb->updatePath(dialog.getPathInput());
+        } else {
+            notebooks.removeOne(nb);
+            --i;
+        }
+
+        updated = true;
+    }
+
+    if (updated) {
+        g_config->setNotebooks(notebooks);
+
+        m_notebookSelector->update();
+    }
+
+    m_notebookSelector->restoreCurrentNotebook();
 }
