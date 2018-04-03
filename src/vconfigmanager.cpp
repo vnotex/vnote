@@ -1035,6 +1035,13 @@ void VConfigManager::readShortcutsFromSettings()
     m_shortcuts.clear();
     m_shortcuts = readShortcutsFromSettings(defaultSettings, group);
 
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    // Translate Ctrl to Meta on macOS.
+    for (auto it = m_shortcuts.begin(); it != m_shortcuts.end(); ++it) {
+        it.value().replace("Ctrl", "Meta", Qt::CaseInsensitive);
+    }
+#endif
+
     // Update default settings according to user settings.
     QHash<QString, QString> userShortcuts = readShortcutsFromSettings(userSettings,
                                                                       group);
