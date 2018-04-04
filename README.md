@@ -98,7 +98,7 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 - Rich and extensible export, such as HTML, PDF, and PDF (All In One);
 
 # Donate
-You could help VNote's development in may ways.
+You could help VNote's development in many ways.
 
 - Keep monitoring VNote and sending feedback for improvement.
 - Spread and promote VNote to your friends. Popularity is a strong power to drive developers.
