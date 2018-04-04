@@ -64,6 +64,10 @@ public:
     static const QString c_flowchartJsFile;
     static const QString c_raphaelJsFile;
 
+    // PlantUML
+    static const QString c_plantUMLJsFile;
+    static const QString c_plantUMLZopfliJsFile;
+
     // Highlight.js line number plugin
     static const QString c_highlightjsLineNumberExtraFile;
 

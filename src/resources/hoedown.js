@@ -16,12 +16,15 @@ marked.setOptions({
 });
 
 var updateHtml = function(html) {
+    asyncJobsCount = 0;
+
     placeholder.innerHTML = html;
 
     insertImageCaption();
 
     var codes = document.getElementsByTagName('code');
     mermaidIdx = 0;
+    plantUMLIdx = 0;
     for (var i = 0; i < codes.length; ++i) {
         var code = codes[i];
         if (code.parentElement.tagName.toLowerCase() == 'pre') {
@@ -43,6 +46,19 @@ var updateHtml = function(html) {
                 }
             } else if (VEnableMathjax && code.classList.contains('language-mathjax')) {
                 // Mathjax code block.
+                continue;
+            } else if (VPlantUMLMode != 0
+                       && code.classList.contains('language-puml')) {
+                // PlantUML code block.
+                if (VPlantUMLMode == 1) {
+                    if (renderPlantUMLOneOnline(code)) {
+                        // replaceChild() will decrease codes.length.
+                        --i;
+                    }
+                } else {
+                    renderPlantUMLOneLocal(code);
+                }
+
                 continue;
             }
 

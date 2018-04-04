@@ -899,10 +899,32 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     QLabel *colorColumnLabel = new QLabel(tr("Color column:"));
     colorColumnLabel->setToolTip(m_colorColumnEdit->toolTip());
 
+    // PlantUML.
+    m_plantUMLModeCombo = VUtils::getComboBox();
+    m_plantUMLModeCombo->setToolTip(tr("Enable PlantUML support in Markdown"));
+    m_plantUMLModeCombo->addItem(tr("Disabled"), PlantUMLMode::DisablePlantUML);
+    m_plantUMLModeCombo->addItem(tr("Online Service"), PlantUMLMode::OnlinePlantUML);
+    m_plantUMLModeCombo->addItem(tr("Local JAR"), PlantUMLMode::LocalPlantUML);
+
+    m_plantUMLServerEdit = new VLineEdit();
+    m_plantUMLServerEdit->setToolTip(tr("Server address for online PlantUML"));
+
+    m_plantUMLJarEdit = new VLineEdit();
+    m_plantUMLJarEdit->setToolTip(tr("Location to the PlantUML JAR executable for local PlantUML"));
+
+    m_plantUMLDotEdit = new VLineEdit();
+    m_plantUMLDotEdit->setPlaceholderText(tr("Empty to detect automatically"));
+    m_plantUMLDotEdit->setToolTip(tr("Location to the GraphViz executable for local PlantUML "
+                                     "(empty to let PlantUML detect it automatically)"));
+
     QFormLayout *mainLayout = new QFormLayout();
     mainLayout->addRow(tr("Note open mode:"), m_openModeCombo);
     mainLayout->addRow(tr("Heading sequence:"), headingSequenceLayout);
     mainLayout->addRow(colorColumnLabel, m_colorColumnEdit);
+    mainLayout->addRow(tr("PlantUML:"), m_plantUMLModeCombo);
+    mainLayout->addRow(tr("PlantUML server:"), m_plantUMLServerEdit);
+    mainLayout->addRow(tr("PlantUML JAR:"), m_plantUMLJarEdit);
+    mainLayout->addRow(tr("Graphviz executable:"), m_plantUMLDotEdit);
 
     setLayout(mainLayout);
 }
@@ -921,6 +943,10 @@ bool VMarkdownTab::loadConfiguration()
         return false;
     }
 
+    if (!loadPlantUML()) {
+        return false;
+    }
+
     return true;
 }
 
@@ -935,6 +961,10 @@ bool VMarkdownTab::saveConfiguration()
     }
 
     if (!saveColorColumn()) {
+        return false;
+    }
+
+    if (!savePlantUML()) {
         return false;
     }
 
@@ -1009,3 +1039,20 @@ bool VMarkdownTab::saveColorColumn()
     return true;
 }
 
+bool VMarkdownTab::loadPlantUML()
+{
+    m_plantUMLModeCombo->setCurrentIndex(m_plantUMLModeCombo->findData(g_config->getPlantUMLMode()));
+    m_plantUMLServerEdit->setText(g_config->getPlantUMLServer());
+    m_plantUMLJarEdit->setText(g_config->getPlantUMLJar());
+    m_plantUMLDotEdit->setText(g_config->getPlantUMLDot());
+    return true;
+}
+
+bool VMarkdownTab::savePlantUML()
+{
+    g_config->setPlantUMLMode(m_plantUMLModeCombo->currentData().toInt());
+    g_config->setPlantUMLServer(m_plantUMLServerEdit->text());
+    g_config->setPlantUMLJar(m_plantUMLJarEdit->text());
+    g_config->setPlantUMLDot(m_plantUMLDotEdit->text());
+    return true;
+}

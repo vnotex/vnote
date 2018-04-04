@@ -164,13 +164,22 @@ table tr th :last-child, table tr td :last-child {
 }
 
 div.mermaid-diagram {
-    overflow-y: hidden;
+    width: fit-content;
+    overflow: hidden;
     background: #B0BEC5;
     color: #6C6C6C;
 }
 
 div.flowchart-diagram {
-    overflow-y: hidden;
+    width: fit-content;
+    overflow: hidden;
+    background: #B0BEC5;
+    color: #6C6C6C;
+}
+
+div.plantuml-diagram {
+    width: fit-content;
+    overflow: hidden;
     background: #B0BEC5;
     color: #6C6C6C;
 }

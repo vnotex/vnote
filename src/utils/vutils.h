@@ -368,6 +368,7 @@ private:
 
     static QString generateHtmlTemplate(const QString &p_template,
                                         MarkdownConverterType p_conType,
+                                        bool p_isPDF = false,
                                         bool p_wkhtmltopdf = false,
                                         bool p_addToc = false);
 

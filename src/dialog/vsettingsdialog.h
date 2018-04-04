@@ -157,6 +157,9 @@ private:
     bool loadColorColumn();
     bool saveColorColumn();
 
+    bool loadPlantUML();
+    bool savePlantUML();
+
     // Default note open mode for markdown.
     QComboBox *m_openModeCombo;
 
@@ -166,6 +169,12 @@ private:
 
     // Color column in code block.
     VLineEdit *m_colorColumnEdit;
+
+    // PlantUML.
+    QComboBox *m_plantUMLModeCombo;
+    VLineEdit *m_plantUMLServerEdit;
+    VLineEdit *m_plantUMLJarEdit;
+    VLineEdit *m_plantUMLDotEdit;
 };
 
 class VSettingsDialog : public QDialog

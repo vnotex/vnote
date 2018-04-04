@@ -352,9 +352,9 @@ void VUniversalEntry::keyPressEvent(QKeyEvent *p_event)
 
         break;
 
-    case Qt::Key_R:
+    case Qt::Key_L:
         if (VUtils::isControlModifierForVim(modifiers)) {
-            // Ctrl+R to go up a level.
+            // Ctrl+L to go up a level.
             if (m_lastEntry) {
                 m_lastEntry->m_entry->selectParentItem(m_lastEntry->m_id);
             }

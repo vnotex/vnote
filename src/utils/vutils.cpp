@@ -618,11 +618,12 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType,
                                                 g_config->getCodeBlockCssStyleUrl(p_renderCodeBlockStyle),
                                                 p_isPDF);
 
-    return generateHtmlTemplate(templ, p_conType, p_wkhtmltopdf, p_addToc);
+    return generateHtmlTemplate(templ, p_conType, p_isPDF, p_wkhtmltopdf, p_addToc);
 }
 
 QString VUtils::generateHtmlTemplate(const QString &p_template,
                                      MarkdownConverterType p_conType,
+                                     bool p_isPDF,
                                      bool p_wkhtmltopdf,
                                      bool p_addToc)
 {
@@ -719,6 +720,20 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
         if (p_wkhtmltopdf) {
             extraFile += "<script>var VRemoveMathjaxScript = true;</script>\n";
         }
+    }
+
+    int plantUMLMode = g_config->getPlantUMLMode();
+    if (plantUMLMode != PlantUMLMode::DisablePlantUML) {
+        if (plantUMLMode == PlantUMLMode::OnlinePlantUML) {
+            extraFile += "<script type=\"text/javascript\" src=\"" + VNote::c_plantUMLJsFile + "\"></script>\n" +
+                         "<script type=\"text/javascript\" src=\"" + VNote::c_plantUMLZopfliJsFile + "\"></script>\n" +
+                         "<script>var VPlantUMLServer = '" + g_config->getPlantUMLServer() + "';</script>\n";
+        }
+
+        extraFile += QString("<script>var VPlantUMLMode = %1;</script>\n").arg(plantUMLMode);
+
+        QString format = p_isPDF ? "png" : "svg";
+        extraFile += QString("<script>var VPlantUMLFormat = '%1';</script>\n").arg(format);
     }
 
     if (g_config->getEnableImageCaption()) {

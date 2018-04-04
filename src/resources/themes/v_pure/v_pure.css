@@ -170,11 +170,18 @@ table tr th :last-child, table tr td :last-child {
 }
 
 div.mermaid-diagram {
-    overflow-y: hidden;
+    width: fit-content;
+    overflow: hidden;
 }
 
 div.flowchart-diagram {
-    overflow-y: hidden;
+    width: fit-content;
+    overflow: hidden;
+}
+
+div.plantuml-diagram {
+    width: fit-content;
+    overflow: hidden;
 }
 
 .img-package {

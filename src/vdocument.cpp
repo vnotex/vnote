@@ -1,11 +1,15 @@
 #include "vdocument.h"
-#include "vfile.h"
+
 #include <QDebug>
+
+#include "vfile.h"
+#include "vplantumlhelper.h"
 
 VDocument::VDocument(const VFile *v_file, QObject *p_parent)
     : QObject(p_parent),
       m_file(v_file),
-      m_readyToHighlight(false)
+      m_readyToHighlight(false),
+      m_plantUMLHelper(NULL)
 {
 }
 
@@ -131,4 +135,17 @@ void VDocument::updateWordCountInfo(int p_wordCount,
     m_wordCountInfo.m_charWithSpacesCount = p_charWithSpacesCount;
 
     emit wordCountInfoUpdated();
+}
+
+void VDocument::processPlantUML(int p_id, const QString &p_format, const QString &p_text)
+{
+    if (!m_plantUMLHelper) {
+        m_plantUMLHelper = new VPlantUMLHelper(this);
+        connect(m_plantUMLHelper, &VPlantUMLHelper::resultReady,
+                this, [this](int p_id, const QString &p_format, const QString &p_result) {
+                    emit plantUMLResultReady(p_id, p_format, p_result);
+                });
+    }
+
+    m_plantUMLHelper->processAsync(p_id, p_format, p_text);
 }

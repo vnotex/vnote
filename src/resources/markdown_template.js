@@ -8,6 +8,8 @@ var pendingKeys = [];
 
 var VMermaidDivClass = 'mermaid-diagram';
 var VFlowchartDivClass = 'flowchart-diagram';
+var VPlantUMLDivClass = 'plantuml-diagram';
+
 if (typeof VEnableMermaid == 'undefined') {
     VEnableMermaid = false;
 } else if (VEnableMermaid) {
@@ -30,6 +32,17 @@ if (typeof VEnableHighlightLineNumber == 'undefined') {
 
 if (typeof VStylesToInline == 'undefined') {
     VStylesToInline = '';
+}
+
+// 0 - disable PlantUML;
+// 1 - Use online PlantUML processor;
+// 2 - Use local PlantUML processor;
+if (typeof VPlantUMLMode == 'undefined') {
+    VPlantUMLMode = 0;
+}
+
+if (typeof VPlantUMLServer == 'undefined') {
+    VPlantUMLServer = 'http://www.plantuml.com/plantuml';
 }
 
 // Add a caption (using alt text) under the image.
@@ -133,6 +146,8 @@ new QWebChannel(qt.webChannelTransport,
         if (typeof htmlContent == "function") {
             content.requestHtmlContent.connect(htmlContent);
         }
+
+        content.plantUMLResultReady.connect(handlePlantUMLResult);
     });
 
 var VHighlightedAnchorClass = 'highlighted-anchor';
@@ -605,6 +620,72 @@ var renderFlowchartOne = function(code) {
     return true;
 };
 
+var plantUMLIdx = 0;
+var plantUMLCodeClass = 'plantuml_code_';
+
+// @className, the class name of the PlantUML code block, such as 'lang-puml'.
+var renderPlantUML = function(className) {
+    if (VPlantUMLMode == 0) {
+        return;
+    }
+
+    plantUMLIdx = 0;
+
+    var codes = document.getElementsByTagName('code');
+    for (var i = 0; i < codes.length; ++i) {
+        var code = codes[i];
+        if (code.classList.contains(className)) {
+            if (VPlantUMLMode == 1) {
+                if (renderPlantUMLOneOnline(code)) {
+                    // replaceChild() will decrease codes.length.
+                    --i;
+                }
+            } else {
+                renderPlantUMLOneLocal(code);
+            }
+        }
+    }
+};
+
+// Render @code as PlantUML graph.
+// Returns true if succeeded.
+var renderPlantUMLOneOnline = function(code) {
+    var s = unescape(encodeURIComponent(code.textContent));
+    var arr = [];
+    for (var i = 0; i < s.length; i++) {
+        arr.push(s.charCodeAt(i));
+    }
+
+    var compressor = new Zopfli.RawDeflate(arr);
+    var compressed = compressor.compress();
+    var url = VPlantUMLServer + "/" + VPlantUMLFormat + "/" + encode64_(compressed);
+
+    var obj = null;
+    if (VPlantUMLFormat == 'svg') {
+        var svgObj = document.createElement('object');
+        svgObj.type = 'image/svg+xml';
+        svgObj.data = url;
+
+        obj = document.createElement('div');
+        obj.classList.add(VPlantUMLDivClass);
+        obj.appendChild(svgObj);
+    } else {
+        obj = document.createElement('img');
+        obj.src = url;
+    }
+
+    var preNode = code.parentNode;
+    preNode.parentNode.replaceChild(obj, preNode);
+    return true;
+};
+
+var renderPlantUMLOneLocal = function(code) {
+    ++asyncJobsCount;
+    code.classList.add(plantUMLCodeClass + plantUMLIdx);
+    content.processPlantUML(plantUMLIdx, VPlantUMLFormat, code.textContent);
+    plantUMLIdx++;
+};
+
 var isImageBlock = function(img) {
     var pn = img.parentNode;
     return (pn.children.length == 1) && (pn.textContent == '');
@@ -704,12 +785,20 @@ var insertImageCaption = function() {
     }
 }
 
+var asyncJobsCount = 0;
+
+var finishOneAsyncJob = function() {
+    --asyncJobsCount;
+    finishLogics();
+};
+
 // The renderer specific code should call this function once thay have finished
 // markdown-specifi handle logics, such as Mermaid, MathJax.
 var finishLogics = function() {
-    content.finishLogics();
-
-    calculateWordCount();
+    if (asyncJobsCount <= 0) {
+        content.finishLogics();
+        calculateWordCount();
+    }
 };
 
 // Escape @text to Html.
@@ -1170,5 +1259,26 @@ var calculateWordCount = function() {
 var specialCodeBlock = function(lang) {
     return (VEnableMathjax && lang == 'mathjax')
            || (VEnableMermaid && lang == 'mermaid')
-           || (VEnableFlowchart && (lang == 'flowchart' || lang == 'flow'));
+           || (VEnableFlowchart && (lang == 'flowchart' || lang == 'flow'))
+           || (VPlantUMLMode != 0 && lang == 'puml');
+};
+
+var handlePlantUMLResult = function(id, format, result) {
+    var code = document.getElementsByClassName(plantUMLCodeClass + id)[0];
+    if (code && result.length > 0) {
+        var obj = null;
+        if (format == 'svg') {
+            obj = document.createElement('div');
+            obj.classList.add(VPlantUMLDivClass);
+            obj.innerHTML = result;
+        } else {
+            obj = document.createElement('img');
+            obj.src = "data:image/" + format + ";base64, " + result;
+        }
+
+        var preNode = code.parentNode;
+        preNode.parentNode.replaceChild(obj, preNode);
+    }
+
+    finishOneAsyncJob();
 };

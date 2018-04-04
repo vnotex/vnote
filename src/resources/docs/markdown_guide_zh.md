@@ -109,7 +109,10 @@ As VNote suggests:
 - `lang`用于指定代码块的代码语言，可选；
 
 ### 图表
-VNote支持 [Flowchart.js](http://flowchart.js.org/) 和 [Mermaid](https://mermaidjs.github.io/) 来实现诸如*流程图*和*序列图*等图表。您需要使用代码块，并标明语言为`flowchart`或`mermaid`，然后在代码块里面定义图表。
+
+> 需要在`Markdown`菜单中启用Flowchart.js或Mermaid。
+
+VNote支持 [Flowchart.js](http://flowchart.js.org/) 和 [Mermaid](https://mermaidjs.github.io/) 来实现诸如*流程图*和*序列图*等图表。您需要使用代码块，并标明语言为`flow`或`flowchart`或`mermaid`，然后在代码块里面定义图表。
 
     ```flowchart
     st=>start: Start:>http://www.google.com[blank]
@@ -125,7 +128,22 @@ VNote支持 [Flowchart.js](http://flowchart.js.org/) 和 [Mermaid](https://merma
     cond(no)->sub1(right)->op1
     ```
 
+#### UML
+
+> 需要在设置中启用PlantUML。如果使用在线的PlantUML服务器，请注意隐私问题；如果使用本地PlantUML，可能需要安装Java运行时、PlantUML以及Graphviz。
+
+VNote支持 [PlantUML](http://plantuml.com/) 来实现UML图表。您需要使用代码块，并标明语言为`puml`，然后在代码块里面定义图表。
+
+    ```puml
+    @startuml
+    Bob -> Alice : hello
+    @enduml
+    ```
+
 ### 数学公式
+
+> 需要在`Markdown`菜单中启用MathJax。
+
 VNote通过 [MathJax](https://www.mathjax.org/) 来支持数学公式。默认的**块公式**的分隔符是`$$...$$$`和`\[...\]`，**行内公式**的分隔符是`$...$`。有时候，您需要使用`\`来*转义*某些字符。
 
 VNote也可以使用标明语言`mathjax`的代码块来实现块公式。使用代码块的一个好处是大多数情况下无需转义字符。

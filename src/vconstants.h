@@ -152,6 +152,13 @@ enum MarkdownConverterType
     Showdown
 };
 
+enum PlantUMLMode
+{
+    DisablePlantUML = 0,
+    OnlinePlantUML = 1,
+    LocalPlantUML = 2
+};
+
 
 struct MarkdownitOption
 {

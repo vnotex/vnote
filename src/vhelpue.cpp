@@ -67,7 +67,7 @@ bool VHelpUE::initListWidget()
         m_listWidget->addItem(tr("Ctrl+D: Cancel the command"));
         m_listWidget->addItem(tr("Ctrl+J: Go to next item"));
         m_listWidget->addItem(tr("Ctrl+K: Go to previous item"));
-        m_listWidget->addItem(tr("Ctrl+R: Go to current item's parent item"));
+        m_listWidget->addItem(tr("Ctrl+L: Go to current item's parent item"));
         m_listWidget->addItem(tr("Ctrl+T: Expand/Collapse current item"));
         m_listWidget->addItem(tr("Ctrl+S: Sort items"));
         m_listWidget->addItem(tr("Enter: Activate current item"));

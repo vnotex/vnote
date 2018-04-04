@@ -210,6 +210,9 @@ public:
     bool getEnableMathjax() const;
     void setEnableMathjax(bool p_enabled);
 
+    int getPlantUMLMode() const;
+    void setPlantUMLMode(int p_mode);
+
     qreal getWebZoomFactor() const;
     void setWebZoomFactor(qreal p_factor);
     bool isCustomWebZoomFactor();
@@ -459,6 +462,15 @@ public:
 
     QStringList getSearchOptions() const;
     void setSearchOptions(const QStringList &p_opts);
+
+    const QString &getPlantUMLServer() const;
+    void setPlantUMLServer(const QString &p_server);
+
+    const QString &getPlantUMLJar() const;
+    void setPlantUMLJar(const QString &p_jarPath);
+
+    const QString &getPlantUMLDot() const;
+    void setPlantUMLDot(const QString &p_dotPath);
 
 private:
     // Look up a config from user and default settings.
@@ -851,6 +863,15 @@ private:
 
     // Whether flash anchor in read mode.
     bool m_enableFlashAnchor;
+
+    // PlantUML mode.
+    int m_plantUMLMode;
+
+    QString m_plantUMLServer;
+
+    QString m_plantUMLJar;
+
+    QString m_plantUMLDot;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1325,8 +1346,24 @@ inline void VConfigManager::setEnableMathjax(bool p_enabled)
     if (m_enableMathjax == p_enabled) {
         return;
     }
+
     m_enableMathjax = p_enabled;
     setConfigToSettings("global", "enable_mathjax", m_enableMathjax);
+}
+
+inline int VConfigManager::getPlantUMLMode() const
+{
+    return m_plantUMLMode;
+}
+
+inline void VConfigManager::setPlantUMLMode(int p_mode)
+{
+    if (m_plantUMLMode == p_mode) {
+        return;
+    }
+
+    m_plantUMLMode = p_mode;
+    setConfigToSettings("global", "plantuml_mode", p_mode);
 }
 
 inline qreal VConfigManager::getWebZoomFactor() const
@@ -2148,5 +2185,50 @@ inline QStringList VConfigManager::getSearchOptions() const
 inline void VConfigManager::setSearchOptions(const QStringList &p_opts)
 {
     setConfigToSettings("global", "search_options", p_opts);
+}
+
+inline const QString &VConfigManager::getPlantUMLServer() const
+{
+    return m_plantUMLServer;
+}
+
+inline void VConfigManager::setPlantUMLServer(const QString &p_server)
+{
+    if (m_plantUMLServer == p_server) {
+        return;
+    }
+
+    m_plantUMLServer = p_server;
+    setConfigToSettings("web", "plantuml_server", p_server);
+}
+
+inline const QString &VConfigManager::getPlantUMLJar() const
+{
+    return m_plantUMLJar;
+}
+
+inline void VConfigManager::setPlantUMLJar(const QString &p_jarPath)
+{
+    if (m_plantUMLJar == p_jarPath) {
+        return;
+    }
+
+    m_plantUMLJar = p_jarPath;
+    setConfigToSettings("web", "plantuml_jar", p_jarPath);
+}
+
+inline const QString &VConfigManager::getPlantUMLDot() const
+{
+    return m_plantUMLDot;
+}
+
+inline void VConfigManager::setPlantUMLDot(const QString &p_dotPath)
+{
+    if (m_plantUMLDot == p_dotPath) {
+        return;
+    }
+
+    m_plantUMLDot = p_dotPath;
+    setConfigToSettings("web", "plantuml_dot", p_dotPath);
 }
 #endif // VCONFIGMANAGER_H

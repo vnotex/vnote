@@ -7,6 +7,7 @@
 #include "vwordcountinfo.h"
 
 class VFile;
+class VPlantUMLHelper;
 
 class VDocument : public QObject
 {
@@ -82,6 +83,9 @@ public slots:
                              int p_charWithoutSpacesCount,
                              int p_charWithSpacesCount);
 
+    // Web-side call this to process PlantUML locally.
+    void processPlantUML(int p_id, const QString &p_format, const QString &p_text);
+
 signals:
     void textChanged(const QString &text);
 
@@ -118,6 +122,8 @@ signals:
 
     void wordCountInfoUpdated();
 
+    void plantUMLResultReady(int p_id, const QString &p_format, const QString &p_result);
+
 private:
     QString m_toc;
     QString m_header;
@@ -137,6 +143,8 @@ private:
     bool m_readyToTextToHtml;
 
     VWordCountInfo m_wordCountInfo;
+
+    VPlantUMLHelper *m_plantUMLHelper;
 };
 
 inline bool VDocument::isReadyToHighlight() const

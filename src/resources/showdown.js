@@ -49,7 +49,7 @@ var mdHasTocSection = function(markdown) {
     return n != -1;
 };
 
-var highlightCodeBlocks = function(doc, enableMermaid, enableFlowchart, enableMathJax) {
+var highlightCodeBlocks = function(doc, enableMermaid, enableFlowchart, enableMathJax, enablePlantUML) {
     var codes = doc.getElementsByTagName('code');
     for (var i = 0; i < codes.length; ++i) {
         var code = codes[i];
@@ -65,6 +65,9 @@ var highlightCodeBlocks = function(doc, enableMermaid, enableFlowchart, enableMa
             } else if (enableMathJax && code.classList.contains('language-mathjax')) {
                 // MathJax code block.
                 continue;
+            } else if (enablePlantUML && code.classList.contains('language-puml')) {
+                // PlantUML code block.
+                continue;
             }
 
             if (listContainsRegex(code.classList, /language-.*/)) {
@@ -79,14 +82,17 @@ var updateText = function(text) {
         text = "[TOC]\n\n" + text;
     }
 
+    asyncJobsCount = 0;
+
     var needToc = mdHasTocSection(text);
     var html = markdownToHtml(text, needToc);
     placeholder.innerHTML = html;
     handleToc(needToc);
     insertImageCaption();
-    highlightCodeBlocks(document, VEnableMermaid, VEnableFlowchart, VEnableMathjax);
+    highlightCodeBlocks(document, VEnableMermaid, VEnableFlowchart, VEnableMathjax, VPlantUMLMode != 0);
     renderMermaid('language-mermaid');
     renderFlowchart(['language-flowchart', 'language-flow']);
+    renderPlantUML('language-puml');
     addClassToCodeBlock();
     renderCodeBlockLineNumber();
 

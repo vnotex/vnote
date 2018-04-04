@@ -108,7 +108,10 @@ As VNote suggests:
 - `lang` is optional to specify the language of the code;
 
 ### Diagrams
-VNote supports [Flowchart.js](http://flowchart.js.org/) and [Mermaid](https://mermaidjs.github.io/) to draw diagrams such as *flowchart* and *sequence diagram*. You should use `flowchart` and `mermaid` specified as the language of the fenced code block and write the definition of your diagram within it.
+
+> You need to enable Flowchart.js or Mermaid in the `Markdown` menu.
+
+VNote supports [Flowchart.js](http://flowchart.js.org/) and [Mermaid](https://mermaidjs.github.io/) to draw diagrams such as *flowchart* and *sequence diagram*. You should use `flow` or `flowchart` and `mermaid` specified as the language of the fenced code block and write the definition of your diagram within it.
 
     ```flowchart
     st=>start: Start:>http://www.google.com[blank]
@@ -124,7 +127,22 @@ VNote supports [Flowchart.js](http://flowchart.js.org/) and [Mermaid](https://me
     cond(no)->sub1(right)->op1
     ```
 
+#### UML
+
+> You need to enable PlantUML in the settings. Pay attention to the privacy issue if you use online PlantUML server. You may need to prepare Java runtime, PlantUML, and Graphviz if you choose local PlantUML.
+
+VNote supports [PlantUML](http://plantuml.com/) to draw UML diagrams. You should use `puml` specified as the language of the fenced code block and write the definition of your diagram within it.
+
+    ```puml
+    @startuml
+    Bob -> Alice : hello
+    @enduml
+    ```
+
 ### Math Formulas
+
+> You need to enable MathJax in the `Markdown` menu.
+
 VNote supports math formulas via [MathJax](https://www.mathjax.org/). The default math delimiters are `$$...$$` and `\[...\]` for **displayed mathematics**, and `$...$` for **inline mathematics**. Sometimes you may need to *escape* some characters via `\`.
 
 VNote also supports displayed mathematics via fenced code block with language `mathjax` specified. The benifit of using code block is you do not have to escape most characters.

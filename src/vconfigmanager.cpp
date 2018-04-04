@@ -284,6 +284,11 @@ void VConfigManager::initialize()
 
     m_enableFlashAnchor = getConfigFromSettings("web",
                                                 "enable_flash_anchor").toBool();
+
+    m_plantUMLMode = getConfigFromSettings("global", "plantuml_mode").toInt();
+    m_plantUMLServer = getConfigFromSettings("web", "plantuml_server").toString();
+    m_plantUMLJar = getConfigFromSettings("web", "plantuml_jar").toString();
+    m_plantUMLDot = getConfigFromSettings("web", "plantuml_dot").toString();
 }
 
 void VConfigManager::initSettings()

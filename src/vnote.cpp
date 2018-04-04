@@ -50,6 +50,9 @@ const QString VNote::c_mermaidForestCssFile = ":/utils/mermaid/mermaid.forest.cs
 const QString VNote::c_flowchartJsFile = ":/utils/flowchart.js/flowchart.min.js";
 const QString VNote::c_raphaelJsFile = ":/utils/flowchart.js/raphael.min.js";
 
+const QString VNote::c_plantUMLJsFile = "http://s.plantuml.com/synchro2.js";
+const QString VNote::c_plantUMLZopfliJsFile = "http://s.plantuml.com/zopfli.raw.min.js";
+
 const QString VNote::c_highlightjsLineNumberExtraFile = ":/utils/highlightjs/highlightjs-line-numbers.min.js";
 
 const QString VNote::c_docFileFolder = ":/resources/docs";
@@ -128,6 +131,7 @@ QString VNote::generateHtmlTemplate(const QString &p_renderBg,
                     "code { word-break: break-all !important; }\n"
                     "div.flowchart-diagram { overflow: hidden !important; }\n"
                     "div.mermaid-diagram { overflow: hidden !important; }\n"
+                    "div.plantuml-diagram { overflow: hidden !important; }\n"
                     "a { word-break: break-all !important; }\n"
                     "td.hljs-ln-code { white-space: pre-wrap !important; "
                                       "word-break: break-all !important; }\n";

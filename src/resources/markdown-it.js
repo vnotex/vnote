@@ -106,6 +106,8 @@ var updateText = function(text) {
         text = "[TOC]\n\n" + text;
     }
 
+    asyncJobsCount = 0;
+
     var needToc = mdHasTocSection(text);
     var html = markdownToHtml(text, needToc);
     placeholder.innerHTML = html;
@@ -113,6 +115,7 @@ var updateText = function(text) {
     insertImageCaption();
     renderMermaid('lang-mermaid');
     renderFlowchart(['lang-flowchart', 'lang-flow']);
+    renderPlantUML('lang-puml');
     addClassToCodeBlock();
     renderCodeBlockLineNumber();
 

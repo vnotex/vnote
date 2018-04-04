@@ -16,14 +16,14 @@ bool VPreviewPage::acceptNavigationRequest(const QUrl &p_url,
                                            bool p_isMainFrame)
 {
     Q_UNUSED(p_type);
-    Q_UNUSED(p_isMainFrame);
 
     if (p_url.isLocalFile()) {
         QString filePath = p_url.toLocalFile();
         if (g_mainWin->tryOpenInternalFile(filePath)) {
-            qDebug() << "internal notes jump" << filePath;
             return false;
         }
+    } else if (!p_isMainFrame) {
+        return true;
     }
 
     QDesktopServices::openUrl(p_url);
