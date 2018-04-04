@@ -103,7 +103,7 @@ VUniversalEntry::VUniversalEntry(QWidget *p_parent)
 void VUniversalEntry::setupUI()
 {
     m_cmdEdit = new VMetaWordLineEdit(this);
-    m_cmdEdit->setPlaceholderText(tr("Welcome to Universal Entry"));
+    m_cmdEdit->setPlaceholderText(tr("Universal Entry, reach anything by typing"));
     m_cmdEdit->setCtrlKEnabled(false);
     m_cmdEdit->setCtrlEEnabled(false);
     connect(m_cmdEdit, &VMetaWordLineEdit::textEdited,

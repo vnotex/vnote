@@ -647,8 +647,23 @@ void VMainWindow::initNoteToolBar(QSize p_iconSize)
     connect(flashPageAct, &QAction::triggered,
             this, &VMainWindow::openFlashPage);
 
+    QAction *universalEntryAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/universal_entry_tb.svg"),
+                                             tr("Universal Entry"),
+                                             this);
+    universalEntryAct->setStatusTip(tr("Activate Universal Entry"));
+    keySeq = g_config->getShortcutKeySequence("UniversalEntry");
+    seq = QKeySequence(keySeq);
+    if (!seq.isEmpty()) {
+        universalEntryAct->setText(tr("Universal Entry\t%1").arg(VUtils::getShortcutText(keySeq)));
+        universalEntryAct->setShortcut(seq);
+    }
+
+    connect(universalEntryAct, &QAction::triggered,
+            this, &VMainWindow::activateUniversalEntry);
+
     noteToolBar->addWidget(m_attachmentBtn);
     noteToolBar->addAction(flashPageAct);
+    noteToolBar->addAction(universalEntryAct);
 }
 
 void VMainWindow::initFileToolBar(QSize p_iconSize)
@@ -2848,15 +2863,6 @@ void VMainWindow::initShortcuts()
         closeNoteShortcut->setContext(Qt::WidgetWithChildrenShortcut);
         connect(closeNoteShortcut, &QShortcut::activated,
                 this, &VMainWindow::closeCurrentFile);
-    }
-
-    keySeq = g_config->getShortcutKeySequence("UniversalEntry");
-    qDebug() << "set UniversalEntry shortcut to" << keySeq;
-    if (!keySeq.isEmpty()) {
-        QShortcut *ueShortcut = new QShortcut(QKeySequence(keySeq), this);
-        ueShortcut->setContext(Qt::WidgetWithChildrenShortcut);
-        connect(ueShortcut, &QShortcut::activated,
-                this, &VMainWindow::activateUniversalEntry);
     }
 }
 

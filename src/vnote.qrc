@@ -209,5 +209,6 @@
         <file>resources/themes/v_moonlight/checkbox_unchecked_disabled.svg</file>
         <file>resources/themes/v_moonlight/radiobutton_checked_disabled.svg</file>
         <file>resources/themes/v_moonlight/radiobutton_unchecked_disabled.svg</file>
+        <file>resources/icons/universal_entry_tb.svg</file>
     </qresource>
 </RCC>
