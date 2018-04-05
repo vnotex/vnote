@@ -75,6 +75,9 @@ cp /opt/qt59/translations/*_zh_CN.qm ./dist/usr/translations/
 # Package it for the second time.
 ./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -appimage
 
+# Delete libnss3.so libnssutil3.so.
+rm ./dist/usr/lib/libnss3.so ./dist/usr/lib/libnssutil3.so
+
 tree dist/
 
 ls -l *.AppImage
