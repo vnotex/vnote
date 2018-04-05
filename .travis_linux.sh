@@ -75,12 +75,21 @@ cp /opt/qt59/translations/*_zh_CN.qm ./dist/usr/translations/
 # Package it for the second time.
 ./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -appimage
 
-# Delete libnss3.so libnssutil3.so.
-rm ./dist/usr/lib/libnss3.so ./dist/usr/lib/libnssutil3.so
-
 tree dist/
 
 ls -l *.AppImage
+
+wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+chmod a+x appimagetool-x86_64.AppImage
+
+mv VNote-*.AppImage VNote-x86_64.AppImage
+chmod a+x VNote-x86_64.AppImage
+./VNote-x86_64.AppImage --appimage-extract
+rm VNote-x86_64.AppImage
+# Delete libnss3.so libnssutil3.so.
+rm ./squashfs-root/usr/lib/libnss3.so ./squashfs-root/usr/lib/libnssutil3.so
+
+./appimagetool-x86_64.AppImage squashfs-root
 
 mv VNote-*.AppImage VNote_x86_64_${version}.AppImage
 
