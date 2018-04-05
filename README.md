@@ -155,7 +155,16 @@ VNote supports previewing the image link in edit mode. With this, you could just
 ## Pleasant Image Experience
 Just paste your image into the Markdown note, VNote will manage all other stuffs. VNote stores images in a specified folder in the same folder with the note. VNote will pop up a window to preview the image when you insert an image. Furthermore, VNote will delete the useless image files automatically after you remove the image links.
 
-![](screenshots/_1513485753_394180887.png)
+![Pleasant Image Experience](screenshots/_1513485753_394180887.png)
+
+## Universal Entry & Full-Text Search
+VNote has powerful built-in full-text search with **Regular Expression** and **Fuzzy Search** support. The search could be executed wihtin all notebooks, current notebook, or current folder, targeted at name or content.
+
+![Full-Text Search](screenshots/_1522894671_1711734243.png)
+
+Like the `CtrlP` in Vim, VNote supports **Universal Entry** to reach anything by typing in a simple input.
+
+![Universal Entry](screenshots/_universale_1522894821_465772669.png)
 
 ## Interactive Outline Viewer In Read & Edit Mode
 VNote provides a user-friendly outline viewer for both edit and view mode. The outline viewer is a responsive item tree instead of a segment of HTML.

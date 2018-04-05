@@ -21,6 +21,8 @@ Recover last closed file.
 Open Flash Page.
 - `Ctrl+T`  
 Edit current note or save changes and exit edit mode.
+- `Ctrl+G`  
+Activate Universal Entry.
 
 ### Read Mode
 - `H`/`J`/`K`/`L`  
