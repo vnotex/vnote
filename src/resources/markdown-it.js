@@ -41,7 +41,7 @@ var mdit = window.markdownit({
     html: VMarkdownitOption.html,
     breaks: VMarkdownitOption.breaks,
     linkify: VMarkdownitOption.linkify,
-    typographer: true,
+    typographer: false,
     langPrefix: 'lang-',
     highlight: function(str, lang) {
         if (lang && !specialCodeBlock(lang)) {
