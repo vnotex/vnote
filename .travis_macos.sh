@@ -48,7 +48,7 @@ ln -s /Applications ./Applications
 
 cd ..
 hdiutil create -srcfolder ./VNote -format UDBZ ./VNote.dmg
-mv VNote.dmg VNote_X64_${version}.dmg
+mv VNote.dmg VNote-${version}-x64.dmg
 cd ..
 
 exit 0

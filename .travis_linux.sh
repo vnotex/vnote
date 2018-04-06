@@ -81,7 +81,7 @@ tree dist/
 
 ls -l *.AppImage
 
-mv VNote-*.AppImage VNote_x86_64_${version}.AppImage
+mv VNote-*.AppImage VNote-${version}-x86_64.AppImage
 
 cd ..
 

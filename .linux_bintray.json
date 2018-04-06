@@ -24,7 +24,7 @@
     },
 
     "files":
-        [{"includePattern": "build/(VNote_.*\\.AppImage)", "uploadPattern": "$1",
+        [{"includePattern": "build/(VNote-.*\\.AppImage)", "uploadPattern": "$1",
           "matrixParams": {"override": 1 }}],
 
     "publish": true

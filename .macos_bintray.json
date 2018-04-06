@@ -24,7 +24,7 @@
     },
 
     "files":
-        [{"includePattern": "build/distrib/(VNote_.*\\.dmg)", "uploadPattern": "$1",
+        [{"includePattern": "build/distrib/(VNote-.*\\.dmg)", "uploadPattern": "$1",
           "matrixParams": {"override": 1 }}],
 
     "publish": true
