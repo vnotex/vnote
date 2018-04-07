@@ -33,8 +33,7 @@ int VLineNumberArea::calculateWidth() const
         ++digits;
     }
 
-    int width = m_digitWidth * (digits + 1);
-    const_cast<VLineNumberArea *>(this)->m_width = width;
+    const_cast<VLineNumberArea *>(this)->m_width = m_digitWidth * digits + 3;
 
     return m_width;
 }

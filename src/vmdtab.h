@@ -9,12 +9,12 @@
 #include "vconfigmanager.h"
 
 class VWebView;
-class QStackedLayout;
 class VDocument;
 class VMdEditor;
 class VInsertSelector;
 class QTimer;
 class QWebEngineDownloadItem;
+class QSplitter;
 
 class VMdTab : public VEditTab
 {
@@ -145,6 +145,8 @@ private slots:
 private:
     enum TabReady { None = 0, ReadMode = 0x1, EditMode = 0x2 };
 
+    enum Mode { Read = 0, Edit, EditPreview };
+
     // Setup UI.
     void setupUI();
 
@@ -213,6 +215,8 @@ private:
     // Update web view by current content.
     void updateWebView();
 
+    void setCurrentMode(Mode p_mode);
+
     VMdEditor *m_editor;
     VWebView *m_webViewer;
     VDocument *m_document;
@@ -221,7 +225,7 @@ private:
     // Whether heading sequence is enabled.
     bool m_enableHeadingSequence;
 
-    QStackedLayout *m_stacks;
+    QSplitter *m_splitter;
 
     // Timer to write backup file when content has been changed.
     QTimer *m_backupTimer;
@@ -232,6 +236,8 @@ private:
     VHeaderPointer m_headerFromEditMode;
 
     VVim::SearchItem m_lastSearchItem;
+
+    Mode m_mode;
 };
 
 inline VMdEditor *VMdTab::getEditor()

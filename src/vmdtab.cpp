@@ -68,14 +68,18 @@ VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
 
 void VMdTab::setupUI()
 {
-    m_stacks = new QStackedLayout(this);
+    m_splitter = new QSplitter(this);
+    m_splitter->setOrientation(Qt::Horizontal);
 
     setupMarkdownViewer();
 
     // Setup editor when we really need it.
     m_editor = NULL;
 
-    setLayout(m_stacks);
+    QVBoxLayout *layout = new QVBoxLayout();
+    layout->addWidget(m_splitter);
+    layout->setContentsMargins(0, 0, 0, 0);
+    setLayout(layout);
 }
 
 void VMdTab::showFileReadMode()
@@ -87,7 +91,8 @@ void VMdTab::showFileReadMode()
 
     updateWebView();
 
-    m_stacks->setCurrentWidget(m_webViewer);
+    setCurrentMode(Mode::Read);
+
     clearSearchedWordHighlight();
 
     updateStatus();
@@ -216,7 +221,8 @@ void VMdTab::showFileEditMode()
 
     VMdEditor *mdEdit = getEditor();
 
-    m_stacks->setCurrentWidget(mdEdit);
+    setCurrentMode(Mode::Edit);
+
     mdEdit->beginEdit();
 
     // If editor is not init, we need to wait for it to init headers.
@@ -444,7 +450,7 @@ void VMdTab::setupMarkdownViewer()
     m_webViewer->setHtml(VUtils::generateHtmlTemplate(m_mdConType),
                          m_file->getBaseUrl());
 
-    m_stacks->addWidget(m_webViewer);
+    m_splitter->addWidget(m_webViewer);
 }
 
 void VMdTab::setupMarkdownEditor()
@@ -503,7 +509,7 @@ void VMdTab::setupMarkdownEditor()
 
     enableHeadingSequence(m_enableHeadingSequence);
     m_editor->reloadFile();
-    m_stacks->addWidget(m_editor);
+    m_splitter->insertWidget(0, m_editor);
 }
 
 void VMdTab::updateOutlineFromHtml(const QString &p_tocHtml)
@@ -781,7 +787,11 @@ MarkdownConverterType VMdTab::getMarkdownConverterType() const
 
 void VMdTab::focusChild()
 {
-    m_stacks->currentWidget()->setFocus();
+    if (m_mode == Mode::Read) {
+        m_webViewer->setFocus();
+    } else {
+        m_editor->setFocus();
+    }
 }
 
 void VMdTab::requestUpdateVimStatus()
@@ -1302,4 +1312,31 @@ VWordCountInfo VMdTab::fetchWordCountInfo(bool p_editMode) const
     }
 
     return VWordCountInfo();
+}
+
+void VMdTab::setCurrentMode(Mode p_mode)
+{
+    switch (p_mode) {
+    case Mode::Read:
+        m_webViewer->show();
+        if (m_editor) {
+            m_editor->hide();
+        }
+
+        break;
+
+    case Mode::EditPreview:
+    case Mode::Edit:
+        Q_ASSERT(m_editor);
+        m_editor->show();
+        m_webViewer->hide();
+        break;
+
+    default:
+        break;
+    }
+
+    m_mode = p_mode;
+
+    focusChild();
 }
