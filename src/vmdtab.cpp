@@ -22,10 +22,12 @@
 #include "vsnippet.h"
 #include "vinsertselector.h"
 #include "vsnippetlist.h"
+#include "vlivepreviewhelper.h"
 
 extern VMainWindow *g_mainWin;
 
 extern VConfigManager *g_config;
+
 
 VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
                OpenFileMode p_mode, QWidget *p_parent)
@@ -35,7 +37,9 @@ VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
       m_document(NULL),
       m_mdConType(g_config->getMdConverterType()),
       m_enableHeadingSequence(false),
-      m_backupFileChecked(false)
+      m_backupFileChecked(false),
+      m_mode(Mode::InvalidMode),
+      m_livePreviewHelper(NULL)
 {
     V_ASSERT(m_file->getDocType() == DocType::Markdown);
 
@@ -459,6 +463,7 @@ void VMdTab::setupMarkdownEditor()
 
     m_editor = new VMdEditor(m_file, m_document, m_mdConType, this);
     m_editor->setProperty("MainEditor", true);
+    m_editor->setEditTab(this);
     connect(m_editor, &VMdEditor::headersChanged,
             this, &VMdTab::updateOutlineFromHeaders);
     connect(m_editor, SIGNAL(currentHeaderChanged(int)),
@@ -467,10 +472,10 @@ void VMdTab::setupMarkdownEditor()
             this, &VMdTab::updateStatus);
     connect(m_editor, &VMdEditor::textChanged,
             this, &VMdTab::updateStatus);
-    connect(m_editor, &VMdEditor::cursorPositionChanged,
-            this, &VMdTab::updateCursorStatus);
     connect(g_mainWin, &VMainWindow::editorConfigUpdated,
             m_editor, &VMdEditor::updateConfig);
+    connect(m_editor->object(), &VEditorObject::cursorPositionChanged,
+            this, &VMdTab::updateCursorStatus);
     connect(m_editor->object(), &VEditorObject::saveAndRead,
             this, &VMdTab::saveAndRead);
     connect(m_editor->object(), &VEditorObject::discardAndRead,
@@ -753,9 +758,7 @@ void VMdTab::handleWebKeyPressed(int p_key, bool p_ctrl, bool p_shift)
 
 void VMdTab::zoom(bool p_zoomIn, qreal p_step)
 {
-    // Editor will handle it itself.
-    Q_ASSERT(!m_isEditMode);
-    if (!m_isEditMode) {
+    if (!m_isEditMode || m_mode == Mode::EditPreview) {
         zoomWebPage(p_zoomIn, p_step);
     }
 }
@@ -1316,6 +1319,18 @@ VWordCountInfo VMdTab::fetchWordCountInfo(bool p_editMode) const
 
 void VMdTab::setCurrentMode(Mode p_mode)
 {
+    if (m_mode == p_mode) {
+        return;
+    }
+
+    qreal factor = m_webViewer->zoomFactor();
+    if (m_mode == Mode::Read) {
+        m_readWebViewState->m_zoomFactor = factor;
+    } else if (m_mode == Mode::EditPreview) {
+        m_previewWebViewState->m_zoomFactor = factor;
+        m_livePreviewHelper->setLivePreviewEnabled(false);
+    }
+
     switch (p_mode) {
     case Mode::Read:
         m_webViewer->show();
@@ -1323,13 +1338,55 @@ void VMdTab::setCurrentMode(Mode p_mode)
             m_editor->hide();
         }
 
+        if (m_readWebViewState.isNull()) {
+            m_readWebViewState.reset(new WebViewState());
+            m_readWebViewState->m_zoomFactor = factor;
+        } else if (factor != m_readWebViewState->m_zoomFactor) {
+            m_webViewer->setZoomFactor(m_readWebViewState->m_zoomFactor);
+        }
+
+        m_document->setPreviewEnabled(false);
+        break;
+
+    case Mode::Edit:
+        m_editor->show();
+        m_webViewer->hide();
         break;
 
     case Mode::EditPreview:
-    case Mode::Edit:
         Q_ASSERT(m_editor);
         m_editor->show();
-        m_webViewer->hide();
+        m_webViewer->show();
+        if (m_previewWebViewState.isNull()) {
+            m_previewWebViewState.reset(new WebViewState());
+            m_previewWebViewState->m_zoomFactor = factor;
+
+            // Init the size of two splits.
+            QList<int> sizes = m_splitter->sizes();
+            Q_ASSERT(sizes.size() == 2);
+            int a = (sizes[0] + sizes[1]) / 2;
+            if (a <= 0) {
+                a = 1;
+            }
+
+            int b = (sizes[0] + sizes[1]) - a;
+
+            QList<int> newSizes;
+            newSizes.append(a);
+            newSizes.append(b);
+            m_splitter->setSizes(newSizes);
+
+            Q_ASSERT(!m_livePreviewHelper);
+            m_livePreviewHelper = new VLivePreviewHelper(m_editor, m_document, this);
+            connect(m_editor->getMarkdownHighlighter(), &HGMarkdownHighlighter::codeBlocksUpdated,
+                    m_livePreviewHelper, &VLivePreviewHelper::updateCodeBlocks);
+        } else if (factor != m_previewWebViewState->m_zoomFactor) {
+            m_webViewer->setZoomFactor(m_previewWebViewState->m_zoomFactor);
+        }
+
+        m_document->setPreviewEnabled(true);
+        m_livePreviewHelper->setLivePreviewEnabled(true);
+        m_editor->getMarkdownHighlighter()->updateHighlight();
         break;
 
     default:
@@ -1339,4 +1396,20 @@ void VMdTab::setCurrentMode(Mode p_mode)
     m_mode = p_mode;
 
     focusChild();
+}
+
+void VMdTab::toggleLivePreview()
+{
+    switch (m_mode) {
+    case Mode::EditPreview:
+        setCurrentMode(Mode::Edit);
+        break;
+
+    case Mode::Edit:
+        setCurrentMode(Mode::EditPreview);
+        break;
+
+    default:
+        break;
+    }
 }

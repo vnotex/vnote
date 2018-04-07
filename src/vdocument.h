@@ -47,6 +47,20 @@ public:
 
     const VWordCountInfo &getWordCountInfo() const;
 
+    // Whether change to preview mode.
+    void setPreviewEnabled(bool p_enabled);
+
+    // @p_livePreview: if true, display the result in the preview-div; otherwise,
+    // call previewCodeBlockCB() to pass back the result.
+    // Only for online parser.
+    void previewCodeBlock(int p_id,
+                          const QString &p_lang,
+                          const QString &p_text,
+                          bool p_livePreview);
+
+    // Set the content of the preview.
+    void setPreviewContent(const QString &p_lang, const QString &p_html);
+
 public slots:
     // Will be called in the HTML side
 
@@ -129,6 +143,15 @@ signals:
     void plantUMLResultReady(int p_id, const QString &p_format, const QString &p_result);
 
     void graphvizResultReady(int p_id, const QString &p_format, const QString &p_result);
+
+    void requestPreviewEnabled(bool p_enabled);
+
+    void requestPreviewCodeBlock(int p_id,
+                                 const QString &p_lang,
+                                 const QString &p_text,
+                                 bool p_livePreview);
+
+    void requestSetPreviewContent(const QString &p_lang, const QString &p_html);
 
 private:
     QString m_toc;

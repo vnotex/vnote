@@ -46,12 +46,27 @@ struct HLUnitStyle
 // Fenced code block only.
 struct VCodeBlock
 {
+    // Global position of the start.
     int m_startPos;
+
     int m_startBlock;
     int m_endBlock;
+
     QString m_lang;
 
     QString m_text;
+
+    bool equalContent(const VCodeBlock &p_block) const
+    {
+        return p_block.m_lang == m_lang && p_block.m_text == m_text;
+    }
+
+    void updateNonContent(const VCodeBlock &p_block)
+    {
+        m_startPos = p_block.m_startPos;
+        m_startBlock = p_block.m_startBlock;
+        m_endBlock = p_block.m_endBlock;
+    }
 };
 
 // Highlight unit with global position and string style name.

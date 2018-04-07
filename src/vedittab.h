@@ -118,6 +118,10 @@ public:
     // Fetch tab stat info.
     virtual VWordCountInfo fetchWordCountInfo(bool p_editMode) const;
 
+    virtual void toggleLivePreview()
+    {
+    }
+
 public slots:
     // Enter edit mode
     virtual void editFile() = 0;

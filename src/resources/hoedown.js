@@ -1,5 +1,3 @@
-var placeholder = document.getElementById('placeholder');
-
 // Use Marked to highlight code blocks in edit mode.
 marked.setOptions({
     highlight: function(code, lang) {
@@ -18,7 +16,7 @@ marked.setOptions({
 var updateHtml = function(html) {
     asyncJobsCount = 0;
 
-    placeholder.innerHTML = html;
+    contentDiv.innerHTML = html;
 
     insertImageCaption();
 
@@ -83,7 +81,7 @@ var updateHtml = function(html) {
     // MathJax may be not loaded for now.
     if (VEnableMathjax && (typeof MathJax != "undefined")) {
         try {
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder, postProcessMathJax]);
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub, contentDiv, postProcessMathJax]);
         } catch (err) {
             content.setLog("err: " + err);
             finishLogics();
@@ -100,7 +98,7 @@ var highlightText = function(text, id, timeStamp) {
 
 var textToHtml = function(text) {
     var html = marked(text);
-    var container = document.getElementById('text-to-html-div');
+    var container = textHtmlDiv;
     container.innerHTML = html;
 
     html = getHtmlWithInlineStyles(container);

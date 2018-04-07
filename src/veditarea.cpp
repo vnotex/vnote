@@ -923,6 +923,10 @@ void VEditArea::registerCaptainTargets()
                                    g_config->getCaptainShortcutKeySequence("ApplySnippet"),
                                    this,
                                    applySnippetByCaptain);
+    captain->registerCaptainTarget(tr("LivePreview"),
+                                   g_config->getCaptainShortcutKeySequence("LivePreview"),
+                                   this,
+                                   toggleLivePreviewByCaptain);
 }
 
 bool VEditArea::activateTabByCaptain(void *p_target, void *p_data, int p_idx)
@@ -1080,6 +1084,19 @@ bool VEditArea::applySnippetByCaptain(void *p_target, void *p_data)
         && (data->m_focusWidgetBeforeCaptain == tab
             || tab->isAncestorOf(data->m_focusWidgetBeforeCaptain))) {
         tab->applySnippet();
+    }
+
+    return true;
+}
+
+bool VEditArea::toggleLivePreviewByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+
+    VEditTab *tab = obj->getCurrentTab();
+    if (tab) {
+        tab->toggleLivePreview();
     }
 
     return true;

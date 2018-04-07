@@ -19,6 +19,7 @@ class VCodeBlockHighlightHelper;
 class VDocument;
 class VPreviewManager;
 class VCopyTextAsHtmlDialog;
+class VEditTab;
 
 class VMdEditor : public VTextEdit, public VEditor
 {
@@ -68,6 +69,10 @@ public:
     void updateInitAndInsertedImages(bool p_fileChanged, UpdateAction p_act);
 
     VWordCountInfo fetchWordCountInfo() const Q_DECL_OVERRIDE;
+
+    void setEditTab(VEditTab *p_editTab);
+
+    HGMarkdownHighlighter *getMarkdownHighlighter() const;
 
 public slots:
     bool jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat) Q_DECL_OVERRIDE;
@@ -260,5 +265,12 @@ private:
     VCopyTextAsHtmlDialog *m_textToHtmlDialog;
 
     int m_zoomDelta;
+
+    VEditTab *m_editTab;
 };
+
+inline HGMarkdownHighlighter *VMdEditor::getMarkdownHighlighter() const
+{
+    return m_mdHighlighter;
+}
 #endif // VMDEDITOR_H

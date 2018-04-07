@@ -1,4 +1,3 @@
-var placeholder = document.getElementById('placeholder');
 var renderer = new showdown.Converter({simplifiedAutoLink: 'true',
                                        excludeTrailingPunctuationFromURLs: 'true',
                                        strikethrough: 'true',
@@ -94,7 +93,7 @@ var updateText = function(text) {
 
     var needToc = mdHasTocSection(text);
     var html = markdownToHtml(text, needToc);
-    placeholder.innerHTML = html;
+    contentDiv.innerHTML = html;
     handleToc(needToc);
     insertImageCaption();
     highlightCodeBlocks(document,
@@ -114,7 +113,7 @@ var updateText = function(text) {
     // finishLoading logic.
     if (VEnableMathjax) {
         try {
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub, placeholder, postProcessMathJax]);
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub, contentDiv, postProcessMathJax]);
         } catch (err) {
             content.setLog("err: " + err);
             finishLogics();
@@ -149,7 +148,7 @@ var textToHtml = function(text) {
 
     delete parser;
 
-    var container = document.getElementById('text-to-html-div');
+    var container = textHtmlDiv;
     container.innerHTML = html;
 
     html = getHtmlWithInlineStyles(container);

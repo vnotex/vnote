@@ -208,6 +208,9 @@ private:
     // Prompt for user to apply a snippet.
     static bool applySnippetByCaptain(void *p_target, void *p_data);
 
+    // Toggle live preview.
+    static bool toggleLivePreviewByCaptain(void *p_target, void *p_data);
+
     // End Captain mode functions.
 
     int curWindowIndex;

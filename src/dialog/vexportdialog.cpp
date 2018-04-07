@@ -892,8 +892,8 @@ int VExportDialog::doExport(VCart *p_cart,
                             QString *p_errMsg,
                             QList<QString> *p_outputFiles)
 {
+    Q_UNUSED(p_cart);
     Q_ASSERT(p_cart);
-
     int ret = 0;
 
     QVector<QString> files = m_cart->getFiles();

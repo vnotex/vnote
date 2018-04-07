@@ -38,7 +38,8 @@ VMdEditor::VMdEditor(VFile *p_file,
       m_mdHighlighter(NULL),
       m_freshEdit(true),
       m_textToHtmlDialog(NULL),
-      m_zoomDelta(0)
+      m_zoomDelta(0),
+      m_editTab(NULL)
 {
     Q_ASSERT(p_file->getDocType() == DocType::Markdown);
 
@@ -96,6 +97,9 @@ VMdEditor::VMdEditor(VFile *p_file,
 
     connect(this, &VTextEdit::cursorPositionChanged,
             this, &VMdEditor::updateCurrentHeader);
+
+    connect(this, &VTextEdit::cursorPositionChanged,
+            m_object, &VEditorObject::cursorPositionChanged);
 
     setDisplayScaleFactor(VUtils::calculateScaleFactor());
 
@@ -276,10 +280,7 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
 {
     QScopedPointer<QMenu> menu(createStandardContextMenu());
     menu->setToolTipsVisible(true);
-
-    VEditTab *editTab = dynamic_cast<VEditTab *>(parent());
-    Q_ASSERT(editTab);
-    if (editTab->isEditMode()) {
+    if (m_editTab && m_editTab->isEditMode()) {
         const QList<QAction *> actions = menu->actions();
 
         if (textCursor().hasSelection()) {
@@ -303,8 +304,18 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
                         emit m_object->discardAndRead();
                     });
 
-            menu->insertAction(actions.isEmpty() ? NULL : actions[0], discardExitAct);
+            QAction *toggleLivePreviewAct = new QAction(tr("Toggle Live Preview"), menu.data());
+            toggleLivePreviewAct->setToolTip(tr("Toggle live preview of diagrams"));
+            connect(toggleLivePreviewAct, &QAction::triggered,
+                    this, [this]() {
+                        m_editTab->toggleLivePreview();
+                    });
+
+            menu->insertAction(actions.isEmpty() ? NULL : actions[0], toggleLivePreviewAct);
+            menu->insertAction(toggleLivePreviewAct, discardExitAct);
             menu->insertAction(discardExitAct, saveExitAct);
+
+            menu->insertSeparator(toggleLivePreviewAct);
 
             if (!actions.isEmpty()) {
                 menu->insertSeparator(actions[0]);
@@ -1321,4 +1332,9 @@ VWordCountInfo VMdEditor::fetchWordCountInfo() const
     info.m_charWithoutSpacesCount = cns;
     info.m_charWithSpacesCount = cc;
     return info;
+}
+
+void VMdEditor::setEditTab(VEditTab *p_editTab)
+{
+    m_editTab = p_editTab;
 }

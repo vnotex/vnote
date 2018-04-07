@@ -160,3 +160,21 @@ void VDocument::processGraphviz(int p_id, const QString &p_format, const QString
 
     m_graphvizHelper->processAsync(p_id, p_format, p_text);
 }
+
+void VDocument::setPreviewEnabled(bool p_enabled)
+{
+    emit requestPreviewEnabled(p_enabled);
+}
+
+void VDocument::previewCodeBlock(int p_id,
+                                 const QString &p_lang,
+                                 const QString &p_text,
+                                 bool p_livePreview)
+{
+    emit requestPreviewCodeBlock(p_id, p_lang, p_text, p_livePreview);
+}
+
+void VDocument::setPreviewContent(const QString &p_lang, const QString &p_html)
+{
+    emit requestSetPreviewContent(p_lang, p_html);
+}

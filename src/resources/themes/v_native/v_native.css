@@ -237,3 +237,7 @@ table.hljs-ln tr td.hljs-ln-numbers {
 table.hljs-ln tr td.hljs-ln-code {
     padding-left: 10px;
 }
+
+::selection {
+  background: #64B5F6;
+}

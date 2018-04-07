@@ -366,6 +366,8 @@ signals:
 
     void mouseReleased(QMouseEvent *p_event);
 
+    void cursorPositionChanged();
+
 private slots:
     // Timer for find-wrap label.
     void labelTimerTimeout()

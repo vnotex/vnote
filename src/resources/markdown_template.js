@@ -1,5 +1,11 @@
 var channelInitialized = false;
 
+var contentDiv = document.getElementById('content-div');
+
+var previewDiv = document.getElementById('preview-div');
+
+var textHtmlDiv = document.getElementById('text-html-div');
+
 var content;
 
 // Current header index in all headers.
@@ -131,7 +137,7 @@ var styleContent = function() {
 };
 
 var htmlContent = function() {
-    content.htmlContentCB("", styleContent(), placeholder.innerHTML);
+    content.htmlContentCB("", styleContent(), contentDiv.innerHTML);
 };
 
 new QWebChannel(qt.webChannelTransport,
@@ -156,6 +162,11 @@ new QWebChannel(qt.webChannelTransport,
 
         content.plantUMLResultReady.connect(handlePlantUMLResult);
         content.graphvizResultReady.connect(handleGraphvizResult);
+
+        content.requestPreviewEnabled.connect(setPreviewEnabled);
+
+        content.requestPreviewCodeBlock.connect(previewCodeBlock);
+        content.requestSetPreviewContent.connect(setPreviewContent);
 
         if (typeof updateHtml == "function") {
             updateHtml(content.html);
@@ -980,7 +991,7 @@ window.onmousedown = function(e) {
     // Left button and Ctrl key.
     if (e.buttons == 1
         && e.ctrlKey
-        && window.getSelection().rangeCount == 0) {
+        && window.getSelection().type != 'Range') {
         vds_oriMouseClientX = e.clientX;
         vds_oriMouseClientY = e.clientY;
         vds_readyToScroll = true;
@@ -1267,7 +1278,7 @@ function getNodeText(el) {
 }
 
 var calculateWordCount = function() {
-    var words = getNodeText(placeholder);
+    var words = getNodeText(contentDiv);
 
     // Char without spaces.
     var cns = 0;
@@ -1348,4 +1359,50 @@ var handleGraphvizResult = function(id, format, result) {
     }
 
     finishOneAsyncJob();
+};
+
+var setPreviewEnabled = function(enabled) {
+    if (enabled) {
+        contentDiv.style.display = 'none';
+        previewDiv.style.display = 'block';
+    } else {
+        contentDiv.style.display = 'block';
+        previewDiv.style.display = 'none';
+        previewDiv.innerHTML = '';
+    }
+};
+
+var previewCodeBlock = function(id, lang, text, isLivePreview) {
+    var div = previewDiv;
+    div.innerHTML = '';
+    div.className = '';
+
+    if (text.length == 0
+        || (lang != 'flow'
+            && lang != 'flowchart'
+            && lang != 'mermaid'
+            && (lang != 'puml' || VPlantUMLMode != 1))) {
+        return;
+    }
+
+    var pre = document.createElement('pre');
+    var code = document.createElement('code');
+    code.textContent = text;
+
+    pre.appendChild(code);
+    div.appendChild(pre);
+
+    if (lang == 'flow' || lang == 'flowchart') {
+        renderFlowchartOne(code);
+    } else if (lang == 'mermaid') {
+        renderMermaidOne(code);
+    } else if (lang == 'puml') {
+        renderPlantUMLOneOnline(code);
+    }
+};
+
+var setPreviewContent = function(lang, html) {
+    previewDiv.innerHTML = html;
+    // Treat plantUML and graphviz the same.
+    previewDiv.classList = VPlantUMLDivClass;
 };
