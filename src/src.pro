@@ -126,7 +126,8 @@ SOURCES += main.cpp\
     vhelpue.cpp \
     vlistfolderue.cpp \
     dialog/vfixnotebookdialog.cpp \
-    vplantumlhelper.cpp
+    vplantumlhelper.cpp \
+    vgraphvizhelper.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -243,7 +244,8 @@ HEADERS  += vmainwindow.h \
     vhelpue.h \
     vlistfolderue.h \
     dialog/vfixnotebookdialog.h \
-    vplantumlhelper.h
+    vplantumlhelper.h \
+    vgraphvizhelper.h
 
 RESOURCES += \
     vnote.qrc \

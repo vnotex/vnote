@@ -1,3 +1,5 @@
+var channelInitialized = false;
+
 var content;
 
 // Current header index in all headers.
@@ -43,6 +45,18 @@ if (typeof VPlantUMLMode == 'undefined') {
 
 if (typeof VPlantUMLServer == 'undefined') {
     VPlantUMLServer = 'http://www.plantuml.com/plantuml';
+}
+
+if (typeof VPlantUMLFormat == 'undefined') {
+    VPlantUMLFormat = 'svg';
+}
+
+if (typeof VEnableGraphviz == 'undefined') {
+    VEnableGraphviz = false;
+}
+
+if (typeof VGraphvizFormat == 'undefined') {
+    VGraphvizFormat = 'svg';
 }
 
 // Add a caption (using alt text) under the image.
@@ -123,14 +137,7 @@ var htmlContent = function() {
 new QWebChannel(qt.webChannelTransport,
     function(channel) {
         content = channel.objects.content;
-        if (typeof updateHtml == "function") {
-            updateHtml(content.html);
-            content.htmlChanged.connect(updateHtml);
-        }
-        if (typeof updateText == "function") {
-            content.textChanged.connect(updateText);
-            content.updateText();
-        }
+
         content.requestScrollToAnchor.connect(scrollToAnchor);
 
         if (typeof highlightText == "function") {
@@ -148,6 +155,19 @@ new QWebChannel(qt.webChannelTransport,
         }
 
         content.plantUMLResultReady.connect(handlePlantUMLResult);
+        content.graphvizResultReady.connect(handleGraphvizResult);
+
+        if (typeof updateHtml == "function") {
+            updateHtml(content.html);
+            content.htmlChanged.connect(updateHtml);
+        }
+
+        if (typeof updateText == "function") {
+            content.textChanged.connect(updateText);
+            content.updateText();
+        }
+
+        channelInitialized = true;
     });
 
 var VHighlightedAnchorClass = 'highlighted-anchor';
@@ -684,6 +704,33 @@ var renderPlantUMLOneLocal = function(code) {
     code.classList.add(plantUMLCodeClass + plantUMLIdx);
     content.processPlantUML(plantUMLIdx, VPlantUMLFormat, code.textContent);
     plantUMLIdx++;
+};
+
+var graphvizIdx = 0;
+var graphvizCodeClass = 'graphviz_code_';
+
+// @className, the class name of the Graghviz code block, such as 'lang-dot'.
+var renderGraphviz = function(className) {
+    if (!VEnableGraphviz) {
+        return;
+    }
+
+    graphvizIdx = 0;
+
+    var codes = document.getElementsByTagName('code');
+    for (var i = 0; i < codes.length; ++i) {
+        var code = codes[i];
+        if (code.classList.contains(className)) {
+            renderGraphvizOneLocal(code);
+        }
+    }
+};
+
+var renderGraphvizOneLocal = function(code) {
+    ++asyncJobsCount;
+    code.classList.add(graphvizCodeClass + graphvizIdx);
+    content.processGraphviz(graphvizIdx, VGraphvizFormat, code.textContent);
+    graphvizIdx++;
 };
 
 var isImageBlock = function(img) {
@@ -1260,7 +1307,8 @@ var specialCodeBlock = function(lang) {
     return (VEnableMathjax && lang == 'mathjax')
            || (VEnableMermaid && lang == 'mermaid')
            || (VEnableFlowchart && (lang == 'flowchart' || lang == 'flow'))
-           || (VPlantUMLMode != 0 && lang == 'puml');
+           || (VPlantUMLMode != 0 && lang == 'puml')
+           || (VEnableGraphviz && lang == 'dot');
 };
 
 var handlePlantUMLResult = function(id, format, result) {
@@ -1270,6 +1318,25 @@ var handlePlantUMLResult = function(id, format, result) {
         if (format == 'svg') {
             obj = document.createElement('div');
             obj.classList.add(VPlantUMLDivClass);
+            obj.innerHTML = result;
+        } else {
+            obj = document.createElement('img');
+            obj.src = "data:image/" + format + ";base64, " + result;
+        }
+
+        var preNode = code.parentNode;
+        preNode.parentNode.replaceChild(obj, preNode);
+    }
+
+    finishOneAsyncJob();
+};
+
+var handleGraphvizResult = function(id, format, result) {
+    var code = document.getElementsByClassName(graphvizCodeClass + id)[0];
+    if (code && result.length > 0) {
+        var obj = null;
+        if (format == 'svg') {
+            obj = document.createElement('p');
             obj.innerHTML = result;
         } else {
             obj = document.createElement('img');

@@ -8,6 +8,7 @@
 
 class VFile;
 class VPlantUMLHelper;
+class VGraphvizHelper;
 
 class VDocument : public QObject
 {
@@ -86,6 +87,9 @@ public slots:
     // Web-side call this to process PlantUML locally.
     void processPlantUML(int p_id, const QString &p_format, const QString &p_text);
 
+    // Web-side call this to process Graphviz locally.
+    void processGraphviz(int p_id, const QString &p_format, const QString &p_text);
+
 signals:
     void textChanged(const QString &text);
 
@@ -124,6 +128,8 @@ signals:
 
     void plantUMLResultReady(int p_id, const QString &p_format, const QString &p_result);
 
+    void graphvizResultReady(int p_id, const QString &p_format, const QString &p_result);
+
 private:
     QString m_toc;
     QString m_header;
@@ -145,6 +151,8 @@ private:
     VWordCountInfo m_wordCountInfo;
 
     VPlantUMLHelper *m_plantUMLHelper;
+
+    VGraphvizHelper *m_graphvizHelper;
 };
 
 inline bool VDocument::isReadyToHighlight() const

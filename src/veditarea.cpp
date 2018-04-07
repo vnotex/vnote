@@ -1012,6 +1012,7 @@ bool VEditArea::activateNextTabByCaptain(void *p_target, void *p_data)
     VEditWindow *win = obj->getCurrentWindow();
     if (win) {
         win->focusNextTab(true);
+        return false;
     }
 
     return true;

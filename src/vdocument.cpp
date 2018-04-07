@@ -4,12 +4,14 @@
 
 #include "vfile.h"
 #include "vplantumlhelper.h"
+#include "vgraphvizhelper.h"
 
 VDocument::VDocument(const VFile *v_file, QObject *p_parent)
     : QObject(p_parent),
       m_file(v_file),
       m_readyToHighlight(false),
-      m_plantUMLHelper(NULL)
+      m_plantUMLHelper(NULL),
+      m_graphvizHelper(NULL)
 {
 }
 
@@ -142,10 +144,19 @@ void VDocument::processPlantUML(int p_id, const QString &p_format, const QString
     if (!m_plantUMLHelper) {
         m_plantUMLHelper = new VPlantUMLHelper(this);
         connect(m_plantUMLHelper, &VPlantUMLHelper::resultReady,
-                this, [this](int p_id, const QString &p_format, const QString &p_result) {
-                    emit plantUMLResultReady(p_id, p_format, p_result);
-                });
+                this, &VDocument::plantUMLResultReady);
     }
 
     m_plantUMLHelper->processAsync(p_id, p_format, p_text);
+}
+
+void VDocument::processGraphviz(int p_id, const QString &p_format, const QString &p_text)
+{
+    if (!m_graphvizHelper) {
+        m_graphvizHelper = new VGraphvizHelper(this);
+        connect(m_graphvizHelper, &VGraphvizHelper::resultReady,
+                this, &VDocument::graphvizResultReady);
+    }
+
+    m_graphvizHelper->processAsync(p_id, p_format, p_text);
 }

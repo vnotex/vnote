@@ -736,6 +736,13 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
         extraFile += QString("<script>var VPlantUMLFormat = '%1';</script>\n").arg(format);
     }
 
+    if (g_config->getEnableGraphviz()) {
+        extraFile += "<script>var VEnableGraphviz = true;</script>\n";
+
+        QString format = p_isPDF ? "png" : "svg";
+        extraFile += QString("<script>var VGraphvizFormat = '%1';</script>\n").arg(format);
+    }
+
     if (g_config->getEnableImageCaption()) {
         extraFile += "<script>var VEnableImageCaption = true;</script>\n";
     }

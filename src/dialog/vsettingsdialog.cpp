@@ -912,10 +912,13 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     m_plantUMLJarEdit = new VLineEdit();
     m_plantUMLJarEdit->setToolTip(tr("Location to the PlantUML JAR executable for local PlantUML"));
 
-    m_plantUMLDotEdit = new VLineEdit();
-    m_plantUMLDotEdit->setPlaceholderText(tr("Empty to detect automatically"));
-    m_plantUMLDotEdit->setToolTip(tr("Location to the GraphViz executable for local PlantUML "
-                                     "(empty to let PlantUML detect it automatically)"));
+    // Graphviz.
+    m_graphvizCB = new QCheckBox(tr("Graphviz"));
+    m_graphvizCB->setToolTip(tr("Enable Graphviz for drawing graph"));
+
+    m_graphvizDotEdit = new VLineEdit();
+    m_graphvizDotEdit->setPlaceholderText(tr("Empty to detect automatically"));
+    m_graphvizDotEdit->setToolTip(tr("Location to the GraphViz dot executable"));
 
     QFormLayout *mainLayout = new QFormLayout();
     mainLayout->addRow(tr("Note open mode:"), m_openModeCombo);
@@ -924,7 +927,8 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     mainLayout->addRow(tr("PlantUML:"), m_plantUMLModeCombo);
     mainLayout->addRow(tr("PlantUML server:"), m_plantUMLServerEdit);
     mainLayout->addRow(tr("PlantUML JAR:"), m_plantUMLJarEdit);
-    mainLayout->addRow(tr("Graphviz executable:"), m_plantUMLDotEdit);
+    mainLayout->addRow(m_graphvizCB);
+    mainLayout->addRow(tr("Graphviz executable:"), m_graphvizDotEdit);
 
     setLayout(mainLayout);
 }
@@ -947,6 +951,10 @@ bool VMarkdownTab::loadConfiguration()
         return false;
     }
 
+    if (!loadGraphviz()) {
+        return false;
+    }
+
     return true;
 }
 
@@ -965,6 +973,10 @@ bool VMarkdownTab::saveConfiguration()
     }
 
     if (!savePlantUML()) {
+        return false;
+    }
+
+    if (!saveGraphviz()) {
         return false;
     }
 
@@ -1044,7 +1056,6 @@ bool VMarkdownTab::loadPlantUML()
     m_plantUMLModeCombo->setCurrentIndex(m_plantUMLModeCombo->findData(g_config->getPlantUMLMode()));
     m_plantUMLServerEdit->setText(g_config->getPlantUMLServer());
     m_plantUMLJarEdit->setText(g_config->getPlantUMLJar());
-    m_plantUMLDotEdit->setText(g_config->getPlantUMLDot());
     return true;
 }
 
@@ -1053,6 +1064,19 @@ bool VMarkdownTab::savePlantUML()
     g_config->setPlantUMLMode(m_plantUMLModeCombo->currentData().toInt());
     g_config->setPlantUMLServer(m_plantUMLServerEdit->text());
     g_config->setPlantUMLJar(m_plantUMLJarEdit->text());
-    g_config->setPlantUMLDot(m_plantUMLDotEdit->text());
+    return true;
+}
+
+bool VMarkdownTab::loadGraphviz()
+{
+    m_graphvizCB->setChecked(g_config->getEnableGraphviz());
+    m_graphvizDotEdit->setText(g_config->getGraphvizDot());
+    return true;
+}
+
+bool VMarkdownTab::saveGraphviz()
+{
+    g_config->setEnableGraphviz(m_graphvizCB->isChecked());
+    g_config->setGraphvizDot(m_graphvizDotEdit->text());
     return true;
 }

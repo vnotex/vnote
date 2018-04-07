@@ -210,6 +210,9 @@ public:
     bool getEnableMathjax() const;
     void setEnableMathjax(bool p_enabled);
 
+    bool getEnableGraphviz() const;
+    void setEnableGraphviz(bool p_enabled);
+
     int getPlantUMLMode() const;
     void setPlantUMLMode(int p_mode);
 
@@ -469,8 +472,8 @@ public:
     const QString &getPlantUMLJar() const;
     void setPlantUMLJar(const QString &p_jarPath);
 
-    const QString &getPlantUMLDot() const;
-    void setPlantUMLDot(const QString &p_dotPath);
+    const QString &getGraphvizDot() const;
+    void setGraphvizDot(const QString &p_dotPath);
 
 private:
     // Look up a config from user and default settings.
@@ -633,6 +636,11 @@ private:
 
     // Enable Mathjax.
     bool m_enableMathjax;
+
+    // Enable Graphviz.
+    bool m_enableGraphviz;
+
+    QString m_graphvizDot;
 
     // Zoom factor of the QWebEngineView.
     qreal m_webZoomFactor;
@@ -870,8 +878,6 @@ private:
     QString m_plantUMLServer;
 
     QString m_plantUMLJar;
-
-    QString m_plantUMLDot;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -1349,6 +1355,21 @@ inline void VConfigManager::setEnableMathjax(bool p_enabled)
 
     m_enableMathjax = p_enabled;
     setConfigToSettings("global", "enable_mathjax", m_enableMathjax);
+}
+
+inline bool VConfigManager::getEnableGraphviz() const
+{
+    return m_enableGraphviz;
+}
+
+inline void VConfigManager::setEnableGraphviz(bool p_enabled)
+{
+    if (m_enableGraphviz == p_enabled) {
+        return;
+    }
+
+    m_enableGraphviz = p_enabled;
+    setConfigToSettings("global", "enable_graphviz", m_enableGraphviz);
 }
 
 inline int VConfigManager::getPlantUMLMode() const
@@ -2217,18 +2238,18 @@ inline void VConfigManager::setPlantUMLJar(const QString &p_jarPath)
     setConfigToSettings("web", "plantuml_jar", p_jarPath);
 }
 
-inline const QString &VConfigManager::getPlantUMLDot() const
+inline const QString &VConfigManager::getGraphvizDot() const
 {
-    return m_plantUMLDot;
+    return m_graphvizDot;
 }
 
-inline void VConfigManager::setPlantUMLDot(const QString &p_dotPath)
+inline void VConfigManager::setGraphvizDot(const QString &p_dotPath)
 {
-    if (m_plantUMLDot == p_dotPath) {
+    if (m_graphvizDot == p_dotPath) {
         return;
     }
 
-    m_plantUMLDot = p_dotPath;
-    setConfigToSettings("web", "plantuml_dot", p_dotPath);
+    m_graphvizDot = p_dotPath;
+    setConfigToSettings("web", "graphviz_dot", p_dotPath);
 }
 #endif // VCONFIGMANAGER_H

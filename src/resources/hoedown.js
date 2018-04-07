@@ -25,6 +25,7 @@ var updateHtml = function(html) {
     var codes = document.getElementsByTagName('code');
     mermaidIdx = 0;
     plantUMLIdx = 0;
+    graphvizIdx = 0;
     for (var i = 0; i < codes.length; ++i) {
         var code = codes[i];
         if (code.parentElement.tagName.toLowerCase() == 'pre') {
@@ -60,7 +61,13 @@ var updateHtml = function(html) {
                 }
 
                 continue;
+            } else if (VEnableGraphviz
+                       && code.classList.contains('language-dot')) {
+                // Graphviz code block.
+                renderGraphvizOneLocal(code);
+                continue;
             }
+
 
             if (listContainsRegex(code.classList, /language-.*/)) {
                 hljs.highlightBlock(code);

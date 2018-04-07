@@ -160,6 +160,9 @@ private:
     bool loadPlantUML();
     bool savePlantUML();
 
+    bool loadGraphviz();
+    bool saveGraphviz();
+
     // Default note open mode for markdown.
     QComboBox *m_openModeCombo;
 
@@ -174,7 +177,10 @@ private:
     QComboBox *m_plantUMLModeCombo;
     VLineEdit *m_plantUMLServerEdit;
     VLineEdit *m_plantUMLJarEdit;
-    VLineEdit *m_plantUMLDotEdit;
+
+    // Graphviz.
+    QCheckBox *m_graphvizCB;
+    VLineEdit *m_graphvizDotEdit;
 };
 
 class VSettingsDialog : public QDialog

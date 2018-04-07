@@ -116,6 +116,7 @@ var updateText = function(text) {
     renderMermaid('lang-mermaid');
     renderFlowchart(['lang-flowchart', 'lang-flow']);
     renderPlantUML('lang-puml');
+    renderGraphviz('lang-dot');
     addClassToCodeBlock();
     renderCodeBlockLineNumber();
 
