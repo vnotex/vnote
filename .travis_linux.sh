@@ -64,32 +64,22 @@ echo ${version} > ./dist/version
 echo "${TRAVIS_COMMIT}" >> ./dist/version
 
 # Get linuxdeployqt tool
-wget -c "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+git clone https://github.com/tamlok/vnote-utils.git vnote-utils.git
+cp vnote-utils.git/linuxdeployqt-continuous-x86_64.AppImage ./linuxdeployqt-continuous-x86_64.AppImage
+# wget -c "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
 chmod a+x linuxdeployqt*.AppImage
 unset QTDIR; unset QT_PLUGIN_PATH ; unset LD_LIBRARY_PATH
-./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -bundle-non-qt-libs
+./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -bundle-non-qt-libs -exclude-libs=libnss3,libnssutil3
 
 # Copy translations
 cp /opt/qt59/translations/*_zh_CN.qm ./dist/usr/translations/
 
 # Package it for the second time.
-./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -appimage
+./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -appimage -exclude-libs=libnss3,libnssutil3
 
 tree dist/
 
 ls -l *.AppImage
-
-wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
-chmod a+x appimagetool-x86_64.AppImage
-
-mv VNote-*.AppImage VNote-x86_64.AppImage
-chmod a+x VNote-x86_64.AppImage
-./VNote-x86_64.AppImage --appimage-extract
-rm VNote-x86_64.AppImage
-# Delete libnss3.so libnssutil3.so.
-rm ./squashfs-root/usr/lib/libnss3.so ./squashfs-root/usr/lib/libnssutil3.so
-
-./appimagetool-x86_64.AppImage squashfs-root
 
 mv VNote-*.AppImage VNote_x86_64_${version}.AppImage
 
