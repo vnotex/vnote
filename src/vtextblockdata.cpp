@@ -17,8 +17,9 @@ VTextBlockData::~VTextBlockData()
     m_previews.clear();
 }
 
-void VTextBlockData::insertPreviewInfo(VPreviewInfo *p_info)
+bool VTextBlockData::insertPreviewInfo(VPreviewInfo *p_info)
 {
+    bool tsUpdated = false;
     bool inserted = false;
     for (auto it = m_previews.begin(); it != m_previews.end();) {
         VPreviewInfo *ele = *it;
@@ -33,6 +34,7 @@ void VTextBlockData::insertPreviewInfo(VPreviewInfo *p_info)
             delete ele;
             *it = p_info;
             inserted = true;
+            tsUpdated = true;
             qDebug() << "update eixsting image's timestamp" << p_info->m_imageInfo.toString();
             break;
         } else if (p_info->m_imageInfo.intersect(ele->m_imageInfo)) {
@@ -53,6 +55,8 @@ void VTextBlockData::insertPreviewInfo(VPreviewInfo *p_info)
     }
 
     Q_ASSERT(checkOrder());
+
+    return tsUpdated;
 }
 
 QString VTextBlockData::toString() const

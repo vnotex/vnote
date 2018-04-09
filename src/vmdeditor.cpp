@@ -85,7 +85,7 @@ VMdEditor::VMdEditor(VFile *p_file,
 
     m_previewMgr = new VPreviewManager(this, m_mdHighlighter);
     connect(m_mdHighlighter, &HGMarkdownHighlighter::imageLinksUpdated,
-            m_previewMgr, &VPreviewManager::imageLinksUpdated);
+            m_previewMgr, &VPreviewManager::updateImageLinks);
     connect(m_previewMgr, &VPreviewManager::requestUpdateImageLinks,
             m_mdHighlighter, &HGMarkdownHighlighter::updateHighlight);
 

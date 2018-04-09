@@ -146,6 +146,8 @@ public:
 
     void clearPossiblePreviewBlocks(const QVector<int> &p_blocksToClear);
 
+    void addPossiblePreviewBlock(int p_blockNumber);
+
     // Parse and only update the highlight results for rehighlight().
     void updateHighlightFast();
 
@@ -327,6 +329,11 @@ inline void HGMarkdownHighlighter::clearPossiblePreviewBlocks(const QVector<int>
     for (auto i : p_blocksToClear) {
         m_possiblePreviewBlocks.remove(i);
     }
+}
+
+inline void HGMarkdownHighlighter::addPossiblePreviewBlock(int p_blockNumber)
+{
+    m_possiblePreviewBlocks.insert(p_blockNumber);
 }
 
 inline VTextBlockData *HGMarkdownHighlighter::currentBlockData() const

@@ -5,6 +5,8 @@
 #include <QDir>
 #include <QUrl>
 #include <QVector>
+#include <QTextLayout>
+
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
 #include "vdownloader.h"
@@ -17,24 +19,25 @@ VPreviewManager::VPreviewManager(VMdEditor *p_editor, HGMarkdownHighlighter *p_h
       m_editor(p_editor),
       m_document(p_editor->document()),
       m_highlighter(p_highlighter),
-      m_previewEnabled(false),
-      m_timeStamp(0)
+      m_previewEnabled(false)
 {
+    for (int i = 0; i < (int)PreviewSource::MaxNumberOfSources; ++i) {
+        m_timeStamps[i] = 0;
+    }
+
     m_downloader = new VDownloader(this);
     connect(m_downloader, &VDownloader::downloadFinished,
             this, &VPreviewManager::imageDownloaded);
 }
 
-void VPreviewManager::imageLinksUpdated(const QVector<VElementRegion> &p_imageRegions)
+void VPreviewManager::updateImageLinks(const QVector<VElementRegion> &p_imageRegions)
 {
     if (!m_previewEnabled) {
         return;
     }
 
-    TS ts = ++m_timeStamp;
-    m_imageRegions = p_imageRegions;
-
-    previewImages(ts);
+    TS ts = ++timeStamp(PreviewSource::ImageLink);
+    previewImages(ts, p_imageRegions);
 }
 
 void VPreviewManager::imageDownloaded(const QByteArray &p_data, const QString &p_url)
@@ -70,6 +73,8 @@ void VPreviewManager::setPreviewEnabled(bool p_enabled)
     if (m_previewEnabled != p_enabled) {
         m_previewEnabled = p_enabled;
 
+        emit previewEnabledChanged(p_enabled);
+
         if (!m_previewEnabled) {
             clearPreview();
         } else {
@@ -80,21 +85,17 @@ void VPreviewManager::setPreviewEnabled(bool p_enabled)
 
 void VPreviewManager::clearPreview()
 {
-    m_imageRegions.clear();
-
-    long long ts = ++m_timeStamp;
-
     for (int i = 0; i < (int)PreviewSource::MaxNumberOfSources; ++i) {
+        TS ts = ++timeStamp(static_cast<PreviewSource>(i));
         clearBlockObsoletePreviewInfo(ts, static_cast<PreviewSource>(i));
-
         clearObsoleteImages(ts, static_cast<PreviewSource>(i));
     }
 }
 
-void VPreviewManager::previewImages(TS p_timeStamp)
+void VPreviewManager::previewImages(TS p_timeStamp, const QVector<VElementRegion> &p_imageRegions)
 {
     QVector<ImageLinkInfo> imageLinks;
-    fetchImageLinksFromRegions(imageLinks);
+    fetchImageLinksFromRegions(p_imageRegions, imageLinks);
 
     updateBlockPreviewInfo(p_timeStamp, imageLinks);
 
@@ -116,20 +117,21 @@ static bool isAllSpaces(const QString &p_text, int p_start, int p_end)
     return true;
 }
 
-void VPreviewManager::fetchImageLinksFromRegions(QVector<ImageLinkInfo> &p_imageLinks)
+void VPreviewManager::fetchImageLinksFromRegions(QVector<VElementRegion> p_imageRegions,
+                                                 QVector<ImageLinkInfo> &p_imageLinks)
 {
     p_imageLinks.clear();
 
-    if (m_imageRegions.isEmpty()) {
+    if (p_imageRegions.isEmpty()) {
         return;
     }
 
-    p_imageLinks.reserve(m_imageRegions.size());
+    p_imageLinks.reserve(p_imageRegions.size());
 
     QTextDocument *doc = m_editor->document();
 
-    for (int i = 0; i < m_imageRegions.size(); ++i) {
-        VElementRegion &reg = m_imageRegions[i];
+    for (int i = 0; i < p_imageRegions.size(); ++i) {
+        VElementRegion &reg = p_imageRegions[i];
         QTextBlock block = doc->findBlock(reg.m_startPos);
         if (!block.isValid()) {
             continue;
@@ -143,7 +145,7 @@ void VPreviewManager::fetchImageLinksFromRegions(QVector<ImageLinkInfo> &p_image
                            reg.m_endPos,
                            blockStart,
                            block.blockNumber(),
-                           calculateBlockMargin(block));
+                           calculateBlockMargin(block, m_editor->tabStopWidthW()));
         if ((reg.m_startPos == blockStart
              || isAllSpaces(text, 0, reg.m_startPos - blockStart))
             && (reg.m_endPos == blockEnd
@@ -256,7 +258,23 @@ QString VPreviewManager::imageResourceName(const ImageLinkInfo &p_link)
     return name;
 }
 
-int VPreviewManager::calculateBlockMargin(const QTextBlock &p_block)
+QString VPreviewManager::imageResourceNameFromCodeBlock(const QSharedPointer<VImageToPreview> &p_image)
+{
+    QString name = "CODE_BLOCK_" + p_image->m_name;
+    if (m_editor->containsImage(name)) {
+        return name;
+    }
+
+    // Add it to the resource.
+    if (p_image->m_image.isNull()) {
+        return QString();
+    }
+
+    m_editor->addImage(name, p_image->m_image);
+    return name;
+}
+
+int VPreviewManager::calculateBlockMargin(const QTextBlock &p_block, int p_tabStopWidth)
 {
     static QHash<QString, int> spaceWidthOfFonts;
 
@@ -272,7 +290,7 @@ int VPreviewManager::calculateBlockMargin(const QTextBlock &p_block)
         } else if (text[i] == ' ') {
             ++nrSpaces;
         } else if (text[i] == '\t') {
-            nrSpaces += m_editor->tabStopWidth();
+            nrSpaces += p_tabStopWidth;
         }
     }
 
@@ -281,7 +299,14 @@ int VPreviewManager::calculateBlockMargin(const QTextBlock &p_block)
     }
 
     int spaceWidth = 0;
-    QFont font = p_block.charFormat().font();
+    QFont font;
+    QVector<QTextLayout::FormatRange> fmts = p_block.layout()->formats();
+    if (fmts.isEmpty()) {
+        font = p_block.charFormat().font();
+    } else {
+        font = fmts.first().format.font();
+    }
+
     QString fontName = font.toString();
     auto it = spaceWidthOfFonts.find(fontName);
     if (it != spaceWidthOfFonts.end()) {
@@ -327,11 +352,57 @@ void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
                  << imageCache(PreviewSource::ImageLink).size()
                  << blockData->toString();
     }
+
+    // TODO: may need to call m_editor->update()?
+}
+
+void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
+                                             PreviewSource p_source,
+                                             const QVector<QSharedPointer<VImageToPreview> > &p_images)
+{
+    QSet<int> affectedBlocks;
+    for (auto const & img : p_images) {
+        if (img.isNull()) {
+            continue;
+        }
+
+        QTextBlock block = m_document->findBlockByNumber(img->m_blockNumber);
+        if (!block.isValid()) {
+            continue;
+        }
+
+        QString name = imageResourceNameFromCodeBlock(img);
+        if (name.isEmpty()) {
+            continue;
+        }
+
+        VTextBlockData *blockData = dynamic_cast<VTextBlockData *>(block.userData());
+        Q_ASSERT(blockData);
+        VPreviewInfo *info = new VPreviewInfo(p_source,
+                                              p_timeStamp,
+                                              img->m_startPos - img->m_blockPos,
+                                              img->m_endPos - img->m_blockPos,
+                                              img->m_padding,
+                                              !img->m_isBlock,
+                                              name,
+                                              m_editor->imageSize(name));
+        bool tsUpdated = blockData->insertPreviewInfo(info);
+        imageCache(p_source).insert(name, p_timeStamp);
+        if (!tsUpdated) {
+            // No need to relayout the block if only timestamp is updated.
+            affectedBlocks.insert(img->m_blockNumber);
+            m_highlighter->addPossiblePreviewBlock(img->m_blockNumber);
+        }
+    }
+
+    // Relayout these blocks since they may not have been changed.
+    m_editor->relayout(affectedBlocks);
+    m_editor->update();
 }
 
 void VPreviewManager::clearObsoleteImages(long long p_timeStamp, PreviewSource p_source)
 {
-    auto cache = imageCache(p_source);
+    QHash<QString, long long> &cache = imageCache(p_source);
 
     for (auto it = cache.begin(); it != cache.end();) {
         if (it.value() < p_timeStamp) {
@@ -348,7 +419,7 @@ void VPreviewManager::clearBlockObsoletePreviewInfo(long long p_timeStamp,
 {
     QSet<int> affectedBlocks;
     QVector<int> obsoleteBlocks;
-    auto blocks = m_highlighter->getPossiblePreviewBlocks();
+    const QSet<int> &blocks = m_highlighter->getPossiblePreviewBlocks();
     qDebug() << "possible preview blocks" << blocks;
     for (auto i : blocks) {
         QTextBlock block = m_document->findBlockByNumber(i);
@@ -384,5 +455,21 @@ void VPreviewManager::refreshPreview()
 
     clearPreview();
 
+    // No need to request updating code blocks since this will also update them.
     requestUpdateImageLinks();
+}
+
+void VPreviewManager::updateCodeBlocks(const QVector<QSharedPointer<VImageToPreview> > &p_images)
+{
+    if (!m_previewEnabled) {
+        return;
+    }
+
+    TS ts = ++timeStamp(PreviewSource::CodeBlock);
+
+    updateBlockPreviewInfo(ts, PreviewSource::CodeBlock, p_images);
+
+    clearBlockObsoletePreviewInfo(ts, PreviewSource::CodeBlock);
+
+    clearObsoleteImages(ts, PreviewSource::CodeBlock);
 }

@@ -16,7 +16,7 @@ renderer.heading = function(text, level) {
 // Highlight.js to highlight code block
 marked.setOptions({
     highlight: function(code, lang) {
-        if (lang && !specialCodeBlock(lang)) {
+        if (lang && (!specialCodeBlock(lang) || highlightSpecialBlocks)) {
             if (hljs.getLanguage(lang)) {
                 return hljs.highlight(lang, code, true).value;
             } else {
@@ -78,7 +78,9 @@ var updateText = function(text) {
 };
 
 var highlightText = function(text, id, timeStamp) {
+    highlightSpecialBlocks = true;
     var html = marked(text);
+    highlightSpecialBlocks = false;
     content.highlightTextCB(html, id, timeStamp);
 }
 

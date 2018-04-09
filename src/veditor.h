@@ -159,6 +159,8 @@ public:
 
     virtual QTextDocument *documentW() const = 0;
 
+    virtual int tabStopWidthW() const = 0;
+
     virtual void setTabStopWidthW(int p_width) = 0;
 
     virtual QTextCursor textCursorW() const = 0;

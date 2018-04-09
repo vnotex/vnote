@@ -8,6 +8,7 @@
 enum class PreviewSource
 {
     ImageLink = 0,
+    CodeBlock,
     MaxNumberOfSources
 };
 
@@ -137,7 +138,8 @@ public:
     ~VTextBlockData();
 
     // Insert @p_info into m_previews, preserving the order.
-    void insertPreviewInfo(VPreviewInfo *p_info);
+    // Returns true if only timestamp is updated.
+    bool insertPreviewInfo(VPreviewInfo *p_info);
 
     // For degub only.
     QString toString() const;

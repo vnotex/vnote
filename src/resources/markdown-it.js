@@ -43,7 +43,7 @@ var mdit = window.markdownit({
     typographer: false,
     langPrefix: 'lang-',
     highlight: function(str, lang) {
-        if (lang && !specialCodeBlock(lang)) {
+        if (lang && (!specialCodeBlock(lang) || highlightSpecialBlocks)) {
             if (hljs.getLanguage(lang)) {
                 return hljs.highlight(lang, str, true).value;
             } else {
@@ -134,7 +134,9 @@ var updateText = function(text) {
 };
 
 var highlightText = function(text, id, timeStamp) {
+    highlightSpecialBlocks = true;
     var html = mdit.render(text);
+    highlightSpecialBlocks = false;
     content.highlightTextCB(html, id, timeStamp);
 };
 

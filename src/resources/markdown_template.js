@@ -4,6 +4,8 @@ var contentDiv = document.getElementById('content-div');
 
 var previewDiv = document.getElementById('preview-div');
 
+var inplacePreviewDiv = document.getElementById('inplace-preview-div');
+
 var textHtmlDiv = document.getElementById('text-html-div');
 
 var content;
@@ -84,6 +86,9 @@ if (typeof VRemoveMathjaxScript == 'undefined') {
 if (typeof VAddTOC == 'undefined') {
     VAddTOC = false;
 }
+
+// Whether highlight special blocks like puml, flowchart.
+var highlightSpecialBlocks = false;
 
 var getUrlScheme = function(url) {
     var idx = url.indexOf(':');
@@ -1204,6 +1209,7 @@ var initStylesToInline = function() {
 };
 
 // Embed the CSS styles of @ele and all its children.
+// StylesToInline need to be init before.
 var embedInlineStyles = function(ele) {
     var tagName = ele.tagName.toLowerCase();
     var props = StylesToInline.get(tagName);
@@ -1373,7 +1379,7 @@ var setPreviewEnabled = function(enabled) {
 };
 
 var previewCodeBlock = function(id, lang, text, isLivePreview) {
-    var div = previewDiv;
+    var div = isLivePreview ? previewDiv : inplacePreviewDiv;
     div.innerHTML = '';
     div.className = '';
 
@@ -1381,7 +1387,7 @@ var previewCodeBlock = function(id, lang, text, isLivePreview) {
         || (lang != 'flow'
             && lang != 'flowchart'
             && lang != 'mermaid'
-            && (lang != 'puml' || VPlantUMLMode != 1))) {
+            && (lang != 'puml' || VPlantUMLMode != 1 || !isLivePreview))) {
         return;
     }
 
@@ -1398,6 +1404,16 @@ var previewCodeBlock = function(id, lang, text, isLivePreview) {
         renderMermaidOne(code);
     } else if (lang == 'puml') {
         renderPlantUMLOneOnline(code);
+    }
+
+    if (!isLivePreview) {
+        var children = div.children;
+        if (children.length > 0) {
+            content.previewCodeBlockCB(id, lang, children[0].innerHTML);
+        }
+
+        div.innerHTML = '';
+        div.className = '';
     }
 };
 

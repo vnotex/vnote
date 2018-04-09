@@ -74,6 +74,8 @@ public:
 
     HGMarkdownHighlighter *getMarkdownHighlighter() const;
 
+    VPreviewManager *getPreviewManager() const;
+
 public slots:
     bool jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat) Q_DECL_OVERRIDE;
 
@@ -89,6 +91,11 @@ public:
     QTextDocument *documentW() const Q_DECL_OVERRIDE
     {
         return document();
+    }
+
+    int tabStopWidthW() const Q_DECL_OVERRIDE
+    {
+        return tabStopWidth();
     }
 
     void setTabStopWidthW(int p_width) Q_DECL_OVERRIDE
@@ -272,5 +279,10 @@ private:
 inline HGMarkdownHighlighter *VMdEditor::getMarkdownHighlighter() const
 {
     return m_mdHighlighter;
+}
+
+inline VPreviewManager *VMdEditor::getPreviewManager() const
+{
+    return m_previewMgr;
 }
 #endif // VMDEDITOR_H

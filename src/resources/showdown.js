@@ -128,7 +128,7 @@ var highlightText = function(text, id, timeStamp) {
 
     var parser = new DOMParser();
     var htmlDoc = parser.parseFromString("<div id=\"showdown-container\">" + html + "</div>", 'text/html');
-    highlightCodeBlocks(htmlDoc, false, false, false);
+    highlightCodeBlocks(htmlDoc, false, false, false, false, false);
 
     html = htmlDoc.getElementById('showdown-container').innerHTML;
 
@@ -142,7 +142,7 @@ var textToHtml = function(text) {
 
     var parser = new DOMParser();
     var htmlDoc = parser.parseFromString("<div id=\"showdown-container\">" + html + "</div>", 'text/html');
-    highlightCodeBlocks(htmlDoc, false, false, false);
+    highlightCodeBlocks(htmlDoc, false, false, false, false, false);
 
     html = htmlDoc.getElementById('showdown-container').innerHTML;
 

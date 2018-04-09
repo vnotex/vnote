@@ -17,6 +17,13 @@ public:
     VCodeBlockHighlightHelper(HGMarkdownHighlighter *p_highlighter,
                               VDocument *p_vdoc, MarkdownConverterType p_type);
 
+    // @p_text: text of fenced code block.
+    // Get the indent level of the first line (fence) and unindent the whole block
+    // to make the fence at the highest indent level.
+    // This operation is to make sure JS could handle the code block correctly
+    // without any context.
+    static QString unindentCodeBlock(const QString &p_text);
+
 private slots:
     void handleCodeBlocksUpdated(const QVector<VCodeBlock> &p_codeBlocks);
 
@@ -46,13 +53,6 @@ private:
     bool parseSpanElement(QXmlStreamReader &p_xml,
                           const QString &p_text, int &p_index,
                           QVector<HLUnitPos> &p_units);
-
-    // @p_text: text of fenced code block.
-    // Get the indent level of the first line (fence) and unindent the whole block
-    // to make the fence at the highest indent level.
-    // This operation is to make sure JS could handle the code block correctly
-    // without any context.
-    QString unindentCodeBlock(const QString &p_text);
 
     void updateHighlightResults(int p_startPos, QVector<HLUnitPos> p_units);
 

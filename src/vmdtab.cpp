@@ -515,6 +515,15 @@ void VMdTab::setupMarkdownEditor()
     enableHeadingSequence(m_enableHeadingSequence);
     m_editor->reloadFile();
     m_splitter->insertWidget(0, m_editor);
+
+    m_livePreviewHelper = new VLivePreviewHelper(m_editor, m_document, this);
+    connect(m_editor->getMarkdownHighlighter(), &HGMarkdownHighlighter::codeBlocksUpdated,
+            m_livePreviewHelper, &VLivePreviewHelper::updateCodeBlocks);
+    connect(m_editor->getPreviewManager(), &VPreviewManager::previewEnabledChanged,
+            m_livePreviewHelper, &VLivePreviewHelper::setInplacePreviewEnabled);
+    connect(m_livePreviewHelper, &VLivePreviewHelper::inplacePreviewCodeBlockUpdated,
+            m_editor->getPreviewManager(), &VPreviewManager::updateCodeBlocks);
+    m_livePreviewHelper->setInplacePreviewEnabled(m_editor->getPreviewManager()->isPreviewEnabled());
 }
 
 void VMdTab::updateOutlineFromHtml(const QString &p_tocHtml)
@@ -1019,6 +1028,13 @@ void VMdTab::tabIsReady(TabReady p_mode)
                     }
                 });
     }
+
+    if (m_editor
+        && p_mode == TabReady::ReadMode
+        && m_livePreviewHelper->isPreviewEnabled()) {
+        // Need to re-preview.
+        m_editor->getMarkdownHighlighter()->updateHighlight();
+    }
 }
 
 void VMdTab::writeBackupFile()
@@ -1375,11 +1391,6 @@ void VMdTab::setCurrentMode(Mode p_mode)
             newSizes.append(a);
             newSizes.append(b);
             m_splitter->setSizes(newSizes);
-
-            Q_ASSERT(!m_livePreviewHelper);
-            m_livePreviewHelper = new VLivePreviewHelper(m_editor, m_document, this);
-            connect(m_editor->getMarkdownHighlighter(), &HGMarkdownHighlighter::codeBlocksUpdated,
-                    m_livePreviewHelper, &VLivePreviewHelper::updateCodeBlocks);
         } else if (factor != m_previewWebViewState->m_zoomFactor) {
             m_webViewer->setZoomFactor(m_previewWebViewState->m_zoomFactor);
         }

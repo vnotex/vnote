@@ -178,3 +178,8 @@ void VDocument::setPreviewContent(const QString &p_lang, const QString &p_html)
 {
     emit requestSetPreviewContent(p_lang, p_html);
 }
+
+void VDocument::previewCodeBlockCB(int p_id, const QString &p_lang, const QString &p_html)
+{
+    emit codeBlockPreviewReady(p_id, p_lang, p_html);
+}

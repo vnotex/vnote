@@ -104,6 +104,8 @@ public slots:
     // Web-side call this to process Graphviz locally.
     void processGraphviz(int p_id, const QString &p_format, const QString &p_text);
 
+    void previewCodeBlockCB(int p_id, const QString &p_lang, const QString &p_html);
+
 signals:
     void textChanged(const QString &text);
 
@@ -152,6 +154,8 @@ signals:
                                  bool p_livePreview);
 
     void requestSetPreviewContent(const QString &p_lang, const QString &p_html);
+
+    void codeBlockPreviewReady(int p_id, const QString &p_lang, const QString &p_html);
 
 private:
     QString m_toc;
