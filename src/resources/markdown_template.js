@@ -1419,6 +1419,11 @@ var previewCodeBlock = function(id, lang, text, isLivePreview) {
 
 var setPreviewContent = function(lang, html) {
     previewDiv.innerHTML = html;
+
     // Treat plantUML and graphviz the same.
-    previewDiv.classList = VPlantUMLDivClass;
+    if (lang == "puml" || lang == "dot") {
+        previewDiv.classList = VPlantUMLDivClass;
+    } else {
+        previewDiv.className = '';
+    }
 };

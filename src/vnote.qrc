@@ -210,5 +210,8 @@
         <file>resources/themes/v_moonlight/radiobutton_checked_disabled.svg</file>
         <file>resources/themes/v_moonlight/radiobutton_unchecked_disabled.svg</file>
         <file>resources/icons/universal_entry_tb.svg</file>
+        <file>resources/mathjax_preview.js</file>
+        <file>resources/mathjax_preview_template.html</file>
+        <file>utils/dom-to-image/dom-to-image.js</file>
     </qresource>
 </RCC>

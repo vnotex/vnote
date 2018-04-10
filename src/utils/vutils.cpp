@@ -815,6 +815,31 @@ QString VUtils::generateExportHtmlTemplate(const QString &p_renderBg, bool p_inc
     return templ;
 }
 
+QString VUtils::generateMathJaxPreviewTemplate()
+{
+    QString templ = VNote::generateMathJaxPreviewTemplate();
+    QString mj = g_config->getMathjaxJavascript();
+    // Chante MathJax to be rendered as SVG.
+    QRegExp reg("(Mathjax\\.js\\?config=)\\S+", Qt::CaseInsensitive);
+    // mj.replace(reg, QString("\\1%1").arg("TeX-MML-AM_SVG"));
+
+    templ.replace(HtmlHolder::c_JSHolder, mj);
+
+    QString extraFile;
+    extraFile += "<script type=\"text/x-mathjax-config\">"
+                 "MathJax.Hub.Config({\n"
+                 "                    tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']],\n"
+                                               "processEscapes: true,\n"
+                                               "processClass: \"tex2jax_process|language-mathjax|lang-mathjax\"},\n"
+                 "                    showProcessingMessages: false,\n"
+                 "                    messageStyle: \"none\"});\n"
+                 "</script>\n";
+
+    templ.replace(HtmlHolder::c_extraHolder, extraFile);
+
+    return templ;
+}
+
 QString VUtils::getFileNameWithSequence(const QString &p_directory,
                                         const QString &p_baseFileName,
                                         bool p_completeBaseName)

@@ -36,6 +36,9 @@ static const int c_tabSequenceBase = 1;
 namespace HtmlHolder
 {
     static const QString c_JSHolder = "JS_PLACE_HOLDER";
+    static const QString c_cssHolder = "CSS_PLACE_HOLDER";
+    static const QString c_codeBlockCssHolder = "HIGHLIGHTJS_CSS_PLACE_HOLDER";
+    static const QString c_globalStyleHolder = "/* BACKGROUND_PLACE_HOLDER */";
     static const QString c_extraHolder = "<!-- EXTRA_PLACE_HOLDER -->";
     static const QString c_bodyHolder = "<!-- BODY_PLACE_HOLDER -->";
     static const QString c_headHolder = "<!-- HEAD_PLACE_HOLDER -->";

@@ -1,5 +1,7 @@
-#include <QtWidgets>
 #include "veditarea.h"
+
+#include <QtWidgets>
+
 #include "veditwindow.h"
 #include "vedittab.h"
 #include "vnote.h"
@@ -11,6 +13,7 @@
 #include "vmainwindow.h"
 #include "vcaptain.h"
 #include "vfilelist.h"
+#include "vmathjaxpreviewhelper.h"
 
 extern VConfigManager *g_config;
 
@@ -64,6 +67,8 @@ VEditArea::VEditArea(QWidget *parent)
     timer->start();
 
     m_autoSave = g_config->getEnableAutoSave();
+
+    m_mathPreviewHelper = new VMathJaxPreviewHelper(this, this);
 }
 
 void VEditArea::setupUI()

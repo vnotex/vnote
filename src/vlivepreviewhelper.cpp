@@ -1,6 +1,7 @@
 #include "vlivepreviewhelper.h"
 
 #include <QDebug>
+#include <QByteArray>
 
 #include "veditor.h"
 #include "vdocument.h"
@@ -8,12 +9,18 @@
 #include "vgraphvizhelper.h"
 #include "vplantumlhelper.h"
 #include "vcodeblockhighlighthelper.h"
+#include "vmainwindow.h"
+#include "veditarea.h"
+#include "vmathjaxpreviewhelper.h"
 
 extern VConfigManager *g_config;
+
+extern VMainWindow *g_mainWin;
 
 // Use the highest 4 bits (31-28) to indicate the lang.
 #define LANG_PREFIX_GRAPHVIZ 0x10000000UL
 #define LANG_PREFIX_PLANTUML 0x20000000UL
+#define LANG_PREFIX_MATHJAX  0x30000000UL
 #define LANG_PREFIX_MASK 0xf0000000UL
 
 // Use th 27th bit to indicate the preview type.
@@ -105,6 +112,11 @@ VLivePreviewHelper::VLivePreviewHelper(VEditor *p_editor,
     m_plantUMLMode = g_config->getPlantUMLMode();
     m_graphvizEnabled = g_config->getEnableGraphviz();
     m_mathjaxEnabled = g_config->getEnableMathjax();
+
+    m_mathJaxHelper = g_mainWin->getEditArea()->getMathJaxPreviewHelper();
+    m_mathJaxID = m_mathJaxHelper->registerIdentifier();
+    connect(m_mathJaxHelper, &VMathJaxPreviewHelper::mathjaxPreviewResultReady,
+            this, &VLivePreviewHelper::mathjaxPreviewResultReady);
 }
 
 bool VLivePreviewHelper::isPreviewLang(const QString &p_lang) const
@@ -246,7 +258,8 @@ void VLivePreviewHelper::updateLivePreview()
         } else {
             m_document->setPreviewContent(vcb.m_lang, cb.imageData());
         }
-    } else if (vcb.m_lang != "puml") {
+    } else if (vcb.m_lang != "mathjax") {
+        // No need to live preview MathJax.
         m_document->previewCodeBlock(m_cbIndex,
                                      vcb.m_lang,
                                      removeFence(vcb.m_text),
@@ -365,6 +378,10 @@ void VLivePreviewHelper::processForInplacePreview(int p_idx)
                                      vcb.m_lang,
                                      removeFence(vcb.m_text),
                                      false);
+    } else if (vcb.m_lang == "mathjax") {
+        m_mathJaxHelper->previewMathJax(m_mathJaxID,
+                                        p_idx,
+                                        removeFence(vcb.m_text));
     }
 }
 
@@ -373,12 +390,17 @@ void VLivePreviewHelper::updateInplacePreview()
     QVector<QSharedPointer<VImageToPreview> > images;
     for (int i = 0; i < m_codeBlocks.size(); ++i) {
         CodeBlockPreviewInfo &cb = m_codeBlocks[i];
-        if (cb.inplacePreviewReady() && cb.hasImageData()) {
-            Q_ASSERT(!cb.inplacePreview().isNull());
+        if (cb.inplacePreviewReady()) {
             // Generate the image.
-            cb.inplacePreview()->m_image.loadFromData(cb.imageData().toUtf8(),
-                                                      cb.imageFormat().toLocal8Bit().data());
-            images.append(cb.inplacePreview());
+            if (cb.hasImageData()) {
+                cb.inplacePreview()->m_image.loadFromData(cb.imageData().toUtf8(),
+                                                          cb.imageFormat().toLocal8Bit().data());
+                images.append(cb.inplacePreview());
+            } else if (cb.hasImageDataBa()) {
+                cb.inplacePreview()->m_image.loadFromData(cb.imageDataBa(),
+                                                          cb.imageFormat().toLocal8Bit().data());
+                images.append(cb.inplacePreview());
+            }
         }
     }
 
@@ -387,7 +409,8 @@ void VLivePreviewHelper::updateInplacePreview()
     // Clear image.
     for (int i = 0; i < m_codeBlocks.size(); ++i) {
         CodeBlockPreviewInfo &cb = m_codeBlocks[i];
-        if (cb.inplacePreviewReady() && cb.hasImageData()) {
+        if (cb.inplacePreviewReady()
+            && (cb.hasImageData() || cb.hasImageDataBa())) {
             cb.inplacePreview()->m_image = QPixmap();
         }
     }
@@ -404,6 +427,22 @@ void VLivePreviewHelper::webAsyncResultReady(int p_id,
 
     CodeBlockPreviewInfo &cb = m_codeBlocks[p_id];
     cb.setImageData(QStringLiteral("svg"), p_result);
+    cb.updateInplacePreview(m_editor, m_doc);
+    updateInplacePreview();
+}
+
+void VLivePreviewHelper::mathjaxPreviewResultReady(int p_identitifer,
+                                                   int p_id,
+                                                   const QString &p_format,
+                                                   const QByteArray &p_data)
+{
+    if (p_identitifer != m_mathJaxID
+        || (p_id >= m_codeBlocks.size() || p_data.isEmpty())) {
+        return;
+    }
+
+    CodeBlockPreviewInfo &cb = m_codeBlocks[p_id];
+    cb.setImageDataBa(p_format, p_data);
     cb.updateInplacePreview(m_editor, m_doc);
     updateInplacePreview();
 }

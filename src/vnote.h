@@ -114,6 +114,8 @@ public:
     // @p_renderBg: background color, empty to not specify given color.
     static QString generateExportHtmlTemplate(const QString &p_renderBg);
 
+    static QString generateMathJaxPreviewTemplate();
+
 public slots:
     void updateTemplate();
 

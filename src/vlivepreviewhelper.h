@@ -11,6 +11,7 @@ class VEditor;
 class VDocument;
 class VGraphvizHelper;
 class VPlantUMLHelper;
+class VMathJaxPreviewHelper;
 
 class CodeBlockPreviewInfo
 {
@@ -57,6 +58,16 @@ public:
         return m_imgData;
     }
 
+    bool hasImageDataBa() const
+    {
+        return !m_imgDataBa.isEmpty();
+    }
+
+    const QByteArray &imageDataBa() const
+    {
+        return m_imgDataBa;
+    }
+
     const QString &imageFormat() const
     {
         return m_imgFormat;
@@ -64,8 +75,18 @@ public:
 
     void setImageData(const QString &p_format, const QString &p_data)
     {
+        m_imgDataBa.clear();
+
         m_imgFormat = p_format;
         m_imgData = p_data;
+    }
+
+    void setImageDataBa(const QString &p_format, const QByteArray &p_data)
+    {
+        m_imgData.clear();
+
+        m_imgFormat = p_format;
+        m_imgDataBa = p_data;
     }
 
     const QSharedPointer<VImageToPreview> inplacePreview() const
@@ -83,6 +104,8 @@ private:
     VCodeBlock m_codeBlock;
 
     QString m_imgData;
+
+    QByteArray m_imgDataBa;
 
     QString m_imgFormat;
 
@@ -120,6 +143,11 @@ private slots:
 
     void localAsyncResultReady(int p_id, const QString &p_format, const QString &p_result);
 
+    void mathjaxPreviewResultReady(int p_identitifer,
+                                   int p_id,
+                                   const QString &p_format,
+                                   const QByteArray &p_data);
+
 private:
 
     bool isPreviewLang(const QString &p_lang) const;
@@ -154,6 +182,11 @@ private:
 
     VGraphvizHelper *m_graphvizHelper;
     VPlantUMLHelper *m_plantUMLHelper;
+
+    VMathJaxPreviewHelper *m_mathJaxHelper;
+
+    // Identification for VMathJaxPreviewHelper.
+    int m_mathJaxID;
 };
 
 inline bool VLivePreviewHelper::isPreviewEnabled() const

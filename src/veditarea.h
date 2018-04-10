@@ -20,6 +20,7 @@ class VDirectory;
 class VFindReplaceDialog;
 class QLabel;
 class VVim;
+class VMathJaxPreviewHelper;
 
 class VEditArea : public QWidget, public VNavigationMode
 {
@@ -85,6 +86,8 @@ public:
 
     // Return the rect not containing the tab bar.
     QRect editAreaRect() const;
+
+    VMathJaxPreviewHelper *getMathJaxPreviewHelper() const;
 
 signals:
     // Emit when current window's tab status updated.
@@ -224,6 +227,8 @@ private:
 
     // Whether auto save files.
     bool m_autoSave;
+
+    VMathJaxPreviewHelper *m_mathPreviewHelper;
 };
 
 inline VEditWindow* VEditArea::getWindow(int windowIndex) const
@@ -242,4 +247,8 @@ inline VFindReplaceDialog *VEditArea::getFindReplaceDialog() const
     return m_findReplace;
 }
 
+inline VMathJaxPreviewHelper *VEditArea::getMathJaxPreviewHelper() const
+{
+    return m_mathPreviewHelper;
+}
 #endif // VEDITAREA_H

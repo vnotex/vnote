@@ -111,16 +111,12 @@ QString VNote::generateHtmlTemplate(const QString &p_renderBg,
         cssStyle += "img { max-width: 100% !important; height: auto !important; }\n";
     }
 
-    const QString styleHolder("/* BACKGROUND_PLACE_HOLDER */");
-    const QString cssHolder("CSS_PLACE_HOLDER");
-    const QString codeBlockCssHolder("HIGHLIGHTJS_CSS_PLACE_HOLDER");
-
     QString templ = VUtils::readFileFromDisk(c_markdownTemplatePath);
     g_palette->fillStyle(templ);
 
     // Must replace the code block holder first.
-    templ.replace(codeBlockCssHolder, p_codeBlockStyleUrl);
-    templ.replace(cssHolder, p_renderStyleUrl);
+    templ.replace(HtmlHolder::c_codeBlockCssHolder, p_codeBlockStyleUrl);
+    templ.replace(HtmlHolder::c_cssHolder, p_renderStyleUrl);
 
     if (p_isPDF) {
         // Shoudl not display scrollbar in PDF.
@@ -143,7 +139,7 @@ QString VNote::generateHtmlTemplate(const QString &p_renderBg,
     }
 
     if (!cssStyle.isEmpty()) {
-        templ.replace(styleHolder, cssStyle);
+        templ.replace(HtmlHolder::c_globalStyleHolder, cssStyle);
     }
 
     return templ;
@@ -163,15 +159,22 @@ QString VNote::generateExportHtmlTemplate(const QString &p_renderBg)
         cssStyle += "img { max-width: 100% !important; height: auto !important; }\n";
     }
 
-    const QString styleHolder("/* BACKGROUND_PLACE_HOLDER */");
-
     QString templ = VUtils::readFileFromDisk(c_exportTemplatePath);
     g_palette->fillStyle(templ);
 
     if (!cssStyle.isEmpty()) {
-        templ.replace(styleHolder, cssStyle);
+        templ.replace(HtmlHolder::c_globalStyleHolder, cssStyle);
     }
 
+    return templ;
+}
+
+QString VNote::generateMathJaxPreviewTemplate()
+{
+    const QString c_templatePath(":/resources/mathjax_preview_template.html");
+    QString templ = VUtils::readFileFromDisk(c_templatePath);
+    g_palette->fillStyle(templ);
+    templ.replace(HtmlHolder::c_cssHolder, g_config->getCssStyleUrl());
     return templ;
 }
 
