@@ -238,6 +238,8 @@ Evaluate current cursor word or selected text as magic words.
 Apply a snippet in edit mode.
 - `O`  
 Export notes.
+- `I`  
+Toggle live preview panel.
 - `Shift+?`   
 Display shortcuts documentation.
 
