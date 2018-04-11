@@ -6,6 +6,7 @@
 
 #include "hgmarkdownhighlighter.h"
 #include "vpreviewmanager.h"
+#include "vconstants.h"
 
 class VEditor;
 class VDocument;
@@ -133,18 +134,19 @@ public:
 public slots:
     void updateCodeBlocks(const QVector<VCodeBlock> &p_codeBlocks);
 
-    void webAsyncResultReady(int p_id, const QString &p_lang, const QString &p_result);
-
 signals:
     void inplacePreviewCodeBlockUpdated(const QVector<QSharedPointer<VImageToPreview> > &p_images);
+
+    void checkBlocksForObsoletePreview(const QList<int> &p_blocks);
 
 private slots:
     void handleCursorPositionChanged();
 
-    void localAsyncResultReady(int p_id, const QString &p_format, const QString &p_result);
+    void localAsyncResultReady(int p_id, TimeStamp p_timeStamp, const QString &p_format, const QString &p_result);
 
     void mathjaxPreviewResultReady(int p_identitifer,
                                    int p_id,
+                                   TimeStamp p_timeStamp,
                                    const QString &p_format,
                                    const QByteArray &p_data);
 
@@ -187,6 +189,10 @@ private:
 
     // Identification for VMathJaxPreviewHelper.
     int m_mathJaxID;
+
+    int m_lastInplacePreviewSize;
+
+    TimeStamp m_timeStamp;
 };
 
 inline bool VLivePreviewHelper::isPreviewEnabled() const

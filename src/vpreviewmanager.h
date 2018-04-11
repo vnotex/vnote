@@ -67,6 +67,10 @@ public:
 
     bool isPreviewEnabled() const;
 
+    // Check @p_blocks to see if there is any obsolete preview and clear them
+    // if there is any.
+    void checkBlocksForObsoletePreview(const QList<int> &p_blocks);
+
     // Calculate the block margin (prefix spaces) in pixels.
     static int calculateBlockMargin(const QTextBlock &p_block, int p_tabStopWidth);
 

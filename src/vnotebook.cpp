@@ -182,6 +182,8 @@ VNotebook *VNotebook::createNotebook(const QString &p_name,
     if (!nb->writeToConfig()) {
         delete nb;
         return NULL;
+    } else {
+        nb->m_valid = true;
     }
 
     return nb;

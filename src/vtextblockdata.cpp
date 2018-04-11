@@ -89,9 +89,8 @@ bool VTextBlockData::clearObsoletePreview(long long p_timeStamp, PreviewSource p
     bool deleted = false;
     for (auto it = m_previews.begin(); it != m_previews.end();) {
         VPreviewInfo *ele = *it;
-
         if (ele->m_source == p_source
-            && ele->m_timeStamp < p_timeStamp) {
+            && ele->m_timeStamp != p_timeStamp) {
             // Remove it.
             qDebug() << "clear obsolete preview" << ele->m_imageInfo.toString();
             delete ele;

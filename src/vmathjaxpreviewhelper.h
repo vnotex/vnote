@@ -3,6 +3,8 @@
 
 #include <QObject>
 
+#include "vconstants.h"
+
 class QWebEngineView;
 class VMathJaxWebDocument;
 class QWidget;
@@ -18,15 +20,33 @@ public:
     // Get an ID for identification.
     int registerIdentifier();
 
-    // Preview @p_text and return SVG data asynchronously.
+    // Preview @p_text and return PNG data asynchronously.
     // @p_identifier: identifier the caller registered;
     // @p_id: internal id for each caller;
     // @p_text: raw text of the MathJax script.
-    void previewMathJax(int p_identifier, int p_id, const QString &p_text);
+    void previewMathJax(int p_identifier, int p_id, TimeStamp p_timeStamp, const QString &p_text);
+
+    // Preview @p_text and return PNG data asynchronously.
+    // @p_identifier: identifier the caller registered;
+    // @p_id: internal id for each caller;
+    // @p_lang: language of the diagram;
+    // @p_text: raw text of the script.
+    void previewDiagram(int p_identifier,
+                        int p_id,
+                        TimeStamp p_timeStamp,
+                        const QString &p_lang,
+                        const QString &p_text);
 
 signals:
     void mathjaxPreviewResultReady(int p_identifier,
                                    int p_id,
+                                   TimeStamp p_timeStamp,
+                                   const QString &p_format,
+                                   const QByteArray &p_data);
+
+    void diagramPreviewResultReady(int p_identifier,
+                                   int p_id,
+                                   TimeStamp p_timeStamp,
                                    const QString &p_format,
                                    const QByteArray &p_data);
 

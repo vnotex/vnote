@@ -1328,7 +1328,7 @@ var specialCodeBlock = function(lang) {
            || (VEnableGraphviz && lang == 'dot');
 };
 
-var handlePlantUMLResult = function(id, format, result) {
+var handlePlantUMLResult = function(id, timeStamp, format, result) {
     var code = document.getElementsByClassName(plantUMLCodeClass + id)[0];
     if (code && result.length > 0) {
         var obj = null;
@@ -1348,7 +1348,7 @@ var handlePlantUMLResult = function(id, format, result) {
     finishOneAsyncJob();
 };
 
-var handleGraphvizResult = function(id, format, result) {
+var handleGraphvizResult = function(id, timeStamp, format, result) {
     var code = document.getElementsByClassName(graphvizCodeClass + id)[0];
     if (code && result.length > 0) {
         var obj = null;

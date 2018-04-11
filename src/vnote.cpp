@@ -174,7 +174,17 @@ QString VNote::generateMathJaxPreviewTemplate()
     const QString c_templatePath(":/resources/mathjax_preview_template.html");
     QString templ = VUtils::readFileFromDisk(c_templatePath);
     g_palette->fillStyle(templ);
+
+    QString cssStyle;
+    cssStyle += "div.flowchart-diagram { margin: 0px !important; "
+                "                        padding: 0px 5px 0px 5px !important; }\n"
+                "div.mermaid-diagram { margin: 0px !important; "
+                "                      padding: 0px 5px 0px 5px !important; }\n";
+
+    templ.replace(HtmlHolder::c_globalStyleHolder, cssStyle);
+
     templ.replace(HtmlHolder::c_cssHolder, g_config->getCssStyleUrl());
+
     return templ;
 }
 

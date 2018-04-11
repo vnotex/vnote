@@ -171,6 +171,7 @@ div.mermaid-diagram {
 }
 
 div.flowchart-diagram {
+    padding: 0px 5px 0px 5px;
     margin: 16px 0px 16px 0px;
     width: fit-content;
     overflow: hidden;
@@ -179,6 +180,7 @@ div.flowchart-diagram {
 }
 
 div.plantuml-diagram {
+    padding: 5px 5px 0px 5px;
     margin: 16px 0px 16px 0px;
     width: fit-content;
     overflow: hidden;

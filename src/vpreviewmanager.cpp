@@ -473,3 +473,40 @@ void VPreviewManager::updateCodeBlocks(const QVector<QSharedPointer<VImageToPrev
 
     clearObsoleteImages(ts, PreviewSource::CodeBlock);
 }
+
+void VPreviewManager::checkBlocksForObsoletePreview(const QList<int> &p_blocks)
+{
+    if (p_blocks.isEmpty()) {
+        return;
+    }
+
+    QSet<int> affectedBlocks;
+    for (auto i : p_blocks) {
+        QTextBlock block = m_document->findBlockByNumber(i);
+        if (!block.isValid()) {
+            continue;
+        }
+
+        VTextBlockData *blockData = dynamic_cast<VTextBlockData *>(block.userData());
+        if (!blockData) {
+            continue;
+        }
+
+        if (blockData->getPreviews().isEmpty()) {
+            continue;
+        }
+
+        for (int i = 0; i < (int)PreviewSource::MaxNumberOfSources; ++i) {
+            if (blockData->getPreviews().isEmpty()) {
+                break;
+            }
+
+            PreviewSource ps = static_cast<PreviewSource>(i);
+            if (blockData->clearObsoletePreview(timeStamp(ps), ps)) {
+                affectedBlocks.insert(i);
+            }
+        }
+    }
+
+    m_editor->relayout(affectedBlocks);
+}

@@ -147,7 +147,7 @@ void VDocument::processPlantUML(int p_id, const QString &p_format, const QString
                 this, &VDocument::plantUMLResultReady);
     }
 
-    m_plantUMLHelper->processAsync(p_id, p_format, p_text);
+    m_plantUMLHelper->processAsync(p_id, 0, p_format, p_text);
 }
 
 void VDocument::processGraphviz(int p_id, const QString &p_format, const QString &p_text)
@@ -158,7 +158,7 @@ void VDocument::processGraphviz(int p_id, const QString &p_format, const QString
                 this, &VDocument::graphvizResultReady);
     }
 
-    m_graphvizHelper->processAsync(p_id, p_format, p_text);
+    m_graphvizHelper->processAsync(p_id, 0, p_format, p_text);
 }
 
 void VDocument::setPreviewEnabled(bool p_enabled)

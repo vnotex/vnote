@@ -42,6 +42,7 @@ CodeBlockPreviewInfo::CodeBlockPreviewInfo(const VCodeBlock &p_cb)
 void CodeBlockPreviewInfo::clearImageData()
 {
     m_imgData.clear();
+    m_imgDataBa.clear();
     m_inplacePreview.clear();
 }
 
@@ -64,7 +65,6 @@ void CodeBlockPreviewInfo::updateNonContent(const QTextDocument *p_doc,
     }
 }
 
-// Update inplace preview according to m_imgData.
 void CodeBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
                                                 const QTextDocument *p_doc)
 {
@@ -100,12 +100,12 @@ VLivePreviewHelper::VLivePreviewHelper(VEditor *p_editor,
       m_livePreviewEnabled(false),
       m_inplacePreviewEnabled(false),
       m_graphvizHelper(NULL),
-      m_plantUMLHelper(NULL)
+      m_plantUMLHelper(NULL),
+      m_lastInplacePreviewSize(0),
+      m_timeStamp(0)
 {
     connect(m_editor->object(), &VEditorObject::cursorPositionChanged,
             this, &VLivePreviewHelper::handleCursorPositionChanged);
-    connect(m_document, &VDocument::codeBlockPreviewReady,
-            this, &VLivePreviewHelper::webAsyncResultReady);
 
     m_flowchartEnabled = g_config->getEnableFlowchart();
     m_mermaidEnabled = g_config->getEnableMermaid();
@@ -116,6 +116,9 @@ VLivePreviewHelper::VLivePreviewHelper(VEditor *p_editor,
     m_mathJaxHelper = g_mainWin->getEditArea()->getMathJaxPreviewHelper();
     m_mathJaxID = m_mathJaxHelper->registerIdentifier();
     connect(m_mathJaxHelper, &VMathJaxPreviewHelper::mathjaxPreviewResultReady,
+            this, &VLivePreviewHelper::mathjaxPreviewResultReady);
+    connect(m_mathJaxHelper, &VMathJaxPreviewHelper::diagramPreviewResultReady,
+            // The same handle logics.
             this, &VLivePreviewHelper::mathjaxPreviewResultReady);
 }
 
@@ -133,6 +136,8 @@ void VLivePreviewHelper::updateCodeBlocks(const QVector<VCodeBlock> &p_codeBlock
     if (!m_livePreviewEnabled && !m_inplacePreviewEnabled) {
         return;
     }
+
+    ++m_timeStamp;
 
     int lastIndex = m_cbIndex;
     m_cbIndex = -1;
@@ -239,6 +244,7 @@ void VLivePreviewHelper::updateLivePreview()
 
         if (!cb.hasImageData()) {
             m_graphvizHelper->processAsync(m_cbIndex | LANG_PREFIX_GRAPHVIZ | TYPE_LIVE_PREVIEW,
+                                           m_timeStamp,
                                            "svg",
                                            removeFence(vcb.m_text));
         } else {
@@ -253,6 +259,7 @@ void VLivePreviewHelper::updateLivePreview()
 
         if (!cb.hasImageData()) {
             m_plantUMLHelper->processAsync(m_cbIndex | LANG_PREFIX_PLANTUML | TYPE_LIVE_PREVIEW,
+                                           m_timeStamp,
                                            "svg",
                                            removeFence(vcb.m_text));
         } else {
@@ -292,13 +299,20 @@ void VLivePreviewHelper::setInplacePreviewEnabled(bool p_enabled)
         for (auto & cb : m_codeBlocks) {
             cb.clearImageData();
         }
+
+        updateInplacePreview();
     }
 }
 
 void VLivePreviewHelper::localAsyncResultReady(int p_id,
+                                               TimeStamp p_timeStamp,
                                                const QString &p_format,
                                                const QString &p_result)
 {
+    if (p_timeStamp != m_timeStamp) {
+        return;
+    }
+
     Q_UNUSED(p_format);
     Q_ASSERT(p_format == "svg");
     int idx = p_id & INDEX_MASK;
@@ -354,6 +368,7 @@ void VLivePreviewHelper::processForInplacePreview(int p_idx)
             updateInplacePreview();
         } else {
             m_graphvizHelper->processAsync(p_idx | LANG_PREFIX_GRAPHVIZ | TYPE_INPLACE_PREVIEW,
+                                           m_timeStamp,
                                            "svg",
                                            removeFence(vcb.m_text));
         }
@@ -369,42 +384,65 @@ void VLivePreviewHelper::processForInplacePreview(int p_idx)
             updateInplacePreview();
         } else {
             m_plantUMLHelper->processAsync(p_idx | LANG_PREFIX_PLANTUML | TYPE_INPLACE_PREVIEW,
+                                           m_timeStamp,
                                            "svg",
                                            removeFence(vcb.m_text));
         }
     } else if (vcb.m_lang == "flow"
                || vcb.m_lang == "flowchart") {
-        m_document->previewCodeBlock(p_idx,
-                                     vcb.m_lang,
-                                     removeFence(vcb.m_text),
-                                     false);
+        m_mathJaxHelper->previewDiagram(m_mathJaxID,
+                                        p_idx,
+                                        m_timeStamp,
+                                        vcb.m_lang,
+                                        removeFence(vcb.m_text));
     } else if (vcb.m_lang == "mathjax") {
         m_mathJaxHelper->previewMathJax(m_mathJaxID,
                                         p_idx,
+                                        m_timeStamp,
                                         removeFence(vcb.m_text));
     }
 }
 
 void VLivePreviewHelper::updateInplacePreview()
 {
+    QSet<int> blocks;
     QVector<QSharedPointer<VImageToPreview> > images;
     for (int i = 0; i < m_codeBlocks.size(); ++i) {
         CodeBlockPreviewInfo &cb = m_codeBlocks[i];
         if (cb.inplacePreviewReady()) {
             // Generate the image.
+            bool valid = false;
             if (cb.hasImageData()) {
                 cb.inplacePreview()->m_image.loadFromData(cb.imageData().toUtf8(),
                                                           cb.imageFormat().toLocal8Bit().data());
                 images.append(cb.inplacePreview());
+                valid = true;
             } else if (cb.hasImageDataBa()) {
                 cb.inplacePreview()->m_image.loadFromData(cb.imageDataBa(),
                                                           cb.imageFormat().toLocal8Bit().data());
                 images.append(cb.inplacePreview());
+                valid = true;
             }
+
+            if (!valid) {
+                blocks.insert(cb.inplacePreview()->m_blockNumber);
+            }
+        } else {
+            blocks.insert(cb.codeBlock().m_endBlock);
         }
     }
 
+    if (images.isEmpty() && m_lastInplacePreviewSize == 0) {
+        return;
+    }
+
     emit inplacePreviewCodeBlockUpdated(images);
+
+    m_lastInplacePreviewSize = images.size();
+
+    if (!blocks.isEmpty()) {
+        emit checkBlocksForObsoletePreview(blocks.toList());
+    }
 
     // Clear image.
     for (int i = 0; i < m_codeBlocks.size(); ++i) {
@@ -416,28 +454,18 @@ void VLivePreviewHelper::updateInplacePreview()
     }
 }
 
-void VLivePreviewHelper::webAsyncResultReady(int p_id,
-                                             const QString &p_lang,
-                                             const QString &p_result)
-{
-    Q_UNUSED(p_lang);
-    if (p_id >= m_codeBlocks.size() || p_result.isEmpty()) {
-        return;
-    }
-
-    CodeBlockPreviewInfo &cb = m_codeBlocks[p_id];
-    cb.setImageData(QStringLiteral("svg"), p_result);
-    cb.updateInplacePreview(m_editor, m_doc);
-    updateInplacePreview();
-}
-
 void VLivePreviewHelper::mathjaxPreviewResultReady(int p_identitifer,
                                                    int p_id,
+                                                   TimeStamp p_timeStamp,
                                                    const QString &p_format,
                                                    const QByteArray &p_data)
 {
-    if (p_identitifer != m_mathJaxID
-        || (p_id >= m_codeBlocks.size() || p_data.isEmpty())) {
+    if (p_identitifer != m_mathJaxID || p_timeStamp != m_timeStamp) {
+        return;
+    }
+
+    if (p_id >= m_codeBlocks.size() || p_data.isEmpty()) {
+        updateInplacePreview();
         return;
     }
 

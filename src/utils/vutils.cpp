@@ -818,19 +818,31 @@ QString VUtils::generateExportHtmlTemplate(const QString &p_renderBg, bool p_inc
 QString VUtils::generateMathJaxPreviewTemplate()
 {
     QString templ = VNote::generateMathJaxPreviewTemplate();
-    QString mj = g_config->getMathjaxJavascript();
-    // Chante MathJax to be rendered as SVG.
-    QRegExp reg("(Mathjax\\.js\\?config=)\\S+", Qt::CaseInsensitive);
-    // mj.replace(reg, QString("\\1%1").arg("TeX-MML-AM_SVG"));
-
-    templ.replace(HtmlHolder::c_JSHolder, mj);
+    templ.replace(HtmlHolder::c_JSHolder, g_config->getMathjaxJavascript());
 
     QString extraFile;
+
+    QString mathjaxScale = QString::number((int)(100 * VUtils::calculateScaleFactor()));
+
+    /*
+    // Mermaid.
+    extraFile += "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + g_config->getMermaidCssStyleUrl() + "\"/>\n" +
+                 "<script src=\"qrc" + VNote::c_mermaidApiJsFile + "\"></script>\n";
+    */
+
+    // Flowchart.
+    extraFile += "<script src=\"qrc" + VNote::c_raphaelJsFile + "\"></script>\n" +
+                 "<script src=\"qrc" + VNote::c_flowchartJsFile + "\"></script>\n";
+
+    // MathJax.
     extraFile += "<script type=\"text/x-mathjax-config\">"
                  "MathJax.Hub.Config({\n"
                  "                    tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']],\n"
                                                "processEscapes: true,\n"
                                                "processClass: \"tex2jax_process|language-mathjax|lang-mathjax\"},\n"
+                 "                    \"HTML-CSS\": {\n"
+                 "                                   scale: " + mathjaxScale + "\n"
+                 "                                  },\n"
                  "                    showProcessingMessages: false,\n"
                  "                    messageStyle: \"none\"});\n"
                  "</script>\n";

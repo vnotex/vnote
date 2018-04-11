@@ -142,9 +142,15 @@ signals:
 
     void wordCountInfoUpdated();
 
-    void plantUMLResultReady(int p_id, const QString &p_format, const QString &p_result);
+    void plantUMLResultReady(int p_id,
+                             unsigned long long p_timeStamp,
+                             const QString &p_format,
+                             const QString &p_result);
 
-    void graphvizResultReady(int p_id, const QString &p_format, const QString &p_result);
+    void graphvizResultReady(int p_id,
+                             unsigned long long p_timeStamp,
+                             const QString &p_format,
+                             const QString &p_result);
 
     void requestPreviewEnabled(bool p_enabled);
 

@@ -523,6 +523,8 @@ void VMdTab::setupMarkdownEditor()
             m_livePreviewHelper, &VLivePreviewHelper::setInplacePreviewEnabled);
     connect(m_livePreviewHelper, &VLivePreviewHelper::inplacePreviewCodeBlockUpdated,
             m_editor->getPreviewManager(), &VPreviewManager::updateCodeBlocks);
+    connect(m_livePreviewHelper, &VLivePreviewHelper::checkBlocksForObsoletePreview,
+            m_editor->getPreviewManager(), &VPreviewManager::checkBlocksForObsoletePreview);
     m_livePreviewHelper->setInplacePreviewEnabled(m_editor->getPreviewManager()->isPreviewEnabled());
 }
 
