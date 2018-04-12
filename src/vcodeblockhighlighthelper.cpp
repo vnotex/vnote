@@ -111,8 +111,20 @@ static void matchTokenRelaxed(const QString &p_text, const QString &p_tokenStr,
                               int &p_index, int &p_start, int &p_end)
 {
     QString regStr = QRegExp::escape(p_tokenStr);
+
+    // Remove the leading spaces.
+    int nonSpaceIdx = 0;
+    while (nonSpaceIdx < regStr.size() && regStr[nonSpaceIdx].isSpace()) {
+        ++nonSpaceIdx;
+    }
+
+    if (nonSpaceIdx > 0 && nonSpaceIdx < regStr.size()) {
+        regStr.remove(0, nonSpaceIdx);
+    }
+
     // Do not replace the ending '\n'.
     regStr.replace(QRegExp("\n(?!$)"), "\\s+");
+
     QRegExp regExp(regStr);
     p_start = p_text.indexOf(regExp, p_index);
     if (p_start == -1) {
