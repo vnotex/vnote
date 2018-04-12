@@ -35,12 +35,16 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
       parsing(0),
       m_blockHLResultReady(false),
       waitInterval(waitInterval),
+      m_enableMathjax(false),
       content(NULL),
       capacity(0),
       result(NULL)
 {
     codeBlockStartExp = QRegExp(VUtils::c_fencedCodeBlockStartRegExp);
     codeBlockEndExp = QRegExp(VUtils::c_fencedCodeBlockEndRegExp);
+
+    m_mathjaxInlineExp = QRegExp(VUtils::c_mathjaxInlineRegExp);
+    m_mathjaxBlockExp = QRegExp(VUtils::c_mathjaxBlockRegExp);
 
     m_codeBlockFormat.setForeground(QBrush(Qt::darkYellow));
     for (int index = 0; index < styles.size(); ++index) {
@@ -57,6 +61,8 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
     m_colorColumnFormat = m_codeBlockFormat;
     m_colorColumnFormat.setForeground(QColor(g_config->getEditorColorColumnFg()));
     m_colorColumnFormat.setBackground(QColor(g_config->getEditorColorColumnBg()));
+
+    m_mathjaxFormat.setForeground(QColor(g_config->getEditorMathjaxFg()));
 
     m_headerStyles.resize(6);
     for (auto const & it : highlightingStyles) {
@@ -108,6 +114,9 @@ void HGMarkdownHighlighter::updateBlockUserData(int p_blockNum, const QString &p
     if (!blockData) {
         blockData = new VTextBlockData();
         setCurrentBlockUserData(blockData);
+    } else {
+        blockData->setCodeBlockIndentation(-1);
+        blockData->clearMathjax();
     }
 
     if (blockData->getPreviews().isEmpty()) {
@@ -115,8 +124,6 @@ void HGMarkdownHighlighter::updateBlockUserData(int p_blockNum, const QString &p
     } else {
         m_possiblePreviewBlocks.insert(p_blockNum);
     }
-
-    blockData->setCodeBlockIndentation(-1);
 }
 
 void HGMarkdownHighlighter::highlightBlock(const QString &text)
@@ -171,10 +178,13 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
     setCurrentBlockState(HighlightBlockState::Normal);
     highlightCodeBlock(curBlock, text);
 
-    if (currentBlockState() == HighlightBlockState::Normal
-        && isVerbatimBlock(curBlock)) {
-        setCurrentBlockState(HighlightBlockState::Verbatim);
-        goto exit;
+    if (currentBlockState() == HighlightBlockState::Normal) {
+        if (isVerbatimBlock(curBlock)) {
+            setCurrentBlockState(HighlightBlockState::Verbatim);
+            goto exit;
+        } else if (m_enableMathjax) {
+            highlightMathJax(curBlock, text);
+        }
     }
 
     // PEG Markdown Highlight does not handle links with spaces in the URL.
@@ -183,6 +193,10 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
     // highlightLinkWithSpacesInURL(text);
 
     highlightHeaderFast(blockNum, text);
+
+    if (currentBlockState() != HighlightBlockState::CodeBlock) {
+        goto exit;
+    }
 
     // Highlight CodeBlock using VCodeBlockHighlightHelper.
     if (m_codeBlockHighlights.size() > blockNum) {
@@ -436,7 +450,7 @@ void HGMarkdownHighlighter::initBlockHighlihgtOne(unsigned long pos,
     }
 }
 
-void HGMarkdownHighlighter::highlightCodeBlock(const QTextBlock &p_block, const QString &text)
+void HGMarkdownHighlighter::highlightCodeBlock(const QTextBlock &p_block, const QString &p_text)
 {
     VTextBlockData *blockData = currentBlockData();
     Q_ASSERT(blockData);
@@ -449,10 +463,10 @@ void HGMarkdownHighlighter::highlightCodeBlock(const QTextBlock &p_block, const 
     if (preState != HighlightBlockState::CodeBlock
         && preState != HighlightBlockState::CodeBlockStart) {
         // Need to find a new code block start.
-        index = codeBlockStartExp.indexIn(text);
+        index = codeBlockStartExp.indexIn(p_text);
         if (index >= 0 && !isVerbatimBlock(p_block)) {
             // Start a new code block.
-            length = text.length();
+            length = p_text.length();
             state = HighlightBlockState::CodeBlockStart;
 
             // The leading spaces of code block start and end must be identical.
@@ -471,18 +485,18 @@ void HGMarkdownHighlighter::highlightCodeBlock(const QTextBlock &p_block, const 
             startLeadingSpaces = preBlockData->getCodeBlockIndentation();
         }
 
-        index = codeBlockEndExp.indexIn(text);
+        index = codeBlockEndExp.indexIn(p_text);
 
         // The closing ``` should have the same indentation as the open ```.
         if (index >= 0
             && startLeadingSpaces == codeBlockEndExp.capturedTexts()[1].size()) {
             // End of code block.
-            length = text.length();
+            length = p_text.length();
             state = HighlightBlockState::CodeBlockEnd;
         } else {
             // Within code block.
             index = 0;
-            length = text.length();
+            length = p_text.length();
             state = HighlightBlockState::CodeBlock;
         }
 
@@ -491,6 +505,101 @@ void HGMarkdownHighlighter::highlightCodeBlock(const QTextBlock &p_block, const 
 
     setCurrentBlockState(state);
     setFormat(index, length, m_codeBlockFormat);
+}
+
+static bool intersect(const QList<QPair<int, int>> &p_indices, int &p_start, int &p_end)
+{
+    for (auto const & range : p_indices) {
+        if (p_end <= range.first) {
+            return false;
+        } else if (p_start < range.second) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void HGMarkdownHighlighter::highlightMathJax(const QTextBlock &p_block, const QString &p_text)
+{
+    const int blockMarkLength = 2;
+    const int inlineMarkLength = 1;
+
+    int startIdx = 0;
+    // Next position to search.
+    int pos = 0;
+    HighlightBlockState state = (HighlightBlockState)previousBlockState();
+
+    QList<QPair<int, int>> blockIdices;
+
+    // Mathjax block formula.
+    if (state != HighlightBlockState::MathjaxBlock) {
+        startIdx = m_mathjaxBlockExp.indexIn(p_text);
+        pos = startIdx + m_mathjaxBlockExp.matchedLength();
+        startIdx = pos - blockMarkLength;
+    }
+
+    while (startIdx >= 0) {
+        int endIdx = m_mathjaxBlockExp.indexIn(p_text, pos);
+        int mathLength = 0;
+        if (endIdx == -1) {
+            setCurrentBlockState(HighlightBlockState::MathjaxBlock);
+            mathLength = p_text.length() - startIdx;
+        } else {
+            mathLength = endIdx - startIdx + m_mathjaxBlockExp.matchedLength();
+        }
+
+        pos = startIdx + mathLength;
+
+        blockIdices.append(QPair<int, int>(startIdx, pos));
+
+        setFormat(startIdx, mathLength, m_mathjaxFormat);
+        startIdx = m_mathjaxBlockExp.indexIn(p_text, pos);
+        pos = startIdx + m_mathjaxBlockExp.matchedLength();
+        startIdx = pos - blockMarkLength;
+    }
+
+    // Mathjax inline formula.
+    startIdx = 0;
+    pos = 0;
+    if (state != HighlightBlockState::MathjaxInline) {
+        startIdx = m_mathjaxInlineExp.indexIn(p_text);
+        pos = startIdx + m_mathjaxInlineExp.matchedLength();
+        startIdx = pos - inlineMarkLength;
+    }
+
+    while (startIdx >= 0) {
+        int endIdx = m_mathjaxInlineExp.indexIn(p_text, pos);
+        int mathLength = 0;
+        if (endIdx == -1) {
+            setCurrentBlockState(HighlightBlockState::MathjaxBlock);
+            mathLength = p_text.length() - startIdx;
+        } else {
+            mathLength = endIdx - startIdx + m_mathjaxInlineExp.matchedLength();
+        }
+
+        pos = startIdx + mathLength;
+        // Check if it intersect with blocks.
+        if (!intersect(blockIdices, startIdx, pos)) {
+            // A valid inline mathjax.
+            if (endIdx == -1) {
+                setCurrentBlockState(HighlightBlockState::MathjaxInline);
+            }
+
+            setFormat(startIdx, mathLength, m_mathjaxFormat);
+
+            startIdx = m_mathjaxInlineExp.indexIn(p_text, pos);
+            pos = startIdx + m_mathjaxInlineExp.matchedLength();
+            startIdx = pos - inlineMarkLength;
+        } else {
+            // Make the second mark as the first one and try again.
+            if (endIdx == -1) {
+                break;
+            }
+
+            startIdx = pos - inlineMarkLength;
+        }
+    }
 }
 
 void HGMarkdownHighlighter::highlightCodeBlockColorColumn(const QString &p_text)

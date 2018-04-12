@@ -121,7 +121,11 @@ enum HighlightBlockState
     Comment,
 
     // Verbatim code block.
-    Verbatim
+    Verbatim,
+
+    // Mathjax. It means the pending state of the block.
+    MathjaxBlock,
+    MathjaxInline
 };
 
 // Pages to open on start up.

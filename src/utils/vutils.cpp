@@ -47,6 +47,10 @@ const QString VUtils::c_fencedCodeBlockStartRegExp = QString("^(\\s*)```([^`\\s]
 
 const QString VUtils::c_fencedCodeBlockEndRegExp = QString("^(\\s*)```$");
 
+const QString VUtils::c_mathjaxInlineRegExp = QString("(?:^|[^\\$\\\\]|(?:^|[^\\\\])(?:\\\\\\\\)+)\\$(?!\\$)");
+
+const QString VUtils::c_mathjaxBlockRegExp = QString("(?:^|[^\\$\\\\]|(?:^|[^\\\\])(?:\\\\\\\\)+)\\$\\$(?!\\$)");
+
 const QString VUtils::c_previewImageBlockRegExp = QString("[\\n|^][ |\\t]*\\xfffc[ |\\t]*(?=\\n)");
 
 const QString VUtils::c_headerRegExp = QString("^(#{1,6})\\s+(((\\d+\\.)+(?=\\s))?\\s*(\\S.*)?)$");

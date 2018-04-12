@@ -155,6 +155,8 @@ public:
 
     QVector<HighlightingStyle> &getHighlightingStyles();
 
+    void setMathjaxEnabled(bool p_enabled);
+
 signals:
     void highlightCompleted();
 
@@ -197,10 +199,15 @@ private:
 
     QRegExp codeBlockStartExp;
     QRegExp codeBlockEndExp;
+
+    QRegExp m_mathjaxInlineExp;
+    QRegExp m_mathjaxBlockExp;
+
     QTextCharFormat m_codeBlockFormat;
     QTextCharFormat m_linkFormat;
     QTextCharFormat m_imageFormat;
     QTextCharFormat m_colorColumnFormat;
+    QTextCharFormat m_mathjaxFormat;
 
     QTextDocument *document;
 
@@ -253,6 +260,8 @@ private:
     // Block number of those blocks which possible contains previewed image.
     QSet<int> m_possiblePreviewBlocks;
 
+    bool m_enableMathjax;
+
     char *content;
     int capacity;
     pmh_element **result;
@@ -260,7 +269,10 @@ private:
     static const int initCapacity;
 
     void resizeBuffer(int newCap);
-    void highlightCodeBlock(const QTextBlock &p_block, const QString &text);
+
+    void highlightCodeBlock(const QTextBlock &p_block, const QString &p_text);
+
+    void highlightMathJax(const QTextBlock &p_block, const QString &p_text);
 
     // Highlight links using regular expression.
     // PEG Markdown Highlight treat URLs with spaces illegal. This function is
@@ -374,5 +386,10 @@ inline QVector<HighlightingStyle> &HGMarkdownHighlighter::getHighlightingStyles(
 inline bool HGMarkdownHighlighter::isVerbatimBlock(const QTextBlock &p_block) const
 {
     return m_verbatimBlocks.contains(p_block.blockNumber());
+}
+
+inline void HGMarkdownHighlighter::setMathjaxEnabled(bool p_enabled)
+{
+    m_enableMathjax = p_enabled;
 }
 #endif

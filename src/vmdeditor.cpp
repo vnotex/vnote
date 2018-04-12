@@ -63,6 +63,7 @@ VMdEditor::VMdEditor(VFile *p_file,
                                                 g_config->getCodeBlockStyles(),
                                                 g_config->getMarkdownHighlightInterval(),
                                                 document());
+    m_mdHighlighter->setMathjaxEnabled(g_config->getEnableMathjax());
 
     connect(m_mdHighlighter, &HGMarkdownHighlighter::headersUpdated,
             this, &VMdEditor::updateHeaders);

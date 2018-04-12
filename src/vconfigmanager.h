@@ -316,6 +316,8 @@ public:
 
     const QString &getEditorPreviewImageLineFg() const;
 
+    const QString &getEditorMathjaxFg() const;
+
     bool getEnableCodeBlockLineNumber() const;
     void setEnableCodeBlockLineNumber(bool p_enabled);
 
@@ -778,6 +780,9 @@ private:
 
     // The foreground color of the preview image line.
     QString m_editorPreviewImageLineFg;
+
+    // The foreground color of the MathJax.
+    QString m_editorMathjaxFg;
 
     // Icon size of tool bar in pixels.
     int m_toolBarIconSize;
@@ -1824,6 +1829,11 @@ inline const QString &VConfigManager::getEditorColorColumnFg() const
 inline const QString &VConfigManager::getEditorPreviewImageLineFg() const
 {
     return m_editorPreviewImageLineFg;
+}
+
+inline const QString &VConfigManager::getEditorMathjaxFg() const
+{
+    return m_editorMathjaxFg;
 }
 
 inline bool VConfigManager::getEnableCodeBlockLineNumber() const

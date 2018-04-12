@@ -340,6 +340,14 @@ public:
     static const QString c_fencedCodeBlockStartRegExp;
     static const QString c_fencedCodeBlockEndRegExp;
 
+    // Regular expression for inline mathjax formula.
+    // $..$
+    static const QString c_mathjaxInlineRegExp;
+
+    // Regular expression for block mathjax formula.
+    // $$..$$
+    static const QString c_mathjaxBlockRegExp;
+
     // Regular expression for preview image block.
     static const QString c_previewImageBlockRegExp;
 

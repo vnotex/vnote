@@ -35,8 +35,10 @@ incremental-searched-word-background: ce93d8
 # [VNote] Style for color column in fenced code block
 color-column-background: c9302c
 color-column-foreground: eeeeee
-# [VNote} Style for preview image line
+# [VNote] Style for preview image line
 preview-image-line-foreground: 6f5799
+# [VNote] Style for MathJax
+mathjax-foreground: ce93d8
 
 editor-selection
 foreground: dadada
