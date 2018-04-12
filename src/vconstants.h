@@ -118,7 +118,10 @@ enum HighlightBlockState
     CodeBlockEnd,
 
     // This block is inside a HTML comment region.
-    Comment
+    Comment,
+
+    // Verbatim code block.
+    Verbatim
 };
 
 // Pages to open on start up.

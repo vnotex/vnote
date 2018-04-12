@@ -232,6 +232,10 @@ private:
     // Sorted by start position.
     QVector<VElementRegion> m_headerRegions;
 
+    // All verbatim blocks (by parser) number.
+    // It may be a code block inside fenced code block.
+    QSet<int> m_verbatimBlocks;
+
     // Indexed by block number.
     QHash<int, HeaderBlockInfo> m_headerBlocks;
 
@@ -256,7 +260,7 @@ private:
     static const int initCapacity;
 
     void resizeBuffer(int newCap);
-    void highlightCodeBlock(const QString &text);
+    void highlightCodeBlock(const QTextBlock &p_block, const QString &text);
 
     // Highlight links using regular expression.
     // PEG Markdown Highlight treat URLs with spaces illegal. This function is
@@ -288,8 +292,14 @@ private:
     // Fetch all the header regions from parsing result.
     void initHeaderRegionsFromResult();
 
+    // Fetch all the verbatim blocks from parsing result.
+    void initVerbatimBlocksFromResult();
+
     // Whether @p_block is totally inside a HTML comment.
     bool isBlockInsideCommentRegion(const QTextBlock &p_block) const;
+
+    // Whether @p_block is a Verbatim block.
+    bool isVerbatimBlock(const QTextBlock &p_block) const;
 
     // Highlights have been changed. Try to signal highlightCompleted().
     void highlightChanged();
@@ -361,4 +371,8 @@ inline QVector<HighlightingStyle> &HGMarkdownHighlighter::getHighlightingStyles(
     return highlightingStyles;
 }
 
+inline bool HGMarkdownHighlighter::isVerbatimBlock(const QTextBlock &p_block) const
+{
+    return m_verbatimBlocks.contains(p_block.blockNumber());
+}
 #endif

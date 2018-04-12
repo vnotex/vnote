@@ -121,7 +121,8 @@ void HGMarkdownHighlighter::updateBlockUserData(int p_blockNum, const QString &p
 
 void HGMarkdownHighlighter::highlightBlock(const QString &text)
 {
-    int blockNum = currentBlock().blockNumber();
+    QTextBlock curBlock = currentBlock();
+    int blockNum = curBlock.blockNumber();
     if (m_blockHLResultReady && m_blockHighlights.size() > blockNum) {
         // units are sorted by start position and length.
         const QVector<HLUnit> &units = m_blockHighlights[blockNum];
@@ -161,14 +162,20 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
     updateBlockUserData(blockNum, text);
 
     // If it is a block inside HTML comment, just skip it.
-    if (isBlockInsideCommentRegion(currentBlock())) {
+    if (isBlockInsideCommentRegion(curBlock)) {
         setCurrentBlockState(HighlightBlockState::Comment);
         goto exit;
     }
 
     // PEG Markdown Highlight does not handle the ``` code block correctly.
     setCurrentBlockState(HighlightBlockState::Normal);
-    highlightCodeBlock(text);
+    highlightCodeBlock(curBlock, text);
+
+    if (currentBlockState() == HighlightBlockState::Normal
+        && isVerbatimBlock(curBlock)) {
+        setCurrentBlockState(HighlightBlockState::Verbatim);
+        goto exit;
+    }
 
     // PEG Markdown Highlight does not handle links with spaces in the URL.
     // Links in the URL should be encoded to %20. We just let it be here and won't
@@ -328,6 +335,31 @@ void HGMarkdownHighlighter::initImageRegionsFromResult()
     emit imageLinksUpdated(m_imageRegions);
 }
 
+void HGMarkdownHighlighter::initVerbatimBlocksFromResult()
+{
+    m_verbatimBlocks.clear();
+    if (!result) {
+        return;
+    }
+
+    pmh_element *elem = result[pmh_VERBATIM];
+    while (elem != NULL) {
+        if (elem->end <= elem->pos) {
+            elem = elem->next;
+            continue;
+        }
+
+        // [firstBlock, lastBlock].
+        int firstBlock = document->findBlock(elem->pos).blockNumber();
+        int lastBlock = document->findBlock(elem->end - 1).blockNumber();
+        for (int i = firstBlock; i <= lastBlock; ++i) {
+            m_verbatimBlocks.insert(i);
+        }
+
+        elem = elem->next;
+    }
+}
+
 void HGMarkdownHighlighter::initHeaderRegionsFromResult()
 {
     // From Qt5.7, the capacity is preserved.
@@ -404,7 +436,7 @@ void HGMarkdownHighlighter::initBlockHighlihgtOne(unsigned long pos,
     }
 }
 
-void HGMarkdownHighlighter::highlightCodeBlock(const QString &text)
+void HGMarkdownHighlighter::highlightCodeBlock(const QTextBlock &p_block, const QString &text)
 {
     VTextBlockData *blockData = currentBlockData();
     Q_ASSERT(blockData);
@@ -418,7 +450,7 @@ void HGMarkdownHighlighter::highlightCodeBlock(const QString &text)
         && preState != HighlightBlockState::CodeBlockStart) {
         // Need to find a new code block start.
         index = codeBlockStartExp.indexIn(text);
-        if (index >= 0) {
+        if (index >= 0 && !isVerbatimBlock(p_block)) {
             // Start a new code block.
             length = text.length();
             state = HighlightBlockState::CodeBlockStart;
@@ -533,6 +565,8 @@ void HGMarkdownHighlighter::parse(bool p_fast)
         initImageRegionsFromResult();
 
         initHeaderRegionsFromResult();
+
+        initVerbatimBlocksFromResult();
     }
 
     if (result) {
@@ -630,6 +664,11 @@ bool HGMarkdownHighlighter::updateCodeBlocks()
     // Only handle complete codeblocks.
     QTextBlock block = document->firstBlock();
     while (block.isValid()) {
+        if (!inBlock && isVerbatimBlock(block)) {
+            block = block.next();
+            continue;
+        }
+
         QString text = block.text();
         if (inBlock) {
             item.m_text = item.m_text + "\n" + text;
