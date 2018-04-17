@@ -11,7 +11,8 @@ VDocument::VDocument(const VFile *v_file, QObject *p_parent)
       m_file(v_file),
       m_readyToHighlight(false),
       m_plantUMLHelper(NULL),
-      m_graphvizHelper(NULL)
+      m_graphvizHelper(NULL),
+      m_nextID(0)
 {
 }
 
@@ -83,9 +84,13 @@ void VDocument::highlightTextCB(const QString &p_html, int p_id, int p_timeStamp
     emit textHighlighted(p_html, p_id, p_timeStamp);
 }
 
-void VDocument::textToHtmlAsync(const QString &p_text)
+void VDocument::textToHtmlAsync(int p_identitifer,
+                                int p_id,
+                                int p_timeStamp,
+                                const QString &p_text,
+                                bool p_inlineStyle)
 {
-    emit requestTextToHtml(p_text);
+    emit requestTextToHtml(p_identitifer, p_id, p_timeStamp, p_text, p_inlineStyle);
 }
 
 void VDocument::getHtmlContentAsync()
@@ -93,9 +98,9 @@ void VDocument::getHtmlContentAsync()
     emit requestHtmlContent();
 }
 
-void VDocument::textToHtmlCB(const QString &p_text, const QString &p_html)
+void VDocument::textToHtmlCB(int p_identitifer, int p_id, int p_timeStamp, const QString &p_html)
 {
-    emit textToHtmlFinished(p_text, p_html);
+    emit textToHtmlFinished(p_identitifer, p_id, p_timeStamp, p_html);
 }
 
 void VDocument::noticeReadyToHighlightText()

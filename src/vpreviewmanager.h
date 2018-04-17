@@ -80,6 +80,8 @@ public slots:
 
     void updateCodeBlocks(const QVector<QSharedPointer<VImageToPreview> > &p_images);
 
+    void updateMathjaxBlocks(const QVector<QSharedPointer<VImageToPreview> > &p_images);
+
 signals:
     // Request highlighter to update image links.
     void requestUpdateImageLinks();
@@ -168,7 +170,7 @@ private:
     // Returns empty if fail to add the image to the resource manager.
     QString imageResourceName(const ImageLinkInfo &p_link);
 
-    QString imageResourceNameFromCodeBlock(const QSharedPointer<VImageToPreview> &p_image);
+    QString imageResourceNameForSource(PreviewSource p_source, const QSharedPointer<VImageToPreview> &p_image);
 
     QHash<QString, long long> &imageCache(PreviewSource p_source);
 

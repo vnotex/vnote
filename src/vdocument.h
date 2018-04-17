@@ -34,7 +34,11 @@ public:
     void highlightTextAsync(const QString &p_text, int p_id, int p_timeStamp);
 
     // Request to convert @p_text to HTML.
-    void textToHtmlAsync(const QString &p_text);
+    void textToHtmlAsync(int p_identitifer,
+                         int p_id,
+                         int p_timeStamp,
+                         const QString &p_text,
+                         bool p_inlineStyle);
 
     void setFile(const VFile *p_file);
 
@@ -61,6 +65,8 @@ public:
     // Set the content of the preview.
     void setPreviewContent(const QString &p_lang, const QString &p_html);
 
+    int registerIdentifier();
+
 public slots:
     // Will be called in the HTML side
 
@@ -82,7 +88,7 @@ public slots:
 
     void noticeReadyToHighlightText();
 
-    void textToHtmlCB(const QString &p_text, const QString &p_html);
+    void textToHtmlCB(int p_identitifer, int p_id, int p_timeStamp, const QString &p_html);
 
     void noticeReadyToTextToHtml();
 
@@ -130,9 +136,13 @@ signals:
 
     void logicsFinished();
 
-    void requestTextToHtml(const QString &p_text);
+    void requestTextToHtml(int p_identitifer,
+                           int p_id,
+                           int p_timeStamp,
+                           const QString &p_text,
+                           bool p_inlineStyle);
 
-    void textToHtmlFinished(const QString &p_text, const QString &p_html);
+    void textToHtmlFinished(int p_identitifer, int p_id, int p_timeStamp, const QString &p_html);
 
     void requestHtmlContent();
 
@@ -186,6 +196,8 @@ private:
     VPlantUMLHelper *m_plantUMLHelper;
 
     VGraphvizHelper *m_graphvizHelper;
+
+    int m_nextID;
 };
 
 inline bool VDocument::isReadyToHighlight() const
@@ -203,4 +215,8 @@ inline const VWordCountInfo &VDocument::getWordCountInfo() const
     return m_wordCountInfo;
 }
 
+inline int VDocument::registerIdentifier()
+{
+    return ++m_nextID;
+}
 #endif // VDOCUMENT_H

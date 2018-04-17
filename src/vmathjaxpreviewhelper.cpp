@@ -1,8 +1,8 @@
 #include "vmathjaxpreviewhelper.h"
 
-#include <QDebug>
 #include <QWebEngineView>
 #include <QWebChannel>
+#include <QApplication>
 
 #include "utils/vutils.h"
 #include "vmathjaxwebdocument.h"
@@ -24,16 +24,30 @@ VMathJaxPreviewHelper::~VMathJaxPreviewHelper()
 void VMathJaxPreviewHelper::doInit()
 {
     Q_ASSERT(!m_initialized);
+    Q_ASSERT(m_parentWidget);
+
     m_initialized = true;
+
+    QWidget *focusWid = QApplication::focusWidget();
 
     m_webView = new QWebEngineView(m_parentWidget);
     connect(m_webView, &QWebEngineView::loadFinished,
             this, [this]() {
                 m_webReady = true;
-            });
+                for (auto const & it : m_pendingFunc) {
+                    it();
+                }
 
+                m_pendingFunc.clear();
+            });
     m_webView->hide();
     m_webView->setFocusPolicy(Qt::NoFocus);
+
+    if (focusWid) {
+        focusWid->setFocus();
+    } else {
+        m_parentWidget->setFocus();
+    }
 
     m_webDoc = new VMathJaxWebDocument(m_webView);
     connect(m_webDoc, &VMathJaxWebDocument::mathjaxPreviewResultReady,
@@ -61,10 +75,6 @@ void VMathJaxPreviewHelper::doInit()
     m_webView->page()->setWebChannel(channel);
 
     m_webView->setHtml(VUtils::generateMathJaxPreviewTemplate(), QUrl("qrc:/resources"));
-
-    while (!m_webReady) {
-        VUtils::sleepWait(100);
-    }
 }
 
 void VMathJaxPreviewHelper::previewMathJax(int p_identifier,
@@ -74,7 +84,39 @@ void VMathJaxPreviewHelper::previewMathJax(int p_identifier,
 {
     init();
 
-    m_webDoc->previewMathJax(p_identifier, p_id, p_timeStamp, p_text);
+    if (!m_webReady) {
+        auto func = std::bind(&VMathJaxWebDocument::previewMathJax,
+                              m_webDoc,
+                              p_identifier,
+                              p_id,
+                              p_timeStamp,
+                              p_text,
+                              false);
+        m_pendingFunc.append(func);
+    } else {
+        m_webDoc->previewMathJax(p_identifier, p_id, p_timeStamp, p_text, false);
+    }
+}
+
+void VMathJaxPreviewHelper::previewMathJaxFromHtml(int p_identifier,
+                                                   int p_id,
+                                                   TimeStamp p_timeStamp,
+                                                   const QString &p_html)
+{
+    init();
+
+    if (!m_webReady) {
+        auto func = std::bind(&VMathJaxWebDocument::previewMathJax,
+                              m_webDoc,
+                              p_identifier,
+                              p_id,
+                              p_timeStamp,
+                              p_html,
+                              true);
+        m_pendingFunc.append(func);
+    } else {
+        m_webDoc->previewMathJax(p_identifier, p_id, p_timeStamp, p_html, true);
+    }
 }
 
 void VMathJaxPreviewHelper::previewDiagram(int p_identifier,
@@ -85,5 +127,16 @@ void VMathJaxPreviewHelper::previewDiagram(int p_identifier,
 {
     init();
 
-    m_webDoc->previewDiagram(p_identifier, p_id, p_timeStamp, p_lang, p_text);
+    if (!m_webReady) {
+        auto func = std::bind(&VMathJaxWebDocument::previewDiagram,
+                              m_webDoc,
+                              p_identifier,
+                              p_id,
+                              p_timeStamp,
+                              p_lang,
+                              p_text);
+        m_pendingFunc.append(func);
+    } else {
+        m_webDoc->previewDiagram(p_identifier, p_id, p_timeStamp, p_lang, p_text);
+    }
 }

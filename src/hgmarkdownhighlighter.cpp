@@ -87,7 +87,10 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
     m_completeTimer->setSingleShot(true);
     m_completeTimer->setInterval(completeWaitTime);
     connect(m_completeTimer, &QTimer::timeout,
-            this, &HGMarkdownHighlighter::highlightCompleted);
+            this, [this]() {
+                updateMathjaxBlocks();
+                emit highlightCompleted();
+            });
 
     connect(document, &QTextDocument::contentsChange,
             this, &HGMarkdownHighlighter::handleContentChange);
@@ -183,7 +186,7 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
             setCurrentBlockState(HighlightBlockState::Verbatim);
             goto exit;
         } else if (m_enableMathjax) {
-            highlightMathJax(curBlock, text);
+            highlightMathJax(text);
         }
     }
 
@@ -520,10 +523,13 @@ static bool intersect(const QList<QPair<int, int>> &p_indices, int &p_start, int
     return false;
 }
 
-void HGMarkdownHighlighter::highlightMathJax(const QTextBlock &p_block, const QString &p_text)
+void HGMarkdownHighlighter::highlightMathJax(const QString &p_text)
 {
     const int blockMarkLength = 2;
     const int inlineMarkLength = 1;
+
+    VTextBlockData *blockData = currentBlockData();
+    Q_ASSERT(blockData);
 
     int startIdx = 0;
     // Next position to search.
@@ -532,8 +538,10 @@ void HGMarkdownHighlighter::highlightMathJax(const QTextBlock &p_block, const QS
 
     QList<QPair<int, int>> blockIdices;
 
+    bool fromPreBlock = true;
     // Mathjax block formula.
     if (state != HighlightBlockState::MathjaxBlock) {
+        fromPreBlock = false;
         startIdx = m_mathjaxBlockExp.indexIn(p_text);
         pos = startIdx + m_mathjaxBlockExp.matchedLength();
         startIdx = pos - blockMarkLength;
@@ -542,14 +550,56 @@ void HGMarkdownHighlighter::highlightMathJax(const QTextBlock &p_block, const QS
     while (startIdx >= 0) {
         int endIdx = m_mathjaxBlockExp.indexIn(p_text, pos);
         int mathLength = 0;
+        MathjaxInfo info;
         if (endIdx == -1) {
             setCurrentBlockState(HighlightBlockState::MathjaxBlock);
             mathLength = p_text.length() - startIdx;
+            pos = startIdx + mathLength;
+
+            info.m_previewedAsBlock = false;
+            info.m_index = startIdx,
+            info.m_length = mathLength;
+            if (fromPreBlock) {
+                VTextBlockData *preBlockData = previousBlockData();
+                Q_ASSERT(preBlockData);
+                const MathjaxInfo &preInfo = preBlockData->getPendingMathjax();
+                info.m_text = preInfo.text() + "\n" + p_text.mid(startIdx, mathLength);
+            } else {
+                info.m_text = p_text.mid(startIdx, mathLength);
+            }
+
+            blockData->setPendingMathjax(info);
         } else {
+            // Found end marker of a formula.
             mathLength = endIdx - startIdx + m_mathjaxBlockExp.matchedLength();
+            pos = startIdx + mathLength;
+
+            info.m_previewedAsBlock = false;
+            info.m_index = startIdx;
+            info.m_length = mathLength;
+            if (fromPreBlock) {
+                // A cross-block formula.
+                if (pos >= p_text.length()) {
+                    info.m_previewedAsBlock = true;
+                }
+
+                VTextBlockData *preBlockData = previousBlockData();
+                Q_ASSERT(preBlockData);
+                const MathjaxInfo &preInfo = preBlockData->getPendingMathjax();
+                info.m_text = preInfo.text() + "\n" + p_text.mid(startIdx, mathLength);
+            } else {
+                // A formula within one block.
+                if (pos >= p_text.length() && startIdx == 0) {
+                    info.m_previewedAsBlock = true;
+                }
+
+                info.m_text = p_text.mid(startIdx, mathLength);
+            }
+
+            blockData->addMathjax(info);
         }
 
-        pos = startIdx + mathLength;
+        fromPreBlock = false;
 
         blockIdices.append(QPair<int, int>(startIdx, pos));
 
@@ -562,7 +612,9 @@ void HGMarkdownHighlighter::highlightMathJax(const QTextBlock &p_block, const QS
     // Mathjax inline formula.
     startIdx = 0;
     pos = 0;
+    fromPreBlock = true;
     if (state != HighlightBlockState::MathjaxInline) {
+        fromPreBlock = false;
         startIdx = m_mathjaxInlineExp.indexIn(p_text);
         pos = startIdx + m_mathjaxInlineExp.matchedLength();
         startIdx = pos - inlineMarkLength;
@@ -582,8 +634,47 @@ void HGMarkdownHighlighter::highlightMathJax(const QTextBlock &p_block, const QS
         // Check if it intersect with blocks.
         if (!intersect(blockIdices, startIdx, pos)) {
             // A valid inline mathjax.
+            MathjaxInfo info;
             if (endIdx == -1) {
                 setCurrentBlockState(HighlightBlockState::MathjaxInline);
+
+                info.m_previewedAsBlock = false;
+                info.m_index = startIdx,
+                info.m_length = mathLength;
+                if (fromPreBlock) {
+                    VTextBlockData *preBlockData = previousBlockData();
+                    Q_ASSERT(preBlockData);
+                    const MathjaxInfo &preInfo = preBlockData->getPendingMathjax();
+                    info.m_text = preInfo.text() + "\n" + p_text.mid(startIdx, mathLength);
+                } else {
+                    info.m_text = p_text.mid(startIdx, mathLength);
+                }
+
+                blockData->setPendingMathjax(info);
+            } else {
+                info.m_previewedAsBlock = false;
+                info.m_index = startIdx;
+                info.m_length = mathLength;
+                if (fromPreBlock) {
+                    // A cross-block formula.
+                    if (pos >= p_text.length()) {
+                        info.m_previewedAsBlock = true;
+                    }
+
+                    VTextBlockData *preBlockData = previousBlockData();
+                    Q_ASSERT(preBlockData);
+                    const MathjaxInfo &preInfo = preBlockData->getPendingMathjax();
+                    info.m_text = preInfo.text() + "\n" + p_text.mid(startIdx, mathLength);
+                } else {
+                    // A formula within one block.
+                    if (pos >= p_text.length() && startIdx == 0) {
+                        info.m_previewedAsBlock = true;
+                    }
+
+                    info.m_text = p_text.mid(startIdx, mathLength);
+                }
+
+                blockData->addMathjax(info);
             }
 
             setFormat(startIdx, mathLength, m_mathjaxFormat);
@@ -599,6 +690,8 @@ void HGMarkdownHighlighter::highlightMathJax(const QTextBlock &p_block, const QS
 
             startIdx = pos - inlineMarkLength;
         }
+
+        fromPreBlock = false;
     }
 }
 
@@ -813,12 +906,8 @@ bool HGMarkdownHighlighter::updateCodeBlocks()
     }
 
     m_numOfCodeBlockHighlightsToRecv = codeBlocks.size();
-    if (m_numOfCodeBlockHighlightsToRecv > 0) {
-        emit codeBlocksUpdated(codeBlocks);
-        return true;
-    } else {
-        return false;
-    }
+    emit codeBlocksUpdated(codeBlocks);
+    return m_numOfCodeBlockHighlightsToRecv > 0;
 }
 
 static bool compHLUnitStyle(const HLUnitStyle &a, const HLUnitStyle &b)
@@ -976,4 +1065,30 @@ void HGMarkdownHighlighter::highlightHeaderFast(int p_blockNumber, const QString
             setFormat(info.m_length, p_text.size() - info.m_length, m_headerStyles[info.m_level]);
         }
     }
+}
+
+void HGMarkdownHighlighter::updateMathjaxBlocks()
+{
+    if (!m_enableMathjax) {
+        return;
+    }
+
+    QVector<VMathjaxBlock> blocks;
+    QTextBlock bl = document->firstBlock();
+    while (bl.isValid()) {
+        VTextBlockData *data = static_cast<VTextBlockData *>(bl.userData());
+        if (!data) {
+            bl = bl.next();
+            continue;
+        }
+
+        const QVector<MathjaxInfo> &info = data->getMathjax();
+        for (auto const & it : info) {
+            blocks.append(VMathjaxBlock(bl.blockNumber(), it));
+        }
+
+        bl = bl.next();
+    }
+
+    emit mathjaxBlocksUpdated(blocks);
 }

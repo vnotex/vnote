@@ -1,7 +1,5 @@
 #include "vmathjaxwebdocument.h"
 
-#include <QDebug>
-
 VMathJaxWebDocument::VMathJaxWebDocument(QObject *p_parent)
     : QObject(p_parent)
 {
@@ -10,9 +8,10 @@ VMathJaxWebDocument::VMathJaxWebDocument(QObject *p_parent)
 void VMathJaxWebDocument::previewMathJax(int p_identifier,
                                          int p_id,
                                          TimeStamp p_timeStamp,
-                                         const QString &p_text)
+                                         const QString &p_text,
+                                         bool p_isHtml)
 {
-    emit requestPreviewMathJax(p_identifier, p_id, p_timeStamp, p_text);
+    emit requestPreviewMathJax(p_identifier, p_id, p_timeStamp, p_text, p_isHtml);
 }
 
 void VMathJaxWebDocument::mathjaxResultReady(int p_identifier,

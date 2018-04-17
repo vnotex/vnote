@@ -258,9 +258,10 @@ QString VPreviewManager::imageResourceName(const ImageLinkInfo &p_link)
     return name;
 }
 
-QString VPreviewManager::imageResourceNameFromCodeBlock(const QSharedPointer<VImageToPreview> &p_image)
+QString VPreviewManager::imageResourceNameForSource(PreviewSource p_source,
+                                                    const QSharedPointer<VImageToPreview> &p_image)
 {
-    QString name = "CODE_BLOCK_" + p_image->m_name;
+    QString name = QString::number((int)p_source) + "_" + p_image->m_name;
     if (m_editor->containsImage(name)) {
         return name;
     }
@@ -371,7 +372,7 @@ void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
             continue;
         }
 
-        QString name = imageResourceNameFromCodeBlock(img);
+        QString name = imageResourceNameForSource(p_source, img);
         if (name.isEmpty()) {
             continue;
         }
@@ -420,7 +421,6 @@ void VPreviewManager::clearBlockObsoletePreviewInfo(long long p_timeStamp,
     QSet<int> affectedBlocks;
     QVector<int> obsoleteBlocks;
     const QSet<int> &blocks = m_highlighter->getPossiblePreviewBlocks();
-    qDebug() << "possible preview blocks" << blocks;
     for (auto i : blocks) {
         QTextBlock block = m_document->findBlockByNumber(i);
         if (!block.isValid()) {
@@ -472,6 +472,21 @@ void VPreviewManager::updateCodeBlocks(const QVector<QSharedPointer<VImageToPrev
     clearBlockObsoletePreviewInfo(ts, PreviewSource::CodeBlock);
 
     clearObsoleteImages(ts, PreviewSource::CodeBlock);
+}
+
+void VPreviewManager::updateMathjaxBlocks(const QVector<QSharedPointer<VImageToPreview> > &p_images)
+{
+    if (!m_previewEnabled) {
+        return;
+    }
+
+    TS ts = ++timeStamp(PreviewSource::MathjaxBlock);
+
+    updateBlockPreviewInfo(ts, PreviewSource::MathjaxBlock, p_images);
+
+    clearBlockObsoletePreviewInfo(ts, PreviewSource::MathjaxBlock);
+
+    clearObsoleteImages(ts, PreviewSource::MathjaxBlock);
 }
 
 void VPreviewManager::checkBlocksForObsoletePreview(const QList<int> &p_blocks)

@@ -21,9 +21,15 @@ public:
 
     explicit CodeBlockPreviewInfo(const VCodeBlock &p_cb);
 
-    void clearImageData();
+    void clearImageData()
+    {
+        m_imgData.clear();
+        m_imgDataBa.clear();
+        m_inplacePreview.clear();
+    }
 
-    void updateNonContent(const QTextDocument *p_doc, const VCodeBlock &p_cb);
+    void updateNonContent(const QTextDocument *p_doc,
+                          const VCodeBlock &p_cb);
 
     void updateInplacePreview(const VEditor *p_editor, const QTextDocument *p_doc);
 
@@ -151,7 +157,6 @@ private slots:
                                    const QByteArray &p_data);
 
 private:
-
     bool isPreviewLang(const QString &p_lang) const;
 
     // Get image data for this code block for inplace preview.

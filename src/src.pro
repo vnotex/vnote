@@ -130,7 +130,8 @@ SOURCES += main.cpp\
     vgraphvizhelper.cpp \
     vlivepreviewhelper.cpp \
     vmathjaxpreviewhelper.cpp \
-    vmathjaxwebdocument.cpp
+    vmathjaxwebdocument.cpp \
+    vmathjaxinplacepreviewhelper.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -251,7 +252,8 @@ HEADERS  += vmainwindow.h \
     vgraphvizhelper.h \
     vlivepreviewhelper.h \
     vmathjaxpreviewhelper.h \
-    vmathjaxwebdocument.h
+    vmathjaxwebdocument.h \
+    vmathjaxinplacepreviewhelper.h
 
 RESOURCES += \
     vnote.qrc \

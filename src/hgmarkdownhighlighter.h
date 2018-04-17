@@ -69,6 +69,52 @@ struct VCodeBlock
     }
 };
 
+
+struct VMathjaxBlock
+{
+    VMathjaxBlock()
+        : m_blockNumber(-1),
+          m_previewedAsBlock(false),
+          m_index(-1),
+          m_length(-1)
+    {
+    }
+
+    VMathjaxBlock(int p_blockNumber, const MathjaxInfo &p_info)
+        : m_blockNumber(p_blockNumber),
+          m_previewedAsBlock(p_info.m_previewedAsBlock),
+          m_index(p_info.m_index),
+          m_length(p_info.m_length),
+          m_text(p_info.m_text)
+    {
+    }
+
+    bool equalContent(const VMathjaxBlock &p_block) const
+    {
+        return m_text == p_block.m_text;
+    }
+
+    void updateNonContent(const VMathjaxBlock &p_block)
+    {
+        m_blockNumber = p_block.m_blockNumber;
+        m_previewedAsBlock = p_block.m_previewedAsBlock;
+        m_index = p_block.m_index;
+        m_length = p_block.m_length;
+    }
+
+    int m_blockNumber;
+
+    bool m_previewedAsBlock;
+
+    // Start index within the block.
+    int m_index;
+
+    int m_length;
+
+    QString m_text;
+};
+
+
 // Highlight unit with global position and string style name.
 struct HLUnitPos
 {
@@ -168,6 +214,9 @@ signals:
 
     // Emitted when header regions have been fetched from a new parsing result.
     void headersUpdated(const QVector<VElementRegion> &p_headerRegions);
+
+    // Emitted when Mathjax blocks updated.
+    void mathjaxBlocksUpdated(const QVector<VMathjaxBlock> &p_mathjaxBlocks);
 
 protected:
     void highlightBlock(const QString &text) Q_DECL_OVERRIDE;
@@ -272,7 +321,7 @@ private:
 
     void highlightCodeBlock(const QTextBlock &p_block, const QString &p_text);
 
-    void highlightMathJax(const QTextBlock &p_block, const QString &p_text);
+    void highlightMathJax(const QString &p_text);
 
     // Highlight links using regular expression.
     // PEG Markdown Highlight treat URLs with spaces illegal. This function is
@@ -294,6 +343,8 @@ private:
     // Return true if there are fenced code blocks and it will call rehighlight() later.
     // Return false if there is none.
     bool updateCodeBlocks();
+
+    void updateMathjaxBlocks();
 
     // Fetch all the HTML comment regions from parsing result.
     void initHtmlCommentRegionsFromResult();

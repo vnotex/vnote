@@ -39,7 +39,8 @@ VMdEditor::VMdEditor(VFile *p_file,
       m_freshEdit(true),
       m_textToHtmlDialog(NULL),
       m_zoomDelta(0),
-      m_editTab(NULL)
+      m_editTab(NULL),
+      m_copyTimeStamp(0)
 {
     Q_ASSERT(p_file->getDocType() == DocType::Markdown);
 
@@ -1124,6 +1125,8 @@ void VMdEditor::updateInitAndInsertedImages(bool p_fileChanged, UpdateAction p_a
 
 void VMdEditor::handleCopyAsAction(QAction *p_act)
 {
+    ++m_copyTimeStamp;
+
     QTextCursor cursor = textCursor();
     Q_ASSERT(cursor.hasSelection());
 
@@ -1134,7 +1137,7 @@ void VMdEditor::handleCopyAsAction(QAction *p_act)
     m_textToHtmlDialog = new VCopyTextAsHtmlDialog(text, p_act->data().toString(), this);
 
     // For Hoedown, we use marked.js to convert the text to have a general interface.
-    emit requestTextToHtml(text);
+    emit requestTextToHtml(text, 0, m_copyTimeStamp);
 
     m_textToHtmlDialog->exec();
 
@@ -1142,11 +1145,13 @@ void VMdEditor::handleCopyAsAction(QAction *p_act)
     m_textToHtmlDialog = NULL;
 }
 
-void VMdEditor::textToHtmlFinished(const QString &p_text,
+void VMdEditor::textToHtmlFinished(int p_id,
+                                   int p_timeStamp,
                                    const QUrl &p_baseUrl,
                                    const QString &p_html)
 {
-    if (m_textToHtmlDialog && m_textToHtmlDialog->getText() == p_text) {
+    Q_UNUSED(p_id);
+    if (m_textToHtmlDialog && p_timeStamp == m_copyTimeStamp) {
         m_textToHtmlDialog->setConvertedHtml(p_baseUrl, p_html);
     }
 }

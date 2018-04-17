@@ -535,6 +535,9 @@ qreal VUtils::calculateScaleFactor()
         factor = dpi / refDpi;
         if (factor < 1) {
             factor = 1;
+        } else {
+            // Keep only two digits after the dot.
+            factor = (int)(factor * 100) / 100.0;
         }
     }
 

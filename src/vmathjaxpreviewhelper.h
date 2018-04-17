@@ -2,12 +2,16 @@
 #define VMATHJAXPREVIEWHELPER_H
 
 #include <QObject>
+#include <functional>
+#include <QVector>
 
 #include "vconstants.h"
 
 class QWebEngineView;
 class VMathJaxWebDocument;
 class QWidget;
+
+typedef std::function<void(void)> PendingFunc;
 
 class VMathJaxPreviewHelper : public QObject
 {
@@ -25,6 +29,8 @@ public:
     // @p_id: internal id for each caller;
     // @p_text: raw text of the MathJax script.
     void previewMathJax(int p_identifier, int p_id, TimeStamp p_timeStamp, const QString &p_text);
+
+    void previewMathJaxFromHtml(int p_identitifer, int p_id, TimeStamp p_timeStamp, const QString &p_html);
 
     // Preview @p_text and return PNG data asynchronously.
     // @p_identifier: identifier the caller registered;
@@ -66,6 +72,8 @@ private:
     VMathJaxWebDocument *m_webDoc;
 
     bool m_webReady;
+
+    QVector<PendingFunc> m_pendingFunc;
 };
 
 inline int VMathJaxPreviewHelper::registerIdentifier()

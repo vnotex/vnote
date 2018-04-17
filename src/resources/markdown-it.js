@@ -140,14 +140,14 @@ var highlightText = function(text, id, timeStamp) {
     content.highlightTextCB(html, id, timeStamp);
 };
 
-var textToHtml = function(text) {
+var textToHtml = function(identifier, id, timeStamp, text, inlineStyle) {
     var html = mdit.render(text);
-    var container = textHtmlDiv;
-    container.innerHTML = html;
+    if (inlineStyle) {
+        var container = textHtmlDiv;
+        container.innerHTML = html;
+        html = getHtmlWithInlineStyles(container);
+        container.innerHTML = "";
+    }
 
-    html = getHtmlWithInlineStyles(container);
-
-    container.innerHTML = "";
-
-    content.textToHtmlCB(text, html);
+    content.textToHtmlCB(identifier, id, timeStamp, html);
 };

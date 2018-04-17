@@ -17,29 +17,72 @@ new QWebChannel(qt.webChannelTransport,
         channelInitialized = true;
     });
 
-var previewMathJax = function(identifier, id, timeStamp, text) {
-    if (text.length == 0) {
+var timeStamps = new Map();
+
+var htmlToElement = function(html) {
+    var template = document.createElement('template');
+    html = html.trim();
+    template.innerHTML = html;
+    return template.content.firstChild;
+};
+
+var isEmptyMathJax = function(text) {
+    return text.replace(/\$/g, '').trim().length == 0;
+};
+
+var previewMathJax = function(identifier, id, timeStamp, text, isHtml) {
+    timeStamps.set(identifier, timeStamp);
+
+    if (isEmptyMathJax(text)) {
+        content.mathjaxResultReady(identifier, id, timeStamp, 'png', '');
         return;
     }
 
-    var p = document.createElement('p');
-    p.textContent = text;
+    var p = null;
+    if (isHtml) {
+        p = htmlToElement(text);
+        if (isEmptyMathJax(p.textContent)) {
+            p = null;
+        }
+    } else {
+        p = document.createElement('p');
+        p.textContent = text;
+    }
+
+    if (!p) {
+        content.mathjaxResultReady(identifier, id, timeStamp, 'png', '');
+        return;
+    }
+
     contentDiv.appendChild(p);
+
+    var isBlock = false;
+    if (text.indexOf('$$') !== -1) {
+        isBlock = true;
+    }
 
     try {
         MathJax.Hub.Queue(["Typeset",
                            MathJax.Hub,
                            p,
-                           postProcessMathJax.bind(undefined, identifier, id, timeStamp, p)]);
+                           [postProcessMathJax, identifier, id, timeStamp, p, isBlock]]);
     } catch (err) {
         console.log("err: " + err);
+        content.mathjaxResultReady(identifier, id, timeStamp, 'png', '');
         contentDiv.removeChild(p);
         delete p;
     }
 };
 
-var postProcessMathJax = function(identifier, id, timeStamp, container) {
-    domtoimage.toPng(container, { height: container.clientHeight * 1.5 }).then(function (dataUrl) {
+var postProcessMathJax = function(identifier, id, timeStamp, container, isBlock) {
+    if (timeStamps.get(identifier) != timeStamp) {
+        contentDiv.removeChild(container);
+        delete container;
+        return;
+    }
+
+    var hei = (isBlock ? container.clientHeight * 1.5 : container.clientHeight * 1.8) + 5;
+    domtoimage.toPng(container, { height: hei }).then(function (dataUrl) {
         var png = dataUrl.substring(dataUrl.indexOf(',') + 1);
         content.mathjaxResultReady(identifier, id, timeStamp, 'png', png);
 
@@ -47,6 +90,7 @@ var postProcessMathJax = function(identifier, id, timeStamp, container) {
         delete container;
     }).catch(function (err) {
         console.log("err: " + err);
+        content.mathjaxResultReady(identifier, id, timeStamp, 'png', '');
         contentDiv.removeChild(container);
         delete container;
     });

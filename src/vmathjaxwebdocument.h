@@ -11,7 +11,11 @@ class VMathJaxWebDocument : public QObject
 public:
     explicit VMathJaxWebDocument(QObject *p_parent = nullptr);
 
-    void previewMathJax(int p_identifier, int p_id, TimeStamp p_timeStamp, const QString &p_text);
+    void previewMathJax(int p_identifier,
+                        int p_id,
+                        TimeStamp p_timeStamp,
+                        const QString &p_text,
+                        bool p_isHtml);
 
     void previewDiagram(int p_identifier,
                         int p_id,
@@ -38,7 +42,8 @@ signals:
     void requestPreviewMathJax(int p_identifier,
                                int p_id,
                                unsigned long long p_timeStamp,
-                               const QString &p_text);
+                               const QString &p_text,
+                               bool p_isHtml);
 
     void requestPreviewDiagram(int p_identifier,
                                int p_id,

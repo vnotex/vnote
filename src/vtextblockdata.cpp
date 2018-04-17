@@ -35,13 +35,11 @@ bool VTextBlockData::insertPreviewInfo(VPreviewInfo *p_info)
             *it = p_info;
             inserted = true;
             tsUpdated = true;
-            qDebug() << "update eixsting image's timestamp" << p_info->m_imageInfo.toString();
             break;
         } else if (p_info->m_imageInfo.intersect(ele->m_imageInfo)) {
             // The new one intersect with an old one.
             // Remove the old one.
             Q_ASSERT(ele->m_timeStamp < p_info->m_timeStamp);
-            qDebug() << "remove intersecting old image" << ele->m_imageInfo.toString();
             delete ele;
             it = m_previews.erase(it);
         } else {

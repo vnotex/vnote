@@ -23,6 +23,7 @@
 #include "vinsertselector.h"
 #include "vsnippetlist.h"
 #include "vlivepreviewhelper.h"
+#include "vmathjaxinplacepreviewhelper.h"
 
 extern VMainWindow *g_mainWin;
 
@@ -39,7 +40,8 @@ VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
       m_enableHeadingSequence(false),
       m_backupFileChecked(false),
       m_mode(Mode::InvalidMode),
-      m_livePreviewHelper(NULL)
+      m_livePreviewHelper(NULL),
+      m_mathjaxPreviewHelper(NULL)
 {
     V_ASSERT(m_file->getDocType() == DocType::Markdown);
 
@@ -412,6 +414,7 @@ void VMdTab::setupMarkdownViewer()
     page->setBackgroundColor(Qt::transparent);
 
     m_document = new VDocument(m_file, m_webViewer);
+    m_documentID = m_document->registerIdentifier();
 
     QWebChannel *channel = new QWebChannel(m_webViewer);
     channel->registerObject(QStringLiteral("content"), m_document);
@@ -435,9 +438,13 @@ void VMdTab::setupMarkdownViewer()
                 tabIsReady(TabReady::ReadMode);
             });
     connect(m_document, &VDocument::textToHtmlFinished,
-            this, [this](const QString &p_text, const QString &p_html) {
+            this, [this](int p_identitifer, int p_id, int p_timeStamp, const QString &p_html) {
                 Q_ASSERT(m_editor);
-                m_editor->textToHtmlFinished(p_text, m_webViewer->url(), p_html);
+                if (m_documentID != p_identitifer) {
+                    return;
+                }
+
+                m_editor->textToHtmlFinished(p_id, p_timeStamp, m_webViewer->url(), p_html);
             });
     connect(m_document, &VDocument::wordCountInfoUpdated,
             this, [this]() {
@@ -526,6 +533,17 @@ void VMdTab::setupMarkdownEditor()
     connect(m_livePreviewHelper, &VLivePreviewHelper::checkBlocksForObsoletePreview,
             m_editor->getPreviewManager(), &VPreviewManager::checkBlocksForObsoletePreview);
     m_livePreviewHelper->setInplacePreviewEnabled(m_editor->getPreviewManager()->isPreviewEnabled());
+
+    m_mathjaxPreviewHelper = new VMathJaxInplacePreviewHelper(m_editor, m_document, this);
+    connect(m_editor->getMarkdownHighlighter(), &HGMarkdownHighlighter::mathjaxBlocksUpdated,
+            m_mathjaxPreviewHelper, &VMathJaxInplacePreviewHelper::updateMathjaxBlocks);
+    connect(m_editor->getPreviewManager(), &VPreviewManager::previewEnabledChanged,
+            m_mathjaxPreviewHelper, &VMathJaxInplacePreviewHelper::setEnabled);
+    connect(m_mathjaxPreviewHelper, &VMathJaxInplacePreviewHelper::inplacePreviewMathjaxBlockUpdated,
+            m_editor->getPreviewManager(), &VPreviewManager::updateMathjaxBlocks);
+    connect(m_mathjaxPreviewHelper, &VMathJaxInplacePreviewHelper::checkBlocksForObsoletePreview,
+            m_editor->getPreviewManager(), &VPreviewManager::checkBlocksForObsoletePreview);
+    m_mathjaxPreviewHelper->setEnabled(m_editor->getPreviewManager()->isPreviewEnabled());
 }
 
 void VMdTab::updateOutlineFromHtml(const QString &p_tocHtml)
@@ -1129,7 +1147,7 @@ void VMdTab::handleFileOrDirectoryChange(bool p_isFile, UpdateAction p_act)
     }
 }
 
-void VMdTab::textToHtmlViaWebView(const QString &p_text)
+void VMdTab::textToHtmlViaWebView(const QString &p_text, int p_id, int p_timeStamp)
 {
     int maxRetry = 50;
     while (!m_document->isReadyToTextToHtml() && maxRetry > 0) {
@@ -1143,7 +1161,7 @@ void VMdTab::textToHtmlViaWebView(const QString &p_text)
         return;
     }
 
-    m_document->textToHtmlAsync(p_text);
+    m_document->textToHtmlAsync(m_documentID, p_id, p_timeStamp, p_text, true);
 }
 
 void VMdTab::handleVimCmdCommandCancelled()

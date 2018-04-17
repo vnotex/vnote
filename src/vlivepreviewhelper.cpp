@@ -39,13 +39,6 @@ CodeBlockPreviewInfo::CodeBlockPreviewInfo(const VCodeBlock &p_cb)
 {
 }
 
-void CodeBlockPreviewInfo::clearImageData()
-{
-    m_imgData.clear();
-    m_imgDataBa.clear();
-    m_inplacePreview.clear();
-}
-
 void CodeBlockPreviewInfo::updateNonContent(const QTextDocument *p_doc,
                                             const VCodeBlock &p_cb)
 {
@@ -60,6 +53,7 @@ void CodeBlockPreviewInfo::updateNonContent(const QTextDocument *p_doc,
         m_inplacePreview->m_endPos = block.position() + block.length();
         m_inplacePreview->m_blockPos = block.position();
         m_inplacePreview->m_blockNumber = m_codeBlock.m_endBlock;
+        // Padding is not changed since content is not changed.
     } else {
         m_inplacePreview->clear();
     }
@@ -143,7 +137,8 @@ void VLivePreviewHelper::updateCodeBlocks(const QVector<VCodeBlock> &p_codeBlock
     m_cbIndex = -1;
     int cursorBlock = m_editor->textCursorW().block().blockNumber();
     int idx = 0;
-    bool needUpdate = true;
+    bool needUpdate = m_livePreviewEnabled;
+    bool manualInplacePreview = m_inplacePreviewEnabled;
     for (auto const & vcb : p_codeBlocks) {
         if (!isPreviewLang(vcb.m_lang)) {
             continue;
@@ -165,6 +160,7 @@ void VLivePreviewHelper::updateCodeBlocks(const QVector<VCodeBlock> &p_codeBlock
         if (m_inplacePreviewEnabled
             && !m_codeBlocks[idx].inplacePreviewReady()) {
             processForInplacePreview(idx);
+            manualInplacePreview = false;
         }
 
         if (m_livePreviewEnabled
@@ -180,9 +176,17 @@ void VLivePreviewHelper::updateCodeBlocks(const QVector<VCodeBlock> &p_codeBlock
         ++idx;
     }
 
-    m_codeBlocks.resize(idx);
+    if (idx == m_codeBlocks.size()) {
+        manualInplacePreview = false;
+    } else {
+        m_codeBlocks.resize(idx);
+    }
 
-    if (m_livePreviewEnabled && needUpdate) {
+    if (manualInplacePreview) {
+        updateInplacePreview();
+    }
+
+    if (needUpdate) {
         updateLivePreview();
     }
 }
@@ -283,8 +287,12 @@ void VLivePreviewHelper::setLivePreviewEnabled(bool p_enabled)
     m_livePreviewEnabled = p_enabled;
     if (!m_livePreviewEnabled) {
         m_cbIndex = -1;
-        m_codeBlocks.clear();
         m_document->previewCodeBlock(-1, "", "", true);
+
+        if (!m_inplacePreviewEnabled) {
+            m_codeBlocks.clear();
+            updateInplacePreview();
+        }
     }
 }
 
@@ -295,13 +303,11 @@ void VLivePreviewHelper::setInplacePreviewEnabled(bool p_enabled)
     }
 
     m_inplacePreviewEnabled = p_enabled;
-    if (!m_livePreviewEnabled) {
-        for (auto & cb : m_codeBlocks) {
-            cb.clearImageData();
-        }
-
-        updateInplacePreview();
+    if (!m_inplacePreviewEnabled && !m_livePreviewEnabled) {
+        m_codeBlocks.clear();
     }
+
+    updateInplacePreview();
 }
 
 void VLivePreviewHelper::localAsyncResultReady(int p_id,
@@ -356,6 +362,7 @@ void VLivePreviewHelper::processForInplacePreview(int p_idx)
 {
     CodeBlockPreviewInfo &cb = m_codeBlocks[p_idx];
     const VCodeBlock &vcb = cb.codeBlock();
+    Q_ASSERT(!(cb.hasImageData() || cb.hasImageDataBa()));
     if (vcb.m_lang == "dot") {
         if (!m_graphvizHelper) {
             m_graphvizHelper = new VGraphvizHelper(this);
@@ -363,15 +370,10 @@ void VLivePreviewHelper::processForInplacePreview(int p_idx)
                     this, &VLivePreviewHelper::localAsyncResultReady);
         }
 
-        if (cb.hasImageData()) {
-            cb.updateInplacePreview(m_editor, m_doc);
-            updateInplacePreview();
-        } else {
-            m_graphvizHelper->processAsync(p_idx | LANG_PREFIX_GRAPHVIZ | TYPE_INPLACE_PREVIEW,
-                                           m_timeStamp,
-                                           "svg",
-                                           removeFence(vcb.m_text));
-        }
+        m_graphvizHelper->processAsync(p_idx | LANG_PREFIX_GRAPHVIZ | TYPE_INPLACE_PREVIEW,
+                                       m_timeStamp,
+                                       "svg",
+                                       removeFence(vcb.m_text));
     } else if (vcb.m_lang == "puml" && m_plantUMLMode == PlantUMLMode::LocalPlantUML) {
         if (!m_plantUMLHelper) {
             m_plantUMLHelper = new VPlantUMLHelper(this);
@@ -379,15 +381,10 @@ void VLivePreviewHelper::processForInplacePreview(int p_idx)
                     this, &VLivePreviewHelper::localAsyncResultReady);
         }
 
-        if (cb.hasImageData()) {
-            cb.updateInplacePreview(m_editor, m_doc);
-            updateInplacePreview();
-        } else {
-            m_plantUMLHelper->processAsync(p_idx | LANG_PREFIX_PLANTUML | TYPE_INPLACE_PREVIEW,
-                                           m_timeStamp,
-                                           "svg",
-                                           removeFence(vcb.m_text));
-        }
+        m_plantUMLHelper->processAsync(p_idx | LANG_PREFIX_PLANTUML | TYPE_INPLACE_PREVIEW,
+                                       m_timeStamp,
+                                       "svg",
+                                       removeFence(vcb.m_text));
     } else if (vcb.m_lang == "flow"
                || vcb.m_lang == "flowchart") {
         m_mathJaxHelper->previewDiagram(m_mathJaxID,

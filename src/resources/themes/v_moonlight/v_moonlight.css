@@ -23,15 +23,15 @@ p {
 }
 
 h1 {
-    font-size: 36px;
-}
-
-h2 {
     font-size: 30px;
 }
 
-h3 {
+h2 {
     font-size: 26px;
+}
+
+h3 {
+    font-size: 24px;
 }
 
 h4 {

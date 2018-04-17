@@ -17,6 +17,7 @@ class QTimer;
 class QWebEngineDownloadItem;
 class QSplitter;
 class VLivePreviewHelper;
+class VMathJaxInplacePreviewHelper;
 
 class VMdTab : public VEditTab
 {
@@ -218,7 +219,7 @@ private:
     // updateStatus() with only cursor position information.
     void updateCursorStatus();
 
-    void textToHtmlViaWebView(const QString &p_text);
+    void textToHtmlViaWebView(const QString &p_text, int p_id, int p_timeStamp);
 
     bool executeVimCommandInWebView(const QString &p_cmd);
 
@@ -253,6 +254,9 @@ private:
     QSharedPointer<WebViewState> m_previewWebViewState;
 
     VLivePreviewHelper *m_livePreviewHelper;
+    VMathJaxInplacePreviewHelper *m_mathjaxPreviewHelper;
+
+    int m_documentID;
 };
 
 inline VMdEditor *VMdTab::getEditor()

@@ -79,7 +79,7 @@ public:
 public slots:
     bool jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat) Q_DECL_OVERRIDE;
 
-    void textToHtmlFinished(const QString &p_text, const QUrl &p_baseUrl, const QString &p_html);
+    void textToHtmlFinished(int p_id, int p_timeStamp, const QUrl &p_baseUrl, const QString &p_html);
 
 // Wrapper functions for QPlainTextEdit/QTextEdit.
 public:
@@ -194,7 +194,7 @@ signals:
     void statusChanged();
 
     // Request to convert @p_text to Html.
-    void requestTextToHtml(const QString &p_text);
+    void requestTextToHtml(const QString &p_text, int p_id, int p_timeStamp);
 
 protected:
     void updateFontAndPalette() Q_DECL_OVERRIDE;
@@ -274,6 +274,8 @@ private:
     int m_zoomDelta;
 
     VEditTab *m_editTab;
+
+    int m_copyTimeStamp;
 };
 
 inline HGMarkdownHighlighter *VMdEditor::getMarkdownHighlighter() const

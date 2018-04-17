@@ -9,6 +9,7 @@ enum class PreviewSource
 {
     ImageLink = 0,
     CodeBlock,
+    MathjaxBlock,
     MaxNumberOfSources
 };
 
@@ -133,7 +134,7 @@ struct MathjaxInfo
 {
 public:
     MathjaxInfo()
-        : m_isBlock(false),
+        : m_previewedAsBlock(false),
           m_index(-1),
           m_length(0)
     {
@@ -145,26 +146,41 @@ public:
         return m_index >= 0 && m_length > 0;
     }
 
-    bool isBlock() const
+    bool previewedAsBlock() const
     {
-        return m_isBlock;
+        return m_previewedAsBlock;
     }
 
     void clear()
     {
-        m_isBlock = false;
+        m_previewedAsBlock = false;
         m_index = -1;
         m_length = 0;
     }
 
-    // Inline or block formula.
-    bool m_isBlock;
+    const QString &text() const
+    {
+        return m_text;
+    }
+
+    QString toString() const
+    {
+        return QString("MathjaxInfo %1 (%2,%3) %4").arg(m_previewedAsBlock)
+                                                   .arg(m_index)
+                                                   .arg(m_length)
+                                                   .arg(m_text);
+    }
+
+    // Whether it should be previewed as block or not.
+    bool m_previewedAsBlock;
 
     // Start index wihtin block, including the start mark.
     int m_index;
 
     // Length of this mathjax, including the end mark.
     int m_length;
+
+    QString m_text;
 };
 
 
@@ -198,7 +214,7 @@ public:
 
     void setPendingMathjax(const MathjaxInfo &p_info);
 
-    const QVector<MathjaxInfo> getMathjax() const;
+    const QVector<MathjaxInfo> &getMathjax() const;
 
     void addMathjax(const MathjaxInfo &p_info);
 
@@ -250,7 +266,7 @@ inline void VTextBlockData::setPendingMathjax(const MathjaxInfo &p_info)
     m_pendingMathjax = p_info;
 }
 
-inline const QVector<MathjaxInfo> VTextBlockData::getMathjax() const
+inline const QVector<MathjaxInfo> &VTextBlockData::getMathjax() const
 {
     return m_mathjax;
 }
