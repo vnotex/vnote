@@ -413,10 +413,10 @@ void VEditArea::saveFile()
     win->saveFile();
 }
 
-void VEditArea::readFile()
+void VEditArea::readFile(bool p_discard)
 {
     VEditWindow *win = getWindow(curWindowIndex);
-    win->readFile();
+    win->readFile(p_discard);
 }
 
 void VEditArea::saveAndReadFile()

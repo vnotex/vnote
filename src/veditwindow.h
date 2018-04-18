@@ -37,7 +37,9 @@ public:
     bool closeFile(const VNotebook *p_notebook, bool p_forced);
     void editFile();
     void saveFile();
-    void readFile();
+
+    void readFile(bool p_discard = false);
+
     void saveAndReadFile();
     bool closeAllFiles(bool p_forced);
 

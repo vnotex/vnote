@@ -95,7 +95,7 @@ void VHtmlTab::editFile()
     showFileEditMode();
 }
 
-void VHtmlTab::readFile()
+void VHtmlTab::readFile(bool p_discard)
 {
     if (!m_isEditMode) {
         return;
@@ -114,7 +114,7 @@ void VHtmlTab::readFile()
                                                     | QMessageBox::Cancel)
                                                  : (QMessageBox::Discard
                                                     | QMessageBox::Cancel),
-                                      modifiable ? QMessageBox::Save
+                                      modifiable ? (p_discard ? QMessageBox::Discard : QMessageBox::Save)
                                                  : QMessageBox::Cancel,
                                       this);
         switch (ret) {

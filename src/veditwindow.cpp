@@ -508,11 +508,11 @@ bool VEditWindow::closeTab(int p_index)
     return ok;
 }
 
-void VEditWindow::readFile()
+void VEditWindow::readFile(bool p_discard)
 {
     VEditTab *editor = getTab(currentIndex());
     Q_ASSERT(editor);
-    editor->readFile();
+    editor->readFile(p_discard);
 }
 
 void VEditWindow::saveAndReadFile()

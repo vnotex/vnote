@@ -118,7 +118,9 @@ public slots:
 
     void editFile();
     void saveFile();
-    void readFile();
+
+    void readFile(bool p_discard = false);
+
     void saveAndReadFile();
 
     // Scroll current tab to @p_header.

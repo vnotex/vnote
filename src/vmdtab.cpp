@@ -270,7 +270,7 @@ void VMdTab::editFile()
     showFileEditMode();
 }
 
-void VMdTab::readFile()
+void VMdTab::readFile(bool p_discard)
 {
     if (!m_isEditMode) {
         return;
@@ -288,7 +288,7 @@ void VMdTab::readFile()
                                                     | QMessageBox::Cancel)
                                                  : (QMessageBox::Discard
                                                     | QMessageBox::Cancel),
-                                      modifiable ? QMessageBox::Save
+                                      modifiable ? (p_discard ? QMessageBox::Discard: QMessageBox::Save)
                                                  : QMessageBox::Cancel,
                                       this);
         switch (ret) {

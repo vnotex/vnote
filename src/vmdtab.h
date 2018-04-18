@@ -32,7 +32,7 @@ public:
 
     // Enter read mode.
     // Will prompt user to save the changes.
-    void readFile() Q_DECL_OVERRIDE;
+    void readFile(bool p_discard = false) Q_DECL_OVERRIDE;
 
     // Save file.
     bool saveFile() Q_DECL_OVERRIDE;

@@ -722,7 +722,9 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     VUtils::fixTextWithCaptainShortcut(m_discardExitAct, "DiscardAndRead");
     m_discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
     connect(m_discardExitAct, &QAction::triggered,
-            m_editArea, &VEditArea::readFile);
+            this, [this]() {
+                m_editArea->readFile(true);
+            });
 
     updateEditReadAct(NULL);
 

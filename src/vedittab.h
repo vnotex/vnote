@@ -28,7 +28,8 @@ public:
     virtual bool closeFile(bool p_forced) = 0;
 
     // Enter read mode.
-    virtual void readFile() = 0;
+    // @p_discard: whether set the discard action as the default one.
+    virtual void readFile(bool p_discard = false) = 0;
 
     // Save file.
     virtual bool saveFile() = 0;
