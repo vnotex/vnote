@@ -230,7 +230,7 @@ void VMathJaxInplacePreviewHelper::textToHtmlFinished(int p_identitifer,
                                                       int p_timeStamp,
                                                       const QString &p_html)
 {
-    if (m_documentID != p_identitifer || m_timeStamp != p_timeStamp) {
+    if (m_documentID != p_identitifer || m_timeStamp != (TS)p_timeStamp) {
         return;
     }
 
