@@ -8,6 +8,7 @@ cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core/Formula
 git checkout 13d52537d1e0e5f913de4639012 qt.rb
 sed -i '' 's/:mysql/"mysql"/' qt.rb
 sed -i '' 's/:postgresql/"postgresql"/' qt.rb
+cat qt.rb
 brew install qt
 
 QTDIR="/usr/local/opt/qt"
