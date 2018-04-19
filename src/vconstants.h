@@ -125,7 +125,10 @@ enum HighlightBlockState
 
     // Mathjax. It means the pending state of the block.
     MathjaxBlock,
-    MathjaxInline
+    MathjaxInline,
+
+    // Header.
+    Header
 };
 
 // Pages to open on start up.

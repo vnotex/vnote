@@ -43,12 +43,6 @@ void VMathJaxPreviewHelper::doInit()
     m_webView->hide();
     m_webView->setFocusPolicy(Qt::NoFocus);
 
-    if (focusWid) {
-        focusWid->setFocus();
-    } else {
-        m_parentWidget->setFocus();
-    }
-
     m_webDoc = new VMathJaxWebDocument(m_webView);
     connect(m_webDoc, &VMathJaxWebDocument::mathjaxPreviewResultReady,
             this, [this](int p_identifier,
@@ -75,6 +69,12 @@ void VMathJaxPreviewHelper::doInit()
     m_webView->page()->setWebChannel(channel);
 
     m_webView->setHtml(VUtils::generateMathJaxPreviewTemplate(), QUrl("qrc:/resources"));
+
+    if (focusWid) {
+        focusWid->setFocus();
+    } else {
+        m_parentWidget->setFocus();
+    }
 }
 
 void VMathJaxPreviewHelper::previewMathJax(int p_identifier,

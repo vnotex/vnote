@@ -38,7 +38,7 @@ color-column-foreground: eeeeee
 # [VNote] Style for preview image line
 preview-image-line-foreground: 6f5799
 # [VNote] Style for MathJax
-mathjax-foreground: ce93d8
+mathjax-foreground: 4db6ac
 
 editor-selection
 foreground: dadada
