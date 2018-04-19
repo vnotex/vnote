@@ -9,6 +9,8 @@ Toggle expanding the edit area.
 Create a note in current folder.
 - `Ctrl+F`  
 Find/Replace in current note.
+- `Ctrl+Alt+F`  
+Advanced find.
 - `Ctrl+Q`  
 Quit VNote.
 - `Ctrl+J`/`Ctrl+K`  
@@ -240,6 +242,8 @@ Apply a snippet in edit mode.
 Export notes.
 - `I`  
 Toggle live preview panel.
+- `C`  
+Toggle full-text search.
 - `Shift+?`   
 Display shortcuts documentation.
 

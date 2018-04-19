@@ -287,6 +287,8 @@ private:
 
     void initUniversalEntry();
 
+    void setMenuBarVisible(bool p_visible);
+
     // Captain mode functions.
 
     // Popup the attachment list if it is enabled.

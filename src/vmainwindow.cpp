@@ -438,7 +438,7 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
     menuBarAct->setChecked(g_config->getMenuBarChecked());
     connect(menuBarAct, &QAction::triggered,
             this, [this](bool p_checked) {
-                menuBar()->setVisible(p_checked);
+                setMenuBarVisible(p_checked);
                 g_config->setMenuBarChecked(p_checked);
             });
 
@@ -767,7 +767,7 @@ void VMainWindow::initMenuBar()
     initMarkdownMenu();
     initHelpMenu();
 
-    menuBar()->setVisible(g_config->getMenuBarChecked());
+    setMenuBarVisible(g_config->getMenuBarChecked());
 }
 
 void VMainWindow::initHelpMenu()
@@ -951,16 +951,16 @@ void VMainWindow::initMarkdownMenu()
     markdownMenu->addAction(lineNumberAct);
     lineNumberAct->setChecked(g_config->getEnableCodeBlockLineNumber());
 
-    QAction *previewImageAct = new QAction(tr("Preview Images In Edit Mode"), this);
-    previewImageAct->setToolTip(tr("Enable image preview in edit mode (re-open current tabs to make it work)"));
+    QAction *previewImageAct = new QAction(tr("In-Place Preview"), this);
+    previewImageAct->setToolTip(tr("Enable in-place preview (images, diagrams, and formulas) in edit mode (re-open current tabs to make it work)"));
     previewImageAct->setCheckable(true);
     connect(previewImageAct, &QAction::triggered,
             this, &VMainWindow::enableImagePreview);
     markdownMenu->addAction(previewImageAct);
     previewImageAct->setChecked(g_config->getEnablePreviewImages());
 
-    QAction *previewWidthAct = new QAction(tr("Constrain The Width Of Previewed Images"), this);
-    previewWidthAct->setToolTip(tr("Constrain the width of previewed images to the edit window in edit mode"));
+    QAction *previewWidthAct = new QAction(tr("Constrain The Width Of In-Place Preview"), this);
+    previewWidthAct->setToolTip(tr("Constrain the width of in-place preview to the edit window in edit mode"));
     previewWidthAct->setCheckable(true);
     connect(previewWidthAct, &QAction::triggered,
             this, &VMainWindow::enableImagePreviewConstraint);
@@ -1424,7 +1424,7 @@ void VMainWindow::aboutMessage()
 {
     QString info = tr("<span style=\"font-weight: bold;\">v%1</span>").arg(VConfigManager::c_version);
     info += "<br/><br/>";
-    info += tr("VNote is a Vim-inspired note-taking application for Markdown.");
+    info += tr("VNote is a free Vim-inspired note-taking application that knows programmers and Markdown better.");
     info += "<br/>";
     info += tr("Please visit <a href=\"https://github.com/tamlok/vnote.git\">Github</a> for more information.");
     QMessageBox::about(this, tr("About VNote"), info);
@@ -3258,4 +3258,14 @@ void VMainWindow::checkNotebooks()
     }
 
     m_notebookSelector->restoreCurrentNotebook();
+}
+
+void VMainWindow::setMenuBarVisible(bool p_visible)
+{
+    // Hiding the menubar will disable the shortcut of QActions.
+    if (p_visible) {
+        menuBar()->setFixedSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
+    } else {
+        menuBar()->setFixedHeight(0);
+    }
 }
