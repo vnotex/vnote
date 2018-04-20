@@ -496,7 +496,7 @@ void VMdEditor::updateHeaders(const QVector<VElementRegion> &p_headerRegions)
                        << block.text();
         }
 
-        if ((block.userState() == HighlightBlockState::Normal)
+        if ((block.userState() == HighlightBlockState::Header)
             && headerReg.exactMatch(block.text())) {
             int level = headerReg.cap(1).length();
             VTableOfContentItem header(headerReg.cap(2).trimmed(),

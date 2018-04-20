@@ -323,6 +323,7 @@ int VPreviewManager::calculateBlockMargin(const QTextBlock &p_block, int p_tabSt
 void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
                                              const QVector<ImageLinkInfo> &p_imageLinks)
 {
+    QSet<int> affectedBlocks;
     for (auto const & link : p_imageLinks) {
         QTextBlock block = m_document->findBlockByNumber(link.m_blockNumber);
         if (!block.isValid()) {
@@ -345,16 +346,21 @@ void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
                                               !link.m_isBlock,
                                               name,
                                               m_editor->imageSize(name));
-        blockData->insertPreviewInfo(info);
-
+        bool tsUpdated = blockData->insertPreviewInfo(info);
         imageCache(PreviewSource::ImageLink).insert(name, p_timeStamp);
+        if (!tsUpdated) {
+            // No need to relayout the block if only timestamp is updated.
+            affectedBlocks.insert(link.m_blockNumber);
+            m_highlighter->addPossiblePreviewBlock(link.m_blockNumber);
+        }
 
         qDebug() << "block" << link.m_blockNumber
                  << imageCache(PreviewSource::ImageLink).size()
                  << blockData->toString();
     }
 
-    // TODO: may need to call m_editor->update()?
+    m_editor->relayout(affectedBlocks);
+    m_editor->update();
 }
 
 void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,

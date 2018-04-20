@@ -241,6 +241,8 @@ private slots:
     // @p_fast: if true, just parse and update styles.
     void startParseAndHighlight(bool p_fast = false);
 
+    void completeHighlight();
+
 private:
     struct HeaderBlockInfo
     {
@@ -330,6 +332,9 @@ private:
     // Comment regions for each block.
     QHash<int, QVector<VElementRegion>> m_commentRegions;
 
+    // Whether need to signal out changes when highlight completes.
+    bool m_signalOut;
+
     char *content;
     int capacity;
     pmh_element **result;
@@ -347,7 +352,7 @@ private:
     // intended to complement this.
     void highlightLinkWithSpacesInURL(const QString &p_text);
 
-    void parse(bool p_fast = false);
+    void parse();
 
     void parseInternal();
 

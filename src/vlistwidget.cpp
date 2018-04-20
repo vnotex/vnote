@@ -82,8 +82,16 @@ void VListWidget::resizeEvent(QResizeEvent *p_event)
 
 void VListWidget::handleSearchModeTriggered(bool p_inSearchMode, bool p_focus)
 {
-    setSearchInputVisible(p_inSearchMode);
-    if (!p_inSearchMode) {
+    if (p_inSearchMode) {
+        setSearchInputVisible(p_inSearchMode);
+    } else {
+        // Hiding search input will make QWebEngine get focus which will consume
+        // the Esc key sequence by mistake.
+        if (p_focus) {
+            setFocus();
+        }
+
+        setSearchInputVisible(p_inSearchMode);
         clearItemsHighlight();
     }
 

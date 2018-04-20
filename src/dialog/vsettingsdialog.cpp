@@ -856,7 +856,7 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
 {
     // Default note open mode.
     m_openModeCombo = VUtils::getComboBox();
-    m_openModeCombo->setToolTip(tr("Default mode to open a note"));
+    m_openModeCombo->setToolTip(tr("Default mode to open an internal note"));
     m_openModeCombo->addItem(tr("Read Mode"), (int)OpenFileMode::Read);
     m_openModeCombo->addItem(tr("Edit Mode"), (int)OpenFileMode::Edit);
 
@@ -865,7 +865,7 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     m_headingSequenceTypeCombo->setToolTip(tr("Enable auto sequence for all headings (in the form like 1.2.3.4.)"));
     m_headingSequenceTypeCombo->addItem(tr("Disabled"), (int)HeadingSequenceType::Disabled);
     m_headingSequenceTypeCombo->addItem(tr("Enabled"), (int)HeadingSequenceType::Enabled);
-    m_headingSequenceTypeCombo->addItem(tr("Enabled for notes only"), (int)HeadingSequenceType::EnabledNoteOnly);
+    m_headingSequenceTypeCombo->addItem(tr("Enabled for intrenal notes only"), (int)HeadingSequenceType::EnabledNoteOnly);
 
     m_headingSequenceLevelCombo = VUtils::getComboBox();
     m_headingSequenceLevelCombo->setToolTip(tr("Base level to start heading sequence"));

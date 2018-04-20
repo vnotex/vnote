@@ -36,6 +36,7 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
       m_blockHLResultReady(false),
       waitInterval(waitInterval),
       m_enableMathjax(false),
+      m_signalOut(false),
       content(NULL),
       capacity(0),
       result(NULL)
@@ -82,15 +83,12 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
                 startParseAndHighlight(false);
             });
 
-    static const int completeWaitTime = 500;
+    const int completeWaitTime = 400;
     m_completeTimer = new QTimer(this);
     m_completeTimer->setSingleShot(true);
     m_completeTimer->setInterval(completeWaitTime);
     connect(m_completeTimer, &QTimer::timeout,
-            this, [this]() {
-                updateMathjaxBlocks();
-                emit highlightCompleted();
-            });
+            this, &HGMarkdownHighlighter::completeHighlight);
 
     connect(document, &QTextDocument::contentsChange,
             this, &HGMarkdownHighlighter::handleContentChange);
@@ -331,7 +329,6 @@ void HGMarkdownHighlighter::initImageRegionsFromResult()
     m_imageRegions.clear();
 
     if (!result) {
-        emit imageLinksUpdated(m_imageRegions);
         return;
     }
 
@@ -345,10 +342,6 @@ void HGMarkdownHighlighter::initImageRegionsFromResult()
         m_imageRegions.push_back(VElementRegion(elem->pos, elem->end));
         elem = elem->next;
     }
-
-    qDebug() << "highlighter: parse" << m_imageRegions.size() << "image regions";
-
-    emit imageLinksUpdated(m_imageRegions);
 }
 
 void HGMarkdownHighlighter::initVerbatimBlocksFromResult()
@@ -383,7 +376,6 @@ void HGMarkdownHighlighter::initHeaderRegionsFromResult()
     m_headerRegions.clear();
 
     if (!result) {
-        emit headersUpdated(m_headerRegions);
         return;
     }
 
@@ -410,10 +402,6 @@ void HGMarkdownHighlighter::initHeaderRegionsFromResult()
     }
 
     std::sort(m_headerRegions.begin(), m_headerRegions.end());
-
-    qDebug() << "highlighter: parse" << m_headerRegions.size() << "header regions";
-
-    emit headersUpdated(m_headerRegions);
 }
 
 void HGMarkdownHighlighter::initBlockHighlihgtOne(unsigned long pos,
@@ -756,7 +744,7 @@ void HGMarkdownHighlighter::highlightLinkWithSpacesInURL(const QString &p_text)
     }
 }
 
-void HGMarkdownHighlighter::parse(bool p_fast)
+void HGMarkdownHighlighter::parse()
 {
     if (!parsing.testAndSetRelaxed(0, 1)) {
         return;
@@ -776,21 +764,19 @@ void HGMarkdownHighlighter::parse(bool p_fast)
 
     m_blockHLResultReady = true;
 
-    if (!p_fast) {
-        initHtmlCommentRegionsFromResult();
+    initHtmlCommentRegionsFromResult();
 
-        initImageRegionsFromResult();
+    initImageRegionsFromResult();
 
-        initHeaderRegionsFromResult();
+    initHeaderRegionsFromResult();
 
-        initVerbatimBlocksFromResult();
+    initVerbatimBlocksFromResult();
 
-        initInlineCodeRegionsFromResult();
+    initInlineCodeRegionsFromResult();
 
-        initBoldItalicRegionsFromResult();
+    initBoldItalicRegionsFromResult();
 
-        initLinkRegionsFromResult();
-    }
+    initLinkRegionsFromResult();
 
     if (result) {
         pmh_free_elements(result);
@@ -834,6 +820,8 @@ void HGMarkdownHighlighter::handleContentChange(int /* position */, int charsRem
         return;
     }
 
+    m_signalOut = false;
+
     timer->stop();
     timer->start();
 }
@@ -841,17 +829,15 @@ void HGMarkdownHighlighter::handleContentChange(int /* position */, int charsRem
 void HGMarkdownHighlighter::startParseAndHighlight(bool p_fast)
 {
     qDebug() << "HGMarkdownHighlighter start a new parse (fast" << p_fast << ")";
-    parse(p_fast);
+    parse();
 
-    if (p_fast) {
-        rehighlight();
-    } else {
-        if (!updateCodeBlocks()) {
-            rehighlight();
-        }
+    m_signalOut = !p_fast;
 
-        highlightChanged();
+    if (!p_fast) {
+        updateCodeBlocks();
     }
+
+    rehighlight();
 }
 
 void HGMarkdownHighlighter::updateHighlight()
@@ -1340,4 +1326,16 @@ bool HGMarkdownHighlighter::isValidMathjaxRegion(int p_blockNumber,
     }
 
     return true;
+}
+
+void HGMarkdownHighlighter::completeHighlight()
+{
+    if (m_signalOut) {
+        m_signalOut = false;
+        updateMathjaxBlocks();
+        emit imageLinksUpdated(m_imageRegions);
+        emit headersUpdated(m_headerRegions);
+    }
+
+    emit highlightCompleted();
 }
