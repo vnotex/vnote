@@ -11,3 +11,15 @@ Modified by Le Tan
 # [markdown-it-task-lists](https://github.com/revin/markdown-it-task-lists)
 v1.4.0  
 Revin Guillen
+
+# [markdown-it-footnote](https://github.com/markdown-it/markdown-it-footnote)
+v3.0.1
+Vitaly Puzrin
+
+# [markdown-it-sub](https://github.com/markdown-it/markdown-it-sub)
+v1.0.0
+Vitaly Puzrin
+
+# [markdown-it-sup](https://github.com/markdown-it/markdown-it-sup)
+v1.0.0
+Vitaly Puzrin

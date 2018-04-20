@@ -187,10 +187,15 @@ In VNote, almost everything is configurable, such as background color, font, and
 - [markdown-it 8.3.1](https://github.com/markdown-it/markdown-it) (MIT License)
 - [markdown-it-headinganchor 1.3.0](https://github.com/adam-p/markdown-it-headinganchor) (MIT License)
 - [markdown-it-task-lists 1.4.0](https://github.com/revin/markdown-it-task-lists) (ISC License)
+- [markdown-it-footnote](https://github.com/markdown-it/markdown-it-footnote) (MIT License)
+- [markdown-it-sub](https://github.com/markdown-it/markdown-it-sub) (MIT License)
+- [markdown-it-sup](https://github.com/markdown-it/markdown-it-sup) (MIT License)
 - [mermaid 7.0.0](https://github.com/knsv/mermaid) (MIT License)
 - [MathJax](https://www.mathjax.org/) (Apache-2.0)
 - [showdown](https://github.com/showdownjs/showdown) (Unknown)
 - [flowchart.js](https://github.com/adrai/flowchart.js) (MIT License)
+- [PlantUML](http://plantuml.com/) (MIT License)
+- [dom-to-image](https://github.com/tsayen/dom-to-image) (MIT License)
 
 # License
 VNote is licensed under the [MIT license](http://opensource.org/licenses/MIT).
