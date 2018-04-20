@@ -11,6 +11,9 @@ namespace FileSessionConfig
     static const QString c_file = "file";
     static const QString c_mode = "mode";
 
+    // Whether it is current file.
+    static const QString c_active = "active";
+
     // Index in outline of the anchor.
     static const QString c_headerIndex = "header_index";
 
@@ -38,11 +41,19 @@ public:
 
     void toSettings(QSettings *p_settings) const;
 
+    void setActive(bool p_active)
+    {
+        m_active = p_active;
+    }
+
     // Absolute path of the file.
     QString m_file;
 
     // Mode of this file in this session.
     OpenFileMode m_mode;
+
+    // Whether this file is current file.
+    bool m_active;
 
     // Index in outline of the header.
     int m_headerIndex;

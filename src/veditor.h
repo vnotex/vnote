@@ -152,6 +152,8 @@ public:
 
     virtual VWordCountInfo fetchWordCountInfo() const = 0;
 
+    virtual bool setCursorPosition(int p_blockNumber, int p_posInBlock);
+
 // Wrapper functions for QPlainTextEdit/QTextEdit.
 // Ends with W to distinguish it from the original interfaces.
 public:

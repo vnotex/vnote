@@ -813,6 +813,7 @@ bool VEditArea::handleKeyNavigation(int p_key, bool &p_succeed)
 
 int VEditArea::openFiles(const QVector<VFileSessionInfo> &p_files)
 {
+    VFile *curFile = NULL;
     int nrOpened = 0;
     for (auto const & info : p_files) {
         QString filePath = VUtils::validFilePathToOpen(info.m_file);
@@ -828,11 +829,19 @@ int VEditArea::openFiles(const QVector<VFileSessionInfo> &p_files)
         VEditTab *tab = openFile(file, info.m_mode, true);
         ++nrOpened;
 
+        if (info.m_active) {
+            curFile = file;
+        }
+
         VEditTabInfo tabInfo;
         tabInfo.m_editTab = tab;
         info.toEditTabInfo(&tabInfo);
 
         tab->tryRestoreFromTabInfo(tabInfo);
+    }
+
+    if (curFile) {
+        openFile(curFile, OpenFileMode::Read, false);
     }
 
     return nrOpened;

@@ -9,6 +9,7 @@
 
 VFileSessionInfo::VFileSessionInfo()
     : m_mode(OpenFileMode::Read),
+      m_active(false),
       m_headerIndex(-1),
       m_cursorBlockNumber(-1),
       m_cursorPositionInBlock(-1)
@@ -19,6 +20,7 @@ VFileSessionInfo::VFileSessionInfo(const QString &p_file,
                                    OpenFileMode p_mode)
     : m_file(p_file),
       m_mode(p_mode),
+      m_active(false),
       m_headerIndex(-1),
       m_cursorBlockNumber(-1),
       m_cursorPositionInBlock(-1)
@@ -57,6 +59,7 @@ VFileSessionInfo VFileSessionInfo::fromSettings(const QSettings *p_settings)
         info.m_mode = OpenFileMode::Read;
     }
 
+    info.m_active = p_settings->value(FileSessionConfig::c_active).toBool();
     info.m_headerIndex = p_settings->value(FileSessionConfig::c_headerIndex).toInt();
     info.m_cursorBlockNumber = p_settings->value(FileSessionConfig::c_cursorBlockNumber).toInt();
     info.m_cursorPositionInBlock = p_settings->value(FileSessionConfig::c_cursorPositionInBlock).toInt();
@@ -68,6 +71,7 @@ void VFileSessionInfo::toSettings(QSettings *p_settings) const
 {
     p_settings->setValue(FileSessionConfig::c_file, m_file);
     p_settings->setValue(FileSessionConfig::c_mode, (int)m_mode);
+    p_settings->setValue(FileSessionConfig::c_active, m_active);
     p_settings->setValue(FileSessionConfig::c_headerIndex, m_headerIndex);
     p_settings->setValue(FileSessionConfig::c_cursorBlockNumber, m_cursorBlockNumber);
     p_settings->setValue(FileSessionConfig::c_cursorPositionInBlock, m_cursorPositionInBlock);

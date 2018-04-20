@@ -1055,3 +1055,17 @@ VVim *VEditor::getVim() const
 
     return NULL;
 }
+
+bool VEditor::setCursorPosition(int p_blockNumber, int p_posInBlock)
+{
+    QTextDocument *doc = documentW();
+    QTextBlock block = doc->findBlockByNumber(p_blockNumber);
+    if (!block.isValid() || block.length() <= p_posInBlock) {
+        return false;
+    }
+
+    QTextCursor cursor = textCursorW();
+    cursor.setPosition(block.position() + p_posInBlock);
+    setTextCursorW(cursor);
+    return true;
+}

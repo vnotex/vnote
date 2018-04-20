@@ -874,9 +874,21 @@ bool VMdTab::restoreFromTabInfo(const VEditTabInfo &p_info)
         return false;
     }
 
+    bool ret = false;
+    // Restore cursor position.
+    if (m_isEditMode
+        && m_editor
+        && p_info.m_cursorBlockNumber > -1
+        && p_info.m_cursorPositionInBlock > -1) {
+        ret = m_editor->setCursorPosition(p_info.m_cursorBlockNumber, p_info.m_cursorPositionInBlock);
+    }
+
     // Restore header.
-    VHeaderPointer header(m_file, p_info.m_headerIndex);
-    bool ret = scrollToHeaderInternal(header);
+    if (!ret) {
+        VHeaderPointer header(m_file, p_info.m_headerIndex);
+        ret = scrollToHeaderInternal(header);
+    }
+
     return ret;
 }
 

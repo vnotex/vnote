@@ -2229,6 +2229,10 @@ void VMainWindow::closeEvent(QCloseEvent *event)
                 }
 
                 VFileSessionInfo info = VFileSessionInfo::fromEditTabInfo(&tab);
+                if (tab.m_editTab == m_curTab) {
+                    info.setActive(true);
+                }
+
                 fileInfos.push_back(info);
 
                 qDebug() << "file session:" << info.m_file << (info.m_mode == OpenFileMode::Edit);
