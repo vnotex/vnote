@@ -5,7 +5,6 @@
 #include <QPainter>
 #include <QResizeEvent>
 
-#include "vtextdocumentlayout.h"
 #include "vimageresourcemanager2.h"
 
 #define VIRTUAL_CURSOR_BLOCK_WIDTH 8
@@ -286,6 +285,22 @@ QTextBlock VTextEdit::firstVisibleBlock() const
     return document()->findBlockByNumber(blockNumber);
 }
 
+QTextBlock VTextEdit::lastVisibleBlock() const
+{
+    VTextDocumentLayout *layout = getLayout();
+    Q_ASSERT(layout);
+    int blockNumber = layout->findBlockByPosition(QPointF(0, -contentOffsetY() + contentsRect().height()));
+    return document()->findBlockByNumber(blockNumber);
+}
+
+void VTextEdit::visibleBlockRange(int &p_first, int &p_last) const
+{
+    VTextDocumentLayout *layout = getLayout();
+    Q_ASSERT(layout);
+    p_first = layout->findBlockByPosition(QPointF(0, -contentOffsetY()));
+    p_last = layout->findBlockByPosition(QPointF(0, -contentOffsetY() + contentsRect().height()));
+}
+
 int VTextEdit::contentOffsetY() const
 {
     QScrollBar *sb = verticalScrollBar();
@@ -299,9 +314,22 @@ void VTextEdit::clearBlockImages()
     getLayout()->relayout();
 }
 
-void VTextEdit::relayout(const QSet<int> &p_blocks)
+void VTextEdit::relayout(const OrderedIntSet &p_blocks)
 {
     getLayout()->relayout(p_blocks);
+}
+
+void VTextEdit::relayoutVisibleBlocks()
+{
+    int first, last;
+    visibleBlockRange(first, last);
+    OrderedIntSet blocks;
+
+    for (int i = first; i <= last; ++i) {
+        blocks.insert(i, QMapDummyValue());
+    }
+
+    getLayout()->relayout(blocks);
 }
 
 bool VTextEdit::containsImage(const QString &p_imageName) const

@@ -4,13 +4,19 @@
 #include <QAbstractTextDocumentLayout>
 #include <QVector>
 #include <QSize>
-#include <QSet>
+#include <QMap>
+
 #include "vconstants.h"
 
 class VImageResourceManager2;
 struct VPreviewedImageInfo;
 struct VPreviewInfo;
 
+struct QMapDummyValue
+{
+};
+
+typedef QMap<int, QMapDummyValue> OrderedIntSet;
 
 class VTextDocumentLayout : public QAbstractTextDocumentLayout
 {
@@ -51,7 +57,7 @@ public:
     void relayout();
 
     // Relayout @p_blocks.
-    void relayout(const QSet<int> &p_blocks);
+    void relayout(const OrderedIntSet &p_blocks);
 
     void setImageLineColor(const QColor &p_color);
 

@@ -14,8 +14,8 @@ version=9
 base_fg=#000000
 base_bg=#F5F5F5
 
-title_fg=#000000
-title_bg=#DADBDB
+title_fg=@base_fg
+title_bg=transparent
 
 hover_fg=#000000
 hover_bg=#C0C0C0

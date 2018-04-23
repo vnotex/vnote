@@ -985,7 +985,7 @@ void VTextDocumentLayout::relayout()
     emit update(QRectF(0., 0., 1000000000., 1000000000.));
 }
 
-void VTextDocumentLayout::relayout(const QSet<int> &p_blocks)
+void VTextDocumentLayout::relayout(const OrderedIntSet &p_blocks)
 {
     if (p_blocks.isEmpty()) {
         return;
@@ -993,8 +993,9 @@ void VTextDocumentLayout::relayout(const QSet<int> &p_blocks)
 
     QTextDocument *doc = document();
 
-    for (auto bn : p_blocks) {
-        QTextBlock block = doc->findBlockByNumber(bn);
+    // Need to relayout and update blocks in ascending order.
+    for (auto bn = p_blocks.keyBegin(); bn != p_blocks.keyEnd(); ++bn) {
+        QTextBlock block = doc->findBlockByNumber(*bn);
         if (block.isValid()) {
             clearBlockLayout(block);
             layoutBlock(block);

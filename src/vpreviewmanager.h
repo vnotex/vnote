@@ -180,6 +180,8 @@ private:
 
     TS &timeStamp(PreviewSource p_source);
 
+    void relayoutEditor(const OrderedIntSet &p_blocks);
+
     VMdEditor *m_editor;
 
     QTextDocument *m_document;

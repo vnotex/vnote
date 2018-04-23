@@ -323,7 +323,7 @@ int VPreviewManager::calculateBlockMargin(const QTextBlock &p_block, int p_tabSt
 void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
                                              const QVector<ImageLinkInfo> &p_imageLinks)
 {
-    QSet<int> affectedBlocks;
+    OrderedIntSet affectedBlocks;
     for (auto const & link : p_imageLinks) {
         QTextBlock block = m_document->findBlockByNumber(link.m_blockNumber);
         if (!block.isValid()) {
@@ -350,7 +350,7 @@ void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
         imageCache(PreviewSource::ImageLink).insert(name, p_timeStamp);
         if (!tsUpdated) {
             // No need to relayout the block if only timestamp is updated.
-            affectedBlocks.insert(link.m_blockNumber);
+            affectedBlocks.insert(link.m_blockNumber, QMapDummyValue());
             m_highlighter->addPossiblePreviewBlock(link.m_blockNumber);
         }
 
@@ -359,15 +359,14 @@ void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
                  << blockData->toString();
     }
 
-    m_editor->relayout(affectedBlocks);
-    m_editor->update();
+    relayoutEditor(affectedBlocks);
 }
 
 void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
                                              PreviewSource p_source,
                                              const QVector<QSharedPointer<VImageToPreview> > &p_images)
 {
-    QSet<int> affectedBlocks;
+    OrderedIntSet affectedBlocks;
     for (auto const & img : p_images) {
         if (img.isNull()) {
             continue;
@@ -397,14 +396,13 @@ void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
         imageCache(p_source).insert(name, p_timeStamp);
         if (!tsUpdated) {
             // No need to relayout the block if only timestamp is updated.
-            affectedBlocks.insert(img->m_blockNumber);
+            affectedBlocks.insert(img->m_blockNumber, QMapDummyValue());
             m_highlighter->addPossiblePreviewBlock(img->m_blockNumber);
         }
     }
 
     // Relayout these blocks since they may not have been changed.
-    m_editor->relayout(affectedBlocks);
-    m_editor->update();
+    relayoutEditor(affectedBlocks);
 }
 
 void VPreviewManager::clearObsoleteImages(long long p_timeStamp, PreviewSource p_source)
@@ -424,7 +422,7 @@ void VPreviewManager::clearObsoleteImages(long long p_timeStamp, PreviewSource p
 void VPreviewManager::clearBlockObsoletePreviewInfo(long long p_timeStamp,
                                                     PreviewSource p_source)
 {
-    QSet<int> affectedBlocks;
+    OrderedIntSet affectedBlocks;
     QVector<int> obsoleteBlocks;
     const QSet<int> &blocks = m_highlighter->getPossiblePreviewBlocks();
     for (auto i : blocks) {
@@ -440,7 +438,7 @@ void VPreviewManager::clearBlockObsoletePreviewInfo(long long p_timeStamp,
         }
 
         if (blockData->clearObsoletePreview(p_timeStamp, p_source)) {
-            affectedBlocks.insert(i);
+            affectedBlocks.insert(i, QMapDummyValue());
         }
 
         if (blockData->getPreviews().isEmpty()) {
@@ -501,7 +499,7 @@ void VPreviewManager::checkBlocksForObsoletePreview(const QList<int> &p_blocks)
         return;
     }
 
-    QSet<int> affectedBlocks;
+    OrderedIntSet affectedBlocks;
     for (auto i : p_blocks) {
         QTextBlock block = m_document->findBlockByNumber(i);
         if (!block.isValid()) {
@@ -524,10 +522,22 @@ void VPreviewManager::checkBlocksForObsoletePreview(const QList<int> &p_blocks)
 
             PreviewSource ps = static_cast<PreviewSource>(i);
             if (blockData->clearObsoletePreview(timeStamp(ps), ps)) {
-                affectedBlocks.insert(i);
+                affectedBlocks.insert(i, QMapDummyValue());
             }
         }
     }
 
     m_editor->relayout(affectedBlocks);
+}
+
+void VPreviewManager::relayoutEditor(const OrderedIntSet &p_blocks)
+{
+    OrderedIntSet bs(p_blocks);
+    int first, last;
+    m_editor->visibleBlockRange(first, last);
+    for (int i = first; i <= last; ++i) {
+        bs.insert(i, QMapDummyValue());
+    }
+
+    m_editor->relayout(bs);
 }
