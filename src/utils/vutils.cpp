@@ -665,18 +665,24 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
             extraFile += "<script src=\"qrc" + VNote::c_markdownitSubExtraFile + "\"></script>\n";
         }
 
+        if (opt.m_metadata) {
+            extraFile += "<script src=\"qrc" + VNote::c_markdownitFrontMatterExtraFile + "\"></script>\n";
+        }
+
         QString optJs = QString("<script>var VMarkdownitOption = {"
                                 "html: %1,\n"
                                 "breaks: %2,\n"
                                 "linkify: %3,\n"
                                 "sub: %4,\n"
-                                "sup: %5 };\n"
+                                "sup: %5,\n"
+                                "metadata: %6 };\n"
                                 "</script>\n")
                                .arg(opt.m_html ? QStringLiteral("true") : QStringLiteral("false"))
                                .arg(opt.m_breaks ? QStringLiteral("true") : QStringLiteral("false"))
                                .arg(opt.m_linkify ? QStringLiteral("true") : QStringLiteral("false"))
                                .arg(opt.m_sub ? QStringLiteral("true") : QStringLiteral("false"))
-                               .arg(opt.m_sup ? QStringLiteral("true") : QStringLiteral("false"));
+                               .arg(opt.m_sup ? QStringLiteral("true") : QStringLiteral("false"))
+                               .arg(opt.m_metadata ? QStringLiteral("true") : QStringLiteral("false"));
         extraFile += optJs;
         break;
     }

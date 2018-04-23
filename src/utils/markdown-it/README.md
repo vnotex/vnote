@@ -23,3 +23,7 @@ Vitaly Puzrin
 # [markdown-it-sup](https://github.com/markdown-it/markdown-it-sup)
 v1.0.0
 Vitaly Puzrin
+
+# [markddown-it-front-matter](https://github.com/craigdmckenna/markdown-it-front-matter)
+v0.1.2
+Craig McKenna

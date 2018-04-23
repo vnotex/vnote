@@ -7,12 +7,14 @@
 #include <QVector>
 #include <QSettings>
 #include <QHash>
+
 #include "vnotebook.h"
 #include "hgmarkdownhighlighter.h"
 #include "vmarkdownconverter.h"
 #include "vconstants.h"
 #include "vfilesessioninfo.h"
 #include "utils/vmetawordmanager.h"
+#include "markdownitoption.h"
 
 class QJsonObject;
 class QString;

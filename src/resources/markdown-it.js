@@ -82,6 +82,10 @@ if (VMarkdownitOption.sup) {
     mdit = mdit.use(window.markdownitSup);
 }
 
+if (VMarkdownitOption.metadata) {
+    mdit = mdit.use(window.markdownitFrontMatter, function(text){});
+}
+
 mdit = mdit.use(window.markdownitFootnote);
 
 var mdHasTocSection = function(markdown) {

@@ -213,5 +213,6 @@
         <file>resources/mathjax_preview.js</file>
         <file>resources/mathjax_preview_template.html</file>
         <file>utils/dom-to-image/dom-to-image.js</file>
+        <file>utils/markdown-it/markdown-it-front-matter.js</file>
     </qresource>
 </RCC>

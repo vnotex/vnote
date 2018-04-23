@@ -1600,11 +1600,23 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
                 g_config->setMarkdownitOption(opt);
             });
 
+    QAction *metadataAct = new QAction(tr("Metadata Aware"), this);
+    metadataAct->setToolTip(tr("Be aware of metadata in YAML format"));
+    metadataAct->setCheckable(true);
+    metadataAct->setChecked(opt.m_metadata);
+    connect(metadataAct, &QAction::triggered,
+            this, [this](bool p_checked) {
+                MarkdownitOption opt = g_config->getMarkdownitOption();
+                opt.m_metadata = p_checked;
+                g_config->setMarkdownitOption(opt);
+            });
+
     optMenu->addAction(htmlAct);
     optMenu->addAction(breaksAct);
     optMenu->addAction(linkifyAct);
     optMenu->addAction(supAct);
     optMenu->addAction(subAct);
+    optMenu->addAction(metadataAct);
 }
 
 void VMainWindow::initRenderBackgroundMenu(QMenu *menu)

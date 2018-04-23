@@ -39,6 +39,7 @@ const QString VNote::c_markdownitTaskListExtraFile = ":/utils/markdown-it/markdo
 const QString VNote::c_markdownitSubExtraFile = ":/utils/markdown-it/markdown-it-sub.min.js";
 const QString VNote::c_markdownitSupExtraFile = ":/utils/markdown-it/markdown-it-sup.min.js";
 const QString VNote::c_markdownitFootnoteExtraFile = ":/utils/markdown-it/markdown-it-footnote.min.js";
+const QString VNote::c_markdownitFrontMatterExtraFile = ":/utils/markdown-it/markdown-it-front-matter.js";
 
 const QString VNote::c_showdownJsFile = ":/resources/showdown.js";
 const QString VNote::c_showdownExtraFile = ":/utils/showdown/showdown.min.js";

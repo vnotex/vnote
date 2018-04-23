@@ -193,6 +193,7 @@ VNote中，几乎一切都是可以定制的，例如背景颜色、字体以及
 - [markdown-it-footnote](https://github.com/markdown-it/markdown-it-footnote) (MIT License)
 - [markdown-it-sub](https://github.com/markdown-it/markdown-it-sub) (MIT License)
 - [markdown-it-sup](https://github.com/markdown-it/markdown-it-sup) (MIT License)
+- [markdown-it-front-matter](https://github.com/craigdmckenna/markdown-it-front-matter) (MIT License)
 - [mermaid 7.0.0](https://github.com/knsv/mermaid) (MIT License)
 - [MathJax](https://www.mathjax.org/) (Apache-2.0)
 - [showdown](https://github.com/showdownjs/showdown) (Unknown)

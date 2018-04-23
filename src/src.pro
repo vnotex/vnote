@@ -253,7 +253,8 @@ HEADERS  += vmainwindow.h \
     vlivepreviewhelper.h \
     vmathjaxpreviewhelper.h \
     vmathjaxwebdocument.h \
-    vmathjaxinplacepreviewhelper.h
+    vmathjaxinplacepreviewhelper.h \
+    markdownitoption.h
 
 RESOURCES += \
     vnote.qrc \
