@@ -68,7 +68,7 @@ bool VHelpUE::initListWidget()
         m_listWidget->addItem(tr("Ctrl+J: Go to next item"));
         m_listWidget->addItem(tr("Ctrl+K: Go to previous item"));
         m_listWidget->addItem(tr("Ctrl+L: Go to current item's parent item"));
-        m_listWidget->addItem(tr("Ctrl+Y: Expand/Collapse current item"));
+        m_listWidget->addItem(tr("Ctrl+I: Expand/Collapse current item"));
         m_listWidget->addItem(tr("Ctrl+S: Sort items"));
         m_listWidget->addItem(tr("Enter: Activate current item"));
         m_listWidget->addItem(tr("Ctrl+M: Browse current item folder or the folder containing current item"));

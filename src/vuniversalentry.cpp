@@ -364,9 +364,9 @@ void VUniversalEntry::keyPressEvent(QKeyEvent *p_event)
 
         break;
 
-    case Qt::Key_Y:
+    case Qt::Key_I:
         if (VUtils::isControlModifierForVim(modifiers)) {
-            // Ctrl+Y to expand or collapse an item.
+            // Ctrl+I to expand or collapse an item.
             if (m_lastEntry) {
                 m_lastEntry->m_entry->toggleItemExpanded(m_lastEntry->m_id);
             }
