@@ -25,6 +25,9 @@ public:
     // Return the target file path on success or empty string on failure.
     QString copyResource(const QUrl &p_url, const QString &p_folder) const;
 
+    // Return a dataURI of @p_url if it is an image.
+    QString dataURI(const QUrl &p_url) const;
+
 private:
     struct CopyTargetAction
     {

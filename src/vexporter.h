@@ -133,23 +133,32 @@ private:
 
     int startProcess(const QString &p_cmd);
 
+    // @p_embedImages: embed <img> as data URI.
     bool outputToHTMLFile(const QString &p_file,
                           const QString &p_headContent,
                           const QString &p_styleContent,
                           const QString &p_bodyContent,
                           bool p_embedCssStyle,
-                          bool p_completeHTML);
+                          bool p_completeHTML,
+                          bool p_embedImages);
 
     // Fix @p_html's resources like url("...") with "file" or "qrc" schema.
     // Copy the resource to @p_folder and fix the url string.
     static bool fixStyleResources(const QString &p_folder,
                                   QString &p_html);
 
+    // Fix @p_html's resources like url("...") with "file" or "qrc" schema.
+    // Embed the image data in data URIs.
+    static bool embedStyleResources(QString &p_html);
+
     // Fix @p_html's resources like <img>.
     // Copy the resource to @p_folder and fix the url string.
     static bool fixBodyResources(const QUrl &p_baseUrl,
                                  const QString &p_folder,
                                  QString &p_html);
+
+    // Embed @p_html's resources like <img>.
+    static bool embedBodyResources(const QUrl &p_baseUrl, QString &p_html);
 
     static QString getResourceRelativePath(const QString &p_file);
 

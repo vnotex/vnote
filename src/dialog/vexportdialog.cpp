@@ -313,11 +313,23 @@ QWidget *VExportDialog::setupHTMLAdvancedSettings()
     m_embedStyleCB = new QCheckBox(tr("Embed CSS styles"), this);
     m_embedStyleCB->setToolTip(tr("Embed CSS styles in HTML file"));
 
+    // Embed images as data URI.
+    m_embedImagesCB = new QCheckBox(tr("Embed images"), this);
+    m_embedImagesCB->setToolTip(tr("Embed images as data URI"));
+
     // Complete HTML.
     m_completeHTMLCB = new QCheckBox(tr("Complete page"), this);
     m_completeHTMLCB->setToolTip(tr("Export the whole web page along with pictures "
                                     "which may not keep the HTML link structure of "
                                     "the original page"));
+    connect(m_completeHTMLCB, &QCheckBox::stateChanged,
+            this, [this](int p_state) {
+                bool checked = p_state == Qt::Checked;
+                m_embedImagesCB->setEnabled(checked);
+                if (!checked) {
+                    m_embedImagesCB->setChecked(false);
+                }
+            });
 
     // Mime HTML.
     m_mimeHTMLCB = new QCheckBox(tr("MIME HTML"), this);
@@ -332,6 +344,7 @@ QWidget *VExportDialog::setupHTMLAdvancedSettings()
     QFormLayout *advLayout = new QFormLayout();
     advLayout->addRow(m_embedStyleCB);
     advLayout->addRow(m_completeHTMLCB);
+    advLayout->addRow(m_embedImagesCB);
     advLayout->addRow(m_mimeHTMLCB);
 
     advLayout->setContentsMargins(0, 0, 0, 0);
@@ -435,6 +448,8 @@ void VExportDialog::initUIFields(MarkdownConverterType p_renderer)
 
     m_completeHTMLCB->setChecked(s_opt.m_htmlOpt.m_completeHTML);
 
+    m_embedImagesCB->setChecked(s_opt.m_htmlOpt.m_embedImages);
+
     m_mimeHTMLCB->setChecked(s_opt.m_htmlOpt.m_mimeHTML);
 
     m_tableOfContentsCB->setChecked(s_opt.m_pdfOpt.m_enableTableOfContents);
@@ -534,6 +549,7 @@ void VExportDialog::startExport()
                                          m_wkExtraArgsEdit->text()),
                          ExportHTMLOption(m_embedStyleCB->isChecked(),
                                           m_completeHTMLCB->isChecked(),
+                                          m_embedImagesCB->isChecked(),
                                           m_mimeHTMLCB->isChecked()),
                          ExportCustomOption((ExportCustomOption::SourceFormat)
                                             m_customSrcFormatCB->currentData().toInt(),

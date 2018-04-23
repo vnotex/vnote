@@ -57,21 +57,25 @@ struct ExportHTMLOption
     ExportHTMLOption()
         : m_embedCssStyle(true),
           m_completeHTML(true),
+          m_embedImages(true),
           m_mimeHTML(false)
     {
     }
 
     ExportHTMLOption(bool p_embedCssStyle,
                      bool p_completeHTML,
+                     bool p_embedImages,
                      bool p_mimeHTML)
         : m_embedCssStyle(p_embedCssStyle),
           m_completeHTML(p_completeHTML),
+          m_embedImages(p_embedImages),
           m_mimeHTML(p_mimeHTML)
     {
     }
 
     bool m_embedCssStyle;
     bool m_completeHTML;
+    bool m_embedImages;
     bool m_mimeHTML;
 };
 
@@ -431,7 +435,9 @@ private:
 
     QCheckBox *m_embedStyleCB;
 
-    QCheckBox *m_completeHTMLCB;;
+    QCheckBox *m_completeHTMLCB;
+
+    QCheckBox *m_embedImagesCB;
 
     QCheckBox *m_mimeHTMLCB;
 

@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QUrl>
+#include <QImageReader>
 
 #include "vpalette.h"
 #include "vconfigmanager.h"
@@ -923,4 +924,41 @@ QString VWebUtils::copyResource(const QUrl &p_url, const QString &p_folder) cons
     }
 
     return succ ? targetFile : QString();
+}
+
+QString VWebUtils::dataURI(const QUrl &p_url) const
+{
+    QString uri;
+    Q_ASSERT(!p_url.isRelative());
+    QString file = p_url.isLocalFile() ? p_url.toLocalFile() : p_url.toString();
+    QString suffix(QFileInfo(file).suffix().toLower());
+
+    if (!QImageReader::supportedImageFormats().contains(suffix.toLatin1())) {
+        return uri;
+    }
+
+    QByteArray data;
+    if (p_url.scheme() == "https" || p_url.scheme() == "http") {
+        // Download it.
+        data = VDownloader::downloadSync(p_url);
+    } else if (QFileInfo::exists(file)) {
+        QFile fi(file);
+        if (fi.open(QIODevice::ReadOnly)) {
+            data = fi.readAll();
+            fi.close();
+        }
+    }
+
+    if (data.isEmpty()) {
+        return uri;
+    }
+
+    if (suffix == "svg") {
+        uri = QString("data:image/svg+xml;utf8,%1").arg(QString::fromUtf8(data));
+        uri.replace('\r', "").replace('\n', "");
+    } else {
+        uri = QString("data:image/%1;base64,%2").arg(suffix).arg(QString::fromUtf8(data.toBase64()));
+    }
+
+    return uri;
 }
