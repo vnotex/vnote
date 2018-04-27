@@ -91,6 +91,12 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
         m_panelViewState = PanelViewState::TwoPanels;
     }
 
+    m_panelViewTimer = new QTimer(this);
+    m_panelViewTimer->setSingleShot(true);
+    m_panelViewTimer->setInterval(500);
+    connect(m_panelViewTimer, &QTimer::timeout,
+            this, &VMainWindow::postChangePanelView);
+
     initCaptain();
 
     setupUI();
@@ -2036,21 +2042,21 @@ void VMainWindow::onePanelView()
 {
     m_panelViewState = PanelViewState::SinglePanel;
     g_config->setEnableCompactMode(false);
-    changePanelView(m_panelViewState);
+    changePanelView(m_panelViewState, true);
 }
 
 void VMainWindow::twoPanelView()
 {
     m_panelViewState = PanelViewState::TwoPanels;
     g_config->setEnableCompactMode(false);
-    changePanelView(m_panelViewState);
+    changePanelView(m_panelViewState, true);
 }
 
 void VMainWindow::compactModeView()
 {
     m_panelViewState = PanelViewState::CompactMode;
     g_config->setEnableCompactMode(true);
-    changePanelView(m_panelViewState);
+    changePanelView(m_panelViewState, true);
 }
 
 void VMainWindow::enableCompactMode(bool p_enabled)
@@ -2099,7 +2105,7 @@ void VMainWindow::enableCompactMode(bool p_enabled)
     setTabOrder(directoryTree, m_fileList->getContentWidget());
 }
 
-void VMainWindow::changePanelView(PanelViewState p_state)
+void VMainWindow::changePanelView(PanelViewState p_state, bool p_postCheck)
 {
     switch (p_state) {
     case PanelViewState::ExpandMode:
@@ -2148,6 +2154,10 @@ void VMainWindow::changePanelView(PanelViewState p_state)
 
     if (p_state != PanelViewState::ExpandMode) {
         expandViewAct->setChecked(false);
+    }
+
+    if (p_postCheck) {
+        m_panelViewTimer->start();
     }
 }
 
@@ -3283,5 +3293,82 @@ void VMainWindow::setMenuBarVisible(bool p_visible)
         menuBar()->setFixedSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
     } else {
         menuBar()->setFixedHeight(0);
+    }
+}
+
+void VMainWindow::postChangePanelView()
+{
+    const int minVal = 10;
+    bool needUpdate = false;
+    QList<int> sizes = m_mainSplitter->sizes();
+    switch (m_panelViewState) {
+    case PanelViewState::SinglePanel:
+        if (sizes[1] == 0) {
+            sizes[1] = minVal;
+            needUpdate = true;
+        }
+
+        if (sizes[2] == 0) {
+            sizes[2] = minVal;
+            needUpdate = true;
+        }
+
+        break;
+
+    case PanelViewState::TwoPanels:
+        if (sizes[0] == 0) {
+            sizes[0] = minVal;
+            needUpdate = true;
+        }
+
+        if (sizes[1] == 0) {
+            sizes[1] = minVal;
+            needUpdate = true;
+        }
+
+        if (sizes[2] == 0) {
+            sizes[2] = minVal;
+            needUpdate = true;
+        }
+
+        break;
+
+    case PanelViewState::CompactMode:
+    {
+        if (sizes[0] == 0) {
+            sizes[0] = minVal;
+            needUpdate = true;
+        }
+
+        if (sizes[2] == 0) {
+            sizes[2] = minVal;
+            needUpdate = true;
+        }
+
+        bool naviUpdate = false;
+        QList<int> naviSizes = m_naviSplitter->sizes();
+        if (naviSizes[0] == 0) {
+            naviSizes[0] = minVal;
+            naviUpdate = true;
+        }
+
+        if (naviSizes[1] == 0) {
+            naviSizes[1] = minVal;
+            naviUpdate = true;
+        }
+
+        if (naviUpdate) {
+            m_naviSplitter->setSizes(naviSizes);
+        }
+
+        break;
+    }
+
+    default:
+        break;
+    }
+
+    if (needUpdate) {
+        m_mainSplitter->setSizes(sizes);
     }
 }

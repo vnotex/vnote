@@ -189,6 +189,9 @@ private slots:
     // Activate Universal Entry.
     void activateUniversalEntry();
 
+    // Make sure width of the panel is not zero after changePanelView().
+    void postChangePanelView();
+
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 
@@ -271,7 +274,7 @@ private:
 
     // Change the panel view according to @p_state.
     // Will not change m_panelViewState.
-    void changePanelView(PanelViewState p_state);
+    void changePanelView(PanelViewState p_state, bool p_postCheck = false);
 
     // Whether heading sequence is applicable to current tab.
     // Only available for writable Markdown file.
@@ -429,6 +432,9 @@ private:
 
     // Timer to check the shared memory between instances of VNote.
     QTimer *m_sharedMemTimer;
+
+    // Timer to check the panel size.
+    QTimer *m_panelViewTimer;
 
     // Tray icon.
     QSystemTrayIcon *m_trayIcon;
