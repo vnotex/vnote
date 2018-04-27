@@ -243,21 +243,20 @@ void VInsertImageDialog::handlePathEditChanged()
         return;
     }
 
-    QImage image(text);
-    if (image.isNull()) {
+    QImage image;
+    if (url.isLocalFile()) {
+        image = VUtils::imageFromFile(url.toLocalFile());
+        setImage(image);
+        m_imageType = ImageType::LocalFile;
+        qDebug() << "fetch local file image to insert" << text;
+    } else {
         setImage(QImage());
-        // Try to treat it as network image.
         m_imageType = ImageType::ImageData;
         VDownloader *downloader = new VDownloader(this);
         connect(downloader, &VDownloader::downloadFinished,
                 this, &VInsertImageDialog::imageDownloaded);
         downloader->download(url.toString());
         qDebug() << "try to fetch network image to insert" << text;
-    } else {
-        // Local image path.
-        setImage(image);
-        m_imageType = ImageType::LocalFile;
-        qDebug() << "fetch local file image to insert" << text;
     }
 
     handleInputChanged();

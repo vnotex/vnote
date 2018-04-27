@@ -320,6 +320,13 @@ public:
 
     static const QTreeWidgetItem *topLevelTreeItem(const QTreeWidgetItem *p_item);
 
+    // Read QImage from local file @p_filePath.
+    // Directly calling QImage(p_filePath) will judge the image format from the suffix,
+    // resulting a null image in wrong suffix case.
+    static QImage imageFromFile(const QString &p_filePath);
+
+    static QPixmap pixmapFromFile(const QString &p_filePath);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
     // Captured texts (need to be trimmed):

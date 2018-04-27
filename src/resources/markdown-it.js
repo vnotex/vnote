@@ -72,6 +72,14 @@ mdit = mdit.use(window.markdownitHeadingAnchor, {
     }
 });
 
+// Enable file: scheme.
+var validateLinkMDIT = mdit.validateLink;
+var fileSchemeRE = /^file:/;
+mdit.validateLink = function(url) {
+    var str = url.trim().toLowerCase();
+    return fileSchemeRE.test(str) ? true : validateLinkMDIT(url);
+};
+
 mdit = mdit.use(window.markdownitTaskLists);
 
 if (VMarkdownitOption.sub) {

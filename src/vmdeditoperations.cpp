@@ -148,12 +148,12 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
     // Whether it is a local file or web URL
     if (isLocal) {
         imagePath = imageUrl.toLocalFile();
-        image = QImage(imagePath);
-
+        image = VUtils::imageFromFile(imagePath);
         if (image.isNull()) {
-            qWarning() << "image is null";
+            qWarning() << "inserted image is null" << imagePath;
             return false;
         }
+
         title = "Insert Image From File";
     } else {
         imagePath = imageUrl.toString();

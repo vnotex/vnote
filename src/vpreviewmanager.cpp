@@ -222,7 +222,11 @@ QString VPreviewManager::fetchImagePathToPreview(const QString &p_text, QString 
             }
         } else {
             QUrl url(p_url);
-            imagePath = url.toString();
+            if (url.isLocalFile()) {
+                imagePath = url.toLocalFile();
+            } else {
+                imagePath = url.toString();
+            }
         }
     }
 
@@ -238,12 +242,11 @@ QString VPreviewManager::imageResourceName(const ImageLinkInfo &p_link)
     }
 
     // Add it to the resource.
-    QString imgPath = p_link.m_linkUrl;
-    QFileInfo info(imgPath);
     QPixmap image;
-    if (info.exists()) {
+    QString imgPath = p_link.m_linkUrl;
+    if (QFileInfo::exists(imgPath)) {
         // Local file.
-        image = QPixmap(imgPath);
+        image = VUtils::pixmapFromFile(imgPath);
     } else {
         // URL. Try to download it.
         m_downloader->download(imgPath);

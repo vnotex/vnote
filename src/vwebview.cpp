@@ -16,6 +16,7 @@
 #include "utils/viconutils.h"
 #include "vconfigmanager.h"
 #include "utils/vwebutils.h"
+#include "utils/vutils.h"
 
 extern VConfigManager *g_config;
 
@@ -139,7 +140,7 @@ void VWebView::copyImage()
         }
 
         if (!imgPath.isEmpty()) {
-            QImage img(imgPath);
+            QImage img = VUtils::imageFromFile(imgPath);
             if (!img.isNull()) {
                 m_afterCopyImage = false;
                 VClipboardUtils::setImageToClipboard(clipboard, img, QClipboard::Clipboard);

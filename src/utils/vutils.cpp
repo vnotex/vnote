@@ -1476,3 +1476,31 @@ const QTreeWidgetItem *VUtils::topLevelTreeItem(const QTreeWidgetItem *p_item)
         return p_item;
     }
 }
+
+QImage VUtils::imageFromFile(const QString &p_filePath)
+{
+    QImage img;
+    QFile file(p_filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "fail to open image file" << p_filePath;
+        return img;
+    }
+
+    img.loadFromData(file.readAll());
+    qDebug() << "imageFromFile" << p_filePath << img.isNull() << img.format();
+    return img;
+}
+
+QPixmap VUtils::pixmapFromFile(const QString &p_filePath)
+{
+    QPixmap pixmap;
+    QFile file(p_filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "fail to open pixmap file" << p_filePath;
+        return pixmap;
+    }
+
+    pixmap.loadFromData(file.readAll());
+    qDebug() << "pixmapFromFile" << p_filePath << pixmap.isNull();
+    return pixmap;
+}
