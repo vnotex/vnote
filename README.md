@@ -107,6 +107,8 @@ You could help VNote's development in many ways.
     - PayPal: [PayPal.Me/vnotemd](https://www.paypal.me/vnotemd)
     - Alipay: `tamlokveer@gmail.com`  
     ![Alipay](screenshots/alipay.png)
+    - WeChat  
+    ![WeChat Pay](screenshots/wechat_pay.png)
 
 Thanks very much to [them](https://github.com/tamlok/vnote/wiki/Donate-List) who donated to VNote!
 

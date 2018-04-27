@@ -108,6 +108,8 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
     - PayPal: [PayPal.Me/vnotemd](https://www.paypal.me/vnotemd)
     - 支付宝: `tamlokveer@gmail.com`  
     ![Alipay](screenshots/alipay.png)
+    - 微信  
+    ![WeChat Pay](screenshots/wechat_pay.png)
 
 非常感谢这些对VNote的 [捐赠者](https://github.com/tamlok/vnote/wiki/Donate-List) !
 
