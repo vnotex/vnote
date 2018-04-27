@@ -234,8 +234,10 @@ void VMdTab::showFileEditMode()
     // If editor is not init, we need to wait for it to init headers.
     // Generally, beginEdit() will generate the headers. Wait is needed when
     // highlight completion is going to re-generate the headers.
-    int nrRetry = 5;
-    while (header.m_index > -1 && m_outline.isEmpty() && nrRetry-- > 0) {
+    int nrRetry = 10;
+    while (header.m_index > -1
+           && nrRetry-- > 0
+           && (m_outline.isEmpty() || m_outline.getType() != VTableOfContentType::BlockNumber)) {
         qDebug() << "wait another 100 ms for editor's headers ready";
         VUtils::sleepWait(100);
     }
