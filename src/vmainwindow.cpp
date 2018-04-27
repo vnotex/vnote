@@ -2542,7 +2542,7 @@ QAction *VMainWindow::newAction(const QIcon &p_icon,
 
 void VMainWindow::showStatusMessage(const QString &p_msg)
 {
-    const int timeout = 3000;
+    const int timeout = 5000;
     statusBar()->showMessage(p_msg, timeout);
 }
 

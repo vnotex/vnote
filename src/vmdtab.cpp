@@ -457,6 +457,8 @@ void VMdTab::setupMarkdownViewer()
 
                 emit statusUpdated(info);
             });
+    connect(m_document, &VDocument::linkHovered,
+            this, &VMdTab::statusMessage);
 
     page->setWebChannel(channel);
 

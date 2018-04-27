@@ -859,6 +859,7 @@ var finishOneAsyncJob = function() {
 // markdown-specifi handle logics, such as Mermaid, MathJax.
 var finishLogics = function() {
     if (asyncJobsCount <= 0) {
+        hookLinks();
         content.finishLogics();
         calculateWordCount();
     }
@@ -1425,5 +1426,20 @@ var setPreviewContent = function(lang, html) {
         previewDiv.classList = VPlantUMLDivClass;
     } else {
         previewDiv.className = '';
+    }
+};
+
+// Show the href text of a link when mouse is over it.
+var showRefInLink = function(e) {
+    if (typeof content.showHoveredLink != 'undefined') {
+        content.showHoveredLink(this.href);
+    }
+};
+
+var hookLinks = function() {
+    var As = document.links;
+
+    for (var i = 0; i < As.length; ++i){
+        As[i].onmouseover = showRefInLink;
     }
 };

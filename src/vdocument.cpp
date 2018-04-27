@@ -188,3 +188,8 @@ void VDocument::previewCodeBlockCB(int p_id, const QString &p_lang, const QStrin
 {
     emit codeBlockPreviewReady(p_id, p_lang, p_html);
 }
+
+void VDocument::showHoveredLink(const QString &p_link)
+{
+    emit linkHovered(p_link);
+}
