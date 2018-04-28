@@ -79,7 +79,7 @@ public:
     bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE;
 
     // Open files @p_files.
-    int openFiles(const QVector<VFileSessionInfo> &p_files);
+    int openFiles(const QVector<VFileSessionInfo> &p_files, bool p_oneByOne = false);
 
     // Record a closed file in the stack.
     void recordClosedFile(const VFileSessionInfo &p_file);

@@ -2637,7 +2637,8 @@ bool VMainWindow::tryOpenInternalFile(const QString &p_filePath)
 void VMainWindow::openFiles(const QStringList &p_files,
                             bool p_forceOrphan,
                             OpenFileMode p_mode,
-                            bool p_forceMode)
+                            bool p_forceMode,
+                            bool p_oneByOne)
 {
     for (int i = 0; i < p_files.size(); ++i) {
         VFile *file = NULL;
@@ -2650,6 +2651,9 @@ void VMainWindow::openFiles(const QStringList &p_files,
         }
 
         m_editArea->openFile(file, p_mode, p_forceMode);
+        if (p_oneByOne) {
+            QCoreApplication::sendPostedEvents();
+        }
     }
 }
 
@@ -2744,7 +2748,7 @@ void VMainWindow::openStartupPages()
     {
         QVector<VFileSessionInfo> files = g_config->getLastOpenedFiles();
         qDebug() << "open" << files.size() << "last opened files";
-        m_editArea->openFiles(files);
+        m_editArea->openFiles(files, true);
         break;
     }
 
@@ -2752,7 +2756,7 @@ void VMainWindow::openStartupPages()
     {
         QStringList pagesToOpen = VUtils::filterFilePathsToOpen(g_config->getStartupPages());
         qDebug() << "open startup pages" << pagesToOpen;
-        openFiles(pagesToOpen);
+        openFiles(pagesToOpen, false, OpenFileMode::Read, false, true);
         break;
     }
 
@@ -3402,4 +3406,16 @@ void VMainWindow::postChangePanelView()
     if (needUpdate) {
         m_mainSplitter->setSizes(sizes);
     }
+}
+
+void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
+{
+    QTimer::singleShot(300, [this, p_files]() {
+        checkNotebooks();
+        QCoreApplication::sendPostedEvents();
+        promptNewNotebookIfEmpty();
+        QCoreApplication::sendPostedEvents();
+        openStartupPages();
+        openFiles(p_files, false, OpenFileMode::Read, false, true);
+    });
 }

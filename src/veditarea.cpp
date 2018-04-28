@@ -811,7 +811,7 @@ bool VEditArea::handleKeyNavigation(int p_key, bool &p_succeed)
     return ret;
 }
 
-int VEditArea::openFiles(const QVector<VFileSessionInfo> &p_files)
+int VEditArea::openFiles(const QVector<VFileSessionInfo> &p_files, bool p_oneByOne)
 {
     VFile *curFile = NULL;
     int nrOpened = 0;
@@ -838,6 +838,10 @@ int VEditArea::openFiles(const QVector<VFileSessionInfo> &p_files)
         info.toEditTabInfo(&tabInfo);
 
         tab->tryRestoreFromTabInfo(tabInfo);
+
+        if (p_oneByOne) {
+            QCoreApplication::sendPostedEvents();
+        }
     }
 
     if (curFile) {

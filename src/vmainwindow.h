@@ -89,7 +89,8 @@ public:
     void openFiles(const QStringList &p_files,
                    bool p_forceOrphan = false,
                    OpenFileMode p_mode = OpenFileMode::Read,
-                   bool p_forceMode = false);
+                   bool p_forceMode = false,
+                   bool p_oneByOne = false);
 
     // Try to open @p_filePath as internal note.
     bool tryOpenInternalFile(const QString &p_filePath);
@@ -113,6 +114,9 @@ public:
     VEditTab *getCurrentTab() const;
 
     VNotebook *getCurrentNotebook() const;
+
+    // Kick off timer to do things after start.
+    void kickOffStartUpTimer(const QStringList &p_files);
 
 signals:
     // Emit when editor related configurations were changed by user.

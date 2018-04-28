@@ -118,7 +118,7 @@ private:
     // Emit signal to update inplace preview.
     void updateInplacePreview();
 
-    void textToHtmlViaWebView(const QString &p_text,
+    bool textToHtmlViaWebView(const QString &p_text,
                               int p_id,
                               int p_timeStamp);
 

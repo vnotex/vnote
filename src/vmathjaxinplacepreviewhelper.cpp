@@ -153,27 +153,23 @@ void VMathJaxInplacePreviewHelper::processForInplacePreview(int p_idx)
     if (vmb.m_text.isEmpty()) {
         updateInplacePreview();
     } else {
-        textToHtmlViaWebView(vmb.m_text, p_idx, m_timeStamp);
+        if (!textToHtmlViaWebView(vmb.m_text, p_idx, m_timeStamp)) {
+            updateInplacePreview();
+        }
     }
 }
 
-void VMathJaxInplacePreviewHelper::textToHtmlViaWebView(const QString &p_text,
+bool VMathJaxInplacePreviewHelper::textToHtmlViaWebView(const QString &p_text,
                                                         int p_id,
                                                         int p_timeStamp)
 {
-    int maxRetry = 50;
-    while (!m_document->isReadyToTextToHtml() && maxRetry > 0) {
-        qDebug() << "wait for web side ready to convert text to HTML";
-        VUtils::sleepWait(100);
-        --maxRetry;
-    }
-
-    if (maxRetry == 0) {
-        qWarning() << "web side is not ready to convert text to HTML";
-        return;
+    if (!m_document->isReadyToTextToHtml()) {
+        qDebug() << "web side is not ready to convert text to HTML";
+        return false;
     }
 
     m_document->textToHtmlAsync(m_documentID, p_id, p_timeStamp, p_text, false);
+    return true;
 }
 
 void VMathJaxInplacePreviewHelper::updateInplacePreview()
