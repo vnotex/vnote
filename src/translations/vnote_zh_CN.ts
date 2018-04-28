@@ -3431,7 +3431,7 @@
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="1045"/>
-        <source>Custom some standard shortcuts</source>
+        <source>Customize some standard shortcuts</source>
         <translation>自定义部分标准快捷键</translation>
     </message>
     <message>
