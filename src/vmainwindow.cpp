@@ -1064,7 +1064,7 @@ void VMainWindow::initFileMenu()
 
     fileMenu->addAction(openConfigAct);
 
-    QAction *customShortcutAct = new QAction(tr("Custom Shortcuts"), this);
+    QAction *customShortcutAct = new QAction(tr("Customize Shortcuts"), this);
     customShortcutAct->setToolTip(tr("Customize some standard shortcuts"));
     connect(customShortcutAct, &QAction::triggered,
             this, &VMainWindow::customShortcut);
