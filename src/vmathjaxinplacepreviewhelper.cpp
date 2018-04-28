@@ -48,25 +48,25 @@ void MathjaxBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
 {
     QTextBlock block = p_doc->findBlockByNumber(m_mathjaxBlock.m_blockNumber);
     if (block.isValid()) {
-        if (m_inplacePreview.isNull()) {
-            m_inplacePreview.reset(new VImageToPreview());
-        }
+        VImageToPreview *preview = new VImageToPreview();
 
-        m_inplacePreview->m_startPos = block.position() + m_mathjaxBlock.m_index;
-        m_inplacePreview->m_endPos = m_inplacePreview->m_startPos + m_mathjaxBlock.m_length;
-        m_inplacePreview->m_blockPos = block.position();
-        m_inplacePreview->m_blockNumber = m_mathjaxBlock.m_blockNumber;
-        m_inplacePreview->m_padding = VPreviewManager::calculateBlockMargin(block,
-                                                                            p_editor->tabStopWidthW());
-        m_inplacePreview->m_name = QString::number(getImageIndex());
-        m_inplacePreview->m_isBlock = m_mathjaxBlock.m_previewedAsBlock;
+        preview->m_startPos = block.position() + m_mathjaxBlock.m_index;
+        preview->m_endPos = preview->m_startPos + m_mathjaxBlock.m_length;
+        preview->m_blockPos = block.position();
+        preview->m_blockNumber = m_mathjaxBlock.m_blockNumber;
+        preview->m_padding = VPreviewManager::calculateBlockMargin(block,
+                                                                   p_editor->tabStopWidthW());
+        preview->m_name = QString::number(getImageIndex());
+        preview->m_isBlock = m_mathjaxBlock.m_previewedAsBlock;
 
         if (hasImageDataBa()) {
-            m_inplacePreview->m_image.loadFromData(m_imgDataBa,
+            preview->m_image.loadFromData(m_imgDataBa,
                                                    m_imgFormat.toLocal8Bit().data());
         } else {
-            m_inplacePreview->m_image = QPixmap();
+            preview->m_image = QPixmap();
         }
+
+        m_inplacePreview.reset(preview);
     } else {
         m_inplacePreview->clear();
     }
@@ -117,9 +117,11 @@ void VMathJaxInplacePreviewHelper::updateMathjaxBlocks(const QVector<VMathjaxBlo
     int idx = 0;
     bool manualUpdate = true;
     for (auto const & vmb : p_blocks) {
+        bool cached = false;
         if (idx < m_mathjaxBlocks.size()) {
             MathjaxBlockPreviewInfo &mb = m_mathjaxBlocks[idx];
             if (mb.mathjaxBlock().equalContent(vmb)) {
+                cached = true;
                 mb.updateNonContent(m_doc, m_editor, vmb);
             } else {
                 mb.setMathjaxBlock(vmb);
@@ -129,7 +131,7 @@ void VMathJaxInplacePreviewHelper::updateMathjaxBlocks(const QVector<VMathjaxBlo
         }
 
         if (m_enabled
-            && !m_mathjaxBlocks[idx].inplacePreviewReady()) {
+            && (!cached || !m_mathjaxBlocks[idx].inplacePreviewReady())) {
             manualUpdate = false;
             processForInplacePreview(idx);
         }

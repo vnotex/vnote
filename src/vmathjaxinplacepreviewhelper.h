@@ -56,6 +56,7 @@ public:
     {
         m_imgFormat = p_format;
         m_imgDataBa = p_data;
+        m_inplacePreview.clear();
     }
 
     bool hasImageDataBa() const

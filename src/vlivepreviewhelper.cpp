@@ -64,19 +64,19 @@ void CodeBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
 {
     QTextBlock block = p_doc->findBlockByNumber(m_codeBlock.m_endBlock);
     if (block.isValid()) {
-        if (m_inplacePreview.isNull()) {
-            m_inplacePreview.reset(new VImageToPreview());
-        }
+        VImageToPreview *preview = new VImageToPreview();
 
         // m_image will be generated when signaling out.
-        m_inplacePreview->m_startPos = block.position();
-        m_inplacePreview->m_endPos = block.position() + block.length();
-        m_inplacePreview->m_blockPos = block.position();
-        m_inplacePreview->m_blockNumber = m_codeBlock.m_endBlock;
-        m_inplacePreview->m_padding = VPreviewManager::calculateBlockMargin(block,
-                                                                            p_editor->tabStopWidthW());
-        m_inplacePreview->m_name = QString::number(getImageIndex());
-        m_inplacePreview->m_isBlock = true;
+        preview->m_startPos = block.position();
+        preview->m_endPos = block.position() + block.length();
+        preview->m_blockPos = block.position();
+        preview->m_blockNumber = m_codeBlock.m_endBlock;
+        preview->m_padding = VPreviewManager::calculateBlockMargin(block,
+                                                                   p_editor->tabStopWidthW());
+        preview->m_name = QString::number(getImageIndex());
+        preview->m_isBlock = true;
+
+        m_inplacePreview.reset(preview);
     } else {
         m_inplacePreview->clear();
     }
@@ -158,7 +158,7 @@ void VLivePreviewHelper::updateCodeBlocks(const QVector<VCodeBlock> &p_codeBlock
         }
 
         if (m_inplacePreviewEnabled
-            && !m_codeBlocks[idx].inplacePreviewReady()) {
+            && (!cached || !m_codeBlocks[idx].inplacePreviewReady())) {
             processForInplacePreview(idx);
             manualInplacePreview = false;
         }

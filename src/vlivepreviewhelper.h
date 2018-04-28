@@ -83,6 +83,7 @@ public:
     void setImageData(const QString &p_format, const QString &p_data)
     {
         m_imgDataBa.clear();
+        m_inplacePreview.clear();
 
         m_imgFormat = p_format;
         m_imgData = p_data;
@@ -91,6 +92,7 @@ public:
     void setImageDataBa(const QString &p_format, const QByteArray &p_data)
     {
         m_imgData.clear();
+        m_inplacePreview.clear();
 
         m_imgFormat = p_format;
         m_imgDataBa = p_data;
