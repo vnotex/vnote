@@ -190,7 +190,7 @@ bool VMdEditor::scrollToBlock(int p_blockNumber)
 }
 
 // Get the visual offset of a block.
-#define GETVISUALOFFSETY (contentOffsetY() + (int)rect.y())
+#define GETVISUALOFFSETY(x) (contentOffsetY() + (int)(x).y())
 
 void VMdEditor::makeBlockVisible(const QTextBlock &p_block)
 {
@@ -213,9 +213,9 @@ void VMdEditor::makeBlockVisible(const QTextBlock &p_block)
     bool moved = false;
 
     QAbstractTextDocumentLayout *layout = document()->documentLayout();
-    QRectF rect = layout->blockBoundingRect(p_block);
-    int y = GETVISUALOFFSETY;
-    int rectHeight = (int)rect.height();
+    QRectF rt = layout->blockBoundingRect(p_block);
+    int y = GETVISUALOFFSETY(rt);
+    int rectHeight = (int)rt.height();
 
     // Handle the case rectHeight >= height.
     if (rectHeight >= height) {
@@ -224,18 +224,18 @@ void VMdEditor::makeBlockVisible(const QTextBlock &p_block)
             while (y + rectHeight < height && vbar->value() > vbar->minimum()) {
                 moved = true;
                 vbar->setValue(vbar->value() - vbar->singleStep());
-                rect = layout->blockBoundingRect(p_block);
-                rectHeight = (int)rect.height();
-                y = GETVISUALOFFSETY;
+                rt = layout->blockBoundingRect(p_block);
+                rectHeight = (int)rt.height();
+                y = GETVISUALOFFSETY(rt);
             }
         } else if (y > 0) {
             // Need to scroll down.
             while (y > 0 && vbar->value() < vbar->maximum()) {
                 moved = true;
                 vbar->setValue(vbar->value() + vbar->singleStep());
-                rect = layout->blockBoundingRect(p_block);
-                rectHeight = (int)rect.height();
-                y = GETVISUALOFFSETY;
+                rt = layout->blockBoundingRect(p_block);
+                rectHeight = (int)rt.height();
+                y = GETVISUALOFFSETY(rt);
             }
 
             if (y < 0) {
@@ -245,36 +245,28 @@ void VMdEditor::makeBlockVisible(const QTextBlock &p_block)
             }
         }
 
-        if (moved) {
-            qDebug() << "scroll to make huge block visible";
-        }
-
         return;
     }
 
+    // There is an extra line leading in the layout, so there will always be a scroll
+    // action to scroll the page down.
     while (y < 0 && vbar->value() > vbar->minimum()) {
         moved = true;
         vbar->setValue(vbar->value() - vbar->singleStep());
-        rect = layout->blockBoundingRect(p_block);
-        rectHeight = (int)rect.height();
-        y = GETVISUALOFFSETY;
+        rt = layout->blockBoundingRect(p_block);
+        y = GETVISUALOFFSETY(rt);
     }
 
     if (moved) {
-        qDebug() << "scroll page down to make block visible";
         return;
     }
 
     while (y + rectHeight > height && vbar->value() < vbar->maximum()) {
         moved = true;
         vbar->setValue(vbar->value() + vbar->singleStep());
-        rect = layout->blockBoundingRect(p_block);
-        rectHeight = (int)rect.height();
-        y = GETVISUALOFFSETY;
-    }
-
-    if (moved) {
-        qDebug() << "scroll page up to make block visible";
+        rt = layout->blockBoundingRect(p_block);
+        rectHeight = (int)rt.height();
+        y = GETVISUALOFFSETY(rt);
     }
 }
 
@@ -396,9 +388,9 @@ bool VMdEditor::isBlockVisible(const QTextBlock &p_block)
     }
 
     QAbstractTextDocumentLayout *layout = document()->documentLayout();
-    QRectF rect = layout->blockBoundingRect(p_block);
-    int y = GETVISUALOFFSETY;
-    int rectHeight = (int)rect.height();
+    QRectF rt = layout->blockBoundingRect(p_block);
+    int y = GETVISUALOFFSETY(rt);
+    int rectHeight = (int)rt.height();
 
     return (y >= 0 && y < height) || (y < 0 && y + rectHeight > 0);
 }
