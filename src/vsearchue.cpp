@@ -794,7 +794,7 @@ void VSearchUE::activateItem(const QSharedPointer<VSearchResultItem> &p_item)
     {
         VNotebook *nb = g_vnote->getNotebook(p_item->m_path);
         if (nb) {
-            g_mainWin->getNotebookSelector()->locateNotebook(nb);
+            g_mainWin->locateNotebook(nb);
         }
 
         break;

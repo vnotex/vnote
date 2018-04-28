@@ -2376,10 +2376,12 @@ bool VMainWindow::locateFile(VFile *p_file)
     }
 
     // Open the directory and file panels after location.
-    if (m_panelViewState == PanelViewState::CompactMode) {
-        compactModeView();
-    } else {
-        twoPanelView();
+    if (ret) {
+        if (m_panelViewState == PanelViewState::CompactMode) {
+            compactModeView();
+        } else {
+            twoPanelView();
+        }
     }
 
     return ret;
@@ -2398,14 +2400,43 @@ bool VMainWindow::locateDirectory(VDirectory *p_directory)
             QCoreApplication::sendPostedEvents();
         }
 
-        ret = directoryTree->locateDirectory(p_directory);
+        if (directoryTree->locateDirectory(p_directory)) {
+            ret = true;
+            directoryTree->setFocus();
+        }
     }
 
     // Open the directory and file panels after location.
-    if (m_panelViewState == PanelViewState::CompactMode) {
-        compactModeView();
-    } else {
-        twoPanelView();
+    if (ret) {
+        if (m_panelViewState == PanelViewState::CompactMode) {
+            compactModeView();
+        } else {
+            twoPanelView();
+        }
+    }
+
+    return ret;
+}
+
+bool VMainWindow::locateNotebook(VNotebook *p_notebook)
+{
+    bool ret = false;
+    if (!p_notebook) {
+        return ret;
+    }
+
+    if (m_notebookSelector->locateNotebook(p_notebook)) {
+        ret = true;
+        directoryTree->setFocus();
+    }
+
+    // Open the directory and file panels after location.
+    if (ret) {
+        if (m_panelViewState == PanelViewState::CompactMode) {
+            compactModeView();
+        } else {
+            twoPanelView();
+        }
     }
 
     return ret;

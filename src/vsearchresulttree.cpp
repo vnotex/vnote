@@ -7,7 +7,6 @@
 #include "utils/viconutils.h"
 #include "vnote.h"
 #include "vmainwindow.h"
-#include "vnotebookselector.h"
 #include "vnotefile.h"
 #include "vcart.h"
 
@@ -252,7 +251,7 @@ void VSearchResultTree::activateItem(const QTreeWidgetItem *p_item) const
     {
         VNotebook *nb = g_vnote->getNotebook(resItem->m_path);
         if (nb) {
-            g_mainWin->getNotebookSelector()->locateNotebook(nb);
+            g_mainWin->locateNotebook(nb);
         }
 
         break;

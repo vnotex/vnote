@@ -65,6 +65,9 @@ public:
     // Returns true if the location succeeds.
     bool locateDirectory(VDirectory *p_directory);
 
+    // Returns true if the location succeeds.
+    bool locateNotebook(VNotebook *p_notebook);
+
     VFileList *getFileList() const;
 
     VEditArea *getEditArea() const;
