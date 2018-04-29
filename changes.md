@@ -2,7 +2,7 @@
 ## v1.15
 - Support **PlantUML** and **Graphviz**;
 - **In-Place Preview** for MathJax, PlantUML, Graphviz, and Flowchart.js;
-- **Live Preview** for diagrams and MathJax via `Ctrl+E I`;
+- **Live Preview** for diagrams via `Ctrl+E I`;
 - Restore cursor position when recovering pages at startup;
 - UniversalEntry
     - Ctrl+I to expand/collapse current item;

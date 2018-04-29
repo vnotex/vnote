@@ -140,6 +140,12 @@ VNote支持 [PlantUML](http://plantuml.com/) 来实现UML图表。您需要使�
     @enduml
     ```
 
+#### Graphviz
+
+> 需要在设置中启用Graphviz。
+
+VNote支持 [Graphviz](http://www.graphviz.org/) 来绘制图表。您需要使用代码块，并标明语言为`dot`，然后在代码块里面定义图表。
+
 ### 数学公式
 
 > 需要在`Markdown`菜单中启用MathJax。

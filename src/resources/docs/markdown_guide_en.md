@@ -139,6 +139,12 @@ VNote supports [PlantUML](http://plantuml.com/) to draw UML diagrams. You should
     @enduml
     ```
 
+#### Graphviz
+
+> You need to enable Graphviz in the settings.
+
+VNote supports [Graphviz](http://www.graphviz.org/) to draw diagrams. You should use `dot` specified as the language of the fenced code block and write the definition of your diagram within it.
+
 ### Math Formulas
 
 > You need to enable MathJax in the `Markdown` menu.
