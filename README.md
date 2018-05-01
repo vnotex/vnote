@@ -67,13 +67,13 @@ brew cask install vnote
 ```
 
 # Description
-**VNote** is a Qt-based, free and open source note-taking application, focusing on Markdown. VNote is designed to provide comfortable edit experience.
+**VNote** is a Qt-based, free and open source note-taking application, focusing on Markdown. VNote is designed to provide comfortable edit experience, especially for programmers.
 
 VNote is **NOT** just a simple editor for Markdown. By providing notes management, VNote makes taking notes in Markdown simpler and more pleasant.
 
 Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 
-![VNote Main Interface](screenshots/_vnotemaini_1521763751_1643978501.png)
+![VNote Main Interface](screenshots/_vnotemaini_1525154456_1561295841.png)
 
 # Supports
 - [Github issues](https://github.com/tamlok/vnote/issues);
@@ -86,16 +86,18 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 - **Universal Entry** to reach anything just by typing;
 - Inserting images directly from clipboard;
 - Syntax highlights of fenced code blocks in both **edit** and **read** mode;
+- Powerful **In-Place Preview** for images, diagrams, and formulas;
+- Side-by-side live preview for diagrams;
 - Outline in both edit and read mode;
 - Custom styles in both edit and read mode;
 - Vim mode and a set of powerful shortcuts;
 - Infinite levels of folders;
 - Multiple tabs and splitting windows;
-- [Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/), and [MathJax](https://www.mathjax.org/);
+- [Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/), [MathJax](https://www.mathjax.org/), [PlantUML](http://plantuml.com/), and [Graphviz](http://www.graphviz.org/);
 - Supports HiDPI;
 - Attachments of notes;
 - Themes and dark mode;
-- Rich and extensible export, such as HTML, PDF, and PDF (All In One);
+- Rich and extensible export, such as HTML, PDF, PDF (All In One), and images;
 
 # Donate
 You could help VNote's development in many ways.
@@ -149,10 +151,10 @@ VNote also supports **syntax highlight for fenced code blocks** in edit mode in 
 
 ![Syntax Highlight](screenshots/_1513485266_1616037517.png)
 
-## Live Image Preview
-VNote supports previewing the image link in edit mode. With this, you could just stay in edit mode as much as possible.
+## In-Place Preview
+VNote supports powerful **in-place preview** for images, diagrams, and formulas in edit mode.
 
-![Live Image Preview](screenshots/_1513485934_140085443.png)
+![In-Place Preview](screenshots/_inplacepre_1525155248_405615820.png)
 
 ## Pleasant Image Experience
 Just paste your image into the Markdown note, VNote will manage all other stuffs. VNote stores images in a specified folder in the same folder with the note. VNote will pop up a window to preview the image when you insert an image. Furthermore, VNote will delete the useless image files automatically after you remove the image links.

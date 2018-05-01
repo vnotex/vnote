@@ -74,7 +74,7 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 
 基于Qt框架，VNote能够在主流操作系统上运行，包括 **Linux**, **Windows** 以及 **macOS** 。
 
-![VNote Main Interface](screenshots/_vnotemaini_1521763751_1643978501.png)
+![VNote Main Interface](screenshots/_vnotemaini_1525154456_1561295841.png)
 
 # 支持
 - [Github issues](https://github.com/tamlok/vnote/issues)；
@@ -87,16 +87,18 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 - **通用入口**，通过按键操控一切；
 - 直接从剪切板插入图片；
 - 编辑和阅读模式下代码块的语法高亮；
+- 强大的**原地预览**，包括图片、图表和公式；
+- 针对图表的两边实时预览；
 - 编辑和阅读模式下的大纲；
 - 自定义编辑和阅读模式的样式；
 - Vim模式以及一系列强大的快捷键；
 - 无限层级的文件夹；
 - 多个标签页和窗口分割；
-- [Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/) 和 [MathJax](https://www.mathjax.org/)；
+- [Mermaid](http://knsv.github.io/mermaid/)、 [Flowchart.js](http://flowchart.js.org/)、 [MathJax](https://www.mathjax.org/)、 [PlantUML](http://plantuml.com/) 和 [Graphviz](http://www.graphviz.org/)；
 - 支持高分辨率；
 - 笔记附件；
 - 主题以及深色模式；
-- 丰富、可扩展的导出，包括HTML，PDF，和PDF（多合一）；
+- 丰富、可扩展的导出，包括HTML、PDF、PDF（多合一）和图片；
 
 # 捐赠
 您可以通过很多途径帮助VNote的开发。
@@ -150,12 +152,10 @@ VNote还支持Markdown编辑模式中代码块的语法高亮。目前的Markdow
 
 ![Syntax Highlight](screenshots/_1513485266_1616037517.png)
 
-## 实时图片预览
-VNote支持在编辑时原地预览图片链接。这样一来，您就能尽可能地留在编辑模式，避免频繁切换。
+## 原地预览
+VNote支持在编辑时原地预览图片、图表和公式。
 
-如果想要拷贝图片，可以选取该图片，然后复制。
-
-![Live Image Preview](screenshots/_1513485934_140085443.png)
+![In-Place Preview](screenshots/_inplacepre_1525155248_405615820.png)
 
 ## 良好的图片体验
 编辑时，支持像其他富文本编辑器一样直接粘贴插入图片，VNote会帮您管理所插入的图片。VNote将这些图片保存在和笔记同一目录下的一个指定目录中。插入图片时，VNote会弹出一个窗口预览即将要插入的图片。另外，当您移除笔记中的图片链接时，VNote会自动删除对应的图片文件。
