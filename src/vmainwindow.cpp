@@ -3073,7 +3073,7 @@ void VMainWindow::initThemeMenu(QMenu *p_menu)
 void VMainWindow::customShortcut()
 {
     VTipsDialog dialog(VUtils::getDocFile("tips_custom_shortcut.md"),
-                       tr("Custom Shortcuts"),
+                       tr("Customize Shortcuts"),
                        []() {
 #if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
                            // On macOS, it seems that we could not open that ini file directly.

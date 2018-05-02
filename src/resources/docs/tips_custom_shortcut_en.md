@@ -1,5 +1,5 @@
-# Custom Shortcuts
-VNote supports customing some standard shortcuts, though it is not recommended. VNote stores shortcuts' configuration information in the `[shortcuts]` and `[captain_mode_shortcuts]` sections of user configuration file `vnote.ini`.
+# Customize Shortcuts
+VNote supports customizing some standard shortcuts, though it is not recommended. VNote stores shortcuts' configuration information in the `[shortcuts]` and `[captain_mode_shortcuts]` sections of user configuration file `vnote.ini`.
 
 For example, the default configruation may look like this:
 
@@ -7,7 +7,7 @@ For example, the default configruation may look like this:
 [shortcuts]
 ; Define shortcuts here, with each item in the form "operation=keysequence".
 ; Leave keysequence empty to disable the shortcut of an operation.
-; Custom shortcuts may conflict with some key bindings in edit mode or Vim mode.
+; Customized shortcuts may conflict with some key bindings in edit mode or Vim mode.
 ; Ctrl+Q is reserved for quitting VNote.
 
 ; Leader key of Captain mode

@@ -9,6 +9,7 @@ class QDialogButtonBox;
 class QComboBox;
 class QGroupBox;
 class QDoubleSpinBox;
+class QSpinBox;
 class QCheckBox;
 class VLineEdit;
 class QStackedLayout;
@@ -52,6 +53,22 @@ private:
     QPushButton *m_startupPagesAddBtn;
 
     static const QVector<QString> c_availableLangs;
+};
+
+class VLookTab: public QWidget
+{
+    Q_OBJECT
+public:
+    explicit VLookTab(QWidget *p_parent = 0);
+    bool loadConfiguration();
+    bool saveConfiguration();
+
+private:
+    bool loadToolBarIconSize();
+    bool saveToolBarIconSize();
+
+    // Tool bar icon size.
+    QSpinBox *m_tbIconSizeSpin;
 };
 
 class VReadEditTab : public QWidget
@@ -157,6 +174,9 @@ private:
     bool loadColorColumn();
     bool saveColorColumn();
 
+    bool loadMathJax();
+    bool saveMathJax();
+
     bool loadPlantUML();
     bool savePlantUML();
 
@@ -172,6 +192,9 @@ private:
 
     // Color column in code block.
     VLineEdit *m_colorColumnEdit;
+
+    // MathJax.
+    VLineEdit *m_mathjaxConfigEdit;
 
     // PlantUML.
     QComboBox *m_plantUMLModeCombo;

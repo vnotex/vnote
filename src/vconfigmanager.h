@@ -324,6 +324,7 @@ public:
     void setEnableCodeBlockLineNumber(bool p_enabled);
 
     int getToolBarIconSize() const;
+    void setToolBarIconSize(int p_size);
 
     const MarkdownitOption &getMarkdownitOption() const;
     void setMarkdownitOption(const MarkdownitOption &p_opt);
@@ -339,6 +340,7 @@ public:
     void setConfirmReloadFolder(bool p_enabled);
 
     const QString &getMathjaxJavascript() const;
+    void setMathjaxJavascript(const QString &p_js);
 
     bool getDoubleClickCloseTab() const;
 
@@ -1860,6 +1862,17 @@ inline int VConfigManager::getToolBarIconSize() const
     return m_toolBarIconSize;
 }
 
+inline void VConfigManager::setToolBarIconSize(int p_size)
+{
+    if (m_toolBarIconSize == p_size) {
+        return;
+    }
+
+    m_toolBarIconSize  = p_size;
+    setConfigToSettings("global",
+                        "tool_bar_icon_size",
+                        m_toolBarIconSize);
+}
 inline const MarkdownitOption &VConfigManager::getMarkdownitOption() const
 {
     return m_markdownItOpt;
@@ -1922,6 +1935,22 @@ inline void VConfigManager::setConfirmReloadFolder(bool p_enabled)
 inline const QString &VConfigManager::getMathjaxJavascript() const
 {
     return m_mathjaxJavascript;
+}
+
+inline void VConfigManager::setMathjaxJavascript(const QString &p_js)
+{
+    if (m_mathjaxJavascript == p_js) {
+        return;
+    }
+
+    if (p_js.isEmpty()) {
+        m_mathjaxJavascript = resetDefaultConfig("web", "mathjax_javascript").toString();
+    } else {
+        m_mathjaxJavascript = p_js;
+        setConfigToSettings("web",
+                            "mathjax_javascript",
+                            m_mathjaxJavascript);
+    }
 }
 
 inline bool VConfigManager::getDoubleClickCloseTab() const
