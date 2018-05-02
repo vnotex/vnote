@@ -469,8 +469,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 
     // Handle Insert mode key press.
     if (VimMode::Insert == m_mode) {
-        if (key == Qt::Key_Escape
-            || (key == Qt::Key_BracketLeft && VUtils::isControlModifierForVim(modifiers))) {
+        if (checkEnterNormalMode(key, modifiers)) {
             // See if we need to cancel auto indent.
             bool cancelAutoIndent = false;
             if (p_autoIndentPos && *p_autoIndentPos > -1) {
@@ -1300,7 +1299,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
     case Qt::Key_BracketLeft:
     {
         if (VUtils::isControlModifierForVim(modifiers)) {
-            // fallthrough.
+            clearSelectionAndEnterNormalMode();
         } else if (modifiers == Qt::NoModifier) {
             tryGetRepeatToken(m_keys, m_tokens);
             if (checkPendingKey(Key(Qt::Key_I))
@@ -1328,32 +1327,14 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 // ][, goto next title at the same level.
                 processTitleJump(m_tokens, true, 0);
             }
-
-            break;
-        } else {
-            break;
         }
 
-        V_FALLTHROUGH;
+        break;
     }
 
     case Qt::Key_Escape:
     {
-        // Clear selection and enter normal mode.
-        int position = -1;
-        if (checkMode(VimMode::Visual)) {
-            QTextCursor cursor = m_editor->textCursorW();
-            if (cursor.position() > cursor.anchor()) {
-                position = cursor.position() - 1;
-            }
-        }
-
-        bool ret = clearSelection();
-        if (!ret && checkMode(VimMode::Normal)) {
-            emit m_editor->object()->requestCloseFindReplaceDialog();
-        }
-
-        setMode(VimMode::Normal, true, position);
+        clearSelectionAndEnterNormalMode();
         break;
     }
 
@@ -1635,10 +1616,6 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 if (checkActionToken(Action::Change)) {
                     addRangeToken(Range::Line);
                     processCommand(m_tokens);
-                    break;
-                } else {
-                    // An invalid sequence.
-                    break;
                 }
             } else {
                 // The first c, an action.
@@ -1661,13 +1638,13 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 addMovementToken(Movement::EndOfLine);
                 processCommand(m_tokens);
             }
-
-            break;
         } else if (VUtils::isControlModifierForVim(modifiers)) {
             if (g_config->getVimExemptionKeys().contains('c')) {
                 // Let it be handled outside.
                 resetState();
                 goto exit;
+            } else {
+                clearSelectionAndEnterNormalMode();
             }
         }
 
@@ -6352,4 +6329,43 @@ bool VVim::useLeftSideOfCursor(const QTextCursor &p_cursor)
 
     Q_ASSERT(m_positionBeforeVisualMode >= 0);
     return p_cursor.position() > m_positionBeforeVisualMode;
+}
+
+bool VVim::checkEnterNormalMode(int p_key, int p_modifiers)
+{
+    if (p_key == Qt::Key_Escape) {
+        return true;
+    }
+
+    if (!VUtils::isControlModifierForVim(p_modifiers)) {
+        return false;
+    }
+
+    if (p_key == Qt::Key_BracketLeft) {
+        return true;
+    }
+
+    if (p_key == Qt::Key_C && !g_config->getVimExemptionKeys().contains('c')) {
+        return true;
+    }
+
+    return false;
+}
+
+void VVim::clearSelectionAndEnterNormalMode()
+{
+    int position = -1;
+    if (checkMode(VimMode::Visual)) {
+        QTextCursor cursor = m_editor->textCursorW();
+        if (cursor.position() > cursor.anchor()) {
+            position = cursor.position() - 1;
+        }
+    }
+
+    bool ret = clearSelection();
+    if (!ret && checkMode(VimMode::Normal)) {
+        emit m_editor->object()->requestCloseFindReplaceDialog();
+    }
+
+    setMode(VimMode::Normal, true, position);
 }

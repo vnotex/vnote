@@ -829,6 +829,10 @@ private:
     // Whether we should consider the left or right side of the cursor.
     bool useLeftSideOfCursor(const QTextCursor &p_cursor);
 
+    bool checkEnterNormalMode(int p_key, int p_modifiers);
+
+    void clearSelectionAndEnterNormalMode();
+
     VEditor *m_editor;
     const VEditConfig *m_editConfig;
     VimMode m_mode;
