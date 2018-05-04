@@ -311,5 +311,6 @@ table.hljs-ln tr td.hljs-ln-code {
 }
 
 ::selection {
-  background: #64B5F6;
+  background: #1976D2;
+  color: #BCBCBC;
 }

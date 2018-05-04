@@ -41,8 +41,8 @@ preview-image-line-foreground: 6f5799
 mathjax-foreground: 4db6ac
 
 editor-selection
-foreground: dadada
-background: 1e88e5
+foreground: bcbcbc
+background: 1976d2
 
 editor-current-line
 background: 353d49
@@ -51,7 +51,7 @@ vim-insert-background: 353d49
 # [VNote] Vim normal mode cursor line background
 vim-normal-background: 373c47
 # [VNote] Vim visual mode cursor line background
-vim-visual-background: 105fa2
+vim-visual-background: 0d47a1
 # [VNote] Vim replace mode cursor line background
 vim-replace-background: 2f3377
 

@@ -40,8 +40,8 @@ preview-image-line-foreground: 9575cd
 mathjax-foreground: 00897b
 
 editor-selection
-foreground: eeeeee
-background: 005fff
+foreground: ffffff
+background: 1976d2
 
 editor-current-line
 background: c5cae9
