@@ -2,7 +2,6 @@
 
 #include <QWebEngineView>
 #include <QWebChannel>
-#include <QApplication>
 
 #include "utils/vutils.h"
 #include "vmathjaxwebdocument.h"
@@ -27,8 +26,6 @@ void VMathJaxPreviewHelper::doInit()
     Q_ASSERT(m_parentWidget);
 
     m_initialized = true;
-
-    QWidget *focusWid = QApplication::focusWidget();
 
     m_webView = new QWebEngineView(m_parentWidget);
     connect(m_webView, &QWebEngineView::loadFinished,
@@ -68,13 +65,10 @@ void VMathJaxPreviewHelper::doInit()
     channel->registerObject(QStringLiteral("content"), m_webDoc);
     m_webView->page()->setWebChannel(channel);
 
+    // setHtml() will change focus if it is not disabled.
+    m_webView->setEnabled(false);
     m_webView->setHtml(VUtils::generateMathJaxPreviewTemplate(), QUrl("qrc:/resources"));
-
-    if (focusWid) {
-        focusWid->setFocus();
-    } else {
-        m_parentWidget->setFocus();
-    }
+    m_webView->setEnabled(true);
 }
 
 void VMathJaxPreviewHelper::previewMathJax(int p_identifier,
