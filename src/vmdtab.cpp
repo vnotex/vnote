@@ -1383,12 +1383,19 @@ void VMdTab::setCurrentMode(Mode p_mode)
         m_livePreviewHelper->setLivePreviewEnabled(false);
     }
 
+    m_mode = p_mode;
+
     switch (p_mode) {
     case Mode::Read:
-        m_webViewer->show();
         if (m_editor) {
             m_editor->hide();
         }
+
+        m_webViewer->show();
+
+        // Fix the bug introduced by 051088be31dbffa3c04e2d382af15beec40d5fdb
+        // which replace QStackedLayout with QSplitter.
+        QCoreApplication::sendPostedEvents();
 
         if (m_readWebViewState.isNull()) {
             m_readWebViewState.reset(new WebViewState());
@@ -1401,14 +1408,20 @@ void VMdTab::setCurrentMode(Mode p_mode)
         break;
 
     case Mode::Edit:
-        m_editor->show();
         m_webViewer->hide();
+        m_editor->show();
+
+        QCoreApplication::sendPostedEvents();
+
         break;
 
     case Mode::EditPreview:
         Q_ASSERT(m_editor);
-        m_editor->show();
         m_webViewer->show();
+        m_editor->show();
+
+        QCoreApplication::sendPostedEvents();
+
         if (m_previewWebViewState.isNull()) {
             m_previewWebViewState.reset(new WebViewState());
             m_previewWebViewState->m_zoomFactor = factor;
@@ -1439,8 +1452,6 @@ void VMdTab::setCurrentMode(Mode p_mode)
     default:
         break;
     }
-
-    m_mode = p_mode;
 
     focusChild();
 }
