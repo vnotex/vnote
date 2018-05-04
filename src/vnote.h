@@ -51,6 +51,7 @@ public:
     static const QString c_markdownitSupExtraFile;
     static const QString c_markdownitFootnoteExtraFile;
     static const QString c_markdownitFrontMatterExtraFile;
+    static const QString c_markdownitImsizeExtraFile;
 
     // Showdown
     static const QString c_showdownJsFile;

@@ -27,3 +27,7 @@ Vitaly Puzrin
 # [markddown-it-front-matter](https://github.com/craigdmckenna/markdown-it-front-matter)
 v0.1.2
 Craig McKenna
+
+# [markdown-it-imsize](https://github.com/tatsy/markdown-it-imsize)
+v2.0.1
+Tatsuya Yatagawa

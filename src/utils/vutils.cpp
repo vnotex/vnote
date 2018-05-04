@@ -653,6 +653,7 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
         extraFile = "<script src=\"qrc" + VNote::c_markdownitExtraFile + "\"></script>\n" +
                     "<script src=\"qrc" + VNote::c_markdownitAnchorExtraFile + "\"></script>\n" +
                     "<script src=\"qrc" + VNote::c_markdownitTaskListExtraFile + "\"></script>\n" +
+                    "<script src=\"qrc" + VNote::c_markdownitImsizeExtraFile + "\"></script>\n" +
                     "<script src=\"qrc" + VNote::c_markdownitFootnoteExtraFile + "\"></script>\n";
 
         const MarkdownitOption &opt = g_config->getMarkdownitOption();

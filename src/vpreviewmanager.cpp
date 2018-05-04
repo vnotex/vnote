@@ -131,7 +131,7 @@ void VPreviewManager::fetchImageLinksFromRegions(QVector<VElementRegion> p_image
     QTextDocument *doc = m_editor->document();
 
     for (int i = 0; i < p_imageRegions.size(); ++i) {
-        VElementRegion &reg = p_imageRegions[i];
+        const VElementRegion &reg = p_imageRegions[i];
         QTextBlock block = doc->findBlock(reg.m_startPos);
         if (!block.isValid()) {
             continue;
@@ -140,7 +140,13 @@ void VPreviewManager::fetchImageLinksFromRegions(QVector<VElementRegion> p_image
         int blockStart = block.position();
         int blockEnd = blockStart + block.length() - 1;
         QString text = block.text();
-        Q_ASSERT(reg.m_endPos <= blockEnd);
+
+        // Since the image links update signal is emitted after a timer, during which
+        // the content may be changed.
+        if (reg.m_endPos > blockEnd) {
+            continue;
+        }
+
         ImageLinkInfo info(reg.m_startPos,
                            reg.m_endPos,
                            blockStart,
