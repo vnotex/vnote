@@ -32,7 +32,10 @@ void VGraphvizHelper::processAsync(int p_id, TimeStamp p_timeStamp, const QStrin
     qDebug() << m_program << args;
 
     process->start(m_program, args);
-    process->write(p_text.toUtf8());
+    if (process->write(p_text.toUtf8()) == -1) {
+        qWarning() << "fail to write to QProcess:" << process->errorString();
+    }
+
     process->closeWriteChannel();
 }
 
@@ -54,7 +57,12 @@ void VGraphvizHelper::handleProcessFinished(int p_exitCode, QProcess::ExitStatus
     int id = process->property(TaskIdProperty).toInt();
     QString format = process->property(TaskFormatProperty).toString();
     TimeStamp timeStamp = process->property(TaskTimeStampProperty).toULongLong();
-    qDebug() << "process finished" << id << timeStamp << format << p_exitCode << p_exitStatus;
+    qDebug() << QString("Graphviz finished: id %1 timestamp %2 format %3 exitcode %4 exitstatus %5")
+                       .arg(id)
+                       .arg(timeStamp)
+                       .arg(format)
+                       .arg(p_exitCode)
+                       .arg(p_exitStatus);
     bool failed = true;
     if (p_exitStatus == QProcess::NormalExit) {
         if (p_exitCode < 0) {
@@ -72,13 +80,17 @@ void VGraphvizHelper::handleProcessFinished(int p_exitCode, QProcess::ExitStatus
         qWarning() << "fail to start Graphviz process" << p_exitCode << p_exitStatus;
     }
 
-    if (failed) {
-        QByteArray errBa = process->readAllStandardError();
-        if (!errBa.isEmpty()) {
-            QString errStr(QString::fromLocal8Bit(errBa));
+    QByteArray errBa = process->readAllStandardError();
+    if (!errBa.isEmpty()) {
+        QString errStr(QString::fromLocal8Bit(errBa));
+        if (failed) {
             qWarning() << "Graphviz stderr:" << errStr;
+        } else {
+            qDebug() << "Graphviz stderr:" << errStr;
         }
+    }
 
+    if (failed) {
         emit resultReady(id, timeStamp, format, "");
     }
 

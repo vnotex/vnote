@@ -478,6 +478,8 @@ public:
     const QString &getPlantUMLJar() const;
     void setPlantUMLJar(const QString &p_jarPath);
 
+    const QStringList &getPlantUMLArgs() const;
+
     const QString &getGraphvizDot() const;
     void setGraphvizDot(const QString &p_dotPath);
 
@@ -887,6 +889,8 @@ private:
     QString m_plantUMLServer;
 
     QString m_plantUMLJar;
+
+    QStringList m_plantUMLArgs;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -2277,6 +2281,11 @@ inline void VConfigManager::setPlantUMLJar(const QString &p_jarPath)
 
     m_plantUMLJar = p_jarPath;
     setConfigToSettings("web", "plantuml_jar", p_jarPath);
+}
+
+inline const QStringList &VConfigManager::getPlantUMLArgs() const
+{
+    return m_plantUMLArgs;
 }
 
 inline const QString &VConfigManager::getGraphvizDot() const
