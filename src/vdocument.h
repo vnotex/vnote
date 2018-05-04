@@ -112,9 +112,6 @@ public slots:
 
     void previewCodeBlockCB(int p_id, const QString &p_lang, const QString &p_html);
 
-    // Show @p_link in status line.
-    void showHoveredLink(const QString &p_link);
-
 signals:
     void textChanged(const QString &text);
 
@@ -175,8 +172,6 @@ signals:
     void requestSetPreviewContent(const QString &p_lang, const QString &p_html);
 
     void codeBlockPreviewReady(int p_id, const QString &p_lang, const QString &p_html);
-
-    void linkHovered(const QString &p_link);
 
 private:
     QString m_toc;

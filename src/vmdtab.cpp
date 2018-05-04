@@ -411,6 +411,8 @@ void VMdTab::setupMarkdownViewer()
     m_webViewer->setZoomFactor(g_config->getWebZoomFactor());
     connect(page->profile(), &QWebEngineProfile::downloadRequested,
             this, &VMdTab::handleDownloadRequested);
+    connect(page, &QWebEnginePage::linkHovered,
+            this, &VMdTab::statusMessage);
 
     // Avoid white flash before loading content.
     page->setBackgroundColor(Qt::transparent);
@@ -457,8 +459,6 @@ void VMdTab::setupMarkdownViewer()
 
                 emit statusUpdated(info);
             });
-    connect(m_document, &VDocument::linkHovered,
-            this, &VMdTab::statusMessage);
 
     page->setWebChannel(channel);
 
