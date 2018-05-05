@@ -129,7 +129,7 @@ foreground: 93a1a1
 VERBATIM
 foreground: 673ab7
 font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
-# [VNote] Codeblock sylte from HighlightJS (bold, italic, underlined, color)
+# [VNote] Codeblock sylte from HighlightJS (bold, italic, underlined, strikeout, color)
 # The last occurence of the same attribute takes effect
 hljs-comment: 6c6c6c
 hljs-keyword: 0000ee
@@ -170,4 +170,5 @@ BLOCKQUOTE
 foreground: 00af00
 
 STRIKE
-strike-color: 586e75
+foreground: b71c1c
+font-style: strikeout

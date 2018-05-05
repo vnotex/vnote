@@ -33,6 +33,7 @@ typedef struct
     bool italic;
     bool bold;
     bool underlined;
+    bool strikeout;
 } pmh_attr_font_styles;
 
 /** \brief Font size attribute value. */

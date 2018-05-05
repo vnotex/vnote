@@ -212,6 +212,7 @@ static pmh_attr_font_styles *new_font_styles()
     ret->italic = false;
     ret->bold = false;
     ret->underlined = false;
+    ret->strikeout = false;
     return ret;
 }
 
@@ -375,7 +376,7 @@ static pmh_style_attribute *interpret_attributes(style_parser_data *p_data,
                                                  raw_attribute *raw_attributes)
 {
     pmh_style_attribute *attrs = NULL;
-    
+
     raw_attribute *cur = raw_attributes;
     while (cur != NULL)
     {
@@ -383,7 +384,7 @@ static pmh_style_attribute *interpret_attributes(style_parser_data *p_data,
         pmh_style_attribute *attr = new_attr(cur->name, atype);
         attr->lang_element_type = lang_element_type;
         attr->value = new_attr_value();
-        
+
         if (atype == pmh_attr_type_foreground_color
             || atype == pmh_attr_type_background_color
             || atype == pmh_attr_type_caret_color
@@ -402,9 +403,9 @@ static pmh_style_attribute *interpret_attributes(style_parser_data *p_data,
         {
             pmh_attr_font_size *fs = new_font_size();
             attr->value->font_size = fs;
-            
+
             char *trimmed_value = trim_str_dup(cur->value);
-            
+
             fs->is_relative = (*trimmed_value == '+' || *trimmed_value == '-');
             char *endptr = NULL;
             fs->size_pt = (int)strtol(cur->value, &endptr, 10);
@@ -415,7 +416,7 @@ static pmh_style_attribute *interpret_attributes(style_parser_data *p_data,
                 free_style_attributes(attr);
                 attr = NULL;
             }
-            
+
             free(trimmed_value);
         }
         else if (atype == pmh_attr_type_font_family)
@@ -430,19 +431,21 @@ static pmh_style_attribute *interpret_attributes(style_parser_data *p_data,
             while (value_cur != NULL)
             {
                 char *standardized_value = standardize_str(value_cur->value);
-                
+
                 if (EQUALS(standardized_value, "italic"))
                     attr->value->font_styles->italic = true;
                 else if (EQUALS(standardized_value, "bold"))
                     attr->value->font_styles->bold = true;
                 else if (EQUALS(standardized_value, "underlined"))
                     attr->value->font_styles->underlined = true;
+                else if (EQUALS(standardized_value, "strikeout"))
+                    attr->value->font_styles->strikeout = true;
                 else {
                     report_error(p_data, cur->line_number,
                                  "Value '%s' is invalid for attribute '%s'",
                                  standardized_value, cur->name);
                 }
-                
+
                 free(standardized_value);
                 value_cur = value_cur->next;
             }
@@ -452,16 +455,16 @@ static pmh_style_attribute *interpret_attributes(style_parser_data *p_data,
         {
             attr->value->string = trim_str_dup(cur->value);
         }
-        
+
         if (attr != NULL) {
             // add to linked list
             attr->next = attrs;
             attrs = attr;
         }
-        
+
         cur = cur->next;
     }
-    
+
     return attrs;
 }
 

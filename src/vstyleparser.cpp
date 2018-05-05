@@ -88,12 +88,19 @@ QTextCharFormat VStyleParser::QTextCharFormatFromAttrs(pmh_style_attribute *attr
             if (fontStyle->italic) {
                 format.setFontItalic(true);
             }
+
             if (fontStyle->bold) {
                 format.setFontWeight(QFont::Bold);
             }
+
             if (fontStyle->underlined) {
                 format.setFontUnderline(true);
             }
+
+            if (fontStyle->strikeout) {
+                format.setFontStrikeOut(true);
+            }
+
             break;
         }
 
@@ -159,6 +166,8 @@ QHash<QString, QTextCharFormat> VStyleParser::fetchCodeBlockStyles(const QFont &
                     format.setFontItalic(true);
                 } else if (val == "underlined") {
                     format.setFontUnderline(true);
+                } else if (val == "strikeout") {
+                    format.setFontStrikeOut(true);
                 } else {
                     // Treat it as the color RGB value string without '#'.
                     QColor color("#" + val);
