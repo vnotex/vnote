@@ -284,16 +284,22 @@ QString VPreviewManager::imageResourceName(const ImageLinkInfo &p_link)
     }
 
     // Resize the image.
+    qreal sf = VUtils::calculateScaleFactor();
     if (p_link.m_width > 0) {
         if (p_link.m_height > 0) {
-            m_editor->addImage(name, image.scaled(p_link.m_width, p_link.m_height));
+            m_editor->addImage(name, image.scaled(p_link.m_width * sf,
+                                                  p_link.m_height * sf));
         } else {
-            m_editor->addImage(name, image.scaledToWidth(p_link.m_width));
+            m_editor->addImage(name, image.scaledToWidth(p_link.m_width * sf));
         }
     } else if (p_link.m_height > 0) {
-        m_editor->addImage(name, image.scaledToHeight(p_link.m_height));
+        m_editor->addImage(name, image.scaledToHeight(p_link.m_height * sf));
     } else {
-        m_editor->addImage(name, image);
+        if (sf < 1.1) {
+            m_editor->addImage(name, image);
+        } else {
+            m_editor->addImage(name, image.scaledToWidth(image.width() * sf));
+        }
     }
 
     return name;
