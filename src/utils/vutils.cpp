@@ -37,7 +37,10 @@ extern VConfigManager *g_config;
 
 QVector<QPair<QString, QString>> VUtils::s_availableLanguages;
 
-const QString VUtils::c_imageLinkRegExp = QString("\\!\\[([^\\]]*)\\]\\(([^\\)\"]+)\\s*(\"(\\\\.|[^\"\\)])*\")?\\s*\\)");
+const QString VUtils::c_imageLinkRegExp = QString("\\!\\[([^\\]]*)\\]\\(([^\\)\"'\\s]+)\\s*"
+                                                  "((\"[^\"\\)\\n]*\")|('[^'\\)\\n]*'))?\\s*"
+                                                  "(=(\\d*)x(\\d*))?\\s*"
+                                                  "\\)");
 
 const QString VUtils::c_imageTitleRegExp = QString("[\\w\\(\\)@#%\\*\\-\\+=\\?<>\\,\\.\\s]*");
 

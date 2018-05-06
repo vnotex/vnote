@@ -158,30 +158,30 @@ void VPreviewManager::fetchImageLinksFromRegions(QVector<VElementRegion> p_image
                 || isAllSpaces(text, reg.m_endPos - blockStart, blockEnd - blockStart))) {
             // Image block.
             info.m_isBlock = true;
-            info.m_linkUrl = fetchImagePathToPreview(text, info.m_linkShortUrl);
+            fetchImageInfoToPreview(text, info);
         } else {
             // Inline image.
             info.m_isBlock = false;
-            info.m_linkUrl = fetchImagePathToPreview(text.mid(reg.m_startPos - blockStart,
-                                                              reg.m_endPos - reg.m_startPos),
-                                                     info.m_linkShortUrl);
+            fetchImageInfoToPreview(text.mid(reg.m_startPos - blockStart,
+                                             reg.m_endPos - reg.m_startPos),
+                                    info);
         }
 
-        if (info.m_linkUrl.isEmpty()) {
+        if (info.m_linkUrl.isEmpty() || info.m_linkShortUrl.isEmpty()) {
             continue;
         }
 
         p_imageLinks.append(info);
 
-        qDebug() << "image region" << i
-                 << info.m_startPos << info.m_endPos << info.m_blockNumber
-                 << info.m_linkShortUrl << info.m_linkUrl << info.m_isBlock;
+        qDebug() << "image region" << i << info.toString();
     }
 }
 
-QString VPreviewManager::fetchImageUrlToPreview(const QString &p_text)
+QString VPreviewManager::fetchImageUrlToPreview(const QString &p_text, int &p_width, int &p_height)
 {
     QRegExp regExp(VUtils::c_imageLinkRegExp);
+
+    p_width = p_height = -1;
 
     int index = regExp.indexIn(p_text);
     if (index == -1) {
@@ -193,30 +193,48 @@ QString VPreviewManager::fetchImageUrlToPreview(const QString &p_text)
         return QString();
     }
 
-    return regExp.capturedTexts()[2].trimmed();
+    QString tmp(regExp.cap(7));
+    if (!tmp.isEmpty()) {
+        p_width = tmp.toInt();
+        if (p_width <= 0) {
+            p_width = -1;
+        }
+    }
+
+    tmp = regExp.cap(8);
+    if (!tmp.isEmpty()) {
+        p_height = tmp.toInt();
+        if (p_height <= 0) {
+            p_height = -1;
+        }
+    }
+
+    return regExp.cap(2).trimmed();
 }
 
-QString VPreviewManager::fetchImagePathToPreview(const QString &p_text, QString &p_url)
+void VPreviewManager::fetchImageInfoToPreview(const QString &p_text, ImageLinkInfo &p_info)
 {
-    p_url = fetchImageUrlToPreview(p_text);
-    if (p_url.isEmpty()) {
-        return p_url;
+    QString surl = fetchImageUrlToPreview(p_text, p_info.m_width, p_info.m_height);
+    p_info.m_linkShortUrl = surl;
+    if (surl.isEmpty()) {
+        p_info.m_linkUrl = surl;
+        return;
     }
 
     const VFile *file = m_editor->getFile();
 
     QString imagePath;
-    QFileInfo info(file->fetchBasePath(), p_url);
+    QFileInfo info(file->fetchBasePath(), surl);
 
     if (info.exists()) {
         if (info.isNativePath()) {
             // Local file.
             imagePath = QDir::cleanPath(info.absoluteFilePath());
         } else {
-            imagePath = p_url;
+            imagePath = surl;
         }
     } else {
-        QString decodedUrl(p_url);
+        QString decodedUrl(surl);
         VUtils::decodeUrl(decodedUrl);
         QFileInfo dinfo(file->fetchBasePath(), decodedUrl);
         if (dinfo.exists()) {
@@ -224,10 +242,10 @@ QString VPreviewManager::fetchImagePathToPreview(const QString &p_text, QString 
                 // Local file.
                 imagePath = QDir::cleanPath(dinfo.absoluteFilePath());
             } else {
-                imagePath = p_url;
+                imagePath = surl;
             }
         } else {
-            QUrl url(p_url);
+            QUrl url(surl);
             if (url.isLocalFile()) {
                 imagePath = url.toLocalFile();
             } else {
@@ -236,14 +254,16 @@ QString VPreviewManager::fetchImagePathToPreview(const QString &p_text, QString 
         }
     }
 
-    return imagePath;
+    p_info.m_linkUrl = imagePath;
 }
 
 QString VPreviewManager::imageResourceName(const ImageLinkInfo &p_link)
 {
-    QString name = p_link.m_linkShortUrl;
-    if (m_editor->containsImage(name)
-        || name.isEmpty()) {
+    // Add size info to the name.
+    QString name = QString("%1_%2_%3").arg(p_link.m_linkShortUrl)
+                                      .arg(p_link.m_width)
+                                      .arg(p_link.m_height);
+    if (m_editor->containsImage(name)) {
         return name;
     }
 
@@ -263,7 +283,19 @@ QString VPreviewManager::imageResourceName(const ImageLinkInfo &p_link)
         return QString();
     }
 
-    m_editor->addImage(name, image);
+    // Resize the image.
+    if (p_link.m_width > 0) {
+        if (p_link.m_height > 0) {
+            m_editor->addImage(name, image.scaled(p_link.m_width, p_link.m_height));
+        } else {
+            m_editor->addImage(name, image.scaledToWidth(p_link.m_width));
+        }
+    } else if (p_link.m_height > 0) {
+        m_editor->addImage(name, image.scaledToHeight(p_link.m_height));
+    } else {
+        m_editor->addImage(name, image);
+    }
+
     return name;
 }
 

@@ -101,7 +101,9 @@ private:
               m_blockPos(-1),
               m_blockNumber(-1),
               m_padding(0),
-              m_isBlock(false)
+              m_isBlock(false),
+              m_width(-1),
+              m_height(-1)
         {
         }
 
@@ -115,8 +117,26 @@ private:
               m_blockPos(p_blockPos),
               m_blockNumber(p_blockNumber),
               m_padding(p_padding),
-              m_isBlock(false)
+              m_isBlock(false),
+              m_width(-1),
+              m_height(-1)
         {
+        }
+
+        QString toString() const
+        {
+            return QString("ImageLinkInfo [%1,%2) block(%3,%4) padding %5 "
+                           "short %6 url %7 isBlock %8 width %9 height %10")
+                          .arg(m_startPos)
+                          .arg(m_endPos)
+                          .arg(m_blockNumber)
+                          .arg(m_blockPos)
+                          .arg(m_padding)
+                          .arg(m_linkShortUrl)
+                          .arg(m_linkUrl)
+                          .arg(m_isBlock)
+                          .arg(m_width)
+                          .arg(m_height);
         }
 
         int m_startPos;
@@ -140,6 +160,12 @@ private:
 
         // Whether it is an image block.
         bool m_isBlock;
+
+        // Image width, -1 for not specified.
+        int m_width;
+
+        // Image height, -1 for not specified.
+        int m_height;
     };
 
     // Start to preview images according to image links.
@@ -151,11 +177,10 @@ private:
                                     QVector<ImageLinkInfo> &p_imageLinks);
 
     // Fetch the image link's URL if there is only one link.
-    QString fetchImageUrlToPreview(const QString &p_text);
+    QString fetchImageUrlToPreview(const QString &p_text, int &p_width, int &p_height);
 
-    // Fetch teh image's full path if there is only one image link.
-    // @p_url: contains the short URL in ![]().
-    QString fetchImagePathToPreview(const QString &p_text, QString &p_url);
+    // Fetch the image's full path and size.
+    void fetchImageInfoToPreview(const QString &p_text, ImageLinkInfo &p_info);
 
     // Update the preview info of related blocks according to @p_imageLinks.
     void updateBlockPreviewInfo(TS p_timeStamp, const QVector<ImageLinkInfo> &p_imageLinks);

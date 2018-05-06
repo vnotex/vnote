@@ -74,7 +74,15 @@ __This text will be bold__
 
 ### 图片和链接
 ```md
-![Image Alt Text](/url/to/images.png)
+![Image Alt Text](/url/to/image.png "Optional Text")
+
+![Image Alt Text](/url/to/image.png "Image specified with width and height" =800x600)
+
+![Image Alt Text](/url/to/image.png =800x600)
+
+![Image Alt Text](/url/to/image.png "Image specified with width" =800x)
+
+![Image Alt Text](/url/to/image.png "Image specified with height" =x600)
 
 [Link Text](/url/of/the/link)
 ```
@@ -82,6 +90,7 @@ __This text will be bold__
 **注意**：
 
 - VNote不推荐使用参考式的图片链接。VNote不会预览这些图片。
+- 声明图片尺寸只在 **markdown-it** 中支持。
 
 ### 块引用
 ```md
@@ -164,6 +173,8 @@ VNote也可以使用标明语言`mathjax`的代码块来实现块公式。使用
 ```md
 Here is a `inline code`.
 ```
+
+如果想输入一个 `` ` ``，需要使用两个 `` ` `` 来括住它，例如 ``` `` ` `` ```。 要输入两个 `` ` ``，则需要使用三个 `` ` ``。
 
 ### 删除线
 ```md

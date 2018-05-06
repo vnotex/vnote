@@ -328,12 +328,16 @@ public:
     static QPixmap pixmapFromFile(const QString &p_filePath);
 
     // Regular expression for image link.
-    // ![image title]( http://github.com/tamlok/vnote.jpg "alt \" text" )
+    // ![image title]( http://github.com/tamlok/vnote.jpg "alt text" =200x100)
     // Captured texts (need to be trimmed):
     // 1. Image Alt Text (Title);
     // 2. Image URL;
-    // 3. Image Optional Title with double quotes;
+    // 3. Image Optional Title with double quotes or quotes;
     // 4. Unused;
+    // 5. Unused;
+    // 6. Unused;
+    // 7. Width;
+    // 8. Height;
     static const QString c_imageLinkRegExp;
 
     // Regular expression for image title.

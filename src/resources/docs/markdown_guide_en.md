@@ -73,7 +73,15 @@ Notice that the sequence number is irrelevant. Markdown will change the sequence
 
 ### Images and Links
 ```md
-![Image Alt Text](/url/to/images.png)
+![Image Alt Text](/url/to/image.png "Optional Text")
+
+![Image Alt Text](/url/to/image.png "Image specified with width and height" =800x600)
+
+![Image Alt Text](/url/to/image.png =800x600)
+
+![Image Alt Text](/url/to/image.png "Image specified with width" =800x)
+
+![Image Alt Text](/url/to/image.png "Image specified with height" =x600)
 
 [Link Text](/url/of/the/link)
 ```
@@ -81,6 +89,7 @@ Notice that the sequence number is irrelevant. Markdown will change the sequence
 **Notes**:
 
 - It is not recommended to use image links in reference format. VNote will not preview those images.
+- Specifying size of image is supported only in **markdown-it**.
 
 ### Blockquotes
 ```md
@@ -163,6 +172,8 @@ VNote also supports displayed mathematics via fenced code block with language `m
 ```md
 Here is a `inline code`.
 ```
+
+To insert one `` ` ``, you need to use two `` ` `` to enclose it, such as ``` `` ` `` ```. To insert two `` ` ``, you need to use three `` ` ``.
 
 ### Strikethrough
 ```md
