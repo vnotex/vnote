@@ -19,7 +19,7 @@ public:
                       const QString &p_format,
                       const QString &p_text);
 
-    void prepareCommand(QString &p_cmd, QStringList &p_args) const;
+    void prepareCommand(QString &p_customCmd, QString &p_cmd, QStringList &p_args) const;
 
 signals:
     void resultReady(int p_id, TimeStamp p_timeStamp, const QString &p_format, const QString &p_result);
@@ -29,7 +29,11 @@ private slots:
 
 private:
     QString m_program;
+
     QStringList m_args;
+
+    // When not empty, @m_program and @m_args will be ignored.
+    QString m_customCmd;
 };
 
 #endif // VPLANTUMLHELPER_H

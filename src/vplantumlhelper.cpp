@@ -14,7 +14,7 @@ extern VConfigManager *g_config;
 VPlantUMLHelper::VPlantUMLHelper(QObject *p_parent)
     : QObject(p_parent)
 {
-    prepareCommand(m_program, m_args);
+    prepareCommand(m_customCmd, m_program, m_args);
 }
 
 void VPlantUMLHelper::processAsync(int p_id,
@@ -29,12 +29,18 @@ void VPlantUMLHelper::processAsync(int p_id,
     connect(process, SIGNAL(finished(int, QProcess::ExitStatus)),
             this, SLOT(handleProcessFinished(int, QProcess::ExitStatus)));
 
-    QStringList args(m_args);
-    args << ("-t" + p_format);
+    if (m_customCmd.isEmpty()) {
+        QStringList args(m_args);
+        args << ("-t" + p_format);
+        qDebug() << m_program << args;
+        process->start(m_program, args);
+    } else {
+        QString cmd(m_customCmd);
+        cmd.replace("%0", p_format);
+        qDebug() << cmd;
+        process->start(cmd);
+    }
 
-    qDebug() << m_program << args;
-
-    process->start(m_program, args);
     if (process->write(p_text.toUtf8()) == -1) {
         qWarning() << "fail to write to QProcess:" << process->errorString();
     }
@@ -42,8 +48,15 @@ void VPlantUMLHelper::processAsync(int p_id,
     process->closeWriteChannel();
 }
 
-void VPlantUMLHelper::prepareCommand(QString &p_program, QStringList &p_args) const
+void VPlantUMLHelper::prepareCommand(QString &p_customCmd,
+                                     QString &p_program,
+                                     QStringList &p_args) const
 {
+    p_customCmd = g_config->getPlantUMLCmd();
+    if (!p_customCmd.isEmpty()) {
+        return;
+    }
+
     p_program = "java";
 
     p_args << "-jar" << g_config->getPlantUMLJar();

@@ -292,6 +292,8 @@ void VConfigManager::initialize()
     QString plantUMLArgs = getConfigFromSettings("web", "plantuml_args").toString();
     m_plantUMLArgs = VUtils::parseCombinedArgString(plantUMLArgs);
 
+    m_plantUMLCmd = getConfigFromSettings("web", "plantuml_cmd").toString();
+
     m_enableGraphviz = getConfigFromSettings("global", "enable_graphviz").toBool();
     m_graphvizDot = getConfigFromSettings("web", "graphviz_dot").toString();
 }
