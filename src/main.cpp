@@ -9,6 +9,8 @@
 #include <QStringList>
 #include <QDir>
 #include <QSslSocket>
+#include <QOpenGLContext>
+
 #include "utils/vutils.h"
 #include "vsingleinstanceguard.h"
 #include "vconfigmanager.h"
@@ -125,6 +127,10 @@ int main(int argc, char *argv[])
         QTextCodec::setCodecForLocale(codec);
     }
 
+    // Set openGL version.
+    // Or set environment QT_OPENGL to "angle/desktop/software".
+    // QCoreApplication::setAttribute(Qt::AA_UseOpenGLES, true);
+
     QApplication app(argc, argv);
 
     // The file path passed via command line arguments.
@@ -173,6 +179,7 @@ int main(int argc, char *argv[])
 
     // Check the openSSL.
     if (checkSSL) {
+        qDebug() << "openGL" << QOpenGLContext::openGLModuleType();
         qDebug() << "openSSL"
                  << QSslSocket::sslLibraryBuildVersionString()
                  << QSslSocket::sslLibraryVersionNumber();
