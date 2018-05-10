@@ -46,13 +46,15 @@ For other architectures, please search for `vnote` at [software.opensuse.org](ht
 We don't support Leap 42 and below due to the Qt version. Please use AppImage or build it yourself.
 
 ### Arch Linux
-VNote on Arch Linux can be installed from the AUR as [vnote-git](https://aur.archlinux.org/packages/vnote-git/):
+VNote on Arch Linux can be installed from the AUR as [vnote](https://aur.archlinux.org/packages/vnote/):
 
 ```shell
-git clone https://aur.archlinux.org/vnote-git.git
-cd vnote-git
+git clone https://aur.archlinux.org/vnote.git
+cd vnote
 makepkg -sic
 ```
+
+There is also a development version that tracks the latest master [vnote-git](https://aur.archlinux.org/packages/vnote-git/)
 
 ## MacOS
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
