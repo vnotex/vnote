@@ -19,6 +19,7 @@ var pendingKeys = [];
 var VMermaidDivClass = 'mermaid-diagram';
 var VFlowchartDivClass = 'flowchart-diagram';
 var VPlantUMLDivClass = 'plantuml-diagram';
+var VMetaDataCodeClass = 'markdown-metadata';
 
 if (typeof VEnableMermaid == 'undefined') {
     VEnableMermaid = false;

@@ -105,6 +105,10 @@ pre code {
     white-space: pre;
 }
 
+pre code.markdown-metadata {
+    border-left: 5px solid #00695C;
+}
+
 aside {
     display: block;
     float: right;
