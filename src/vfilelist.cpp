@@ -685,12 +685,18 @@ void VFileList::handleItemClicked(QListWidgetItem *p_item)
             return;
         }
 
-        // Get current tab which will be closed if click timer timeouts.
-        VEditTab *tab = editArea->getCurrentTab();
-        if (tab) {
-            m_fileToCloseInSingleClick = tab->getFile();
-        } else {
+        // EditArea will open Unknown file using system's default program, in which
+        // case we should now close current file even after single click.
+        if (file->getDocType() == DocType::Unknown) {
             m_fileToCloseInSingleClick = NULL;
+        } else {
+            // Get current tab which will be closed if click timer timeouts.
+            VEditTab *tab = editArea->getCurrentTab();
+            if (tab) {
+                m_fileToCloseInSingleClick = tab->getFile();
+            } else {
+                m_fileToCloseInSingleClick = NULL;
+            }
         }
     }
 
