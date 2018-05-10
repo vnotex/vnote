@@ -31,3 +31,7 @@ Craig McKenna
 # [markdown-it-imsize](https://github.com/tatsy/markdown-it-imsize)
 v2.0.1
 Tatsuya Yatagawa
+
+# [markdown-it-emoji](https://github.com/markdown-it/markdown-it-emoji)
+v1.4.0
+Vitaly Puzrin

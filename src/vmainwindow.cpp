@@ -1617,12 +1617,24 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
                 g_config->setMarkdownitOption(opt);
             });
 
+    QAction *emojiAct = new QAction(tr("Emoji"), this);
+    emojiAct->setToolTip(tr("Enable emoji and emoticon"));
+    emojiAct->setCheckable(true);
+    emojiAct->setChecked(opt.m_emoji);
+    connect(emojiAct, &QAction::triggered,
+            this, [this](bool p_checked) {
+                MarkdownitOption opt = g_config->getMarkdownitOption();
+                opt.m_emoji = p_checked;
+                g_config->setMarkdownitOption(opt);
+            });
+
     optMenu->addAction(htmlAct);
     optMenu->addAction(breaksAct);
     optMenu->addAction(linkifyAct);
     optMenu->addAction(supAct);
     optMenu->addAction(subAct);
     optMenu->addAction(metadataAct);
+    optMenu->addAction(emojiAct);
 }
 
 void VMainWindow::initRenderBackgroundMenu(QMenu *menu)

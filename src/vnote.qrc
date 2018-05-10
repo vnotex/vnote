@@ -215,5 +215,6 @@
         <file>utils/dom-to-image/dom-to-image.js</file>
         <file>utils/markdown-it/markdown-it-front-matter.js</file>
         <file>utils/markdown-it/markdown-it-imsize.min.js</file>
+        <file>utils/markdown-it/markdown-it-emoji.min.js</file>
     </qresource>
 </RCC>

@@ -94,6 +94,10 @@ if (VMarkdownitOption.metadata) {
     mdit = mdit.use(window.markdownitFrontMatter, function(text){});
 }
 
+if (VMarkdownitOption.emoji) {
+    mdit = mdit.use(window.markdownitEmoji);
+}
+
 mdit = mdit.use(window.markdownitFootnote);
 
 mdit = mdit.use(window["markdown-it-imsize.js"]);
