@@ -410,9 +410,6 @@ private:
     // Highlight color column in code block.
     void highlightCodeBlockColorColumn(const QString &p_text);
 
-    // Check if [p_pos, p_end) is a valid header.
-    bool isValidHeader(unsigned long p_pos, unsigned long p_end);
-
     bool isValidHeader(const QString &p_text);
 
     VTextBlockData *currentBlockData() const;

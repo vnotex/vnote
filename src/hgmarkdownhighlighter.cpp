@@ -271,21 +271,11 @@ void HGMarkdownHighlighter::initBlockHighlightFromResult(int nrBlocks)
         const HighlightingStyle &style = highlightingStyles[i];
         pmh_element *elem_cursor = result[style.type];
 
-        // pmh_H1 to pmh_H6 is continuous.
-        bool isHeader = style.type >= pmh_H1 && style.type <= pmh_H6;
-
         while (elem_cursor != NULL)
         {
             // elem_cursor->pos and elem_cursor->end is the start
             // and end position of the element in document.
             if (elem_cursor->end <= elem_cursor->pos) {
-                elem_cursor = elem_cursor->next;
-                continue;
-            }
-
-            // Check header. Skip those headers with no spaces after #s.
-            if (isHeader
-                && !isValidHeader(elem_cursor->pos, elem_cursor->end)) {
                 elem_cursor = elem_cursor->next;
                 continue;
             }
@@ -383,8 +373,7 @@ void HGMarkdownHighlighter::initHeaderRegionsFromResult()
     for (int i = 0; i < 6; ++i) {
         pmh_element *elem = result[hx[i]];
         while (elem != NULL) {
-            if (elem->end <= elem->pos
-                || !isValidHeader(elem->pos, elem->end)) {
+            if (elem->end <= elem->pos) {
                 elem = elem->next;
                 continue;
             }
@@ -1013,27 +1002,6 @@ void HGMarkdownHighlighter::highlightChanged()
 {
     m_completeTimer->stop();
     m_completeTimer->start();
-}
-
-bool HGMarkdownHighlighter::isValidHeader(unsigned long p_pos, unsigned long p_end)
-{
-    // There must exist spaces after #s.
-    // No more than 6 #s.
-    int nrNumberSign = 0;
-    for (unsigned long i = p_pos; i < p_end; ++i) {
-        QChar ch = document->characterAt(i);
-        if (ch.isSpace()) {
-            return nrNumberSign > 0;
-        } else if (ch == QChar('#')) {
-            if (++nrNumberSign > 6) {
-                return false;
-            }
-        } else {
-            return false;
-        }
-    }
-
-    return false;
 }
 
 bool HGMarkdownHighlighter::isValidHeader(const QString &p_text)

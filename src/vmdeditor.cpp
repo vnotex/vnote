@@ -298,8 +298,8 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
                         emit m_object->discardAndRead();
                     });
 
-            QAction *toggleLivePreviewAct = new QAction(tr("Toggle Live Preview"), menu.data());
-            toggleLivePreviewAct->setToolTip(tr("Toggle live preview of diagrams"));
+            QAction *toggleLivePreviewAct = new QAction(tr("Live Preview for Diagrams"), menu.data());
+            toggleLivePreviewAct->setToolTip(tr("Toggle live preview panel for diagrams"));
             connect(toggleLivePreviewAct, &QAction::triggered,
                     this, [this]() {
                         m_editTab->toggleLivePreview();
