@@ -1,4 +1,8 @@
 # Changes History
+## v1.16
+- Markdown-it: supports specifying image size, emoji, and YAML metadata;
+- Bug fixes;
+
 ## v1.15
 - Support **PlantUML** and **Graphviz**;
 - **In-Place Preview** for MathJax, PlantUML, Graphviz, and Flowchart.js;
