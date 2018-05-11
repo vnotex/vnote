@@ -54,7 +54,7 @@ cd vnote
 makepkg -sic
 ```
 
-There is also a development version that tracks the latest master [vnote-git](https://aur.archlinux.org/packages/vnote-git/)
+There is also a development version that tracks the latest master [vnote-git](https://aur.archlinux.org/packages/vnote-git/).
 
 ## MacOS
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
