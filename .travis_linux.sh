@@ -3,7 +3,7 @@ project_dir=$(pwd)
 
 # Install qt5.9
 sudo add-apt-repository ppa:george-edison55/cmake-3.x -y
-sudo add-apt-repository ppa:beineri/opt-qt594-trusty -y
+sudo add-apt-repository ppa:beineri/opt-qt593-trusty -y
 sudo apt-get update -qq
 sudo apt-get -y install qt59base qt59webengine qt59webchannel qt59svg qt59location qt59tools qt59translations
 source /opt/qt*/bin/qt*-env.sh
