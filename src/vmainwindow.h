@@ -46,9 +46,8 @@ class VUniversalEntry;
 enum class PanelViewState
 {
     ExpandMode,
-    SinglePanel,
-    TwoPanels,
-    CompactMode,
+    HorizontalMode,
+    VerticalMode,
     Invalid
 };
 
@@ -140,9 +139,6 @@ private slots:
     void changeHighlightSelectedWord(bool p_checked);
     void changeHighlightSearchedWord(bool p_checked);
     void changeHighlightTrailingSapce(bool p_checked);
-    void onePanelView();
-    void twoPanelView();
-    void compactModeView();
     void curEditFileInfo();
     void deleteCurNote();
     void handleCurrentDirectoryChanged(const VDirectory *p_dir);
@@ -163,9 +159,6 @@ private slots:
 
     // Open export dialog.
     void handleExportAct();
-
-    // Set the panel view properly.
-    void enableCompactMode(bool p_enabled);
 
     // Handle Vim status updated.
     void handleVimStatusUpdated(const VVim *p_vim);
@@ -196,9 +189,6 @@ private slots:
     // Activate Universal Entry.
     void activateUniversalEntry();
 
-    // Make sure width of the panel is not zero after changePanelView().
-    void postChangePanelView();
-
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 
@@ -208,7 +198,8 @@ protected:
 
 private:
     void setupUI();
-    QWidget *setupDirectoryPanel();
+
+    void setupNotebookPanel();
 
     void initToolBar();
 
@@ -280,8 +271,7 @@ private:
     void initTrayIcon();
 
     // Change the panel view according to @p_state.
-    // Will not change m_panelViewState.
-    void changePanelView(PanelViewState p_state, bool p_postCheck = false);
+    void changePanelView(PanelViewState p_state);
 
     // Whether heading sequence is applicable to current tab.
     // Only available for writable Markdown file.
@@ -299,6 +289,8 @@ private:
 
     void setMenuBarVisible(bool p_visible);
 
+    void showNotebookPanel();
+
     // Captain mode functions.
 
     // Popup the attachment list if it is enabled.
@@ -307,8 +299,6 @@ private:
     static bool locateCurrentFileByCaptain(void *p_target, void *p_data);
 
     static bool toggleExpandModeByCaptain(void *p_target, void *p_data);
-
-    static bool toggleOnePanelViewByCaptain(void *p_target, void *p_data);
 
     static bool discardAndReadByCaptain(void *p_target, void *p_data);
 
@@ -333,15 +323,18 @@ private:
     VCaptain *m_captain;
 
     VNotebookSelector *m_notebookSelector;
+
     VFileList *m_fileList;
-    VDirectoryTree *directoryTree;
+
+    VDirectoryTree *m_dirTree;
+
+    VToolBox *m_naviBox;
 
     // Splitter for directory | files | edit.
     QSplitter *m_mainSplitter;
 
-    // Splitter for directory | files.
-    // Move directory and file panel in one compact vertical split.
-    QSplitter *m_naviSplitter;
+    // Splitter for folders/notes.
+    QSplitter *m_nbSplitter;
 
     VEditArea *m_editArea;
 
@@ -370,9 +363,6 @@ private:
     VVimIndicator *m_vimIndicator;
 
     VTabIndicator *m_tabIndicator;
-
-    // SinglePanel, TwoPanels, CompactMode.
-    PanelViewState m_panelViewState;
 
     // Actions
     QAction *newRootDirAct;
@@ -415,9 +405,6 @@ private:
     // Act group for code block render styles.
     QActionGroup *m_codeBlockStyleActs;
 
-    // Act group for panel view actions.
-    QActionGroup *m_viewActGroup;
-
     // Menus
     QMenu *m_viewMenu;
 
@@ -439,9 +426,6 @@ private:
 
     // Timer to check the shared memory between instances of VNote.
     QTimer *m_sharedMemTimer;
-
-    // Timer to check the panel size.
-    QTimer *m_panelViewTimer;
 
     // Tray icon.
     QSystemTrayIcon *m_trayIcon;
@@ -499,7 +483,7 @@ inline VCart *VMainWindow::getCart() const
 
 inline VDirectoryTree *VMainWindow::getDirectoryTree() const
 {
-    return directoryTree;
+    return m_dirTree;
 }
 
 inline VNotebookSelector *VMainWindow::getNotebookSelector() const

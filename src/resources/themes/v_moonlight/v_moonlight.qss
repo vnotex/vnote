@@ -402,7 +402,6 @@ VButtonMenuItem:disabled {
 /* QComboBox */
 QComboBox#NotebookSelector {
     border: none;
-    border-bottom: $2px solid @combobox_notebookselector_border;
     font-size: 13pt;
     padding-top: 3px;
     padding-bottom: 3px;

@@ -20,8 +20,6 @@
         <file>resources/icons/dir_info.svg</file>
         <file>resources/icons/notebook_info.svg</file>
         <file>resources/icons/expand.svg</file>
-        <file>resources/icons/two_panels.svg</file>
-        <file>resources/icons/one_panel.svg</file>
         <file>resources/icons/split_window.svg</file>
         <file>resources/icons/corner_menu.svg</file>
         <file>resources/icons/remove_split.svg</file>
@@ -92,7 +90,6 @@
         <file>resources/icons/delete_attachment.svg</file>
         <file>resources/icons/sort.svg</file>
         <file>resources/icons/create_subdir.svg</file>
-        <file>resources/icons/compact_mode.svg</file>
         <file>resources/icons/heading_sequence.svg</file>
         <file>resources/icons/link.svg</file>
         <file>resources/icons/code_block.svg</file>
@@ -216,5 +213,6 @@
         <file>utils/markdown-it/markdown-it-front-matter.js</file>
         <file>utils/markdown-it/markdown-it-imsize.min.js</file>
         <file>utils/markdown-it/markdown-it-emoji.min.js</file>
+        <file>resources/icons/notebook.svg</file>
     </qresource>
 </RCC>

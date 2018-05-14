@@ -18,11 +18,14 @@ class VToolBox : public QWidget, public VNavigationMode
 public:
     explicit VToolBox(QWidget *p_parent = nullptr);
 
-    int addItem(QWidget *p_widget, const QString &p_iconFile, const QString &p_text);
+    int addItem(QWidget *p_widget,
+                const QString &p_iconFile,
+                const QString &p_text,
+                QWidget *p_focusWidget = nullptr);
 
-    void setCurrentIndex(int p_idx);
+    void setCurrentIndex(int p_idx, bool p_focus = true);
 
-    void setCurrentWidget(QWidget *p_widget);
+    void setCurrentWidget(QWidget *p_widget, bool p_focus = true);
 
     // Implementations for VNavigationMode.
     void showNavigation() Q_DECL_OVERRIDE;
@@ -32,16 +35,20 @@ private:
     struct ItemInfo
     {
         ItemInfo()
-            : m_widget(nullptr), m_btn(nullptr)
+            : m_widget(nullptr),
+              m_focusWidget(nullptr),
+              m_btn(nullptr)
         {
         }
 
         ItemInfo(QWidget *p_widget,
+                 QWidget *p_focusWidget,
                  const QString &p_text,
                  QPushButton *p_btn,
                  const QIcon &p_icon,
                  const QIcon &p_activeIcon)
             : m_widget(p_widget),
+              m_focusWidget(p_focusWidget),
               m_text(p_text),
               m_btn(p_btn),
               m_icon(p_icon),
@@ -50,6 +57,7 @@ private:
         }
 
         QWidget *m_widget;
+        QWidget *m_focusWidget;
         QString m_text;
 
         QPushButton *m_btn;

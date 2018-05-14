@@ -176,17 +176,17 @@ public:
     bool getSearchDockChecked() const;
     void setSearchDockChecked(bool p_checked);
 
-    const QByteArray &getMainWindowGeometry() const;
+    const QByteArray getMainWindowGeometry() const;
     void setMainWindowGeometry(const QByteArray &p_geometry);
 
-    const QByteArray &getMainWindowState() const;
+    const QByteArray getMainWindowState() const;
     void setMainWindowState(const QByteArray &p_state);
 
-    const QByteArray &getMainSplitterState() const;
+    const QByteArray getMainSplitterState() const;
     void setMainSplitterState(const QByteArray &p_state);
 
-    const QByteArray &getNaviSplitterState() const;
-    void setNaviSplitterState(const QByteArray &p_state);
+    const QByteArray getNotebookSplitterState() const;
+    void setNotebookSplitterState(const QByteArray &p_state);
 
     bool getFindCaseSensitive() const;
     void setFindCaseSensitive(bool p_enabled);
@@ -343,9 +343,6 @@ public:
     void setMathjaxJavascript(const QString &p_js);
 
     bool getDoubleClickCloseTab() const;
-
-    bool getEnableCompactMode() const;
-    void setEnableCompactMode(bool p_enabled);
 
     StartupPageType getStartupPageType() const;
     void setStartupPageType(StartupPageType p_type);
@@ -623,11 +620,6 @@ private:
 
     QString curRenderBackgroundColor;
 
-    QByteArray m_mainWindowGeometry;
-    QByteArray m_mainWindowState;
-    QByteArray m_mainSplitterState;
-    QByteArray m_naviSplitterState;
-
     // Find/Replace dialog options
     bool m_findCaseSensitive;
     bool m_findWholeWordOnly;
@@ -814,9 +806,6 @@ private:
 
     // Whether double click on a tab to close it.
     bool m_doubleClickCloseTab;
-
-    // Whether put folder and note panel in one single column.
-    bool m_enableCompactMode;
 
     // Type of the pages to open on startup.
     StartupPageType m_startupPageType;
@@ -1204,56 +1193,56 @@ inline void VConfigManager::setSearchDockChecked(bool p_checked)
                         p_checked);
 }
 
-inline const QByteArray& VConfigManager::getMainWindowGeometry() const
+inline const QByteArray VConfigManager::getMainWindowGeometry() const
 {
-    return m_mainWindowGeometry;
+    return getConfigFromSessionSettings("geometry",
+                                        "main_window_geometry").toByteArray();
 }
 
 inline void VConfigManager::setMainWindowGeometry(const QByteArray &p_geometry)
 {
-    m_mainWindowGeometry = p_geometry;
     setConfigToSessionSettings("geometry",
                                "main_window_geometry",
-                               m_mainWindowGeometry);
+                               p_geometry);
 }
 
-inline const QByteArray& VConfigManager::getMainWindowState() const
+inline const QByteArray VConfigManager::getMainWindowState() const
 {
-    return m_mainWindowState;
+    return getConfigFromSessionSettings("geometry",
+                                        "main_window_state").toByteArray();
 }
 
 inline void VConfigManager::setMainWindowState(const QByteArray &p_state)
 {
-    m_mainWindowState = p_state;
     setConfigToSessionSettings("geometry",
                                "main_window_state",
-                               m_mainWindowState);
+                               p_state);
 }
 
-inline const QByteArray& VConfigManager::getMainSplitterState() const
+inline const QByteArray VConfigManager::getMainSplitterState() const
 {
-    return m_mainSplitterState;
+    return getConfigFromSessionSettings("geometry",
+                                        "main_splitter_state").toByteArray();
 }
 
 inline void VConfigManager::setMainSplitterState(const QByteArray &p_state)
 {
-    m_mainSplitterState = p_state;
     setConfigToSessionSettings("geometry",
                                "main_splitter_state",
-                               m_mainSplitterState);
+                               p_state);
 }
 
-inline const QByteArray& VConfigManager::getNaviSplitterState() const
+inline const QByteArray VConfigManager::getNotebookSplitterState() const
 {
-    return m_naviSplitterState;
+    return getConfigFromSessionSettings("geometry",
+                                        "notebook_splitter_state").toByteArray();
 }
 
-inline void VConfigManager::setNaviSplitterState(const QByteArray &p_state)
+inline void VConfigManager::setNotebookSplitterState(const QByteArray &p_state)
 {
-    m_naviSplitterState = p_state;
     setConfigToSessionSettings("geometry",
-                               "navi_splitter_state",
-                               m_naviSplitterState);
+                               "notebook_splitter_state",
+                               p_state);
 }
 
 inline bool VConfigManager::getFindCaseSensitive() const
@@ -1963,21 +1952,6 @@ inline void VConfigManager::setMathjaxJavascript(const QString &p_js)
 inline bool VConfigManager::getDoubleClickCloseTab() const
 {
     return m_doubleClickCloseTab;
-}
-
-inline bool VConfigManager::getEnableCompactMode() const
-{
-    return m_enableCompactMode;
-}
-
-inline void VConfigManager::setEnableCompactMode(bool p_enabled)
-{
-    if (m_enableCompactMode == p_enabled) {
-        return;
-    }
-
-    m_enableCompactMode = p_enabled;
-    setConfigToSettings("global", "enable_compact_mode", m_enableCompactMode);
 }
 
 inline StartupPageType VConfigManager::getStartupPageType() const

@@ -238,9 +238,6 @@ void VConfigManager::initialize()
     m_doubleClickCloseTab = getConfigFromSettings("global",
                                                   "double_click_close_tab").toBool();
 
-    m_enableCompactMode = getConfigFromSettings("global",
-                                                "enable_compact_mode").toBool();
-
     int tmpStartupPageMode = getConfigFromSettings("global",
                                                    "startup_page_type").toInt();
     if (tmpStartupPageMode < (int)StartupPageType::Invalid
@@ -337,18 +334,6 @@ void VConfigManager::initSettings()
 void VConfigManager::initFromSessionSettings()
 {
     curNotebookIndex = getConfigFromSessionSettings("global", "current_notebook").toInt();
-
-    m_mainWindowGeometry = getConfigFromSessionSettings("geometry",
-                                                        "main_window_geometry").toByteArray();
-
-    m_mainWindowState = getConfigFromSessionSettings("geometry",
-                                                     "main_window_state").toByteArray();
-
-    m_mainSplitterState = getConfigFromSessionSettings("geometry",
-                                                       "main_splitter_state").toByteArray();
-
-    m_naviSplitterState = getConfigFromSessionSettings("geometry",
-                                                       "navi_splitter_state").toByteArray();
 }
 
 void VConfigManager::readCustomColors()
@@ -1478,7 +1463,6 @@ void VConfigManager::resetLayoutConfigurations()
     resetDefaultConfig("global", "tools_dock_checked");
     resetDefaultConfig("global", "search_dock_checked");
     resetDefaultConfig("global", "menu_bar_checked");
-    resetDefaultConfig("global", "enable_compact_mode");
 
     clearGroupOfSettings(m_sessionSettings, "geometry");
 
