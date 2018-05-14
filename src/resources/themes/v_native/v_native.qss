@@ -482,6 +482,7 @@ QListView::item {
 /* QSplitter */
 QSplitter {
     border: none;
+    margin-left: $3px;
 }
 
 QSplitter::handle {

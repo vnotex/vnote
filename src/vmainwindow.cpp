@@ -217,7 +217,7 @@ void VMainWindow::setupUI()
     m_mainSplitter->addWidget(m_naviBox);
     m_mainSplitter->addWidget(m_editArea);
     m_mainSplitter->setStretchFactor(0, 0);
-    m_mainSplitter->setStretchFactor(1, 0);
+    m_mainSplitter->setStretchFactor(1, 1);
 
     connect(m_dirTree, &VDirectoryTree::directoryUpdated,
             m_editArea, &VEditArea::handleDirectoryUpdated);

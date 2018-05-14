@@ -855,6 +855,7 @@ QListView::item:selected:!active {
 /* QSplitter */
 QSplitter#MainSplitter {
     border: none;
+    margin-left: $3px;
 }
 
 QSplitter {
