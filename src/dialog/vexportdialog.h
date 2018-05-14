@@ -417,6 +417,8 @@ private:
 
     QPushButton *m_exportBtn;
 
+    QPushButton *m_copyBtn;
+
     QLabel *m_layoutLabel;
 
     QCheckBox *m_wkhtmltopdfCB;
@@ -479,6 +481,9 @@ private:
 
     // Exporter used to export PDF and HTML.
     VExporter *m_exporter;
+
+    // Last exproted file path.
+    QString m_exportedFile;
 
     // Last output folder path.
     static QString s_lastOutputFolder;

@@ -4,6 +4,9 @@
 #include <QCoreApplication>
 #include <QProcess>
 #include <QTemporaryDir>
+#include <QMimeData>
+#include <QApplication>
+#include <QClipboard>
 
 #ifndef QT_NO_PRINTER
 #include <QPrinter>
@@ -11,6 +14,7 @@
 #endif
 
 #include "utils/vutils.h"
+#include "utils/vclipboardutils.h"
 #include "vlineedit.h"
 #include "vnotebook.h"
 #include "vfile.h"
@@ -127,7 +131,11 @@ void VExportDialog::setupUI()
     // Ok is the default button.
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Close);
     m_exportBtn = m_btnBox->addButton(tr("Export"), QDialogButtonBox::ActionRole);
-    m_openBtn = m_btnBox->addButton(tr("Open Output Directory"), QDialogButtonBox::ActionRole);
+    m_openBtn = m_btnBox->addButton(tr("Open Directory"), QDialogButtonBox::ActionRole);
+    m_openBtn->setToolTip(tr("Open output directory"));
+    m_copyBtn = m_btnBox->addButton(tr("Copy Content"), QDialogButtonBox::ActionRole);
+    m_copyBtn->setToolTip(tr("Copy the content of the exported file"));
+    m_copyBtn->setEnabled(false);
     connect(m_btnBox, &QDialogButtonBox::rejected,
             this, [this]() {
                 if (m_inExport) {
@@ -148,6 +156,28 @@ void VExportDialog::setupUI()
             this, [this]() {
                 QUrl url = QUrl::fromLocalFile(getOutputDirectory());
                 QDesktopServices::openUrl(url);
+            });
+
+    connect(m_copyBtn, &QPushButton::clicked,
+            this, [this]() {
+                if (m_exportedFile.isEmpty()) {
+                    return;
+                }
+
+                bool ret = false;
+                QString content = VUtils::readFileFromDisk(m_exportedFile);
+                if (!content.isNull()) {
+                    QMimeData *data = new QMimeData();
+                    data->setText(content);
+                    VClipboardUtils::setMimeDataToClipboard(QApplication::clipboard(), data, QClipboard::Clipboard);
+                    ret = true;
+                }
+
+                if (ret) {
+                    appendLogLine(tr("Copied content of file %1").arg(m_exportedFile));
+                } else {
+                    appendLogLine(tr("Fail to copy content of file %1").arg(m_exportedFile));
+                }
             });
 
     // Progress bar.
@@ -524,6 +554,8 @@ void VExportDialog::startExport()
     m_askedToStop = false;
     m_exporter->setAskedToStop(false);
     m_inExport = true;
+    m_exportedFile.clear();
+    m_copyBtn->setEnabled(false);
 
     QString outputFolder = QDir::cleanPath(QDir(getOutputDirectory()).absolutePath());
 
@@ -655,8 +687,16 @@ void VExportDialog::startExport()
     } else {
         switch (s_opt.m_source) {
         case ExportSource::CurrentNote:
-            ret = doExport(m_file, s_opt, outputFolder, &msg);
+        {
+            QStringList files;
+            ret = doExport(m_file, s_opt, outputFolder, &msg, &files);
+            if (ret == 1 && s_opt.m_format == ExportFormat::HTML) {
+                Q_ASSERT(files.size() == 1);
+                m_exportedFile = files.first();
+            }
+
             break;
+        }
 
         case ExportSource::CurrentFolder:
             ret = doExport(m_directory, s_opt, outputFolder, &msg);
@@ -698,6 +738,8 @@ exit:
     m_inExport = false;
     m_exportBtn->setEnabled(true);
     m_proBar->hide();
+
+    m_copyBtn->setEnabled(!m_exportedFile.isEmpty());
 }
 
 QString VExportDialog::getOutputDirectory() const
