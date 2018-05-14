@@ -26,6 +26,7 @@
 #include <QWebEngineView>
 #include <QAction>
 #include <QTreeWidgetItem>
+#include <QFormLayout>
 
 #include "vorphanfile.h"
 #include "vnote.h"
@@ -1513,4 +1514,16 @@ QPixmap VUtils::pixmapFromFile(const QString &p_filePath)
     pixmap.loadFromData(file.readAll());
     qDebug() << "pixmapFromFile" << p_filePath << pixmap.isNull();
     return pixmap;
+}
+
+QFormLayout *VUtils::getFormLayout()
+{
+    QFormLayout *layout = new QFormLayout();
+
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+    layout->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
+#endif
+
+    return layout;
 }

@@ -171,7 +171,7 @@ void VSearcher::setupUI()
                 m_fuzzyCB->setEnabled(!checked);
             });
 
-    QFormLayout *advLayout = new QFormLayout();
+    QFormLayout *advLayout = VUtils::getFormLayout();
     advLayout->addRow(tr("File pattern:"), m_filePatternCB);
     advLayout->addRow(tr("Engine:"), m_searchEngineCB);
     advLayout->addRow(m_caseSensitiveCB);
@@ -226,7 +226,7 @@ void VSearcher::setupUI()
                 updateNumLabel(p_count);
             });
 
-    QFormLayout *formLayout = new QFormLayout();
+    QFormLayout *formLayout = VUtils::getFormLayout();
     formLayout->addRow(tr("Keywords:"), m_keywordCB);
     formLayout->addRow(tr("Scope:"), m_searchScopeCB);
     formLayout->addRow(tr("Object:"), m_searchObjectCB);

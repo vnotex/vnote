@@ -20,6 +20,7 @@ class QComboBox;
 class QWebEngineView;
 class QAction;
 class QTreeWidgetItem;
+class QFormLayout;
 
 #if !defined(V_ASSERT)
     #define V_ASSERT(cond) ((!(cond)) ? qt_assert(#cond, __FILE__, __LINE__) : qt_noop())
@@ -326,6 +327,9 @@ public:
     static QImage imageFromFile(const QString &p_filePath);
 
     static QPixmap pixmapFromFile(const QString &p_filePath);
+
+    // Return QFormLayout.
+    static QFormLayout *getFormLayout();
 
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt text" =200x100)
