@@ -284,21 +284,24 @@ QString VPreviewManager::imageResourceName(const ImageLinkInfo &p_link)
     }
 
     // Resize the image.
+    Qt::TransformationMode tMode = Qt::SmoothTransformation;
     qreal sf = VUtils::calculateScaleFactor();
     if (p_link.m_width > 0) {
         if (p_link.m_height > 0) {
             m_editor->addImage(name, image.scaled(p_link.m_width * sf,
-                                                  p_link.m_height * sf));
+                                                  p_link.m_height * sf,
+                                                  Qt::IgnoreAspectRatio,
+                                                  tMode));
         } else {
-            m_editor->addImage(name, image.scaledToWidth(p_link.m_width * sf));
+            m_editor->addImage(name, image.scaledToWidth(p_link.m_width * sf, tMode));
         }
     } else if (p_link.m_height > 0) {
-        m_editor->addImage(name, image.scaledToHeight(p_link.m_height * sf));
+        m_editor->addImage(name, image.scaledToHeight(p_link.m_height * sf, tMode));
     } else {
         if (sf < 1.1) {
             m_editor->addImage(name, image);
         } else {
-            m_editor->addImage(name, image.scaledToWidth(image.width() * sf));
+            m_editor->addImage(name, image.scaledToWidth(image.width() * sf, tMode));
         }
     }
 
