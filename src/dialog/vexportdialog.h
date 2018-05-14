@@ -167,12 +167,14 @@ struct ExportCustomOption
                        const QString &p_outputSuffix,
                        const QString &p_cmd,
                        const QString &p_cssUrl,
+                       const QString &p_codeBlockCssUrl,
                        bool p_allInOne,
                        const QString &p_folderSep,
                        const QString &p_targetFileName)
         : m_srcFormat(p_srcFormat),
           m_outputSuffix(p_outputSuffix),
           m_cssUrl(p_cssUrl),
+          m_codeBlockCssUrl(p_codeBlockCssUrl),
           m_allInOne(p_allInOne),
           m_folderSep(p_folderSep),
           m_targetFileName(p_targetFileName)
@@ -198,6 +200,8 @@ struct ExportCustomOption
     QString m_cmd;
 
     QString m_cssUrl;
+    QString m_codeBlockCssUrl;
+
     bool m_allInOne;
 
     QString m_folderSep;

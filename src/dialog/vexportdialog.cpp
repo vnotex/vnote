@@ -528,14 +528,14 @@ void VExportDialog::startExport()
     QString outputFolder = QDir::cleanPath(QDir(getOutputDirectory()).absolutePath());
 
     QString renderStyle = m_renderStyleCB->currentData().toString();
-    QString cssUrl = g_config->getCssStyleUrl(renderStyle);
+    QString renderCodeBlockStyle = m_renderCodeBlockStyleCB->currentData().toString();
 
     s_opt = ExportOption(currentSource(),
                          currentFormat(),
                          (MarkdownConverterType)m_rendererCB->currentData().toInt(),
                          m_renderBgCB->currentData().toString(),
                          renderStyle,
-                         m_renderCodeBlockStyleCB->currentData().toString(),
+                         renderCodeBlockStyle,
                          m_subfolderCB->isChecked(),
                          ExportPDFOption(&m_pageLayout,
                                          m_wkhtmltopdfCB->isChecked(),
@@ -555,7 +555,8 @@ void VExportDialog::startExport()
                                             m_customSrcFormatCB->currentData().toInt(),
                                             m_customSuffixEdit->text(),
                                             m_customCmdEdit->toPlainText(),
-                                            cssUrl,
+                                            g_config->getCssStyleUrl(renderStyle),
+                                            g_config->getCodeBlockCssStyleUrl(renderCodeBlockStyle),
                                             m_customAllInOneCB->isChecked(),
                                             m_customFolderSepEdit->text(),
                                             m_customTargetFileNameEdit->text()));
@@ -1304,7 +1305,8 @@ QWidget *VExportDialog::setupCustomAdvancedSettings()
     QLabel *tipsLabel = new QLabel(tr("<span><span style=\"font-weight:bold;\">%0</span> for the input file; "
                                       "<span style=\"font-weight:bold;\">%1</span> for the output file; "
                                       "<span style=\"font-weight:bold;\">%2</span> for the rendering CSS style file; "
-                                      "<span style=\"font-weight:bold;\">%3</span> for the input file directory.</span>"),
+                                      "<span style=\"font-weight:bold;\">%3</span> for the input file directory; "
+                                      "<span style=\"font-weight:bold;\">%4</span> for the rendering code block CSS style file.</span>"),
                                    this);
     tipsLabel->setWordWrap(true);
 
@@ -1336,7 +1338,7 @@ QWidget *VExportDialog::setupCustomAdvancedSettings()
     // Cmd edit.
     m_customCmdEdit = new QPlainTextEdit(this);
     m_customCmdEdit->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
-    QString cmdExamp("pandoc --resource-path=.:\"%3\" --css=\"%2\" -s -o \"%1\" \"%0\"");
+    QString cmdExamp("pandoc --resource-path=.:\"%3\" --css=\"%2\" --css=\"%4\" -s -o \"%1\" \"%0\"");
     m_customCmdEdit->setPlaceholderText(cmdExamp);
     m_customCmdEdit->setToolTip(tr("Custom command to be executed"));
     m_customCmdEdit->setProperty("LineEdit", true);

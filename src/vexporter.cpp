@@ -174,13 +174,12 @@ static QString evaluateCommand(const ExportCustomOption &p_opt,
                                const QString &p_inputFolder,
                                const QString &p_output)
 {
-    QString cssStyle = QDir::toNativeSeparators(p_opt.m_cssUrl);
-
     QString cmd(p_opt.m_cmd);
     replaceArgument(cmd, "%0", p_input);
     replaceArgument(cmd, "%1", p_output);
-    replaceArgument(cmd, "%2", cssStyle);
+    replaceArgument(cmd, "%2", QDir::toNativeSeparators(p_opt.m_cssUrl));
     replaceArgument(cmd, "%3", p_inputFolder);
+    replaceArgument(cmd, "%4", QDir::toNativeSeparators(p_opt.m_codeBlockCssUrl));
 
     return cmd;
 }
