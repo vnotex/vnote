@@ -402,6 +402,8 @@ void VLivePreviewHelper::processForInplacePreview(int p_idx)
 
 void VLivePreviewHelper::updateInplacePreview()
 {
+    Qt::TransformationMode tMode = Qt::SmoothTransformation;
+    qreal sf = VUtils::calculateScaleFactor();
     QSet<int> blocks;
     QVector<QSharedPointer<VImageToPreview> > images;
     for (int i = 0; i < m_codeBlocks.size(); ++i) {
@@ -410,13 +412,27 @@ void VLivePreviewHelper::updateInplacePreview()
             // Generate the image.
             bool valid = false;
             if (cb.hasImageData()) {
-                cb.inplacePreview()->m_image.loadFromData(cb.imageData().toUtf8(),
-                                                          cb.imageFormat().toLocal8Bit().data());
+                QPixmap tmpImg;
+                tmpImg.loadFromData(cb.imageData().toUtf8(),
+                                    cb.imageFormat().toLocal8Bit().data());
+                if (sf < 1.1) {
+                    cb.inplacePreview()->m_image.swap(tmpImg);
+                } else {
+                    cb.inplacePreview()->m_image = tmpImg.scaledToWidth(tmpImg.width() * sf, tMode);
+                }
+
                 images.append(cb.inplacePreview());
                 valid = true;
             } else if (cb.hasImageDataBa()) {
-                cb.inplacePreview()->m_image.loadFromData(cb.imageDataBa(),
-                                                          cb.imageFormat().toLocal8Bit().data());
+                QPixmap tmpImg;
+                tmpImg.loadFromData(cb.imageDataBa(),
+                                    cb.imageFormat().toLocal8Bit().data());
+                if (sf < 1.1) {
+                    cb.inplacePreview()->m_image.swap(tmpImg);
+                } else {
+                    cb.inplacePreview()->m_image = tmpImg.scaledToWidth(tmpImg.width() * sf, tMode);
+                }
+
                 images.append(cb.inplacePreview());
                 valid = true;
             }
