@@ -625,7 +625,7 @@ bool VExporter::embedStyleResources(QString &p_html)
             break;
         }
 
-        QString dataURI = g_webUtils->dataURI(QUrl(reg.cap(1)));
+        QString dataURI = g_webUtils->dataURI(QUrl(reg.cap(1)), false);
         if (dataURI.isEmpty()) {
             pos = idx + reg.matchedLength();
         } else {

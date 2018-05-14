@@ -926,7 +926,7 @@ QString VWebUtils::copyResource(const QUrl &p_url, const QString &p_folder) cons
     return succ ? targetFile : QString();
 }
 
-QString VWebUtils::dataURI(const QUrl &p_url) const
+QString VWebUtils::dataURI(const QUrl &p_url, bool p_keepTitle) const
 {
     QString uri;
     Q_ASSERT(!p_url.isRelative());
@@ -956,6 +956,12 @@ QString VWebUtils::dataURI(const QUrl &p_url) const
     if (suffix == "svg") {
         uri = QString("data:image/svg+xml;utf8,%1").arg(QString::fromUtf8(data));
         uri.replace('\r', "").replace('\n', "");
+
+        if (!p_keepTitle) {
+            // Remove <title>...</title>.
+            QRegExp reg("<title>.*</title>", Qt::CaseInsensitive);
+            uri.remove(reg);
+        }
     } else {
         uri = QString("data:image/%1;base64,%2").arg(suffix).arg(QString::fromUtf8(data.toBase64()));
     }
