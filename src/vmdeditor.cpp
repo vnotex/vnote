@@ -425,7 +425,8 @@ static QString headerSequenceStr(const QVector<int> &p_sequence)
     return res;
 }
 
-static void insertSequenceToHeader(QTextBlock p_block,
+static void insertSequenceToHeader(QTextCursor& p_cursor,
+                                   QTextBlock p_block,
                                    QRegExp &p_reg,
                                    QRegExp &p_preReg,
                                    const QString &p_seq)
@@ -446,16 +447,16 @@ static void insertSequenceToHeader(QTextBlock p_block,
 
     Q_ASSERT(start <= end);
 
-    QTextCursor cursor(p_block);
-    cursor.setPosition(p_block.position() + start);
+
+    p_cursor.setPosition(p_block.position() + start);
     if (start != end) {
-        cursor.setPosition(p_block.position() + end, QTextCursor::KeepAnchor);
+        p_cursor.setPosition(p_block.position() + end, QTextCursor::KeepAnchor);
     }
 
     if (p_seq.isEmpty()) {
-        cursor.removeSelectedText();
+        p_cursor.removeSelectedText();
     } else {
-        cursor.insertText(p_seq + ' ');
+        p_cursor.insertText(p_seq + ' ');
     }
 }
 
@@ -585,7 +586,8 @@ void VMdEditor::updateHeadersHelper(const QVector<VElementRegion> &p_headerRegio
             QString seqStr = headerSequenceStr(seqs);
             if (headerSequences[i] != seqStr) {
                 // Insert correct sequence.
-                insertSequenceToHeader(doc->findBlockByNumber(headerBlockNumbers[i]),
+                insertSequenceToHeader(cursor,
+                                       doc->findBlockByNumber(headerBlockNumbers[i]),
                                        headerReg,
                                        preReg,
                                        seqStr);
