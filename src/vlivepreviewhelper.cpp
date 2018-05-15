@@ -30,6 +30,8 @@ extern VMainWindow *g_mainWin;
 
 #define INDEX_MASK 0x00ffffffUL
 
+#define SCALE_FACTOR_THRESHOLD 1.1
+
 CodeBlockPreviewInfo::CodeBlockPreviewInfo()
 {
 }
@@ -55,18 +57,19 @@ void CodeBlockPreviewInfo::updateNonContent(const QTextDocument *p_doc,
         m_inplacePreview->m_blockNumber = m_codeBlock.m_endBlock;
         // Padding is not changed since content is not changed.
     } else {
-        m_inplacePreview->clear();
+        m_inplacePreview.clear();
     }
 }
 
 void CodeBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
-                                                const QTextDocument *p_doc)
+                                                const QTextDocument *p_doc,
+                                                qreal p_scaleFactor)
 {
     QTextBlock block = p_doc->findBlockByNumber(m_codeBlock.m_endBlock);
     if (block.isValid()) {
+        Qt::TransformationMode tMode = Qt::SmoothTransformation;
         VImageToPreview *preview = new VImageToPreview();
 
-        // m_image will be generated when signaling out.
         preview->m_startPos = block.position();
         preview->m_endPos = block.position() + block.length();
         preview->m_blockPos = block.position();
@@ -76,9 +79,33 @@ void CodeBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
         preview->m_name = QString::number(getImageIndex());
         preview->m_isBlock = true;
 
+        if (hasImageData()) {
+            if (p_scaleFactor < SCALE_FACTOR_THRESHOLD) {
+                preview->m_image.loadFromData(m_imgData.toUtf8(),
+                                              m_imgFormat.toLocal8Bit().data());
+            } else {
+                QPixmap tmpImg;
+                tmpImg.loadFromData(m_imgData.toUtf8(),
+                                    m_imgFormat.toLocal8Bit().data());
+                preview->m_image = tmpImg.scaledToWidth(tmpImg.width() * p_scaleFactor, tMode);
+            }
+        } else if (hasImageDataBa()) {
+            if (p_scaleFactor < SCALE_FACTOR_THRESHOLD) {
+                preview->m_image.loadFromData(m_imgDataBa,
+                                              m_imgFormat.toLocal8Bit().data());
+            } else {
+                QPixmap tmpImg;
+                tmpImg.loadFromData(m_imgDataBa,
+                                    m_imgFormat.toLocal8Bit().data());
+                preview->m_image = tmpImg.scaledToWidth(tmpImg.width() * p_scaleFactor, tMode);
+            }
+        } else {
+            preview->m_image = QPixmap();
+        }
+
         m_inplacePreview.reset(preview);
     } else {
-        m_inplacePreview->clear();
+        m_inplacePreview.clear();
     }
 }
 
@@ -96,7 +123,8 @@ VLivePreviewHelper::VLivePreviewHelper(VEditor *p_editor,
       m_graphvizHelper(NULL),
       m_plantUMLHelper(NULL),
       m_lastInplacePreviewSize(0),
-      m_timeStamp(0)
+      m_timeStamp(0),
+      m_scaleFactor(VUtils::calculateScaleFactor())
 {
     connect(m_editor->object(), &VEditorObject::cursorPositionChanged,
             this, &VLivePreviewHelper::handleCursorPositionChanged);
@@ -352,7 +380,7 @@ void VLivePreviewHelper::localAsyncResultReady(int p_id,
         m_document->setPreviewContent(lang, p_result);
     } else {
         // Inplace preview.
-        cb.updateInplacePreview(m_editor, m_doc);
+        cb.updateInplacePreview(m_editor, m_doc, getScaleFactor(cb));
 
         updateInplacePreview();
     }
@@ -402,42 +430,14 @@ void VLivePreviewHelper::processForInplacePreview(int p_idx)
 
 void VLivePreviewHelper::updateInplacePreview()
 {
-    Qt::TransformationMode tMode = Qt::SmoothTransformation;
-    qreal sf = VUtils::calculateScaleFactor();
     QSet<int> blocks;
     QVector<QSharedPointer<VImageToPreview> > images;
     for (int i = 0; i < m_codeBlocks.size(); ++i) {
         CodeBlockPreviewInfo &cb = m_codeBlocks[i];
         if (cb.inplacePreviewReady()) {
-            // Generate the image.
-            bool valid = false;
-            if (cb.hasImageData()) {
-                QPixmap tmpImg;
-                tmpImg.loadFromData(cb.imageData().toUtf8(),
-                                    cb.imageFormat().toLocal8Bit().data());
-                if (sf < 1.1) {
-                    cb.inplacePreview()->m_image.swap(tmpImg);
-                } else {
-                    cb.inplacePreview()->m_image = tmpImg.scaledToWidth(tmpImg.width() * sf, tMode);
-                }
-
+            if (!cb.inplacePreview()->m_image.isNull()) {
                 images.append(cb.inplacePreview());
-                valid = true;
-            } else if (cb.hasImageDataBa()) {
-                QPixmap tmpImg;
-                tmpImg.loadFromData(cb.imageDataBa(),
-                                    cb.imageFormat().toLocal8Bit().data());
-                if (sf < 1.1) {
-                    cb.inplacePreview()->m_image.swap(tmpImg);
-                } else {
-                    cb.inplacePreview()->m_image = tmpImg.scaledToWidth(tmpImg.width() * sf, tMode);
-                }
-
-                images.append(cb.inplacePreview());
-                valid = true;
-            }
-
-            if (!valid) {
+            } else {
                 blocks.insert(cb.inplacePreview()->m_blockNumber);
             }
         } else {
@@ -455,15 +455,6 @@ void VLivePreviewHelper::updateInplacePreview()
 
     if (!blocks.isEmpty()) {
         emit checkBlocksForObsoletePreview(blocks.toList());
-    }
-
-    // Clear image.
-    for (int i = 0; i < m_codeBlocks.size(); ++i) {
-        CodeBlockPreviewInfo &cb = m_codeBlocks[i];
-        if (cb.inplacePreviewReady()
-            && (cb.hasImageData() || cb.hasImageDataBa())) {
-            cb.inplacePreview()->m_image = QPixmap();
-        }
     }
 }
 
@@ -484,6 +475,6 @@ void VLivePreviewHelper::mathjaxPreviewResultReady(int p_identitifer,
 
     CodeBlockPreviewInfo &cb = m_codeBlocks[p_id];
     cb.setImageDataBa(p_format, p_data);
-    cb.updateInplacePreview(m_editor, m_doc);
+    cb.updateInplacePreview(m_editor, m_doc, getScaleFactor(cb));
     updateInplacePreview();
 }

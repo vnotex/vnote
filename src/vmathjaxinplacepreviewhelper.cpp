@@ -39,7 +39,7 @@ void MathjaxBlockPreviewInfo::updateNonContent(const QTextDocument *p_doc,
                                                                             p_editor->tabStopWidthW());
         m_inplacePreview->m_isBlock = m_mathjaxBlock.m_previewedAsBlock;
     } else {
-        m_inplacePreview->clear();
+        m_inplacePreview.clear();
     }
 }
 
@@ -68,7 +68,7 @@ void MathjaxBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
 
         m_inplacePreview.reset(preview);
     } else {
-        m_inplacePreview->clear();
+        m_inplacePreview.clear();
     }
 }
 

@@ -31,7 +31,9 @@ public:
     void updateNonContent(const QTextDocument *p_doc,
                           const VCodeBlock &p_cb);
 
-    void updateInplacePreview(const VEditor *p_editor, const QTextDocument *p_doc);
+    void updateInplacePreview(const VEditor *p_editor,
+                              const QTextDocument *p_doc,
+                              qreal p_scaleFactor);
 
     VCodeBlock &codeBlock()
     {
@@ -167,6 +169,8 @@ private:
     // Emit signal to update inplace preview.
     void updateInplacePreview();
 
+    qreal getScaleFactor(const CodeBlockPreviewInfo &p_cb);
+
     // Sorted by m_startBlock in ascending order.
     QVector<CodeBlockPreviewInfo> m_codeBlocks;
 
@@ -200,10 +204,21 @@ private:
     int m_lastInplacePreviewSize;
 
     TimeStamp m_timeStamp;
+
+    const qreal m_scaleFactor;
 };
 
 inline bool VLivePreviewHelper::isPreviewEnabled() const
 {
     return m_inplacePreviewEnabled || m_livePreviewEnabled;
+}
+
+inline qreal VLivePreviewHelper::getScaleFactor(const CodeBlockPreviewInfo &p_cb)
+{
+    if (p_cb.codeBlock().m_lang == QStringLiteral("mathjax")) {
+        return 1.0;
+    } else {
+        return m_scaleFactor;
+    }
 }
 #endif // VLIVEPREVIEWHELPER_H
