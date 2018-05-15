@@ -459,7 +459,40 @@ static void insertSequenceToHeader(QTextBlock p_block,
     }
 }
 
-void VMdEditor::updateHeaders(const QVector<VElementRegion> &p_headerRegions)
+static void removeSequenceFromHeader(QTextCursor& p_cursor, QTextBlock p_block,
+                                   QRegExp &p_reg,
+                                   QRegExp &p_preReg)
+{
+    if (!p_block.isValid()) {
+        return;
+    }
+
+    QString text = p_block.text();
+    bool matched = p_reg.exactMatch(text);
+    Q_ASSERT(matched);
+
+    matched = p_preReg.exactMatch(text);
+    Q_ASSERT(matched);
+
+    int start = p_reg.cap(1).length() + 1;
+    int end = p_preReg.cap(1).length();
+
+    Q_ASSERT(start <= end);
+
+    p_cursor.setPosition(p_block.position() + start);
+    if (start != end) {
+        p_cursor.setPosition(p_block.position() + end, QTextCursor::KeepAnchor);
+    }
+
+    p_cursor.removeSelectedText();
+}
+
+void VMdEditor::updateHeaderSequenceByConfigChange()
+{
+    updateHeadersHelper(m_mdHighlighter->getHeaderRegions(), true);
+}
+
+void VMdEditor::updateHeadersHelper(const QVector<VElementRegion> &p_headerRegions, bool configChanged)
 {
     QTextDocument *doc = document();
 
@@ -520,6 +553,14 @@ void VMdEditor::updateHeaders(const QVector<VElementRegion> &p_headerRegions)
     QVector<int> seqs(7, 0);
     QRegExp preReg(VUtils::c_headerPrefixRegExp);
     int curLevel = baseLevel - 1;
+    QTextCursor cursor = textCursorW();
+
+    int blockNo = cursor.block().blockNumber();
+    int posToBlockEnd = cursor.block().length() - cursor.positionInBlock();
+
+    if(autoSequence || configChanged) {
+        cursor.beginEditBlock();
+    }
     for (int i = 0; i < headers.size(); ++i) {
         VTableOfContentItem &item = headers[i];
         while (item.m_level > curLevel + 1) {
@@ -530,7 +571,7 @@ void VMdEditor::updateHeaders(const QVector<VElementRegion> &p_headerRegions)
                                                  curLevel,
                                                  -1,
                                                  m_headers.size()));
-            if (autoSequence) {
+            if (autoSequence || configChanged) {
                 addHeaderSequence(seqs, curLevel, headingSequenceBaseLevel);
             }
         }
@@ -549,12 +590,29 @@ void VMdEditor::updateHeaders(const QVector<VElementRegion> &p_headerRegions)
                                        preReg,
                                        seqStr);
             }
+        } else if (configChanged) {
+            addHeaderSequence(seqs, item.m_level, headingSequenceBaseLevel);
+            removeSequenceFromHeader(cursor,
+                                     doc->findBlockByNumber(headerBlockNumbers[i]),
+                                     headerReg,
+                                     preReg);
         }
+    }
+    if (autoSequence || configChanged) {
+        QTextBlock blk = doc->findBlockByNumber(blockNo);
+        cursor.setPosition(blk.position() + blk.length() - posToBlockEnd);
+        cursor.endEditBlock();
+        setTextCursorW(cursor);
     }
 
     emit headersChanged(m_headers);
 
     updateCurrentHeader();
+}
+
+void VMdEditor::updateHeaders(const QVector<VElementRegion> &p_headerRegions)
+{
+    updateHeadersHelper(p_headerRegions, false);
 }
 
 void VMdEditor::updateCurrentHeader()

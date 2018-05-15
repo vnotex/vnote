@@ -911,6 +911,9 @@ void VMdTab::enableHeadingSequence(bool p_enabled)
     if (m_editor) {
         VEditConfig &config = m_editor->getConfig();
         config.m_enableHeadingSequence = m_enableHeadingSequence;
+        if (isEditMode()) {
+            m_editor->updateHeaderSequenceByConfigChange();
+        }
     }
 }
 
