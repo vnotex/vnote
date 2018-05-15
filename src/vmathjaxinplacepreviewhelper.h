@@ -19,17 +19,9 @@ public:
 
     explicit MathjaxBlockPreviewInfo(const VMathjaxBlock &p_mb);
 
-    void clearImageData()
-    {
-        m_imgDataBa.clear();
-        m_inplacePreview.clear();
-    }
-
-    void updateNonContent(const QTextDocument *p_doc,
-                          const VEditor *p_editor,
-                          const VMathjaxBlock &p_mb);
-
-    void updateInplacePreview(const VEditor *p_editor, const QTextDocument *p_doc);
+    void updateInplacePreview(const VEditor *p_editor,
+                              const QTextDocument *p_doc,
+                              const QPixmap &p_image);
 
     VMathjaxBlock &mathjaxBlock()
     {
@@ -41,27 +33,9 @@ public:
         return m_mathjaxBlock;
     }
 
-    void setMathjaxBlock(const VMathjaxBlock &p_mb)
-    {
-        m_mathjaxBlock = p_mb;
-        clearImageData();
-    }
-
     bool inplacePreviewReady() const
     {
         return !m_inplacePreview.isNull();
-    }
-
-    void setImageDataBa(const QString &p_format, const QByteArray &p_data)
-    {
-        m_imgFormat = p_format;
-        m_imgDataBa = p_data;
-        m_inplacePreview.clear();
-    }
-
-    bool hasImageDataBa() const
-    {
-        return !m_imgDataBa.isEmpty();
     }
 
     const QSharedPointer<VImageToPreview> inplacePreview() const
@@ -77,10 +51,6 @@ private:
     }
 
     VMathjaxBlock m_mathjaxBlock;
-
-    QByteArray m_imgDataBa;
-
-    QString m_imgFormat;
 
     QSharedPointer<VImageToPreview> m_inplacePreview;
 };
@@ -124,15 +94,15 @@ private:
         MathjaxImageCacheEntry(TimeStamp p_ts,
                                const QByteArray &p_dataBa,
                                const QString &p_format)
-            : m_ts(p_ts),
-              m_imgDataBa(p_dataBa),
-              m_imgFormat(p_format)
+            : m_ts(p_ts)
         {
+            if (!p_dataBa.isEmpty()) {
+                m_image.loadFromData(p_dataBa, p_format.toLocal8Bit().data());
+            }
         }
 
         TimeStamp m_ts;
-        QByteArray m_imgDataBa;
-        QString m_imgFormat;
+        QPixmap m_image;
     };
 
 

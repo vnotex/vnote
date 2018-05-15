@@ -21,19 +21,9 @@ public:
 
     explicit CodeBlockPreviewInfo(const VCodeBlock &p_cb);
 
-    void clearImageData()
-    {
-        m_imgData.clear();
-        m_imgDataBa.clear();
-        m_inplacePreview.clear();
-    }
-
-    void updateNonContent(const QTextDocument *p_doc,
-                          const VCodeBlock &p_cb);
-
     void updateInplacePreview(const VEditor *p_editor,
                               const QTextDocument *p_doc,
-                              qreal p_scaleFactor);
+                              const QPixmap &p_image);
 
     VCodeBlock &codeBlock()
     {
@@ -43,13 +33,6 @@ public:
     const VCodeBlock &codeBlock() const
     {
         return m_codeBlock;
-    }
-
-    void setCodeBlock(const VCodeBlock &p_cb)
-    {
-        m_codeBlock = p_cb;
-
-        clearImageData();
     }
 
     bool inplacePreviewReady() const
@@ -67,16 +50,6 @@ public:
         return m_imgData;
     }
 
-    bool hasImageDataBa() const
-    {
-        return !m_imgDataBa.isEmpty();
-    }
-
-    const QByteArray &imageDataBa() const
-    {
-        return m_imgDataBa;
-    }
-
     const QString &imageFormat() const
     {
         return m_imgFormat;
@@ -84,20 +57,8 @@ public:
 
     void setImageData(const QString &p_format, const QString &p_data)
     {
-        m_imgDataBa.clear();
-        m_inplacePreview.clear();
-
         m_imgFormat = p_format;
         m_imgData = p_data;
-    }
-
-    void setImageDataBa(const QString &p_format, const QByteArray &p_data)
-    {
-        m_imgData.clear();
-        m_inplacePreview.clear();
-
-        m_imgFormat = p_format;
-        m_imgDataBa = p_data;
     }
 
     const QSharedPointer<VImageToPreview> inplacePreview() const
@@ -115,8 +76,6 @@ private:
     VCodeBlock m_codeBlock;
 
     QString m_imgData;
-
-    QByteArray m_imgDataBa;
 
     QString m_imgFormat;
 
@@ -161,7 +120,79 @@ private slots:
                                    const QByteArray &p_data);
 
 private:
-    bool isPreviewLang(const QString &p_lang) const;
+    struct CodeBlockImageCacheEntry
+    {
+        #define SCALE_FACTOR_THRESHOLD 1.1
+
+        CodeBlockImageCacheEntry()
+            : m_ts(0)
+        {
+        }
+
+        CodeBlockImageCacheEntry(TimeStamp p_ts,
+                                 const QString &p_format,
+                                 const QByteArray &p_data,
+                                 qreal p_scaleFactor)
+            : m_ts(p_ts)
+        {
+            if (!p_data.isEmpty()) {
+                if (p_scaleFactor < SCALE_FACTOR_THRESHOLD) {
+                    m_image.loadFromData(p_data,
+                                         p_format.toLocal8Bit().data());
+                } else {
+                    QPixmap tmpImg;
+                    tmpImg.loadFromData(p_data,
+                                        p_format.toLocal8Bit().data());
+                    m_image = tmpImg.scaledToWidth(tmpImg.width() * p_scaleFactor,
+                                                   Qt::SmoothTransformation);
+                }
+            }
+        }
+
+        CodeBlockImageCacheEntry(TimeStamp p_ts,
+                                 const QString &p_format,
+                                 const QString &p_data,
+                                 qreal p_scaleFactor)
+            : m_ts(p_ts),
+              m_imgData(p_data),
+              m_imgFormat(p_format)
+        {
+            if (!p_data.isEmpty()) {
+                if (p_scaleFactor < SCALE_FACTOR_THRESHOLD) {
+                    m_image.loadFromData(p_data.toUtf8(),
+                                         p_format.toLocal8Bit().data());
+                } else {
+                    QPixmap tmpImg;
+                    tmpImg.loadFromData(p_data.toUtf8(),
+                                        p_format.toLocal8Bit().data());
+                    m_image = tmpImg.scaledToWidth(tmpImg.width() * p_scaleFactor,
+                                                   Qt::SmoothTransformation);
+                }
+            }
+        }
+
+        bool hasImageData() const
+        {
+            return !m_imgData.isEmpty();
+        }
+
+        bool hasImage() const
+        {
+            return !m_image.isNull();
+        }
+
+        TimeStamp m_ts;
+
+        // For live preview.
+        QString m_imgData;
+        QString m_imgFormat;
+
+        // For in-place preview.
+        QPixmap m_image;
+    };
+
+
+    void checkLang(const QString &p_lang, bool &p_livePreview, bool &p_inplacePreview) const;
 
     // Get image data for this code block for inplace preview.
     void processForInplacePreview(int p_idx);
@@ -170,6 +201,8 @@ private:
     void updateInplacePreview();
 
     qreal getScaleFactor(const CodeBlockPreviewInfo &p_cb);
+
+    void clearObsoleteCache();
 
     // Sorted by m_startBlock in ascending order.
     QVector<CodeBlockPreviewInfo> m_codeBlocks;
@@ -206,6 +239,9 @@ private:
     TimeStamp m_timeStamp;
 
     const qreal m_scaleFactor;
+
+    // Indexed by content.
+    QHash<QString, QSharedPointer<CodeBlockImageCacheEntry>> m_cache;
 };
 
 inline bool VLivePreviewHelper::isPreviewEnabled() const

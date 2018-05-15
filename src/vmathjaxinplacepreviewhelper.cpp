@@ -19,32 +19,9 @@ MathjaxBlockPreviewInfo::MathjaxBlockPreviewInfo(const VMathjaxBlock &p_mb)
 {
 }
 
-void MathjaxBlockPreviewInfo::updateNonContent(const QTextDocument *p_doc,
-                                               const VEditor *p_editor,
-                                               const VMathjaxBlock &p_mb)
-{
-    m_mathjaxBlock.updateNonContent(p_mb);
-    if (m_inplacePreview.isNull()) {
-        return;
-    }
-
-    QTextBlock block = p_doc->findBlockByNumber(m_mathjaxBlock.m_blockNumber);
-    if (block.isValid()) {
-        m_inplacePreview->m_startPos = block.position() + m_mathjaxBlock.m_index;
-        m_inplacePreview->m_endPos = m_inplacePreview->m_startPos + m_mathjaxBlock.m_length;
-        m_inplacePreview->m_blockPos = block.position();
-        m_inplacePreview->m_blockNumber = m_mathjaxBlock.m_blockNumber;
-        // Padding may changed.
-        m_inplacePreview->m_padding = VPreviewManager::calculateBlockMargin(block,
-                                                                            p_editor->tabStopWidthW());
-        m_inplacePreview->m_isBlock = m_mathjaxBlock.m_previewedAsBlock;
-    } else {
-        m_inplacePreview.clear();
-    }
-}
-
 void MathjaxBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
-                                                   const QTextDocument *p_doc)
+                                                   const QTextDocument *p_doc,
+                                                   const QPixmap &p_image)
 {
     QTextBlock block = p_doc->findBlockByNumber(m_mathjaxBlock.m_blockNumber);
     if (block.isValid()) {
@@ -59,12 +36,7 @@ void MathjaxBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
         preview->m_name = QString::number(getImageIndex());
         preview->m_isBlock = m_mathjaxBlock.m_previewedAsBlock;
 
-        if (hasImageDataBa()) {
-            preview->m_image.loadFromData(m_imgDataBa,
-                                                   m_imgFormat.toLocal8Bit().data());
-        } else {
-            preview->m_image = QPixmap();
-        }
+        preview->m_image = p_image;
 
         m_inplacePreview.reset(preview);
     } else {
@@ -133,13 +105,12 @@ void VMathJaxInplacePreviewHelper::updateMathjaxBlocks(const QVector<VMathjaxBlo
             QSharedPointer<MathjaxImageCacheEntry> &entry = it.value();
             entry->m_ts = m_timeStamp;
             cached = true;
-            m_mathjaxBlocks[i].setImageDataBa(entry->m_imgFormat, entry->m_imgDataBa);
-            m_mathjaxBlocks[i].updateInplacePreview(m_editor, m_doc);
+            m_mathjaxBlocks.last().updateInplacePreview(m_editor, m_doc, entry->m_image);
         }
 
-        if (!cached || !m_mathjaxBlocks[i].inplacePreviewReady()) {
+        if (!cached || !m_mathjaxBlocks.last().inplacePreviewReady()) {
             manualUpdate = false;
-            processForInplacePreview(i);
+            processForInplacePreview(m_mathjaxBlocks.size() - 1);
         }
     }
 
@@ -222,14 +193,12 @@ void VMathJaxInplacePreviewHelper::mathjaxPreviewResultReady(int p_identitifer,
     }
 
     MathjaxBlockPreviewInfo &mb = m_mathjaxBlocks[p_id];
-    mb.setImageDataBa(p_format, p_data);
-    mb.updateInplacePreview(m_editor, m_doc);
-
     // Update the cache.
     QSharedPointer<MathjaxImageCacheEntry> entry(new MathjaxImageCacheEntry(p_timeStamp,
                                                                             p_data,
                                                                             p_format));
     m_cache.insert(mb.mathjaxBlock().m_text, entry);
+    mb.updateInplacePreview(m_editor, m_doc, entry->m_image);
 
     updateInplacePreview();
 }

@@ -1,6 +1,5 @@
 #include "vlivepreviewhelper.h"
 
-#include <QDebug>
 #include <QByteArray>
 
 #include "veditor.h"
@@ -30,8 +29,6 @@ extern VMainWindow *g_mainWin;
 
 #define INDEX_MASK 0x00ffffffUL
 
-#define SCALE_FACTOR_THRESHOLD 1.1
-
 CodeBlockPreviewInfo::CodeBlockPreviewInfo()
 {
 }
@@ -41,33 +38,12 @@ CodeBlockPreviewInfo::CodeBlockPreviewInfo(const VCodeBlock &p_cb)
 {
 }
 
-void CodeBlockPreviewInfo::updateNonContent(const QTextDocument *p_doc,
-                                            const VCodeBlock &p_cb)
-{
-    m_codeBlock.updateNonContent(p_cb);
-    if (m_inplacePreview.isNull()) {
-        return;
-    }
-
-    QTextBlock block = p_doc->findBlockByNumber(m_codeBlock.m_endBlock);
-    if (block.isValid()) {
-        m_inplacePreview->m_startPos = block.position();
-        m_inplacePreview->m_endPos = block.position() + block.length();
-        m_inplacePreview->m_blockPos = block.position();
-        m_inplacePreview->m_blockNumber = m_codeBlock.m_endBlock;
-        // Padding is not changed since content is not changed.
-    } else {
-        m_inplacePreview.clear();
-    }
-}
-
 void CodeBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
                                                 const QTextDocument *p_doc,
-                                                qreal p_scaleFactor)
+                                                const QPixmap &p_image)
 {
     QTextBlock block = p_doc->findBlockByNumber(m_codeBlock.m_endBlock);
     if (block.isValid()) {
-        Qt::TransformationMode tMode = Qt::SmoothTransformation;
         VImageToPreview *preview = new VImageToPreview();
 
         preview->m_startPos = block.position();
@@ -79,29 +55,7 @@ void CodeBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
         preview->m_name = QString::number(getImageIndex());
         preview->m_isBlock = true;
 
-        if (hasImageData()) {
-            if (p_scaleFactor < SCALE_FACTOR_THRESHOLD) {
-                preview->m_image.loadFromData(m_imgData.toUtf8(),
-                                              m_imgFormat.toLocal8Bit().data());
-            } else {
-                QPixmap tmpImg;
-                tmpImg.loadFromData(m_imgData.toUtf8(),
-                                    m_imgFormat.toLocal8Bit().data());
-                preview->m_image = tmpImg.scaledToWidth(tmpImg.width() * p_scaleFactor, tMode);
-            }
-        } else if (hasImageDataBa()) {
-            if (p_scaleFactor < SCALE_FACTOR_THRESHOLD) {
-                preview->m_image.loadFromData(m_imgDataBa,
-                                              m_imgFormat.toLocal8Bit().data());
-            } else {
-                QPixmap tmpImg;
-                tmpImg.loadFromData(m_imgDataBa,
-                                    m_imgFormat.toLocal8Bit().data());
-                preview->m_image = tmpImg.scaledToWidth(tmpImg.width() * p_scaleFactor, tMode);
-            }
-        } else {
-            preview->m_image = QPixmap();
-        }
+        preview->m_image = p_image;
 
         m_inplacePreview.reset(preview);
     } else {
@@ -109,6 +63,9 @@ void CodeBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
     }
 }
 
+
+#define CODE_BLOCK_IMAGE_CACHE_SIZE_DIFF 10
+#define CODE_BLOCK_IMAGE_CACHE_TIME_DIFF 5
 
 VLivePreviewHelper::VLivePreviewHelper(VEditor *p_editor,
                                        VDocument *p_document,
@@ -144,13 +101,26 @@ VLivePreviewHelper::VLivePreviewHelper(VEditor *p_editor,
             this, &VLivePreviewHelper::mathjaxPreviewResultReady);
 }
 
-bool VLivePreviewHelper::isPreviewLang(const QString &p_lang) const
+void VLivePreviewHelper::checkLang(const QString &p_lang,
+                                   bool &p_livePreview,
+                                   bool &p_inplacePreview) const
 {
-    return (m_flowchartEnabled && (p_lang == "flow" || p_lang == "flowchart"))
-           || (m_mermaidEnabled && p_lang == "mermaid")
-           || (m_plantUMLMode != PlantUMLMode::DisablePlantUML && p_lang == "puml")
-           || (m_graphvizEnabled && p_lang == "dot")
-           || (m_mathjaxEnabled && p_lang == "mathjax");
+    if (m_flowchartEnabled && (p_lang == "flow" || p_lang == "flowchart")) {
+        p_livePreview = p_inplacePreview = true;
+    } else if (m_plantUMLMode != PlantUMLMode::DisablePlantUML && p_lang == "puml") {
+        p_livePreview = true;
+        p_inplacePreview = m_plantUMLMode == PlantUMLMode::LocalPlantUML;
+    } else if (m_graphvizEnabled && p_lang == "dot") {
+        p_livePreview = p_inplacePreview = true;
+    } else if (m_mermaidEnabled && p_lang == "mermaid") {
+        p_livePreview = true;
+        p_inplacePreview = false;
+    } else if (m_mathjaxEnabled && p_lang == "mathjax") {
+        p_livePreview = false;
+        p_inplacePreview = true;
+    } else {
+        p_livePreview = p_inplacePreview = false;
+    }
 }
 
 void VLivePreviewHelper::updateCodeBlocks(const QVector<VCodeBlock> &p_codeBlocks)
@@ -164,34 +134,42 @@ void VLivePreviewHelper::updateCodeBlocks(const QVector<VCodeBlock> &p_codeBlock
     int lastIndex = m_cbIndex;
     m_cbIndex = -1;
     int cursorBlock = m_editor->textCursorW().block().blockNumber();
-    int idx = 0;
     bool needUpdate = m_livePreviewEnabled;
     bool manualInplacePreview = m_inplacePreviewEnabled;
-    for (auto const & vcb : p_codeBlocks) {
-        if (!isPreviewLang(vcb.m_lang)) {
+    m_codeBlocks.clear();
+
+    for (int i = 0; i < p_codeBlocks.size(); ++i) {
+        const VCodeBlock &vcb = p_codeBlocks[i];
+        bool livePreview = false, inplacePreview = false;
+        checkLang(vcb.m_lang, livePreview, inplacePreview);
+        if (!livePreview && !inplacePreview) {
             continue;
         }
 
+        const QString &text = vcb.m_text;
         bool cached = false;
-        if (idx < m_codeBlocks.size()) {
-            CodeBlockPreviewInfo &cb = m_codeBlocks[idx];
-            if (cb.codeBlock().equalContent(vcb)) {
-                cb.updateNonContent(m_doc, vcb);
-                cached = true;
-            } else {
-                cb.setCodeBlock(vcb);
-            }
-        } else {
-            m_codeBlocks.append(CodeBlockPreviewInfo(vcb));
+
+        m_codeBlocks.append(CodeBlockPreviewInfo(vcb));
+        int idx = m_codeBlocks.size() - 1;
+
+        auto it = m_cache.find(text);
+        if (it != m_cache.end()) {
+            QSharedPointer<CodeBlockImageCacheEntry> &entry = it.value();
+            entry->m_ts = m_timeStamp;
+            cached = true;
+            m_codeBlocks[idx].setImageData(entry->m_imgFormat, entry->m_imgData);
+            m_codeBlocks[idx].updateInplacePreview(m_editor, m_doc, entry->m_image);
         }
 
         if (m_inplacePreviewEnabled
+            && inplacePreview
             && (!cached || !m_codeBlocks[idx].inplacePreviewReady())) {
-            processForInplacePreview(idx);
             manualInplacePreview = false;
+            processForInplacePreview(idx);
         }
 
         if (m_livePreviewEnabled
+            && livePreview
             && vcb.m_startBlock <= cursorBlock
             && vcb.m_endBlock >= cursorBlock) {
             if (lastIndex == idx && cached) {
@@ -200,14 +178,6 @@ void VLivePreviewHelper::updateCodeBlocks(const QVector<VCodeBlock> &p_codeBlock
 
             m_cbIndex = idx;
         }
-
-        ++idx;
-    }
-
-    if (idx == m_codeBlocks.size()) {
-        manualInplacePreview = false;
-    } else {
-        m_codeBlocks.resize(idx);
     }
 
     if (manualInplacePreview) {
@@ -217,6 +187,8 @@ void VLivePreviewHelper::updateCodeBlocks(const QVector<VCodeBlock> &p_codeBlock
     if (needUpdate) {
         updateLivePreview();
     }
+
+    clearObsoleteCache();
 }
 
 void VLivePreviewHelper::handleCursorPositionChanged()
@@ -319,6 +291,7 @@ void VLivePreviewHelper::setLivePreviewEnabled(bool p_enabled)
 
         if (!m_inplacePreviewEnabled) {
             m_codeBlocks.clear();
+            m_cache.clear();
             updateInplacePreview();
         }
     }
@@ -333,6 +306,7 @@ void VLivePreviewHelper::setInplacePreviewEnabled(bool p_enabled)
     m_inplacePreviewEnabled = p_enabled;
     if (!m_inplacePreviewEnabled && !m_livePreviewEnabled) {
         m_codeBlocks.clear();
+        m_cache.clear();
     }
 
     updateInplacePreview();
@@ -371,7 +345,17 @@ void VLivePreviewHelper::localAsyncResultReady(int p_id,
     }
 
     CodeBlockPreviewInfo &cb = m_codeBlocks[idx];
+    const QString &text = cb.codeBlock().m_text;
+
+    QSharedPointer<CodeBlockImageCacheEntry> entry(new CodeBlockImageCacheEntry(p_timeStamp,
+                                                                                p_format,
+                                                                                p_result,
+                                                                                getScaleFactor(cb)));
+    m_cache.insert(text, entry);
+
     cb.setImageData(p_format, p_result);
+    cb.updateInplacePreview(m_editor, m_doc, entry->m_image);
+
     if (livePreview) {
         if (idx != m_cbIndex) {
             return;
@@ -380,8 +364,6 @@ void VLivePreviewHelper::localAsyncResultReady(int p_id,
         m_document->setPreviewContent(lang, p_result);
     } else {
         // Inplace preview.
-        cb.updateInplacePreview(m_editor, m_doc, getScaleFactor(cb));
-
         updateInplacePreview();
     }
 }
@@ -390,7 +372,7 @@ void VLivePreviewHelper::processForInplacePreview(int p_idx)
 {
     CodeBlockPreviewInfo &cb = m_codeBlocks[p_idx];
     const VCodeBlock &vcb = cb.codeBlock();
-    Q_ASSERT(!(cb.hasImageData() || cb.hasImageDataBa()));
+    Q_ASSERT(!cb.hasImageData());
     if (vcb.m_lang == "dot") {
         if (!m_graphvizHelper) {
             m_graphvizHelper = new VGraphvizHelper(this);
@@ -474,7 +456,31 @@ void VLivePreviewHelper::mathjaxPreviewResultReady(int p_identitifer,
     }
 
     CodeBlockPreviewInfo &cb = m_codeBlocks[p_id];
-    cb.setImageDataBa(p_format, p_data);
-    cb.updateInplacePreview(m_editor, m_doc, getScaleFactor(cb));
+    const QString &text = cb.codeBlock().m_text;
+
+    QSharedPointer<CodeBlockImageCacheEntry> entry(new CodeBlockImageCacheEntry(p_timeStamp,
+                                                                                p_format,
+                                                                                p_data,
+                                                                                getScaleFactor(cb)));
+    m_cache.insert(text, entry);
+
+    cb.updateInplacePreview(m_editor, m_doc, entry->m_image);
+
     updateInplacePreview();
+}
+
+void VLivePreviewHelper::clearObsoleteCache()
+{
+    if (m_cache.size() - m_codeBlocks.size() <= CODE_BLOCK_IMAGE_CACHE_SIZE_DIFF) {
+        return;
+    }
+
+    for (auto it = m_cache.begin(); it != m_cache.end();) {
+        if (m_timeStamp - it.value()->m_ts > CODE_BLOCK_IMAGE_CACHE_TIME_DIFF) {
+            it.value().clear();
+            it = m_cache.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
