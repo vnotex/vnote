@@ -72,6 +72,9 @@ void MathjaxBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
     }
 }
 
+#define MATHJAX_IMAGE_CACHE_SIZE_DIFF 20
+#define MATHJAX_IMAGE_CACHE_TIME_DIFF 5
+
 VMathJaxInplacePreviewHelper::VMathJaxInplacePreviewHelper(VEditor *p_editor,
                                                            VDocument *p_document,
                                                            QObject *p_parent)
@@ -100,6 +103,7 @@ void VMathJaxInplacePreviewHelper::setEnabled(bool p_enabled)
 
         if (!m_enabled) {
             m_mathjaxBlocks.clear();
+            m_cache.clear();
         }
 
         updateInplacePreview();
@@ -114,36 +118,36 @@ void VMathJaxInplacePreviewHelper::updateMathjaxBlocks(const QVector<VMathjaxBlo
 
     ++m_timeStamp;
 
-    int idx = 0;
+    m_mathjaxBlocks.clear();
+    m_mathjaxBlocks.reserve(p_blocks.size());
     bool manualUpdate = true;
-    for (auto const & vmb : p_blocks) {
+    for (int i = 0; i < p_blocks.size(); ++i) {
+        const VMathjaxBlock &vmb = p_blocks[i];
+        const QString &text = vmb.m_text;
         bool cached = false;
-        if (idx < m_mathjaxBlocks.size()) {
-            MathjaxBlockPreviewInfo &mb = m_mathjaxBlocks[idx];
-            if (mb.mathjaxBlock().equalContent(vmb)) {
-                cached = true;
-                mb.updateNonContent(m_doc, m_editor, vmb);
-            } else {
-                mb.setMathjaxBlock(vmb);
-            }
-        } else {
-            m_mathjaxBlocks.append(MathjaxBlockPreviewInfo(vmb));
+
+        m_mathjaxBlocks.append(MathjaxBlockPreviewInfo(vmb));
+
+        auto it = m_cache.find(text);
+        if (it != m_cache.end()) {
+            QSharedPointer<MathjaxImageCacheEntry> &entry = it.value();
+            entry->m_ts = m_timeStamp;
+            cached = true;
+            m_mathjaxBlocks[i].setImageDataBa(entry->m_imgFormat, entry->m_imgDataBa);
+            m_mathjaxBlocks[i].updateInplacePreview(m_editor, m_doc);
         }
 
-        if (m_enabled
-            && (!cached || !m_mathjaxBlocks[idx].inplacePreviewReady())) {
+        if (!cached || !m_mathjaxBlocks[i].inplacePreviewReady()) {
             manualUpdate = false;
-            processForInplacePreview(idx);
+            processForInplacePreview(i);
         }
-
-        ++idx;
     }
-
-    m_mathjaxBlocks.resize(idx);
 
     if (manualUpdate) {
         updateInplacePreview();
     }
+
+    clearObsoleteCache();
 }
 
 void VMathJaxInplacePreviewHelper::processForInplacePreview(int p_idx)
@@ -220,6 +224,13 @@ void VMathJaxInplacePreviewHelper::mathjaxPreviewResultReady(int p_identitifer,
     MathjaxBlockPreviewInfo &mb = m_mathjaxBlocks[p_id];
     mb.setImageDataBa(p_format, p_data);
     mb.updateInplacePreview(m_editor, m_doc);
+
+    // Update the cache.
+    QSharedPointer<MathjaxImageCacheEntry> entry(new MathjaxImageCacheEntry(p_timeStamp,
+                                                                            p_data,
+                                                                            p_format));
+    m_cache.insert(mb.mathjaxBlock().m_text, entry);
+
     updateInplacePreview();
 }
 
@@ -237,4 +248,20 @@ void VMathJaxInplacePreviewHelper::textToHtmlFinished(int p_identitifer,
                                             p_id,
                                             p_timeStamp,
                                             p_html);
+}
+
+void VMathJaxInplacePreviewHelper::clearObsoleteCache()
+{
+    if (m_cache.size() - m_mathjaxBlocks.size() <= MATHJAX_IMAGE_CACHE_SIZE_DIFF) {
+        return;
+    }
+
+    for (auto it = m_cache.begin(); it != m_cache.end();) {
+        if (m_timeStamp - it.value()->m_ts > MATHJAX_IMAGE_CACHE_TIME_DIFF) {
+            it.value().clear();
+            it = m_cache.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }

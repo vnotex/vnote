@@ -85,6 +85,7 @@ private:
     QSharedPointer<VImageToPreview> m_inplacePreview;
 };
 
+
 class VMathJaxInplacePreviewHelper : public QObject
 {
     Q_OBJECT
@@ -113,6 +114,28 @@ private slots:
     void textToHtmlFinished(int p_identitifer, int p_id, int p_timeStamp, const QString &p_html);
 
 private:
+    struct MathjaxImageCacheEntry
+    {
+        MathjaxImageCacheEntry()
+            : m_ts(0)
+        {
+        }
+
+        MathjaxImageCacheEntry(TimeStamp p_ts,
+                               const QByteArray &p_dataBa,
+                               const QString &p_format)
+            : m_ts(p_ts),
+              m_imgDataBa(p_dataBa),
+              m_imgFormat(p_format)
+        {
+        }
+
+        TimeStamp m_ts;
+        QByteArray m_imgDataBa;
+        QString m_imgFormat;
+    };
+
+
     void processForInplacePreview(int p_idx);
 
     // Emit signal to update inplace preview.
@@ -121,6 +144,8 @@ private:
     bool textToHtmlViaWebView(const QString &p_text,
                               int p_id,
                               int p_timeStamp);
+
+    void clearObsoleteCache();
 
     VEditor *m_editor;
 
@@ -143,6 +168,9 @@ private:
     QVector<MathjaxBlockPreviewInfo> m_mathjaxBlocks;
 
     int m_documentID;
+
+    // Indexed by content.
+    QHash<QString, QSharedPointer<MathjaxImageCacheEntry>> m_cache;
 };
 
 #endif // VMATHJAXINPLACEPREVIEWHELPER_H
