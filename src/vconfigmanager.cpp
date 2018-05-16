@@ -293,6 +293,11 @@ void VConfigManager::initialize()
 
     m_enableGraphviz = getConfigFromSettings("global", "enable_graphviz").toBool();
     m_graphvizDot = getConfigFromSettings("web", "graphviz_dot").toString();
+
+    m_historySize = getConfigFromSettings("global", "history_size").toInt();
+    if (m_historySize < 0) {
+        m_historySize = 0;
+    }
 }
 
 void VConfigManager::initSettings()
@@ -1210,9 +1215,42 @@ void VConfigManager::setLastOpenedFiles(const QVector<VFileSessionInfo> &p_files
     }
 
     m_sessionSettings->endArray();
-    qDebug() << "write" << p_files.size()
-             << "items in [last_opened_files] section";
+}
 
+void VConfigManager::getHistory(QLinkedList<VHistoryEntry> &p_history)
+{
+    p_history.clear();
+
+    int size = m_sessionSettings->beginReadArray("history");
+    for (int i = 0; i < size; ++i) {
+        m_sessionSettings->setArrayIndex(i);
+        p_history.append(VHistoryEntry::fromSettings(m_sessionSettings));
+    }
+
+    m_sessionSettings->endArray();
+}
+
+void VConfigManager::setHistory(const QLinkedList<VHistoryEntry> &p_history)
+{
+    if (m_hasReset) {
+        return;
+    }
+
+    const QString section("history");
+
+    // Clear it first
+    m_sessionSettings->beginGroup(section);
+    m_sessionSettings->remove("");
+    m_sessionSettings->endGroup();
+
+    m_sessionSettings->beginWriteArray(section);
+    int i = 0;
+    for (auto it = p_history.begin(); it != p_history.end(); ++it, ++i) {
+        m_sessionSettings->setArrayIndex(i);
+        it->toSettings(m_sessionSettings);
+    }
+
+    m_sessionSettings->endArray();
 }
 
 QVector<VMagicWord> VConfigManager::getCustomMagicWords()

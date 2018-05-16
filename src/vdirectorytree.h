@@ -93,6 +93,9 @@ private slots:
     // Sort sub-folders of current item's folder.
     void sortItems();
 
+    // Pin selected directory to History.
+    void pinDirectoryToHistory();
+
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
 
@@ -176,6 +179,7 @@ private:
     QAction *cutAct;
     QAction *pasteAct;
     QAction *m_openLocationAct;
+    QAction *m_pinToHistoryAct;
     QAction *m_sortAct;
 
     // Reload content from disk.

@@ -42,6 +42,7 @@ class VCart;
 class VSearcher;
 class QPrinter;
 class VUniversalEntry;
+class VHistoryList;
 
 enum class PanelViewState
 {
@@ -78,6 +79,8 @@ public:
     VDirectoryTree *getDirectoryTree() const;
 
     VNotebookSelector *getNotebookSelector() const;
+
+    VHistoryList *getHistoryList() const;
 
     // View and edit the information of @p_file, which is an orphan file.
     void editOrphanFileInfo(VFile *p_file);
@@ -198,6 +201,8 @@ protected:
 
 private:
     void setupUI();
+
+    void setupNaviBox();
 
     void setupNotebookPanel();
 
@@ -442,6 +447,8 @@ private:
 
     VUniversalEntry *m_ue;
 
+    VHistoryList *m_historyList;
+
     // Interval of the shared memory timer in ms.
     static const int c_sharedMemTimerInterval;
 };
@@ -479,6 +486,11 @@ inline VSnippetList *VMainWindow::getSnippetList() const
 inline VCart *VMainWindow::getCart() const
 {
     return m_cart;
+}
+
+inline VHistoryList *VMainWindow::getHistoryList() const
+{
+    return m_historyList;
 }
 
 inline VDirectoryTree *VMainWindow::getDirectoryTree() const

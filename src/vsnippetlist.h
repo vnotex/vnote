@@ -9,7 +9,7 @@
 #include "vnavigationmode.h"
 
 class QPushButton;
-class QListWidget;
+class VListWidget;
 class QListWidgetItem;
 class QLabel;
 class QAction;
@@ -92,7 +92,7 @@ private:
     QPushButton *m_addBtn;
     QPushButton *m_locateBtn;
     QLabel *m_numLabel;
-    QListWidget *m_snippetList;
+    VListWidget *m_snippetList;
 
     QAction *m_applyAct;
     QAction *m_infoAct;

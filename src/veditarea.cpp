@@ -1131,7 +1131,8 @@ void VEditArea::recordClosedFile(const VFileSessionInfo &p_file)
     }
 
     m_lastClosedFiles.push(p_file);
-    qDebug() << "pushed closed file" << p_file.m_file;
+
+    emit fileClosed(p_file.m_file);
 }
 
 void VEditArea::handleFileTimerTimeout()

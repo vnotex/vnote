@@ -43,6 +43,8 @@ public:
 
     void setFitContent(bool p_enabled);
 
+    QTreeWidgetItem *getItemFromIndex(const QModelIndex &p_index) const;
+
 protected:
     void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -94,5 +96,10 @@ inline void VTreeWidget::setFitContent(bool p_enabled)
     m_fitContent = p_enabled;
     setSizeAdjustPolicy(m_fitContent ? QAbstractScrollArea::AdjustToContents
                                      : QAbstractScrollArea::AdjustIgnored);
+}
+
+inline QTreeWidgetItem *VTreeWidget::getItemFromIndex(const QModelIndex &p_index) const
+{
+    return itemFromIndex(p_index);
 }
 #endif // VTREEWIDGET_H

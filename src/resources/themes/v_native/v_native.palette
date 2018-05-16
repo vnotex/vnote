@@ -87,6 +87,10 @@ search_hit_item_bg=#80CBC4
 ue_cmd_busy_border=#3F51B5
 ue_cmd_fail_border=@danger_bg
 
+; VListWidget/VTreeWidget separator.
+item_separator_fg=@content_fg
+item_separator_bg=@separator_bg
+
 [widgets]
 ; Widget color attributes.
 

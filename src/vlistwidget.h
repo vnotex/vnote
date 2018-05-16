@@ -34,10 +34,14 @@ public:
 
     virtual QSize sizeHint() const Q_DECL_OVERRIDE;
 
+    void setFitContent(bool p_enabled);
+
     // Sort @p_list according to @p_sortedIdx.
     static void sortListWidget(QListWidget *p_list, const QVector<int> &p_sortedIdx);
 
-    void setFitContent(bool p_enabled);
+    static QListWidgetItem *createSeparatorItem(const QString &p_text);
+
+    static bool isSeparatorItem(const QListWidgetItem *p_item);
 
 private slots:
     void handleSearchModeTriggered(bool p_inSearchMode, bool p_focus);

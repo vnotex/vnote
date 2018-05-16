@@ -70,7 +70,7 @@ QList<QListWidgetItem *> VNavigationMode::getVisibleItems(const QListWidget *p_w
     QList<QListWidgetItem *> items;
     for (int i = 0; i < p_widget->count(); ++i) {
         QListWidgetItem *item = p_widget->item(i);
-        if (!item->isHidden()) {
+        if (!item->isHidden() && item->flags() != Qt::NoItemFlags) {
             items.append(item);
         }
     }

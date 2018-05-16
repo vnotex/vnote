@@ -119,6 +119,10 @@ search_hit_item_bg=@master_dark_bg
 ue_cmd_busy_border=#3F51B5
 ue_cmd_fail_border=@danger_bg
 
+; VListWidget/VTreeWidget separator.
+item_separator_fg=@master_light_bg
+item_separator_bg=@separator_bg
+
 [widgets]
 ; Widget color attributes.
 
@@ -138,6 +142,7 @@ menubar_item_selected_bg=@selected_bg
 ; Menu.
 menu_bg=@base_bg
 menu_fg=@base_fg
+menu_border_bg=@border_bg
 menu_item_disabled_fg=@disabled_fg
 menu_item_selected_fg=@selected_fg
 menu_item_selected_bg=@selected_bg

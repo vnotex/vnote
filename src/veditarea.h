@@ -105,6 +105,9 @@ signals:
     // Emit when Vim status updated.
     void vimStatusUpdated(const VVim *p_vim);
 
+    // Emit when @p_file is closed.
+    void fileClosed(const QString &p_file);
+
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
 

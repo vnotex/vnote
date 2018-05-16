@@ -13,6 +13,7 @@
 #include "utils/vimnavigationforwidget.h"
 #include "utils/viconutils.h"
 #include "vfilelist.h"
+#include "vhistorylist.h"
 
 extern VMainWindow *g_mainWin;
 
@@ -145,6 +146,13 @@ void VDirectoryTree::initActions()
     m_openLocationAct->setToolTip(tr("Open the folder containing this folder in operating system"));
     connect(m_openLocationAct, &QAction::triggered,
             this, &VDirectoryTree::openDirectoryLocation);
+
+    m_pinToHistoryAct = new QAction(VIconUtils::menuIcon(":/resources/icons/pin.svg"),
+                                    tr("Pin To History"),
+                                    this);
+    m_pinToHistoryAct->setToolTip(tr("Pin selected folder to History"));
+    connect(m_pinToHistoryAct, &QAction::triggered,
+            this, &VDirectoryTree::pinDirectoryToHistory);
 
     m_reloadAct = new QAction(tr("&Reload From Disk"), this);
     m_reloadAct->setToolTip(tr("Reload the content of this folder (or notebook) from disk"));
@@ -435,6 +443,7 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
 
     if (item) {
         menu.addAction(m_openLocationAct);
+        menu.addAction(m_pinToHistoryAct);
         menu.addAction(dirInfoAct);
     }
 
@@ -1210,4 +1219,12 @@ VDirectory *VDirectoryTree::currentDirectory() const
     }
 
     return NULL;
+}
+
+void VDirectoryTree::pinDirectoryToHistory()
+{
+    QTreeWidgetItem *curItem = currentItem();
+    V_ASSERT(curItem);
+    g_mainWin->getHistoryList()->pinFolder(getVDirectory(curItem)->fetchPath());
+    g_mainWin->showStatusMessage(tr("1 folder pinned to History"));
 }

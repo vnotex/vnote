@@ -52,6 +52,7 @@ int VToolBox::addItem(QWidget *p_widget,
     QPushButton *btn = new QPushButton(icon, "");
     btn->setToolTip(p_text);
     btn->setProperty("FlatBtn", true);
+    btn->setProperty("ToolBoxTitleBtn", true);
     connect(btn, &QPushButton::clicked,
             this, [this]() {
                 QObject *btn = sender();

@@ -89,6 +89,9 @@ private slots:
     // Add selected files to Cart.
     void addFileToCart() const;
 
+    // Add selected files to History and pin them.
+    void pinFileToHistory() const;
+
     // Copy selected files to clipboard.
     // Will put a Json string into the clipboard which contains the information
     // about copied files.
@@ -194,6 +197,8 @@ private:
     QAction *m_sortAct;
 
     QAction *m_addToCartAct;
+
+    QAction *m_pinToHistoryAct;
 
     // Context sub-menu of Open With.
     QMenu *m_openWithMenu;

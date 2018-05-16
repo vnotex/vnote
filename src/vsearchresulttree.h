@@ -34,6 +34,8 @@ private slots:
 
     void addSelectedItemsToCart();
 
+    void pinSelectedItemsToHistory();
+
 private:
     void appendItem(const QSharedPointer<VSearchResultItem> &p_item);
 
@@ -56,6 +58,8 @@ private:
     QAction *m_locateAct;
 
     QAction *m_addToCartAct;
+
+    QAction *m_pinToHistoryAct;
 };
 
 #endif // VSEARCHRESULTTREE_H

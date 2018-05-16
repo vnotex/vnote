@@ -7,6 +7,7 @@
 #include <QVector>
 #include <QSettings>
 #include <QHash>
+#include <QLinkedList>
 
 #include "vnotebook.h"
 #include "hgmarkdownhighlighter.h"
@@ -15,6 +16,7 @@
 #include "vfilesessioninfo.h"
 #include "utils/vmetawordmanager.h"
 #include "markdownitoption.h"
+#include "vhistoryentry.h"
 
 class QJsonObject;
 class QString;
@@ -355,6 +357,13 @@ public:
 
     // Write last opened files to [last_opened_files] of session.ini.
     void setLastOpenedFiles(const QVector<VFileSessionInfo> &p_files);
+
+    // Read history from [history] of session.ini.
+    void getHistory(QLinkedList<VHistoryEntry> &p_history);
+
+    void setHistory(const QLinkedList<VHistoryEntry> &p_history);
+
+    int getHistorySize() const;
 
     // Read custom magic words from [magic_words] section.
     QVector<VMagicWord> getCustomMagicWords();
@@ -883,6 +892,9 @@ private:
     QStringList m_plantUMLArgs;
 
     QString m_plantUMLCmd;
+
+    // Size of history.
+    int m_historySize;
 
     // The name of the config file in each directory, obsolete.
     // Use c_dirConfigFile instead.
@@ -2283,5 +2295,10 @@ inline void VConfigManager::setGraphvizDot(const QString &p_dotPath)
 
     m_graphvizDot = p_dotPath;
     setConfigToSettings("web", "graphviz_dot", p_dotPath);
+}
+
+inline int VConfigManager::getHistorySize() const
+{
+    return m_historySize;
 }
 #endif // VCONFIGMANAGER_H

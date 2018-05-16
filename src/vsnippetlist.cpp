@@ -10,6 +10,7 @@
 #include "dialog/vconfirmdeletiondialog.h"
 #include "vmainwindow.h"
 #include "utils/viconutils.h"
+#include "vlistwidget.h"
 
 extern VConfigManager *g_config;
 
@@ -70,7 +71,7 @@ void VSnippetList::setupUI()
     btnLayout->addWidget(m_numLabel);
     btnLayout->setContentsMargins(0, 0, 0, 0);
 
-    m_snippetList = new QListWidget();
+    m_snippetList = new VListWidget();
     m_snippetList->setAttribute(Qt::WA_MacShowFocusRect, false);
     m_snippetList->setContextMenuPolicy(Qt::CustomContextMenu);
     m_snippetList->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -380,7 +381,7 @@ void VSnippetList::makeSureFolderExist() const
 
 void VSnippetList::updateContent()
 {
-    m_snippetList->clear();
+    m_snippetList->clearAll();
 
     for (int i = 0; i < m_snippets.size(); ++i) {
         const VSnippet &snip = m_snippets[i];

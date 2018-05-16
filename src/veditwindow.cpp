@@ -14,6 +14,7 @@
 #include "vconfigmanager.h"
 #include "utils/viconutils.h"
 #include "vcart.h"
+#include "vhistorylist.h"
 
 extern VConfigManager *g_config;
 extern VMainWindow *g_mainWin;
@@ -167,7 +168,9 @@ void VEditWindow::initTabActions()
                 }
             });
 
-    m_addToCartAct = new QAction(tr("Add To Cart"), this);
+    m_addToCartAct = new QAction(VIconUtils::menuIcon(":/resources/icons/cart.svg"),
+                                 tr("Add To Cart"),
+                                 this);
     m_addToCartAct->setToolTip(tr("Add this note to Cart for further processing"));
     connect(m_addToCartAct, &QAction::triggered,
             this, [this](){
@@ -179,6 +182,24 @@ void VEditWindow::initTabActions()
                 Q_ASSERT(file);
                 g_mainWin->getCart()->addFile(file->fetchPath());
                 g_mainWin->showStatusMessage(tr("1 note added to Cart"));
+            });
+
+    m_pinToHistoryAct = new QAction(VIconUtils::menuIcon(":/resources/icons/pin.svg"),
+                                    tr("Pin To History"),
+                                    this);
+    m_pinToHistoryAct->setToolTip(tr("Pin this note to History"));
+    connect(m_pinToHistoryAct, &QAction::triggered,
+            this, [this](){
+                int tab = this->m_pinToHistoryAct->data().toInt();
+                Q_ASSERT(tab != -1);
+
+                VEditTab *editor = getTab(tab);
+                QPointer<VFile> file = editor->getFile();
+                Q_ASSERT(file);
+                QStringList files;
+                files << file->fetchPath();
+                g_mainWin->getHistoryList()->pinFiles(files);
+                g_mainWin->showStatusMessage(tr("1 note pinned to History"));
             });
 
     m_openLocationAct = new QAction(tr("Open Note Location"), this);
@@ -692,6 +713,9 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
         m_addToCartAct->setData(tab);
         menu.addAction(m_addToCartAct);
 
+        m_pinToHistoryAct->setData(tab);
+        menu.addAction(m_pinToHistoryAct);
+
         m_noteInfoAct->setData(tab);
         menu.addAction(m_noteInfoAct);
     } else if (file->getType() == FileType::Orphan
@@ -707,6 +731,9 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
 
         m_addToCartAct->setData(tab);
         menu.addAction(m_addToCartAct);
+
+        m_pinToHistoryAct->setData(tab);
+        menu.addAction(m_pinToHistoryAct);
 
         m_noteInfoAct->setData(tab);
         menu.addAction(m_noteInfoAct);

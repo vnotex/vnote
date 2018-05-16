@@ -41,7 +41,7 @@ void VCart::setupUI()
                                                   g_mainWin,
                                                   MessageBoxType::Danger);
                     if (ret == QMessageBox::Ok) {
-                        m_itemList->clear();
+                        m_itemList->clearAll();
                         updateNumberLabel();
                     }
                 }
@@ -55,7 +55,7 @@ void VCart::setupUI()
     btnLayout->addWidget(m_numLabel);
     btnLayout->setContentsMargins(0, 0, 0, 0);
 
-    m_itemList = new QListWidget();
+    m_itemList = new VListWidget();
     m_itemList->setAttribute(Qt::WA_MacShowFocusRect, false);
     m_itemList->setContextMenuPolicy(Qt::CustomContextMenu);
     m_itemList->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -109,9 +109,9 @@ void VCart::handleContextMenuRequested(QPoint p_pos)
     menu.setToolTipsVisible(true);
 
     if (item) {
-        int itemCount = m_itemList->selectedItems().size();
-        if (itemCount == 1) {
-            menu.addAction(m_openAct);
+        menu.addAction(m_openAct);
+
+        if (m_itemList->selectedItems().size() == 1) {
             menu.addAction(m_locateAct);
         }
 
@@ -174,7 +174,15 @@ void VCart::deleteSelectedItems()
 
 void VCart::openSelectedItems() const
 {
-    openItem(m_itemList->currentItem());
+    QStringList files;
+    QList<QListWidgetItem *> selectedItems = m_itemList->selectedItems();
+    for (auto it : selectedItems) {
+        files << getFilePath(it);
+    }
+
+    if (!files.isEmpty()) {
+        g_mainWin->openFiles(files);
+    }
 }
 
 void VCart::locateCurrentItem()
@@ -265,4 +273,23 @@ void VCart::updateNumberLabel() const
     int cnt = m_itemList->count();
     m_numLabel->setText(tr("%1 %2").arg(cnt)
                                    .arg(cnt > 1 ? tr("Items") : tr("Item")));
+}
+
+void VCart::showNavigation()
+{
+    VNavigationMode::showNavigation(m_itemList);
+}
+
+bool VCart::handleKeyNavigation(int p_key, bool &p_succeed)
+{
+    static bool secondKey = false;
+    return VNavigationMode::handleKeyNavigation(m_itemList,
+                                                secondKey,
+                                                p_key,
+                                                p_succeed);
+}
+
+QWidget *VCart::getContentWidget() const
+{
+    return m_itemList;
 }

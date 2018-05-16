@@ -131,7 +131,8 @@ SOURCES += main.cpp\
     vlivepreviewhelper.cpp \
     vmathjaxpreviewhelper.cpp \
     vmathjaxwebdocument.cpp \
-    vmathjaxinplacepreviewhelper.cpp
+    vmathjaxinplacepreviewhelper.cpp \
+    vhistorylist.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -254,7 +255,9 @@ HEADERS  += vmainwindow.h \
     vmathjaxpreviewhelper.h \
     vmathjaxwebdocument.h \
     vmathjaxinplacepreviewhelper.h \
-    markdownitoption.h
+    markdownitoption.h \
+    vhistorylist.h \
+    vhistoryentry.h
 
 RESOURCES += \
     vnote.qrc \

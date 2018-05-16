@@ -214,5 +214,8 @@
         <file>utils/markdown-it/markdown-it-imsize.min.js</file>
         <file>utils/markdown-it/markdown-it-emoji.min.js</file>
         <file>resources/icons/notebook.svg</file>
+        <file>resources/icons/history.svg</file>
+        <file>resources/icons/clear_history.svg</file>
+        <file>resources/icons/pin.svg</file>
     </qresource>
 </RCC>

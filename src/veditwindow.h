@@ -231,6 +231,9 @@ private:
     // Add this note to Cart.
     QAction *m_addToCartAct;
 
+    // Pin this note to History.
+    QAction *m_pinToHistoryAct;
+
     // Open the location (the folder containing this file) of this note.
     QAction *m_openLocationAct;
 

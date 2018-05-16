@@ -45,6 +45,7 @@
 #include "vhelpue.h"
 #include "vlistfolderue.h"
 #include "dialog/vfixnotebookdialog.h"
+#include "vhistorylist.h"
 
 extern VConfigManager *g_config;
 
@@ -63,6 +64,8 @@ extern QFile g_logFile;
 #endif
 
 #define COLOR_PIXMAP_ICON_SIZE 64
+
+#define NAVI_BOX_NOTEBOOKS_IDX 0
 
 
 VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
@@ -145,10 +148,12 @@ void VMainWindow::registerCaptainAndNavigationTargets()
     m_captain->registerNavigationTarget(m_notebookSelector);
     m_captain->registerNavigationTarget(m_dirTree);
     m_captain->registerNavigationTarget(m_fileList);
+    m_captain->registerNavigationTarget(m_historyList);
     m_captain->registerNavigationTarget(m_editArea);
     m_captain->registerNavigationTarget(m_toolBox);
     m_captain->registerNavigationTarget(outline);
     m_captain->registerNavigationTarget(m_snippetList);
+    m_captain->registerNavigationTarget(m_cart);
     m_captain->registerNavigationTarget(m_searcher);
 
     // Register Captain mode targets.
@@ -196,20 +201,16 @@ void VMainWindow::registerCaptainAndNavigationTargets()
 
 void VMainWindow::setupUI()
 {
-    m_naviBox = new VToolBox();
-
-    setupNotebookPanel();
-
-    m_naviBox->addItem(m_nbSplitter,
-                       ":/resources/icons/notebook.svg",
-                       tr("Notebooks"),
-                       m_dirTree);
+    setupNaviBox();
 
     m_editArea = new VEditArea();
     m_editArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     m_findReplaceDialog = m_editArea->getFindReplaceDialog();
     m_fileList->setEditArea(m_editArea);
     m_dirTree->setEditArea(m_editArea);
+
+    connect(m_editArea, &VEditArea::fileClosed,
+            m_historyList, &VHistoryList::addFile);
 
     // Main Splitter
     m_mainSplitter = new QSplitter();
@@ -263,6 +264,23 @@ void VMainWindow::setupUI()
     statusBar()->addPermanentWidget(m_tabIndicator);
 
     initTrayIcon();
+}
+
+void VMainWindow::setupNaviBox()
+{
+    m_naviBox = new VToolBox();
+
+    setupNotebookPanel();
+    m_naviBox->addItem(m_nbSplitter,
+                       ":/resources/icons/notebook.svg",
+                       tr("Notebooks"),
+                       m_dirTree);
+
+    m_historyList = new VHistoryList();
+    m_naviBox->addItem(m_historyList,
+                       ":/resources/icons/history.svg",
+                       tr("History"),
+                       m_historyList->getContentWidget());
 }
 
 void VMainWindow::setupNotebookPanel()
@@ -1265,7 +1283,8 @@ void VMainWindow::initToolsDock()
                        tr("Snippets"));
     m_toolBox->addItem(m_cart,
                        ":/resources/icons/cart.svg",
-                       tr("Cart"));
+                       tr("Cart"),
+                       m_cart->getContentWidget());
 
     m_toolDock->setWidget(m_toolBox);
     addDockWidget(Qt::RightDockWidgetArea, m_toolDock);
@@ -3134,5 +3153,5 @@ void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
 void VMainWindow::showNotebookPanel()
 {
     changePanelView(PanelViewState::VerticalMode);
-    m_naviBox->setCurrentIndex(0, false);
+    m_naviBox->setCurrentIndex(NAVI_BOX_NOTEBOOKS_IDX, false);
 }

@@ -40,7 +40,7 @@ QMenuBar::item:selected {
 QMenu {
     background: @menu_bg;
     color: @menu_fg;
-    margin: 2px;
+    border: 2px solid @menu_border_bg;
 }
 
 QMenu::icon {
@@ -402,10 +402,10 @@ VButtonMenuItem:disabled {
 /* QComboBox */
 QComboBox#NotebookSelector {
     border: none;
-    font-size: 13pt;
-    padding-top: 3px;
-    padding-bottom: 3px;
-    icon-size: $30px;
+    font-size: 12pt;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    icon-size: $24px;
     font-weight: bold;
     color: @combobox_notebookselector_fg;
     background: @combobox_notebookselector_bg;
@@ -424,14 +424,14 @@ QComboBox#NotebookSelector:hover {
 QComboBox#NotebookSelector QListWidget {
     border: 1px solid @combobox_view_border;
     background-color: @combobox_bg;
-    font-size: 13pt;
+    font-size: 12pt;
     font-weight: normal;
-    icon-size: $30px;
+    icon-size: $24px;
 }
 
 QComboBox#NotebookSelector QListWidget::item {
-    padding-top: $10px;
-    padding-bottom: $10px;
+    padding-top: $5px;
+    padding-bottom: $5px;
 }
 
 QComboBox#NotebookSelector QListWidget::item:hover {
@@ -851,6 +851,10 @@ QListView::item:selected:!active {
     color: @listview_item_selected_inactive_fg;
     background: @listview_item_selected_inactive_bg;
 }
+
+QListView::item:disabled {
+    background: transparent;
+}
 /* End QListView */
 
 /* QSplitter */
@@ -1247,6 +1251,10 @@ QWidget#FindReplaceTitleWidget {
 
 QWidget[ToolBoxTitle="true"] {
     border-bottom: $2px solid @toolbox_title_border;
+}
+
+QWidget[ToolBoxTitle="true"] QPushButton[ToolBoxTitleBtn="true"] {
+    height: $20px;
 }
 
 QWidget[MainEditor="true"] {

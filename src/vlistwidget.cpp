@@ -8,6 +8,9 @@
 #include "utils/vutils.h"
 #include "utils/vimnavigationforwidget.h"
 #include "vstyleditemdelegate.h"
+#include "vpalette.h"
+
+extern VPalette *g_palette;
 
 VListWidget::VListWidget(QWidget *p_parent)
     : QListWidget(p_parent),
@@ -20,7 +23,7 @@ VListWidget::VListWidget(QWidget *p_parent)
 
     m_searchInput->hide();
 
-    m_delegate = new VStyledItemDelegate(this);
+    m_delegate = new VStyledItemDelegate(this, NULL);
     setItemDelegate(m_delegate);
 }
 
@@ -108,6 +111,10 @@ QList<void *> VListWidget::searchItems(const QString &p_text,
     QList<void *> res;
     res.reserve(items.size());
     for (int i = 0; i < items.size(); ++i) {
+        if (items[i]->type() == ItemTypeSeparator) {
+            continue;
+        }
+
         res.append(items[i]);
     }
 
@@ -212,3 +219,14 @@ QSize VListWidget::sizeHint() const
     }
 }
 
+QListWidgetItem *VListWidget::createSeparatorItem(const QString &p_text)
+{
+    QListWidgetItem *item = new QListWidgetItem(p_text, NULL, ItemTypeSeparator);
+    item->setFlags(Qt::NoItemFlags);
+    return item;
+}
+
+bool VListWidget::isSeparatorItem(const QListWidgetItem *p_item)
+{
+    return p_item->type() == ItemTypeSeparator;
+}

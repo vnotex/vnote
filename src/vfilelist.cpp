@@ -20,6 +20,7 @@
 #include "utils/viconutils.h"
 #include "dialog/vtipsdialog.h"
 #include "vcart.h"
+#include "vhistorylist.h"
 
 extern VConfigManager *g_config;
 extern VNote *g_vnote;
@@ -190,10 +191,19 @@ void VFileList::initActions()
     connect(m_openLocationAct, &QAction::triggered,
             this, &VFileList::openFileLocation);
 
-    m_addToCartAct = new QAction(tr("Add To Cart"), this);
+    m_addToCartAct = new QAction(VIconUtils::menuIcon(":/resources/icons/cart.svg"),
+                                 tr("Add To Cart"),
+                                 this);
     m_addToCartAct->setToolTip(tr("Add selected notes to Cart for further processing"));
     connect(m_addToCartAct, &QAction::triggered,
             this, &VFileList::addFileToCart);
+
+    m_pinToHistoryAct = new QAction(VIconUtils::menuIcon(":/resources/icons/pin.svg"),
+                                    tr("Pin To History"),
+                                    this);
+    m_pinToHistoryAct->setToolTip(tr("Pin selected notes to History"));
+    connect(m_pinToHistoryAct, &QAction::triggered,
+            this, &VFileList::pinFileToHistory);
 
     m_sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
                             tr("&Sort"),
@@ -272,6 +282,22 @@ void VFileList::addFileToCart() const
     }
 
     g_mainWin->showStatusMessage(tr("%1 %2 added to Cart")
+                                   .arg(items.size())
+                                   .arg(items.size() > 1 ? tr("notes") : tr("note")));
+}
+
+void VFileList::pinFileToHistory() const
+{
+    QList<QListWidgetItem *> items = fileList->selectedItems();
+
+    QStringList files;
+    for (int i = 0; i < items.size(); ++i) {
+        files << getVFile(items[i])->fetchPath();
+    }
+
+    g_mainWin->getHistoryList()->pinFiles(files);
+
+    g_mainWin->showStatusMessage(tr("%1 %2 pinned to History")
                                    .arg(items.size())
                                    .arg(items.size() > 1 ? tr("notes") : tr("note")));
 }
@@ -621,6 +647,7 @@ void VFileList::contextMenuRequested(QPoint pos)
         }
 
         menu.addAction(m_addToCartAct);
+        menu.addAction(m_pinToHistoryAct);
 
         if (selectedSize == 1) {
             menu.addAction(fileInfoAct);

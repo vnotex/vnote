@@ -16,8 +16,6 @@
 
 extern VConfigManager *g_config;
 
-extern VPalette *g_palette;
-
 VVimIndicator::VVimIndicator(QWidget *p_parent)
     : QWidget(p_parent), m_vim(NULL)
 {

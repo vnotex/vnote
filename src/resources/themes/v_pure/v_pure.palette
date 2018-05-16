@@ -113,6 +113,10 @@ search_hit_item_bg=#CCE7E4
 ue_cmd_busy_border=#3F51B5
 ue_cmd_fail_border=@danger_bg
 
+; VListWidget/VTreeWidget separator.
+item_separator_fg=@master_dark_bg
+item_separator_bg=@separator_bg
+
 [widgets]
 ; Widget color attributes.
 
@@ -120,7 +124,7 @@ ue_cmd_fail_border=@danger_bg
 widget_fg=@base_fg
 
 ; Separator of dock widgets.
-dock_separator_bg=@border_bg
+dock_separator_bg=@separator_bg
 dock_separator_hover_bg=@hover_bg
 dock_separator_pressed_bg=@pressed_bg
 
@@ -132,6 +136,7 @@ menubar_item_selected_bg=@selected_bg
 ; Menu.
 menu_bg=@base_bg
 menu_fg=@base_fg
+menu_border_bg=@border_bg
 menu_item_disabled_fg=@disabled_fg
 menu_item_selected_fg=@selected_fg
 menu_item_selected_bg=@selected_bg
