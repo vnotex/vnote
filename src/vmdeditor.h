@@ -230,8 +230,8 @@ private slots:
     void handleCopyAsAction(QAction *p_act);
 
 private:
+    void updateHeadersHelper(const QVector<VElementRegion> &p_headerRegions, bool p_configChanged);
 
-    void updateHeadersHelper(const QVector<VElementRegion> &p_headerRegions, bool configChanged);
     // Update the config of VTextEdit according to global configurations.
     void updateTextEditConfig();
 
