@@ -29,10 +29,26 @@ QDockWidget::Title {
 
 QDockWidget::close-button, QDockWidget::float-button {
     border: none;
+    icon-size: $16px;
+    width: $16px;
 }
 
 QDockWidget::close-button:hover, QDockWidget::float-button:hover {
     background: @dockwidget_button_hover_bg;
+}
+
+QDockWidget::close-button {
+    subcontrol-position: top right;
+    subcontrol-origin: margin;
+    position: absolute;
+    top: 0px; right: 0px; bottom: 0px;
+}
+
+QDockWidget::float-button {
+    subcontrol-position: top right;
+    subcontrol-origin: margin;
+    position: absolute;
+    top: 0px; right: $18px; bottom: 0px;
 }
 /* End DockWidget */
 
