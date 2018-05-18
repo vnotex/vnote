@@ -1,6 +1,5 @@
 #include "viconutils.h"
 
-#include <QDebug>
 #include <QRegExp>
 #include <QByteArray>
 #include <QPixmap>
@@ -8,13 +7,20 @@
 
 #include "vutils.h"
 
+QHash<QString, QIcon> VIconUtils::m_cache;
+
 VIconUtils::VIconUtils()
 {
-
 }
 
 QIcon VIconUtils::icon(const QString &p_file, const QString &p_fg, bool p_addDisabled)
 {
+    const QString key = cacheKey(p_file, p_fg, p_addDisabled);
+    auto it = m_cache.find(key);
+    if (it != m_cache.end()) {
+        return it.value();
+    }
+
     QFileInfo fi(p_file);
     bool isSvg = fi.suffix().toLower() == "svg";
     if (p_fg.isEmpty() || !isSvg) {
@@ -47,6 +53,9 @@ QIcon VIconUtils::icon(const QString &p_file, const QString &p_fg, bool p_addDis
     if (p_addDisabled) {
         icon.addPixmap(disabledPixmap, QIcon::Disabled);
     }
+
+    // Add to cache.
+    m_cache.insert(key, icon);
 
     return icon;
 }

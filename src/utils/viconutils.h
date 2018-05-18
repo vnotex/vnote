@@ -3,11 +3,11 @@
 
 #include <QString>
 #include <QIcon>
+#include <QHash>
 
 #include "vpalette.h"
 
 extern VPalette *g_palette;
-
 
 class VIconUtils
 {
@@ -94,6 +94,14 @@ public:
 
 private:
     VIconUtils();
+
+    static QString cacheKey(const QString &p_file, const QString &p_fg, bool p_addDisabled)
+    {
+        return p_file + "_" + p_fg + "_" + (p_addDisabled ? "1" : "0");
+    }
+
+    // file_fg_addDisabled as key.
+    static QHash<QString, QIcon> m_cache;
 };
 
 #endif // VICONUTILS_H
