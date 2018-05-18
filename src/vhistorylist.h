@@ -3,7 +3,6 @@
 
 #include <QWidget>
 #include <QLinkedList>
-#include <QIcon>
 
 #include "vhistoryentry.h"
 #include "vnavigationmode.h"
@@ -11,17 +10,14 @@
 class QPushButton;
 class VListWidget;
 class QListWidgetItem;
-class QLabel;
-class QAction;
 class QShowEvent;
+class QFocusEvent;
 
 class VHistoryList : public QWidget, public VNavigationMode
 {
     Q_OBJECT
 public:
     explicit VHistoryList(QWidget *p_parent = nullptr);
-
-    QWidget *getContentWidget() const;
 
     void pinFiles(const QStringList &p_files);
 
@@ -36,6 +32,8 @@ public slots:
 
 protected:
     void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
+
+    void focusInEvent(QFocusEvent *p_event) Q_DECL_OVERRIDE;
 
 private slots:
     void handleContextMenuRequested(QPoint p_pos);
@@ -55,8 +53,6 @@ private slots:
 
 private:
     void setupUI();
-
-    void initActions();
 
     // Read data from config file.
     void init();
@@ -81,14 +77,10 @@ private:
     QPushButton *m_clearBtn;
     VListWidget *m_itemList;
 
-    QAction *m_openAct;
-    QAction *m_locateAct;
-    QAction *m_pinAct;
-    QAction *m_unpinAct;
-    QAction *m_addToCartAct;
-
     // Whether data is loaded.
     bool m_initialized;
+
+    bool m_uiSetuped;
 
     // New files are appended to the end.
     QLinkedList<VHistoryEntry> m_histories;
@@ -97,8 +89,6 @@ private:
     bool m_updatePending;
 
     QDate m_currentDate;
-
-    QIcon m_folderIcon;
 };
 
 #endif // VHISTORYLIST_H

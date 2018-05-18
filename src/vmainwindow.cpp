@@ -279,8 +279,7 @@ void VMainWindow::setupNaviBox()
     m_historyList = new VHistoryList();
     m_naviBox->addItem(m_historyList,
                        ":/resources/icons/history.svg",
-                       tr("History"),
-                       m_historyList->getContentWidget());
+                       tr("History"));
 }
 
 void VMainWindow::setupNotebookPanel()

@@ -1,7 +1,6 @@
 #include "vhistorylist.h"
 
 #include <QtWidgets>
-#include <QDebug>
 
 #include "utils/viconutils.h"
 #include "utils/vutils.h"
@@ -22,14 +21,20 @@ extern VNote *g_vnote;
 VHistoryList::VHistoryList(QWidget *p_parent)
     : QWidget(p_parent),
       m_initialized(false),
+      m_uiSetuped(false),
       m_updatePending(true),
       m_currentDate(QDate::currentDate())
 {
-    setupUI();
 }
 
 void VHistoryList::setupUI()
 {
+    if (m_uiSetuped) {
+        return;
+    }
+
+    m_uiSetuped = true;
+
     m_clearBtn = new QPushButton(VIconUtils::buttonDangerIcon(":/resources/icons/clear_history.svg"), "");
     m_clearBtn->setToolTip(tr("Clear"));
     m_clearBtn->setProperty("FlatBtn", true);
@@ -75,40 +80,6 @@ void VHistoryList::setupUI()
     mainLayout->setContentsMargins(3, 0, 3, 0);
 
     setLayout(mainLayout);
-}
-
-void VHistoryList::initActions()
-{
-    m_openAct = new QAction(tr("&Open"), this);
-    m_openAct->setToolTip(tr("Open selected notes"));
-    connect(m_openAct, &QAction::triggered,
-            this, &VHistoryList::openSelectedItems);
-
-    m_locateAct = new QAction(VIconUtils::menuIcon(":/resources/icons/locate_note.svg"),
-                              tr("&Locate To Folder"),
-                              this);
-    m_locateAct->setToolTip(tr("Locate the folder of current note"));
-    connect(m_locateAct, &QAction::triggered,
-            this, &VHistoryList::locateCurrentItem);
-
-    m_pinAct = new QAction(VIconUtils::menuIcon(":/resources/icons/pin.svg"),
-                           tr("Pin"),
-                           this);
-    m_pinAct->setToolTip(tr("Pin selected notes in History"));
-    connect(m_pinAct, &QAction::triggered,
-            this, &VHistoryList::pinSelectedItems);
-
-    m_unpinAct = new QAction(tr("Unpin"), this);
-    m_unpinAct->setToolTip(tr("Unpin selected notes in History"));
-    connect(m_unpinAct, &QAction::triggered,
-            this, &VHistoryList::unpinSelectedItems);
-
-    m_addToCartAct = new QAction(VIconUtils::menuIcon(":/resources/icons/cart.svg"),
-                                 tr("Add To Cart"),
-                                 this);
-    m_addToCartAct->setToolTip(tr("Add selected notes to Cart for further processing"));
-    connect(m_addToCartAct, &QAction::triggered,
-            this, &VHistoryList::addFileToCart);
 }
 
 void VHistoryList::addFile(const QString &p_filePath)
@@ -212,9 +183,7 @@ void VHistoryList::init()
         return;
     }
 
-    m_folderIcon = VIconUtils::treeViewIcon(":/resources/icons/dir_item.svg");
-
-    initActions();
+    setupUI();
 
     g_config->getHistory(m_histories);
 
@@ -295,13 +264,14 @@ void VHistoryList::updateList()
         m_itemList->addItem(seps[i].m_item);
     }
 
+    QIcon folderIcon(VIconUtils::treeViewIcon(":/resources/icons/dir_item.svg"));
     for (auto it = m_histories.cbegin(); it != m_histories.cend(); ++it) {
         QListWidgetItem *item = new QListWidgetItem(VUtils::fileNameFromPath(it->m_file));
         item->setToolTip(it->m_file);
         item->setData(Qt::UserRole, (qulonglong)&(*it));
 
         if (it->m_isFolder) {
-            item->setIcon(m_folderIcon);
+            item->setIcon(folderIcon);
         }
 
         if (it->m_isPinned) {
@@ -330,11 +300,6 @@ void VHistoryList::updateList()
     seps.clear();
 }
 
-QWidget *VHistoryList::getContentWidget() const
-{
-    return m_itemList;
-}
-
 void VHistoryList::handleContextMenuRequested(QPoint p_pos)
 {
     QListWidgetItem *item = m_itemList->itemAt(p_pos);
@@ -345,11 +310,21 @@ void VHistoryList::handleContextMenuRequested(QPoint p_pos)
     QMenu menu(this);
     menu.setToolTipsVisible(true);
 
-    menu.addAction(m_openAct);
+    QAction *openAct = new QAction(tr("&Open"), &menu);
+    openAct->setToolTip(tr("Open selected notes"));
+    connect(openAct, &QAction::triggered,
+            this, &VHistoryList::openSelectedItems);
+    menu.addAction(openAct);
 
     QList<QListWidgetItem *> selectedItems = m_itemList->selectedItems();
     if (selectedItems.size() == 1) {
-        menu.addAction(m_locateAct);
+        QAction *locateAct = new QAction(VIconUtils::menuIcon(":/resources/icons/locate_note.svg"),
+                                         tr("&Locate To Folder"),
+                                         &menu);
+        locateAct->setToolTip(tr("Locate the folder of current note"));
+        connect(locateAct, &QAction::triggered,
+                this, &VHistoryList::locateCurrentItem);
+        menu.addAction(locateAct);
     }
 
     bool allPinned = true, allUnpinned = true;
@@ -362,14 +337,30 @@ void VHistoryList::handleContextMenuRequested(QPoint p_pos)
     }
 
     if (allUnpinned) {
-        menu.addAction(m_pinAct);
+        QAction *pinAct = new QAction(VIconUtils::menuIcon(":/resources/icons/pin.svg"),
+                                      tr("Pin"),
+                                      &menu);
+        pinAct->setToolTip(tr("Pin selected notes in History"));
+        connect(pinAct, &QAction::triggered,
+                this, &VHistoryList::pinSelectedItems);
+        menu.addAction(pinAct);
     } else if (allPinned) {
-        menu.addAction(m_unpinAct);
+        QAction *unpinAct = new QAction(tr("Unpin"), &menu);
+        unpinAct->setToolTip(tr("Unpin selected notes in History"));
+        connect(unpinAct, &QAction::triggered,
+                this, &VHistoryList::unpinSelectedItems);
+        menu.addAction(unpinAct);
     }
 
     menu.addSeparator();
 
-    menu.addAction(m_addToCartAct);
+    QAction *addToCartAct = new QAction(VIconUtils::menuIcon(":/resources/icons/cart.svg"),
+                                        tr("Add To Cart"),
+                                        &menu);
+    addToCartAct->setToolTip(tr("Add selected notes to Cart for further processing"));
+    connect(addToCartAct, &QAction::triggered,
+            this, &VHistoryList::addFileToCart);
+    menu.addAction(addToCartAct);
 
     menu.exec(m_itemList->mapToGlobal(p_pos));
 }
@@ -480,12 +471,16 @@ void VHistoryList::locateCurrentItem()
 
 void VHistoryList::showNavigation()
 {
+    setupUI();
+
     VNavigationMode::showNavigation(m_itemList);
 }
 
 bool VHistoryList::handleKeyNavigation(int p_key, bool &p_succeed)
 {
     static bool secondKey = false;
+    setupUI();
+
     return VNavigationMode::handleKeyNavigation(m_itemList,
                                                 secondKey,
                                                 p_key,
@@ -504,4 +499,12 @@ void VHistoryList::addFileToCart() const
     g_mainWin->showStatusMessage(tr("%1 %2 added to Cart")
                                    .arg(items.size())
                                    .arg(items.size() > 1 ? tr("notes") : tr("note")));
+}
+
+void VHistoryList::focusInEvent(QFocusEvent *p_event)
+{
+    init();
+
+    QWidget::focusInEvent(p_event);
+    m_itemList->setFocus();
 }
