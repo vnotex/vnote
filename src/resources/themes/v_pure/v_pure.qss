@@ -689,10 +689,25 @@ QTabBar::tab {
     color: @tabbar_fg;
     background: @tabbar_bg;
     border: none;
+    padding: $2px;
+}
+
+QTabBar::tab:top, QTabBar::tab:bottom {
     border-top: $2px solid transparent;
     border-right: $1px solid @tabbar_border;
-    padding: 2px 0px 2px 0px;
     height: $20px;
+}
+
+QTabBar::tab:right {
+    border-left: $3px solid transparent;
+    border-bottom: $1px solid @tabbar_border;
+    min-width: $20px;
+}
+
+QTabBar::tab:left {
+    border-right: $3px solid transparent;
+    border-bottom: $1px solid @tabbar_border;
+    min-width: $20px;
 }
 
 QTabBar::tab:hover {
@@ -703,7 +718,18 @@ QTabBar::tab:hover {
 QTabBar::tab:selected {
     color: @tabbar_selected_fg;
     background: @tabbar_selected_bg;
+}
+
+QTabBar::tab:top:selected, QTabBar::tab:bottom:selected {
     border-top: $2px solid @master_bg;
+}
+
+QTabBar::tab:right:selected {
+    border-left: $3px solid @master_bg;
+}
+
+QTabBar::tab:left:selected {
+    border-right: $3px solid @master_bg;
 }
 
 QTabBar::close-button {

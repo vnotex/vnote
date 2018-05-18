@@ -1245,7 +1245,7 @@ void VMainWindow::initDockWindows()
     setTabPosition(Qt::LeftDockWidgetArea, QTabWidget::West);
     setTabPosition(Qt::RightDockWidgetArea, QTabWidget::East);
     setTabPosition(Qt::TopDockWidgetArea, QTabWidget::North);
-    setTabPosition(Qt::BottomDockWidgetArea, QTabWidget::South);
+    setTabPosition(Qt::BottomDockWidgetArea, QTabWidget::North);
 
     setDockNestingEnabled(true);
 
