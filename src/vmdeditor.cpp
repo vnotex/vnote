@@ -426,7 +426,7 @@ static QString headerSequenceStr(const QVector<int> &p_sequence)
 }
 
 static void insertSequenceToHeader(QTextCursor& p_cursor,
-                                   QTextBlock p_block,
+                                   const QTextBlock &p_block,
                                    QRegExp &p_reg,
                                    QRegExp &p_preReg,
                                    const QString &p_seq)
@@ -525,14 +525,11 @@ void VMdEditor::updateHeadersHelper(const QVector<VElementRegion> &p_headerRegio
     QVector<int> seqs(7, 0);
     QRegExp preReg(VUtils::c_headerPrefixRegExp);
     int curLevel = baseLevel - 1;
-    QTextCursor cursor = textCursorW();
-
-    int blockNo = cursor.block().blockNumber();
-    int posToBlockEnd = cursor.block().length() - cursor.positionInBlock();
-
+    QTextCursor cursor(doc);
     if(autoSequence || p_configChanged) {
         cursor.beginEditBlock();
     }
+
     for (int i = 0; i < headers.size(); ++i) {
         VTableOfContentItem &item = headers[i];
         while (item.m_level > curLevel + 1) {
@@ -565,11 +562,9 @@ void VMdEditor::updateHeadersHelper(const QVector<VElementRegion> &p_headerRegio
             }
         }
     }
+
     if (autoSequence || p_configChanged) {
-        QTextBlock block = doc->findBlockByNumber(blockNo);
-        cursor.setPosition(block.position() + block.length() - posToBlockEnd);
         cursor.endEditBlock();
-        setTextCursorW(cursor);
     }
 
     emit headersChanged(m_headers);
