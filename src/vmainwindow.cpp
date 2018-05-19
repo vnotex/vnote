@@ -1903,9 +1903,11 @@ void VMainWindow::updateActionsStateFromTab(const VEditTab *p_tab)
     setActionsEnabled(m_editToolBar, file && editMode);
 
     // Handle heading sequence act independently.
-    m_headingSequenceAct->setEnabled(isHeadingSequenceApplicable());
+    m_headingSequenceAct->setEnabled(editMode && file->isModifiable()
+                                     && isHeadingSequenceApplicable());
     const VMdTab *mdTab = dynamic_cast<const VMdTab *>(p_tab);
-    m_headingSequenceAct->setChecked(mdTab && mdTab->isHeadingSequenceEnabled());
+    m_headingSequenceAct->setChecked(mdTab && editMode && file->isModifiable()
+                                     && mdTab->isHeadingSequenceEnabled());
 
     // Find/Replace
     m_findReplaceAct->setEnabled(file);

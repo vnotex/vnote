@@ -76,6 +76,8 @@ public:
 
     VPreviewManager *getPreviewManager() const;
 
+    void updateHeaderSequenceByConfigChange();
+
 public slots:
     bool jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat) Q_DECL_OVERRIDE;
 
@@ -228,6 +230,8 @@ private slots:
     void handleCopyAsAction(QAction *p_act);
 
 private:
+    void updateHeadersHelper(const QVector<VElementRegion> &p_headerRegions, bool p_configChanged);
+
     // Update the config of VTextEdit according to global configurations.
     void updateTextEditConfig();
 
