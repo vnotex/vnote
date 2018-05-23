@@ -43,6 +43,7 @@ class VSearcher;
 class QPrinter;
 class VUniversalEntry;
 class VHistoryList;
+class VExplorer;
 
 enum class PanelViewState
 {
@@ -88,11 +89,11 @@ public:
     // Open files @p_files as orphan files or internal note files.
     // If @p_forceOrphan is false, for each file, VNote will try to find out if
     // it is a note inside VNote. If yes, VNote will open it as internal file.
-    void openFiles(const QStringList &p_files,
-                   bool p_forceOrphan = false,
-                   OpenFileMode p_mode = OpenFileMode::Read,
-                   bool p_forceMode = false,
-                   bool p_oneByOne = false);
+    QVector<VFile *> openFiles(const QStringList &p_files,
+                               bool p_forceOrphan = false,
+                               OpenFileMode p_mode = OpenFileMode::Read,
+                               bool p_forceMode = false,
+                               bool p_oneByOne = false);
 
     // Try to open @p_filePath as internal note.
     bool tryOpenInternalFile(const QString &p_filePath);
@@ -448,6 +449,8 @@ private:
     VUniversalEntry *m_ue;
 
     VHistoryList *m_historyList;
+
+    VExplorer *m_explorer;
 
     // Interval of the shared memory timer in ms.
     static const int c_sharedMemTimerInterval;

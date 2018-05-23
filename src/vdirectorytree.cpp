@@ -33,6 +33,7 @@ VDirectoryTree::VDirectoryTree(QWidget *parent)
     setColumnCount(1);
     setHeaderHidden(true);
     setContextMenuPolicy(Qt::CustomContextMenu);
+    setFitContent(true);
 
     initShortcuts();
 
@@ -147,6 +148,8 @@ void VDirectoryTree::updateDirectoryTree()
     if (!restoreCurrentItem() && topLevelItemCount() > 0) {
         setCurrentItem(topLevelItem(0));
     }
+
+    resizeColumnToContents(0);
 }
 
 bool VDirectoryTree::restoreCurrentItem()
@@ -425,8 +428,10 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
     menu.addAction(reloadAct);
 
     if (item) {
-        QAction *openLocationAct = new QAction(tr("&Open Folder Location"), &menu);
-        openLocationAct->setToolTip(tr("Open the folder containing this folder in operating system"));
+        QAction *openLocationAct = new QAction(VIconUtils::menuIcon(":/resources/icons/open_location.svg"),
+                                               tr("&Open Folder Location"),
+                                               &menu);
+        openLocationAct->setToolTip(tr("Explore this folder in operating system"));
         connect(openLocationAct, &QAction::triggered,
                 this, &VDirectoryTree::openDirectoryLocation);
         menu.addAction(openLocationAct);
@@ -645,7 +650,7 @@ void VDirectoryTree::openDirectoryLocation() const
 {
     QTreeWidgetItem *curItem = currentItem();
     V_ASSERT(curItem);
-    QUrl url = QUrl::fromLocalFile(getVDirectory(curItem)->fetchBasePath());
+    QUrl url = QUrl::fromLocalFile(getVDirectory(curItem)->fetchPath());
     QDesktopServices::openUrl(url);
 }
 

@@ -922,7 +922,7 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
 {
     // Default note open mode.
     m_openModeCombo = VUtils::getComboBox();
-    m_openModeCombo->setToolTip(tr("Default mode to open an internal note"));
+    m_openModeCombo->setToolTip(tr("Default mode to open a file"));
     m_openModeCombo->addItem(tr("Read Mode"), (int)OpenFileMode::Read);
     m_openModeCombo->addItem(tr("Edit Mode"), (int)OpenFileMode::Edit);
 
@@ -992,7 +992,7 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     m_graphvizDotEdit->setToolTip(tr("Location to the GraphViz dot executable"));
 
     QFormLayout *mainLayout = new QFormLayout();
-    mainLayout->addRow(tr("Note open mode:"), m_openModeCombo);
+    mainLayout->addRow(tr("Open mode:"), m_openModeCombo);
     mainLayout->addRow(tr("Heading sequence:"), headingSequenceLayout);
     mainLayout->addRow(colorColumnLabel, m_colorColumnEdit);
     mainLayout->addRow(tr("MathJax configuration:"), m_mathjaxConfigEdit);

@@ -452,6 +452,14 @@ QLineEdit[VimCommandLine="true"] {
     background: @lineedit_bg;
 }
 
+QLineEdit[EmbeddedEdit="true"] {
+    padding: 0px;
+    margin: 0px;
+    border: none;
+    color: @lineedit_fg;
+    background: transparent;
+}
+
 VUniversalEntry VMetaWordLineEdit {
     border: 1px solid @lineedit_border;
 }

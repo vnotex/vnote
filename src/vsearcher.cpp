@@ -25,36 +25,23 @@ extern VConfigManager *g_config;
 
 VSearcher::VSearcher(QWidget *p_parent)
     : QWidget(p_parent),
+      m_initialized(false),
+      m_uiInitialized(false),
       m_inSearch(false),
       m_askedToStop(false),
       m_search(this)
 {
     qRegisterMetaType<QList<QSharedPointer<VSearchResultItem>>>("QList<QSharedPointer<VSearchResultItem>>");
-
-    setupUI();
-
-    initUIFields();
-
-    handleInputChanged();
-
-    connect(&m_search, &VSearch::resultItemAdded,
-            this, [this](const QSharedPointer<VSearchResultItem> &p_item) {
-                // Not sure if it works.
-                QCoreApplication::sendPostedEvents(NULL, QEvent::MouseButtonRelease);
-                m_results->addResultItem(p_item);
-            });
-    connect(&m_search, &VSearch::resultItemsAdded,
-            this, [this](const QList<QSharedPointer<VSearchResultItem> > &p_items) {
-                // Not sure if it works.
-                QCoreApplication::sendPostedEvents(NULL, QEvent::MouseButtonRelease);
-                m_results->addResultItems(p_items);
-            });
-    connect(&m_search, &VSearch::finished,
-            this, &VSearcher::handleSearchFinished);
 }
 
 void VSearcher::setupUI()
 {
+    if (m_uiInitialized) {
+        return;
+    }
+
+    m_uiInitialized = true;
+
     // Search button.
     m_searchBtn = new QPushButton(VIconUtils::buttonIcon(":/resources/icons/search.svg"), "", this);
     m_searchBtn->setToolTip(tr("Search"));
@@ -112,6 +99,7 @@ void VSearcher::setupUI()
     m_keywordCB->setLineEdit(new VLineEdit(this));
     m_keywordCB->setToolTip(tr("Keywords to search for"));
     m_keywordCB->lineEdit()->setPlaceholderText(tr("Supports space, &&, and ||"));
+    m_keywordCB->lineEdit()->setProperty("EmbeddedEdit", true);
     connect(m_keywordCB, &QComboBox::currentTextChanged,
             this, &VSearcher::handleInputChanged);
     connect(m_keywordCB->lineEdit(), &QLineEdit::returnPressed,
@@ -141,6 +129,7 @@ void VSearcher::setupUI()
     m_filePatternCB->setEditable(true);
     m_filePatternCB->setLineEdit(new VLineEdit(this));
     m_filePatternCB->setToolTip(tr("Wildcard pattern to filter the files to be searched"));
+    m_filePatternCB->lineEdit()->setProperty("EmbeddedEdit", true);
     m_filePatternCB->completer()->setCaseSensitivity(Qt::CaseSensitive);
 
     // Engine.
@@ -544,19 +533,62 @@ void VSearcher::updateNumLabel(int p_count)
 
 void VSearcher::focusToSearch()
 {
+    init();
+
     m_keywordCB->setFocus(Qt::OtherFocusReason);
 }
 
 void VSearcher::showNavigation()
 {
+    setupUI();
+
     VNavigationMode::showNavigation(m_results);
 }
 
 bool VSearcher::handleKeyNavigation(int p_key, bool &p_succeed)
 {
     static bool secondKey = false;
+    setupUI();
+
     return VNavigationMode::handleKeyNavigation(m_results,
                                                 secondKey,
                                                 p_key,
                                                 p_succeed);
+}
+
+void VSearcher::init()
+{
+    if (m_initialized) {
+        return;
+    }
+
+    m_initialized = true;
+
+    setupUI();
+
+    initUIFields();
+
+    handleInputChanged();
+
+    connect(&m_search, &VSearch::resultItemAdded,
+            this, [this](const QSharedPointer<VSearchResultItem> &p_item) {
+                // Not sure if it works.
+                QCoreApplication::sendPostedEvents(NULL, QEvent::MouseButtonRelease);
+                m_results->addResultItem(p_item);
+            });
+    connect(&m_search, &VSearch::resultItemsAdded,
+            this, [this](const QList<QSharedPointer<VSearchResultItem> > &p_items) {
+                // Not sure if it works.
+                QCoreApplication::sendPostedEvents(NULL, QEvent::MouseButtonRelease);
+                m_results->addResultItems(p_items);
+            });
+    connect(&m_search, &VSearch::finished,
+            this, &VSearcher::handleSearchFinished);
+}
+
+void VSearcher::showEvent(QShowEvent *p_event)
+{
+    init();
+
+    QWidget::showEvent(p_event);
 }

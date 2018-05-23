@@ -333,6 +333,12 @@ public:
 
     static bool inSameDrive(const QString &p_a, const QString &p_b);
 
+    static QString promptForFileName(const QString &p_title,
+                                     const QString &p_label,
+                                     const QString &p_default,
+                                     const QString &p_dir,
+                                     QWidget *p_parent = nullptr);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt text" =200x100)
     // Captured texts (need to be trimmed):

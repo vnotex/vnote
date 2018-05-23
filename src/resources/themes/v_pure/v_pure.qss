@@ -630,6 +630,24 @@ QLineEdit[VimCommandLine="true"]:hover {
     border: none;
 }
 
+QLineEdit[EmbeddedEdit="true"] {
+    padding: 0px;
+    margin: 0px;
+    border: none;
+    color: @lineedit_fg;
+    background: transparent;
+}
+
+QLineEdit[EmbeddedEdit="true"]:focus {
+    background: @lineedit_focus_bg;
+    border: none;
+}
+
+QLineEdit[EmbeddedEdit="true"]:hover {
+    background: @lineedit_hover_bg;
+    border: none;
+}
+
 QLineEdit {
     border: 1px solid @lineedit_border;
     padding: 3px;

@@ -27,6 +27,8 @@ public:
 
     void setCurrentWidget(QWidget *p_widget, bool p_focus = true);
 
+    int currentIndex() const;
+
     // Implementations for VNavigationMode.
     void showNavigation() Q_DECL_OVERRIDE;
     bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE;
@@ -77,5 +79,10 @@ private:
 
     QVector<ItemInfo> m_items;
 };
+
+inline int VToolBox::currentIndex() const
+{
+    return m_currentIndex;
+}
 
 #endif // VTOOLBOX_H

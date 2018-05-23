@@ -8,7 +8,6 @@
 
 class VNotebook;
 class QListWidget;
-class QAction;
 class QListWidgetItem;
 class QLabel;
 
@@ -66,8 +65,6 @@ private slots:
     void editNotebookInfo();
 
 private:
-    void initActions();
-
     // Update Combox from m_notebooks.
     void updateComboBox();
 
@@ -114,13 +111,6 @@ private:
 
     // Whether it is muted from currentIndexChanged().
     bool m_muted;
-
-    // Actions
-    QAction *m_deleteNotebookAct;
-    QAction *m_notebookInfoAct;
-    QAction *m_openLocationAct;
-    QAction *m_recycleBinAct;
-    QAction *m_emptyRecycleBinAct;
 
     QLabel *m_naviLabel;
 };

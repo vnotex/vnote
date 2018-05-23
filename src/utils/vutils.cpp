@@ -27,6 +27,7 @@
 #include <QAction>
 #include <QTreeWidgetItem>
 #include <QFormLayout>
+#include <QInputDialog>
 
 #include "vorphanfile.h"
 #include "vnote.h"
@@ -1541,4 +1542,41 @@ bool VUtils::inSameDrive(const QString &p_a, const QString &p_b)
 #else
     return true;
 #endif
+}
+
+QString VUtils::promptForFileName(const QString &p_title,
+                                  const QString &p_label,
+                                  const QString &p_default,
+                                  const QString &p_dir,
+                                  QWidget *p_parent)
+{
+    QString name = p_default;
+    QString text = p_label;
+    QDir paDir(p_dir);
+    while (true) {
+        bool ok;
+        name = QInputDialog::getText(p_parent,
+                                     p_title,
+                                     text,
+                                     QLineEdit::Normal,
+                                     name,
+                                     &ok);
+        if (!ok || name.isEmpty()) {
+            return "";
+        }
+
+        if (!VUtils::checkFileNameLegal(name)) {
+            text = QObject::tr("Illegal name. Please try again:");
+            continue;
+        }
+
+        if (paDir.exists(name)) {
+            text = QObject::tr("Name already exists. Please try again:");
+            continue;
+        }
+
+        break;
+    }
+
+    return name;
 }

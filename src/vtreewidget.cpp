@@ -53,6 +53,12 @@ VTreeWidget::VTreeWidget(QWidget *p_parent)
                     resizeColumnToContents(0);
                 }
             });
+    connect(this, &VTreeWidget::itemCollapsed,
+            this, [this]() {
+                if (m_fitContent) {
+                    resizeColumnToContents(0);
+                }
+            });
 }
 
 void VTreeWidget::keyPressEvent(QKeyEvent *p_event)

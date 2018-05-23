@@ -86,7 +86,11 @@ int VToolBox::addItem(QWidget *p_widget,
 void VToolBox::setCurrentIndex(int p_idx, bool p_focus)
 {
     if (p_idx < 0 || p_idx >= m_items.size()) {
-        m_currentIndex = -1;
+        if (m_items.isEmpty()) {
+            m_currentIndex = -1;
+        } else {
+            m_currentIndex = 0;
+        }
     } else {
         m_currentIndex = p_idx;
     }

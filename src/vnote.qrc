@@ -218,5 +218,10 @@
         <file>resources/icons/clear_history.svg</file>
         <file>resources/icons/pin.svg</file>
         <file>resources/icons/view.svg</file>
+        <file>resources/icons/explorer.svg</file>
+        <file>resources/icons/star.svg</file>
+        <file>resources/icons/open_location.svg</file>
+        <file>resources/icons/unstar.svg</file>
+        <file>resources/icons/explore_root.svg</file>
     </qresource>
 </RCC>

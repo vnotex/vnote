@@ -17,6 +17,7 @@
 #include "utils/vmetawordmanager.h"
 #include "markdownitoption.h"
 #include "vhistoryentry.h"
+#include "vexplorerentry.h"
 
 class QJsonObject;
 class QString;
@@ -130,6 +131,9 @@ public:
 
     int getCurNotebookIndex() const;
     void setCurNotebookIndex(int index);
+
+    int getNaviBoxCurrentIndex() const;
+    void setNaviBoxCurrentIndex(int p_index);
 
     // Read [notebooks] section from settings into @p_notebooks.
     void getNotebooks(QVector<VNotebook *> &p_notebooks, QObject *p_parent);
@@ -359,11 +363,21 @@ public:
     void setLastOpenedFiles(const QVector<VFileSessionInfo> &p_files);
 
     // Read history from [history] of session.ini.
-    void getHistory(QLinkedList<VHistoryEntry> &p_history);
+    void getHistory(QLinkedList<VHistoryEntry> &p_history) const;
 
     void setHistory(const QLinkedList<VHistoryEntry> &p_history);
 
     int getHistorySize() const;
+
+    // Read explorer's starred entries from [explorer_starred] of session.ini.
+    void getExplorerEntries(QVector<VExplorerEntry> &p_entries) const;
+
+    // Output starred entries to [explorer_starred] of session.ini.
+    void setExplorerEntries(const QVector<VExplorerEntry> &p_entries);
+
+    int getExplorerCurrentIndex() const;
+
+    void setExplorerCurrentIndex(int p_idx);
 
     // Read custom magic words from [magic_words] section.
     QVector<VMagicWord> getCustomMagicWords();
@@ -899,6 +913,9 @@ private:
     // View order of note list.
     int m_noteListViewOrder;
 
+    // Current entry index of explorer entries.
+    int m_explorerCurrentIndex;
+
     // Whether user has reset the configurations.
     bool m_hasReset;
 
@@ -1002,6 +1019,16 @@ inline void VConfigManager::setCurNotebookIndex(int index)
 
     curNotebookIndex = index;
     setConfigToSessionSettings("global", "current_notebook", index);
+}
+
+inline int VConfigManager::getNaviBoxCurrentIndex() const
+{
+    return getConfigFromSessionSettings("global", "navibox_current_index").toInt();
+}
+
+inline void VConfigManager::setNaviBoxCurrentIndex(int p_index)
+{
+    setConfigToSessionSettings("global", "navibox_current_index", p_index);
 }
 
 inline void VConfigManager::getNotebooks(QVector<VNotebook *> &p_notebooks,
@@ -2325,5 +2352,24 @@ inline void VConfigManager::setNoteListViewOrder(int p_order)
 
     m_noteListViewOrder = p_order;
     setConfigToSettings("global", "note_list_view_order", m_noteListViewOrder);
+}
+
+inline int VConfigManager::getExplorerCurrentIndex() const
+{
+    if (m_explorerCurrentIndex == -1) {
+        const_cast<VConfigManager *>(this)->m_explorerCurrentIndex = getConfigFromSessionSettings("global", "explorer_current_entry").toInt();
+    }
+
+    return m_explorerCurrentIndex;
+}
+
+inline void VConfigManager::setExplorerCurrentIndex(int p_idx)
+{
+    if (p_idx == m_explorerCurrentIndex) {
+        return;
+    }
+
+    m_explorerCurrentIndex = p_idx;
+    setConfigToSessionSettings("global", "explorer_current_entry", m_explorerCurrentIndex);
 }
 #endif // VCONFIGMANAGER_H

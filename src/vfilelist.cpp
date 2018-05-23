@@ -609,8 +609,10 @@ void VFileList::contextMenuRequested(QPoint pos)
     if (item) {
         menu.addSeparator();
         if (selectedSize == 1) {
-            QAction *openLocationAct = new QAction(tr("&Open Note Location"), &menu);
-            openLocationAct->setToolTip(tr("Open the folder containing this note in operating system"));
+            QAction *openLocationAct = new QAction(VIconUtils::menuIcon(":/resources/icons/open_location.svg"),
+                                                   tr("&Open Note Location"),
+                                                   &menu);
+            openLocationAct->setToolTip(tr("Explore the folder containing this note in operating system"));
             connect(openLocationAct, &QAction::triggered,
                     this, &VFileList::openFileLocation);
             menu.addAction(openLocationAct);
@@ -1359,7 +1361,7 @@ void VFileList::sortFiles(QVector<VNoteFile *> &p_files, ViewOrder p_order)
 
     case ViewOrder::NameReverse:
         reverse = true;
-        V_FALLTHROUGH
+        V_FALLTHROUGH;
     case ViewOrder::Name:
         std::sort(p_files.begin(), p_files.end(), [reverse](const VNoteFile *p_a, const VNoteFile *p_b) {
             if (reverse) {
@@ -1372,7 +1374,7 @@ void VFileList::sortFiles(QVector<VNoteFile *> &p_files, ViewOrder p_order)
 
     case ViewOrder::CreatedTimeReverse:
         reverse = true;
-        V_FALLTHROUGH
+        V_FALLTHROUGH;
     case ViewOrder::CreatedTime:
         std::sort(p_files.begin(), p_files.end(), [reverse](const VNoteFile *p_a, const VNoteFile *p_b) {
             if (reverse) {
@@ -1385,7 +1387,7 @@ void VFileList::sortFiles(QVector<VNoteFile *> &p_files, ViewOrder p_order)
 
     case ViewOrder::ModifiedTimeReverse:
         reverse = true;
-        V_FALLTHROUGH
+        V_FALLTHROUGH;
     case ViewOrder::ModifiedTime:
         std::sort(p_files.begin(), p_files.end(), [reverse](const VNoteFile *p_a, const VNoteFile *p_b) {
             if (reverse) {
