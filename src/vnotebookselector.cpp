@@ -320,8 +320,11 @@ void VNotebookSelector::createNotebook(const QString &p_name,
                                        const QString &p_imageFolder,
                                        const QString &p_attachmentFolder)
 {
-    VNotebook *nb = VNotebook::createNotebook(p_name, p_path, p_import,
-                                              p_imageFolder, p_attachmentFolder,
+    VNotebook *nb = VNotebook::createNotebook(p_name,
+                                              p_path,
+                                              p_import,
+                                              p_imageFolder,
+                                              p_attachmentFolder,
                                               g_vnote);
     if (!nb) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),

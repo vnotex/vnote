@@ -39,6 +39,12 @@ void VFixNotebookDialog::setupUI()
     connect(m_browseBtn, &QPushButton::clicked,
             this, &VFixNotebookDialog::handleBrowseBtnClicked);
 
+    m_relativePathCB = new QCheckBox(tr("Use relative path"), this);
+    m_relativePathCB->setToolTip(tr("Use relative path (to VNote's executable) in configuration file"));
+    m_relativePathCB->setChecked(!QDir::isAbsolutePath(m_notebook->getPathInConfig()));
+    connect(m_relativePathCB, &QCheckBox::stateChanged,
+            this, &VFixNotebookDialog::handleInputChanged);
+
     QHBoxLayout *pathLayout = new QHBoxLayout();
     pathLayout->addWidget(m_pathEdit);
     pathLayout->addWidget(m_browseBtn);
@@ -46,6 +52,7 @@ void VFixNotebookDialog::setupUI()
     QFormLayout *topLayout = new QFormLayout();
     topLayout->addRow(tr("Notebook name:"), nameLabel);
     topLayout->addRow(tr("Notebook root folder:"), pathLayout);
+    topLayout->addRow(m_relativePathCB);
 
     // Warning label.
     m_warnLabel = new QLabel(this);
@@ -89,7 +96,12 @@ void VFixNotebookDialog::handleBrowseBtnClicked()
                                                         QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
     if (!dirPath.isEmpty()) {
-        m_pathEdit->setText(dirPath);
+        if (m_pathEdit->text() == dirPath) {
+            handleInputChanged();
+        } else {
+            m_pathEdit->setText(dirPath);
+        }
+
         defaultPath = VUtils::basePathFromPath(dirPath);
     }
 }
@@ -103,7 +115,11 @@ void VFixNotebookDialog::handleInputChanged()
 
     QString path = m_pathEdit->text();
     if (!path.isEmpty()) {
-        if (VConfigManager::directoryConfigExist(path)) {
+        if (!QDir::isAbsolutePath(path)) {
+            QString tmp = tr("<span style=\"%1\">WARNING</span>: Please specify absolute path.")
+                            .arg(g_config->c_warningTextStyle);
+            m_warnLabel->setText(tmp);
+        } else if (VConfigManager::directoryConfigExist(path)) {
             pathOk = true;
         }
     }
@@ -131,6 +147,18 @@ void VFixNotebookDialog::handleInputChanged()
         m_warnLabel->setText(warnText);
     }
 
+    if (pathOk && isUseRelativePath()) {
+        if (!VUtils::inSameDrive(QCoreApplication::applicationDirPath(), path)) {
+            pathOk = false;
+            QString existText = tr("<span style=\"%1\">WARNING</span>: Please choose a folder in the same drive as "
+                                   "<span style=\"%2\">%3</span> when relative path is enabled.")
+                                   .arg(g_config->c_warningTextStyle)
+                                   .arg(g_config->c_dataTextStyle)
+                                   .arg(QCoreApplication::applicationDirPath());
+            m_warnLabel->setText(existText);
+        }
+    }
+
     m_warnLabel->setVisible(!pathOk);
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
     okBtn->setEnabled(pathOk);
@@ -140,5 +168,19 @@ QString VFixNotebookDialog::getPathInput() const
 {
     // absoluteFilePath() to convert the drive to upper case.
     // cleanPath() to remove duplicate separator, '.', and '..'.
-    return QDir::cleanPath(QFileInfo(m_pathEdit->text()).absoluteFilePath());
+    QString ret;
+    if (isUseRelativePath()) {
+        // Use relative path in config file.
+        QDir appDir(QCoreApplication::applicationDirPath());
+        ret = QDir::cleanPath(appDir.relativeFilePath(m_pathEdit->text()));
+    } else {
+        ret = QDir::cleanPath(QFileInfo(m_pathEdit->text()).absoluteFilePath());
+    }
+
+    return ret;
+}
+
+bool VFixNotebookDialog::isUseRelativePath() const
+{
+    return m_relativePathCB->isChecked();
 }

@@ -20,7 +20,7 @@ VNewNotebookDialog::VNewNotebookDialog(const QString &title, const QString &info
     setupUI(title, info);
 
     connect(m_nameEdit, &VMetaWordLineEdit::textChanged, this, &VNewNotebookDialog::handleInputChanged);
-    connect(pathEdit, &VLineEdit::textChanged, this, &VNewNotebookDialog::handleInputChanged);
+    connect(m_pathEdit, &VLineEdit::textChanged, this, &VNewNotebookDialog::handleInputChanged);
     connect(browseBtn, &QPushButton::clicked, this, &VNewNotebookDialog::handleBrowseBtnClicked);
 
     handleInputChanged();
@@ -42,9 +42,14 @@ void VNewNotebookDialog::setupUI(const QString &p_title, const QString &p_info)
     nameLabel->setBuddy(m_nameEdit);
 
     QLabel *pathLabel = new QLabel(tr("Notebook &root folder:"));
-    pathEdit = new VLineEdit(defaultPath);
-    pathLabel->setBuddy(pathEdit);
+    m_pathEdit = new VLineEdit(defaultPath);
+    pathLabel->setBuddy(m_pathEdit);
     browseBtn = new QPushButton(tr("&Browse"));
+
+    m_relativePathCB = new QCheckBox(tr("Use relative path"));
+    m_relativePathCB->setToolTip(tr("Use relative path (to VNote's executable) in configuration file"));
+    connect(m_relativePathCB, &QCheckBox::stateChanged,
+            this, &VNewNotebookDialog::handleInputChanged);
 
     QLabel *imageFolderLabel = new QLabel(tr("&Image folder:"));
     m_imageFolderEdit = new VLineEdit();
@@ -72,12 +77,13 @@ void VNewNotebookDialog::setupUI(const QString &p_title, const QString &p_info)
     topLayout->addWidget(nameLabel, 0, 0);
     topLayout->addWidget(m_nameEdit, 0, 1, 1, 2);
     topLayout->addWidget(pathLabel, 1, 0);
-    topLayout->addWidget(pathEdit, 1, 1);
+    topLayout->addWidget(m_pathEdit, 1, 1);
     topLayout->addWidget(browseBtn, 1, 2);
-    topLayout->addWidget(imageFolderLabel, 2, 0);
-    topLayout->addWidget(m_imageFolderEdit, 2, 1);
-    topLayout->addWidget(attachmentFolderLabel, 3, 0);
-    topLayout->addWidget(m_attachmentFolderEdit, 3, 1);
+    topLayout->addWidget(m_relativePathCB, 2, 1);
+    topLayout->addWidget(imageFolderLabel, 3, 0);
+    topLayout->addWidget(m_imageFolderEdit, 3, 1);
+    topLayout->addWidget(attachmentFolderLabel, 4, 0);
+    topLayout->addWidget(m_attachmentFolderEdit, 4, 1);
 
     // Warning label.
     m_warnLabel = new QLabel();
@@ -91,7 +97,7 @@ void VNewNotebookDialog::setupUI(const QString &p_title, const QString &p_info)
 
     QPushButton *okBtn = m_btnBox->button(QDialogButtonBox::Ok);
     okBtn->setProperty("SpecialBtn", true);
-    pathEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
+    m_pathEdit->setMinimumWidth(okBtn->sizeHint().width() * 3);
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     if (infoLabel) {
@@ -116,7 +122,16 @@ QString VNewNotebookDialog::getPathInput() const
 {
     // absoluteFilePath() to convert the drive to upper case.
     // cleanPath() to remove duplicate separator, '.', and '..'.
-    return QDir::cleanPath(QFileInfo(pathEdit->text()).absoluteFilePath());
+    QString ret;
+    if (isUseRelativePath()) {
+        // Use relative path in config file.
+        QDir appDir(QCoreApplication::applicationDirPath());
+        ret = QDir::cleanPath(appDir.relativeFilePath(m_pathEdit->text()));
+    } else {
+        ret = QDir::cleanPath(QFileInfo(m_pathEdit->text()).absoluteFilePath());
+    }
+
+    return ret;
 }
 
 QString VNewNotebookDialog::getImageFolder() const
@@ -140,6 +155,7 @@ QString VNewNotebookDialog::getAttachmentFolder() const
 void VNewNotebookDialog::handleBrowseBtnClicked()
 {
     static QString defaultPath;
+
     if (defaultPath.isEmpty()) {
         defaultPath = g_config->getVnoteNotebookFolderPath();
         if (!QFileInfo::exists(defaultPath)) {
@@ -154,7 +170,12 @@ void VNewNotebookDialog::handleBrowseBtnClicked()
 
     if (!dirPath.isEmpty()) {
         m_manualPath = true;
-        pathEdit->setText(dirPath);
+        if (m_pathEdit->text() == dirPath) {
+            handleInputChanged();
+        } else {
+            m_pathEdit->setText(dirPath);
+        }
+
         defaultPath = VUtils::basePathFromPath(dirPath);
     }
 }
@@ -184,7 +205,7 @@ void VNewNotebookDialog::handleInputChanged()
     bool showWarnLabel = false;
 
     // User has input some texts.
-    if (pathEdit->isModified()) {
+    if (m_pathEdit->isModified()) {
         m_manualPath = true;
     }
 
@@ -196,9 +217,14 @@ void VNewNotebookDialog::handleInputChanged()
         return;
     }
 
-    QString path = pathEdit->text();
+    QString path = m_pathEdit->text();
     if (!path.isEmpty()) {
-        if (QFileInfo::exists(path)) {
+        if (!QDir::isAbsolutePath(path)) {
+            showWarnLabel = true;
+            QString tmp = tr("<span style=\"%1\">WARNING</span>: Please specify absolute path.")
+                            .arg(g_config->c_warningTextStyle);
+            m_warnLabel->setText(tmp);
+        } else if (QFileInfo::exists(path)) {
             QDir dir(path);
             QStringList files = dir.entryList(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::Hidden);
             if (files.isEmpty()) {
@@ -206,18 +232,18 @@ void VNewNotebookDialog::handleInputChanged()
             } else {
                 // Folder is not empty.
                 configExist = VConfigManager::directoryConfigExist(path);
+                if (configExist) {
+                    pathOk = true;
+                    m_warnLabel->setText(infoText);
+                } else {
+                    m_warnLabel->setText(warnText);
+                }
+
                 showWarnLabel = true;
             }
         } else {
             pathOk = true;
         }
-    }
-
-    if (configExist) {
-        pathOk = true;
-        m_warnLabel->setText(infoText);
-    } else {
-        m_warnLabel->setText(warnText);
     }
 
     // Try to validate if this is a legal path on the OS.
@@ -249,6 +275,19 @@ void VNewNotebookDialog::handleInputChanged()
                                    .arg(g_config->c_warningTextStyle)
                                    .arg(g_config->c_dataTextStyle)
                                    .arg(m_notebooks[idx]->getName());
+            m_warnLabel->setText(existText);
+        }
+    }
+
+    if (pathOk && isUseRelativePath()) {
+        if (!VUtils::inSameDrive(QCoreApplication::applicationDirPath(), path)) {
+            pathOk = false;
+            showWarnLabel = true;
+            QString existText = tr("<span style=\"%1\">WARNING</span>: Please choose a folder in the same drive as "
+                                   "<span style=\"%2\">%3</span> when relative path is enabled.")
+                                   .arg(g_config->c_warningTextStyle)
+                                   .arg(g_config->c_dataTextStyle)
+                                   .arg(QCoreApplication::applicationDirPath());
             m_warnLabel->setText(existText);
         }
     }
@@ -310,7 +349,7 @@ bool VNewNotebookDialog::autoComplete()
         }
 
         // Set the name according to user-chosen path.
-        QString pathText = pathEdit->text();
+        QString pathText = m_pathEdit->text();
         if (!pathText.isEmpty()) {
             QString autoName = VUtils::directoryNameFromPath(pathText);
             if (autoName != nameText) {
@@ -323,7 +362,7 @@ bool VNewNotebookDialog::autoComplete()
     }
 
     QString vnoteFolder = g_config->getVnoteNotebookFolderPath();
-    QString pathText = pathEdit->text();
+    QString pathText = m_pathEdit->text();
     if (!pathText.isEmpty()
         && !VUtils::equalPath(vnoteFolder, VUtils::basePathFromPath(pathText))) {
         return false;
@@ -344,10 +383,15 @@ bool VNewNotebookDialog::autoComplete()
         // Use the name as the folder name under vnoteFolder.
         QString autoPath = QDir::cleanPath(QDir(vnoteFolder).filePath(nameText));
         if (autoPath != pathText) {
-            pathEdit->setText(autoPath);
+            m_pathEdit->setText(autoPath);
             ret = true;
         }
     }
 
     return ret;
+}
+
+bool VNewNotebookDialog::isUseRelativePath() const
+{
+    return m_relativePathCB->isChecked();
 }

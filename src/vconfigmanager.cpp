@@ -396,7 +396,7 @@ void VConfigManager::writeNotebookToSettings(QSettings *p_settings,
         p_settings->setArrayIndex(i);
         const VNotebook &notebook = *p_notebooks[i];
         p_settings->setValue("name", notebook.getName());
-        p_settings->setValue("path", notebook.getPath());
+        p_settings->setValue("path", notebook.getPathInConfig());
     }
 
     p_settings->endArray();

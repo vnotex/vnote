@@ -1525,3 +1525,20 @@ QFormLayout *VUtils::getFormLayout()
 
     return layout;
 }
+
+bool VUtils::inSameDrive(const QString &p_a, const QString &p_b)
+{
+#if defined(Q_OS_WIN)
+    QChar sep(':');
+    int ai = p_a.indexOf(sep);
+    int bi = p_b.indexOf(sep);
+
+    if (ai == -1 || bi == -1) {
+        return false;
+    }
+
+    return p_a.left(ai).toLower() == p_b.left(bi).toLower();
+#else
+    return true;
+#endif
+}

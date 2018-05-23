@@ -1,6 +1,8 @@
 #include "vnotebook.h"
 #include <QDir>
 #include <QDebug>
+#include <QCoreApplication>
+
 #include "vdirectory.h"
 #include "utils/vutils.h"
 #include "vconfigmanager.h"
@@ -11,7 +13,7 @@ extern VConfigManager *g_config;
 VNotebook::VNotebook(const QString &name, const QString &path, QObject *parent)
     : QObject(parent), m_name(name), m_valid(false)
 {
-    m_path = QDir::cleanPath(path);
+    setPath(path);
     m_recycleBinFolder = g_config->getRecycleBinFolder();
     m_rootDir = new VDirectory(this,
                                NULL,
@@ -22,6 +24,16 @@ VNotebook::VNotebook(const QString &name, const QString &path, QObject *parent)
 VNotebook::~VNotebook()
 {
     delete m_rootDir;
+}
+
+void VNotebook::setPath(const QString &p_path)
+{
+    m_pathInConfig = QDir::cleanPath(p_path);
+    if (QDir::isAbsolutePath(m_pathInConfig)) {
+        m_path = m_pathInConfig;
+    } else {
+        m_path = QDir::cleanPath(QDir(QCoreApplication::applicationDirPath()).absoluteFilePath(m_pathInConfig));
+    }
 }
 
 bool VNotebook::readConfigNotebook()
@@ -115,16 +127,6 @@ bool VNotebook::writeConfigNotebook() const
     return VConfigManager::writeDirectoryConfig(m_path, configJson);
 }
 
-const QString &VNotebook::getName() const
-{
-    return m_name;
-}
-
-const QString &VNotebook::getPath() const
-{
-    return m_path;
-}
-
 void VNotebook::close()
 {
     m_rootDir->close();
@@ -171,13 +173,13 @@ VNotebook *VNotebook::createNotebook(const QString &p_name,
     nb->setAttachmentFolder(attachmentFolder);
 
     // Check if there alread exists a config file.
-    if (p_import && VConfigManager::directoryConfigExist(p_path)) {
+    if (p_import && VConfigManager::directoryConfigExist(nb->getPath())) {
         qDebug() << "import existing notebook";
         nb->readConfigNotebook();
         return nb;
     }
 
-    VUtils::makePath(p_path);
+    VUtils::makePath(nb->getPath());
 
     if (!nb->writeToConfig()) {
         delete nb;
@@ -397,7 +399,7 @@ void VNotebook::updatePath(const QString &p_path)
 {
     Q_ASSERT(!isOpened());
     m_valid = false;
-    m_path = QDir::cleanPath(p_path);
+    setPath(p_path);
     delete m_rootDir;
     m_rootDir = new VDirectory(this,
                                NULL,

@@ -331,6 +331,8 @@ public:
     // Return QFormLayout.
     static QFormLayout *getFormLayout();
 
+    static bool inSameDrive(const QString &p_a, const QString &p_b);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt text" =200x100)
     // Captured texts (need to be trimmed):

@@ -47,6 +47,8 @@ public:
 
     const QString &getPath() const;
 
+    const QString &getPathInConfig() const;
+
     void updatePath(const QString &p_path);
 
     VDirectory *getRootDir() const;
@@ -107,8 +109,15 @@ private:
     // Write current instance to config file.
     bool writeToConfig() const;
 
+    void setPath(const QString &p_path);
+
     QString m_name;
+
     QString m_path;
+
+    // Path in vnote.ini.
+    // May be relative path to VNote's executable.
+    QString m_pathInConfig;
 
     // Folder name to store images.
     // If not empty, VNote will store images in this folder within the same directory of the note.
@@ -144,6 +153,21 @@ inline const QString &VNotebook::getRecycleBinFolder() const
 inline bool VNotebook::isValid() const
 {
     return m_valid;
+}
+
+inline const QString &VNotebook::getPath() const
+{
+    return m_path;
+}
+
+inline const QString &VNotebook::getPathInConfig() const
+{
+    return m_pathInConfig;
+}
+
+inline const QString &VNotebook::getName() const
+{
+    return m_name;
 }
 
 #endif // VNOTEBOOK_H

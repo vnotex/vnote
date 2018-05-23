@@ -8,6 +8,7 @@ class VLineEdit;
 class QLabel;
 class QPushButton;
 class QDialogButtonBox;
+class QCheckBox;
 
 class VFixNotebookDialog : public QDialog
 {
@@ -27,6 +28,9 @@ private slots:
 private:
     void setupUI();
 
+    // Whether relative path will be used in config file.
+    bool isUseRelativePath() const;
+
     const VNotebook *m_notebook;
 
     const QVector<VNotebook *> &m_notebooks;
@@ -34,6 +38,8 @@ private:
     VLineEdit *m_pathEdit;
 
     QPushButton *m_browseBtn;
+
+    QCheckBox *m_relativePathCB;
 
     QLabel *m_warnLabel;
 

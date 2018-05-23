@@ -77,8 +77,10 @@ private:
     // If @p_import is true, we will use the existing config file.
     // If @p_imageFolder is empty, we will use the global one.
     // If @p_attachmentFolder is empty, we will use the global one.
-    void createNotebook(const QString &p_name, const QString &p_path,
-                        bool p_import, const QString &p_imageFolder,
+    void createNotebook(const QString &p_name,
+                        const QString &p_path,
+                        bool p_import,
+                        const QString &p_imageFolder,
                         const QString &p_attachmentFolder);
 
     void deleteNotebook(VNotebook *p_notebook, bool p_deleteFiles);

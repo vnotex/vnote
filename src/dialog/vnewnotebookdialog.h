@@ -10,6 +10,7 @@ class VMetaWordLineEdit;
 class QPushButton;
 class QDialogButtonBox;
 class VNotebook;
+class QCheckBox;
 
 class VNewNotebookDialog : public QDialog
 {
@@ -53,9 +54,13 @@ private:
     // Returns true if name or path is modified.
     bool autoComplete();
 
+    // Whether relative path will be used in config file.
+    bool isUseRelativePath() const;
+
     VMetaWordLineEdit *m_nameEdit;
-    VLineEdit *pathEdit;
+    VLineEdit *m_pathEdit;
     QPushButton *browseBtn;
+    QCheckBox *m_relativePathCB;
     QLabel *m_warnLabel;
     VLineEdit *m_imageFolderEdit;
     VLineEdit *m_attachmentFolderEdit;
