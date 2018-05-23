@@ -48,12 +48,19 @@ static QString allMetaWordsInfo(const VMetaWord *p_metaWord)
 const QChar VMetaWordManager::c_delimiter = '%';
 
 VMetaWordManager::VMetaWordManager(QObject *p_parent)
-    : QObject(p_parent)
+    : QObject(p_parent),
+      m_initialized(false)
 {
 }
 
 void VMetaWordManager::init()
 {
+    if (m_initialized) {
+        return;
+    }
+
+    m_initialized = true;
+
     using namespace std::placeholders;
 
     // %d%.
@@ -300,6 +307,8 @@ QString VMetaWordManager::evaluate(const QString &p_text,
         return p_text;
     }
 
+    const_cast<VMetaWordManager *>(this)->init();
+
     // Update datetime for later parse.
     const_cast<VMetaWordManager *>(this)->m_dateTime = QDateTime::currentDateTime();
 
@@ -330,11 +339,15 @@ QString VMetaWordManager::evaluate(const QString &p_text,
 
 bool VMetaWordManager::contains(const QString &p_word) const
 {
+    const_cast<VMetaWordManager *>(this)->init();
+
     return m_metaWords.contains(p_word);
 }
 
 const VMetaWord *VMetaWordManager::findMetaWord(const QString &p_word) const
 {
+    const_cast<VMetaWordManager *>(this)->init();
+
     auto it = m_metaWords.find(p_word);
     if (it != m_metaWords.end()) {
         return &it.value();
@@ -368,6 +381,8 @@ void VMetaWordManager::addMetaWord(MetaWordType p_type,
 bool VMetaWordManager::findOverriddenValue(const QString &p_word,
                                            QString &p_value) const
 {
+    const_cast<VMetaWordManager *>(this)->init();
+
     auto it = m_overriddenWords.find(p_word);
     if (it != m_overriddenWords.end()) {
         p_value = it.value();

@@ -605,7 +605,6 @@ void VDirectory::setExpanded(bool p_expanded)
 
 VNoteFile *VDirectory::tryLoadFile(QStringList &p_filePath)
 {
-    qDebug() << "directory" << m_name << "tryLoadFile()" << p_filePath.join("/");
     if (p_filePath.isEmpty()) {
         return NULL;
     }
@@ -644,7 +643,6 @@ VNoteFile *VDirectory::tryLoadFile(QStringList &p_filePath)
 
 VDirectory *VDirectory::tryLoadDirectory(QStringList &p_filePath)
 {
-    qDebug() << "directory" << m_name << "tryLoadDirectory()" << p_filePath.join("/");
     if (p_filePath.isEmpty()) {
         return NULL;
     }

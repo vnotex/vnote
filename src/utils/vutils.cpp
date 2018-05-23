@@ -1036,8 +1036,6 @@ bool VUtils::splitPathInBasePath(const QString &p_base,
     }
 
     p_parts = b.right(b.size() - a.size() - 1).split("/", QString::SkipEmptyParts);
-
-    qDebug() << QString("split path %1 based on %2 to %3 parts").arg(p_path).arg(p_base).arg(p_parts.size());
     return true;
 }
 

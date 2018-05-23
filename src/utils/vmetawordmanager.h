@@ -161,8 +161,6 @@ class VMetaWordManager : public QObject
 public:
     explicit VMetaWordManager(QObject *p_parent = nullptr);
 
-    void init();
-
     // Expand meta words in @p_text and return the expanded text.
     // @p_overriddenWords: a table containing overridden meta words.
     QString evaluate(const QString &p_text,
@@ -184,12 +182,16 @@ public:
     static const QChar c_delimiter;
 
 private:
+    void init();
+
     void addMetaWord(MetaWordType p_type,
                      const QString &p_word,
                      const QString &p_definition,
                      MetaWordFunc p_function = nullptr);
 
     void initCustomMetaWords();
+
+    bool m_initialized;
 
     // Map using word as key.
     QHash<QString, VMetaWord> m_metaWords;
@@ -210,6 +212,8 @@ inline const QDateTime &VMetaWordManager::getDateTime() const
 
 inline const QHash<QString, VMetaWord> &VMetaWordManager::getAllMetaWords() const
 {
+    const_cast<VMetaWordManager *>(this)->init();
+
     return m_metaWords;
 }
 

@@ -33,7 +33,6 @@ VEditArea::VEditArea(QWidget *parent)
 
     registerCaptainTargets();
 
-
     QString keySeq = g_config->getShortcutKeySequence("ActivateNextTab");
     qDebug() << "set ActivateNextTab shortcut to" << keySeq;
     QShortcut *activateNextTab = new QShortcut(QKeySequence(keySeq), this);

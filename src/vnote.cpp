@@ -71,8 +71,6 @@ VNote::VNote(QObject *parent)
 
     g_config->getNotebooks(m_notebooks, this);
 
-    m_metaWordMgr.init();
-
     g_mwMgr = &m_metaWordMgr;
 }
 
