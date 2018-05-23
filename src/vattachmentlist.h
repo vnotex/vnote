@@ -13,7 +13,6 @@ class QListWidget;
 class QListWidgetItem;
 class QLabel;
 class VNoteFile;
-class QAction;
 
 
 class VAttachmentList : public QWidget, public VButtonPopupWidget
@@ -24,9 +23,6 @@ public:
 
     // Need to call updateContent() to update the list.
     void setFile(VNoteFile *p_file);
-
-    // Update attachment info of m_file.
-    void updateContent();
 
     bool isAcceptDrops() const Q_DECL_OVERRIDE;
 
@@ -57,7 +53,7 @@ private slots:
 private:
     void setupUI();
 
-    void initActions();
+    void init();
 
     void fillAttachmentList(const QVector<VAttachment> &p_attachments);
 
@@ -69,6 +65,11 @@ private:
     // Check if there are attachments that do not exist in disk.
     void checkAttachments();
 
+    // Update attachment info of m_file.
+    void updateContent();
+
+    bool m_initialized;
+
     QPushButton *m_addBtn;
     QPushButton *m_clearBtn;
     QPushButton *m_locateBtn;
@@ -76,10 +77,6 @@ private:
 
     LineEditDelegate m_listDelegate;
     QListWidget *m_attachmentList;
-
-    QAction *m_openAct;
-    QAction *m_deleteAct;
-    QAction *m_sortAct;
 
     VNoteFile *m_file;
 };

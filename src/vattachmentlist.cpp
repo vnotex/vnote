@@ -16,13 +16,11 @@ extern VConfigManager *g_config;
 extern VMainWindow *g_mainWin;
 
 VAttachmentList::VAttachmentList(QWidget *p_parent)
-    : QWidget(p_parent), VButtonPopupWidget(this), m_file(NULL)
+    : QWidget(p_parent),
+      VButtonPopupWidget(this),
+      m_initialized(false),
+      m_file(NULL)
 {
-    setupUI();
-
-    initActions();
-
-    updateContent();
 }
 
 void VAttachmentList::setupUI()
@@ -118,33 +116,10 @@ void VAttachmentList::setupUI()
     setLayout(mainLayout);
 }
 
-void VAttachmentList::initActions()
-{
-    m_openAct = new QAction(tr("&Open"), this);
-    m_openAct->setToolTip(tr("Open current attachment file"));
-    connect(m_openAct, &QAction::triggered,
-            this, [this]() {
-                QListWidgetItem *item = m_attachmentList->currentItem();
-                handleItemActivated(item);
-            });
-
-    m_deleteAct = new QAction(VIconUtils::menuDangerIcon(":/resources/icons/delete_attachment.svg"),
-                              tr("&Delete"),
-                              this);
-    m_deleteAct->setToolTip(tr("Delete selected attachments"));
-    connect(m_deleteAct, &QAction::triggered,
-            this, &VAttachmentList::deleteSelectedItems);
-
-    m_sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
-                            tr("&Sort"),
-                            this);
-    m_sortAct->setToolTip(tr("Sort attachments manually"));
-    connect(m_sortAct, &QAction::triggered,
-            this, &VAttachmentList::sortItems);
-}
-
 void VAttachmentList::setFile(VNoteFile *p_file)
 {
+    init();
+
     m_file = p_file;
 
     updateButtonState();
@@ -270,10 +245,23 @@ void VAttachmentList::handleContextMenuRequested(QPoint p_pos)
         }
 
         if (m_attachmentList->selectedItems().size() == 1) {
-            menu.addAction(m_openAct);
+            QAction *openAct = new QAction(tr("&Open"), &menu);
+            openAct->setToolTip(tr("Open current attachment file"));
+            connect(openAct, &QAction::triggered,
+                    this, [this]() {
+                        QListWidgetItem *item = m_attachmentList->currentItem();
+                        handleItemActivated(item);
+                    });
+            menu.addAction(openAct);
         }
 
-        menu.addAction(m_deleteAct);
+        QAction *deleteAct = new QAction(VIconUtils::menuDangerIcon(":/resources/icons/delete_attachment.svg"),
+                                         tr("&Delete"),
+                                         &menu);
+        deleteAct->setToolTip(tr("Delete selected attachments"));
+        connect(deleteAct, &QAction::triggered,
+                this, &VAttachmentList::deleteSelectedItems);
+        menu.addAction(deleteAct);
     }
 
     m_attachmentList->update();
@@ -283,7 +271,13 @@ void VAttachmentList::handleContextMenuRequested(QPoint p_pos)
             menu.addSeparator();
         }
 
-        menu.addAction(m_sortAct);
+        QAction *sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
+                                       tr("&Sort"),
+                                       &menu);
+        sortAct->setToolTip(tr("Sort attachments manually"));
+        connect(sortAct, &QAction::triggered,
+                this, &VAttachmentList::sortItems);
+        menu.addAction(sortAct);
     }
 
     if (!menu.actions().isEmpty()) {
@@ -499,6 +493,8 @@ bool VAttachmentList::handleDropEvent(QDropEvent *p_event)
         return false;
     }
 
+    init();
+
     const QMimeData *mime = p_event->mimeData();
     if (mime->hasFormat("text/uri-list") && mime->hasUrls()) {
         // Add attachments.
@@ -531,6 +527,8 @@ bool VAttachmentList::handleDropEvent(QDropEvent *p_event)
 
 void VAttachmentList::handleAboutToShow()
 {
+    init();
+
     updateContent();
 
     checkAttachments();
@@ -619,7 +617,22 @@ void VAttachmentList::checkAttachments()
 
 void VAttachmentList::showEvent(QShowEvent *p_event)
 {
+    init();
+
     QWidget::showEvent(p_event);
 
     processShowEvent(p_event);
+}
+
+void VAttachmentList::init()
+{
+    if (m_initialized) {
+        return;
+    }
+
+    m_initialized = true;
+
+    setupUI();
+
+    updateContent();
 }
