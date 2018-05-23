@@ -34,12 +34,12 @@ const QString VFileList::c_pasteShortcutSequence = "Ctrl+V";
 VFileList::VFileList(QWidget *parent)
     : QWidget(parent),
       VNavigationMode(),
+      m_openWithMenu(NULL),
       m_itemClicked(NULL),
       m_fileToCloseInSingleClick(NULL)
 {
     setupUI();
     initShortcuts();
-    initActions();
 
     m_clickTimer = new QTimer(this);
     m_clickTimer->setSingleShot(true);
@@ -123,96 +123,6 @@ void VFileList::initShortcuts()
             this, [this](){
                 pasteFilesFromClipboard();
             });
-}
-
-void VFileList::initActions()
-{
-    newFileAct = new QAction(VIconUtils::menuIcon(":/resources/icons/create_note.svg"),
-                             tr("&New Note"), this);
-    VUtils::fixTextWithShortcut(newFileAct, "NewNote");
-    newFileAct->setToolTip(tr("Create a note in current folder"));
-    connect(newFileAct, SIGNAL(triggered(bool)),
-            this, SLOT(newFile()));
-
-    m_openInReadAct = new QAction(VIconUtils::menuIcon(":/resources/icons/reading.svg"),
-                                  tr("&Open In Read Mode"), this);
-    m_openInReadAct->setToolTip(tr("Open current note in read mode"));
-    connect(m_openInReadAct, &QAction::triggered,
-            this, [this]() {
-                QListWidgetItem *item = fileList->currentItem();
-                if (item) {
-                    emit fileClicked(getVFile(item), OpenFileMode::Read, true);
-                }
-            });
-
-    m_openInEditAct = new QAction(VIconUtils::menuIcon(":/resources/icons/editing.svg"),
-                                  tr("Open In &Edit Mode"), this);
-    m_openInEditAct->setToolTip(tr("Open current note in edit mode"));
-    connect(m_openInEditAct, &QAction::triggered,
-            this, [this]() {
-                QListWidgetItem *item = fileList->currentItem();
-                if (item) {
-                    emit fileClicked(getVFile(item), OpenFileMode::Edit, true);
-                }
-            });
-
-    deleteFileAct = new QAction(VIconUtils::menuDangerIcon(":/resources/icons/delete_note.svg"),
-                                tr("&Delete"), this);
-    deleteFileAct->setToolTip(tr("Delete selected note"));
-    connect(deleteFileAct, SIGNAL(triggered(bool)),
-            this, SLOT(deleteSelectedFiles()));
-
-    fileInfoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/note_info.svg"),
-                              tr("&Info\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)), this);
-    fileInfoAct->setToolTip(tr("View and edit current note's information"));
-    connect(fileInfoAct, SIGNAL(triggered(bool)),
-            this, SLOT(fileInfo()));
-
-    copyAct = new QAction(VIconUtils::menuIcon(":/resources/icons/copy.svg"),
-                          tr("&Copy\t%1").arg(VUtils::getShortcutText(c_copyShortcutSequence)), this);
-    copyAct->setToolTip(tr("Copy selected notes"));
-    connect(copyAct, &QAction::triggered,
-            this, &VFileList::copySelectedFiles);
-
-    cutAct = new QAction(VIconUtils::menuIcon(":/resources/icons/cut.svg"),
-                         tr("C&ut\t%1").arg(VUtils::getShortcutText(c_cutShortcutSequence)), this);
-    cutAct->setToolTip(tr("Cut selected notes"));
-    connect(cutAct, &QAction::triggered,
-            this, &VFileList::cutSelectedFiles);
-
-    pasteAct = new QAction(VIconUtils::menuIcon(":/resources/icons/paste.svg"),
-                           tr("&Paste\t%1").arg(VUtils::getShortcutText(c_pasteShortcutSequence)), this);
-    pasteAct->setToolTip(tr("Paste notes in current folder"));
-    connect(pasteAct, &QAction::triggered,
-            this, &VFileList::pasteFilesFromClipboard);
-
-    m_openLocationAct = new QAction(tr("&Open Note Location"), this);
-    m_openLocationAct->setToolTip(tr("Open the folder containing this note in operating system"));
-    connect(m_openLocationAct, &QAction::triggered,
-            this, &VFileList::openFileLocation);
-
-    m_addToCartAct = new QAction(VIconUtils::menuIcon(":/resources/icons/cart.svg"),
-                                 tr("Add To Cart"),
-                                 this);
-    m_addToCartAct->setToolTip(tr("Add selected notes to Cart for further processing"));
-    connect(m_addToCartAct, &QAction::triggered,
-            this, &VFileList::addFileToCart);
-
-    m_pinToHistoryAct = new QAction(VIconUtils::menuIcon(":/resources/icons/pin.svg"),
-                                    tr("Pin To History"),
-                                    this);
-    m_pinToHistoryAct->setToolTip(tr("Pin selected notes to History"));
-    connect(m_pinToHistoryAct, &QAction::triggered,
-            this, &VFileList::pinFileToHistory);
-
-    m_sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
-                            tr("&Sort"),
-                            this);
-    m_sortAct->setToolTip(tr("Sort notes in this folder manually"));
-    connect(m_sortAct, &QAction::triggered,
-            this, &VFileList::sortItems);
-
-    initOpenWithMenu();
 }
 
 void VFileList::setDirectory(VDirectory *p_directory)
@@ -610,25 +520,83 @@ void VFileList::contextMenuRequested(QPoint pos)
         VNoteFile *file = getVFile(item);
         if (file) {
             if (file->getDocType() == DocType::Markdown) {
-                menu.addAction(m_openInReadAct);
-                menu.addAction(m_openInEditAct);
+                QAction *openInReadAct = new QAction(VIconUtils::menuIcon(":/resources/icons/reading.svg"),
+                                                     tr("&Open In Read Mode"),
+                                                     &menu);
+                openInReadAct->setToolTip(tr("Open current note in read mode"));
+                connect(openInReadAct, &QAction::triggered,
+                        this, [this]() {
+                            QListWidgetItem *item = fileList->currentItem();
+                            if (item) {
+                                emit fileClicked(getVFile(item), OpenFileMode::Read, true);
+                            }
+                        });
+                menu.addAction(openInReadAct);
+
+                QAction *openInEditAct = new QAction(VIconUtils::menuIcon(":/resources/icons/editing.svg"),
+                                                     tr("Open In &Edit Mode"),
+                                                     &menu);
+                openInEditAct->setToolTip(tr("Open current note in edit mode"));
+                connect(openInEditAct, &QAction::triggered,
+                        this, [this]() {
+                            QListWidgetItem *item = fileList->currentItem();
+                            if (item) {
+                                emit fileClicked(getVFile(item), OpenFileMode::Edit, true);
+                            }
+                        });
+                menu.addAction(openInEditAct);
             }
 
-            menu.addMenu(m_openWithMenu);
+            menu.addMenu(getOpenWithMenu());
+
             menu.addSeparator();
         }
     }
 
+    QAction *newFileAct = new QAction(VIconUtils::menuIcon(":/resources/icons/create_note.svg"),
+                                      tr("&New Note"),
+                                      &menu);
+    VUtils::fixTextWithShortcut(newFileAct, "NewNote");
+    newFileAct->setToolTip(tr("Create a note in current folder"));
+    connect(newFileAct, SIGNAL(triggered(bool)),
+            this, SLOT(newFile()));
     menu.addAction(newFileAct);
 
     if (fileList->count() > 1) {
-        menu.addAction(m_sortAct);
+        QAction *sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
+                                       tr("&Sort"),
+                                       &menu);
+        sortAct->setToolTip(tr("Sort notes in this folder manually"));
+        connect(sortAct, &QAction::triggered,
+                this, &VFileList::sortItems);
+        menu.addAction(sortAct);
     }
 
     if (item) {
         menu.addSeparator();
+
+        QAction *deleteFileAct = new QAction(VIconUtils::menuDangerIcon(":/resources/icons/delete_note.svg"),
+                                             tr("&Delete"),
+                                             &menu);
+        deleteFileAct->setToolTip(tr("Delete selected note"));
+        connect(deleteFileAct, SIGNAL(triggered(bool)),
+                this, SLOT(deleteSelectedFiles()));
         menu.addAction(deleteFileAct);
+
+        QAction *copyAct = new QAction(VIconUtils::menuIcon(":/resources/icons/copy.svg"),
+                                       tr("&Copy\t%1").arg(VUtils::getShortcutText(c_copyShortcutSequence)),
+                                       &menu);
+        copyAct->setToolTip(tr("Copy selected notes"));
+        connect(copyAct, &QAction::triggered,
+                this, &VFileList::copySelectedFiles);
         menu.addAction(copyAct);
+
+        QAction *cutAct = new QAction(VIconUtils::menuIcon(":/resources/icons/cut.svg"),
+                                      tr("C&ut\t%1").arg(VUtils::getShortcutText(c_cutShortcutSequence)),
+                                      &menu);
+        cutAct->setToolTip(tr("Cut selected notes"));
+        connect(cutAct, &QAction::triggered,
+                this, &VFileList::cutSelectedFiles);
         menu.addAction(cutAct);
     }
 
@@ -637,19 +605,48 @@ void VFileList::contextMenuRequested(QPoint pos)
             menu.addSeparator();
         }
 
+        QAction *pasteAct = new QAction(VIconUtils::menuIcon(":/resources/icons/paste.svg"),
+                                        tr("&Paste\t%1").arg(VUtils::getShortcutText(c_pasteShortcutSequence)),
+                                        &menu);
+        pasteAct->setToolTip(tr("Paste notes in current folder"));
+        connect(pasteAct, &QAction::triggered,
+                this, &VFileList::pasteFilesFromClipboard);
         menu.addAction(pasteAct);
     }
 
     if (item) {
         menu.addSeparator();
         if (selectedSize == 1) {
-            menu.addAction(m_openLocationAct);
+            QAction *openLocationAct = new QAction(tr("&Open Note Location"), &menu);
+            openLocationAct->setToolTip(tr("Open the folder containing this note in operating system"));
+            connect(openLocationAct, &QAction::triggered,
+                    this, &VFileList::openFileLocation);
+            menu.addAction(openLocationAct);
         }
 
-        menu.addAction(m_addToCartAct);
-        menu.addAction(m_pinToHistoryAct);
+        QAction *addToCartAct = new QAction(VIconUtils::menuIcon(":/resources/icons/cart.svg"),
+                                            tr("Add To Cart"),
+                                            &menu);
+        addToCartAct->setToolTip(tr("Add selected notes to Cart for further processing"));
+        connect(addToCartAct, &QAction::triggered,
+                this, &VFileList::addFileToCart);
+        menu.addAction(addToCartAct);
+
+        QAction *pinToHistoryAct = new QAction(VIconUtils::menuIcon(":/resources/icons/pin.svg"),
+                                               tr("Pin To History"),
+                                               &menu);
+        pinToHistoryAct->setToolTip(tr("Pin selected notes to History"));
+        connect(pinToHistoryAct, &QAction::triggered,
+                this, &VFileList::pinFileToHistory);
+        menu.addAction(pinToHistoryAct);
 
         if (selectedSize == 1) {
+            QAction *fileInfoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/note_info.svg"),
+                                               tr("&Info\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)),
+                                               &menu);
+            fileInfoAct->setToolTip(tr("View and edit current note's information"));
+            connect(fileInfoAct, SIGNAL(triggered(bool)),
+                    this, SLOT(fileInfo()));
             menu.addAction(fileInfoAct);
         }
     }
@@ -1151,8 +1148,12 @@ void VFileList::sortItems()
     }
 }
 
-void VFileList::initOpenWithMenu()
+QMenu *VFileList::getOpenWithMenu()
 {
+    if (m_openWithMenu) {
+        return m_openWithMenu;
+    }
+
     m_openWithMenu = new QMenu(tr("Open With"), this);
     m_openWithMenu->setToolTipsVisible(true);
 
@@ -1240,6 +1241,8 @@ void VFileList::initOpenWithMenu()
             });
 
     m_openWithMenu->addAction(addAct);
+
+    return m_openWithMenu;
 }
 
 void VFileList::handleOpenWithActionTriggered()

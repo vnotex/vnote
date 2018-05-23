@@ -264,6 +264,7 @@ void VHistoryList::updateList()
         m_itemList->addItem(seps[i].m_item);
     }
 
+    QIcon noteIcon(VIconUtils::treeViewIcon(":/resources/icons/note_item.svg"));
     QIcon folderIcon(VIconUtils::treeViewIcon(":/resources/icons/dir_item.svg"));
     for (auto it = m_histories.cbegin(); it != m_histories.cend(); ++it) {
         QListWidgetItem *item = new QListWidgetItem(VUtils::fileNameFromPath(it->m_file));
@@ -272,6 +273,8 @@ void VHistoryList::updateList()
 
         if (it->m_isFolder) {
             item->setIcon(folderIcon);
+        } else {
+            item->setIcon(noteIcon);
         }
 
         if (it->m_isPinned) {

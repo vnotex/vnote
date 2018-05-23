@@ -46,7 +46,7 @@ sudo zypper in vnote
 由于 Leap 42 及以下版本的 Qt 版本过低，我们无法在 OBS 上进行打包。请使用 AppImage 或自行构建。
 
 ### Arch Linux
-Arch Linux可以通过AUR中的 [vnote-git](https://aur.archlinux.org/packages/vnote/) 进行安装：
+Arch Linux可以通过AUR中的 [vnote](https://aur.archlinux.org/packages/vnote/) 进行安装：
 
 ```shell
 git clone https://aur.archlinux.org/vnote.git
