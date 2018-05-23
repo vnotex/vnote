@@ -984,10 +984,11 @@ void VFileList::keyPressEvent(QKeyEvent *p_event)
         QListWidgetItem *item = fileList->currentItem();
         if (item) {
             VFile *fileToClose = NULL;
-            if (!(p_event->modifiers() & Qt::ControlModifier)
-                && g_config->getSingleClickClosePreviousTab()) {
-                VFile *file = getVFile(item);
-                Q_ASSERT(file);
+            VFile *file = getVFile(item);
+            Q_ASSERT(file);
+            if (p_event->modifiers() == Qt::NoModifier
+                && g_config->getSingleClickClosePreviousTab()
+                && file->getDocType() != DocType::Unknown) {
                 if (!editArea->isFileOpened(file)) {
                     VEditTab *tab = editArea->getCurrentTab();
                     if (tab) {
