@@ -80,7 +80,7 @@ private:
     // Whether data is loaded.
     bool m_initialized;
 
-    bool m_uiSetuped;
+    bool m_uiInitialized;
 
     // New files are appended to the end.
     QLinkedList<VHistoryEntry> m_histories;

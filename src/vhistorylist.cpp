@@ -21,7 +21,7 @@ extern VNote *g_vnote;
 VHistoryList::VHistoryList(QWidget *p_parent)
     : QWidget(p_parent),
       m_initialized(false),
-      m_uiSetuped(false),
+      m_uiInitialized(false),
       m_updatePending(true),
       m_currentDate(QDate::currentDate())
 {
@@ -29,11 +29,11 @@ VHistoryList::VHistoryList(QWidget *p_parent)
 
 void VHistoryList::setupUI()
 {
-    if (m_uiSetuped) {
+    if (m_uiInitialized) {
         return;
     }
 
-    m_uiSetuped = true;
+    m_uiInitialized = true;
 
     m_clearBtn = new QPushButton(VIconUtils::buttonDangerIcon(":/resources/icons/clear_history.svg"), "");
     m_clearBtn->setToolTip(tr("Clear"));
@@ -183,11 +183,12 @@ void VHistoryList::init()
         return;
     }
 
+    m_initialized = true;
+
     setupUI();
 
     g_config->getHistory(m_histories);
 
-    m_initialized = true;
     m_updatePending = true;
 }
 

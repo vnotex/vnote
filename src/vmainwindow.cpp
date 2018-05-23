@@ -1282,8 +1282,7 @@ void VMainWindow::initToolsDock()
                        tr("Snippets"));
     m_toolBox->addItem(m_cart,
                        ":/resources/icons/cart.svg",
-                       tr("Cart"),
-                       m_cart->getContentWidget());
+                       tr("Cart"));
 
     m_toolDock->setWidget(m_toolBox);
     addDockWidget(Qt::RightDockWidgetArea, m_toolDock);

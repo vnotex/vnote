@@ -24,11 +24,14 @@ public:
 
     QVector<QString> getFiles() const;
 
-    QWidget *getContentWidget() const;
-
     // Implementations for VNavigationMode.
     void showNavigation() Q_DECL_OVERRIDE;
     bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE;
+
+protected:
+    void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
+
+    void focusInEvent(QFocusEvent *p_event) Q_DECL_OVERRIDE;
 
 private slots:
     void handleContextMenuRequested(QPoint p_pos);
@@ -46,7 +49,11 @@ private slots:
 private:
     void setupUI();
 
-    void initActions();
+    void init();
+
+    bool m_initialized;
+
+    bool m_uiInitialized;
 
     // Return index of item.
     int findFileInCart(const QString &p_file) const;
@@ -60,11 +67,6 @@ private:
     QPushButton *m_clearBtn;
     QLabel *m_numLabel;
     VListWidget *m_itemList;
-
-    QAction *m_openAct;
-    QAction *m_locateAct;
-    QAction *m_deleteAct;
-    QAction *m_sortAct;
 };
 
 #endif // VCART_H
