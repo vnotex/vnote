@@ -14,6 +14,7 @@
 class QPushButton;
 class QActionGroup;
 class VEditArea;
+class QMenu;
 
 // Tab info for navigation mode.
 struct TabNavigationInfo
@@ -146,7 +147,8 @@ private slots:
 
     void handleTabCurrentHeaderChanged(const VHeaderPointer &p_header);
 
-    void updateSplitMenu();
+    void updateSplitMenu(QMenu *p_menu);
+
     void tabbarContextMenuRequested(QPoint p_pos);
     void handleLocateAct();
     void handleMoveLeftAct();
@@ -165,8 +167,8 @@ private slots:
     void tabRequestToClose(VEditTab *p_tab);
 
 private:
-    void initTabActions();
     void setupCornerWidget();
+
     void removeEditTab(int p_index);
 
     int insertEditTab(int p_index, VFile *p_file, QWidget *p_page);
@@ -194,6 +196,8 @@ private:
     // Connect the signals of VEditTab to this VEditWindow.
     void connectEditTab(const VEditTab *p_tab);
 
+    QAction *getRemoveSplitAction();
+
     VEditArea *m_editArea;
 
     // These two members are only used for alternateTab().
@@ -206,42 +210,7 @@ private:
     QPushButton *leftBtn;
 
     // Actions
-    QAction *splitAct;
-    QAction *removeSplitAct;
-    // Locate current note in the directory and file list
-    QAction *m_locateAct;
-    QAction *m_moveLeftAct;
-    QAction *m_moveRightAct;
-
-    // Close current tab action in tab menu.
-    QAction *m_closeTabAct;
-
-    // Close other tabs action in tab menu.
-    QAction *m_closeOthersAct;
-
-    // Close tabs to the right in tab menu.
-    QAction *m_closeRightAct;
-
-    // Close all tabs.
-    QAction *m_closeAllAct;
-
-    // View and edit info about this note.
-    QAction *m_noteInfoAct;
-
-    // Add this note to Cart.
-    QAction *m_addToCartAct;
-
-    // Pin this note to History.
-    QAction *m_pinToHistoryAct;
-
-    // Open the location (the folder containing this file) of this note.
-    QAction *m_openLocationAct;
-
-    // Reload the note from disk.
-    QAction *m_reloadAct;
-
-    // Open the recycle bin folder of this note.
-    QAction *m_recycleBinAct;
+    QAction *m_removeSplitAct;
 };
 
 inline QString VEditWindow::generateTooltip(const VFile *p_file) const
