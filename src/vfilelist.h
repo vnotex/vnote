@@ -119,6 +119,19 @@ protected:
     void focusInEvent(QFocusEvent *p_event) Q_DECL_OVERRIDE;
 
 private:
+    // Should be aligned with note_list_view_order in vnote.ini.
+    enum ViewOrder
+    {
+        Config = 0,
+        Name,
+        NameReverse,
+        CreatedTime,
+        CreatedTimeReverse,
+        ModifiedTime,
+        ModifiedTimeReverse,
+        Max
+    };
+
     void setupUI();
 
     // Init shortcuts.
@@ -143,9 +156,6 @@ private:
                     const QVector<QString> &p_files,
                     bool p_isCut);
 
-    // New items have been added to direcotry. Update file list accordingly.
-    QVector<QListWidgetItem *> updateFileListAdded();
-
     inline QPointer<VNoteFile> getVFile(QListWidgetItem *p_item) const;
 
     // Fill the info of @p_item according to @p_file.
@@ -165,6 +175,16 @@ private:
     void activateItem(QListWidgetItem *p_item, bool p_restoreFocus = false);
 
     void updateNumberLabel() const;
+
+    // Update the View menu.
+    void updateViewMenu(QMenu *p_menu);
+
+    // Sort file list.
+    void sortFileList(ViewOrder p_order);
+
+    void sortFiles(QVector<VNoteFile *> &p_files, ViewOrder p_order);
+
+    void selectFiles(const QVector<VNoteFile *> &p_files);
 
     VEditArea *editArea;
 

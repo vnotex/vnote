@@ -66,10 +66,22 @@ void VFileList::setupUI()
     QLabel *titleLabel = new QLabel(tr("Notes"), this);
     titleLabel->setProperty("TitleLabel", true);
 
+    QPushButton *viewBtn = new QPushButton(VIconUtils::buttonIcon(":/resources/icons/view.svg"), "", this);
+    viewBtn->setToolTip(tr("View"));
+    viewBtn->setProperty("CornerBtn", true);
+
+    QMenu *viewMenu = new QMenu(this);
+    connect(viewMenu, &QMenu::aboutToShow,
+            this, [this, viewMenu]() {
+                updateViewMenu(viewMenu);
+            });
+    viewBtn->setMenu(viewMenu);
+
     m_numLabel = new QLabel(this);
 
     QHBoxLayout *titleLayout = new QHBoxLayout();
     titleLayout->addWidget(titleLabel);
+    titleLayout->addWidget(viewBtn);
     titleLayout->addStretch();
     titleLayout->addWidget(m_numLabel);
 
@@ -156,7 +168,9 @@ void VFileList::updateFileList()
         return;
     }
 
-    const QVector<VNoteFile *> &files = m_directory->getFiles();
+    QVector<VNoteFile *> files = m_directory->getFiles();
+    sortFiles(files, (ViewOrder)g_config->getNoteListViewOrder());
+
     for (int i = 0; i < files.size(); ++i) {
         VNoteFile *file = files[i];
         insertFileListItem(file);
@@ -359,11 +373,9 @@ void VFileList::newFile()
             }
         }
 
-        QVector<QListWidgetItem *> items = updateFileListAdded();
-        Q_ASSERT(items.size() == 1);
-        fileList->setCurrentItem(items[0], QItemSelectionModel::ClearAndSelect);
-        // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
-        fileList->update();
+        updateFileList();
+
+        locateFile(file);
 
         // Open it in edit mode
         emit fileCreated(file, OpenFileMode::Edit, true);
@@ -381,27 +393,6 @@ void VFileList::newFile()
             }
         }
     }
-}
-
-QVector<QListWidgetItem *> VFileList::updateFileListAdded()
-{
-    QVector<QListWidgetItem *> ret;
-    const QVector<VNoteFile *> &files = m_directory->getFiles();
-    for (int i = 0; i < files.size(); ++i) {
-        VNoteFile *file = files[i];
-        if (i >= fileList->count()) {
-            QListWidgetItem *item = insertFileListItem(file, false);
-            ret.append(item);
-        } else {
-            VNoteFile *itemFile = getVFile(fileList->item(i));
-            if (itemFile != file) {
-                QListWidgetItem *item = insertFileListItem(file, false);
-                ret.append(item);
-            }
-        }
-    }
-
-    return ret;
 }
 
 void VFileList::deleteSelectedFiles()
@@ -500,6 +491,7 @@ void VFileList::deleteFiles(const QVector<VNoteFile *> &p_files)
             g_mainWin->showStatusMessage(tr("%1 %2 deleted")
                                            .arg(nrDeleted)
                                            .arg(nrDeleted > 1 ? tr("notes") : tr("note")));
+            updateNumberLabel();
         }
     }
 }
@@ -760,7 +752,7 @@ bool VFileList::importFiles(const QStringList &p_files, QString *p_errMsg)
     QString dirPath = m_directory->fetchPath();
     QDir dir(dirPath);
 
-    int nrImported = 0;
+    QVector<VNoteFile *> importedFiles;
     for (int i = 0; i < p_files.size(); ++i) {
         const QString &file = p_files[i];
 
@@ -799,7 +791,7 @@ bool VFileList::importFiles(const QStringList &p_files, QString *p_errMsg)
 
         VNoteFile *destFile = m_directory->addFile(name, -1);
         if (destFile) {
-            ++nrImported;
+            importedFiles.append(destFile);
             qDebug() << "imported" << file << "as" << targetFilePath;
         } else {
             VUtils::addErrMsg(p_errMsg, tr("Fail to add the note %1 to target folder's configuration.")
@@ -809,9 +801,11 @@ bool VFileList::importFiles(const QStringList &p_files, QString *p_errMsg)
         }
     }
 
-    qDebug() << "imported" << nrImported << "files";
+    qDebug() << "imported" << importedFiles.size() << "files";
 
     updateFileList();
+
+    selectFiles(importedFiles);
 
     return ret;
 }
@@ -1272,4 +1266,153 @@ void VFileList::updateNumberLabel() const
     int cnt = fileList->count();
     m_numLabel->setText(tr("%1 %2").arg(cnt)
                                    .arg(cnt > 1 ? tr("Items") : tr("Item")));
+}
+
+void VFileList::updateViewMenu(QMenu *p_menu)
+{
+    if (p_menu->isEmpty()) {
+        QActionGroup *ag = new QActionGroup(p_menu);
+
+        QAction *act = new QAction(tr("View By Configuration File"), ag);
+        act->setCheckable(true);
+        act->setData(ViewOrder::Config);
+        act->setChecked(true);
+        p_menu->addAction(act);
+
+        act = new QAction(tr("View By Name"), ag);
+        act->setCheckable(true);
+        act->setData(ViewOrder::Name);
+        p_menu->addAction(act);
+
+        act = new QAction(tr("View By Name (Reverse)"), ag);
+        act->setCheckable(true);
+        act->setData(ViewOrder::NameReverse);
+        p_menu->addAction(act);
+
+        act = new QAction(tr("View By Created Time"), ag);
+        act->setCheckable(true);
+        act->setData(ViewOrder::CreatedTime);
+        p_menu->addAction(act);
+
+        act = new QAction(tr("View By Created Time (Reverse)"), ag);
+        act->setCheckable(true);
+        act->setData(ViewOrder::CreatedTimeReverse);
+        p_menu->addAction(act);
+
+        act = new QAction(tr("View By Modified Time"), ag);
+        act->setCheckable(true);
+        act->setData(ViewOrder::ModifiedTime);
+        p_menu->addAction(act);
+
+        act = new QAction(tr("View By Modified Time (Reverse)"), ag);
+        act->setCheckable(true);
+        act->setData(ViewOrder::ModifiedTimeReverse);
+        p_menu->addAction(act);
+
+        int config = g_config->getNoteListViewOrder();
+        for (auto act : ag->actions()) {
+            if (act->data().toInt() == config) {
+                act->setChecked(true);
+            }
+        }
+
+        connect(ag, &QActionGroup::triggered,
+                this, [this](QAction *p_action) {
+                    int order = p_action->data().toInt();
+                    g_config->setNoteListViewOrder(order);
+
+                    sortFileList((ViewOrder)order);
+                });
+    }
+}
+
+void VFileList::sortFileList(ViewOrder p_order)
+{
+    QVector<VNoteFile *> files = m_directory->getFiles();
+    sortFiles(files, p_order);
+
+    Q_ASSERT(files.size() == fileList->count());
+    int cnt = files.size();
+    for (int i = 0; i < cnt; ++i) {
+        int row = -1;
+        for (int j = i; j < cnt; ++j) {
+            QListWidgetItem *item = fileList->item(j);
+            if (files[i] == getVFile(item)) {
+                row = j;
+                break;
+            }
+        }
+
+        Q_ASSERT(row > -1);
+        QListWidgetItem *item = fileList->takeItem(row);
+        fileList->insertItem(i, item);
+    }
+}
+
+void VFileList::sortFiles(QVector<VNoteFile *> &p_files, ViewOrder p_order)
+{
+    bool reverse = false;
+
+    switch (p_order) {
+    case ViewOrder::Config:
+        break;
+
+    case ViewOrder::NameReverse:
+        reverse = true;
+        V_FALLTHROUGH
+    case ViewOrder::Name:
+        std::sort(p_files.begin(), p_files.end(), [reverse](const VNoteFile *p_a, const VNoteFile *p_b) {
+            if (reverse) {
+                return p_b->getName() < p_a->getName();
+            } else {
+                return p_a->getName() < p_b->getName();
+            }
+        });
+        break;
+
+    case ViewOrder::CreatedTimeReverse:
+        reverse = true;
+        V_FALLTHROUGH
+    case ViewOrder::CreatedTime:
+        std::sort(p_files.begin(), p_files.end(), [reverse](const VNoteFile *p_a, const VNoteFile *p_b) {
+            if (reverse) {
+                return p_b->getCreatedTimeUtc() < p_a->getCreatedTimeUtc();
+            } else {
+                return p_a->getCreatedTimeUtc() < p_b->getCreatedTimeUtc();
+            }
+        });
+        break;
+
+    case ViewOrder::ModifiedTimeReverse:
+        reverse = true;
+        V_FALLTHROUGH
+    case ViewOrder::ModifiedTime:
+        std::sort(p_files.begin(), p_files.end(), [reverse](const VNoteFile *p_a, const VNoteFile *p_b) {
+            if (reverse) {
+                return p_b->getModifiedTimeUtc() < p_a->getModifiedTimeUtc();
+            } else {
+                return p_a->getModifiedTimeUtc() < p_b->getModifiedTimeUtc();
+            }
+        });
+        break;
+
+    default:
+        break;
+    }
+}
+
+void VFileList::selectFiles(const QVector<VNoteFile *> &p_files)
+{
+    bool first = true;
+    for (auto const & file : p_files) {
+        QListWidgetItem *item = findItem(file);
+        if (item) {
+            if (first) {
+                first = false;
+                fileList->setCurrentItem(item, QItemSelectionModel::ClearAndSelect);
+            } else {
+                item->setSelected(true);
+            }
+        }
+    }
 }

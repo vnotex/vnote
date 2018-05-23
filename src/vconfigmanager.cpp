@@ -51,6 +51,7 @@ const QString VConfigManager::c_exportFolderName = QString("vnote_exports");
 
 VConfigManager::VConfigManager(QObject *p_parent)
     : QObject(p_parent),
+      m_noteListViewOrder(-1),
       m_hasReset(false),
       userSettings(NULL),
       defaultSettings(NULL),
