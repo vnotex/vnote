@@ -19,33 +19,21 @@ extern VMainWindow *g_mainWin;
 const QString VSnippetList::c_infoShortcutSequence = "F2";
 
 VSnippetList::VSnippetList(QWidget *p_parent)
-    : QWidget(p_parent)
+    : QWidget(p_parent),
+      m_initialized(false),
+      m_uiInitialized(false)
 {
-    setupUI();
-
     initShortcuts();
-
-    initActions();
-
-    if (!readSnippetsFromConfig()) {
-        VUtils::showMessage(QMessageBox::Warning,
-                            tr("Warning"),
-                            tr("Fail to read snippets from <span style=\"%1\">%2</span>.")
-                              .arg(g_config->c_dataTextStyle)
-                              .arg(g_config->getSnippetConfigFolder()),
-                            "",
-                            QMessageBox::Ok,
-                            QMessageBox::Ok,
-                            this);
-    }
-
-    updateContent();
-
-    updateNumberLabel();
 }
 
 void VSnippetList::setupUI()
 {
+    if (m_uiInitialized) {
+        return;
+    }
+
+    m_uiInitialized = true;
+
     m_addBtn = new QPushButton(VIconUtils::buttonIcon(":/resources/icons/add_snippet.svg"), "");
     m_addBtn->setToolTip(tr("New Snippet"));
     m_addBtn->setProperty("FlatBtn", true);
@@ -86,40 +74,6 @@ void VSnippetList::setupUI()
     mainLayout->setContentsMargins(3, 0, 3, 0);
 
     setLayout(mainLayout);
-}
-
-void VSnippetList::initActions()
-{
-    m_applyAct = new QAction(VIconUtils::menuIcon(":/resources/icons/apply_snippet.svg"),
-                             tr("&Apply"),
-                             this);
-    m_applyAct->setToolTip(tr("Insert this snippet in editor"));
-    connect(m_applyAct, &QAction::triggered,
-            this, [this]() {
-                QListWidgetItem *item = m_snippetList->currentItem();
-                handleItemActivated(item);
-            });
-
-    m_infoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/snippet_info.svg"),
-                            tr("&Info\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)),
-                            this);
-    m_infoAct->setToolTip(tr("View and edit snippet's information"));
-    connect(m_infoAct, &QAction::triggered,
-            this, &VSnippetList::snippetInfo);
-
-    m_deleteAct = new QAction(VIconUtils::menuDangerIcon(":/resources/icons/delete_snippet.svg"),
-                              tr("&Delete"),
-                              this);
-    m_deleteAct->setToolTip(tr("Delete selected snippets"));
-    connect(m_deleteAct, &QAction::triggered,
-            this, &VSnippetList::deleteSelectedItems);
-
-    m_sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
-                            tr("&Sort"),
-                            this);
-    m_sortAct->setToolTip(tr("Sort snippets manually"));
-    connect(m_sortAct, &QAction::triggered,
-            this, &VSnippetList::sortItems);
 }
 
 void VSnippetList::initShortcuts()
@@ -178,11 +132,33 @@ void VSnippetList::handleContextMenuRequested(QPoint p_pos)
     if (item) {
         int itemCount = m_snippetList->selectedItems().size();
         if (itemCount == 1) {
-            menu.addAction(m_applyAct);
-            menu.addAction(m_infoAct);
+            QAction *applyAct = new QAction(VIconUtils::menuIcon(":/resources/icons/apply_snippet.svg"),
+                                            tr("&Apply"),
+                                            &menu);
+            applyAct->setToolTip(tr("Insert this snippet in editor"));
+            connect(applyAct, &QAction::triggered,
+                    this, [this]() {
+                        QListWidgetItem *item = m_snippetList->currentItem();
+                        handleItemActivated(item);
+                    });
+            menu.addAction(applyAct);
+
+            QAction *infoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/snippet_info.svg"),
+                                           tr("&Info\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)),
+                                           &menu);
+            infoAct->setToolTip(tr("View and edit snippet's information"));
+            connect(infoAct, &QAction::triggered,
+                    this, &VSnippetList::snippetInfo);
+            menu.addAction(infoAct);
         }
 
-        menu.addAction(m_deleteAct);
+        QAction *deleteAct = new QAction(VIconUtils::menuDangerIcon(":/resources/icons/delete_snippet.svg"),
+                                         tr("&Delete"),
+                                         &menu);
+        deleteAct->setToolTip(tr("Delete selected snippets"));
+        connect(deleteAct, &QAction::triggered,
+                this, &VSnippetList::deleteSelectedItems);
+        menu.addAction(deleteAct);
     }
 
     m_snippetList->update();
@@ -192,7 +168,13 @@ void VSnippetList::handleContextMenuRequested(QPoint p_pos)
             menu.addSeparator();
         }
 
-        menu.addAction(m_sortAct);
+        QAction *sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
+                                       tr("&Sort"),
+                                       &menu);
+        sortAct->setToolTip(tr("Sort snippets manually"));
+        connect(sortAct, &QAction::triggered,
+                this, &VSnippetList::sortItems);
+        menu.addAction(sortAct);
     }
 
     if (!menu.actions().isEmpty()) {
@@ -492,12 +474,16 @@ void VSnippetList::keyPressEvent(QKeyEvent *p_event)
 
 void VSnippetList::showNavigation()
 {
+    setupUI();
+
     VNavigationMode::showNavigation(m_snippetList);
 }
 
 bool VSnippetList::handleKeyNavigation(int p_key, bool &p_succeed)
 {
     static bool secondKey = false;
+    setupUI();
+
     return VNavigationMode::handleKeyNavigation(m_snippetList,
                                                 secondKey,
                                                 p_key,
@@ -617,6 +603,8 @@ bool VSnippetList::deleteSnippetFile(const VSnippet &p_snippet, QString *p_errMs
 
 void VSnippetList::focusInEvent(QFocusEvent *p_event)
 {
+    init();
+
     QWidget::focusInEvent(p_event);
 
     if (m_snippets.isEmpty()) {
@@ -632,3 +620,36 @@ void VSnippetList::updateNumberLabel() const
     m_numLabel->setText(tr("%1 %2").arg(cnt)
                                    .arg(cnt > 1 ? tr("Items") : tr("Item")));
 }
+
+void VSnippetList::init()
+{
+    if (m_initialized) {
+        return;
+    }
+
+    m_initialized = true;
+
+    setupUI();
+
+    if (!readSnippetsFromConfig()) {
+        VUtils::showMessage(QMessageBox::Warning,
+                            tr("Warning"),
+                            tr("Fail to read snippets from <span style=\"%1\">%2</span>.")
+                              .arg(g_config->c_dataTextStyle)
+                              .arg(g_config->getSnippetConfigFolder()),
+                            "",
+                            QMessageBox::Ok,
+                            QMessageBox::Ok,
+                            this);
+    }
+
+    updateContent();
+}
+
+void VSnippetList::showEvent(QShowEvent *p_event)
+{
+    init();
+
+    QWidget::showEvent(p_event);
+}
+

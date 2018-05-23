@@ -15,7 +15,6 @@
 #include "vnavigationmode.h"
 #include "vlistwidget.h"
 
-class QAction;
 class VNote;
 class QListWidget;
 class QPushButton;

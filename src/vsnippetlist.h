@@ -12,7 +12,6 @@ class QPushButton;
 class VListWidget;
 class QListWidgetItem;
 class QLabel;
-class QAction;
 class QKeyEvent;
 class QFocusEvent;
 
@@ -32,6 +31,8 @@ public:
     bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE;
 
 protected:
+    void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
+
     void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
     void focusInEvent(QFocusEvent *p_event) Q_DECL_OVERRIDE;
@@ -52,7 +53,7 @@ private slots:
 private:
     void setupUI();
 
-    void initActions();
+    void init();
 
     void initShortcuts();
 
@@ -89,15 +90,14 @@ private:
 
     void updateNumberLabel() const;
 
+    bool m_initialized;
+
+    bool m_uiInitialized;
+
     QPushButton *m_addBtn;
     QPushButton *m_locateBtn;
     QLabel *m_numLabel;
     VListWidget *m_snippetList;
-
-    QAction *m_applyAct;
-    QAction *m_infoAct;
-    QAction *m_deleteAct;
-    QAction *m_sortAct;
 
     QVector<VSnippet> m_snippets;
 
@@ -106,11 +106,15 @@ private:
 
 inline const QVector<VSnippet> &VSnippetList::getSnippets() const
 {
+    const_cast<VSnippetList *>(this)->init();
+
     return m_snippets;
 }
 
 inline const VSnippet *VSnippetList::getSnippet(const QString &p_name) const
 {
+    const_cast<VSnippetList *>(this)->init();
+
     for (auto const & snip : m_snippets) {
         if (snip.getName() == p_name) {
             return &snip;

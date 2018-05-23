@@ -10,7 +10,6 @@ class QPushButton;
 class VListWidget;
 class QListWidgetItem;
 class QLabel;
-class QAction;
 
 class VCart : public QWidget, public VNavigationMode
 {
