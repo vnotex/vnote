@@ -766,7 +766,8 @@ void VMdEditor::insertFromMimeData(const QMimeData *p_source)
     if (p_source->hasHtml()) {
         // Handle <img>.
         QRegExp reg("<img ([^>]*)src=\"([^\"]+)\"([^>]*)>");
-        if (reg.indexIn(p_source->html()) != -1) {
+        QString html(p_source->html());
+        if (reg.indexIn(html) != -1 && VUtils::onlyHasImgInHtml(html)) {
             if (p_source->hasImage()) {
                 // Both image data and URL are embedded.
                 VSelectDialog dialog(tr("Insert From Clipboard"), this);
@@ -858,9 +859,15 @@ void VMdEditor::insertFromMimeData(const QMimeData *p_source)
                 int selection = dialog.getSelection();
                 if (selection == 0) {
                     // Insert as image.
-                    QUrl url(text);
+                    QUrl url;
+                    if (QFileInfo::exists(text)) {
+                        url = QUrl::fromLocalFile(text);
+                    } else {
+                        url = QUrl(text);
+                    }
+
                     if (url.isValid()) {
-                        m_editOps->insertImageFromURL(QUrl(text));
+                        m_editOps->insertImageFromURL(url);
                     }
 
                     return;

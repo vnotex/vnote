@@ -339,6 +339,9 @@ public:
                                      const QString &p_dir,
                                      QWidget *p_parent = nullptr);
 
+    // Whether @p_html has only <img> content.
+    static bool onlyHasImgInHtml(const QString &p_html);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt text" =200x100)
     // Captured texts (need to be trimmed):

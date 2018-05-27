@@ -1580,3 +1580,9 @@ QString VUtils::promptForFileName(const QString &p_title,
 
     return name;
 }
+
+bool VUtils::onlyHasImgInHtml(const QString &p_html)
+{
+    // Tricky.
+    return !p_html.contains("<p ");
+}
