@@ -337,6 +337,19 @@ void VExplorer::handleEntryActivated(int p_idx)
 
     updateStarButton();
 
+    // Check if exists.
+    if (!QFileInfo::exists(m_entries[m_index].m_directory)) {
+        VUtils::showMessage(QMessageBox::Warning,
+                            tr("Warning"),
+                            tr("Fail to open directory <span style=\"%1\">%2</span>.")
+                              .arg(g_config->c_dataTextStyle)
+                              .arg(m_entries[m_index].m_directory),
+                            tr("Please check if the directory exists."),
+                            QMessageBox::Ok,
+                            QMessageBox::Ok,
+                            g_mainWin);
+    }
+
     updateTree();
 }
 
