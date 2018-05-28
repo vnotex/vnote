@@ -277,6 +277,13 @@ void VTextEdit::updateLineNumberArea()
     }
 }
 
+int VTextEdit::firstVisibleBlockNumber() const
+{
+    VTextDocumentLayout *layout = getLayout();
+    Q_ASSERT(layout);
+    return layout->findBlockByPosition(QPointF(0, -contentOffsetY()));
+}
+
 QTextBlock VTextEdit::firstVisibleBlock() const
 {
     VTextDocumentLayout *layout = getLayout();
@@ -317,6 +324,8 @@ void VTextEdit::clearBlockImages()
 void VTextEdit::relayout(const OrderedIntSet &p_blocks)
 {
     getLayout()->relayout(p_blocks);
+
+    updateLineNumberArea();
 }
 
 void VTextEdit::relayoutVisibleBlocks()
@@ -330,6 +339,8 @@ void VTextEdit::relayoutVisibleBlocks()
     }
 
     getLayout()->relayout(blocks);
+
+    updateLineNumberArea();
 }
 
 bool VTextEdit::containsImage(const QString &p_imageName) const
@@ -419,6 +430,8 @@ void VTextEdit::setCursorLineBlockBg(const QColor &p_bg)
 void VTextEdit::relayout()
 {
     getLayout()->relayout();
+
+    updateLineNumberArea();
 }
 
 void VTextEdit::setDisplayScaleFactor(qreal p_factor)

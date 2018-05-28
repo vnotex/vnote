@@ -33,6 +33,8 @@ public:
 
     void setLineNumberColor(const QColor &p_foreground, const QColor &p_background);
 
+    int firstVisibleBlockNumber() const;
+
     QTextBlock firstVisibleBlock() const;
 
     QTextBlock lastVisibleBlock() const;

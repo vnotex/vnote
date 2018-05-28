@@ -590,4 +590,13 @@ void VPreviewManager::relayoutEditor(const OrderedIntSet &p_blocks)
     }
 
     m_editor->relayout(bs);
+
+    // We may get the wrong visible block range before relayout() updating the document size.
+    OrderedIntSet after;
+    int afterFirst = m_editor->firstVisibleBlockNumber();
+    for (int i = afterFirst; i < first; ++i) {
+        after.insert(i, QMapDummyValue());
+    }
+
+    m_editor->relayout(after);
 }
