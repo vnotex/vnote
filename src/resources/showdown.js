@@ -23,7 +23,7 @@ var parseHeadings = function(html) {
         toc.push({
             level: level,
             anchor: ele.id,
-            title: ele.innerHTML
+            title: escapeHtml(ele.textContent)
         });
     }
 

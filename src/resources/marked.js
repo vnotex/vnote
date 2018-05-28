@@ -5,12 +5,13 @@ var nameCounter = 0;
 renderer.heading = function(text, level) {
     // Use number to avoid issues with Chinese
     var escapedText = 'toc_' + nameCounter++;
+    var textHtml = escapeHtml(text);
     toc.push({
         level: level,
         anchor: escapedText,
-        title: text
+        title: textHtml
     });
-    return '<h' + level + ' id="' + escapedText + '">' + text + '</h' + level + '>';
+    return '<h' + level + ' id="' + escapedText + '">' + textHtml + '</h' + level + '>';
 };
 
 // Highlight.js to highlight code block
