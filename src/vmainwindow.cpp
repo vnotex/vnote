@@ -3202,12 +3202,7 @@ void VMainWindow::stayOnTop(bool p_enabled)
     bool shown = isVisible();
     Qt::WindowFlags flags = this->windowFlags();
 
-#if defined(Q_OS_LINUX) || defined(Q_OS_UNIX)
-    Qt::WindowFlags magicFlag = Qt::WindowStaysOnTopHint | Qt::X11BypassWindowManagerHint;
-#else
     Qt::WindowFlags magicFlag = Qt::WindowStaysOnTopHint;
-#endif
-
     if (p_enabled) {
         setWindowFlags(flags | magicFlag);
     } else {
