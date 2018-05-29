@@ -236,6 +236,12 @@ void VExplorer::init()
     infoShortcut->setContext(Qt::WidgetWithChildrenShortcut);
     connect(infoShortcut, &QShortcut::activated,
             this, [this]() {
+                QModelIndexList selectedIdx = m_tree->selectionModel()->selectedRows();
+                if (selectedIdx.size() == 1) {
+                    QFileSystemModel *model = static_cast<QFileSystemModel *>(m_tree->model());
+                    QString filePath = model->filePath(selectedIdx[0]);
+                    renameFile(filePath);
+                }
             });
 
     g_config->getExplorerEntries(m_entries);

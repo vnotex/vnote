@@ -13,7 +13,10 @@
 #include "vlineedit.h"
 
 extern VConfigManager *g_config;
+
 extern VMainWindow *g_mainWin;
+
+const QString VAttachmentList::c_infoShortcutSequence = "F2";
 
 VAttachmentList::VAttachmentList(QWidget *p_parent)
     : QWidget(p_parent),
@@ -239,12 +242,13 @@ void VAttachmentList::handleContextMenuRequested(QPoint p_pos)
         return;
     }
 
+    int selectedSize = m_attachmentList->selectedItems().size();
     if (item) {
         if (!item->isSelected()) {
             m_attachmentList->setCurrentItem(item, QItemSelectionModel::ClearAndSelect);
         }
 
-        if (m_attachmentList->selectedItems().size() == 1) {
+        if (selectedSize == 1) {
             QAction *openAct = new QAction(tr("&Open"), &menu);
             openAct->setToolTip(tr("Open current attachment file"));
             connect(openAct, &QAction::triggered,
@@ -278,6 +282,18 @@ void VAttachmentList::handleContextMenuRequested(QPoint p_pos)
         connect(sortAct, &QAction::triggered,
                 this, &VAttachmentList::sortItems);
         menu.addAction(sortAct);
+    }
+
+    if (selectedSize == 1) {
+        menu.addSeparator();
+
+        QAction *fileInfoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/note_info.svg"),
+                                           tr("&Info\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)),
+                                           &menu);
+        fileInfoAct->setToolTip(tr("View and edit current folder's information"));
+        connect(fileInfoAct, &QAction::triggered,
+                this, &VAttachmentList::attachmentInfo);
+        menu.addAction(fileInfoAct);
     }
 
     if (!menu.actions().isEmpty()) {
@@ -439,7 +455,7 @@ void VAttachmentList::handleListItemCommitData(QWidget *p_itemEdit)
         item->setText(oldText);
     } else {
         if (!m_file->renameAttachment(oldText, text)) {
-            VUtils::showMessage(QMessageBox::Information,
+            VUtils::showMessage(QMessageBox::Warning,
                                 tr("Rename Attachment"),
                                 tr("Fail to rename attachment <span style=\"%1\">%2</span>.")
                                   .arg(g_config->c_dataTextStyle)
@@ -447,7 +463,7 @@ void VAttachmentList::handleListItemCommitData(QWidget *p_itemEdit)
                                 "",
                                 QMessageBox::Ok,
                                 QMessageBox::Ok,
-                                this);
+                                g_mainWin);
             // Recover to old name.
             item->setText(oldText);
         } else {
@@ -634,5 +650,51 @@ void VAttachmentList::init()
 
     setupUI();
 
+    QShortcut *infoShortcut = new QShortcut(QKeySequence(c_infoShortcutSequence), this);
+    infoShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(infoShortcut, &QShortcut::activated,
+            this, &VAttachmentList::attachmentInfo);
+
     updateContent();
+}
+
+void VAttachmentList::attachmentInfo()
+{
+    QListWidgetItem *item = m_attachmentList->currentItem();
+    if (!item) {
+        return;
+    }
+
+    QString oldName = item->data(Qt::UserRole).toString();
+    QString name = VUtils::promptForFileName(tr("Attachment Information"),
+                                             tr("Rename attachment (%1):").arg(oldName),
+                                             oldName,
+                                             [this](const QString &p_name) {
+                                                if (m_file->findAttachment(p_name, false) > -1) {
+                                                    return true;
+                                                }
+
+                                                return false;
+                                             },
+                                             g_mainWin);
+
+    if (name.isEmpty()) {
+        return;
+    }
+
+    if (!m_file->renameAttachment(oldName, name)) {
+        VUtils::showMessage(QMessageBox::Warning,
+                            tr("Attachment Information"),
+                            tr("Fail to rename attachment <span style=\"%1\">%2</span>.")
+                              .arg(g_config->c_dataTextStyle)
+                              .arg(oldName),
+                            "",
+                            QMessageBox::Ok,
+                            QMessageBox::Ok,
+                            g_mainWin);
+    } else {
+        // Change the data.
+        item->setData(Qt::UserRole, name);
+        item->setText(name);
+    }
 }

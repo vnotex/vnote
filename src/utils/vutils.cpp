@@ -1581,6 +1581,42 @@ QString VUtils::promptForFileName(const QString &p_title,
     return name;
 }
 
+QString VUtils::promptForFileName(const QString &p_title,
+                                  const QString &p_label,
+                                  const QString &p_default,
+                                  std::function<bool(const QString &p_name)> p_checkExistsFunc,
+                                  QWidget *p_parent)
+{
+    QString name = p_default;
+    QString text = p_label;
+    while (true) {
+        bool ok;
+        name = QInputDialog::getText(p_parent,
+                                     p_title,
+                                     text,
+                                     QLineEdit::Normal,
+                                     name,
+                                     &ok);
+        if (!ok || name.isEmpty()) {
+            return "";
+        }
+
+        if (!VUtils::checkFileNameLegal(name)) {
+            text = QObject::tr("Illegal name. Please try again:");
+            continue;
+        }
+
+        if (p_checkExistsFunc(name)) {
+            text = QObject::tr("Name already exists. Please try again:");
+            continue;
+        }
+
+        break;
+    }
+
+    return name;
+}
+
 bool VUtils::onlyHasImgInHtml(const QString &p_html)
 {
     // Tricky.

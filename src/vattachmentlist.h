@@ -50,6 +50,8 @@ private slots:
 
     void handleListItemCommitData(QWidget *p_itemEdit);
 
+    void attachmentInfo();
+
 private:
     void setupUI();
 
@@ -79,6 +81,8 @@ private:
     QListWidget *m_attachmentList;
 
     VNoteFile *m_file;
+
+    static const QString c_infoShortcutSequence;
 };
 
 #endif // VATTACHMENTLIST_H

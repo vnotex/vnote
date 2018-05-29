@@ -8,6 +8,8 @@
 #include <QMessageBox>
 #include <QUrl>
 #include <QDir>
+#include <functional>
+
 #include "vconfigmanager.h"
 #include "vconstants.h"
 
@@ -337,6 +339,12 @@ public:
                                      const QString &p_label,
                                      const QString &p_default,
                                      const QString &p_dir,
+                                     QWidget *p_parent = nullptr);
+
+    static QString promptForFileName(const QString &p_title,
+                                     const QString &p_label,
+                                     const QString &p_default,
+                                     std::function<bool(const QString &p_name)> p_checkExistsFunc,
                                      QWidget *p_parent = nullptr);
 
     // Whether @p_html has only <img> content.
