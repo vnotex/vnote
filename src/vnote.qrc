@@ -223,5 +223,6 @@
         <file>resources/icons/open_location.svg</file>
         <file>resources/icons/unstar.svg</file>
         <file>resources/icons/explore_root.svg</file>
+        <file>resources/icons/stay_on_top.svg</file>
     </qresource>
 </RCC>

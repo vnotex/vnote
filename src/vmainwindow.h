@@ -193,6 +193,8 @@ private slots:
     // Activate Universal Entry.
     void activateUniversalEntry();
 
+    void stayOnTop(bool p_enabled);
+
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 

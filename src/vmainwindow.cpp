@@ -381,6 +381,14 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
                 }
             });
 
+    QAction *stayOnTopAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/stay_on_top.svg"),
+                                        tr("Stay On Top"),
+                                        this);
+    stayOnTopAct->setStatusTip(tr("Toggle stay-on-top"));
+    stayOnTopAct->setCheckable(true);
+    connect(stayOnTopAct, &QAction::triggered,
+            this, &VMainWindow::stayOnTop);
+
     QAction *menuBarAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/menubar.svg"),
                                       tr("Menu Bar"),
                                       this);
@@ -396,6 +404,7 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
     QMenu *viewMenu = new QMenu(this);
     viewMenu->setToolTipsVisible(true);
     viewMenu->addAction(fullScreenAct);
+    viewMenu->addAction(stayOnTopAct);
     viewMenu->addAction(menuBarAct);
 
     expandViewAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/expand.svg"),
@@ -3186,4 +3195,26 @@ void VMainWindow::showNotebookPanel()
 {
     changePanelView(PanelViewState::VerticalMode);
     m_naviBox->setCurrentIndex(NAVI_BOX_NOTEBOOKS_IDX, false);
+}
+
+void VMainWindow::stayOnTop(bool p_enabled)
+{
+    bool shown = isVisible();
+    Qt::WindowFlags flags = this->windowFlags();
+
+#if defined(Q_OS_LINUX) || defined(Q_OS_UNIX)
+    Qt::WindowFlags magicFlag = Qt::WindowStaysOnTopHint | Qt::X11BypassWindowManagerHint;
+#else
+    Qt::WindowFlags magicFlag = Qt::WindowStaysOnTopHint;
+#endif
+
+    if (p_enabled) {
+        setWindowFlags(flags | magicFlag);
+    } else {
+        setWindowFlags(flags ^ magicFlag);
+    }
+
+    if (shown) {
+        show();
+    }
 }
