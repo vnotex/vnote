@@ -274,6 +274,10 @@ void VUniversalEntry::keyPressEvent(QKeyEvent *p_event)
 
         break;
 
+    case Qt::Key_Escape:
+        hide();
+        return;
+
     // Up/Down Ctrl+K/J to navigate to next item.
     case Qt::Key_Up:
         forward = false;
