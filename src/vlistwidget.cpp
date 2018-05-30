@@ -230,3 +230,11 @@ bool VListWidget::isSeparatorItem(const QListWidgetItem *p_item)
 {
     return p_item->type() == ItemTypeSeparator;
 }
+
+void VListWidget::moveItem(int p_srcRow, int p_destRow)
+{
+    QListWidgetItem *it = takeItem(p_srcRow);
+    if (it) {
+        insertItem(p_destRow, it);
+    }
+}

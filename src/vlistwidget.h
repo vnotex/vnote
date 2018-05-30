@@ -34,6 +34,8 @@ public:
 
     virtual QSize sizeHint() const Q_DECL_OVERRIDE;
 
+    virtual void moveItem(int p_srcRow, int p_destRow);
+
     void setFitContent(bool p_enabled);
 
     // Sort @p_list according to @p_sortedIdx.

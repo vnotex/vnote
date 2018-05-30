@@ -144,7 +144,7 @@ void VHistoryList::pinFolder(const QString &p_folder)
 void VHistoryList::addFilesInternal(const QStringList &p_files, bool p_isPinned)
 {
     for (auto const & file : p_files) {
-        // Find it in existing enries.
+        // Find it in existing entries.
         bool pinnedBefore = false;
         auto it = findFileInHistory(file);
         if (it != m_histories.end()) {

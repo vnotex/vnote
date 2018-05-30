@@ -47,6 +47,7 @@
 #include "dialog/vfixnotebookdialog.h"
 #include "vhistorylist.h"
 #include "vexplorer.h"
+#include "vlistue.h"
 
 extern VConfigManager *g_config;
 
@@ -2489,6 +2490,11 @@ QVector<VFile *> VMainWindow::openFiles(const QStringList &p_files,
     vfiles.reserve(p_files.size());
 
     for (int i = 0; i < p_files.size(); ++i) {
+        if (!QFileInfo::exists(p_files[i])) {
+            qWarning() << "file" << p_files[i] << "does not exist";
+            continue;
+        }
+
         VFile *file = NULL;
         if (!p_forceOrphan) {
             file = vnote->getInternalFile(p_files[i]);
@@ -3135,6 +3141,7 @@ void VMainWindow::initUniversalEntry()
     m_ue->registerEntry('h', searchUE, VSearchUE::Path_FolderNote_AllNotebook);
     m_ue->registerEntry('n', searchUE, VSearchUE::Path_FolderNote_CurrentNotebook);
     m_ue->registerEntry('m', new VListFolderUE(this), 0);
+    m_ue->registerEntry('j', new VListUE(this), VListUE::History);
     m_ue->registerEntry('?', new VHelpUE(this), 0);
 }
 

@@ -4,7 +4,7 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
-#include "vlistwidgetdoublerows.h"
+#include "vlistwidget.h"
 #include "vdirectory.h"
 #include "vdirectorytree.h"
 #include "vmainwindow.h"
@@ -14,39 +14,11 @@
 #include "vsearchue.h"
 #include "utils/vutils.h"
 #include "vnotebook.h"
+#include "vuetitlecontentpanel.h"
 
 extern VMainWindow *g_mainWin;
 
 extern VNote *g_vnote;
-
-VListFolderPanel::VListFolderPanel(QWidget *p_contentWidget,
-                                QWidget *p_parent)
-    : QWidget(p_parent)
-{
-    m_titleLabel = new QLabel(this);
-    m_titleLabel->setProperty("TitleLabel", true);
-
-    p_contentWidget->setParent(this);
-
-    QVBoxLayout *layout = new QVBoxLayout();
-    layout->addWidget(m_titleLabel);
-    layout->addWidget(p_contentWidget);
-
-    layout->setContentsMargins(0, 0, 0, 0);
-
-    setLayout(layout);
-}
-
-void VListFolderPanel::setTitleLabel(const QString &p_title)
-{
-    m_titleLabel->setText(p_title);
-}
-
-void VListFolderPanel::clearTitle()
-{
-    m_titleLabel->clear();
-}
-
 
 VListFolderUE::VListFolderUE(QObject *p_parent)
     : IUniversalEntry(p_parent),
@@ -72,12 +44,12 @@ void VListFolderUE::init()
     m_noteIcon = VIconUtils::treeViewIcon(":/resources/icons/note_item.svg");
     m_folderIcon = VIconUtils::treeViewIcon(":/resources/icons/dir_item.svg");
 
-    m_listWidget = new VListWidgetDoubleRows(m_widgetParent);
+    m_listWidget = new VListWidget(m_widgetParent);
     m_listWidget->setFitContent(true);
     connect(m_listWidget, SIGNAL(itemActivated(QListWidgetItem *)),
             this, SLOT(activateItem(QListWidgetItem *)));
 
-    m_panel = new VListFolderPanel(m_listWidget, m_widgetParent);
+    m_panel = new VUETitleContentPanel(m_listWidget, m_widgetParent);
     m_panel->hide();
 }
 
@@ -208,12 +180,11 @@ void VListFolderUE::addResultItem(const QSharedPointer<VSearchResultItem> &p_ite
 {
     m_data.append(p_item);
 
-    QString first, second;
+    QString text;
     if (p_item->m_text.isEmpty()) {
-        first = p_item->m_path;
+        text = p_item->m_path;
     } else {
-        first = p_item->m_text;
-        second = p_item->m_path;
+        text = p_item->m_text;
     }
 
     QIcon *icon = NULL;
@@ -230,9 +201,11 @@ void VListFolderUE::addResultItem(const QSharedPointer<VSearchResultItem> &p_ite
         break;
     }
 
-    QListWidgetItem *item = m_listWidget->addDoubleRowsItem(*icon, first, second);
+    QListWidgetItem *item = new QListWidgetItem(*icon, text);
     item->setData(Qt::UserRole, m_data.size() - 1);
     item->setToolTip(p_item->m_path);
+
+    m_listWidget->addItem(item);
 
     if (m_listWidget->count() == 1) {
         m_listWidget->setCurrentRow(0);
@@ -282,7 +255,7 @@ bool VListFolderUE::listFolder(const QString &p_path, const QString &p_cmd)
     m_data.clear();
 
     m_currentFolderPath = dir->fetchPath();
-    m_panel->setTitleLabel(m_currentFolderPath);
+    m_panel->setTitle(m_currentFolderPath);
 
     if (!dir->open()) {
         return true;

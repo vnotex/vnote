@@ -133,7 +133,9 @@ SOURCES += main.cpp\
     vmathjaxwebdocument.cpp \
     vmathjaxinplacepreviewhelper.cpp \
     vhistorylist.cpp \
-    vexplorer.cpp
+    vexplorer.cpp \
+    vlistue.cpp \
+    vuetitlecontentpanel.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -260,7 +262,9 @@ HEADERS  += vmainwindow.h \
     vhistorylist.h \
     vhistoryentry.h \
     vexplorer.h \
-    vexplorerentry.h
+    vexplorerentry.h \
+    vlistue.h \
+    vuetitlecontentpanel.h
 
 RESOURCES += \
     vnote.qrc \

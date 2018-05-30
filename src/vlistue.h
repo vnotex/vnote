@@ -1,23 +1,31 @@
-#ifndef VLISTFOLDERUE_H
-#define VLISTFOLDERUE_H
+#ifndef VLISTUE_H
+#define VLISTUE_H
 
 #include "iuniversalentry.h"
+
 #include <QWidget>
 #include <QIcon>
+#include <functional>
+#include <QSharedPointer>
 
 #include "vsearchconfig.h"
 
-class VListWidget;
+class VListWidgetDoubleRows;
 class QListWidgetItem;
 class QLabel;
 class VUETitleContentPanel;
 
-// Universal Entry to list contents of folder.
-class VListFolderUE : public IUniversalEntry
+class VListUE : public IUniversalEntry
 {
     Q_OBJECT
 public:
-    explicit VListFolderUE(QObject *p_parent = nullptr);
+    enum ID
+    {
+        // List and search the history.
+        History = 0
+    };
+
+    explicit VListUE(QObject *p_parent = nullptr);
 
     QString description(int p_id) const Q_DECL_OVERRIDE;
 
@@ -29,17 +37,9 @@ public:
 
     void selectNextItem(int p_id, bool p_forward) Q_DECL_OVERRIDE;
 
-    void selectParentItem(int p_id) Q_DECL_OVERRIDE;
-
     void activate(int p_id) Q_DECL_OVERRIDE;
 
     void sort(int p_id) Q_DECL_OVERRIDE;
-
-    void entryShown(int p_id, const QString &p_cmd) Q_DECL_OVERRIDE;
-
-    QString currentItemFolder(int p_id) Q_DECL_OVERRIDE;
-
-    void setFolderPath(const QString &p_path);
 
 protected:
     void init() Q_DECL_OVERRIDE;
@@ -52,23 +52,16 @@ private:
 
     const QSharedPointer<VSearchResultItem> &itemResultData(const QListWidgetItem *p_item) const;
 
-    bool listFolder(const QString &p_path, const QString &p_cmd);
+    void listHistory(const QString &p_cmd);
 
     QVector<QSharedPointer<VSearchResultItem> > m_data;
 
     QIcon m_noteIcon;
     QIcon m_folderIcon;
 
-    // Folder path to list.
-    // If empty, use current folder.
-    QString m_folderPath;
-
-    // Current folder path.
-    QString m_currentFolderPath;
-
-    VListWidget *m_listWidget;
+    VListWidgetDoubleRows *m_listWidget;
 
     VUETitleContentPanel *m_panel;
 };
 
-#endif // VLISTFOLDERUE_H
+#endif // VLISTUE_H

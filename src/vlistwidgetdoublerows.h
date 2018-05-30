@@ -23,7 +23,7 @@ public:
                                           const QString &p_firstRow,
                                           const QString &p_secondRow);
 
-    void moveItem(int p_srcRow, int p_destRow);
+    void moveItem(int p_srcRow, int p_destRow) Q_DECL_OVERRIDE;
 
     void clearAll() Q_DECL_OVERRIDE;
 };
