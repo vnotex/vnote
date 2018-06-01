@@ -290,7 +290,7 @@ void VAttachmentList::handleContextMenuRequested(QPoint p_pos)
         QAction *fileInfoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/note_info.svg"),
                                            tr("&Info (Rename)\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)),
                                            &menu);
-        fileInfoAct->setToolTip(tr("View and edit current folder's information"));
+        fileInfoAct->setToolTip(tr("View and edit current attachment's information"));
         connect(fileInfoAct, &QAction::triggered,
                 this, &VAttachmentList::attachmentInfo);
         menu.addAction(fileInfoAct);
