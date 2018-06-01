@@ -144,7 +144,7 @@ void VSnippetList::handleContextMenuRequested(QPoint p_pos)
             menu.addAction(applyAct);
 
             QAction *infoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/snippet_info.svg"),
-                                           tr("&Info\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)),
+                                           tr("&Info (Rename)\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)),
                                            &menu);
             infoAct->setToolTip(tr("View and edit snippet's information"));
             connect(infoAct, &QAction::triggered,

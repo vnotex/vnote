@@ -487,7 +487,7 @@ void VNotebookSelector::popupListContextMenuRequested(QPoint p_pos)
 
     if (nb->isValid()) {
         QAction *notebookInfoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/notebook_info.svg"),
-                                               tr("&Info"),
+                                               tr("&Info (Rename)"),
                                                &menu);
         notebookInfoAct->setToolTip(tr("View and edit current notebook's information"));
         connect(notebookInfoAct, SIGNAL(triggered(bool)),

@@ -445,7 +445,7 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
         menu.addAction(pinToHistoryAct);
 
         QAction *dirInfoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/dir_info.svg"),
-                                          tr("&Info\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)),
+                                          tr("&Info (Rename)\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)),
                                           &menu);
         dirInfoAct->setToolTip(tr("View and edit current folder's information"));
         connect(dirInfoAct, &QAction::triggered,

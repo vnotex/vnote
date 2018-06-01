@@ -475,7 +475,7 @@ void VExplorer::handleContextMenuRequested(QPoint p_pos)
         menu.addSeparator();
 
         QAction *fileInfoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/note_info.svg"),
-                                           tr("&Info\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)),
+                                           tr("&Info (Rename)\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)),
                                            &menu);
         fileInfoAct->setToolTip(tr("View and edit current folder's information"));
         connect(fileInfoAct, &QAction::triggered,
@@ -573,7 +573,7 @@ void VExplorer::handleContextMenuRequested(QPoint p_pos)
 
     if (selectedFiles.size() == 1) {
         QAction *fileInfoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/note_info.svg"),
-                                           tr("&Info\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)),
+                                           tr("&Info (Rename)\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)),
                                            &menu);
         fileInfoAct->setToolTip(tr("View and edit current file's information"));
         connect(fileInfoAct, &QAction::triggered,
