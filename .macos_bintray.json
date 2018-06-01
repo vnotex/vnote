@@ -16,10 +16,10 @@
     },
 
     "version": {
-        "name": "1.16",
+        "name": "1.17",
         "desc": "VNote Releases",
-        "released": "2018-05-11",
-        "vcs_tag": "1.16",
+        "released": "2018-06-01",
+        "vcs_tag": "1.17",
         "gpgSign": false
     },
 
