@@ -1,4 +1,18 @@
 # Changes History
+## v1.17
+- Add **History** to browse history;
+- Add **Explorer** to browse external files;
+- Support view order in note list;
+- Support relative path for notebook;
+- UniversalEntry
+    - Fix input method issue on macOS;
+    - Add `j` for listing and searching History;
+- Support customized zoom delta of editor;
+- Add cache for in-place preview;
+- Better support for hiDPI;
+- Lazy initialization;
+- Support stay-on-top;
+
 ## v1.16
 - Markdown-it: supports specifying image size, emoji, and YAML metadata;
 - Bug fixes;
