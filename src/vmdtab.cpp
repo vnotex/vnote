@@ -709,9 +709,16 @@ void VMdTab::clearSearchedWordHighlight()
     }
 }
 
-void VMdTab::handleWebKeyPressed(int p_key, bool p_ctrl, bool p_shift)
+void VMdTab::handleWebKeyPressed(int p_key, bool p_ctrl, bool p_shift, bool p_meta)
 {
     V_ASSERT(m_webViewer);
+
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    bool macCtrl = p_meta;
+#else
+    Q_UNUSED(p_meta);
+    bool macCtrl = false;
+#endif
 
     switch (p_key) {
     // Esc
@@ -721,7 +728,7 @@ void VMdTab::handleWebKeyPressed(int p_key, bool p_ctrl, bool p_shift)
 
     // Dash
     case 189:
-        if (p_ctrl) {
+        if (p_ctrl || macCtrl) {
             // Zoom out.
             zoomWebPage(false);
         }
@@ -730,7 +737,7 @@ void VMdTab::handleWebKeyPressed(int p_key, bool p_ctrl, bool p_shift)
 
     // Equal
     case 187:
-        if (p_ctrl) {
+        if (p_ctrl || macCtrl) {
             // Zoom in.
             zoomWebPage(true);
         }
@@ -739,7 +746,7 @@ void VMdTab::handleWebKeyPressed(int p_key, bool p_ctrl, bool p_shift)
 
     // 0
     case 48:
-        if (p_ctrl) {
+        if (p_ctrl || macCtrl) {
             // Recover zoom.
             m_webViewer->setZoomFactor(1);
         }

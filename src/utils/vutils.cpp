@@ -794,6 +794,14 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
 
     extraFile += "<script>var VStylesToInline = '" + g_config->getStylesToInlineWhenCopied() + "';</script>\n";
 
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    extraFile += "<script>var VOS = 'mac';</script>\n";
+#elif defined(Q_OS_WIN)
+    extraFile += "<script>var VOS = 'win';</script>\n";
+#else
+    extraFile += "<script>var VOS = 'linux';</script>\n";
+#endif
+
     QString htmlTemplate(p_template);
     htmlTemplate.replace(HtmlHolder::c_JSHolder, jsFile);
     if (!extraFile.isEmpty()) {

@@ -131,7 +131,7 @@ private slots:
     void updateCurrentHeader(int p_blockNumber);
 
     // Handle key press event in Web view.
-    void handleWebKeyPressed(int p_key, bool p_ctrl, bool p_shift);
+    void handleWebKeyPressed(int p_key, bool p_ctrl, bool p_shift, bool p_meta);
 
     // m_editor requests to save changes and enter read mode.
     void saveAndRead();

@@ -81,7 +81,7 @@ public slots:
     void setHeader(const QString &anchor);
 
     void setLog(const QString &p_log);
-    void keyPressEvent(int p_key, bool p_ctrl, bool p_shift);
+    void keyPressEvent(int p_key, bool p_ctrl, bool p_shift, bool p_meta);
     void updateText();
 
     void highlightTextCB(const QString &p_html, int p_id, int p_timeStamp);
@@ -126,7 +126,7 @@ signals:
 
     void logChanged(const QString &p_log);
 
-    void keyPressed(int p_key, bool p_ctrl, bool p_shift);
+    void keyPressed(int p_key, bool p_ctrl, bool p_shift, bool p_meta);
 
     void requestHighlightText(const QString &p_text, int p_id, int p_timeStamp);
 

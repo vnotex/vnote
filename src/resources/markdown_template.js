@@ -88,6 +88,10 @@ if (typeof VAddTOC == 'undefined') {
     VAddTOC = false;
 }
 
+if (typeof VOS == 'undefined') {
+    VOS = 'win';
+}
+
 // Whether highlight special blocks like puml, flowchart.
 var highlightSpecialBlocks = false;
 
@@ -287,6 +291,7 @@ document.onkeydown = function(e) {
     var key;
     var shift;
     var ctrl;
+    var meta;
     if (e.which) {
         key = e.which;
     } else {
@@ -295,12 +300,14 @@ document.onkeydown = function(e) {
 
     shift = !!e.shiftKey;
     ctrl = !!e.ctrlKey;
+    meta = !!e.metaKey;
     switch (key) {
     // Skip Ctrl, Shift, Alt, Supper.
     case 16:
     case 17:
     case 18:
     case 91:
+    case 92:
         clear = false;
         break;
 
@@ -326,7 +333,7 @@ document.onkeydown = function(e) {
     case 104:
     case 105:
     {
-        if (pendingKeys.length != 0 || ctrl || shift) {
+        if (pendingKeys.length != 0 || ctrl || shift || meta) {
             accept = false;
             break;
         }
@@ -338,7 +345,7 @@ document.onkeydown = function(e) {
     }
 
     case 74: // J
-        if (!ctrl && !shift) {
+        if (!ctrl && !shift && !meta) {
             window.scrollBy(0, 100);
             break;
         }
@@ -347,7 +354,7 @@ document.onkeydown = function(e) {
         break;
 
     case 75: // K
-        if (!ctrl && !shift) {
+        if (!ctrl && !shift && !meta) {
             window.scrollBy(0, -100);
             break;
         }
@@ -356,7 +363,7 @@ document.onkeydown = function(e) {
         break;
 
     case 72: // H
-        if (!ctrl && !shift) {
+        if (!ctrl && !shift && !meta) {
             window.scrollBy(-100, 0);
             break;
         }
@@ -365,7 +372,7 @@ document.onkeydown = function(e) {
         break;
 
     case 76: // L
-        if (!ctrl && !shift) {
+        if (!ctrl && !shift && !meta) {
             window.scrollBy(100, 0);
             break;
         }
@@ -381,7 +388,7 @@ document.onkeydown = function(e) {
                 window.scrollTo(scrollLeft, scrollHeight);
                 break;
             }
-        } else if (!ctrl) {
+        } else if (!ctrl && !meta) {
             if (pendingKeys.length == 0) {
                 // First g, pend it.
                 pendingKeys.push({
@@ -440,7 +447,7 @@ document.onkeydown = function(e) {
                     break;
                 }
             }
-        } else if (!ctrl) {
+        } else if (!ctrl && !meta) {
             // [
             if (pendingKeys.length == 0) {
                 // First [, pend it.
@@ -483,7 +490,7 @@ document.onkeydown = function(e) {
                     break;
                 }
             }
-        } else if (!ctrl) {
+        } else if (!ctrl && !meta) {
             // ]
             if (pendingKeys.length == 0) {
                 // First ], pend it.
@@ -526,7 +533,7 @@ document.onkeydown = function(e) {
     if (accept) {
         e.preventDefault();
     } else {
-        content.keyPressEvent(key, ctrl, shift);
+        content.keyPressEvent(key, ctrl, shift, meta);
     }
 };
 
@@ -994,9 +1001,10 @@ var vds_scrolled = false;
 
 window.onmousedown = function(e) {
     e = e || window.event;
+    var isCtrl = VOS == 'mac' ? e.metaKey : e.ctrlKey;
     // Left button and Ctrl key.
     if (e.buttons == 1
-        && e.ctrlKey
+        && isCtrl
         && window.getSelection().type != 'Range') {
         vds_oriMouseClientX = e.clientX;
         vds_oriMouseClientY = e.clientY;

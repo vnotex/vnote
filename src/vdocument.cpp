@@ -69,9 +69,9 @@ void VDocument::setLog(const QString &p_log)
     emit logChanged(p_log);
 }
 
-void VDocument::keyPressEvent(int p_key, bool p_ctrl, bool p_shift)
+void VDocument::keyPressEvent(int p_key, bool p_ctrl, bool p_shift, bool p_meta)
 {
-    emit keyPressed(p_key, p_ctrl, p_shift);
+    emit keyPressed(p_key, p_ctrl, p_shift, p_meta);
 }
 
 void VDocument::highlightTextAsync(const QString &p_text, int p_id, int p_timeStamp)
