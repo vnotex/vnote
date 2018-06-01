@@ -94,6 +94,9 @@ private:
     bool loadFlashAnchor();
     bool saveFlashAnchor();
 
+    bool loadEditorZoomDelta();
+    bool saveEditorZoomDelta();
+
     // Web zoom factor.
     QCheckBox *m_customWebZoom;
     QDoubleSpinBox *m_webZoomFactorSpin;
@@ -106,6 +109,9 @@ private:
 
     // Auto save.
     QCheckBox *m_autoSave;
+
+    // Editor zoom delta.
+    QSpinBox *m_editorZoomDeltaSpin;
 
     QGroupBox *m_readBox;
     QGroupBox *m_editBox;

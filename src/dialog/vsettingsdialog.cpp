@@ -546,6 +546,13 @@ VReadEditTab::VReadEditTab(QWidget *p_parent)
     connect(m_autoSave, &QCheckBox::stateChanged,
             this, &VReadEditTab::showTipsAboutAutoSave);
 
+    // Editor zoom delta.
+    m_editorZoomDeltaSpin = new QSpinBox();
+    m_editorZoomDeltaSpin->setToolTip(tr("Set the zoom delta of the editor font"));
+    m_editorZoomDeltaSpin->setMaximum(c_editorZoomDeltaMax);
+    m_editorZoomDeltaSpin->setMinimum(c_editorZoomDeltaMin);
+    m_editorZoomDeltaSpin->setSingleStep(1);
+
     QVBoxLayout *readLayout = new QVBoxLayout();
     readLayout->addLayout(zoomFactorLayout);
     readLayout->addWidget(m_flashAnchor);
@@ -554,6 +561,7 @@ VReadEditTab::VReadEditTab(QWidget *p_parent)
     QFormLayout *editLayout = new QFormLayout();
     editLayout->addRow(m_swapFile);
     editLayout->addRow(m_autoSave);
+    editLayout->addRow(tr("Editor zoom delta:"), m_editorZoomDeltaSpin);
     m_editBox->setLayout(editLayout);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
@@ -592,6 +600,10 @@ bool VReadEditTab::loadConfiguration()
         return false;
     }
 
+    if (!loadEditorZoomDelta()) {
+        return false;
+    }
+
     return true;
 }
 
@@ -610,6 +622,10 @@ bool VReadEditTab::saveConfiguration()
     }
 
     if (!saveAutoSave()) {
+        return false;
+    }
+
+    if (!saveEditorZoomDelta()) {
         return false;
     }
 
@@ -643,6 +659,18 @@ bool VReadEditTab::saveWebZoomFactor()
         g_config->setWebZoomFactor(-1);
     }
 
+    return true;
+}
+
+bool VReadEditTab::loadEditorZoomDelta()
+{
+    m_editorZoomDeltaSpin->setValue(g_config->getEditorZoomDelta());
+    return true;
+}
+
+bool VReadEditTab::saveEditorZoomDelta()
+{
+    g_config->setEditorZoomDelta(m_editorZoomDeltaSpin->value());
     return true;
 }
 

@@ -130,6 +130,8 @@ void VConfigManager::initialize()
         qDebug() << "set WebZoomFactor to" << m_webZoomFactor;
     }
 
+    m_editorZoomDelta = getConfigFromSettings("global", "editor_zoom_delta").toInt();
+
     m_enableCodeBlockHighlight = getConfigFromSettings("global",
                                                        "enable_code_block_highlight").toBool();
 

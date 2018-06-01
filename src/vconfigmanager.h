@@ -228,6 +228,9 @@ public:
     void setWebZoomFactor(qreal p_factor);
     bool isCustomWebZoomFactor();
 
+    int getEditorZoomDelta() const;
+    void setEditorZoomDelta(int p_delta);
+
     const QString &getEditorCurrentLineBg() const;
 
     const QString &getEditorTrailingSpaceBg() const;
@@ -671,6 +674,9 @@ private:
 
     // Zoom factor of the QWebEngineView.
     qreal m_webZoomFactor;
+
+    // Editor zoom delta.
+    int m_editorZoomDelta;
 
     // Current line background color in editor.
     QString m_editorCurrentLineBg;
@@ -1447,6 +1453,21 @@ inline bool VConfigManager::isCustomWebZoomFactor()
     qreal factorFromIni = getConfigFromSettings("global", "web_zoom_factor").toReal();
     // -1 indicates let system automatically calculate the factor.
     return factorFromIni > 0;
+}
+
+inline int VConfigManager::getEditorZoomDelta() const
+{
+    return m_editorZoomDelta;
+}
+
+inline void VConfigManager::setEditorZoomDelta(int p_delta)
+{
+    if (m_editorZoomDelta == p_delta) {
+        return;
+    }
+
+    m_editorZoomDelta = p_delta;
+    setConfigToSettings("global", "editor_zoom_delta", m_editorZoomDelta);
 }
 
 inline const QString &VConfigManager::getEditorCurrentLineBg() const

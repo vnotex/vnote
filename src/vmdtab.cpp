@@ -475,6 +475,13 @@ void VMdTab::setupMarkdownEditor()
     m_editor = new VMdEditor(m_file, m_document, m_mdConType, this);
     m_editor->setProperty("MainEditor", true);
     m_editor->setEditTab(this);
+    int delta = g_config->getEditorZoomDelta();
+    if (delta > 0) {
+        m_editor->zoomInW(delta);
+    } else if (delta < 0) {
+        m_editor->zoomOutW(-delta);
+    }
+
     connect(m_editor, &VMdEditor::headersChanged,
             this, &VMdTab::updateOutlineFromHeaders);
     connect(m_editor, SIGNAL(currentHeaderChanged(int)),
