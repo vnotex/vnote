@@ -67,6 +67,8 @@ private:
 
     void renameFile(const QString &p_filePath);
 
+    void setAsRootDirectory(const QString &p_path);
+
     bool m_initialized;
 
     bool m_uiInitialized;

@@ -194,6 +194,12 @@ void VExplorer::setupUI()
                 if (!model->isDir(p_index)) {
                     QStringList files;
                     files << model->filePath(p_index);
+
+                    // If there is no directory entry currently, new one using the parent dir.
+                    if (m_index == -1 || m_entries.isEmpty()) {
+                        setAsRootDirectory(VUtils::basePathFromPath(files[0]));
+                    }
+
                     openFiles(files, g_config->getNoteOpenMode());
                 }
             });
@@ -454,11 +460,7 @@ void VExplorer::handleContextMenuRequested(QPoint p_pos)
         setRootAct->setToolTip(tr("Set current folder as the root directory to explore"));
         connect(setRootAct, &QAction::triggered,
                 this, [this, filePath]() {
-                    int idx = addEntry(filePath);
-                    updateDirectoryComboBox();
-                    if (idx != -1) {
-                        setCurrentEntry(idx);
-                    }
+                    setAsRootDirectory(filePath);
                 });
         menu.addAction(setRootAct);
 
@@ -752,5 +754,20 @@ void VExplorer::renameFile(const QString &p_filePath)
                             QMessageBox::Ok,
                             g_mainWin);
         return;
+    }
+}
+
+void VExplorer::setAsRootDirectory(const QString &p_path)
+{
+    if (p_path.isEmpty()) {
+        return;
+    }
+
+    qDebug() << "set new root directory" << p_path;
+
+    int idx = addEntry(p_path);
+    updateDirectoryComboBox();
+    if (idx != -1) {
+        setCurrentEntry(idx);
     }
 }
