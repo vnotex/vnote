@@ -169,8 +169,13 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
     // Set current block's user data.
     updateBlockUserData(blockNum, text);
 
+    int preState = previousBlockState();
+    bool inCodeblock = preState == HighlightBlockState::CodeBlock
+                       || preState == HighlightBlockState::CodeBlockStart;
+
     // If it is a block inside HTML comment, just skip it.
-    if (isBlockInsideCommentRegion(curBlock)) {
+    // Pay attention to distinguish the HTML comments inside a fenced code block.
+    if (!inCodeblock && isBlockInsideCommentRegion(curBlock)) {
         setCurrentBlockState(HighlightBlockState::Comment);
         goto exit;
     }
