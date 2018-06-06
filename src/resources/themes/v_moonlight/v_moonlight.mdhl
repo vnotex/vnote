@@ -19,7 +19,7 @@ background: 282c34
 trailing-space: 636d81
 # [VNote] Style for line number
 line-number-background: 2c313a
-line-number-foreground: 5c6370
+line-number-foreground: 6e7686
 # [VNote] Style for selected word highlight
 selected-word-foreground: 222222
 selected-word-background: dfdf00
@@ -127,7 +127,7 @@ HTML_ENTITY
 foreground: abb2bf
 
 COMMENT
-foreground: 5c6370
+foreground: 6e7686
 
 VERBATIM
 foreground: 98c379
@@ -135,8 +135,8 @@ font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
 # [VNote] Codeblock sylte from HighlightJS (bold, italic, underlined, strikeout, color)
 # The last occurence of the same attribute takes effect
 # Could specify multiple attribute in one line
-hljs-comment: 5c6370
-hljs-quote: 5c6370
+hljs-comment: 6e7686
+hljs-quote: 6e7686
 hljs-doctag: c678dd
 hljs-keyword: c678dd
 hljs-formula: c678dd
@@ -171,7 +171,7 @@ hljs-emphasis: italic
 hljs-strong: bold
 
 BLOCKQUOTE
-foreground: 5c6370
+foreground: 6e7686
 
 STRIKE
 foreground: e57373

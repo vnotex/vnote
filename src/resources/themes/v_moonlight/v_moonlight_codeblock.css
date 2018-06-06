@@ -3,7 +3,7 @@
 Atom One Dark by Daniel Gamage
 Original One Dark Syntax theme from https://github.com/atom/one-dark-syntax
 
-base:    #2c313a
+base:    #343a45
 mono-1:  #abb2bf
 mono-2:  #818896
 mono-3:  #5c6370
@@ -23,12 +23,12 @@ hue-6-2: #e6c07b
   overflow-x: auto;
   padding: 0.5em;
   color: #abb2bf;
-  background: #2c313a;
+  background: #343a45;
 }
 
 .hljs-comment,
 .hljs-quote {
-  color: #5c6370;
+  color: #6e7686;
   font-style: italic;
 }
 
