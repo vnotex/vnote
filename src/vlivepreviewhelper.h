@@ -23,7 +23,15 @@ public:
 
     void updateInplacePreview(const VEditor *p_editor,
                               const QTextDocument *p_doc,
-                              const QPixmap &p_image);
+                              const QPixmap &p_image,
+                              const QString &p_background);
+
+    void updateInplacePreview(const VEditor *p_editor,
+                              const QTextDocument *p_doc,
+                              const QPixmap &p_image)
+    {
+        updateInplacePreview(p_editor, p_doc, p_image, QString());
+    }
 
     VCodeBlock &codeBlock()
     {

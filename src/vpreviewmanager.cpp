@@ -395,7 +395,8 @@ void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
                                               link.m_padding,
                                               !link.m_isBlock,
                                               name,
-                                              m_editor->imageSize(name));
+                                              m_editor->imageSize(name),
+                                              QString());
         bool tsUpdated = blockData->insertPreviewInfo(info);
         imageCache(PreviewSource::ImageLink).insert(name, p_timeStamp);
         if (!tsUpdated) {
@@ -441,7 +442,8 @@ void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
                                               img->m_padding,
                                               !img->m_isBlock,
                                               name,
-                                              m_editor->imageSize(name));
+                                              m_editor->imageSize(name),
+                                              img->m_background);
         bool tsUpdated = blockData->insertPreviewInfo(info);
         imageCache(p_source).insert(name, p_timeStamp);
         if (!tsUpdated) {

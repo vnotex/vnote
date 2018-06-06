@@ -674,6 +674,10 @@ void VTextDocumentLayout::layoutInlineImage(const VPreviewedImageInfo *p_info,
         ipi.m_rect = QRectF(QPointF(p_xStart,
                                     p_heightInBlock + p_imageSpaceHeight - size.height()),
                             size);
+        if (!p_info->m_background.isEmpty()) {
+            ipi.m_background = QColor(p_info->m_background);
+        }
+
         p_images.append(ipi);
     }
 }
@@ -820,6 +824,9 @@ QRectF VTextDocumentLayout::blockRectFromTextLayout(const QTextBlock &p_block,
                                                  br.height() + m_lineLeading,
                                                  size.width(),
                                                  size.height());
+                        if (!img.m_background.isEmpty()) {
+                            p_image->m_background = QColor(img.m_background);
+                        }
                     }
 
                     int dw = padding + size.width() + m_margin - br.width();
@@ -931,6 +938,12 @@ void VTextDocumentLayout::drawImages(QPainter *p_painter,
                                                p_offset.y(),
                                                p_offset.x(),
                                                p_offset.y()).toRect();
+
+        // Qt do not render the background of some SVGs.
+        // We add a forced background mechanism to complement this.
+        if (img.hasForcedBackground()) {
+            p_painter->fillRect(targetRect, img.m_background);
+        }
 
         p_painter->drawPixmap(targetRect, *image);
     }

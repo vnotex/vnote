@@ -25,6 +25,7 @@ struct VImageToPreview
         m_padding = 0;
         m_image = QPixmap();
         m_name.clear();
+        m_background.clear();
         m_isBlock = true;
     };
 
@@ -44,6 +45,9 @@ struct VImageToPreview
 
     // If @m_name are the same, then they are the same imges.
     QString m_name;
+
+    // If not empty, we should draw a background before drawing this image.
+    QString m_background;
 
     // Whether it is an image block.
     bool m_isBlock;

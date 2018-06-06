@@ -327,6 +327,8 @@ public:
 
     const QString &getEditorPreviewImageLineFg() const;
 
+    const QString &getEditorPreviewImageBg() const;
+
     const QString &getEditorMathjaxFg() const;
 
     bool getEnableCodeBlockLineNumber() const;
@@ -811,6 +813,9 @@ private:
 
     // The foreground color of the preview image line.
     QString m_editorPreviewImageLineFg;
+
+    // The forced background color of the preview image. Can be empty.
+    QString m_editorPreviewImageBg;
 
     // The foreground color of the MathJax.
     QString m_editorMathjaxFg;
@@ -1895,6 +1900,11 @@ inline const QString &VConfigManager::getEditorColorColumnFg() const
 inline const QString &VConfigManager::getEditorPreviewImageLineFg() const
 {
     return m_editorPreviewImageLineFg;
+}
+
+inline const QString &VConfigManager::getEditorPreviewImageBg() const
+{
+    return m_editorPreviewImageBg;
 }
 
 inline const QString &VConfigManager::getEditorMathjaxFg() const

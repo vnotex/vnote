@@ -40,7 +40,8 @@ CodeBlockPreviewInfo::CodeBlockPreviewInfo(const VCodeBlock &p_cb)
 
 void CodeBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
                                                 const QTextDocument *p_doc,
-                                                const QPixmap &p_image)
+                                                const QPixmap &p_image,
+                                                const QString &p_background)
 {
     QTextBlock block = p_doc->findBlockByNumber(m_codeBlock.m_endBlock);
     if (block.isValid()) {
@@ -53,6 +54,7 @@ void CodeBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
         preview->m_padding = VPreviewManager::calculateBlockMargin(block,
                                                                    p_editor->tabStopWidthW());
         preview->m_name = QString::number(getImageIndex());
+        preview->m_background = p_background;
         preview->m_isBlock = true;
 
         preview->m_image = p_image;
@@ -158,7 +160,16 @@ void VLivePreviewHelper::updateCodeBlocks(const QVector<VCodeBlock> &p_codeBlock
             entry->m_ts = m_timeStamp;
             cached = true;
             m_codeBlocks[idx].setImageData(entry->m_imgFormat, entry->m_imgData);
-            m_codeBlocks[idx].updateInplacePreview(m_editor, m_doc, entry->m_image);
+
+            QString background;
+            if (vcb.m_lang == "puml") {
+                background = g_config->getEditorPreviewImageBg();
+            }
+
+            m_codeBlocks[idx].updateInplacePreview(m_editor,
+                                                   m_doc,
+                                                   entry->m_image,
+                                                   background);
         }
 
         if (m_inplacePreviewEnabled
@@ -323,13 +334,20 @@ void VLivePreviewHelper::localAsyncResultReady(int p_id,
 
     Q_UNUSED(p_format);
     Q_ASSERT(p_format == "svg");
-    int idx = p_id & INDEX_MASK;
-    bool livePreview = (p_id & TYPE_MASK) == TYPE_LIVE_PREVIEW;
-    QString lang;
 
+    int idx = p_id & INDEX_MASK;
+    if (idx >= m_codeBlocks.size()) {
+        return;
+    }
+
+    bool livePreview = (p_id & TYPE_MASK) == TYPE_LIVE_PREVIEW;
+
+    QString lang;
+    QString background;
     switch (p_id & LANG_PREFIX_MASK) {
     case LANG_PREFIX_PLANTUML:
         lang = "puml";
+        background = g_config->getEditorPreviewImageBg();
         break;
 
     case LANG_PREFIX_GRAPHVIZ:
@@ -337,10 +355,6 @@ void VLivePreviewHelper::localAsyncResultReady(int p_id,
         break;
 
     default:
-        return;
-    }
-
-    if (idx >= m_codeBlocks.size()) {
         return;
     }
 
@@ -354,7 +368,7 @@ void VLivePreviewHelper::localAsyncResultReady(int p_id,
     m_cache.insert(text, entry);
 
     cb.setImageData(p_format, p_result);
-    cb.updateInplacePreview(m_editor, m_doc, entry->m_image);
+    cb.updateInplacePreview(m_editor, m_doc, entry->m_image, background);
 
     if (livePreview) {
         if (idx != m_cbIndex) {

@@ -634,6 +634,7 @@ void VConfigManager::updateMarkdownEditStyle()
     m_editorColorColumnBg = defaultColor;
     m_editorColorColumnFg = defaultColor;
     m_editorPreviewImageLineFg = defaultColor;
+    m_editorPreviewImageBg.clear();
     m_editorMathjaxFg = defaultColor;
 
     auto editorIt = styles.find("editor");
@@ -706,6 +707,11 @@ void VConfigManager::updateMarkdownEditStyle()
         it = editorIt->find("preview-image-line-foreground");
         if (it != editorIt->end()) {
             m_editorPreviewImageLineFg = "#" + *it;
+        }
+
+        it = editorIt->find("preview-image-background");
+        if (it != editorIt->end()) {
+            m_editorPreviewImageBg = "#" + *it;
         }
 
         it = editorIt->find("mathjax-foreground");

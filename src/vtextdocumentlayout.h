@@ -99,9 +99,17 @@ private:
         // Name of the image.
         QString m_name;
 
-        bool isValid()
+        // Forced background.
+        QColor m_background;
+
+        bool isValid() const
         {
             return !m_name.isEmpty();
+        }
+
+        bool hasForcedBackground() const
+        {
+            return m_background.isValid();
         }
     };
 

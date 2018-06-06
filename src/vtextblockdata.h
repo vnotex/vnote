@@ -30,13 +30,15 @@ struct VPreviewedImageInfo
                         int p_padding,
                         bool p_inline,
                         const QString &p_imageName,
-                        const QSize &p_imageSize)
+                        const QSize &p_imageSize,
+                        const QString &p_background)
         : m_startPos(p_startPos),
           m_endPos(p_endPos),
           m_padding(p_padding),
           m_inline(p_inline),
           m_imageName(p_imageName),
-          m_imageSize(p_imageSize)
+          m_imageSize(p_imageSize),
+          m_background(p_background)
     {
     }
 
@@ -52,7 +54,8 @@ struct VPreviewedImageInfo
                && m_padding == a.m_padding
                && m_inline == a.m_inline
                && m_imageName == a.m_imageName
-               && m_imageSize == a.m_imageSize;
+               && m_imageSize == a.m_imageSize
+               && m_background == a.m_background;
     }
 
     bool intersect(const VPreviewedImageInfo &a) const
@@ -62,14 +65,15 @@ struct VPreviewedImageInfo
 
     QString toString() const
     {
-        return QString("previewed image (%1): [%2, %3] padding %4 inline %5 (%6,%7)")
+        return QString("previewed image (%1): [%2, %3] padding %4 inline %5 (%6,%7) bg(%8)")
                       .arg(m_imageName)
                       .arg(m_startPos)
                       .arg(m_endPos)
                       .arg(m_padding)
                       .arg(m_inline)
                       .arg(m_imageSize.width())
-                      .arg(m_imageSize.height());
+                      .arg(m_imageSize.height())
+                      .arg(m_background);
     }
 
     // Start position of text corresponding to the image within block.
@@ -89,6 +93,9 @@ struct VPreviewedImageInfo
 
     // Image size of the image. Cache for performance.
     QSize m_imageSize;
+
+    // Forced background before drawing this image.
+    QString m_background;
 };
 
 
@@ -107,7 +114,8 @@ struct VPreviewInfo
                  int p_padding,
                  bool p_inline,
                  const QString &p_imageName,
-                 const QSize &p_imageSize)
+                 const QSize &p_imageSize,
+                 const QString &p_background)
         : m_source(p_source),
           m_timeStamp(p_timeStamp),
           m_imageInfo(p_startPos,
@@ -115,7 +123,8 @@ struct VPreviewInfo
                       p_padding,
                       p_inline,
                       p_imageName,
-                      p_imageSize)
+                      p_imageSize,
+                      p_background)
     {
     }
 
