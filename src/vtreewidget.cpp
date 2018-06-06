@@ -197,7 +197,7 @@ void VTreeWidget::clearItemsHighlight()
 
 void VTreeWidget::selectHitItem(void *p_item)
 {
-    setCurrentItem(static_cast<QTreeWidgetItem *>(p_item));
+    setCurrentItem(static_cast<QTreeWidgetItem *>(p_item), 0, QItemSelectionModel::ClearAndSelect);
 }
 
 // Count the total number of tree @p_item.
@@ -301,13 +301,13 @@ void VTreeWidget::selectNextItem(bool p_forward)
 
     QTreeWidgetItem *item = currentItem();
     if (!item) {
-        setCurrentItem(topLevelItem(0));
+        setCurrentItem(topLevelItem(0), 0, QItemSelectionModel::ClearAndSelect);
         return;
     }
 
     QTreeWidgetItem *nItem = nextItem(item, p_forward);
     if (nItem) {
-        setCurrentItem(nItem);
+        setCurrentItem(nItem, 0, QItemSelectionModel::ClearAndSelect);
     }
 }
 
@@ -341,7 +341,7 @@ void VTreeWidget::selectParentItem()
     if (item) {
         QTreeWidgetItem *pitem = item->parent();
         if (pitem) {
-            setCurrentItem(pitem);
+            setCurrentItem(pitem, 0, QItemSelectionModel::ClearAndSelect);
         }
     }
 }

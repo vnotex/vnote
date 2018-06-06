@@ -170,7 +170,7 @@ void VListWidget::selectNextItem(bool p_forward)
         cur = count() - 1;
     }
 
-    setCurrentRow(cur);
+    setCurrentRow(cur, QItemSelectionModel::ClearAndSelect);
 }
 
 void VListWidget::sortListWidget(QListWidget *p_list, const QVector<int> &p_sortedIdx)
