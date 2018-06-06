@@ -19,6 +19,7 @@ VUETitleContentPanel::VUETitleContentPanel(QWidget *p_contentWidget,
     layout->addWidget(p_contentWidget);
 
     layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
 
     setLayout(layout);
 }

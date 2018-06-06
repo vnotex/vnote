@@ -596,10 +596,12 @@ VSelectorItemWidget QLabel[SelectorItemShortcutLabel="true"] {
 }
 
 VDoubleRowItemWidget QLabel[FirstRowLabel="true"] {
+    border: none;
     font-size: 10pt;
 }
 
 VDoubleRowItemWidget QLabel[SecondRowLabel="true"] {
+    border: none;
     font-size: 9pt;
     color: @doublerowitem_second_row_label_fg;
 }
