@@ -1389,6 +1389,8 @@ void VConfigManager::initThemes()
     m_themes.insert(VPalette::themeName(file), file);
     file = ":/resources/themes/v_moonlight/v_moonlight.palette";
     m_themes.insert(VPalette::themeName(file), file);
+    file = ":/resources/themes/v_detorte/v_detorte.palette";
+    m_themes.insert(VPalette::themeName(file), file);
 
     outputBuiltInThemes();
 

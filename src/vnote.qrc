@@ -224,5 +224,39 @@
         <file>resources/icons/unstar.svg</file>
         <file>resources/icons/explore_root.svg</file>
         <file>resources/icons/stay_on_top.svg</file>
+        <file>resources/themes/v_detorte/arrow_dropdown.svg</file>
+        <file>resources/themes/v_detorte/arrow_dropdown_disabled.svg</file>
+        <file>resources/themes/v_detorte/branch_closed.svg</file>
+        <file>resources/themes/v_detorte/branch_end.svg</file>
+        <file>resources/themes/v_detorte/branch_more.svg</file>
+        <file>resources/themes/v_detorte/branch_open.svg</file>
+        <file>resources/themes/v_detorte/checkbox_checked.svg</file>
+        <file>resources/themes/v_detorte/checkbox_checked_disabled.svg</file>
+        <file>resources/themes/v_detorte/checkbox_unchecked.svg</file>
+        <file>resources/themes/v_detorte/checkbox_unchecked_disabled.svg</file>
+        <file>resources/themes/v_detorte/close.svg</file>
+        <file>resources/themes/v_detorte/close_grey.svg</file>
+        <file>resources/themes/v_detorte/down.svg</file>
+        <file>resources/themes/v_detorte/down_disabled.svg</file>
+        <file>resources/themes/v_detorte/float.svg</file>
+        <file>resources/themes/v_detorte/left.svg</file>
+        <file>resources/themes/v_detorte/left_disabled.svg</file>
+        <file>resources/themes/v_detorte/line.svg</file>
+        <file>resources/themes/v_detorte/menu_checkbox.svg</file>
+        <file>resources/themes/v_detorte/menu_radiobutton.svg</file>
+        <file>resources/themes/v_detorte/radiobutton_checked.svg</file>
+        <file>resources/themes/v_detorte/radiobutton_checked_disabled.svg</file>
+        <file>resources/themes/v_detorte/radiobutton_unchecked.svg</file>
+        <file>resources/themes/v_detorte/radiobutton_unchecked_disabled.svg</file>
+        <file>resources/themes/v_detorte/right.svg</file>
+        <file>resources/themes/v_detorte/right_disabled.svg</file>
+        <file>resources/themes/v_detorte/up.svg</file>
+        <file>resources/themes/v_detorte/up_disabled.svg</file>
+        <file>resources/themes/v_detorte/v_detorte.css</file>
+        <file>resources/themes/v_detorte/v_detorte.mdhl</file>
+        <file>resources/themes/v_detorte/v_detorte.palette</file>
+        <file>resources/themes/v_detorte/v_detorte.qss</file>
+        <file>resources/themes/v_detorte/v_detorte_codeblock.css</file>
+        <file>resources/themes/v_detorte/v_detorte_mermaid.css</file>
     </qresource>
 </RCC>
