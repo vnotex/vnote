@@ -771,6 +771,16 @@ bool VFileList::importFiles(const QStringList &p_files, QString *p_errMsg)
 
         bool copyNeeded = true;
         if (VUtils::equalPath(dirPath, fi.absolutePath())) {
+            // Check if it is already a note.
+            if (m_directory->findFile(name, false)) {
+                VUtils::addErrMsg(p_errMsg, tr("Skip importing file %1. "
+                                               "A note with the same name (case-insensitive) "
+                                               "in the same directory already exists.")
+                                              .arg(file));
+                ret = false;
+                continue;
+            }
+
             qDebug() << "skip cpoy file" << file << "locates in" << dirPath;
             copyNeeded = false;
         }

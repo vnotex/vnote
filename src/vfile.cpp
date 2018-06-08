@@ -44,7 +44,10 @@ bool VFile::open()
     Q_ASSERT(m_content.isEmpty());
 
     QString filePath = fetchPath();
-    Q_ASSERT(QFileInfo::exists(filePath));
+    if (!QFileInfo::exists(filePath)) {
+        return false;
+    }
+
     m_content = VUtils::readFileFromDisk(filePath);
     m_lastModified = QFileInfo(filePath).lastModified();
     m_opened = true;
