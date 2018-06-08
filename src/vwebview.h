@@ -15,6 +15,8 @@ public:
     // @p_file could be NULL.
     explicit VWebView(VFile *p_file, QWidget *p_parent = Q_NULLPTR);
 
+    void setInPreview(bool p_preview);
+
 signals:
     void editNote();
 
@@ -64,6 +66,13 @@ private:
 
     // Target of Copy As.
     QString m_copyTarget;
+
+    // Whether in preview mode.
+    bool m_inPreview;
 };
 
+inline void VWebView::setInPreview(bool p_preview)
+{
+    m_inPreview = p_preview;
+}
 #endif // VWEBVIEW_H

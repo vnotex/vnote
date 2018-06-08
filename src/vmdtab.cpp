@@ -1408,6 +1408,7 @@ void VMdTab::setCurrentMode(Mode p_mode)
             m_editor->hide();
         }
 
+        m_webViewer->setInPreview(false);
         m_webViewer->show();
 
         // Fix the bug introduced by 051088be31dbffa3c04e2d382af15beec40d5fdb
@@ -1434,6 +1435,7 @@ void VMdTab::setCurrentMode(Mode p_mode)
 
     case Mode::EditPreview:
         Q_ASSERT(m_editor);
+        m_webViewer->setInPreview(true);
         m_webViewer->show();
         m_editor->show();
 

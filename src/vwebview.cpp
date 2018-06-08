@@ -30,7 +30,8 @@ VWebView::VWebView(VFile *p_file, QWidget *p_parent)
     : QWebEngineView(p_parent),
       m_file(p_file),
       m_copyImageUrlActionHooked(false),
-      m_afterCopyImage(false)
+      m_afterCopyImage(false),
+      m_inPreview(false)
 {
     setAcceptDrops(false);
 
@@ -40,6 +41,11 @@ VWebView::VWebView(VFile *p_file, QWidget *p_parent)
 
 void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
 {
+    if (m_inPreview) {
+        QWebEngineView(p_event);
+        return;
+    }
+
     QMenu *menu = page()->createStandardContextMenu();
     menu->setToolTipsVisible(true);
 
@@ -107,6 +113,8 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
     initCopyAllAsMenu(menu);
 
     hideUnusedActions(menu);
+
+    p_event->accept();
 
     menu->exec(p_event->globalPos());
     delete menu;
@@ -400,4 +408,3 @@ void VWebView::handleCopyAllAsAction(QAction *p_act)
 
     triggerPageAction(QWebEnginePage::Unselect);
 }
-
