@@ -1628,5 +1628,6 @@ QString VUtils::promptForFileName(const QString &p_title,
 bool VUtils::onlyHasImgInHtml(const QString &p_html)
 {
     // Tricky.
-    return !p_html.contains("<p ");
+    QRegExp reg("<(?:p|span|div) ");
+    return !p_html.contains(reg);
 }
