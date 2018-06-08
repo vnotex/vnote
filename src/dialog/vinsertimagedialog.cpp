@@ -1,8 +1,7 @@
 #include <QtWidgets>
 #include <QValidator>
 #include <QRegExp>
-#include <QDebug>
-#include <QTimer>
+
 #include "vinsertimagedialog.h"
 #include "utils/vutils.h"
 #include "vmetawordlineedit.h"
@@ -16,8 +15,7 @@ VInsertImageDialog::VInsertImageDialog(const QString &p_title,
                                        QWidget *p_parent)
     : QDialog(p_parent),
       m_image(NULL),
-      m_browsable(p_browsable),
-      m_timer(NULL)
+      m_browsable(p_browsable)
 {
     setupUI(p_title, p_imageTitle, p_imagePath);
 
@@ -25,23 +23,8 @@ VInsertImageDialog::VInsertImageDialog(const QString &p_title,
             this, &VInsertImageDialog::handleInputChanged);
 
     if (m_browsable) {
-        m_timer = new QTimer(this);
-        m_timer->setSingleShot(true);
-        m_timer->setInterval(500 /* ms */);
-        connect(m_timer, &QTimer::timeout,
+        connect(m_pathEdit, &VLineEdit::editingFinished,
                 this, &VInsertImageDialog::handlePathEditChanged);
-
-        connect(m_pathEdit, &VLineEdit::textChanged,
-                this, [this]() {
-                    m_timer->stop();
-
-                    setImage(QImage());
-                    if (m_pathEdit->text().isEmpty()) {
-                        return;
-                    }
-
-                    m_timer->start();
-                });
 
         connect(browseBtn, &QPushButton::clicked,
                 this, &VInsertImageDialog::handleBrowseBtnClicked);
@@ -131,7 +114,7 @@ void VInsertImageDialog::handleBrowseBtnClicked()
 {
     static QString lastPath = QDir::homePath();
     QString filePath = QFileDialog::getOpenFileName(this, tr("Select The Image To Be Inserted"),
-                                                    lastPath, tr("Images (*.png *.xpm *.jpg *.bmp *.gif)"));
+                                                    lastPath, tr("Images (*.png *.xpm *.jpg *.bmp *.gif *.svg)"));
     if (filePath.isEmpty()) {
         return;
     }
@@ -141,7 +124,7 @@ void VInsertImageDialog::handleBrowseBtnClicked()
 
     m_imageType = ImageType::LocalFile;
 
-    m_pathEdit->setText(filePath);
+    setPath(filePath);
 
     m_imageTitleEdit->setFocus();
 }
@@ -212,7 +195,6 @@ void VInsertImageDialog::fetchImageFromClipboard()
 
         setImage(im);
         m_imageType = ImageType::ImageData;
-        qDebug() << "fetch image data from clipboard to insert";
         return;
     } else if (mimeData->hasUrls()) {
         QList<QUrl> urls = mimeData->urls();
@@ -227,9 +209,9 @@ void VInsertImageDialog::fetchImageFromClipboard()
 
     if (url.isValid()) {
         if (url.isLocalFile()) {
-            m_pathEdit->setText(url.toLocalFile());
+            setPath(url.toLocalFile());
         } else {
-            m_pathEdit->setText(url.toString());
+            setPath(url.toString());
         }
     }
 }
@@ -238,7 +220,7 @@ void VInsertImageDialog::handlePathEditChanged()
 {
     QString text = m_pathEdit->text();
     QUrl url = QUrl::fromUserInput(text);
-    if (!url.isValid()) {
+    if (text.isEmpty() || !url.isValid()) {
         setImage(QImage());
         return;
     }
@@ -248,7 +230,6 @@ void VInsertImageDialog::handlePathEditChanged()
         image = VUtils::imageFromFile(url.toLocalFile());
         setImage(image);
         m_imageType = ImageType::LocalFile;
-        qDebug() << "fetch local file image to insert" << text;
     } else {
         setImage(QImage());
         m_imageType = ImageType::ImageData;
@@ -256,8 +237,13 @@ void VInsertImageDialog::handlePathEditChanged()
         connect(downloader, &VDownloader::downloadFinished,
                 this, &VInsertImageDialog::imageDownloaded);
         downloader->download(url.toString());
-        qDebug() << "try to fetch network image to insert" << text;
     }
 
     handleInputChanged();
+}
+
+void VInsertImageDialog::setPath(const QString &p_path)
+{
+    m_pathEdit->setText(p_path);
+    handlePathEditChanged();
 }

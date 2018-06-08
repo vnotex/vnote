@@ -11,7 +11,6 @@ class VLineEdit;
 class VMetaWordLineEdit;
 class QPushButton;
 class QDialogButtonBox;
-class QTimer;
 
 class VInsertImageDialog : public QDialog
 {
@@ -58,6 +57,8 @@ private:
 
     void fetchImageFromClipboard();
 
+    void setPath(const QString &p_path);
+
     VMetaWordLineEdit *m_imageTitleEdit;
     VLineEdit *m_pathEdit;
     QPushButton *browseBtn;
@@ -70,9 +71,6 @@ private:
     bool m_browsable;
 
     ImageType m_imageType;
-
-    // Timer for path edit change.
-    QTimer *m_timer;
 };
 
 inline VInsertImageDialog::ImageType VInsertImageDialog::getImageType() const
