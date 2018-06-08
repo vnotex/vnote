@@ -40,16 +40,16 @@ QMenuBar::item:selected {
 QMenu {
     background: @menu_bg;
     color: @menu_fg;
-    border: 2px solid @menu_border_bg;
+    border: $2px solid @menu_border_bg;
 }
 
 QMenu::icon {
-    margin: 5px;
+    margin: $5px;
 }
 
 QMenu::item {
-    padding: 5px 30px 5px 30px;
-    border: 1px solid transparent;
+    padding: $5px $30px $5px $30px;
+    border: $1px solid transparent;
 }
 
 QMenu::item:selected {
@@ -62,19 +62,19 @@ QMenu::item:disabled {
 }
 
 QMenu::icon:checked { /* appearance of a 'checked' icon */
-    border: 2px solid @menu_fg;
+    border: $2px solid @menu_fg;
 }
 
 QMenu::separator {
-    height: 2px;
+    height: $2px;
     background: @menu_separator_bg;
-    margin-left: 10px;
-    margin-right: 5px;
+    margin-left: $10px;
+    margin-right: $5px;
 }
 
 QMenu::indicator {
-    width: 20px;
-    height: 20px;
+    width: $20px;
+    height: $20px;
 }
 
 QMenu::indicator:non-exclusive:unchecked {
