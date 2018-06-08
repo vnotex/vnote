@@ -443,6 +443,8 @@ void VEditArea::splitWindow(VEditWindow *p_window, bool p_right)
 
     insertSplitWindow(idx);
     setCurrentWindow(idx, true);
+
+    distributeSplits();
 }
 
 void VEditArea::splitCurrentWindow()
@@ -932,6 +934,14 @@ void VEditArea::registerCaptainTargets()
                                    g_config->getCaptainShortcutKeySequence("RemoveSplit"),
                                    this,
                                    removeSplitByCaptain);
+    captain->registerCaptainTarget(tr("MaximizeSplit"),
+                                   g_config->getCaptainShortcutKeySequence("MaximizeSplit"),
+                                   this,
+                                   maximizeSplitByCaptain);
+    captain->registerCaptainTarget(tr("DistributeSplits"),
+                                   g_config->getCaptainShortcutKeySequence("DistributeSplits"),
+                                   this,
+                                   distributeSplitsByCaptain);
     captain->registerCaptainTarget(tr("MagicWord"),
                                    g_config->getCaptainShortcutKeySequence("MagicWord"),
                                    this,
@@ -1076,6 +1086,24 @@ bool VEditArea::removeSplitByCaptain(void *p_target, void *p_data)
     return false;
 }
 
+bool VEditArea::maximizeSplitByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+
+    obj->maximizeCurrentSplit();
+    return true;
+}
+
+bool VEditArea::distributeSplitsByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+
+    obj->distributeSplits();
+    return true;
+}
+
 bool VEditArea::evaluateMagicWordsByCaptain(void *p_target, void *p_data)
 {
     VEditArea *obj = static_cast<VEditArea *>(p_target);
@@ -1157,4 +1185,54 @@ QRect VEditArea::editAreaRect() const
     }
 
     return rt;
+}
+
+void VEditArea::maximizeCurrentSplit()
+{
+    if (splitter->count() <= 1 || curWindowIndex == -1) {
+        return;
+    }
+
+    const int MinSplitWidth = 20 * VUtils::calculateScaleFactor();
+
+    auto sizes = splitter->sizes();
+    int totalWidth = 0;
+    for (auto sz : sizes) {
+        totalWidth += sz;
+    }
+
+    int newWidth = totalWidth - MinSplitWidth * (sizes.size() - 1);
+    if (newWidth <= 0) {
+        return;
+    }
+
+    for (int i = 0; i < sizes.size(); ++i) {
+        sizes[i] = (i == curWindowIndex) ? newWidth : MinSplitWidth;
+    }
+
+    splitter->setSizes(sizes);
+}
+
+void VEditArea::distributeSplits()
+{
+    if (splitter->count() <= 1) {
+        return;
+    }
+
+    auto sizes = splitter->sizes();
+    int totalWidth = 0;
+    for (auto sz : sizes) {
+        totalWidth += sz;
+    }
+
+    int newWidth = totalWidth / sizes.size();
+    if (newWidth <= 0) {
+        return;
+    }
+
+    for (int i = 0; i < sizes.size(); ++i) {
+        sizes[i] = newWidth;
+    }
+
+    splitter->setSizes(sizes);
 }

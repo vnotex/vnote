@@ -89,6 +89,12 @@ public:
 
     VMathJaxPreviewHelper *getMathJaxPreviewHelper() const;
 
+    // Maximize the width of current vertical split.
+    void maximizeCurrentSplit();
+
+    // Distribute all the splits evenly.
+    void distributeSplits();
+
 signals:
     // Emit when current window's tab status updated.
     void tabStatusUpdated(const VEditTabInfo &p_info);
@@ -209,6 +215,10 @@ private:
     static bool verticalSplitByCaptain(void *p_target, void *p_data);
 
     static bool removeSplitByCaptain(void *p_target, void *p_data);
+
+    static bool maximizeSplitByCaptain(void *p_target, void *p_data);
+
+    static bool distributeSplitsByCaptain(void *p_target, void *p_data);
 
     // Evaluate selected text or the word on cursor as magic words.
     static bool evaluateMagicWordsByCaptain(void *p_target, void *p_data);

@@ -26,7 +26,9 @@ VEditWindow::VEditWindow(VEditArea *editArea, QWidget *parent)
       m_editArea(editArea),
       m_curTabWidget(NULL),
       m_lastTabWidget(NULL),
-      m_removeSplitAct(NULL)
+      m_removeSplitAct(NULL),
+      m_maximizeSplitAct(NULL),
+      m_distributeSplitsAct(NULL)
 {
     setAcceptDrops(true);
     setupCornerWidget();
@@ -463,7 +465,7 @@ QAction *VEditWindow::getRemoveSplitAction()
 {
     if (!m_removeSplitAct) {
         m_removeSplitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/remove_split.svg"),
-                                       tr("Remove split"),
+                                       tr("Remove Split"),
                                        this);
         m_removeSplitAct->setToolTip(tr("Remove current split window"));
         VUtils::fixTextWithCaptainShortcut(m_removeSplitAct, "RemoveSplit");
@@ -796,10 +798,36 @@ void VEditWindow::updateSplitMenu(QMenu *p_menu)
                 this, [this](){
                     splitWindow(true);
                 });
-
         p_menu->addAction(splitAct);
 
+        Q_ASSERT(!m_maximizeSplitAct);
+        m_maximizeSplitAct = new QAction(tr("Maximize Split"), p_menu);
+        m_maximizeSplitAct->setToolTip(tr("Maximize current split window"));
+        VUtils::fixTextWithCaptainShortcut(m_maximizeSplitAct, "MaximizeSplit");
+        connect(m_maximizeSplitAct, &QAction::triggered,
+                this, [this]() {
+                    focusWindow();
+                    m_editArea->maximizeCurrentSplit();
+                });
+        p_menu->addAction(m_maximizeSplitAct);
+
+        Q_ASSERT(!m_distributeSplitsAct);
+        m_distributeSplitsAct = new QAction(tr("Distribute Splits"), p_menu);
+        m_distributeSplitsAct->setToolTip(tr("Distribute all the split windows evenly"));
+        VUtils::fixTextWithCaptainShortcut(m_distributeSplitsAct, "DistributeSplits");
+        connect(m_distributeSplitsAct, &QAction::triggered,
+                m_editArea, &VEditArea::distributeSplits);
+        p_menu->addAction(m_distributeSplitsAct);
+
         p_menu->addAction(getRemoveSplitAction());
+    }
+
+    if (m_editArea->windowCount() > 1) {
+        m_maximizeSplitAct->setVisible(true);
+        m_distributeSplitsAct->setVisible(true);
+    } else {
+        m_maximizeSplitAct->setVisible(false);
+        m_distributeSplitsAct->setVisible(false);
     }
 
     getRemoveSplitAction()->setVisible(canRemoveSplit());

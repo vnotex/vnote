@@ -211,6 +211,8 @@ private:
 
     // Actions
     QAction *m_removeSplitAct;
+    QAction *m_maximizeSplitAct;
+    QAction *m_distributeSplitsAct;
 };
 
 inline QString VEditWindow::generateTooltip(const VFile *p_file) const
