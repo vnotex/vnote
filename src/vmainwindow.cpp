@@ -175,6 +175,10 @@ void VMainWindow::registerCaptainAndNavigationTargets()
                                      g_config->getCaptainShortcutKeySequence("DiscardAndRead"),
                                      this,
                                      discardAndReadByCaptain);
+    m_captain->registerCaptainTarget(tr("ToolBar"),
+                                     g_config->getCaptainShortcutKeySequence("ToolBar"),
+                                     this,
+                                     toggleToolBarByCaptain);
     m_captain->registerCaptainTarget(tr("ToolsDock"),
                                      g_config->getCaptainShortcutKeySequence("ToolsDock"),
                                      this,
@@ -343,13 +347,15 @@ void VMainWindow::initToolBar()
     const int tbIconSize = g_config->getToolBarIconSize() * VUtils::calculateScaleFactor();
     QSize iconSize(tbIconSize, tbIconSize);
 
-    initFileToolBar(iconSize);
-    initViewToolBar(iconSize);
-    initEditToolBar(iconSize);
-    initNoteToolBar(iconSize);
+    m_toolBars.append(initFileToolBar(iconSize));
+    m_toolBars.append(initViewToolBar(iconSize));
+    m_toolBars.append(initEditToolBar(iconSize));
+    m_toolBars.append(initNoteToolBar(iconSize));
+
+    setToolBarVisible(g_config->getToolBarChecked());
 }
 
-void VMainWindow::initViewToolBar(QSize p_iconSize)
+QToolBar *VMainWindow::initViewToolBar(QSize p_iconSize)
 {
     QToolBar *viewToolBar = addToolBar(tr("View"));
     viewToolBar->setObjectName("ViewToolBar");
@@ -422,6 +428,8 @@ void VMainWindow::initViewToolBar(QSize p_iconSize)
             });
 
     viewToolBar->addAction(expandViewAct);
+
+    return viewToolBar;
 }
 
 // Enable/disable all actions of @p_widget.
@@ -434,7 +442,7 @@ static void setActionsEnabled(QWidget *p_widget, bool p_enabled)
     }
 }
 
-void VMainWindow::initEditToolBar(QSize p_iconSize)
+QToolBar *VMainWindow::initEditToolBar(QSize p_iconSize)
 {
     m_editToolBar = addToolBar(tr("Edit Toolbar"));
     m_editToolBar->setObjectName("EditToolBar");
@@ -557,9 +565,11 @@ void VMainWindow::initEditToolBar(QSize p_iconSize)
     m_editToolBar->addAction(insertImageAct);
 
     setActionsEnabled(m_editToolBar, false);
+
+    return m_editToolBar;
 }
 
-void VMainWindow::initNoteToolBar(QSize p_iconSize)
+QToolBar *VMainWindow::initNoteToolBar(QSize p_iconSize)
 {
     QToolBar *noteToolBar = addToolBar(tr("Note Toolbar"));
     noteToolBar->setObjectName("NoteToolBar");
@@ -614,9 +624,11 @@ void VMainWindow::initNoteToolBar(QSize p_iconSize)
     noteToolBar->addWidget(m_attachmentBtn);
     noteToolBar->addAction(flashPageAct);
     noteToolBar->addAction(universalEntryAct);
+
+    return noteToolBar;
 }
 
-void VMainWindow::initFileToolBar(QSize p_iconSize)
+QToolBar *VMainWindow::initFileToolBar(QSize p_iconSize)
 {
     QToolBar *fileToolBar = addToolBar(tr("Note"));
     fileToolBar->setObjectName("NoteToolBar");
@@ -707,6 +719,8 @@ void VMainWindow::initFileToolBar(QSize p_iconSize)
     fileToolBar->addAction(m_editReadAct);
     fileToolBar->addAction(m_discardExitAct);
     fileToolBar->addAction(saveNoteAct);
+
+    return fileToolBar;
 }
 
 void VMainWindow::initMenuBar()
@@ -922,6 +936,19 @@ void VMainWindow::initViewMenu()
 {
     m_viewMenu = menuBar()->addMenu(tr("&View"));
     m_viewMenu->setToolTipsVisible(true);
+
+    m_toolBarAct = new QAction(tr("Tool Bar"), this);
+    m_toolBarAct->setToolTip(tr("Toogle the tool bar"));
+    VUtils::fixTextWithCaptainShortcut(m_toolBarAct, "ToolBar");
+    m_toolBarAct->setCheckable(true);
+    m_toolBarAct->setChecked(g_config->getToolBarChecked());
+    connect(m_toolBarAct, &QAction::triggered,
+            this, [this] (bool p_checked) {
+                g_config->setToolBarChecked(p_checked);
+                setToolBarVisible(p_checked);
+            });
+
+    m_viewMenu->addAction(m_toolBarAct);
 }
 
 void VMainWindow::initFileMenu()
@@ -2645,7 +2672,20 @@ bool VMainWindow::showAttachmentListByCaptain(void *p_target, void *p_data)
     Q_UNUSED(p_data);
     VMainWindow *obj = static_cast<VMainWindow *>(p_target);
     if (obj->m_attachmentBtn->isEnabled()) {
+        // Show tool bar first.
+        bool toolBarChecked = obj->m_toolBarAct->isChecked();
+        if (!toolBarChecked) {
+            obj->setToolBarVisible(true);
+
+            // Make it visible first.
+            QCoreApplication::sendPostedEvents();
+        }
+
         obj->m_attachmentBtn->showPopupWidget();
+
+        if (!toolBarChecked) {
+            obj->setToolBarVisible(false);
+        }
     }
 
     return true;
@@ -2683,6 +2723,14 @@ bool VMainWindow::discardAndReadByCaptain(void *p_target, void *p_data)
         return false;
     }
 
+    return true;
+}
+
+bool VMainWindow::toggleToolBarByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    obj->m_toolBarAct->trigger();
     return true;
 }
 
@@ -3183,6 +3231,17 @@ void VMainWindow::setMenuBarVisible(bool p_visible)
         menuBar()->setFixedSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
     } else {
         menuBar()->setFixedHeight(0);
+    }
+}
+
+void VMainWindow::setToolBarVisible(bool p_visible)
+{
+    for (auto bar : m_toolBars) {
+        if (p_visible) {
+            bar->setFixedSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
+        } else {
+            bar->setFixedHeight(0);
+        }
     }
 }
 

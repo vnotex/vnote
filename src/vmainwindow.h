@@ -211,14 +211,13 @@ private:
 
     void initToolBar();
 
-    void initFileToolBar(QSize p_iconSize = QSize());
+    QToolBar *initFileToolBar(QSize p_iconSize = QSize());
 
-    void initViewToolBar(QSize p_iconSize = QSize());
+    QToolBar *initViewToolBar(QSize p_iconSize = QSize());
 
-    void initNoteToolBar(QSize p_iconSize = QSize());
+    QToolBar *initNoteToolBar(QSize p_iconSize = QSize());
 
-    // Init the Edit toolbar.
-    void initEditToolBar(QSize p_iconSize = QSize());
+    QToolBar *initEditToolBar(QSize p_iconSize = QSize());
 
     void initMenuBar();
     void initFileMenu();
@@ -297,6 +296,8 @@ private:
 
     void setMenuBarVisible(bool p_visible);
 
+    void setToolBarVisible(bool p_visible);
+
     void showNotebookPanel();
 
     // Captain mode functions.
@@ -309,6 +310,8 @@ private:
     static bool toggleExpandModeByCaptain(void *p_target, void *p_data);
 
     static bool discardAndReadByCaptain(void *p_target, void *p_data);
+
+    static bool toggleToolBarByCaptain(void *p_target, void *p_data);
 
     static bool toggleToolsDockByCaptain(void *p_target, void *p_data);
 
@@ -407,6 +410,8 @@ private:
     // Enable heading sequence for current note.
     QAction *m_headingSequenceAct;
 
+    QAction *m_toolBarAct;
+
     // Act group for render styles.
     QActionGroup *m_renderStyleActs;
 
@@ -416,8 +421,11 @@ private:
     // Menus
     QMenu *m_viewMenu;
 
-    // Edit Toolbar.
+    // Edit ToolBar.
     QToolBar *m_editToolBar;
+
+    // All the ToolBar.
+    QVector<QToolBar *> m_toolBars;
 
     // Attachment button.
     VButtonWithWidget *m_attachmentBtn;

@@ -474,6 +474,9 @@ public:
     bool getMenuBarChecked() const;
     void setMenuBarChecked(bool p_checked);
 
+    bool getToolBarChecked() const;
+    void setToolBarChecked(bool p_checked);
+
     bool getSingleClickClosePreviousTab() const;
     void setSingleClickClosePreviousTab(bool p_enabled);
 
@@ -2213,6 +2216,17 @@ inline bool VConfigManager::getMenuBarChecked() const
 inline void VConfigManager::setMenuBarChecked(bool p_checked)
 {
     setConfigToSettings("global", "menu_bar_checked", p_checked);
+}
+
+inline bool VConfigManager::getToolBarChecked() const
+{
+    return getConfigFromSettings("global",
+                                 "tool_bar_checked").toBool();
+}
+
+inline void VConfigManager::setToolBarChecked(bool p_checked)
+{
+    setConfigToSettings("global", "tool_bar_checked", p_checked);
 }
 
 inline bool VConfigManager::getSingleClickClosePreviousTab() const

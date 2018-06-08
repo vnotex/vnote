@@ -204,6 +204,8 @@ Toggle expanding the edit area.
 Toggle single panel or two panels mode.
 - `T`   
 Toggle the Tools panel.
+- `Shift+#`   
+Toggle the Tool Bar.
 - `F`   
 Popup the opened notes list of current split window. Within this list, pressing the sequence number in front of each note could jump to that note.
 - `A`   
@@ -226,6 +228,10 @@ Discard current changes and exit edit mode.
 Vertically split current window.
 - `R`   
 Remove current split window.
+- `Shift+|`   
+Maximize current split window.
+- `=`   
+Distribute all the split windows evenly.
 - `H`   
 Jump to the first split window on the left.
 - `L`   
