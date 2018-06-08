@@ -1344,3 +1344,19 @@ VUniversalEntry {
     border: 1px solid @universalentry_border_bg;
 }
 /* End QWidget */
+
+/* QGroupBox */
+QGroupBox {
+    border: 2px solid @groupbox_border;
+    border-radius: 5px;
+    margin-top: 2ex;
+}
+
+QGroupBox::title {
+    color: @groupbox_title_fg;
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    position: absolute;
+    padding: 0 $3px;
+    top: 0px; left: $10px; bottom: 0px;
+}

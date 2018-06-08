@@ -7,7 +7,7 @@ mdhl_file=v_pure.mdhl
 css_file=v_pure.css
 codeblock_css_file=v_pure_codeblock.css
 mermaid_css_file=v_pure_mermaid.css
-version=11
+version=12
 
 [phony]
 ; Abstract color attributes.
@@ -358,3 +358,7 @@ universalentry_bg=@base_bg
 universalentry_border_bg=@border_bg
 
 doublerowitem_second_row_label_fg=#6C6C6C
+
+; GroupBox.
+groupbox_border=@border_bg
+groupbox_title_fg=@base_fg
