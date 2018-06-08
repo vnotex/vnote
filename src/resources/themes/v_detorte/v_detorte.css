@@ -97,7 +97,7 @@ pre code {
     overflow-x: auto;
     padding: 0.5em;
     color: #DADADA;
-    background-color: #4E4E4E;
+    background-color: #4A4A4A;
     line-height: 1.5;
     font-family: Consolas, Monaco, Monospace, Courier;
     white-space: pre;
@@ -115,7 +115,7 @@ aside {
 
 blockquote {
     color: #BCBCBC;
-    background-color: #4E4E4E;
+    background-color: #4A4A4A;
     border-left:.5em solid #8A8A8A;
     padding: 0 2em;
     margin-left:0;

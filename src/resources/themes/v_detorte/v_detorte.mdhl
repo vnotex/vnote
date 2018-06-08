@@ -51,7 +51,7 @@ background: 363636
 # [VNote] Vim insert mode cursor line background
 vim-insert-background: 363636
 # [VNote] Vim normal mode cursor line background
-vim-normal-background: 585858
+vim-normal-background: 545454
 # [VNote] Vim visual mode cursor line background
 vim-visual-background: 484f5d
 # [VNote] Vim replace mode cursor line background
@@ -151,7 +151,7 @@ hljs-regexp: f06292
 hljs-addition: f06292
 hljs-attribute: f06292
 hljs-meta-string: f06292
-hljs-built_in: 00c179
+hljs-built_in: 80cbc4
 hljs-attr: ce93db
 hljs-variable: ce93db
 hljs-template-variable: ce93db

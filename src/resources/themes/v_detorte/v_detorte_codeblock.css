@@ -3,7 +3,7 @@
   overflow-x: auto;
   padding: 0.5em;
   color: #dadada;
-  background: #4e4e4e;
+  background: #4a4a4a;
 }
 
 .hljs-comment,
@@ -39,7 +39,7 @@
 
 .hljs-built_in,
 .hljs-class .hljs-title {
-  color: #00c179;
+  color: #80cbc4;
 }
 
 .hljs-attr,
