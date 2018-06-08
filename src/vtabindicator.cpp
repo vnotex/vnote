@@ -6,6 +6,7 @@
 #include "vorphanfile.h"
 #include "vbuttonwithwidget.h"
 #include "vwordcountinfo.h"
+#include "utils/vutils.h"
 
 VWordCountPanel::VWordCountPanel(QWidget *p_parent)
     : QWidget(p_parent)
@@ -49,8 +50,6 @@ VWordCountPanel::VWordCountPanel(QWidget *p_parent)
     mainLayout->addWidget(m_editBox);
 
     setLayout(mainLayout);
-
-    setMinimumWidth(300);
 }
 
 void VWordCountPanel::updateReadInfo(const VWordCountInfo &p_readInfo)
@@ -120,6 +119,8 @@ void VTabIndicator::setupUI()
     m_cursorLabel->setProperty("TabIndicatorLabel", true);
 
     m_wordCountPanel = new VWordCountPanel(this);
+    m_wordCountPanel->setMinimumWidth(300 * VUtils::calculateScaleFactor());
+
     m_wordCountBtn = new VButtonWithWidget(tr("[W]"), m_wordCountPanel, this);
     m_wordCountBtn->setToolTip(tr("Word Count Information"));
     m_wordCountBtn->setProperty("StatusBtn", true);
@@ -223,6 +224,7 @@ void VTabIndicator::update(const VEditTabInfo &p_info)
 void VTabIndicator::updateWordCountInfo(QWidget *p_widget)
 {
     VWordCountPanel *wcp = dynamic_cast<VWordCountPanel *>(p_widget);
+
     if (!m_editTab) {
         wcp->clear();
         return;
