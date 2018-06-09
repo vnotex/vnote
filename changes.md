@@ -1,4 +1,10 @@
 # Changes History
+## v1.18
+- Explorer: fix the crash when no root entry is set;
+- New dark theme **v_detorte** from a Vim *detorte* theme;
+- Support maximizing split or distributing splits;
+- Refine styles and HiDPI support;
+
 ## v1.17
 - Add **History** to browse history;
 - Add **Explorer** to browse external files;
