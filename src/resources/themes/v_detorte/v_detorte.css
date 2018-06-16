@@ -9,10 +9,15 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
+    color: #E4E4E4;
     font-weight: bold;
     margin-top: 20px;
     margin-bottom: 10px;
     padding: 0;
+}
+
+strong, em {
+    color: #E4E4E4;
 }
 
 p {
