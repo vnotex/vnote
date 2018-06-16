@@ -121,7 +121,7 @@ void VDocument::setFile(const VFile *p_file)
 
 void VDocument::finishLogics()
 {
-    qDebug() << "Web side finished logics";
+    qDebug() << "Web side finished logics" << this;
     emit logicsFinished();
 }
 

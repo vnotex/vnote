@@ -89,7 +89,8 @@ var updateText = function(text) {
         text = "[TOC]\n\n" + text;
     }
 
-    asyncJobsCount = 0;
+    // There is at least one async job for MathJax.
+    asyncJobsCount = 1;
 
     var needToc = mdHasTocSection(text);
     var html = markdownToHtml(text, needToc);
@@ -116,10 +117,10 @@ var updateText = function(text) {
             MathJax.Hub.Queue(["Typeset", MathJax.Hub, contentDiv, postProcessMathJax]);
         } catch (err) {
             content.setLog("err: " + err);
-            finishLogics();
+            finishOneAsyncJob();
         }
     } else {
-        finishLogics();
+        finishOneAsyncJob();
     }
 };
 

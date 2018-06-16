@@ -1276,7 +1276,7 @@ var postProcessMathJax = function() {
         }
     }
 
-    finishLogics();
+    finishOneAsyncJob();
 };
 
 function getNodeText(el) {

@@ -14,7 +14,8 @@ marked.setOptions({
 });
 
 var updateHtml = function(html) {
-    asyncJobsCount = 0;
+    // There is at least one async job for MathJax.
+    asyncJobsCount = 1;
 
     contentDiv.innerHTML = html;
 
@@ -84,10 +85,10 @@ var updateHtml = function(html) {
             MathJax.Hub.Queue(["Typeset", MathJax.Hub, contentDiv, postProcessMathJax]);
         } catch (err) {
             content.setLog("err: " + err);
-            finishLogics();
+            finishOneAsyncJob();
         }
     } else {
-        finishLogics();
+        finishOneAsyncJob();
     }
 };
 

@@ -823,6 +823,10 @@ QString VUtils::generateExportHtmlTemplate(const QString &p_renderBg, bool p_inc
                              "SVG: {\n"
                                  "minScaleAdjust: 100,\n"
                                  "styles: {\n"
+/*
+FIXME: Using wkhtmltopdf, without 2em, the math formula will be very small. However,
+with 2em, if there are Chinese characters in it, the font will be a mess.
+*/
 #if defined(Q_OS_WIN)
                                    "\".MathJax_SVG\": {\n"
                                         "\"font-size\": \"2em !important\"\n"
