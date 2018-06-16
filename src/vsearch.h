@@ -72,6 +72,8 @@ private:
 
     VSearchResultItem *searchForOutline(const VFile *p_file) const;
 
+    VSearchResultItem *searchForTag(const VFile *p_file) const;
+
     VSearchResultItem *searchForContent(const VFile *p_file) const;
 
     void searchSecondPhase(const QSharedPointer<VSearchResult> &p_result);

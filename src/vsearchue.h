@@ -29,17 +29,26 @@ public:
         // Search content of the note in all the notebooks.
         Content_Note_AllNotebook,
 
+        // Search tag of the note in all the notebooks.
+        Tag_Note_AllNotebook,
+
         // Search the name of the folder/note in current notebook.
         Name_FolderNote_CurrentNotebook,
 
         // Search content of the note in current notebook.
         Content_Note_CurrentNotebook,
 
+        // Search tag of the note in current notebook.
+        Tag_Note_CurrentNotebook,
+
         // Search the name of the folder/note in current folder.
         Name_FolderNote_CurrentFolder,
 
         // Search content of the note in current folder.
         Content_Note_CurrentFolder,
+
+        // Search the tag of the note in current folder.
+        Tag_Note_CurrentFolder,
 
         // List and search the name of opened notes in buffer.
         Name_Note_Buffer,
@@ -101,6 +110,12 @@ private:
     void searchNameOfAllNotebooks(const QString &p_cmd);
 
     void searchNameOfFolderNoteInAllNotebooks(const QString &p_cmd);
+
+    void searchTagOfNoteInAllNotebooks(const QString &p_cmd);
+
+    void searchTagOfNoteInCurrentNotebook(const QString &p_cmd);
+
+    void searchTagOfNoteInCurrentFolder(const QString &p_cmd);
 
     void searchNameOfFolderNoteInCurrentNotebook(const QString &p_cmd);
 

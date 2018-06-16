@@ -183,6 +183,14 @@ void VSearch::searchFirstPhase(VFile *p_file,
         }
     }
 
+    if (testObject(VSearchConfig::Tag)) {
+        VSearchResultItem *item = searchForTag(p_file);
+        if (item) {
+            QSharedPointer<VSearchResultItem> pitem(item);
+            emit resultItemAdded(pitem);
+        }
+    }
+
     if (testObject(VSearchConfig::Content)) {
         // Search content in first phase.
         if (p_searchContent) {
@@ -347,6 +355,30 @@ VSearchResultItem *VSearch::searchForOutline(const VFile *p_file) const
     }
 
     return item;
+}
+
+VSearchResultItem *VSearch::searchForTag(const VFile *p_file) const
+{
+    if (p_file->getType() != FileType::Note) {
+        return NULL;
+    }
+
+    const VNoteFile *file = static_cast<const VNoteFile *>(p_file);
+    const QStringList &tags = file->getTags();
+    for (auto const & tag: tags) {
+        if (tag.isEmpty()) {
+            continue;
+        }
+
+        if (matchNonContent(tag)) {
+            return new VSearchResultItem(VSearchResultItem::Note,
+                                         VSearchResultItem::LineNumber,
+                                         file->getName(),
+                                         file->fetchPath());
+        }
+    }
+
+    return NULL;
 }
 
 VSearchResultItem *VSearch::searchForContent(const VFile *p_file) const
