@@ -4,6 +4,7 @@
 #include <QThread>
 
 #include "vconfigmanager.h"
+#include "utils/vprocessutils.h"
 
 extern VConfigManager *g_config;
 
@@ -119,4 +120,36 @@ void VPlantUMLHelper::handleProcessFinished(int p_exitCode, QProcess::ExitStatus
     }
 
     process->deleteLater();
+}
+
+bool VPlantUMLHelper::testPlantUMLJar(const QString &p_jar, QString &p_msg)
+{
+    QString program("java");
+    QStringList args;
+    args << "-jar" << p_jar;
+    args << "-charset" << "UTF-8";
+
+    const QString &dot = g_config->getGraphvizDot();
+    if (!dot.isEmpty()) {
+        args << "-graphvizdot";
+        args << dot;
+    }
+
+    args << "-pipe";
+    args << "-tsvg";
+
+    QString testGraph("VNote->Markdown : hello");
+
+    int exitCode = -1;
+    QByteArray out, err;
+    int ret = VProcessUtils::startProcess(program, args, testGraph.toUtf8(), exitCode, out, err);
+
+    p_msg = QString("Command: %1 %2\nExitCode: %3\nOutput: %4\nError: %5")
+                   .arg(program)
+                   .arg(args.join(' '))
+                   .arg(exitCode)
+                   .arg(QString::fromLocal8Bit(out))
+                   .arg(QString::fromLocal8Bit(err));
+
+    return ret == 0 && exitCode == 0;
 }

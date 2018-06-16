@@ -18,6 +18,8 @@ public:
 
     void prepareCommand(QString &p_cmd, QStringList &p_args) const;
 
+    static bool testGraphviz(const QString &p_dot, QString &p_msg);
+
 signals:
     void resultReady(int p_id, TimeStamp p_timeStamp, const QString &p_format, const QString &p_result);
 

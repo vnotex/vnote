@@ -135,7 +135,8 @@ SOURCES += main.cpp\
     vhistorylist.cpp \
     vexplorer.cpp \
     vlistue.cpp \
-    vuetitlecontentpanel.cpp
+    vuetitlecontentpanel.cpp \
+    utils/vprocessutils.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -264,7 +265,8 @@ HEADERS  += vmainwindow.h \
     vexplorer.h \
     vexplorerentry.h \
     vlistue.h \
-    vuetitlecontentpanel.h
+    vuetitlecontentpanel.h \
+    utils/vprocessutils.h
 
 RESOURCES += \
     vnote.qrc \

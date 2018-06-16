@@ -81,7 +81,7 @@ var postProcessMathJax = function(identifier, id, timeStamp, container, isBlock)
         return;
     }
 
-    var hei = (isBlock ? container.clientHeight * 1.5 : container.clientHeight * 1.8) + 5;
+    var hei = (isBlock ? container.clientHeight * 1.5 : container.clientHeight * 1.6) + 5;
     domtoimage.toPng(container, { height: hei }).then(function (dataUrl) {
         var png = dataUrl.substring(dataUrl.indexOf(',') + 1);
         content.mathjaxResultReady(identifier, id, timeStamp, 'png', png);

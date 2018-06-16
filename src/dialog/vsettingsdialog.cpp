@@ -7,6 +7,8 @@
 #include "utils/vutils.h"
 #include "vconstants.h"
 #include "vlineedit.h"
+#include "vplantumlhelper.h"
+#include "vgraphvizhelper.h"
 
 extern VConfigManager *g_config;
 
@@ -1011,6 +1013,48 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     m_plantUMLJarEdit = new VLineEdit();
     m_plantUMLJarEdit->setToolTip(tr("Location to the PlantUML JAR executable for local PlantUML"));
 
+    QPushButton *plantUMLJarTestBtn = new QPushButton(tr("Test"));
+    plantUMLJarTestBtn->setToolTip(tr("Test PlantUML JAR configuration"));
+    connect(plantUMLJarTestBtn, &QPushButton::clicked,
+            this, [this]() {
+                QString jar = m_plantUMLJarEdit->text();
+                if (jar.isEmpty() || !QFileInfo::exists(jar)) {
+                    VUtils::showMessage(QMessageBox::Warning,
+                                        tr("Warning"),
+                                        tr("The JAR file specified does not exist."),
+                                        tr("Please input the right absolute file path to the JAR file."),
+                                        QMessageBox::Ok,
+                                        QMessageBox::Ok,
+                                        this);
+                    return;
+                }
+
+                if (!jar.trimmed().toLower().endsWith(".jar")) {
+                    VUtils::showMessage(QMessageBox::Warning,
+                                        tr("Warning"),
+                                        tr("Please specify the absolute file path to the JAR file."),
+                                        tr("It should be something like \"/path/to/plantuml.jar\"."),
+                                        QMessageBox::Ok,
+                                        QMessageBox::Ok,
+                                        this);
+                    return;
+                }
+
+                QString msg;
+                bool ret = VPlantUMLHelper::testPlantUMLJar(jar, msg);
+                VUtils::showMessage(QMessageBox::Information,
+                                    tr("Information"),
+                                    tr("Test %1.").arg((ret ? tr("succeeded") : tr("failed"))),
+                                    msg,
+                                    QMessageBox::Ok,
+                                    QMessageBox::Ok,
+                                    this);
+            });
+
+    QHBoxLayout *plantUMLLayout = new QHBoxLayout();
+    plantUMLLayout->addWidget(m_plantUMLJarEdit);
+    plantUMLLayout->addWidget(plantUMLJarTestBtn);
+
     // Graphviz.
     m_graphvizCB = new QCheckBox(tr("Graphviz"));
     m_graphvizCB->setToolTip(tr("Enable Graphviz for drawing graph"));
@@ -1019,6 +1063,30 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     m_graphvizDotEdit->setPlaceholderText(tr("Empty to detect automatically"));
     m_graphvizDotEdit->setToolTip(tr("Location to the GraphViz dot executable"));
 
+    QPushButton *graphvizTestBtn = new QPushButton(tr("Test"));
+    graphvizTestBtn->setToolTip(tr("Test Graphviz executable configuration"));
+    connect(graphvizTestBtn, &QPushButton::clicked,
+            this, [this]() {
+                QString dot = m_graphvizDotEdit->text();
+                if (dot.isEmpty()) {
+                    dot = "dot";
+                }
+
+                QString msg;
+                bool ret = VGraphvizHelper::testGraphviz(dot, msg);
+                VUtils::showMessage(QMessageBox::Information,
+                                    tr("Information"),
+                                    tr("Test %1.").arg((ret ? tr("succeeded") : tr("failed"))),
+                                    msg,
+                                    QMessageBox::Ok,
+                                    QMessageBox::Ok,
+                                    this);
+            });
+
+    QHBoxLayout *graphvizLayout = new QHBoxLayout();
+    graphvizLayout->addWidget(m_graphvizDotEdit);
+    graphvizLayout->addWidget(graphvizTestBtn);
+
     QFormLayout *mainLayout = new QFormLayout();
     mainLayout->addRow(tr("Open mode:"), m_openModeCombo);
     mainLayout->addRow(tr("Heading sequence:"), headingSequenceLayout);
@@ -1026,9 +1094,9 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     mainLayout->addRow(tr("MathJax configuration:"), m_mathjaxConfigEdit);
     mainLayout->addRow(tr("PlantUML:"), m_plantUMLModeCombo);
     mainLayout->addRow(tr("PlantUML server:"), m_plantUMLServerEdit);
-    mainLayout->addRow(tr("PlantUML JAR:"), m_plantUMLJarEdit);
+    mainLayout->addRow(tr("PlantUML JAR:"), plantUMLLayout);
     mainLayout->addRow(m_graphvizCB);
-    mainLayout->addRow(tr("Graphviz executable:"), m_graphvizDotEdit);
+    mainLayout->addRow(tr("Graphviz executable:"), graphvizLayout);
 
     setLayout(mainLayout);
 }

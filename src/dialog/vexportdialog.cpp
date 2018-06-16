@@ -25,6 +25,7 @@
 #include "vnote.h"
 #include "vexporter.h"
 #include "vlineedit.h"
+#include "utils/vprocessutils.h"
 
 extern VConfigManager *g_config;
 
@@ -521,22 +522,24 @@ bool VExportDialog::checkWkhtmltopdfExecutable(const QString &p_file)
 {
     QStringList args;
     args << "--version";
-    int ret = QProcess::execute(p_file, args);
+    QByteArray out, err;
+    int exitCode = -1;
+    int ret = VProcessUtils::startProcess(p_file, args, exitCode, out, err);
     switch (ret) {
     case -2:
-        appendLogLine(tr("Fail to start wkhtmltopdf."));
+        appendLogLine(tr("Fail to start wkhtmltopdf (%1).").arg(p_file));
         break;
 
     case -1:
-        appendLogLine(tr("wkhtmltopdf crashed."));
+        appendLogLine(tr("wkhtmltopdf crashed (%1).").arg(p_file));
         break;
 
     case 0:
-        appendLogLine(tr("Use %1.").arg(p_file));
+        appendLogLine(tr("Use %1 (%2).").arg(p_file).arg(exitCode));
         break;
 
     default:
-        appendLogLine(tr("wkhtmltopdf returned %1.").arg(ret));
+        Q_ASSERT(false);
         break;
     }
 
