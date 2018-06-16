@@ -442,3 +442,18 @@ bool VNotebook::addTag(const QString &p_tag)
 
     return true;
 }
+
+void VNotebook::removeTag(const QString &p_tag)
+{
+    if (p_tag.isEmpty() || m_tags.isEmpty()) {
+        return;
+    }
+
+    int nr = m_tags.removeAll(p_tag);
+    if (nr > 0) {
+        if (!writeConfigNotebook()) {
+            qWarning() << "fail to update config of notebook" << m_name
+                       << "in directory" << m_path;
+        }
+    }
+}

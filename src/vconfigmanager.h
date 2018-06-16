@@ -194,6 +194,9 @@ public:
     const QByteArray getNotebookSplitterState() const;
     void setNotebookSplitterState(const QByteArray &p_state);
 
+    const QByteArray getTagExplorerSplitterState() const;
+    void setTagExplorerSplitterState(const QByteArray &p_state);
+
     bool getFindCaseSensitive() const;
     void setFindCaseSensitive(bool p_enabled);
 
@@ -1301,6 +1304,19 @@ inline void VConfigManager::setNotebookSplitterState(const QByteArray &p_state)
 {
     setConfigToSessionSettings("geometry",
                                "notebook_splitter_state",
+                               p_state);
+}
+
+inline const QByteArray VConfigManager::getTagExplorerSplitterState() const
+{
+    return getConfigFromSessionSettings("geometry",
+                                        "tag_explorer_splitter_state").toByteArray();
+}
+
+inline void VConfigManager::setTagExplorerSplitterState(const QByteArray &p_state)
+{
+    setConfigToSessionSettings("geometry",
+                               "tag_explorer_splitter_state",
                                p_state);
 }
 

@@ -60,6 +60,8 @@ public:
 
     bool addTag(const QString &p_tag);
 
+    void removeTag(const QString &p_tag);
+
     bool hasTag(const QString &p_tag) const;
 
     static VNotebook *createNotebook(const QString &p_name,

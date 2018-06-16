@@ -48,6 +48,7 @@
 #include "vhistorylist.h"
 #include "vexplorer.h"
 #include "vlistue.h"
+#include "vtagexplorer.h"
 
 extern VConfigManager *g_config;
 
@@ -291,6 +292,13 @@ void VMainWindow::setupNaviBox()
     m_naviBox->addItem(m_explorer,
                        ":/resources/icons/explorer.svg",
                        tr("Explorer"));
+
+    m_tagExplorer = new VTagExplorer();
+    m_naviBox->addItem(m_tagExplorer,
+                       ":/resources/icons/tag_explorer.svg",
+                       tr("Tags"));
+    connect(m_notebookSelector, &VNotebookSelector::curNotebookChanged,
+            m_tagExplorer, &VTagExplorer::setNotebook);
 }
 
 void VMainWindow::setupNotebookPanel()
@@ -2177,17 +2185,18 @@ void VMainWindow::saveStateAndGeometry()
     g_config->setSearchDockChecked(m_searchDock->isVisible());
     g_config->setNotebookSplitterState(m_nbSplitter->saveState());
     g_config->setMainSplitterState(m_mainSplitter->saveState());
+    m_tagExplorer->saveStateAndGeometry();
     g_config->setNaviBoxCurrentIndex(m_naviBox->currentIndex());
 }
 
 void VMainWindow::restoreStateAndGeometry()
 {
-    const QByteArray &geometry = g_config->getMainWindowGeometry();
+    const QByteArray geometry = g_config->getMainWindowGeometry();
     if (!geometry.isEmpty()) {
         restoreGeometry(geometry);
     }
 
-    const QByteArray &state = g_config->getMainWindowState();
+    const QByteArray state = g_config->getMainWindowState();
     if (!state.isEmpty()) {
         restoreState(state);
     }
@@ -2195,12 +2204,12 @@ void VMainWindow::restoreStateAndGeometry()
     m_toolDock->setVisible(g_config->getToolsDockChecked());
     m_searchDock->setVisible(g_config->getSearchDockChecked());
 
-    const QByteArray &splitterState = g_config->getMainSplitterState();
+    const QByteArray splitterState = g_config->getMainSplitterState();
     if (!splitterState.isEmpty()) {
         m_mainSplitter->restoreState(splitterState);
     }
 
-    const QByteArray &nbSplitterState = g_config->getNotebookSplitterState();
+    const QByteArray nbSplitterState = g_config->getNotebookSplitterState();
     if (!nbSplitterState.isEmpty()) {
         m_nbSplitter->restoreState(nbSplitterState);
     }

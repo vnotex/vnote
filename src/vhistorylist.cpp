@@ -460,7 +460,7 @@ void VHistoryList::openItem(const QListWidgetItem *p_item) const
     g_mainWin->openFiles(files);
 }
 
-void VHistoryList::locateCurrentItem()
+void VHistoryList::locateCurrentItem() const
 {
     auto item = m_itemList->currentItem();
     if (!item) {

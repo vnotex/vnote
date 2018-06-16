@@ -48,7 +48,7 @@ private slots:
 
     void unpinSelectedItems();
 
-    void locateCurrentItem();
+    void locateCurrentItem() const;
 
     // Add selected files to Cart.
     void addFileToCart() const;

@@ -139,7 +139,8 @@ SOURCES += main.cpp\
     utils/vprocessutils.cpp \
     vtagpanel.cpp \
     valltagspanel.cpp \
-    vtaglabel.cpp
+    vtaglabel.cpp \
+    vtagexplorer.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -272,7 +273,8 @@ HEADERS  += vmainwindow.h \
     utils/vprocessutils.h \
     vtagpanel.h \
     valltagspanel.h \
-    vtaglabel.h
+    vtaglabel.h \
+    vtagexplorer.h
 
 RESOURCES += \
     vnote.qrc \
