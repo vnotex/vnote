@@ -59,11 +59,18 @@ void VFileInfoDialog::setupUI(const QString &p_title, const QString &p_info)
     QLabel *modifiedTimeLabel = new QLabel(createdTimeStr);
     modifiedTimeLabel->setToolTip(tr("Last modified time within VNote"));
 
+    // Tags.
+    QLineEdit *tagEdit = new QLineEdit();
+    tagEdit->setToolTip(tr("Tags of this note separated by ,"));
+    tagEdit->setReadOnly(true);
+    tagEdit->setText(m_file->getTags().join(", "));
+
     QFormLayout *topLayout = new QFormLayout();
     topLayout->addRow(tr("Note &name:"), m_nameEdit);
     topLayout->addRow(tr("Attachment folder:"), attachmentFolderEdit);
     topLayout->addRow(tr("Created time:"), createdTimeLabel);
     topLayout->addRow(tr("Modified time:"), modifiedTimeLabel);
+    topLayout->addRow(tr("Tags:"), tagEdit);
 
     m_warnLabel = new QLabel();
     m_warnLabel->setWordWrap(true);

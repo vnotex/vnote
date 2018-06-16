@@ -73,6 +73,8 @@ public:
     // Show the popup widget.
     void showPopupWidget();
 
+    void hidePopupWidget();
+
     // Set the bubble to display a number @p_num.
     // @p_num: -1 to hide the bubble.
     void setBubbleNumber(int p_num);

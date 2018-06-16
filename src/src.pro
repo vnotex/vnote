@@ -136,7 +136,10 @@ SOURCES += main.cpp\
     vexplorer.cpp \
     vlistue.cpp \
     vuetitlecontentpanel.cpp \
-    utils/vprocessutils.cpp
+    utils/vprocessutils.cpp \
+    vtagpanel.cpp \
+    valltagspanel.cpp \
+    vtaglabel.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -266,7 +269,10 @@ HEADERS  += vmainwindow.h \
     vexplorerentry.h \
     vlistue.h \
     vuetitlecontentpanel.h \
-    utils/vprocessutils.h
+    utils/vprocessutils.h \
+    vtagpanel.h \
+    valltagspanel.h \
+    vtaglabel.h
 
 RESOURCES += \
     vnote.qrc \

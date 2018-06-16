@@ -35,9 +35,7 @@ public:
               FileType p_type,
               bool p_modifiable,
               QDateTime p_createdTimeUtc,
-              QDateTime p_modifiedTimeUtc,
-              const QString &p_attachmentFolder = "",
-              const QVector<VAttachment> &p_attachments = QVector<VAttachment>());
+              QDateTime p_modifiedTimeUtc);
 
     QString fetchPath() const Q_DECL_OVERRIDE;
 
@@ -109,6 +107,14 @@ public:
     // Return the missing attachments' names.
     QVector<QString> checkAttachments();
 
+    const QStringList &getTags() const;
+
+    void removeTag(const QString &p_tag);
+
+    bool addTag(const QString &p_tag);
+
+    bool hasTag(const QString &p_tag) const;
+
     // Create a VNoteFile from @p_json Json object.
     static VNoteFile *fromJson(VDirectory *p_directory,
                                const QJsonObject &p_json,
@@ -151,6 +157,9 @@ private:
 
     // Attachments.
     QVector<VAttachment> m_attachments;
+
+    // Tags of this file.
+    QStringList m_tags;
 };
 
 inline const QString &VNoteFile::getAttachmentFolder() const
@@ -173,4 +182,13 @@ inline void VNoteFile::setAttachments(const QVector<VAttachment> &p_attas)
     m_attachments = p_attas;
 }
 
+inline const QStringList &VNoteFile::getTags() const
+{
+    return m_tags;
+}
+
+inline bool VNoteFile::hasTag(const QString &p_tag) const
+{
+    return m_tags.contains(p_tag);
+}
 #endif // VNOTEFILE_H

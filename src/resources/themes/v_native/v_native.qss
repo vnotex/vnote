@@ -411,6 +411,15 @@ QLabel[MenuSeparator="true"] {
     border-top: 1px solid @menu_separator_bg
 }
 
+QLabel[TagLabel="true"] {
+    padding-left: $5px;
+    padding-right: $5px;
+    color: @tab_indicator_tag_label_fg;
+    border-top-left-radius: $10px $8px;
+    border-bottom-left-radius: $10px $8px;
+    background-color: @tab_indicator_tag_label_bg;
+}
+
 VVimIndicator QLabel[VimIndicatorKeyLabel="true"] {
     font: bold;
     color: @vim_indicator_key_label_fg;

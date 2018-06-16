@@ -60,6 +60,7 @@ namespace DirConfig
     static const QString c_imageFolder = "image_folder";
     static const QString c_attachmentFolder = "attachment_folder";
     static const QString c_recycleBinFolder = "recycle_bin_folder";
+    static const QString c_tags = "tags";
     static const QString c_name = "name";
     static const QString c_createdTime = "created_time";
     static const QString c_modifiedTime = "modified_time";

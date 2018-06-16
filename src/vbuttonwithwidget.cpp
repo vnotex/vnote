@@ -72,6 +72,11 @@ void VButtonWithWidget::showPopupWidget()
     showMenu();
 }
 
+void VButtonWithWidget::hidePopupWidget()
+{
+    menu()->hide();
+}
+
 void VButtonWithWidget::dragEnterEvent(QDragEnterEvent *p_event)
 {
     VButtonPopupWidget *popup = getButtonPopupWidget();

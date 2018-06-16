@@ -9,6 +9,7 @@ class VButtonWithWidget;
 class VEditTab;
 class VWordCountPanel;
 class QGroupBox;
+class VTagPanel;
 
 class VWordCountPanel : public QWidget
 {
@@ -53,6 +54,9 @@ private:
     void setupUI();
 
     void updateWordCountBtn(const VEditTabInfo &p_info);
+
+    // Tag panel.
+    VTagPanel *m_tagPanel;
 
     // Indicate the doc type.
     QLabel *m_docTypeLabel;

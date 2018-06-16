@@ -15,12 +15,8 @@ VNoteFile::VNoteFile(VDirectory *p_directory,
                      FileType p_type,
                      bool p_modifiable,
                      QDateTime p_createdTimeUtc,
-                     QDateTime p_modifiedTimeUtc,
-                     const QString &p_attachmentFolder,
-                     const QVector<VAttachment> &p_attachments)
-    : VFile(p_directory, p_name, p_type, p_modifiable, p_createdTimeUtc, p_modifiedTimeUtc),
-      m_attachmentFolder(p_attachmentFolder),
-      m_attachments(p_attachments)
+                     QDateTime p_modifiedTimeUtc)
+    : VFile(p_directory, p_name, p_type, p_modifiable, p_createdTimeUtc, p_modifiedTimeUtc)
 {
 }
 
@@ -129,24 +125,32 @@ VNoteFile *VNoteFile::fromJson(VDirectory *p_directory,
                                FileType p_type,
                                bool p_modifiable)
 {
+    VNoteFile *file = new VNoteFile(p_directory,
+                                    p_json[DirConfig::c_name].toString(),
+                                    p_type,
+                                    p_modifiable,
+                                    QDateTime::fromString(p_json[DirConfig::c_createdTime].toString(),
+                                                          Qt::ISODate),
+                                    QDateTime::fromString(p_json[DirConfig::c_modifiedTime].toString(),
+                                                          Qt::ISODate));
+
+    // Attachment Folder.
+    file->m_attachmentFolder = p_json[DirConfig::c_attachmentFolder].toString();
+
     // Attachments.
     QJsonArray attachmentJson = p_json[DirConfig::c_attachments].toArray();
-    QVector<VAttachment> attachments;
     for (int i = 0; i < attachmentJson.size(); ++i) {
         QJsonObject attachmentItem = attachmentJson[i].toObject();
-        attachments.push_back(VAttachment(attachmentItem[DirConfig::c_name].toString()));
+        file->m_attachments.push_back(VAttachment(attachmentItem[DirConfig::c_name].toString()));
     }
 
-    return new VNoteFile(p_directory,
-                         p_json[DirConfig::c_name].toString(),
-                         p_type,
-                         p_modifiable,
-                         QDateTime::fromString(p_json[DirConfig::c_createdTime].toString(),
-                                               Qt::ISODate),
-                         QDateTime::fromString(p_json[DirConfig::c_modifiedTime].toString(),
-                                               Qt::ISODate),
-                         p_json[DirConfig::c_attachmentFolder].toString(),
-                         attachments);
+    // Tags.
+    QJsonArray tagsJson = p_json[DirConfig::c_tags].toArray();
+    for (int i = 0; i < tagsJson.size(); ++i) {
+        file->m_tags.append(tagsJson[i].toString());
+    }
+
+    return file;
 }
 
 QJsonObject VNoteFile::toConfigJson() const
@@ -167,6 +171,14 @@ QJsonObject VNoteFile::toConfigJson() const
     }
 
     item[DirConfig::c_attachments] = attachmentJson;
+
+    // Tags.
+    QJsonArray tags;
+    for (auto const & tag : m_tags) {
+        tags.append(tag);
+    }
+
+    item[DirConfig::c_tags] = tags;
 
     return item;
 }
@@ -605,4 +617,38 @@ bool VNoteFile::copyInternalImages(const QVector<ImageLink> &p_images,
 
     *p_nrImageCopied = nrImageCopied;
     return ret;
+}
+
+void VNoteFile::removeTag(const QString &p_tag)
+{
+    if (p_tag.isEmpty() || m_tags.isEmpty()) {
+        return;
+    }
+
+    int nr = m_tags.removeAll(p_tag);
+    if (nr > 0) {
+        if (!getDirectory()->updateFileConfig(this)) {
+            qWarning() << "fail to update config of file" << m_name
+                       << "in directory" << fetchBasePath();
+        }
+    }
+}
+
+bool VNoteFile::addTag(const QString &p_tag)
+{
+    Q_ASSERT(isOpened());
+
+    if (p_tag.isEmpty() || hasTag(p_tag)) {
+        return false;
+    }
+
+    m_tags.append(p_tag);
+    if (!getDirectory()->updateFileConfig(this)) {
+        qWarning() << "fail to update config of file" << m_name
+                   << "in directory" << fetchBasePath();
+        m_tags.removeAll(p_tag);
+        return false;
+    }
+
+    return true;
 }

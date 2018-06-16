@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QString>
 #include <QDateTime>
+#include <QStringList>
 
 class VDirectory;
 class VFile;
@@ -54,6 +55,12 @@ public:
     VDirectory *getRootDir() const;
 
     void rename(const QString &p_name);
+
+    const QStringList &getTags() const;
+
+    bool addTag(const QString &p_tag);
+
+    bool hasTag(const QString &p_tag) const;
 
     static VNotebook *createNotebook(const QString &p_name,
                                      const QString &p_path,
@@ -132,6 +139,10 @@ private:
     // Could be relative or absolute.
     QString m_recycleBinFolder;
 
+    // List of all the tags of notes.
+    // Used for index and auto-completion.
+    QStringList m_tags;
+
     // Parent is NULL for root directory
     VDirectory *m_rootDir;
 
@@ -170,4 +181,13 @@ inline const QString &VNotebook::getName() const
     return m_name;
 }
 
+inline bool VNotebook::hasTag(const QString &p_tag) const
+{
+    return m_tags.contains(p_tag);
+}
+
+inline const QStringList &VNotebook::getTags() const
+{
+    return m_tags;
+}
 #endif // VNOTEBOOK_H

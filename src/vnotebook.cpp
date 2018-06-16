@@ -2,6 +2,7 @@
 #include <QDir>
 #include <QDebug>
 #include <QCoreApplication>
+#include <QJsonArray>
 
 #include "vdirectory.h"
 #include "utils/vutils.h"
@@ -57,6 +58,12 @@ bool VNotebook::readConfigNotebook()
         m_recycleBinFolder = it.value().toString();
     }
 
+    // [tags] section.
+    QJsonArray tagsJson = configJson[DirConfig::c_tags].toArray();
+    for (int i = 0; i < tagsJson.size(); ++i) {
+        m_tags.append(tagsJson[i].toString());
+    }
+
     // [attachment_folder] section.
     // SHOULD be processed at last.
     it = configJson.find(DirConfig::c_attachmentFolder);
@@ -87,6 +94,14 @@ QJsonObject VNotebook::toConfigJsonNotebook() const
 
     // [recycle_bin_folder] section.
     json[DirConfig::c_recycleBinFolder] = m_recycleBinFolder;
+
+    // [tags] section.
+    QJsonArray tags;
+    for (auto const & tag : m_tags) {
+        tags.append(tag);
+    }
+
+    json[DirConfig::c_tags] = tags;
 
     return json;
 }
@@ -407,4 +422,23 @@ void VNotebook::updatePath(const QString &p_path)
                                QDateTime::currentDateTimeUtc());
 
     readConfigNotebook();
+}
+
+bool VNotebook::addTag(const QString &p_tag)
+{
+    Q_ASSERT(isOpened());
+
+    if (p_tag.isEmpty() || hasTag(p_tag)) {
+        return false;
+    }
+
+    m_tags.append(p_tag);
+    if (!writeConfigNotebook()) {
+        qWarning() << "fail to update config of notebook" << m_name
+                   << "in directory" << m_path;
+        m_tags.removeAll(p_tag);
+        return false;
+    }
+
+    return true;
 }

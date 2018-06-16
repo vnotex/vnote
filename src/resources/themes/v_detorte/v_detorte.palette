@@ -9,7 +9,7 @@ mdhl_file=v_detorte.mdhl
 css_file=v_detorte.css
 codeblock_css_file=v_detorte_codeblock.css
 mermaid_css_file=v_detorte_mermaid.css
-version=2
+version=3
 
 ; This mapping will be used to translate colors when the content of HTML is copied
 ; without background. You could just specify the foreground colors mapping here.
@@ -108,6 +108,8 @@ vim_indicator_cmd_edit_pending_bg=@selected_bg
 
 ; VTabIndicator.
 tab_indicator_label_fg=@base_fg
+tab_indicator_tag_label_fg=#222222
+tab_indicator_tag_label_bg=#ce93db
 
 ; Html template.
 template_title_flash_light_fg=@master_light_bg

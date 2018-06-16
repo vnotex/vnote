@@ -258,5 +258,6 @@
         <file>resources/themes/v_detorte/v_detorte.qss</file>
         <file>resources/themes/v_detorte/v_detorte_codeblock.css</file>
         <file>resources/themes/v_detorte/v_detorte_mermaid.css</file>
+        <file>resources/icons/tags.svg</file>
     </qresource>
 </RCC>

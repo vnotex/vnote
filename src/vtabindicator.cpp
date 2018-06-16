@@ -7,6 +7,8 @@
 #include "vbuttonwithwidget.h"
 #include "vwordcountinfo.h"
 #include "utils/vutils.h"
+#include "vtagpanel.h"
+#include "vnotefile.h"
 
 VWordCountPanel::VWordCountPanel(QWidget *p_parent)
     : QWidget(p_parent)
@@ -99,6 +101,8 @@ VTabIndicator::VTabIndicator(QWidget *p_parent)
 
 void VTabIndicator::setupUI()
 {
+    m_tagPanel = new VTagPanel(this);
+
     m_docTypeLabel = new QLabel(this);
     m_docTypeLabel->setToolTip(tr("The type of the file"));
     m_docTypeLabel->setProperty("ColorGreyLabel", true);
@@ -129,6 +133,7 @@ void VTabIndicator::setupUI()
             this, &VTabIndicator::updateWordCountInfo);
 
     QHBoxLayout *mainLayout = new QHBoxLayout(this);
+    mainLayout->addWidget(m_tagPanel);
     mainLayout->addWidget(m_cursorLabel);
     mainLayout->addWidget(m_wordCountBtn);
     mainLayout->addWidget(m_externalLabel);
@@ -171,7 +176,7 @@ static QString docTypeToString(DocType p_type)
 
 void VTabIndicator::update(const VEditTabInfo &p_info)
 {
-    const VFile *file = NULL;
+    VFile *file = NULL;
     DocType docType = DocType::Html;
     bool readonly = false;
     bool external = false;
@@ -186,7 +191,7 @@ void VTabIndicator::update(const VEditTabInfo &p_info)
         docType = file->getDocType();
         readonly = !file->isModifiable();
         external = file->getType() == FileType::Orphan;
-        system = external && dynamic_cast<const VOrphanFile *>(file)->isSystemFile();
+        system = external && dynamic_cast<VOrphanFile *>(file)->isSystemFile();
 
         if (m_editTab->isEditMode()) {
             int line = p_info.m_cursorBlockNumber + 1;
@@ -207,6 +212,13 @@ void VTabIndicator::update(const VEditTabInfo &p_info)
         } else {
             m_cursorLabel->hide();
         }
+    }
+
+    m_tagPanel->setVisible(!external);
+    if (external) {
+        m_tagPanel->updateTags(NULL);
+    } else {
+        m_tagPanel->updateTags(dynamic_cast<VNoteFile *>(file));
     }
 
     updateWordCountBtn(p_info);
