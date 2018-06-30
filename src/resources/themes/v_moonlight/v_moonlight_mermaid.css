@@ -46,7 +46,7 @@
 }
 
 .mermaid-diagram .actor-line {
-  stroke: grey;
+  stroke: blue;
 }
 
 .mermaid-diagram .messageLine0 {
@@ -154,7 +154,7 @@
 
 /* Grid and axis */
 .mermaid-diagram .grid .tick {
-  stroke: lightgrey;
+  stroke: lightblue;
   opacity: 0.3;
   shape-rendering: crispEdges;
 }
@@ -240,8 +240,8 @@
 .mermaid-diagram .done1,
 .mermaid-diagram .done2,
 .mermaid-diagram .done3 {
-  stroke: grey;
-  fill: lightgrey;
+  stroke: blue;
+  fill: lightblue;
   stroke-width: 2;
 }
 
@@ -276,7 +276,7 @@
 .mermaid-diagram .doneCrit2,
 .mermaid-diagram .doneCrit3 {
   stroke: #ff8888;
-  fill: lightgrey;
+  fill: lightblue;
   stroke-width: 2;
   cursor: pointer;
   shape-rendering: crispEdges;

@@ -1,5 +1,4 @@
-.view-image {
-    cursor: pointer;
+.view-image,.view-svg {
     transition: 0.3s;
 }
 
@@ -14,7 +13,7 @@
     height: 100%;
     overflow: hidden;
     background-color: rgb(68, 68, 68);
-    background-color: rgba(68, 68, 68, 0.9);
+    background-color: rgba(68, 68, 68, 0.95);
 }
 
 .modal-content {

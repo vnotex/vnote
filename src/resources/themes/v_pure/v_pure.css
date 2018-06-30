@@ -322,3 +322,17 @@ table.hljs-ln tr td.hljs-ln-code {
   background: #1976D2;
   color: #F5F5F5;
 }
+
+.modal-box {
+    background-color: rgb(234, 234, 234);
+    background-color: rgba(234, 234, 234, 0.95);
+}
+
+span.modal-close {
+    color: #666666;
+}
+
+span.modal-close:hover,
+span.modal-close:focus {
+    color: #222222;
+}

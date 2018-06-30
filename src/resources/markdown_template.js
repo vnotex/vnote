@@ -594,6 +594,7 @@ var renderMermaidOne = function(code) {
     var graphDiv = document.createElement('div');
     graphDiv.classList.add(VMermaidDivClass);
     graphDiv.innerHTML = graph;
+
     var preNode = code.parentNode;
     preNode.parentNode.replaceChild(graphDiv, preNode);
     return true;
@@ -654,6 +655,7 @@ var renderFlowchartOne = function(code) {
     // Draw on it after adding it to page.
     try {
         graph.drawSVG(graphDiv.id);
+        setupSVGToView(graphDiv.children[0], true);
     } catch (err) {
         content.setLog("err: " + err);
         preParentNode.replaceChild(preNode, graphDiv);
@@ -716,6 +718,7 @@ var renderPlantUMLOneOnline = function(code) {
     } else {
         obj = document.createElement('img');
         obj.src = url;
+        setupIMGToView(obj);
     }
 
     var preNode = code.parentNode;
@@ -1196,7 +1199,6 @@ var listContainsRegex = function(strs, exp) {
 var StylesToInline = null;
 
 var initStylesToInline = function() {
-    console.log('initStylesToInline');
     StylesToInline = new Map();
 
     if (VStylesToInline.length == 0) {
@@ -1346,9 +1348,11 @@ var handlePlantUMLResult = function(id, timeStamp, format, result) {
             obj = document.createElement('div');
             obj.classList.add(VPlantUMLDivClass);
             obj.innerHTML = result;
+            setupSVGToView(obj.children[0], true);
         } else {
             obj = document.createElement('img');
             obj.src = "data:image/" + format + ";base64, " + result;
+            setupIMGToView(obj);
         }
 
         var preNode = code.parentNode;
@@ -1365,9 +1369,11 @@ var handleGraphvizResult = function(id, timeStamp, format, result) {
         if (format == 'svg') {
             obj = document.createElement('p');
             obj.innerHTML = result;
+            setupSVGToView(obj.children[0]);
         } else {
             obj = document.createElement('img');
             obj.src = "data:image/" + format + ";base64, " + result;
+            setupIMGToView(obj);
         }
 
         var preNode = code.parentNode;

@@ -1,16 +1,29 @@
 var imageViewDiv = document.getElementById('image-view-div');
 
-var viewImage = function(obj, image) {
-    image = !image ? obj.src : image;
+var viewImage = function(imgSrc, background = 'transparent') {
+    viewBoxImageMouseDown = false;
 
     imageViewDiv.style.display = 'block';
 
     var boxImage = document.getElementById('image-view');
-    boxImage.src = image;
+    boxImage.src = imgSrc;
+    boxImage.style.backgroundColor = background;
+
     // Restore image-view.
     boxImage.style.width = '';
     boxImage.style.position = '';
     boxImage.style.zIndex = '';
+};
+
+var viewIMG = function(imgNode) {
+    viewImage(imgNode.src);
+};
+
+var viewSVG = function(svgNode, background = 'transparent') {
+    var svg = svgNode.outerHTML.replace(/#/g, '%23').replace(/[\r\n]/g, '');
+    var src = 'data:image/svg+xml;utf8,' + svg;
+
+    viewImage(src, background);
 };
 
 var viewBoxImageMouseDown = false;
@@ -132,18 +145,57 @@ var setupImageView = function() {
 
     var imgs = document.getElementsByTagName('img');
     for (var i = 0; i < imgs.length; ++i) {
-        var img = imgs[i];
-        if (img.id == 'image-view') {
+        if (imgs[i].id == 'image-view') {
             continue;
         }
 
-        img.classList.add('view-image');
-        img.onclick = function() {
-            viewImage(this, this.src);
-        };
+        setupIMGToView(imgs[i]);
     }
 };
 
 var isViewingImage = function() {
     return imageViewDiv.style.display == 'block';
+};
+
+var onSVGDoubleClick = function(forceBackground, e) {
+    e = e || window.event;
+    var name = e.target.nodeName.toLowerCase();
+    if (name != 'text' && name != 'tspan') {
+        if (forceBackground) {
+            // Use <svg>'s parent's background color.
+            var svgNode = e.target;
+            while (svgNode && svgNode.nodeName.toLowerCase() != 'svg') {
+                svgNode = svgNode.parentNode;
+            }
+
+            if (svgNode) {
+                var style = window.getComputedStyle(svgNode.parentNode, null);
+                viewSVG(this, style.backgroundColor);
+            }
+        } else {
+            viewSVG(this);
+        }
+
+        e.preventDefault();
+    }
+};
+
+var setupSVGToView = function(node, forceBackground = false) {
+    if (!node || node.nodeName.toLowerCase() != 'svg') {
+        return;
+    }
+
+    node.classList.add('view-svg');
+    node.ondblclick = onSVGDoubleClick.bind(node, forceBackground);
+};
+
+var setupIMGToView = function(node) {
+    if (!node || node.nodeName.toLowerCase() != 'img') {
+        return;
+    }
+
+    node.classList.add('view-image');
+    node.ondblclick = function() {
+        viewIMG(this);
+    };
 };
