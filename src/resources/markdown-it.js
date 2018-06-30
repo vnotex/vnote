@@ -99,6 +99,9 @@ if (VMarkdownitOption.metadata) {
 
 if (VMarkdownitOption.emoji) {
     mdit = mdit.use(window.markdownitEmoji);
+    mdit.renderer.rules.emoji = function(token, idx) {
+        return '<span class="emoji emoji_' + token[idx].markup + '">' + token[idx].content + '</span>';
+    };
 }
 
 mdit = mdit.use(window.markdownitFootnote);

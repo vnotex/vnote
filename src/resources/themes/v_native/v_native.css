@@ -212,6 +212,11 @@ div.img-caption {
     line-height: 1.5;
 }
 
+.emoji_zero,.emoji_one,.emoji_two,.emoji_three,.emoji_four,.emoji_five,.emoji_six,.emoji_seven,.emoji_eight,.emoji_nine {
+    margin-left: 5px;
+    margin-right: 8px;
+}
+
 /* For Highlight.js Line Number */
 table.hljs-ln tr {
     border: none;
