@@ -367,7 +367,7 @@ public:
     static const QString c_imageTitleRegExp;
 
     // Regular expression for file/directory name.
-    // Forbidden char: \/:*?"<>|
+    // Forbidden char: \/:*?"<>| and whitespaces except space.
     static const QString c_fileNameRegExp;
 
     // Regular expression for fenced code block.
