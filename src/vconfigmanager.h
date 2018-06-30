@@ -8,6 +8,7 @@
 #include <QSettings>
 #include <QHash>
 #include <QLinkedList>
+#include <QDir>
 
 #include "vnotebook.h"
 #include "hgmarkdownhighlighter.h"
@@ -564,8 +565,6 @@ private:
 
     void updateMarkdownEditStyle();
 
-    // See if the old c_obsoleteDirConfigFile exists. If so, rename it to
-    // the new one; if not, use the c_dirConfigFile.
     static QString fetchDirConfigFilePath(const QString &p_path);
 
     // Read the [shortcuts] section in settings to init m_shortcuts.
@@ -935,10 +934,6 @@ private:
 
     // Whether user has reset the configurations.
     bool m_hasReset;
-
-    // The name of the config file in each directory, obsolete.
-    // Use c_dirConfigFile instead.
-    static const QString c_obsoleteDirConfigFile;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2432,5 +2427,10 @@ inline void VConfigManager::setExplorerCurrentIndex(int p_idx)
 
     m_explorerCurrentIndex = p_idx;
     setConfigToSessionSettings("global", "explorer_current_entry", m_explorerCurrentIndex);
+}
+
+inline QString VConfigManager::fetchDirConfigFilePath(const QString &p_path)
+{
+    return QDir(p_path).filePath(c_dirConfigFile);
 }
 #endif // VCONFIGMANAGER_H

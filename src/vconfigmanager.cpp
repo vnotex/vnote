@@ -19,8 +19,6 @@ const QString VConfigManager::appName = QString("vnote");
 
 const QString VConfigManager::c_version = QString("1.18");
 
-const QString VConfigManager::c_obsoleteDirConfigFile = QString(".vnote.json");
-
 const QString VConfigManager::c_dirConfigFile = QString("_vnote.json");
 
 const QString VConfigManager::c_defaultConfigFilePath = QString(":/resources/vnote.ini");
@@ -484,22 +482,6 @@ void VConfigManager::setConfigToSessionSettings(const QString &p_section,
                                     p_section,
                                     p_key,
                                     p_value);
-}
-
-QString VConfigManager::fetchDirConfigFilePath(const QString &p_path)
-{
-    QDir dir(p_path);
-    QString fileName = c_dirConfigFile;
-
-    if (dir.exists(c_obsoleteDirConfigFile)) {
-        V_ASSERT(!dir.exists(c_dirConfigFile));
-        if (!dir.rename(c_obsoleteDirConfigFile, c_dirConfigFile)) {
-            fileName = c_obsoleteDirConfigFile;
-        }
-    }
-
-    QString filePath = QDir::cleanPath(dir.filePath(fileName));
-    return filePath;
 }
 
 QJsonObject VConfigManager::readDirectoryConfig(const QString &path)
