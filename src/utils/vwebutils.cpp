@@ -957,6 +957,10 @@ QString VWebUtils::dataURI(const QUrl &p_url, bool p_keepTitle) const
         uri = QString("data:image/svg+xml;utf8,%1").arg(QString::fromUtf8(data));
         uri.replace('\r', "").replace('\n', "");
 
+        // Using unescaped '#' characters in a data URI body is deprecated and
+        // will be removed in M68, around July 2018. Please use '%23' instead.
+        uri.replace("#", "%23");
+
         if (!p_keepTitle) {
             // Remove <title>...</title>.
             QRegExp reg("<title>.*</title>", Qt::CaseInsensitive);
