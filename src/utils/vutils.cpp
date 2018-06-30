@@ -764,7 +764,10 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
     if (g_config->getEnableGraphviz()) {
         extraFile += "<script>var VEnableGraphviz = true;</script>\n";
 
-        QString format = p_isPDF ? "png" : "svg";
+        // If we use png, we need to specify proper font in the dot command to render
+        // non-ASCII chars properly.
+        // Hence we use svg format in both cases.
+        QString format = p_isPDF ? "svg" : "svg";
         extraFile += QString("<script>var VGraphvizFormat = '%1';</script>\n").arg(format);
     }
 
