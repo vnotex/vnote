@@ -261,5 +261,7 @@
         <file>resources/icons/tags.svg</file>
         <file>resources/icons/tag_explorer.svg</file>
         <file>resources/icons/tag.svg</file>
+        <file>resources/view_image.js</file>
+        <file>resources/view_image.css</file>
     </qresource>
 </RCC>

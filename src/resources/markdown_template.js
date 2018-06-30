@@ -854,7 +854,7 @@ var insertImageCaption = function() {
         captionDiv.textContent = img.alt;
         img.insertAdjacentElement('afterend', captionDiv);
     }
-}
+};
 
 var asyncJobsCount = 0;
 
@@ -1005,7 +1005,8 @@ window.onmousedown = function(e) {
     // Left button and Ctrl key.
     if (e.buttons == 1
         && isCtrl
-        && window.getSelection().type != 'Range') {
+        && window.getSelection().type != 'Range'
+        && !isViewingImage()) {
         vds_oriMouseClientX = e.clientX;
         vds_oriMouseClientY = e.clientY;
         vds_readyToScroll = true;

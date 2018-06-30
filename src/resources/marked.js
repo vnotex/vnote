@@ -58,6 +58,7 @@ var updateText = function(text) {
     contentDiv.innerHTML = html;
     handleToc(needToc);
     insertImageCaption();
+    setupImageView();
     renderMermaid('lang-mermaid');
     renderFlowchart(['lang-flowchart', 'lang-flow']);
     renderPlantUML('lang-puml');

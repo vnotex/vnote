@@ -20,6 +20,7 @@ var updateHtml = function(html) {
     contentDiv.innerHTML = html;
 
     insertImageCaption();
+    setupImageView();
 
     var codes = document.getElementsByTagName('code');
     mermaidIdx = 0;

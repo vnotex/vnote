@@ -97,6 +97,7 @@ var updateText = function(text) {
     contentDiv.innerHTML = html;
     handleToc(needToc);
     insertImageCaption();
+    setupImageView();
     highlightCodeBlocks(document,
                         VEnableMermaid,
                         VEnableFlowchart,
