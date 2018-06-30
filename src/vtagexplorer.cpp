@@ -225,7 +225,8 @@ bool VTagExplorer::activateTag(const QString &p_tag)
                                                            VSearchConfig::Tag,
                                                            VSearchConfig::Note,
                                                            VSearchConfig::Internal,
-                                                           VSearchConfig::NoneOption,
+                                                           VSearchConfig::CaseSensitive
+                                                           | VSearchConfig::WholeWordOnly,
                                                            p_tag,
                                                            QString()));
     getVSearch()->setConfig(config);
