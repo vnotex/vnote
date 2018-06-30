@@ -49,13 +49,26 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
 
     m_codeBlockFormat.setForeground(QBrush(Qt::darkYellow));
     for (int index = 0; index < styles.size(); ++index) {
-        const pmh_element_type &eleType = styles[index].type;
-        if (eleType == pmh_VERBATIM) {
+        switch (styles[index].type) {
+        case pmh_VERBATIM:
             m_codeBlockFormat = styles[index].format;
-        } else if (eleType == pmh_LINK) {
+            break;
+
+        case pmh_LINK:
             m_linkFormat = styles[index].format;
-        } else if (eleType == pmh_IMAGE) {
+            break;
+
+        case pmh_IMAGE:
             m_imageFormat = styles[index].format;
+            break;
+
+        case pmh_CODE:
+            // Use inline code font family for MathJax format.
+            m_mathjaxFormat.setFontFamily(styles[index].format.fontFamily());
+            break;
+
+        default:
+            break;
         }
     }
 
