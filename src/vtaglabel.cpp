@@ -10,8 +10,8 @@ VTagLabel::VTagLabel(const QString &p_text,
                      bool p_useFullText,
                      QWidget *p_parent)
     : QWidget(p_parent),
-      m_useFullText(p_useFullText),
-      m_text(p_text)
+      m_text(p_text),
+      m_useFullText(p_useFullText)
 {
     setupUI();
 }

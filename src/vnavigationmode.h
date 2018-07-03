@@ -77,7 +77,7 @@ public:
         VNavigationMode::showNavigation(m_widget);
     }
 
-    bool handleKeyNavigation(int p_key, bool &p_succeed)
+    bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE
     {
         static bool secondKey = false;
 
