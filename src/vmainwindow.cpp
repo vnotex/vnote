@@ -210,6 +210,10 @@ void VMainWindow::registerCaptainAndNavigationTargets()
                                      g_config->getCaptainShortcutKeySequence("Export"),
                                      this,
                                      exportByCaptain);
+    m_captain->registerCaptainTarget(tr("FocusEditArea"),
+                                     g_config->getCaptainShortcutKeySequence("FocusEditArea"),
+                                     this,
+                                     focusEditAreaByCaptain);
 }
 
 void VMainWindow::setupUI()
@@ -2816,6 +2820,15 @@ bool VMainWindow::exportByCaptain(void *p_target, void *p_data)
     QTimer::singleShot(50, obj, SLOT(handleExportAct()));
 
     return true;
+}
+
+bool VMainWindow::focusEditAreaByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+
+    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    obj->focusEditArea();
+    return false;
 }
 
 void VMainWindow::promptNewNotebookIfEmpty()

@@ -70,17 +70,18 @@ public:
 
     QWidget *getPopupWidget() const;
 
-    // Show the popup widget.
-    void showPopupWidget();
-
-    void hidePopupWidget();
-
     // Set the bubble to display a number @p_num.
     // @p_num: -1 to hide the bubble.
     void setBubbleNumber(int p_num);
 
     // Set the foreground and background of the bubble.
     void setBubbleColor(const QColor &p_fg, const QColor &p_bg);
+
+public slots:
+    // Show the popup widget.
+    void showPopupWidget();
+
+    void hidePopupWidget();
 
 signals:
     // Emit when popup widget is about to show.

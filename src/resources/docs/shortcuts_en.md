@@ -200,8 +200,8 @@ Press the leader key `Ctrl+E`, then VNote will enter the Captain Mode, within wh
 
 - `E`   
 Toggle expanding the edit area.
-- `P`   
-Toggle single panel or two panels mode.
+- `Y`   
+Focus to the edit area.
 - `T`   
 Toggle the Tools panel.
 - `Shift+#`   

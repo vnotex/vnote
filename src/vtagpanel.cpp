@@ -265,7 +265,8 @@ bool VTagPanel::handleKeyNavigation(int p_key, bool &p_succeed)
                 // Show all tags panel.
                 // To avoid focus in VCaptain after hiding the menu.
                 g_mainWin->focusEditArea();
-                m_btn->showPopupWidget();
+                // Use timer to hide the label first.
+                QTimer::singleShot(50, m_btn, SLOT(showPopupWidget()));
             } else {
                 m_tagEdit->setFocus();
             }
