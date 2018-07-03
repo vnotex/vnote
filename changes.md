@@ -1,4 +1,11 @@
 # Changes History
+## v1.19
+- Support tags for notes;
+- UniversalEntry: support searching tags;
+- WebView: click an image or diagram to view it in read mode;
+- Add test buttons for PlantUML and Graphviz in settings dialog;
+- CaptainMode: Y to focus to the edit area;
+
 ## v1.18
 - Explorer: fix the crash when no root entry is set;
 - New dark theme **v_detorte** from a Vim *detorte* theme;
