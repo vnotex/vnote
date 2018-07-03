@@ -77,6 +77,7 @@ public:
     void clearSearchedWordHighlight();
     void moveCurrentTabOneSplit(bool p_right);
     void focusNextTab(bool p_right);
+
     // Return true if the file list is shown.
     bool showOpenedFileList();
 

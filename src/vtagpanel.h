@@ -2,6 +2,8 @@
 #define VTAGPANEL_H
 
 #include <QWidget>
+#include "vnavigationmode.h"
+
 #include <QVector>
 
 class VTagLabel;
@@ -12,13 +14,17 @@ class VLineEdit;
 class QStringListModel;
 class VNotebook;
 
-class VTagPanel : public QWidget
+class VTagPanel : public QWidget, public VNavigationMode
 {
     Q_OBJECT
 public:
     explicit VTagPanel(QWidget *parent = nullptr);
 
     void updateTags(VNoteFile *p_file);
+
+    // Implementations for VNavigationMode.
+    void showNavigation() Q_DECL_OVERRIDE;
+    bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE;
 
 protected:
     bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
@@ -41,6 +47,8 @@ private:
 
     void updateCompleter();
 
+    bool isAllTagsPanelAvailable() const;
+
     QVector<VTagLabel *> m_labels;
 
     VButtonWithWidget *m_btn;
@@ -56,5 +64,4 @@ private:
 
     const VNotebook *m_notebookOfCompleter;
 };
-
 #endif // VTAGPANEL_H

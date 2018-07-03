@@ -9,6 +9,10 @@
 #include "utils/vutils.h"
 #include "vtagpanel.h"
 #include "vnotefile.h"
+#include "vmainwindow.h"
+#include "vcaptain.h"
+
+extern VMainWindow *g_mainWin;
 
 VWordCountPanel::VWordCountPanel(QWidget *p_parent)
     : QWidget(p_parent)
@@ -97,6 +101,11 @@ VTabIndicator::VTabIndicator(QWidget *p_parent)
       m_editTab(NULL)
 {
     setupUI();
+}
+
+void VTabIndicator::registerNavigationTarget()
+{
+    g_mainWin->getCaptain()->registerNavigationTarget(m_tagPanel);
 }
 
 void VTabIndicator::setupUI()

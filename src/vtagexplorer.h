@@ -25,6 +25,8 @@ public:
 
     void saveStateAndGeometry();
 
+    void registerNavigationTarget();
+
 protected:
     void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 

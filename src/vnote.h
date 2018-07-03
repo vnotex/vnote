@@ -81,7 +81,7 @@ public:
     static const QString c_markdownGuideDocFile;
 
     // Get the label style in Navigation mode.
-    QString getNavigationLabelStyle(const QString &p_str) const;
+    QString getNavigationLabelStyle(const QString &p_str, bool p_small = false) const;
 
     // Given the path of a file, first try to open it as note file,
     // then try to open it as orphan file.

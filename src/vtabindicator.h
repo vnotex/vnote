@@ -47,6 +47,8 @@ public:
     // Update indicator.
     void update(const VEditTabInfo &p_info);
 
+    void registerNavigationTarget();
+
 private slots:
     void updateWordCountInfo(QWidget *p_widget);
 

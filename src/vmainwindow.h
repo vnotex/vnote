@@ -122,6 +122,8 @@ public:
     // Kick off timer to do things after start.
     void kickOffStartUpTimer(const QStringList &p_files);
 
+    void focusEditArea() const;
+
 signals:
     // Emit when editor related configurations were changed by user.
     void editorConfigUpdated();

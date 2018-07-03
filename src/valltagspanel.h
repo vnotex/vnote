@@ -20,6 +20,11 @@ public:
 signals:
     void tagRemoved(const QString &p_text);
 
+protected:
+    void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
+
+    void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
+
 private:
     void removeItem(QListWidgetItem *p_item);
 

@@ -3,6 +3,7 @@
 #include <QtWidgets>
 
 #include "vtaglabel.h"
+#include "utils/vimnavigationforwidget.h"
 
 VAllTagsPanel::VAllTagsPanel(QWidget *p_parent)
     : QWidget(p_parent)
@@ -52,4 +53,20 @@ VTagLabel *VAllTagsPanel::addTag(const QString &p_text)
     m_list->addItem(item);
     m_list->setItemWidget(item, label);
     return label;
+}
+
+void VAllTagsPanel::showEvent(QShowEvent *p_event)
+{
+    QWidget::showEvent(p_event);
+
+    m_list->setFocus();
+}
+
+void VAllTagsPanel::keyPressEvent(QKeyEvent *p_event)
+{
+    if (VimNavigationForWidget::injectKeyPressEventForVim(m_list, p_event)) {
+        return;
+    }
+
+    QWidget::keyPressEvent(p_event);
 }

@@ -575,6 +575,7 @@ void VNotebookSelector::showNavigation()
     m_naviLabel = new QLabel(m_majorKey, this);
     m_naviLabel->setStyleSheet(g_vnote->getNavigationLabelStyle(m_majorKey));
     m_naviLabel->show();
+    m_naviLabel->move(rect().topRight() - QPoint(m_naviLabel->width() + 2, 2));
 }
 
 void VNotebookSelector::hideNavigation()

@@ -209,11 +209,12 @@ QVector<VNotebook *> &VNote::getNotebooks()
     return m_notebooks;
 }
 
-QString VNote::getNavigationLabelStyle(const QString &p_str) const
+QString VNote::getNavigationLabelStyle(const QString &p_str, bool p_small) const
 {
     static int lastLen = -1;
     static int pxWidth = 24;
-    const int fontPt = 15;
+    static int pxHeight = 24;
+    const int fontPt = p_small ? 12 : 15;
 
     QString fontFamily = getMonospacedFont();
 
@@ -222,25 +223,36 @@ QString VNote::getNavigationLabelStyle(const QString &p_str) const
         font.setBold(true);
         QFontMetrics fm(font);
         pxWidth = fm.width(p_str);
+        pxHeight = fm.capHeight() + 5;
         lastLen = p_str.size();
     }
 
     QColor bg(g_palette->color("navigation_label_bg"));
     bg.setAlpha(200);
 
-    return QString("background-color: %1;"
-                   "color: %2;"
-                   "font-size: %3pt;"
-                   "font: bold;"
-                   "font-family: %4;"
-                   "border-radius: 3px;"
-                   "min-width: %5px;"
-                   "max-width: %5px;")
-                   .arg(bg.name(QColor::HexArgb))
-                   .arg(g_palette->color("navigation_label_fg"))
-                   .arg(fontPt)
-                   .arg(fontFamily)
-                   .arg(pxWidth);
+    QString style = QString("background-color: %1;"
+                            "color: %2;"
+                            "font-size: %3pt;"
+                            "font: bold;"
+                            "font-family: %4;"
+                            "border-radius: 3px;"
+                            "min-width: %5px;"
+                            "max-width: %5px;")
+                           .arg(bg.name(QColor::HexArgb))
+                           .arg(g_palette->color("navigation_label_fg"))
+                           .arg(fontPt)
+                           .arg(fontFamily)
+                           .arg(pxWidth);
+
+    if (p_small) {
+        style += QString("margin: 0px;"
+                         "padding: 0px;"
+                         "min-height: %1px;"
+                         "max-height: %1px;")
+                        .arg(pxHeight);
+    }
+
+    return style;
 }
 
 const QString &VNote::getMonospacedFont() const

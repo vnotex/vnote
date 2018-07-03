@@ -13,6 +13,8 @@
 #include "vhistorylist.h"
 #include "vnotefile.h"
 #include "utils/vutils.h"
+#include "vnavigationmode.h"
+#include "vcaptain.h"
 
 extern VMainWindow *g_mainWin;
 
@@ -495,4 +497,15 @@ void VTagExplorer::promptToRemoveEmptyTag(const QString &p_tag)
     // Remove the tag from m_notebook.
     m_notebook->removeTag(p_tag);
     updateContent();
+}
+
+void VTagExplorer::registerNavigationTarget()
+{
+    setupUI();
+
+    VNavigationModeListWidgetWrapper *tagWrapper = new VNavigationModeListWidgetWrapper(m_tagList, this);
+    g_mainWin->getCaptain()->registerNavigationTarget(tagWrapper);
+
+    VNavigationModeListWidgetWrapper *fileWrapper = new VNavigationModeListWidgetWrapper(m_fileList, this);
+    g_mainWin->getCaptain()->registerNavigationTarget(fileWrapper);
 }

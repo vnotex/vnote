@@ -9,10 +9,13 @@
 #include "vtaglabel.h"
 #include "vlineedit.h"
 #include "vmainwindow.h"
+#include "vnote.h"
 
 extern VPalette *g_palette;
 
 extern VMainWindow *g_mainWin;
+
+extern VNote *g_vnote;
 
 #define MAX_DISPLAY_LABEL 3
 
@@ -209,4 +212,80 @@ void VTagPanel::updateCompleter()
 {
     m_tagsModel->setStringList(m_notebookOfCompleter ? m_notebookOfCompleter->getTags()
                                                      : QStringList());
+}
+
+void VTagPanel::showNavigation()
+{
+    if (!isVisible() || !m_file) {
+        return;
+    }
+
+    // View all tags.
+    if (isAllTagsPanelAvailable()) {
+        QChar key('a');
+        m_keyMap[key] = m_btn;
+
+        QString str = QString(m_majorKey) + key;
+        QLabel *label = new QLabel(str, this);
+        qDebug() << g_vnote->getNavigationLabelStyle(str, true);
+        label->setStyleSheet(g_vnote->getNavigationLabelStyle(str, true));
+        label->move(m_btn->geometry().topLeft());
+        label->show();
+        m_naviLabels.append(label);
+    }
+
+    // Add tag edit.
+    {
+        QChar key('b');
+        m_keyMap[key] = m_tagEdit;
+
+        QString str = QString(m_majorKey) + key;
+        QLabel *label = new QLabel(str, this);
+        label->setStyleSheet(g_vnote->getNavigationLabelStyle(str, true));
+        label->move(m_tagEdit->geometry().topLeft());
+        label->show();
+        m_naviLabels.append(label);
+    }
+}
+
+bool VTagPanel::handleKeyNavigation(int p_key, bool &p_succeed)
+{
+    static bool secondKey = false;
+    bool ret = false;
+    p_succeed = false;
+    QChar keyChar = VUtils::keyToChar(p_key);
+    if (secondKey && !keyChar.isNull()) {
+        secondKey = false;
+        p_succeed = true;
+        auto it = m_keyMap.find(keyChar);
+        if (it != m_keyMap.end()) {
+            ret = true;
+
+            if (*it == m_btn) {
+                // Show all tags panel.
+                // To avoid focus in VCaptain after hiding the menu.
+                g_mainWin->focusEditArea();
+                m_btn->showPopupWidget();
+            } else {
+                m_tagEdit->setFocus();
+            }
+        }
+    } else if (keyChar == m_majorKey) {
+        // Major key pressed.
+        // Need second key if m_keyMap is not empty.
+        if (m_keyMap.isEmpty()) {
+            p_succeed = true;
+        } else {
+            secondKey = true;
+        }
+
+        ret = true;
+    }
+
+    return ret;
+}
+
+bool VTagPanel::isAllTagsPanelAvailable() const
+{
+    return m_btn->isVisible();
 }

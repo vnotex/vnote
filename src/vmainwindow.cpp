@@ -152,7 +152,13 @@ void VMainWindow::registerCaptainAndNavigationTargets()
     m_captain->registerNavigationTarget(m_dirTree);
     m_captain->registerNavigationTarget(m_fileList);
     m_captain->registerNavigationTarget(m_historyList);
+
+    m_tagExplorer->registerNavigationTarget();
+
     m_captain->registerNavigationTarget(m_editArea);
+
+    m_tabIndicator->registerNavigationTarget();
+
     m_captain->registerNavigationTarget(m_toolBox);
     m_captain->registerNavigationTarget(outline);
     m_captain->registerNavigationTarget(m_snippetList);
@@ -3290,4 +3296,14 @@ void VMainWindow::stayOnTop(bool p_enabled)
     if (shown) {
         show();
     }
+}
+
+void VMainWindow::focusEditArea() const
+{
+    QWidget *widget = m_editArea->getCurrentTab();
+    if (!widget) {
+        widget = m_editArea;
+    }
+
+    widget->setFocus();
 }
