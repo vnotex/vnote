@@ -926,6 +926,7 @@ QString VWebUtils::copyResource(const QUrl &p_url, const QString &p_folder) cons
     return succ ? targetFile : QString();
 }
 
+// Please use single quote to quote the URI.
 QString VWebUtils::dataURI(const QUrl &p_url, bool p_keepTitle) const
 {
     QString uri;
@@ -960,6 +961,9 @@ QString VWebUtils::dataURI(const QUrl &p_url, bool p_keepTitle) const
         // Using unescaped '#' characters in a data URI body is deprecated and
         // will be removed in M68, around July 2018. Please use '%23' instead.
         uri.replace("#", "%23");
+
+        // Escape "'" to avoid conflict with src='...' attribute.
+        uri.replace("'", "%27");
 
         if (!p_keepTitle) {
             // Remove <title>...</title>.

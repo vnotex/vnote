@@ -26,6 +26,7 @@ public:
     QString copyResource(const QUrl &p_url, const QString &p_folder) const;
 
     // Return a dataURI of @p_url if it is an image.
+    // Please use single quote to quote the URI.
     QString dataURI(const QUrl &p_url, bool p_keepTitle = true) const;
 
 private:
