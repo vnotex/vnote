@@ -1,19 +1,22 @@
 #ifndef VOUTLINE_H
 #define VOUTLINE_H
 
+#include <QWidget>
 #include <QVector>
 #include <QMap>
 #include <QChar>
 
-#include "vtreewidget.h"
 #include "vtableofcontent.h"
 #include "vnavigationmode.h"
 
 class QLabel;
+class VTreeWidget;
+class QPushButton;
+class QTimer;
 
 // Display table of content as a tree and enable user to click an item to
 // jump to that header.
-class VOutline : public VTreeWidget, public VNavigationMode
+class VOutline : public QWidget, public VNavigationMode
 {
     Q_OBJECT
 public:
@@ -52,12 +55,22 @@ public slots:
 protected:
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 
+    void focusInEvent(QFocusEvent *p_event) Q_DECL_OVERRIDE;
+
 private slots:
     // Handle current item change even of the tree.
     // Do not response if m_muted is true.
     void handleCurrentItemChanged(QTreeWidgetItem *p_curItem, QTreeWidgetItem *p_preItem);
 
 private:
+    void setupUI();
+
+    void expandTree(int p_expandedLevel = 6);
+
+    void expandTreeOne(QTreeWidgetItem *p_item, int p_levelToBeExpanded);
+
+    void updateButtonsState();
+
     // @index: the index in @headers.
     static void updateTreeByLevel(QTreeWidget *p_treeWidget,
                                   const QVector<VTableOfContentItem> &p_headers,
@@ -68,8 +81,6 @@ private:
 
     // Fill the info of @p_item.
     static void fillItem(QTreeWidgetItem *p_item, const VTableOfContentItem &p_header);
-
-    void expandTree();
 
     static bool selectHeaderOne(QTreeWidget *p_treeWidget,
                                 QTreeWidgetItem *p_item,
@@ -82,6 +93,12 @@ private:
 
     // When true, won't emit outlineItemActivated().
     bool m_muted;
+
+    QTimer *m_expandTimer;
+
+    QPushButton *m_deLevelBtn;
+    QPushButton *m_inLevelBtn;
+    VTreeWidget *m_tree;
 };
 
 #endif // VOUTLINE_H

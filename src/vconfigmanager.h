@@ -519,6 +519,9 @@ public:
     int getNoteListViewOrder() const;
     void setNoteListViewOrder(int p_order);
 
+    int getOutlineExpandedLevel() const;
+    void setOutlineExpandedLevel(int p_level);
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -934,6 +937,9 @@ private:
 
     // Whether user has reset the configurations.
     bool m_hasReset;
+
+    // Expanded level of outline.
+    int m_outlineExpandedLevel;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2432,5 +2438,20 @@ inline void VConfigManager::setExplorerCurrentIndex(int p_idx)
 inline QString VConfigManager::fetchDirConfigFilePath(const QString &p_path)
 {
     return QDir(p_path).filePath(c_dirConfigFile);
+}
+
+inline int VConfigManager::getOutlineExpandedLevel() const
+{
+    return m_outlineExpandedLevel;
+}
+
+inline void VConfigManager::setOutlineExpandedLevel(int p_level)
+{
+    if (m_outlineExpandedLevel == p_level) {
+        return;
+    }
+
+    m_outlineExpandedLevel = p_level;
+    setConfigToSettings("global", "outline_expanded_level", m_outlineExpandedLevel);
 }
 #endif // VCONFIGMANAGER_H

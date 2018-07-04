@@ -263,5 +263,7 @@
         <file>resources/icons/tag.svg</file>
         <file>resources/view_image.js</file>
         <file>resources/view_image.css</file>
+        <file>resources/icons/decrease_outline_level.svg</file>
+        <file>resources/icons/increase_outline_level.svg</file>
     </qresource>
 </RCC>

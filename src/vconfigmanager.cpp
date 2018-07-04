@@ -300,6 +300,9 @@ void VConfigManager::initialize()
     if (m_historySize < 0) {
         m_historySize = 0;
     }
+
+    m_outlineExpandedLevel = getConfigFromSettings("global",
+                                                   "outline_expanded_level").toInt();
 }
 
 void VConfigManager::initSettings()
