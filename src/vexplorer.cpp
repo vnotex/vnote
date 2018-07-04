@@ -12,6 +12,7 @@
 #include "vlineedit.h"
 #include "vhistorylist.h"
 #include "vorphanfile.h"
+#include "utils/vimnavigationforwidget.h"
 
 extern VMainWindow *g_mainWin;
 
@@ -772,4 +773,13 @@ void VExplorer::setRootDirectory(const QString &p_path)
     if (idx != -1) {
         setCurrentEntry(idx);
     }
+}
+
+void VExplorer::keyPressEvent(QKeyEvent *p_event)
+{
+    if (VimNavigationForWidget::injectKeyPressEventForVim(m_tree, p_event)) {
+        return;
+    }
+
+    QWidget::keyPressEvent(p_event);
 }

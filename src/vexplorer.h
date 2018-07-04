@@ -28,6 +28,8 @@ protected:
 
     void focusInEvent(QFocusEvent *p_event) Q_DECL_OVERRIDE;
 
+    void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
+
 private slots:
     void handleEntryActivated(int p_idx);
 
