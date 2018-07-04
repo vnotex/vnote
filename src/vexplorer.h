@@ -21,6 +21,8 @@ class VExplorer : public QWidget
 public:
     explicit VExplorer(QWidget *p_parent = nullptr);
 
+    void setRootDirectory(const QString &p_path);
+
 protected:
     void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -66,8 +68,6 @@ private:
     void newFolder();
 
     void renameFile(const QString &p_filePath);
-
-    void setAsRootDirectory(const QString &p_path);
 
     bool m_initialized;
 

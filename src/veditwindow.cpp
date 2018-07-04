@@ -15,9 +15,14 @@
 #include "utils/viconutils.h"
 #include "vcart.h"
 #include "vhistorylist.h"
+#include "vnote.h"
+#include "vexplorer.h"
 
 extern VConfigManager *g_config;
+
 extern VMainWindow *g_mainWin;
+
+extern VNote *g_vnote;
 
 #define GET_TAB_FROM_SENDER() static_cast<QAction *>(sender())->data().toInt()
 
@@ -1189,24 +1194,41 @@ void VEditWindow::dropEvent(QDropEvent *p_event)
 {
     const QMimeData *mime = p_event->mimeData();
     if (mime->hasFormat("text/uri-list") && mime->hasUrls()) {
-        // Open external files in this edit window.
+        // Open external files in this edit window or open a direcotry in Explorer.
+        bool isDir = false;
         QStringList files;
         QList<QUrl> urls = mime->urls();
         for (int i = 0; i < urls.size(); ++i) {
-            QString file;
             if (urls[i].isLocalFile()) {
-                file = urls[i].toLocalFile();
-                QFileInfo fi(file);
-                if (fi.exists() && fi.isFile()) {
-                    file = QDir::cleanPath(fi.absoluteFilePath());
+                QFileInfo fi(urls[i].toLocalFile());
+                if (!fi.exists()) {
+                    continue;
+                }
+
+                QString file = QDir::cleanPath(fi.absoluteFilePath());
+                if (fi.isFile()) {
+                    files.append(file);
+                } else if (urls.size() == 1) {
+                    isDir = true;
                     files.append(file);
                 }
             }
         }
 
         if (!files.isEmpty()) {
-            focusWindow();
-            g_mainWin->openFiles(files);
+            if (isDir) {
+                VDirectory *dir = g_vnote->getInternalDirectory(files[0]);
+                if (dir) {
+                    g_mainWin->locateDirectory(dir);
+                } else {
+                    // External directory.
+                    g_mainWin->showExplorerPanel(true);
+                    g_mainWin->getExplorer()->setRootDirectory(files[0]);
+                }
+            } else {
+                focusWindow();
+                g_mainWin->openFiles(files);
+            }
         }
 
         p_event->acceptProposedAction();

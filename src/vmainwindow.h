@@ -124,6 +124,10 @@ public:
 
     void focusEditArea() const;
 
+    void showExplorerPanel(bool p_focus = false);
+
+    VExplorer *getExplorer() const;
+
 signals:
     // Emit when editor related configurations were changed by user.
     void editorConfigUpdated();
@@ -521,5 +525,10 @@ inline VDirectoryTree *VMainWindow::getDirectoryTree() const
 inline VNotebookSelector *VMainWindow::getNotebookSelector() const
 {
     return m_notebookSelector;
+}
+
+inline VExplorer *VMainWindow::getExplorer() const
+{
+    return m_explorer;
 }
 #endif // VMAINWINDOW_H

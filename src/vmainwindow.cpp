@@ -68,7 +68,13 @@ extern QFile g_logFile;
 
 #define COLOR_PIXMAP_ICON_SIZE 64
 
-#define NAVI_BOX_NOTEBOOKS_IDX 0
+enum NaviBoxIndex
+{
+    NotebookPanel = 0,
+    HistoryList,
+    Explorer,
+    TagExplorer
+};
 
 
 VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
@@ -3291,7 +3297,13 @@ void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
 void VMainWindow::showNotebookPanel()
 {
     changePanelView(PanelViewState::VerticalMode);
-    m_naviBox->setCurrentIndex(NAVI_BOX_NOTEBOOKS_IDX, false);
+    m_naviBox->setCurrentIndex(NaviBoxIndex::NotebookPanel, false);
+}
+
+void VMainWindow::showExplorerPanel(bool p_focus)
+{
+    changePanelView(PanelViewState::VerticalMode);
+    m_naviBox->setCurrentIndex(NaviBoxIndex::Explorer, p_focus);
 }
 
 void VMainWindow::stayOnTop(bool p_enabled)
