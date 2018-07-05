@@ -639,6 +639,8 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
                                      bool p_wkhtmltopdf,
                                      bool p_addToc)
 {
+    bool mathjaxTypeSetOnLoad = true;
+
     QString jsFile, extraFile;
     switch (p_conType) {
     case MarkdownConverterType::Marked:
@@ -659,7 +661,8 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
                     "<script src=\"qrc" + VNote::c_markdownitAnchorExtraFile + "\"></script>\n" +
                     "<script src=\"qrc" + VNote::c_markdownitTaskListExtraFile + "\"></script>\n" +
                     "<script src=\"qrc" + VNote::c_markdownitImsizeExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_markdownitFootnoteExtraFile + "\"></script>\n";
+                    "<script src=\"qrc" + VNote::c_markdownitFootnoteExtraFile + "\"></script>\n" +
+                    "<script src=\"qrc" + VNote::c_markdownitTexMathExtraFile + "\"></script>\n";
 
         const MarkdownitOption &opt = g_config->getMarkdownitOption();
 
@@ -696,6 +699,8 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
                                .arg(opt.m_metadata ? QStringLiteral("true") : QStringLiteral("false"))
                                .arg(opt.m_emoji ? QStringLiteral("true") : QStringLiteral("false"));
         extraFile += optJs;
+
+        mathjaxTypeSetOnLoad = false;
         break;
     }
 
@@ -734,10 +739,12 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
         extraFile += "<script type=\"text/x-mathjax-config\">"
                      "MathJax.Hub.Config({\n"
                      "                    tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']],\n"
-                                                   "processEscapes: true,\n"
-                                                   "processClass: \"tex2jax_process|language-mathjax|lang-mathjax\"},\n"
+                                                    "processEscapes: true,\n"
+                                                    "processClass: \"tex2jax_process|language-mathjax|lang-mathjax\"},\n"
                      "                    showProcessingMessages: false,\n"
+                     "                    skipStartupTypeset: " + QString("%1,\n").arg(mathjaxTypeSetOnLoad ? "false" : "true") +
                      "                    messageStyle: \"none\"});\n"
+                     "MathJax.Hub.Register.StartupHook(\"End\", function() { handleMathjaxReady(); });\n"
                      "</script>\n"
                      "<script type=\"text/javascript\" async src=\"" + mj + "\"></script>\n" +
                      "<script>var VEnableMathjax = true;</script>\n";

@@ -108,6 +108,8 @@ mdit = mdit.use(window.markdownitFootnote);
 
 mdit = mdit.use(window["markdown-it-imsize.js"]);
 
+mdit = mdit.use(texmath, { delimiters: 'dollars' });
+
 var mdHasTocSection = function(markdown) {
     var n = markdown.search(/(\n|^)\[toc\]/i);
     return n != -1;
@@ -150,8 +152,20 @@ var updateText = function(text) {
     // If you add new logics after handling MathJax, please pay attention to
     // finishLoading logic.
     if (VEnableMathjax) {
+        var texToRender = document.getElementsByClassName('tex-to-render');
+        var nrTex = texToRender.length;
+        if (nrTex == 0) {
+            finishOneAsyncJob();
+            return;
+        }
+
+        var eles = [];
+        for (var i = 0; i < nrTex; ++i) {
+            eles.push(texToRender[i]);
+        }
+
         try {
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub, contentDiv, postProcessMathJax]);
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub, eles, postProcessMathJax]);
         } catch (err) {
             content.setLog("err: " + err);
             finishOneAsyncJob();
@@ -195,4 +209,50 @@ var handleMetaData = function() {
 
     pre.appendChild(code);
     contentDiv.insertAdjacentElement('afterbegin', pre);
+};
+
+var postProcessMathJaxWhenMathjaxReady = function() {
+    var all = MathJax.Hub.getAllJax();
+    for (var i = 0; i < all.length; ++i) {
+        var node = all[i].SourceElement().parentNode;
+        if (VRemoveMathjaxScript) {
+            // Remove the SourceElement.
+            try {
+                node.removeChild(all[i].SourceElement());
+            } catch (err) {
+                content.setLog("err: " + err);
+            }
+        }
+
+        if (node.tagName.toLowerCase() == 'code') {
+            var pre = node.parentNode;
+            var p = document.createElement('p');
+            p.innerHTML = node.innerHTML;
+            pre.parentNode.replaceChild(p, pre);
+        }
+    }
+};
+
+var handleMathjaxReady = function() {
+    if (!VEnableMathjax) {
+        return;
+    }
+
+    var texToRender = document.getElementsByClassName('tex-to-render');
+    var nrTex = texToRender.length;
+    if (nrTex == 0) {
+        return;
+    }
+
+    var eles = [];
+    for (var i = 0; i < nrTex; ++i) {
+        eles.push(texToRender[i]);
+    }
+
+    try {
+        MathJax.Hub.Queue(["Typeset", MathJax.Hub, eles, postProcessMathJaxWhenMathjaxReady]);
+    } catch (err) {
+        content.setLog("err: " + err);
+        finishOneAsyncJob();
+    }
 };

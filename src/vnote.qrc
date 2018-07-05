@@ -265,5 +265,6 @@
         <file>resources/view_image.css</file>
         <file>resources/icons/decrease_outline_level.svg</file>
         <file>resources/icons/increase_outline_level.svg</file>
+        <file>utils/markdown-it/markdown-it-texmath.js</file>
     </qresource>
 </RCC>

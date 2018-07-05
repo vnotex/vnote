@@ -43,6 +43,11 @@ var previewMathJax = function(identifier, id, timeStamp, text, isHtml) {
         p = htmlToElement(text);
         if (isEmptyMathJax(p.textContent)) {
             p = null;
+        } else if (p.tagName.toLowerCase() != 'p') {
+            // Need to wrap it in a <p>, or domtoimage won't work.
+            var tp = document.createElement('p');
+            tp.appendChild(p);
+            p = tp;
         }
     } else {
         p = document.createElement('p');

@@ -35,3 +35,7 @@ Tatsuya Yatagawa
 # [markdown-it-emoji](https://github.com/markdown-it/markdown-it-emoji)
 v1.4.0
 Vitaly Puzrin
+
+# [markdown-it-texmath](https://github.com/goessner/markdown-it-texmath)
+v0.0.0
+Stefan Goessner

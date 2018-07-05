@@ -92,6 +92,10 @@ if (typeof VOS == 'undefined') {
     VOS = 'win';
 }
 
+if (typeof handleMathjaxReady == 'undefined') {
+    var handleMathjaxReady = function() {};
+}
+
 // Whether highlight special blocks like puml, flowchart.
 var highlightSpecialBlocks = false;
 
@@ -1181,6 +1185,7 @@ var addClassToCodeBlock = function() {
                 // Add the class to pre.
                 pare.classList.add("lang-mathjax");
                 pare.classList.add("language-mathjax");
+                pare.classList.add("tex-to-render");
             }
         }
     }
@@ -1268,7 +1273,11 @@ var postProcessMathJax = function() {
         var node = all[i].SourceElement().parentNode;
         if (VRemoveMathjaxScript) {
             // Remove the SourceElement.
-            node.removeChild(all[i].SourceElement());
+            try {
+                node.removeChild(all[i].SourceElement());
+            } catch (err) {
+                content.setLog("err: " + err);
+            }
         }
 
         if (node.tagName.toLowerCase() == 'code') {

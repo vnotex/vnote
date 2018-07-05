@@ -42,6 +42,7 @@ const QString VNote::c_markdownitFootnoteExtraFile = ":/utils/markdown-it/markdo
 const QString VNote::c_markdownitFrontMatterExtraFile = ":/utils/markdown-it/markdown-it-front-matter.js";
 const QString VNote::c_markdownitImsizeExtraFile = ":/utils/markdown-it/markdown-it-imsize.min.js";
 const QString VNote::c_markdownitEmojiExtraFile = ":/utils/markdown-it/markdown-it-emoji.min.js";
+const QString VNote::c_markdownitTexMathExtraFile = ":/utils/markdown-it/markdown-it-texmath.js";
 
 const QString VNote::c_showdownJsFile = ":/resources/showdown.js";
 const QString VNote::c_showdownExtraFile = ":/utils/showdown/showdown.min.js";

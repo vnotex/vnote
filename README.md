@@ -199,6 +199,7 @@ In VNote, almost everything is configurable, such as background color, font, and
 - [markdown-it-front-matter](https://github.com/craigdmckenna/markdown-it-front-matter) (MIT License)
 - [markdown-it-imsize](https://github.com/tatsy/markdown-it-imsize) (Unknown) (Thanks @Kinka for help)
 - [markdown-it-emoji](https://github.com/markdown-it/markdown-it-emoji) (MIT License)
+- [markdown-it-texmath](https://github.com/goessner/markdown-it-texmath) (MIT License)
 - [mermaid 7.0.0](https://github.com/knsv/mermaid) (MIT License)
 - [MathJax](https://www.mathjax.org/) (Apache-2.0)
 - [showdown](https://github.com/showdownjs/showdown) (Unknown)
