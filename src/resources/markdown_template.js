@@ -305,6 +305,7 @@ document.onkeydown = function(e) {
     shift = !!e.shiftKey;
     ctrl = !!e.ctrlKey;
     meta = !!e.metaKey;
+    var isCtrl = VOS == 'mac' ? e.metaKey : e.ctrlKey;
     switch (key) {
     // Skip Ctrl, Shift, Alt, Supper.
     case 16:
@@ -349,7 +350,7 @@ document.onkeydown = function(e) {
     }
 
     case 74: // J
-        if (!ctrl && !shift && !meta) {
+        if (!shift && (!ctrl || isCtrl) && (!meta || isCtrl)) {
             window.scrollBy(0, 100);
             break;
         }
@@ -358,7 +359,7 @@ document.onkeydown = function(e) {
         break;
 
     case 75: // K
-        if (!ctrl && !shift && !meta) {
+        if (!shift && (!ctrl || isCtrl) && (!meta || isCtrl)) {
             window.scrollBy(0, -100);
             break;
         }

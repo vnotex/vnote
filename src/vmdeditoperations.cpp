@@ -12,6 +12,8 @@
 #include <QGuiApplication>
 #include <QApplication>
 #include <QClipboard>
+#include <QScrollBar>
+
 #include "vmdeditoperations.h"
 #include "dialog/vinsertimagedialog.h"
 #include "dialog/vselectdialog.h"
@@ -333,7 +335,7 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         break;
     }
 
-    case Qt::Key_K:
+    case Qt::Key_Semicolon:
     {
         if (modifiers == Qt::ControlModifier) {
             decorateInlineCode();
@@ -398,6 +400,32 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
             decorateStrikethrough();
             p_event->accept();
             ret = true;
+        }
+
+        break;
+    }
+
+    case Qt::Key_J:
+    {
+        if (VUtils::isControlModifierForVim(modifiers)) {
+            // Scroll down without changing cursor.
+            QScrollBar *vbar = m_editor->verticalScrollBarW();
+            if (vbar && (vbar->minimum() != vbar->maximum())) {
+                vbar->triggerAction(QAbstractSlider::SliderSingleStepAdd);
+            }
+        }
+
+        break;
+    }
+
+    case Qt::Key_K:
+    {
+        if (VUtils::isControlModifierForVim(modifiers)) {
+            // Scroll up without changing cursor.
+            QScrollBar *vbar = m_editor->verticalScrollBarW();
+            if (vbar && (vbar->minimum() != vbar->maximum())) {
+                vbar->triggerAction(QAbstractSlider::SliderSingleStepSub);
+            }
         }
 
         break;

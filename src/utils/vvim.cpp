@@ -777,6 +777,12 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 
                 processCommand(m_tokens);
             }
+        } else if (VUtils::isControlModifierForVim(modifiers)) {
+            if (key == Qt::Key_J || key == Qt::Key_K) {
+                // Let it be handled outside.
+                resetState();
+                goto exit;
+            }
         }
 
         break;

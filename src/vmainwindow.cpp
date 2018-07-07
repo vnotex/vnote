@@ -535,7 +535,7 @@ QToolBar *VMainWindow::initEditToolBar(QSize p_iconSize)
     m_editToolBar->addAction(strikethroughAct);
 
     QAction *inlineCodeAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/inline_code.svg"),
-                                         tr("Inline Code\t%1").arg(VUtils::getShortcutText("Ctrl+K")),
+                                         tr("Inline Code\t%1").arg(VUtils::getShortcutText("Ctrl+;")),
                                          this);
     inlineCodeAct->setStatusTip(tr("Insert inline-code text or change selected text to inline-coded"));
     connect(inlineCodeAct, &QAction::triggered,

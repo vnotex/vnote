@@ -35,9 +35,9 @@ Scroll up half screen.
 Scroll down half screen.
 - `gg`/`G`  
 Jump to the beginning or end of the note. (Case Sensitive).
-- `Ctrl + +/-`    
+- `Ctrl + +/-`  
 Zoom in/out the page.
-- `Ctrl+Wheel`    
+- `Ctrl+Wheel`  
 Zoom in/out the page through the mouse scroll.
 - `Ctrl+0`  
 Recover the page zoom factor to 100%.
@@ -58,12 +58,15 @@ Recover the page zoom factor to 100%.
 ### Edit Mode
 - `Ctrl+S`  
 Save current changes.
-- `Ctrl + +/-`    
+- `Ctrl + +/-`  
 Zoom in/out the page.
-- `Ctrl+Wheel`    
+- `Ctrl+Wheel`  
 Zoom in/out the page through the mouse scroll.
 - `Ctrl+0`  
 Recover the page zoom factor to 100%.
+- `Ctrl+J/K`  
+Scroll page down/up without changing cursor.
+
 
 #### Text Editing
 - `Ctrl+B`  
@@ -72,8 +75,8 @@ Insert bold. Press `Ctrl+B` again to exit. Current selected text will be changed
 Insert italic. Press `Ctrl+I` again to exit. Current selected text will be changed to italic if exists.
 - `Ctrl+D`  
 Insert strikethrought. Press `Ctrl+D` again to exit. Current selected text will be changed to strikethrough if exists.
-- `Ctrl+K`  
-Insert inline code. Press `Ctrl+K` again to exit. Current selected text will be changed to inline code if exists.
+- `Ctrl+;`  
+Insert inline code. Press `Ctrl+;` again to exit. Current selected text will be changed to inline code if exists.
 - `Ctrl+M`  
 Insert fenced code block. Press `Ctrl+M` again to exit. Current selected text will be wrapped into a code block if exists.
 - `Ctrl+L`  
@@ -213,9 +216,9 @@ Popup the attachments list of current note.
 - `X`   
 Close current tab.
 - `J`   
-Jump to next tab.
+Jump to the next tab.
 - `K`   
-Jump to last tab.
+Jump to the previous tab.
 - `1` - `9`  
 Number key 1 to 9 will jump to the tabs with corresponding sequence number.
 - `0`   
