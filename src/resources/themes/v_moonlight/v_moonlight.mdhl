@@ -176,3 +176,6 @@ foreground: 6e7686
 STRIKE
 foreground: e57373
 font-style: strikeout
+
+FRONTMATTER
+foreground: 6e7686

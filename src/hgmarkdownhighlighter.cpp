@@ -818,7 +818,8 @@ void HGMarkdownHighlighter::parseInternal()
     memcpy(content, data, len);
     content[len] = '\0';
 
-    pmh_markdown_to_elements(content, pmh_EXT_STRIKE, &result);
+    int exts = pmh_EXT_STRIKE | pmh_EXT_FRONTMATTER;
+    pmh_markdown_to_elements(content, exts, &result);
 }
 
 void HGMarkdownHighlighter::handleContentChange(int /* position */, int charsRemoved, int charsAdded)

@@ -177,3 +177,6 @@ foreground: ccb24c
 STRIKE
 foreground: e57373
 font-style: strikeout
+
+FRONTMATTER
+foreground: af8787
