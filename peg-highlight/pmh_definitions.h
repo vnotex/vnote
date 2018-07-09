@@ -53,6 +53,8 @@ typedef enum
     pmh_REFERENCE,          /**< Reference */
     pmh_NOTE,               /**< Note */
     pmh_STRIKE,             /**< Strike-through */
+
+    pmh_FRONTMATTER,        /**< Front matter */
     
     // Utility types used by the parser itself:
     
@@ -84,7 +86,7 @@ typedef enum
 * \brief Number of types in pmh_element_type.
 * \sa pmh_element_type
 */
-#define pmh_NUM_TYPES 31
+#define pmh_NUM_TYPES 32
 
 /**
 * \brief Number of *language element* types in pmh_element_type.
@@ -118,8 +120,9 @@ enum pmh_extensions
     pmh_EXT_NONE    = 0,        /**< No extensions */
     pmh_EXT_NOTES   = (1 << 0), /**< Footnote syntax:
                                      http://pandoc.org/README.html#footnotes */
-    pmh_EXT_STRIKE  = (1 << 1)  /**< Strike-through syntax:
+    pmh_EXT_STRIKE  = (1 << 1), /**< Strike-through syntax:
                                      http://pandoc.org/README.html#strikeout */
+    pmh_EXT_FRONTMATTER  = (1 << 2)  /**< YAML meta data */
 };
 
 #endif
