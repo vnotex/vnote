@@ -74,12 +74,12 @@ void VDocument::keyPressEvent(int p_key, bool p_ctrl, bool p_shift, bool p_meta)
     emit keyPressed(p_key, p_ctrl, p_shift, p_meta);
 }
 
-void VDocument::highlightTextAsync(const QString &p_text, int p_id, int p_timeStamp)
+void VDocument::highlightTextAsync(const QString &p_text, int p_id, unsigned long long p_timeStamp)
 {
     emit requestHighlightText(p_text, p_id, p_timeStamp);
 }
 
-void VDocument::highlightTextCB(const QString &p_html, int p_id, int p_timeStamp)
+void VDocument::highlightTextCB(const QString &p_html, int p_id, unsigned long long p_timeStamp)
 {
     emit textHighlighted(p_html, p_id, p_timeStamp);
 }

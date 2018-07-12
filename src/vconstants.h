@@ -122,9 +122,11 @@ enum HighlightBlockState
     CodeBlockEnd,
 
     // This block is inside a HTML comment region.
+    // Obsolete.
     Comment,
 
     // Verbatim code block.
+    // Obsolete.
     Verbatim,
 
     // Mathjax. It means the pending state of the block.
@@ -132,6 +134,7 @@ enum HighlightBlockState
     MathjaxInline,
 
     // Header.
+    // Obsolete.
     Header
 };
 

@@ -125,8 +125,9 @@ void VLivePreviewHelper::checkLang(const QString &p_lang,
     }
 }
 
-void VLivePreviewHelper::updateCodeBlocks(const QVector<VCodeBlock> &p_codeBlocks)
+void VLivePreviewHelper::updateCodeBlocks(TimeStamp p_timeStamp, const QVector<VCodeBlock> &p_codeBlocks)
 {
+    Q_UNUSED(p_timeStamp);
     if (!m_livePreviewEnabled && !m_inplacePreviewEnabled) {
         return;
     }

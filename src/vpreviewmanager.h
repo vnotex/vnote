@@ -8,7 +8,7 @@
 #include <QVector>
 #include <QSharedPointer>
 
-#include "hgmarkdownhighlighter.h"
+#include "markdownhighlighterdata.h"
 #include "vmdeditor.h"
 #include "vtextblockdata.h"
 
@@ -59,7 +59,7 @@ class VPreviewManager : public QObject
 {
     Q_OBJECT
 public:
-    VPreviewManager(VMdEditor *p_editor, HGMarkdownHighlighter *p_highlighter);
+    VPreviewManager(VMdEditor *p_editor, PegMarkdownHighlighter *p_highlighter);
 
     void setPreviewEnabled(bool p_enabled);
 
@@ -215,7 +215,7 @@ private:
 
     QTextDocument *m_document;
 
-    HGMarkdownHighlighter *m_highlighter;
+    PegMarkdownHighlighter *m_highlighter;
 
     VDownloader *m_downloader;
 

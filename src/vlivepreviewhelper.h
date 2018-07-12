@@ -109,7 +109,7 @@ public:
     bool isPreviewEnabled() const;
 
 public slots:
-    void updateCodeBlocks(const QVector<VCodeBlock> &p_codeBlocks);
+    void updateCodeBlocks(TimeStamp p_timeStamp, const QVector<VCodeBlock> &p_codeBlocks);
 
 signals:
     void inplacePreviewCodeBlockUpdated(const QVector<QSharedPointer<VImageToPreview> > &p_images);

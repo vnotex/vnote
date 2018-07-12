@@ -10,11 +10,11 @@
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
 #include "vdownloader.h"
-#include "hgmarkdownhighlighter.h"
+#include "pegmarkdownhighlighter.h"
 
 extern VConfigManager *g_config;
 
-VPreviewManager::VPreviewManager(VMdEditor *p_editor, HGMarkdownHighlighter *p_highlighter)
+VPreviewManager::VPreviewManager(VMdEditor *p_editor, PegMarkdownHighlighter *p_highlighter)
     : QObject(p_editor),
       m_editor(p_editor),
       m_document(p_editor->document()),

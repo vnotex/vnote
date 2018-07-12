@@ -11,7 +11,7 @@
 #include <QDir>
 
 #include "vnotebook.h"
-#include "hgmarkdownhighlighter.h"
+#include "markdownhighlighterdata.h"
 #include "vmarkdownconverter.h"
 #include "vconstants.h"
 #include "vfilesessioninfo.h"

@@ -8,7 +8,7 @@
 #include "vnote.h"
 #include "utils/vutils.h"
 #include "vpreviewpage.h"
-#include "hgmarkdownhighlighter.h"
+#include "pegmarkdownhighlighter.h"
 #include "vconfigmanager.h"
 #include "vmarkdownconverter.h"
 #include "vnotebook.h"
@@ -535,7 +535,7 @@ void VMdTab::setupMarkdownEditor()
     m_splitter->insertWidget(0, m_editor);
 
     m_livePreviewHelper = new VLivePreviewHelper(m_editor, m_document, this);
-    connect(m_editor->getMarkdownHighlighter(), &HGMarkdownHighlighter::codeBlocksUpdated,
+    connect(m_editor->getMarkdownHighlighter(), &PegMarkdownHighlighter::codeBlocksUpdated,
             m_livePreviewHelper, &VLivePreviewHelper::updateCodeBlocks);
     connect(m_editor->getPreviewManager(), &VPreviewManager::previewEnabledChanged,
             m_livePreviewHelper, &VLivePreviewHelper::setInplacePreviewEnabled);
@@ -546,7 +546,7 @@ void VMdTab::setupMarkdownEditor()
     m_livePreviewHelper->setInplacePreviewEnabled(m_editor->getPreviewManager()->isPreviewEnabled());
 
     m_mathjaxPreviewHelper = new VMathJaxInplacePreviewHelper(m_editor, m_document, this);
-    connect(m_editor->getMarkdownHighlighter(), &HGMarkdownHighlighter::mathjaxBlocksUpdated,
+    connect(m_editor->getMarkdownHighlighter(), &PegMarkdownHighlighter::mathjaxBlocksUpdated,
             m_mathjaxPreviewHelper, &VMathJaxInplacePreviewHelper::updateMathjaxBlocks);
     connect(m_editor->getPreviewManager(), &VPreviewManager::previewEnabledChanged,
             m_mathjaxPreviewHelper, &VMathJaxInplacePreviewHelper::setEnabled);

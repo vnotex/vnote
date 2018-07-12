@@ -1,7 +1,6 @@
 #include <QtWidgets>
 #include "vmdedit.h"
 #include "hgmarkdownhighlighter.h"
-#include "vcodeblockhighlighthelper.h"
 #include "vmdeditoperations.h"
 #include "vnote.h"
 #include "vconfigmanager.h"
@@ -24,6 +23,9 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
     : VEdit(p_file, p_parent), m_mdHighlighter(NULL), m_freshEdit(true),
       m_finishedAsyncJobs(c_numberOfAysncJobs)
 {
+    Q_UNUSED(p_type);
+    Q_UNUSED(p_vdoc);
+
     V_ASSERT(p_file->getDocType() == DocType::Markdown);
 
     setAcceptRichText(false);
@@ -42,9 +44,6 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
             this, [this]() {
             makeBlockVisible(textCursor().block());
     });
-
-    m_cbHighlighter = new VCodeBlockHighlightHelper(m_mdHighlighter, p_vdoc,
-                                                    p_type);
 
     /*
     m_imagePreviewer = new VImagePreviewer(this, m_mdHighlighter);

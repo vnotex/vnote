@@ -140,7 +140,10 @@ SOURCES += main.cpp\
     vtagpanel.cpp \
     valltagspanel.cpp \
     vtaglabel.cpp \
-    vtagexplorer.cpp
+    vtagexplorer.cpp \
+    pegmarkdownhighlighter.cpp \
+    pegparser.cpp \
+    peghighlighterresult.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -274,7 +277,11 @@ HEADERS  += vmainwindow.h \
     vtagpanel.h \
     valltagspanel.h \
     vtaglabel.h \
-    vtagexplorer.h
+    vtagexplorer.h \
+    markdownhighlighterdata.h \
+    pegmarkdownhighlighter.h \
+    pegparser.h \
+    peghighlighterresult.h
 
 RESOURCES += \
     vnote.qrc \

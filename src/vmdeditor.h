@@ -14,7 +14,7 @@
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
 
-class HGMarkdownHighlighter;
+class PegMarkdownHighlighter;
 class VCodeBlockHighlightHelper;
 class VDocument;
 class VPreviewManager;
@@ -72,7 +72,7 @@ public:
 
     void setEditTab(VEditTab *p_editTab);
 
-    HGMarkdownHighlighter *getMarkdownHighlighter() const;
+    PegMarkdownHighlighter *getMarkdownHighlighter() const;
 
     VPreviewManager *getPreviewManager() const;
 
@@ -256,7 +256,7 @@ private:
 
     void insertImageLink(const QString &p_text, const QString &p_url);
 
-    HGMarkdownHighlighter *m_mdHighlighter;
+    PegMarkdownHighlighter *m_pegHighlighter;
 
     VCodeBlockHighlightHelper *m_cbHighlighter;
 
@@ -282,9 +282,9 @@ private:
     int m_copyTimeStamp;
 };
 
-inline HGMarkdownHighlighter *VMdEditor::getMarkdownHighlighter() const
+inline PegMarkdownHighlighter *VMdEditor::getMarkdownHighlighter() const
 {
-    return m_mdHighlighter;
+    return m_pegHighlighter;
 }
 
 inline VPreviewManager *VMdEditor::getPreviewManager() const

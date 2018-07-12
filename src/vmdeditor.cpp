@@ -9,7 +9,7 @@
 #include "vdocument.h"
 #include "utils/veditutils.h"
 #include "vedittab.h"
-#include "hgmarkdownhighlighter.h"
+#include "pegmarkdownhighlighter.h"
 #include "vcodeblockhighlighthelper.h"
 #include "vmdeditoperations.h"
 #include "vtableofcontent.h"
@@ -35,7 +35,7 @@ VMdEditor::VMdEditor(VFile *p_file,
                      QWidget *p_parent)
     : VTextEdit(p_parent),
       VEditor(p_file, this),
-      m_mdHighlighter(NULL),
+      m_pegHighlighter(NULL),
       m_freshEdit(true),
       m_textToHtmlDialog(NULL),
       m_zoomDelta(0),
@@ -60,18 +60,17 @@ VMdEditor::VMdEditor(VFile *p_file,
 
     setReadOnly(true);
 
-    m_mdHighlighter = new HGMarkdownHighlighter(g_config->getMdHighlightingStyles(),
-                                                g_config->getCodeBlockStyles(),
-                                                g_config->getMarkdownHighlightInterval(),
-                                                document());
-    m_mdHighlighter->setMathjaxEnabled(g_config->getEnableMathjax());
-
-    connect(m_mdHighlighter, &HGMarkdownHighlighter::headersUpdated,
+    m_pegHighlighter = new PegMarkdownHighlighter(document());
+    m_pegHighlighter->init(g_config->getMdHighlightingStyles(),
+                           g_config->getCodeBlockStyles(),
+                           g_config->getEnableMathjax(),
+                           g_config->getMarkdownHighlightInterval());
+    connect(m_pegHighlighter, &PegMarkdownHighlighter::headersUpdated,
             this, &VMdEditor::updateHeaders);
 
     // After highlight, the cursor may trun into non-visible. We should make it visible
     // in this case.
-    connect(m_mdHighlighter, &HGMarkdownHighlighter::highlightCompleted,
+    connect(m_pegHighlighter, &PegMarkdownHighlighter::highlightCompleted,
             this, [this]() {
             makeBlockVisible(textCursor().block());
 
@@ -81,15 +80,15 @@ VMdEditor::VMdEditor(VFile *p_file,
             }
     });
 
-    m_cbHighlighter = new VCodeBlockHighlightHelper(m_mdHighlighter,
+    m_cbHighlighter = new VCodeBlockHighlightHelper(m_pegHighlighter,
                                                     p_doc,
                                                     p_type);
 
-    m_previewMgr = new VPreviewManager(this, m_mdHighlighter);
-    connect(m_mdHighlighter, &HGMarkdownHighlighter::imageLinksUpdated,
+    m_previewMgr = new VPreviewManager(this, m_pegHighlighter);
+    connect(m_pegHighlighter, &PegMarkdownHighlighter::imageLinksUpdated,
             m_previewMgr, &VPreviewManager::updateImageLinks);
     connect(m_previewMgr, &VPreviewManager::requestUpdateImageLinks,
-            m_mdHighlighter, &HGMarkdownHighlighter::updateHighlight);
+            m_pegHighlighter, &PegMarkdownHighlighter::updateHighlight);
 
     m_editOps = new VMdEditOperations(this, m_file);
     connect(m_editOps, &VEditOperations::statusMessage,
@@ -132,10 +131,10 @@ void VMdEditor::beginEdit()
     emit statusChanged();
 
     if (m_freshEdit) {
-        m_mdHighlighter->updateHighlight();
+        m_pegHighlighter->updateHighlight();
         relayout();
     } else {
-        updateHeaders(m_mdHighlighter->getHeaderRegions());
+        updateHeaders(m_pegHighlighter->getHeaderRegions());
     }
 }
 
@@ -170,7 +169,7 @@ void VMdEditor::reloadFile()
     const QString &content = m_file->getContent();
     setPlainText(content);
     setModified(false);
-    m_mdHighlighter->updateHighlightFast();
+    m_pegHighlighter->updateHighlightFast();
 
     m_freshEdit = true;
 
@@ -461,7 +460,7 @@ static void insertSequenceToHeader(QTextCursor& p_cursor,
 
 void VMdEditor::updateHeaderSequenceByConfigChange()
 {
-    updateHeadersHelper(m_mdHighlighter->getHeaderRegions(), true);
+    updateHeadersHelper(m_pegHighlighter->getHeaderRegions(), true);
 }
 
 void VMdEditor::updateHeadersHelper(const QVector<VElementRegion> &p_headerRegions, bool p_configChanged)
@@ -493,8 +492,7 @@ void VMdEditor::updateHeadersHelper(const QVector<VElementRegion> &p_headerRegio
                        << block.text();
         }
 
-        if ((block.userState() == HighlightBlockState::Header)
-            && headerReg.exactMatch(block.text())) {
+        if (headerReg.exactMatch(block.text())) {
             int level = headerReg.cap(1).length();
             VTableOfContentItem header(headerReg.cap(2).trimmed(),
                                        level,
@@ -1199,7 +1197,7 @@ void VMdEditor::zoomPage(bool p_zoomIn, int p_range)
 
     m_zoomDelta += delta;
 
-    QVector<HighlightingStyle> &styles = m_mdHighlighter->getHighlightingStyles();
+    QVector<HighlightingStyle> &styles = m_pegHighlighter->getStyles();
     for (auto & it : styles) {
         int size = it.format.fontPointSize();
         if (size == 0) {
@@ -1215,7 +1213,7 @@ void VMdEditor::zoomPage(bool p_zoomIn, int p_range)
         it.format.setFontPointSize(size);
     }
 
-    QHash<QString, QTextCharFormat> &cbStyles = m_mdHighlighter->getCodeBlockStyles();
+    QHash<QString, QTextCharFormat> &cbStyles = m_pegHighlighter->getCodeBlockStyles();
     for (auto it = cbStyles.begin(); it != cbStyles.end(); ++it) {
         int size = it.value().fontPointSize();
         if (size == 0) {
@@ -1231,7 +1229,7 @@ void VMdEditor::zoomPage(bool p_zoomIn, int p_range)
         it.value().setFontPointSize(size);
     }
 
-    m_mdHighlighter->rehighlight();
+    m_pegHighlighter->rehighlight();
 }
 
 void VMdEditor::initCopyAsMenu(QAction *p_before, QMenu *p_menu)

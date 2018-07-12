@@ -29,6 +29,7 @@ HGMarkdownHighlighter::HGMarkdownHighlighter(const QVector<HighlightingStyle> &s
                                              int waitInterval,
                                              QTextDocument *parent)
     : QSyntaxHighlighter(parent),
+      m_timeStamp(0),
       highlightingStyles(styles),
       m_codeBlockStyles(codeBlockStyles),
       m_numOfCodeBlockHighlightsToRecv(0),
@@ -864,9 +865,9 @@ void HGMarkdownHighlighter::handleContentChange(int /* position */, int charsRem
         return;
     }
 
-    m_signalOut = false;
+    ++m_timeStamp;
 
-    timer->stop();
+    m_signalOut = false;
     timer->start();
 }
 

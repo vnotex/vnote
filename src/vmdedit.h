@@ -13,7 +13,6 @@
 #include "utils/vutils.h"
 
 class HGMarkdownHighlighter;
-class VCodeBlockHighlightHelper;
 class VDocument;
 
 class VMdEdit : public VEdit
@@ -110,7 +109,6 @@ private:
     int indexOfCurrentHeader() const;
 
     HGMarkdownHighlighter *m_mdHighlighter;
-    VCodeBlockHighlightHelper *m_cbHighlighter;
     // VImagePreviewer *m_imagePreviewer;
 
     // Image links inserted while editing.

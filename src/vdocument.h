@@ -31,7 +31,7 @@ public:
 
     // Request to highlight a segment text.
     // Use p_id to identify the result.
-    void highlightTextAsync(const QString &p_text, int p_id, int p_timeStamp);
+    void highlightTextAsync(const QString &p_text, int p_id, unsigned long long p_timeStamp);
 
     // Request to convert @p_text to HTML.
     void textToHtmlAsync(int p_identitifer,
@@ -84,7 +84,7 @@ public slots:
     void keyPressEvent(int p_key, bool p_ctrl, bool p_shift, bool p_meta);
     void updateText();
 
-    void highlightTextCB(const QString &p_html, int p_id, int p_timeStamp);
+    void highlightTextCB(const QString &p_html, int p_id, unsigned long long p_timeStamp);
 
     void noticeReadyToHighlightText();
 
@@ -128,9 +128,9 @@ signals:
 
     void keyPressed(int p_key, bool p_ctrl, bool p_shift, bool p_meta);
 
-    void requestHighlightText(const QString &p_text, int p_id, int p_timeStamp);
+    void requestHighlightText(const QString &p_text, int p_id, unsigned long long p_timeStamp);
 
-    void textHighlighted(const QString &p_html, int p_id, int p_timeStamp);
+    void textHighlighted(const QString &p_html, int p_id, unsigned long long p_timeStamp);
 
     void readyToHighlightText();
 
