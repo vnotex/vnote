@@ -9,6 +9,7 @@
 #include <QString>
 
 #include "vtextblockdata.h"
+#include "vconstants.h"
 
 extern "C" {
 #include <pmh_parser.h>
@@ -298,8 +299,13 @@ private:
     QVector<VElementRegion> m_headerRegions;
 
     // All verbatim blocks (by parser) number.
-    // It may be a code block inside fenced code block.
     QSet<int> m_verbatimBlocks;
+
+    // All fenced code blocks.
+    QVector<VCodeBlock> m_codeBlocks;
+
+    // Indexed by block number.
+    QHash<int, HighlightBlockState> m_codeBlocksState;
 
     // Indexed by block number.
     QHash<int, HeaderBlockInfo> m_headerBlocks;
@@ -343,14 +349,9 @@ private:
 
     void resizeBuffer(int newCap);
 
-    void highlightCodeBlock(const QTextBlock &p_block, const QString &p_text);
+    void highlightCodeBlock(int p_blockNumber, const QString &p_text);
 
     void highlightMathJax(const QTextBlock &p_block, const QString &p_text);
-
-    // Highlight links using regular expression.
-    // PEG Markdown Highlight treat URLs with spaces illegal. This function is
-    // intended to complement this.
-    void highlightLinkWithSpacesInURL(const QString &p_text);
 
     void parse();
 
@@ -381,6 +382,9 @@ private:
 
     // Fetch all the verbatim blocks from parsing result.
     void initVerbatimBlocksFromResult();
+
+    // Fetch all the fenced code blocks from parsing result.
+    void initFencedCodeBlocksFromResult();
 
     // Fetch all the inlnie code regions from parsing result.
     void initInlineCodeRegionsFromResult();

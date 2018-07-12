@@ -118,6 +118,8 @@ void VStyleParser::parseMarkdownStyle(const QString &styleStr)
     if (markdownStyles) {
         pmh_free_style_collection(markdownStyles);
     }
+
+    // markdownStyles is not indexed by element type.
     markdownStyles = pmh_parse_styles(styleStr.toLocal8Bit().data(),
                                       &markdownStyleErrorCB, this);
 }
@@ -131,6 +133,7 @@ QVector<HighlightingStyle> VStyleParser::fetchMarkdownStyles(const QFont &baseFo
         if (!attr) {
             continue;
         }
+
         HighlightingStyle style;
         style.type = attr->lang_element_type;
         style.format = QTextCharFormatFromAttrs(attr, baseFont);
@@ -143,7 +146,18 @@ QHash<QString, QTextCharFormat> VStyleParser::fetchCodeBlockStyles(const QFont &
 {
     QHash<QString, QTextCharFormat> styles;
 
-    pmh_style_attribute *attrs = markdownStyles->element_styles[pmh_VERBATIM];
+    pmh_style_attribute *attrs = NULL;
+    for (int i = 0; i < pmh_NUM_LANG_TYPES; ++i) {
+        pmh_style_attribute *tmp = markdownStyles->element_styles[i];
+        if (!tmp) {
+            continue;
+        }
+
+        if (tmp->lang_element_type == pmh_FENCEDCODEBLOCK) {
+            attrs = tmp;
+            break;
+        }
+    }
 
     // First set up the base format.
     QTextCharFormat baseFormat = QTextCharFormatFromAttrs(attrs, p_baseFont);

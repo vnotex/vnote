@@ -129,6 +129,10 @@ foreground: 93a1a1
 VERBATIM
 foreground: 673ab7
 font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
+
+FENCEDCODEBLOCK
+foreground: 673ab7
+font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
 # [VNote] Codeblock sylte from HighlightJS (bold, italic, underlined, strikeout, color)
 # The last occurence of the same attribute takes effect
 hljs-comment: 6c6c6c

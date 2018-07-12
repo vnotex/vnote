@@ -193,9 +193,9 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
         goto exit;
     }
 
-    // PEG Markdown Highlight does not handle the ``` code block correctly.
     setCurrentBlockState(HighlightBlockState::Normal);
-    highlightCodeBlock(curBlock, text);
+
+    highlightCodeBlock(blockNum, text);
 
     if (currentBlockState() == HighlightBlockState::Normal) {
         if (isVerbatimBlock(curBlock)) {
@@ -210,11 +210,6 @@ void HGMarkdownHighlighter::highlightBlock(const QString &text)
             highlightMathJax(curBlock, text);
         }
     }
-
-    // PEG Markdown Highlight does not handle links with spaces in the URL.
-    // Links in the URL should be encoded to %20. We just let it be here and won't
-    // fix this.
-    // highlightLinkWithSpacesInURL(text);
 
     if (currentBlockState() != HighlightBlockState::CodeBlock) {
         goto exit;
@@ -377,6 +372,84 @@ void HGMarkdownHighlighter::initVerbatimBlocksFromResult()
     }
 }
 
+void HGMarkdownHighlighter::initFencedCodeBlocksFromResult()
+{
+    m_codeBlocks.clear();
+    m_codeBlocksState.clear();
+    if (!result) {
+        return;
+    }
+
+    // Ordered by start position in ascending order.
+    QMap<int, VElementRegion> regs;
+
+    pmh_element *elem = result[pmh_FENCEDCODEBLOCK];
+    while (elem != NULL) {
+        if (elem->end <= elem->pos) {
+            elem = elem->next;
+            continue;
+        }
+
+        if (!regs.contains(elem->pos)) {
+            regs.insert(elem->pos, VElementRegion(elem->pos, elem->end));
+        }
+
+        elem = elem->next;
+    }
+
+    VCodeBlock item;
+    bool inBlock = false;
+    for (auto it = regs.begin(); it != regs.end(); ++it) {
+        // [firstBlock, lastBlock].
+        int firstBlock = document->findBlock(it.value().m_startPos).blockNumber();
+        int lastBlock = document->findBlock(it.value().m_endPos - 1).blockNumber();
+
+        QTextBlock block = document->findBlockByNumber(firstBlock);
+        while (block.isValid()) {
+            int blockNumber = block.blockNumber();
+            if (blockNumber > lastBlock) {
+                break;
+            }
+
+            HighlightBlockState state = HighlightBlockState::Normal;
+            QString text = block.text();
+            if (inBlock) {
+                item.m_text = item.m_text + "\n" + text;
+                int idx = codeBlockEndExp.indexIn(text);
+                if (idx >= 0) {
+                    // End block.
+                    inBlock = false;
+                    state = HighlightBlockState::CodeBlockEnd;
+                    item.m_endBlock = blockNumber;
+                    m_codeBlocks.append(item);
+                } else {
+                    // Within code block.
+                    state = HighlightBlockState::CodeBlock;
+                }
+            } else {
+                int idx = codeBlockStartExp.indexIn(text);
+                if (idx >= 0) {
+                    // Start block.
+                    inBlock = true;
+                    state = HighlightBlockState::CodeBlockStart;
+                    item.m_startBlock = blockNumber;
+                    item.m_startPos = block.position();
+                    item.m_text = text;
+                    if (codeBlockStartExp.captureCount() == 2) {
+                        item.m_lang = codeBlockStartExp.capturedTexts()[2];
+                    }
+                }
+            }
+
+            if (state != HighlightBlockState::Normal) {
+                m_codeBlocksState.insert(blockNumber, state);
+            }
+
+            block = block.next();
+        }
+    }
+}
+
 void HGMarkdownHighlighter::initHeaderRegionsFromResult()
 {
     // From Qt5.7, the capacity is preserved.
@@ -447,61 +520,46 @@ void HGMarkdownHighlighter::initBlockHighlihgtOne(unsigned long pos,
     }
 }
 
-void HGMarkdownHighlighter::highlightCodeBlock(const QTextBlock &p_block, const QString &p_text)
+void HGMarkdownHighlighter::highlightCodeBlock(int p_blockNumber, const QString &p_text)
 {
-    VTextBlockData *blockData = currentBlockData();
-    Q_ASSERT(blockData);
+    auto it = m_codeBlocksState.find(p_blockNumber);
+    if (it != m_codeBlocksState.end()) {
+        VTextBlockData *blockData = currentBlockData();
+        Q_ASSERT(blockData);
 
-    int length = 0;
-    int index = -1;
-    int preState = previousBlockState();
-    int state = HighlightBlockState::Normal;
+        HighlightBlockState state = it.value();
+        // Set code block indentation.
+        switch (state) {
+        case HighlightBlockState::CodeBlockStart:
+        {
+            int index = codeBlockStartExp.indexIn(p_text);
+            Q_ASSERT(index >= 0);
+            blockData->setCodeBlockIndentation(codeBlockStartExp.capturedTexts()[1].size());
+            break;
+        }
 
-    if (preState != HighlightBlockState::CodeBlock
-        && preState != HighlightBlockState::CodeBlockStart) {
-        // Need to find a new code block start.
-        index = codeBlockStartExp.indexIn(p_text);
-        if (index >= 0 && !isVerbatimBlock(p_block)) {
-            // Start a new code block.
-            length = p_text.length();
-            state = HighlightBlockState::CodeBlockStart;
+        case HighlightBlockState::CodeBlock:
+            V_FALLTHROUGH;
+        case HighlightBlockState::CodeBlockEnd:
+        {
+            int startLeadingSpaces = 0;
+            VTextBlockData *preBlockData = previousBlockData();
+            if (preBlockData) {
+                startLeadingSpaces = preBlockData->getCodeBlockIndentation();
+            }
 
-            // The leading spaces of code block start and end must be identical.
-            int startLeadingSpaces = codeBlockStartExp.capturedTexts()[1].size();
             blockData->setCodeBlockIndentation(startLeadingSpaces);
-        } else {
-            // A normal block.
-            blockData->setCodeBlockIndentation(-1);
-            return;
-        }
-    } else {
-        // Need to find a code block end.
-        int startLeadingSpaces = 0;
-        VTextBlockData *preBlockData = previousBlockData();
-        if (preBlockData) {
-            startLeadingSpaces = preBlockData->getCodeBlockIndentation();
+            break;
         }
 
-        index = codeBlockEndExp.indexIn(p_text);
-
-        // The closing ``` should have the same indentation as the open ```.
-        if (index >= 0
-            && startLeadingSpaces == codeBlockEndExp.capturedTexts()[1].size()) {
-            // End of code block.
-            length = p_text.length();
-            state = HighlightBlockState::CodeBlockEnd;
-        } else {
-            // Within code block.
-            index = 0;
-            length = p_text.length();
-            state = HighlightBlockState::CodeBlock;
+        default:
+            Q_ASSERT(false);
+            break;
         }
 
-        blockData->setCodeBlockIndentation(startLeadingSpaces);
+        // Set code block state.
+        setCurrentBlockState(state);
     }
-
-    setCurrentBlockState(state);
-    setFormat(index, length, m_codeBlockFormat);
 }
 
 static bool intersect(const QList<QPair<int, int>> &p_indices, int &p_start, int &p_end)
@@ -727,30 +785,6 @@ void HGMarkdownHighlighter::highlightCodeBlockColorColumn(const QString &p_text)
     setFormat(cc - 1, 1, m_colorColumnFormat);
 }
 
-void HGMarkdownHighlighter::highlightLinkWithSpacesInURL(const QString &p_text)
-{
-    if (currentBlockState() == HighlightBlockState::CodeBlock) {
-        return;
-    }
-
-    // TODO: should select links with spaces in URL.
-    QRegExp regExp("[\\!]?\\[[^\\]]*\\]\\(([^\\n\\)]+)\\)");
-    int index = regExp.indexIn(p_text);
-    while (index >= 0) {
-        Q_ASSERT(regExp.captureCount() == 1);
-        int length = regExp.matchedLength();
-        QString capturedText = regExp.capturedTexts()[1];
-        if (capturedText.contains(' ')) {
-            if (p_text[index] == '!' && m_imageFormat.isValid()) {
-                setFormat(index, length, m_imageFormat);
-            } else if (m_linkFormat.isValid()) {
-                setFormat(index, length, m_linkFormat);
-            }
-        }
-        index = regExp.indexIn(p_text, index + length);
-    }
-}
-
 void HGMarkdownHighlighter::parse()
 {
     if (!parsing.testAndSetRelaxed(0, 1)) {
@@ -778,6 +812,8 @@ void HGMarkdownHighlighter::parse()
     initHeaderRegionsFromResult();
 
     initVerbatimBlocksFromResult();
+
+    initFencedCodeBlocksFromResult();
 
     initInlineCodeRegionsFromResult();
 
@@ -872,56 +908,8 @@ bool HGMarkdownHighlighter::updateCodeBlocks()
         m_codeBlockHighlights[i].clear();
     }
 
-    QVector<VCodeBlock> codeBlocks;
-
-    VCodeBlock item;
-    bool inBlock = false;
-    int startLeadingSpaces = -1;
-
-    // Only handle complete codeblocks.
-    QTextBlock block = document->firstBlock();
-    while (block.isValid()) {
-        if (!inBlock && isVerbatimBlock(block)) {
-            block = block.next();
-            continue;
-        }
-
-        QString text = block.text();
-        if (inBlock) {
-            item.m_text = item.m_text + "\n" + text;
-            int idx = codeBlockEndExp.indexIn(text);
-            if (idx >= 0 && codeBlockEndExp.capturedTexts()[1].size() == startLeadingSpaces) {
-                // End block.
-                inBlock = false;
-                item.m_endBlock = block.blockNumber();
-
-                // See if it is a code block inside HTML comment.
-                if (!isBlockInsideCommentRegion(block)) {
-                    qDebug() << "add one code block in lang" << item.m_lang;
-                    codeBlocks.append(item);
-                }
-            }
-        } else {
-            int idx = codeBlockStartExp.indexIn(text);
-            if (idx >= 0) {
-                // Start block.
-                inBlock = true;
-                item.m_startBlock = block.blockNumber();
-                item.m_startPos = block.position();
-                item.m_text = text;
-                if (codeBlockStartExp.captureCount() == 2) {
-                    item.m_lang = codeBlockStartExp.capturedTexts()[2];
-                }
-
-                startLeadingSpaces = codeBlockStartExp.capturedTexts()[1].size();
-            }
-        }
-
-        block = block.next();
-    }
-
-    m_numOfCodeBlockHighlightsToRecv = codeBlocks.size();
-    emit codeBlocksUpdated(codeBlocks);
+    m_numOfCodeBlockHighlightsToRecv = m_codeBlocks.size();
+    emit codeBlocksUpdated(m_codeBlocks);
     return m_numOfCodeBlockHighlightsToRecv > 0;
 }
 

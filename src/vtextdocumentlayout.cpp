@@ -74,10 +74,15 @@ void VTextDocumentLayout::blockRangeFromRect(const QRectF &p_rect,
         return;
     }
 
+    if (document()->blockCount() != m_blocks.size()) {
+        p_first = -1;
+        p_last = -1;
+        return;
+    }
+
     p_first = -1;
     p_last = m_blocks.size() - 1;
     int y = p_rect.y();
-    Q_ASSERT(document()->blockCount() == m_blocks.size());
     QTextBlock block = document()->firstBlock();
     while (block.isValid()) {
         const BlockInfo &info = m_blocks[block.blockNumber()];
@@ -121,9 +126,11 @@ void VTextDocumentLayout::blockRangeFromRectBS(const QRectF &p_rect,
         return;
     }
 
-    Q_ASSERT(document()->blockCount() == m_blocks.size());
-
-    p_first = findBlockByPosition(p_rect.topLeft());
+    if (document()->blockCount() != m_blocks.size()) {
+        p_first = -1;
+    } else {
+        p_first = findBlockByPosition(p_rect.topLeft());
+    }
 
     if (p_first == -1) {
         p_last = -1;
