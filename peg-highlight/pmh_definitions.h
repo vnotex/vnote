@@ -51,13 +51,13 @@ typedef enum
     pmh_HTMLBLOCK,          /**< Block of HTML */
     pmh_HRULE,              /**< Horizontal rule */
     pmh_REFERENCE,          /**< Reference */
+    pmh_FENCEDCODEBLOCK,    /**< Fenced code block */
     pmh_NOTE,               /**< Note */
     pmh_STRIKE,             /**< Strike-through */
-
     pmh_FRONTMATTER,        /**< Front matter */
-    
+
     // Utility types used by the parser itself:
-    
+
     // List of pmh_RAW element lists, each to be processed separately from
     // others (for each element in linked lists of this type, `children` points
     // to a linked list of pmh_RAW elements):
@@ -86,7 +86,7 @@ typedef enum
 * \brief Number of types in pmh_element_type.
 * \sa pmh_element_type
 */
-#define pmh_NUM_TYPES 32
+#define pmh_NUM_TYPES 33
 
 /**
 * \brief Number of *language element* types in pmh_element_type.
