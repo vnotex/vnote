@@ -3,7 +3,7 @@
 
 #include <QObject>
 
-#include "hgmarkdownhighlighter.h"
+#include "pegmarkdownhighlighter.h"
 #include "vpreviewmanager.h"
 #include "vconstants.h"
 

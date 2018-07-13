@@ -36,8 +36,6 @@ color-column-background: dd0000
 color-column-foreground: ffff00
 # [VNote] Style for preview image line
 preview-image-line-foreground: 9575cd
-# [VNote] Style for MathJax
-mathjax-foreground: 00897b
 
 editor-selection
 foreground: ffffff
@@ -179,3 +177,11 @@ font-style: strikeout
 
 FRONTMATTER
 foreground: 6c6c6c
+
+INLINEEQUATION
+foreground: 00897b
+font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
+
+DISPLAYFORMULA
+foreground: 00897b
+font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New

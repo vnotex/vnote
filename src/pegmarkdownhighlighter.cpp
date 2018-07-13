@@ -15,7 +15,7 @@ PegMarkdownHighlighter::PegMarkdownHighlighter(QTextDocument *p_doc)
       m_doc(p_doc),
       m_timeStamp(0),
       m_parser(NULL),
-      m_parserExts(pmh_EXT_STRIKE | pmh_EXT_FRONTMATTER)
+      m_parserExts(pmh_EXT_NOTES | pmh_EXT_STRIKE | pmh_EXT_FRONTMATTER)
 {
 }
 
@@ -26,6 +26,10 @@ void PegMarkdownHighlighter::init(const QVector<HighlightingStyle> &p_styles,
 {
     m_styles = p_styles;
     m_codeBlockStyles = p_codeBlockStyles;
+
+    if (p_mathjaxEnabled) {
+        m_parserExts |= pmh_EXT_MATH;
+    }
 
     m_codeBlockFormat.setForeground(QBrush(Qt::darkYellow));
     for (int index = 0; index < m_styles.size(); ++index) {
@@ -272,7 +276,6 @@ void PegMarkdownHighlighter::updateBlockUserData(int p_blockNum, const QString &
         setCurrentBlockUserData(blockData);
     } else {
         blockData->setCodeBlockIndentation(-1);
-        blockData->clearMathjax();
     }
 
     if (blockData->getPreviews().isEmpty()) {
@@ -400,6 +403,10 @@ void PegMarkdownHighlighter::completeHighlight(QSharedPointer<PegHighlighterResu
 {
     if (!p_result->matched(m_timeStamp)) {
         return;
+    }
+
+    if (isMathJaxEnabled()) {
+        emit mathjaxBlocksUpdated(p_result->m_mathjaxBlocks);
     }
 
     emit imageLinksUpdated(p_result->m_imageRegions);

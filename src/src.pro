@@ -29,7 +29,6 @@ SOURCES += main.cpp\
     vdocument.cpp \
     utils/vutils.cpp \
     vpreviewpage.cpp \
-    hgmarkdownhighlighter.cpp \
     vstyleparser.cpp \
     dialog/vnewnotebookdialog.cpp \
     vmarkdownconverter.cpp \
@@ -158,7 +157,6 @@ HEADERS  += vmainwindow.h \
     vdocument.h \
     utils/vutils.h \
     vpreviewpage.h \
-    hgmarkdownhighlighter.h \
     vstyleparser.h \
     dialog/vnewnotebookdialog.h \
     vmarkdownconverter.h \

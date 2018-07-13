@@ -32,8 +32,8 @@
 #include "vorphanfile.h"
 #include "vnote.h"
 #include "vnotebook.h"
-#include "hgmarkdownhighlighter.h"
 #include "vpreviewpage.h"
+#include "pegparser.h"
 
 extern VConfigManager *g_config;
 
@@ -51,10 +51,6 @@ const QString VUtils::c_fileNameRegExp = QString("(?:[^\\\\/:\\*\\?\"<>\\|\\s]| 
 const QString VUtils::c_fencedCodeBlockStartRegExp = QString("^(\\s*)```([^`\\s]*)\\s*[^`]*$");
 
 const QString VUtils::c_fencedCodeBlockEndRegExp = QString("^(\\s*)```$");
-
-const QString VUtils::c_mathjaxInlineRegExp = QString("(?:^|[^\\$\\\\]|(?:^|[^\\\\])(?:\\\\\\\\)+)\\$(?!\\$)");
-
-const QString VUtils::c_mathjaxBlockRegExp = QString("(?:^|[^\\$\\\\]|(?:^|[^\\\\])(?:\\\\\\\\)+)\\$\\$(?!\\$)");
 
 const QString VUtils::c_previewImageBlockRegExp = QString("[\\n|^][ |\\t]*\\xfffc[ |\\t]*(?=\\n)");
 
@@ -661,8 +657,11 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
                     "<script src=\"qrc" + VNote::c_markdownitAnchorExtraFile + "\"></script>\n" +
                     "<script src=\"qrc" + VNote::c_markdownitTaskListExtraFile + "\"></script>\n" +
                     "<script src=\"qrc" + VNote::c_markdownitImsizeExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_markdownitFootnoteExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_markdownitTexMathExtraFile + "\"></script>\n";
+                    "<script src=\"qrc" + VNote::c_markdownitFootnoteExtraFile + "\"></script>\n";
+
+        if (g_config->getEnableMathjax()) {
+            extraFile += "<script src=\"qrc" + VNote::c_markdownitTexMathExtraFile + "\"></script>\n";
+        }
 
         const MarkdownitOption &opt = g_config->getMarkdownitOption();
 
@@ -1201,38 +1200,11 @@ bool VUtils::deleteFile(const QString &p_recycleBinFolderPath,
 QVector<VElementRegion> VUtils::fetchImageRegionsUsingParser(const QString &p_content)
 {
     Q_ASSERT(!p_content.isEmpty());
-    QVector<VElementRegion> regs;
 
-    QByteArray ba = p_content.toUtf8();
-    const char *data = (const char *)ba.data();
-    int len = ba.size();
+    const QSharedPointer<PegParseConfig> parserConfig(new PegParseConfig());
+    parserConfig->m_data = p_content.toUtf8();
 
-    pmh_element **result = NULL;
-    char *content = new char[len + 1];
-    memcpy(content, data, len);
-    content[len] = '\0';
-
-    pmh_markdown_to_elements(content, pmh_EXT_NONE, &result);
-
-    if (!result) {
-        return regs;
-    }
-
-    pmh_element *elem = result[pmh_IMAGE];
-    while (elem != NULL) {
-        if (elem->end <= elem->pos) {
-            elem = elem->next;
-            continue;
-        }
-
-        regs.push_back(VElementRegion(elem->pos, elem->end));
-
-        elem = elem->next;
-    }
-
-    pmh_free_elements(result);
-
-    return regs;
+    return PegParser::parseImageRegions(parserConfig);
 }
 
 QString VUtils::displayDateTime(const QDateTime &p_dateTime,

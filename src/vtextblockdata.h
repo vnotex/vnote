@@ -139,60 +139,6 @@ struct VPreviewInfo
 };
 
 
-struct MathjaxInfo
-{
-public:
-    MathjaxInfo()
-        : m_previewedAsBlock(false),
-          m_index(-1),
-          m_length(0)
-    {
-    }
-
-
-    bool isValid() const
-    {
-        return m_index >= 0 && m_length > 0;
-    }
-
-    bool previewedAsBlock() const
-    {
-        return m_previewedAsBlock;
-    }
-
-    void clear()
-    {
-        m_previewedAsBlock = false;
-        m_index = -1;
-        m_length = 0;
-    }
-
-    const QString &text() const
-    {
-        return m_text;
-    }
-
-    QString toString() const
-    {
-        return QString("MathjaxInfo %1 (%2,%3) %4").arg(m_previewedAsBlock)
-                                                   .arg(m_index)
-                                                   .arg(m_length)
-                                                   .arg(m_text);
-    }
-
-    // Whether it should be previewed as block or not.
-    bool m_previewedAsBlock;
-
-    // Start index wihtin block, including the start mark.
-    int m_index;
-
-    // Length of this mathjax, including the end mark.
-    int m_length;
-
-    QString m_text;
-};
-
-
 // User data for each block.
 class VTextBlockData : public QTextBlockUserData
 {
@@ -217,16 +163,6 @@ public:
 
     void setCodeBlockIndentation(int p_indent);
 
-    void clearMathjax();
-
-    const MathjaxInfo &getPendingMathjax() const;
-
-    void setPendingMathjax(const MathjaxInfo &p_info);
-
-    const QVector<MathjaxInfo> &getMathjax() const;
-
-    void addMathjax(const MathjaxInfo &p_info);
-
 private:
     // Check the order of elements.
     bool checkOrder() const;
@@ -236,12 +172,6 @@ private:
 
     // Indentation of the this code block if this block is a fenced code block.
     int m_codeBlockIndentation;
-
-    // Pending Mathjax info, such as this block is the start of a Mathjax formula.
-    MathjaxInfo m_pendingMathjax;
-
-    // Mathjax info ends in this block.
-    QVector<MathjaxInfo> m_mathjax;
 };
 
 inline const QVector<VPreviewInfo *> &VTextBlockData::getPreviews() const
@@ -258,31 +188,4 @@ inline void VTextBlockData::setCodeBlockIndentation(int p_indent)
 {
     m_codeBlockIndentation = p_indent;
 }
-
-inline void VTextBlockData::clearMathjax()
-{
-    m_pendingMathjax.clear();
-    m_mathjax.clear();
-}
-
-inline const MathjaxInfo &VTextBlockData::getPendingMathjax() const
-{
-    return m_pendingMathjax;
-}
-
-inline void VTextBlockData::setPendingMathjax(const MathjaxInfo &p_info)
-{
-    m_pendingMathjax = p_info;
-}
-
-inline const QVector<MathjaxInfo> &VTextBlockData::getMathjax() const
-{
-    return m_mathjax;
-}
-
-inline void VTextBlockData::addMathjax(const MathjaxInfo &p_info)
-{
-    m_mathjax.append(p_info);
-}
-
 #endif // VTEXTBLOCKDATA_H

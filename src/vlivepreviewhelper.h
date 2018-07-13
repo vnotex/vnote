@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QTextDocument>
 
-#include "hgmarkdownhighlighter.h"
+#include "pegmarkdownhighlighter.h"
 #include "vpreviewmanager.h"
 #include "vconstants.h"
 

@@ -13,6 +13,13 @@
 
 struct PegParseConfig
 {
+    PegParseConfig()
+        : m_timeStamp(0),
+          m_numOfBlocks(0),
+          m_extensions(pmh_EXT_NONE)
+    {
+    }
+
     TimeStamp m_timeStamp;
 
     QByteArray m_data;
@@ -86,12 +93,23 @@ struct PegParseResult
     // Ordered by start position in ascending order.
     QMap<int, VElementRegion>  m_codeBlockRegions;
 
+    // All $ $ inline equation regions.
+    QVector<VElementRegion> m_inlineEquationRegions;
+
+    // All $$ $$ display formula regions.
+    // Sorted by start position.
+    QVector<VElementRegion> m_displayFormulaRegions;
+
 private:
     void parseImageRegions(QAtomicInt &p_stop);
 
     void parseHeaderRegions(QAtomicInt &p_stop);
 
     void parseFencedCodeBlockRegions(QAtomicInt &p_stop);
+
+    void parseInlineEquationRegions(QAtomicInt &p_stop);
+
+    void parseDisplayFormulaRegions(QAtomicInt &p_stop);
 };
 
 class PegParserWorker : public QThread
@@ -161,6 +179,11 @@ public:
     ~PegParser();
 
     void parseAsync(const QSharedPointer<PegParseConfig> &p_config);
+
+    static QVector<VElementRegion> parseImageRegions(const QSharedPointer<PegParseConfig> &p_config);
+
+    // MUST pmh_free_elements() the result.
+    static pmh_element **parseMarkdownToElements(const QSharedPointer<PegParseConfig> &p_config);
 
 signals:
     void parseResultReady(const QSharedPointer<PegParseResult> &p_result);

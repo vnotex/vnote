@@ -108,7 +108,9 @@ mdit = mdit.use(window.markdownitFootnote);
 
 mdit = mdit.use(window["markdown-it-imsize.js"]);
 
-mdit = mdit.use(texmath, { delimiters: 'dollars' });
+if (typeof texmath != 'undefined') {
+    mdit = mdit.use(texmath, { delimiters: 'dollars' });
+}
 
 var mdHasTocSection = function(markdown) {
     var n = markdown.search(/(\n|^)\[toc\]/i);

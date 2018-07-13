@@ -2,6 +2,7 @@
 
 #include <QTextDocument>
 #include <QTextBlock>
+#include <QDebug>
 
 #include "pegmarkdownhighlighter.h"
 #include "utils/vutils.h"
@@ -31,6 +32,8 @@ PegHighlighterResult::PegHighlighterResult(const PegMarkdownHighlighter *p_peg,
     m_headerRegions = p_result->m_headerRegions;
 
     parseFencedCodeBlocks(p_peg, p_result);
+
+    parseMathjaxBlocks(p_peg, p_result);
 }
 
 static bool compHLUnit(const HLUnit &p_a, const HLUnit &p_b)
@@ -215,6 +218,89 @@ void PegHighlighterResult::parseFencedCodeBlocks(const PegMarkdownHighlighter *p
 
             if (state != HighlightBlockState::Normal) {
                 m_codeBlocksState.insert(blockNumber, state);
+            }
+
+            block = block.next();
+        }
+    }
+}
+
+void PegHighlighterResult::parseMathjaxBlocks(const PegMarkdownHighlighter *p_peg,
+                                              const QSharedPointer<PegParseResult> &p_result)
+{
+    const QTextDocument *doc = p_peg->getDocument();
+
+    // Inline equations.
+    const QVector<VElementRegion> inlineRegs = p_result->m_inlineEquationRegions;
+
+    for (auto it = inlineRegs.begin(); it != inlineRegs.end(); ++it) {
+        const VElementRegion &r = *it;
+        QTextBlock block = doc->findBlock(r.m_startPos);
+        // Inline equation MUST in one block.
+        Q_ASSERT(block.blockNumber() == doc->findBlock(r.m_endPos - 1).blockNumber());
+
+        if (!block.isValid()) {
+            continue;
+        }
+
+        if (r.m_endPos - block.position() > block.length()) {
+            continue;
+        }
+
+        VMathjaxBlock item;
+        item.m_blockNumber = block.blockNumber();
+        item.m_previewedAsBlock = false;
+        item.m_index = r.m_startPos - block.position();
+        item.m_length = r.m_endPos - r.m_startPos;
+        item.m_text = block.text().mid(item.m_index, item.m_length);
+        m_mathjaxBlocks.append(item);
+    }
+
+    // Display formulas.
+    // One block may be split into several regions due to list indentation.
+    const QVector<VElementRegion> formulaRegs = p_result->m_displayFormulaRegions;
+    VMathjaxBlock item;
+    bool inBlock = false;
+    QString marker("$$");
+    for (auto it = formulaRegs.begin(); it != formulaRegs.end(); ++it) {
+        const VElementRegion &r = *it;
+        QTextBlock block = doc->findBlock(r.m_startPos);
+        int lastBlock = doc->findBlock(r.m_endPos - 1).blockNumber();
+
+        while (block.isValid()) {
+            int blockNum = block.blockNumber();
+            if (blockNum > lastBlock) {
+                break;
+            }
+
+            int pib = r.m_startPos - block.position();
+            int length = r.m_endPos - r.m_startPos;
+            QString text = block.text().mid(pib, length);
+            if (inBlock) {
+                item.m_text = item.m_text + "\n" + text;
+                if (text.endsWith(marker)) {
+                    // End of block.
+                    inBlock = false;
+                    item.m_blockNumber = blockNum;
+                    item.m_index = pib;
+                    item.m_length = length;
+                    m_mathjaxBlocks.append(item);
+                }
+            } else {
+                Q_ASSERT(text.startsWith(marker));
+                if (text.size() > 2 && text.endsWith(marker)) {
+                    // Within one block.
+                    item.m_blockNumber = blockNum;
+                    item.m_previewedAsBlock = true;
+                    item.m_index = pib;
+                    item.m_length = length;
+                    item.m_text = text;
+                    m_mathjaxBlocks.append(item);
+                } else {
+                    inBlock = true;
+                    item.m_previewedAsBlock = true;
+                    item.m_text = text;
+                }
             }
 
             block = block.next();

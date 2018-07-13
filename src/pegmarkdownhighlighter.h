@@ -96,6 +96,8 @@ private:
 
     void completeHighlight(QSharedPointer<PegHighlighterResult> p_result);
 
+    bool isMathJaxEnabled() const;
+
     QTextDocument *m_doc;
 
     TimeStamp m_timeStamp;
@@ -175,5 +177,10 @@ inline VTextBlockData *PegMarkdownHighlighter::previousBlockData() const
     }
 
     return static_cast<VTextBlockData *>(block.userData());
+}
+
+inline bool PegMarkdownHighlighter::isMathJaxEnabled() const
+{
+    return m_parserExts & pmh_EXT_MATH;
 }
 #endif // PEGMARKDOWNHIGHLIGHTER_H

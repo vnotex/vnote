@@ -39,8 +39,6 @@ color-column-foreground: eeeeee
 preview-image-line-foreground: 6f5799
 # [VNote] Style for preview image (useful for SVG in dark theme)
 preview-image-background: 949494
-# [VNote] Style for MathJax
-mathjax-foreground: 93d3cc
 
 editor-selection
 foreground: dadada
@@ -184,3 +182,11 @@ font-style: strikeout
 
 FRONTMATTER
 foreground: af8787
+
+INLINEEQUATION
+foreground: 93d3cc
+font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
+
+DISPLAYFORMULA
+foreground: 93d3cc
+font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New

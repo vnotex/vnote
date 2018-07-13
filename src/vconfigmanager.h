@@ -333,8 +333,6 @@ public:
 
     const QString &getEditorPreviewImageBg() const;
 
-    const QString &getEditorMathjaxFg() const;
-
     bool getEnableCodeBlockLineNumber() const;
     void setEnableCodeBlockLineNumber(bool p_enabled);
 
@@ -789,7 +787,7 @@ private:
     // [DocType] -> { Suffixes }.
     QHash<int, QList<QString>> m_docSuffixes;
 
-    // Interval for HGMarkdownHighlighter highlight timer (milliseconds).
+    // Interval for PegMarkdownHighlighter highlight timer (milliseconds).
     int m_markdownHighlightInterval;
 
     // Line distance height in pixel.
@@ -824,9 +822,6 @@ private:
 
     // The forced background color of the preview image. Can be empty.
     QString m_editorPreviewImageBg;
-
-    // The foreground color of the MathJax.
-    QString m_editorMathjaxFg;
 
     // Icon size of tool bar in pixels.
     int m_toolBarIconSize;
@@ -1925,11 +1920,6 @@ inline const QString &VConfigManager::getEditorPreviewImageLineFg() const
 inline const QString &VConfigManager::getEditorPreviewImageBg() const
 {
     return m_editorPreviewImageBg;
-}
-
-inline const QString &VConfigManager::getEditorMathjaxFg() const
-{
-    return m_editorMathjaxFg;
 }
 
 inline bool VConfigManager::getEnableCodeBlockLineNumber() const

@@ -72,15 +72,6 @@ struct VMathjaxBlock
     {
     }
 
-    VMathjaxBlock(int p_blockNumber, const MathjaxInfo &p_info)
-        : m_blockNumber(p_blockNumber),
-          m_previewedAsBlock(p_info.m_previewedAsBlock),
-          m_index(p_info.m_index),
-          m_length(p_info.m_length),
-          m_text(p_info.m_text)
-    {
-    }
-
     bool equalContent(const VMathjaxBlock &p_block) const
     {
         return m_text == p_block.m_text;
@@ -94,13 +85,16 @@ struct VMathjaxBlock
         m_length = p_block.m_length;
     }
 
+    // Block number for in-place preview.
     int m_blockNumber;
 
+    // Whether it should be previewed as block or not.
     bool m_previewedAsBlock;
 
-    // Start index within the block.
+    // Start index wihtin block with number m_blockNumber, including the start mark.
     int m_index;
 
+    // Length of this mathjax in block with number m_blockNumber, including the end mark.
     int m_length;
 
     QString m_text;
@@ -171,12 +165,4 @@ struct VElementRegion
         return QString("[%1,%2)").arg(m_startPos).arg(m_endPos);
     }
 };
-
-struct PegHighlightResult
-{
-    TimeStamp m_timeStamp;
-
-    QVector<QVector<HLUnit> > m_blockHighlights;
-};
-
 #endif // MARKDOWNHIGHLIGHTERDATA_H

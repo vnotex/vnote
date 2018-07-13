@@ -119,23 +119,7 @@ enum HighlightBlockState
     // A fenced code block.
     CodeBlockStart,
     CodeBlock,
-    CodeBlockEnd,
-
-    // This block is inside a HTML comment region.
-    // Obsolete.
-    Comment,
-
-    // Verbatim code block.
-    // Obsolete.
-    Verbatim,
-
-    // Mathjax. It means the pending state of the block.
-    MathjaxBlock,
-    MathjaxInline,
-
-    // Header.
-    // Obsolete.
-    Header
+    CodeBlockEnd
 };
 
 // Pages to open on start up.

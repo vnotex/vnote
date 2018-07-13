@@ -5,7 +5,7 @@
 #include <QVector>
 #include <QString>
 #include <QHash>
-#include "hgmarkdownhighlighter.h"
+#include "pegmarkdownhighlighter.h"
 
 extern "C" {
 #include <pmh_definitions.h>

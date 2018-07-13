@@ -374,14 +374,6 @@ public:
     static const QString c_fencedCodeBlockStartRegExp;
     static const QString c_fencedCodeBlockEndRegExp;
 
-    // Regular expression for inline mathjax formula.
-    // $..$
-    static const QString c_mathjaxInlineRegExp;
-
-    // Regular expression for block mathjax formula.
-    // $$..$$
-    static const QString c_mathjaxBlockRegExp;
-
     // Regular expression for preview image block.
     static const QString c_previewImageBlockRegExp;
 
@@ -403,7 +395,7 @@ private:
 
     static void initAvailableLanguage();
 
-    // Use HGMarkdownParser to parse @p_content to get all image link regions.
+    // Use PegParser to parse @p_content to get all image link regions.
     static QVector<VElementRegion> fetchImageRegionsUsingParser(const QString &p_content);
 
     // Delete file/directory specified by @p_path by moving it to the recycle bin

@@ -1,6 +1,6 @@
 #include <QtWidgets>
 #include "vmdedit.h"
-#include "hgmarkdownhighlighter.h"
+#include "pegmarkdownhighlighter.h"
 #include "vmdeditoperations.h"
 #include "vnote.h"
 #include "vconfigmanager.h"
@@ -30,6 +30,7 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
 
     setAcceptRichText(false);
 
+    /*
     m_mdHighlighter = new HGMarkdownHighlighter(g_config->getMdHighlightingStyles(),
                                                 g_config->getCodeBlockStyles(),
                                                 g_config->getMarkdownHighlightInterval(),
@@ -37,13 +38,13 @@ VMdEdit::VMdEdit(VFile *p_file, VDocument *p_vdoc, MarkdownConverterType p_type,
 
     connect(m_mdHighlighter, &HGMarkdownHighlighter::headersUpdated,
             this, &VMdEdit::updateHeaders);
-
     // After highlight, the cursor may trun into non-visible. We should make it visible
     // in this case.
     connect(m_mdHighlighter, &HGMarkdownHighlighter::highlightCompleted,
             this, [this]() {
             makeBlockVisible(textCursor().block());
     });
+    */
 
     /*
     m_imagePreviewer = new VImagePreviewer(this, m_mdHighlighter);

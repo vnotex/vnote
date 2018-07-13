@@ -15,6 +15,10 @@ void PegParseResult::parse(QAtomicInt &p_stop)
     parseHeaderRegions(p_stop);
 
     parseFencedCodeBlockRegions(p_stop);
+
+    parseInlineEquationRegions(p_stop);
+
+    parseDisplayFormulaRegions(p_stop);
 }
 
 void PegParseResult::parseImageRegions(QAtomicInt &p_stop)
@@ -100,6 +104,58 @@ void PegParseResult::parseFencedCodeBlockRegions(QAtomicInt &p_stop)
     }
 }
 
+void PegParseResult::parseInlineEquationRegions(QAtomicInt &p_stop)
+{
+    m_inlineEquationRegions.clear();
+    if (isEmpty()) {
+        return;
+    }
+
+    pmh_element *elem = m_pmhElements[pmh_INLINEEQUATION];
+    while (elem != NULL) {
+        if (elem->end <= elem->pos) {
+            elem = elem->next;
+            continue;
+        }
+
+        if (p_stop.load() == 1) {
+            return;
+        }
+
+        m_inlineEquationRegions.push_back(VElementRegion(elem->pos, elem->end));
+        elem = elem->next;
+    }
+}
+
+void PegParseResult::parseDisplayFormulaRegions(QAtomicInt &p_stop)
+{
+    m_displayFormulaRegions.clear();
+    if (isEmpty()) {
+        return;
+    }
+
+    pmh_element *elem = m_pmhElements[pmh_DISPLAYFORMULA];
+    while (elem != NULL) {
+        if (elem->end <= elem->pos) {
+            elem = elem->next;
+            continue;
+        }
+
+        if (p_stop.load() == 1) {
+            return;
+        }
+
+        m_displayFormulaRegions.push_back(VElementRegion(elem->pos, elem->end));
+        elem = elem->next;
+    }
+
+    if (p_stop.load() == 1) {
+        return;
+    }
+
+    std::sort(m_displayFormulaRegions.begin(), m_displayFormulaRegions.end());
+}
+
 
 PegParserWorker::PegParserWorker(QObject *p_parent)
     : QThread(p_parent),
@@ -152,13 +208,7 @@ QSharedPointer<PegParseResult> PegParserWorker::parseMarkdown(const QSharedPoint
         return result;
     }
 
-    pmh_element **pmhResult = NULL;
-
-    char *data = p_config->m_data.data();
-
-    pmh_markdown_to_elements(data, p_config->m_extensions, &pmhResult);
-
-    result->m_pmhElements = pmhResult;
+    result->m_pmhElements = PegParser::parseMarkdownToElements(p_config);
 
     if (p_stop.load() == 1) {
         return result;
@@ -273,4 +323,40 @@ void PegParser::scheduleWork(PegParserWorker *p_worker,
     p_worker->reset();
     p_worker->prepareParse(p_config);
     p_worker->start();
+}
+
+QVector<VElementRegion> PegParser::parseImageRegions(const QSharedPointer<PegParseConfig> &p_config)
+{
+    QVector<VElementRegion> regs;
+    pmh_element **res = PegParser::parseMarkdownToElements(p_config);
+    if (!res) {
+        return regs;
+    }
+
+    pmh_element *elem = res[pmh_IMAGE];
+    while (elem != NULL) {
+        if (elem->end <= elem->pos) {
+            elem = elem->next;
+            continue;
+        }
+
+        regs.push_back(VElementRegion(elem->pos, elem->end));
+        elem = elem->next;
+    }
+
+    pmh_free_elements(res);
+
+    return regs;
+}
+
+pmh_element **PegParser::parseMarkdownToElements(const QSharedPointer<PegParseConfig> &p_config)
+{
+    if (p_config->m_data.isEmpty()) {
+        return NULL;
+    }
+
+    pmh_element **pmhResult = NULL;
+    char *data = p_config->m_data.data();
+    pmh_markdown_to_elements(data, p_config->m_extensions, &pmhResult);
+    return pmhResult;
 }
