@@ -42,6 +42,8 @@ public:
         return QSize(calculateWidth(), 0);
     }
 
+    void setDigitWidth(int p_width);
+
     int calculateWidth() const;
 
     const QColor &getBackgroundColor() const;
@@ -86,4 +88,8 @@ inline void VLineNumberArea::setForegroundColor(const QColor &p_color)
     m_foregroundColor = p_color;
 }
 
+inline void VLineNumberArea::setDigitWidth(int p_width)
+{
+    m_digitWidth = p_width;
+}
 #endif // VLINENUMBERAREA_H

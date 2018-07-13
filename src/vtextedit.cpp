@@ -442,3 +442,8 @@ void VTextEdit::setDisplayScaleFactor(qreal p_factor)
                                                           : m_defaultCursorWidth);
     getLayout()->setCursorWidth(m_defaultCursorWidth);
 }
+
+void VTextEdit::updateLineNumberAreaWidth(const QFontMetrics &p_metrics)
+{
+    m_lineNumberArea->setDigitWidth(p_metrics.width(QLatin1Char('8')));
+}

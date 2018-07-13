@@ -81,6 +81,8 @@ protected:
     // Return the Y offset of the content via the scrollbar.
     int contentOffsetY() const;
 
+    void updateLineNumberAreaWidth(const QFontMetrics &p_metrics);
+
 private slots:
     // Update viewport margin to hold the line number area.
     void updateLineNumberAreaMargin();

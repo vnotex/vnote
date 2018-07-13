@@ -111,11 +111,27 @@ VMdEditor::VMdEditor(VFile *p_file,
 
 void VMdEditor::updateFontAndPalette()
 {
-    setFont(g_config->getMdEditFont());
-    setPalette(g_config->getMdEditPalette());
+    QFont font(g_config->getMdEditFont());
+    setFont(font);
+
+    const QPalette &palette = g_config->getMdEditPalette();
+    setPalette(palette);
 
     // setPalette() won't change the foreground.
-    setTextColor(g_config->getMdEditPalette().color(QPalette::Text));
+    setTextColor(palette.color(QPalette::Text));
+
+    // Only this could override the font-family set of QWidget in QSS.
+    // May be need to reset all the stylesheet?
+    setStyleSheet(QString("font-family: \"%1\";"
+                          "font-size: %2pt;"
+                          "color: %3;"
+                          "background-color: %4;")
+                         .arg(font.family())
+                         .arg(font.pointSize())
+                         .arg(palette.color(QPalette::Text).name())
+                         .arg(palette.color(QPalette::Base).name()));
+
+    updateLineNumberAreaWidth(fontMetrics());
 }
 
 void VMdEditor::beginEdit()

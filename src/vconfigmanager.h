@@ -95,9 +95,9 @@ public:
     // Reset the layout.
     void resetLayoutConfigurations();
 
-    QFont getMdEditFont() const;
+    const QFont &getMdEditFont() const;
 
-    QPalette getMdEditPalette() const;
+    const QPalette &getMdEditPalette() const;
 
     QVector<HighlightingStyle> getMdHighlightingStyles() const;
 
@@ -984,12 +984,12 @@ private:
 };
 
 
-inline QFont VConfigManager::getMdEditFont() const
+inline const QFont &VConfigManager::getMdEditFont() const
 {
     return mdEditFont;
 }
 
-inline QPalette VConfigManager::getMdEditPalette() const
+inline const QPalette &VConfigManager::getMdEditPalette() const
 {
     return mdEditPalette;
 }
