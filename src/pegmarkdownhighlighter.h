@@ -85,7 +85,8 @@ private:
 
     // Highlight fenced code block according to VCodeBlockHighlightHelper result.
     void highlightCodeBlock(const QSharedPointer<PegHighlighterResult> &p_result,
-                            int p_blockNum);
+                            int p_blockNum,
+                            const QString &p_text);
 
     // Highlight color column in code block.
     void highlightCodeBlockColorColumn(const QString &p_text);

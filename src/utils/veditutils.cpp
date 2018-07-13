@@ -944,6 +944,18 @@ QString VEditUtils::fetchIndentSpaces(const QTextBlock &p_block)
     return regExp.capturedTexts()[1];
 }
 
+int VEditUtils::fetchIndentation(const QString &p_text)
+{
+    int idx = 0;
+    for (; idx < p_text.size(); ++idx) {
+        if (!p_text[idx].isSpace()) {
+            break;
+        }
+    }
+
+    return idx;
+}
+
 void VEditUtils::insertBlock(QTextCursor &p_cursor,
                              bool p_above)
 {

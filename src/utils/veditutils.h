@@ -184,6 +184,8 @@ public:
     // Return the leading spaces of @p_block.
     static QString fetchIndentSpaces(const QTextBlock &p_block);
 
+    static int fetchIndentation(const QString &p_text);
+
     // Insert a block above/below current block. Move the cursor to the start of
     // the new block after insertion.
     static void insertBlock(QTextCursor &p_cursor,

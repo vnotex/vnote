@@ -7,6 +7,7 @@
 #include "pegparser.h"
 #include "vconfigmanager.h"
 #include "utils/vutils.h"
+#include "utils/veditutils.h"
 
 extern VConfigManager *g_config;
 
@@ -110,7 +111,7 @@ void PegMarkdownHighlighter::highlightBlock(const QString &p_text)
     updateCodeBlockState(result, blockNum, p_text);
 
     if (currentBlockState() == HighlightBlockState::CodeBlock) {
-        highlightCodeBlock(result, blockNum);
+        highlightCodeBlock(result, blockNum, p_text);
 
         highlightCodeBlockColorColumn(p_text);
     }
@@ -339,8 +340,17 @@ void PegMarkdownHighlighter::updateCodeBlockState(const QSharedPointer<PegHighli
 }
 
 void PegMarkdownHighlighter::highlightCodeBlock(const QSharedPointer<PegHighlighterResult> &p_result,
-                                                int p_blockNum)
+                                                int p_blockNum,
+                                                const QString &p_text)
 {
+    // Brush the indentation spaces.
+    if (currentBlockState() == HighlightBlockState::CodeBlock) {
+        int spaces = VEditUtils::fetchIndentation(p_text);
+        if (spaces > 0) {
+            setFormat(0, spaces, m_codeBlockFormat);
+        }
+    }
+
     if (p_result->m_codeBlocksHighlights.size() > p_blockNum) {
         const QVector<HLUnitStyle> &units = p_result->m_codeBlocksHighlights[p_blockNum];
         if (!units.isEmpty()) {
