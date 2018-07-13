@@ -102,7 +102,7 @@ texmath.rules = {
         ],
         block: [
             {   name: 'math_block',
-                rex: /\\\[(.+?)\\\]/gmy,
+                rex: /\\\[(.+?)\\\]\s*$/gmy,
                 tmpl: '<x-eqn class="tex-to-render">$1</x-eqn>',
                 tag: '\\['
             }
@@ -118,7 +118,7 @@ texmath.rules = {
         ],
         block: [
             {   name: 'math_block',
-                rex: /`{3}math\s+?([^`]+?)\s+?`{3}/gmy,
+                rex: /`{3}math\s+?([^`]+?)\s+?`{3}\s*$/gmy,
                 tmpl: '<x-eqn class="tex-to-render">$1</x-eqn>',
                 tag: '```math'
             }
@@ -143,7 +143,7 @@ texmath.rules = {
         ],
         block: [
             {   name: 'math_block',
-                rex: /\${2}([^$]*?)\${2}/gmy,
+                rex: /\${2}([^$]*?)\${2}\s*$/gmy,
                 tmpl: '<x-eqn class="tex-to-render">$1</x-eqn>',
                 tag: '$$'
             }
