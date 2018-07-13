@@ -12,7 +12,8 @@ VDocument::VDocument(const VFile *v_file, QObject *p_parent)
       m_readyToHighlight(false),
       m_plantUMLHelper(NULL),
       m_graphvizHelper(NULL),
-      m_nextID(0)
+      m_nextID(0),
+      m_webViewMuted(false)
 {
 }
 
@@ -46,7 +47,7 @@ void VDocument::scrollToAnchor(const QString &anchor)
 
 void VDocument::setHeader(const QString &anchor)
 {
-    if (anchor == m_header) {
+    if (m_webViewMuted || anchor == m_header) {
         return;
     }
 

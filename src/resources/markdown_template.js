@@ -154,11 +154,17 @@ var htmlContent = function() {
     content.htmlContentCB("", styleContent(), contentDiv.innerHTML);
 };
 
+var mute = function(muted) {
+    g_muteScroll = muted;
+};
+
 new QWebChannel(qt.webChannelTransport,
     function(channel) {
         content = channel.objects.content;
 
         content.requestScrollToAnchor.connect(scrollToAnchor);
+
+        content.requestMuted.connect(mute);
 
         if (typeof highlightText == "function") {
             content.requestHighlightText.connect(highlightText);

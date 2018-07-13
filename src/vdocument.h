@@ -67,6 +67,8 @@ public:
 
     int registerIdentifier();
 
+    void muteWebView(bool p_muted);
+
 public slots:
     // Will be called in the HTML side
 
@@ -173,6 +175,8 @@ signals:
 
     void codeBlockPreviewReady(int p_id, const QString &p_lang, const QString &p_html);
 
+    void requestMuted(bool p_muted);
+
 private:
     QString m_toc;
     QString m_header;
@@ -198,6 +202,9 @@ private:
     VGraphvizHelper *m_graphvizHelper;
 
     int m_nextID;
+
+    // Whether propogate signals from web view.
+    bool m_webViewMuted;
 };
 
 inline bool VDocument::isReadyToHighlight() const
@@ -218,5 +225,11 @@ inline const VWordCountInfo &VDocument::getWordCountInfo() const
 inline int VDocument::registerIdentifier()
 {
     return ++m_nextID;
+}
+
+inline void VDocument::muteWebView(bool p_muted)
+{
+    m_webViewMuted = p_muted;
+    emit requestMuted(m_webViewMuted);
 }
 #endif // VDOCUMENT_H

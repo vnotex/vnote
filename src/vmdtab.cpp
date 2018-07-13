@@ -434,6 +434,7 @@ void VMdTab::setupMarkdownViewer()
                     // Recover header from edit mode.
                     scrollWebViewToHeader(m_headerFromEditMode);
                     m_headerFromEditMode.clear();
+                    m_document->muteWebView(false);
                     return;
                 }
 
@@ -1058,6 +1059,10 @@ void VMdTab::tabIsReady(TabReady p_mode)
                          || (!m_isEditMode && p_mode == TabReady::ReadMode);
 
     if (isCurrentMode) {
+        if (p_mode == TabReady::ReadMode) {
+            m_document->muteWebView(false);
+        }
+
         restoreFromTabInfo();
 
         if (m_enableBackupFile
@@ -1426,6 +1431,7 @@ void VMdTab::setCurrentMode(Mode p_mode)
         break;
 
     case Mode::Edit:
+        m_document->muteWebView(true);
         m_webViewer->hide();
         m_editor->show();
 
@@ -1435,6 +1441,7 @@ void VMdTab::setCurrentMode(Mode p_mode)
 
     case Mode::EditPreview:
         Q_ASSERT(m_editor);
+        m_document->muteWebView(true);
         m_webViewer->setInPreview(true);
         m_webViewer->show();
         m_editor->show();
