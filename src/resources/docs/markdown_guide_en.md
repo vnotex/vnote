@@ -156,11 +156,16 @@ VNote supports [Graphviz](http://www.graphviz.org/) to draw diagrams. You should
 
 ### Math Formulas
 
-> You need to enable MathJax in the `Markdown` menu.
+> You need to enable MathJax in the `Markdown` menu and restart VNote.
 
-VNote supports math formulas via [MathJax](https://www.mathjax.org/). The default math delimiters are `$$...$$` and `\[...\]` for **displayed mathematics**, and `$...$` for **inline mathematics**. Sometimes you may need to *escape* some characters via `\`.
+VNote supports math formulas via [MathJax](https://www.mathjax.org/). The default math delimiters are `$$...$$` for **displayed mathematics**, and `$...$` for **inline mathematics**.
 
-VNote also supports displayed mathematics via fenced code block with language `mathjax` specified. The benifit of using code block is you do not have to escape most characters.
+- Inline mathematics should not cross multiple lines;
+- Forms like `3$abc$`, `$abc$4`, `$ abc$`, and `$abc $` will not be treated as mathematics;
+- Use `\` to escape `$`;
+- There should be only space chars before opening `$$` and after closing `$$`;
+
+VNote also supports displayed mathematics via fenced code block with language `mathjax` specified.
 
     ```mathjax
     $$
