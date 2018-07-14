@@ -7,15 +7,40 @@
 class PegMarkdownHighlighter;
 class QTextDocument;
 
+class PegHighlighterFastResult
+{
+public:
+    PegHighlighterFastResult();
+
+    PegHighlighterFastResult(const PegMarkdownHighlighter *p_peg,
+                             const QSharedPointer<PegParseResult> &p_result);
+
+    bool matched(TimeStamp p_timeStamp) const
+    {
+        return m_timeStamp == p_timeStamp;
+    }
+
+    TimeStamp m_timeStamp;
+
+    QVector<QVector<HLUnit>> m_blocksHighlights;
+};
+
+
 class PegHighlighterResult
 {
 public:
     PegHighlighterResult();
 
+    // TODO: handle p_result->m_offset.
     PegHighlighterResult(const PegMarkdownHighlighter *p_peg,
                          const QSharedPointer<PegParseResult> &p_result);
 
     bool matched(TimeStamp p_timeStamp) const;
+
+    // Parse highlight elements for all the blocks from parse results.
+    static void parseBlocksHighlights(QVector<QVector<HLUnit>> &p_blocksHighlights,
+                                      const PegMarkdownHighlighter *p_peg,
+                                      const QSharedPointer<PegParseResult> &p_result);
 
     TimeStamp m_timeStamp;
 
@@ -48,15 +73,12 @@ public:
     QVector<VMathjaxBlock> m_mathjaxBlocks;
 
 private:
-    // Parse highlight elements for all the blocks from parse results.
-    void parseBlocksHighlights(const PegMarkdownHighlighter *p_peg,
-                               const QSharedPointer<PegParseResult> &p_result);
-
     // Parse highlight elements for blocks from one parse result.
-    void parseBlocksHighlightOne(const QTextDocument *p_doc,
-                                 unsigned long p_pos,
-                                 unsigned long p_end,
-                                 int p_styleIndex);
+    static void parseBlocksHighlightOne(QVector<QVector<HLUnit>> &p_blocksHighlights,
+                                        const QTextDocument *p_doc,
+                                        unsigned long p_pos,
+                                        unsigned long p_end,
+                                        int p_styleIndex);
 
     // Parse fenced code blocks from parse results.
     void parseFencedCodeBlocks(const PegMarkdownHighlighter *p_peg,

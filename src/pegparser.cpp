@@ -8,8 +8,12 @@ enum WorkerState
     Finished
 };
 
-void PegParseResult::parse(QAtomicInt &p_stop)
+void PegParseResult::parse(QAtomicInt &p_stop, bool p_fast)
 {
+    if (p_fast) {
+        return;
+    }
+
     parseImageRegions(p_stop);
 
     parseHeaderRegions(p_stop);
@@ -40,7 +44,7 @@ void PegParseResult::parseImageRegions(QAtomicInt &p_stop)
             return;
         }
 
-        m_imageRegions.push_back(VElementRegion(elem->pos, elem->end));
+        m_imageRegions.push_back(VElementRegion(m_offset + elem->pos, m_offset + elem->end));
         elem = elem->next;
     }
 }
@@ -66,7 +70,7 @@ void PegParseResult::parseHeaderRegions(QAtomicInt &p_stop)
                 return;
             }
 
-            m_headerRegions.push_back(VElementRegion(elem->pos, elem->end));
+            m_headerRegions.push_back(VElementRegion(m_offset + elem->pos, m_offset + elem->end));
             elem = elem->next;
         }
     }
@@ -96,8 +100,9 @@ void PegParseResult::parseFencedCodeBlockRegions(QAtomicInt &p_stop)
             return;
         }
 
-        if (!m_codeBlockRegions.contains(elem->pos)) {
-            m_codeBlockRegions.insert(elem->pos, VElementRegion(elem->pos, elem->end));
+        if (!m_codeBlockRegions.contains(m_offset + elem->pos)) {
+            m_codeBlockRegions.insert(m_offset + elem->pos,
+                                      VElementRegion(m_offset + elem->pos, m_offset + elem->end));
         }
 
         elem = elem->next;
@@ -122,7 +127,7 @@ void PegParseResult::parseInlineEquationRegions(QAtomicInt &p_stop)
             return;
         }
 
-        m_inlineEquationRegions.push_back(VElementRegion(elem->pos, elem->end));
+        m_inlineEquationRegions.push_back(VElementRegion(m_offset + elem->pos, m_offset + elem->end));
         elem = elem->next;
     }
 }
@@ -145,7 +150,7 @@ void PegParseResult::parseDisplayFormulaRegions(QAtomicInt &p_stop)
             return;
         }
 
-        m_displayFormulaRegions.push_back(VElementRegion(elem->pos, elem->end));
+        m_displayFormulaRegions.push_back(VElementRegion(m_offset + elem->pos, m_offset + elem->end));
         elem = elem->next;
     }
 
@@ -214,7 +219,7 @@ QSharedPointer<PegParseResult> PegParserWorker::parseMarkdown(const QSharedPoint
         return result;
     }
 
-    result->parse(p_stop);
+    result->parse(p_stop, p_config->m_fast);
 
     return result;
 }
@@ -226,13 +231,6 @@ PegParser::PegParser(QObject *p_parent)
     : QObject(p_parent)
 {
     init();
-}
-
-void PegParser::parseAsync(const QSharedPointer<PegParseConfig> &p_config)
-{
-    m_pendingWork = p_config;
-
-    pickWorker();
 }
 
 void PegParser::init()
@@ -265,6 +263,29 @@ void PegParser::clear()
 PegParser::~PegParser()
 {
     clear();
+}
+
+void PegParser::parseAsync(const QSharedPointer<PegParseConfig> &p_config)
+{
+    m_pendingWork = p_config;
+
+    pickWorker();
+}
+
+QSharedPointer<PegParseResult> PegParser::parse(const QSharedPointer<PegParseConfig> &p_config)
+{
+    QSharedPointer<PegParseResult> result(new PegParseResult(p_config));
+
+    if (p_config->m_data.isEmpty()) {
+        return result;
+    }
+
+    result->m_pmhElements = PegParser::parseMarkdownToElements(p_config);
+
+    QAtomicInt stop(0);
+    result->parse(stop, p_config->m_fast);
+
+    return result;
 }
 
 void PegParser::handleWorkerFinished(PegParserWorker *p_worker)
@@ -333,6 +354,7 @@ QVector<VElementRegion> PegParser::parseImageRegions(const QSharedPointer<PegPar
         return regs;
     }
 
+    int offset = p_config->m_offset;
     pmh_element *elem = res[pmh_IMAGE];
     while (elem != NULL) {
         if (elem->end <= elem->pos) {
@@ -340,7 +362,7 @@ QVector<VElementRegion> PegParser::parseImageRegions(const QSharedPointer<PegPar
             continue;
         }
 
-        regs.push_back(VElementRegion(elem->pos, elem->end));
+        regs.push_back(VElementRegion(offset + elem->pos, offset + elem->end));
         elem = elem->next;
     }
 

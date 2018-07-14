@@ -74,6 +74,8 @@ private slots:
 private:
     void startParse();
 
+    void startFastParse(int p_position, int p_charsRemoved, int p_charsAdded);
+
     void updateCodeBlocks(QSharedPointer<PegHighlighterResult> p_result);
 
     // Set the user data of currentBlock().
@@ -99,6 +101,17 @@ private:
 
     bool isMathJaxEnabled() const;
 
+    void getFastParseBlockRange(int p_position,
+                                int p_charsRemoved,
+                                int p_charsAdded,
+                                int &p_firstBlock,
+                                int &p_lastBlock) const;
+
+    void processFastParseResult(const QSharedPointer<PegParseResult> &p_result);
+
+    void highlightBlockOne(const QVector<QVector<HLUnit>> &p_highlights,
+                           int p_blockNum);
+
     QTextDocument *m_doc;
 
     TimeStamp m_timeStamp;
@@ -113,6 +126,8 @@ private:
 
     QSharedPointer<PegHighlighterResult> m_result;
 
+    QSharedPointer<PegHighlighterFastResult> m_fastResult;
+
     // Block number of those blocks which possible contains previewed image.
     QSet<int> m_possiblePreviewBlocks;
 
@@ -121,6 +136,8 @@ private:
 
     // Timer to trigger parse.
     QTimer *m_timer;
+
+    QTimer *m_fastParseTimer;
 };
 
 inline const QVector<VElementRegion> &PegMarkdownHighlighter::getHeaderRegions() const

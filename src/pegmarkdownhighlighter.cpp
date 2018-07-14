@@ -49,6 +49,7 @@ void PegMarkdownHighlighter::init(const QVector<HighlightingStyle> &p_styles,
     m_colorColumnFormat.setBackground(QColor(g_config->getEditorColorColumnBg()));
 
     m_result.reset(new PegHighlighterResult());
+    m_fastResult.reset(new PegHighlighterFastResult());
 
     m_parser = new PegParser(this);
     connect(m_parser, &PegParser::parseResultReady,
@@ -62,6 +63,24 @@ void PegMarkdownHighlighter::init(const QVector<HighlightingStyle> &p_styles,
                 startParse();
             });
 
+    m_fastParseTimer = new QTimer(this);
+    m_fastParseTimer->setSingleShot(true);
+    m_fastParseTimer->setInterval(50);
+    connect(m_fastParseTimer, &QTimer::timeout,
+            this, [this]() {
+                QSharedPointer<PegHighlighterFastResult> result(m_fastResult);
+                if (!result->matched(m_timeStamp)) {
+                    return;
+                }
+
+                const QVector<QVector<HLUnit>> &hls = result->m_blocksHighlights;
+                for (int i = 0; i < hls.size(); ++i) {
+                    if (!hls[i].isEmpty()) {
+                        rehighlightBlock(m_doc->findBlockByNumber(i));
+                    }
+                }
+            });
+
     connect(m_doc, &QTextDocument::contentsChange,
             this, &PegMarkdownHighlighter::handleContentsChange);
 }
@@ -71,9 +90,31 @@ void PegMarkdownHighlighter::highlightBlock(const QString &p_text)
     QSharedPointer<PegHighlighterResult> result(m_result);
 
     int blockNum = currentBlock().blockNumber();
-    if (result->m_blocksHighlights.size() > blockNum) {
+
+    highlightBlockOne(result->m_blocksHighlights, blockNum);
+
+    highlightBlockOne(m_fastResult->m_blocksHighlights, blockNum);
+
+    // Set current block's user data.
+    updateBlockUserData(blockNum, p_text);
+
+    setCurrentBlockState(HighlightBlockState::Normal);
+
+    updateCodeBlockState(result, blockNum, p_text);
+
+    if (currentBlockState() == HighlightBlockState::CodeBlock) {
+        highlightCodeBlock(result, blockNum, p_text);
+
+        highlightCodeBlockColorColumn(p_text);
+    }
+}
+
+void PegMarkdownHighlighter::highlightBlockOne(const QVector<QVector<HLUnit>> &p_highlights,
+                                               int p_blockNum)
+{
+    if (p_highlights.size() > p_blockNum) {
         // units are sorted by start position and length.
-        const QVector<HLUnit> &units = result->m_blocksHighlights[blockNum];
+        const QVector<HLUnit> &units = p_highlights[p_blockNum];
         if (!units.isEmpty()) {
             for (int i = 0; i < units.size(); ++i) {
                 const HLUnit &unit = units[i];
@@ -102,19 +143,6 @@ void PegMarkdownHighlighter::highlightBlock(const QString &p_text)
             }
         }
     }
-
-    // Set current block's user data.
-    updateBlockUserData(blockNum, p_text);
-
-    setCurrentBlockState(HighlightBlockState::Normal);
-
-    updateCodeBlockState(result, blockNum, p_text);
-
-    if (currentBlockState() == HighlightBlockState::CodeBlock) {
-        highlightCodeBlock(result, blockNum, p_text);
-
-        highlightCodeBlockColorColumn(p_text);
-    }
 }
 
 void PegMarkdownHighlighter::handleContentsChange(int p_position, int p_charsRemoved, int p_charsAdded)
@@ -126,6 +154,8 @@ void PegMarkdownHighlighter::handleContentsChange(int p_position, int p_charsRem
     }
 
     ++m_timeStamp;
+
+    startFastParse(p_position, p_charsRemoved, p_charsAdded);
 
     // We still need a timer to start a complete parse.
     m_timer->start();
@@ -140,6 +170,47 @@ void PegMarkdownHighlighter::startParse()
     config->m_extensions = m_parserExts;
 
     m_parser->parseAsync(config);
+}
+
+void PegMarkdownHighlighter::startFastParse(int p_position, int p_charsRemoved, int p_charsAdded)
+{
+    // Get affected block range.
+    int firstBlockNum, lastBlockNum;
+    getFastParseBlockRange(p_position, p_charsRemoved, p_charsAdded, firstBlockNum, lastBlockNum);
+
+    QString text;
+    QTextBlock block = m_doc->findBlockByNumber(firstBlockNum);
+    int offset = block.position();
+    while (block.isValid()) {
+        int blockNum = block.blockNumber();
+        if (blockNum > lastBlockNum) {
+            break;
+        } else if (blockNum == firstBlockNum) {
+            text = block.text();
+        } else {
+            text = text + "\n" + block.text();
+        }
+
+        block = block.next();
+    }
+
+    QSharedPointer<PegParseConfig> config(new PegParseConfig());
+    config->m_timeStamp = m_timeStamp;
+    config->m_data = text.toUtf8();
+    config->m_numOfBlocks = m_doc->blockCount();
+    config->m_offset = offset;
+    config->m_extensions = m_parserExts;
+    config->m_fast = true;
+
+    QSharedPointer<PegParseResult> parseRes = m_parser->parse(config);
+    processFastParseResult(parseRes);
+}
+
+void PegMarkdownHighlighter::processFastParseResult(const QSharedPointer<PegParseResult> &p_result)
+{
+    m_fastParseTimer->stop();
+    m_fastResult.reset(new PegHighlighterFastResult(this, p_result));
+    m_fastParseTimer->start();
 }
 
 static bool compHLUnitStyle(const HLUnitStyle &a, const HLUnitStyle &b)
@@ -423,4 +494,98 @@ void PegMarkdownHighlighter::completeHighlight(QSharedPointer<PegHighlighterResu
     emit headersUpdated(p_result->m_headerRegions);
 
     emit highlightCompleted();
+}
+
+void PegMarkdownHighlighter::getFastParseBlockRange(int p_position,
+                                                    int p_charsRemoved,
+                                                    int p_charsAdded,
+                                                    int &p_firstBlock,
+                                                    int &p_lastBlock) const
+{
+    const int maxNumOfBlocks = 50;
+
+    int charsChanged = p_charsRemoved + p_charsAdded;
+    QTextBlock firstBlock = m_doc->findBlock(p_position);
+
+    // May be an invalid block.
+    QTextBlock lastBlock = m_doc->findBlock(qMax(0, p_position + charsChanged));
+    if (!lastBlock.isValid()) {
+        lastBlock = m_doc->lastBlock();
+    }
+
+    int num = lastBlock.blockNumber() - firstBlock.blockNumber() + 1;
+
+    if (num >= maxNumOfBlocks) {
+        p_firstBlock = firstBlock.blockNumber();
+        p_lastBlock = p_firstBlock + maxNumOfBlocks - 1;
+        return;
+    }
+
+    // Look up.
+    // Find empty block.
+    if (!VEditUtils::isEmptyBlock(firstBlock)) {
+        while (firstBlock.isValid() && num < maxNumOfBlocks) {
+            QTextBlock block = firstBlock.previous();
+            if (block.isValid() && !VEditUtils::isEmptyBlock(block)) {
+                firstBlock = block;
+                ++num;
+            } else {
+                break;
+            }
+        }
+    }
+
+    // Cross code block.
+    while (firstBlock.isValid() && num < maxNumOfBlocks) {
+        int state = firstBlock.userState();
+        if (state == HighlightBlockState::CodeBlock
+            || state == HighlightBlockState::CodeBlockEnd) {
+            QTextBlock block = firstBlock.previous();
+            if (block.isValid()) {
+                firstBlock = block;
+                ++num;
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+
+    // Look down.
+    // Find empty block.
+    if (!VEditUtils::isEmptyBlock(lastBlock)) {
+        while (lastBlock.isValid() && num < maxNumOfBlocks) {
+            QTextBlock block = lastBlock.next();
+            if (block.isValid() && !VEditUtils::isEmptyBlock(block)) {
+                lastBlock = block;
+                ++num;
+            } else {
+                break;
+            }
+        }
+    }
+
+    // Cross code block.
+    while (lastBlock.isValid() && num < maxNumOfBlocks) {
+        int state = lastBlock.userState();
+        if (state == HighlightBlockState::CodeBlock
+            || state == HighlightBlockState::CodeBlockStart) {
+            QTextBlock block = lastBlock.next();
+            if (block.isValid()) {
+                lastBlock = block;
+                ++num;
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+
+    p_firstBlock = firstBlock.blockNumber();
+    p_lastBlock = lastBlock.blockNumber();
+    if (p_lastBlock < p_firstBlock) {
+        p_lastBlock = p_firstBlock;
+    }
 }

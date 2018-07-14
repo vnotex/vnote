@@ -16,7 +16,9 @@ struct PegParseConfig
     PegParseConfig()
         : m_timeStamp(0),
           m_numOfBlocks(0),
-          m_extensions(pmh_EXT_NONE)
+          m_offset(0),
+          m_extensions(pmh_EXT_NONE),
+          m_fast(false)
     {
     }
 
@@ -26,7 +28,13 @@ struct PegParseConfig
 
     int m_numOfBlocks;
 
+    // Offset of m_data in the document.
+    int m_offset;
+
     int m_extensions;
+
+    // Fast parse.
+    bool m_fast;
 
     QString toString() const
     {
@@ -41,6 +49,7 @@ struct PegParseResult
     PegParseResult(const QSharedPointer<PegParseConfig> &p_config)
         : m_timeStamp(p_config->m_timeStamp),
           m_numOfBlocks(p_config->m_numOfBlocks),
+          m_offset(p_config->m_offset),
           m_pmhElements(NULL)
     {
     }
@@ -74,11 +83,13 @@ struct PegParseResult
     }
 
     // Parse m_pmhElements.
-    void parse(QAtomicInt &p_stop);
+    void parse(QAtomicInt &p_stop, bool p_fast);
 
     TimeStamp m_timeStamp;
 
     int m_numOfBlocks;
+
+    int m_offset;
 
     pmh_element **m_pmhElements;
 
@@ -177,6 +188,8 @@ public:
     explicit PegParser(QObject *p_parent = nullptr);
 
     ~PegParser();
+
+    QSharedPointer<PegParseResult> parse(const QSharedPointer<PegParseConfig> &p_config);
 
     void parseAsync(const QSharedPointer<PegParseConfig> &p_config);
 

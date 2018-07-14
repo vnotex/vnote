@@ -1,7 +1,6 @@
 #include "vpreviewmanager.h"
 
 #include <QTextDocument>
-#include <QDebug>
 #include <QDir>
 #include <QUrl>
 #include <QVector>
@@ -63,7 +62,6 @@ void VPreviewManager::imageDownloaded(const QByteArray &p_data, const QString &p
 
     if (!image.isNull()) {
         m_editor->addImage(name, image);
-        qDebug() << "downloaded image inserted in resource manager" << p_url << name;
         emit requestUpdateImageLinks();
     }
 }
@@ -172,8 +170,6 @@ void VPreviewManager::fetchImageLinksFromRegions(QVector<VElementRegion> p_image
         }
 
         p_imageLinks.append(info);
-
-        qDebug() << "image region" << i << info.toString();
     }
 }
 
@@ -404,10 +400,6 @@ void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
             affectedBlocks.insert(link.m_blockNumber, QMapDummyValue());
             m_highlighter->addPossiblePreviewBlock(link.m_blockNumber);
         }
-
-        qDebug() << "block" << link.m_blockNumber
-                 << imageCache(PreviewSource::ImageLink).size()
-                 << blockData->toString();
     }
 
     relayoutEditor(affectedBlocks);

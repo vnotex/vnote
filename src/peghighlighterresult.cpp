@@ -7,6 +7,19 @@
 #include "pegmarkdownhighlighter.h"
 #include "utils/vutils.h"
 
+PegHighlighterFastResult::PegHighlighterFastResult()
+    : m_timeStamp(0)
+{
+}
+
+PegHighlighterFastResult::PegHighlighterFastResult(const PegMarkdownHighlighter *p_peg,
+                                                   const QSharedPointer<PegParseResult> &p_result)
+    : m_timeStamp(p_result->m_timeStamp)
+{
+    PegHighlighterResult::parseBlocksHighlights(m_blocksHighlights, p_peg, p_result);
+}
+
+
 PegHighlighterResult::PegHighlighterResult()
     : m_timeStamp(0),
       m_numOfBlocks(0),
@@ -25,7 +38,7 @@ PegHighlighterResult::PegHighlighterResult(const PegMarkdownHighlighter *p_peg,
     m_codeBlockStartExp = QRegExp(VUtils::c_fencedCodeBlockStartRegExp);
     m_codeBlockEndExp = QRegExp(VUtils::c_fencedCodeBlockEndRegExp);
 
-    parseBlocksHighlights(p_peg, p_result);
+    parseBlocksHighlights(m_blocksHighlights, p_peg, p_result);
 
     // Implicit sharing.
     m_imageRegions = p_result->m_imageRegions;
@@ -47,14 +60,16 @@ static bool compHLUnit(const HLUnit &p_a, const HLUnit &p_b)
     }
 }
 
-void PegHighlighterResult::parseBlocksHighlights(const PegMarkdownHighlighter *p_peg,
+void PegHighlighterResult::parseBlocksHighlights(QVector<QVector<HLUnit>> &p_blocksHighlights,
+                                                 const PegMarkdownHighlighter *p_peg,
                                                  const QSharedPointer<PegParseResult> &p_result)
 {
-    m_blocksHighlights.resize(m_numOfBlocks);
+    p_blocksHighlights.resize(p_result->m_numOfBlocks);
     if (p_result->isEmpty()) {
         return;
     }
 
+    int offset = p_result->m_offset;
     const QTextDocument *doc = p_peg->getDocument();
     const QVector<HighlightingStyle> &styles = p_peg->getStyles();
     auto pmhResult = p_result->m_pmhElements;
@@ -71,20 +86,25 @@ void PegHighlighterResult::parseBlocksHighlights(const PegMarkdownHighlighter *p
                 continue;
             }
 
-            parseBlocksHighlightOne(doc, elem_cursor->pos, elem_cursor->end, i);
+            parseBlocksHighlightOne(p_blocksHighlights,
+                                    doc,
+                                    offset + elem_cursor->pos,
+                                    offset + elem_cursor->end,
+                                    i);
             elem_cursor = elem_cursor->next;
         }
     }
 
-    // Sort m_blocksHighlights.
-    for (int i = 0; i < m_blocksHighlights.size(); ++i) {
-        if (m_blocksHighlights[i].size() > 1) {
-            std::sort(m_blocksHighlights[i].begin(), m_blocksHighlights[i].end(), compHLUnit);
+    // Sort p_blocksHighlights.
+    for (int i = 0; i < p_blocksHighlights.size(); ++i) {
+        if (p_blocksHighlights[i].size() > 1) {
+            std::sort(p_blocksHighlights[i].begin(), p_blocksHighlights[i].end(), compHLUnit);
         }
     }
 }
 
-void PegHighlighterResult::parseBlocksHighlightOne(const QTextDocument *p_doc,
+void PegHighlighterResult::parseBlocksHighlightOne(QVector<QVector<HLUnit>> &p_blocksHighlights,
+                                                   const QTextDocument *p_doc,
                                                    unsigned long p_pos,
                                                    unsigned long p_end,
                                                    int p_styleIndex)
@@ -121,7 +141,7 @@ void PegHighlighterResult::parseBlocksHighlightOne(const QTextDocument *p_doc,
         }
         unit.styleIndex = p_styleIndex;
 
-        m_blocksHighlights[blockNum].append(unit);
+        p_blocksHighlights[blockNum].append(unit);
 
         block = block.next();
     }

@@ -290,10 +290,10 @@ void VCodeBlockHighlightHelper::addToHighlightCache(const QString &p_text,
                                                     const QVector<HLUnitPos> &p_units)
 {
     const int c_maxEntries = 100;
-    const int c_maxTimeStampSpan = 3;
+    const TimeStamp c_maxTimeStampSpan = 3;
     if (m_cache.size() >= c_maxEntries) {
         // Remove the oldest one.
-        int ts = p_timeStamp - c_maxTimeStampSpan;
+        TimeStamp ts = p_timeStamp - c_maxTimeStampSpan;
         for (auto it = m_cache.begin(); it != m_cache.end();) {
             if (it.value().m_timeStamp < ts) {
                 it = m_cache.erase(it);
