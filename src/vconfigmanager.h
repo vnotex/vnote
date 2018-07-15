@@ -520,6 +520,8 @@ public:
     int getOutlineExpandedLevel() const;
     void setOutlineExpandedLevel(int p_level);
 
+    const QString &getImageNamePrefix() const;
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -935,6 +937,9 @@ private:
 
     // Expanded level of outline.
     int m_outlineExpandedLevel;
+
+    // Prefix of the name of inserted images.
+    QString m_imageNamePrefix;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2443,5 +2448,10 @@ inline void VConfigManager::setOutlineExpandedLevel(int p_level)
 
     m_outlineExpandedLevel = p_level;
     setConfigToSettings("global", "outline_expanded_level", m_outlineExpandedLevel);
+}
+
+inline const QString &VConfigManager::getImageNamePrefix() const
+{
+    return m_imageNamePrefix;
 }
 #endif // VCONFIGMANAGER_H

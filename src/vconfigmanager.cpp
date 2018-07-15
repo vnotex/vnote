@@ -303,6 +303,9 @@ void VConfigManager::initialize()
 
     m_outlineExpandedLevel = getConfigFromSettings("global",
                                                    "outline_expanded_level").toInt();
+
+    m_imageNamePrefix = getConfigFromSettings("global",
+                                              "image_name_prefix").toString();
 }
 
 void VConfigManager::initSettings()

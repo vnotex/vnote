@@ -151,13 +151,16 @@ QString VUtils::generateImageFileName(const QString &path,
     // Constrain the length of the name.
     baseName.truncate(10);
 
+    baseName.prepend(g_config->getImageNamePrefix());
+
     if (!baseName.isEmpty()) {
-        baseName.prepend('_');
+        baseName.append('_');
     }
 
     // Add current time and random number to make the name be most likely unique
-    baseName = baseName + '_' + QString::number(QDateTime::currentDateTime().toTime_t());
-    baseName = baseName + '_' + QString::number(qrand());
+    baseName += QString::number(QDateTime::currentDateTime().toTime_t())
+                + '_'
+                + QString::number(qrand());
 
     QDir dir(path);
     QString imageName = baseName + "." + format.toLower();

@@ -42,7 +42,7 @@ VWebView::VWebView(VFile *p_file, QWidget *p_parent)
 void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
 {
     if (m_inPreview) {
-        QWebEngineView(p_event);
+        QWebEngineView::contextMenuEvent(p_event);
         return;
     }
 
