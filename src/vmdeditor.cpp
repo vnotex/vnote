@@ -115,21 +115,27 @@ void VMdEditor::updateFontAndPalette()
     setFont(font);
 
     const QPalette &palette = g_config->getMdEditPalette();
+    /*
+        Do not use this function in conjunction with Qt Style Sheets. When
+        using style sheets, the palette of a widget can be customized using
+        the "color", "background-color", "selection-color",
+        "selection-background-color" and "alternate-background-color".
+    */
+    // We still call this to set the background. If the stylesheet defines background,
+    // then it will take no effect here.
     setPalette(palette);
 
-    // setPalette() won't change the foreground.
     setTextColor(palette.color(QPalette::Text));
 
     // Only this could override the font-family set of QWidget in QSS.
-    // May be need to reset all the stylesheet?
+    // Do NOT set background-color in stylesheet below, otherwise it will
+    // make the scrollbars messy.
     setStyleSheet(QString("font-family: \"%1\";"
                           "font-size: %2pt;"
-                          "color: %3;"
-                          "background-color: %4;")
+                          "color: %3;")
                          .arg(font.family())
                          .arg(font.pointSize())
-                         .arg(palette.color(QPalette::Text).name())
-                         .arg(palette.color(QPalette::Base).name()));
+                         .arg(palette.color(QPalette::Text).name()));
 
     updateLineNumberAreaWidth(fontMetrics());
 }
