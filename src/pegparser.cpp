@@ -23,6 +23,8 @@ void PegParseResult::parse(QAtomicInt &p_stop, bool p_fast)
     parseInlineEquationRegions(p_stop);
 
     parseDisplayFormulaRegions(p_stop);
+
+    parseHRuleRegions(p_stop);
 }
 
 void PegParseResult::parseImageRegions(QAtomicInt &p_stop)
@@ -159,6 +161,29 @@ void PegParseResult::parseDisplayFormulaRegions(QAtomicInt &p_stop)
     }
 
     std::sort(m_displayFormulaRegions.begin(), m_displayFormulaRegions.end());
+}
+
+void PegParseResult::parseHRuleRegions(QAtomicInt &p_stop)
+{
+    m_hruleRegions.clear();
+    if (isEmpty()) {
+        return;
+    }
+
+    pmh_element *elem = m_pmhElements[pmh_HRULE];
+    while (elem != NULL) {
+        if (elem->end <= elem->pos) {
+            elem = elem->next;
+            continue;
+        }
+
+        if (p_stop.load() == 1) {
+            return;
+        }
+
+        m_hruleRegions.push_back(VElementRegion(m_offset + elem->pos, m_offset + elem->end));
+        elem = elem->next;
+    }
 }
 
 

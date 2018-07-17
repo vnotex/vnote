@@ -72,6 +72,8 @@ public:
     // All MathJax blocks.
     QVector<VMathjaxBlock> m_mathjaxBlocks;
 
+    QSet<int> m_hruleBlocks;
+
 private:
     // Parse highlight elements for blocks from one parse result.
     static void parseBlocksHighlightOne(QVector<QVector<HLUnit>> &p_blocksHighlights,
@@ -84,9 +86,13 @@ private:
     void parseFencedCodeBlocks(const PegMarkdownHighlighter *p_peg,
                                const QSharedPointer<PegParseResult> &p_result);
 
-    // Parse fenced code blocks from parse results.
+    // Parse mathjax blocks from parse results.
     void parseMathjaxBlocks(const PegMarkdownHighlighter *p_peg,
                             const QSharedPointer<PegParseResult> &p_result);
+
+    // Parse HRule blocks from parse results.
+    void parseHRuleBlocks(const PegMarkdownHighlighter *p_peg,
+                          const QSharedPointer<PegParseResult> &p_result);
 
     void parseBlocksElementRegionOne(QHash<int, QVector<VElementRegion>> &p_regs,
                                      const QTextDocument *p_doc,

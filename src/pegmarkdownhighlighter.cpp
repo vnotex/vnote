@@ -468,6 +468,8 @@ void PegMarkdownHighlighter::updateBlockUserState(const QSharedPointer<PegHighli
             Q_ASSERT(false);
             break;
         }
+    } else if (p_result->m_hruleBlocks.contains(p_blockNum)) {
+        state = HighlightBlockState::HRule;
     }
 
     // Set code block state.

@@ -8,7 +8,6 @@
 #include <QFontMetrics>
 #include <QFont>
 #include <QPainter>
-#include <QDebug>
 
 #include "vimageresourcemanager2.h"
 #include "vtextedit.h"
@@ -234,6 +233,18 @@ void VTextDocumentLayout::draw(QPainter *p_painter, const PaintContext &p_contex
             fillBackground(p_painter,
                            rect.adjusted(x, y, x, y),
                            bg);
+        }
+
+        // Draw block background for HRULE.
+        if (block.userState() == HighlightBlockState::HRule) {
+            QVector<QTextLayout::FormatRange> fmts = layout->formats();
+            if (fmts.size() == 1) {
+                int x = offset.x();
+                int y = offset.y();
+                fillBackground(p_painter,
+                               rect.adjusted(x, y, x, y),
+                               fmts[0].format.background());
+            }
         }
 
         auto selections = formatRangeFromSelection(block, p_context.selections);

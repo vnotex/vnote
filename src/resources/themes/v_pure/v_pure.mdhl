@@ -84,7 +84,8 @@ font-style: bold
 font-size: +2
 
 HRULE
-foreground: 586e75
+foreground: 222222
+background: dac7c9
 
 LIST_BULLET
 foreground: d33682

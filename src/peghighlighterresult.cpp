@@ -2,7 +2,6 @@
 
 #include <QTextDocument>
 #include <QTextBlock>
-#include <QDebug>
 
 #include "pegmarkdownhighlighter.h"
 #include "utils/vutils.h"
@@ -47,6 +46,8 @@ PegHighlighterResult::PegHighlighterResult(const PegMarkdownHighlighter *p_peg,
     parseFencedCodeBlocks(p_peg, p_result);
 
     parseMathjaxBlocks(p_peg, p_result);
+
+    parseHRuleBlocks(p_peg, p_result);
 }
 
 static bool compHLUnit(const HLUnit &p_a, const HLUnit &p_b)
@@ -251,7 +252,7 @@ void PegHighlighterResult::parseMathjaxBlocks(const PegMarkdownHighlighter *p_pe
     const QTextDocument *doc = p_peg->getDocument();
 
     // Inline equations.
-    const QVector<VElementRegion> inlineRegs = p_result->m_inlineEquationRegions;
+    const QVector<VElementRegion> &inlineRegs = p_result->m_inlineEquationRegions;
 
     for (auto it = inlineRegs.begin(); it != inlineRegs.end(); ++it) {
         const VElementRegion &r = *it;
@@ -278,7 +279,7 @@ void PegHighlighterResult::parseMathjaxBlocks(const PegMarkdownHighlighter *p_pe
 
     // Display formulas.
     // One block may be split into several regions due to list indentation.
-    const QVector<VElementRegion> formulaRegs = p_result->m_displayFormulaRegions;
+    const QVector<VElementRegion> &formulaRegs = p_result->m_displayFormulaRegions;
     VMathjaxBlock item;
     bool inBlock = false;
     QString marker("$$");
@@ -322,6 +323,29 @@ void PegHighlighterResult::parseMathjaxBlocks(const PegMarkdownHighlighter *p_pe
                     item.m_text = text;
                 }
             }
+
+            block = block.next();
+        }
+    }
+}
+
+void PegHighlighterResult::parseHRuleBlocks(const PegMarkdownHighlighter *p_peg,
+                                            const QSharedPointer<PegParseResult> &p_result)
+{
+    const QTextDocument *doc = p_peg->getDocument();
+    const QVector<VElementRegion> &regs = p_result->m_hruleRegions;
+
+    for (auto it = regs.begin(); it != regs.end(); ++it) {
+        QTextBlock block = doc->findBlock(it->m_startPos);
+        int lastBlock = doc->findBlock(it->m_endPos - 1).blockNumber();
+
+        while (block.isValid()) {
+            int blockNumber = block.blockNumber();
+            if (blockNumber > lastBlock) {
+                break;
+            }
+
+            m_hruleBlocks.insert(blockNumber);
 
             block = block.next();
         }

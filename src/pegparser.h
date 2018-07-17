@@ -111,6 +111,9 @@ struct PegParseResult
     // Sorted by start position.
     QVector<VElementRegion> m_displayFormulaRegions;
 
+    // HRule regions.
+    QVector<VElementRegion> m_hruleRegions;
+
 private:
     void parseImageRegions(QAtomicInt &p_stop);
 
@@ -121,6 +124,8 @@ private:
     void parseInlineEquationRegions(QAtomicInt &p_stop);
 
     void parseDisplayFormulaRegions(QAtomicInt &p_stop);
+
+    void parseHRuleRegions(QAtomicInt &p_stop);
 };
 
 class PegParserWorker : public QThread

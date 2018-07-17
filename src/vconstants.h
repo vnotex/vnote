@@ -119,7 +119,9 @@ enum HighlightBlockState
     // A fenced code block.
     CodeBlockStart,
     CodeBlock,
-    CodeBlockEnd
+    CodeBlockEnd,
+
+    HRule
 };
 
 // Pages to open on start up.
