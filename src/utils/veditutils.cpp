@@ -956,6 +956,11 @@ int VEditUtils::fetchIndentation(const QString &p_text)
     return idx;
 }
 
+int VEditUtils::fetchIndentation(const QTextBlock &p_block)
+{
+    return fetchIndentation(p_block.text());
+}
+
 void VEditUtils::insertBlock(QTextCursor &p_cursor,
                              bool p_above)
 {

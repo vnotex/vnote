@@ -81,7 +81,7 @@ private:
     // Set the user data of currentBlock().
     void updateBlockUserData(int p_blockNum, const QString &p_text);
 
-    void updateCodeBlockState(const QSharedPointer<PegHighlighterResult> &p_result,
+    void updateBlockUserState(const QSharedPointer<PegHighlighterResult> &p_result,
                               int p_blockNum,
                               const QString &p_text);
 
@@ -112,6 +112,13 @@ private:
     void highlightBlockOne(const QVector<QVector<HLUnit>> &p_highlights,
                            int p_blockNum);
 
+    // To avoid line height jitter.
+    void preHighlightMonospaceBlock(const QVector<QVector<HLUnit>> &p_highlights,
+                                    int p_blockNum,
+                                    const QString &p_text);
+
+    void updateSingleFormatBlocks(const QVector<QVector<HLUnit>> &p_highlights);
+
     QTextDocument *m_doc;
 
     TimeStamp m_timeStamp;
@@ -138,6 +145,9 @@ private:
     QTimer *m_timer;
 
     QTimer *m_fastParseTimer;
+
+    // Blocks have only one format set which occupies the whole block.
+    QSet<int> m_singleFormatBlocks;
 };
 
 inline const QVector<VElementRegion> &PegMarkdownHighlighter::getHeaderRegions() const

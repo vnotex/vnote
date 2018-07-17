@@ -186,6 +186,8 @@ public:
 
     static int fetchIndentation(const QString &p_text);
 
+    static int fetchIndentation(const QTextBlock &p_block);
+
     // Insert a block above/below current block. Move the cursor to the start of
     // the new block after insertion.
     static void insertBlock(QTextCursor &p_cursor,
