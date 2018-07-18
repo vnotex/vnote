@@ -16,6 +16,7 @@
 #include "vdirectory.h"
 #include "vdirectorytree.h"
 #include "veditarea.h"
+#include "vexplorer.h"
 
 extern VNote *g_vnote;
 
@@ -80,6 +81,9 @@ QString VSearchUE::description(int p_id) const
 
     case ID::Path_FolderNote_CurrentNotebook:
         return tr("Search the path of folders/notes in current notebook");
+
+    case ID::Content_Note_ExplorerDirectory:
+        return tr("Search the content of notes in Explorer root directory");
 
     default:
         Q_ASSERT(false);
@@ -147,6 +151,7 @@ QWidget *VSearchUE::widget(int p_id)
     case ID::Content_Note_AllNotebook:
     case ID::Content_Note_CurrentNotebook:
     case ID::Content_Note_CurrentFolder:
+    case ID::Content_Note_ExplorerDirectory:
     case ID::Content_Note_Buffer:
     case ID::Outline_Note_Buffer:
         return m_treeWidget;
@@ -203,6 +208,10 @@ void VSearchUE::processCommand(int p_id, const QString &p_cmd)
 
     case ID::Content_Note_CurrentFolder:
         searchContentOfNoteInCurrentFolder(p_cmd);
+        break;
+
+    case ID::Content_Note_ExplorerDirectory:
+        searchContentOfNoteInExplorerDirectory(p_cmd);
         break;
 
     case ID::Tag_Note_CurrentFolder:
@@ -475,6 +484,27 @@ void VSearchUE::searchContentOfNoteInCurrentFolder(const QString &p_cmd)
     }
 }
 
+void VSearchUE::searchContentOfNoteInExplorerDirectory(const QString &p_cmd)
+{
+    if (p_cmd.isEmpty()) {
+        m_inSearch = false;
+        emit stateUpdated(State::Success);
+    } else {
+        QString rootDirectory = g_mainWin->getExplorer()->getRootDirectory();
+        m_search->clear();
+        QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::ExplorerDirectory,
+                                                               VSearchConfig::Content,
+                                                               VSearchConfig::Note,
+                                                               VSearchConfig::Internal,
+                                                               VSearchConfig::NoneOption,
+                                                               p_cmd,
+                                                               QString()));
+        m_search->setConfig(config);
+        QSharedPointer<VSearchResult> result = m_search->search(rootDirectory);
+        handleSearchFinished(result);
+    }
+}
+
 QVector<VFile *> getFilesInBuffer()
 {
     QVector<VEditTabInfo> tabs = g_mainWin->getEditArea()->getAllTabsInfo();
@@ -639,6 +669,7 @@ void VSearchUE::handleSearchItemAdded(const QSharedPointer<VSearchResultItem> &p
     case ID::Content_Note_AllNotebook:
     case ID::Content_Note_CurrentNotebook:
     case ID::Content_Note_CurrentFolder:
+    case ID::Content_Note_ExplorerDirectory:
     case ID::Content_Note_Buffer:
     case ID::Outline_Note_Buffer:
         appendItemToTree(p_item);
@@ -684,6 +715,7 @@ void VSearchUE::handleSearchItemsAdded(const QList<QSharedPointer<VSearchResultI
     case ID::Content_Note_AllNotebook:
     case ID::Content_Note_CurrentNotebook:
     case ID::Content_Note_CurrentFolder:
+    case ID::Content_Note_ExplorerDirectory:
     case ID::Content_Note_Buffer:
     case ID::Outline_Note_Buffer:
     {
@@ -941,6 +973,7 @@ void VSearchUE::selectNextItem(int p_id, bool p_forward)
     case ID::Content_Note_AllNotebook:
     case ID::Content_Note_CurrentNotebook:
     case ID::Content_Note_CurrentFolder:
+    case ID::Content_Note_ExplorerDirectory:
     case ID::Content_Note_Buffer:
     case ID::Outline_Note_Buffer:
     {
@@ -974,6 +1007,7 @@ void VSearchUE::activate(int p_id)
     case ID::Content_Note_AllNotebook:
     case ID::Content_Note_CurrentNotebook:
     case ID::Content_Note_CurrentFolder:
+    case ID::Content_Note_ExplorerDirectory:
     case ID::Content_Note_Buffer:
     case ID::Outline_Note_Buffer:
     {
@@ -1000,6 +1034,7 @@ void VSearchUE::selectParentItem(int p_id)
     case ID::Content_Note_AllNotebook:
     case ID::Content_Note_CurrentNotebook:
     case ID::Content_Note_CurrentFolder:
+    case ID::Content_Note_ExplorerDirectory:
     case ID::Content_Note_Buffer:
     case ID::Outline_Note_Buffer:
         m_treeWidget->selectParentItem();
@@ -1016,6 +1051,7 @@ void VSearchUE::toggleItemExpanded(int p_id)
     case ID::Content_Note_AllNotebook:
     case ID::Content_Note_CurrentNotebook:
     case ID::Content_Note_CurrentFolder:
+    case ID::Content_Note_ExplorerDirectory:
     case ID::Content_Note_Buffer:
     case ID::Outline_Note_Buffer:
     {
@@ -1112,6 +1148,7 @@ QString VSearchUE::currentItemFolder(int p_id)
     case ID::Content_Note_AllNotebook:
     case ID::Content_Note_CurrentNotebook:
     case ID::Content_Note_CurrentFolder:
+    case ID::Content_Note_ExplorerDirectory:
     case ID::Content_Note_Buffer:
     case ID::Outline_Note_Buffer:
     {

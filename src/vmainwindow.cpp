@@ -3222,6 +3222,7 @@ void VMainWindow::initUniversalEntry()
     m_ue->registerEntry('t', searchUE, VSearchUE::Name_Note_Buffer);
     m_ue->registerEntry('g', searchUE, VSearchUE::Content_Note_Buffer);
     m_ue->registerEntry('b', searchUE, VSearchUE::Outline_Note_Buffer);
+    m_ue->registerEntry('u', searchUE, VSearchUE::Content_Note_ExplorerDirectory);
     m_ue->registerEntry('y', new VOutlineUE(this), 0);
     m_ue->registerEntry('h', searchUE, VSearchUE::Path_FolderNote_AllNotebook);
     m_ue->registerEntry('n', searchUE, VSearchUE::Path_FolderNote_CurrentNotebook);

@@ -63,7 +63,10 @@ public:
         Path_FolderNote_AllNotebook,
 
         // Search path of folder/note in current notebook.
-        Path_FolderNote_CurrentNotebook
+        Path_FolderNote_CurrentNotebook,
+
+        // Search content of the note in Explorer root directory.
+        Content_Note_ExplorerDirectory
     };
 
     explicit VSearchUE(QObject *p_parent = nullptr);
@@ -126,6 +129,8 @@ private:
     void searchContentOfNoteInCurrentNotebook(const QString &p_cmd);
 
     void searchContentOfNoteInCurrentFolder(const QString &p_cmd);
+
+    void searchContentOfNoteInExplorerDirectory(const QString &p_cmd);
 
     void searchNameOfBuffer(const QString &p_cmd);
 
