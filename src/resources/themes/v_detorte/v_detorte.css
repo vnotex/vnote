@@ -103,13 +103,14 @@ pre code {
     padding: 0.5em;
     color: #DADADA;
     background-color: #4A4A4A;
+    border-left: .5em solid #865E1B;
     line-height: 1.5;
     font-family: Consolas, Monaco, Monospace, Courier;
     white-space: pre;
 }
 
 pre code.markdown-metadata {
-    border-left: 5px solid #D89F3E;
+    border-left: .5em solid #D89F3E;
 }
 
 aside {
@@ -121,9 +122,9 @@ aside {
 blockquote {
     color: #BCBCBC;
     background-color: #4A4A4A;
-    border-left:.5em solid #8A8A8A;
-    padding: 0 2em;
-    margin-left:0;
+    border-left: .5em solid #8A8A8A;
+    padding: 0 1em;
+    margin-left: 0;
 }
 
 blockquote p {

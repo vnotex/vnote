@@ -105,7 +105,7 @@ pre code {
 }
 
 pre code.markdown-metadata {
-    border-left: 5px solid #00897B;
+    border-left: .5em solid #00897B;
 }
 
 aside {
@@ -116,9 +116,9 @@ aside {
 
 blockquote {
     color: #666;
-    border-left:.5em solid #7A7A7A;
-    padding: 0 2em;
-    margin-left:0;
+    border-left: .5em solid #7A7A7A;
+    padding: 0 1em;
+    margin-left: 0;
 }
 
 blockquote p {

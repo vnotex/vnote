@@ -20,9 +20,9 @@ css_color_mapping=#abb2bf:#222222,#282c34:#f5f5f5,#61afef:#0099ff,#98c379:#8e24a
 master_fg=@edit_fg
 master_bg=#5768c4
 master_light_bg=#7482CF
-master_dark_bg=#3f51b5
-master_focus_bg=#3a4aa6
-master_hover_bg=#6575ca
+master_dark_bg=#3F51B5
+master_focus_bg=#3A4AA6
+master_hover_bg=#6575CA
 master_pressed_bg=#354498
 
 base_fg=#9DA5B4
