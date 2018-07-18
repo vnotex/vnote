@@ -783,3 +783,14 @@ void VExplorer::keyPressEvent(QKeyEvent *p_event)
 
     QWidget::keyPressEvent(p_event);
 }
+
+QString VExplorer::getRootDirectory() const
+{
+    const_cast<VExplorer *>(this)->init();
+
+    if (checkIndex()) {
+        return m_entries[m_index].m_directory;
+    }
+
+    return QString();
+}

@@ -16,6 +16,7 @@
 #include "vnotebook.h"
 #include "vnote.h"
 #include "vconfigmanager.h"
+#include "vexplorer.h"
 
 extern VMainWindow *g_mainWin;
 
@@ -243,12 +244,14 @@ void VSearcher::initUIFields()
     m_searchScopeCB->addItem(tr("Current Folder"), VSearchConfig::CurrentFolder);
     m_searchScopeCB->addItem(tr("Current Notebook"), VSearchConfig::CurrentNotebook);
     m_searchScopeCB->addItem(tr("All Notebooks"), VSearchConfig::AllNotebooks);
+    m_searchScopeCB->addItem(tr("Explorer Directory"), VSearchConfig::ExplorerDirectory);
     m_searchScopeCB->setCurrentIndex(m_searchScopeCB->findData(config.m_scope));
 
     // Object.
     m_searchObjectCB->addItem(tr("Name"), VSearchConfig::Name);
     m_searchObjectCB->addItem(tr("Content"), VSearchConfig::Content);
     m_searchObjectCB->addItem(tr("Tag"), VSearchConfig::Tag);
+    m_searchObjectCB->addItem(tr("Path"), VSearchConfig::Path);
     m_searchObjectCB->setCurrentIndex(m_searchObjectCB->findData(config.m_object));
 
     // Target.
@@ -314,20 +317,32 @@ void VSearcher::handleInputChanged()
     readyToSearch = !keyword.isEmpty();
 
     if (readyToSearch) {
-        // Other targets are only available for Name and Path.
         int obj = m_searchObjectCB->currentData().toInt();
-        if (obj != VSearchConfig::Name && obj != VSearchConfig::Path) {
-            int target = m_searchTargetCB->currentData().toInt();
-            if (!(target & VSearchConfig::Note)) {
-                readyToSearch = false;
-            }
+        int target = m_searchTargetCB->currentData().toInt();
+        int scope = m_searchScopeCB->currentData().toInt();
+
+        // Other targets are only available for Name and Path.
+        if (!(obj & VSearchConfig::Name)
+            && !(obj & VSearchConfig::Path)
+            && !(target & VSearchConfig::Note)) {
+            readyToSearch = false;
         }
 
-        if (readyToSearch && obj == VSearchConfig::Outline) {
+        if (readyToSearch
+            && obj == VSearchConfig::Outline
+            && scope != VSearchConfig::CurrentNotebook
+            && scope != VSearchConfig::OpenedNotes) {
             // Outline is available only for CurrentNote and OpenedNotes.
-            int scope = m_searchScopeCB->currentData().toInt();
-            if (scope != VSearchConfig::CurrentNote
-                && scope != VSearchConfig::OpenedNotes) {
+            readyToSearch = false;
+        }
+
+        if (readyToSearch && scope == VSearchConfig::ExplorerDirectory) {
+            if (!(obj & VSearchConfig::Name)
+                && !(obj & VSearchConfig::Path)
+                && !(obj & VSearchConfig::Content)) {
+                readyToSearch = false;
+            } else if (!(target & VSearchConfig::Note)
+                && !(target & VSearchConfig::Folder)) {
                 readyToSearch = false;
             }
         }
@@ -426,6 +441,19 @@ void VSearcher::startSearch()
     {
         const QVector<VNotebook *> &notebooks = g_vnote->getNotebooks();
         result = m_search.search(notebooks);
+        break;
+    }
+
+    case VSearchConfig::ExplorerDirectory:
+    {
+        QString rootDirectory = g_mainWin->getExplorer()->getRootDirectory();
+        if (!rootDirectory.isEmpty()) {
+            QString msg(tr("Search Explorer directory %1.").arg(rootDirectory));
+            appendLogLine(msg);
+            showMessage(msg);
+        }
+
+        result = m_search.search(rootDirectory);
         break;
     }
 

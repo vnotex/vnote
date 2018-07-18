@@ -23,6 +23,8 @@ public:
 
     void setRootDirectory(const QString &p_path);
 
+    QString getRootDirectory() const;
+
 protected:
     void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 

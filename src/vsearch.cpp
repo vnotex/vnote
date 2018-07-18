@@ -133,6 +133,39 @@ QSharedPointer<VSearchResult> VSearch::search(const QVector<VNotebook *> &p_note
     return result;
 }
 
+QSharedPointer<VSearchResult> VSearch::search(const QString &p_directoryPath)
+{
+    Q_ASSERT(!askedToStop());
+
+    QSharedPointer<VSearchResult> result(new VSearchResult(this));
+
+    if (p_directoryPath.isEmpty() || m_config->isEmpty()) {
+        result->m_state = VSearchState::Success;
+        return result;
+    }
+
+    if ((!testTarget(VSearchConfig::Note)
+         && !testTarget(VSearchConfig::Folder))
+        || testObject(VSearchConfig::Outline)
+        || testObject(VSearchConfig::Tag)) {
+        qDebug() << "search is not applicable for directory";
+        result->m_state = VSearchState::Success;
+        return result;
+    }
+
+    result->m_state = VSearchState::Busy;
+
+    searchFirstPhase(p_directoryPath, p_directoryPath, result);
+
+    if (result->hasSecondPhaseItems()) {
+        searchSecondPhase(result);
+    } else if (result->m_state == VSearchState::Busy) {
+        result->m_state = VSearchState::Success;
+    }
+
+    return result;
+}
+
 void VSearch::searchFirstPhase(VFile *p_file,
                                const QSharedPointer<VSearchResult> &p_result,
                                bool p_searchContent)
@@ -209,10 +242,7 @@ void VSearch::searchFirstPhase(VFile *p_file,
 void VSearch::searchFirstPhase(VDirectory *p_directory,
                                const QSharedPointer<VSearchResult> &p_result)
 {
-    if (!testTarget(VSearchConfig::Note)
-        && !testTarget(VSearchConfig::Folder)) {
-        return;
-    }
+    Q_ASSERT(testTarget(VSearchConfig::Note) || testTarget(VSearchConfig::Folder));
 
     bool opened = p_directory->isOpened();
     if (!opened && !p_directory->open()) {
@@ -321,6 +351,116 @@ void VSearch::searchFirstPhase(VNotebook *p_notebook,
 exit:
     if (!opened) {
         p_notebook->close();
+    }
+}
+
+void VSearch::searchFirstPhase(const QString &p_basePath,
+                               const QString &p_directoryPath,
+                               const QSharedPointer<VSearchResult> &p_result)
+{
+    Q_ASSERT(testTarget(VSearchConfig::Note) || testTarget(VSearchConfig::Folder));
+    Q_ASSERT(!p_directoryPath.isEmpty());
+
+    QDir dir(p_directoryPath);
+    if (!dir.exists()) {
+        p_result->logError(QString("Directory %1 does not exist.").arg(p_directoryPath));
+        p_result->m_state = VSearchState::Fail;
+        return;
+    }
+
+    Q_ASSERT(dir.isAbsolute());
+
+    if (testTarget(VSearchConfig::Folder)) {
+        QString name = dir.dirName();
+        if (testObject(VSearchConfig::Name)) {
+            if (matchNonContent(name)) {
+                VSearchResultItem *item = new VSearchResultItem(VSearchResultItem::Folder,
+                                                                VSearchResultItem::LineNumber,
+                                                                name,
+                                                                p_directoryPath);
+                QSharedPointer<VSearchResultItem> pitem(item);
+                emit resultItemAdded(pitem);
+            }
+        }
+
+        if (testObject(VSearchConfig::Path)) {
+            QString normPath(QDir(p_basePath).relativeFilePath(p_directoryPath));
+            removeSlashFromPath(normPath);
+            if (matchNonContent(normPath)) {
+                VSearchResultItem *item = new VSearchResultItem(VSearchResultItem::Folder,
+                                                                VSearchResultItem::LineNumber,
+                                                                name,
+                                                                p_directoryPath);
+                QSharedPointer<VSearchResultItem> pitem(item);
+                emit resultItemAdded(pitem);
+            }
+        }
+    }
+
+    if (testTarget(VSearchConfig::Note)) {
+        QStringList files = dir.entryList(QDir::Files);
+        for (auto const & file : files) {
+            if (askedToStop()) {
+                qDebug() << "asked to cancel the search";
+                p_result->m_state = VSearchState::Cancelled;
+                return;
+            }
+
+            searchFirstPhaseFile(p_basePath, dir.absoluteFilePath(file), p_result);
+        }
+    }
+
+    // Search subfolders.
+    QStringList subdirs = dir.entryList(QDir::AllDirs | QDir::NoDotAndDotDot);
+    for (auto const & sub : subdirs) {
+        if (askedToStop()) {
+            qDebug() << "asked to cancel the search";
+            p_result->m_state = VSearchState::Cancelled;
+            return;
+        }
+
+        searchFirstPhase(p_basePath, dir.absoluteFilePath(sub), p_result);
+    }
+}
+
+void VSearch::searchFirstPhaseFile(const QString &p_basePath,
+                                   const QString &p_filePath,
+                                   const QSharedPointer<VSearchResult> &p_result)
+{
+    Q_ASSERT(testTarget(VSearchConfig::Note));
+
+    QString name = VUtils::fileNameFromPath(p_filePath);
+    if (!matchPattern(name)) {
+        return;
+    }
+
+    if (testObject(VSearchConfig::Name)) {
+        if (matchNonContent(name)) {
+            VSearchResultItem *item = new VSearchResultItem(VSearchResultItem::Note,
+                                                            VSearchResultItem::LineNumber,
+                                                            name,
+                                                            p_filePath);
+            QSharedPointer<VSearchResultItem> pitem(item);
+            emit resultItemAdded(pitem);
+        }
+    }
+
+    if (testObject(VSearchConfig::Path)) {
+        QString normFilePath(QDir(p_basePath).relativeFilePath(p_filePath));
+        removeSlashFromPath(normFilePath);
+        if (matchNonContent(normFilePath)) {
+            VSearchResultItem *item = new VSearchResultItem(VSearchResultItem::Note,
+                                                            VSearchResultItem::LineNumber,
+                                                            name,
+                                                            p_filePath);
+            QSharedPointer<VSearchResultItem> pitem(item);
+            emit resultItemAdded(pitem);
+        }
+    }
+
+    if (testObject(VSearchConfig::Content)) {
+        // Add an item for second phase process.
+        p_result->addSecondPhaseItem(p_filePath);
     }
 }
 

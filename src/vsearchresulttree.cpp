@@ -10,6 +10,7 @@
 #include "vnotefile.h"
 #include "vcart.h"
 #include "vhistorylist.h"
+#include "vexplorer.h"
 
 extern VNote *g_vnote;
 
@@ -272,6 +273,10 @@ void VSearchResultTree::activateItem(const QTreeWidgetItem *p_item) const
         VDirectory *dir = g_vnote->getInternalDirectory(resItem->m_path);
         if (dir) {
             g_mainWin->locateDirectory(dir);
+        } else {
+            // External directory.
+            g_mainWin->showExplorerPanel(true);
+            g_mainWin->getExplorer()->setRootDirectory(resItem->m_path);
         }
 
         break;

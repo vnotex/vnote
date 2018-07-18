@@ -194,7 +194,8 @@ struct VSearchConfig
         OpenedNotes,
         CurrentFolder,
         CurrentNotebook,
-        AllNotebooks
+        AllNotebooks,
+        ExplorerDirectory
     };
 
     enum Object

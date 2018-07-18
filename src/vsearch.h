@@ -32,6 +32,9 @@ public:
     // Search folder for CurrentNotebook and AllNotebooks.
     QSharedPointer<VSearchResult> search(const QVector<VNotebook *> &p_notebooks);
 
+    // Search directory path for ExplorerDirectory.
+    QSharedPointer<VSearchResult> search(const QString &p_directoryPath);
+
     // Clear resources after a search completed.
     void clear();
 
@@ -59,6 +62,14 @@ private:
 
     void searchFirstPhase(VNotebook *p_notebook,
                           const QSharedPointer<VSearchResult> &p_result);
+
+    void searchFirstPhase(const QString &p_basePath,
+                          const QString &p_directoryPath,
+                          const QSharedPointer<VSearchResult> &p_result);
+
+    void searchFirstPhaseFile(const QString &p_basePath,
+                              const QString &p_filePath,
+                              const QSharedPointer<VSearchResult> &p_result);
 
     bool testTarget(VSearchConfig::Target p_target) const;
 
