@@ -82,6 +82,7 @@ private:
     int m_index;
 
     QPushButton *m_openBtn;
+    QPushButton *m_upBtn;
     QPushButton *m_openLocationBtn;
     QPushButton *m_starBtn;
     QComboBox *m_dirCB;

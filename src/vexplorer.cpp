@@ -62,6 +62,25 @@ void VExplorer::setupUI()
                 }
             });
 
+    m_upBtn = new QPushButton(VIconUtils::buttonIcon(":/resources/icons/up.svg"),
+                              "",
+                              this);
+    m_upBtn->setToolTip(tr("Up"));
+    m_upBtn->setProperty("FlatBtn", true);
+    connect(m_upBtn, &QPushButton::clicked,
+            this, [this]() {
+                if (checkIndex()) {
+                    QDir dir(m_entries[m_index].m_directory);
+                    if (dir.cdUp()) {
+                        int idx = addEntry(dir.absolutePath());
+                        updateDirectoryComboBox();
+                        if (idx != -1) {
+                            setCurrentEntry(idx);
+                        }
+                    }
+                }
+            });
+
     m_openLocationBtn = new QPushButton(VIconUtils::buttonIcon(":/resources/icons/open_location.svg"),
                                         "",
                                         this);
@@ -97,6 +116,7 @@ void VExplorer::setupUI()
     dirLayout->addWidget(dirLabel);
     dirLayout->addStretch();
     dirLayout->addWidget(m_openBtn);
+    dirLayout->addWidget(m_upBtn);
     dirLayout->addWidget(m_openLocationBtn);
     dirLayout->addWidget(m_starBtn);
     dirLayout->setContentsMargins(0, 0, 0, 0);
@@ -345,6 +365,7 @@ void VExplorer::handleEntryActivated(int p_idx)
     m_imgFolderEdit->setEnabled(valid);
 
     m_openLocationBtn->setEnabled(valid);
+    m_upBtn->setEnabled(valid);
     m_newFileBtn->setEnabled(valid);
     m_newDirBtn->setEnabled(valid);
 
