@@ -156,10 +156,10 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
             return false;
         }
 
-        title = "Insert Image From File";
+        title = tr("Insert Image From File");
     } else {
         imagePath = imageUrl.toString();
-        title = "Insert Image From Network";
+        title = tr("Insert Image From Network");
     }
 
 
