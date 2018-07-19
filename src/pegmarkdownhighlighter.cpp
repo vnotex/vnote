@@ -374,7 +374,7 @@ void PegMarkdownHighlighter::updateSingleFormatBlocks(const QVector<QVector<HLUn
             const HLUnit &unit = units[0];
             if (unit.start == 0 && unit.length > 0) {
                 QTextBlock block = m_doc->findBlockByNumber(i);
-                if (block.length() - 1 == unit.length) {
+                if (block.length() - 1 == (int)unit.length) {
                     m_singleFormatBlocks.insert(i);
                 }
             }
