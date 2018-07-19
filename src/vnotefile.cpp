@@ -164,9 +164,9 @@ QJsonObject VNoteFile::toConfigJson() const
     // Attachments.
     QJsonArray attachmentJson;
     for (int i = 0; i < m_attachments.size(); ++i) {
-        const VAttachment &item = m_attachments[i];
+        const VAttachment &att = m_attachments[i];
         QJsonObject attachmentItem;
-        attachmentItem[DirConfig::c_name] = item.m_name;
+        attachmentItem[DirConfig::c_name] = att.m_name;
         attachmentJson.append(attachmentItem);
     }
 
@@ -651,4 +651,18 @@ bool VNoteFile::addTag(const QString &p_tag)
     }
 
     return true;
+}
+
+bool VNoteFile::save()
+{
+    bool ret = VFile::save();
+    if (ret) {
+        if (!getDirectory()->updateFileConfig(this)) {
+            qWarning() << "fail to update config of file" << m_name
+                       << "in directory" << fetchBasePath();
+            ret = false;
+        }
+    }
+
+    return ret;
 }

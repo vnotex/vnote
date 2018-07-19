@@ -47,6 +47,8 @@ public:
 
     QString getImageFolderInLink() const Q_DECL_OVERRIDE;
 
+    bool save() Q_DECL_OVERRIDE;
+
     // Set the name of this file.
     void setName(const QString &p_name);
 

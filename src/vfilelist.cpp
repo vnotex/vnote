@@ -262,9 +262,15 @@ void VFileList::fillItem(QListWidgetItem *p_item, const VNoteFile *p_file)
 {
     qulonglong ptr = (qulonglong)p_file;
     p_item->setData(Qt::UserRole, ptr);
-    p_item->setToolTip(p_file->getName());
     p_item->setText(p_file->getName());
 
+    QString createdTime = VUtils::displayDateTime(p_file->getCreatedTimeUtc().toLocalTime());
+    QString modifiedTime = VUtils::displayDateTime(p_file->getModifiedTimeUtc().toLocalTime());
+    QString tooltip = tr("%1\n\nCreated Time: %2\nModified Time: %3")
+                        .arg(p_file->getName())
+                        .arg(createdTime)
+                        .arg(modifiedTime);
+    p_item->setToolTip(tooltip);
     V_ASSERT(sizeof(p_file) <= sizeof(ptr));
 }
 
