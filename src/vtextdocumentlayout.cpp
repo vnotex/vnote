@@ -793,16 +793,6 @@ void VTextDocumentLayout::updateDocumentSize()
     }
 }
 
-void VTextDocumentLayout::setCursorWidth(int p_width)
-{
-    m_cursorWidth = p_width;
-}
-
-int VTextDocumentLayout::cursorWidth() const
-{
-    return m_cursorWidth;
-}
-
 QRectF VTextDocumentLayout::blockRectFromTextLayout(const QTextBlock &p_block,
                                                     ImagePaintInfo *p_image)
 {

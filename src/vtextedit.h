@@ -83,6 +83,8 @@ protected:
 
     void updateLineNumberAreaWidth(const QFontMetrics &p_metrics);
 
+    void dragMoveEvent(QDragMoveEvent *p_event) Q_DECL_OVERRIDE;
+
 private slots:
     // Update viewport margin to hold the line number area.
     void updateLineNumberAreaMargin();

@@ -385,4 +385,14 @@ inline void VTextDocumentLayout::setCursorLineBlockNumber(int p_blockNumber)
         }
     }
 }
+
+inline void VTextDocumentLayout::setCursorWidth(int p_width)
+{
+    m_cursorWidth = p_width;
+}
+
+inline int VTextDocumentLayout::cursorWidth() const
+{
+    return m_cursorWidth;
+}
 #endif // VTEXTDOCUMENTLAYOUT_H

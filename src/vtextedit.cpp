@@ -447,3 +447,14 @@ void VTextEdit::updateLineNumberAreaWidth(const QFontMetrics &p_metrics)
 {
     m_lineNumberArea->setDigitWidth(p_metrics.width(QLatin1Char('8')));
 }
+
+void VTextEdit::dragMoveEvent(QDragMoveEvent *p_event)
+{
+    QTextEdit::dragMoveEvent(p_event);
+
+    // We need to update the cursor rect to show the cursor while dragging text.
+    // This is a work-around. We do not know why VTextEdit won't update the cursor
+    // rect to show the cursor.
+    // TODO: find out the rect of current cursor to update that rect only.
+    update();
+}
