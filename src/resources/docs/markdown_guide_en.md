@@ -202,6 +202,16 @@ This is a footnote [^1].
 [^1]: Here is the detail of the footnote.
 ```
 
+### Superscript and Subscript
+
+> You need to enable Superscript or Subscript in the `Markdown` menu and use `Markdown-it` renderer.
+
+```md
+This is the 1^st^ superscript.
+
+This is the H~2~O subscript.
+```
+
 ### New Line and Paragraph
 If you want to enter a new line, you should add two spaces after current line and then continue your input. VNote provides `Shift+Enter` to help.
 

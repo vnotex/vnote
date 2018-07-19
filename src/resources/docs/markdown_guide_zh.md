@@ -203,6 +203,16 @@ This is a footnote [^1].
 [^1]: Here is the detail of the footnote.
 ```
 
+### 上标和下标
+
+> 需要在`Markdown`菜单中启用上标和下标并使用`Markdown-it`渲染引擎。
+
+```md
+This is the 1^st^ superscript.
+
+This is the H~2~O subscript.
+```
+
 ### 换行和段落
 如果需要换行，您应该在当前行末尾添加两个空格，然后换行。VNote提供快捷键`Shift+Enter`来辅助用户输入两个空格并换行。
 
