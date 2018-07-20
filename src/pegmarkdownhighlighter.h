@@ -113,9 +113,9 @@ private:
                            int p_blockNum);
 
     // To avoid line height jitter.
-    void preHighlightMonospaceBlock(const QVector<QVector<HLUnit>> &p_highlights,
-                                    int p_blockNum,
-                                    const QString &p_text);
+    void preHighlightSingleFormatBlock(const QVector<QVector<HLUnit>> &p_highlights,
+                                       int p_blockNum,
+                                       const QString &p_text);
 
     void updateSingleFormatBlocks(const QVector<QVector<HLUnit>> &p_highlights);
 

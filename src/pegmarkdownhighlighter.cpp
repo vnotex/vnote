@@ -92,9 +92,9 @@ void PegMarkdownHighlighter::highlightBlock(const QString &p_text)
     int blockNum = block.blockNumber();
 
     if (result->matched(m_timeStamp)) {
-        preHighlightMonospaceBlock(result->m_blocksHighlights, blockNum, p_text);
+        preHighlightSingleFormatBlock(result->m_blocksHighlights, blockNum, p_text);
     } else {
-        preHighlightMonospaceBlock(m_fastResult->m_blocksHighlights, blockNum, p_text);
+        preHighlightSingleFormatBlock(m_fastResult->m_blocksHighlights, blockNum, p_text);
     }
 
     highlightBlockOne(result->m_blocksHighlights, blockNum);
@@ -116,9 +116,9 @@ void PegMarkdownHighlighter::highlightBlock(const QString &p_text)
     }
 }
 
-void PegMarkdownHighlighter::preHighlightMonospaceBlock(const QVector<QVector<HLUnit>> &p_highlights,
-                                                        int p_blockNum,
-                                                        const QString &p_text)
+void PegMarkdownHighlighter::preHighlightSingleFormatBlock(const QVector<QVector<HLUnit>> &p_highlights,
+                                                           int p_blockNum,
+                                                           const QString &p_text)
 {
     int sz = p_text.size();
     if (sz == 0) {
@@ -210,7 +210,7 @@ void PegMarkdownHighlighter::startFastParse(int p_position, int p_charsRemoved, 
     int firstBlockNum, lastBlockNum;
     getFastParseBlockRange(p_position, p_charsRemoved, p_charsAdded, firstBlockNum, lastBlockNum);
     if (firstBlockNum == -1) {
-        m_fastResult.reset();
+        // We could not let m_fastResult NULL here.
         return;
     }
 
@@ -378,7 +378,7 @@ void PegMarkdownHighlighter::updateSingleFormatBlocks(const QVector<QVector<HLUn
             const HLUnit &unit = units[0];
             if (unit.start == 0 && unit.length > 0) {
                 QTextBlock block = m_doc->findBlockByNumber(i);
-                if (block.length() - 1 == (int)unit.length) {
+                if (block.length() - 1 <= (int)unit.length) {
                     m_singleFormatBlocks.insert(i);
                 }
             }

@@ -119,7 +119,7 @@ void PegHighlighterResult::parseBlocksHighlightOne(QVector<QVector<HLUnit>> &p_b
 
     QTextBlock block = p_doc->findBlock(p_pos);
     int startBlockNum = block.blockNumber();
-    int endBlockNum = p_doc->findBlock(p_end).blockNumber();
+    int endBlockNum = p_doc->findBlock(p_end - 1).blockNumber();
     if (endBlockNum >= p_blocksHighlights.size()) {
         endBlockNum = p_blocksHighlights.size() - 1;
     }
@@ -144,9 +144,14 @@ void PegHighlighterResult::parseBlocksHighlightOne(QVector<QVector<HLUnit>> &p_b
             unit.start = 0;
             unit.length = block.length();
         }
+
         unit.styleIndex = p_styleIndex;
 
-        p_blocksHighlights[blockNum].append(unit);
+        Q_ASSERT(unit.length > 0);
+
+        if (unit.length > 0) {
+            p_blocksHighlights[blockNum].append(unit);
+        }
 
         block = block.next();
     }
@@ -167,7 +172,11 @@ void PegHighlighterResult::parseBlocksElementRegionOne(QHash<int, QVector<VEleme
 
     QTextBlock block = p_doc->findBlock(p_pos);
     int startBlockNum = block.blockNumber();
-    int endBlockNum = p_doc->findBlock(p_end).blockNumber();
+    int endBlockNum = p_doc->findBlock(p_end - 1).blockNumber();
+    if (endBlockNum >= p_regs.size()) {
+        endBlockNum = p_regs.size() - 1;
+    }
+
     while (block.isValid())
     {
         int blockNum = block.blockNumber();
