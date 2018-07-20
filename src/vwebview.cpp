@@ -41,11 +41,6 @@ VWebView::VWebView(VFile *p_file, QWidget *p_parent)
 
 void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
 {
-    if (m_inPreview) {
-        QWebEngineView::contextMenuEvent(p_event);
-        return;
-    }
-
     QMenu *menu = page()->createStandardContextMenu();
     menu->setToolTipsVisible(true);
 
@@ -69,7 +64,10 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
     }
 #endif
 
-    if (!hasSelection() && m_file && m_file->isModifiable()) {
+    if (!hasSelection()
+        && !m_inPreview
+        && m_file
+        && m_file->isModifiable()) {
         QAction *editAct= new QAction(VIconUtils::menuIcon(":/resources/icons/edit_note.svg"),
                                       tr("&Edit"), menu);
         editAct->setToolTip(tr("Edit current note"));
@@ -84,7 +82,7 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
 
     // Add Copy As menu.
     QAction *copyAct = pageAction(QWebEnginePage::Copy);
-    if (actions.contains(copyAct)) {
+    if (actions.contains(copyAct) && !m_inPreview) {
         initCopyAsMenu(copyAct, menu);
     }
 
@@ -102,7 +100,7 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
         defaultCopyImageAct->setVisible(false);
     }
 
-    if (!hasSelection()) {
+    if (!hasSelection() && !m_inPreview) {
         QAction *savePageAct = new QAction(QWebEnginePage::tr("Save &Page"), menu);
         connect(savePageAct, &QAction::triggered,
                 this, &VWebView::requestSavePage);
@@ -110,13 +108,26 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
     }
 
     // Add Copy All As menu.
-    initCopyAllAsMenu(menu);
+    if (!m_inPreview) {
+        initCopyAllAsMenu(menu);
+    }
 
     hideUnusedActions(menu);
 
     p_event->accept();
 
-    menu->exec(p_event->globalPos());
+    bool valid = false;
+    for (auto act : menu->actions()) {
+        if (act->isVisible()) {
+            valid = true;
+            break;
+        }
+    }
+
+    if (valid) {
+        menu->exec(p_event->globalPos());
+    }
+
     delete menu;
 }
 
