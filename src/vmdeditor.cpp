@@ -195,6 +195,8 @@ void VMdEditor::reloadFile()
     m_freshEdit = true;
 
     setReadOnly(readonly);
+
+    refreshPreview();
 }
 
 bool VMdEditor::scrollToBlock(int p_blockNumber)

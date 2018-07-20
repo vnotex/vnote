@@ -1039,16 +1039,27 @@ VInsertSelector *VMdTab::prepareSnippetSelector(QWidget *p_parent)
 
 void VMdTab::reload()
 {
-    if (m_isEditMode) {
+    // Reload editor.
+    if (m_editor) {
         m_editor->reloadFile();
+    }
+
+    if (m_isEditMode) {
         m_editor->endEdit();
         m_editor->beginEdit();
         updateStatus();
-    } else {
-        if (m_editor) {
-            m_editor->reloadFile();
-        }
+    }
 
+    if (!m_isEditMode) {
+        updateWebView();
+    }
+
+    // Reload web viewer.
+    m_ready &= ~TabReady::ReadMode;
+    m_webViewer->reload();
+
+    if (!m_isEditMode) {
+        VUtils::sleepWait(500);
         showFileReadMode();
     }
 }
