@@ -56,32 +56,32 @@ vim-visual-background: 484f5d
 vim-replace-background: 2f3377
 
 H1
-foreground: e4e4e4
+foreground: e0e0e0
 font-style: bold
 font-size: +8
 
 H2
-foreground: e4e4e4
+foreground: e0e0e0
 font-style: bold
 font-size: +6
 
 H3
-foreground: e4e4e4
+foreground: e0e0e0
 font-style: bold
 font-size: +4
 
 H4
-foreground: e4e4e4
+foreground: e0e0e0
 font-style: bold
 font-size: +2
 
 H5
-foreground: e4e4e4
+foreground: e0e0e0
 font-style: bold
 font-size: +2
 
 H6
-foreground: e4e4e4
+foreground: e0e0e0
 font-style: bold
 font-size: +2
 
@@ -117,11 +117,11 @@ foreground: 98c379
 font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
 
 EMPH
-foreground: e4e4e4
+foreground: e0e0e0
 font-style: italic
 
 STRONG
-foreground: e4e4e4
+foreground: e0e0e0
 font-style: bold
 
 HTML_ENTITY

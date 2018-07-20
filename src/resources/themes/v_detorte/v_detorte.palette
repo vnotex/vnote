@@ -9,13 +9,13 @@ mdhl_file=v_detorte.mdhl
 css_file=v_detorte.css
 codeblock_css_file=v_detorte_codeblock.css
 mermaid_css_file=v_detorte_mermaid.css
-version=5
+version=6
 
 ; This mapping will be used to translate colors when the content of HTML is copied
 ; without background. You could just specify the foreground colors mapping here.
 ; It is useful for dark mode theme. '#aabbcc' or 'red' formats are supported.
 ; col1:col1_new,col2:col2_new
-css_color_mapping=#dadada:#222222,#61afef:#0099ff,#98c379:#8e24aa,#bcbcbc:#666666,#8a8a8a:#7a7a7a,#767676:#aaaaaa,#af8787:#767676,#ccb24c:#0000ee,#e37c84:#880000,#56b6c2:#af00d7,#f06292:#bc6060,#80cbc4:#008700,#ce93db:#4d99bf,#84c0f2:#1f7199,#e4e4e4:#222222,#ba68c8:#6a1b9a
+css_color_mapping=#dadada:#222222,#61afef:#0099ff,#98c379:#8e24aa,#bcbcbc:#666666,#8a8a8a:#7a7a7a,#767676:#aaaaaa,#af8787:#767676,#ccb24c:#0000ee,#e37c84:#880000,#56b6c2:#af00d7,#f06292:#bc6060,#80cbc4:#008700,#ce93db:#4d99bf,#84c0f2:#1f7199,#e4e4e4:#222222,#ba68c8:#6a1b9a,#e0e0e0:#222222
 
 [phony]
 ; Abstract color attributes.
