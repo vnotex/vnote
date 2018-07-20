@@ -94,10 +94,12 @@ private:
     void parseHRuleBlocks(const PegMarkdownHighlighter *p_peg,
                           const QSharedPointer<PegParseResult> &p_result);
 
+#if 0
     void parseBlocksElementRegionOne(QHash<int, QVector<VElementRegion>> &p_regs,
                                      const QTextDocument *p_doc,
                                      unsigned long p_pos,
                                      unsigned long p_end);
+#endif
 
     QRegExp m_codeBlockStartExp;
     QRegExp m_codeBlockEndExp;

@@ -209,6 +209,10 @@ void PegMarkdownHighlighter::startFastParse(int p_position, int p_charsRemoved, 
     // Get affected block range.
     int firstBlockNum, lastBlockNum;
     getFastParseBlockRange(p_position, p_charsRemoved, p_charsAdded, firstBlockNum, lastBlockNum);
+    if (firstBlockNum == -1) {
+        m_fastResult.reset();
+        return;
+    }
 
     QString text;
     QTextBlock block = m_doc->findBlockByNumber(firstBlockNum);
@@ -568,7 +572,7 @@ void PegMarkdownHighlighter::getFastParseBlockRange(int p_position,
                                                     int &p_firstBlock,
                                                     int &p_lastBlock) const
 {
-    const int maxNumOfBlocks = 50;
+    const int maxNumOfBlocks = 500;
 
     int charsChanged = p_charsRemoved + p_charsAdded;
     QTextBlock firstBlock = m_doc->findBlock(p_position);
@@ -580,10 +584,8 @@ void PegMarkdownHighlighter::getFastParseBlockRange(int p_position,
     }
 
     int num = lastBlock.blockNumber() - firstBlock.blockNumber() + 1;
-
     if (num >= maxNumOfBlocks) {
-        p_firstBlock = firstBlock.blockNumber();
-        p_lastBlock = p_firstBlock + maxNumOfBlocks - 1;
+        p_firstBlock = p_lastBlock = -1;
         return;
     }
 
@@ -667,5 +669,7 @@ void PegMarkdownHighlighter::getFastParseBlockRange(int p_position,
     p_lastBlock = lastBlock.blockNumber();
     if (p_lastBlock < p_firstBlock) {
         p_lastBlock = p_firstBlock;
+    } else if (p_lastBlock - p_firstBlock + 1 > maxNumOfBlocks) {
+        p_firstBlock = p_lastBlock = -1;
     }
 }

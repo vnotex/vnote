@@ -120,6 +120,10 @@ void PegHighlighterResult::parseBlocksHighlightOne(QVector<QVector<HLUnit>> &p_b
     QTextBlock block = p_doc->findBlock(p_pos);
     int startBlockNum = block.blockNumber();
     int endBlockNum = p_doc->findBlock(p_end).blockNumber();
+    if (endBlockNum >= p_blocksHighlights.size()) {
+        endBlockNum = p_blocksHighlights.size() - 1;
+    }
+
     while (block.isValid())
     {
         int blockNum = block.blockNumber();
@@ -148,6 +152,7 @@ void PegHighlighterResult::parseBlocksHighlightOne(QVector<QVector<HLUnit>> &p_b
     }
 }
 
+#if 0
 void PegHighlighterResult::parseBlocksElementRegionOne(QHash<int, QVector<VElementRegion>> &p_regs,
                                                        const QTextDocument *p_doc,
                                                        unsigned long p_pos,
@@ -188,6 +193,7 @@ void PegHighlighterResult::parseBlocksElementRegionOne(QHash<int, QVector<VEleme
         regs.append(VElementRegion(start, end));
     }
 }
+#endif
 
 void PegHighlighterResult::parseFencedCodeBlocks(const PegMarkdownHighlighter *p_peg,
                                                  const QSharedPointer<PegParseResult> &p_result)
@@ -200,6 +206,9 @@ void PegHighlighterResult::parseFencedCodeBlocks(const PegMarkdownHighlighter *p
     for (auto it = regs.begin(); it != regs.end(); ++it) {
         QTextBlock block = doc->findBlock(it.value().m_startPos);
         int lastBlock = doc->findBlock(it.value().m_endPos - 1).blockNumber();
+        if (lastBlock >= p_result->m_numOfBlocks) {
+            lastBlock = p_result->m_numOfBlocks - 1;
+        }
 
         while (block.isValid()) {
             int blockNumber = block.blockNumber();
@@ -257,13 +266,11 @@ void PegHighlighterResult::parseMathjaxBlocks(const PegMarkdownHighlighter *p_pe
     for (auto it = inlineRegs.begin(); it != inlineRegs.end(); ++it) {
         const VElementRegion &r = *it;
         QTextBlock block = doc->findBlock(r.m_startPos);
-        // Inline equation MUST in one block.
-        Q_ASSERT(block.blockNumber() == doc->findBlock(r.m_endPos - 1).blockNumber());
-
         if (!block.isValid()) {
             continue;
         }
 
+        // Inline equation MUST in one block.
         if (r.m_endPos - block.position() > block.length()) {
             continue;
         }
@@ -287,6 +294,9 @@ void PegHighlighterResult::parseMathjaxBlocks(const PegMarkdownHighlighter *p_pe
         const VElementRegion &r = *it;
         QTextBlock block = doc->findBlock(r.m_startPos);
         int lastBlock = doc->findBlock(r.m_endPos - 1).blockNumber();
+        if (lastBlock >= p_result->m_numOfBlocks) {
+            lastBlock = p_result->m_numOfBlocks - 1;
+        }
 
         while (block.isValid()) {
             int blockNum = block.blockNumber();
@@ -308,7 +318,10 @@ void PegHighlighterResult::parseMathjaxBlocks(const PegMarkdownHighlighter *p_pe
                     m_mathjaxBlocks.append(item);
                 }
             } else {
-                Q_ASSERT(text.startsWith(marker));
+                if (!text.startsWith(marker)) {
+                    break;
+                }
+
                 if (text.size() > 2 && text.endsWith(marker)) {
                     // Within one block.
                     item.m_blockNumber = blockNum;
@@ -338,6 +351,9 @@ void PegHighlighterResult::parseHRuleBlocks(const PegMarkdownHighlighter *p_peg,
     for (auto it = regs.begin(); it != regs.end(); ++it) {
         QTextBlock block = doc->findBlock(it->m_startPos);
         int lastBlock = doc->findBlock(it->m_endPos - 1).blockNumber();
+        if (lastBlock >= p_result->m_numOfBlocks) {
+            lastBlock = p_result->m_numOfBlocks - 1;
+        }
 
         while (block.isValid()) {
             int blockNumber = block.blockNumber();
