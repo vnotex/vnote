@@ -1,4 +1,14 @@
 # Changes History
+## v1.20
+- More efficient and accurate Markdown parser and highlighter;
+- MathJax: get rid of escaping;
+- Draw background for **hrule** in edit mode;
+- Support specifying the expanded level of outline;
+- Support drag&drop a directory to Explorer to open it;
+- `Ctrl+;` to insert inline code and `Ctrl+J/K` to scroll page in edit mode;
+- Support YAML front matter in edit mode;
+- Support searching Explorer root directory;
+
 ## v1.19
 - Support tags for notes;
 - UniversalEntry: support searching tags;
