@@ -85,6 +85,11 @@ p, ul, ol {
     line-height: 24px;
 }
 
+mark {
+    color: #000000;
+    background-color: #D8D800;
+}
+
 pre {
     display: block;
     overflow-y: hidden;

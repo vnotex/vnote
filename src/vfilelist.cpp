@@ -69,6 +69,7 @@ void VFileList::setupUI()
     QPushButton *viewBtn = new QPushButton(VIconUtils::buttonIcon(":/resources/icons/view.svg"), "", this);
     viewBtn->setToolTip(tr("View"));
     viewBtn->setProperty("CornerBtn", true);
+    viewBtn->setFocusPolicy(Qt::NoFocus);
 
     QMenu *viewMenu = new QMenu(this);
     connect(viewMenu, &QMenu::aboutToShow,
