@@ -57,11 +57,6 @@ protected:
 
     void focusInEvent(QFocusEvent *p_event) Q_DECL_OVERRIDE;
 
-private slots:
-    // Handle current item change even of the tree.
-    // Do not response if m_muted is true.
-    void handleCurrentItemChanged(QTreeWidgetItem *p_curItem, QTreeWidgetItem *p_preItem);
-
 private:
     void setupUI();
 
@@ -70,6 +65,9 @@ private:
     void expandTreeOne(QTreeWidgetItem *p_item, int p_levelToBeExpanded);
 
     void updateButtonsState();
+
+    // Do not response if m_muted is true.
+    void activateItem(QTreeWidgetItem *p_item, bool p_focusEditArea = false);
 
     // @index: the index in @headers.
     static void updateTreeByLevel(QTreeWidget *p_treeWidget,

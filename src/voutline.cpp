@@ -98,7 +98,16 @@ void VOutline::setupUI()
     m_tree->setSelectionMode(QAbstractItemView::SingleSelection);
     // TODO: jump to the header when user click the same item twice.
     connect(m_tree, &QTreeWidget::currentItemChanged,
-            this, &VOutline::handleCurrentItemChanged);
+            this, [this](QTreeWidgetItem *p_cur, QTreeWidgetItem *p_pre) {
+                Q_UNUSED(p_pre);
+                activateItem(p_cur);
+            });
+    connect(m_tree, &QTreeWidget::itemClicked,
+            this, [this](QTreeWidgetItem *p_item, int p_col) {
+                Q_UNUSED(p_col);
+                // Will duplicate the signal. That's fine.
+                activateItem(p_item, true);
+            });
 
     QVBoxLayout *layout = new QVBoxLayout();
     layout->addLayout(btnLayout);
@@ -218,21 +227,21 @@ void VOutline::expandTreeOne(QTreeWidgetItem *p_item, int p_levelToBeExpanded)
     }
 }
 
-void VOutline::handleCurrentItemChanged(QTreeWidgetItem *p_curItem,
-                                        QTreeWidgetItem * p_preItem)
+void VOutline::activateItem(QTreeWidgetItem *p_item, bool p_focusEditArea)
 {
-    Q_UNUSED(p_preItem);
-
-    if (!p_curItem) {
+    if (!p_item) {
         return;
     }
 
-    const VTableOfContentItem *header = getHeaderFromItem(p_curItem, m_outline);
+    const VTableOfContentItem *header = getHeaderFromItem(p_item, m_outline);
     Q_ASSERT(header);
     m_currentHeader.update(m_outline.getFile(), header->m_index);
 
     if (!header->isEmpty() && !m_muted) {
         emit outlineItemActivated(m_currentHeader);
+        if (p_focusEditArea) {
+            g_mainWin->focusEditArea();
+        }
     }
 }
 
@@ -329,10 +338,16 @@ void VOutline::showNavigation()
 bool VOutline::handleKeyNavigation(int p_key, bool &p_succeed)
 {
     static bool secondKey = false;
-    return VNavigationMode::handleKeyNavigation(m_tree,
-                                                secondKey,
-                                                p_key,
-                                                p_succeed);
+    bool ret = VNavigationMode::handleKeyNavigation(m_tree,
+                                                    secondKey,
+                                                    p_key,
+                                                    p_succeed);
+
+    if (ret && p_succeed && !secondKey) {
+        g_mainWin->focusEditArea();
+    }
+
+    return ret;
 }
 
 const VTableOfContentItem *VOutline::getHeaderFromItem(QTreeWidgetItem *p_item,
