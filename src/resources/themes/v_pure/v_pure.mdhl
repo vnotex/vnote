@@ -108,7 +108,7 @@ IMAGE
 foreground: 616161
 
 REFERENCE
-foreground: b58900
+foreground: 826200
 
 CODE
 foreground: 8e24aa
@@ -121,7 +121,13 @@ STRONG
 font-style: bold
 
 HTML_ENTITY
-foreground: 6c71c4
+foreground: 8900b5
+
+HTML
+foreground: 8900b5
+
+HTMLBLOCK
+foreground: 8900b5
 
 COMMENT
 foreground: 93a1a1
@@ -172,6 +178,9 @@ hljs-strong: bold
 
 BLOCKQUOTE
 foreground: 00af00
+
+NOTE
+foreground: 0087b5
 
 STRIKE
 foreground: b71c1c

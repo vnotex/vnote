@@ -125,7 +125,13 @@ foreground: e0e0e0
 font-style: bold
 
 HTML_ENTITY
-foreground: abb2bf
+foreground: d09a80
+
+HTML
+foreground: d09a80
+
+HTMLBLOCK
+foreground: d09a80
 
 COMMENT
 foreground: 9e9e9e
@@ -176,6 +182,9 @@ hljs-strong: bold
 
 BLOCKQUOTE
 foreground: ccb24c
+
+NOTE
+foreground: b39ddb
 
 STRIKE
 foreground: e57373
