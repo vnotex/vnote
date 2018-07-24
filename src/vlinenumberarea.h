@@ -91,5 +91,7 @@ inline void VLineNumberArea::setForegroundColor(const QColor &p_color)
 inline void VLineNumberArea::setDigitWidth(int p_width)
 {
     m_digitWidth = p_width;
+    m_blockCount = -1;
+    calculateWidth();
 }
 #endif // VLINENUMBERAREA_H

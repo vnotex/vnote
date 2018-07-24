@@ -126,17 +126,9 @@ void VMdEditor::updateFontAndPalette()
     // setTextColor(palette.color(QPalette::Text));
 
     // Only this could override the font-family set of QWidget in QSS.
-    setStyleSheet(QString("VMdEditor, VLineNumberArea {"
-                          "font-family: \"%1\";"
-                          "font-size: %2pt;"
-                          "color: %3;"
-                          "background-color: %4; }")
-                         .arg(font.family())
-                         .arg(font.pointSize())
-                         .arg(palette.color(QPalette::Text).name())
-                         .arg(palette.color(QPalette::Base).name()));
+    setFontAndPaletteByStyleSheet(font, palette);
 
-    updateLineNumberAreaWidth(fontMetrics());
+    updateLineNumberAreaWidth(QFontMetrics(font));
 }
 
 void VMdEditor::beginEdit()
@@ -284,7 +276,6 @@ void VMdEditor::makeBlockVisible(const QTextBlock &p_block)
     }
 
     while (y + rectHeight > height && vbar->value() < vbar->maximum()) {
-        moved = true;
         vbar->setValue(vbar->value() + vbar->singleStep());
         rt = layout->blockBoundingRect(p_block);
         rectHeight = (int)rt.height();
@@ -1207,16 +1198,19 @@ void VMdEditor::wheelEvent(QWheelEvent *p_event)
 
 void VMdEditor::zoomPage(bool p_zoomIn, int p_range)
 {
-    int delta;
     const int minSize = 2;
 
-    if (p_zoomIn) {
-        delta = p_range;
-        zoomIn(p_range);
-    } else {
-        delta = -p_range;
-        zoomOut(p_range);
+    int delta = p_zoomIn ? p_range : -p_range;
+
+    // zoomIn() and zoomOut() does not work if we set stylesheet of VMdEditor.
+    int ptSz = font().pointSize() + delta;
+    if (ptSz < minSize) {
+        ptSz = minSize;
     }
+
+    setFontPointSizeByStyleSheet(ptSz);
+
+    emit m_object->statusMessage(QObject::tr("Set base font point size %1").arg(ptSz));
 
     m_zoomDelta += delta;
 
@@ -1383,4 +1377,29 @@ VWordCountInfo VMdEditor::fetchWordCountInfo() const
 void VMdEditor::setEditTab(VEditTab *p_editTab)
 {
     m_editTab = p_editTab;
+}
+
+void VMdEditor::setFontPointSizeByStyleSheet(int p_ptSize)
+{
+    QFont ft = font();
+    ft.setPointSize(p_ptSize);
+
+    setFontAndPaletteByStyleSheet(ft, palette());
+
+    ensurePolished();
+
+    updateLineNumberAreaWidth(QFontMetrics(ft));
+}
+
+void VMdEditor::setFontAndPaletteByStyleSheet(const QFont &p_font, const QPalette &p_palette)
+{
+    setStyleSheet(QString("VMdEditor, VLineNumberArea {"
+                          "font-family: \"%1\";"
+                          "font-size: %2pt;"
+                          "color: %3;"
+                          "background-color: %4; }")
+                         .arg(p_font.family())
+                         .arg(p_font.pointSize())
+                         .arg(p_palette.color(QPalette::Text).name())
+                         .arg(p_palette.color(QPalette::Base).name()));
 }

@@ -446,6 +446,7 @@ void VTextEdit::setDisplayScaleFactor(qreal p_factor)
 void VTextEdit::updateLineNumberAreaWidth(const QFontMetrics &p_metrics)
 {
     m_lineNumberArea->setDigitWidth(p_metrics.width(QLatin1Char('8')));
+    updateLineNumberAreaMargin();
 }
 
 void VTextEdit::dragMoveEvent(QDragMoveEvent *p_event)

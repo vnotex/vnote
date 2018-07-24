@@ -256,6 +256,10 @@ private:
 
     void insertImageLink(const QString &p_text, const QString &p_url);
 
+    void setFontPointSizeByStyleSheet(int p_ptSize);
+
+    void setFontAndPaletteByStyleSheet(const QFont &p_font, const QPalette &p_palette);
+
     PegMarkdownHighlighter *m_pegHighlighter;
 
     VCodeBlockHighlightHelper *m_cbHighlighter;
