@@ -48,7 +48,7 @@ class VTagExplorer;
 
 enum class PanelViewState
 {
-    ExpandMode,
+    ExpandMode = 0,
     HorizontalMode,
     VerticalMode,
     Invalid

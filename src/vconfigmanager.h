@@ -198,6 +198,9 @@ public:
     const QByteArray getTagExplorerSplitterState() const;
     void setTagExplorerSplitterState(const QByteArray &p_state);
 
+    int getPanelViewState() const;
+    void setPanelViewState(int p_state);
+
     bool getFindCaseSensitive() const;
     void setFindCaseSensitive(bool p_enabled);
 
@@ -940,6 +943,9 @@ private:
 
     // Prefix of the name of inserted images.
     QString m_imageNamePrefix;
+
+    // State of MainWindow panel view.
+    int m_panelViewState;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2453,5 +2459,20 @@ inline void VConfigManager::setOutlineExpandedLevel(int p_level)
 inline const QString &VConfigManager::getImageNamePrefix() const
 {
     return m_imageNamePrefix;
+}
+
+inline int VConfigManager::getPanelViewState() const
+{
+    return m_panelViewState;
+}
+
+inline void VConfigManager::setPanelViewState(int p_state)
+{
+    if (m_panelViewState == p_state) {
+        return;
+    }
+
+    m_panelViewState = p_state;
+    setConfigToSettings("global", "panel_view_state", m_panelViewState);
 }
 #endif // VCONFIGMANAGER_H

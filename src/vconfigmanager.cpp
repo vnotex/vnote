@@ -306,6 +306,9 @@ void VConfigManager::initialize()
 
     m_imageNamePrefix = getConfigFromSettings("global",
                                               "image_name_prefix").toString();
+
+    m_panelViewState = getConfigFromSettings("global",
+                                             "panel_view_state").toInt();
 }
 
 void VConfigManager::initSettings()

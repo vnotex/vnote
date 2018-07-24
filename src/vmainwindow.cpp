@@ -109,6 +109,13 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
 
     initDockWindows();
 
+    int state = g_config->getPanelViewState();
+    if (state < 0 || state >= (int)PanelViewState::Invalid) {
+        state = (int)PanelViewState::VerticalMode;
+    }
+
+    changePanelView((PanelViewState)state);
+
     restoreStateAndGeometry();
 
     setContextMenuPolicy(Qt::NoContextMenu);
@@ -2069,8 +2076,11 @@ void VMainWindow::changePanelView(PanelViewState p_state)
         break;
 
     default:
+        Q_ASSERT(false);
         break;
     }
+
+    g_config->setPanelViewState((int)p_state);
 
     expandViewAct->setChecked(p_state == PanelViewState::ExpandMode);
 }
