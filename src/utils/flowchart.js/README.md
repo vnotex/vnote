@@ -1,5 +1,5 @@
 # [flowchart.js](https://github.com/adrai/flowchart.js)
-v1.6.6  
+v1.11.3
 Adriano Raiano
 
 # [Raphael](https://github.com/DmitryBaranovskiy/raphael)
