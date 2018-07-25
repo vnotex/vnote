@@ -15,7 +15,7 @@ PegMarkdownHighlighter::PegMarkdownHighlighter(QTextDocument *p_doc)
       m_doc(p_doc),
       m_timeStamp(0),
       m_parser(NULL),
-      m_parserExts(pmh_EXT_NOTES | pmh_EXT_STRIKE | pmh_EXT_FRONTMATTER)
+      m_parserExts(pmh_EXT_NOTES | pmh_EXT_STRIKE | pmh_EXT_FRONTMATTER | pmh_EXT_MARK)
 {
 }
 

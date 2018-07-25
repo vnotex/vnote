@@ -195,3 +195,7 @@ font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
 DISPLAYFORMULA
 foreground: 00897b
 font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
+
+MARK
+foreground: 363636
+background: ffff76
