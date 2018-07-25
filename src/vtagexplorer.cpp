@@ -223,13 +223,16 @@ bool VTagExplorer::activateTag(const QString &p_tag)
     QVector<VNotebook *> notebooks;
     notebooks.append(m_notebook);
     getVSearch()->clear();
+    // We could not use WholeWordOnly here, since "c#" won't match a word.
+    int opts = VSearchConfig::CaseSensitive | VSearchConfig::RegularExpression;
+    QString pattern = QRegExp::escape(p_tag);
+    pattern = "^" + pattern + "$";
     QSharedPointer<VSearchConfig> config(new VSearchConfig(VSearchConfig::CurrentNotebook,
                                                            VSearchConfig::Tag,
                                                            VSearchConfig::Note,
                                                            VSearchConfig::Internal,
-                                                           VSearchConfig::CaseSensitive
-                                                           | VSearchConfig::WholeWordOnly,
-                                                           p_tag,
+                                                           opts,
+                                                           pattern,
                                                            QString()));
     getVSearch()->setConfig(config);
     QSharedPointer<VSearchResult> result = getVSearch()->search(notebooks);
