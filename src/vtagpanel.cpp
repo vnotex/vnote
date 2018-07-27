@@ -10,6 +10,7 @@
 #include "vlineedit.h"
 #include "vmainwindow.h"
 #include "vnote.h"
+#include "vconfigmanager.h"
 
 extern VPalette *g_palette;
 
@@ -17,7 +18,7 @@ extern VMainWindow *g_mainWin;
 
 extern VNote *g_vnote;
 
-#define MAX_DISPLAY_LABEL 3
+extern VConfigManager *g_config;
 
 VTagPanel::VTagPanel(QWidget *parent)
     : QWidget(parent),
@@ -29,7 +30,8 @@ VTagPanel::VTagPanel(QWidget *parent)
 
 void VTagPanel::setupUI()
 {
-    for (int i = 0; i < MAX_DISPLAY_LABEL; ++i) {
+    const int maxNum = g_config->getMaxNumOfTagLabels();
+    for (int i = 0; i < maxNum; ++i) {
         VTagLabel *label = new VTagLabel(this);
         connect(label, &VTagLabel::removalRequested,
                 this, [this](const QString &p_text) {
@@ -45,7 +47,7 @@ void VTagPanel::setupUI()
             this, [this](const QString &p_text) {
                 removeTag(p_text);
 
-                if (m_file->getTags().size() <= MAX_DISPLAY_LABEL) {
+                if (m_file->getTags().size() <= g_config->getMaxNumOfTagLabels()) {
                     // Hide the more panel.
                     m_btn->hidePopupWidget();
                     m_btn->hide();
@@ -156,7 +158,7 @@ void VTagPanel::updateAllTagsPanel()
     m_tagsPanel->clear();
 
     const QStringList &tags = m_file->getTags();
-    for (int idx = MAX_DISPLAY_LABEL; idx < tags.size(); ++idx) {
+    for (int idx = g_config->getMaxNumOfTagLabels(); idx < tags.size(); ++idx) {
         m_tagsPanel->addTag(tags[idx]);
     }
 }

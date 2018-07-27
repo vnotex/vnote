@@ -201,6 +201,10 @@ public:
     int getPanelViewState() const;
     void setPanelViewState(int p_state);
 
+    int getMaxTagLabelLength() const;
+
+    int getMaxNumOfTagLabels() const;
+
     bool getFindCaseSensitive() const;
     void setFindCaseSensitive(bool p_enabled);
 
@@ -946,6 +950,12 @@ private:
 
     // State of MainWindow panel view.
     int m_panelViewState;
+
+    // Max length of the tag label text.
+    int m_maxTagLabelLength;
+
+    // Max number of tag labels to display.
+    int m_maxNumOfTagLabels;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2474,5 +2484,15 @@ inline void VConfigManager::setPanelViewState(int p_state)
 
     m_panelViewState = p_state;
     setConfigToSettings("global", "panel_view_state", m_panelViewState);
+}
+
+inline int VConfigManager::getMaxTagLabelLength() const
+{
+    return m_maxTagLabelLength;
+}
+
+inline int VConfigManager::getMaxNumOfTagLabels() const
+{
+    return m_maxNumOfTagLabels;
 }
 #endif // VCONFIGMANAGER_H

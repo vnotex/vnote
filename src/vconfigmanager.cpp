@@ -309,6 +309,12 @@ void VConfigManager::initialize()
 
     m_panelViewState = getConfigFromSettings("global",
                                              "panel_view_state").toInt();
+
+    m_maxTagLabelLength = getConfigFromSettings("global",
+                                                "max_tag_label_length").toInt();
+
+    m_maxNumOfTagLabels = getConfigFromSettings("global",
+                                                "max_num_of_tag_labels").toInt();
 }
 
 void VConfigManager::initSettings()

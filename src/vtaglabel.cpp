@@ -3,8 +3,9 @@
 #include <QtWidgets>
 
 #include "utils/viconutils.h"
+#include "vconfigmanager.h"
 
-#define MAX_DISPLAY_SIZE_PER_LABEL 5
+extern VConfigManager *g_config;
 
 VTagLabel::VTagLabel(const QString &p_text,
                      bool p_useFullText,
@@ -56,8 +57,9 @@ void VTagLabel::updateLabel()
     QString tag(m_text);
 
     if (!m_useFullText) {
-        if (tag.size() > MAX_DISPLAY_SIZE_PER_LABEL) {
-            tag.resize(MAX_DISPLAY_SIZE_PER_LABEL);
+        int ml = g_config->getMaxTagLabelLength();
+        if (ml > 0 && tag.size() > ml) {
+            tag.resize(ml);
             tag += QStringLiteral("...");
         }
     }
