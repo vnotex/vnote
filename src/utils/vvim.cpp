@@ -1383,7 +1383,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
     case Qt::Key_AsciiCircum:
     {
         if (modifiers == Qt::ShiftModifier) {
-            // ~, go to first non-space character of current line (block).
+            // ^, go to first non-space character of current line (block).
             tryGetRepeatToken(m_keys, m_tokens);
             if (!m_keys.isEmpty()) {
                 // Not a valid sequence.

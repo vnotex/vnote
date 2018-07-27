@@ -25,6 +25,7 @@ public:
     // Need to call setTextCursor() to make it take effect.
     static void moveCursorFirstNonSpaceCharacter(QTextCursor &p_cursor,
                                                  QTextCursor::MoveMode p_mode);
+
     // Indent current block as next/previous block.
     // Return true if some changes have been made.
     // @p_cursor will be placed at the position after inserting leading spaces.

@@ -565,8 +565,15 @@ bool VMdEditOperations::handleKeyU(QKeyEvent *p_event)
         if (cursor.atBlockStart()) {
             ret = cursor.movePosition(QTextCursor::PreviousWord, QTextCursor::KeepAnchor);
         } else {
-            ret = cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::KeepAnchor);
+            int indent = VEditUtils::fetchIndentation(cursor.block());
+            int pib = cursor.positionInBlock();
+            if (pib <= indent) {
+                ret = cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::KeepAnchor);
+            } else {
+                ret = cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::KeepAnchor, pib - indent);
+            }
         }
+
         if (ret) {
             cursor.removeSelectedText();
         }
