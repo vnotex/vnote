@@ -22,6 +22,7 @@ PegHighlighterFastResult::PegHighlighterFastResult(const PegMarkdownHighlighter 
 PegHighlighterResult::PegHighlighterResult()
     : m_timeStamp(0),
       m_numOfBlocks(0),
+      m_codeBlockTimeStamp(0),
       m_numOfCodeBlockHighlightsToRecv(0)
 {
     m_codeBlockStartExp = QRegExp(VUtils::c_fencedCodeBlockStartRegExp);
@@ -32,6 +33,7 @@ PegHighlighterResult::PegHighlighterResult(const PegMarkdownHighlighter *p_peg,
                                            const QSharedPointer<PegParseResult> &p_result)
     : m_timeStamp(p_result->m_timeStamp),
       m_numOfBlocks(p_result->m_numOfBlocks),
+      m_codeBlockTimeStamp(0),
       m_numOfCodeBlockHighlightsToRecv(0)
 {
     m_codeBlockStartExp = QRegExp(VUtils::c_fencedCodeBlockStartRegExp);

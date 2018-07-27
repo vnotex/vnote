@@ -199,6 +199,8 @@ public:
 
     virtual void zoomOutW(int p_range = 1) = 0;
 
+    virtual void ensureCursorVisibleW() = 0;
+
 protected:
     void init();
 

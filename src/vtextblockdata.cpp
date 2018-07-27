@@ -1,9 +1,9 @@
 #include "vtextblockdata.h"
 
-#include <QDebug>
-
 VTextBlockData::VTextBlockData()
     : QTextBlockUserData(),
+      m_timeStamp(0),
+      m_codeBlockTimeStamp(0),
       m_codeBlockIndentation(-1)
 {
 }
@@ -90,7 +90,6 @@ bool VTextBlockData::clearObsoletePreview(long long p_timeStamp, PreviewSource p
         if (ele->m_source == p_source
             && ele->m_timeStamp != p_timeStamp) {
             // Remove it.
-            qDebug() << "clear obsolete preview" << ele->m_imageInfo.toString();
             delete ele;
             it = m_previews.erase(it);
             deleted = true;

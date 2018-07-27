@@ -54,6 +54,10 @@ class QFormLayout;
 #  define V_FALLTHROUGH while(false){}
 #endif
 
+#define DETIME() qDebug() << "ELAPSED_TIME" << __func__ << __LINE__ << VUtils::elapsedTime()
+
+#define RESET_TIME() VUtils::elapsedTime(true)
+
 enum class MessageBoxType
 {
     Normal = 0,
@@ -349,6 +353,8 @@ public:
 
     // Whether @p_html has only <img> content.
     static bool onlyHasImgInHtml(const QString &p_html);
+
+    static int elapsedTime(bool p_reset = false);
 
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt text" =200x100)

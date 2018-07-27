@@ -114,7 +114,7 @@ enum class PreviewImageSource { Image, CodeBlock, Invalid };
 
 enum HighlightBlockState
 {
-    Normal = 0,
+    Normal = -1,
 
     // A fenced code block.
     CodeBlockStart,

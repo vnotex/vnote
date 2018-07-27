@@ -54,6 +54,9 @@ public:
     // Support fenced code block only.
     QVector<QVector<HLUnitStyle> > m_codeBlocksHighlights;
 
+    // Timestamp for m_codeBlocksHighlights.
+    TimeStamp m_codeBlockTimeStamp;
+
     // All image link regions.
     QVector<VElementRegion> m_imageRegions;
 

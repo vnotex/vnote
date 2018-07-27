@@ -184,6 +184,11 @@ public:
         zoomPage(false, p_range);
     }
 
+    void ensureCursorVisibleW() Q_DECL_OVERRIDE
+    {
+        ensureCursorVisible();
+    }
+
 signals:
     // Signal when headers change.
     void headersChanged(const QVector<VTableOfContentItem> &p_headers);

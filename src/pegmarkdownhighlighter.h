@@ -10,12 +10,13 @@
 
 class PegParser;
 class QTimer;
+class VMdEditor;
 
 class PegMarkdownHighlighter : public QSyntaxHighlighter
 {
     Q_OBJECT
 public:
-    explicit PegMarkdownHighlighter(QTextDocument *p_doc = nullptr);
+    PegMarkdownHighlighter(QTextDocument *p_doc, VMdEditor *p_editor);
 
     void init(const QVector<HighlightingStyle> &p_styles,
               const QHash<QString, QTextCharFormat> &p_codeBlockStyles,
@@ -33,9 +34,6 @@ public:
 
     void addPossiblePreviewBlock(int p_blockNumber);
 
-    // Parse and only update the highlight results for rehighlight().
-    void updateHighlightFast();
-
     QHash<QString, QTextCharFormat> &getCodeBlockStyles();
 
     QVector<HighlightingStyle> &getStyles();
@@ -47,6 +45,10 @@ public:
 public slots:
     // Parse and rehighlight immediately.
     void updateHighlight();
+
+    // Rehighlight sensitive blocks using current parse result, mainly
+    // visible blocks.
+    void rehighlightSensitiveBlocks();
 
 signals:
     void highlightCompleted();
@@ -76,14 +78,14 @@ private:
 
     void startFastParse(int p_position, int p_charsRemoved, int p_charsAdded);
 
-    void updateCodeBlocks(QSharedPointer<PegHighlighterResult> p_result);
+    void clearAllBlocksUserDataAndState(const QSharedPointer<PegHighlighterResult> &p_result);
 
-    // Set the user data of currentBlock().
-    void updateBlockUserData(int p_blockNum, const QString &p_text);
+    void updateAllBlocksUserState(const QSharedPointer<PegHighlighterResult> &p_result);
 
-    void updateBlockUserState(const QSharedPointer<PegHighlighterResult> &p_result,
-                              int p_blockNum,
-                              const QString &p_text);
+    void updateCodeBlocks(const QSharedPointer<PegHighlighterResult> &p_result);
+
+    void clearBlockUserData(const QSharedPointer<PegHighlighterResult> &p_result,
+                            QTextBlock &p_block);
 
     // Highlight fenced code block according to VCodeBlockHighlightHelper result.
     void highlightCodeBlock(const QSharedPointer<PegHighlighterResult> &p_result,
@@ -97,6 +99,8 @@ private:
 
     VTextBlockData *previousBlockData() const;
 
+    VTextBlockData *previousBlockData(const QTextBlock &p_block) const;
+
     void completeHighlight(QSharedPointer<PegHighlighterResult> p_result);
 
     bool isMathJaxEnabled() const;
@@ -109,7 +113,7 @@ private:
 
     void processFastParseResult(const QSharedPointer<PegParseResult> &p_result);
 
-    void highlightBlockOne(const QVector<QVector<HLUnit>> &p_highlights,
+    bool highlightBlockOne(const QVector<QVector<HLUnit>> &p_highlights,
                            int p_blockNum);
 
     // To avoid line height jitter.
@@ -119,7 +123,23 @@ private:
 
     void updateSingleFormatBlocks(const QVector<QVector<HLUnit>> &p_highlights);
 
+    void rehighlightBlocks();
+
+    bool rehighlightBlockRange(int p_first, int p_last);
+
+    static bool isEmptyCodeBlockHighlights(const QVector<QVector<HLUnitStyle>> &p_highlights);
+
+    static TimeStamp blockTimeStamp(const QTextBlock &p_block);
+
+    static void updateBlockTimeStamp(const QTextBlock &p_block, TimeStamp p_ts);
+
+    static TimeStamp blockCodeBlockTimeStamp(const QTextBlock &p_block);
+
+    static void updateBlockCodeBlockTimeStamp(const QTextBlock &p_block, TimeStamp p_ts);
+
     QTextDocument *m_doc;
+
+    VMdEditor *m_editor;
 
     TimeStamp m_timeStamp;
 
@@ -145,6 +165,8 @@ private:
     QTimer *m_timer;
 
     QTimer *m_fastParseTimer;
+
+    QTimer *m_rehighlightTimer;
 
     // Blocks have only one format set which occupies the whole block.
     QSet<int> m_singleFormatBlocks;
@@ -207,8 +229,75 @@ inline VTextBlockData *PegMarkdownHighlighter::previousBlockData() const
     return static_cast<VTextBlockData *>(block.userData());
 }
 
+inline VTextBlockData *PegMarkdownHighlighter::previousBlockData(const QTextBlock &p_block) const
+{
+    if (!p_block.isValid()) {
+        return NULL;
+    }
+
+    QTextBlock block = p_block.previous();
+    if (!block.isValid()) {
+        return NULL;
+    }
+
+    return static_cast<VTextBlockData *>(block.userData());
+}
+
 inline bool PegMarkdownHighlighter::isMathJaxEnabled() const
 {
     return m_parserExts & pmh_EXT_MATH;
+}
+
+inline TimeStamp PegMarkdownHighlighter::blockTimeStamp(const QTextBlock &p_block)
+{
+    VTextBlockData *data = static_cast<VTextBlockData *>(p_block.userData());
+    if (data) {
+        return data->getTimeStamp();
+    } else {
+        return 0;
+    }
+}
+
+inline void PegMarkdownHighlighter::updateBlockTimeStamp(const QTextBlock &p_block, TimeStamp p_ts)
+{
+    VTextBlockData *data = static_cast<VTextBlockData *>(p_block.userData());
+    if (data) {
+        data->setTimeStamp(p_ts);
+    }
+}
+
+inline TimeStamp PegMarkdownHighlighter::blockCodeBlockTimeStamp(const QTextBlock &p_block)
+{
+    VTextBlockData *data = static_cast<VTextBlockData *>(p_block.userData());
+    if (data) {
+        return data->getCodeBlockTimeStamp();
+    } else {
+        return 0;
+    }
+}
+
+inline void PegMarkdownHighlighter::updateBlockCodeBlockTimeStamp(const QTextBlock &p_block, TimeStamp p_ts)
+{
+    VTextBlockData *data = static_cast<VTextBlockData *>(p_block.userData());
+    if (data) {
+        data->setCodeBlockTimeStamp(p_ts);
+    }
+}
+
+inline bool PegMarkdownHighlighter::isEmptyCodeBlockHighlights(const QVector<QVector<HLUnitStyle>> &p_highlights)
+{
+    if (p_highlights.isEmpty()) {
+        return true;
+    }
+
+    bool empty = true;
+    for (int i = 0; i < p_highlights.size(); ++i) {
+        if (!p_highlights[i].isEmpty()) {
+            empty = false;
+            break;
+        }
+    }
+
+    return empty;
 }
 #endif // PEGMARKDOWNHIGHLIGHTER_H

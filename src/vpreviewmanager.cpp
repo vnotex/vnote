@@ -381,8 +381,10 @@ void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
             continue;
         }
 
-        VTextBlockData *blockData = dynamic_cast<VTextBlockData *>(block.userData());
-        Q_ASSERT(blockData);
+        VTextBlockData *blockData = static_cast<VTextBlockData *>(block.userData());
+        if (!blockData) {
+            continue;
+        }
 
         VPreviewInfo *info = new VPreviewInfo(PreviewSource::ImageLink,
                                               p_timeStamp,
@@ -425,8 +427,11 @@ void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
             continue;
         }
 
-        VTextBlockData *blockData = dynamic_cast<VTextBlockData *>(block.userData());
-        Q_ASSERT(blockData);
+        VTextBlockData *blockData = static_cast<VTextBlockData *>(block.userData());
+        if (!blockData) {
+            continue;
+        }
+
         VPreviewInfo *info = new VPreviewInfo(p_source,
                                               p_timeStamp,
                                               img->m_startPos - img->m_blockPos,
@@ -476,7 +481,7 @@ void VPreviewManager::clearBlockObsoletePreviewInfo(long long p_timeStamp,
             continue;
         }
 
-        VTextBlockData *blockData = dynamic_cast<VTextBlockData *>(block.userData());
+        VTextBlockData *blockData = static_cast<VTextBlockData *>(block.userData());
         if (!blockData) {
             continue;
         }
@@ -550,7 +555,7 @@ void VPreviewManager::checkBlocksForObsoletePreview(const QList<int> &p_blocks)
             continue;
         }
 
-        VTextBlockData *blockData = dynamic_cast<VTextBlockData *>(block.userData());
+        VTextBlockData *blockData = static_cast<VTextBlockData *>(block.userData());
         if (!blockData) {
             continue;
         }

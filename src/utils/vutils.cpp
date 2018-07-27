@@ -1620,3 +1620,20 @@ bool VUtils::onlyHasImgInHtml(const QString &p_html)
     QRegExp reg("<(?:p|span|div) ");
     return !p_html.contains(reg);
 }
+
+int VUtils::elapsedTime(bool p_reset)
+{
+    static QTime tm;
+
+    if (p_reset) {
+        tm = QTime();
+        return 0;
+    }
+
+    if (tm.isNull()) {
+        tm.start();
+        return 0;
+    }
+
+    return tm.restart();
+}

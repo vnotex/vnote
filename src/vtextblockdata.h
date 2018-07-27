@@ -4,6 +4,8 @@
 #include <QTextBlockUserData>
 #include <QVector>
 
+#include "vconstants.h"
+
 // Sources of the preview.
 enum class PreviewSource
 {
@@ -163,9 +165,23 @@ public:
 
     void setCodeBlockIndentation(int p_indent);
 
+    TimeStamp getTimeStamp() const;
+
+    void setTimeStamp(TimeStamp p_ts);
+
+    TimeStamp getCodeBlockTimeStamp() const;
+
+    void setCodeBlockTimeStamp(TimeStamp p_ts);
+
 private:
     // Check the order of elements.
     bool checkOrder() const;
+
+    // TimeStamp of the highlight result which has been applied to this block.
+    TimeStamp m_timeStamp;
+
+    // TimeStamp of the code block highlight result which has been applied to this block.
+    TimeStamp m_codeBlockTimeStamp;
 
     // Sorted by m_imageInfo.m_startPos, with no two element's position intersected.
     QVector<VPreviewInfo *> m_previews;
@@ -187,5 +203,25 @@ inline int VTextBlockData::getCodeBlockIndentation() const
 inline void VTextBlockData::setCodeBlockIndentation(int p_indent)
 {
     m_codeBlockIndentation = p_indent;
+}
+
+inline TimeStamp VTextBlockData::getTimeStamp() const
+{
+    return m_timeStamp;
+}
+
+inline void VTextBlockData::setTimeStamp(TimeStamp p_ts)
+{
+    m_timeStamp = p_ts;
+}
+
+inline TimeStamp VTextBlockData::getCodeBlockTimeStamp() const
+{
+    return m_codeBlockTimeStamp;
+}
+
+inline void VTextBlockData::setCodeBlockTimeStamp(TimeStamp p_ts)
+{
+    m_codeBlockTimeStamp = p_ts;
 }
 #endif // VTEXTBLOCKDATA_H

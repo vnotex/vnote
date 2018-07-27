@@ -60,7 +60,7 @@ VMdEditor::VMdEditor(VFile *p_file,
 
     setReadOnly(true);
 
-    m_pegHighlighter = new PegMarkdownHighlighter(document());
+    m_pegHighlighter = new PegMarkdownHighlighter(document(), this);
     m_pegHighlighter->init(g_config->getMdHighlightingStyles(),
                            g_config->getCodeBlockStyles(),
                            g_config->getEnableMathjax(),
@@ -182,13 +182,13 @@ void VMdEditor::reloadFile()
     const QString &content = m_file->getContent();
     setPlainText(content);
     setModified(false);
-    m_pegHighlighter->updateHighlightFast();
-
-    m_freshEdit = true;
 
     setReadOnly(readonly);
 
-    refreshPreview();
+    if (!m_freshEdit) {
+        m_freshEdit = true;
+        refreshPreview();
+    }
 }
 
 bool VMdEditor::scrollToBlock(int p_blockNumber)
