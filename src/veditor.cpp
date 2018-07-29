@@ -21,7 +21,9 @@ VEditor::VEditor(VFile *p_file, QWidget *p_editor)
       m_file(p_file),
       m_editOps(nullptr),
       m_document(nullptr),
-      m_enableInputMethod(true)
+      m_enableInputMethod(true),
+      m_timeStamp(0),
+      m_trailingSpaceSelectionTS(0)
 {
 }
 
@@ -33,6 +35,7 @@ void VEditor::init()
 {
     const int labelTimerInterval = 500;
     const int extraSelectionHighlightTimer = 500;
+    const int trailingSpaceUpdateTimer = 500;
     const int labelSize = 64;
 
     m_document = documentW();
@@ -67,6 +70,12 @@ void VEditor::init()
     QObject::connect(m_highlightTimer, &QTimer::timeout,
                      m_object, &VEditorObject::doHighlightExtraSelections);
 
+    m_trailingSpaceTimer = new QTimer(m_editor);
+    m_trailingSpaceTimer->setSingleShot(true);
+    m_trailingSpaceTimer->setInterval(trailingSpaceUpdateTimer);
+    QObject::connect(m_trailingSpaceTimer, &QTimer::timeout,
+                     m_object, &VEditorObject::doUpdateTrailingSpaceHighlights);
+
     m_extraSelections.resize((int)SelectionId::MaxSelection);
 
     updateFontAndPalette();
@@ -80,16 +89,54 @@ void VEditor::labelTimerTimeout()
     m_wrapLabel->hide();
 }
 
+void VEditor::updateTrailingSpaceHighlights()
+{
+    if (m_trailingSpaceSelectionTS != m_timeStamp) {
+        m_trailingSpaceTimer->start();
+    } else {
+        highlightExtraSelections(false);
+    }
+}
+
 void VEditor::doHighlightExtraSelections()
 {
     int nrExtra = m_extraSelections.size();
     Q_ASSERT(nrExtra == (int)SelectionId::MaxSelection);
     QList<QTextEdit::ExtraSelection> extraSelects;
     for (int i = 0; i < nrExtra; ++i) {
-        extraSelects.append(m_extraSelections[i]);
+        if (i == (int)SelectionId::TrailingSapce) {
+            filterTrailingSpace(extraSelects, m_extraSelections[i]);
+        } else {
+            extraSelects.append(m_extraSelections[i]);
+        }
     }
 
     setExtraSelectionsW(extraSelects);
+}
+
+void VEditor::doUpdateTrailingSpaceHighlights()
+{
+    if (!g_config->getEnableTrailingSpaceHighlight()) {
+        QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::TrailingSapce];
+        if (!selects.isEmpty()) {
+            selects.clear();
+            highlightExtraSelections(true);
+        }
+
+        m_trailingSpaceSelectionTS = m_timeStamp;
+        return;
+    }
+
+    QTextCharFormat format;
+    format.setBackground(m_trailingSpaceColor);
+    QString text("\\s+$");
+    highlightTextAll(text,
+                     FindOption::RegularExpression,
+                     SelectionId::TrailingSapce,
+                     format);
+
+    m_trailingSpaceSelectionTS = m_timeStamp;
+    highlightExtraSelections(true);
 }
 
 void VEditor::updateEditConfig()
@@ -109,13 +156,13 @@ void VEditor::highlightOnCursorPositionChanged()
 
     QTextCursor cursor = textCursorW();
     if (lastCursor.isNull() || cursor.blockNumber() != lastCursor.blockNumber()) {
+        updateTrailingSpaceHighlights();
         highlightCurrentLine();
-        highlightTrailingSpace();
     } else {
         // Judge whether we have trailing space at current line.
         QString text = cursor.block().text();
         if (text.rbegin()->isSpace()) {
-            highlightTrailingSpace();
+            updateTrailingSpaceHighlights();
         }
 
         // Handle word-wrap in one block.
@@ -127,6 +174,11 @@ void VEditor::highlightOnCursorPositionChanged()
     }
 
     lastCursor = cursor;
+}
+
+void VEditor::updateTimeStamp()
+{
+    ++m_timeStamp;
 }
 
 void VEditor::highlightCurrentLine()
@@ -172,44 +224,23 @@ void VEditor::highlightCurrentLine()
     highlightExtraSelections(true);
 }
 
-// Do not highlight trailing spaces with current cursor right behind.
-static void trailingSpaceFilter(VEditor *p_editor, QList<QTextEdit::ExtraSelection> &p_result)
+void VEditor::filterTrailingSpace(QList<QTextEdit::ExtraSelection> &p_selects,
+                                  const QList<QTextEdit::ExtraSelection> &p_src)
 {
-    QTextCursor cursor = p_editor->textCursorW();
+    QTextCursor cursor = textCursorW();
     if (!cursor.atBlockEnd()) {
+        p_selects.append(p_src);
         return;
     }
 
     int cursorPos = cursor.position();
-    for (auto it = p_result.begin(); it != p_result.end(); ++it) {
+    for (auto it = p_src.begin(); it != p_src.end(); ++it) {
         if (it->cursor.selectionEnd() == cursorPos) {
-            p_result.erase(it);
-
-            // There will be only one.
-            return;
+            continue;
+        } else {
+            p_selects.append(*it);
         }
     }
-}
-
-void VEditor::highlightTrailingSpace()
-{
-    if (!g_config->getEnableTrailingSpaceHighlight()) {
-        QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::TrailingSapce];
-        if (!selects.isEmpty()) {
-            selects.clear();
-            highlightExtraSelections(true);
-        }
-        return;
-    }
-
-    QTextCharFormat format;
-    format.setBackground(m_trailingSpaceColor);
-    QString text("\\s+$");
-    highlightTextAll(text,
-                     FindOption::RegularExpression,
-                     SelectionId::TrailingSapce,
-                     format,
-                     trailingSpaceFilter);
 }
 
 void VEditor::highlightExtraSelections(bool p_now)

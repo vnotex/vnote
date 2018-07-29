@@ -212,6 +212,8 @@ protected:
     // Do some highlight on cursor position changed.
     void highlightOnCursorPositionChanged();
 
+    void updateTimeStamp();
+
     // Highlight selected text.
     void highlightSelectedWord();
 
@@ -246,7 +248,9 @@ protected:
 private:
     friend class VEditorObject;
 
-    void highlightTrailingSpace();
+    // Filter out the trailing space right before cursor.
+    void filterTrailingSpace(QList<QTextEdit::ExtraSelection> &p_selects,
+                             const QList<QTextEdit::ExtraSelection> &p_src);
 
     // Trigger the timer to request highlight.
     // If @p_now is true, stop the timer and highlight immediately.
@@ -310,6 +314,9 @@ private:
     // Timer for extra selections highlight.
     QTimer *m_highlightTimer;
 
+    // Timer for update trailing space.
+    QTimer *m_trailingSpaceTimer;
+
     bool m_readyToScroll;
     bool m_mouseMoveScrolled;
     int m_oriMouseX;
@@ -318,12 +325,20 @@ private:
     // Whether enable input method.
     bool m_enableInputMethod;
 
+    TimeStamp m_timeStamp;
+
+    TimeStamp m_trailingSpaceSelectionTS;
+
 // Functions for private slots.
 private:
     void labelTimerTimeout();
 
     // Do the real work to highlight extra selections.
     void doHighlightExtraSelections();
+
+    void updateTrailingSpaceHighlights();
+
+    void doUpdateTrailingSpaceHighlights();
 };
 
 
@@ -385,6 +400,11 @@ private slots:
     void doHighlightExtraSelections()
     {
         m_editor->doHighlightExtraSelections();
+    }
+
+    void doUpdateTrailingSpaceHighlights()
+    {
+        m_editor->doUpdateTrailingSpaceHighlights();
     }
 
 private:

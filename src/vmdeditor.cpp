@@ -52,6 +52,14 @@ VMdEditor::VMdEditor(VFile *p_file,
                 highlightOnCursorPositionChanged();
             });
 
+    connect(document(), &QTextDocument::contentsChange,
+            this, [this](int p_position, int p_charsRemoved, int p_charsAdded) {
+                Q_UNUSED(p_position);
+                if (p_charsAdded > 0 || p_charsAdded > 0) {
+                    updateTimeStamp();
+                }
+            });
+
     connect(this, &VTextEdit::selectionChanged,
             this, [this]() {
                 highlightSelectedWord();
