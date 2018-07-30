@@ -4,7 +4,6 @@
 #include <QTextCharFormat>
 
 #include "vconstants.h"
-#include "vtextblockdata.h"
 
 extern "C" {
 #include <pmh_parser.h>
@@ -26,6 +25,18 @@ struct HLUnit
     unsigned long start;
     unsigned long length;
     unsigned int styleIndex;
+
+    bool operator==(const HLUnit &p_a) const
+    {
+        return start == p_a.start
+               && length == p_a.length
+               && styleIndex == p_a.styleIndex;
+    }
+
+    QString toString() const
+    {
+        return QString("HLUnit %1 %2 %3").arg(start).arg(length).arg(styleIndex);
+    }
 };
 
 struct HLUnitStyle
@@ -33,6 +44,15 @@ struct HLUnitStyle
     unsigned long start;
     unsigned long length;
     QString style;
+
+    bool operator==(const HLUnitStyle &p_a) const
+    {
+        if (start != p_a.start || length != p_a.length) {
+            return false;
+        }
+
+        return style == p_a.style;
+    }
 };
 
 // Fenced code block only.

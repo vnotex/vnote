@@ -4,6 +4,7 @@ VTextBlockData::VTextBlockData()
     : QTextBlockUserData(),
       m_timeStamp(0),
       m_codeBlockTimeStamp(0),
+      m_cacheValid(false),
       m_codeBlockIndentation(-1)
 {
 }

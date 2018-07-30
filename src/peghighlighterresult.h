@@ -1,6 +1,8 @@
 #ifndef PEGHIGHLIGHTERRESULT_H
 #define PEGHIGHLIGHTERRESULT_H
 
+#include <QSet>
+
 #include "vconstants.h"
 #include "pegparser.h"
 

@@ -28,6 +28,7 @@
 #include <QTreeWidgetItem>
 #include <QFormLayout>
 #include <QInputDialog>
+#include <QFontDatabase>
 
 #include "vorphanfile.h"
 #include "vnote.h"

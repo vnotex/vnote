@@ -3,8 +3,10 @@
 
 #include <QTextBlockUserData>
 #include <QVector>
+#include <QDebug>
 
 #include "vconstants.h"
+#include "markdownhighlighterdata.h"
 
 // Sources of the preview.
 enum class PreviewSource
@@ -173,6 +175,22 @@ public:
 
     void setCodeBlockTimeStamp(TimeStamp p_ts);
 
+    bool isBlockHighlightCacheMatched(const QVector<HLUnit> &p_highlight) const;
+
+    QVector<HLUnit> &getBlockHighlightCache();
+
+    void setBlockHighlightCache(const QVector<HLUnit> &p_highlight);
+
+    bool isCodeBlockHighlightCacheMatched(const QVector<HLUnitStyle> &p_highlight) const;
+
+    QVector<HLUnitStyle> &getCodeBlockHighlightCache();
+
+    void setCodeBlockHighlightCache(const QVector<HLUnitStyle> &p_highlight);
+
+    bool isCacheValid() const;
+
+    void setCacheValid(bool p_valid);
+
 private:
     // Check the order of elements.
     bool checkOrder() const;
@@ -182,6 +200,15 @@ private:
 
     // TimeStamp of the code block highlight result which has been applied to this block.
     TimeStamp m_codeBlockTimeStamp;
+
+    // Block highlight cache.
+    QVector<HLUnit> m_blockHighlightCache;
+
+    // Code block highlight cache.
+    QVector<HLUnitStyle> m_codeBlockHighlightCache;
+
+    // Whether the above two cahces are valid.
+    bool m_cacheValid;
 
     // Sorted by m_imageInfo.m_startPos, with no two element's position intersected.
     QVector<VPreviewInfo *> m_previews;
@@ -223,5 +250,71 @@ inline TimeStamp VTextBlockData::getCodeBlockTimeStamp() const
 inline void VTextBlockData::setCodeBlockTimeStamp(TimeStamp p_ts)
 {
     m_codeBlockTimeStamp = p_ts;
+}
+
+inline bool VTextBlockData::isBlockHighlightCacheMatched(const QVector<HLUnit> &p_highlight) const
+{
+    if (!m_cacheValid
+        || p_highlight.size() != m_blockHighlightCache.size()) {
+        return false;
+    }
+
+    int sz = p_highlight.size();
+    for (int i = 0; i < sz; ++i)
+    {
+        if (!(p_highlight[i] == m_blockHighlightCache[i])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+inline QVector<HLUnit> &VTextBlockData::getBlockHighlightCache()
+{
+    return m_blockHighlightCache;
+}
+
+inline void VTextBlockData::setBlockHighlightCache(const QVector<HLUnit> &p_highlight)
+{
+    m_blockHighlightCache = p_highlight;
+}
+
+inline bool VTextBlockData::isCodeBlockHighlightCacheMatched(const QVector<HLUnitStyle> &p_highlight) const
+{
+    if (!m_cacheValid
+        || p_highlight.size() != m_codeBlockHighlightCache.size()) {
+        return false;
+    }
+
+    int sz = p_highlight.size();
+    for (int i = 0; i < sz; ++i)
+    {
+        if (!(p_highlight[i] == m_codeBlockHighlightCache[i])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+inline QVector<HLUnitStyle> &VTextBlockData::getCodeBlockHighlightCache()
+{
+    return m_codeBlockHighlightCache;
+}
+
+inline void VTextBlockData::setCodeBlockHighlightCache(const QVector<HLUnitStyle> &p_highlight)
+{
+    m_codeBlockHighlightCache = p_highlight;
+}
+
+inline bool VTextBlockData::isCacheValid() const
+{
+    return m_cacheValid;
+}
+
+inline void VTextBlockData::setCacheValid(bool p_valid)
+{
+    m_cacheValid = p_valid;
 }
 #endif // VTEXTBLOCKDATA_H

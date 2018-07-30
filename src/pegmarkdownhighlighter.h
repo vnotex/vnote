@@ -90,7 +90,8 @@ private:
     // Highlight fenced code block according to VCodeBlockHighlightHelper result.
     void highlightCodeBlock(const QSharedPointer<PegHighlighterResult> &p_result,
                             int p_blockNum,
-                            const QString &p_text);
+                            const QString &p_text,
+                            QVector<HLUnitStyle> *p_cache);
 
     // Highlight color column in code block.
     void highlightCodeBlockColorColumn(const QString &p_text);
@@ -114,10 +115,11 @@ private:
     void processFastParseResult(const QSharedPointer<PegParseResult> &p_result);
 
     bool highlightBlockOne(const QVector<QVector<HLUnit>> &p_highlights,
-                           int p_blockNum);
+                           int p_blockNum,
+                           QVector<HLUnit> *p_cache);
 
     // To avoid line height jitter.
-    void preHighlightSingleFormatBlock(const QVector<QVector<HLUnit>> &p_highlights,
+    bool preHighlightSingleFormatBlock(const QVector<QVector<HLUnit>> &p_highlights,
                                        int p_blockNum,
                                        const QString &p_text);
 
@@ -126,6 +128,10 @@ private:
     void rehighlightBlocks();
 
     bool rehighlightBlockRange(int p_first, int p_last);
+
+    TimeStamp nextCodeBlockTimeStamp();
+
+    static VTextBlockData *getBlockData(const QTextBlock &p_block);
 
     static bool isEmptyCodeBlockHighlights(const QVector<QVector<HLUnitStyle>> &p_highlights);
 
@@ -142,6 +148,8 @@ private:
     VMdEditor *m_editor;
 
     TimeStamp m_timeStamp;
+
+    TimeStamp m_codeBlockTimeStamp;
 
     QVector<HighlightingStyle> m_styles;
     QHash<QString, QTextCharFormat> m_codeBlockStyles;
@@ -299,5 +307,15 @@ inline bool PegMarkdownHighlighter::isEmptyCodeBlockHighlights(const QVector<QVe
     }
 
     return empty;
+}
+
+inline VTextBlockData *PegMarkdownHighlighter::getBlockData(const QTextBlock &p_block)
+{
+    return static_cast<VTextBlockData *>(p_block.userData());
+}
+
+inline TimeStamp PegMarkdownHighlighter::nextCodeBlockTimeStamp()
+{
+    return ++m_codeBlockTimeStamp;
 }
 #endif // PEGMARKDOWNHIGHLIGHTER_H

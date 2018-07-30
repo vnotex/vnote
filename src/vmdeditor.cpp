@@ -55,7 +55,7 @@ VMdEditor::VMdEditor(VFile *p_file,
     connect(document(), &QTextDocument::contentsChange,
             this, [this](int p_position, int p_charsRemoved, int p_charsAdded) {
                 Q_UNUSED(p_position);
-                if (p_charsAdded > 0 || p_charsAdded > 0) {
+                if (p_charsRemoved > 0 || p_charsAdded > 0) {
                     updateTimeStamp();
                 }
             });

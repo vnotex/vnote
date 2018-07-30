@@ -2,6 +2,7 @@
 
 #include <QInputMethod>
 #include <QGuiApplication>
+#include <QKeyEvent>
 
 #include "vpalette.h"
 
