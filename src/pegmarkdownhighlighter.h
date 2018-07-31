@@ -131,6 +131,8 @@ private:
 
     TimeStamp nextCodeBlockTimeStamp();
 
+    bool isFastParseBlock(int p_blockNum) const;
+
     static VTextBlockData *getBlockData(const QTextBlock &p_block);
 
     static bool isEmptyCodeBlockHighlights(const QVector<QVector<HLUnitStyle>> &p_highlights);
@@ -162,6 +164,9 @@ private:
     QSharedPointer<PegHighlighterResult> m_result;
 
     QSharedPointer<PegHighlighterFastResult> m_fastResult;
+
+    // Block range of fast parse, inclusive.
+    QPair<int, int> m_fastParseBlocks;
 
     // Block number of those blocks which possible contains previewed image.
     QSet<int> m_possiblePreviewBlocks;
@@ -317,5 +322,10 @@ inline VTextBlockData *PegMarkdownHighlighter::getBlockData(const QTextBlock &p_
 inline TimeStamp PegMarkdownHighlighter::nextCodeBlockTimeStamp()
 {
     return ++m_codeBlockTimeStamp;
+}
+
+inline bool PegMarkdownHighlighter::isFastParseBlock(int p_blockNum) const
+{
+    return p_blockNum >= m_fastParseBlocks.first && p_blockNum <= m_fastParseBlocks.second;
 }
 #endif // PEGMARKDOWNHIGHLIGHTER_H

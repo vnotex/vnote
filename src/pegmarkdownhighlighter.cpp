@@ -56,6 +56,8 @@ void PegMarkdownHighlighter::init(const QVector<HighlightingStyle> &p_styles,
     m_result.reset(new PegHighlighterResult());
     m_fastResult.reset(new PegHighlighterFastResult());
 
+    m_fastParseBlocks = QPair<int, int>(-1, -1);
+
     m_parser = new PegParser(this);
     connect(m_parser, &PegParser::parseResultReady,
             this, &PegMarkdownHighlighter::handleParseResult);
@@ -78,14 +80,9 @@ void PegMarkdownHighlighter::init(const QVector<HighlightingStyle> &p_styles,
                     return;
                 }
 
-                const QVector<QVector<HLUnit>> &hls = result->m_blocksHighlights;
-                for (int i = 0; i < hls.size(); ++i) {
-                    if (!hls[i].isEmpty()) {
-                        QTextBlock block = m_doc->findBlockByNumber(i);
-                        if (PegMarkdownHighlighter::blockTimeStamp(block) != m_timeStamp) {
-                            rehighlightBlock(block);
-                        }
-                    }
+                for (int i = m_fastParseBlocks.first; i <= m_fastParseBlocks.second; ++i) {
+                    QTextBlock block = m_doc->findBlockByNumber(i);
+                    rehighlightBlock(block);
                 }
             });
 
@@ -135,14 +132,16 @@ void PegMarkdownHighlighter::highlightBlock(const QString &p_text)
 
         highlightBlockOne(result->m_blocksHighlights, blockNum, cacheValid ? cache : NULL);
     } else {
-        if (preHighlightSingleFormatBlock(m_fastResult->m_blocksHighlights, blockNum, p_text)) {
-            cacheValid = false;
-        }
-
         // If fast result cover this block, we do not need to use the outdated one.
-        if (highlightBlockOne(m_fastResult->m_blocksHighlights, blockNum, NULL)) {
+        if (isFastParseBlock(blockNum)) {
+            preHighlightSingleFormatBlock(m_fastResult->m_blocksHighlights, blockNum, p_text);
+            highlightBlockOne(m_fastResult->m_blocksHighlights, blockNum, NULL);
             cacheValid = false;
         } else {
+            if (preHighlightSingleFormatBlock(result->m_blocksHighlights, blockNum, p_text)) {
+                cacheValid = false;
+            }
+
             highlightBlockOne(result->m_blocksHighlights, blockNum, cacheValid ? cache : NULL);
         }
     }
@@ -287,6 +286,9 @@ void PegMarkdownHighlighter::startFastParse(int p_position, int p_charsRemoved, 
 
         block = block.next();
     }
+
+    m_fastParseBlocks.first = firstBlockNum;
+    m_fastParseBlocks.second = lastBlockNum;
 
     QSharedPointer<PegParseConfig> config(new PegParseConfig());
     config->m_timeStamp = m_timeStamp;
@@ -671,85 +673,65 @@ void PegMarkdownHighlighter::getFastParseBlockRange(int p_position,
     }
 
     int num = lastBlock.blockNumber() - firstBlock.blockNumber() + 1;
-    if (num >= maxNumOfBlocks) {
+    if (num > maxNumOfBlocks) {
         p_firstBlock = p_lastBlock = -1;
         return;
     }
 
     // Look up.
-    // Find empty block.
-    // When firstBlock is an empty block at first, we should always skip it.
     while (firstBlock.isValid() && num < maxNumOfBlocks) {
-        QTextBlock block = firstBlock.previous();
-        if (block.isValid() && !VEditUtils::isEmptyBlock(block)) {
-            firstBlock = block;
-            ++num;
-        } else {
+        QTextBlock preBlock = firstBlock.previous();
+        if (!preBlock.isValid()) {
             break;
         }
-    }
 
-    // Cross code block.
-    while (firstBlock.isValid() && num < maxNumOfBlocks) {
+        // Check code block.
         int state = firstBlock.userState();
         if (state == HighlightBlockState::CodeBlock
             || state == HighlightBlockState::CodeBlockEnd) {
-            QTextBlock block = firstBlock.previous();
-            if (block.isValid()) {
-                firstBlock = block;
-                ++num;
-            } else {
-                break;
-            }
-        } else {
-            break;
+            goto goup;
         }
-    }
 
-    // Till the block with 0 indentation to handle contents in list.
-    while (firstBlock.isValid() && num < maxNumOfBlocks) {
-        if (VEditUtils::fetchIndentation(firstBlock) == 0
-            && !VEditUtils::isEmptyBlock(firstBlock)) {
-            break;
-        } else {
-            QTextBlock block = firstBlock.previous();
-            if (block.isValid()) {
-                firstBlock = block;
-                ++num;
-            } else {
+        // Empty block.
+        if (VEditUtils::isEmptyBlock(firstBlock)) {
+            goto goup;
+        }
+
+        int indent = VEditUtils::fetchIndentation(firstBlock);
+        if (indent == 0) {
+            // If previous block is empty, then we could stop now.
+            if (VEditUtils::isEmptyBlock(preBlock)) {
                 break;
             }
         }
+
+goup:
+        firstBlock = preBlock;
+        ++num;
     }
 
     // Look down.
-    // Find empty block.
-    // If lastBlock is an empty block at first, we should always skip it.
     while (lastBlock.isValid() && num < maxNumOfBlocks) {
-        QTextBlock block = lastBlock.next();
-        if (block.isValid() && !VEditUtils::isEmptyBlock(block)) {
-            lastBlock = block;
-            ++num;
-        } else {
+        QTextBlock nextBlock = lastBlock.next();
+        if (!nextBlock.isValid()) {
             break;
         }
-    }
 
-    // Cross code block.
-    while (lastBlock.isValid() && num < maxNumOfBlocks) {
+        // Check code block.
         int state = lastBlock.userState();
-        if (state == HighlightBlockState::CodeBlock
-            || state == HighlightBlockState::CodeBlockStart) {
-            QTextBlock block = lastBlock.next();
-            if (block.isValid()) {
-                lastBlock = block;
-                ++num;
-            } else {
-                break;
-            }
-        } else {
+        if (state == HighlightBlockState::CodeBlockStart
+            || state == HighlightBlockState::CodeBlock) {
+            goto godown;
+        }
+
+        // Empty block.
+        if (VEditUtils::isEmptyBlock(nextBlock)) {
             break;
         }
+
+godown:
+        lastBlock = nextBlock;
+        ++num;
     }
 
     p_firstBlock = firstBlock.blockNumber();
