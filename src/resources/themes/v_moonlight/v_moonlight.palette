@@ -7,7 +7,7 @@ mdhl_file=v_moonlight.mdhl
 css_file=v_moonlight.css
 codeblock_css_file=v_moonlight_codeblock.css
 mermaid_css_file=v_moonlight_mermaid.css
-version=18
+version=19
 
 ; This mapping will be used to translate colors when the content of HTML is copied
 ; without background. You could just specify the foreground colors mapping here.
@@ -305,6 +305,18 @@ listview_item_selected_avtive_fg=@active_fg
 listview_item_selected_avtive_bg=@active_bg
 listview_item_selected_inactive_fg=@inactive_fg
 listview_item_selected_inactive_bg=@inactive_bg
+
+; QAbstractItemView for TextEdit Completer.
+abstractitemview_textedit_fg=@content_fg
+abstractitemview_textedit_bg=#323841
+abstractitemview_textedit_item_hover_fg=@master_fg
+abstractitemview_textedit_item_hover_bg=@master_hover_bg
+abstractitemview_textedit_item_selected_fg=@master_fg
+abstractitemview_textedit_item_selected_bg=@master_bg
+abstractitemview_textedit_item_selected_avtive_fg=@master_fg
+abstractitemview_textedit_item_selected_avtive_bg=@master_focus_bg
+abstractitemview_textedit_item_selected_inactive_fg=@inactive_fg
+abstractitemview_textedit_item_selected_inactive_bg=@inactive_bg
 
 ; Splitter.
 splitter_handle_bg=@border_bg

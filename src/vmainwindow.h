@@ -128,6 +128,8 @@ public:
 
     VExplorer *getExplorer() const;
 
+    void setCaptainModeEnabled(bool p_enabled);
+
 signals:
     // Emit when editor related configurations were changed by user.
     void editorConfigUpdated();

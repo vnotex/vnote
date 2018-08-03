@@ -6,11 +6,13 @@
 #include <QList>
 #include <QTextEdit>
 #include <QColor>
+#include <QSharedPointer>
 
 #include "veditconfig.h"
 #include "vconstants.h"
 #include "vfile.h"
 #include "vwordcountinfo.h"
+#include "vtexteditcompleter.h"
 
 class QWidget;
 class VEditorObject;
@@ -39,7 +41,9 @@ enum class SelectionId {
 class VEditor
 {
 public:
-    explicit VEditor(VFile *p_file, QWidget *p_editor);
+    explicit VEditor(VFile *p_file,
+                     QWidget *p_editor,
+                     const QSharedPointer<VTextEditCompleter> &p_completer);
 
     virtual ~VEditor();
 
@@ -154,6 +158,15 @@ public:
 
     virtual bool setCursorPosition(int p_blockNumber, int p_posInBlock);
 
+    QString fetchCompletionPrefix() const;
+
+    // Request text completion.
+    virtual void requestCompletion(bool p_reversed);
+
+    virtual bool isCompletionActivated() const;
+
+    virtual void insertCompletion(const QString &p_prefix, const QString &p_completion);
+
 // Wrapper functions for QPlainTextEdit/QTextEdit.
 // Ends with W to distinguish it from the original interfaces.
 public:
@@ -201,6 +214,10 @@ public:
 
     virtual void ensureCursorVisibleW() = 0;
 
+    virtual QRect cursorRectW() = 0;
+
+    virtual QRect cursorRectW(const QTextCursor &p_cursor) = 0;
+
 protected:
     void init();
 
@@ -234,6 +251,8 @@ protected:
                                 QVariant &p_var) const;
 
     bool handleWheelEvent(QWheelEvent *p_event);
+
+    virtual int lineNumberAreaWidth() const = 0;
 
     QWidget *m_editor;
 
@@ -288,6 +307,8 @@ private:
     // Highlight @p_cursor as the searched keyword under cursor.
     void highlightSearchedWordUnderCursor(const QTextCursor &p_cursor);
 
+    QStringList generateCompletionCandidates() const;
+
     QLabel *m_wrapLabel;
     QTimer *m_labelTimer;
 
@@ -328,6 +349,8 @@ private:
     TimeStamp m_timeStamp;
 
     TimeStamp m_trailingSpaceSelectionTS;
+
+    QSharedPointer<VTextEditCompleter> m_completer;
 
 // Functions for private slots.
 private:

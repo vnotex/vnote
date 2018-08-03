@@ -930,6 +930,46 @@ QListView::item:disabled {
 }
 /* End QListView */
 
+/* QAbstractItemView for TextEdit Completer popup*/
+QAbstractItemView[TextEdit="true"] {
+    color: @abstractitemview_textedit_fg;
+    background: @abstractitemview_textedit_bg;
+    show-decoration-selected: 0;
+    border: none;
+    selection-background-color: transparent;
+    outline: none;
+}
+
+QAbstractItemView[TextEdit="true"]::item {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+QAbstractItemView[TextEdit="true"]::item:hover {
+    color: @abstractitemview_textedit_item_hover_fg;
+    background: @abstractitemview_textedit_item_hover_bg;
+}
+
+QAbstractItemView[TextEdit="true"]::item:selected {
+    color: @abstractitemview_textedit_item_selected_fg;
+    background: @abstractitemview_textedit_item_selected_bg;
+}
+
+QAbstractItemView[TextEdit="true"]::item:selected:active {
+    color: @abstractitemview_textedit_item_selected_active_fg;
+    background: @abstractitemview_textedit_item_selected_active_bg;
+}
+
+QAbstractItemView[TextEdit="true"]::item:selected:!active {
+    color: @abstractitemview_textedit_item_selected_inactive_fg;
+    background: @abstractitemview_textedit_item_selected_inactive_bg;
+}
+
+QAbstractItemView[TextEdit="true"]::item:disabled {
+    background: transparent;
+}
+/* End QAbstractItemView */
+
 /* QSplitter */
 QSplitter#MainSplitter {
     border: none;

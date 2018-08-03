@@ -7,7 +7,7 @@ mdhl_file=v_pure.mdhl
 css_file=v_pure.css
 codeblock_css_file=v_pure_codeblock.css
 mermaid_css_file=v_pure_mermaid.css
-version=16
+version=17
 
 [phony]
 ; Abstract color attributes.
@@ -299,6 +299,18 @@ listview_item_selected_avtive_fg=@active_fg
 listview_item_selected_avtive_bg=@active_bg
 listview_item_selected_inactive_fg=@inactive_fg
 listview_item_selected_inactive_bg=@inactive_bg
+
+; QAbstractItemView for TextEdit Completer.
+abstractitemview_textedit_fg=#content_fg
+abstractitemview_textedit_bg=#DADADA
+abstractitemview_textedit_item_hover_fg=@abstractitemview_textedit_fg
+abstractitemview_textedit_item_hover_bg=@master_hover_bg
+abstractitemview_textedit_item_selected_fg=@abstractitemview_textedit_fg
+abstractitemview_textedit_item_selected_bg=@master_light_bg
+abstractitemview_textedit_item_selected_avtive_fg=@abstractitemview_textedit_fg
+abstractitemview_textedit_item_selected_avtive_bg=@master_focus_bg
+abstractitemview_textedit_item_selected_inactive_fg=@inactive_fg
+abstractitemview_textedit_item_selected_inactive_bg=@inactive_bg
 
 ; Splitter.
 splitter_handle_bg=@border_bg

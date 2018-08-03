@@ -28,6 +28,7 @@ public:
     VMdEditor(VFile *p_file,
               VDocument *p_doc,
               MarkdownConverterType p_type,
+              const QSharedPointer<VTextEditCompleter> &p_completer,
               QWidget *p_parent = nullptr);
 
     void beginEdit() Q_DECL_OVERRIDE;
@@ -189,6 +190,16 @@ public:
         ensureCursorVisible();
     }
 
+    QRect cursorRectW() Q_DECL_OVERRIDE
+    {
+        return cursorRect();
+    }
+
+    QRect cursorRectW(const QTextCursor &p_cursor) Q_DECL_OVERRIDE
+    {
+        return cursorRect(p_cursor);
+    }
+
 signals:
     // Signal when headers change.
     void headersChanged(const QVector<VTableOfContentItem> &p_headers);
@@ -222,6 +233,8 @@ protected:
     void insertFromMimeData(const QMimeData *p_source) Q_DECL_OVERRIDE;
 
     void wheelEvent(QWheelEvent *p_event) Q_DECL_OVERRIDE;
+
+    int lineNumberAreaWidth() const Q_DECL_OVERRIDE;
 
 private slots:
     // Update m_headers according to elements.

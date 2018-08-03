@@ -10,10 +10,13 @@
 #include <QPair>
 #include <QSplitter>
 #include <QStack>
+#include <QSharedPointer>
+
 #include "vnotebook.h"
 #include "veditwindow.h"
 #include "vnavigationmode.h"
 #include "vfilesessioninfo.h"
+#include "vtexteditcompleter.h"
 
 class VFile;
 class VDirectory;
@@ -94,6 +97,8 @@ public:
 
     // Distribute all the splits evenly.
     void distributeSplits();
+
+    QSharedPointer<VTextEditCompleter> getCompleter() const;
 
 signals:
     // Emit when current window's tab status updated.
@@ -244,6 +249,8 @@ private:
     bool m_autoSave;
 
     VMathJaxPreviewHelper *m_mathPreviewHelper;
+
+    QSharedPointer<VTextEditCompleter> m_completer;
 };
 
 inline VEditWindow* VEditArea::getWindow(int windowIndex) const
@@ -265,5 +272,15 @@ inline VFindReplaceDialog *VEditArea::getFindReplaceDialog() const
 inline VMathJaxPreviewHelper *VEditArea::getMathJaxPreviewHelper() const
 {
     return m_mathPreviewHelper;
+}
+
+inline QSharedPointer<VTextEditCompleter> VEditArea::getCompleter() const
+{
+    if (m_completer.isNull()) {
+        VEditArea *ea = const_cast<VEditArea *>(this);
+        ea->m_completer.reset(new VTextEditCompleter(ea));
+    }
+
+    return m_completer;
 }
 #endif // VEDITAREA_H

@@ -142,7 +142,8 @@ SOURCES += main.cpp\
     vtagexplorer.cpp \
     pegmarkdownhighlighter.cpp \
     pegparser.cpp \
-    peghighlighterresult.cpp
+    peghighlighterresult.cpp \
+    vtexteditcompleter.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -279,7 +280,8 @@ HEADERS  += vmainwindow.h \
     markdownhighlighterdata.h \
     pegmarkdownhighlighter.h \
     pegparser.h \
-    peghighlighterresult.h
+    peghighlighterresult.h \
+    vtexteditcompleter.h
 
 RESOURCES += \
     vnote.qrc \

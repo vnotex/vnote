@@ -510,6 +510,12 @@ QListView::item {
 }
 /* End QListView */
 
+/* QAbstractItemView for TextEdit Completer popup*/
+QAbstractItemView[TextEdit="true"] {
+    border: 1px solid @border_bg;
+}
+/* End QAbstractItemView */
+
 /* QSplitter */
 QSplitter {
     border: none;

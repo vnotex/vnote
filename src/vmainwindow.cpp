@@ -3343,3 +3343,8 @@ void VMainWindow::focusEditArea() const
 
     widget->setFocus();
 }
+
+void VMainWindow::setCaptainModeEnabled(bool p_enabled)
+{
+    m_captain->setCaptainModeEnabled(p_enabled);
+}

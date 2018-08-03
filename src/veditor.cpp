@@ -15,7 +15,9 @@ extern VConfigManager *g_config;
 
 extern VMetaWordManager *g_mwMgr;
 
-VEditor::VEditor(VFile *p_file, QWidget *p_editor)
+VEditor::VEditor(VFile *p_file,
+                 QWidget *p_editor,
+                 const QSharedPointer<VTextEditCompleter> &p_completer)
     : m_editor(p_editor),
       m_object(new VEditorObject(this, p_editor)),
       m_file(p_file),
@@ -23,12 +25,16 @@ VEditor::VEditor(VFile *p_file, QWidget *p_editor)
       m_document(nullptr),
       m_enableInputMethod(true),
       m_timeStamp(0),
-      m_trailingSpaceSelectionTS(0)
+      m_trailingSpaceSelectionTS(0),
+      m_completer(p_completer)
 {
 }
 
 VEditor::~VEditor()
 {
+    if (m_completer->widget() == m_editor) {
+        m_completer->setWidget(NULL);
+    }
 }
 
 void VEditor::init()
@@ -161,8 +167,19 @@ void VEditor::highlightOnCursorPositionChanged()
     } else {
         // Judge whether we have trailing space at current line.
         QString text = cursor.block().text();
-        if (text.rbegin()->isSpace()) {
-            updateTrailingSpaceHighlights();
+        if (!text.isEmpty()) {
+            auto it = text.rbegin();
+            bool needUpdate = it->isSpace();
+            if (!needUpdate
+                && cursor.atBlockEnd()
+                && text.size() > 1) {
+                ++it;
+                needUpdate = it->isSpace();
+            }
+
+            if (needUpdate) {
+                updateTrailingSpaceHighlights();
+            }
         }
 
         // Handle word-wrap in one block.
@@ -228,14 +245,15 @@ void VEditor::filterTrailingSpace(QList<QTextEdit::ExtraSelection> &p_selects,
                                   const QList<QTextEdit::ExtraSelection> &p_src)
 {
     QTextCursor cursor = textCursorW();
-    if (!cursor.atBlockEnd()) {
-        p_selects.append(p_src);
-        return;
-    }
-
-    int cursorPos = cursor.position();
+    bool blockEnd = cursor.atBlockEnd();
+    int blockNum = cursor.blockNumber();
     for (auto it = p_src.begin(); it != p_src.end(); ++it) {
-        if (it->cursor.selectionEnd() == cursorPos) {
+        if (blockEnd && it->cursor.blockNumber() == blockNum) {
+            // When cursor is at block end, we do not display any trailing space
+            // at current line.
+            continue;
+        } else if (!it->cursor.atBlockEnd()) {
+            // Obsolete trailing space.
             continue;
         } else {
             p_selects.append(*it);
@@ -1099,4 +1117,92 @@ bool VEditor::setCursorPosition(int p_blockNumber, int p_posInBlock)
     cursor.setPosition(block.position() + p_posInBlock);
     setTextCursorW(cursor);
     return true;
+}
+
+static Qt::CaseSensitivity completionCaseSensitivity(const QString &p_text)
+{
+    bool upperCase = false;
+    for (int i = 0; i < p_text.size(); ++i) {
+        if (p_text[i].isUpper()) {
+            upperCase = true;
+            break;
+        }
+    }
+
+    return upperCase ? Qt::CaseSensitive : Qt::CaseInsensitive;
+}
+
+void VEditor::requestCompletion(bool p_reversed)
+{
+    QTextCursor cursor = textCursorW();
+    cursor.clearSelection();
+    setTextCursorW(cursor);
+
+    QStringList words = generateCompletionCandidates();
+    QString prefix = fetchCompletionPrefix();
+    // Smart case.
+    Qt::CaseSensitivity cs = completionCaseSensitivity(prefix);
+
+    cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::MoveAnchor, prefix.size());
+    QRect popupRect = cursorRectW(cursor);
+    popupRect.setLeft(popupRect.left() + lineNumberAreaWidth());
+
+    m_completer->performCompletion(words, prefix, cs, p_reversed, popupRect, this);
+}
+
+bool VEditor::isCompletionActivated() const
+{
+    if (m_completer->widget() == m_editor
+        && m_completer->isPopupVisible()) {
+        return true;
+    }
+
+    return false;
+}
+
+QStringList VEditor::generateCompletionCandidates() const
+{
+    QString content = getContent();
+    QTextCursor cursor = textCursorW();
+    int start, end;
+    VEditUtils::findCurrentWord(cursor, start, end);
+
+    QRegExp reg("\\W+");
+
+    QStringList ret = content.mid(end).split(reg, QString::SkipEmptyParts);
+    ret.append(content.left(start).split(reg, QString::SkipEmptyParts));
+    ret.removeDuplicates();
+    return ret;
+}
+
+QString VEditor::fetchCompletionPrefix() const
+{
+    QTextCursor cursor = textCursorW();
+    if (cursor.atBlockStart()) {
+        return QString();
+    }
+
+    int pos = cursor.position() - 1;
+    int blockPos = cursor.block().position();
+    QString prefix;
+    while (pos >= blockPos) {
+        QChar ch = m_document->characterAt(pos);
+        if (ch.isSpace()) {
+            break;
+        }
+
+        prefix.prepend(ch);
+        --pos;
+    }
+
+    return prefix;
+}
+
+// @p_prefix may be longer than @p_completion.
+void VEditor::insertCompletion(const QString &p_prefix, const QString &p_completion)
+{
+    QTextCursor cursor = textCursorW();
+    cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::KeepAnchor, p_prefix.size());
+    cursor.insertText(p_completion);
+    setTextCursorW(cursor);
 }

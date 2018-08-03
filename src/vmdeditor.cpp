@@ -32,9 +32,10 @@ extern VConfigManager *g_config;
 VMdEditor::VMdEditor(VFile *p_file,
                      VDocument *p_doc,
                      MarkdownConverterType p_type,
+                     const QSharedPointer<VTextEditCompleter> &p_completer,
                      QWidget *p_parent)
     : VTextEdit(p_parent),
-      VEditor(p_file, this),
+      VEditor(p_file, this, p_completer),
       m_pegHighlighter(NULL),
       m_freshEdit(true),
       m_textToHtmlDialog(NULL),
@@ -1410,4 +1411,9 @@ void VMdEditor::setFontAndPaletteByStyleSheet(const QFont &p_font, const QPalett
                          .arg(p_font.pointSize())
                          .arg(p_palette.color(QPalette::Text).name())
                          .arg(p_palette.color(QPalette::Base).name()));
+}
+
+int VMdEditor::lineNumberAreaWidth() const
+{
+    return VTextEdit::lineNumberAreaWidth();
 }

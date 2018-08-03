@@ -459,3 +459,8 @@ void VTextEdit::dragMoveEvent(QDragMoveEvent *p_event)
     // TODO: find out the rect of current cursor to update that rect only.
     update();
 }
+
+int VTextEdit::lineNumberAreaWidth() const
+{
+    return m_lineNumberArea->width();
+}

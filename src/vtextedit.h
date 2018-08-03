@@ -81,6 +81,8 @@ protected:
     // Return the Y offset of the content via the scrollbar.
     int contentOffsetY() const;
 
+    int lineNumberAreaWidth() const;
+
     void updateLineNumberAreaWidth(const QFontMetrics &p_metrics);
 
     void dragMoveEvent(QDragMoveEvent *p_event) Q_DECL_OVERRIDE;

@@ -66,7 +66,18 @@ Zoom in/out the page through the mouse scroll.
 Recover the page zoom factor to 100%.
 - `Ctrl+J/K`  
 Scroll page down/up without changing cursor.
-
+- `Ctrl+N/P`  
+Activate auto-completion.
+    - `Ctrl+N/P`  
+    Navigate through the completion list and insert current completion.
+    - `Ctrl+J/K`  
+    Navigate through the completion list.
+    - `Ctrl+E`  
+    Cancel completion.
+    - `Enter`  
+    Insert current completion.
+    - `Ctrl+[` or `Escape`  
+    Finish completion.
 
 #### Text Editing
 - `Ctrl+B`  

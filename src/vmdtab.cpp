@@ -473,7 +473,11 @@ void VMdTab::setupMarkdownEditor()
 {
     Q_ASSERT(!m_editor);
 
-    m_editor = new VMdEditor(m_file, m_document, m_mdConType, this);
+    m_editor = new VMdEditor(m_file,
+                             m_document,
+                             m_mdConType,
+                             m_editArea->getCompleter(),
+                             this);
     m_editor->setProperty("MainEditor", true);
     m_editor->setEditTab(this);
     int delta = g_config->getEditorZoomDelta();
