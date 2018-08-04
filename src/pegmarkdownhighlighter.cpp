@@ -697,8 +697,7 @@ void PegMarkdownHighlighter::getFastParseBlockRange(int p_position,
             goto goup;
         }
 
-        int indent = VEditUtils::fetchIndentation(firstBlock);
-        if (indent == 0) {
+        if (VEditUtils::fetchIndentation(firstBlock) == 0) {
             // If previous block is empty, then we could stop now.
             if (VEditUtils::isEmptyBlock(preBlock)) {
                 break;
