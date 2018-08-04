@@ -14,7 +14,7 @@ VNewNotebookDialog::VNewNotebookDialog(const QString &title, const QString &info
                                        QWidget *parent)
     : QDialog(parent),
       defaultName(defaultName), defaultPath(defaultPath),
-      m_importNotebook(false), m_manualPath(false), m_manualName(false),
+      m_importNotebook(false), m_importExternalProject(false), m_manualPath(false), m_manualName(false),
       m_notebooks(p_notebooks)
 {
     setupUI(title, info);
@@ -185,6 +185,11 @@ bool VNewNotebookDialog::isImportExistingNotebook() const
     return m_importNotebook;
 }
 
+bool VNewNotebookDialog::isImportExternalProject() const
+{
+    return m_importExternalProject;
+}
+
 void VNewNotebookDialog::showEvent(QShowEvent *event)
 {
     m_nameEdit->setFocus();
@@ -227,21 +232,24 @@ void VNewNotebookDialog::handleInputChanged()
         } else if (QFileInfo::exists(path)) {
             QDir dir(path);
             QStringList files = dir.entryList(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::Hidden);
-            if (files.isEmpty()) {
-                pathOk = true;
-            } else {
+            if (!files.isEmpty()) {
                 // Folder is not empty.
                 configExist = VConfigManager::directoryConfigExist(path);
                 if (configExist) {
-                    pathOk = true;
                     m_warnLabel->setText(infoText);
                 } else {
+                    QString warnText = tr("<span style=\"%1\">WARNING</span>: The folder chosen is NOT empty! "
+                                          "VNote will try to create a new notebook and import existing files.")
+                                          .arg(g_config->c_warningTextStyle);
                     m_warnLabel->setText(warnText);
+
+                    m_importExternalProject = true;
+                    // If ok button is clicked, automatically create a configuration file
+                    configExist = true;
                 }
 
                 showWarnLabel = true;
             }
-        } else {
             pathOk = true;
         }
     }

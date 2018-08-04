@@ -1,6 +1,7 @@
 #include "vnotebookselector.h"
 #include <QDebug>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QListWidget>
 #include <QAction>
 #include <QMenu>
@@ -118,6 +119,46 @@ int VNotebookSelector::itemIndexOfNotebook(const VNotebook *p_notebook) const
     return -1;
 }
 
+void VNotebookSelector::createConfigFiles(const QString &p_path)
+{
+    QDir root(p_path);
+    QStringList filters;
+    filters << "*.md" << "*.markdown";
+
+    QJsonObject dirJson;
+    dirJson[DirConfig::c_version] = "1";
+    dirJson[DirConfig::c_createdTime] = QDateTime::currentDateTime().toString(Qt::ISODate);
+
+    QJsonArray subDirs;
+    QJsonArray files;
+
+    QFileInfoList dirInfoList = root.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
+    QFileInfoList fileInfoList = root.entryInfoList(filters,QDir::Files);
+
+    for(const QFileInfo &dirInfo : dirInfoList) {
+        const QString dirname = dirInfo.fileName();
+        if (dirname != "_v_recycle_bin") {
+            QJsonObject item;
+            item[DirConfig::c_name] = dirname;
+            subDirs.append(item);
+
+            createConfigFiles(dirInfo.absoluteFilePath());
+        }
+    }
+
+    for(const QFileInfo &fileInfo : fileInfoList) {
+        QJsonObject item;
+        item[DirConfig::c_createdTime] = fileInfo.created().toString(Qt::ISODate);
+        item[DirConfig::c_name] = fileInfo.fileName();
+        files.append(item);
+    }
+
+    dirJson[DirConfig::c_subDirectories] = subDirs;
+    dirJson[DirConfig::c_files] = files;
+
+    g_config->writeDirectoryConfig(p_path,dirJson);
+}
+
 void VNotebookSelector::insertAddNotebookItem()
 {
     QListWidgetItem *item = new QListWidgetItem();
@@ -199,6 +240,9 @@ bool VNotebookSelector::newNotebook()
                               m_notebooks,
                               this);
     if (dialog.exec() == QDialog::Accepted) {
+        if(dialog.isImportExternalProject()) {
+            createConfigFiles(dialog.getPathInput());
+        }
         createNotebook(dialog.getNameInput(),
                        dialog.getPathInput(),
                        dialog.isImportExistingNotebook(),
