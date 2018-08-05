@@ -198,13 +198,6 @@ void VNewNotebookDialog::showEvent(QShowEvent *event)
 
 void VNewNotebookDialog::handleInputChanged()
 {
-    QString warnText = tr("<span style=\"%1\">WARNING</span>: The folder chosen is NOT empty! "
-                          "It is highly recommended to use an EMPTY and EXCLUSIVE folder for a new notebook.")
-                          .arg(g_config->c_warningTextStyle);
-    QString infoText = tr("<span style=\"%1\">INFO</span>: The folder chosen seems to be a root "
-                          "folder of a notebook created by VNote before. "
-                          "VNote will try to import it by reading the configuration file.")
-                          .arg("font-weight:bold;");
     bool pathOk = false;
     bool configExist = false;
     bool showWarnLabel = false;
@@ -236,20 +229,25 @@ void VNewNotebookDialog::handleInputChanged()
                 // Folder is not empty.
                 configExist = VConfigManager::directoryConfigExist(path);
                 if (configExist) {
+                    QString infoText = tr("<span style=\"%1\">INFO</span>: The folder chosen seems to be a root "
+                                          "folder of a notebook created by VNote before. "
+                                          "VNote will try to import it by reading the configuration file.")
+                                          .arg("font-weight:bold;");
                     m_warnLabel->setText(infoText);
                 } else {
                     QString warnText = tr("<span style=\"%1\">WARNING</span>: The folder chosen is NOT empty! "
-                                          "VNote will try to create a new notebook and import existing files.")
+                                          "It is highly recommended to use an EMPTY and EXCLUSIVE folder for a new notebook. "
+                                          "If continue, VNote will try to create a notebook based on existing "
+                                          "folders and files recursively.")
                                           .arg(g_config->c_warningTextStyle);
                     m_warnLabel->setText(warnText);
 
                     m_importExternalProject = true;
-                    // If ok button is clicked, automatically create a configuration file
-                    configExist = true;
                 }
 
                 showWarnLabel = true;
             }
+
             pathOk = true;
         } else {
             pathOk = true;

@@ -68,6 +68,7 @@ public:
                               QString *p_errMsg = NULL);
 
     const QVector<VDirectory *> &getSubDirs() const;
+    QVector<VDirectory *> &getSubDirs();
 
     const QString &getName() const;
     void setName(const QString &p_name);
@@ -76,7 +77,11 @@ public:
     const VDirectory *getParentDirectory() const;
     VNotebook *getNotebook();
     const VNotebook *getNotebook() const;
+
     const QVector<VNoteFile *> &getFiles() const;
+
+    QVector<VNoteFile *> &getFiles();
+
     QString fetchPath() const;
     QString fetchBasePath() const;
     QString fetchRelativePath() const;
@@ -121,6 +126,10 @@ public:
     static bool deleteDirectory(VDirectory *p_dir,
                                 bool p_skipRecycleBin = false,
                                 QString *p_errMsg = NULL);
+
+    static VDirectory *buildDirectory(const QString &p_path,
+                                      VDirectory *p_parent,
+                                      QString *p_errMsg);
 
 private:
     // Get the path of @p_dir recursively
@@ -173,6 +182,11 @@ inline const QVector<VDirectory *> &VDirectory::getSubDirs() const
     return m_subDirs;
 }
 
+inline QVector<VDirectory *> &VDirectory::getSubDirs()
+{
+    return m_subDirs;
+}
+
 inline const QString &VDirectory::getName() const
 {
     return m_name;
@@ -199,6 +213,11 @@ inline const VDirectory *VDirectory::getParentDirectory() const
 }
 
 inline const QVector<VNoteFile *> &VDirectory::getFiles() const
+{
+    return m_files;
+}
+
+inline QVector<VNoteFile *> &VDirectory::getFiles()
 {
     return m_files;
 }

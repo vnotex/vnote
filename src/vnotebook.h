@@ -111,6 +111,14 @@ public:
 
     QList<QString> collectFiles();
 
+    // Create configuration files recursively to build a notebook based on
+    // a external directory.
+    static bool buildNotebook(const QString &p_name,
+                              const QString &p_path,
+                              const QString &p_imgFolder,
+                              const QString &p_attachmentFolder,
+                              QString *p_errMsg = NULL);
+
 private:
     // Serialize current instance to json.
     QJsonObject toConfigJson() const;

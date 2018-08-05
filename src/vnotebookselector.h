@@ -71,9 +71,6 @@ private:
     // Return the item index of @p_notebook.
     int itemIndexOfNotebook(const VNotebook *p_notebook) const;
 
-    // Recursively create config files
-    void createConfigFiles(const QString &p_path);
-
     // If @p_import is true, we will use the existing config file.
     // If @p_imageFolder is empty, we will use the global one.
     // If @p_attachmentFolder is empty, we will use the global one.

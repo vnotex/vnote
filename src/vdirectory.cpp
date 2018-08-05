@@ -740,3 +740,65 @@ QList<QString> VDirectory::collectFiles()
 
     return files;
 }
+
+VDirectory *VDirectory::buildDirectory(const QString &p_path,
+                                       VDirectory *p_parent,
+                                       QString *p_errMsg)
+{
+    VDirectory *ret = new VDirectory(p_parent->getNotebook(),
+                                     p_parent,
+                                     VUtils::directoryNameFromPath(p_path),
+                                     QDateTime::currentDateTimeUtc());
+
+    QDir rootDir(p_path);
+
+    // Process all the folders.
+    QVector<VDirectory *> &subdirs = ret->getSubDirs();
+    QFileInfoList dirList = rootDir.entryInfoList(QDir::AllDirs | QDir::NoDotAndDotDot);
+    for (auto const & sub : dirList) {
+        VDirectory *dir = VDirectory::buildDirectory(sub.absoluteFilePath(),
+                                                     ret,
+                                                     p_errMsg);
+        if (dir) {
+            subdirs.append(dir);
+        }
+    }
+
+    // Process all the files.
+    QVector<VNoteFile *> &files = ret->getFiles();
+    QDateTime dateTime = QDateTime::currentDateTimeUtc();
+    QList<QString> suffixes = g_config->getDocSuffixes()[(int)DocType::Markdown];
+    QStringList filters;
+    for (auto const & suf : suffixes) {
+        filters << ("*." + suf);
+    }
+
+    QStringList fileList = rootDir.entryList(filters, QDir::Files);
+    for (auto const & fileName : fileList) {
+        VNoteFile *file = new VNoteFile(ret,
+                                        fileName,
+                                        FileType::Note,
+                                        true,
+                                        dateTime,
+                                        dateTime);
+        if (!file) {
+            VUtils::addErrMsg(p_errMsg, tr("Skip file %1.").arg(rootDir.absoluteFilePath(fileName)));
+        } else {
+            files.append(file);
+        }
+    }
+
+    if (subdirs.isEmpty() && files.isEmpty()) {
+        delete ret;
+        VUtils::addErrMsg(p_errMsg, tr("Skip folder %1.").arg(p_path));
+        return NULL;
+    }
+
+    if (!ret->writeToConfig()) {
+        delete ret;
+        VUtils::addErrMsg(p_errMsg, tr("Fail to write configuration of folder %1.").arg(p_path));
+        return NULL;
+    }
+
+    return ret;
+}

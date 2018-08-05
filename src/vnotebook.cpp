@@ -457,3 +457,43 @@ void VNotebook::removeTag(const QString &p_tag)
         }
     }
 }
+
+bool VNotebook::buildNotebook(const QString &p_name,
+                              const QString &p_path,
+                              const QString &p_imgFolder,
+                              const QString &p_attachmentFolder,
+                              QString *p_errMsg)
+{
+    VNotebook *nb = new VNotebook(p_name, p_path);
+    nb->setImageFolder(p_imgFolder);
+
+    QString attachmentFolder = p_attachmentFolder;
+    if (p_attachmentFolder.isEmpty()) {
+        nb->setAttachmentFolder(g_config->getAttachmentFolder());
+    } else {
+        nb->setAttachmentFolder(p_attachmentFolder);
+    }
+
+    // Process all the folders.
+    QVector<VDirectory *> &subdirs = nb->getRootDir()->getSubDirs();
+    QDir rootDir(p_path);
+    QFileInfoList dirList = rootDir.entryInfoList(QDir::AllDirs | QDir::NoDotAndDotDot);
+    for (auto const & sub : dirList) {
+        VDirectory *dir = VDirectory::buildDirectory(sub.absoluteFilePath(),
+                                                     nb->getRootDir(),
+                                                     p_errMsg);
+        if (dir) {
+            subdirs.append(dir);
+        }
+    }
+
+    if (!nb->writeToConfig()) {
+        delete nb;
+        VUtils::addErrMsg(p_errMsg,
+                          tr("Fail to write notebook configuration file."));
+        return false;
+    }
+
+    delete nb;
+    return true;
+}

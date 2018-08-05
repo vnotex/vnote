@@ -1,7 +1,6 @@
 #include "vnotebookselector.h"
 #include <QDebug>
 #include <QJsonObject>
-#include <QJsonArray>
 #include <QListWidget>
 #include <QAction>
 #include <QMenu>
@@ -10,6 +9,7 @@
 #include <QLabel>
 #include <QDesktopServices>
 #include <QUrl>
+
 #include "vnotebook.h"
 #include "vconfigmanager.h"
 #include "dialog/vnewnotebookdialog.h"
@@ -119,46 +119,6 @@ int VNotebookSelector::itemIndexOfNotebook(const VNotebook *p_notebook) const
     return -1;
 }
 
-void VNotebookSelector::createConfigFiles(const QString &p_path)
-{
-    QDir root(p_path);
-    QStringList filters;
-    filters << "*.md" << "*.markdown";
-
-    QJsonObject dirJson;
-    dirJson[DirConfig::c_version] = "1";
-    dirJson[DirConfig::c_createdTime] = QDateTime::currentDateTime().toString(Qt::ISODate);
-
-    QJsonArray subDirs;
-    QJsonArray files;
-
-    QFileInfoList dirInfoList = root.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
-    QFileInfoList fileInfoList = root.entryInfoList(filters,QDir::Files);
-
-    for(const QFileInfo &dirInfo : dirInfoList) {
-        const QString dirname = dirInfo.fileName();
-        if (dirname != "_v_recycle_bin") {
-            QJsonObject item;
-            item[DirConfig::c_name] = dirname;
-            subDirs.append(item);
-
-            createConfigFiles(dirInfo.absoluteFilePath());
-        }
-    }
-
-    for(const QFileInfo &fileInfo : fileInfoList) {
-        QJsonObject item;
-        item[DirConfig::c_createdTime] = fileInfo.created().toString(Qt::ISODate);
-        item[DirConfig::c_name] = fileInfo.fileName();
-        files.append(item);
-    }
-
-    dirJson[DirConfig::c_subDirectories] = subDirs;
-    dirJson[DirConfig::c_files] = files;
-
-    g_config->writeDirectoryConfig(p_path,dirJson);
-}
-
 void VNotebookSelector::insertAddNotebookItem()
 {
     QListWidgetItem *item = new QListWidgetItem();
@@ -230,6 +190,9 @@ bool VNotebookSelector::newNotebook()
     info += "\n";
     info += tr("* A previously created notebook could be imported into VNote "
                "by choosing its root folder.");
+    info += "\n";
+    info += tr("* When a non-empty folder is chosen, VNote will create a notebook "
+               "based on the folders and files in it recursively.");
 
     // Use empty default name and path to let the dialog to auto generate a name
     // under the default VNote notebook folder.
@@ -240,18 +203,51 @@ bool VNotebookSelector::newNotebook()
                               m_notebooks,
                               this);
     if (dialog.exec() == QDialog::Accepted) {
-
+        bool isImport = dialog.isImportExistingNotebook();
         if(dialog.isImportExternalProject()) {
-            createConfigFiles(dialog.getPathInput());
+            QString msg;
+            bool ret = VNotebook::buildNotebook(dialog.getNameInput(),
+                                                dialog.getPathInput(),
+                                                dialog.getImageFolder(),
+                                                dialog.getAttachmentFolder(),
+                                                &msg);
+
+            QList<QString> suffixes = g_config->getDocSuffixes()[(int)DocType::Markdown];
+            QString sufs;
+            for (auto const & suf : suffixes) {
+                if (sufs.isEmpty()) {
+                    sufs = "*." + suf;
+                } else {
+                    sufs += ",*." + suf;
+                }
+            }
+
+            QString info = ret ? tr("Successfully build notebook recursively (%1).").arg(sufs)
+                               : tr("Fail to build notebook recursively.");
+            if (!ret || !msg.isEmpty()) {
+                VUtils::showMessage(ret ? QMessageBox::Information : QMessageBox::Warning,
+                                    ret ? tr("Information") : tr("Warning"),
+                                    info,
+                                    msg,
+                                    QMessageBox::Ok,
+                                    QMessageBox::Ok,
+                                    this);
+            }
+
+            if (!ret) {
+                return false;
+            }
+
+            isImport = true;
         }
 
         createNotebook(dialog.getNameInput(),
                        dialog.getPathInput(),
-                       dialog.isImportExistingNotebook(),
+                       isImport,
                        dialog.getImageFolder(),
                        dialog.getAttachmentFolder());
 
-        emit notebookCreated(dialog.getNameInput(), dialog.isImportExistingNotebook());
+        emit notebookCreated(dialog.getNameInput(), isImport);
         return true;
     }
 
