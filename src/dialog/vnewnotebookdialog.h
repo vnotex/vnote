@@ -26,6 +26,9 @@ public:
 
     // Whether import existing notebook by reading the config file.
     bool isImportExistingNotebook() const;
+    
+    // Whether import external project
+    bool isImportExternalProject() const;
 
     // Get the custom image folder for this notebook.
     // Empty string indicates using global config.
@@ -71,6 +74,9 @@ private:
 
     // Whether import existing notebook config file.
     bool m_importNotebook;
+    
+    // Whether import external project
+    bool m_importExternalProject;
 
     // True if user has change the content of the path edit.
     bool m_manualPath;
