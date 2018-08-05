@@ -251,6 +251,8 @@ void VNewNotebookDialog::handleInputChanged()
                 showWarnLabel = true;
             }
             pathOk = true;
+        } else {
+            pathOk = true;
         }
     }
 

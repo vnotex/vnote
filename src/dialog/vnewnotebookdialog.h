@@ -26,6 +26,7 @@ public:
 
     // Whether import existing notebook by reading the config file.
     bool isImportExistingNotebook() const;
+    
     // Whether import external project
     bool isImportExternalProject() const;
 
