@@ -124,6 +124,8 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
 
     initSharedMemoryWatcher();
 
+    initUpdateTimer();
+
     registerCaptainAndNavigationTargets();
 }
 
@@ -388,11 +390,11 @@ void VMainWindow::initToolBar()
 
 QToolBar *VMainWindow::initViewToolBar(QSize p_iconSize)
 {
-    QToolBar *viewToolBar = addToolBar(tr("View"));
-    viewToolBar->setObjectName("ViewToolBar");
-    viewToolBar->setMovable(false);
+    m_viewToolBar = addToolBar(tr("View"));
+    m_viewToolBar->setObjectName("ViewToolBar");
+    m_viewToolBar->setMovable(false);
     if (p_iconSize.isValid()) {
-        viewToolBar->setIconSize(p_iconSize);
+        m_viewToolBar->setIconSize(p_iconSize);
     }
 
     QAction *fullScreenAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/fullscreen.svg"),
@@ -458,9 +460,9 @@ QToolBar *VMainWindow::initViewToolBar(QSize p_iconSize)
                                           : PanelViewState::VerticalMode);
             });
 
-    viewToolBar->addAction(expandViewAct);
+    m_viewToolBar->addAction(expandViewAct);
 
-    return viewToolBar;
+    return m_viewToolBar;
 }
 
 // Enable/disable all actions of @p_widget.
@@ -602,14 +604,14 @@ QToolBar *VMainWindow::initEditToolBar(QSize p_iconSize)
 
 QToolBar *VMainWindow::initNoteToolBar(QSize p_iconSize)
 {
-    QToolBar *noteToolBar = addToolBar(tr("Note Toolbar"));
-    noteToolBar->setObjectName("NoteToolBar");
-    noteToolBar->setMovable(false);
+    m_noteToolBar = addToolBar(tr("Note Toolbar"));
+    m_noteToolBar->setObjectName("NoteToolBar");
+    m_noteToolBar->setMovable(false);
     if (p_iconSize.isValid()) {
-        noteToolBar->setIconSize(p_iconSize);
+        m_noteToolBar->setIconSize(p_iconSize);
     }
 
-    noteToolBar->addSeparator();
+    m_noteToolBar->addSeparator();
 
     // Attachment.
     m_attachmentList = new VAttachmentList(this);
@@ -652,20 +654,20 @@ QToolBar *VMainWindow::initNoteToolBar(QSize p_iconSize)
     connect(universalEntryAct, &QAction::triggered,
             this, &VMainWindow::activateUniversalEntry);
 
-    noteToolBar->addWidget(m_attachmentBtn);
-    noteToolBar->addAction(flashPageAct);
-    noteToolBar->addAction(universalEntryAct);
+    m_noteToolBar->addWidget(m_attachmentBtn);
+    m_noteToolBar->addAction(flashPageAct);
+    m_noteToolBar->addAction(universalEntryAct);
 
-    return noteToolBar;
+    return m_noteToolBar;
 }
 
 QToolBar *VMainWindow::initFileToolBar(QSize p_iconSize)
 {
-    QToolBar *fileToolBar = addToolBar(tr("Note"));
-    fileToolBar->setObjectName("NoteToolBar");
-    fileToolBar->setMovable(false);
+    m_fileToolBar = addToolBar(tr("Note"));
+    m_fileToolBar->setObjectName("FileToolBar");
+    m_fileToolBar->setMovable(false);
     if (p_iconSize.isValid()) {
-        fileToolBar->setIconSize(p_iconSize);
+        m_fileToolBar->setIconSize(p_iconSize);
     }
 
     m_avatarBtn = new QPushButton("VNote", this);
@@ -742,16 +744,16 @@ QToolBar *VMainWindow::initFileToolBar(QSize p_iconSize)
     m_discardExitAct->setEnabled(false);
     saveNoteAct->setEnabled(false);
 
-    fileToolBar->addWidget(m_avatarBtn);
-    fileToolBar->addAction(newRootDirAct);
-    fileToolBar->addAction(newNoteAct);
-    fileToolBar->addAction(deleteNoteAct);
-    fileToolBar->addAction(noteInfoAct);
-    fileToolBar->addAction(m_editReadAct);
-    fileToolBar->addAction(m_discardExitAct);
-    fileToolBar->addAction(saveNoteAct);
+    m_fileToolBar->addWidget(m_avatarBtn);
+    m_fileToolBar->addAction(newRootDirAct);
+    m_fileToolBar->addAction(newNoteAct);
+    m_fileToolBar->addAction(deleteNoteAct);
+    m_fileToolBar->addAction(noteInfoAct);
+    m_fileToolBar->addAction(m_editReadAct);
+    m_fileToolBar->addAction(m_discardExitAct);
+    m_fileToolBar->addAction(saveNoteAct);
 
-    return fileToolBar;
+    return m_fileToolBar;
 }
 
 void VMainWindow::initMenuBar()
@@ -2000,6 +2002,8 @@ void VMainWindow::updateActionsStateFromTab(const VEditTab *p_tab)
     if (!file) {
         m_findReplaceDialog->closeDialog();
     }
+
+    m_updateTimer->start();
 }
 
 void VMainWindow::handleAreaTabStatusUpdated(const VEditTabInfo &p_info)
@@ -3347,4 +3351,18 @@ void VMainWindow::focusEditArea() const
 void VMainWindow::setCaptainModeEnabled(bool p_enabled)
 {
     m_captain->setCaptainModeEnabled(p_enabled);
+}
+
+void VMainWindow::initUpdateTimer()
+{
+    m_updateTimer = new QTimer(this);
+    m_updateTimer->setSingleShot(true);
+    m_updateTimer->setInterval(200);
+    connect(m_updateTimer, &QTimer::timeout,
+            this, [this]() {
+                m_fileToolBar->update();
+                m_viewToolBar->update();
+                m_editToolBar->update();
+                m_noteToolBar->update();
+            });
 }

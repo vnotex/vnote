@@ -283,6 +283,8 @@ private:
     // VNote.
     void initSharedMemoryWatcher();
 
+    void initUpdateTimer();
+
     // Init system tray icon and correspondign context menu.
     void initTrayIcon();
 
@@ -432,8 +434,13 @@ private:
     // Menus
     QMenu *m_viewMenu;
 
-    // Edit ToolBar.
+    QToolBar *m_fileToolBar;
+
+    QToolBar *m_viewToolBar;
+
     QToolBar *m_editToolBar;
+
+    QToolBar *m_noteToolBar;
 
     // All the ToolBar.
     QVector<QToolBar *> m_toolBars;
@@ -453,6 +460,10 @@ private:
 
     // Timer to check the shared memory between instances of VNote.
     QTimer *m_sharedMemTimer;
+
+    // Timer to update gui.
+    // Sometimes the toolbar buttons do not refresh themselves.
+    QTimer *m_updateTimer;
 
     // Tray icon.
     QSystemTrayIcon *m_trayIcon;
