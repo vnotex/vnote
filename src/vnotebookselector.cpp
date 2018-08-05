@@ -240,9 +240,11 @@ bool VNotebookSelector::newNotebook()
                               m_notebooks,
                               this);
     if (dialog.exec() == QDialog::Accepted) {
+
         if(dialog.isImportExternalProject()) {
             createConfigFiles(dialog.getPathInput());
         }
+
         createNotebook(dialog.getNameInput(),
                        dialog.getPathInput(),
                        dialog.isImportExistingNotebook(),

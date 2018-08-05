@@ -74,6 +74,7 @@ private:
 
     // Whether import existing notebook config file.
     bool m_importNotebook;
+    
     // Whether import external project
     bool m_importExternalProject;
 
