@@ -2134,6 +2134,8 @@ void VMainWindow::closeEvent(QCloseEvent *event)
     bool isExit = m_requestQuit || !g_config->getMinimizeToStystemTray();
     m_requestQuit = false;
 
+    m_captain->exitCaptainMode();
+
 #if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
     // Do not support minimized to tray on macOS.
     isExit = true;

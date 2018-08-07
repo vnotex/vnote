@@ -190,7 +190,9 @@ void VCaptain::restoreFocus()
 
 void VCaptain::exitCaptainMode()
 {
-    if (checkMode(CaptainMode::Navigation)) {
+    if (checkMode(CaptainMode::Normal)) {
+        return;
+    } else if (checkMode(CaptainMode::Navigation)) {
         exitNavigationMode();
     }
 

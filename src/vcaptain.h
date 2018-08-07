@@ -45,6 +45,8 @@ public:
 
     void setCaptainModeEnabled(bool p_enabled);
 
+    void exitCaptainMode();
+
 signals:
     // Emit when mode changed.
     void captainModeChanged(bool p_captainMode);
@@ -139,8 +141,6 @@ private:
 
     // Exit navigation mode to ask all targets hide themselves.
     void exitNavigationMode();
-
-    void exitCaptainMode();
 
     // Called to trigger the action of a Captain target which has
     // registered @p_key.
