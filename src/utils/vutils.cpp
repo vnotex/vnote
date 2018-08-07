@@ -444,6 +444,17 @@ int VUtils::showMessage(QMessageBox::Icon p_icon,
     return msgBox.exec();
 }
 
+void VUtils::promptForReopen(QWidget *p_parent)
+{
+    VUtils::showMessage(QMessageBox::Information,
+                        QObject::tr("Information"),
+                        QObject::tr("Please re-open current opened tabs to make it work."),
+                        "",
+                        QMessageBox::Ok,
+                        QMessageBox::Ok,
+                        p_parent);
+}
+
 QString VUtils::generateCopiedFileName(const QString &p_dirPath,
                                        const QString &p_fileName,
                                        bool p_completeBaseName)

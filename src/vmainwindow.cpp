@@ -901,7 +901,7 @@ void VMainWindow::initMarkdownMenu()
     markdownMenu->addSeparator();
 
     QAction *mermaidAct = new QAction(tr("&Mermaid Diagram"), this);
-    mermaidAct->setToolTip(tr("Enable Mermaid for graph and diagram"));
+    mermaidAct->setToolTip(tr("Enable Mermaid for graph and diagram (re-open current tabs to make it work)"));
     mermaidAct->setCheckable(true);
     connect(mermaidAct, &QAction::triggered,
             this, &VMainWindow::enableMermaid);
@@ -910,17 +910,18 @@ void VMainWindow::initMarkdownMenu()
     mermaidAct->setChecked(g_config->getEnableMermaid());
 
     QAction *flowchartAct = new QAction(tr("&Flowchart.js"), this);
-    flowchartAct->setToolTip(tr("Enable Flowchart.js for flowchart diagram"));
+    flowchartAct->setToolTip(tr("Enable Flowchart.js for flowchart diagram (re-open current tabs to make it work)"));
     flowchartAct->setCheckable(true);
     connect(flowchartAct, &QAction::triggered,
             this, [this](bool p_enabled){
                 g_config->setEnableFlowchart(p_enabled);
+                VUtils::promptForReopen(this);
             });
     markdownMenu->addAction(flowchartAct);
     flowchartAct->setChecked(g_config->getEnableFlowchart());
 
     QAction *mathjaxAct = new QAction(tr("Math&Jax"), this);
-    mathjaxAct->setToolTip(tr("Enable MathJax for math support in Markdown"));
+    mathjaxAct->setToolTip(tr("Enable MathJax for math support in Markdown (re-open current tabs to make it work)"));
     mathjaxAct->setCheckable(true);
     connect(mathjaxAct, &QAction::triggered,
             this, &VMainWindow::enableMathjax);
@@ -1452,11 +1453,13 @@ void VMainWindow::changeExpandTab(bool checked)
 void VMainWindow::enableMermaid(bool p_checked)
 {
     g_config->setEnableMermaid(p_checked);
+    VUtils::promptForReopen(this);
 }
 
 void VMainWindow::enableMathjax(bool p_checked)
 {
     g_config->setEnableMathjax(p_checked);
+    VUtils::promptForReopen(this);
 }
 
 void VMainWindow::changeHighlightCursorLine(bool p_checked)
@@ -1560,7 +1563,7 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
     const MarkdownitOption &opt = g_config->getMarkdownitOption();
 
     QAction *htmlAct = new QAction(tr("HTML"), this);
-    htmlAct->setToolTip(tr("Enable HTML tags in source"));
+    htmlAct->setToolTip(tr("Enable HTML tags in source (re-open current tabs to make it work)"));
     htmlAct->setCheckable(true);
     htmlAct->setChecked(opt.m_html);
     connect(htmlAct, &QAction::triggered,
@@ -1571,7 +1574,7 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
             });
 
     QAction *breaksAct = new QAction(tr("Line Break"), this);
-    breaksAct->setToolTip(tr("Convert '\\n' in paragraphs into line break"));
+    breaksAct->setToolTip(tr("Convert '\\n' in paragraphs into line break (re-open current tabs to make it work)"));
     breaksAct->setCheckable(true);
     breaksAct->setChecked(opt.m_breaks);
     connect(breaksAct, &QAction::triggered,
@@ -1582,7 +1585,7 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
             });
 
     QAction *linkifyAct = new QAction(tr("Linkify"), this);
-    linkifyAct->setToolTip(tr("Convert URL-like text into links"));
+    linkifyAct->setToolTip(tr("Convert URL-like text into links (re-open current tabs to make it work)"));
     linkifyAct->setCheckable(true);
     linkifyAct->setChecked(opt.m_linkify);
     connect(linkifyAct, &QAction::triggered,
@@ -1593,7 +1596,7 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
             });
 
     QAction *supAct = new QAction(tr("Superscript"), this);
-    supAct->setToolTip(tr("Enable superscript via ^^"));
+    supAct->setToolTip(tr("Enable superscript like ^vnote^ (re-open current tabs to make it work)"));
     supAct->setCheckable(true);
     supAct->setChecked(opt.m_sup);
     connect(supAct, &QAction::triggered,
@@ -1604,7 +1607,7 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
             });
 
     QAction *subAct = new QAction(tr("Subscript"), this);
-    subAct->setToolTip(tr("Enable subscript via ~~"));
+    subAct->setToolTip(tr("Enable subscript like ~vnote~ (re-open current tabs to make it work)"));
     subAct->setCheckable(true);
     subAct->setChecked(opt.m_sub);
     connect(subAct, &QAction::triggered,
@@ -1615,7 +1618,7 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
             });
 
     QAction *metadataAct = new QAction(tr("Metadata Aware"), this);
-    metadataAct->setToolTip(tr("Be aware of metadata in YAML format"));
+    metadataAct->setToolTip(tr("Be aware of metadata in YAML format (re-open current tabs to make it work)"));
     metadataAct->setCheckable(true);
     metadataAct->setChecked(opt.m_metadata);
     connect(metadataAct, &QAction::triggered,
@@ -1626,7 +1629,7 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
             });
 
     QAction *emojiAct = new QAction(tr("Emoji"), this);
-    emojiAct->setToolTip(tr("Enable emoji and emoticon"));
+    emojiAct->setToolTip(tr("Enable emoji and emoticon (re-open current tabs to make it work)"));
     emojiAct->setCheckable(true);
     emojiAct->setChecked(opt.m_emoji);
     connect(emojiAct, &QAction::triggered,
@@ -1677,7 +1680,8 @@ void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
     const QVector<VColor> &bgColors = g_config->getCustomColors();
     for (int i = 0; i < bgColors.size(); ++i) {
         tmpAct = new QAction(bgColors[i].m_name, renderBackgroundAct);
-        tmpAct->setToolTip(tr("Set as the background color for Markdown rendering"));
+        tmpAct->setToolTip(tr("Set as the background color for Markdown rendering "
+                              "(re-open current tabs to make it work)"));
         tmpAct->setCheckable(true);
         tmpAct->setData(bgColors[i].m_name);
 
@@ -1824,7 +1828,7 @@ void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
     const QVector<VColor> &bgColors = g_config->getCustomColors();
     for (int i = 0; i < bgColors.size(); ++i) {
         tmpAct = new QAction(bgColors[i].m_name, backgroundColorAct);
-        tmpAct->setToolTip(tr("Set as the background color for editor"));
+        tmpAct->setToolTip(tr("Set as the background color for editor (re-open current tabs to make it work)"));
         tmpAct->setCheckable(true);
         tmpAct->setData(bgColors[i].m_name);
 

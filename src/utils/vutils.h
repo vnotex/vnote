@@ -161,6 +161,9 @@ public:
                            const QString &p_infoText, QMessageBox::StandardButtons p_buttons,
                            QMessageBox::StandardButton p_defaultBtn, QWidget *p_parent,
                            MessageBoxType p_type = MessageBoxType::Normal);
+
+    static void promptForReopen(QWidget *p_parent);
+
     static const QVector<QPair<QString, QString> > &getAvailableLanguages();
     static bool isValidLanguage(const QString &p_lang);
     static bool isImageURL(const QUrl &p_url);
