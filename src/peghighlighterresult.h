@@ -22,6 +22,11 @@ public:
         return m_timeStamp == p_timeStamp;
     }
 
+    void clear()
+    {
+        m_blocksHighlights.clear();
+    }
+
     TimeStamp m_timeStamp;
 
     QVector<QVector<HLUnit>> m_blocksHighlights;
@@ -55,6 +60,9 @@ public:
     // codeBlockHighlights.
     // Support fenced code block only.
     QVector<QVector<HLUnitStyle> > m_codeBlocksHighlights;
+
+    // Whether the code block highlight results of this result have been received.
+    bool m_codeBlockHighlightReceived;
 
     // Timestamp for m_codeBlocksHighlights.
     TimeStamp m_codeBlockTimeStamp;

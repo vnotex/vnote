@@ -210,9 +210,10 @@ private:
     QVector<HLUnit> m_blockHighlightCache;
 
     // Code block highlight cache.
+    // This cache is always valid.
     QVector<HLUnitStyle> m_codeBlockHighlightCache;
 
-    // Whether the above two cahces are valid.
+    // Whether the highlight cache is valid.
     bool m_cacheValid;
 
     // Sorted by m_imageInfo.m_startPos, with no two element's position intersected.
@@ -289,8 +290,7 @@ inline void VTextBlockData::setBlockHighlightCache(const QVector<HLUnit> &p_high
 
 inline bool VTextBlockData::isCodeBlockHighlightCacheMatched(const QVector<HLUnitStyle> &p_highlight) const
 {
-    if (!m_cacheValid
-        || p_highlight.size() != m_codeBlockHighlightCache.size()) {
+    if (p_highlight.size() != m_codeBlockHighlightCache.size()) {
         return false;
     }
 

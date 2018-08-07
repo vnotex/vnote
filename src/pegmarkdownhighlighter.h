@@ -93,6 +93,11 @@ private:
                             const QString &p_text,
                             QVector<HLUnitStyle> *p_cache);
 
+    void highlightCodeBlock(const QVector<HLUnitStyle> &p_units,
+                            const QString &p_text);
+
+    void highlightCodeBlockOne(const QVector<HLUnitStyle> &p_units);
+
     // Highlight color column in code block.
     void highlightCodeBlockColorColumn(const QString &p_text);
 
@@ -118,20 +123,27 @@ private:
                            int p_blockNum,
                            QVector<HLUnit> *p_cache);
 
-    // To avoid line height jitter.
+    void highlightBlockOne(const QVector<HLUnit> &p_units);
+
+    // To avoid line height jitter and code block mess.
     bool preHighlightSingleFormatBlock(const QVector<QVector<HLUnit>> &p_highlights,
                                        int p_blockNum,
-                                       const QString &p_text);
+                                       const QString &p_text,
+                                       bool p_forced);
 
     void updateSingleFormatBlocks(const QVector<QVector<HLUnit>> &p_highlights);
 
     void rehighlightBlocks();
+
+    void rehighlightBlocksLater();
 
     bool rehighlightBlockRange(int p_first, int p_last);
 
     TimeStamp nextCodeBlockTimeStamp();
 
     bool isFastParseBlock(int p_blockNum) const;
+
+    void clearFastParseResult();
 
     static VTextBlockData *getBlockData(const QTextBlock &p_block);
 
@@ -179,10 +191,14 @@ private:
 
     QTimer *m_fastParseTimer;
 
+    QTimer *m_scrollRehighlightTimer;
+
     QTimer *m_rehighlightTimer;
 
     // Blocks have only one format set which occupies the whole block.
     QSet<int> m_singleFormatBlocks;
+
+    bool m_notifyHighlightComplete;
 };
 
 inline const QVector<VElementRegion> &PegMarkdownHighlighter::getHeaderRegions() const

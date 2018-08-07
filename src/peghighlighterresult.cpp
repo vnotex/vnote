@@ -33,6 +33,7 @@ PegHighlighterResult::PegHighlighterResult(const PegMarkdownHighlighter *p_peg,
                                            const QSharedPointer<PegParseResult> &p_result)
     : m_timeStamp(p_result->m_timeStamp),
       m_numOfBlocks(p_result->m_numOfBlocks),
+      m_codeBlockHighlightReceived(false),
       m_codeBlockTimeStamp(0),
       m_numOfCodeBlockHighlightsToRecv(0)
 {

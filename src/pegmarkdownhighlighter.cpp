@@ -21,7 +21,8 @@ PegMarkdownHighlighter::PegMarkdownHighlighter(QTextDocument *p_doc, VMdEditor *
       m_timeStamp(0),
       m_codeBlockTimeStamp(0),
       m_parser(NULL),
-      m_parserExts(pmh_EXT_NOTES | pmh_EXT_STRIKE | pmh_EXT_FRONTMATTER | pmh_EXT_MARK)
+      m_parserExts(pmh_EXT_NOTES | pmh_EXT_STRIKE | pmh_EXT_FRONTMATTER | pmh_EXT_MARK),
+      m_notifyHighlightComplete(false)
 {
 }
 
@@ -66,13 +67,11 @@ void PegMarkdownHighlighter::init(const QVector<HighlightingStyle> &p_styles,
     m_timer->setSingleShot(true);
     m_timer->setInterval(p_timerInterval);
     connect(m_timer, &QTimer::timeout,
-            this, [this]() {
-                startParse();
-            });
+            this, &PegMarkdownHighlighter::startParse);
 
     m_fastParseTimer = new QTimer(this);
     m_fastParseTimer->setSingleShot(true);
-    m_fastParseTimer->setInterval(50);
+    m_fastParseTimer->setInterval(5);
     connect(m_fastParseTimer, &QTimer::timeout,
             this, [this]() {
                 QSharedPointer<PegHighlighterFastResult> result(m_fastResult);
@@ -86,21 +85,27 @@ void PegMarkdownHighlighter::init(const QVector<HighlightingStyle> &p_styles,
                 }
             });
 
-    m_rehighlightTimer = new QTimer(this);
-    m_rehighlightTimer->setSingleShot(true);
-    m_rehighlightTimer->setInterval(5);
-    connect(m_rehighlightTimer, &QTimer::timeout,
+    m_scrollRehighlightTimer = new QTimer(this);
+    m_scrollRehighlightTimer->setSingleShot(true);
+    m_scrollRehighlightTimer->setInterval(5);
+    connect(m_scrollRehighlightTimer, &QTimer::timeout,
             this, [this]() {
                 if (m_result->m_numOfBlocks > LARGE_BLOCK_NUMBER) {
                     rehighlightSensitiveBlocks();
                 }
             });
 
+    m_rehighlightTimer = new QTimer(this);
+    m_rehighlightTimer->setSingleShot(true);
+    m_rehighlightTimer->setInterval(10);
+    connect(m_rehighlightTimer, &QTimer::timeout,
+            this, &PegMarkdownHighlighter::rehighlightBlocks);
+
     connect(m_doc, &QTextDocument::contentsChange,
             this, &PegMarkdownHighlighter::handleContentsChange);
 
     connect(m_editor->verticalScrollBar(), &QScrollBar::valueChanged,
-            m_rehighlightTimer, static_cast<void(QTimer::*)()>(&QTimer::start));
+            m_scrollRehighlightTimer, static_cast<void(QTimer::*)()>(&QTimer::start));
 }
 
 // Just use parse results to highlight block.
@@ -112,74 +117,93 @@ void PegMarkdownHighlighter::highlightBlock(const QString &p_text)
     QTextBlock block = currentBlock();
     int blockNum = block.blockNumber();
 
-    VTextBlockData *blockData = PegMarkdownHighlighter::getBlockData(block);
-    QVector<HLUnit> *cache = NULL;
-    QVector<HLUnitStyle> *cbCache = NULL;
-    if (blockData) {
-        cache = &blockData->getBlockHighlightCache();
-        cbCache = &blockData->getCodeBlockHighlightCache();
-
-        cache->clear();
-        cbCache->clear();
-    }
+    bool isCodeBlock = currentBlockState() == HighlightBlockState::CodeBlock;
+    VTextBlockData *blockData = VTextBlockData::blockData(block);
+    QVector<HLUnit> *cache = &blockData->getBlockHighlightCache();
 
     bool cacheValid = true;
-
     if (result->matched(m_timeStamp)) {
-        if (preHighlightSingleFormatBlock(result->m_blocksHighlights, blockNum, p_text)) {
+        if (preHighlightSingleFormatBlock(result->m_blocksHighlights,
+                                          blockNum,
+                                          p_text,
+                                          isCodeBlock)) {
             cacheValid = false;
+        } else if (blockData->isCacheValid() && blockData->getTimeStamp() == m_timeStamp) {
+            // Use the cache to highlight.
+            highlightBlockOne(*cache);
+        } else {
+            cache->clear();
+            highlightBlockOne(result->m_blocksHighlights, blockNum, cache);
         }
-
-        highlightBlockOne(result->m_blocksHighlights, blockNum, cacheValid ? cache : NULL);
     } else {
         // If fast result cover this block, we do not need to use the outdated one.
         if (isFastParseBlock(blockNum)) {
-            preHighlightSingleFormatBlock(m_fastResult->m_blocksHighlights, blockNum, p_text);
-            highlightBlockOne(m_fastResult->m_blocksHighlights, blockNum, NULL);
-            cacheValid = false;
-        } else {
-            if (preHighlightSingleFormatBlock(result->m_blocksHighlights, blockNum, p_text)) {
-                cacheValid = false;
+            if (!preHighlightSingleFormatBlock(m_fastResult->m_blocksHighlights,
+                                               blockNum,
+                                               p_text,
+                                               isCodeBlock)) {
+                highlightBlockOne(m_fastResult->m_blocksHighlights, blockNum, NULL);
             }
 
-            highlightBlockOne(result->m_blocksHighlights, blockNum, cacheValid ? cache : NULL);
+            cacheValid = false;
+        } else {
+            if (preHighlightSingleFormatBlock(result->m_blocksHighlights,
+                                              blockNum,
+                                              p_text,
+                                              isCodeBlock)) {
+                cacheValid = false;
+            } else if (blockData->isCacheValid() && result->matched(blockData->getTimeStamp())) {
+                // Use the cache to highlight.
+                highlightBlockOne(*cache);
+            } else {
+                cache->clear();
+                highlightBlockOne(result->m_blocksHighlights, blockNum, cache);
+            }
         }
     }
 
-    if (currentBlockState() == HighlightBlockState::CodeBlock) {
-        highlightCodeBlock(result, blockNum, p_text, cacheValid ? cbCache : NULL);
-        highlightCodeBlockColorColumn(p_text);
-        PegMarkdownHighlighter::updateBlockCodeBlockTimeStamp(block, result->m_codeBlockTimeStamp);
-    }
-
+    blockData->setCacheValid(cacheValid);
     PegMarkdownHighlighter::updateBlockTimeStamp(block, result->m_timeStamp);
 
-    if (blockData) {
-        blockData->setCacheValid(cacheValid);
+    if (isCodeBlock) {
+        QVector<HLUnitStyle> *cbCache = &blockData->getCodeBlockHighlightCache();
+        if (blockData->getCodeBlockTimeStamp() == result->m_codeBlockTimeStamp
+            || !result->m_codeBlockHighlightReceived) {
+            highlightCodeBlock(*cbCache, p_text);
+        } else {
+            cbCache->clear();
+            highlightCodeBlock(result, blockNum, p_text, cbCache);
+            PegMarkdownHighlighter::updateBlockCodeBlockTimeStamp(block, result->m_codeBlockTimeStamp);
+        }
+
+        highlightCodeBlockColorColumn(p_text);
     }
 }
 
 bool PegMarkdownHighlighter::preHighlightSingleFormatBlock(const QVector<QVector<HLUnit>> &p_highlights,
                                                            int p_blockNum,
-                                                           const QString &p_text)
+                                                           const QString &p_text,
+                                                           bool p_forced)
 {
     int sz = p_text.size();
     if (sz == 0) {
         return false;
     }
 
-    if (!m_singleFormatBlocks.contains(p_blockNum)) {
+    if (p_highlights.size() <= p_blockNum) {
         return false;
     }
 
-    if (p_highlights.size() > p_blockNum) {
-        const QVector<HLUnit> &units = p_highlights[p_blockNum];
-        if (units.size() == 1) {
-            const HLUnit &unit = units[0];
-            if (unit.start == 0 && (int)unit.length < sz) {
-                setFormat(unit.length, sz - unit.length, m_styles[unit.styleIndex].format);
-                return true;
-            }
+    if (!p_forced && !m_singleFormatBlocks.contains(p_blockNum)) {
+        return false;
+    }
+
+    const QVector<HLUnit> &units = p_highlights[p_blockNum];
+    if (units.size() == 1) {
+        const HLUnit &unit = units[0];
+        if (unit.start == 0 && (int)unit.length < sz) {
+            setFormat(0, sz, m_styles[unit.styleIndex].format);
+            return true;
         }
     }
 
@@ -200,35 +224,40 @@ bool PegMarkdownHighlighter::highlightBlockOne(const QVector<QVector<HLUnit>> &p
                 p_cache->append(units);
             }
 
-            for (int i = 0; i < units.size(); ++i) {
-                const HLUnit &unit = units[i];
-                if (i == 0) {
-                    // No need to merge format.
-                    setFormat(unit.start,
-                              unit.length,
-                              m_styles[unit.styleIndex].format);
-                } else {
-                    QTextCharFormat newFormat = m_styles[unit.styleIndex].format;
-                    for (int j = i - 1; j >= 0; --j) {
-                        if (units[j].start + units[j].length <= unit.start) {
-                            // It won't affect current unit.
-                            continue;
-                        } else {
-                            // Merge the format.
-                            QTextCharFormat tmpFormat(newFormat);
-                            newFormat = m_styles[units[j].styleIndex].format;
-                            // tmpFormat takes precedence.
-                            newFormat.merge(tmpFormat);
-                        }
-                    }
-
-                    setFormat(unit.start, unit.length, newFormat);
-                }
-            }
+            highlightBlockOne(units);
         }
     }
 
     return highlighted;
+}
+
+void PegMarkdownHighlighter::highlightBlockOne(const QVector<HLUnit> &p_units)
+{
+    for (int i = 0; i < p_units.size(); ++i) {
+        const HLUnit &unit = p_units[i];
+        if (i == 0) {
+            // No need to merge format.
+            setFormat(unit.start,
+                      unit.length,
+                      m_styles[unit.styleIndex].format);
+        } else {
+            QTextCharFormat newFormat = m_styles[unit.styleIndex].format;
+            for (int j = i - 1; j >= 0; --j) {
+                if (p_units[j].start + p_units[j].length <= unit.start) {
+                    // It won't affect current unit.
+                    continue;
+                } else {
+                    // Merge the format.
+                    QTextCharFormat tmpFormat(newFormat);
+                    newFormat = m_styles[p_units[j].styleIndex].format;
+                    // tmpFormat takes precedence.
+                    newFormat.merge(tmpFormat);
+                }
+            }
+
+            setFormat(unit.start, unit.length, newFormat);
+        }
+    }
 }
 
 // highlightBlock() will be called before this function.
@@ -247,7 +276,11 @@ void PegMarkdownHighlighter::handleContentsChange(int p_position, int p_charsRem
     }
 
     // We still need a timer to start a complete parse.
-    m_timer->start();
+    if (m_timeStamp == 2) {
+        startParse();
+    } else {
+        m_timer->start();
+    }
 }
 
 void PegMarkdownHighlighter::startParse()
@@ -268,6 +301,7 @@ void PegMarkdownHighlighter::startFastParse(int p_position, int p_charsRemoved, 
     getFastParseBlockRange(p_position, p_charsRemoved, p_charsAdded, firstBlockNum, lastBlockNum);
     if (firstBlockNum == -1) {
         // We could not let m_fastResult NULL here.
+        clearFastParseResult();
         return;
     }
 
@@ -392,7 +426,8 @@ void PegMarkdownHighlighter::setCodeBlockHighlights(TimeStamp p_timeStamp,
 exit:
     if (--result->m_numOfCodeBlockHighlightsToRecv <= 0) {
         result->m_codeBlockTimeStamp = nextCodeBlockTimeStamp();
-        rehighlightBlocks();
+        result->m_codeBlockHighlightReceived = true;
+        rehighlightBlocksLater();
     }
 }
 
@@ -402,7 +437,7 @@ void PegMarkdownHighlighter::updateHighlight()
     if (m_result->matched(m_timeStamp)) {
         // No need to parse again. Already the latest.
         updateCodeBlocks(m_result);
-        rehighlightBlocks();
+        rehighlightBlocksLater();
         completeHighlight(m_result);
     } else {
         startParse();
@@ -414,6 +449,8 @@ void PegMarkdownHighlighter::handleParseResult(const QSharedPointer<PegParseResu
     if (!m_result.isNull() && m_result->m_timeStamp > p_result->m_timeStamp) {
         return;
     }
+
+    clearFastParseResult();
 
     m_result.reset(new PegHighlighterResult(this, p_result));
 
@@ -431,7 +468,12 @@ void PegMarkdownHighlighter::handleParseResult(const QSharedPointer<PegParseResu
         updateCodeBlocks(m_result);
     }
 
-    rehighlightBlocks();
+    if (m_result->m_timeStamp == 2) {
+        m_notifyHighlightComplete = true;
+        rehighlightBlocks();
+    } else {
+        rehighlightBlocksLater();
+    }
 
     if (matched) {
         completeHighlight(m_result);
@@ -464,7 +506,11 @@ void PegMarkdownHighlighter::updateCodeBlocks(const QSharedPointer<PegHighlighte
                 p_result->m_codeBlocksHighlights.resize(p_result->m_numOfBlocks);
                 p_result->m_numOfCodeBlockHighlightsToRecv = cbSz;
             }
+        } else {
+            p_result->m_codeBlockHighlightReceived = true;
         }
+    } else {
+        p_result->m_codeBlockHighlightReceived = true;
     }
 
     emit codeBlocksUpdated(p_result->m_timeStamp, p_result->m_codeBlocks);
@@ -579,40 +625,61 @@ void PegMarkdownHighlighter::highlightCodeBlock(const QSharedPointer<PegHighligh
     if (p_result->m_codeBlocksHighlights.size() > p_blockNum) {
         const QVector<HLUnitStyle> &units = p_result->m_codeBlocksHighlights[p_blockNum];
         if (!units.isEmpty()) {
-            QVector<QTextCharFormat *> formats(units.size(), NULL);
             if (p_cache) {
                 p_cache->append(units);
             }
 
-            for (int i = 0; i < units.size(); ++i) {
-                const HLUnitStyle &unit = units[i];
-                auto it = m_codeBlockStyles.find(unit.style);
-                if (it == m_codeBlockStyles.end()) {
-                    continue;
+            highlightCodeBlockOne(units);
+        }
+    }
+}
+
+void PegMarkdownHighlighter::highlightCodeBlock(const QVector<HLUnitStyle> &p_units,
+                                                const QString &p_text)
+{
+    // Brush the indentation spaces.
+    if (currentBlockState() == HighlightBlockState::CodeBlock) {
+        int spaces = VEditUtils::fetchIndentation(p_text);
+        if (spaces > 0) {
+            setFormat(0, spaces, m_codeBlockFormat);
+        }
+    }
+
+    if (!p_units.isEmpty()) {
+        highlightCodeBlockOne(p_units);
+    }
+}
+
+void PegMarkdownHighlighter::highlightCodeBlockOne(const QVector<HLUnitStyle> &p_units)
+{
+    QVector<QTextCharFormat *> formats(p_units.size(), NULL);
+    for (int i = 0; i < p_units.size(); ++i) {
+        const HLUnitStyle &unit = p_units[i];
+        auto it = m_codeBlockStyles.find(unit.style);
+        if (it == m_codeBlockStyles.end()) {
+            continue;
+        }
+
+        formats[i] = &(*it);
+
+        QTextCharFormat newFormat = m_codeBlockFormat;
+        newFormat.merge(*it);
+        for (int j = i - 1; j >= 0; --j) {
+            if (p_units[j].start + p_units[j].length <= unit.start) {
+                // It won't affect current unit.
+                continue;
+            } else {
+                // Merge the format.
+                if (formats[j]) {
+                    QTextCharFormat tmpFormat(newFormat);
+                    newFormat = *(formats[j]);
+                    // tmpFormat takes precedence.
+                    newFormat.merge(tmpFormat);
                 }
-
-                formats[i] = &(*it);
-
-                QTextCharFormat newFormat = m_codeBlockFormat;
-                newFormat.merge(*it);
-                for (int j = i - 1; j >= 0; --j) {
-                    if (units[j].start + units[j].length <= unit.start) {
-                        // It won't affect current unit.
-                        continue;
-                    } else {
-                        // Merge the format.
-                        if (formats[j]) {
-                            QTextCharFormat tmpFormat(newFormat);
-                            newFormat = *(formats[j]);
-                            // tmpFormat takes precedence.
-                            newFormat.merge(tmpFormat);
-                        }
-                    }
-                }
-
-                setFormat(unit.start, unit.length, newFormat);
             }
         }
+
+        setFormat(unit.start, unit.length, newFormat);
     }
 }
 
@@ -640,14 +707,14 @@ void PegMarkdownHighlighter::highlightCodeBlockColorColumn(const QString &p_text
 
 void PegMarkdownHighlighter::completeHighlight(QSharedPointer<PegHighlighterResult> p_result)
 {
+    m_notifyHighlightComplete = true;
+
     if (isMathJaxEnabled()) {
         emit mathjaxBlocksUpdated(p_result->m_mathjaxBlocks);
     }
 
     emit imageLinksUpdated(p_result->m_imageRegions);
     emit headersUpdated(p_result->m_headerRegions);
-
-    emit highlightCompleted();
 }
 
 void PegMarkdownHighlighter::getFastParseBlockRange(int p_position,
@@ -656,7 +723,7 @@ void PegMarkdownHighlighter::getFastParseBlockRange(int p_position,
                                                     int &p_firstBlock,
                                                     int &p_lastBlock) const
 {
-    const int maxNumOfBlocks = 100;
+    const int maxNumOfBlocks = 50;
 
     int charsChanged = p_charsRemoved + p_charsAdded;
     QTextBlock firstBlock = m_doc->findBlock(p_position);
@@ -674,7 +741,7 @@ void PegMarkdownHighlighter::getFastParseBlockRange(int p_position,
     }
 
     // Look up.
-    while (firstBlock.isValid() && num < maxNumOfBlocks) {
+    while (firstBlock.isValid() && num <= maxNumOfBlocks) {
         QTextBlock preBlock = firstBlock.previous();
         if (!preBlock.isValid()) {
             break;
@@ -705,22 +772,37 @@ goup:
     }
 
     // Look down.
-    while (lastBlock.isValid() && num < maxNumOfBlocks) {
+    bool inCodeBlock = false;
+    while (lastBlock.isValid() && num <= maxNumOfBlocks) {
         QTextBlock nextBlock = lastBlock.next();
         if (!nextBlock.isValid()) {
             break;
         }
 
         // Check code block.
-        int state = lastBlock.userState();
-        if (state == HighlightBlockState::CodeBlockStart
-            || state == HighlightBlockState::CodeBlock) {
+        switch (lastBlock.userState()) {
+        case HighlightBlockState::CodeBlockStart:
+            V_FALLTHROUGH;
+        case HighlightBlockState::CodeBlock:
+            inCodeBlock = true;
             goto godown;
+
+        case HighlightBlockState::CodeBlockEnd:
+            inCodeBlock = false;
+            break;
+
+        default:
+            break;
         }
 
         // Empty block.
-        if (VEditUtils::isEmptyBlock(nextBlock)) {
-            break;
+        if (VEditUtils::isEmptyBlock(nextBlock) && !inCodeBlock) {
+            int nstate = nextBlock.userState();
+            if (nstate != HighlightBlockState::CodeBlockStart
+                && nstate != HighlightBlockState::CodeBlock
+                && nstate != HighlightBlockState::CodeBlockEnd) {
+                break;
+            }
         }
 
 godown:
@@ -766,6 +848,11 @@ void PegMarkdownHighlighter::rehighlightBlocks()
     } else {
         rehighlightSensitiveBlocks();
     }
+
+    if (m_notifyHighlightComplete) {
+        m_notifyHighlightComplete = false;
+        emit highlightCompleted();
+    }
 }
 
 bool PegMarkdownHighlighter::rehighlightBlockRange(int p_first, int p_last)
@@ -785,11 +872,11 @@ bool PegMarkdownHighlighter::rehighlightBlockRange(int p_first, int p_last)
 
         bool needHL = false;
         bool updateTS = false;
-        VTextBlockData *data = PegMarkdownHighlighter::getBlockData(block);
+        VTextBlockData *data = VTextBlockData::blockData(block);
         if (PegMarkdownHighlighter::blockTimeStamp(block) != m_result->m_timeStamp) {
             needHL = true;
             // Try to find cache.
-            if (data && blockNum < hls.size()) {
+            if (blockNum < hls.size()) {
                 if (data->isBlockHighlightCacheMatched(hls[blockNum])) {
                     needHL = false;
                     updateTS = true;
@@ -802,19 +889,21 @@ bool PegMarkdownHighlighter::rehighlightBlockRange(int p_first, int p_last)
             // they can be distinguished by block highlights.
             auto it = cbStates.find(blockNum);
             if (it != cbStates.end() && it.value() == HighlightBlockState::CodeBlock) {
-                if (PegMarkdownHighlighter::blockCodeBlockTimeStamp(block) != m_result->m_codeBlockTimeStamp) {
+                if (PegMarkdownHighlighter::blockCodeBlockTimeStamp(block) != m_result->m_codeBlockTimeStamp
+                    && m_result->m_codeBlockHighlightReceived) {
                     needHL = true;
                     // Try to find cache.
-                    if (updateTS && data && blockNum < cbHls.size()) {
+                    if (blockNum < cbHls.size()) {
                         if (data->isCodeBlockHighlightCacheMatched(cbHls[blockNum])) {
                             needHL = false;
+                            updateTS = true;
                         }
                     }
                 }
             }
         }
 
-        if (!needHL && data && !data->getPreviews().isEmpty()) {
+        if (!needHL && !data->getPreviews().isEmpty()) {
             needHL = true;
         }
 
@@ -823,6 +912,7 @@ bool PegMarkdownHighlighter::rehighlightBlockRange(int p_first, int p_last)
             rehighlightBlock(block);
             ++nr;
         } else if (updateTS) {
+            data->setCacheValid(true);
             data->setTimeStamp(m_result->m_timeStamp);
             data->setCodeBlockTimeStamp(m_result->m_codeBlockTimeStamp);
         }
@@ -832,4 +922,16 @@ bool PegMarkdownHighlighter::rehighlightBlockRange(int p_first, int p_last)
 
     qDebug() << "rehighlightBlockRange" << p_first << p_last << nr;
     return highlighted;
+}
+
+void PegMarkdownHighlighter::clearFastParseResult()
+{
+    m_fastParseBlocks.first = -1;
+    m_fastParseBlocks.second = -1;
+    m_fastResult->clear();
+}
+
+void PegMarkdownHighlighter::rehighlightBlocksLater()
+{
+    m_rehighlightTimer->start();
 }
