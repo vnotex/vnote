@@ -7,6 +7,7 @@
 
 #include "vconstants.h"
 #include "markdownhighlighterdata.h"
+#include "vtextdocumentlayoutdata.h"
 
 // Sources of the preview.
 enum class PreviewSource
@@ -191,6 +192,10 @@ public:
 
     void setCacheValid(bool p_valid);
 
+    static VTextBlockData *blockData(const QTextBlock &p_block);
+
+    static BlockLayoutInfo *layoutInfo(const QTextBlock &p_block);
+
 private:
     // Check the order of elements.
     bool checkOrder() const;
@@ -215,6 +220,8 @@ private:
 
     // Indentation of the this code block if this block is a fenced code block.
     int m_codeBlockIndentation;
+
+    BlockLayoutInfo m_layoutInfo;
 };
 
 inline const QVector<VPreviewInfo *> &VTextBlockData::getPreviews() const
@@ -316,5 +323,30 @@ inline bool VTextBlockData::isCacheValid() const
 inline void VTextBlockData::setCacheValid(bool p_valid)
 {
     m_cacheValid = p_valid;
+}
+
+inline VTextBlockData *VTextBlockData::blockData(const QTextBlock &p_block)
+{
+    if (!p_block.isValid()) {
+        return NULL;
+    }
+
+    VTextBlockData *data = static_cast<VTextBlockData *>(p_block.userData());
+    if (!data) {
+        data = new VTextBlockData();
+        const_cast<QTextBlock &>(p_block).setUserData(data);
+    }
+
+    return data;
+}
+
+inline BlockLayoutInfo *VTextBlockData::layoutInfo(const QTextBlock &p_block)
+{
+    VTextBlockData *data = blockData(p_block);
+    if (data) {
+        return &data->m_layoutInfo;
+    } else {
+        return NULL;
+    }
 }
 #endif // VTEXTBLOCKDATA_H

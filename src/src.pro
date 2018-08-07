@@ -281,7 +281,8 @@ HEADERS  += vmainwindow.h \
     pegmarkdownhighlighter.h \
     pegparser.h \
     peghighlighterresult.h \
-    vtexteditcompleter.h
+    vtexteditcompleter.h \
+    vtextdocumentlayoutdata.h
 
 RESOURCES += \
     vnote.qrc \

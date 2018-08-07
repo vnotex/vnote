@@ -7,6 +7,7 @@
 #include <QMap>
 
 #include "vconstants.h"
+#include "vtextdocumentlayoutdata.h"
 
 class VImageResourceManager2;
 struct VPreviewedImageInfo;
@@ -84,85 +85,21 @@ protected:
     void documentChanged(int p_from, int p_charsRemoved, int p_charsAdded) Q_DECL_OVERRIDE;
 
 private:
-    // Denote the start and end position of a marker line.
-    struct Marker
-    {
-        QPointF m_start;
-        QPointF m_end;
-    };
-
-    struct ImagePaintInfo
-    {
-        // The rect to draw the image.
-        QRectF m_rect;
-
-        // Name of the image.
-        QString m_name;
-
-        // Forced background.
-        QColor m_background;
-
-        bool isValid() const
-        {
-            return !m_name.isEmpty();
-        }
-
-        bool hasForcedBackground() const
-        {
-            return m_background.isValid();
-        }
-    };
-
-    struct BlockInfo
-    {
-        BlockInfo()
-        {
-            reset();
-        }
-
-        void reset()
-        {
-            m_offset = -1;
-            m_rect = QRectF();
-            m_markers.clear();
-            m_images.clear();
-        }
-
-        bool hasOffset() const
-        {
-            return m_offset > -1 && !m_rect.isNull();
-        }
-
-        qreal top() const
-        {
-            Q_ASSERT(hasOffset());
-            return m_offset;
-        }
-
-        qreal bottom() const
-        {
-            Q_ASSERT(hasOffset());
-            return m_offset + m_rect.height();
-        }
-
-        // Y offset of this block.
-        // -1 for invalid.
-        qreal m_offset;
-
-        // The bounding rect of this block, including the margins.
-        // Null for invalid.
-        QRectF m_rect;
-
-        // Markers to draw for this block.
-        // Y is the offset within this block.
-        QVector<Marker> m_markers;
-
-        // Images to draw for this block.
-        // Y is the offset within this block.
-        QVector<ImagePaintInfo> m_images;
-    };
-
+    // Layout one block.
+    // Only update the rect of the block. Offset is not updated yet.
     void layoutBlock(const QTextBlock &p_block);
+
+    // Update the offset of @p_block.
+    // @p_block has a valid layout.
+    // After the call, all block before @p_block will have the correct layout and offset.
+    void updateOffsetBefore(const QTextBlock &p_block);
+
+    // Update the offset of blocks after @p_block if they are layouted.
+    void updateOffsetAfter(const QTextBlock &p_block);
+
+    void updateOffset(const QTextBlock &p_block);
+
+    void layoutBlockAndUpdateOffset(const QTextBlock &p_block);
 
     // Returns the total height of this block after layouting lines and inline
     // images.
@@ -200,28 +137,11 @@ private:
     // Also clear all the offset behind this block.
     void clearBlockLayout(QTextBlock &p_block);
 
-    // Clear the offset of all the blocks from @p_blockNumber.
-    void clearOffsetFrom(int p_blockNumber);
-
-    // Fill the offset filed from @p_blockNumber + 1.
-    void fillOffsetFrom(int p_blockNumber);
-
-    // Update block count to @p_count due to document change.
-    // Maintain m_blocks.
-    // @p_changeStartBlock is the block number of the start block in this change.
-    void updateBlockCount(int p_count, int p_changeStartBlock);
-
-    bool validateBlocks() const;
-
+    // Update rect of a block.
     void finishBlockLayout(const QTextBlock &p_block,
                            const QVector<Marker> &p_markers,
                            const QVector<ImagePaintInfo> &p_images);
 
-    int previousValidBlockNumber(int p_number) const;
-
-    int nextValidBlockNumber(int p_number) const;
-
-    // Update block count and m_blocks size.
     void updateDocumentSize();
 
     QVector<QTextLayout::FormatRange> formatRangeFromSelection(const QTextBlock &p_block,
@@ -242,9 +162,9 @@ private:
     QRectF blockRectFromTextLayout(const QTextBlock &p_block,
                                    ImagePaintInfo *p_image = NULL);
 
-    // Update document size when only block @p_blockNumber is changed and the height
-    // remain the same.
-    void updateDocumentSizeWithOneBlockChanged(int p_blockNumber);
+    // Update document size when only @p_block is changed and the height
+    // remains the same.
+    void updateDocumentSizeWithOneBlockChanged(const QTextBlock &p_block);
 
     void adjustImagePaddingAndSize(const VPreviewedImageInfo *p_info,
                                    int p_maximumWidth,
@@ -290,8 +210,6 @@ private:
 
     // Right margin for cursor.
     qreal m_cursorMargin;
-
-    QVector<BlockInfo> m_blocks;
 
     VImageResourceManager2 *m_imageMgr;
 
@@ -394,5 +312,17 @@ inline void VTextDocumentLayout::setCursorWidth(int p_width)
 inline int VTextDocumentLayout::cursorWidth() const
 {
     return m_cursorWidth;
+}
+
+inline void VTextDocumentLayout::layoutBlockAndUpdateOffset(const QTextBlock &p_block)
+{
+    layoutBlock(p_block);
+    updateOffset(p_block);
+}
+
+inline void VTextDocumentLayout::updateOffset(const QTextBlock &p_block)
+{
+    updateOffsetBefore(p_block);
+    updateOffsetAfter(p_block);
 }
 #endif // VTEXTDOCUMENTLAYOUT_H

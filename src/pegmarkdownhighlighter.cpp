@@ -488,21 +488,16 @@ void PegMarkdownHighlighter::clearBlockUserData(const QSharedPointer<PegHighligh
     Q_UNUSED(p_result);
 
     int blockNum = p_block.blockNumber();
+    VTextBlockData *data = VTextBlockData::blockData(p_block);
+    if (!data) {
+        return;
+    }
 
-    VTextBlockData *blockData = static_cast<VTextBlockData *>(p_block.userData());
-    if (!blockData) {
-        blockData = new VTextBlockData();
-        p_block.setUserData(blockData);
-
+    data->setCodeBlockIndentation(-1);
+    if (data->getPreviews().isEmpty()) {
         m_possiblePreviewBlocks.remove(blockNum);
     } else {
-        blockData->setCodeBlockIndentation(-1);
-
-        if (blockData->getPreviews().isEmpty()) {
-            m_possiblePreviewBlocks.remove(blockNum);
-        } else {
-            m_possiblePreviewBlocks.insert(blockNum);
-        }
+        m_possiblePreviewBlocks.insert(blockNum);
     }
 }
 
