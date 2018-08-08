@@ -142,7 +142,7 @@ table {
 }
 
 table tr {
-   border-top: 1px solid #cccccc;
+   border-top: 2px solid #cccccc;
    background-color: white;
    margin: 0;
    padding: 0;
@@ -154,13 +154,13 @@ table tr:nth-child(2n) {
 
 table tr th {
    font-weight: bold;
-   border: 1px solid #cccccc;
+   border: 2px solid #cccccc;
    margin: 0;
    padding: 6px 13px;
 }
 
 table tr td {
-   border: 1px solid #cccccc;
+   border: 2px solid #cccccc;
    margin: 0;
    padding: 6px 13px;
 }

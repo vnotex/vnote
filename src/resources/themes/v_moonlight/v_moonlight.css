@@ -145,20 +145,20 @@ table {
 }
 
 table tr {
-   border-top: 1px solid #373E47;
+   border-top: 2px solid #373E47;
    margin: 0;
    padding: 0;
 }
 
 table tr th {
    font-weight: bold;
-   border: 1px solid #373E47;
+   border: 2px solid #373E47;
    margin: 0;
    padding: 6px 13px;
 }
 
 table tr td {
-   border: 1px solid #373E47;
+   border: 2px solid #373E47;
    margin: 0;
    padding: 6px 13px;
 }
