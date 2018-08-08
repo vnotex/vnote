@@ -1,4 +1,11 @@
 # Changes History
+## v1.21
+- Improve performance of editor (now could process 10K lines);
+- Support `<mark>vnote</mark>` highlight in edit mode;
+- Support **completion** in edit mode by `Ctrl+N/P`;
+- Support building a notebook from external directory recursively;
+- Update Flowchart.js to 1.11.3;
+
 ## v1.20
 - More efficient and accurate Markdown parser and highlighter;
 - MathJax: get rid of escaping;
