@@ -62,15 +62,15 @@ bool VEditUtils::insertListMarkAsPreviousBlock(QTextCursor &p_cursor)
     }
 
     QString text = preBlock.text();
-    QRegExp regExp("^\\s*(-|\\d+\\.)\\s");
+    QRegExp regExp(VUtils::c_listRegExp);
     int regIdx = regExp.indexIn(text);
     if (regIdx != -1) {
         ret = true;
         V_ASSERT(regExp.captureCount() == 1);
         QString markText = regExp.capturedTexts()[1];
-        if (markText == "-") {
-            // Insert - in front.
-            p_cursor.insertText("- ");
+        if (isListBullet(markText)) {
+            // Insert bullet in front.
+            p_cursor.insertText(markText + " ");
         } else {
             // markText is like "123.".
             V_ASSERT(markText.endsWith('.'));
@@ -557,7 +557,7 @@ void VEditUtils::scrollBlockInPage(QPlainTextEdit *p_edit,
 bool VEditUtils::isListBlock(const QTextBlock &p_block, int *p_seq)
 {
     QString text = p_block.text();
-    QRegExp regExp("^\\s*(-|\\d+\\.)\\s");
+    QRegExp regExp(VUtils::c_listRegExp);
 
     if (p_seq) {
         *p_seq = -1;
@@ -570,7 +570,7 @@ bool VEditUtils::isListBlock(const QTextBlock &p_block, int *p_seq)
 
     V_ASSERT(regExp.captureCount() == 1);
     QString markText = regExp.capturedTexts()[1];
-    if (markText != "-") {
+    if (!isListBullet(markText)) {
         V_ASSERT(markText.endsWith('.'));
         bool ok = false;
         int num = markText.left(markText.size() - 1).toInt(&ok, 10);
@@ -581,6 +581,11 @@ bool VEditUtils::isListBlock(const QTextBlock &p_block, int *p_seq)
     }
 
     return true;
+}
+
+bool VEditUtils::isListBullet(const QString &p_str)
+{
+    return p_str == "-" || p_str == "*";
 }
 
 bool VEditUtils::isSpaceToBlockStart(const QTextBlock &p_block, int p_posInBlock)

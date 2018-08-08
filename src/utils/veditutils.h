@@ -139,6 +139,8 @@ public:
     // Returns true if it is an auto list block.
     static bool isListBlock(const QTextBlock &p_block, int *p_seq = NULL);
 
+    static bool isListBullet(const QString &p_str);
+
     // If the start of @p_block to postition @p_posInBlock are spaces.
     static bool isSpaceToBlockStart(const QTextBlock &p_block, int p_posInBlock);
 

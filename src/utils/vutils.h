@@ -399,6 +399,8 @@ public:
     // 1. prefix till the real header title content;
     static const QString c_headerPrefixRegExp;
 
+    static const QString c_listRegExp;
+
 private:
     VUtils() {}
 
