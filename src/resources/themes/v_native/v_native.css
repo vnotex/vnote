@@ -217,6 +217,16 @@ div.img-caption {
     margin-right: 8px;
 }
 
+div.preview-hint {
+    opacity: 0.5;
+    margin-top: 30%;
+    margin-bottom: 30%;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
 /* For Highlight.js Line Number */
 table.hljs-ln tr {
     border: none;
