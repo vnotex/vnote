@@ -1202,7 +1202,11 @@ QString VEditor::fetchCompletionPrefix() const
 void VEditor::insertCompletion(const QString &p_prefix, const QString &p_completion)
 {
     QTextCursor cursor = textCursorW();
+
+    cursor.joinPreviousEditBlock();
     cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::KeepAnchor, p_prefix.size());
     cursor.insertText(p_completion);
+    cursor.endEditBlock();
+
     setTextCursorW(cursor);
 }

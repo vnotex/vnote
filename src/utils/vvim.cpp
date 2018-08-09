@@ -921,8 +921,14 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
                 bool textInserted = false;
                 if (g_config->getAutoIndent()) {
                     textInserted = VEditUtils::indentBlockAsBlock(cursor, false);
+                    bool listInserted = false;
                     if (g_config->getAutoList()) {
-                        textInserted = VEditUtils::insertListMarkAsPreviousBlock(cursor)
+                        listInserted = VEditUtils::insertListMarkAsPreviousBlock(cursor);
+                        textInserted = listInserted || textInserted;
+                    }
+
+                    if (!listInserted && g_config->getAutoQuote()) {
+                        textInserted = VEditUtils::insertQuoteMarkAsPreviousBlock(cursor)
                                        || textInserted;
                     }
                 }

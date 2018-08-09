@@ -166,6 +166,8 @@ public:
     bool getAutoList() const;
     void setAutoList(bool p_autoList);
 
+    bool getAutoQuote() const;
+
     const QVector<VColor> &getCustomColors() const;
 
     const QString &getCurBackgroundColor() const;
@@ -658,6 +660,9 @@ private:
 
     // Auto List.
     bool m_autoList;
+
+    // Auto quote.
+    bool m_autoQuote;
 
     // App defined color
     QVector<VColor> m_customColors;
@@ -1193,8 +1198,7 @@ inline void VConfigManager::setAutoIndent(bool p_autoIndent)
         return;
     }
     m_autoIndent = p_autoIndent;
-    setConfigToSettings("global", "auto_indent",
-                        m_autoIndent);
+    setConfigToSettings("editor", "auto_indent", m_autoIndent);
 }
 
 inline bool VConfigManager::getAutoList() const
@@ -1208,8 +1212,12 @@ inline void VConfigManager::setAutoList(bool p_autoList)
         return;
     }
     m_autoList = p_autoList;
-    setConfigToSettings("global", "auto_list",
-                        m_autoList);
+    setConfigToSettings("editor", "auto_list", m_autoList);
+}
+
+inline bool VConfigManager::getAutoQuote() const
+{
+    return m_autoQuote;
 }
 
 inline const QVector<VColor>& VConfigManager::getCustomColors() const

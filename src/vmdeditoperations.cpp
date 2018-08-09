@@ -645,6 +645,7 @@ bool VMdEditOperations::handleKeyEsc(QKeyEvent *p_event)
 bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
 {
     bool autolist = true;
+    bool autoQuote = true;
     if (p_event->modifiers() & Qt::ControlModifier) {
         m_autoIndentPos = -1;
         return false;
@@ -660,6 +661,7 @@ bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
 
         // Let remaining logics handle inserting the new block except that we
         // do not need to insert auto list.
+        // But we still need auto quote.
         autolist = false;
     }
 
@@ -682,16 +684,21 @@ bool VMdEditOperations::handleKeyReturn(QKeyEvent *p_event)
         handled = true;
 
         QTextCursor cursor = m_editor->textCursorW();
-        bool textInserted = false;
         cursor.beginEditBlock();
         cursor.removeSelectedText();
 
         // Indent the new line as previous line.
-        textInserted = VEditUtils::insertBlockWithIndent(cursor);
+        bool textInserted = VEditUtils::insertBlockWithIndent(cursor);
 
         // Continue the list from previous line.
-        if (g_config->getAutoList() && autolist) {
-            textInserted = VEditUtils::insertListMarkAsPreviousBlock(cursor) || textInserted;
+        bool listInserted = false;
+        if (autolist && g_config->getAutoList()) {
+            listInserted = VEditUtils::insertListMarkAsPreviousBlock(cursor);
+            textInserted = listInserted || textInserted;
+        }
+
+        if (autoQuote && !listInserted && g_config->getAutoQuote()) {
+            textInserted = VEditUtils::insertQuoteMarkAsPreviousBlock(cursor) || textInserted;
         }
 
         cursor.endEditBlock();

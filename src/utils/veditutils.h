@@ -49,6 +49,11 @@ public:
     // Need to call setTextCursor() to make it take effect.
     static bool insertListMarkAsPreviousBlock(QTextCursor &p_cursor);
 
+    // Fetch the block quote mark of previous block, and insert it at current position.
+    // Returns true if quote mark has been inserted.
+    // Need to call setTextCursor() to make it take effect.
+    static bool insertQuoteMarkAsPreviousBlock(QTextCursor &p_cursor);
+
     // Remove ObjectReplaceCharacter in p_text.
     // If the ObjectReplaceCharacter is in a block with only other spaces, remove the
     // whole block.
@@ -140,6 +145,8 @@ public:
     static bool isListBlock(const QTextBlock &p_block, int *p_seq = NULL);
 
     static bool isListBullet(const QString &p_str);
+
+    static bool isBlockQuoteBlock(const QTextBlock &p_block);
 
     // If the start of @p_block to postition @p_posInBlock are spaces.
     static bool isSpaceToBlockStart(const QTextBlock &p_block, int p_posInBlock);

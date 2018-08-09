@@ -61,6 +61,8 @@ const QString VUtils::c_headerPrefixRegExp = QString("^(#{1,6}\\s+((\\d+\\.)+(?=
 
 const QString VUtils::c_listRegExp = QString("^\\s*(-|\\*|\\d+\\.)\\s");
 
+const QString VUtils::c_blockQuoteRegExp = QString("^\\s*(\\>\\s?)");
+
 void VUtils::initAvailableLanguage()
 {
     if (!s_availableLanguages.isEmpty()) {

@@ -277,7 +277,7 @@ void PegMarkdownHighlighter::handleContentsChange(int p_position, int p_charsRem
 
     // We still need a timer to start a complete parse.
     if (m_timeStamp == 2) {
-        startParse();
+        m_timer->start(0);
     } else {
         m_timer->start();
     }

@@ -83,7 +83,28 @@ bool VEditUtils::insertListMarkAsPreviousBlock(QTextCursor &p_cursor)
     }
 
     return ret;
+}
 
+bool VEditUtils::insertQuoteMarkAsPreviousBlock(QTextCursor &p_cursor)
+{
+    bool ret = false;
+    QTextBlock block = p_cursor.block();
+    QTextBlock preBlock = block.previous();
+    if (!preBlock.isValid()) {
+        return false;
+    }
+
+    QString text = preBlock.text();
+    QRegExp regExp(VUtils::c_blockQuoteRegExp);
+    int regIdx = regExp.indexIn(text);
+    if (regIdx != -1) {
+        ret = true;
+        Q_ASSERT(regExp.captureCount() == 1);
+        QString markText = regExp.capturedTexts()[1];
+        p_cursor.insertText(markText);
+    }
+
+    return ret;
 }
 
 bool VEditUtils::indentBlockAsBlock(QTextCursor &p_cursor, bool p_next)
@@ -554,6 +575,14 @@ void VEditUtils::scrollBlockInPage(QPlainTextEdit *p_edit,
     p_edit->ensureCursorVisible();
 }
 
+bool VEditUtils::isBlockQuoteBlock(const QTextBlock &p_block)
+{
+    QString text = p_block.text();
+    QRegExp regExp(VUtils::c_blockQuoteRegExp);
+    int regIdx = regExp.indexIn(text);
+    return regIdx >= 0;
+}
+
 bool VEditUtils::isListBlock(const QTextBlock &p_block, int *p_seq)
 {
     QString text = p_block.text();
@@ -820,7 +849,7 @@ bool VEditUtils::needToCancelAutoIndent(int p_autoIndentPos, const QTextCursor &
     if (p_cursor.position() == p_autoIndentPos
         && !p_cursor.hasSelection()
         && p_cursor.atBlockEnd()) {
-        if (isListBlock(block)) {
+        if (isListBlock(block) || isBlockQuoteBlock(block)) {
             return true;
         } else if (isSpaceToBlockStart(block,
                                        p_cursor.positionInBlock())) {

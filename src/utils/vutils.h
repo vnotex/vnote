@@ -401,6 +401,8 @@ public:
 
     static const QString c_listRegExp;
 
+    static const QString c_blockQuoteRegExp;
+
 private:
     VUtils() {}
 
