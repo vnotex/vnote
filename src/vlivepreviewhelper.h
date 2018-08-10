@@ -250,6 +250,10 @@ private:
 
     // Indexed by content.
     QHash<QString, QSharedPointer<CodeBlockImageCacheEntry>> m_cache;
+
+    int m_lastCursorBlock;
+
+    QTimer *m_livePreviewTimer;
 };
 
 inline bool VLivePreviewHelper::isPreviewEnabled() const

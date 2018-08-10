@@ -1,6 +1,7 @@
 #include "vlivepreviewhelper.h"
 
 #include <QByteArray>
+#include <QTimer>
 
 #include "veditor.h"
 #include "vdocument.h"
@@ -83,10 +84,17 @@ VLivePreviewHelper::VLivePreviewHelper(VEditor *p_editor,
       m_plantUMLHelper(NULL),
       m_lastInplacePreviewSize(0),
       m_timeStamp(0),
-      m_scaleFactor(VUtils::calculateScaleFactor())
+      m_scaleFactor(VUtils::calculateScaleFactor()),
+      m_lastCursorBlock(-1)
 {
-    connect(m_editor->object(), &VEditorObject::cursorPositionChanged,
+    m_livePreviewTimer = new QTimer(this);
+    m_livePreviewTimer->setSingleShot(true);
+    m_livePreviewTimer->setInterval(100);
+    connect(m_livePreviewTimer, &QTimer::timeout,
             this, &VLivePreviewHelper::handleCursorPositionChanged);
+
+    connect(m_editor->object(), SIGNAL(cursorPositionChanged()),
+            m_livePreviewTimer, SLOT(start()));
 
     m_flowchartEnabled = g_config->getEnableFlowchart();
     m_mermaidEnabled = g_config->getEnableMermaid();
@@ -206,10 +214,16 @@ void VLivePreviewHelper::updateCodeBlocks(TimeStamp p_timeStamp, const QVector<V
 void VLivePreviewHelper::handleCursorPositionChanged()
 {
     if (!m_livePreviewEnabled || m_codeBlocks.isEmpty()) {
+        m_lastCursorBlock = -1;
         return;
     }
 
     int cursorBlock = m_editor->textCursorW().block().blockNumber();
+    if (m_lastCursorBlock == cursorBlock) {
+        return;
+    }
+
+    m_lastCursorBlock = cursorBlock;
 
     int left = 0, right = m_codeBlocks.size() - 1;
     int mid = left;

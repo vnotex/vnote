@@ -74,6 +74,13 @@ private slots:
     void handleParseResult(const QSharedPointer<PegParseResult> &p_result);
 
 private:
+    struct FastParseInfo
+    {
+        int m_position;
+        int m_charsRemoved;
+        int m_charsAdded;
+    } m_fastParseInfo;
+
     void startParse();
 
     void startFastParse(int p_position, int p_charsRemoved, int p_charsAdded);
@@ -188,6 +195,8 @@ private:
 
     // Timer to trigger parse.
     QTimer *m_timer;
+
+    int m_parseInterval;
 
     QTimer *m_fastParseTimer;
 

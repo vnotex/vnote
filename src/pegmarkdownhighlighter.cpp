@@ -22,6 +22,7 @@ PegMarkdownHighlighter::PegMarkdownHighlighter(QTextDocument *p_doc, VMdEditor *
       m_codeBlockTimeStamp(0),
       m_parser(NULL),
       m_parserExts(pmh_EXT_NOTES | pmh_EXT_STRIKE | pmh_EXT_FRONTMATTER | pmh_EXT_MARK),
+      m_parseInterval(50),
       m_notifyHighlightComplete(false)
 {
 }
@@ -37,6 +38,8 @@ void PegMarkdownHighlighter::init(const QVector<HighlightingStyle> &p_styles,
     if (p_mathjaxEnabled) {
         m_parserExts |= pmh_EXT_MATH;
     }
+
+    m_parseInterval = p_timerInterval;
 
     m_codeBlockFormat.setForeground(QBrush(Qt::darkYellow));
     for (int index = 0; index < m_styles.size(); ++index) {
@@ -65,24 +68,18 @@ void PegMarkdownHighlighter::init(const QVector<HighlightingStyle> &p_styles,
 
     m_timer = new QTimer(this);
     m_timer->setSingleShot(true);
-    m_timer->setInterval(p_timerInterval);
+    m_timer->setInterval(m_parseInterval);
     connect(m_timer, &QTimer::timeout,
             this, &PegMarkdownHighlighter::startParse);
 
     m_fastParseTimer = new QTimer(this);
     m_fastParseTimer->setSingleShot(true);
-    m_fastParseTimer->setInterval(5);
+    m_fastParseTimer->setInterval(50);
     connect(m_fastParseTimer, &QTimer::timeout,
             this, [this]() {
-                QSharedPointer<PegHighlighterFastResult> result(m_fastResult);
-                if (!result->matched(m_timeStamp) || m_result->matched(m_timeStamp)) {
-                    return;
-                }
-
-                for (int i = m_fastParseBlocks.first; i <= m_fastParseBlocks.second; ++i) {
-                    QTextBlock block = m_doc->findBlockByNumber(i);
-                    rehighlightBlock(block);
-                }
+                startFastParse(m_fastParseInfo.m_position,
+                               m_fastParseInfo.m_charsRemoved,
+                               m_fastParseInfo.m_charsAdded);
             });
 
     m_scrollRehighlightTimer = new QTimer(this);
@@ -271,16 +268,17 @@ void PegMarkdownHighlighter::handleContentsChange(int p_position, int p_charsRem
 
     ++m_timeStamp;
 
+    m_timer->stop();
+
     if (m_timeStamp > 2) {
-        startFastParse(p_position, p_charsRemoved, p_charsAdded);
+        m_fastParseInfo.m_position = p_position;
+        m_fastParseInfo.m_charsRemoved = p_charsRemoved;
+        m_fastParseInfo.m_charsAdded = p_charsAdded;
+        m_fastParseTimer->start();
     }
 
     // We still need a timer to start a complete parse.
-    if (m_timeStamp == 2) {
-        m_timer->start(0);
-    } else {
-        m_timer->start();
-    }
+    m_timer->start(m_timeStamp == 2 ? 0 : m_parseInterval);
 }
 
 void PegMarkdownHighlighter::startParse()
@@ -338,11 +336,19 @@ void PegMarkdownHighlighter::startFastParse(int p_position, int p_charsRemoved, 
 
 void PegMarkdownHighlighter::processFastParseResult(const QSharedPointer<PegParseResult> &p_result)
 {
-    m_fastParseTimer->stop();
     m_fastResult.reset(new PegHighlighterFastResult(this, p_result));
+
     // Add additional single format blocks.
     updateSingleFormatBlocks(m_fastResult->m_blocksHighlights);
-    m_fastParseTimer->start();
+
+    if (!m_fastResult->matched(m_timeStamp) || m_result->matched(m_timeStamp)) {
+        return;
+    }
+
+    for (int i = m_fastParseBlocks.first; i <= m_fastParseBlocks.second; ++i) {
+        QTextBlock block = m_doc->findBlockByNumber(i);
+        rehighlightBlock(block);
+    }
 }
 
 static bool compHLUnitStyle(const HLUnitStyle &a, const HLUnitStyle &b)
@@ -759,10 +765,14 @@ void PegMarkdownHighlighter::getFastParseBlockRange(int p_position,
             goto goup;
         }
 
-        if (VEditUtils::fetchIndentation(firstBlock) == 0) {
+        if (VEditUtils::fetchIndentation(firstBlock) < 4) {
             // If previous block is empty, then we could stop now.
             if (VEditUtils::isEmptyBlock(preBlock)) {
-                break;
+                int preState = preBlock.userState();
+                if (preState != HighlightBlockState::CodeBlockStart
+                    && preState != HighlightBlockState::CodeBlock) {
+                    break;
+                }
             }
         }
 
