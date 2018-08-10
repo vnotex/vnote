@@ -18,7 +18,7 @@
 
 inline static bool realEqual(qreal p_a, qreal p_b)
 {
-    return std::abs((double)(p_a - p_b)) < 1e-8;
+    return qAbs(p_a - p_b) < 1e-8;
 }
 
 VTextDocumentLayout::VTextDocumentLayout(QTextDocument *p_doc,
