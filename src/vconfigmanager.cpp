@@ -93,12 +93,6 @@ void VConfigManager::initialize()
     m_highlightSelectedWord = getConfigFromSettings("global", "highlight_selected_word").toBool();
     m_highlightSearchedWord = getConfigFromSettings("global", "highlight_searched_word").toBool();
 
-    m_autoIndent = getConfigFromSettings("editor", "auto_indent").toBool();
-
-    m_autoList = getConfigFromSettings("editor", "auto_list").toBool();
-
-    m_autoQuote = getConfigFromSettings("editor", "auto_quote").toBool();
-
     readCustomColors();
 
     curBackgroundColor = getConfigFromSettings("global", "current_background_color").toString();
@@ -164,12 +158,6 @@ void VConfigManager::initialize()
 
     m_enableTrailingSpaceHighlight = getConfigFromSettings("global",
                                                            "enable_trailing_space_highlight").toBool();
-
-    m_enableVimMode = getConfigFromSettings("global",
-                                            "enable_vim_mode").toBool();
-
-    m_enableSmartImInVimMode = getConfigFromSettings("global",
-                                                     "enable_smart_im_in_vim_mode").toBool();
 
     m_editorLineNumber = getConfigFromSettings("global",
                                                "editor_line_number").toInt();
@@ -319,6 +307,26 @@ void VConfigManager::initialize()
 
     m_maxNumOfTagLabels = getConfigFromSettings("global",
                                                 "max_num_of_tag_labels").toInt();
+
+    initEditorConfigs();
+}
+
+void VConfigManager::initEditorConfigs()
+{
+    m_autoIndent = getConfigFromSettings("editor", "auto_indent").toBool();
+
+    m_autoList = getConfigFromSettings("editor", "auto_list").toBool();
+
+    m_autoQuote = getConfigFromSettings("editor", "auto_quote").toBool();
+
+    int keyMode = getConfigFromSettings("editor", "key_mode").toInt();
+    if (keyMode < 0 || keyMode >= (int)KeyMode::Invalid) {
+        keyMode = 0;
+    }
+    m_keyMode = (KeyMode)keyMode;
+
+    m_enableSmartImInVimMode = getConfigFromSettings("editor",
+                                                     "enable_smart_im_in_vim_mode").toBool();
 }
 
 void VConfigManager::initSettings()

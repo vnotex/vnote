@@ -52,6 +52,14 @@ enum class HeadingSequenceType
     Invalid
 };
 
+// Editor key mode.
+enum class KeyMode
+{
+    Normal = 0,
+    Vim,
+    Invalid
+};
+
 
 class VConfigManager : public QObject
 {
@@ -59,6 +67,8 @@ public:
     explicit VConfigManager(QObject *p_parent = NULL);
 
     void initialize();
+
+    void initEditorConfigs();
 
     // Read config from the directory config json file into a QJsonObject.
     // @path is the directory containing the config json file.
@@ -298,8 +308,10 @@ public:
     bool getEnableTrailingSpaceHighlight() const;
     void setEnableTrailingSapceHighlight(bool p_enabled);
 
+    KeyMode getKeyMode() const;
+    void setKeyMode(KeyMode p_mode);
+
     bool getEnableVimMode() const;
-    void setEnableVimMode(bool p_enabled);
 
     bool getEnableSmartImInVimMode() const;
     void setEnableSmartImInVimMode(bool p_enabled);
@@ -768,8 +780,8 @@ private:
     // Enable trailing-space highlight.
     bool m_enableTrailingSpaceHighlight;
 
-    // Enable Vim mode.
-    bool m_enableVimMode;
+    // Editor key mode.
+    KeyMode m_keyMode;
 
     // Enable smart input method in Vim mode.
     bool m_enableSmartImInVimMode;
@@ -1761,20 +1773,24 @@ inline void VConfigManager::setEnableTrailingSapceHighlight(bool p_enabled)
                         m_enableTrailingSpaceHighlight);
 }
 
-inline bool VConfigManager::getEnableVimMode() const
+inline KeyMode VConfigManager::getKeyMode() const
 {
-    return m_enableVimMode;
+    return m_keyMode;
 }
 
-inline void VConfigManager::setEnableVimMode(bool p_enabled)
+inline void VConfigManager::setKeyMode(KeyMode p_mode)
 {
-    if (m_enableVimMode == p_enabled) {
+    if (m_keyMode == p_mode) {
         return;
     }
 
-    m_enableVimMode = p_enabled;
-    setConfigToSettings("global", "enable_vim_mode",
-                        m_enableVimMode);
+    m_keyMode = p_mode;
+    setConfigToSettings("editor", "key_mode", (int)m_keyMode);
+}
+
+inline bool VConfigManager::getEnableVimMode() const
+{
+    return m_keyMode == KeyMode::Vim;
 }
 
 inline bool VConfigManager::getEnableSmartImInVimMode() const
@@ -1789,7 +1805,7 @@ inline void VConfigManager::setEnableSmartImInVimMode(bool p_enabled)
     }
 
     m_enableSmartImInVimMode = p_enabled;
-    setConfigToSettings("global", "enable_smart_im_in_vim_mode",
+    setConfigToSettings("editor", "enable_smart_im_in_vim_mode",
                         m_enableSmartImInVimMode);
 }
 

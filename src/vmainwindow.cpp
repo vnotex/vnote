@@ -1200,22 +1200,6 @@ void VMainWindow::initEditMenu()
     connect(autoListAct, &QAction::triggered,
             this, &VMainWindow::changeAutoList);
 
-    // Vim Mode.
-    QAction *vimAct = new QAction(tr("Vim Mode"), this);
-    vimAct->setToolTip(tr("Enable Vim mode for editing (re-open current tabs to make it work)"));
-    vimAct->setCheckable(true);
-    connect(vimAct, &QAction::triggered,
-            this, &VMainWindow::changeVimMode);
-
-    // Smart input method in Vim mode.
-    QAction *smartImAct = new QAction(tr("Smart Input Method In Vim Mode"), this);
-    smartImAct->setToolTip(tr("Disable input method when leaving Insert mode in Vim mode"));
-    smartImAct->setCheckable(true);
-    connect(smartImAct, &QAction::triggered,
-            this, [this](bool p_checked){
-                g_config->setEnableSmartImInVimMode(p_checked);
-            });
-
     // Highlight current cursor line.
     QAction *cursorLineAct = new QAction(tr("Highlight Cursor Line"), this);
     cursorLineAct->setToolTip(tr("Highlight current cursor line"));
@@ -1295,12 +1279,6 @@ void VMainWindow::initEditMenu()
         autoListAct->trigger();
     }
     Q_ASSERT(!(autoListAct->isChecked() && !m_autoIndentAct->isChecked()));
-
-    editMenu->addAction(vimAct);
-    vimAct->setChecked(g_config->getEnableVimMode());
-
-    editMenu->addAction(smartImAct);
-    smartImAct->setChecked(g_config->getEnableSmartImInVimMode());
 
     editMenu->addSeparator();
 
@@ -2407,11 +2385,6 @@ void VMainWindow::changeAutoList(bool p_checked)
     } else {
         m_autoIndentAct->setEnabled(true);
     }
-}
-
-void VMainWindow::changeVimMode(bool p_checked)
-{
-    g_config->setEnableVimMode(p_checked);
 }
 
 void VMainWindow::enableCodeBlockHighlight(bool p_checked)

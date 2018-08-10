@@ -548,6 +548,21 @@ VReadEditTab::VReadEditTab(QWidget *p_parent)
     connect(m_autoSave, &QCheckBox::stateChanged,
             this, &VReadEditTab::showTipsAboutAutoSave);
 
+    // Key mode.
+    m_keyModeCB = VUtils::getComboBox();
+    m_keyModeCB->setToolTip(tr("Choose the key mode in editor"));
+    m_keyModeCB->addItem(tr("Normal"), (int)KeyMode::Normal);
+    m_keyModeCB->addItem(tr("Vim"), (int)KeyMode::Vim);
+    connect(m_keyModeCB, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, [this](int p_index) {
+                int mode = m_keyModeCB->itemData(p_index).toInt();
+                m_smartIM->setVisible(mode == (int)KeyMode::Vim);
+            });
+
+    // Smart IM in Vim.
+    m_smartIM = new QCheckBox(tr("Smart input method in Vim mode"));
+    m_smartIM->setToolTip(tr("Disable input method when leaving Insert mode in Vim mode"));
+
     // Editor zoom delta.
     m_editorZoomDeltaSpin = new QSpinBox();
     m_editorZoomDeltaSpin->setToolTip(tr("Set the zoom delta of the editor font"));
@@ -563,8 +578,13 @@ VReadEditTab::VReadEditTab(QWidget *p_parent)
     QFormLayout *editLayout = new QFormLayout();
     editLayout->addRow(m_swapFile);
     editLayout->addRow(m_autoSave);
+    editLayout->addRow(tr("Key mode:"), m_keyModeCB);
+    editLayout->addWidget(m_smartIM);
     editLayout->addRow(tr("Editor zoom delta:"), m_editorZoomDeltaSpin);
     m_editBox->setLayout(editLayout);
+
+    m_smartIM->hide();
+    m_keyModeCB->setCurrentIndex(0);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addWidget(m_readBox);
@@ -606,6 +626,10 @@ bool VReadEditTab::loadConfiguration()
         return false;
     }
 
+    if (!loadKeyMode()) {
+        return false;
+    }
+
     return true;
 }
 
@@ -628,6 +652,10 @@ bool VReadEditTab::saveConfiguration()
     }
 
     if (!saveEditorZoomDelta()) {
+        return false;
+    }
+
+    if (!saveKeyMode()) {
         return false;
     }
 
@@ -709,6 +737,20 @@ bool VReadEditTab::loadAutoSave()
 bool VReadEditTab::saveAutoSave()
 {
     g_config->setEnableAutoSave(m_autoSave->isChecked());
+    return true;
+}
+
+bool VReadEditTab::loadKeyMode()
+{
+    m_keyModeCB->setCurrentIndex(m_keyModeCB->findData((int)g_config->getKeyMode()));
+    m_smartIM->setChecked(g_config->getEnableSmartImInVimMode());
+    return true;
+}
+
+bool VReadEditTab::saveKeyMode()
+{
+    g_config->setKeyMode((KeyMode)m_keyModeCB->currentData().toInt());
+    g_config->setEnableSmartImInVimMode(m_smartIM->isChecked());
     return true;
 }
 

@@ -91,6 +91,9 @@ private:
 
     void showTipsAboutAutoSave();
 
+    bool loadKeyMode();
+    bool saveKeyMode();
+
     bool loadFlashAnchor();
     bool saveFlashAnchor();
 
@@ -109,6 +112,12 @@ private:
 
     // Auto save.
     QCheckBox *m_autoSave;
+
+    // Key mode.
+    QComboBox *m_keyModeCB;
+
+    // Smart IM in Vim mode.
+    QCheckBox *m_smartIM;
 
     // Editor zoom delta.
     QSpinBox *m_editorZoomDeltaSpin;
