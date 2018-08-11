@@ -413,6 +413,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
             if (vbar && (vbar->minimum() != vbar->maximum())) {
                 vbar->triggerAction(QAbstractSlider::SliderSingleStepAdd);
             }
+
+            ret = true;
         }
 
         break;
@@ -426,6 +428,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
             if (vbar && (vbar->minimum() != vbar->maximum())) {
                 vbar->triggerAction(QAbstractSlider::SliderSingleStepSub);
             }
+
+            ret = true;
         }
 
         break;
@@ -438,6 +442,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
             if (!m_editor->isCompletionActivated()) {
                 m_editor->requestCompletion(false);
             }
+
+            ret = true;
         }
 
         break;
@@ -450,6 +456,8 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
             if (!m_editor->isCompletionActivated()) {
                 m_editor->requestCompletion(true);
             }
+
+            ret = true;
         }
 
         break;
