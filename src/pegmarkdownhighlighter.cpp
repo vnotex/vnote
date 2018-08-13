@@ -913,10 +913,6 @@ bool PegMarkdownHighlighter::rehighlightBlockRange(int p_first, int p_last)
             }
         }
 
-        if (!needHL && !data->getPreviews().isEmpty()) {
-            needHL = true;
-        }
-
         if (needHL) {
             highlighted = true;
             rehighlightBlock(block);

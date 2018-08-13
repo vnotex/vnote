@@ -187,12 +187,15 @@ private:
     void fetchImageInfoToPreview(const QString &p_text, ImageLinkInfo &p_info);
 
     // Update the preview info of related blocks according to @p_imageLinks.
-    void updateBlockPreviewInfo(TS p_timeStamp, const QVector<ImageLinkInfo> &p_imageLinks);
+    void updateBlockPreviewInfo(TS p_timeStamp,
+                                const QVector<ImageLinkInfo> &p_imageLinks,
+                                OrderedIntSet &p_affectedBlocks);
 
     // Update the preview info of related blocks according to @p_images.
     void updateBlockPreviewInfo(TS p_timeStamp,
                                 PreviewSource p_source,
-                                const QVector<QSharedPointer<VImageToPreview> > &p_images);
+                                const QVector<QSharedPointer<VImageToPreview> > &p_images,
+                                OrderedIntSet &p_affectedBlocks);
 
     // Get the name of the image in the resource manager.
     // Will add the image to the resource manager if not exists.
@@ -205,11 +208,15 @@ private:
 
     void clearObsoleteImages(long long p_timeStamp, PreviewSource p_source);
 
-    void clearBlockObsoletePreviewInfo(long long p_timeStamp, PreviewSource p_source);
+    void clearBlockObsoletePreviewInfo(long long p_timeStamp,
+                                       PreviewSource p_source,
+                                       OrderedIntSet &p_affectedBlocks);
 
     TS &timeStamp(PreviewSource p_source);
 
     void relayoutEditor(const OrderedIntSet &p_blocks);
+
+    void relayout(const OrderedIntSet &p_blocks);
 
     VMdEditor *m_editor;
 
@@ -246,5 +253,10 @@ inline TS &VPreviewManager::timeStamp(PreviewSource p_source)
 inline bool VPreviewManager::isPreviewEnabled() const
 {
     return m_previewEnabled;
+}
+
+inline void VPreviewManager::relayout(const OrderedIntSet &p_blocks)
+{
+    m_editor->relayout(p_blocks);
 }
 #endif // VPREVIEWMANAGER_H

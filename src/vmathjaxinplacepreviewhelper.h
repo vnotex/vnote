@@ -21,7 +21,8 @@ public:
 
     void updateInplacePreview(const VEditor *p_editor,
                               const QTextDocument *p_doc,
-                              const QPixmap &p_image);
+                              const QPixmap &p_image,
+                              const QString &p_imageName);
 
     VMathjaxBlock &mathjaxBlock()
     {
@@ -38,7 +39,7 @@ public:
         return !m_inplacePreview.isNull();
     }
 
-    const QSharedPointer<VImageToPreview> inplacePreview() const
+    const QSharedPointer<VImageToPreview> &inplacePreview() const
     {
         return m_inplacePreview;
     }
@@ -103,6 +104,7 @@ private:
 
         TimeStamp m_ts;
         QPixmap m_image;
+        QString m_imageName;
     };
 
 

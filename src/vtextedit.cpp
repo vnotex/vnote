@@ -323,6 +323,10 @@ void VTextEdit::clearBlockImages()
 
 void VTextEdit::relayout(const OrderedIntSet &p_blocks)
 {
+    if (p_blocks.isEmpty()) {
+        return;
+    }
+
     getLayout()->relayout(p_blocks);
 
     updateLineNumberArea();

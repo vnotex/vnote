@@ -21,7 +21,8 @@ MathjaxBlockPreviewInfo::MathjaxBlockPreviewInfo(const VMathjaxBlock &p_mb)
 
 void MathjaxBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
                                                    const QTextDocument *p_doc,
-                                                   const QPixmap &p_image)
+                                                   const QPixmap &p_image,
+                                                   const QString &p_imageName)
 {
     QTextBlock block = p_doc->findBlockByNumber(m_mathjaxBlock.m_blockNumber);
     if (block.isValid()) {
@@ -33,7 +34,12 @@ void MathjaxBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
         preview->m_blockNumber = m_mathjaxBlock.m_blockNumber;
         preview->m_padding = VPreviewManager::calculateBlockMargin(block,
                                                                    p_editor->tabStopWidthW());
-        preview->m_name = QString::number(getImageIndex());
+        if (!p_imageName.isEmpty()) {
+            preview->m_name = p_imageName;
+        } else {
+            preview->m_name = QString::number(getImageIndex());
+        }
+
         preview->m_isBlock = m_mathjaxBlock.m_previewedAsBlock;
 
         preview->m_image = p_image;
@@ -105,7 +111,10 @@ void VMathJaxInplacePreviewHelper::updateMathjaxBlocks(const QVector<VMathjaxBlo
             QSharedPointer<MathjaxImageCacheEntry> &entry = it.value();
             entry->m_ts = m_timeStamp;
             cached = true;
-            m_mathjaxBlocks.last().updateInplacePreview(m_editor, m_doc, entry->m_image);
+            m_mathjaxBlocks.last().updateInplacePreview(m_editor,
+                                                        m_doc,
+                                                        entry->m_image,
+                                                        entry->m_imageName);
         }
 
         if (!cached || !m_mathjaxBlocks.last().inplacePreviewReady()) {
@@ -198,7 +207,11 @@ void VMathJaxInplacePreviewHelper::mathjaxPreviewResultReady(int p_identitifer,
                                                                             p_data,
                                                                             p_format));
     m_cache.insert(mb.mathjaxBlock().m_text, entry);
-    mb.updateInplacePreview(m_editor, m_doc, entry->m_image);
+    mb.updateInplacePreview(m_editor, m_doc, entry->m_image, QString());
+
+    if (mb.inplacePreview()) {
+        entry->m_imageName = mb.inplacePreview()->m_name;
+    }
 
     updateInplacePreview();
 }

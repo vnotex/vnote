@@ -730,7 +730,7 @@ void VTextDocumentLayout::finishBlockLayout(const QTextBlock &p_block,
 
 void VTextDocumentLayout::updateDocumentSize()
 {
-    QTextBlock block = document()->lastBlock(); 
+    QTextBlock block = document()->lastBlock();
     const BlockLayoutInfo *info = VTextBlockData::layoutInfo(block);
     if (!info->hasOffset()) {
         if (info->isNull()) {
@@ -959,7 +959,7 @@ void VTextDocumentLayout::relayout()
         block = block.next();
     }
 
-    updateOffsetBefore(doc->lastBlock());
+    updateOffset(doc->firstBlock());
 
     updateDocumentSize();
 
@@ -975,28 +975,29 @@ void VTextDocumentLayout::relayout(const OrderedIntSet &p_blocks)
     QTextDocument *doc = document();
 
     // Need to relayout and update blocks in ascending order.
-    QVector<QTextBlock> blocks;
-    blocks.reserve(p_blocks.size());
+    QTextBlock startBlock;
     for (auto bn = p_blocks.keyBegin(); bn != p_blocks.keyEnd(); ++bn) {
         QTextBlock block = doc->findBlockByNumber(*bn);
         if (block.isValid()) {
-            blocks.append(block);
+            if (!startBlock.isValid()) {
+                startBlock = block;
+            }
+
             clearBlockLayout(block);
             layoutBlock(block);
         }
     }
 
-    if (blocks.isEmpty()) {
+    if (!startBlock.isValid()) {
         return;
     }
 
-    updateOffset(blocks.last());
-
-    for (auto const & blk : blocks) {
-        emit updateBlock(blk);
-    }
+    updateOffset(startBlock);
 
     updateDocumentSize();
+
+    qreal offset = VTextBlockData::layoutInfo(startBlock)->m_offset;
+    emit update(QRectF(0., offset, 1000000000., 1000000000.));
 }
 
 qreal VTextDocumentLayout::fetchInlineImagesForOneLine(const QVector<VPreviewInfo *> &p_info,

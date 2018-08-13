@@ -24,13 +24,14 @@ public:
     void updateInplacePreview(const VEditor *p_editor,
                               const QTextDocument *p_doc,
                               const QPixmap &p_image,
+                              const QString &p_imageName,
                               const QString &p_background);
 
     void updateInplacePreview(const VEditor *p_editor,
                               const QTextDocument *p_doc,
                               const QPixmap &p_image)
     {
-        updateInplacePreview(p_editor, p_doc, p_image, QString());
+        updateInplacePreview(p_editor, p_doc, p_image, QString(), QString());
     }
 
     VCodeBlock &codeBlock()
@@ -69,7 +70,7 @@ public:
         m_imgData = p_data;
     }
 
-    const QSharedPointer<VImageToPreview> inplacePreview() const
+    const QSharedPointer<VImageToPreview> &inplacePreview() const
     {
         return m_inplacePreview;
     }
@@ -197,6 +198,7 @@ private:
 
         // For in-place preview.
         QPixmap m_image;
+        QString m_imageName;
     };
 
 

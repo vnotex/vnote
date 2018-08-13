@@ -83,11 +83,14 @@ void VPreviewManager::setPreviewEnabled(bool p_enabled)
 
 void VPreviewManager::clearPreview()
 {
+    OrderedIntSet affectedBlocks;
     for (int i = 0; i < (int)PreviewSource::MaxNumberOfSources; ++i) {
         TS ts = ++timeStamp(static_cast<PreviewSource>(i));
-        clearBlockObsoletePreviewInfo(ts, static_cast<PreviewSource>(i));
+        clearBlockObsoletePreviewInfo(ts, static_cast<PreviewSource>(i), affectedBlocks);
         clearObsoleteImages(ts, static_cast<PreviewSource>(i));
     }
+
+    relayout(affectedBlocks);
 }
 
 void VPreviewManager::previewImages(TS p_timeStamp, const QVector<VElementRegion> &p_imageRegions)
@@ -95,11 +98,15 @@ void VPreviewManager::previewImages(TS p_timeStamp, const QVector<VElementRegion
     QVector<ImageLinkInfo> imageLinks;
     fetchImageLinksFromRegions(p_imageRegions, imageLinks);
 
-    updateBlockPreviewInfo(p_timeStamp, imageLinks);
+    OrderedIntSet affectedBlocks;
 
-    clearBlockObsoletePreviewInfo(p_timeStamp, PreviewSource::ImageLink);
+    updateBlockPreviewInfo(p_timeStamp, imageLinks, affectedBlocks);
+
+    clearBlockObsoletePreviewInfo(p_timeStamp, PreviewSource::ImageLink, affectedBlocks);
 
     clearObsoleteImages(p_timeStamp, PreviewSource::ImageLink);
+
+    relayout(affectedBlocks);
 }
 
 // Returns true if p_text[p_start, p_end) is all spaces.
@@ -367,9 +374,9 @@ int VPreviewManager::calculateBlockMargin(const QTextBlock &p_block, int p_tabSt
 }
 
 void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
-                                             const QVector<ImageLinkInfo> &p_imageLinks)
+                                             const QVector<ImageLinkInfo> &p_imageLinks,
+                                             OrderedIntSet &p_affectedBlocks)
 {
-    OrderedIntSet affectedBlocks;
     for (auto const & link : p_imageLinks) {
         QTextBlock block = m_document->findBlockByNumber(link.m_blockNumber);
         if (!block.isValid()) {
@@ -399,19 +406,17 @@ void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
         imageCache(PreviewSource::ImageLink).insert(name, p_timeStamp);
         if (!tsUpdated) {
             // No need to relayout the block if only timestamp is updated.
-            affectedBlocks.insert(link.m_blockNumber, QMapDummyValue());
+            p_affectedBlocks.insert(link.m_blockNumber, QMapDummyValue());
             m_highlighter->addPossiblePreviewBlock(link.m_blockNumber);
         }
     }
-
-    relayoutEditor(affectedBlocks);
 }
 
 void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
                                              PreviewSource p_source,
-                                             const QVector<QSharedPointer<VImageToPreview> > &p_images)
+                                             const QVector<QSharedPointer<VImageToPreview> > &p_images,
+                                             OrderedIntSet &p_affectedBlocks)
 {
-    OrderedIntSet affectedBlocks;
     for (auto const & img : p_images) {
         if (img.isNull()) {
             continue;
@@ -445,13 +450,10 @@ void VPreviewManager::updateBlockPreviewInfo(TS p_timeStamp,
         imageCache(p_source).insert(name, p_timeStamp);
         if (!tsUpdated) {
             // No need to relayout the block if only timestamp is updated.
-            affectedBlocks.insert(img->m_blockNumber, QMapDummyValue());
+            p_affectedBlocks.insert(img->m_blockNumber, QMapDummyValue());
             m_highlighter->addPossiblePreviewBlock(img->m_blockNumber);
         }
     }
-
-    // Relayout these blocks since they may not have been changed.
-    relayoutEditor(affectedBlocks);
 }
 
 void VPreviewManager::clearObsoleteImages(long long p_timeStamp, PreviewSource p_source)
@@ -469,9 +471,9 @@ void VPreviewManager::clearObsoleteImages(long long p_timeStamp, PreviewSource p
 }
 
 void VPreviewManager::clearBlockObsoletePreviewInfo(long long p_timeStamp,
-                                                    PreviewSource p_source)
+                                                    PreviewSource p_source,
+                                                    OrderedIntSet &p_affectedBlocks)
 {
-    OrderedIntSet affectedBlocks;
     QVector<int> obsoleteBlocks;
     const QSet<int> &blocks = m_highlighter->getPossiblePreviewBlocks();
     for (auto i : blocks) {
@@ -487,7 +489,7 @@ void VPreviewManager::clearBlockObsoletePreviewInfo(long long p_timeStamp,
         }
 
         if (blockData->clearObsoletePreview(p_timeStamp, p_source)) {
-            affectedBlocks.insert(i, QMapDummyValue());
+            p_affectedBlocks.insert(i, QMapDummyValue());
         }
 
         if (blockData->getPreviews().isEmpty()) {
@@ -496,8 +498,6 @@ void VPreviewManager::clearBlockObsoletePreviewInfo(long long p_timeStamp,
     }
 
     m_highlighter->clearPossiblePreviewBlocks(obsoleteBlocks);
-
-    m_editor->relayout(affectedBlocks);
 }
 
 void VPreviewManager::refreshPreview()
@@ -520,11 +520,15 @@ void VPreviewManager::updateCodeBlocks(const QVector<QSharedPointer<VImageToPrev
 
     TS ts = ++timeStamp(PreviewSource::CodeBlock);
 
-    updateBlockPreviewInfo(ts, PreviewSource::CodeBlock, p_images);
+    OrderedIntSet affectedBlocks;
 
-    clearBlockObsoletePreviewInfo(ts, PreviewSource::CodeBlock);
+    updateBlockPreviewInfo(ts, PreviewSource::CodeBlock, p_images, affectedBlocks);
+
+    clearBlockObsoletePreviewInfo(ts, PreviewSource::CodeBlock, affectedBlocks);
 
     clearObsoleteImages(ts, PreviewSource::CodeBlock);
+
+    relayout(affectedBlocks);
 }
 
 void VPreviewManager::updateMathjaxBlocks(const QVector<QSharedPointer<VImageToPreview> > &p_images)
@@ -535,11 +539,15 @@ void VPreviewManager::updateMathjaxBlocks(const QVector<QSharedPointer<VImageToP
 
     TS ts = ++timeStamp(PreviewSource::MathjaxBlock);
 
-    updateBlockPreviewInfo(ts, PreviewSource::MathjaxBlock, p_images);
+    OrderedIntSet affectedBlocks;
 
-    clearBlockObsoletePreviewInfo(ts, PreviewSource::MathjaxBlock);
+    updateBlockPreviewInfo(ts, PreviewSource::MathjaxBlock, p_images, affectedBlocks);
+
+    clearBlockObsoletePreviewInfo(ts, PreviewSource::MathjaxBlock, affectedBlocks);
 
     clearObsoleteImages(ts, PreviewSource::MathjaxBlock);
+
+    relayout(affectedBlocks);
 }
 
 void VPreviewManager::checkBlocksForObsoletePreview(const QList<int> &p_blocks)
@@ -576,7 +584,7 @@ void VPreviewManager::checkBlocksForObsoletePreview(const QList<int> &p_blocks)
         }
     }
 
-    m_editor->relayout(affectedBlocks);
+    relayout(affectedBlocks);
 }
 
 void VPreviewManager::relayoutEditor(const OrderedIntSet &p_blocks)
@@ -594,7 +602,9 @@ void VPreviewManager::relayoutEditor(const OrderedIntSet &p_blocks)
     OrderedIntSet after;
     int afterFirst = m_editor->firstVisibleBlockNumber();
     for (int i = afterFirst; i < first; ++i) {
-        after.insert(i, QMapDummyValue());
+        if (!bs.contains(i)) {
+            after.insert(i, QMapDummyValue());
+        }
     }
 
     m_editor->relayout(after);

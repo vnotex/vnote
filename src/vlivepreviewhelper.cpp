@@ -42,6 +42,7 @@ CodeBlockPreviewInfo::CodeBlockPreviewInfo(const VCodeBlock &p_cb)
 void CodeBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
                                                 const QTextDocument *p_doc,
                                                 const QPixmap &p_image,
+                                                const QString &p_imageName,
                                                 const QString &p_background)
 {
     QTextBlock block = p_doc->findBlockByNumber(m_codeBlock.m_endBlock);
@@ -54,7 +55,12 @@ void CodeBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
         preview->m_blockNumber = m_codeBlock.m_endBlock;
         preview->m_padding = VPreviewManager::calculateBlockMargin(block,
                                                                    p_editor->tabStopWidthW());
-        preview->m_name = QString::number(getImageIndex());
+        if (!p_imageName.isEmpty()) {
+            preview->m_name = p_imageName;
+        } else {
+            preview->m_name = QString::number(getImageIndex());
+        }
+
         preview->m_background = p_background;
         preview->m_isBlock = true;
 
@@ -178,6 +184,7 @@ void VLivePreviewHelper::updateCodeBlocks(TimeStamp p_timeStamp, const QVector<V
             m_codeBlocks[idx].updateInplacePreview(m_editor,
                                                    m_doc,
                                                    entry->m_image,
+                                                   entry->m_imageName,
                                                    background);
         }
 
@@ -383,7 +390,11 @@ void VLivePreviewHelper::localAsyncResultReady(int p_id,
     m_cache.insert(text, entry);
 
     cb.setImageData(p_format, p_result);
-    cb.updateInplacePreview(m_editor, m_doc, entry->m_image, background);
+    cb.updateInplacePreview(m_editor, m_doc, entry->m_image, QString(), background);
+
+    if (cb.inplacePreview()) {
+        entry->m_imageName = cb.inplacePreview()->m_name;
+    }
 
     if (livePreview) {
         if (idx != m_cbIndex) {
@@ -494,6 +505,10 @@ void VLivePreviewHelper::mathjaxPreviewResultReady(int p_identitifer,
     m_cache.insert(text, entry);
 
     cb.updateInplacePreview(m_editor, m_doc, entry->m_image);
+
+    if (cb.inplacePreview()) {
+        entry->m_imageName = cb.inplacePreview()->m_name;
+    }
 
     updateInplacePreview();
 }
