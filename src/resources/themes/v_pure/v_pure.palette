@@ -301,7 +301,7 @@ listview_item_selected_inactive_fg=@inactive_fg
 listview_item_selected_inactive_bg=@inactive_bg
 
 ; QAbstractItemView for TextEdit Completer.
-abstractitemview_textedit_fg=#content_fg
+abstractitemview_textedit_fg=@content_fg
 abstractitemview_textedit_bg=#DADADA
 abstractitemview_textedit_item_hover_fg=@abstractitemview_textedit_fg
 abstractitemview_textedit_item_hover_bg=@master_hover_bg

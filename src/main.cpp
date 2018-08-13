@@ -75,19 +75,18 @@ void VLogger(QtMsgType type, const QMessageLogContext &context, const QString &m
         break;
     }
 
+    QString fileName = QFileInfo(context.file).fileName();
 #if defined(QT_NO_DEBUG)
-    Q_UNUSED(context);
-
     QTextStream stream(&g_logFile);
-
-    stream << header << localMsg << "\n";
+    stream << header << (QString("(%1:%2) ").arg(fileName).arg(context.line))
+           << localMsg << "\n";
 
     if (type == QtFatalMsg) {
         g_logFile.close();
         abort();
     }
 #else
-    std::string fileStr = QFileInfo(context.file).fileName().toStdString();
+    std::string fileStr = fileName.toStdString();
     const char *file = fileStr.c_str();
 
     switch (type) {
@@ -167,6 +166,8 @@ int main(int argc, char *argv[])
 #endif
 
     qInstallMessageHandler(VLogger);
+
+    qInfo() << "VNote started" << g_config->c_version << QDateTime::currentDateTime().toString();
 
     QString locale = VUtils::getLocale();
     // Set default locale.

@@ -8,6 +8,9 @@ QT       += core gui webenginewidgets webchannel network svg printsupport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+# Enable message log in release build
+DEFINES += QT_MESSAGELOGCONTEXT
+
 TARGET = VNote
 TEMPLATE = app
 
