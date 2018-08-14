@@ -74,7 +74,7 @@ void PegMarkdownHighlighter::init(const QVector<HighlightingStyle> &p_styles,
 
     m_fastParseTimer = new QTimer(this);
     m_fastParseTimer->setSingleShot(true);
-    m_fastParseTimer->setInterval(50);
+    m_fastParseTimer->setInterval(100);
     connect(m_fastParseTimer, &QTimer::timeout,
             this, [this]() {
                 startFastParse(m_fastParseInfo.m_position,
@@ -729,7 +729,7 @@ void PegMarkdownHighlighter::getFastParseBlockRange(int p_position,
                                                     int &p_firstBlock,
                                                     int &p_lastBlock) const
 {
-    const int maxNumOfBlocks = 50;
+    const int maxNumOfBlocks = 10;
 
     int charsChanged = p_charsRemoved + p_charsAdded;
     QTextBlock firstBlock = m_doc->findBlock(p_position);
