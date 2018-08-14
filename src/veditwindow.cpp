@@ -47,6 +47,10 @@ VEditWindow::VEditWindow(VEditArea *editArea, QWidget *parent)
 
     QTabBar *bar = tabBar();
     bar->setContextMenuPolicy(Qt::CustomContextMenu);
+    if (g_config->getMiddleClickClostTab()) {
+        bar->installEventFilter(this);
+    }
+
     connect(bar, &QTabBar::customContextMenuRequested,
             this, &VEditWindow::tabbarContextMenuRequested);
 
@@ -1304,4 +1308,20 @@ QVector<TabNavigationInfo> VEditWindow::getTabsNavigationInfo() const
     }
 
     return infos;
+}
+
+bool VEditWindow::eventFilter(QObject *p_obj, QEvent *p_event)
+{
+    if (p_obj == tabBar() && p_event->type() == QEvent::MouseButtonRelease) {
+        QMouseEvent *me = static_cast<QMouseEvent *>(p_event);
+        if (me->button() == Qt::MiddleButton) {
+            // Close current tab.
+            int idx = tabBar()->tabAt(me->pos());
+            if (idx != -1) {
+                closeTab(idx);
+            }
+        }
+    }
+
+    return QTabWidget::eventFilter(p_obj, p_event);
 }

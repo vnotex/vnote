@@ -232,6 +232,9 @@ void VConfigManager::initialize()
     m_doubleClickCloseTab = getConfigFromSettings("global",
                                                   "double_click_close_tab").toBool();
 
+    m_middleClickCloseTab = getConfigFromSettings("global",
+                                                  "middle_click_close_tab").toBool();
+
     int tmpStartupPageMode = getConfigFromSettings("global",
                                                    "startup_page_type").toInt();
     if (tmpStartupPageMode < (int)StartupPageType::Invalid

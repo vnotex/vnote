@@ -110,6 +110,8 @@ protected:
     // Drop the data.
     void dropEvent(QDropEvent *p_event) Q_DECL_OVERRIDE;
 
+    bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
+
 signals:
     // Status of current VEditTab has update.
     void tabStatusUpdated(const VEditTabInfo &p_info);

@@ -378,6 +378,8 @@ public:
 
     bool getDoubleClickCloseTab() const;
 
+    bool getMiddleClickClostTab() const;
+
     StartupPageType getStartupPageType() const;
     void setStartupPageType(StartupPageType p_type);
 
@@ -872,6 +874,9 @@ private:
 
     // Whether double click on a tab to close it.
     bool m_doubleClickCloseTab;
+
+    // Whether middle click on a tab to close it.
+    bool m_middleClickCloseTab;
 
     // Type of the pages to open on startup.
     StartupPageType m_startupPageType;
@@ -2083,6 +2088,11 @@ inline void VConfigManager::setMathjaxJavascript(const QString &p_js)
 inline bool VConfigManager::getDoubleClickCloseTab() const
 {
     return m_doubleClickCloseTab;
+}
+
+inline bool VConfigManager::getMiddleClickClostTab() const
+{
+    return m_middleClickCloseTab;
 }
 
 inline StartupPageType VConfigManager::getStartupPageType() const
