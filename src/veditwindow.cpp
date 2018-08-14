@@ -365,10 +365,12 @@ void VEditWindow::updateTabStatus(int p_index)
         return;
     }
 
-    VEditTab *tab = getTab(p_index);
-    emit tabStatusUpdated(tab->fetchTabInfo());
-    emit outlineChanged(tab->getOutline());
-    emit currentHeaderChanged(tab->getCurrentHeader());
+    if (p_index == currentIndex()) {
+        VEditTab *tab = getTab(p_index);
+        emit tabStatusUpdated(tab->fetchTabInfo());
+        emit outlineChanged(tab->getOutline());
+        emit currentHeaderChanged(tab->getCurrentHeader());
+    }
 
     updateTabInfo(p_index);
 }
