@@ -1656,7 +1656,9 @@ int VUtils::elapsedTime(bool p_reset)
     return tm.restart();
 }
 
-QPixmap VUtils::svgToPixmap(const QByteArray &p_content, qreal p_factor)
+QPixmap VUtils::svgToPixmap(const QByteArray &p_content,
+                            const QString &p_background,
+                            qreal p_factor)
 {
     QSvgRenderer renderer(p_content);
     QSize deSz = renderer.defaultSize();
@@ -1665,6 +1667,10 @@ QPixmap VUtils::svgToPixmap(const QByteArray &p_content, qreal p_factor)
     }
 
     QPixmap pm(deSz);
+    if (!p_background.isEmpty()) {
+        pm.fill(p_background);
+    }
+
     QPainter painter(&pm);
     renderer.render(&painter);
     return pm;

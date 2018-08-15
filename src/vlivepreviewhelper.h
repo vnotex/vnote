@@ -141,16 +141,21 @@ private:
         CodeBlockImageCacheEntry(TimeStamp p_ts,
                                  const QString &p_format,
                                  const QByteArray &p_data,
+                                 const QString &p_background,
                                  qreal p_scaleFactor)
             : m_ts(p_ts)
         {
             if (!p_data.isEmpty()) {
+                m_imageBackground = p_background;
+
                 if (p_scaleFactor < SCALE_FACTOR_THRESHOLD) {
                     m_image.loadFromData(p_data,
                                          p_format.toLocal8Bit().data());
                 } else {
                     if (p_format == "svg") {
-                        m_image = VUtils::svgToPixmap(p_data, p_scaleFactor);
+                        m_image = VUtils::svgToPixmap(p_data,
+                                                      m_imageBackground,
+                                                      p_scaleFactor);
                     } else {
                         QPixmap tmpImg;
                         tmpImg.loadFromData(p_data,
@@ -165,18 +170,23 @@ private:
         CodeBlockImageCacheEntry(TimeStamp p_ts,
                                  const QString &p_format,
                                  const QString &p_data,
+                                 const QString &p_background,
                                  qreal p_scaleFactor)
             : m_ts(p_ts),
               m_imgData(p_data),
               m_imgFormat(p_format)
         {
             if (!p_data.isEmpty()) {
+                m_imageBackground = p_background;
+
                 if (p_scaleFactor < SCALE_FACTOR_THRESHOLD) {
                     m_image.loadFromData(p_data.toUtf8(),
                                          p_format.toLocal8Bit().data());
                 } else {
                     if (p_format == "svg") {
-                        m_image = VUtils::svgToPixmap(p_data.toUtf8(), p_scaleFactor);
+                        m_image = VUtils::svgToPixmap(p_data.toUtf8(),
+                                                      m_imageBackground,
+                                                      p_scaleFactor);
                     } else {
                         QPixmap tmpImg;
                         tmpImg.loadFromData(p_data.toUtf8(),
@@ -207,6 +217,7 @@ private:
         // For in-place preview.
         QPixmap m_image;
         QString m_imageName;
+        QString m_imageBackground;
     };
 
 

@@ -175,17 +175,11 @@ void VLivePreviewHelper::updateCodeBlocks(TimeStamp p_timeStamp, const QVector<V
             entry->m_ts = m_timeStamp;
             cached = true;
             m_codeBlocks[idx].setImageData(entry->m_imgFormat, entry->m_imgData);
-
-            QString background;
-            if (vcb.m_lang == "puml") {
-                background = g_config->getEditorPreviewImageBg();
-            }
-
             m_codeBlocks[idx].updateInplacePreview(m_editor,
                                                    m_doc,
                                                    entry->m_image,
                                                    entry->m_imageName,
-                                                   background);
+                                                   entry->m_imageBackground);
         }
 
         if (m_inplacePreviewEnabled
@@ -386,6 +380,7 @@ void VLivePreviewHelper::localAsyncResultReady(int p_id,
     QSharedPointer<CodeBlockImageCacheEntry> entry(new CodeBlockImageCacheEntry(p_timeStamp,
                                                                                 p_format,
                                                                                 p_result,
+                                                                                background,
                                                                                 getScaleFactor(cb)));
     m_cache.insert(text, entry);
 
@@ -501,6 +496,7 @@ void VLivePreviewHelper::mathjaxPreviewResultReady(int p_identitifer,
     QSharedPointer<CodeBlockImageCacheEntry> entry(new CodeBlockImageCacheEntry(p_timeStamp,
                                                                                 p_format,
                                                                                 p_data,
+                                                                                "",
                                                                                 getScaleFactor(cb)));
     m_cache.insert(text, entry);
 
