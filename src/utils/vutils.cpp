@@ -29,6 +29,8 @@
 #include <QFormLayout>
 #include <QInputDialog>
 #include <QFontDatabase>
+#include <QSvgRenderer>
+#include <QPainter>
 
 #include "vorphanfile.h"
 #include "vnote.h"
@@ -1652,4 +1654,18 @@ int VUtils::elapsedTime(bool p_reset)
     }
 
     return tm.restart();
+}
+
+QPixmap VUtils::svgToPixmap(const QByteArray &p_content, qreal p_factor)
+{
+    QSvgRenderer renderer(p_content);
+    QSize deSz = renderer.defaultSize();
+    if (p_factor > 0) {
+        deSz *= p_factor;
+    }
+
+    QPixmap pm(deSz);
+    QPainter painter(&pm);
+    renderer.render(&painter);
+    return pm;
 }

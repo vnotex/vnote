@@ -359,6 +359,10 @@ public:
 
     static int elapsedTime(bool p_reset = false);
 
+    // Render SVG to Pixmap.
+    // @p_factor: < 0 indicates no scaling.
+    static QPixmap svgToPixmap(const QByteArray &p_content, qreal p_factor);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt text" =200x100)
     // Captured texts (need to be trimmed):

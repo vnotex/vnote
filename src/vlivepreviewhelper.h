@@ -149,11 +149,15 @@ private:
                     m_image.loadFromData(p_data,
                                          p_format.toLocal8Bit().data());
                 } else {
-                    QPixmap tmpImg;
-                    tmpImg.loadFromData(p_data,
-                                        p_format.toLocal8Bit().data());
-                    m_image = tmpImg.scaledToWidth(tmpImg.width() * p_scaleFactor,
-                                                   Qt::SmoothTransformation);
+                    if (p_format == "svg") {
+                        m_image = VUtils::svgToPixmap(p_data, p_scaleFactor);
+                    } else {
+                        QPixmap tmpImg;
+                        tmpImg.loadFromData(p_data,
+                                            p_format.toLocal8Bit().data());
+                        m_image = tmpImg.scaledToWidth(tmpImg.width() * p_scaleFactor,
+                                                       Qt::SmoothTransformation);
+                    }
                 }
             }
         }
@@ -171,11 +175,15 @@ private:
                     m_image.loadFromData(p_data.toUtf8(),
                                          p_format.toLocal8Bit().data());
                 } else {
-                    QPixmap tmpImg;
-                    tmpImg.loadFromData(p_data.toUtf8(),
-                                        p_format.toLocal8Bit().data());
-                    m_image = tmpImg.scaledToWidth(tmpImg.width() * p_scaleFactor,
-                                                   Qt::SmoothTransformation);
+                    if (p_format == "svg") {
+                        m_image = VUtils::svgToPixmap(p_data.toUtf8(), p_scaleFactor);
+                    } else {
+                        QPixmap tmpImg;
+                        tmpImg.loadFromData(p_data.toUtf8(),
+                                            p_format.toLocal8Bit().data());
+                        m_image = tmpImg.scaledToWidth(tmpImg.width() * p_scaleFactor,
+                                                       Qt::SmoothTransformation);
+                    }
                 }
             }
         }
