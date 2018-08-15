@@ -175,6 +175,11 @@ void VEditor::highlightOnCursorPositionChanged()
                 && text.size() > 1) {
                 ++it;
                 needUpdate = it->isSpace();
+                // Input two chars at once in Chinese.
+                if (!needUpdate && text.size() > 2) {
+                    ++it;
+                    needUpdate = it->isSpace();
+                }
             }
 
             if (needUpdate) {
@@ -248,13 +253,17 @@ void VEditor::filterTrailingSpace(QList<QTextEdit::ExtraSelection> &p_selects,
     bool blockEnd = cursor.atBlockEnd();
     int blockNum = cursor.blockNumber();
     for (auto it = p_src.begin(); it != p_src.end(); ++it) {
-        if (blockEnd && it->cursor.blockNumber() == blockNum) {
-            // When cursor is at block end, we do not display any trailing space
-            // at current line.
-            continue;
-        } else if (!it->cursor.atBlockEnd()) {
-            // Obsolete trailing space.
-            continue;
+        if (it->cursor.blockNumber() == blockNum) {
+            if (blockEnd) {
+                // When cursor is at block end, we do not display any trailing space
+                // at current line.
+                continue;
+            }
+
+            QString text = cursor.block().text();
+            if (!text.isEmpty() && !text[text.size() - 1].isSpace()) {
+                continue;
+            }
         } else {
             p_selects.append(*it);
         }
