@@ -807,7 +807,7 @@ void VEditor::replaceText(const QString &p_text,
     QRegExp exp;
     if (useRegExp) {
         exp = QRegExp(p_text,
-                      p_options & FindOption::CaseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive);
+                      (p_options & FindOption::CaseSensitive) ? Qt::CaseSensitive : Qt::CaseInsensitive);
     }
 
     bool found = findTextHelper(p_text,
@@ -855,7 +855,7 @@ void VEditor::replaceTextAll(const QString &p_text,
     QRegExp exp;
     if (useRegExp) {
         exp = QRegExp(p_text,
-                      p_options & FindOption::CaseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive);
+                      (p_options & FindOption::CaseSensitive) ? Qt::CaseSensitive : Qt::CaseInsensitive);
     } else {
         newText = p_replaceText;
     }
@@ -1196,7 +1196,7 @@ QString VEditor::fetchCompletionPrefix() const
     QString prefix;
     while (pos >= blockPos) {
         QChar ch = m_document->characterAt(pos);
-        if (ch.isSpace()) {
+        if (ch.isSpace() || VEditUtils::isWordSeparator(ch)) {
             break;
         }
 

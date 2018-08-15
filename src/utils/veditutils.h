@@ -209,6 +209,8 @@ public:
     // Whether @p_block is empty.
     static bool isEmptyBlock(const QTextBlock &p_block);
 
+    static bool isWordSeparator(QChar p_char);
+
 private:
     VEditUtils() {}
 };

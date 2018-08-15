@@ -1039,3 +1039,47 @@ bool VEditUtils::isEmptyBlock(const QTextBlock &p_block)
 {
     return p_block.length() == 1;
 }
+
+// Copy from QTextEngine::atWordSeparator(int position).
+bool VEditUtils::isWordSeparator(QChar p_char)
+{
+    switch (p_char.unicode()) {
+    case '.':
+    case ',':
+    case '?':
+    case '!':
+    case '@':
+    case '#':
+    case '$':
+    case ':':
+    case ';':
+    case '-':
+    case '<':
+    case '>':
+    case '[':
+    case ']':
+    case '(':
+    case ')':
+    case '{':
+    case '}':
+    case '=':
+    case '/':
+    case '+':
+    case '%':
+    case '&':
+    case '^':
+    case '*':
+    case '\'':
+    case '"':
+    case '`':
+    case '~':
+    case '|':
+    case '\\':
+        return true;
+
+    default:
+        break;
+    }
+
+    return false;
+}
