@@ -84,6 +84,8 @@ public slots:
 
     void textToHtmlFinished(int p_id, int p_timeStamp, const QUrl &p_baseUrl, const QString &p_html);
 
+    void htmlToTextFinished(int p_id, int p_timeStamp, const QString &p_html);
+
 // Wrapper functions for QPlainTextEdit/QTextEdit.
 public:
     void setExtraSelectionsW(const QList<QTextEdit::ExtraSelection> &p_selections) Q_DECL_OVERRIDE
@@ -213,6 +215,9 @@ signals:
 
     // Request to convert @p_text to Html.
     void requestTextToHtml(const QString &p_text, int p_id, int p_timeStamp);
+
+    // Request to convert @p_html to Markdown text.
+    void requestHtmlToText(const QString &p_html, int p_id, int p_timeStamp);
 
 protected:
     void updateFontAndPalette() Q_DECL_OVERRIDE;

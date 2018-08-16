@@ -171,6 +171,10 @@ new QWebChannel(qt.webChannelTransport,
             content.noticeReadyToHighlightText();
         }
 
+        if (typeof htmlToText == "function") {
+            content.requestHtmlToText.connect(htmlToText);
+        }
+
         if (typeof textToHtml == "function") {
             content.requestTextToHtml.connect(textToHtml);
             content.noticeReadyToTextToHtml();
@@ -1464,4 +1468,112 @@ var setPreviewContent = function(lang, html) {
     } else {
         previewDiv.className = '';
     }
+};
+
+var htmlToText = function(identifier, id, timeStamp, html) {
+    var splitString = function(str) {
+        var result = { leadingSpaces: '',
+                       content: '',
+                       trailingSpaces: ''
+                     };
+        if (!str) {
+            return result;
+        }
+
+        var lRe = /^\s+/;
+        var ret = lRe.exec(str);
+        if (ret) {
+            result.leadingSpaces = ret[0];
+            if (result.leadingSpaces.length == str.length) {
+                return result;
+            }
+        }
+
+        var tRe = /\s+$/;
+        ret = tRe.exec(str);
+        if (ret) {
+            result.trailingSpaces = ret[0];
+        }
+
+        result.content = str.slice(result.leadingSpaces.length,
+                                   str.length - result.trailingSpaces.length);
+        return result;
+    };
+
+    var gfm = turndownPluginGfm.gfm
+    var ts = new TurndownService({ headingStyle: 'atx',
+                                   bulletListMarker: '-',
+                                   emDelimiter: '*',
+                                   hr: '***',
+                                   codeBlockStyle: 'fenced',
+                                   blankReplacement: function(content, node) {
+                                       if (node.nodeName == 'SPAN') {
+                                           return content;
+                                       }
+
+                                       return node.isBlock ? '\n\n' : ''
+                                   }
+                                 });
+    ts.use(gfm);
+    ts.addRule('emspan', {
+        filter: 'span',
+        replacement: function(content, node, options) {
+            if (node.style.fontWeight == 'bold') {
+                var con = splitString(content);
+                if (!con.content) {
+                    return content;
+                }
+
+                return con.leadingSpaces + options.strongDelimiter
+                       + con.content
+                       + options.strongDelimiter + con.trailingSpaces;
+            } else if (node.style.fontStyle == 'italic') {
+                var con = splitString(content);
+                if (!con.content) {
+                    return content;
+                }
+
+                return con.leadingSpaces + options.emDelimiter
+                       + con.content
+                       + options.emDelimiter + con.trailingSpaces;
+            } else {
+                return content;
+            }
+        }
+    });
+    ts.addRule('mark', {
+        filter: 'mark',
+        replacement: function(content, node, options) {
+            return '<mark>' + content + '</mark>';
+        }
+    });
+    ts.addRule('emphasis_fix', {
+        filter: ['em', 'i'],
+        replacement: function (content, node, options) {
+            var con = splitString(content);
+            if (!con.content) {
+                return content;
+            }
+
+            return con.leadingSpaces + options.emDelimiter
+                   + con.content
+                   + options.emDelimiter + con.trailingSpaces;
+        }
+    });
+    ts.addRule('strong_fix', {
+        filter: ['strong', 'b'],
+        replacement: function (content, node, options) {
+            var con = splitString(content);
+            if (!con.content) {
+                return content;
+            }
+
+            return con.leadingSpaces + options.strongDelimiter
+                   + con.content
+                   + options.strongDelimiter + con.trailingSpaces;
+        }
+    });
+
+    var markdown = ts.turndown(html);
+    content.htmlToTextCB(identifier, id, timeStamp, markdown);
 };

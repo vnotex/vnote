@@ -40,6 +40,12 @@ public:
                          const QString &p_text,
                          bool p_inlineStyle);
 
+    // Request to convert @p_html to Markdown text.
+    void htmlToTextAsync(int p_identitifer,
+                         int p_id,
+                         int p_timeStamp,
+                         const QString &p_html);
+
     void setFile(const VFile *p_file);
 
     bool isReadyToHighlight() const;
@@ -91,6 +97,8 @@ public slots:
     void noticeReadyToHighlightText();
 
     void textToHtmlCB(int p_identitifer, int p_id, int p_timeStamp, const QString &p_html);
+
+    void htmlToTextCB(int p_identitifer, int p_id, int p_timeStamp, const QString &p_text);
 
     void noticeReadyToTextToHtml();
 
@@ -144,7 +152,14 @@ signals:
                            const QString &p_text,
                            bool p_inlineStyle);
 
+    void requestHtmlToText(int p_identitifer,
+                           int p_id,
+                           int p_timeStamp,
+                           const QString &p_html);
+
     void textToHtmlFinished(int p_identitifer, int p_id, int p_timeStamp, const QString &p_html);
+
+    void htmlToTextFinished(int p_identitifer, int p_id, int p_timeStamp, const QString &p_text);
 
     void requestHtmlContent();
 

@@ -221,6 +221,8 @@ private:
 
     void textToHtmlViaWebView(const QString &p_text, int p_id, int p_timeStamp);
 
+    void htmlToTextViaWebView(const QString &p_html, int p_id, int p_timeStamp);
+
     bool executeVimCommandInWebView(const QString &p_cmd);
 
     // Update web view by current content.

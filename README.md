@@ -206,6 +206,7 @@ In VNote, almost everything is configurable, such as background color, font, and
 - [flowchart.js](https://github.com/adrai/flowchart.js) (MIT License)
 - [PlantUML](http://plantuml.com/) (MIT License)
 - [dom-to-image](https://github.com/tsayen/dom-to-image) (MIT License)
+- [turndown](https://github.com/domchristie/turndown) (MIT License)
 
 # License
 VNote is licensed under the [MIT license](http://opensource.org/licenses/MIT).

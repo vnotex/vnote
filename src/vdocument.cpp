@@ -94,6 +94,14 @@ void VDocument::textToHtmlAsync(int p_identitifer,
     emit requestTextToHtml(p_identitifer, p_id, p_timeStamp, p_text, p_inlineStyle);
 }
 
+void VDocument::htmlToTextAsync(int p_identitifer,
+                                int p_id,
+                                int p_timeStamp,
+                                const QString &p_html)
+{
+    emit requestHtmlToText(p_identitifer, p_id, p_timeStamp, p_html);
+}
+
 void VDocument::getHtmlContentAsync()
 {
     emit requestHtmlContent();
@@ -102,6 +110,11 @@ void VDocument::getHtmlContentAsync()
 void VDocument::textToHtmlCB(int p_identitifer, int p_id, int p_timeStamp, const QString &p_html)
 {
     emit textToHtmlFinished(p_identitifer, p_id, p_timeStamp, p_html);
+}
+
+void VDocument::htmlToTextCB(int p_identitifer, int p_id, int p_timeStamp, const QString &p_text)
+{
+    emit htmlToTextFinished(p_identitifer, p_id, p_timeStamp, p_text);
 }
 
 void VDocument::noticeReadyToHighlightText()

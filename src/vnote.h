@@ -60,6 +60,10 @@ public:
     static const QString c_showdownExtraFile;
     static const QString c_showdownAnchorExtraFile;
 
+    // Turndown
+    static const QString c_turndownJsFile;
+    static const QString c_turndownGfmExtraFile;
+
     // Mermaid
     static const QString c_mermaidApiJsFile;
     static const QString c_mermaidForestCssFile;

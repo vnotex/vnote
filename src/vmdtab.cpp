@@ -451,6 +451,15 @@ void VMdTab::setupMarkdownViewer()
 
                 m_editor->textToHtmlFinished(p_id, p_timeStamp, m_webViewer->url(), p_html);
             });
+    connect(m_document, &VDocument::htmlToTextFinished,
+            this, [this](int p_identitifer, int p_id, int p_timeStamp, const QString &p_text) {
+                Q_ASSERT(m_editor);
+                if (m_documentID != p_identitifer) {
+                    return;
+                }
+
+                m_editor->htmlToTextFinished(p_id, p_timeStamp, p_text);
+            });
     connect(m_document, &VDocument::wordCountInfoUpdated,
             this, [this]() {
                 VEditTabInfo info = fetchTabInfo(VEditTabInfo::InfoType::All);
@@ -525,6 +534,8 @@ void VMdTab::setupMarkdownEditor()
             });
     connect(m_editor, &VMdEditor::requestTextToHtml,
             this, &VMdTab::textToHtmlViaWebView);
+    connect(m_editor, &VMdEditor::requestHtmlToText,
+            this, &VMdTab::htmlToTextViaWebView);
 
     if (m_editor->getVim()) {
         connect(m_editor->getVim(), &VVim::commandLineTriggered,
@@ -1215,6 +1226,23 @@ void VMdTab::textToHtmlViaWebView(const QString &p_text, int p_id, int p_timeSta
     }
 
     m_document->textToHtmlAsync(m_documentID, p_id, p_timeStamp, p_text, true);
+}
+
+void VMdTab::htmlToTextViaWebView(const QString &p_html, int p_id, int p_timeStamp)
+{
+    int maxRetry = 50;
+    while (!m_document->isReadyToTextToHtml() && maxRetry > 0) {
+        qDebug() << "wait for web side ready to convert HTML to text";
+        VUtils::sleepWait(100);
+        --maxRetry;
+    }
+
+    if (maxRetry == 0) {
+        qWarning() << "web side is not ready to convert HTML to text";
+        return;
+    }
+
+    m_document->htmlToTextAsync(m_documentID, p_id, p_timeStamp, p_html);
 }
 
 void VMdTab::handleVimCmdCommandCancelled()

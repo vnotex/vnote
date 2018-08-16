@@ -815,6 +815,36 @@ void VMdEditor::insertFromMimeData(const QMimeData *p_source)
             m_editOps->insertImageFromURL(QUrl(reg.cap(2)));
             return;
         }
+
+        // Handle HTML.
+        VSelectDialog dialog(tr("Insert From Clipboard"), this);
+        dialog.addSelection(tr("Insert Converted Markdown Text"), 0);
+        dialog.addSelection(tr("Insert As Text"), 1);
+        if (p_source->hasImage()) {
+            dialog.addSelection(tr("Insert As Image"), 2);
+        }
+
+        if (dialog.exec() == QDialog::Accepted) {
+            switch (dialog.getSelection()) {
+            case 0:
+                ++m_copyTimeStamp;
+                emit requestHtmlToText(html, 0, m_copyTimeStamp);
+                break;
+
+            case 1:
+                VTextEdit::insertFromMimeData(p_source);
+                break;
+
+            case 2:
+                m_editOps->insertImageFromMimeData(p_source);
+                break;
+
+            default:
+                break;
+            }
+        }
+
+        return;
     }
 
     VSelectDialog dialog(tr("Insert From Clipboard"), this);
@@ -1193,6 +1223,17 @@ void VMdEditor::textToHtmlFinished(int p_id,
     Q_UNUSED(p_id);
     if (m_textToHtmlDialog && p_timeStamp == m_copyTimeStamp) {
         m_textToHtmlDialog->setConvertedHtml(p_baseUrl, p_html);
+    }
+}
+
+void VMdEditor::htmlToTextFinished(int p_id, int p_timeStamp, const QString &p_text)
+{
+    Q_UNUSED(p_id);
+    if (m_copyTimeStamp == p_timeStamp && !p_text.isEmpty()) {
+        QTextCursor cursor = textCursor();
+        cursor.insertText(p_text);
+        setTextCursor(cursor);
+        emit m_object->statusMessage(tr("Converted Markdown text inverted"));
     }
 }
 

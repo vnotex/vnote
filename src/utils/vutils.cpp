@@ -735,6 +735,9 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
         Q_ASSERT(false);
     }
 
+    extraFile += "<script src=\"qrc" + VNote::c_turndownJsFile + "\"></script>\n";
+    extraFile += "<script src=\"qrc" + VNote::c_turndownGfmExtraFile + "\"></script>\n";
+
     if (g_config->getEnableMermaid()) {
         extraFile += "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + g_config->getMermaidCssStyleUrl() + "\"/>\n" +
                      "<script src=\"qrc" + VNote::c_mermaidApiJsFile + "\"></script>\n" +

@@ -48,6 +48,9 @@ const QString VNote::c_showdownJsFile = ":/resources/showdown.js";
 const QString VNote::c_showdownExtraFile = ":/utils/showdown/showdown.min.js";
 const QString VNote::c_showdownAnchorExtraFile = ":/utils/showdown/showdown-headinganchor.js";
 
+const QString VNote::c_turndownJsFile = ":/utils/turndown/turndown.js";
+const QString VNote::c_turndownGfmExtraFile = ":/utils/turndown/turndown-plugin-gfm.js";
+
 const QString VNote::c_mermaidApiJsFile = ":/utils/mermaid/mermaidAPI.min.js";
 const QString VNote::c_mermaidForestCssFile = ":/utils/mermaid/mermaid.forest.css";
 

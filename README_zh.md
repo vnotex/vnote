@@ -207,6 +207,7 @@ VNote中，几乎一切都是可以定制的，例如背景颜色、字体以及
 - [flowchart.js](https://github.com/adrai/flowchart.js) (MIT License)
 - [PlantUML](http://plantuml.com/) (MIT License)
 - [dom-to-image](https://github.com/tsayen/dom-to-image) (MIT License)
+- [turndown](https://github.com/domchristie/turndown) (MIT License)
 
 # 代码许可
 VNote使用[MIT许可](http://opensource.org/licenses/MIT)。

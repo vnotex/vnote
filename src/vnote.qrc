@@ -267,5 +267,7 @@
         <file>resources/icons/increase_outline_level.svg</file>
         <file>utils/markdown-it/markdown-it-texmath.js</file>
         <file>resources/icons/up.svg</file>
+        <file>utils/turndown/turndown.js</file>
+        <file>utils/turndown/turndown-plugin-gfm.js</file>
     </qresource>
 </RCC>
