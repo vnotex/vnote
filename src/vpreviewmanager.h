@@ -180,9 +180,6 @@ private:
     void fetchImageLinksFromRegions(QVector<VElementRegion> p_imageRegions,
                                     QVector<ImageLinkInfo> &p_imageLinks);
 
-    // Fetch the image link's URL if there is only one link.
-    QString fetchImageUrlToPreview(const QString &p_text, int &p_width, int &p_height);
-
     // Fetch the image's full path and size.
     void fetchImageInfoToPreview(const QString &p_text, ImageLinkInfo &p_info);
 

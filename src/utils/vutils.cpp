@@ -42,12 +42,16 @@ extern VConfigManager *g_config;
 
 QVector<QPair<QString, QString>> VUtils::s_availableLanguages;
 
-const QString VUtils::c_imageLinkRegExp = QString("\\!\\[([^\\]]*)\\]\\(([^\\)\"'\\s]+)\\s*"
+const QString VUtils::c_imageLinkRegExp = QString("\\!\\[([^\\]]*)\\]\\(\\s*([^\\)\"'\\s]+)\\s*"
                                                   "((\"[^\"\\)\\n]*\")|('[^'\\)\\n]*'))?\\s*"
                                                   "(=(\\d*)x(\\d*))?\\s*"
                                                   "\\)");
 
 const QString VUtils::c_imageTitleRegExp = QString("[\\w\\(\\)@#%\\*\\-\\+=\\?<>\\,\\.\\s]*");
+
+const QString VUtils::c_linkRegExp = QString("\\[([^\\]]*)\\]\\(\\s*([^\\)\"'\\s]+)\\s*"
+                                             "((\"[^\"\\)\\n]*\")|('[^'\\)\\n]*'))?\\s*"
+                                             "\\)");
 
 const QString VUtils::c_fileNameRegExp = QString("(?:[^\\\\/:\\*\\?\"<>\\|\\s]| )*");
 
@@ -276,22 +280,39 @@ QVector<ImageLink> VUtils::fetchImagesFromMarkdownFile(VFile *p_file,
     return images;
 }
 
-QString VUtils::imageLinkUrlToPath(const QString &p_basePath, const QString &p_url)
+QString VUtils::linkUrlToPath(const QString &p_basePath, const QString &p_url)
 {
-    QString path;
+    QString fullPath;
     QFileInfo info(p_basePath, p_url);
     if (info.exists()) {
         if (info.isNativePath()) {
             // Local file.
-            path = QDir::cleanPath(info.absoluteFilePath());
+            fullPath = QDir::cleanPath(info.absoluteFilePath());
         } else {
-            path = p_url;
+            fullPath = p_url;
         }
     } else {
-        path = QUrl(p_url).toString();
+        QString decodedUrl(p_url);
+        VUtils::decodeUrl(decodedUrl);
+        QFileInfo dinfo(p_basePath, decodedUrl);
+        if (dinfo.exists()) {
+            if (dinfo.isNativePath()) {
+                // Local file.
+                fullPath = QDir::cleanPath(dinfo.absoluteFilePath());
+            } else {
+                fullPath = p_url;
+            }
+        } else {
+            QUrl url(p_url);
+            if (url.isLocalFile()) {
+                fullPath = url.toLocalFile();
+            } else {
+                fullPath = url.toString();
+            }
+        }
     }
 
-    return path;
+    return fullPath;
 }
 
 bool VUtils::makePath(const QString &p_path)
@@ -1677,4 +1698,75 @@ QPixmap VUtils::svgToPixmap(const QByteArray &p_content,
     QPainter painter(&pm);
     renderer.render(&painter);
     return pm;
+}
+
+QString VUtils::fetchImageLinkUrlToPreview(const QString &p_text, int &p_width, int &p_height)
+{
+    QRegExp regExp(VUtils::c_imageLinkRegExp);
+
+    p_width = p_height = -1;
+
+    int index = regExp.indexIn(p_text);
+    if (index == -1) {
+        return QString();
+    }
+
+    int lastIndex = regExp.lastIndexIn(p_text);
+    if (lastIndex != index) {
+        return QString();
+    }
+
+    QString tmp(regExp.cap(7));
+    if (!tmp.isEmpty()) {
+        p_width = tmp.toInt();
+        if (p_width <= 0) {
+            p_width = -1;
+        }
+    }
+
+    tmp = regExp.cap(8);
+    if (!tmp.isEmpty()) {
+        p_height = tmp.toInt();
+        if (p_height <= 0) {
+            p_height = -1;
+        }
+    }
+
+    return regExp.cap(2).trimmed();
+}
+
+QString VUtils::fetchImageLinkUrl(const QString &p_link)
+{
+    QRegExp regExp(VUtils::c_imageLinkRegExp);
+
+    int index = regExp.indexIn(p_link);
+    if (index == -1) {
+        return QString();
+    }
+
+    return regExp.cap(2).trimmed();
+}
+
+QString VUtils::fetchLinkUrl(const QString &p_link)
+{
+    QRegExp regExp(VUtils::c_linkRegExp);
+
+    int index = regExp.indexIn(p_link);
+    if (index == -1) {
+        return QString();
+    }
+
+    return regExp.cap(2).trimmed();
+}
+
+QUrl VUtils::pathToUrl(const QString &p_path)
+{
+    QUrl url;
+    if (QFileInfo::exists(p_path)) {
+        url = QUrl::fromLocalFile(p_path);
+    } else {
+        url = QUrl(p_path);
+    }
+
+    return url;
 }

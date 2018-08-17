@@ -163,3 +163,42 @@ void VClipboardUtils::setMimeDataLoop(QClipboard *p_clipboard,
         VUtils::sleepWait(100 /* ms */);
     }
 }
+
+QMimeData *linkMimeData(const QString &p_link)
+{
+    QList<QUrl> urls;
+    urls.append(VUtils::pathToUrl(p_link));
+    QMimeData *data = new QMimeData();
+    data->setUrls(urls);
+
+    QString text = urls[0].toEncoded();
+#if defined(Q_OS_WIN)
+    if (urls[0].isLocalFile()) {
+        text = urls[0].toString(QUrl::EncodeSpaces);
+    }
+#endif
+
+    data->setText(text);
+    return data;
+}
+
+void VClipboardUtils::setLinkToClipboard(QClipboard *p_clipboard,
+                                         const QString &p_link,
+                                         QClipboard::Mode p_mode)
+{
+    VClipboardUtils::setMimeDataToClipboard(p_clipboard,
+                                            linkMimeData(p_link),
+                                            p_mode);
+}
+
+void VClipboardUtils::setImageAndLinkToClipboard(QClipboard *p_clipboard,
+                                                 const QImage &p_image,
+                                                 const QString &p_link,
+                                                 QClipboard::Mode p_mode)
+{
+    QMimeData *data = linkMimeData(p_link);
+    data->setImageData(p_image);
+    VClipboardUtils::setMimeDataToClipboard(p_clipboard,
+                                            data,
+                                            p_mode);
+}

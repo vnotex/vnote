@@ -180,44 +180,9 @@ void VPreviewManager::fetchImageLinksFromRegions(QVector<VElementRegion> p_image
     }
 }
 
-QString VPreviewManager::fetchImageUrlToPreview(const QString &p_text, int &p_width, int &p_height)
-{
-    QRegExp regExp(VUtils::c_imageLinkRegExp);
-
-    p_width = p_height = -1;
-
-    int index = regExp.indexIn(p_text);
-    if (index == -1) {
-        return QString();
-    }
-
-    int lastIndex = regExp.lastIndexIn(p_text);
-    if (lastIndex != index) {
-        return QString();
-    }
-
-    QString tmp(regExp.cap(7));
-    if (!tmp.isEmpty()) {
-        p_width = tmp.toInt();
-        if (p_width <= 0) {
-            p_width = -1;
-        }
-    }
-
-    tmp = regExp.cap(8);
-    if (!tmp.isEmpty()) {
-        p_height = tmp.toInt();
-        if (p_height <= 0) {
-            p_height = -1;
-        }
-    }
-
-    return regExp.cap(2).trimmed();
-}
-
 void VPreviewManager::fetchImageInfoToPreview(const QString &p_text, ImageLinkInfo &p_info)
 {
-    QString surl = fetchImageUrlToPreview(p_text, p_info.m_width, p_info.m_height);
+    QString surl = VUtils::fetchImageLinkUrlToPreview(p_text, p_info.m_width, p_info.m_height);
     p_info.m_linkShortUrl = surl;
     if (surl.isEmpty()) {
         p_info.m_linkUrl = surl;
@@ -225,39 +190,7 @@ void VPreviewManager::fetchImageInfoToPreview(const QString &p_text, ImageLinkIn
     }
 
     const VFile *file = m_editor->getFile();
-
-    QString imagePath;
-    QFileInfo info(file->fetchBasePath(), surl);
-
-    if (info.exists()) {
-        if (info.isNativePath()) {
-            // Local file.
-            imagePath = QDir::cleanPath(info.absoluteFilePath());
-        } else {
-            imagePath = surl;
-        }
-    } else {
-        QString decodedUrl(surl);
-        VUtils::decodeUrl(decodedUrl);
-        QFileInfo dinfo(file->fetchBasePath(), decodedUrl);
-        if (dinfo.exists()) {
-            if (dinfo.isNativePath()) {
-                // Local file.
-                imagePath = QDir::cleanPath(dinfo.absoluteFilePath());
-            } else {
-                imagePath = surl;
-            }
-        } else {
-            QUrl url(surl);
-            if (url.isLocalFile()) {
-                imagePath = url.toLocalFile();
-            } else {
-                imagePath = url.toString();
-            }
-        }
-    }
-
-    p_info.m_linkUrl = imagePath;
+    p_info.m_linkUrl = VUtils::linkUrlToPath(file->fetchBasePath(), surl);
 }
 
 QString VPreviewManager::imageResourceName(const ImageLinkInfo &p_link)

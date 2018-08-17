@@ -133,7 +133,7 @@ public:
                                                           ImageLink::ImageLinkType p_type = ImageLink::All);
 
     // Return the absolute path of @p_url according to @p_basePath.
-    static QString imageLinkUrlToPath(const QString &p_basePath, const QString &p_url);
+    static QString linkUrlToPath(const QString &p_basePath, const QString &p_url);
 
     // Create directories along the @p_path.
     // @p_path could be /home/tamlok/abc, /home/tamlok/abc/.
@@ -365,6 +365,15 @@ public:
                                const QString &p_background,
                                qreal p_factor);
 
+    // Fetch the image link's URL if there is only one link.
+    static QString fetchImageLinkUrlToPreview(const QString &p_text, int &p_width, int &p_height);
+
+    static QString fetchImageLinkUrl(const QString &p_link);
+
+    static QString fetchLinkUrl(const QString &p_link);
+
+    static QUrl pathToUrl(const QString &p_path);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt text" =200x100)
     // Captured texts (need to be trimmed):
@@ -380,6 +389,16 @@ public:
 
     // Regular expression for image title.
     static const QString c_imageTitleRegExp;
+
+    // Regular expression for link.
+    // [link text]( http://github.com/tamlok "alt text")
+    // Captured texts (need to be trimmed):
+    // 1. Link Alt Text (Title);
+    // 2. Link URL;
+    // 3. Link Optional Title with double quotes or quotes;
+    // 4. Unused;
+    // 5. Unused;
+    static const QString c_linkRegExp;
 
     // Regular expression for file/directory name.
     // Forbidden char: \/:*?"<>| and whitespaces except space.

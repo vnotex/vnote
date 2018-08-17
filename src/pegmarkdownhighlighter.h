@@ -42,6 +42,8 @@ public:
 
     const QTextDocument *getDocument() const;
 
+    const QVector<VElementRegion> &getImageRegions() const;
+
 public slots:
     // Parse and rehighlight immediately.
     void updateHighlight();
@@ -213,6 +215,11 @@ private:
 inline const QVector<VElementRegion> &PegMarkdownHighlighter::getHeaderRegions() const
 {
     return m_result->m_headerRegions;
+}
+
+inline const QVector<VElementRegion> &PegMarkdownHighlighter::getImageRegions() const
+{
+    return m_result->m_imageRegions;
 }
 
 inline const QSet<int> &PegMarkdownHighlighter::getPossiblePreviewBlocks() const
