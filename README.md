@@ -1,11 +1,9 @@
 # VNote
-[中文 Chinese](./README_zh.md)
-
-[VNote Homepage](https://tamlok.github.io/vnote)
-
-[Documentation](http://vnote.readthedocs.io/en/latest/)
-
-[Screenshots](https://tamlok.github.io/vnote/gallery.html)
+- [中文 Chinese](./README_zh.md)
+- [VNote Homepage](https://tamlok.github.io/vnote)
+- [Documentation](http://vnote.readthedocs.io/en/latest/)
+- [Screenshots](https://tamlok.github.io/vnote/gallery.html)
+- [VNote Posts](https://github.com/tamlok/vnote-posts)
 
 Designed specially for **Markdown**, **VNote** is a Vim-inspired note-taking application, which knows programmers and Markdown better.
 

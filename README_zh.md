@@ -1,11 +1,9 @@
 # VNote
-[英文 English](./README.md)
-
-[VNote主页](https://tamlok.github.io/vnote)
-
-[文档](http://vnote.readthedocs.io/en/latest/)
-
-[使用截图](https://tamlok.github.io/vnote/gallery.html)
+- [英文 English](./README.md)
+- [VNote主页](https://tamlok.github.io/vnote)
+- [文档](http://vnote.readthedocs.io/en/latest/)
+- [使用截图](https://tamlok.github.io/vnote/gallery.html)
+- [相关文章](https://github.com/tamlok/vnote-posts)
 
 **VNote** 是一个受Vim启发开发的专门为 **Markdown** 而优化、设计的笔记软件。VNote是一个更了解程序员和Markdown的笔记软件。
 
