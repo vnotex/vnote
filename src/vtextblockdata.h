@@ -68,6 +68,11 @@ struct VPreviewedImageInfo
         return !(m_endPos <= a.m_startPos || m_startPos >= a.m_endPos);
     }
 
+    bool contains(int p_positionInBlock) const
+    {
+        return p_positionInBlock >= m_startPos && p_positionInBlock < m_endPos;
+    }
+
     QString toString() const
     {
         return QString("previewed image (%1): [%2, %3] padding %4 inline %5 (%6,%7) bg(%8)")

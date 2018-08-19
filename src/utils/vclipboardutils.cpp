@@ -35,6 +35,20 @@ void VClipboardUtils::setImageLoop(QClipboard *p_clipboard,
     }
 }
 
+void VClipboardUtils::setImageToClipboard(QClipboard *p_clipboard,
+                                          const QPixmap &p_image,
+                                          QClipboard::Mode p_mode)
+{
+    QImage img(p_image.toImage());
+
+#if defined(Q_OS_WIN)
+    // On Windows, setImage() may fail. We will repeatedly retry until succeed.
+    setImageLoop(p_clipboard, img, p_mode);
+#else
+    p_clipboard->setImage(img, p_mode);
+#endif
+}
+
 void VClipboardUtils::setMimeDataToClipboard(QClipboard *p_clipboard,
                                              QMimeData *p_mimeData,
                                              QClipboard::Mode p_mode)

@@ -2,6 +2,7 @@
 #define VCLIPBOARDUTILS_H
 
 #include <QImage>
+#include <QPixmap>
 #include <QClipboard>
 
 class QMimeData;
@@ -12,6 +13,10 @@ class VClipboardUtils
 public:
     static void setImageToClipboard(QClipboard *p_clipboard,
                                     const QImage &p_image,
+                                    QClipboard::Mode p_mode = QClipboard::Clipboard);
+
+    static void setImageToClipboard(QClipboard *p_clipboard,
+                                    const QPixmap &p_image,
                                     QClipboard::Mode p_mode = QClipboard::Clipboard);
 
     static void setImageAndLinkToClipboard(QClipboard *p_clipboard,

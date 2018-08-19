@@ -303,7 +303,9 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
         if (textCursor().hasSelection()) {
             initCopyAsMenu(actions.isEmpty() ? NULL : actions.last(), menu.data());
         } else {
-            initLinkMenu(actions.isEmpty() ? NULL : actions[0], menu.data(), p_event->pos());
+            initLinkAndPreviewMenu(actions.isEmpty() ? NULL : actions[0],
+                                   menu.data(),
+                                   p_event->pos());
 
             QAction *saveExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/save_exit.svg"),
                                                tr("&Save Changes And Read"),
@@ -1462,7 +1464,7 @@ int VMdEditor::lineNumberAreaWidth() const
     return VTextEdit::lineNumberAreaWidth();
 }
 
-void VMdEditor::initLinkMenu(QAction *p_before, QMenu *p_menu, const QPoint &p_pos)
+void VMdEditor::initLinkAndPreviewMenu(QAction *p_before, QMenu *p_menu, const QPoint &p_pos)
 {
     QTextCursor cursor = cursorForPosition(p_pos);
     int pos = cursor.position();
@@ -1536,6 +1538,9 @@ void VMdEditor::initLinkMenu(QAction *p_before, QMenu *p_menu, const QPoint &p_p
                             }
                         });
                 p_menu->insertAction(p_before, copyImageAct);
+            } else {
+                // Copy in-place preview.
+                initInPlacePreviewMenu(p_before, p_menu, block, pos);
             }
 
             p_menu->insertSeparator(p_before ? p_before : NULL);
@@ -1560,43 +1565,91 @@ void VMdEditor::initLinkMenu(QAction *p_before, QMenu *p_menu, const QPoint &p_p
         }
     }
 
-    if (linkText.isEmpty()) {
+    if (!linkText.isEmpty()) {
+        QString linkUrl = VUtils::linkUrlToPath(m_file->fetchBasePath(), linkText);
+        bool isLocalFile = QFileInfo::exists(linkUrl);
+
+        QAction *viewLinkAct = new QAction(tr("View Link"), p_menu);
+        connect(viewLinkAct, &QAction::triggered,
+                this, [this, linkUrl]() {
+                    QDesktopServices::openUrl(VUtils::pathToUrl(linkUrl));
+                });
+        p_menu->insertAction(p_before, viewLinkAct);
+
+        QAction *copyLinkAct = new QAction(tr("Copy Link URL"), p_menu);
+        connect(copyLinkAct, &QAction::triggered,
+                this, [this, linkUrl]() {
+                    QClipboard *clipboard = QApplication::clipboard();
+                    VClipboardUtils::setLinkToClipboard(clipboard,
+                                                        linkUrl,
+                                                        QClipboard::Clipboard);
+                });
+        p_menu->insertAction(p_before, copyLinkAct);
+
+        if (isLocalFile) {
+            QAction *copyLinkPathAct = new QAction(tr("Copy Link Path"), p_menu);
+            connect(copyLinkPathAct, &QAction::triggered,
+                    this, [this, linkUrl]() {
+                        QClipboard *clipboard = QApplication::clipboard();
+                        QMimeData *data = new QMimeData();
+                        data->setText(linkUrl);
+                        VClipboardUtils::setMimeDataToClipboard(clipboard,
+                                                                data,
+                                                                QClipboard::Clipboard);
+                    });
+            p_menu->insertAction(p_before, copyLinkPathAct);
+        }
+
+        p_menu->insertSeparator(p_before ? p_before : NULL);
         return;
     }
 
-    QString linkUrl = VUtils::linkUrlToPath(m_file->fetchBasePath(), linkText);
-    bool isLocalFile = QFileInfo::exists(linkUrl);
+    if (initInPlacePreviewMenu(p_before, p_menu, block, pos)) {
+        p_menu->insertSeparator(p_before ? p_before : NULL);
+    }
+}
 
-    QAction *viewLinkAct = new QAction(tr("View Link"), p_menu);
-    connect(viewLinkAct, &QAction::triggered,
-            this, [this, linkUrl]() {
-                QDesktopServices::openUrl(VUtils::pathToUrl(linkUrl));
-            });
-    p_menu->insertAction(p_before, viewLinkAct);
-
-    QAction *copyLinkAct = new QAction(tr("Copy Link URL"), p_menu);
-    connect(copyLinkAct, &QAction::triggered,
-            this, [this, linkUrl]() {
-                QClipboard *clipboard = QApplication::clipboard();
-                VClipboardUtils::setLinkToClipboard(clipboard,
-                                                    linkUrl,
-                                                    QClipboard::Clipboard);
-            });
-    p_menu->insertAction(p_before, copyLinkAct);
-
-    if (isLocalFile) {
-        QAction *copyLinkPathAct = new QAction(tr("Copy Link Path"), p_menu);
-        connect(copyLinkPathAct, &QAction::triggered,
-                this, [this, linkUrl]() {
-                    QClipboard *clipboard = QApplication::clipboard();
-                    QMimeData *data = new QMimeData();
-                    data->setText(linkUrl);
-                    VClipboardUtils::setMimeDataToClipboard(clipboard,
-                                                            data,
-                                                            QClipboard::Clipboard);
-                });
-        p_menu->insertAction(p_before, copyLinkPathAct);
+bool VMdEditor::initInPlacePreviewMenu(QAction *p_before,
+                                       QMenu *p_menu,
+                                       const QTextBlock &p_block,
+                                       int p_pos)
+{
+    VTextBlockData *data = VTextBlockData::blockData(p_block);
+    if (!data) {
+        return false;
     }
 
-    p_menu->insertSeparator(p_before ? p_before : NULL);
+    const QVector<VPreviewInfo *> &previews = data->getPreviews();
+    if (previews.isEmpty()) {
+        return false;
+    }
+
+    QPixmap image;
+    int pib = p_pos - p_block.position();
+    for (auto info : previews) {
+        const VPreviewedImageInfo &pii = info->m_imageInfo;
+        if (pii.contains(pib)) {
+            const QPixmap *img = findImage(pii.m_imageName);
+            if (img) {
+                image = *img;
+            }
+
+            break;
+        }
+    }
+
+    if (image.isNull()) {
+        return false;
+    }
+
+    QAction *copyImageAct = new QAction(tr("Copy In-Place Preview"), p_menu);
+    connect(copyImageAct, &QAction::triggered,
+            this, [this, image]() {
+                QClipboard *clipboard = QApplication::clipboard();
+                VClipboardUtils::setImageToClipboard(clipboard,
+                                                     image,
+                                                     QClipboard::Clipboard);
+            });
+    p_menu->insertAction(p_before, copyImageAct);
+    return true;
 }

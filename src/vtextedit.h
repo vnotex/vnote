@@ -49,6 +49,9 @@ public:
     // Get the image size from the resource manager.
     QSize imageSize(const QString &p_imageName) const;
 
+    // Get the image from the resource manager.
+    const QPixmap *findImage(const QString &p_name) const;
+
     // Add an image to the resources.
     void addImage(const QString &p_imageName, const QPixmap &p_image);
 

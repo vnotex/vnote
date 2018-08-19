@@ -277,7 +277,12 @@ private:
 
     void initPasteAsBlockQuoteMenu(QMenu *p_menu);
 
-    void initLinkMenu(QAction *p_before, QMenu *p_menu, const QPoint &p_pos);
+    void initLinkAndPreviewMenu(QAction *p_before, QMenu *p_menu, const QPoint &p_pos);
+
+    bool initInPlacePreviewMenu(QAction *p_before,
+                                QMenu *p_menu,
+                                const QTextBlock &p_block,
+                                int p_pos);
 
     void insertImageLink(const QString &p_text, const QString &p_url);
 

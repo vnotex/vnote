@@ -362,6 +362,11 @@ QSize VTextEdit::imageSize(const QString &p_imageName) const
     return QSize();
 }
 
+const QPixmap *VTextEdit::findImage(const QString &p_name) const
+{
+    return m_imageMgr->findImage(p_name);
+}
+
 void VTextEdit::addImage(const QString &p_imageName, const QPixmap &p_image)
 {
     if (m_blockImageEnabled) {
