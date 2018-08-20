@@ -1625,6 +1625,7 @@ bool VMdEditor::initInPlacePreviewMenu(QAction *p_before,
     }
 
     QPixmap image;
+    QString background;
     int pib = p_pos - p_block.position();
     for (auto info : previews) {
         const VPreviewedImageInfo &pii = info->m_imageInfo;
@@ -1632,6 +1633,7 @@ bool VMdEditor::initInPlacePreviewMenu(QAction *p_before,
             const QPixmap *img = findImage(pii.m_imageName);
             if (img) {
                 image = *img;
+                background = pii.m_background;
             }
 
             break;
@@ -1644,10 +1646,20 @@ bool VMdEditor::initInPlacePreviewMenu(QAction *p_before,
 
     QAction *copyImageAct = new QAction(tr("Copy In-Place Preview"), p_menu);
     connect(copyImageAct, &QAction::triggered,
-            this, [this, image]() {
+            this, [this, image, background]() {
+                QColor co(background);
+                if (!co.isValid()) {
+                    co = palette().color(QPalette::Base);
+                }
+
+                QImage img(image.size(), QImage::Format_ARGB32);
+                img.fill(co);
+                QPainter pter(&img);
+                pter.drawPixmap(img.rect(), image);
+
                 QClipboard *clipboard = QApplication::clipboard();
                 VClipboardUtils::setImageToClipboard(clipboard,
-                                                     image,
+                                                     img,
                                                      QClipboard::Clipboard);
             });
     p_menu->insertAction(p_before, copyImageAct);
