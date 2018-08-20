@@ -115,8 +115,20 @@ void PegMarkdownHighlighter::highlightBlock(const QString &p_text)
     int blockNum = block.blockNumber();
 
     bool isCodeBlock = currentBlockState() == HighlightBlockState::CodeBlock;
+    bool isNewBlock = block.userData() == NULL;
     VTextBlockData *blockData = VTextBlockData::blockData(block);
     QVector<HLUnit> *cache = &blockData->getBlockHighlightCache();
+
+    // Fast parse can not cross multiple empty lines in code block, which
+    // cause the wrong parse results.
+    if (isNewBlock) {
+        int pstate = previousBlockState();
+        if (pstate == HighlightBlockState::CodeBlock
+            || pstate == HighlightBlockState::CodeBlockStart) {
+            setCurrentBlockState(HighlightBlockState::CodeBlock);
+            isCodeBlock = true;
+        }
+    }
 
     bool cacheValid = true;
     if (result->matched(m_timeStamp)) {
