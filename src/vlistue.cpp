@@ -16,6 +16,7 @@
 #include "vnotebook.h"
 #include "vuetitlecontentpanel.h"
 #include "vhistorylist.h"
+#include "vuniversalentry.h"
 
 extern VMainWindow *g_mainWin;
 
@@ -174,7 +175,11 @@ void VListUE::addResultItem(const QSharedPointer<VSearchResultItem> &p_item)
     if (p_item->m_text.isEmpty()) {
         first = p_item->m_path;
     } else {
-        first = p_item->m_text;
+        if (p_item->m_type != VSearchResultItem::Notebook) {
+            first = VUniversalEntry::fileNameWithDir(p_item->m_text, p_item->m_path);
+        } else {
+            first = p_item->m_text;
+        }
         second = p_item->m_path;
     }
 

@@ -1770,3 +1770,12 @@ QUrl VUtils::pathToUrl(const QString &p_path)
 
     return url;
 }
+
+QString VUtils::parentDirName(const QString &p_path)
+{
+    if (p_path.isEmpty()) {
+        return p_path;
+    }
+
+    return QFileInfo(p_path).dir().dirName();
+}

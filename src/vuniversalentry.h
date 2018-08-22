@@ -7,6 +7,7 @@
 #include <QAtomicInt>
 
 #include "iuniversalentry.h"
+#include "utils/vutils.h"
 
 class VMetaWordLineEdit;
 class QVBoxLayout;
@@ -52,6 +53,8 @@ public:
     // Different entries may use the same @p_entry, in which case they can use
     // @p_id to distinguish.
     void registerEntry(QChar p_key, IUniversalEntry *p_entry, int p_id = 0);
+
+    static QString fileNameWithDir(const QString &p_name, const QString &p_path);
 
 signals:
     // Exit Universal Entry.
@@ -125,4 +128,8 @@ private:
     bool m_pendingCommand;
 };
 
+inline QString VUniversalEntry::fileNameWithDir(const QString &p_name, const QString &p_path)
+{
+    return VUtils::parentDirName(p_path) + " / " + p_name;
+}
 #endif // VUNIVERSALENTRY_H

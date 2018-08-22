@@ -374,6 +374,10 @@ public:
 
     static QUrl pathToUrl(const QString &p_path);
 
+    // Return the name of the parent directory of @p_path.
+    // @p_path: file path of file or dir.
+    static QString parentDirName(const QString &p_path);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt text" =200x100)
     // Captured texts (need to be trimmed):

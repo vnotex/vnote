@@ -14,7 +14,6 @@
 #include <QAtomicInt>
 
 #include "vmetawordlineedit.h"
-#include "utils/vutils.h"
 #include "vlistwidget.h"
 #include "vpalette.h"
 #include "vlistfolderue.h"
