@@ -169,9 +169,16 @@ void VLivePreviewHelper::updateCodeBlocks(TimeStamp p_timeStamp, const QVector<V
         m_codeBlocks.append(CodeBlockPreviewInfo(vcb));
         int idx = m_codeBlocks.size() - 1;
 
+        bool oldCache = false;
         auto it = m_cache.find(text);
         if (it != m_cache.end()) {
             QSharedPointer<CodeBlockImageCacheEntry> &entry = it.value();
+            // If this cache is not used at the last timestamp, we still need to
+            // update the live preview.
+            if (entry->m_ts < m_timeStamp - 1) {
+                oldCache = true;
+            }
+
             entry->m_ts = m_timeStamp;
             cached = true;
             m_codeBlocks[idx].setImageData(entry->m_imgFormat, entry->m_imgData);
@@ -193,7 +200,7 @@ void VLivePreviewHelper::updateCodeBlocks(TimeStamp p_timeStamp, const QVector<V
             && livePreview
             && vcb.m_startBlock <= cursorBlock
             && vcb.m_endBlock >= cursorBlock) {
-            if (lastIndex == idx && cached) {
+            if (lastIndex == idx && cached && !oldCache) {
                 needUpdate = false;
             }
 
