@@ -505,20 +505,58 @@ VSearchResultItem *VSearch::searchForTag(const VFile *p_file) const
 
     const VNoteFile *file = static_cast<const VNoteFile *>(p_file);
     const QStringList &tags = file->getTags();
-    for (auto const & tag: tags) {
+
+    VSearchToken &contentToken = m_config->m_contentToken;
+    bool singleToken = contentToken.tokenSize() == 1;
+    if (!singleToken) {
+        contentToken.startBatchMode();
+    }
+
+    VSearchResultItem *item = NULL;
+    bool allMatched = false;
+
+    for (int i = 0; i < tags.size(); ++i) {
+        const QString &tag = tags[i];
         if (tag.isEmpty()) {
             continue;
         }
 
-        if (matchNonContent(tag)) {
-            return new VSearchResultItem(VSearchResultItem::Note,
-                                         VSearchResultItem::LineNumber,
-                                         file->getName(),
-                                         file->fetchPath());
+        bool matched = false;
+        if (singleToken) {
+            matched = contentToken.matched(tag);
+        } else {
+            matched = contentToken.matchBatchMode(tag);
+        }
+
+        if (matched) {
+            if (!item) {
+                item = new VSearchResultItem(VSearchResultItem::Note,
+                                             VSearchResultItem::LineNumber,
+                                             file->getName(),
+                                             file->fetchPath());
+            }
+
+            VSearchResultSubItem sitem(i, tag);
+            item->m_matches.append(sitem);
+        }
+
+        if (!singleToken && contentToken.readyToEndBatchMode(allMatched)) {
+            break;
         }
     }
 
-    return NULL;
+    if (!singleToken) {
+        contentToken.readyToEndBatchMode(allMatched);
+        contentToken.endBatchMode();
+
+        if (!allMatched && item) {
+            // This file does not meet all the tokens.
+            delete item;
+            item = NULL;
+        }
+    }
+
+    return item;
 }
 
 VSearchResultItem *VSearch::searchForContent(const VFile *p_file) const

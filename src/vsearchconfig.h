@@ -429,10 +429,10 @@ struct VSearchConfig
     // Wildcard pattern to filter file.
     QString m_pattern;
 
-    // Token for name, outline, and tag.
+    // Token for name, outline.
     VSearchToken m_token;
 
-    // Token for content.
+    // Token for content and tag.
     VSearchToken m_contentToken;
 };
 
@@ -538,7 +538,7 @@ struct VSearchResult
 {
     friend class VSearch;
 
-    VSearchResult(VSearch *p_search)
+    explicit VSearchResult(VSearch *p_search)
         : m_state(VSearchState::Idle),
           m_search(p_search)
     {
