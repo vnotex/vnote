@@ -119,3 +119,26 @@ bool VGraphvizHelper::testGraphviz(const QString &p_dot, QString &p_msg)
 
     return ret == 0 && exitCode == 0;
 }
+
+QByteArray VGraphvizHelper::process(const QString &p_format, const QString &p_text)
+{
+    VGraphvizHelper inst;
+
+    int exitCode = -1;
+    QByteArray out, err;
+
+    QStringList args(inst.m_args);
+    args << ("-T" + p_format);
+    int ret = VProcessUtils::startProcess(inst.m_program,
+                                          args,
+                                          p_text.toUtf8(),
+                                          exitCode,
+                                          out,
+                                          err);
+
+    if (ret != 0 || exitCode < 0) {
+        qWarning() << "Graphviz fail" << ret << exitCode << QString::fromLocal8Bit(err);
+    }
+
+    return out;
+}

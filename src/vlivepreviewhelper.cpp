@@ -8,10 +8,10 @@
 #include "vconfigmanager.h"
 #include "vgraphvizhelper.h"
 #include "vplantumlhelper.h"
-#include "vcodeblockhighlighthelper.h"
 #include "vmainwindow.h"
 #include "veditarea.h"
 #include "vmathjaxpreviewhelper.h"
+#include "utils/veditutils.h"
 
 extern VConfigManager *g_config;
 
@@ -249,14 +249,6 @@ void VLivePreviewHelper::handleCursorPositionChanged()
     }
 }
 
-static QString removeFence(const QString &p_text)
-{
-    QString text = VCodeBlockHighlightHelper::unindentCodeBlock(p_text);
-    Q_ASSERT(text.startsWith("```") && text.endsWith("```"));
-    int idx = text.indexOf('\n') + 1;
-    return text.mid(idx, text.size() - idx - 3);
-}
-
 void VLivePreviewHelper::updateLivePreview()
 {
     if (m_cbIndex < 0) {
@@ -277,7 +269,7 @@ void VLivePreviewHelper::updateLivePreview()
             m_graphvizHelper->processAsync(m_cbIndex | LANG_PREFIX_GRAPHVIZ | TYPE_LIVE_PREVIEW,
                                            m_timeStamp,
                                            "svg",
-                                           removeFence(vcb.m_text));
+                                           VEditUtils::removeCodeBlockFence(vcb.m_text));
         } else {
             m_document->setPreviewContent(vcb.m_lang, cb.imageData());
         }
@@ -292,7 +284,7 @@ void VLivePreviewHelper::updateLivePreview()
             m_plantUMLHelper->processAsync(m_cbIndex | LANG_PREFIX_PLANTUML | TYPE_LIVE_PREVIEW,
                                            m_timeStamp,
                                            "svg",
-                                           removeFence(vcb.m_text));
+                                           VEditUtils::removeCodeBlockFence(vcb.m_text));
         } else {
             m_document->setPreviewContent(vcb.m_lang, cb.imageData());
         }
@@ -300,7 +292,7 @@ void VLivePreviewHelper::updateLivePreview()
         // No need to live preview MathJax.
         m_document->previewCodeBlock(m_cbIndex,
                                      vcb.m_lang,
-                                     removeFence(vcb.m_text),
+                                     VEditUtils::removeCodeBlockFence(vcb.m_text),
                                      true);
     }
 }
@@ -418,7 +410,7 @@ void VLivePreviewHelper::processForInplacePreview(int p_idx)
         m_graphvizHelper->processAsync(p_idx | LANG_PREFIX_GRAPHVIZ | TYPE_INPLACE_PREVIEW,
                                        m_timeStamp,
                                        "svg",
-                                       removeFence(vcb.m_text));
+                                       VEditUtils::removeCodeBlockFence(vcb.m_text));
     } else if (vcb.m_lang == "puml" && m_plantUMLMode == PlantUMLMode::LocalPlantUML) {
         if (!m_plantUMLHelper) {
             m_plantUMLHelper = new VPlantUMLHelper(this);
@@ -429,19 +421,19 @@ void VLivePreviewHelper::processForInplacePreview(int p_idx)
         m_plantUMLHelper->processAsync(p_idx | LANG_PREFIX_PLANTUML | TYPE_INPLACE_PREVIEW,
                                        m_timeStamp,
                                        "svg",
-                                       removeFence(vcb.m_text));
+                                       VEditUtils::removeCodeBlockFence(vcb.m_text));
     } else if (vcb.m_lang == "flow"
                || vcb.m_lang == "flowchart") {
         m_mathJaxHelper->previewDiagram(m_mathJaxID,
                                         p_idx,
                                         m_timeStamp,
                                         vcb.m_lang,
-                                        removeFence(vcb.m_text));
+                                        VEditUtils::removeCodeBlockFence(vcb.m_text));
     } else if (vcb.m_lang == "mathjax") {
         m_mathJaxHelper->previewMathJax(m_mathJaxID,
                                         p_idx,
                                         m_timeStamp,
-                                        removeFence(vcb.m_text));
+                                        VEditUtils::removeCodeBlockFence(vcb.m_text));
     }
 }
 

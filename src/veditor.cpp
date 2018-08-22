@@ -35,6 +35,17 @@ VEditor::~VEditor()
     if (m_completer->widget() == m_editor) {
         m_completer->setWidget(NULL);
     }
+
+    cleanUp();
+}
+
+void VEditor::cleanUp()
+{
+    for (auto const & file : m_tempFiles) {
+        VUtils::deleteFile(file);
+    }
+
+    m_tempFiles.clear();
 }
 
 void VEditor::init()

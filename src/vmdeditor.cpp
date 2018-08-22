@@ -25,6 +25,8 @@
 #include "utils/vwebutils.h"
 #include "dialog/vinsertlinkdialog.h"
 #include "utils/vclipboardutils.h"
+#include "vplantumlhelper.h"
+#include "vgraphvizhelper.h"
 
 extern VWebUtils *g_webUtils;
 
@@ -1604,7 +1606,16 @@ void VMdEditor::initLinkAndPreviewMenu(QAction *p_before, QMenu *p_menu, const Q
         return;
     }
 
+    bool needSeparator = false;
     if (initInPlacePreviewMenu(p_before, p_menu, block, pos)) {
+        needSeparator = true;
+    }
+
+    if (initExportAndCopyMenu(p_before, p_menu, block, pos)) {
+        needSeparator = true;
+    }
+
+    if (needSeparator) {
         p_menu->insertSeparator(p_before ? p_before : NULL);
     }
 }
@@ -1664,4 +1675,118 @@ bool VMdEditor::initInPlacePreviewMenu(QAction *p_before,
             });
     p_menu->insertAction(p_before, copyImageAct);
     return true;
+}
+
+bool VMdEditor::initExportAndCopyMenu(QAction *p_before,
+                                      QMenu *p_menu,
+                                      const QTextBlock &p_block,
+                                      int p_pos)
+{
+    Q_UNUSED(p_pos);
+    int state = p_block.userState();
+    if (state != HighlightBlockState::CodeBlockStart
+        && state != HighlightBlockState::CodeBlock
+        && state != HighlightBlockState::CodeBlockEnd) {
+        return false;
+    }
+
+    int blockNum = p_block.blockNumber();
+    const QVector<VCodeBlock> &cbs = m_pegHighlighter->getCodeBlocks();
+    int idx = 0;
+    for (idx = 0; idx < cbs.size(); ++idx) {
+        if (cbs[idx].m_startBlock <= blockNum
+            && cbs[idx].m_endBlock >= blockNum) {
+            break;
+        }
+    }
+
+    if (idx >= cbs.size()) {
+        return false;
+    }
+
+    const VCodeBlock &cb = cbs[idx];
+    if (cb.m_lang != "puml" && cb.m_lang != "dot") {
+        return false;
+    }
+
+    QMenu *subMenu = new QMenu(tr("Copy Diagram"), p_menu);
+    subMenu->setToolTipsVisible(true);
+
+    QAction *pngAct = new QAction(tr("PNG"), subMenu);
+    pngAct->setToolTip(tr("Export diagram as PNG to a temporary file and copy"));
+    connect(pngAct, &QAction::triggered,
+            this, [this, lang = cb.m_lang, text = cb.m_text]() {
+                exportDiagramAndCopy(lang, text, "png");
+            });
+    subMenu->addAction(pngAct);
+
+    QAction *svgAct = new QAction(tr("SVG"), subMenu);
+    svgAct->setToolTip(tr("Export diagram as SVG to a temporary file and copy"));
+    connect(svgAct, &QAction::triggered,
+            this, [this, lang = cb.m_lang, text = cb.m_text]() {
+                exportDiagramAndCopy(lang, text, "svg");
+            });
+    subMenu->addAction(svgAct);
+
+    p_menu->insertMenu(p_before, subMenu);
+    return true;
+}
+
+void VMdEditor::exportDiagramAndCopy(const QString &p_lang,
+                                     const QString &p_text,
+                                     const QString &p_format)
+{
+    m_exportTempFile.reset(new QTemporaryFile(QDir::tempPath()
+                                              + QDir::separator()
+                                              + "XXXXXX." + p_format));
+    if (!m_exportTempFile->open()) {
+        VUtils::showMessage(QMessageBox::Warning,
+                            tr("Warning"),
+                            tr("Fail to open a temporary file for export."),
+                            "",
+                            QMessageBox::Ok,
+                            QMessageBox::Ok,
+                            this);
+        m_exportTempFile.clear();
+        return;
+    }
+
+    emit m_object->statusMessage(tr("Exporting diagram"));
+
+    QString filePath(m_exportTempFile->fileName());
+    QByteArray out;
+    if (p_lang == "puml") {
+        out = VPlantUMLHelper::process(p_format,
+                                       VEditUtils::removeCodeBlockFence(p_text));
+    } else if (p_lang == "dot") {
+        out = VGraphvizHelper::process(p_format,
+                                       VEditUtils::removeCodeBlockFence(p_text));
+    }
+
+    if (out.isEmpty() || m_exportTempFile->write(out) == -1) {
+        VUtils::showMessage(QMessageBox::Warning,
+                            tr("Warning"),
+                            tr("Fail to export diagram."),
+                            "",
+                            QMessageBox::Ok,
+                            QMessageBox::Ok,
+                            this);
+    } else {
+        QClipboard *clipboard = QApplication::clipboard();
+        clipboard->clear();
+        QImage img;
+        img.loadFromData(out, p_format.toLocal8Bit().data());
+        if (!img.isNull()) {
+            VClipboardUtils::setImageAndLinkToClipboard(clipboard,
+                                                        img,
+                                                        filePath,
+                                                        QClipboard::Clipboard);
+            emit m_object->statusMessage(tr("Diagram exported and copied"));
+        } else {
+            emit m_object->statusMessage(tr("Fail to read exported image: %1").arg(filePath));
+        }
+    }
+
+    m_exportTempFile->close();
+
 }

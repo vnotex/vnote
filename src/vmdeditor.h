@@ -6,6 +6,8 @@
 #include <QClipboard>
 #include <QImage>
 #include <QUrl>
+#include <QTemporaryFile>
+#include <QSharedPointer>
 
 #include "vtextedit.h"
 #include "veditor.h"
@@ -284,11 +286,20 @@ private:
                                 const QTextBlock &p_block,
                                 int p_pos);
 
+    bool initExportAndCopyMenu(QAction *p_before,
+                               QMenu *p_menu,
+                               const QTextBlock &p_block,
+                               int p_pos);
+
     void insertImageLink(const QString &p_text, const QString &p_url);
 
     void setFontPointSizeByStyleSheet(int p_ptSize);
 
     void setFontAndPaletteByStyleSheet(const QFont &p_font, const QPalette &p_palette);
+
+    void exportDiagramAndCopy(const QString &p_lang,
+                              const QString &p_text,
+                              const QString &p_format);
 
     PegMarkdownHighlighter *m_pegHighlighter;
 
@@ -314,6 +325,9 @@ private:
     VEditTab *m_editTab;
 
     int m_copyTimeStamp;
+
+    // Temp file used for ExportAndCopy.
+    QSharedPointer<QTemporaryFile> m_exportTempFile;
 };
 
 inline PegMarkdownHighlighter *VMdEditor::getMarkdownHighlighter() const

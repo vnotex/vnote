@@ -254,6 +254,8 @@ protected:
 
     virtual int lineNumberAreaWidth() const = 0;
 
+    void addTempFile(const QString &p_file);
+
     QWidget *m_editor;
 
     VEditorObject *m_object;
@@ -309,6 +311,8 @@ private:
 
     QStringList generateCompletionCandidates() const;
 
+    void cleanUp();
+
     QLabel *m_wrapLabel;
     QTimer *m_labelTimer;
 
@@ -351,6 +355,9 @@ private:
     TimeStamp m_trailingSpaceSelectionTS;
 
     QSharedPointer<VTextEditCompleter> m_completer;
+
+    // Temp files needed to be delete.
+    QStringList m_tempFiles;
 
 // Functions for private slots.
 private:
@@ -456,4 +463,8 @@ inline QWidget *VEditor::getEditor() const
     return m_editor;
 }
 
+inline void VEditor::addTempFile(const QString &p_file)
+{
+    m_tempFiles.append(p_file);
+}
 #endif // VEDITOR_H

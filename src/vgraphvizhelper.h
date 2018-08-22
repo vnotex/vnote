@@ -16,9 +16,9 @@ public:
 
     void processAsync(int p_id, TimeStamp p_timeStamp, const QString &p_format, const QString &p_text);
 
-    void prepareCommand(QString &p_cmd, QStringList &p_args) const;
-
     static bool testGraphviz(const QString &p_dot, QString &p_msg);
+
+    static QByteArray process(const QString &p_format, const QString &p_text);
 
 signals:
     void resultReady(int p_id, TimeStamp p_timeStamp, const QString &p_format, const QString &p_result);
@@ -27,6 +27,8 @@ private slots:
     void handleProcessFinished(int p_exitCode, QProcess::ExitStatus p_exitStatus);
 
 private:
+    void prepareCommand(QString &p_cmd, QStringList &p_args) const;
+
     QString m_program;
     QStringList m_args;
 };

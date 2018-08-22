@@ -15,7 +15,19 @@ extern VConfigManager *g_config;
 VPlantUMLHelper::VPlantUMLHelper(QObject *p_parent)
     : QObject(p_parent)
 {
-    prepareCommand(m_customCmd, m_program, m_args);
+    m_customCmd = g_config->getPlantUMLCmd();
+    if (m_customCmd.isEmpty()) {
+        prepareCommand(m_program, m_args);
+    }
+}
+
+VPlantUMLHelper::VPlantUMLHelper(const QString &p_jar, QObject *p_parent)
+    : QObject(p_parent)
+{
+    m_customCmd = g_config->getPlantUMLCmd();
+    if (m_customCmd.isEmpty()) {
+        prepareCommand(m_program, m_args, p_jar);
+    }
 }
 
 void VPlantUMLHelper::processAsync(int p_id,
@@ -49,18 +61,13 @@ void VPlantUMLHelper::processAsync(int p_id,
     process->closeWriteChannel();
 }
 
-void VPlantUMLHelper::prepareCommand(QString &p_customCmd,
-                                     QString &p_program,
-                                     QStringList &p_args) const
+void VPlantUMLHelper::prepareCommand(QString &p_program,
+                                     QStringList &p_args,
+                                     const QString &p_jar) const
 {
-    p_customCmd = g_config->getPlantUMLCmd();
-    if (!p_customCmd.isEmpty()) {
-        return;
-    }
-
     p_program = "java";
 
-    p_args << "-jar" << g_config->getPlantUMLJar();
+    p_args << "-jar" << (p_jar.isEmpty() ? g_config->getPlantUMLJar() : p_jar);
     p_args << "-charset" << "UTF-8";
 
     int nbthread = QThread::idealThreadCount();
@@ -124,32 +131,60 @@ void VPlantUMLHelper::handleProcessFinished(int p_exitCode, QProcess::ExitStatus
 
 bool VPlantUMLHelper::testPlantUMLJar(const QString &p_jar, QString &p_msg)
 {
-    QString program("java");
-    QStringList args;
-    args << "-jar" << p_jar;
-    args << "-charset" << "UTF-8";
-
-    const QString &dot = g_config->getGraphvizDot();
-    if (!dot.isEmpty()) {
-        args << "-graphvizdot";
-        args << dot;
-    }
-
-    args << "-pipe";
+    VPlantUMLHelper inst(p_jar);
+    QStringList args(inst.m_args);
     args << "-tsvg";
 
     QString testGraph("VNote->Markdown : hello");
 
     int exitCode = -1;
     QByteArray out, err;
-    int ret = VProcessUtils::startProcess(program, args, testGraph.toUtf8(), exitCode, out, err);
+    int ret = VProcessUtils::startProcess(inst.m_program,
+                                          args,
+                                          testGraph.toUtf8(),
+                                          exitCode,
+                                          out,
+                                          err);
 
     p_msg = QString("Command: %1 %2\nExitCode: %3\nOutput: %4\nError: %5")
-                   .arg(program)
+                   .arg(inst.m_program)
                    .arg(args.join(' '))
                    .arg(exitCode)
                    .arg(QString::fromLocal8Bit(out))
                    .arg(QString::fromLocal8Bit(err));
 
     return ret == 0 && exitCode == 0;
+}
+
+QByteArray VPlantUMLHelper::process(const QString &p_format, const QString &p_text)
+{
+    VPlantUMLHelper inst;
+
+    int exitCode = -1;
+    QByteArray out, err;
+    int ret = -1;
+    if (inst.m_customCmd.isEmpty()) {
+        QStringList args(inst.m_args);
+        args << ("-t" + p_format);
+        ret = VProcessUtils::startProcess(inst.m_program,
+                                          args,
+                                          p_text.toUtf8(),
+                                          exitCode,
+                                          out,
+                                          err);
+    } else {
+        QString cmd(inst.m_customCmd);
+        cmd.replace("%0", p_format);
+        ret = VProcessUtils::startProcess(cmd,
+                                          p_text.toUtf8(),
+                                          exitCode,
+                                          out,
+                                          err);
+    }
+
+    if (ret != 0 || exitCode < 0) {
+        qWarning() << "PlantUML fail" << ret << exitCode << QString::fromLocal8Bit(err);
+    }
+
+    return out;
 }

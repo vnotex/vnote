@@ -44,6 +44,8 @@ public:
 
     const QVector<VElementRegion> &getImageRegions() const;
 
+    const QVector<VCodeBlock> &getCodeBlocks() const;
+
 public slots:
     // Parse and rehighlight immediately.
     void updateHighlight();
@@ -359,5 +361,10 @@ inline TimeStamp PegMarkdownHighlighter::nextCodeBlockTimeStamp()
 inline bool PegMarkdownHighlighter::isFastParseBlock(int p_blockNum) const
 {
     return p_blockNum >= m_fastParseBlocks.first && p_blockNum <= m_fastParseBlocks.second;
+}
+
+inline const QVector<VCodeBlock> &PegMarkdownHighlighter::getCodeBlocks() const
+{
+    return m_result->m_codeBlocks;
 }
 #endif // PEGMARKDOWNHIGHLIGHTER_H

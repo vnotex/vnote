@@ -7,6 +7,7 @@
 #include <QScrollBar>
 
 #include "vutils.h"
+#include "vcodeblockhighlighthelper.h"
 
 void VEditUtils::removeBlock(QTextBlock &p_block, QString *p_text)
 {
@@ -1082,4 +1083,12 @@ bool VEditUtils::isWordSeparator(QChar p_char)
     }
 
     return false;
+}
+
+QString VEditUtils::removeCodeBlockFence(const QString &p_text)
+{
+    QString text = VCodeBlockHighlightHelper::unindentCodeBlock(p_text);
+    Q_ASSERT(text.startsWith("```") && text.endsWith("```"));
+    int idx = text.indexOf('\n') + 1;
+    return text.mid(idx, text.size() - idx - 3);
 }

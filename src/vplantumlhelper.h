@@ -19,17 +19,24 @@ public:
                       const QString &p_format,
                       const QString &p_text);
 
-    void prepareCommand(QString &p_customCmd, QString &p_cmd, QStringList &p_args) const;
-
     static bool testPlantUMLJar(const QString &p_jar, QString &p_msg);
 
+    static QByteArray process(const QString &p_format, const QString &p_text);
+
 signals:
-    void resultReady(int p_id, TimeStamp p_timeStamp, const QString &p_format, const QString &p_result);
+    void resultReady(int p_id,
+                     TimeStamp p_timeStamp,
+                     const QString &p_format,
+                     const QString &p_result);
 
 private slots:
     void handleProcessFinished(int p_exitCode, QProcess::ExitStatus p_exitStatus);
 
 private:
+    VPlantUMLHelper(const QString &p_jar, QObject *p_parent = nullptr);
+
+    void prepareCommand(QString &p_cmd, QStringList &p_args, const QString &p_jar= QString()) const;
+
     QString m_program;
 
     QStringList m_args;

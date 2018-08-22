@@ -4,6 +4,7 @@
 #include <QStringList>
 #include <QByteArray>
 
+class QProcess;
 
 class VProcessUtils
 {
@@ -25,8 +26,20 @@ public:
                             QByteArray &p_out,
                             QByteArray &p_err);
 
+    static int startProcess(const QString &p_cmd,
+                            const QByteArray &p_in,
+                            int &p_exitCode,
+                            QByteArray &p_out,
+                            QByteArray &p_err);
+
 private:
     VProcessUtils() {}
+
+    static int startProcess(QProcess *p_process,
+                            const QByteArray &p_in,
+                            int &p_exitCode,
+                            QByteArray &p_out,
+                            QByteArray &p_err);
 };
 
 #endif // VPROCESSUTILS_H
