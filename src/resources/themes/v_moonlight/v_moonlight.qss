@@ -151,6 +151,7 @@ QToolButton::menu-arrow {
 /* DockWidget */
 QDockWidget {
     color: @dockwidget_title_fg;
+    background: @dockwidget_bg;
     titlebar-close-icon: url(close.svg);
     titlebar-normal-icon: url(float.svg);
 }

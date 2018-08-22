@@ -9,7 +9,7 @@ mdhl_file=v_detorte.mdhl
 css_file=v_detorte.css
 codeblock_css_file=v_detorte_codeblock.css
 mermaid_css_file=v_detorte_mermaid.css
-version=8
+version=9
 
 ; This mapping will be used to translate colors when the content of HTML is copied
 ; without background. You could just specify the foreground colors mapping here.
@@ -175,6 +175,7 @@ toolbox_icon_active_fg=@master_fg
 toolbox_title_border=@master_bg
 
 ; Dockwidget.
+dockwidget_bg=@base_bg
 dockwidget_title_fg=@title_fg
 dockwidget_title_bg=@title_bg
 dockwidget_button_hover_bg=@hover_bg

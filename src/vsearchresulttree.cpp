@@ -11,6 +11,7 @@
 #include "vcart.h"
 #include "vhistorylist.h"
 #include "vexplorer.h"
+#include "vuniversalentry.h"
 
 extern VNote *g_vnote;
 
@@ -112,7 +113,15 @@ void VSearchResultTree::appendItem(const QSharedPointer<VSearchResultItem> &p_it
 
     QTreeWidgetItem *item = new QTreeWidgetItem(this);
     item->setData(0, Qt::UserRole, m_data.size() - 1);
-    item->setText(0, p_item->m_text.isEmpty() ? p_item->m_path : p_item->m_text);
+    QString text;
+    if (p_item->m_text.isEmpty()) {
+        text = p_item->m_path;
+    } else if (p_item->m_type != VSearchResultItem::Notebook) {
+        text = VUniversalEntry::fileNameWithDir(p_item->m_text, p_item->m_path);
+    } else {
+        text = p_item->m_text;
+    }
+    item->setText(0, text);
     item->setToolTip(0, p_item->m_path);
 
     switch (p_item->m_type) {
