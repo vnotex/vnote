@@ -1469,7 +1469,7 @@ int VMdEditor::lineNumberAreaWidth() const
 void VMdEditor::initLinkAndPreviewMenu(QAction *p_before, QMenu *p_menu, const QPoint &p_pos)
 {
     QTextCursor cursor = cursorForPosition(p_pos);
-    int pos = cursor.position();
+    const int pos = cursor.position();
     QTextBlock block = cursor.block();
     const QString text(block.text());
 
@@ -1554,6 +1554,7 @@ void VMdEditor::initLinkAndPreviewMenu(QAction *p_before, QMenu *p_menu, const Q
     QRegExp regExp2(VUtils::c_linkRegExp);
     QString linkText;
     int p = 0;
+    const int pib = pos - block.position();
     while (p < text.size()) {
         int idx = text.indexOf(regExp2, p);
         if (idx == -1) {
@@ -1561,7 +1562,7 @@ void VMdEditor::initLinkAndPreviewMenu(QAction *p_before, QMenu *p_menu, const Q
         }
 
         p = idx + regExp2.matchedLength();
-        if (pos >= idx && pos < p) {
+        if (pib >= idx && pib < p) {
             linkText = regExp2.cap(2);
             break;
         }

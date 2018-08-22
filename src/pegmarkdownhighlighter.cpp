@@ -23,7 +23,8 @@ PegMarkdownHighlighter::PegMarkdownHighlighter(QTextDocument *p_doc, VMdEditor *
       m_parser(NULL),
       m_parserExts(pmh_EXT_NOTES | pmh_EXT_STRIKE | pmh_EXT_FRONTMATTER | pmh_EXT_MARK),
       m_parseInterval(50),
-      m_notifyHighlightComplete(false)
+      m_notifyHighlightComplete(false),
+      m_fastParseInterval(30)
 {
 }
 
@@ -74,7 +75,7 @@ void PegMarkdownHighlighter::init(const QVector<HighlightingStyle> &p_styles,
 
     m_fastParseTimer = new QTimer(this);
     m_fastParseTimer->setSingleShot(true);
-    m_fastParseTimer->setInterval(100);
+    m_fastParseTimer->setInterval(m_fastParseInterval);
     connect(m_fastParseTimer, &QTimer::timeout,
             this, [this]() {
                 startFastParse(m_fastParseInfo.m_position,
@@ -103,6 +104,8 @@ void PegMarkdownHighlighter::init(const QVector<HighlightingStyle> &p_styles,
 
     connect(m_editor->verticalScrollBar(), &QScrollBar::valueChanged,
             m_scrollRehighlightTimer, static_cast<void(QTimer::*)()>(&QTimer::start));
+
+    m_contentChangeTime.start();
 }
 
 // Just use parse results to highlight block.
@@ -189,6 +192,16 @@ void PegMarkdownHighlighter::highlightBlock(const QString &p_text)
     }
 }
 
+inline
+static bool containSpecialChar(const QString &p_str)
+{
+    QChar fi = p_str[0];
+    QChar la = p_str[p_str.size() - 1];
+
+    return fi == '#'
+           || la == '`' || la == '$' || la == '*' || la == '_';
+}
+
 bool PegMarkdownHighlighter::preHighlightSingleFormatBlock(const QVector<QVector<HLUnit>> &p_highlights,
                                                            int p_blockNum,
                                                            const QString &p_text,
@@ -210,7 +223,9 @@ bool PegMarkdownHighlighter::preHighlightSingleFormatBlock(const QVector<QVector
     const QVector<HLUnit> &units = p_highlights[p_blockNum];
     if (units.size() == 1) {
         const HLUnit &unit = units[0];
-        if (unit.start == 0 && (int)unit.length < sz) {
+        if (unit.start == 0
+            && (int)unit.length < sz
+            && (p_forced || containSpecialChar(p_text))) {
             setFormat(0, sz, m_styles[unit.styleIndex].format);
             return true;
         }
@@ -269,10 +284,14 @@ void PegMarkdownHighlighter::highlightBlockOne(const QVector<HLUnit> &p_units)
     }
 }
 
+#define KEY_PRESS_INTERVAL 50
+
 // highlightBlock() will be called before this function.
 void PegMarkdownHighlighter::handleContentsChange(int p_position, int p_charsRemoved, int p_charsAdded)
 {
     Q_UNUSED(p_position);
+
+    int interval = m_contentChangeTime.restart();
 
     if (p_charsRemoved == 0 && p_charsAdded == 0) {
         return;
@@ -286,7 +305,7 @@ void PegMarkdownHighlighter::handleContentsChange(int p_position, int p_charsRem
         m_fastParseInfo.m_position = p_position;
         m_fastParseInfo.m_charsRemoved = p_charsRemoved;
         m_fastParseInfo.m_charsAdded = p_charsAdded;
-        m_fastParseTimer->start();
+        m_fastParseTimer->start(interval < KEY_PRESS_INTERVAL ? 100 : m_fastParseInterval);
     }
 
     // We still need a timer to start a complete parse.
@@ -312,7 +331,10 @@ void PegMarkdownHighlighter::startFastParse(int p_position, int p_charsRemoved, 
     if (firstBlockNum == -1) {
         // We could not let m_fastResult NULL here.
         clearFastParseResult();
+        m_fastParseInterval = 100;
         return;
+    } else {
+        m_fastParseInterval = (lastBlockNum - firstBlockNum) < 5 ? 0 : 30;
     }
 
     QString text;
@@ -741,7 +763,7 @@ void PegMarkdownHighlighter::getFastParseBlockRange(int p_position,
                                                     int &p_firstBlock,
                                                     int &p_lastBlock) const
 {
-    const int maxNumOfBlocks = 10;
+    const int maxNumOfBlocks = 15;
 
     int charsChanged = p_charsRemoved + p_charsAdded;
     QTextBlock firstBlock = m_doc->findBlock(p_position);

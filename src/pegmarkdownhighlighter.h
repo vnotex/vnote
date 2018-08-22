@@ -3,6 +3,7 @@
 
 #include <QSyntaxHighlighter>
 #include <QTextCharFormat>
+#include <QTime>
 
 #include "vtextblockdata.h"
 #include "markdownhighlighterdata.h"
@@ -212,6 +213,12 @@ private:
     QSet<int> m_singleFormatBlocks;
 
     bool m_notifyHighlightComplete;
+
+    // Time since last content change.
+    QTime m_contentChangeTime;
+
+    // Interval for fast parse timer.
+    int m_fastParseInterval;
 };
 
 inline const QVector<VElementRegion> &PegMarkdownHighlighter::getHeaderRegions() const
