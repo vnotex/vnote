@@ -17,7 +17,7 @@ const QString VConfigManager::orgName = QString("vnote");
 
 const QString VConfigManager::appName = QString("vnote");
 
-const QString VConfigManager::c_version = QString("1.21");
+const QString VConfigManager::c_version = QString("1.22");
 
 const QString VConfigManager::c_dirConfigFile = QString("_vnote.json");
 
