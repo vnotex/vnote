@@ -1,4 +1,13 @@
 # Changes History
+## v1.22
+- Editor
+    - Support parsting HTML as converted Markdown text;
+    - Improve performance of in-place preview;
+    - Be aware of links, images, and in-place preview in edit mode (visit or copy);
+    - Support exporting and copying PlantUML and Graphviz diagram in edit mode;
+- Support middle click to close a tab;
+- Support searching files via multiple tags, such as "vnote && markdown";
+
 ## v1.21
 - Improve performance of editor (now could process 10K lines);
 - Support `<mark>vnote</mark>` highlight in edit mode;

@@ -327,8 +327,8 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
                         emit m_object->discardAndRead();
                     });
 
-            QAction *toggleLivePreviewAct = new QAction(tr("Live Preview for Diagrams"), menu.data());
-            toggleLivePreviewAct->setToolTip(tr("Toggle live preview panel for diagrams"));
+            QAction *toggleLivePreviewAct = new QAction(tr("Live Preview For Graphs"), menu.data());
+            toggleLivePreviewAct->setToolTip(tr("Toggle live preview panel for graphs"));
             connect(toggleLivePreviewAct, &QAction::triggered,
                     this, [this]() {
                         m_editTab->toggleLivePreview();
@@ -825,7 +825,7 @@ void VMdEditor::insertFromMimeData(const QMimeData *p_source)
 
         // Handle HTML.
         VSelectDialog dialog(tr("Insert From Clipboard"), this);
-        dialog.addSelection(tr("Insert Converted Markdown Text"), 0);
+        dialog.addSelection(tr("Parse And Insert Markdown Text"), 0);
         dialog.addSelection(tr("Insert As Text"), 1);
         if (p_source->hasImage()) {
             dialog.addSelection(tr("Insert As Image"), 2);
@@ -1240,7 +1240,7 @@ void VMdEditor::htmlToTextFinished(int p_id, int p_timeStamp, const QString &p_t
         QTextCursor cursor = textCursor();
         cursor.insertText(p_text);
         setTextCursor(cursor);
-        emit m_object->statusMessage(tr("Converted Markdown text inverted"));
+        emit m_object->statusMessage(tr("Parsed Markdown text inserted"));
     }
 }
 
@@ -1710,22 +1710,22 @@ bool VMdEditor::initExportAndCopyMenu(QAction *p_before,
         return false;
     }
 
-    QMenu *subMenu = new QMenu(tr("Copy Diagram"), p_menu);
+    QMenu *subMenu = new QMenu(tr("Copy Graph"), p_menu);
     subMenu->setToolTipsVisible(true);
 
     QAction *pngAct = new QAction(tr("PNG"), subMenu);
-    pngAct->setToolTip(tr("Export diagram as PNG to a temporary file and copy"));
+    pngAct->setToolTip(tr("Export graph as PNG to a temporary file and copy"));
     connect(pngAct, &QAction::triggered,
             this, [this, lang = cb.m_lang, text = cb.m_text]() {
-                exportDiagramAndCopy(lang, text, "png");
+                exportGraphAndCopy(lang, text, "png");
             });
     subMenu->addAction(pngAct);
 
     QAction *svgAct = new QAction(tr("SVG"), subMenu);
-    svgAct->setToolTip(tr("Export diagram as SVG to a temporary file and copy"));
+    svgAct->setToolTip(tr("Export graph as SVG to a temporary file and copy"));
     connect(svgAct, &QAction::triggered,
             this, [this, lang = cb.m_lang, text = cb.m_text]() {
-                exportDiagramAndCopy(lang, text, "svg");
+                exportGraphAndCopy(lang, text, "svg");
             });
     subMenu->addAction(svgAct);
 
@@ -1733,9 +1733,9 @@ bool VMdEditor::initExportAndCopyMenu(QAction *p_before,
     return true;
 }
 
-void VMdEditor::exportDiagramAndCopy(const QString &p_lang,
-                                     const QString &p_text,
-                                     const QString &p_format)
+void VMdEditor::exportGraphAndCopy(const QString &p_lang,
+                                   const QString &p_text,
+                                   const QString &p_format)
 {
     m_exportTempFile.reset(new QTemporaryFile(QDir::tempPath()
                                               + QDir::separator()
@@ -1752,7 +1752,7 @@ void VMdEditor::exportDiagramAndCopy(const QString &p_lang,
         return;
     }
 
-    emit m_object->statusMessage(tr("Exporting diagram"));
+    emit m_object->statusMessage(tr("Exporting graph"));
 
     QString filePath(m_exportTempFile->fileName());
     QByteArray out;
@@ -1767,7 +1767,7 @@ void VMdEditor::exportDiagramAndCopy(const QString &p_lang,
     if (out.isEmpty() || m_exportTempFile->write(out) == -1) {
         VUtils::showMessage(QMessageBox::Warning,
                             tr("Warning"),
-                            tr("Fail to export diagram."),
+                            tr("Fail to export graph."),
                             "",
                             QMessageBox::Ok,
                             QMessageBox::Ok,
@@ -1782,7 +1782,7 @@ void VMdEditor::exportDiagramAndCopy(const QString &p_lang,
                                                         img,
                                                         filePath,
                                                         QClipboard::Clipboard);
-            emit m_object->statusMessage(tr("Diagram exported and copied"));
+            emit m_object->statusMessage(tr("Graph exported and copied"));
         } else {
             emit m_object->statusMessage(tr("Fail to read exported image: %1").arg(filePath));
         }

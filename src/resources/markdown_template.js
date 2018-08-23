@@ -1405,8 +1405,8 @@ var handleGraphvizResult = function(id, timeStamp, format, result) {
 
 var setPreviewEnabled = function(enabled) {
     var hint = '<div class="preview-hint">' +
-               '<h3>Live Preview for Diagrams</h3>' +
-               '<p>Place the cursor on the definition of a diagram to preview.</p>' +
+               '<h3>Live Preview for Graphs</h3>' +
+               '<p>Place the cursor on the definition of a graph to preview.</p>' +
                '</div>';
 
     if (enabled) {

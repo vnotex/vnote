@@ -297,9 +297,9 @@ private:
 
     void setFontAndPaletteByStyleSheet(const QFont &p_font, const QPalette &p_palette);
 
-    void exportDiagramAndCopy(const QString &p_lang,
-                              const QString &p_text,
-                              const QString &p_format);
+    void exportGraphAndCopy(const QString &p_lang,
+                            const QString &p_text,
+                            const QString &p_format);
 
     PegMarkdownHighlighter *m_pegHighlighter;
 
