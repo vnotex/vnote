@@ -182,15 +182,6 @@ bool VMdTab::scrollEditorToHeader(const VHeaderPointer &p_header)
         }
     }
 
-    // If the cursor are now under the right title, we should not change it right at
-    // the title.
-    int curBlockNumber = mdEdit->textCursor().block().blockNumber();
-    if (m_outline.indexOfItemByBlockNumber(curBlockNumber)
-        == m_outline.indexOfItemByBlockNumber(blockNumber)) {
-        m_currentHeader = p_header;
-        return true;
-    }
-
     if (mdEdit->scrollToHeader(blockNumber)) {
         m_currentHeader = p_header;
         return true;
