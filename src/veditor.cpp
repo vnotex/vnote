@@ -272,12 +272,14 @@ void VEditor::filterTrailingSpace(QList<QTextEdit::ExtraSelection> &p_selects,
             }
 
             QString text = cursor.block().text();
-            if (!text.isEmpty() && !text[text.size() - 1].isSpace()) {
+            if (text.isEmpty()) {
+                continue;
+            } else if (!text[text.size() - 1].isSpace()) {
                 continue;
             }
-        } else {
-            p_selects.append(*it);
         }
+
+        p_selects.append(*it);
     }
 }
 
