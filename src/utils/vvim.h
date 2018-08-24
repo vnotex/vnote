@@ -678,6 +678,9 @@ private:
     // of @p_cursor.
     void expandSelectionToWholeLines(QTextCursor &p_cursor);
 
+    // Init leader key from config.
+    void initLeaderKey();
+
     // Init m_registers.
     // Currently supported registers:
     // a-z, A-Z (append to a-z), ", +, _

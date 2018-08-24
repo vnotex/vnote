@@ -545,6 +545,8 @@ public:
 
     const QString &getImageNamePrefix() const;
 
+    QChar getVimLeaderKey() const;
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -978,6 +980,9 @@ private:
 
     // Max number of tag labels to display.
     int m_maxNumOfTagLabels;
+
+    // Vim leader key.
+    QChar m_vimLeaderKey;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2528,5 +2533,10 @@ inline int VConfigManager::getMaxTagLabelLength() const
 inline int VConfigManager::getMaxNumOfTagLabels() const
 {
     return m_maxNumOfTagLabels;
+}
+
+inline QChar VConfigManager::getVimLeaderKey() const
+{
+    return m_vimLeaderKey;
 }
 #endif // VCONFIGMANAGER_H

@@ -330,6 +330,17 @@ void VConfigManager::initEditorConfigs()
 
     m_enableSmartImInVimMode = getConfigFromSettings("editor",
                                                      "enable_smart_im_in_vim_mode").toBool();
+
+    QString tmpLeader = getConfigFromSettings("editor",
+                                              "vim_leader_key").toString();
+    if (tmpLeader.isEmpty()) {
+        m_vimLeaderKey = QChar(' ');
+    } else {
+        m_vimLeaderKey = tmpLeader[0];
+        if (m_vimLeaderKey.isNull()) {
+            m_vimLeaderKey = QChar(' ');
+        }
+    }
 }
 
 void VConfigManager::initSettings()

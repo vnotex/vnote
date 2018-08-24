@@ -83,6 +83,68 @@ static QChar keyToChar(int p_key, int p_modifiers)
     return ch;
 }
 
+#define ADDCHAR(x, y) case (x): {p_key = (y); break;}
+#define ADDCHAR_SHIFT(x, y) case (x): {p_key = (y); p_modifiers = Qt::ShiftModifier; break;}
+
+static void charToKey(const QChar &p_char, int &p_key, int &p_modifiers)
+{
+    p_modifiers = Qt::NoModifier;
+
+    ushort ucode = p_char.unicode();
+    if (ucode >= '0' && ucode <= '9') {
+        p_key = Qt::Key_0 + ucode - '0';
+        return;
+    } else if (ucode >= 'a' && ucode <= 'z') {
+        p_key = Qt::Key_A + ucode - 'a';
+        return;
+    } else if (ucode >= 'A' && ucode <= 'Z') {
+        p_key = Qt::Key_A + ucode - 'A';
+        p_modifiers = Qt::ShiftModifier;
+        return;
+    }
+
+    switch (p_char.unicode()) {
+    ADDCHAR('\t', Qt::Key_Tab);
+    ADDCHAR(' ', Qt::Key_Space);
+    ADDCHAR_SHIFT('!', Qt::Key_Exclam);
+    ADDCHAR_SHIFT('"', Qt::Key_QuoteDbl);
+    ADDCHAR_SHIFT('#', Qt::Key_NumberSign);
+    ADDCHAR_SHIFT('$', Qt::Key_Dollar);
+    ADDCHAR_SHIFT('%', Qt::Key_Percent);
+    ADDCHAR_SHIFT('&', Qt::Key_Ampersand);
+    ADDCHAR('\'', Qt::Key_Apostrophe);
+    ADDCHAR_SHIFT('(', Qt::Key_ParenLeft);
+    ADDCHAR_SHIFT(')', Qt::Key_ParenRight);
+    ADDCHAR_SHIFT('*', Qt::Key_Asterisk);
+    ADDCHAR_SHIFT('+', Qt::Key_Plus);
+    ADDCHAR(',', Qt::Key_Comma);
+    ADDCHAR('-', Qt::Key_Minus);
+    ADDCHAR('.', Qt::Key_Period);
+    ADDCHAR('/', Qt::Key_Slash);
+    ADDCHAR_SHIFT(':', Qt::Key_Colon);
+    ADDCHAR(';', Qt::Key_Semicolon);
+    ADDCHAR_SHIFT('<', Qt::Key_Less);
+    ADDCHAR('=', Qt::Key_Equal);
+    ADDCHAR_SHIFT('>', Qt::Key_Greater);
+    ADDCHAR_SHIFT('?', Qt::Key_Question);
+    ADDCHAR_SHIFT('@', Qt::Key_At);
+    ADDCHAR('[', Qt::Key_BracketLeft);
+    ADDCHAR('\\', Qt::Key_Backslash);
+    ADDCHAR(']', Qt::Key_BracketRight);
+    ADDCHAR_SHIFT('^', Qt::Key_AsciiCircum);
+    ADDCHAR_SHIFT('_', Qt::Key_Underscore);
+    ADDCHAR('`', Qt::Key_QuoteLeft);
+    ADDCHAR_SHIFT('{', Qt::Key_BraceLeft);
+    ADDCHAR_SHIFT('|', Qt::Key_Bar);
+    ADDCHAR_SHIFT('}', Qt::Key_BraceRight);
+    ADDCHAR_SHIFT('~', Qt::Key_AsciiTilde);
+
+    default:
+        p_key = -1;
+        break;
+    }
+}
+
 static QString keyToString(int p_key, int p_modifiers)
 {
     QChar ch = keyToChar(p_key, p_modifiers);
@@ -114,6 +176,8 @@ VVim::VVim(VEditor *p_editor)
 
     setMode(VimMode::Normal);
 
+    initLeaderKey();
+
     initRegisters();
 
     connect(m_editor->object(), &VEditorObject::mousePressed,
@@ -122,6 +186,17 @@ VVim::VVim(VEditor *p_editor)
             this, &VVim::handleMouseMoved);
     connect(m_editor->object(), &VEditorObject::mouseReleased,
             this, &VVim::handleMouseReleased);
+}
+
+void VVim::initLeaderKey()
+{
+    QChar ch = g_config->getVimLeaderKey();
+    Q_ASSERT(!ch.isNull());
+
+    int key, modifiers;
+    charToKey(ch, key, modifiers);
+    m_leaderKey = Key(key, modifiers);
+    qDebug() << "Vim leader key" << ch << key << modifiers;
 }
 
 // Set @p_cursor's position specified by @p_positionInBlock.
