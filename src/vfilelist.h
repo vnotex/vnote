@@ -77,6 +77,8 @@ private slots:
 
     void handleItemClicked(QListWidgetItem *p_item);
 
+    void showStatusTipAboutItem(QListWidgetItem *p_item);
+
     // View and edit information of selected file.
     // Valid only when there is only one selected file.
     void fileInfo();

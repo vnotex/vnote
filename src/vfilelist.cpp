@@ -93,6 +93,7 @@ void VFileList::setupUI()
     fileList->setSelectionMode(QAbstractItemView::ExtendedSelection);
     fileList->setObjectName("FileList");
     fileList->setAttribute(Qt::WA_MacShowFocusRect, false);
+    fileList->setMouseTracking(true);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addLayout(titleLayout);
@@ -103,6 +104,15 @@ void VFileList::setupUI()
             this, &VFileList::contextMenuRequested);
     connect(fileList, &QListWidget::itemClicked,
             this, &VFileList::handleItemClicked);
+    connect(fileList, &QListWidget::itemEntered,
+            this, &VFileList::showStatusTipAboutItem);
+    connect(fileList, &QListWidget::currentItemChanged,
+            this, [this](QListWidgetItem *p_cur, QListWidgetItem *p_pre) {
+                Q_UNUSED(p_pre);
+                if (p_cur) {
+                    showStatusTipAboutItem(p_cur);
+                }
+            });
 
     setLayout(mainLayout);
 }
@@ -734,6 +744,24 @@ void VFileList::handleItemClicked(QListWidgetItem *p_item)
     }
 }
 
+void VFileList::showStatusTipAboutItem(QListWidgetItem *p_item)
+{
+    Q_ASSERT(p_item);
+    const VNoteFile *file = getVFile(p_item);
+    const QStringList &tags = file->getTags();
+    QString tag;
+    for (int i = 0; i < tags.size(); ++i) {
+        if (i == 0) {
+            tag = "\t[" + tags[i] + "]";
+        } else {
+            tag += " [" + tags[i] + "]";
+        }
+    }
+
+    QString tip(file->getName() + tag);
+    g_mainWin->showStatusMessage(tip);
+}
+
 void VFileList::activateItem(QListWidgetItem *p_item, bool p_restoreFocus)
 {
     if (!p_item) {
@@ -1347,11 +1375,19 @@ void VFileList::updateViewMenu(QMenu *p_menu)
 
 void VFileList::sortFileList(ViewOrder p_order)
 {
+    if (!m_directory) {
+        return;
+    }
+
     QVector<VNoteFile *> files = m_directory->getFiles();
+    if (files.isEmpty()) {
+        return;
+    }
+
     sortFiles(files, p_order);
 
-    Q_ASSERT(files.size() == fileList->count());
     int cnt = files.size();
+    Q_ASSERT(cnt == fileList->count());
     for (int i = 0; i < cnt; ++i) {
         int row = -1;
         for (int j = i; j < cnt; ++j) {
