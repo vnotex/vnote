@@ -190,7 +190,9 @@ new QWebChannel(qt.webChannelTransport,
         content.requestPreviewEnabled.connect(setPreviewEnabled);
 
         content.requestPreviewCodeBlock.connect(previewCodeBlock);
+
         content.requestSetPreviewContent.connect(setPreviewContent);
+        content.requestPerformSmartLivePreview.connect(performSmartLivePreview);
 
         if (typeof updateHtml == "function") {
             updateHtml(content.html);
@@ -1577,3 +1579,77 @@ var htmlToText = function(identifier, id, timeStamp, html) {
     var markdown = ts.turndown(html);
     content.htmlToTextCB(identifier, id, timeStamp, markdown);
 };
+
+var performSmartLivePreview = function(lang, text) {
+    if (previewDiv.style.display == 'none') {
+        return;
+    }
+
+    if (lang != 'puml') {
+        return;
+    }
+
+    // PlantUML.
+    var targetNode = findNodeWithText(previewDiv, new RegExp(text));
+    if (!targetNode) {
+        return;
+    }
+
+    // (left, top) is relative to the viewport.
+    // Should add window.scrollX and window.scrollY to get the real content offset.
+    var trect = targetNode.getBoundingClientRect();
+
+    var vrect = {
+        left: document.documentElement.scrollLeft || document.body.scrollLeft || window.pageXOffset,
+        top: document.documentElement.scrollTop || document.body.scrollTop || window.pageYOffset,
+        width: document.documentElement.clientWidth || document.body.clientWidth,
+        height: document.documentElement.clientHeight || document.body.clientHeight
+    }
+
+    var dx = 0, dy = 0;
+
+    // If target is already in, do not scroll.
+    if (trect.left < 0
+        || trect.left + trect.width > vrect.width) {
+        if (trect.width >= vrect.width) {
+            dx = trect.left;
+        } else {
+            dx = trect.left - (vrect.width - trect.width) / 2;
+        }
+    }
+
+    if (trect.top < 0
+        || trect.top + trect.height > vrect.height) {
+        if (trect.height >= vrect.height) {
+            dy = trect.top;
+        } else {
+            dy = trect.top - (vrect.height - trect.width) / 2;
+        }
+    }
+
+    window.scrollBy(dx, dy);
+}
+
+var findNodeWithText = function(node, reg) {
+    var children = node.children;
+    if (children.length == 0) {
+        if (reg.test(node.textContent)) {
+            return node;
+        } else {
+            return null;
+        }
+    }
+
+    for (var i = 0; i < children.length; ++i) {
+        var ret = findNodeWithText(children[i], reg);
+        if (ret) {
+            return ret;
+        }
+    }
+
+    if (reg.test(node.textContent)) {
+        return node;
+    }
+
+    return null;
+}

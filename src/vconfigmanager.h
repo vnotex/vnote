@@ -547,6 +547,8 @@ public:
 
     QChar getVimLeaderKey() const;
 
+    bool getSmartLivePreview() const;
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -983,6 +985,9 @@ private:
 
     // Vim leader key.
     QChar m_vimLeaderKey;
+
+    // Smart live preview.
+    bool m_smartLivePreview;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2538,5 +2543,10 @@ inline int VConfigManager::getMaxNumOfTagLabels() const
 inline QChar VConfigManager::getVimLeaderKey() const
 {
     return m_vimLeaderKey;
+}
+
+inline bool VConfigManager::getSmartLivePreview() const
+{
+    return m_smartLivePreview;
 }
 #endif // VCONFIGMANAGER_H

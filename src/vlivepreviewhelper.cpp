@@ -95,7 +95,7 @@ VLivePreviewHelper::VLivePreviewHelper(VEditor *p_editor,
 {
     m_livePreviewTimer = new QTimer(this);
     m_livePreviewTimer->setSingleShot(true);
-    m_livePreviewTimer->setInterval(100);
+    m_livePreviewTimer->setInterval(500);
     connect(m_livePreviewTimer, &QTimer::timeout,
             this, &VLivePreviewHelper::handleCursorPositionChanged);
 
@@ -214,6 +214,7 @@ void VLivePreviewHelper::updateCodeBlocks(TimeStamp p_timeStamp, const QVector<V
 
     if (needUpdate) {
         updateLivePreview();
+        performSmartLivePreview();
     }
 
     clearObsoleteCache();
@@ -227,33 +228,33 @@ void VLivePreviewHelper::handleCursorPositionChanged()
     }
 
     int cursorBlock = m_editor->textCursorW().block().blockNumber();
-    if (m_lastCursorBlock == cursorBlock) {
-        return;
-    }
+    if (m_lastCursorBlock != cursorBlock) {
+        m_lastCursorBlock = cursorBlock;
 
-    m_lastCursorBlock = cursorBlock;
+        int left = 0, right = m_codeBlocks.size() - 1;
+        int mid = left;
+        while (left <= right) {
+            mid = (left + right) / 2;
+            const CodeBlockPreviewInfo &cb = m_codeBlocks[mid];
+            const VCodeBlock &vcb = cb.codeBlock();
+            if (vcb.m_startBlock <= cursorBlock && vcb.m_endBlock >= cursorBlock) {
+                break;
+            } else if (vcb.m_startBlock > cursorBlock) {
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
+        }
 
-    int left = 0, right = m_codeBlocks.size() - 1;
-    int mid = left;
-    while (left <= right) {
-        mid = (left + right) / 2;
-        const CodeBlockPreviewInfo &cb = m_codeBlocks[mid];
-        const VCodeBlock &vcb = cb.codeBlock();
-        if (vcb.m_startBlock <= cursorBlock && vcb.m_endBlock >= cursorBlock) {
-            break;
-        } else if (vcb.m_startBlock > cursorBlock) {
-            right = mid - 1;
-        } else {
-            left = mid + 1;
+        if (left <= right) {
+            if (m_cbIndex != mid) {
+                m_cbIndex = mid;
+                updateLivePreview();
+            }
         }
     }
 
-    if (left <= right) {
-        if (m_cbIndex != mid) {
-            m_cbIndex = mid;
-            updateLivePreview();
-        }
-    }
+    performSmartLivePreview();
 }
 
 void VLivePreviewHelper::updateLivePreview()
@@ -396,6 +397,7 @@ void VLivePreviewHelper::localAsyncResultReady(int p_id,
         }
 
         m_document->setPreviewContent(lang, p_result);
+        performSmartLivePreview();
     } else {
         // Inplace preview.
         updateInplacePreview();
@@ -522,4 +524,28 @@ void VLivePreviewHelper::clearObsoleteCache()
             ++it;
         }
     }
+}
+
+void VLivePreviewHelper::performSmartLivePreview()
+{
+    if (m_cbIndex < 0
+        || m_cbIndex >= m_codeBlocks.size()
+        || !g_config->getSmartLivePreview()) {
+        return;
+    }
+
+    const CodeBlockPreviewInfo &cb = m_codeBlocks[m_cbIndex];
+    const VCodeBlock &vcb = cb.codeBlock();
+    const QTextBlock block = m_editor->textCursorW().block();
+    if (block.blockNumber() <= vcb.m_startBlock
+        || block.blockNumber() >= vcb.m_endBlock) {
+        return;
+    }
+
+    QString keyword;
+    if (vcb.m_lang == "puml" && m_plantUMLMode == PlantUMLMode::LocalPlantUML) {
+        keyword = VPlantUMLHelper::keywordForSmartLivePreview(block.text());
+    }
+
+    m_document->performSmartLivePreview(vcb.m_lang, keyword);
 }

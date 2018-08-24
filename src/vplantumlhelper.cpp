@@ -188,3 +188,40 @@ QByteArray VPlantUMLHelper::process(const QString &p_format, const QString &p_te
 
     return out;
 }
+
+static bool tryClassDiagram(QString &p_keyword)
+{
+    {
+    // class ABC #Pink {
+    QRegExp classDef1("class\\s*(\\w+)\\s*.*");
+    if (classDef1.indexIn(p_keyword) >= 0) {
+        p_keyword = classDef1.cap(1);
+        return true;
+    }
+    }
+
+    {
+    // class "ABC DEF" as AD #Pink {
+    QRegExp classDef2("class\\s*\"([^\"]+)\"\\s*.*");
+    if (classDef2.indexIn(p_keyword) >= 0) {
+        p_keyword = classDef2.cap(1);
+        return true;
+    }
+    }
+
+    return false;
+}
+
+QString VPlantUMLHelper::keywordForSmartLivePreview(const QString &p_text)
+{
+    QString kw = p_text.trimmed();
+    if (kw.isEmpty()) {
+        return kw;
+    }
+
+    if (tryClassDiagram(kw)) {
+        return kw;
+    }
+
+    return kw;
+}

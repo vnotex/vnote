@@ -311,6 +311,9 @@ void VConfigManager::initialize()
     m_maxNumOfTagLabels = getConfigFromSettings("global",
                                                 "max_num_of_tag_labels").toInt();
 
+    m_smartLivePreview = getConfigFromSettings("global",
+                                               "smart_live_preview").toBool();
+
     initEditorConfigs();
 }
 

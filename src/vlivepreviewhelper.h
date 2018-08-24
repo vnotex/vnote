@@ -233,6 +233,8 @@ private:
 
     void clearObsoleteCache();
 
+    void performSmartLivePreview();
+
     // Sorted by m_startBlock in ascending order.
     QVector<CodeBlockPreviewInfo> m_codeBlocks;
 

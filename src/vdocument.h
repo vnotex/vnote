@@ -75,6 +75,8 @@ public:
 
     void muteWebView(bool p_muted);
 
+    void performSmartLivePreview(const QString &p_lang, const QString &p_text);
+
 public slots:
     // Will be called in the HTML side
 
@@ -191,6 +193,8 @@ signals:
     void codeBlockPreviewReady(int p_id, const QString &p_lang, const QString &p_html);
 
     void requestMuted(bool p_muted);
+
+    void requestPerformSmartLivePreview(const QString &p_lang, const QString &p_text);
 
 private:
     QString m_toc;

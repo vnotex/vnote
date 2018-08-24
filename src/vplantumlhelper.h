@@ -23,6 +23,8 @@ public:
 
     static QByteArray process(const QString &p_format, const QString &p_text);
 
+    static QString keywordForSmartLivePreview(const QString &p_text);
+
 signals:
     void resultReady(int p_id,
                      TimeStamp p_timeStamp,

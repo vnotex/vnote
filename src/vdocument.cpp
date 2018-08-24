@@ -202,3 +202,10 @@ void VDocument::previewCodeBlockCB(int p_id, const QString &p_lang, const QStrin
 {
     emit codeBlockPreviewReady(p_id, p_lang, p_html);
 }
+
+void VDocument::performSmartLivePreview(const QString &p_lang, const QString &p_text)
+{
+    if (!p_text.isEmpty()) {
+        emit requestPerformSmartLivePreview(p_lang, p_text);
+    }
+}
