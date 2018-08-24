@@ -275,9 +275,11 @@ private:
     // We need to maintain the styles font size.
     void zoomPage(bool p_zoomIn, int p_range = 1);
 
-    void initCopyAsMenu(QAction *p_before, QMenu *p_menu);
+    QAction *initCopyAsMenu(QAction *p_after, QMenu *p_menu);
 
-    void initPasteAsBlockQuoteMenu(QMenu *p_menu);
+    QAction *initPasteAsBlockQuoteMenu(QAction *p_after, QMenu *p_menu);
+
+    QAction *initPasteAfterParseMenu(QAction *p_after, QMenu *p_menu);
 
     void initLinkAndPreviewMenu(QAction *p_before, QMenu *p_menu, const QPoint &p_pos);
 

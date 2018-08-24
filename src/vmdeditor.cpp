@@ -295,60 +295,108 @@ void VMdEditor::makeBlockVisible(const QTextBlock &p_block)
     }
 }
 
+static QAction *getActionByObjectName(const QList<QAction *> &p_actions,
+                                      const QString &p_objName)
+{
+    for (auto act : p_actions) {
+        if (act->objectName() == p_objName) {
+            return act;
+        }
+    }
+
+    return NULL;
+}
+
+// Insert @p_action into @p_menu after action @p_after.
+static void insertActionAfter(QAction *p_after, QAction *p_action, QMenu *p_menu)
+{
+    p_menu->insertAction(p_after, p_action);
+    if (p_after) {
+        p_menu->removeAction(p_after);
+        p_menu->insertAction(p_action, p_after);
+    }
+}
+
+static QAction *insertMenuAfter(QAction *p_after, QMenu *p_subMenu, QMenu *p_menu)
+{
+    QAction *menuAct = p_menu->insertMenu(p_after, p_subMenu);
+    if (p_after) {
+        p_menu->removeAction(p_after);
+        p_menu->insertAction(menuAct, p_after);
+    }
+
+    return menuAct;
+}
+
 void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
 {
+    if (!m_editTab || !m_editTab->isEditMode()) {
+        return;
+    }
+
     QScopedPointer<QMenu> menu(createStandardContextMenu());
     menu->setToolTipsVisible(true);
-    if (m_editTab && m_editTab->isEditMode()) {
-        const QList<QAction *> actions = menu->actions();
 
-        if (textCursor().hasSelection()) {
-            initCopyAsMenu(actions.isEmpty() ? NULL : actions.last(), menu.data());
-        } else {
-            initLinkAndPreviewMenu(actions.isEmpty() ? NULL : actions[0],
-                                   menu.data(),
-                                   p_event->pos());
+    QAction *copyAct, *pasteAct, *firstAct;
+    {
+    const QList<QAction *> actions = menu->actions();
+    firstAct = actions.isEmpty() ? NULL : actions.first();
+    copyAct = getActionByObjectName(actions, "edit-copy");
+    pasteAct = getActionByObjectName(actions, "edit-paste");
+    }
 
-            QAction *saveExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/save_exit.svg"),
-                                               tr("&Save Changes And Read"),
-                                               menu.data());
-            saveExitAct->setToolTip(tr("Save changes and exit edit mode"));
-            connect(saveExitAct, &QAction::triggered,
-                    this, [this]() {
-                        emit m_object->saveAndRead();
-                    });
+    if (copyAct && copyAct->isEnabled()) {
+        initCopyAsMenu(copyAct, menu.data());
+    }
 
-            QAction *discardExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/discard_exit.svg"),
-                                                  tr("&Discard Changes And Read"),
-                                                  menu.data());
-            discardExitAct->setToolTip(tr("Discard changes and exit edit mode"));
-            connect(discardExitAct, &QAction::triggered,
-                    this, [this]() {
-                        emit m_object->discardAndRead();
-                    });
-
-            QAction *toggleLivePreviewAct = new QAction(tr("Live Preview For Graphs"), menu.data());
-            toggleLivePreviewAct->setToolTip(tr("Toggle live preview panel for graphs"));
-            connect(toggleLivePreviewAct, &QAction::triggered,
-                    this, [this]() {
-                        m_editTab->toggleLivePreview();
-                    });
-
-            menu->insertAction(actions.isEmpty() ? NULL : actions[0], toggleLivePreviewAct);
-            menu->insertAction(toggleLivePreviewAct, discardExitAct);
-            menu->insertAction(discardExitAct, saveExitAct);
-
-            menu->insertSeparator(toggleLivePreviewAct);
-
-            if (!actions.isEmpty()) {
-                menu->insertSeparator(actions[0]);
-            }
-        }
-
+    if (pasteAct && pasteAct->isEnabled()) {
         QClipboard *clipboard = QApplication::clipboard();
         const QMimeData *mimeData = clipboard->mimeData();
         if (mimeData->hasText()) {
-            initPasteAsBlockQuoteMenu(menu.data());
+            initPasteAsBlockQuoteMenu(pasteAct, menu.data());
+        }
+
+        if (mimeData->hasHtml()) {
+            initPasteAfterParseMenu(pasteAct, menu.data());
+        }
+    }
+
+    if (!textCursor().hasSelection()) {
+        initLinkAndPreviewMenu(firstAct, menu.data(), p_event->pos());
+
+        QAction *saveExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/save_exit.svg"),
+                                           tr("&Save Changes And Read"),
+                                           menu.data());
+        saveExitAct->setToolTip(tr("Save changes and exit edit mode"));
+        connect(saveExitAct, &QAction::triggered,
+                this, [this]() {
+                    emit m_object->saveAndRead();
+                });
+
+        QAction *discardExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/discard_exit.svg"),
+                                              tr("&Discard Changes And Read"),
+                                              menu.data());
+        discardExitAct->setToolTip(tr("Discard changes and exit edit mode"));
+        connect(discardExitAct, &QAction::triggered,
+                this, [this]() {
+                    emit m_object->discardAndRead();
+                });
+
+        QAction *toggleLivePreviewAct = new QAction(tr("Live Preview For Graphs"), menu.data());
+        toggleLivePreviewAct->setToolTip(tr("Toggle live preview panel for graphs"));
+        connect(toggleLivePreviewAct, &QAction::triggered,
+                this, [this]() {
+                    m_editTab->toggleLivePreview();
+                });
+
+        menu->insertAction(firstAct, toggleLivePreviewAct);
+        menu->insertAction(toggleLivePreviewAct, discardExitAct);
+        menu->insertAction(discardExitAct, saveExitAct);
+
+        menu->insertSeparator(toggleLivePreviewAct);
+
+        if (firstAct) {
+            menu->insertSeparator(firstAct);
         }
     }
 
@@ -822,36 +870,6 @@ void VMdEditor::insertFromMimeData(const QMimeData *p_source)
             m_editOps->insertImageFromURL(QUrl(reg.cap(2)));
             return;
         }
-
-        // Handle HTML.
-        VSelectDialog dialog(tr("Insert From Clipboard"), this);
-        dialog.addSelection(tr("Parse And Insert Markdown Text"), 0);
-        dialog.addSelection(tr("Insert As Text"), 1);
-        if (p_source->hasImage()) {
-            dialog.addSelection(tr("Insert As Image"), 2);
-        }
-
-        if (dialog.exec() == QDialog::Accepted) {
-            switch (dialog.getSelection()) {
-            case 0:
-                ++m_copyTimeStamp;
-                emit requestHtmlToText(html, 0, m_copyTimeStamp);
-                break;
-
-            case 1:
-                VTextEdit::insertFromMimeData(p_source);
-                break;
-
-            case 2:
-                m_editOps->insertImageFromMimeData(p_source);
-                break;
-
-            default:
-                break;
-            }
-        }
-
-        return;
     }
 
     VSelectDialog dialog(tr("Insert From Clipboard"), this);
@@ -1306,11 +1324,11 @@ void VMdEditor::zoomPage(bool p_zoomIn, int p_range)
     m_pegHighlighter->rehighlight();
 }
 
-void VMdEditor::initCopyAsMenu(QAction *p_before, QMenu *p_menu)
+QAction *VMdEditor::initCopyAsMenu(QAction *p_after, QMenu *p_menu)
 {
     QStringList targets = g_webUtils->getCopyTargetsName();
     if (targets.isEmpty()) {
-        return;
+        return NULL;
     }
 
     QMenu *subMenu = new QMenu(tr("Copy HTML As"), p_menu);
@@ -1325,16 +1343,10 @@ void VMdEditor::initCopyAsMenu(QAction *p_before, QMenu *p_menu)
 
     connect(subMenu, &QMenu::triggered,
             this, &VMdEditor::handleCopyAsAction);
-
-    QAction *menuAct = p_menu->insertMenu(p_before, subMenu);
-    if (p_before) {
-        p_menu->removeAction(p_before);
-        p_menu->insertAction(menuAct, p_before);
-        p_menu->insertSeparator(menuAct);
-    }
+    return insertMenuAfter(p_after, subMenu, p_menu);
 }
 
-void VMdEditor::initPasteAsBlockQuoteMenu(QMenu *p_menu)
+QAction *VMdEditor::initPasteAsBlockQuoteMenu(QAction *p_after, QMenu *p_menu)
 {
     QAction *pbqAct = new QAction(tr("Paste As Block &Quote"), p_menu);
     pbqAct->setToolTip(tr("Paste text from clipboard as block quote"));
@@ -1368,8 +1380,29 @@ void VMdEditor::initPasteAsBlockQuoteMenu(QMenu *p_menu)
                 setTextCursor(cursor);
             });
 
-    p_menu->addSeparator();
-    p_menu->addAction(pbqAct);
+
+    insertActionAfter(p_after, pbqAct, p_menu);
+    return pbqAct;
+}
+
+QAction *VMdEditor::initPasteAfterParseMenu(QAction *p_after, QMenu *p_menu)
+{
+    QAction *papAct = new QAction(tr("Paste Parsed &Markdown Text"), p_menu);
+    papAct->setToolTip(tr("Parse HTML to Markdown text and paste"));
+    connect(papAct, &QAction::triggered,
+            this, [this]() {
+                QClipboard *clipboard = QApplication::clipboard();
+                const QMimeData *mimeData = clipboard->mimeData();
+                QString html(mimeData->html());
+                if (!html.isEmpty()) {
+                    ++m_copyTimeStamp;
+                    emit requestHtmlToText(html, 0, m_copyTimeStamp);
+                }
+            });
+
+
+    insertActionAfter(p_after, papAct, p_menu);
+    return papAct;
 }
 
 void VMdEditor::insertImageLink(const QString &p_text, const QString &p_url)
@@ -1545,7 +1578,7 @@ void VMdEditor::initLinkAndPreviewMenu(QAction *p_before, QMenu *p_menu, const Q
                 initInPlacePreviewMenu(p_before, p_menu, block, pos);
             }
 
-            p_menu->insertSeparator(p_before ? p_before : NULL);
+            p_menu->insertSeparator(p_before);
             return;
         }
     }
@@ -1603,7 +1636,7 @@ void VMdEditor::initLinkAndPreviewMenu(QAction *p_before, QMenu *p_menu, const Q
             p_menu->insertAction(p_before, copyLinkPathAct);
         }
 
-        p_menu->insertSeparator(p_before ? p_before : NULL);
+        p_menu->insertSeparator(p_before);
         return;
     }
 
@@ -1617,7 +1650,7 @@ void VMdEditor::initLinkAndPreviewMenu(QAction *p_before, QMenu *p_menu, const Q
     }
 
     if (needSeparator) {
-        p_menu->insertSeparator(p_before ? p_before : NULL);
+        p_menu->insertSeparator(p_before);
     }
 }
 
