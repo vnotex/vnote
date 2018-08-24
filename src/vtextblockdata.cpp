@@ -38,9 +38,7 @@ bool VTextBlockData::insertPreviewInfo(VPreviewInfo *p_info)
             tsUpdated = true;
             break;
         } else if (p_info->m_imageInfo.intersect(ele->m_imageInfo)) {
-            // The new one intersect with an old one.
-            // Remove the old one.
-            Q_ASSERT(ele->m_timeStamp < p_info->m_timeStamp);
+            // Two preview intersect.
             delete ele;
             it = m_previews.erase(it);
         } else {
