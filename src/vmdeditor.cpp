@@ -1822,5 +1822,4 @@ void VMdEditor::exportGraphAndCopy(const QString &p_lang,
     }
 
     m_exportTempFile->close();
-
 }

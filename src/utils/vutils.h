@@ -97,7 +97,8 @@ public:
 
     static QJsonObject readJsonFromDisk(const QString &p_filePath);
 
-    static QString generateImageFileName(const QString &path, const QString &title,
+    static QString generateImageFileName(const QString &path,
+                                         const QString &title,
                                          const QString &format = "png");
 
     // Given the file name @p_fileName and directory path @p_dirPath, generate

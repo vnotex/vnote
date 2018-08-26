@@ -58,8 +58,10 @@ bool VMdEditOperations::insertImageFromMimeData(const QMimeData *source)
     return true;
 }
 
-void VMdEditOperations::insertImageFromQImage(const QString &title, const QString &path,
-                                              const QString &folderInLink, const QImage &image)
+void VMdEditOperations::insertImageFromQImage(const QString &title,
+                                              const QString &path,
+                                              const QString &folderInLink,
+                                              const QImage &image)
 {
     QString fileName = VUtils::generateImageFileName(path, title);
     QString filePath = QDir(path).filePath(fileName);
@@ -184,10 +186,17 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
                                 m_file->getImageFolderInLink(),
                                 imagePath);
         } else {
-            insertImageFromQImage(dialog.getImageTitleInput(),
-                                  m_file->fetchImageFolderPath(),
-                                  m_file->getImageFolderInLink(),
-                                  dialog.getImage());
+            if (dialog.getImageType() == VInsertImageDialog::ImageType::LocalFile) {
+                insertImageFromPath(dialog.getImageTitleInput(),
+                                    m_file->fetchImageFolderPath(),
+                                    m_file->getImageFolderInLink(),
+                                    dialog.getPathInput());
+            } else {
+                insertImageFromQImage(dialog.getImageTitleInput(),
+                                      m_file->fetchImageFolderPath(),
+                                      m_file->getImageFolderInLink(),
+                                      dialog.getImage());
+            }
         }
     }
     return true;
