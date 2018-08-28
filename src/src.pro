@@ -312,7 +312,7 @@ DEPENDPATH += $$PWD/../peg-highlight
 
 win32-g++:CONFIG(release, debug|release): LIBS += $$OUT_PWD/../hoedown/release/libhoedown.a
 else:win32-g++:CONFIG(debug, debug|release): LIBS += $$OUT_PWD/../hoedown/debug/libhoedown.a
-else:win32:!win32-g++:CONFIG(release, debug|release): LIBS += $$OUT_PWD/../hoedown/hoedown.lib
+else:win32:!win32-g++:CONFIG(release, debug|release): LIBS += $$OUT_PWD/../hoedown/release/hoedown.lib
 else:win32:!win32-g++:CONFIG(debug, debug|release): LIBS += $$OUT_PWD/../hoedown/debug/hoedown.lib
 else:unix: LIBS += $$OUT_PWD/../hoedown/libhoedown.a
 
