@@ -72,7 +72,7 @@ var previewMathJax = function(identifier, id, timeStamp, text, isHtml) {
                            p,
                            [postProcessMathJax, identifier, id, timeStamp, p, isBlock]]);
     } catch (err) {
-        console.log("err: " + err);
+        content.setLog("err: " + err);
         content.mathjaxResultReady(identifier, id, timeStamp, 'png', '');
         contentDiv.removeChild(p);
         delete p;
@@ -94,7 +94,7 @@ var postProcessMathJax = function(identifier, id, timeStamp, container, isBlock)
         contentDiv.removeChild(container);
         delete container;
     }).catch(function (err) {
-        console.log("err: " + err);
+        content.setLog("err: " + err);
         content.mathjaxResultReady(identifier, id, timeStamp, 'png', '');
         contentDiv.removeChild(container);
         delete container;
@@ -132,7 +132,7 @@ var previewDiagram = function(identifier, id, timeStamp, lang, text) {
         try {
             var graph = flowchart.parse(text);
         } catch (err) {
-            console.log("err: " + err);
+            content.setLog("err: " + err);
             content.diagramResultReady(identifier, id, timeStamp, 'png', '');
             return;
         }
@@ -152,7 +152,7 @@ var previewDiagram = function(identifier, id, timeStamp, lang, text) {
         try {
             graph.drawSVG(div.id);
         } catch (err) {
-            console.log("err: " + err);
+            content.setLog("err: " + err);
             contentDiv.removeChild(div);
             delete div;
             content.diagramResultReady(identifier, id, timeStamp, 'png', '');
@@ -167,7 +167,7 @@ var previewDiagram = function(identifier, id, timeStamp, lang, text) {
                                           text,
                                           function(){});
         } catch (err) {
-            console.log("err: " + err);
+            content.setLog("err: " + err);
             content.diagramResultReady(identifier, id, timeStamp, 'png', '');
             return;
         }
@@ -197,7 +197,7 @@ var previewDiagram = function(identifier, id, timeStamp, lang, text) {
         contentDiv.removeChild(div);
         delete div;
     }).catch(function (err) {
-        console.log("err: " + err);
+        content.setLog("err: " + err);
         contentDiv.removeChild(div);
         content.diagramResultReady(identifier, id, timeStamp, 'png', '');
         delete div;

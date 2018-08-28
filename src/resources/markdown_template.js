@@ -1546,6 +1546,10 @@ var htmlToText = function(identifier, id, timeStamp, html) {
     ts.addRule('mark', {
         filter: 'mark',
         replacement: function(content, node, options) {
+            if (!content) {
+                return '';
+            }
+
             return '<mark>' + content + '</mark>';
         }
     });
@@ -1573,6 +1577,44 @@ var htmlToText = function(identifier, id, timeStamp, html) {
             return con.leadingSpaces + options.strongDelimiter
                    + con.content
                    + options.strongDelimiter + con.trailingSpaces;
+        }
+    });
+
+    ts.remove(['head', 'style']);
+
+    var subEnabled = false, supEnabled = false;
+    if (typeof VMarkdownitOption != "undefined") {
+        subEnabled = VMarkdownitOption.sub;
+        supEnabled = VMarkdownitOption.sup;
+    }
+
+    ts.addRule('sub_fix', {
+        filter: 'sub',
+        replacement: function (content, node, options) {
+            if (!content) {
+                return '';
+            }
+
+            if (subEnabled) {
+                return '~' + content + '~';
+            } else {
+                return '<sub>' + content + '</sub>';
+            }
+        }
+    });
+
+    ts.addRule('sup_fix', {
+        filter: 'sup',
+        replacement: function (content, node, options) {
+            if (!content) {
+                return '';
+            }
+
+            if (supEnabled) {
+                return '^' + content + '^';
+            } else {
+                return '<sup>' + content + '</sup>';
+            }
         }
     });
 
