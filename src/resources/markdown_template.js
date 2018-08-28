@@ -1622,7 +1622,7 @@ var htmlToText = function(identifier, id, timeStamp, html) {
     content.htmlToTextCB(identifier, id, timeStamp, markdown);
 };
 
-var performSmartLivePreview = function(lang, text) {
+var performSmartLivePreview = function(lang, text, hints, isRegex) {
     if (previewDiv.style.display == 'none') {
         return;
     }
@@ -1632,7 +1632,35 @@ var performSmartLivePreview = function(lang, text) {
     }
 
     // PlantUML.
-    var targetNode = findNodeWithText(previewDiv, new RegExp(text));
+    var targetNode = null;
+    if (hints.indexOf('id') >= 0) {
+        // isRegex is ignored.
+        targetNode = findNodeWithText(previewDiv,
+                                      text,
+                                      function (node, text) {
+                                          if (!node.id) {
+                                              return false;
+                                          }
+
+                                          return node.id == text;
+                                      });
+    } else {
+        if (isRegex) {
+            var nodeReg = new RegExp(text);
+            targetNode = findNodeWithText(previewDiv,
+                                          text,
+                                          function(node, text) {
+                                              return nodeReg.test(node.textContent);
+                                          });
+        } else {
+            targetNode = findNodeWithText(previewDiv,
+                                          text,
+                                          function(node, text) {
+                                              return node.textContent.indexOf(text) >= 0;
+                                          });
+        }
+    }
+
     if (!targetNode) {
         return;
     }
@@ -1665,17 +1693,17 @@ var performSmartLivePreview = function(lang, text) {
         if (trect.height >= vrect.height) {
             dy = trect.top;
         } else {
-            dy = trect.top - (vrect.height - trect.width) / 2;
+            dy = trect.top - (vrect.height - trect.height) / 2;
         }
     }
 
     window.scrollBy(dx, dy);
 }
 
-var findNodeWithText = function(node, reg) {
+var findNodeWithText = function(node, text, isMatched) {
     var children = node.children;
     if (children.length == 0) {
-        if (reg.test(node.textContent)) {
+        if (isMatched(node, text)) {
             return node;
         } else {
             return null;
@@ -1683,13 +1711,13 @@ var findNodeWithText = function(node, reg) {
     }
 
     for (var i = 0; i < children.length; ++i) {
-        var ret = findNodeWithText(children[i], reg);
+        var ret = findNodeWithText(children[i], text, isMatched);
         if (ret) {
             return ret;
         }
     }
 
-    if (reg.test(node.textContent)) {
+    if (isMatched(node, text)) {
         return node;
     }
 

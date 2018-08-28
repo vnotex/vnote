@@ -75,7 +75,10 @@ public:
 
     void muteWebView(bool p_muted);
 
-    void performSmartLivePreview(const QString &p_lang, const QString &p_text);
+    void performSmartLivePreview(const QString &p_lang,
+                                 const QString &p_text,
+                                 const QString &p_hints,
+                                 bool p_isRegex);
 
 public slots:
     // Will be called in the HTML side
@@ -194,7 +197,10 @@ signals:
 
     void requestMuted(bool p_muted);
 
-    void requestPerformSmartLivePreview(const QString &p_lang, const QString &p_text);
+    void requestPerformSmartLivePreview(const QString &p_lang,
+                                        const QString &p_text,
+                                        const QString &p_hints,
+                                        bool p_isRegex);
 
 private:
     QString m_toc;

@@ -203,9 +203,13 @@ void VDocument::previewCodeBlockCB(int p_id, const QString &p_lang, const QStrin
     emit codeBlockPreviewReady(p_id, p_lang, p_html);
 }
 
-void VDocument::performSmartLivePreview(const QString &p_lang, const QString &p_text)
+void VDocument::performSmartLivePreview(const QString &p_lang,
+                                        const QString &p_text,
+                                        const QString &p_hints,
+                                        bool p_isRegex)
 {
     if (!p_text.isEmpty()) {
-        emit requestPerformSmartLivePreview(p_lang, p_text);
+        qDebug() << "performSmartLivePreview" << p_lang << p_text << p_hints << p_isRegex;
+        emit requestPerformSmartLivePreview(p_lang, p_text, p_hints, p_isRegex);
     }
 }

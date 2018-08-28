@@ -535,6 +535,10 @@ void VLivePreviewHelper::performSmartLivePreview()
     }
 
     const CodeBlockPreviewInfo &cb = m_codeBlocks[m_cbIndex];
+    if (!cb.hasImageData()) {
+        return;
+    }
+
     const VCodeBlock &vcb = cb.codeBlock();
     const QTextBlock block = m_editor->textCursorW().block();
     if (block.blockNumber() <= vcb.m_startBlock
@@ -542,10 +546,13 @@ void VLivePreviewHelper::performSmartLivePreview()
         return;
     }
 
-    QString keyword;
+    QString keyword, hints;
+    bool isRegex = false;
     if (vcb.m_lang == "puml" && m_plantUMLMode == PlantUMLMode::LocalPlantUML) {
-        keyword = VPlantUMLHelper::keywordForSmartLivePreview(block.text());
+        keyword = VPlantUMLHelper::keywordForSmartLivePreview(block.text(),
+                                                              hints,
+                                                              isRegex);
     }
 
-    m_document->performSmartLivePreview(vcb.m_lang, keyword);
+    m_document->performSmartLivePreview(vcb.m_lang, keyword, hints, isRegex);
 }
