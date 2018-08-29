@@ -269,5 +269,6 @@
         <file>resources/icons/up.svg</file>
         <file>utils/turndown/turndown.js</file>
         <file>utils/turndown/turndown-plugin-gfm.js</file>
+        <file>resources/common.css</file>
     </qresource>
 </RCC>

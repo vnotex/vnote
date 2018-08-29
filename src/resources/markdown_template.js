@@ -20,6 +20,7 @@ var VMermaidDivClass = 'mermaid-diagram';
 var VFlowchartDivClass = 'flowchart-diagram';
 var VPlantUMLDivClass = 'plantuml-diagram';
 var VMetaDataCodeClass = 'markdown-metadata';
+var VMarkRectDivClass = 'mark-rect';
 
 if (typeof VEnableMermaid == 'undefined') {
     VEnableMermaid = false;
@@ -1674,7 +1675,15 @@ var performSmartLivePreview = function(lang, text, hints, isRegex) {
         top: document.documentElement.scrollTop || document.body.scrollTop || window.pageYOffset,
         width: document.documentElement.clientWidth || document.body.clientWidth,
         height: document.documentElement.clientHeight || document.body.clientHeight
-    }
+    };
+
+    // Target node rect in the content.
+    var nrect = {
+        left: vrect.left + trect.left,
+        top: vrect.top + trect.top,
+        width: trect.width,
+        height: trect.height
+    };
 
     var dx = 0, dy = 0;
 
@@ -1698,6 +1707,8 @@ var performSmartLivePreview = function(lang, text, hints, isRegex) {
     }
 
     window.scrollBy(dx, dy);
+
+    markNode(nrect);
 }
 
 var findNodeWithText = function(node, text, isMatched) {
@@ -1723,3 +1734,34 @@ var findNodeWithText = function(node, text, isMatched) {
 
     return null;
 }
+
+// Draw a rectangle to mark @rect.
+var markNode = function(rect) {
+    if (!rect) {
+        return;
+    }
+
+    var nodes = document.getElementsByClassName(VMarkRectDivClass);
+    while (nodes.length > 0) {
+        var n = nodes[0];
+        n.outerHTML = '';
+        delete n;
+    }
+
+    var div = document.createElement('div');
+    div.id = 'markrect_' + Date.now();
+    div.classList.add(VMarkRectDivClass);
+
+    document.body.appendChild(div);
+
+    var extraW = 8;
+    var extraH = 5;
+    div.style.left = (rect.left - extraW) + 'px';
+    div.style.top = (rect.top - extraH) + 'px';
+    div.style.width = (rect.width + extraW) + 'px';
+    div.style.height = rect.height + 'px';
+
+    setTimeout('var node = document.getElementById("' + div.id + '");'
+               + 'if (node) { node.outerHTML = ""; delete node; }',
+               3000);
+};

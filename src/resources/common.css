@@ -1,0 +1,6 @@
+div.mark-rect {
+    background: transparent;
+    border: 5px solid #5768c4;
+    border-radius: 2px;
+    position: absolute;
+}
