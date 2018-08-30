@@ -193,21 +193,21 @@ static bool tryClassDiagram(QString &p_keyword, QString &p_hints, bool &p_isRege
 {
     Q_UNUSED(p_isRegex);
 
-    // class ABC #Pink {
-    static QRegExp classDef1("^\\s*(?:class|(?:abstract(?:\\s+class)?)|interface|annotation|enum)\\s*"
-                             "(?!class)(\\w+)\\s*.*");
+    // class ABC #Pink
+    static QRegExp classDef1("^\\s*(?:class|(?:abstract(?:\\s+class)?)|interface|annotation|enum)\\s+"
+                             "(?!class)(\\w+)");
     if (classDef1.indexIn(p_keyword) >= 0) {
         p_keyword = classDef1.cap(1);
         p_hints = "id";
         return true;
     }
 
-    // class "ABC DEF" as AD #Pink {
-    static QRegExp classDef2("^\\s*(?:class|(?:abstract(?:\\s+class)?)|interface|annotation|enum)\\s*"
-                             "\"([^\"]+)\"\\s*(?:\\bas (\\w+))?.*");
+    // class "ABC DEF" as AD #Pink
+    static QRegExp classDef2("^\\s*(?:class|(?:abstract(?:\\s+class)?)|interface|annotation|enum)\\s+"
+                             "\"([^\"]+)\"\\s*(?:\\bas\\s+(\\w+))?");
     if (classDef2.indexIn(p_keyword) >= 0) {
         if (classDef2.cap(2).isEmpty()) {
-            p_keyword = classDef2.cap(1);
+            p_keyword = classDef2.cap(1).trimmed();
         } else {
             p_keyword = classDef2.cap(2);
         }
@@ -216,24 +216,23 @@ static bool tryClassDiagram(QString &p_keyword, QString &p_hints, bool &p_isRege
     }
 
     // class01 "1" *-- "many" class02 : contains 4 >
-    static QRegExp relation("^\\s*(?:(\\w+)|\"([^\"]+)\")\\s+"
-                            "(?:\"[^\"]+\"\\s+)?"
-                            "(?:<\\||[*o<#x}+^])?" "(?:-+|\\.+)" "(?:\\|>|[*o>#x{+^])?\\s+"
-                            "(?:\"[^\"]+\"\\s+)?"
+    static QRegExp relation("^\\s*(?:(\\w+)|\"([^\"]+)\")\\s*"
+                            "(?:\"[^\"]+\"\\s*)?"
+                            "(?:<\\||[*o<#x}+^])?" "(?:-+|\\.+)" "(?:\\|>|[*o>#x{+^])?\\s*"
+                            "(?:\"[^\"]+\"\\s*)?"
                             "(?:(\\w+)|\"([^\"]+)\")\\s*"
                             "(?::(.+))?");
     if (relation.indexIn(p_keyword) >= 0) {
-        QString note(relation.cap(5));
-        if (note.isEmpty()) {
+        if (relation.cap(5).isEmpty()) {
             QString class2 = relation.cap(3);
             if (class2.isEmpty()) {
-                class2 = relation.cap(4);
+                class2 = relation.cap(4).trimmed();
             }
 
             p_keyword = class2;
             p_hints = "id";
         } else {
-            p_keyword = note.trimmed();
+            p_keyword = relation.cap(5).trimmed();
         }
 
         return true;
@@ -257,7 +256,7 @@ static bool tryClassDiagram(QString &p_keyword, QString &p_hints, bool &p_isRege
         return true;
     }
 
-    // note left on link: message
+    // note left on link #Pink : message
     // note left on link
     // node on link: message
     // MUST before next rule "note".
@@ -270,11 +269,13 @@ static bool tryClassDiagram(QString &p_keyword, QString &p_hints, bool &p_isRege
         return true;
     }
 
-    // note top of Object: message
+    // note top of Object #Pink : message
     // note top of Object
     // note top: message
-    static QRegExp note("^\\s*note\\s+(?:left|top|right|bottom)"
-                        "(?:\\s+of\\s+(\\w+))?\\s*"
+    // hnote and rnote for sequence diagram.
+    static QRegExp note("^\\s*[hr]?note\\s+(?:left|top|right|bottom)"
+                        "(?:\\s+of\\s+(\\w+))?"
+                        "[^:]*"
                         "(?::(.*))?");
     if (note.indexIn(p_keyword) >= 0) {
         p_keyword = note.cap(2).trimmed();
@@ -288,16 +289,16 @@ static bool tryClassDiagram(QString &p_keyword, QString &p_hints, bool &p_isRege
         return true;
     }
 
-    // note "a floating note" as N1
+    // note "a floating note" as N1 #Pink
     // note as N1
-    static QRegExp note2("^\\s*note\\s+(?:\"([^\"]*)\"\\s+)?as\\s+\\w+\\s*");
+    static QRegExp note2("^\\s*note\\s+(?:\"([^\"]*)\"\\s+)?as\\s+\\w+");
     if (note2.indexIn(p_keyword) >= 0) {
-        p_keyword = note2.cap(1);
+        p_keyword = note2.cap(1).trimmed();
         return true;
     }
 
     // end note
-    static QRegExp note3("^\\s*end note\\s*$");
+    static QRegExp note3("^\\s*end ?note\\s*$");
     if (note3.indexIn(p_keyword) >= 0) {
         p_keyword.clear();
         return true;
@@ -355,17 +356,26 @@ static bool tryActivityDiagram(QString &p_keyword, QString &p_hints, bool &p_isR
 
     // Activity.
     // multiple lines;
-    static QRegExp activity2("^\\s*(.+)[;|<>/\\]}]\\s*$");
+    static QRegExp activity2("^\\s*(.+)([;|<>/\\]}])\\s*$");
     if (activity2.indexIn(p_keyword) >= 0) {
-        p_keyword = activity2.cap(1).trimmed();
+        QString word = activity2.cap(1);
+        QChar end = activity2.cap(2)[0];
+        if (end != ';' && !word.isEmpty()) {
+            // || << >> // ]] }} are not legal.
+            if (word[word.size() - 1] == end) {
+                return false;
+            }
+        }
+
+        p_keyword = word.trimmed();
         return true;
     }
 
     // start, stop, end, endif, repeat, fork, fork again, end fork, },
     // detach
-    static QRegExp start("^\\s*(?:start|stop|end|endif|repeat|"
-                         "fork(?:\\s+again)?|end\\s+fork|\\}|detach)\\s*$");
-    if (start.indexIn(p_keyword) >= 0) {
+    static QRegExp keywords("^\\s*(?:start|stop|end|endif|repeat|"
+                            "fork(?:\\s+again)?|end\\s+fork|\\}|detach)\\s*$");
+    if (keywords.indexIn(p_keyword) >= 0) {
         p_keyword.clear();
         return true;
     }
@@ -426,6 +436,143 @@ static bool tryActivityDiagram(QString &p_keyword, QString &p_hints, bool &p_isR
     return false;
 }
 
+static bool trySequenceDiagram(QString &p_keyword, QString &p_hints, bool &p_isRegex)
+{
+    Q_UNUSED(p_isRegex);
+    Q_UNUSED(p_hints);
+
+    // participant ABC #Pink
+    // participant "ABC DEF" as AD #Pink
+    static QRegExp participant1("^\\s*(?:participant|actor|boundary|control|entity|database)\\s+"
+                                "(?:(\\w+)|\"([^\"]+)\"\\s*(?:\\bas\\s+\\w+)?)");
+    if (participant1.indexIn(p_keyword) >= 0) {
+        p_keyword = participant1.cap(1);
+        if (p_keyword.isEmpty()) {
+            p_keyword = participant1.cap(2).trimmed();
+        }
+
+        return true;
+    }
+
+    // "abc" ->> "def" : Authentication
+    static QRegExp message("^\\s*(?:\\w+|\"[^\"]+\")\\s*"
+                           "[-<>x\\\\/o]+\\s*"
+                           "(?:\\w+|\"[^\"]+\")\\s*"
+                           ":\\s*(.+)");
+    if (message.indexIn(p_keyword) >= 0) {
+        p_keyword = message.cap(1).trimmed();
+        return true;
+    }
+
+    // autonumber
+    static QRegExp autonum("^\\s*autonumber\\s+");
+    if (autonum.indexIn(p_keyword) >= 0) {
+        p_keyword.clear();
+        return true;
+    }
+
+    // newpage
+    static QRegExp newpage("^\\s*newpage\\s+(.+)");
+    if (newpage.indexIn(p_keyword) >= 0) {
+        p_keyword = newpage.cap(1).trimmed();
+        return true;
+    }
+
+    // alt, else, group, loop ABCDEFG
+    static QRegExp group1("^\\s*(?:alt|else|group|loop)\\s+(.*)");
+    if (group1.indexIn(p_keyword) >= 0) {
+        p_keyword = group1.cap(1).trimmed();
+        return true;
+    }
+
+    // note over bob, alice #Pink:
+    // ret over bob, alice : init
+    static QRegExp noteon("^\\s*(?:[hr]?note|ref)\\s+over\\s+"
+                          "(\\w+)[^:]*"
+                          "(?::(.+))?");
+    if (noteon.indexIn(p_keyword) >= 0) {
+        p_keyword = noteon.cap(2).trimmed();
+        if (p_keyword.isEmpty()) {
+            p_keyword = noteon.cap(1);
+        }
+
+        return true;
+    }
+
+    // Divider.
+    // == Initialization ==
+    static QRegExp divider("^\\s*==\\s*([^=]*)==\\s*$");
+    if (divider.indexIn(p_keyword) >= 0) {
+        p_keyword = divider.cap(1).trimmed();
+        return true;
+    }
+
+    // Delay.
+    // ... 5 minutes latter ...
+    static QRegExp delay("^\\s*\\.\\.\\.(?:(.+)\\.\\.\\.)?\\s*$");
+    if (delay.indexIn(p_keyword) >= 0) {
+        p_keyword = delay.cap(1).trimmed();
+        return true;
+    }
+
+    // activate A
+    static QRegExp activate("^\\s*(?:(?:de)?activate|destroy)\\s+"
+                            "(?:(\\w+)|\"([^\"]+)\")");
+    if (activate.indexIn(p_keyword) >= 0) {
+        p_keyword = activate.cap(1);
+        if (p_keyword.isEmpty()) {
+            p_keyword = activate.cap(2).trimmed();
+        }
+
+        return true;
+    }
+
+    // create control ABC
+    static QRegExp create("^\\s*create\\s+(?:\\w+\\s+)?"
+                          "(?:(\\w+)|\"([^\"]+)\")");
+    if (create.indexIn(p_keyword) >= 0) {
+        p_keyword = create.cap(1);
+        if (p_keyword.isEmpty()) {
+            p_keyword = create.cap(2).trimmed();
+        }
+
+        return true;
+    }
+
+    // Incoming and outgoing message.
+    static QRegExp incoming("^\\s*\\[[-<>ox]+\\s*"
+                            "(?:\\w+|\"[^\"]+\")\\s*"
+                            ":\\s*(.+)");
+    if (incoming.indexIn(p_keyword) >= 0) {
+        p_keyword = incoming.cap(1).trimmed();
+        return true;
+    }
+
+    static QRegExp outgoing("^\\s*(?:\\w+|\"[^\"]+\")\\s*"
+                            "[-<>ox]+\\]\\s*"
+                            ":\\s*(.+)");
+    if (outgoing.indexIn(p_keyword) >= 0) {
+        p_keyword = outgoing.cap(1).trimmed();
+        return true;
+    }
+
+    // box "Internal Service" #Pink
+    static QRegExp box("^\\s*box(?:\\s+\"([^\"]+)\")?\\s*");
+    if (box.indexIn(p_keyword) >= 0) {
+        p_keyword = box.cap(1).trimmed();
+        return true;
+    }
+
+    // end box
+    static QRegExp endbox("^\\s*end ?box\\s*$");
+    if (endbox.indexIn(p_keyword) >= 0) {
+        p_keyword.clear();
+        return true;
+    }
+
+    return false;
+}
+
 QString VPlantUMLHelper::keywordForSmartLivePreview(const QString &p_text,
                                                     QString &p_hints,
                                                     bool &p_isRegex)
@@ -446,6 +593,12 @@ QString VPlantUMLHelper::keywordForSmartLivePreview(const QString &p_text,
     qDebug() << "tryActivityDiagram" << kw;
 
     if (tryActivityDiagram(kw, p_hints, p_isRegex)) {
+        return kw;
+    }
+
+    qDebug() << "trySequenceDiagram" << kw;
+
+    if (trySequenceDiagram(kw, p_hints, p_isRegex)) {
         return kw;
     }
 

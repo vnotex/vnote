@@ -1421,6 +1421,8 @@ var setPreviewEnabled = function(enabled) {
         previewDiv.style.display = 'none';
         previewDiv.innerHTML = '';
     }
+
+    clearMarkRectDivs();
 };
 
 var previewCodeBlock = function(id, lang, text, isLivePreview) {
@@ -1737,15 +1739,10 @@ var findNodeWithText = function(node, text, isMatched) {
 
 // Draw a rectangle to mark @rect.
 var markNode = function(rect) {
+    clearMarkRectDivs();
+
     if (!rect) {
         return;
-    }
-
-    var nodes = document.getElementsByClassName(VMarkRectDivClass);
-    while (nodes.length > 0) {
-        var n = nodes[0];
-        n.outerHTML = '';
-        delete n;
     }
 
     var div = document.createElement('div');
@@ -1764,4 +1761,13 @@ var markNode = function(rect) {
     setTimeout('var node = document.getElementById("' + div.id + '");'
                + 'if (node) { node.outerHTML = ""; delete node; }',
                3000);
+};
+
+var clearMarkRectDivs = function() {
+    var nodes = document.getElementsByClassName(VMarkRectDivClass);
+    while (nodes.length > 0) {
+        var n = nodes[0];
+        n.outerHTML = '';
+        delete n;
+    }
 };
