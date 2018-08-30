@@ -1638,30 +1638,61 @@ var performSmartLivePreview = function(lang, text, hints, isRegex) {
     var targetNode = null;
     if (hints.indexOf('id') >= 0) {
         // isRegex is ignored.
-        targetNode = findNodeWithText(previewDiv,
+        var result = findNodeWithText(previewDiv,
                                       text,
                                       function (node, text) {
-                                          if (!node.id) {
-                                              return false;
+                                          if (node.id && node.id == text) {
+                                              var res = { stop: true,
+                                                  node: { node: node,
+                                                      diff: 0
+                                                  }
+                                              };
+                                              return res;
                                           }
 
-                                          return node.id == text;
+                                          return null;
                                       });
+        targetNode = result.node;
     } else {
+        var result;
         if (isRegex) {
             var nodeReg = new RegExp(text);
-            targetNode = findNodeWithText(previewDiv,
-                                          text,
-                                          function(node, text) {
-                                              return nodeReg.test(node.textContent);
-                                          });
+            result = findNodeWithText(previewDiv,
+                                      text,
+                                      function(node, text) {
+                                          var se = nodeReg.exec(node.textContent);
+                                          if (!se) {
+                                              return null;
+                                          }
+
+                                          var diff = node.textContent.length - se[0].length;
+                                          var res = { stop: diff == 0,
+                                              node: { node: node,
+                                                  diff: diff
+                                              }
+                                          };
+                                          return res;
+                                      });
         } else {
-            targetNode = findNodeWithText(previewDiv,
-                                          text,
-                                          function(node, text) {
-                                              return node.textContent.indexOf(text) >= 0;
-                                          });
+            result = findNodeWithText(previewDiv,
+                                      text,
+                                      function(node, text) {
+                                          var idx = node.textContent.indexOf(text);
+                                          if (idx < 0) {
+                                              return null;
+                                          }
+
+                                          var diff = node.textContent.length - text.length;
+                                          var res = { stop: diff == 0,
+                                              node: { node: node,
+                                                  diff: diff
+                                              }
+                                          };
+                                          return res;
+                                      });
         }
+
+        targetNode = result.node;
     }
 
     if (!targetNode) {
@@ -1713,28 +1744,46 @@ var performSmartLivePreview = function(lang, text, hints, isRegex) {
     markNode(nrect);
 }
 
+// isMatched() should return a strut or null:
+// - null to indicates a mismatch;
+// - { stop: whether continue search,
+//     node: { node: the matched node,
+//             diff: a value indicates the match quality (the lower the better)
+//           }
+//   }
 var findNodeWithText = function(node, text, isMatched) {
+    var result = {
+        node: null,
+        diff: 999999
+    };
+
+    findNodeWithTextInternal(node, text, isMatched, result);
+    return result;
+}
+
+// Return true to stop search.
+var findNodeWithTextInternal = function(node, text, isMatched, result) {
     var children = node.children;
-    if (children.length == 0) {
-        if (isMatched(node, text)) {
-            return node;
-        } else {
-            return null;
+    if (children.length > 0) {
+        for (var i = 0; i < children.length; ++i) {
+            var ret = findNodeWithTextInternal(children[i], text, isMatched, result);
+            if (ret) {
+                return ret;
+            }
         }
     }
 
-    for (var i = 0; i < children.length; ++i) {
-        var ret = findNodeWithText(children[i], text, isMatched);
-        if (ret) {
-            return ret;
+    var res = isMatched(node, text);
+    if (res) {
+        if (res.node.diff < result.diff) {
+            result.node = res.node.node;
+            result.diff = res.node.diff;
         }
+
+        return res.stop;
     }
 
-    if (isMatched(node, text)) {
-        return node;
-    }
-
-    return null;
+    return false;
 }
 
 // Draw a rectangle to mark @rect.

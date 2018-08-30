@@ -189,7 +189,7 @@ QByteArray VPlantUMLHelper::process(const QString &p_format, const QString &p_te
     return out;
 }
 
-static bool tryClassDiagram(QString &p_keyword, QString &p_hints, bool &p_isRegex)
+static bool tryClassDiagram(QString &p_keyword, QString &p_hints, bool &p_isRegex, bool &p_needCreole)
 {
     Q_UNUSED(p_isRegex);
 
@@ -232,6 +232,7 @@ static bool tryClassDiagram(QString &p_keyword, QString &p_hints, bool &p_isRege
             p_keyword = class2;
             p_hints = "id";
         } else {
+            p_needCreole = true;
             p_keyword = relation.cap(5).trimmed();
         }
 
@@ -265,6 +266,7 @@ static bool tryClassDiagram(QString &p_keyword, QString &p_hints, bool &p_isRege
                          "[^:]*"
                          "(?::(.*))?");
     if (note4.indexIn(p_keyword) >= 0) {
+        p_needCreole = true;
         p_keyword = note4.cap(1).trimmed();
         return true;
     }
@@ -284,6 +286,8 @@ static bool tryClassDiagram(QString &p_keyword, QString &p_hints, bool &p_isRege
             if (!p_keyword.isEmpty()) {
                 p_hints = "id";
             }
+        } else {
+            p_needCreole = true;
         }
 
         return true;
@@ -307,19 +311,11 @@ static bool tryClassDiagram(QString &p_keyword, QString &p_hints, bool &p_isRege
     return false;
 }
 
-static bool tryCommonElements(QString &p_keyword, QString &p_hints, bool &p_isRegex)
+static bool tryCommonElements(QString &p_keyword, QString &p_hints, bool &p_isRegex, bool &p_needCreole)
 {
     Q_UNUSED(p_isRegex);
     Q_UNUSED(p_hints);
-
-    // List.
-    // ** list
-    // # list
-    static QRegExp listMark("^\\s*(?:\\*+|#+)\\s+(.+)$");
-    if (listMark.indexIn(p_keyword) >= 0) {
-        p_keyword = listMark.cap(1).trimmed();
-        return true;
-    }
+    Q_UNUSED(p_needCreole);
 
     // Words in quotes.
     // cmf("abc")
@@ -332,7 +328,7 @@ static bool tryCommonElements(QString &p_keyword, QString &p_hints, bool &p_isRe
     return false;
 }
 
-static bool tryActivityDiagram(QString &p_keyword, QString &p_hints, bool &p_isRegex)
+static bool tryActivityDiagram(QString &p_keyword, QString &p_hints, bool &p_isRegex, bool &p_needCreole)
 {
     Q_UNUSED(p_isRegex);
     Q_UNUSED(p_hints);
@@ -351,6 +347,7 @@ static bool tryActivityDiagram(QString &p_keyword, QString &p_hints, bool &p_isR
             }
         }
 
+        p_needCreole = true;
         return true;
     }
 
@@ -367,6 +364,8 @@ static bool tryActivityDiagram(QString &p_keyword, QString &p_hints, bool &p_isR
             }
         }
 
+        // It may conflict with note.
+        p_needCreole = true;
         p_keyword = word.trimmed();
         return true;
     }
@@ -436,7 +435,7 @@ static bool tryActivityDiagram(QString &p_keyword, QString &p_hints, bool &p_isR
     return false;
 }
 
-static bool trySequenceDiagram(QString &p_keyword, QString &p_hints, bool &p_isRegex)
+static bool trySequenceDiagram(QString &p_keyword, QString &p_hints, bool &p_isRegex, bool &p_needCreole)
 {
     Q_UNUSED(p_isRegex);
     Q_UNUSED(p_hints);
@@ -460,6 +459,7 @@ static bool trySequenceDiagram(QString &p_keyword, QString &p_hints, bool &p_isR
                            "(?:\\w+|\"[^\"]+\")\\s*"
                            ":\\s*(.+)");
     if (message.indexIn(p_keyword) >= 0) {
+        p_needCreole = true;
         p_keyword = message.cap(1).trimmed();
         return true;
     }
@@ -494,6 +494,8 @@ static bool trySequenceDiagram(QString &p_keyword, QString &p_hints, bool &p_isR
         p_keyword = noteon.cap(2).trimmed();
         if (p_keyword.isEmpty()) {
             p_keyword = noteon.cap(1);
+        } else {
+            p_needCreole = true;
         }
 
         return true;
@@ -544,6 +546,7 @@ static bool trySequenceDiagram(QString &p_keyword, QString &p_hints, bool &p_isR
                             "(?:\\w+|\"[^\"]+\")\\s*"
                             ":\\s*(.+)");
     if (incoming.indexIn(p_keyword) >= 0) {
+        p_needCreole = true;
         p_keyword = incoming.cap(1).trimmed();
         return true;
     }
@@ -552,6 +555,7 @@ static bool trySequenceDiagram(QString &p_keyword, QString &p_hints, bool &p_isR
                             "[-<>ox]+\\]\\s*"
                             ":\\s*(.+)");
     if (outgoing.indexIn(p_keyword) >= 0) {
+        p_needCreole = true;
         p_keyword = outgoing.cap(1).trimmed();
         return true;
     }
@@ -573,6 +577,24 @@ static bool trySequenceDiagram(QString &p_keyword, QString &p_hints, bool &p_isR
     return false;
 }
 
+static bool tryCreole(QString &p_keyword)
+{
+    if (p_keyword.isEmpty()) {
+        return false;
+    }
+
+    // List.
+    // ** list
+    // # list
+    static QRegExp listMark("^\\s*(?:\\*+|#+)\\s+(.+)$");
+    if (listMark.indexIn(p_keyword) >= 0) {
+        p_keyword = listMark.cap(1).trimmed();
+        return true;
+    }
+
+    return false;
+}
+
 QString VPlantUMLHelper::keywordForSmartLivePreview(const QString &p_text,
                                                     QString &p_hints,
                                                     bool &p_isRegex)
@@ -583,30 +605,41 @@ QString VPlantUMLHelper::keywordForSmartLivePreview(const QString &p_text,
     }
 
     p_isRegex = false;
+    bool needCreole = false;
 
-    qDebug() << "tryClassDiagram" << kw;
+    if (tryClassDiagram(kw, p_hints, p_isRegex, needCreole)) {
+        if (needCreole) {
+            goto creole;
+        }
 
-    if (tryClassDiagram(kw, p_hints, p_isRegex)) {
         return kw;
     }
 
-    qDebug() << "tryActivityDiagram" << kw;
+    if (tryActivityDiagram(kw, p_hints, p_isRegex, needCreole)) {
+        if (needCreole) {
+            goto creole;
+        }
 
-    if (tryActivityDiagram(kw, p_hints, p_isRegex)) {
         return kw;
     }
 
-    qDebug() << "trySequenceDiagram" << kw;
+    if (trySequenceDiagram(kw, p_hints, p_isRegex, needCreole)) {
+        if (needCreole) {
+            goto creole;
+        }
 
-    if (trySequenceDiagram(kw, p_hints, p_isRegex)) {
         return kw;
     }
 
-    qDebug() << "tryCommonElements" << kw;
+    if (tryCommonElements(kw, p_hints, p_isRegex, needCreole)) {
+        if (needCreole) {
+            goto creole;
+        }
 
-    if (tryCommonElements(kw, p_hints, p_isRegex)) {
         return kw;
     }
 
+creole:
+    tryCreole(kw);
     return kw;
 }
