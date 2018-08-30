@@ -182,7 +182,8 @@ public:
     // @p_start will equals to @p_end if @p_cursor is a space.
     static void findCurrentWord(QTextCursor p_cursor,
                                 int &p_start,
-                                int &p_end);
+                                int &p_end,
+                                bool p_findPrecedingWord = false);
 
     // Find the start and end of the WORD @p_cursor locates in (within a single block).
     // @p_start and @p_end will be the global position of the start and end of the WORD.

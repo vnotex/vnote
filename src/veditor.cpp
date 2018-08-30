@@ -1187,7 +1187,7 @@ QStringList VEditor::generateCompletionCandidates() const
     QString content = getContent();
     QTextCursor cursor = textCursorW();
     int start, end;
-    VEditUtils::findCurrentWord(cursor, start, end);
+    VEditUtils::findCurrentWord(cursor, start, end, true);
 
     QRegExp reg("\\W+");
 
