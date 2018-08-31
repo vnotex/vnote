@@ -100,9 +100,9 @@ QString VDirectory::fetchPath(const VDirectory *p_dir) const
     VDirectory *parentDir = (VDirectory *)p_dir->parent();
     if (parentDir) {
         // Not the root directory
-        return QDir(fetchPath(parentDir)).filePath(p_dir->getName());
+        return QDir(parentDir->fetchPath()).filePath(p_dir->getName());
     } else {
-        return m_notebook->getPath();
+        return p_dir->getNotebook()->getPath();
     }
 }
 
@@ -349,6 +349,12 @@ bool VDirectory::addFile(VNoteFile *p_file, int p_index)
 
     p_file->setParent(this);
 
+    // Add tags from this file to the notebook.
+    const QStringList &tags = p_file->getTags();
+    for (auto const & tag : tags) {
+        m_notebook->addTag(tag);
+    }
+
     qDebug() << "note" << p_file->getName() << "added to folder" << m_name;
 
     return true;
@@ -402,6 +408,9 @@ bool VDirectory::addSubDirectory(VDirectory *p_dir, int p_index)
     }
 
     p_dir->setParent(this);
+    p_dir->m_notebook = m_notebook;
+
+    m_notebook->addTags(p_dir);
 
     qDebug() << "folder" << p_dir->getName() << "added to folder" << m_name;
 
@@ -588,8 +597,6 @@ bool VDirectory::copyDirectory(VDirectory *p_destDir,
         return false;
     }
 
-    qDebug() << "copyDirectory:" << p_dir << "to" << destDir;
-
     *p_targetDir = destDir;
     return ret;
 }
@@ -739,6 +746,32 @@ QList<QString> VDirectory::collectFiles()
     }
 
     return files;
+}
+
+QStringList VDirectory::collectTags()
+{
+    QStringList tags;
+    bool opened = isOpened();
+    if (!opened && !open()) {
+        qWarning() << "fail to open directory" << fetchPath();
+        return tags;
+    }
+
+    // Files.
+    for (auto const & file : m_files) {
+        tags.append(file->getTags());
+    }
+
+    // Subfolders.
+    for (auto const & dir : m_subDirs) {
+        tags.append(dir->collectTags());
+    }
+
+    if (!opened) {
+        close();
+    }
+
+    return tags;
 }
 
 VDirectory *VDirectory::buildDirectory(const QString &p_path,

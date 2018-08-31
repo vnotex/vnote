@@ -45,6 +45,7 @@ bool VFile::open()
 
     QString filePath = fetchPath();
     if (!QFileInfo::exists(filePath)) {
+        qWarning() << "file does not exist" << filePath;
         return false;
     }
 
@@ -112,8 +113,15 @@ bool VFile::isInternalImageFolder(const QString &p_path) const
            || VUtils::equalPath(p_path, fetchImageFolderPath());
 }
 
-bool VFile::isChangedOutside() const
+bool VFile::isChangedOutside(bool &p_missing) const
 {
+    QFileInfo fi(fetchPath());
+    if (!fi.exists()) {
+        p_missing = true;
+        return true;
+    }
+
+    p_missing = false;
     QDateTime lm = QFileInfo(fetchPath()).lastModified();
     return lm.toSecsSinceEpoch() != m_lastModified.toSecsSinceEpoch();
 }

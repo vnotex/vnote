@@ -77,7 +77,7 @@ public:
     QDateTime getModifiedTimeUtc() const;
 
     // Whether this file was changed outside VNote.
-    bool isChangedOutside() const;
+    bool isChangedOutside(bool &p_missing) const;
 
     // Return backup file of previous session if there exists one.
     QString backupFileOfPreviousSession() const;

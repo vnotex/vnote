@@ -513,6 +513,14 @@ bool VNoteFile::copyFile(VDirectory *p_destDir,
         }
     } else {
         destFile = p_destDir->addFile(p_destName, -1);
+        // Copy tags to this file.
+        if (destFile) {
+            const QStringList &tags = p_file->getTags();
+            for (auto const & tag : tags) {
+                destFile->addTag(tag);
+                destFile->getNotebook()->addTag(tag);
+            }
+        }
     }
 
     if (!destFile) {
@@ -636,8 +644,6 @@ void VNoteFile::removeTag(const QString &p_tag)
 
 bool VNoteFile::addTag(const QString &p_tag)
 {
-    Q_ASSERT(isOpened());
-
     if (p_tag.isEmpty() || hasTag(p_tag)) {
         return false;
     }

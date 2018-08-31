@@ -122,6 +122,9 @@ public:
     // Return path of files in this directory recursively.
     QList<QString> collectFiles();
 
+    // Return tags of files in this directory recursively.
+    QStringList collectTags();
+
     // Delete directory @p_dir.
     static bool deleteDirectory(VDirectory *p_dir,
                                 bool p_skipRecycleBin = false,

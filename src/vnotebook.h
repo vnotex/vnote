@@ -60,6 +60,9 @@ public:
 
     bool addTag(const QString &p_tag);
 
+    // Walk through @p_dir recursively to add all tags to notebook.
+    bool addTags(VDirectory *p_dir);
+
     void removeTag(const QString &p_tag);
 
     bool hasTag(const QString &p_tag) const;
