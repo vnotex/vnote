@@ -1653,7 +1653,9 @@ var performSmartLivePreview = function(lang, text, hints, isRegex) {
                                           return null;
                                       });
         targetNode = result.node;
-    } else {
+    }
+
+    if (!targetNode) {
         var result;
         if (isRegex) {
             var nodeReg = new RegExp(text);

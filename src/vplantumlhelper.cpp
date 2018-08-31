@@ -189,6 +189,26 @@ QByteArray VPlantUMLHelper::process(const QString &p_format, const QString &p_te
     return out;
 }
 
+static bool tryKeywords(QString &p_keyword)
+{
+    // start, stop, end, endif, repeat, fork, fork again, end fork, },
+    // detach, end note, end box, endrnote, endhnote,
+    // top to bottom direction, left to right direction,
+    // @startuml, @enduml
+    static QRegExp keywords("^\\s*(?:start|stop|end|endif|repeat|"
+                            "fork(?:\\s+again)?|end\\s+fork|\\}|detach|"
+                            "end ?(?:note|box)|endrnote|endhnote|"
+                            "top\\s+to\\s+bottom\\s+direction|"
+                            "left\\s+to\\s+right\\s+direction|"
+                            "@startuml|@enduml)\\s*$");
+    if (keywords.indexIn(p_keyword) >= 0) {
+        p_keyword.clear();
+        return true;
+    }
+
+    return false;
+}
+
 static bool tryClassDiagram(QString &p_keyword, QString &p_hints, bool &p_isRegex, bool &p_needCreole)
 {
     Q_UNUSED(p_isRegex);
@@ -275,16 +295,20 @@ static bool tryClassDiagram(QString &p_keyword, QString &p_hints, bool &p_isRege
     // note top of Object
     // note top: message
     // hnote and rnote for sequence diagram.
+    // note right of (use case)
     static QRegExp note("^\\s*[hr]?note\\s+(?:left|top|right|bottom)"
-                        "(?:\\s+of\\s+(\\w+))?"
+                        "(?:\\s+of\\s+(?:(\\w+)|\\(([^\\)]+)\\)))?"
                         "[^:]*"
                         "(?::(.*))?");
     if (note.indexIn(p_keyword) >= 0) {
-        p_keyword = note.cap(2).trimmed();
+        p_keyword = note.cap(3).trimmed();
         if (p_keyword.isEmpty()) {
-            p_keyword = note.cap(1);
-            if (!p_keyword.isEmpty()) {
+            p_keyword = note.cap(2).trimmed();
+            if (p_keyword.isEmpty()) {
+                p_keyword = note.cap(1);
                 p_hints = "id";
+            } else {
+                p_needCreole = true;
             }
         } else {
             p_needCreole = true;
@@ -298,13 +322,6 @@ static bool tryClassDiagram(QString &p_keyword, QString &p_hints, bool &p_isRege
     static QRegExp note2("^\\s*note\\s+(?:\"([^\"]*)\"\\s+)?as\\s+\\w+");
     if (note2.indexIn(p_keyword) >= 0) {
         p_keyword = note2.cap(1).trimmed();
-        return true;
-    }
-
-    // end note
-    static QRegExp note3("^\\s*end ?note\\s*$");
-    if (note3.indexIn(p_keyword) >= 0) {
-        p_keyword.clear();
         return true;
     }
 
@@ -336,7 +353,7 @@ static bool tryActivityDiagram(QString &p_keyword, QString &p_hints, bool &p_isR
     // Activity. (Do not support color.)
     // :Hello world;
     // :Across multiple lines
-    static QRegExp activity1("^\\s*:(.+)\\s*$");
+    static QRegExp activity1("^\\s*:([^:]+)\\s*$");
     if (activity1.indexIn(p_keyword) >= 0) {
         p_keyword = activity1.cap(1).trimmed();
         if (!p_keyword.isEmpty()) {
@@ -367,15 +384,6 @@ static bool tryActivityDiagram(QString &p_keyword, QString &p_hints, bool &p_isR
         // It may conflict with note.
         p_needCreole = true;
         p_keyword = word.trimmed();
-        return true;
-    }
-
-    // start, stop, end, endif, repeat, fork, fork again, end fork, },
-    // detach
-    static QRegExp keywords("^\\s*(?:start|stop|end|endif|repeat|"
-                            "fork(?:\\s+again)?|end\\s+fork|\\}|detach)\\s*$");
-    if (keywords.indexIn(p_keyword) >= 0) {
-        p_keyword.clear();
         return true;
     }
 
@@ -454,8 +462,8 @@ static bool trySequenceDiagram(QString &p_keyword, QString &p_hints, bool &p_isR
     }
 
     // "abc" ->> "def" : Authentication
-    static QRegExp message("^\\s*(?:\\w+|\"[^\"]+\")\\s*"
-                           "[-<>x\\\\/o]+\\s*"
+    static QRegExp message("^\\s*(?:\\w+|\"[^\"]+\")\\s+"
+                           "[-<>x\\\\/o]{2,}\\s+"
                            "(?:\\w+|\"[^\"]+\")\\s*"
                            ":\\s*(.+)");
     if (message.indexIn(p_keyword) >= 0) {
@@ -486,7 +494,7 @@ static bool trySequenceDiagram(QString &p_keyword, QString &p_hints, bool &p_isR
     }
 
     // note over bob, alice #Pink:
-    // ret over bob, alice : init
+    // ref over bob, alice : init
     static QRegExp noteon("^\\s*(?:[hr]?note|ref)\\s+over\\s+"
                           "(\\w+)[^:]*"
                           "(?::(.+))?");
@@ -567,10 +575,102 @@ static bool trySequenceDiagram(QString &p_keyword, QString &p_hints, bool &p_isR
         return true;
     }
 
-    // end box
-    static QRegExp endbox("^\\s*end ?box\\s*$");
-    if (endbox.indexIn(p_keyword) >= 0) {
-        p_keyword.clear();
+    return false;
+}
+
+static bool tryUseCaseDiagram(QString &p_keyword, QString &p_hints, bool &p_isRegex, bool &p_needCreole)
+{
+    Q_UNUSED(p_isRegex);
+    Q_UNUSED(p_hints);
+
+    // User -> (Start)
+    // User --> (Use the application) : A small label
+    // :Main Admin: --> (Use the application) : This is another label
+    // (chekckout) -- (payment) : include
+    static QRegExp rel("^\\s*(?:(\\w+)|:([^:]+):|\\(([^\\)]+)\\))\\s*"
+                       "[-.<>]{2,}\\s*"
+                       "(?:\\(([^\\)]+)\\)|(\\w+))\\s*"
+                       "(?::(.+))?");
+    if (rel.indexIn(p_keyword) >= 0) {
+        QString msg(rel.cap(6).trimmed());
+        if (msg.isEmpty()) {
+            QString ent2(rel.cap(4).trimmed());
+            if (ent2.isEmpty()) {
+                ent2 = rel.cap(5).trimmed();
+            }
+
+            if (ent2.isEmpty()) {
+                QString ent1(rel.cap(3).trimmed());
+                if (ent1.isEmpty()) {
+                    ent1 = rel.cap(2).trimmed();
+                    if (ent1.isEmpty()) {
+                        ent1 = rel.cap(1).trimmed();
+                    }
+                }
+
+                p_keyword = ent1;
+            } else {
+                p_keyword = ent2;
+            }
+        } else {
+            p_keyword = msg;
+        }
+
+        p_needCreole = true;
+        return true;
+    }
+
+    // Usecase.
+    // (First usecase) as (UC2)
+    // usecase UC3
+    // usecase (Last usecase) as UC4
+    static QRegExp usecase1("^\\s*usecase\\s+(?:(\\w+)|\\(([^\\)]+)\\)\\s+as\\s+\\w+)");
+    if (usecase1.indexIn(p_keyword) >= 0) {
+        if (usecase1.cap(1).isEmpty()) {
+            p_keyword = usecase1.cap(2).trimmed();
+            p_needCreole = true;
+        } else {
+            p_keyword = usecase1.cap(1);
+        }
+
+        return true;
+    }
+
+    // This will eat almost anything starting with ().
+    static QRegExp usecase2("^\\s*\\(([^\\)]+)\\)");
+    if (usecase2.indexIn(p_keyword) >= 0) {
+        p_keyword = usecase2.cap(1).trimmed();
+        p_needCreole = true;
+        return true;
+    }
+
+    // Actor.
+    // :Another\nactor: as men2
+    // actor :Last actor: as men4
+    static QRegExp actor1("^\\s*(?:actor\\s+)?:([^:]+):(?:\\s+as\\s+\\w+)?[^:]*$");
+    if (actor1.indexIn(p_keyword) >= 0) {
+        p_keyword = actor1.cap(1).trimmed();
+        p_needCreole = true;
+        return true;
+    }
+
+    // actor men1
+    static QRegExp actor2("^\\s*actor\\s+(\\w+)");
+    if (actor2.indexIn(p_keyword) >= 0) {
+        p_keyword = actor2.cap(1).trimmed();
+        p_needCreole = true;
+        return true;
+    }
+
+    // rectangle checkout {
+    static QRegExp rect("^\\s*rectangle\\s+(?:(\\w+)|\"([^\"]+)\")");
+    if (rect.indexIn(p_keyword) >= 0) {
+        p_keyword = rect.cap(1).trimmed();
+        if (p_keyword.isEmpty()) {
+            p_keyword = rect.cap(2).trimmed();
+        }
+
+        p_needCreole = true;
         return true;
     }
 
@@ -607,6 +707,14 @@ QString VPlantUMLHelper::keywordForSmartLivePreview(const QString &p_text,
     p_isRegex = false;
     bool needCreole = false;
 
+    qDebug() << "tryKeywords" << kw;
+
+    if (tryKeywords(kw)) {
+        return kw;
+    }
+
+    qDebug() << "tryClassDiagram" << kw;
+
     if (tryClassDiagram(kw, p_hints, p_isRegex, needCreole)) {
         if (needCreole) {
             goto creole;
@@ -614,6 +722,8 @@ QString VPlantUMLHelper::keywordForSmartLivePreview(const QString &p_text,
 
         return kw;
     }
+
+    qDebug() << "tryActivityDiagram" << kw;
 
     if (tryActivityDiagram(kw, p_hints, p_isRegex, needCreole)) {
         if (needCreole) {
@@ -623,6 +733,8 @@ QString VPlantUMLHelper::keywordForSmartLivePreview(const QString &p_text,
         return kw;
     }
 
+    qDebug() << "trySequenceDiagram" << kw;
+
     if (trySequenceDiagram(kw, p_hints, p_isRegex, needCreole)) {
         if (needCreole) {
             goto creole;
@@ -630,6 +742,18 @@ QString VPlantUMLHelper::keywordForSmartLivePreview(const QString &p_text,
 
         return kw;
     }
+
+    qDebug() << "tryUseCaseDiagram" << kw;
+
+    if (tryUseCaseDiagram(kw, p_hints, p_isRegex, needCreole)) {
+        if (needCreole) {
+            goto creole;
+        }
+
+        return kw;
+    }
+
+    qDebug() << "tryCommonElements" << kw;
 
     if (tryCommonElements(kw, p_hints, p_isRegex, needCreole)) {
         if (needCreole) {
