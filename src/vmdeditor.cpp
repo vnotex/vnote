@@ -384,6 +384,7 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
 
         QAction *toggleLivePreviewAct = new QAction(tr("Live Preview For Graphs"), menu.data());
         toggleLivePreviewAct->setToolTip(tr("Toggle live preview panel for graphs"));
+        VUtils::fixTextWithCaptainShortcut(toggleLivePreviewAct, "LivePreview");
         connect(toggleLivePreviewAct, &QAction::triggered,
                 this, [this]() {
                     m_editTab->toggleLivePreview();
