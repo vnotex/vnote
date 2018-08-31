@@ -1628,6 +1628,12 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
             processCommand(m_tokens);
             setMode(VimMode::Normal);
             break;
+        } else if (VUtils::isControlModifierForVim(modifiers)) {
+            if (g_config->getVimExemptionKeys().contains('x')) {
+                // Let it be handled outside.
+                resetState();
+                goto exit;
+            }
         }
 
         break;
