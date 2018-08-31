@@ -24,6 +24,8 @@ void VOrphanFileInfoDialog::setupUI()
     QFormLayout *topLayout = new QFormLayout();
 
     QLabel *fileLabel = new QLabel(m_file->fetchPath());
+    fileLabel->setTextInteractionFlags(fileLabel->textInteractionFlags() | Qt::TextSelectableByMouse);
+    fileLabel->setWordWrap(true);
     topLayout->addRow(tr("File:"), fileLabel);
 
     m_imageFolderEdit = new VLineEdit(m_file->getImageFolder());

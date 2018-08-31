@@ -633,6 +633,19 @@ void VFileList::contextMenuRequested(QPoint pos)
             connect(openLocationAct, &QAction::triggered,
                     this, &VFileList::openFileLocation);
             menu.addAction(openLocationAct);
+
+            QAction *copyPathAct = new QAction(tr("Copy File Path"), &menu);
+            connect(copyPathAct, &QAction::triggered,
+                    this, [this]() {
+                        QList<QListWidgetItem *> items = fileList->selectedItems();
+                        if (items.size() == 1) {
+                            QString filePath = getVFile(items[0])->fetchPath();
+                            QClipboard *clipboard = QApplication::clipboard();
+                            clipboard->setText(filePath);
+                            g_mainWin->showStatusMessage(tr("File path copied %1").arg(filePath));
+                        }
+                    });
+            menu.addAction(copyPathAct);
         }
 
         QAction *addToCartAct = new QAction(VIconUtils::menuIcon(":/resources/icons/cart.svg"),
