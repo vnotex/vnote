@@ -616,6 +616,12 @@ bool VEditor::findTextHelper(const QString &p_text,
     QRegExp exp;
     if (p_options & FindOption::RegularExpression) {
         useRegExp = true;
+        // FIXME: hang bug in Qt's find().
+        QRegExp test("[$^]+");
+        if (test.exactMatch(p_text)) {
+            return false;
+        }
+
         exp = QRegExp(p_text,
                       caseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive);
     }
