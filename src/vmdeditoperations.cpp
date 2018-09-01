@@ -483,7 +483,9 @@ exit:
         && key != Qt::Key_Tab
         && key != Qt::Key_Backtab
         && key != Qt::Key_Shift
-        && key != Qt::Key_Control) {
+        && key != Qt::Key_Control
+        // For mapping Caps as Ctrl in KDE.
+        && key != Qt::Key_CapsLock) {
         m_autoIndentPos = -1;
     }
 
