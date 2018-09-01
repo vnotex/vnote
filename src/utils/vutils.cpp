@@ -908,8 +908,9 @@ with 2em, if there are Chinese characters in it, the font will be a mess.
 
 QString VUtils::generateMathJaxPreviewTemplate()
 {
+    QString mj = g_config->getMathjaxJavascript();
     QString templ = VNote::generateMathJaxPreviewTemplate();
-    templ.replace(HtmlHolder::c_JSHolder, g_config->getMathjaxJavascript());
+    templ.replace(HtmlHolder::c_JSHolder, mj);
 
     QString extraFile;
 

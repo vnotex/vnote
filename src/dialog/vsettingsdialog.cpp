@@ -1041,6 +1041,7 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     m_mathjaxConfigEdit = new VLineEdit();
     m_mathjaxConfigEdit->setToolTip(tr("Location of MathJax JavaScript and its configuration "
                                        "(restart VNote to make it work in in-place preview)"));
+    m_mathjaxConfigEdit->setPlaceholderText(tr("Need to prepend \"file://\" to local path"));
 
     // PlantUML.
     m_plantUMLModeCombo = VUtils::getComboBox();

@@ -5,6 +5,9 @@
 
 #include "utils/vutils.h"
 #include "vmathjaxwebdocument.h"
+#include "vconfigmanager.h"
+
+extern VConfigManager *g_config;
 
 VMathJaxPreviewHelper::VMathJaxPreviewHelper(QWidget *p_parentWidget, QObject *p_parent)
     : QObject(p_parent),
@@ -67,7 +70,8 @@ void VMathJaxPreviewHelper::doInit()
 
     // setHtml() will change focus if it is not disabled.
     m_webView->setEnabled(false);
-    m_webView->setHtml(VUtils::generateMathJaxPreviewTemplate(), QUrl("qrc:/resources"));
+    QUrl baseUrl(QUrl::fromLocalFile(g_config->getDocumentPathOrHomePath() + QDir::separator()));
+    m_webView->setHtml(VUtils::generateMathJaxPreviewTemplate(), baseUrl);
     m_webView->setEnabled(true);
 }
 

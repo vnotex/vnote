@@ -139,8 +139,6 @@ signals:
 
     void htmlChanged(const QString &html);
 
-    void logChanged(const QString &p_log);
-
     void keyPressed(int p_key, bool p_ctrl, bool p_shift, bool p_meta);
 
     void requestHighlightText(const QString &p_text, int p_id, unsigned long long p_timeStamp);

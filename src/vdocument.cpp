@@ -67,7 +67,6 @@ void VDocument::setHtml(const QString &html)
 void VDocument::setLog(const QString &p_log)
 {
     qDebug() << "JS:" << p_log;
-    emit logChanged(p_log);
 }
 
 void VDocument::keyPressEvent(int p_key, bool p_ctrl, bool p_shift, bool p_meta)
