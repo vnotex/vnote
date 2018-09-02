@@ -314,6 +314,9 @@ void VConfigManager::initialize()
     m_smartLivePreview = getConfigFromSettings("global",
                                                "smart_live_preview").toBool();
 
+    m_multipleKeyboardLayout = getConfigFromSettings("global",
+                                                     "multiple_keyboard_layout").toBool();
+
     initEditorConfigs();
 }
 

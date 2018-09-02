@@ -549,6 +549,8 @@ public:
 
     bool getSmartLivePreview() const;
 
+    bool getMultipleKeyboardLayout() const;
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -988,6 +990,9 @@ private:
 
     // Smart live preview.
     bool m_smartLivePreview;
+
+    // Support multiple keyboard layout.
+    bool m_multipleKeyboardLayout;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2548,5 +2553,10 @@ inline QChar VConfigManager::getVimLeaderKey() const
 inline bool VConfigManager::getSmartLivePreview() const
 {
     return m_smartLivePreview;
+}
+
+inline bool VConfigManager::getMultipleKeyboardLayout() const
+{
+    return m_multipleKeyboardLayout;
 }
 #endif // VCONFIGMANAGER_H

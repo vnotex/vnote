@@ -171,7 +171,9 @@ public:
     static bool isImageURLText(const QString &p_url);
     static qreal calculateScaleFactor();
     static bool realEqual(qreal p_a, qreal p_b);
-    static QChar keyToChar(int p_key);
+
+    static QChar keyToChar(int p_key, bool p_smallCase = true);
+
     static QString getLocale();
 
     static void sleepWait(int p_milliseconds);
