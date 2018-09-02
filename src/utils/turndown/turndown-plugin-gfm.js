@@ -39,6 +39,7 @@ function strikethrough (turndownService) {
 var indexOf = Array.prototype.indexOf;
 var every = Array.prototype.every;
 var rules = {};
+var configs = { autoHead: false };
 
 rules.tableCell = {
   filter: ['th', 'td'],
@@ -64,7 +65,26 @@ rules.tableRow = {
 
         borderCells += cell(border, node.childNodes[i]);
       }
+    } else if (configs.autoHead && isFirstRow(node)) {
+      var fakeHead = '';
+
+      for (var i = 0; i < node.childNodes.length; i++) {
+        // Add a fake head.
+        fakeHead += cell('<br>', node.childNodes[i]);
+
+        var border = '---';
+        var align = (
+          node.childNodes[i].getAttribute('align') || ''
+        ).toLowerCase();
+
+        if (align) border = alignMap[align] || border;
+
+        borderCells += cell(border, node.childNodes[i]);
+      }
+
+      return '\n' + fakeHead + '\n' + borderCells + '\n' + content;
     }
+
     return '\n' + content + (borderCells ? '\n' + borderCells : '')
   }
 };
@@ -73,7 +93,8 @@ rules.table = {
   // Only convert tables with a heading row.
   // Tables with no heading row are kept using `keep` (see below).
   filter: function (node) {
-    return node.nodeName === 'TABLE' && isHeadingRow(node.rows[0])
+    return node.nodeName === 'TABLE'
+           && (configs.autoHead || isHeadingRow(node.rows[0]))
   },
 
   replacement: function (content) {
@@ -89,6 +110,12 @@ rules.tableSection = {
     return content
   }
 };
+
+function isFirstRow (tr) {
+  var parentNode = tr.parentNode;
+  return parentNode.firstChild === tr
+         && (parentNode.nodeName === 'TABLE' || isFirstTbody(parentNode));
+}
 
 // A tr is a heading row if:
 // - the parent is a THEAD
@@ -128,9 +155,12 @@ function cell (content, node) {
 }
 
 function tables (turndownService) {
-  turndownService.keep(function (node) {
-    return node.nodeName === 'TABLE' && !isHeadingRow(node.rows[0])
-  });
+  if (!configs.autoHead) {
+    turndownService.keep(function (node) {
+      return node.nodeName === 'TABLE' && !isHeadingRow(node.rows[0])
+    });
+  }
+
   for (var key in rules) turndownService.addRule(key, rules[key]);
 }
 
@@ -159,6 +189,7 @@ exports.highlightedCodeBlock = highlightedCodeBlock;
 exports.strikethrough = strikethrough;
 exports.tables = tables;
 exports.taskListItems = taskListItems;
+exports.options = configs;
 
 return exports;
 

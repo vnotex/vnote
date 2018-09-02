@@ -1505,7 +1505,8 @@ var htmlToText = function(identifier, id, timeStamp, html) {
         return result;
     };
 
-    var gfm = turndownPluginGfm.gfm
+    turndownPluginGfm.options.autoHead = true;
+
     var ts = new TurndownService({ headingStyle: 'atx',
                                    bulletListMarker: '-',
                                    emDelimiter: '*',
@@ -1519,7 +1520,8 @@ var htmlToText = function(identifier, id, timeStamp, html) {
                                        return node.isBlock ? '\n\n' : ''
                                    }
                                  });
-    ts.use(gfm);
+    ts.use(turndownPluginGfm.gfm);
+
     ts.addRule('emspan', {
         filter: 'span',
         replacement: function(content, node, options) {
