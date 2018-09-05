@@ -27,6 +27,7 @@
 #include "utils/vclipboardutils.h"
 #include "vplantumlhelper.h"
 #include "vgraphvizhelper.h"
+#include "vmdtab.h"
 
 extern VWebUtils *g_webUtils;
 
@@ -382,19 +383,25 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
                     emit m_object->discardAndRead();
                 });
 
-        QAction *toggleLivePreviewAct = new QAction(tr("Live Preview For Graphs"), menu.data());
-        toggleLivePreviewAct->setToolTip(tr("Toggle live preview panel for graphs"));
-        VUtils::fixTextWithCaptainShortcut(toggleLivePreviewAct, "LivePreview");
-        connect(toggleLivePreviewAct, &QAction::triggered,
-                this, [this]() {
-                    m_editTab->toggleLivePreview();
-                });
+        VMdTab *mdtab = dynamic_cast<VMdTab *>(m_editTab);
+        if (mdtab) {
+            QAction *toggleLivePreviewAct = new QAction(tr("Live Preview For Graphs"), menu.data());
+            toggleLivePreviewAct->setToolTip(tr("Toggle live preview panel for graphs"));
+            VUtils::fixTextWithCaptainShortcut(toggleLivePreviewAct, "LivePreview");
+            connect(toggleLivePreviewAct, &QAction::triggered,
+                    this, [this, mdtab]() {
+                        mdtab->toggleLivePreview();
+                    });
 
-        menu->insertAction(firstAct, toggleLivePreviewAct);
-        menu->insertAction(toggleLivePreviewAct, discardExitAct);
-        menu->insertAction(discardExitAct, saveExitAct);
-
-        menu->insertSeparator(toggleLivePreviewAct);
+            menu->insertAction(firstAct, toggleLivePreviewAct);
+            menu->insertAction(toggleLivePreviewAct, discardExitAct);
+            menu->insertAction(discardExitAct, saveExitAct);
+            menu->insertSeparator(toggleLivePreviewAct);
+        } else {
+            menu->insertAction(firstAct, discardExitAct);
+            menu->insertAction(discardExitAct, saveExitAct);
+            menu->insertSeparator(discardExitAct);
+        }
 
         if (firstAct) {
             menu->insertSeparator(firstAct);
@@ -1389,18 +1396,10 @@ QAction *VMdEditor::initPasteAsBlockQuoteMenu(QAction *p_after, QMenu *p_menu)
 QAction *VMdEditor::initPasteAfterParseMenu(QAction *p_after, QMenu *p_menu)
 {
     QAction *papAct = new QAction(tr("Paste Parsed &Markdown Text"), p_menu);
+    VUtils::fixTextWithCaptainShortcut(papAct, "ParseAndPaste");
     papAct->setToolTip(tr("Parse HTML to Markdown text and paste"));
     connect(papAct, &QAction::triggered,
-            this, [this]() {
-                QClipboard *clipboard = QApplication::clipboard();
-                const QMimeData *mimeData = clipboard->mimeData();
-                QString html(mimeData->html());
-                if (!html.isEmpty()) {
-                    ++m_copyTimeStamp;
-                    emit requestHtmlToText(html, 0, m_copyTimeStamp);
-                }
-            });
-
+            this, &VMdEditor::parseAndPaste);
 
     insertActionAfter(p_after, papAct, p_menu);
     return papAct;
@@ -1823,4 +1822,21 @@ void VMdEditor::exportGraphAndCopy(const QString &p_lang,
     }
 
     m_exportTempFile->close();
+}
+
+void VMdEditor::parseAndPaste()
+{
+    if (!m_editTab
+        || !m_editTab->isEditMode()
+        || isReadOnly()) {
+        return;
+    }
+
+    QClipboard *clipboard = QApplication::clipboard();
+    const QMimeData *mimeData = clipboard->mimeData();
+    QString html(mimeData->html());
+    if (!html.isEmpty()) {
+        ++m_copyTimeStamp;
+        emit requestHtmlToText(html, 0, m_copyTimeStamp);
+    }
 }

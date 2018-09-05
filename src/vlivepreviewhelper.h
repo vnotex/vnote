@@ -92,6 +92,36 @@ private:
 };
 
 
+struct LivePreviewInfo
+{
+    LivePreviewInfo()
+        : m_startPos(),
+          m_endPos()
+    {
+    }
+
+    void clear()
+    {
+        m_startPos = 0;
+        m_endPos = 0;
+    }
+
+    void update(const VCodeBlock &p_cb)
+    {
+        m_startPos = p_cb.m_startPos;
+        m_endPos = p_cb.m_startPos + p_cb.m_text.size();
+    }
+
+    bool isValid() const
+    {
+        return m_endPos > m_startPos;
+    }
+
+    int m_startPos;
+    int m_endPos;
+};
+
+
 // Manage live preview and inplace preview.
 class VLivePreviewHelper : public QObject
 {
@@ -108,6 +138,8 @@ public:
     void setInplacePreviewEnabled(bool p_enabled);
 
     bool isPreviewEnabled() const;
+
+    const LivePreviewInfo &getLivePreviewInfo() const;
 
 public slots:
     void updateCodeBlocks(TimeStamp p_timeStamp, const QVector<VCodeBlock> &p_codeBlocks);
@@ -220,7 +252,6 @@ private:
         QString m_imageBackground;
     };
 
-
     void checkLang(const QString &p_lang, bool &p_livePreview, bool &p_inplacePreview) const;
 
     // Get image data for this code block for inplace preview.
@@ -277,6 +308,8 @@ private:
     int m_lastCursorBlock;
 
     QTimer *m_livePreviewTimer;
+
+    LivePreviewInfo m_curLivePreviewInfo;
 };
 
 inline bool VLivePreviewHelper::isPreviewEnabled() const
@@ -291,5 +324,10 @@ inline qreal VLivePreviewHelper::getScaleFactor(const CodeBlockPreviewInfo &p_cb
     } else {
         return m_scaleFactor;
     }
+}
+
+inline const LivePreviewInfo &VLivePreviewHelper::getLivePreviewInfo() const
+{
+    return m_curLivePreviewInfo;
 }
 #endif // VLIVEPREVIEWHELPER_H

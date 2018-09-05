@@ -234,6 +234,12 @@ private:
     // Toggle live preview.
     static bool toggleLivePreviewByCaptain(void *p_target, void *p_data);
 
+    // Expand live preview.
+    static bool expandLivePreviewByCaptain(void *p_target, void *p_data);
+
+    // Parse and paste.
+    static bool parseAndPasteByCaptain(void *p_target, void *p_data);
+
     // End Captain mode functions.
 
     int curWindowIndex;

@@ -88,6 +88,8 @@ public slots:
 
     void htmlToTextFinished(int p_id, int p_timeStamp, const QString &p_html);
 
+    void parseAndPaste();
+
 // Wrapper functions for QPlainTextEdit/QTextEdit.
 public:
     void setExtraSelectionsW(const QList<QTextEdit::ExtraSelection> &p_selections) Q_DECL_OVERRIDE

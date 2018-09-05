@@ -519,35 +519,43 @@ bool VEditor::findText(const QString &p_text,
     bool wrapped = false;
     QTextCursor retCursor;
     int matches = 0;
-    int start = p_forward ? cursor.position() + 1 : cursor.position();
-    if (p_cursor) {
-        start = p_forward ? p_cursor->position() + 1 : p_cursor->position();
-    }
-
+    int start = p_cursor ? p_cursor->position() : cursor.position();
     if (p_useLeftSideOfCursor) {
         --start;
     }
+    int skipPosition = start;
 
-    bool found = findTextHelper(p_text, p_options, p_forward, start,
-                                wrapped, retCursor);
-    if (found) {
-        Q_ASSERT(!retCursor.isNull());
-        if (wrapped) {
-            showWrapLabel();
-        }
+    bool found = false;
+    while (true) {
+        found = findTextHelper(p_text, p_options, p_forward, start, wrapped, retCursor);
+        if (found) {
+            Q_ASSERT(!retCursor.isNull());
+            if (wrapped) {
+                showWrapLabel();
+            }
 
-        if (p_cursor) {
-            p_cursor->setPosition(retCursor.selectionStart(), p_moveMode);
+            if (p_forward && retCursor.selectionStart() == skipPosition) {
+                // Skip the first match.
+                skipPosition = -1;
+                start = retCursor.selectionEnd();
+                continue;
+            }
+
+            if (p_cursor) {
+                p_cursor->setPosition(retCursor.selectionStart(), p_moveMode);
+            } else {
+                cursor.setPosition(retCursor.selectionStart(), p_moveMode);
+                setTextCursorW(cursor);
+            }
+
+            highlightSearchedWord(p_text, p_options);
+            highlightSearchedWordUnderCursor(retCursor);
+            matches = m_extraSelections[(int)SelectionId::SearchedKeyword].size();
         } else {
-            cursor.setPosition(retCursor.selectionStart(), p_moveMode);
-            setTextCursorW(cursor);
+            clearSearchedWordHighlight();
         }
 
-        highlightSearchedWord(p_text, p_options);
-        highlightSearchedWordUnderCursor(retCursor);
-        matches = m_extraSelections[(int)SelectionId::SearchedKeyword].size();
-    } else {
-        clearSearchedWordHighlight();
+        break;
     }
 
     if (matches == 0) {
@@ -559,6 +567,18 @@ bool VEditor::findText(const QString &p_text,
     }
 
     return found;
+}
+
+bool VEditor::findTextInRange(const QString &p_text,
+                              uint p_options,
+                              bool p_forward,
+                              int p_start,
+                              int p_end)
+{
+    Q_UNUSED(p_start);
+    Q_UNUSED(p_end);
+    // TODO
+    return findText(p_text, p_options, p_forward);
 }
 
 void VEditor::highlightIncrementalSearchedWord(const QTextCursor &p_cursor)

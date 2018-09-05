@@ -202,6 +202,7 @@ void VLivePreviewHelper::updateCodeBlocks(TimeStamp p_timeStamp, const QVector<V
             && vcb.m_endBlock >= cursorBlock) {
             if (lastIndex == idx && cached && !oldCache) {
                 needUpdate = false;
+                m_curLivePreviewInfo.update(vcb);
             }
 
             m_cbIndex = idx;
@@ -260,12 +261,16 @@ void VLivePreviewHelper::handleCursorPositionChanged()
 void VLivePreviewHelper::updateLivePreview()
 {
     if (m_cbIndex < 0) {
+        m_curLivePreviewInfo.clear();
         return;
     }
 
     Q_ASSERT(!(m_cbIndex & ~INDEX_MASK));
     const CodeBlockPreviewInfo &cb = m_codeBlocks[m_cbIndex];
     const VCodeBlock &vcb = cb.codeBlock();
+
+    m_curLivePreviewInfo.update(vcb);
+
     if (vcb.m_lang == "dot") {
         if (!m_graphvizHelper) {
             m_graphvizHelper = new VGraphvizHelper(this);
@@ -530,7 +535,7 @@ void VLivePreviewHelper::performSmartLivePreview()
 {
     if (m_cbIndex < 0
         || m_cbIndex >= m_codeBlocks.size()
-        || !g_config->getSmartLivePreview()) {
+        || !(g_config->getSmartLivePreview() & SmartLivePreview::EditorToWeb)) {
         return;
     }
 

@@ -95,7 +95,9 @@ public:
     VWordCountInfo fetchWordCountInfo(bool p_editMode) const Q_DECL_OVERRIDE;
 
     // Toggle live preview in edit mode.
-    void toggleLivePreview() Q_DECL_OVERRIDE;
+    bool toggleLivePreview();
+
+    bool expandRestorePreviewArea();
 
 public slots:
     // Enter edit mode.
@@ -147,6 +149,9 @@ private slots:
 
     // Handle save page request.
     void handleSavePageRequested();
+
+    // Selection changed in web.
+    void handleWebSelectionChanged();
 
 private:
     enum TabReady { None = 0, ReadMode = 0x1, EditMode = 0x2 };
@@ -242,6 +247,8 @@ private:
 
     // Timer to write backup file when content has been changed.
     QTimer *m_backupTimer;
+
+    QTimer *m_livePreviewTimer;
 
     bool m_backupFileChecked;
 

@@ -14,6 +14,8 @@
 #include "vcaptain.h"
 #include "vfilelist.h"
 #include "vmathjaxpreviewhelper.h"
+#include "vmdtab.h"
+#include "vmdeditor.h"
 
 extern VConfigManager *g_config;
 
@@ -954,6 +956,14 @@ void VEditArea::registerCaptainTargets()
                                    g_config->getCaptainShortcutKeySequence("LivePreview"),
                                    this,
                                    toggleLivePreviewByCaptain);
+    captain->registerCaptainTarget(tr("ExpandLivePreview"),
+                                   g_config->getCaptainShortcutKeySequence("ExpandLivePreview"),
+                                   this,
+                                   expandLivePreviewByCaptain);
+    captain->registerCaptainTarget(tr("ParseAndPaste"),
+                                   g_config->getCaptainShortcutKeySequence("ParseAndPaste"),
+                                   this,
+                                   parseAndPasteByCaptain);
 }
 
 bool VEditArea::activateTabByCaptain(void *p_target, void *p_data, int p_idx)
@@ -1139,9 +1149,40 @@ bool VEditArea::toggleLivePreviewByCaptain(void *p_target, void *p_data)
     Q_UNUSED(p_data);
     VEditArea *obj = static_cast<VEditArea *>(p_target);
 
-    VEditTab *tab = obj->getCurrentTab();
+    VMdTab *tab = dynamic_cast<VMdTab *>(obj->getCurrentTab());
     if (tab) {
-        tab->toggleLivePreview();
+        if (tab->toggleLivePreview()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool VEditArea::expandLivePreviewByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+
+    VMdTab *tab = dynamic_cast<VMdTab *>(obj->getCurrentTab());
+    if (tab) {
+        if (tab->expandRestorePreviewArea()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool VEditArea::parseAndPasteByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+
+    const VMdTab *tab = dynamic_cast<const VMdTab *>(obj->getCurrentTab());
+    if (tab && tab->isEditMode()) {
+        VMdEditor *editor = tab->getEditor();
+        editor->parseAndPaste();
     }
 
     return true;

@@ -65,6 +65,26 @@ VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
                 writeBackupFile();
             });
 
+    m_livePreviewTimer = new QTimer(this);
+    m_livePreviewTimer->setSingleShot(true);
+    m_livePreviewTimer->setInterval(500);
+    connect(m_livePreviewTimer, &QTimer::timeout,
+            this, [this]() {
+                QString text = m_webViewer->selectedText();
+                if (text.isEmpty()) {
+                    return;
+                }
+
+                const LivePreviewInfo &info = m_livePreviewHelper->getLivePreviewInfo();
+                if (info.isValid()) {
+                    m_editor->findTextInRange(text,
+                                              FindOption::CaseSensitive,
+                                              true,
+                                              info.m_startPos,
+                                              info.m_endPos);
+                }
+            });
+
     if (p_mode == OpenFileMode::Edit) {
         showFileEditMode();
     } else {
@@ -396,6 +416,10 @@ void VMdTab::setupMarkdownViewer()
             this, &VMdTab::editFile);
     connect(m_webViewer, &VWebView::requestSavePage,
             this, &VMdTab::handleSavePageRequested);
+    connect(m_webViewer, &VWebView::selectionChanged,
+            this, &VMdTab::handleWebSelectionChanged);
+    connect(m_webViewer, &VWebView::requestExpandRestorePreviewArea,
+            this, &VMdTab::expandRestorePreviewArea);
 
     VPreviewPage *page = new VPreviewPage(m_webViewer);
     m_webViewer->setPage(page);
@@ -1516,18 +1540,51 @@ void VMdTab::setCurrentMode(Mode p_mode)
     focusChild();
 }
 
-void VMdTab::toggleLivePreview()
+bool VMdTab::toggleLivePreview()
 {
+    bool ret = false;
+
     switch (m_mode) {
     case Mode::EditPreview:
         setCurrentMode(Mode::Edit);
+        ret = true;
         break;
 
     case Mode::Edit:
         setCurrentMode(Mode::EditPreview);
+        ret = true;
         break;
 
     default:
         break;
     }
+
+    return ret;
+}
+
+void VMdTab::handleWebSelectionChanged()
+{
+    if (m_mode != Mode::EditPreview
+        || !(g_config->getSmartLivePreview() & SmartLivePreview::WebToEditor)) {
+        return;
+    }
+
+    m_livePreviewTimer->start();
+}
+
+bool VMdTab::expandRestorePreviewArea()
+{
+    if (m_mode != Mode::EditPreview) {
+        return false;
+    }
+
+    if (m_editor->isVisible()) {
+        m_editor->hide();
+        m_webViewer->setFocus();
+    } else {
+        m_editor->show();
+        m_editor->setFocus();
+    }
+
+    return true;
 }

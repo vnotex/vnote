@@ -312,7 +312,7 @@ void VConfigManager::initialize()
                                                 "max_num_of_tag_labels").toInt();
 
     m_smartLivePreview = getConfigFromSettings("global",
-                                               "smart_live_preview").toBool();
+                                               "smart_live_preview").toInt();
 
     m_multipleKeyboardLayout = getConfigFromSettings("global",
                                                      "multiple_keyboard_layout").toBool();

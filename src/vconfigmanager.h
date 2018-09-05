@@ -60,6 +60,12 @@ enum class KeyMode
     Invalid
 };
 
+enum SmartLivePreview
+{
+    Disabled = 0,
+    EditorToWeb = 0x1,
+    WebToEditor = 0x2
+};
 
 class VConfigManager : public QObject
 {
@@ -547,7 +553,8 @@ public:
 
     QChar getVimLeaderKey() const;
 
-    bool getSmartLivePreview() const;
+    int getSmartLivePreview() const;
+    void setSmartLivePreview(int p_preview);
 
     bool getMultipleKeyboardLayout() const;
 
@@ -989,7 +996,7 @@ private:
     QChar m_vimLeaderKey;
 
     // Smart live preview.
-    bool m_smartLivePreview;
+    int m_smartLivePreview;
 
     // Support multiple keyboard layout.
     bool m_multipleKeyboardLayout;
@@ -2550,9 +2557,19 @@ inline QChar VConfigManager::getVimLeaderKey() const
     return m_vimLeaderKey;
 }
 
-inline bool VConfigManager::getSmartLivePreview() const
+inline int VConfigManager::getSmartLivePreview() const
 {
     return m_smartLivePreview;
+}
+
+inline void VConfigManager::setSmartLivePreview(int p_preview)
+{
+    if (m_smartLivePreview == p_preview) {
+        return;
+    }
+
+    m_smartLivePreview = p_preview;
+    setConfigToSettings("global", "smart_live_preview", m_smartLivePreview);
 }
 
 inline bool VConfigManager::getMultipleKeyboardLayout() const

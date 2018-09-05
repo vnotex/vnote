@@ -45,6 +45,9 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
     menu->setToolTipsVisible(true);
 
     const QList<QAction *> actions = menu->actions();
+    QAction *firstAction = actions.isEmpty() ? NULL : actions[0];
+
+    bool selection = hasSelection();
 
 #if defined(Q_OS_WIN)
     if (!m_copyImageUrlActionHooked) {
@@ -64,26 +67,46 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
     }
 #endif
 
-    if (!hasSelection()
-        && !m_inPreview
-        && m_file
-        && m_file->isModifiable()) {
-        QAction *editAct= new QAction(VIconUtils::menuIcon(":/resources/icons/edit_note.svg"),
-                                      tr("&Edit"), menu);
-        editAct->setToolTip(tr("Edit current note"));
-        connect(editAct, &QAction::triggered,
-                this, &VWebView::handleEditAction);
-        menu->insertAction(actions.isEmpty() ? NULL : actions[0], editAct);
-        // actions does not contain editAction.
-        if (!actions.isEmpty()) {
-            menu->insertSeparator(actions[0]);
+    if (!selection) {
+        if (m_inPreview) {
+            QAction *expandAct = new QAction(tr("Expand/Restore Preview Area"), menu);
+            VUtils::fixTextWithCaptainShortcut(expandAct, "ExpandLivePreview");
+            connect(expandAct, &QAction::triggered,
+                    this, &VWebView::requestExpandRestorePreviewArea);
+            menu->insertAction(firstAction, expandAct);
+
+            initPreviewTunnelMenu(firstAction, menu);
+
+            if (firstAction) {
+                menu->insertSeparator(firstAction);
+            }
+        } else {
+            if (m_file && m_file->isModifiable()) {
+                QAction *editAct= new QAction(VIconUtils::menuIcon(":/resources/icons/edit_note.svg"),
+                                              tr("&Edit"),
+                                              menu);
+                editAct->setToolTip(tr("Edit current note"));
+                connect(editAct, &QAction::triggered,
+                        this, &VWebView::handleEditAction);
+                menu->insertAction(firstAction, editAct);
+                if (firstAction) {
+                    menu->insertSeparator(firstAction);
+                }
+            }
+
+            QAction *savePageAct = new QAction(QWebEnginePage::tr("Save &Page"), menu);
+            connect(savePageAct, &QAction::triggered,
+                    this, &VWebView::requestSavePage);
+            menu->addAction(savePageAct);
         }
     }
 
     // Add Copy As menu.
-    QAction *copyAct = pageAction(QWebEnginePage::Copy);
-    if (actions.contains(copyAct) && !m_inPreview) {
-        initCopyAsMenu(copyAct, menu);
+    {
+        QAction *copyAct = pageAction(QWebEnginePage::Copy);
+        if (actions.contains(copyAct) && !m_inPreview) {
+            initCopyAsMenu(copyAct, menu);
+        }
     }
 
     // We need to replace the "Copy Image" action:
@@ -98,13 +121,6 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
                 this, &VWebView::copyImage);
         menu->insertAction(defaultCopyImageAct, copyImageAct);
         defaultCopyImageAct->setVisible(false);
-    }
-
-    if (!hasSelection() && !m_inPreview) {
-        QAction *savePageAct = new QAction(QWebEnginePage::tr("Save &Page"), menu);
-        connect(savePageAct, &QAction::triggered,
-                this, &VWebView::requestSavePage);
-        menu->addAction(savePageAct);
     }
 
     // Add Copy All As menu.
@@ -418,4 +434,50 @@ void VWebView::handleCopyAllAsAction(QAction *p_act)
     triggerPageAction(QWebEnginePage::Copy);
 
     triggerPageAction(QWebEnginePage::Unselect);
+}
+
+void VWebView::initPreviewTunnelMenu(QAction *p_before, QMenu *p_menu)
+{
+    QMenu *subMenu = new QMenu(tr("Live Preview Tunnel"), p_menu);
+
+    int config = g_config->getSmartLivePreview();
+
+    QActionGroup *ag = new QActionGroup(subMenu);
+    QAction *act = ag->addAction(tr("Disabled"));
+    act->setData(SmartLivePreview::Disabled);
+    act->setCheckable(true);
+    if (act->data().toInt() == config) {
+        act->setChecked(true);
+    }
+
+    act = ag->addAction(tr("Editor -> Preview"));
+    act->setData(SmartLivePreview::EditorToWeb);
+    act->setCheckable(true);
+    if (act->data().toInt() == config) {
+        act->setChecked(true);
+    }
+
+    act = ag->addAction(tr("Preview -> Editor"));
+    act->setData(SmartLivePreview::WebToEditor);
+    act->setCheckable(true);
+    if (act->data().toInt() == config) {
+        act->setChecked(true);
+    }
+
+    act = ag->addAction(tr("Bidirectional"));
+    act->setData(SmartLivePreview::EditorToWeb | SmartLivePreview::WebToEditor);
+    act->setCheckable(true);
+    if (act->data().toInt() == config) {
+        act->setChecked(true);
+    }
+
+    connect(ag, &QActionGroup::triggered,
+            this, [this](QAction *p_act) {
+                int data = p_act->data().toInt();
+                g_config->setSmartLivePreview(data);
+            });
+
+    subMenu->addActions(ag->actions());
+
+    p_menu->insertMenu(p_before, subMenu);
 }

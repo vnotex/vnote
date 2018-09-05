@@ -83,6 +83,13 @@ public:
                   QTextCursor::MoveMode p_moveMode = QTextCursor::MoveAnchor,
                   bool p_useLeftSideOfCursor = false);
 
+    // Constrain the scope.
+    bool findTextInRange(const QString &p_text,
+                         uint p_options,
+                         bool p_forward,
+                         int p_start,
+                         int p_end);
+
     void replaceText(const QString &p_text,
                      uint p_options,
                      const QString &p_replaceText,

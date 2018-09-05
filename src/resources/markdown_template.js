@@ -1626,7 +1626,8 @@ var htmlToText = function(identifier, id, timeStamp, html) {
 };
 
 var performSmartLivePreview = function(lang, text, hints, isRegex) {
-    if (previewDiv.style.display == 'none') {
+    if (previewDiv.style.display == 'none'
+        || document.getSelection().type == 'Range') {
         return;
     }
 
