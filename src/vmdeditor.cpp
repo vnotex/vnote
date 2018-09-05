@@ -33,6 +33,8 @@ extern VWebUtils *g_webUtils;
 
 extern VConfigManager *g_config;
 
+#define LINE_NUMBER_AREA_FONT_DELTA -2
+
 VMdEditor::VMdEditor(VFile *p_file,
                      VDocument *p_doc,
                      MarkdownConverterType p_type,
@@ -141,6 +143,7 @@ void VMdEditor::updateFontAndPalette()
     // Only this could override the font-family set of QWidget in QSS.
     setFontAndPaletteByStyleSheet(font, palette);
 
+    font.setPointSize(font.pointSize() + LINE_NUMBER_AREA_FONT_DELTA);
     updateLineNumberAreaWidth(QFontMetrics(font));
 }
 
@@ -1474,24 +1477,31 @@ void VMdEditor::setFontPointSizeByStyleSheet(int p_ptSize)
     QFont ft = font();
     ft.setPointSize(p_ptSize);
 
-    setFontAndPaletteByStyleSheet(ft, palette());
+    const QPalette &palette = g_config->getMdEditPalette();
+    setFontAndPaletteByStyleSheet(ft, palette);
 
     ensurePolished();
 
+    ft.setPointSize(p_ptSize + LINE_NUMBER_AREA_FONT_DELTA);
     updateLineNumberAreaWidth(QFontMetrics(ft));
 }
 
 void VMdEditor::setFontAndPaletteByStyleSheet(const QFont &p_font, const QPalette &p_palette)
 {
-    setStyleSheet(QString("VMdEditor, VLineNumberArea {"
-                          "font-family: \"%1\";"
-                          "font-size: %2pt;"
-                          "color: %3;"
-                          "background-color: %4; }")
-                         .arg(p_font.family())
-                         .arg(p_font.pointSize())
-                         .arg(p_palette.color(QPalette::Text).name())
-                         .arg(p_palette.color(QPalette::Base).name()));
+    QString styles(QString("VMdEditor, VLineNumberArea {"
+                           "font-family: \"%1\";"
+                           "font-size: %2pt;"
+                           "color: %3;"
+                           "background-color: %4; } "
+                           "VLineNumberArea {"
+                           "font-size: %5pt; }")
+                          .arg(p_font.family())
+                          .arg(p_font.pointSize())
+                          .arg(p_palette.color(QPalette::Text).name())
+                          .arg(p_palette.color(QPalette::Base).name())
+                          .arg(p_font.pointSize() + LINE_NUMBER_AREA_FONT_DELTA));
+
+    setStyleSheet(styles);
 }
 
 int VMdEditor::lineNumberAreaWidth() const
