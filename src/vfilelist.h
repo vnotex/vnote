@@ -93,6 +93,8 @@ private slots:
     // Add selected files to History and pin them.
     void pinFileToHistory() const;
 
+    void setFileQuickAccess() const;
+
     // Copy selected files to clipboard.
     // Will put a Json string into the clipboard which contains the information
     // about copied files.

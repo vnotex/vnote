@@ -1337,6 +1337,10 @@ bool VUtils::isControlModifierForVim(int p_modifiers)
 
 void VUtils::touchFile(const QString &p_file)
 {
+    if (p_file.isEmpty()) {
+        return;
+    }
+
     QFile file(p_file);
     if (!file.open(QIODevice::WriteOnly)) {
         qWarning() << "fail to touch file" << p_file;

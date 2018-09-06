@@ -481,6 +481,9 @@ public:
 
     const QString &getFlashPage() const;
 
+    const QString &getQuickAccess() const;
+    void setQuickAccess(const QString &p_path);
+
     // All the themes.
     QList<QString> getThemes() const;
 
@@ -916,6 +919,9 @@ private:
 
     // Absolute path of flash page.
     QString m_flashPage;
+
+    // Absolute path of quick access note.
+    QString m_quickAccess;
 
     // The theme name.
     QString m_theme;
@@ -2596,5 +2602,15 @@ inline void VConfigManager::setInsertNewNoteInFront(bool p_enabled)
 
     m_insertNewNoteInFront = p_enabled;
     setConfigToSettings("global", "insert_new_note_in_front", m_insertNewNoteInFront);
+}
+
+inline void VConfigManager::setQuickAccess(const QString &p_path)
+{
+    if (m_quickAccess == p_path) {
+        return;
+    }
+
+    m_quickAccess = p_path;
+    setConfigToSettings("global", "quick_access", m_quickAccess);
 }
 #endif // VCONFIGMANAGER_H

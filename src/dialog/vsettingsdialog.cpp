@@ -283,10 +283,33 @@ VGeneralTab::VGeneralTab(QWidget *p_parent)
     // Startup pages.
     QLayout *startupLayout = setupStartupPagesLayout();
 
+    // Quick access.
+    m_quickAccessEdit = new VLineEdit(this);
+    m_quickAccessEdit->setPlaceholderText(tr("Path of file to quick access"));
+    m_quickAccessEdit->setToolTip(tr("Set the path of a file to quick access "
+                                     "(absolute or relative to configuration folder)"));
+
+    QPushButton *browseBtn = new QPushButton(tr("Browse"), this);
+    connect(browseBtn, &QPushButton::clicked,
+            this, [this]() {
+                QString filePath = QFileDialog::getOpenFileName(this,
+                                                                tr("Select File To Quick Access"),
+                                                                g_config->getDocumentPathOrHomePath());
+
+                if (!filePath.isEmpty()) {
+                    m_quickAccessEdit->setText(filePath);
+                }
+            });
+
+    QHBoxLayout *qaLayout = new QHBoxLayout();
+    qaLayout->addWidget(m_quickAccessEdit);
+    qaLayout->addWidget(browseBtn);
+
     QFormLayout *optionLayout = new QFormLayout();
     optionLayout->addRow(tr("Language:"), m_langCombo);
     optionLayout->addRow(m_systemTray);
     optionLayout->addRow(tr("Startup pages:"), startupLayout);
+    optionLayout->addRow(tr("Quick access:"), qaLayout);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(optionLayout);
@@ -363,6 +386,10 @@ bool VGeneralTab::loadConfiguration()
         return false;
     }
 
+    if (!loadQuickAccess()) {
+        return false;
+    }
+
     return true;
 }
 
@@ -377,6 +404,10 @@ bool VGeneralTab::saveConfiguration()
     }
 
     if (!saveStartupPageType()) {
+        return false;
+    }
+
+    if (!saveQuickAccess()) {
         return false;
     }
 
@@ -463,6 +494,18 @@ bool VGeneralTab::saveStartupPageType()
         g_config->setStartupPages(pages);
     }
 
+    return true;
+}
+
+bool VGeneralTab::loadQuickAccess()
+{
+    m_quickAccessEdit->setText(g_config->getQuickAccess());
+    return true;
+}
+
+bool VGeneralTab::saveQuickAccess()
+{
+    g_config->setQuickAccess(m_quickAccessEdit->text());
     return true;
 }
 

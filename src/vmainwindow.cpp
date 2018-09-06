@@ -640,6 +640,20 @@ QToolBar *VMainWindow::initNoteToolBar(QSize p_iconSize)
     connect(flashPageAct, &QAction::triggered,
             this, &VMainWindow::openFlashPage);
 
+    QAction *quickAccessAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/quick_access.svg"),
+                                          tr("Quick Access"),
+                                          this);
+    quickAccessAct->setStatusTip(tr("Open quick access note"));
+    keySeq = g_config->getShortcutKeySequence("QuickAccess");
+    seq = QKeySequence(keySeq);
+    if (!seq.isEmpty()) {
+        quickAccessAct->setText(tr("Quick Access\t%1").arg(VUtils::getShortcutText(keySeq)));
+        quickAccessAct->setShortcut(seq);
+    }
+
+    connect(quickAccessAct, &QAction::triggered,
+            this, &VMainWindow::openQuickAccess);
+
     QAction *universalEntryAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/universal_entry_tb.svg"),
                                              tr("Universal Entry"),
                                              this);
@@ -656,6 +670,7 @@ QToolBar *VMainWindow::initNoteToolBar(QSize p_iconSize)
 
     m_noteToolBar->addWidget(m_attachmentBtn);
     m_noteToolBar->addAction(flashPageAct);
+    m_noteToolBar->addAction(quickAccessAct);
     m_noteToolBar->addAction(universalEntryAct);
 
     return m_noteToolBar;
@@ -2855,6 +2870,24 @@ void VMainWindow::openFlashPage()
               false,
               OpenFileMode::Edit,
               true);
+}
+
+void VMainWindow::openQuickAccess()
+{
+    const QString &qaPath = g_config->getQuickAccess();
+    if (qaPath.isEmpty()) {
+        VUtils::showMessage(QMessageBox::Information,
+                            tr("Info"),
+                            tr("Quick Access is not set."),
+                            tr("Please specify the note for Quick Access in the settings dialog "
+                               "or the context menu of a note."),
+                            QMessageBox::Ok,
+                            QMessageBox::Ok,
+                            this);
+        return;
+    }
+
+    openFiles(QStringList(qaPath), false, g_config->getNoteOpenMode());
 }
 
 void VMainWindow::initHeadingButton(QToolBar *p_tb)

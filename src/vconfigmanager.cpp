@@ -1404,6 +1404,25 @@ const QString &VConfigManager::getFlashPage() const
     return m_flashPage;
 }
 
+const QString &VConfigManager::getQuickAccess() const
+{
+    if (m_quickAccess.isEmpty()) {
+        VConfigManager *var = const_cast<VConfigManager *>(this);
+
+        var->m_quickAccess = var->getConfigFromSettings("global",
+                                                        "quick_access").toString();
+        if (VUtils::checkFileNameLegal(m_quickAccess)) {
+            var->m_quickAccess = QDir(getConfigFolder()).filePath(m_quickAccess);
+        }
+    }
+
+    if (!m_quickAccess.isEmpty() && !QFileInfo::exists(m_quickAccess)) {
+        VUtils::touchFile(m_quickAccess);
+    }
+
+    return m_quickAccess;
+}
+
 void VConfigManager::initThemes()
 {
     m_themes.clear();

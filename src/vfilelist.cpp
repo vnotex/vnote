@@ -237,6 +237,17 @@ void VFileList::pinFileToHistory() const
                                    .arg(items.size() > 1 ? tr("notes") : tr("note")));
 }
 
+void VFileList::setFileQuickAccess() const
+{
+    QList<QListWidgetItem *> items = fileList->selectedItems();
+    if (items.size() == 1) {
+        QString fp(getVFile(items[0])->fetchPath());
+
+        g_config->setQuickAccess(fp);
+        g_mainWin->showStatusMessage(tr("Quick access: %1").arg(fp));
+    }
+}
+
 void VFileList::fileInfo(VNoteFile *p_file)
 {
     if (!p_file) {
@@ -664,6 +675,14 @@ void VFileList::contextMenuRequested(QPoint pos)
         connect(pinToHistoryAct, &QAction::triggered,
                 this, &VFileList::pinFileToHistory);
         menu.addAction(pinToHistoryAct);
+
+        QAction *quickAccessAct = new QAction(VIconUtils::menuIcon(":/resources/icons/quick_access.svg"),
+                                              tr("Set As Quick Access"),
+                                              &menu);
+        quickAccessAct->setToolTip(tr("Set current note as quick access"));
+        connect(quickAccessAct, &QAction::triggered,
+                this, &VFileList::setFileQuickAccess);
+        menu.addAction(quickAccessAct);
 
         if (selectedSize == 1) {
             QAction *fileInfoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/note_info.svg"),

@@ -270,5 +270,6 @@
         <file>utils/turndown/turndown.js</file>
         <file>utils/turndown/turndown-plugin-gfm.js</file>
         <file>resources/common.css</file>
+        <file>resources/icons/quick_access.svg</file>
     </qresource>
 </RCC>

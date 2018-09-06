@@ -37,6 +37,9 @@ private:
     bool loadStartupPageType();
     bool saveStartupPageType();
 
+    bool loadQuickAccess();
+    bool saveQuickAccess();
+
     // Language
     QComboBox *m_langCombo;
 
@@ -51,6 +54,9 @@ private:
 
     // Startup pages add files button.
     QPushButton *m_startupPagesAddBtn;
+
+    // Quick access note path.
+    VLineEdit *m_quickAccessEdit;
 
     static const QVector<QString> c_availableLangs;
 };
