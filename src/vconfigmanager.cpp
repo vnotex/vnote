@@ -317,6 +317,9 @@ void VConfigManager::initialize()
     m_multipleKeyboardLayout = getConfigFromSettings("global",
                                                      "multiple_keyboard_layout").toBool();
 
+    m_insertNewNoteInFront = getConfigFromSettings("global",
+                                                   "insert_new_note_in_front").toBool();
+
     initEditorConfigs();
 }
 

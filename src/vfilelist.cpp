@@ -349,7 +349,8 @@ void VFileList::newFile()
                                                   true);
     VNewFileDialog dialog(tr("Create Note"), info, defaultName, m_directory, this);
     if (dialog.exec() == QDialog::Accepted) {
-        VNoteFile *file = m_directory->createFile(dialog.getNameInput());
+        VNoteFile *file = m_directory->createFile(dialog.getNameInput(),
+                                                  g_config->getInsertNewNoteInFront());
         if (!file) {
             VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                 tr("Fail to create note <span style=\"%1\">%2</span>.")
@@ -998,6 +999,7 @@ void VFileList::pasteFiles(VDirectory *p_destDir,
                                        fileName,
                                        file,
                                        p_isCut,
+                                       g_config->getInsertNewNoteInFront() ? 0 : -1,
                                        &destFile,
                                        &msg);
         if (!ret) {

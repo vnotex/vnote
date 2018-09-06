@@ -289,7 +289,7 @@ bool VDirectory::containsFile(const VFile *p_file) const
     return false;
 }
 
-VNoteFile *VDirectory::createFile(const QString &p_name)
+VNoteFile *VDirectory::createFile(const QString &p_name, bool p_front)
 {
     Q_ASSERT(!p_name.isEmpty());
     if (!open()) {
@@ -312,11 +312,19 @@ VNoteFile *VDirectory::createFile(const QString &p_name)
                                    true,
                                    dateTime,
                                    dateTime);
-    m_files.append(ret);
+    int idx = -1;
+    if (p_front) {
+        m_files.prepend(ret);
+        idx = 0;
+    } else {
+        m_files.append(ret);
+        idx = m_files.size() - 1;
+    }
+
     if (!writeToConfig()) {
         file.remove();
         delete ret;
-        m_files.removeLast();
+        m_files.remove(idx);
         return NULL;
     }
 

@@ -558,6 +558,9 @@ public:
 
     bool getMultipleKeyboardLayout() const;
 
+    bool getInsertNewNoteInFront() const;
+    void setInsertNewNoteInFront(bool p_enabled);
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -1000,6 +1003,9 @@ private:
 
     // Support multiple keyboard layout.
     bool m_multipleKeyboardLayout;
+
+    // Whether insert new note in front.
+    bool m_insertNewNoteInFront;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2575,5 +2581,20 @@ inline void VConfigManager::setSmartLivePreview(int p_preview)
 inline bool VConfigManager::getMultipleKeyboardLayout() const
 {
     return m_multipleKeyboardLayout;
+}
+
+inline bool VConfigManager::getInsertNewNoteInFront() const
+{
+    return m_insertNewNoteInFront;
+}
+
+inline void VConfigManager::setInsertNewNoteInFront(bool p_enabled)
+{
+    if (m_insertNewNoteInFront == p_enabled) {
+        return;
+    }
+
+    m_insertNewNoteInFront = p_enabled;
+    setConfigToSettings("global", "insert_new_note_in_front", m_insertNewNoteInFront);
 }
 #endif // VCONFIGMANAGER_H
