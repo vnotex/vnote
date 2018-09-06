@@ -8,6 +8,8 @@
 
 #include "vconfigmanager.h"
 #include "vmainwindow.h"
+#include "vnotefile.h"
+#include "vnotebook.h"
 
 extern VConfigManager *g_config;
 
@@ -275,6 +277,25 @@ void VMetaWordManager::init()
                     const VFile *file = g_mainWin->getCurrentFile();
                     if (file) {
                         return QFileInfo(file->getName()).completeBaseName();
+                    }
+
+                    return QString();
+                });
+
+    // %att%.
+    addMetaWord(MetaWordType::FunctionBased,
+                "att",
+                tr("relative path of current note's attachment folder"),
+                [](const VMetaWord *) {
+                    const VFile *file = g_mainWin->getCurrentFile();
+                    if (file && file->getType() == FileType::Note) {
+                        const VNoteFile *nfile = static_cast<const VNoteFile *>(file);
+                        const QString &folder = nfile->getAttachmentFolder();
+                        if (!folder.isEmpty()) {
+                            return nfile->getNotebook()->getAttachmentFolder()
+                                   + "/"
+                                   + folder;
+                        }
                     }
 
                     return QString();
