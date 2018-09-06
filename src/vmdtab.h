@@ -185,7 +185,8 @@ private:
     // Return true if scroll was made.
     bool scrollWebViewToHeader(const VHeaderPointer &p_header);
 
-    bool scrollEditorToHeader(const VHeaderPointer &p_header);
+    // @p_force: when true, will scroll even current mouse is under the specified header.
+    bool scrollEditorToHeader(const VHeaderPointer &p_header, bool p_force = true);
 
     // Scroll web/editor to given header.
     // Return true if scroll was made.

@@ -168,7 +168,7 @@ bool VMdTab::scrollWebViewToHeader(const VHeaderPointer &p_header)
     return true;
 }
 
-bool VMdTab::scrollEditorToHeader(const VHeaderPointer &p_header)
+bool VMdTab::scrollEditorToHeader(const VHeaderPointer &p_header, bool p_force)
 {
     if (!m_outline.isMatched(p_header)
         || m_outline.getType() != VTableOfContentType::BlockNumber) {
@@ -199,6 +199,17 @@ bool VMdTab::scrollEditorToHeader(const VHeaderPointer &p_header)
             // Has outline and scroll to -1 index.
             // Scroll to top.
             blockNumber = 0;
+        }
+    }
+
+    // If the cursor are now under the right title, we should not change it right at
+    // the title.
+    if (!p_force) {
+        int curBlockNumber = mdEdit->textCursor().block().blockNumber();
+        if (m_outline.indexOfItemByBlockNumber(curBlockNumber)
+            == m_outline.indexOfItemByBlockNumber(blockNumber)) {
+            m_currentHeader = p_header;
+            return true;
         }
     }
 
@@ -253,7 +264,7 @@ void VMdTab::showFileEditMode()
         VUtils::sleepWait(100);
     }
 
-    scrollEditorToHeader(header);
+    scrollEditorToHeader(header, false);
 
     mdEdit->setFocus();
 }
