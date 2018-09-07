@@ -325,6 +325,25 @@ void VEditor::highlightTextAll(const QString &p_text,
     highlightExtraSelections();
 }
 
+static QTextDocument::FindFlags findOptionsToFlags(uint p_options, bool p_forward)
+{
+    QTextDocument::FindFlags findFlags;
+
+    if (p_options & FindOption::CaseSensitive) {
+        findFlags |= QTextDocument::FindCaseSensitively;
+    }
+
+    if (p_options & FindOption::WholeWordOnly) {
+        findFlags |= QTextDocument::FindWholeWords;
+    }
+
+    if (!p_forward) {
+        findFlags |= QTextDocument::FindBackward;
+    }
+
+    return findFlags;
+}
+
 QList<QTextCursor> VEditor::findTextAll(const QString &p_text, uint p_options)
 {
     QList<QTextCursor> results;
@@ -333,21 +352,13 @@ QList<QTextCursor> VEditor::findTextAll(const QString &p_text, uint p_options)
     }
 
     // Options
-    QTextDocument::FindFlags findFlags;
-    bool caseSensitive = false;
-    if (p_options & FindOption::CaseSensitive) {
-        findFlags |= QTextDocument::FindCaseSensitively;
-        caseSensitive = true;
-    }
-
-    if (p_options & FindOption::WholeWordOnly) {
-        findFlags |= QTextDocument::FindWholeWords;
-    }
+    bool caseSensitive = p_options & FindOption::CaseSensitive;
+    QTextDocument::FindFlags findFlags = findOptionsToFlags(p_options, true);
 
     // Use regular expression
-    bool useRegExp = false;
+    bool useRegExp = p_options & FindOption::RegularExpression;
     QRegExp exp;
-    if (p_options & FindOption::RegularExpression) {
+    if (useRegExp) {
         useRegExp = true;
         exp = QRegExp(p_text,
                       caseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive);
@@ -486,16 +497,25 @@ bool VEditor::peekText(const QString &p_text, uint p_options, bool p_forward)
 
     bool wrapped = false;
     QTextCursor retCursor;
-    bool found = findTextHelper(p_text,
-                                p_options,
-                                p_forward,
-                                p_forward ? textCursorW().position() + 1
-                                          : textCursorW().position(),
-                                wrapped,
-                                retCursor);
-    if (found) {
-        makeBlockVisible(m_document->findBlock(retCursor.selectionStart()));
-        highlightIncrementalSearchedWord(retCursor);
+    int start = textCursorW().position();
+    int skipPosition = start;
+
+    bool found = false;
+    while (true) {
+        found = findTextHelper(p_text, p_options, p_forward, start, wrapped, retCursor);
+        if (found) {
+            if (p_forward && retCursor.selectionStart() == skipPosition) {
+                // Skip the first match.
+                skipPosition = -1;
+                start = retCursor.selectionEnd();
+                continue;
+            }
+
+            makeBlockVisible(m_document->findBlock(retCursor.selectionStart()));
+            highlightIncrementalSearchedWord(retCursor);
+        }
+
+        break;
     }
 
     return found;
@@ -569,6 +589,37 @@ bool VEditor::findText(const QString &p_text,
     return found;
 }
 
+bool VEditor::findTextOne(const QString &p_text, uint p_options, bool p_forward)
+{
+    clearIncrementalSearchedWordHighlight();
+
+    if (p_text.isEmpty()) {
+        clearSearchedWordHighlight();
+        return false;
+    }
+
+    QTextCursor cursor = textCursorW();
+    bool wrapped = false;
+    QTextCursor retCursor;
+    int start = cursor.position();
+    bool found = findTextHelper(p_text, p_options, p_forward, start, wrapped, retCursor);
+    if (found) {
+        Q_ASSERT(!retCursor.isNull());
+        if (wrapped) {
+            showWrapLabel();
+        }
+
+        cursor.setPosition(retCursor.selectionStart(), QTextCursor::MoveAnchor);
+        setTextCursorW(cursor);
+
+        highlightSearchedWordUnderCursor(retCursor);
+    } else {
+        clearSearchedWordHighlight();
+    }
+
+    return found;
+}
+
 bool VEditor::findTextInRange(const QString &p_text,
                               uint p_options,
                               bool p_forward,
@@ -616,25 +667,13 @@ bool VEditor::findTextHelper(const QString &p_text,
     bool found = false;
 
     // Options
-    QTextDocument::FindFlags findFlags;
-    bool caseSensitive = false;
-    if (p_options & FindOption::CaseSensitive) {
-        findFlags |= QTextDocument::FindCaseSensitively;
-        caseSensitive = true;
-    }
-
-    if (p_options & FindOption::WholeWordOnly) {
-        findFlags |= QTextDocument::FindWholeWords;
-    }
-
-    if (!p_forward) {
-        findFlags |= QTextDocument::FindBackward;
-    }
+    bool caseSensitive = p_options & FindOption::CaseSensitive;
+    QTextDocument::FindFlags findFlags = findOptionsToFlags(p_options, p_forward);
 
     // Use regular expression
-    bool useRegExp = false;
+    bool useRegExp = p_options & FindOption::RegularExpression;
     QRegExp exp;
-    if (p_options & FindOption::RegularExpression) {
+    if (useRegExp) {
         useRegExp = true;
         // FIXME: hang bug in Qt's find().
         QRegExp test("[$^]+");
@@ -872,7 +911,7 @@ void VEditor::replaceText(const QString &p_text,
         }
 
         if (p_findNext) {
-            findText(p_text, p_options, true);
+            findTextOne(p_text, p_options, true);
         }
     }
 }

@@ -320,6 +320,8 @@ private:
 
     void cleanUp();
 
+    bool findTextOne(const QString &p_text, uint p_options, bool p_forward);
+
     QLabel *m_wrapLabel;
     QTimer *m_labelTimer;
 
