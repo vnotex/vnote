@@ -484,6 +484,9 @@ public:
     const QString &getQuickAccess() const;
     void setQuickAccess(const QString &p_path);
 
+    bool getHighlightMatchesInPage() const;
+    void setHighlightMatchesInPage(bool p_enabled);
+
     // All the themes.
     QList<QString> getThemes() const;
 
@@ -922,6 +925,9 @@ private:
 
     // Absolute path of quick access note.
     QString m_quickAccess;
+
+    // Whether highlight matches in page when activating a search item.
+    bool m_highlightMatchesInPage;
 
     // The theme name.
     QString m_theme;
@@ -2612,5 +2618,20 @@ inline void VConfigManager::setQuickAccess(const QString &p_path)
 
     m_quickAccess = p_path;
     setConfigToSettings("global", "quick_access", m_quickAccess);
+}
+
+inline bool VConfigManager::getHighlightMatchesInPage() const
+{
+    return m_highlightMatchesInPage;
+}
+
+inline void VConfigManager::setHighlightMatchesInPage(bool p_enabled)
+{
+    if (m_highlightMatchesInPage == p_enabled) {
+        return;
+    }
+
+    m_highlightMatchesInPage = p_enabled;
+    setConfigToSettings("global", "highlight_matches_in_page", m_highlightMatchesInPage);
 }
 #endif // VCONFIGMANAGER_H

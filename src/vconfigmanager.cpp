@@ -320,6 +320,9 @@ void VConfigManager::initialize()
     m_insertNewNoteInFront = getConfigFromSettings("global",
                                                    "insert_new_note_in_front").toBool();
 
+    m_highlightMatchesInPage = getConfigFromSettings("global",
+                                                     "highlight_matches_in_page").toBool();
+
     initEditorConfigs();
 }
 

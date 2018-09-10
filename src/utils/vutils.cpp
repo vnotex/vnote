@@ -1526,9 +1526,18 @@ const QTreeWidgetItem *VUtils::topLevelTreeItem(const QTreeWidgetItem *p_item)
     }
 
     if (p_item->parent()) {
-        return p_item->parent();
+        return topLevelTreeItem(p_item->parent());
     } else {
         return p_item;
+    }
+}
+
+int VUtils::childIndexOfTreeItem(const QTreeWidgetItem *p_item)
+{
+    if (p_item->parent()) {
+        return p_item->parent()->indexOfChild(const_cast<QTreeWidgetItem *>(p_item));
+    } else {
+        return 0;
     }
 }
 

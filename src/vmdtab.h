@@ -50,6 +50,10 @@ public:
     void findText(const QString &p_text, uint p_options, bool p_peek,
                   bool p_forward = true) Q_DECL_OVERRIDE;
 
+    void findText(const VSearchToken &p_token,
+                  bool p_forward = true,
+                  bool p_fromStart = false) Q_DECL_OVERRIDE;
+
     // Replace @p_text with @p_replaceText in current note.
     void replaceText(const QString &p_text, uint p_options,
                      const QString &p_replaceText, bool p_findNext) Q_DECL_OVERRIDE;

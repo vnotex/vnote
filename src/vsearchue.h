@@ -93,7 +93,7 @@ public:
 
     QString currentItemFolder(int p_id) Q_DECL_OVERRIDE;
 
-    static void activateItem(const QSharedPointer<VSearchResultItem> &p_item);
+    static void activateItem(const QSharedPointer<VSearchResultItem> &p_item, int p_matchIndex = 0);
 
 protected:
     void init() Q_DECL_OVERRIDE;

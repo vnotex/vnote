@@ -371,6 +371,69 @@ QList<QTextCursor> VEditor::findTextAll(const QString &p_text,
     return results;
 }
 
+static void mergeResult(QList<QTextCursor> &p_result, const QList<QTextCursor> &p_part)
+{
+    if (p_result.isEmpty()) {
+        p_result = p_part;
+        return;
+    }
+
+    int idx = 0;
+    for (auto const & cur : p_part) {
+        // Find position to insert into @p_result.
+        while (idx < p_result.size()) {
+            const QTextCursor &toCur = p_result[idx];
+            if (cur.selectionEnd() <= toCur.selectionStart()) {
+                // Insert it before toCur.
+                p_result.insert(idx, cur);
+                ++idx;
+                break;
+            } else if (cur.selectionStart() < toCur.selectionEnd()) {
+                // Interleave. Abandon it.
+                break;
+            } else {
+                ++idx;
+            }
+        }
+
+        // Insert to the end.
+        if (idx >= p_result.size()) {
+            p_result.append(cur);
+            idx = p_result.size();
+        }
+    }
+}
+
+QList<QTextCursor> VEditor::findTextAll(const VSearchToken &p_token,
+                                        int p_start,
+                                        int p_end)
+{
+    QList<QTextCursor> results;
+    if (p_token.isEmpty()) {
+        return results;
+    }
+
+    QTextDocument::FindFlags flags;
+    if (p_token.m_caseSensitivity == Qt::CaseSensitive) {
+        flags |= QTextDocument::FindCaseSensitively;
+    }
+
+    if (p_token.m_type == VSearchToken::RawString) {
+        for (auto const & wd : p_token.m_keywords) {
+            QList<QTextCursor> part = findTextAllInRange(m_document, wd, flags, p_start, p_end);
+            mergeResult(results, part);
+        }
+    } else {
+        // Regular expression.
+        for (auto const & reg : p_token.m_regs) {
+            QList<QTextCursor> part = findTextAllInRange(m_document, reg, flags, p_start, p_end);
+            mergeResult(results, part);
+        }
+    }
+
+    return results;
+}
+
 const QList<QTextCursor> &VEditor::findTextAllCached(const QString &p_text,
                                                      uint p_options,
                                                      int p_start,
@@ -387,6 +450,25 @@ const QList<QTextCursor> &VEditor::findTextAllCached(const QString &p_text,
 
     QList<QTextCursor> result = findTextAll(p_text, p_options, p_start, p_end);
     m_findInfo.update(p_text, p_options, p_start, p_end, result);
+
+    return m_findInfo.m_result;
+}
+
+const QList<QTextCursor> &VEditor::findTextAllCached(const VSearchToken &p_token,
+                                                     int p_start,
+                                                     int p_end)
+{
+    if (p_token.isEmpty()) {
+        m_findInfo.clear();
+        return m_findInfo.m_result;
+    }
+
+    if (m_findInfo.isCached(p_token, p_start, p_end)) {
+        return m_findInfo.m_result;
+    }
+
+    QList<QTextCursor> result = findTextAll(p_token, p_start, p_end);
+    m_findInfo.update(p_token, p_start, p_end, result);
 
     return m_findInfo.m_result;
 }
@@ -611,6 +693,48 @@ bool VEditor::findText(const QString &p_text,
                            p_cursor,
                            p_moveMode,
                            p_useLeftSideOfCursor);
+}
+
+bool VEditor::findText(const VSearchToken &p_token, bool p_forward, bool p_fromStart)
+{
+    clearIncrementalSearchedWordHighlight();
+
+    if (p_token.isEmpty()) {
+        m_findInfo.clear();
+        clearSearchedWordHighlight();
+        return false;
+    }
+
+    const QList<QTextCursor> &result = findTextAllCached(p_token);
+
+    if (result.isEmpty()) {
+        clearSearchedWordHighlight();
+
+        emit m_object->statusMessage(QObject::tr("No match found"));
+    } else {
+        // Locate to the right match and update current cursor.
+        QTextCursor cursor = textCursorW();
+        int pos = p_fromStart ? (m_document->characterCount() + 1) : cursor.position();
+        bool wrapped = false;
+        int idx = selectCursor(result, pos, p_forward, wrapped);
+        const QTextCursor &tcursor = result.at(idx);
+        if (wrapped && !p_fromStart) {
+            showWrapLabel();
+        }
+
+        cursor.setPosition(tcursor.selectionStart(), QTextCursor::MoveAnchor);
+        setTextCursorW(cursor);
+
+        highlightSearchedWord(result);
+
+        highlightSearchedWordUnderCursor(tcursor);
+
+        emit m_object->statusMessage(QObject::tr("Match found: %2 of %3")
+                                                .arg(idx + 1)
+                                                .arg(result.size()));
+    }
+
+    return !result.isEmpty();
 }
 
 bool VEditor::findTextInRange(const QString &p_text,
@@ -1463,7 +1587,7 @@ void VEditor::nextMatch(bool p_forward)
     }
 
     if (m_findInfo.m_useToken) {
-        // TODO
+        findText(m_findInfo.m_token, p_forward, false);
     } else {
         findTextInRange(m_findInfo.m_text,
                         m_findInfo.m_options,

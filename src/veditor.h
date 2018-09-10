@@ -84,6 +84,8 @@ public:
                   QTextCursor::MoveMode p_moveMode = QTextCursor::MoveAnchor,
                   bool p_useLeftSideOfCursor = false);
 
+    bool findText(const VSearchToken &p_token, bool p_forward, bool p_fromStart);
+
     // Constrain the scope.
     bool findTextInRange(const QString &p_text,
                          uint p_options,
@@ -327,6 +329,17 @@ private:
                    && m_end == p_end;
         }
 
+        bool isCached(const VSearchToken &p_token,
+                      int p_start = 0,
+                      int p_end = -1) const
+        {
+            return m_cacheValid
+                   && m_useToken
+                   && m_token == p_token
+                   && m_start == p_start
+                   && m_end == p_end;
+        }
+
         void update(const QString &p_text,
                     uint p_options,
                     int p_start,
@@ -347,10 +360,29 @@ private:
             m_token.clear();
         }
 
+        void update(const VSearchToken &p_token,
+                    int p_start,
+                    int p_end,
+                    const QList<QTextCursor> &p_result)
+        {
+            m_start = p_start;
+            m_end = p_end;
+
+            m_useToken = true;
+
+            m_token = p_token;
+
+            m_cacheValid = true;
+            m_result = p_result;
+
+            m_text.clear();
+            m_options = 0;
+        }
+
         bool isNull() const
         {
             if (m_useToken) {
-                return m_token.tokenSize() == 0;
+                return m_token.isEmpty();
             } else {
                 return m_text.isEmpty();
             }
@@ -396,8 +428,16 @@ private:
                                    int p_start = 0,
                                    int p_end = -1);
 
+    QList<QTextCursor> findTextAll(const VSearchToken &p_token,
+                                   int p_start = 0,
+                                   int p_end = -1);
+
     const QList<QTextCursor> &findTextAllCached(const QString &p_text,
                                                 uint p_options,
+                                                int p_start = 0,
+                                                int p_end = -1);
+
+    const QList<QTextCursor> &findTextAllCached(const VSearchToken &p_token,
                                                 int p_start = 0,
                                                 int p_end = -1);
 

@@ -701,6 +701,18 @@ void VMdTab::findText(const QString &p_text, uint p_options, bool p_peek,
     }
 }
 
+void VMdTab::findText(const VSearchToken &p_token,
+                      bool p_forward,
+                      bool p_fromStart)
+{
+    if (m_isEditMode) {
+        m_editor->findText(p_token, p_forward, p_fromStart);
+    } else {
+        // TODO
+        Q_ASSERT(false);
+    }
+}
+
 void VMdTab::replaceText(const QString &p_text, uint p_options,
                          const QString &p_replaceText, bool p_findNext)
 {

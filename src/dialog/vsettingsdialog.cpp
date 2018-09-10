@@ -62,6 +62,7 @@ VSettingsDialog::VSettingsDialog(QWidget *p_parent)
     addTab(new VReadEditTab(), tr("Read/Edit"));
     addTab(new VNoteManagementTab(), tr("Note Management"));
     addTab(new VMarkdownTab(), tr("Markdown"));
+    addTab(new VMiscTab(), tr("Misc"));
 
     m_tabList->setMaximumWidth(m_tabList->sizeHintForColumn(0) + 5);
 
@@ -193,6 +194,15 @@ void VSettingsDialog::loadConfiguration()
         }
     }
 
+    // Misc Tab.
+    {
+        VMiscTab *miscTab = dynamic_cast<VMiscTab *>(m_tabs->widget(idx++));
+        Q_ASSERT(miscTab);
+        if (!miscTab->loadConfiguration()) {
+            goto err;
+        }
+    }
+
     return;
 err:
     VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
@@ -245,6 +255,15 @@ void VSettingsDialog::saveConfiguration()
         VMarkdownTab *markdownTab = dynamic_cast<VMarkdownTab *>(m_tabs->widget(idx++));
         Q_ASSERT(markdownTab);
         if (!markdownTab->saveConfiguration()) {
+            goto err;
+        }
+    }
+
+    // Misc Tab.
+    {
+        VMiscTab *miscTab = dynamic_cast<VMiscTab *>(m_tabs->widget(idx++));
+        Q_ASSERT(miscTab);
+        if (!miscTab->saveConfiguration()) {
             goto err;
         }
     }
@@ -1352,5 +1371,47 @@ bool VMarkdownTab::saveGraphviz()
 {
     g_config->setEnableGraphviz(m_graphvizCB->isChecked());
     g_config->setGraphvizDot(m_graphvizDotEdit->text());
+    return true;
+}
+
+VMiscTab::VMiscTab(QWidget *p_parent)
+    : QWidget(p_parent)
+{
+    m_matchesInPageCB = new QCheckBox(tr("Highlight matches of a full-text search in page"),
+                                      this);
+
+    QFormLayout *mainLayout = new QFormLayout();
+    mainLayout->addRow(m_matchesInPageCB);
+
+    setLayout(mainLayout);
+}
+
+bool VMiscTab::loadConfiguration()
+{
+    if (!loadMatchesInPage()) {
+        return false;
+    }
+
+    return true;
+}
+
+bool VMiscTab::saveConfiguration()
+{
+    if (!saveMatchesInPage()) {
+        return false;
+    }
+
+    return true;
+}
+
+bool VMiscTab::loadMatchesInPage()
+{
+    m_matchesInPageCB->setChecked(g_config->getHighlightMatchesInPage());
+    return true;
+}
+
+bool VMiscTab::saveMatchesInPage()
+{
+    g_config->setHighlightMatchesInPage(m_matchesInPageCB->isChecked());
     return true;
 }

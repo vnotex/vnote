@@ -14,10 +14,12 @@ VSearchEngineWorker::VSearchEngineWorker(QObject *p_parent)
 }
 
 void VSearchEngineWorker::setData(const QStringList &p_files,
-                                  const VSearchToken &p_token)
+                                  const VSearchToken &p_token,
+                                  const QSharedPointer<VSearchConfig> &p_config)
 {
     m_files = p_files;
     m_token = p_token;
+    m_config = p_config;
 }
 
 void VSearchEngineWorker::stop()
@@ -104,7 +106,8 @@ VSearchResultItem *VSearchEngineWorker::searchFile(const QString &p_fileName)
                 item = new VSearchResultItem(VSearchResultItem::Note,
                                              VSearchResultItem::LineNumber,
                                              VUtils::fileNameFromPath(p_fileName),
-                                             p_fileName);
+                                             p_fileName,
+                                             m_config);
             }
 
             VSearchResultSubItem sitem(lineNum, line);
@@ -188,7 +191,8 @@ void VSearchEngine::search(const QSharedPointer<VSearchConfig> &p_config,
 
         VSearchEngineWorker *th = new VSearchEngineWorker(this);
         th->setData(m_result->m_secondPhaseItems.mid(start, len),
-                    p_config->m_contentToken);
+                    p_config->m_contentToken,
+                    p_config);
         connect(th, &VSearchEngineWorker::finished,
                 this, &VSearchEngine::handleWorkerFinished);
         connect(th, &VSearchEngineWorker::resultItemsReady,

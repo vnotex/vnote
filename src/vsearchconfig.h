@@ -165,6 +165,26 @@ struct VSearchToken
         return m_type == Type::RawString ? m_keywords.size() : m_regs.size();
     }
 
+    bool isEmpty() const
+    {
+        return tokenSize() == 0;
+    }
+
+    bool operator==(const VSearchToken &p_other) const
+    {
+        if (m_type != p_other.m_type
+            || m_op != p_other.m_op
+            || m_caseSensitivity != p_other.m_caseSensitivity
+            || m_keywords.size() != p_other.m_keywords.size()
+            || m_numOfMatches != p_other.m_numOfMatches
+            || m_regs.size() != p_other.m_regs.size()) {
+            return false;
+        }
+
+        return m_keywords == p_other.m_keywords
+               && m_regs == p_other.m_regs;
+    }
+
     VSearchToken::Type m_type;
 
     VSearchToken::Operator m_op;
@@ -484,11 +504,13 @@ struct VSearchResultItem
     VSearchResultItem(VSearchResultItem::ItemType p_type,
                       VSearchResultItem::MatchType p_matchType,
                       const QString &p_text,
-                      const QString &p_path)
+                      const QString &p_path,
+                      const QSharedPointer<VSearchConfig> &p_config = nullptr)
         : m_type(p_type),
           m_matchType(p_matchType),
           m_text(p_text),
-          m_path(p_path)
+          m_path(p_path),
+          m_config(p_config)
     {
     }
 
@@ -518,6 +540,9 @@ struct VSearchResultItem
 
     // Matched places within this item.
     QList<VSearchResultSubItem> m_matches;
+
+    // Search config to search for this item.
+    QSharedPointer<VSearchConfig> m_config;
 };
 
 

@@ -224,6 +224,17 @@ void VHtmlTab::findText(const QString &p_text, uint p_options, bool p_peek,
     }
 }
 
+void VHtmlTab::findText(const VSearchToken &p_token,
+                        bool p_forward,
+                        bool p_fromStart)
+{
+    // TODO
+    Q_UNUSED(p_token);
+    Q_UNUSED(p_forward);
+    Q_UNUSED(p_fromStart);
+    return;
+}
+
 void VHtmlTab::replaceText(const QString &p_text, uint p_options,
                            const QString &p_replaceText, bool p_findNext)
 {

@@ -9,6 +9,7 @@
 #include "utils/vvim.h"
 #include "vedittabinfo.h"
 #include "vwordcountinfo.h"
+#include "vsearchconfig.h"
 
 class VEditArea;
 class VSnippet;
@@ -58,6 +59,10 @@ public:
     // Search @p_text in current note.
     virtual void findText(const QString &p_text, uint p_options, bool p_peek,
                           bool p_forward = true) = 0;
+
+    virtual void findText(const VSearchToken &p_token,
+                          bool p_forward = true,
+                          bool p_fromStart = false) = 0;
 
     // Replace @p_text with @p_replaceText in current note.
     virtual void replaceText(const QString &p_text, uint p_options,

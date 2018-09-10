@@ -227,6 +227,22 @@ private:
     VLineEdit *m_graphvizDotEdit;
 };
 
+class VMiscTab : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit VMiscTab(QWidget *p_parent = 0);
+    bool loadConfiguration();
+    bool saveConfiguration();
+
+private:
+    bool loadMatchesInPage();
+    bool saveMatchesInPage();
+
+    // Highlight matches in page.
+    QCheckBox *m_matchesInPageCB;
+};
+
 class VSettingsDialog : public QDialog
 {
     Q_OBJECT
