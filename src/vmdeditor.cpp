@@ -1576,10 +1576,9 @@ void VMdEditor::initLinkAndPreviewMenu(QAction *p_before, QMenu *p_menu, const Q
                             clipboard->clear();
                             QImage img = VUtils::imageFromFile(imgPath);
                             if (!img.isNull()) {
-                                VClipboardUtils::setImageAndLinkToClipboard(clipboard,
-                                                                            img,
-                                                                            imgPath,
-                                                                            QClipboard::Clipboard);
+                                VClipboardUtils::setImageToClipboard(clipboard,
+                                                                     img,
+                                                                     QClipboard::Clipboard);
                             }
                         });
                 p_menu->insertAction(p_before, copyImageAct);
