@@ -66,6 +66,8 @@ public:
     virtual void replaceTextAll(const QString &p_text, uint p_options,
                                 const QString &p_replaceText) = 0;
 
+    virtual void nextMatch(const QString &p_text, uint p_options, bool p_forward) = 0;
+
     // Return selected text.
     virtual QString getSelectedText() const = 0;
 

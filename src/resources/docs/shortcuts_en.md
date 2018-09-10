@@ -25,6 +25,8 @@ Open Flash Page.
 Edit current note or save changes and exit edit mode.
 - `Ctrl+G`  
 Activate Universal Entry.
+- `Ctrl+8`/`Ctrl+9`  
+Jump to the next/previous match in last find action.
 
 ### Read Mode
 - `H`/`J`/`K`/`L`  

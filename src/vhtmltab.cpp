@@ -240,6 +240,11 @@ void VHtmlTab::replaceTextAll(const QString &p_text, uint p_options,
     }
 }
 
+void VHtmlTab::nextMatch(const QString &p_text, uint p_options, bool p_forward)
+{
+    findText(p_text, p_options, false, p_forward);
+}
+
 QString VHtmlTab::getSelectedText() const
 {
     QTextCursor cursor = m_editor->textCursor();

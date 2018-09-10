@@ -41,6 +41,8 @@ public:
     void replaceTextAll(const QString &p_text, uint p_options,
                         const QString &p_replaceText) Q_DECL_OVERRIDE;
 
+    void nextMatch(const QString &p_text, uint p_options, bool p_forward) Q_DECL_OVERRIDE;
+
     QString getSelectedText() const Q_DECL_OVERRIDE;
 
     void clearSearchedWordHighlight() Q_DECL_OVERRIDE;

@@ -179,9 +179,16 @@ private slots:
     // Handle the timeout signal of file timer.
     void handleFileTimerTimeout();
 
+    // Jump to next match of last find.
+    void nextMatch(bool p_forward);
+
 private:
     void setupUI();
+
+    void initShortcuts();
+
     QVector<QPair<int, int> > findTabsByFile(const VFile *p_file);
+
     int openFileInWindow(int windowIndex, VFile *p_file, OpenFileMode p_mode);
     void setCurrentTab(int windowIndex, int tabIndex, bool setFocus);
     void setCurrentWindow(int windowIndex, bool setFocus);

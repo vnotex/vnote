@@ -719,6 +719,16 @@ void VMdTab::replaceTextAll(const QString &p_text, uint p_options,
     }
 }
 
+void VMdTab::nextMatch(const QString &p_text, uint p_options, bool p_forward)
+{
+    if (m_isEditMode) {
+        Q_ASSERT(m_editor);
+        m_editor->nextMatch(p_forward);
+    } else {
+        findTextInWebView(p_text, p_options, false, p_forward);
+    }
+}
+
 void VMdTab::findTextInWebView(const QString &p_text, uint p_options,
                                bool /* p_peek */, bool p_forward)
 {

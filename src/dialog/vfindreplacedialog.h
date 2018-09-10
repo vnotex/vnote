@@ -14,10 +14,16 @@ class VFindReplaceDialog : public QWidget
     Q_OBJECT
 public:
     explicit VFindReplaceDialog(QWidget *p_parent = 0);
+
+    uint options() const;
+
     void setOption(FindOption p_opt, bool p_enabled);
+
     // Update the options enabled/disabled state according to current
     // edit tab.
     void updateState(DocType p_docType, bool p_editMode);
+
+    QString textToFind() const;
 
 signals:
     void dialogClosed();
@@ -68,4 +74,8 @@ private:
     QCheckBox *m_incrementalSearchCheck;
 };
 
+inline uint VFindReplaceDialog::options() const
+{
+    return m_options;
+}
 #endif // VFINDREPLACEDIALOG_H
