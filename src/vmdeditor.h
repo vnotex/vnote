@@ -305,6 +305,14 @@ private:
                             const QString &p_text,
                             const QString &p_format);
 
+    bool processHtmlFromMimeData(const QMimeData *p_source);
+
+    bool processImageFromMimeData(const QMimeData *p_source);
+
+    bool processUrlFromMimeData(const QMimeData *p_source);
+
+    bool processTextFromMimeData(const QMimeData *p_source);
+
     PegMarkdownHighlighter *m_pegHighlighter;
 
     VCodeBlockHighlightHelper *m_cbHighlighter;

@@ -92,7 +92,7 @@ void VMdEditOperations::insertImageFromQImage(const QString &title,
 
     QString url = QString("%1/%2").arg(folderInLink).arg(fileName);
     QString md = QString("![%1](%2)").arg(title).arg(url);
-    insertTextAtCurPos(md);
+    insertText(md);
 
     qDebug() << "insert image" << title << filePath;
 
@@ -133,7 +133,7 @@ void VMdEditOperations::insertImageFromPath(const QString &title, const QString 
 
     QString url = QString("%1/%2").arg(folderInLink).arg(fileName);
     QString md = QString("![%1](%2)").arg(title).arg(url);
-    insertTextAtCurPos(md);
+    insertText(md);
 
     qDebug() << "insert image" << title << filePath;
 
@@ -540,7 +540,7 @@ bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)
                 m_autoIndentPos = m_editor->textCursorW().position();
             } else {
                 // Just insert "tab".
-                insertTextAtCurPos(text);
+                insertText(text);
                 m_autoIndentPos = -1;
             }
         }
@@ -1128,9 +1128,7 @@ bool VMdEditOperations::insertLink(const QString &p_linkText,
                                    const QString &p_linkUrl)
 {
     QString link = QString("[%1](%2)").arg(p_linkText).arg(p_linkUrl);
-    QTextCursor cursor = m_editor->textCursorW();
-    cursor.insertText(link);
-    m_editor->setTextCursorW(cursor);
+    insertText(link);
 
     setVimMode(VimMode::Insert);
 

@@ -30,7 +30,7 @@ VEditOperations::VEditOperations(VEditor *p_editor, VFile *p_file)
     }
 }
 
-void VEditOperations::insertTextAtCurPos(const QString &p_text)
+void VEditOperations::insertText(const QString &p_text)
 {
     m_editor->insertPlainTextW(p_text);
 }

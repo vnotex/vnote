@@ -49,8 +49,10 @@ const QString VUtils::c_imageLinkRegExp = QString("\\!\\[([^\\]]*)\\]\\(\\s*([^\
 
 const QString VUtils::c_imageTitleRegExp = QString("[^\\[\\]]*");
 
-const QString VUtils::c_linkRegExp = QString("\\[([^\\]]*)\\]\\(\\s*([^\\)\"'\\s]+)\\s*"
-                                             "((\"[^\"\\)\\n]*\")|('[^'\\)\\n]*'))?\\s*"
+const QString VUtils::c_linkRegExp = QString("\\[([^\\]]*)\\]"
+                                             "\\(\\s*(\\S+)"
+                                             "(?:\\s+((\"[^\"\\n]*\")"
+                                                     "|('[^'\\n]*')))?\\s*"
                                              "\\)");
 
 const QString VUtils::c_fileNameRegExp = QString("(?:[^\\\\/:\\*\\?\"<>\\|\\s]| )*");

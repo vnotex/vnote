@@ -119,7 +119,11 @@ void VInsertLinkDialog::fetchLinkFromClipboard()
     QUrl url = QUrl::fromUserInput(text);
     if (url.isValid()) {
         if (m_linkUrlEdit->text().isEmpty()) {
-            m_linkUrlEdit->setText(text);
+            if (url.isLocalFile()) {
+                m_linkUrlEdit->setText(url.toString(QUrl::EncodeSpaces));
+            } else {
+                m_linkUrlEdit->setText(text);
+            }
         }
     } else if (m_linkTextEdit->text().isEmpty()) {
         m_linkTextEdit->setText(text);
