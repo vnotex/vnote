@@ -242,6 +242,8 @@ private:
 
     void setCurrentMode(Mode p_mode);
 
+    bool previewExpanded() const;
+
     VMdEditor *m_editor;
     VWebView *m_webViewer;
     VDocument *m_document;

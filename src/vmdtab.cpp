@@ -689,8 +689,7 @@ void VMdTab::insertLink()
 void VMdTab::findText(const QString &p_text, uint p_options, bool p_peek,
                       bool p_forward)
 {
-    if (m_isEditMode) {
-        Q_ASSERT(m_editor);
+    if (m_isEditMode && !previewExpanded()) {
         if (p_peek) {
             m_editor->peekText(p_text, p_options);
         } else {
@@ -901,10 +900,27 @@ MarkdownConverterType VMdTab::getMarkdownConverterType() const
 
 void VMdTab::focusChild()
 {
-    if (m_mode == Mode::Read) {
+    switch (m_mode) {
+    case Mode::Read:
         m_webViewer->setFocus();
-    } else {
+        break;
+
+    case Mode::Edit:
         m_editor->setFocus();
+        break;
+
+    case Mode::EditPreview:
+        if (m_editor->isVisible()) {
+            m_editor->setFocus();
+        } else {
+            m_webViewer->setFocus();
+        }
+
+        break;
+
+    default:
+        Q_ASSERT(false);
+        break;
     }
 }
 
@@ -1305,7 +1321,7 @@ void VMdTab::handleVimCmdCommandCancelled()
 
 void VMdTab::handleVimCmdCommandFinished(VVim::CommandLineType p_type, const QString &p_cmd)
 {
-    if (m_isEditMode) {
+    if (m_isEditMode && !previewExpanded()) {
         VVim *vim = getEditor()->getVim();
         if (vim) {
             vim->processCommandLine(p_type, p_cmd);
@@ -1328,7 +1344,7 @@ void VMdTab::handleVimCmdCommandChanged(VVim::CommandLineType p_type, const QStr
 {
     Q_UNUSED(p_type);
     Q_UNUSED(p_cmd);
-    if (m_isEditMode) {
+    if (m_isEditMode && !previewExpanded()) {
         VVim *vim = getEditor()->getVim();
         if (vim) {
             vim->processCommandLineChanged(p_type, p_cmd);
@@ -1620,4 +1636,9 @@ bool VMdTab::expandRestorePreviewArea()
     }
 
     return true;
+}
+
+bool VMdTab::previewExpanded() const
+{
+    return (m_mode == Mode::EditPreview) && !m_editor->isVisible();
 }
