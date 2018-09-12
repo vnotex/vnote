@@ -266,6 +266,8 @@ private:
 
     void performSmartLivePreview();
 
+    bool isOnlineLivePreview(const QString &p_lang) const;
+
     // Sorted by m_startBlock in ascending order.
     QVector<CodeBlockPreviewInfo> m_codeBlocks;
 

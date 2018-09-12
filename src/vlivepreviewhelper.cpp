@@ -540,11 +540,11 @@ void VLivePreviewHelper::performSmartLivePreview()
     }
 
     const CodeBlockPreviewInfo &cb = m_codeBlocks[m_cbIndex];
-    if (!cb.hasImageData()) {
+    const VCodeBlock &vcb = cb.codeBlock();
+    if (!cb.hasImageData() && !isOnlineLivePreview(vcb.m_lang)) {
         return;
     }
 
-    const VCodeBlock &vcb = cb.codeBlock();
     const QTextBlock block = m_editor->textCursorW().block();
     if (block.blockNumber() <= vcb.m_startBlock
         || block.blockNumber() >= vcb.m_endBlock) {
@@ -553,11 +553,21 @@ void VLivePreviewHelper::performSmartLivePreview()
 
     QString keyword, hints;
     bool isRegex = false;
-    if (vcb.m_lang == "puml" && m_plantUMLMode == PlantUMLMode::LocalPlantUML) {
+    if (vcb.m_lang == "puml") {
         keyword = VPlantUMLHelper::keywordForSmartLivePreview(block.text(),
                                                               hints,
                                                               isRegex);
     }
 
     m_document->performSmartLivePreview(vcb.m_lang, keyword, hints, isRegex);
+}
+
+bool VLivePreviewHelper::isOnlineLivePreview(const QString &p_lang) const
+{
+    if (p_lang == "dot"
+        || (p_lang == "puml" && m_plantUMLMode == PlantUMLMode::LocalPlantUML)) {
+        return false;
+    }
+
+    return true;
 }

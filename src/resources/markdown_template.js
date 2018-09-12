@@ -1625,6 +1625,10 @@ var htmlToText = function(identifier, id, timeStamp, html) {
     content.htmlToTextCB(identifier, id, timeStamp, markdown);
 };
 
+var printRect = function(rect) {
+    content.setLog('rect ' + rect.left + ' ' + rect.top + ' ' + rect.width + ' ' + rect.height);
+};
+
 var performSmartLivePreview = function(lang, text, hints, isRegex) {
     if (previewDiv.style.display == 'none'
         || document.getSelection().type == 'Range') {
@@ -1635,11 +1639,25 @@ var performSmartLivePreview = function(lang, text, hints, isRegex) {
         return;
     }
 
+    var previewNode = previewDiv;
+    var trectOffset = null;
+    try {
+        var objs = previewNode.getElementsByTagName('object');
+        if (objs.length > 0) {
+            var obj = objs[0];
+            previewNode = obj.contentDocument.children[0];
+            trectOffset = obj.getBoundingClientRect();
+        }
+    } catch (err) {
+        content.setLog("err: " + err);
+        return;
+    }
+
     // PlantUML.
     var targetNode = null;
     if (hints.indexOf('id') >= 0) {
         // isRegex is ignored.
-        var result = findNodeWithText(previewDiv,
+        var result = findNodeWithText(previewNode,
                                       text,
                                       function (node, text) {
                                           if (node.id && node.id == text) {
@@ -1660,7 +1678,7 @@ var performSmartLivePreview = function(lang, text, hints, isRegex) {
         var result;
         if (isRegex) {
             var nodeReg = new RegExp(text);
-            result = findNodeWithText(previewDiv,
+            result = findNodeWithText(previewNode,
                                       text,
                                       function(node, text) {
                                           var se = nodeReg.exec(node.textContent);
@@ -1677,7 +1695,7 @@ var performSmartLivePreview = function(lang, text, hints, isRegex) {
                                           return res;
                                       });
         } else {
-            result = findNodeWithText(previewDiv,
+            result = findNodeWithText(previewNode,
                                       text,
                                       function(node, text) {
                                           var idx = node.textContent.indexOf(text);
@@ -1704,7 +1722,13 @@ var performSmartLivePreview = function(lang, text, hints, isRegex) {
 
     // (left, top) is relative to the viewport.
     // Should add window.scrollX and window.scrollY to get the real content offset.
-    var trect = targetNode.getBoundingClientRect();
+    var tbrect = targetNode.getBoundingClientRect();
+    var trect = {
+        left: tbrect.left + (trectOffset ? trectOffset.left : 0),
+        top: tbrect.top + (trectOffset ? trectOffset.top : 0),
+        width: tbrect.width,
+        height: tbrect.height
+    };
 
     var vrect = {
         left: document.documentElement.scrollLeft || document.body.scrollLeft || window.pageXOffset,
