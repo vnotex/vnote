@@ -6,6 +6,11 @@ var content;
 
 var VMermaidDivClass = 'mermaid-diagram';
 var VFlowchartDivClass = 'flowchart-diagram';
+var VPlantUMLDivClass = 'plantuml-diagram';
+
+if (typeof VPlantUMLServer == 'undefined') {
+    VPlantUMLServer = 'http://www.plantuml.com/plantuml';
+}
 
 new QWebChannel(qt.webChannelTransport,
     function(channel) {
@@ -128,59 +133,12 @@ var previewDiagram = function(identifier, id, timeStamp, lang, text) {
 
     var div = null;
     if (lang == 'flow' || lang == 'flowchart') {
-        flowchartIdx++;
-        try {
-            var graph = flowchart.parse(text);
-        } catch (err) {
-            content.setLog("err: " + err);
-            content.diagramResultReady(identifier, id, timeStamp, 'png', '');
-            return;
-        }
-
-        if (typeof graph == "undefined") {
-            content.diagramResultReady(identifier, id, timeStamp, 'png', '');
-            return;
-        }
-
-        div = document.createElement('div');
-        div.id = 'flowchart-diagram-' + flowchartIdx;
-        div.classList.add(VFlowchartDivClass);
-
-        contentDiv.appendChild(div);
-
-        // Draw on it after adding it to page.
-        try {
-            graph.drawSVG(div.id);
-        } catch (err) {
-            content.setLog("err: " + err);
-            contentDiv.removeChild(div);
-            delete div;
-            content.diagramResultReady(identifier, id, timeStamp, 'png', '');
-            return;
-        }
+        div = renderFlowchartOne(identifier, id, timeStamp, text);
     } else if (lang == 'mermaid') {
-        mermaidParserErr = false;
-        mermaidIdx++;
-        try {
-            // Do not increment mermaidIdx here.
-            var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx,
-                                          text,
-                                          function(){});
-        } catch (err) {
-            content.setLog("err: " + err);
-            content.diagramResultReady(identifier, id, timeStamp, 'png', '');
-            return;
-        }
-
-        if (mermaidParserErr || typeof graph == "undefined") {
-            content.diagramResultReady(identifier, id, timeStamp, 'png', '');
-            return;
-        }
-
-        div = document.createElement('div');
-        div.classList.add(VMermaidDivClass);
-        div.innerHTML = graph;
-        contentDiv.appendChild(div);
+        div = renderMermaidOne(identifier, id, timeStamp, text);
+    } else if (lang == 'puml') {
+        renderPlantUMLOne(identifier, id, timeStamp, text);
+        return;
     }
 
     if (!div) {
@@ -188,9 +146,13 @@ var previewDiagram = function(identifier, id, timeStamp, lang, text) {
         return;
     }
 
-    // For Flowchart.js, we need to add addtitional height. Since Mermaid is not
-    // supported now, we just add it simply here.
-    domtoimage.toPng(div, { height: div.clientHeight + 30 }).then(function (dataUrl) {
+    // For Flowchart.js, we need to add addtitional height.
+    var dtiOpt = {};
+    if (lang == 'flow' || lang == 'flowchart') {
+        dtiOpt = { height: div.clientHeight + 30 };
+    }
+
+    domtoimage.toPng(div, dtiOpt).then(function (dataUrl) {
         var png = dataUrl.substring(dataUrl.indexOf(',') + 1);
         content.diagramResultReady(identifier, id, timeStamp, 'png', png);
 
@@ -203,3 +165,102 @@ var previewDiagram = function(identifier, id, timeStamp, lang, text) {
         delete div;
     });
 };
+
+var renderMermaidOne = function(identifier, id, timeStamp, text) {
+    mermaidParserErr = false;
+    mermaidIdx++;
+    try {
+        // Do not increment mermaidIdx here.
+        var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx,
+                                      text,
+                                      function(){});
+    } catch (err) {
+        content.setLog("err: " + err);
+        return null;
+    }
+
+    if (mermaidParserErr || typeof graph == "undefined") {
+        return null;
+    }
+
+    var div = document.createElement('div');
+    div.classList.add(VMermaidDivClass);
+    div.innerHTML = graph;
+    contentDiv.appendChild(div);
+    return div;
+};
+
+var renderFlowchartOne = function(identifier, id, timeStamp, text) {
+    flowchartIdx++;
+    try {
+        var graph = flowchart.parse(text);
+    } catch (err) {
+        content.setLog("err: " + err);
+        return null;
+    }
+
+    if (typeof graph == "undefined") {
+        return null;
+    }
+
+    var div = document.createElement('div');
+    div.id = 'flowchart-diagram-' + flowchartIdx;
+    div.classList.add(VFlowchartDivClass);
+
+    contentDiv.appendChild(div);
+
+    // Draw on it after adding it to page.
+    try {
+        graph.drawSVG(div.id);
+    } catch (err) {
+        content.setLog("err: " + err);
+        contentDiv.removeChild(div);
+        delete div;
+        return null;
+    }
+
+    return div;
+};
+
+var renderPlantUMLOne = function(identifier, id, timeStamp, text) {
+    var format = 'svg';
+    var s = unescape(encodeURIComponent(text));
+    var arr = [];
+    for (var i = 0; i < s.length; i++) {
+        arr.push(s.charCodeAt(i));
+    }
+
+    var compressor = new Zopfli.RawDeflate(arr);
+    var compressed = compressor.compress();
+    var url = VPlantUMLServer + "/" + format + "/" + encode64_(compressed);
+
+    if (format == 'png') {
+        httpGet(url, 'blob', function(resp) {
+            var blob = resp;
+            var reader = new FileReader();
+            reader.onload = function () {
+                var dataUrl = reader.result;
+                var png = dataUrl.substring(dataUrl.indexOf(',') + 1);
+                content.diagramResultReady(identifier, id, timeStamp, 'png', png);
+            };
+
+            reader.readAsDataURL(blob);
+        });
+    } else if (format == 'svg') {
+        httpGet(url, 'text', function(resp) {
+            content.diagramResultReady(identifier, id, timeStamp, 'svg', resp);
+        });
+    }
+};
+
+var httpGet = function(url, type, callback) {
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open("GET", url);
+    xmlHttp.responseType = type;
+
+    xmlHttp.onload = function() {
+        callback(xmlHttp.response);
+    };
+
+    xmlHttp.send(null);
+}

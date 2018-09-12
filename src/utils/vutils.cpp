@@ -942,6 +942,11 @@ QString VUtils::generateMathJaxPreviewTemplate()
                  "                    messageStyle: \"none\"});\n"
                  "</script>\n";
 
+    // PlantUML.
+    extraFile += "<script type=\"text/javascript\" src=\"" + VNote::c_plantUMLJsFile + "\"></script>\n" +
+                 "<script type=\"text/javascript\" src=\"" + VNote::c_plantUMLZopfliJsFile + "\"></script>\n" +
+                 "<script>var VPlantUMLServer = '" + g_config->getPlantUMLServer() + "';</script>\n";
+
     templ.replace(HtmlHolder::c_extraHolder, extraFile);
 
     return templ;

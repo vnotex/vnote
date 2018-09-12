@@ -124,8 +124,7 @@ void VLivePreviewHelper::checkLang(const QString &p_lang,
     if (m_flowchartEnabled && (p_lang == "flow" || p_lang == "flowchart")) {
         p_livePreview = p_inplacePreview = true;
     } else if (m_plantUMLMode != PlantUMLMode::DisablePlantUML && p_lang == "puml") {
-        p_livePreview = true;
-        p_inplacePreview = m_plantUMLMode == PlantUMLMode::LocalPlantUML;
+        p_livePreview = p_inplacePreview = true;
     } else if (m_graphvizEnabled && p_lang == "dot") {
         p_livePreview = p_inplacePreview = true;
     } else if (m_mermaidEnabled && p_lang == "mermaid") {
@@ -380,14 +379,12 @@ void VLivePreviewHelper::localAsyncResultReady(int p_id,
     }
 
     CodeBlockPreviewInfo &cb = m_codeBlocks[idx];
-    const QString &text = cb.codeBlock().m_text;
-
     QSharedPointer<CodeBlockImageCacheEntry> entry(new CodeBlockImageCacheEntry(p_timeStamp,
                                                                                 p_format,
                                                                                 p_result,
                                                                                 background,
                                                                                 getScaleFactor(cb)));
-    m_cache.insert(text, entry);
+    m_cache.insert(cb.codeBlock().m_text, entry);
 
     cb.setImageData(p_format, p_result);
     cb.updateInplacePreview(m_editor, m_doc, entry->m_image, QString(), background);
@@ -425,17 +422,25 @@ void VLivePreviewHelper::processForInplacePreview(int p_idx)
                                        m_timeStamp,
                                        "svg",
                                        VEditUtils::removeCodeBlockFence(vcb.m_text));
-    } else if (vcb.m_lang == "puml" && m_plantUMLMode == PlantUMLMode::LocalPlantUML) {
-        if (!m_plantUMLHelper) {
-            m_plantUMLHelper = new VPlantUMLHelper(this);
-            connect(m_plantUMLHelper, &VPlantUMLHelper::resultReady,
-                    this, &VLivePreviewHelper::localAsyncResultReady);
-        }
+    } else if (vcb.m_lang == "puml") {
+        if (m_plantUMLMode == PlantUMLMode::LocalPlantUML) {
+            if (!m_plantUMLHelper) {
+                m_plantUMLHelper = new VPlantUMLHelper(this);
+                connect(m_plantUMLHelper, &VPlantUMLHelper::resultReady,
+                        this, &VLivePreviewHelper::localAsyncResultReady);
+            }
 
-        m_plantUMLHelper->processAsync(p_idx | LANG_PREFIX_PLANTUML | TYPE_INPLACE_PREVIEW,
-                                       m_timeStamp,
-                                       "svg",
-                                       VEditUtils::removeCodeBlockFence(vcb.m_text));
+            m_plantUMLHelper->processAsync(p_idx | LANG_PREFIX_PLANTUML | TYPE_INPLACE_PREVIEW,
+                                           m_timeStamp,
+                                           "svg",
+                                           VEditUtils::removeCodeBlockFence(vcb.m_text));
+        } else {
+            m_mathJaxHelper->previewDiagram(m_mathJaxID,
+                                            p_idx,
+                                            m_timeStamp,
+                                            vcb.m_lang,
+                                            VEditUtils::removeCodeBlockFence(vcb.m_text));
+        }
     } else if (vcb.m_lang == "flow"
                || vcb.m_lang == "flowchart") {
         m_mathJaxHelper->previewDiagram(m_mathJaxID,
@@ -497,16 +502,21 @@ void VLivePreviewHelper::mathjaxPreviewResultReady(int p_identitifer,
     }
 
     CodeBlockPreviewInfo &cb = m_codeBlocks[p_id];
-    const QString &text = cb.codeBlock().m_text;
+    const VCodeBlock &vcb = cb.codeBlock();
+
+    QString background;
+    if (vcb.m_lang == "puml") {
+        background = g_config->getEditorPreviewImageBg();
+    }
 
     QSharedPointer<CodeBlockImageCacheEntry> entry(new CodeBlockImageCacheEntry(p_timeStamp,
                                                                                 p_format,
                                                                                 p_data,
-                                                                                "",
+                                                                                background,
                                                                                 getScaleFactor(cb)));
-    m_cache.insert(text, entry);
+    m_cache.insert(vcb.m_text, entry);
 
-    cb.updateInplacePreview(m_editor, m_doc, entry->m_image);
+    cb.updateInplacePreview(m_editor, m_doc, entry->m_image, QString(), background);
 
     if (cb.inplacePreview()) {
         entry->m_imageName = cb.inplacePreview()->m_name;

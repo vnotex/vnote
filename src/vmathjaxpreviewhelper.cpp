@@ -60,7 +60,13 @@ void VMathJaxPreviewHelper::doInit()
                         TimeStamp p_timeStamp,
                         const QString &p_format,
                         const QString &p_data) {
-                QByteArray ba = QByteArray::fromBase64(p_data.toUtf8());
+                QByteArray ba;
+                if (p_format == "png") {
+                    ba = QByteArray::fromBase64(p_data.toUtf8());
+                } else {
+                    ba = p_data.toUtf8();
+                }
+
                 emit diagramPreviewResultReady(p_identifier, p_id, p_timeStamp, p_format, ba);
             });
 
