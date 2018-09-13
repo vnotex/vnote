@@ -22,6 +22,8 @@ var VPlantUMLDivClass = 'plantuml-diagram';
 var VMetaDataCodeClass = 'markdown-metadata';
 var VMarkRectDivClass = 'mark-rect';
 
+var VPreviewMode = false;
+
 if (typeof VEnableMermaid == 'undefined') {
     VEnableMermaid = false;
 } else if (VEnableMermaid) {
@@ -700,10 +702,7 @@ var renderPlantUML = function(className) {
         var code = codes[i];
         if (code.classList.contains(className)) {
             if (VPlantUMLMode == 1) {
-                if (renderPlantUMLOneOnline(code)) {
-                    // replaceChild() will decrease codes.length.
-                    --i;
-                }
+                renderPlantUMLOneOnline(code);
             } else {
                 renderPlantUMLOneLocal(code);
             }
@@ -711,37 +710,22 @@ var renderPlantUML = function(className) {
     }
 };
 
-// Render @code as PlantUML graph.
-// Returns true if succeeded.
+// Render @code as PlantUML graph asynchronously.
 var renderPlantUMLOneOnline = function(code) {
-    var s = unescape(encodeURIComponent(code.textContent));
-    var arr = [];
-    for (var i = 0; i < s.length; i++) {
-        arr.push(s.charCodeAt(i));
-    }
+    ++asyncJobsCount;
+    code.classList.add(plantUMLCodeClass + plantUMLIdx);
 
-    var compressor = new Zopfli.RawDeflate(arr);
-    var compressed = compressor.compress();
-    var url = VPlantUMLServer + "/" + VPlantUMLFormat + "/" + encode64_(compressed);
-
-    var obj = null;
-    if (VPlantUMLFormat == 'svg') {
-        var svgObj = document.createElement('object');
-        svgObj.type = 'image/svg+xml';
-        svgObj.data = url;
-
-        obj = document.createElement('div');
-        obj.classList.add(VPlantUMLDivClass);
-        obj.appendChild(svgObj);
-    } else {
-        obj = document.createElement('img');
-        obj.src = url;
-        setupIMGToView(obj);
-    }
-
-    var preNode = code.parentNode;
-    preNode.parentNode.replaceChild(obj, preNode);
-    return true;
+    data = { index: plantUMLIdx,
+             setupView: !VPreviewMode
+           };
+    renderPlantUMLOnline(VPlantUMLServer,
+                         VPlantUMLFormat,
+                         code.textContent,
+                         function(data, format, result) {
+                             handlePlantUMLResultExt(data.index, 0, format, result, data.setupView);
+                         },
+                         data);
+    plantUMLIdx++;
 };
 
 var renderPlantUMLOneLocal = function(code) {
@@ -1364,6 +1348,10 @@ var specialCodeBlock = function(lang) {
 };
 
 var handlePlantUMLResult = function(id, timeStamp, format, result) {
+    handlePlantUMLResultExt(id, timeStamp, format, result, true);
+};
+
+var handlePlantUMLResultExt = function(id, timeStamp, format, result, isSetupView) {
     var code = document.getElementsByClassName(plantUMLCodeClass + id)[0];
     if (code && result.length > 0) {
         var obj = null;
@@ -1371,11 +1359,15 @@ var handlePlantUMLResult = function(id, timeStamp, format, result) {
             obj = document.createElement('div');
             obj.classList.add(VPlantUMLDivClass);
             obj.innerHTML = result;
-            setupSVGToView(obj.children[0], true);
+            if (isSetupView) {
+                setupSVGToView(obj.children[0], true);
+            }
         } else {
             obj = document.createElement('img');
             obj.src = "data:image/" + format + ";base64, " + result;
-            setupIMGToView(obj);
+            if (isSetupView) {
+                setupIMGToView(obj);
+            }
         }
 
         var preNode = code.parentNode;
@@ -1421,6 +1413,8 @@ var setPreviewEnabled = function(enabled) {
         previewDiv.style.display = 'none';
         previewDiv.innerHTML = '';
     }
+
+    VPreviewMode = enabled;
 
     clearMarkRectDivs();
 };
@@ -1642,18 +1636,8 @@ var performSmartLivePreview = function(lang, text, hints, isRegex) {
     }
 
     var previewNode = previewDiv;
-    var trectOffset = null;
-    try {
-        var objs = previewNode.getElementsByTagName('object');
-        if (objs.length > 0) {
-            var obj = objs[0];
-            previewNode = obj.contentDocument.children[0];
-            trectOffset = obj.getBoundingClientRect();
-        }
-    } catch (err) {
-        content.setLog("err: " + err);
-        return;
-    }
+
+    // Accessing contentDocument will fail due to crossing orgin.
 
     // PlantUML.
     var targetNode = null;
@@ -1724,13 +1708,7 @@ var performSmartLivePreview = function(lang, text, hints, isRegex) {
 
     // (left, top) is relative to the viewport.
     // Should add window.scrollX and window.scrollY to get the real content offset.
-    var tbrect = targetNode.getBoundingClientRect();
-    var trect = {
-        left: tbrect.left + (trectOffset ? trectOffset.left : 0),
-        top: tbrect.top + (trectOffset ? trectOffset.top : 0),
-        width: tbrect.width,
-        height: tbrect.height
-    };
+    var trect = targetNode.getBoundingClientRect();
 
     var vrect = {
         left: document.documentElement.scrollLeft || document.body.scrollLeft || window.pageXOffset,

@@ -70,7 +70,7 @@ VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
     m_livePreviewTimer->setInterval(500);
     connect(m_livePreviewTimer, &QTimer::timeout,
             this, [this]() {
-                QString text = m_webViewer->selectedText();
+                QString text = m_webViewer->selectedText().trimmed();
                 if (text.isEmpty()) {
                     return;
                 }

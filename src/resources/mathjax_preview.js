@@ -223,44 +223,20 @@ var renderFlowchartOne = function(identifier, id, timeStamp, text) {
 };
 
 var renderPlantUMLOne = function(identifier, id, timeStamp, text) {
-    var format = 'svg';
-    var s = unescape(encodeURIComponent(text));
-    var arr = [];
-    for (var i = 0; i < s.length; i++) {
-        arr.push(s.charCodeAt(i));
-    }
+    var data = { identifier: identifier,
+                 id: id,
+                 timeStamp: timeStamp
+               };
 
-    var compressor = new Zopfli.RawDeflate(arr);
-    var compressed = compressor.compress();
-    var url = VPlantUMLServer + "/" + format + "/" + encode64_(compressed);
-
-    if (format == 'png') {
-        httpGet(url, 'blob', function(resp) {
-            var blob = resp;
-            var reader = new FileReader();
-            reader.onload = function () {
-                var dataUrl = reader.result;
-                var png = dataUrl.substring(dataUrl.indexOf(',') + 1);
-                content.diagramResultReady(identifier, id, timeStamp, 'png', png);
-            };
-
-            reader.readAsDataURL(blob);
-        });
-    } else if (format == 'svg') {
-        httpGet(url, 'text', function(resp) {
-            content.diagramResultReady(identifier, id, timeStamp, 'svg', resp);
-        });
-    }
+    renderPlantUMLOnline(VPlantUMLServer,
+                         'svg',
+                         text,
+                         function(data, format, result) {
+                             content.diagramResultReady(data.identifier,
+                                                        data.id,
+                                                        data.timeStamp,
+                                                        format,
+                                                        result);
+                         },
+                         data);
 };
-
-var httpGet = function(url, type, callback) {
-    var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open("GET", url);
-    xmlHttp.responseType = type;
-
-    xmlHttp.onload = function() {
-        callback(xmlHttp.response);
-    };
-
-    xmlHttp.send(null);
-}
