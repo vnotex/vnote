@@ -863,6 +863,21 @@ void VEditor::highlightIncrementalSearchedWord(const QTextCursor &p_cursor)
     highlightExtraSelections(true);
 }
 
+static bool isRegularExpressionSupported(const QRegExp &p_reg)
+{
+    if (!p_reg.isValid()) {
+        return false;
+    }
+
+    // FIXME: hang bug in Qt's find().
+    QRegExp test("[$^]+");
+    if (test.exactMatch(p_reg.pattern())) {
+        return false;
+    }
+
+    return true;
+}
+
 // Use QPlainTextEdit::find() instead of QTextDocument::find() because the later has
 // bugs in searching backward.
 bool VEditor::findTextHelper(const QString &p_text,
@@ -884,14 +899,11 @@ bool VEditor::findTextHelper(const QString &p_text,
     QRegExp exp;
     if (useRegExp) {
         useRegExp = true;
-        // FIXME: hang bug in Qt's find().
-        QRegExp test("[$^]+");
-        if (test.exactMatch(p_text)) {
-            return false;
-        }
-
         exp = QRegExp(p_text,
                       caseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive);
+        if (!isRegularExpressionSupported(exp)) {
+            return false;
+        }
     }
 
     // Store current state of the cursor.
@@ -1553,7 +1565,7 @@ QList<QTextCursor> VEditor::findTextAllInRange(const QTextDocument *p_doc,
                                                int p_end)
 {
     QList<QTextCursor> results;
-    if (!p_reg.isValid()) {
+    if (!isRegularExpressionSupported(p_reg)) {
         return results;
     }
 
