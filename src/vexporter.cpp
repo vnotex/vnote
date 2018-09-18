@@ -41,7 +41,8 @@ void VExporter::prepareExport(const ExportOption &p_opt)
 {
     bool isPdf = p_opt.m_format == ExportFormat::PDF
                  || p_opt.m_format == ExportFormat::OnePDF
-                 || p_opt.m_format == ExportFormat::Custom;
+                 || (p_opt.m_format == ExportFormat::Custom
+                     && p_opt.m_customOpt.m_pdfLike);
     bool extraToc = isPdf
                     && !p_opt.m_pdfOpt.m_wkhtmltopdf
                     && p_opt.m_pdfOpt.m_enableTableOfContents;

@@ -515,6 +515,8 @@ void VExportDialog::initUIFields(MarkdownConverterType p_renderer)
 
     m_customAllInOneCB->setChecked(s_opt.m_customOpt.m_allInOne);
 
+    m_customPdfLikeCB->setChecked(s_opt.m_customOpt.m_pdfLike);
+
     m_customFolderSepEdit->setText(s_opt.m_customOpt.m_folderSep);
 }
 
@@ -593,6 +595,7 @@ void VExportDialog::startExport()
                                             g_config->getCssStyleUrl(renderStyle),
                                             g_config->getCodeBlockCssStyleUrl(renderCodeBlockStyle),
                                             m_customAllInOneCB->isChecked(),
+                                            m_customPdfLikeCB->isChecked(),
                                             m_customFolderSepEdit->text(),
                                             m_customTargetFileNameEdit->text()));
 
@@ -1365,6 +1368,10 @@ QWidget *VExportDialog::setupCustomAdvancedSettings()
                 m_customTargetFileNameEdit->setEnabled(checked);
             });
 
+    // Enable PDF-like.
+    m_customPdfLikeCB = new QCheckBox(tr("PDF-Like"), this);
+    m_customPdfLikeCB->setToolTip(tr("Treat the exported file as PDF, such as wrapping line"));
+
     // Input directory separator.
     m_customFolderSepEdit = new VLineEdit(this);
     m_customFolderSepEdit->setPlaceholderText(tr("Separator to concatenate input files directories"));
@@ -1396,6 +1403,7 @@ QWidget *VExportDialog::setupCustomAdvancedSettings()
     advLayout->addWidget(m_customSuffixEdit, 0, 4, 1, 2);
 
     advLayout->addWidget(m_customAllInOneCB, 1, 1, 1, 2);
+    advLayout->addWidget(m_customPdfLikeCB, 1, 4, 1, 2);
 
     advLayout->addWidget(new QLabel(tr("Output file name:")), 2, 0);
     advLayout->addWidget(m_customTargetFileNameEdit, 2, 1, 1, 2);
