@@ -186,6 +186,8 @@ VVim::VVim(VEditor *p_editor)
             this, &VVim::handleMouseMoved);
     connect(m_editor->object(), &VEditorObject::mouseReleased,
             this, &VVim::handleMouseReleased);
+    connect(m_editor->object(), &VEditorObject::mouseDoubleClicked,
+            this, &VVim::handleMouseDoubleClicked);
 }
 
 void VVim::initLeaderKey()
@@ -6357,12 +6359,17 @@ void VVim::amendCursorPosition()
 void VVim::handleMousePressed(QMouseEvent *p_event)
 {
     Q_UNUSED(p_event);
-    QTextCursor cursor = m_editor->textCursorW();
     if ((checkMode(VimMode::Visual) || checkMode(VimMode::VisualLine))
         && p_event->buttons() != Qt::RightButton) {
         setMode(VimMode::Normal);
-    } else if (checkMode(VimMode::Normal)) {
-        if (cursor.hasSelection()) {
+    }
+}
+
+void VVim::handleMouseDoubleClicked(QMouseEvent *p_event)
+{
+    Q_UNUSED(p_event);
+    if (checkMode(VimMode::Normal)) {
+        if (m_editor->textCursorW().hasSelection()) {
             setMode(VimMode::Visual, false);
             maintainSelectionInVisualMode();
         }

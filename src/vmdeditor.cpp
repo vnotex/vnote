@@ -426,6 +426,13 @@ void VMdEditor::mousePressEvent(QMouseEvent *p_event)
     emit m_object->mousePressed(p_event);
 }
 
+void VMdEditor::mouseDoubleClickEvent(QMouseEvent *p_event)
+{
+    VTextEdit::mouseDoubleClickEvent(p_event);
+
+    emit m_object->mouseDoubleClicked(p_event);
+}
+
 void VMdEditor::mouseReleaseEvent(QMouseEvent *p_event)
 {
     if (handleMouseReleaseEvent(p_event)) {

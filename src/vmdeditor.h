@@ -235,6 +235,8 @@ protected:
 
     void mouseMoveEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
 
+    void mouseDoubleClickEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
+
     void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
     bool canInsertFromMimeData(const QMimeData *p_source) const Q_DECL_OVERRIDE;

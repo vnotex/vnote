@@ -598,6 +598,8 @@ signals:
 
     void mouseReleased(QMouseEvent *p_event);
 
+    void mouseDoubleClicked(QMouseEvent *p_event);
+
     void cursorPositionChanged();
 
 private slots:
