@@ -58,12 +58,12 @@ vim-replace-background: 2f3377
 H1
 foreground: e0e0e0
 font-style: bold
-font-size: +8
+font-size: +6
 
 H2
 foreground: e0e0e0
 font-style: bold
-font-size: +6
+font-size: +5
 
 H3
 foreground: e0e0e0
@@ -73,7 +73,7 @@ font-size: +4
 H4
 foreground: e0e0e0
 font-style: bold
-font-size: +2
+font-size: +3
 
 H5
 foreground: e0e0e0
@@ -83,7 +83,7 @@ font-size: +2
 H6
 foreground: e0e0e0
 font-style: bold
-font-size: +2
+font-size: +1
 
 HRULE
 foreground: dadada

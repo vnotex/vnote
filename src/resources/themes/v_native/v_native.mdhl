@@ -48,19 +48,19 @@ vim-insert-background: c5cae9
 # [VNote] Vim normal mode cursor line background
 vim-normal-background: e0e0e0
 # [VNote] Vim visual mode cursor line background
-vim-visual-background: bbdefb
+vim-visual-background: d3eafc
 # [VNote] Vim replace mode cursor line background
 vim-replace-background: f8bbd0
 
 H1
 foreground: 363636
 font-style: bold
-font-size: +8
+font-size: +6
 
 H2
 foreground: 363636
 font-style: bold
-font-size: +6
+font-size: +5
 
 H3
 foreground: 363636
@@ -70,7 +70,7 @@ font-size: +4
 H4
 foreground: 363636
 font-style: bold
-font-size: +2
+font-size: +3
 
 H5
 foreground: 363636
@@ -80,7 +80,7 @@ font-size: +2
 H6
 foreground: 363636
 font-style: bold
-font-size: +2
+font-size: +1
 
 HRULE
 foreground: 363636
