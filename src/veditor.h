@@ -31,7 +31,8 @@ enum class SelectionId {
     SearchedKeyword,
     SearchedKeywordUnderCursor,
     IncrementalSearchedKeyword,
-    TrailingSapce,
+    TrailingSpace,
+    Tab,
     MaxSelection
 };
 
@@ -490,6 +491,10 @@ private:
                          int p_start = 0,
                          int p_end = -1);
 
+    void updateTrailingSpaceAndTabHighlights();
+
+    bool needUpdateTrailingSpaceAndTabHighlights();
+
     QLabel *m_wrapLabel;
     QTimer *m_labelTimer;
 
@@ -512,6 +517,7 @@ private:
     QColor m_incrementalSearchedWordBg;
 
     QColor m_trailingSpaceColor;
+    QColor m_tabColor;
 
     // Timer for extra selections highlight.
     QTimer *m_highlightTimer;
@@ -538,6 +544,9 @@ private:
 
     FindInfo m_findInfo;
 
+    bool m_trailingSpaceHighlightEnabled;
+    bool m_tabHighlightEnabled;
+
 // Functions for private slots.
 private:
     void labelTimerTimeout();
@@ -545,9 +554,7 @@ private:
     // Do the real work to highlight extra selections.
     void doHighlightExtraSelections();
 
-    void updateTrailingSpaceHighlights();
-
-    void doUpdateTrailingSpaceHighlights();
+    void doUpdateTrailingSpaceAndTabHighlights();
 
     void clearFindCache();
 };
@@ -615,9 +622,9 @@ private slots:
         m_editor->doHighlightExtraSelections();
     }
 
-    void doUpdateTrailingSpaceHighlights()
+    void doUpdateTrailingSpaceAndTabHighlights()
     {
-        m_editor->doUpdateTrailingSpaceHighlights();
+        m_editor->doUpdateTrailingSpaceAndTabHighlights();
     }
 
     void clearFindCache()

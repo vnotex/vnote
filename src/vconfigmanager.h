@@ -314,6 +314,9 @@ public:
     bool getEnableTrailingSpaceHighlight() const;
     void setEnableTrailingSapceHighlight(bool p_enabled);
 
+    bool getEnableTabHighlight() const;
+    void setEnableTabHighlight(bool p_enabled);
+
     KeyMode getKeyMode() const;
     void setKeyMode(KeyMode p_mode);
 
@@ -803,6 +806,9 @@ private:
 
     // Enable trailing-space highlight.
     bool m_enableTrailingSpaceHighlight;
+
+    // Enable tab highlight.
+    bool m_enableTabHighlight;
 
     // Editor key mode.
     KeyMode m_keyMode;
@@ -1816,6 +1822,23 @@ inline void VConfigManager::setEnableTrailingSapceHighlight(bool p_enabled)
     m_enableTrailingSpaceHighlight = p_enabled;
     setConfigToSettings("global", "enable_trailing_space_highlight",
                         m_enableTrailingSpaceHighlight);
+}
+
+inline bool VConfigManager::getEnableTabHighlight() const
+{
+    return m_enableTabHighlight;
+}
+
+inline void VConfigManager::setEnableTabHighlight(bool p_enabled)
+{
+    if (m_enableTabHighlight == p_enabled) {
+        return;
+    }
+
+    m_enableTabHighlight = p_enabled;
+    setConfigToSettings("editor",
+                        "enable_tab_highlight",
+                        m_enableTabHighlight);
 }
 
 inline KeyMode VConfigManager::getKeyMode() const

@@ -26,7 +26,9 @@ VEditor::VEditor(VFile *p_file,
       m_enableInputMethod(true),
       m_timeStamp(0),
       m_trailingSpaceSelectionTS(0),
-      m_completer(p_completer)
+      m_completer(p_completer),
+      m_trailingSpaceHighlightEnabled(false),
+      m_tabHighlightEnabled(false)
 {
 }
 
@@ -73,6 +75,8 @@ void VEditor::init()
 
     m_trailingSpaceColor = QColor(g_config->getEditorTrailingSpaceBg());
 
+    m_tabColor = g_config->getMdEditPalette().color(QPalette::Text);
+
     QPixmap wrapPixmap(":/resources/icons/search_wrap.svg");
     m_wrapLabel = new QLabel(m_editor);
     m_wrapLabel->setPixmap(wrapPixmap.scaled(labelSize, labelSize));
@@ -93,7 +97,7 @@ void VEditor::init()
     m_trailingSpaceTimer->setSingleShot(true);
     m_trailingSpaceTimer->setInterval(trailingSpaceUpdateTimer);
     QObject::connect(m_trailingSpaceTimer, &QTimer::timeout,
-                     m_object, &VEditorObject::doUpdateTrailingSpaceHighlights);
+                     m_object, &VEditorObject::doUpdateTrailingSpaceAndTabHighlights);
 
     m_extraSelections.resize((int)SelectionId::MaxSelection);
 
@@ -108,9 +112,31 @@ void VEditor::labelTimerTimeout()
     m_wrapLabel->hide();
 }
 
-void VEditor::updateTrailingSpaceHighlights()
+bool VEditor::needUpdateTrailingSpaceAndTabHighlights()
 {
+    bool ret = false;
+    bool space = g_config->getEnableTrailingSpaceHighlight();
+    if (m_trailingSpaceHighlightEnabled != space) {
+        m_trailingSpaceHighlightEnabled = space;
+        ret = true;
+    }
+
+    bool tab = g_config->getEnableTabHighlight();
+    if (m_tabHighlightEnabled != tab) {
+        m_tabHighlightEnabled = tab;
+        ret = true;
+    }
+
     if (m_trailingSpaceSelectionTS != m_timeStamp) {
+        ret = true;
+    }
+
+    return ret;
+}
+
+void VEditor::updateTrailingSpaceAndTabHighlights()
+{
+    if (needUpdateTrailingSpaceAndTabHighlights()) {
         m_trailingSpaceTimer->start();
     } else {
         highlightExtraSelections(false);
@@ -123,7 +149,7 @@ void VEditor::doHighlightExtraSelections()
     Q_ASSERT(nrExtra == (int)SelectionId::MaxSelection);
     QList<QTextEdit::ExtraSelection> extraSelects;
     for (int i = 0; i < nrExtra; ++i) {
-        if (i == (int)SelectionId::TrailingSapce) {
+        if (i == (int)SelectionId::TrailingSpace) {
             filterTrailingSpace(extraSelects, m_extraSelections[i]);
         } else {
             extraSelects.append(m_extraSelections[i]);
@@ -133,29 +159,51 @@ void VEditor::doHighlightExtraSelections()
     setExtraSelectionsW(extraSelects);
 }
 
-void VEditor::doUpdateTrailingSpaceHighlights()
+void VEditor::doUpdateTrailingSpaceAndTabHighlights()
 {
-    if (!g_config->getEnableTrailingSpaceHighlight()) {
-        QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::TrailingSapce];
+    bool needHighlight = false;
+
+    // Trailing space.
+    if (!m_trailingSpaceHighlightEnabled) {
+        QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::TrailingSpace];
         if (!selects.isEmpty()) {
             selects.clear();
-            highlightExtraSelections(true);
+            needHighlight = true;
         }
-
-        m_trailingSpaceSelectionTS = m_timeStamp;
-        return;
+    } else {
+        needHighlight = true;
+        QTextCharFormat format;
+        format.setBackground(m_trailingSpaceColor);
+        QString text("\\s+$");
+        highlightTextAll(text,
+                         FindOption::RegularExpression,
+                         SelectionId::TrailingSpace,
+                         format);
     }
 
-    QTextCharFormat format;
-    format.setBackground(m_trailingSpaceColor);
-    QString text("\\s+$");
-    highlightTextAll(text,
-                     FindOption::RegularExpression,
-                     SelectionId::TrailingSapce,
-                     format);
+    // Tab.
+    if (!m_tabHighlightEnabled) {
+        QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::Tab];
+        if (!selects.isEmpty()) {
+            selects.clear();
+            needHighlight = true;
+        }
+    } else {
+        needHighlight = true;
+        QTextCharFormat format;
+        format.setBackground(m_tabColor);
+        QString text("\\t");
+        highlightTextAll(text,
+                         FindOption::RegularExpression,
+                         SelectionId::Tab,
+                         format);
+    }
 
     m_trailingSpaceSelectionTS = m_timeStamp;
-    highlightExtraSelections(true);
+
+    if (needHighlight) {
+        highlightExtraSelections(true);
+    }
 }
 
 void VEditor::updateEditConfig()
@@ -175,7 +223,7 @@ void VEditor::highlightOnCursorPositionChanged()
 
     QTextCursor cursor = textCursorW();
     if (lastCursor.isNull() || cursor.blockNumber() != lastCursor.blockNumber()) {
-        updateTrailingSpaceHighlights();
+        updateTrailingSpaceAndTabHighlights();
         highlightCurrentLine();
     } else {
         // Judge whether we have trailing space at current line.
@@ -196,7 +244,7 @@ void VEditor::highlightOnCursorPositionChanged()
             }
 
             if (needUpdate) {
-                updateTrailingSpaceHighlights();
+                updateTrailingSpaceAndTabHighlights();
             }
         }
 

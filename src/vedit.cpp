@@ -604,7 +604,7 @@ static void trailingSpaceFilter(VEdit *p_editor, QList<QTextEdit::ExtraSelection
 void VEdit::highlightTrailingSpace()
 {
     if (!g_config->getEnableTrailingSpaceHighlight()) {
-        QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::TrailingSapce];
+        QList<QTextEdit::ExtraSelection> &selects = m_extraSelections[(int)SelectionId::TrailingSpace];
         if (!selects.isEmpty()) {
             selects.clear();
             highlightExtraSelections(true);
@@ -616,7 +616,7 @@ void VEdit::highlightTrailingSpace()
     format.setBackground(m_trailingSpaceColor);
     QString text("\\s+$");
     highlightTextAll(text, FindOption::RegularExpression,
-                     SelectionId::TrailingSapce, format,
+                     SelectionId::TrailingSpace, format,
                      trailingSpaceFilter);
 }
 

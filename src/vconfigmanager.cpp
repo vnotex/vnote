@@ -353,6 +353,10 @@ void VConfigManager::initEditorConfigs()
             m_vimLeaderKey = QChar(' ');
         }
     }
+
+    m_enableTabHighlight = getConfigFromSettings("editor",
+                                                 "enable_tab_highlight").toBool();
+
 }
 
 void VConfigManager::initSettings()

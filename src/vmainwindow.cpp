@@ -1236,6 +1236,15 @@ void VMainWindow::initEditMenu()
     connect(trailingSapceAct, &QAction::triggered,
             this, &VMainWindow::changeHighlightTrailingSapce);
 
+    // Highlight tab.
+    QAction *tabAct = new QAction(tr("Highlight Tabs"), this);
+    tabAct->setToolTip(tr("Highlight all the tabs"));
+    tabAct->setCheckable(true);
+    connect(tabAct, &QAction::triggered,
+            this, [this](bool p_checked) {
+                g_config->setEnableTabHighlight(p_checked);
+            });
+
     QMenu *findReplaceMenu = editMenu->addMenu(tr("Find/Replace"));
     findReplaceMenu->setToolTipsVisible(true);
     findReplaceMenu->addAction(m_findReplaceAct);
@@ -1311,6 +1320,9 @@ void VMainWindow::initEditMenu()
 
     editMenu->addAction(trailingSapceAct);
     trailingSapceAct->setChecked(g_config->getEnableTrailingSpaceHighlight());
+
+    editMenu->addAction(tabAct);
+    tabAct->setChecked(g_config->getEnableTabHighlight());
 }
 
 void VMainWindow::initDockWindows()
