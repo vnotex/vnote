@@ -195,7 +195,9 @@ public:
                                         bool p_addToc = false);
 
     // @p_renderBg is the background name.
-    static QString generateExportHtmlTemplate(const QString &p_renderBg, bool p_includeMathJax);
+    static QString generateExportHtmlTemplate(const QString &p_renderBg,
+                                              bool p_includeMathJax,
+                                              bool p_outlinePanel);
 
     static QString generateSimpleHtmlTemplate(const QString &p_body);
 

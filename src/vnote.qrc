@@ -177,7 +177,6 @@
         <file>resources/icons/delete_cart_item.svg</file>
         <file>resources/icons/fullscreen.svg</file>
         <file>resources/icons/menubar.svg</file>
-        <file>resources/export_template.html</file>
         <file>resources/themes/v_pure/v_pure_mermaid.css</file>
         <file>resources/themes/v_moonlight/v_moonlight_mermaid.css</file>
         <file>resources/themes/v_moonlight/arrow_dropdown_disabled.svg</file>
@@ -272,5 +271,8 @@
         <file>resources/common.css</file>
         <file>resources/icons/quick_access.svg</file>
         <file>resources/common.js</file>
+        <file>resources/export/export_template.html</file>
+        <file>resources/export/outline.css</file>
+        <file>resources/export/outline.js</file>
     </qresource>
 </RCC>

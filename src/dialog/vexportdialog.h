@@ -58,18 +58,21 @@ struct ExportHTMLOption
         : m_embedCssStyle(true),
           m_completeHTML(true),
           m_embedImages(true),
-          m_mimeHTML(false)
+          m_mimeHTML(false),
+          m_outlinePanel(true)
     {
     }
 
     ExportHTMLOption(bool p_embedCssStyle,
                      bool p_completeHTML,
                      bool p_embedImages,
-                     bool p_mimeHTML)
+                     bool p_mimeHTML,
+                     bool p_outlinePanel)
         : m_embedCssStyle(p_embedCssStyle),
           m_completeHTML(p_completeHTML),
           m_embedImages(p_embedImages),
-          m_mimeHTML(p_mimeHTML)
+          m_mimeHTML(p_mimeHTML),
+          m_outlinePanel(p_outlinePanel)
     {
     }
 
@@ -77,6 +80,7 @@ struct ExportHTMLOption
     bool m_completeHTML;
     bool m_embedImages;
     bool m_mimeHTML;
+    bool m_outlinePanel;
 };
 
 
@@ -451,6 +455,8 @@ private:
     QCheckBox *m_embedImagesCB;
 
     QCheckBox *m_mimeHTMLCB;
+
+    QCheckBox *m_outlinePanelCB;
 
     QCheckBox *m_subfolderCB;
 

@@ -55,8 +55,13 @@ void VExporter::prepareExport(const ExportOption &p_opt)
                                                   isPdf && p_opt.m_pdfOpt.m_wkhtmltopdf,
                                                   extraToc);
 
+    bool outline = p_opt.m_htmlOpt.m_outlinePanel
+                   && !isPdf
+                   && (p_opt.m_format == ExportFormat::HTML
+                       || p_opt.m_format == ExportFormat::Custom);
     m_exportHtmlTemplate = VUtils::generateExportHtmlTemplate(p_opt.m_renderBg,
-                                                              isPdf && p_opt.m_pdfOpt.m_wkhtmltopdf);
+                                                              isPdf && p_opt.m_pdfOpt.m_wkhtmltopdf,
+                                                              outline);
 
     m_pageLayout = *(p_opt.m_pdfOpt.m_layout);
 

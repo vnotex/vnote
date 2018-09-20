@@ -868,7 +868,9 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
     return htmlTemplate;
 }
 
-QString VUtils::generateExportHtmlTemplate(const QString &p_renderBg, bool p_includeMathJax)
+QString VUtils::generateExportHtmlTemplate(const QString &p_renderBg,
+                                           bool p_includeMathJax,
+                                           bool p_outlinePanel)
 {
     QString templ = VNote::generateExportHtmlTemplate(g_config->getRenderBackgroundColor(p_renderBg));
     QString extra;
@@ -900,6 +902,18 @@ with 2em, if there are Chinese characters in it, the font will be a mess.
         mj.replace(reg, QString("\\1%1").arg("TeX-MML-AM_SVG"));
 
         extra += "<script type=\"text/javascript\" async src=\"" + mj + "\"></script>\n";
+    }
+
+    if (p_outlinePanel) {
+        const QString outlineCss(":/resources/export/outline.css");
+        QString css = VUtils::readFileFromDisk(outlineCss);
+        if (!css.isEmpty()) {
+            templ.replace(HtmlHolder::c_outlineStyleHolder, css);
+        }
+
+        const QString outlineJs(":/resources/export/outline.js");
+        QString js = VUtils::readFileFromDisk(outlineJs);
+        extra += QString("<script type=\"text/javascript\">\n%1\n</script>\n").arg(js);
     }
 
     if (!extra.isEmpty()) {

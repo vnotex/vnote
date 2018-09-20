@@ -152,7 +152,7 @@ QString VNote::generateHtmlTemplate(const QString &p_renderBg,
 
 QString VNote::generateExportHtmlTemplate(const QString &p_renderBg)
 {
-    const QString c_exportTemplatePath(":/resources/export_template.html");
+    const QString c_exportTemplatePath(":/resources/export/export_template.html");
 
     QString cssStyle;
     if (!p_renderBg.isEmpty()) {
