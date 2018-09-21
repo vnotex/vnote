@@ -54,6 +54,16 @@ makepkg -sic
 
 There is also a development version that tracks the latest master [vnote-git](https://aur.archlinux.org/packages/vnote-git/).
 
+
+### Gentoo linux
+VNote on gentoo can be installed from vnote-overlay via layman
+```bash
+layman -f -a vnote-overlay -o https://raw.githubusercontent.com/fodrice/vnote-overlay/master/overlay.xml
+emerge -a vnote
+```
+
+More info at https://github.com/fodrice/vnote-overlay 
+
 ## MacOS
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
 
