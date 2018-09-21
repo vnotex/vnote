@@ -1,4 +1,20 @@
 # Changes History
+## v2.0
+- Vim: support specifying leader key via "[editor]/vim_leader_key";
+- LivePreview
+    - Smart live preview for PlantUML (Live Preview Tunnel);
+    - Expand live preview area via `Ctrl+E U`;
+- In-Place Preview: support in-place preview for online PlantUML;
+- Captain: fix captain mode shortcuts in different keyboard layout (Linux/Windows only);
+- Quick Access: specify a note for quick access via `Ctrl+Alt+I`;
+- Magic Word: support `%att%` as the relative path of the attachment folder;
+- Search: highlight matches of full-text search results in page in edit mode;
+- Editor
+    - Allow inserting link or content when dropping files in;
+    - Support highlighting tabs;
+- Support parsing HTML tables without head;
+- Export: support outline panel in exported HTML files;
+
 ## v1.22
 - Editor
     - Support parsting HTML as converted Markdown text;

@@ -777,7 +777,7 @@ bool VEditor::findText(const VSearchToken &p_token, bool p_forward, bool p_fromS
 
         highlightSearchedWordUnderCursor(tcursor);
 
-        emit m_object->statusMessage(QObject::tr("Match found: %2 of %3")
+        emit m_object->statusMessage(QObject::tr("Match found: %1 of %2")
                                                 .arg(idx + 1)
                                                 .arg(result.size()));
     }
@@ -834,7 +834,7 @@ bool VEditor::findTextInRange(const QString &p_text,
 
         highlightSearchedWordUnderCursor(tcursor);
 
-        emit m_object->statusMessage(QObject::tr("Match found: %2 of %3")
+        emit m_object->statusMessage(QObject::tr("Match found: %1 of %2")
                                                 .arg(idx + 1)
                                                 .arg(result.size()));
     }
