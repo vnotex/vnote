@@ -1286,7 +1286,9 @@ QMenu *VFileList::getOpenWithMenu()
                 if (item) {
                     VNoteFile *file = getVFile(item);
                     if (file
-                        && (!editArea->isFileOpened(file) || editArea->closeFile(file, false))) {
+                        && (!g_config->getCloseBeforeExternalEditor()
+                            || !editArea->isFileOpened(file)
+                            || editArea->closeFile(file, false))) {
                         QUrl url = QUrl::fromLocalFile(file->fetchPath());
                         QDesktopServices::openUrl(url);
                     }

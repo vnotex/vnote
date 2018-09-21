@@ -1442,10 +1442,14 @@ void VMainWindow::changeMarkdownConverter(QAction *action)
 
 void VMainWindow::aboutMessage()
 {
-    QString info = tr("<span style=\"font-weight: bold;\">v%1</span>").arg(VConfigManager::c_version);
-    info += "<br/><br/>";
-    info += tr("VNote is a free Vim-inspired note-taking application that knows programmers and Markdown better.");
+    QString info = tr("VNote");
     info += "<br/>";
+    info += tr("Version: %1").arg(VConfigManager::c_version);
+    info += "<br/>";
+    info += tr("Author: Le Tan (tamlok)");
+    info += "<br/><br/>";
+    info += tr("VNote is a free and open source Vim-inspired note-taking application that knows programmers and Markdown better.");
+    info += "<br/><br/>";
     info += tr("Please visit <a href=\"https://github.com/tamlok/vnote.git\">Github</a> for more information.");
     QMessageBox::about(this, tr("About VNote"), info);
 }
