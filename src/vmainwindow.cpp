@@ -2893,7 +2893,7 @@ void VMainWindow::openQuickAccess()
     const QString &qaPath = g_config->getQuickAccess();
     if (qaPath.isEmpty()) {
         VUtils::showMessage(QMessageBox::Information,
-                            tr("Info"),
+                            tr("Information"),
                             tr("Quick Access is not set."),
                             tr("Please specify the note for Quick Access in the settings dialog "
                                "or the context menu of a note."),
