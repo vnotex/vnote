@@ -14,6 +14,8 @@
 #include "vcaptain.h"
 #include "vfilelist.h"
 #include "vmathjaxpreviewhelper.h"
+#include "vmdtab.h"
+#include "vmdeditor.h"
 
 extern VConfigManager *g_config;
 
@@ -33,29 +35,7 @@ VEditArea::VEditArea(QWidget *parent)
 
     registerCaptainTargets();
 
-    QString keySeq = g_config->getShortcutKeySequence("ActivateNextTab");
-    qDebug() << "set ActivateNextTab shortcut to" << keySeq;
-    QShortcut *activateNextTab = new QShortcut(QKeySequence(keySeq), this);
-    activateNextTab->setContext(Qt::ApplicationShortcut);
-    connect(activateNextTab, &QShortcut::activated,
-            this, [this]() {
-                VEditWindow *win = getCurrentWindow();
-                if (win) {
-                    win->focusNextTab(true);
-                }
-            });
-
-    keySeq = g_config->getShortcutKeySequence("ActivatePreviousTab");
-    qDebug() << "set ActivatePreviousTab shortcut to" << keySeq;
-    QShortcut *activatePreviousTab = new QShortcut(QKeySequence(keySeq), this);
-    activatePreviousTab->setContext(Qt::ApplicationShortcut);
-    connect(activatePreviousTab, &QShortcut::activated,
-            this, [this]() {
-                VEditWindow *win = getCurrentWindow();
-                if (win) {
-                    win->focusNextTab(false);
-                }
-            });
+    initShortcuts();
 
     QTimer *timer = new QTimer(this);
     timer->setSingleShot(false);
@@ -125,6 +105,49 @@ void VEditArea::setupUI()
 
                     openFiles(files);
                 }
+            });
+}
+
+void VEditArea::initShortcuts()
+{
+    QString keySeq = g_config->getShortcutKeySequence("ActivateNextTab");
+    qDebug() << "set ActivateNextTab shortcut to" << keySeq;
+    QShortcut *activateNextTab = new QShortcut(QKeySequence(keySeq), this);
+    activateNextTab->setContext(Qt::ApplicationShortcut);
+    connect(activateNextTab, &QShortcut::activated,
+            this, [this]() {
+                VEditWindow *win = getCurrentWindow();
+                if (win) {
+                    win->focusNextTab(true);
+                }
+            });
+
+    keySeq = g_config->getShortcutKeySequence("ActivatePreviousTab");
+    qDebug() << "set ActivatePreviousTab shortcut to" << keySeq;
+    QShortcut *activatePreviousTab = new QShortcut(QKeySequence(keySeq), this);
+    activatePreviousTab->setContext(Qt::ApplicationShortcut);
+    connect(activatePreviousTab, &QShortcut::activated,
+            this, [this]() {
+                VEditWindow *win = getCurrentWindow();
+                if (win) {
+                    win->focusNextTab(false);
+                }
+            });
+
+    keySeq = g_config->getShortcutKeySequence("NextMatch");
+    qDebug() << "set NextMatch shortcut to" << keySeq;
+    QShortcut *nextMatchSC = new QShortcut(QKeySequence(keySeq), this);
+    connect(nextMatchSC, &QShortcut::activated,
+            this, [this]() {
+                nextMatch(true);
+            });
+
+    keySeq = g_config->getShortcutKeySequence("PreviousMatch");
+    qDebug() << "set PreviousMatch shortcut to" << keySeq;
+    QShortcut *previousMatchSC = new QShortcut(QKeySequence(keySeq), this);
+    connect(previousMatchSC, &QShortcut::activated,
+            this, [this]() {
+                nextMatch(false);
             });
 }
 
@@ -954,6 +977,14 @@ void VEditArea::registerCaptainTargets()
                                    g_config->getCaptainShortcutKeySequence("LivePreview"),
                                    this,
                                    toggleLivePreviewByCaptain);
+    captain->registerCaptainTarget(tr("ExpandLivePreview"),
+                                   g_config->getCaptainShortcutKeySequence("ExpandLivePreview"),
+                                   this,
+                                   expandLivePreviewByCaptain);
+    captain->registerCaptainTarget(tr("ParseAndPaste"),
+                                   g_config->getCaptainShortcutKeySequence("ParseAndPaste"),
+                                   this,
+                                   parseAndPasteByCaptain);
 }
 
 bool VEditArea::activateTabByCaptain(void *p_target, void *p_data, int p_idx)
@@ -1139,9 +1170,40 @@ bool VEditArea::toggleLivePreviewByCaptain(void *p_target, void *p_data)
     Q_UNUSED(p_data);
     VEditArea *obj = static_cast<VEditArea *>(p_target);
 
-    VEditTab *tab = obj->getCurrentTab();
+    VMdTab *tab = dynamic_cast<VMdTab *>(obj->getCurrentTab());
     if (tab) {
-        tab->toggleLivePreview();
+        if (tab->toggleLivePreview()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool VEditArea::expandLivePreviewByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+
+    VMdTab *tab = dynamic_cast<VMdTab *>(obj->getCurrentTab());
+    if (tab) {
+        if (tab->expandRestorePreviewArea()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool VEditArea::parseAndPasteByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VEditArea *obj = static_cast<VEditArea *>(p_target);
+
+    const VMdTab *tab = dynamic_cast<const VMdTab *>(obj->getCurrentTab());
+    if (tab && tab->isEditMode()) {
+        VMdEditor *editor = tab->getEditor();
+        editor->parseAndPaste();
     }
 
     return true;
@@ -1235,4 +1297,18 @@ void VEditArea::distributeSplits()
     }
 
     splitter->setSizes(sizes);
+}
+
+void VEditArea::nextMatch(bool p_forward)
+{
+    VEditTab *tab = getCurrentTab();
+    if (!tab) {
+        return;
+    }
+
+    Q_ASSERT(m_findReplace);
+
+    tab->nextMatch(m_findReplace->textToFind(),
+                   m_findReplace->options(),
+                   p_forward);
 }

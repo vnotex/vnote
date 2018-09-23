@@ -17,7 +17,7 @@ const QString VConfigManager::orgName = QString("vnote");
 
 const QString VConfigManager::appName = QString("vnote");
 
-const QString VConfigManager::c_version = QString("1.22");
+const QString VConfigManager::c_version = QString("2.0");
 
 const QString VConfigManager::c_dirConfigFile = QString("_vnote.json");
 
@@ -311,6 +311,22 @@ void VConfigManager::initialize()
     m_maxNumOfTagLabels = getConfigFromSettings("global",
                                                 "max_num_of_tag_labels").toInt();
 
+    m_smartLivePreview = getConfigFromSettings("global",
+                                               "smart_live_preview").toInt();
+
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    m_multipleKeyboardLayout = false;
+#else
+    m_multipleKeyboardLayout = getConfigFromSettings("global",
+                                                     "multiple_keyboard_layout").toBool();
+#endif
+
+    m_insertNewNoteInFront = getConfigFromSettings("global",
+                                                   "insert_new_note_in_front").toBool();
+
+    m_highlightMatchesInPage = getConfigFromSettings("global",
+                                                     "highlight_matches_in_page").toBool();
+
     initEditorConfigs();
 }
 
@@ -330,6 +346,21 @@ void VConfigManager::initEditorConfigs()
 
     m_enableSmartImInVimMode = getConfigFromSettings("editor",
                                                      "enable_smart_im_in_vim_mode").toBool();
+
+    QString tmpLeader = getConfigFromSettings("editor",
+                                              "vim_leader_key").toString();
+    if (tmpLeader.isEmpty()) {
+        m_vimLeaderKey = QChar(' ');
+    } else {
+        m_vimLeaderKey = tmpLeader[0];
+        if (m_vimLeaderKey.isNull()) {
+            m_vimLeaderKey = QChar(' ');
+        }
+    }
+
+    m_enableTabHighlight = getConfigFromSettings("editor",
+                                                 "enable_tab_highlight").toBool();
+
 }
 
 void VConfigManager::initSettings()
@@ -1382,6 +1413,25 @@ const QString &VConfigManager::getFlashPage() const
     }
 
     return m_flashPage;
+}
+
+const QString &VConfigManager::getQuickAccess() const
+{
+    if (m_quickAccess.isEmpty()) {
+        VConfigManager *var = const_cast<VConfigManager *>(this);
+
+        var->m_quickAccess = var->getConfigFromSettings("global",
+                                                        "quick_access").toString();
+        if (VUtils::checkFileNameLegal(m_quickAccess)) {
+            var->m_quickAccess = QDir(getConfigFolder()).filePath(m_quickAccess);
+        }
+    }
+
+    if (!m_quickAccess.isEmpty() && !QFileInfo::exists(m_quickAccess)) {
+        VUtils::touchFile(m_quickAccess);
+    }
+
+    return m_quickAccess;
 }
 
 void VConfigManager::initThemes()

@@ -93,6 +93,7 @@ void VFileList::setupUI()
     fileList->setSelectionMode(QAbstractItemView::ExtendedSelection);
     fileList->setObjectName("FileList");
     fileList->setAttribute(Qt::WA_MacShowFocusRect, false);
+    fileList->setMouseTracking(true);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addLayout(titleLayout);
@@ -103,6 +104,15 @@ void VFileList::setupUI()
             this, &VFileList::contextMenuRequested);
     connect(fileList, &QListWidget::itemClicked,
             this, &VFileList::handleItemClicked);
+    connect(fileList, &QListWidget::itemEntered,
+            this, &VFileList::showStatusTipAboutItem);
+    connect(fileList, &QListWidget::currentItemChanged,
+            this, [this](QListWidgetItem *p_cur, QListWidgetItem *p_pre) {
+                Q_UNUSED(p_pre);
+                if (p_cur) {
+                    showStatusTipAboutItem(p_cur);
+                }
+            });
 
     setLayout(mainLayout);
 }
@@ -227,6 +237,17 @@ void VFileList::pinFileToHistory() const
                                    .arg(items.size() > 1 ? tr("notes") : tr("note")));
 }
 
+void VFileList::setFileQuickAccess() const
+{
+    QList<QListWidgetItem *> items = fileList->selectedItems();
+    if (items.size() == 1) {
+        QString fp(getVFile(items[0])->fetchPath());
+
+        g_config->setQuickAccess(fp);
+        g_mainWin->showStatusMessage(tr("Quick access: %1").arg(fp));
+    }
+}
+
 void VFileList::fileInfo(VNoteFile *p_file)
 {
     if (!p_file) {
@@ -339,7 +360,8 @@ void VFileList::newFile()
                                                   true);
     VNewFileDialog dialog(tr("Create Note"), info, defaultName, m_directory, this);
     if (dialog.exec() == QDialog::Accepted) {
-        VNoteFile *file = m_directory->createFile(dialog.getNameInput());
+        VNoteFile *file = m_directory->createFile(dialog.getNameInput(),
+                                                  g_config->getInsertNewNoteInFront());
         if (!file) {
             VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                 tr("Fail to create note <span style=\"%1\">%2</span>.")
@@ -623,6 +645,19 @@ void VFileList::contextMenuRequested(QPoint pos)
             connect(openLocationAct, &QAction::triggered,
                     this, &VFileList::openFileLocation);
             menu.addAction(openLocationAct);
+
+            QAction *copyPathAct = new QAction(tr("Copy File Path"), &menu);
+            connect(copyPathAct, &QAction::triggered,
+                    this, [this]() {
+                        QList<QListWidgetItem *> items = fileList->selectedItems();
+                        if (items.size() == 1) {
+                            QString filePath = getVFile(items[0])->fetchPath();
+                            QClipboard *clipboard = QApplication::clipboard();
+                            clipboard->setText(filePath);
+                            g_mainWin->showStatusMessage(tr("File path copied %1").arg(filePath));
+                        }
+                    });
+            menu.addAction(copyPathAct);
         }
 
         QAction *addToCartAct = new QAction(VIconUtils::menuIcon(":/resources/icons/cart.svg"),
@@ -640,6 +675,14 @@ void VFileList::contextMenuRequested(QPoint pos)
         connect(pinToHistoryAct, &QAction::triggered,
                 this, &VFileList::pinFileToHistory);
         menu.addAction(pinToHistoryAct);
+
+        QAction *quickAccessAct = new QAction(VIconUtils::menuIcon(":/resources/icons/quick_access.svg"),
+                                              tr("Set As Quick Access"),
+                                              &menu);
+        quickAccessAct->setToolTip(tr("Set current note as quick access"));
+        connect(quickAccessAct, &QAction::triggered,
+                this, &VFileList::setFileQuickAccess);
+        menu.addAction(quickAccessAct);
 
         if (selectedSize == 1) {
             QAction *fileInfoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/note_info.svg"),
@@ -732,6 +775,24 @@ void VFileList::handleItemClicked(QListWidgetItem *p_item)
         m_itemClicked = p_item;
         m_clickTimer->start();
     }
+}
+
+void VFileList::showStatusTipAboutItem(QListWidgetItem *p_item)
+{
+    Q_ASSERT(p_item);
+    const VNoteFile *file = getVFile(p_item);
+    const QStringList &tags = file->getTags();
+    QString tag;
+    for (int i = 0; i < tags.size(); ++i) {
+        if (i == 0) {
+            tag = "\t[" + tags[i] + "]";
+        } else {
+            tag += " [" + tags[i] + "]";
+        }
+    }
+
+    QString tip(file->getName() + tag);
+    g_mainWin->showStatusMessage(tip);
 }
 
 void VFileList::activateItem(QListWidgetItem *p_item, bool p_restoreFocus)
@@ -957,6 +1018,7 @@ void VFileList::pasteFiles(VDirectory *p_destDir,
                                        fileName,
                                        file,
                                        p_isCut,
+                                       g_config->getInsertNewNoteInFront() ? 0 : -1,
                                        &destFile,
                                        &msg);
         if (!ret) {
@@ -1224,7 +1286,9 @@ QMenu *VFileList::getOpenWithMenu()
                 if (item) {
                     VNoteFile *file = getVFile(item);
                     if (file
-                        && (!editArea->isFileOpened(file) || editArea->closeFile(file, false))) {
+                        && (!g_config->getCloseBeforeExternalEditor()
+                            || !editArea->isFileOpened(file)
+                            || editArea->closeFile(file, false))) {
                         QUrl url = QUrl::fromLocalFile(file->fetchPath());
                         QDesktopServices::openUrl(url);
                     }
@@ -1347,11 +1411,19 @@ void VFileList::updateViewMenu(QMenu *p_menu)
 
 void VFileList::sortFileList(ViewOrder p_order)
 {
+    if (!m_directory) {
+        return;
+    }
+
     QVector<VNoteFile *> files = m_directory->getFiles();
+    if (files.isEmpty()) {
+        return;
+    }
+
     sortFiles(files, p_order);
 
-    Q_ASSERT(files.size() == fileList->count());
     int cnt = files.size();
+    Q_ASSERT(cnt == fileList->count());
     for (int i = 0; i < cnt; ++i) {
         int row = -1;
         for (int j = i; j < cnt; ++j) {

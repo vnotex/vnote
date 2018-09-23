@@ -251,6 +251,8 @@ private slots:
 
     void handleMouseReleased(QMouseEvent *p_event);
 
+    void handleMouseDoubleClicked(QMouseEvent *p_event);
+
     // When we display cursor as block, it makes no sense to put cursor at the
     // end of line.
     void amendCursorPosition();
@@ -677,6 +679,9 @@ private:
     // Expand selection to whole lines which will change the position
     // of @p_cursor.
     void expandSelectionToWholeLines(QTextCursor &p_cursor);
+
+    // Init leader key from config.
+    void initLeaderKey();
 
     // Init m_registers.
     // Currently supported registers:

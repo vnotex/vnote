@@ -77,6 +77,8 @@ private slots:
 
     void handleItemClicked(QListWidgetItem *p_item);
 
+    void showStatusTipAboutItem(QListWidgetItem *p_item);
+
     // View and edit information of selected file.
     // Valid only when there is only one selected file.
     void fileInfo();
@@ -90,6 +92,8 @@ private slots:
 
     // Add selected files to History and pin them.
     void pinFileToHistory() const;
+
+    void setFileQuickAccess() const;
 
     // Copy selected files to clipboard.
     // Will put a Json string into the clipboard which contains the information

@@ -443,6 +443,27 @@ bool VNotebook::addTag(const QString &p_tag)
     return true;
 }
 
+bool VNotebook::addTags(VDirectory *p_dir)
+{
+    QStringList tags = p_dir->collectTags();
+
+    for (auto const & tag : tags) {
+        if (tag.isEmpty() || hasTag(tag)) {
+            continue;
+        }
+
+        m_tags.append(tag);
+    }
+
+    if (!writeConfigNotebook()) {
+        qWarning() << "fail to update config of notebook" << m_name
+                   << "in directory" << m_path;
+        return false;
+    }
+
+    return true;
+}
+
 void VNotebook::removeTag(const QString &p_tag)
 {
     if (p_tag.isEmpty() || m_tags.isEmpty()) {

@@ -135,6 +135,7 @@ public:
                          const QString &p_destName,
                          VNoteFile *p_file,
                          bool p_isCut,
+                         int p_idx,
                          VNoteFile **p_targetFile,
                          QString *p_errMsg = NULL);
 

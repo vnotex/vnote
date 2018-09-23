@@ -1,5 +1,7 @@
 #include "vmathjaxwebdocument.h"
 
+#include <QDebug>
+
 VMathJaxWebDocument::VMathJaxWebDocument(QObject *p_parent)
     : QObject(p_parent)
 {
@@ -44,3 +46,9 @@ void VMathJaxWebDocument::previewDiagram(int p_identifier,
                                p_lang,
                                p_text);
 }
+
+void VMathJaxWebDocument::setLog(const QString &p_log)
+{
+    qDebug() << "JS:" << p_log;
+}
+

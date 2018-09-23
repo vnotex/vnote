@@ -5,6 +5,9 @@
 
 #include "utils/vutils.h"
 #include "vmathjaxwebdocument.h"
+#include "vconfigmanager.h"
+
+extern VConfigManager *g_config;
 
 VMathJaxPreviewHelper::VMathJaxPreviewHelper(QWidget *p_parentWidget, QObject *p_parent)
     : QObject(p_parent),
@@ -57,7 +60,13 @@ void VMathJaxPreviewHelper::doInit()
                         TimeStamp p_timeStamp,
                         const QString &p_format,
                         const QString &p_data) {
-                QByteArray ba = QByteArray::fromBase64(p_data.toUtf8());
+                QByteArray ba;
+                if (p_format == "png") {
+                    ba = QByteArray::fromBase64(p_data.toUtf8());
+                } else {
+                    ba = p_data.toUtf8();
+                }
+
                 emit diagramPreviewResultReady(p_identifier, p_id, p_timeStamp, p_format, ba);
             });
 
@@ -67,7 +76,8 @@ void VMathJaxPreviewHelper::doInit()
 
     // setHtml() will change focus if it is not disabled.
     m_webView->setEnabled(false);
-    m_webView->setHtml(VUtils::generateMathJaxPreviewTemplate(), QUrl("qrc:/resources"));
+    QUrl baseUrl(QUrl::fromLocalFile(g_config->getDocumentPathOrHomePath() + QDir::separator()));
+    m_webView->setHtml(VUtils::generateMathJaxPreviewTemplate(), baseUrl);
     m_webView->setEnabled(true);
 }
 

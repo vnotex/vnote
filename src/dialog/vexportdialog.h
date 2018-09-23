@@ -58,18 +58,21 @@ struct ExportHTMLOption
         : m_embedCssStyle(true),
           m_completeHTML(true),
           m_embedImages(true),
-          m_mimeHTML(false)
+          m_mimeHTML(false),
+          m_outlinePanel(true)
     {
     }
 
     ExportHTMLOption(bool p_embedCssStyle,
                      bool p_completeHTML,
                      bool p_embedImages,
-                     bool p_mimeHTML)
+                     bool p_mimeHTML,
+                     bool p_outlinePanel)
         : m_embedCssStyle(p_embedCssStyle),
           m_completeHTML(p_completeHTML),
           m_embedImages(p_embedImages),
-          m_mimeHTML(p_mimeHTML)
+          m_mimeHTML(p_mimeHTML),
+          m_outlinePanel(p_outlinePanel)
     {
     }
 
@@ -77,6 +80,7 @@ struct ExportHTMLOption
     bool m_completeHTML;
     bool m_embedImages;
     bool m_mimeHTML;
+    bool m_outlinePanel;
 };
 
 
@@ -141,6 +145,7 @@ struct ExportCustomOption
     ExportCustomOption()
         : m_srcFormat(SourceFormat::Markdown),
           m_allInOne(false),
+          m_pdfLike(false),
           m_folderSep(DEFAULT_SEP)
     {
     }
@@ -148,6 +153,7 @@ struct ExportCustomOption
     ExportCustomOption(const QStringList &p_config)
         : m_srcFormat(SourceFormat::Markdown),
           m_allInOne(false),
+          m_pdfLike(false),
           m_folderSep(DEFAULT_SEP)
     {
         if (p_config.size() < 3) {
@@ -169,6 +175,7 @@ struct ExportCustomOption
                        const QString &p_cssUrl,
                        const QString &p_codeBlockCssUrl,
                        bool p_allInOne,
+                       bool p_pdfLike,
                        const QString &p_folderSep,
                        const QString &p_targetFileName)
         : m_srcFormat(p_srcFormat),
@@ -176,6 +183,7 @@ struct ExportCustomOption
           m_cssUrl(p_cssUrl),
           m_codeBlockCssUrl(p_codeBlockCssUrl),
           m_allInOne(p_allInOne),
+          m_pdfLike(p_pdfLike),
           m_folderSep(p_folderSep),
           m_targetFileName(p_targetFileName)
     {
@@ -203,6 +211,7 @@ struct ExportCustomOption
     QString m_codeBlockCssUrl;
 
     bool m_allInOne;
+    bool m_pdfLike;
 
     QString m_folderSep;
     QString m_targetFileName;
@@ -447,6 +456,8 @@ private:
 
     QCheckBox *m_mimeHTMLCB;
 
+    QCheckBox *m_outlinePanelCB;
+
     QCheckBox *m_subfolderCB;
 
     QComboBox *m_customSrcFormatCB;
@@ -454,6 +465,8 @@ private:
     VLineEdit *m_customSuffixEdit;
 
     QCheckBox *m_customAllInOneCB;
+
+    QCheckBox *m_customPdfLikeCB;
 
     QPlainTextEdit *m_customCmdEdit;
 

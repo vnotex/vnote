@@ -168,8 +168,7 @@ QHash<QString, QTextCharFormat> VStyleParser::fetchCodeBlockStyles(const QFont &
         {
             QString attrName(attrs->name);
             QString attrValue(attrs->value->string);
-            QTextCharFormat format;
-            format.setFontFamily(baseFormat.fontFamily());
+            QTextCharFormat format = baseFormat;
 
             QStringList items = attrValue.split(',', QString::SkipEmptyParts);
             for (auto const &item : items) {

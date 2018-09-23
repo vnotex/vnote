@@ -919,14 +919,21 @@ void VEditUtils::insertTitleMark(QTextCursor &p_cursor,
 
 void VEditUtils::findCurrentWord(QTextCursor p_cursor,
                                  int &p_start,
-                                 int &p_end)
+                                 int &p_end,
+                                 bool p_findPrecedingWord)
 {
     QString text = p_cursor.block().text();
     int pib = p_cursor.positionInBlock();
 
     if (pib < text.size() && text[pib].isSpace()) {
-        p_start = p_end = p_cursor.position();
-        return;
+        if (!p_findPrecedingWord
+            || pib == 0
+            || text[pib - 1].isSpace()) {
+            p_start = p_end = p_cursor.position();
+            return;
+        }
+
+        p_cursor.movePosition(QTextCursor::PreviousCharacter);
     }
 
     p_cursor.movePosition(QTextCursor::StartOfWord);

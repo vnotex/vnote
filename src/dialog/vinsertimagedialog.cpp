@@ -107,7 +107,11 @@ QString VInsertImageDialog::getImageTitleInput() const
 
 QString VInsertImageDialog::getPathInput() const
 {
-    return m_pathEdit->text();
+    if (m_tempFile.isNull()) {
+        return m_pathEdit->text();
+    } else {
+        return m_tempFile->fileName();
+    }
 }
 
 void VInsertImageDialog::handleBrowseBtnClicked()
@@ -163,8 +167,38 @@ void VInsertImageDialog::setImage(const QImage &image)
 
 void VInsertImageDialog::imageDownloaded(const QByteArray &data)
 {
-    m_imageType = ImageType::ImageData;
     setImage(QImage::fromData(data));
+
+    // Try to save it to a temp file.
+    {
+    if (data.isEmpty()) {
+        goto image_data;
+    }
+
+    QString format = QFileInfo(getPathInput()).suffix();
+    if (format.isEmpty()) {
+        goto image_data;
+    }
+
+    m_tempFile.reset(new QTemporaryFile(QDir::tempPath()
+                                        + QDir::separator()
+                                        + "XXXXXX." + format));
+    if (!m_tempFile->open()) {
+        goto image_data;
+    }
+
+    if (m_tempFile->write(data) == -1) {
+        goto image_data;
+    }
+
+    m_imageType = ImageType::LocalFile;
+    m_tempFile->close();
+    return;
+    }
+
+image_data:
+    m_tempFile.clear();
+    m_imageType = ImageType::ImageData;
 }
 
 QImage VInsertImageDialog::getImage() const

@@ -95,7 +95,7 @@ VLivePreviewHelper::VLivePreviewHelper(VEditor *p_editor,
 {
     m_livePreviewTimer = new QTimer(this);
     m_livePreviewTimer->setSingleShot(true);
-    m_livePreviewTimer->setInterval(100);
+    m_livePreviewTimer->setInterval(500);
     connect(m_livePreviewTimer, &QTimer::timeout,
             this, &VLivePreviewHelper::handleCursorPositionChanged);
 
@@ -124,8 +124,7 @@ void VLivePreviewHelper::checkLang(const QString &p_lang,
     if (m_flowchartEnabled && (p_lang == "flow" || p_lang == "flowchart")) {
         p_livePreview = p_inplacePreview = true;
     } else if (m_plantUMLMode != PlantUMLMode::DisablePlantUML && p_lang == "puml") {
-        p_livePreview = true;
-        p_inplacePreview = m_plantUMLMode == PlantUMLMode::LocalPlantUML;
+        p_livePreview = p_inplacePreview = true;
     } else if (m_graphvizEnabled && p_lang == "dot") {
         p_livePreview = p_inplacePreview = true;
     } else if (m_mermaidEnabled && p_lang == "mermaid") {
@@ -202,6 +201,7 @@ void VLivePreviewHelper::updateCodeBlocks(TimeStamp p_timeStamp, const QVector<V
             && vcb.m_endBlock >= cursorBlock) {
             if (lastIndex == idx && cached && !oldCache) {
                 needUpdate = false;
+                m_curLivePreviewInfo.update(vcb);
             }
 
             m_cbIndex = idx;
@@ -214,6 +214,7 @@ void VLivePreviewHelper::updateCodeBlocks(TimeStamp p_timeStamp, const QVector<V
 
     if (needUpdate) {
         updateLivePreview();
+        performSmartLivePreview();
     }
 
     clearObsoleteCache();
@@ -227,44 +228,48 @@ void VLivePreviewHelper::handleCursorPositionChanged()
     }
 
     int cursorBlock = m_editor->textCursorW().block().blockNumber();
-    if (m_lastCursorBlock == cursorBlock) {
-        return;
-    }
+    if (m_lastCursorBlock != cursorBlock) {
+        m_lastCursorBlock = cursorBlock;
 
-    m_lastCursorBlock = cursorBlock;
+        int left = 0, right = m_codeBlocks.size() - 1;
+        int mid = left;
+        while (left <= right) {
+            mid = (left + right) / 2;
+            const CodeBlockPreviewInfo &cb = m_codeBlocks[mid];
+            const VCodeBlock &vcb = cb.codeBlock();
+            if (vcb.m_startBlock <= cursorBlock && vcb.m_endBlock >= cursorBlock) {
+                break;
+            } else if (vcb.m_startBlock > cursorBlock) {
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
+        }
 
-    int left = 0, right = m_codeBlocks.size() - 1;
-    int mid = left;
-    while (left <= right) {
-        mid = (left + right) / 2;
-        const CodeBlockPreviewInfo &cb = m_codeBlocks[mid];
-        const VCodeBlock &vcb = cb.codeBlock();
-        if (vcb.m_startBlock <= cursorBlock && vcb.m_endBlock >= cursorBlock) {
-            break;
-        } else if (vcb.m_startBlock > cursorBlock) {
-            right = mid - 1;
-        } else {
-            left = mid + 1;
+        if (left <= right) {
+            if (m_cbIndex != mid) {
+                m_cbIndex = mid;
+                updateLivePreview();
+            }
         }
     }
 
-    if (left <= right) {
-        if (m_cbIndex != mid) {
-            m_cbIndex = mid;
-            updateLivePreview();
-        }
-    }
+    performSmartLivePreview();
 }
 
 void VLivePreviewHelper::updateLivePreview()
 {
     if (m_cbIndex < 0) {
+        m_curLivePreviewInfo.clear();
         return;
     }
 
     Q_ASSERT(!(m_cbIndex & ~INDEX_MASK));
     const CodeBlockPreviewInfo &cb = m_codeBlocks[m_cbIndex];
     const VCodeBlock &vcb = cb.codeBlock();
+
+    m_curLivePreviewInfo.update(vcb);
+
     if (vcb.m_lang == "dot") {
         if (!m_graphvizHelper) {
             m_graphvizHelper = new VGraphvizHelper(this);
@@ -374,14 +379,12 @@ void VLivePreviewHelper::localAsyncResultReady(int p_id,
     }
 
     CodeBlockPreviewInfo &cb = m_codeBlocks[idx];
-    const QString &text = cb.codeBlock().m_text;
-
     QSharedPointer<CodeBlockImageCacheEntry> entry(new CodeBlockImageCacheEntry(p_timeStamp,
                                                                                 p_format,
                                                                                 p_result,
                                                                                 background,
                                                                                 getScaleFactor(cb)));
-    m_cache.insert(text, entry);
+    m_cache.insert(cb.codeBlock().m_text, entry);
 
     cb.setImageData(p_format, p_result);
     cb.updateInplacePreview(m_editor, m_doc, entry->m_image, QString(), background);
@@ -396,6 +399,7 @@ void VLivePreviewHelper::localAsyncResultReady(int p_id,
         }
 
         m_document->setPreviewContent(lang, p_result);
+        performSmartLivePreview();
     } else {
         // Inplace preview.
         updateInplacePreview();
@@ -418,17 +422,25 @@ void VLivePreviewHelper::processForInplacePreview(int p_idx)
                                        m_timeStamp,
                                        "svg",
                                        VEditUtils::removeCodeBlockFence(vcb.m_text));
-    } else if (vcb.m_lang == "puml" && m_plantUMLMode == PlantUMLMode::LocalPlantUML) {
-        if (!m_plantUMLHelper) {
-            m_plantUMLHelper = new VPlantUMLHelper(this);
-            connect(m_plantUMLHelper, &VPlantUMLHelper::resultReady,
-                    this, &VLivePreviewHelper::localAsyncResultReady);
-        }
+    } else if (vcb.m_lang == "puml") {
+        if (m_plantUMLMode == PlantUMLMode::LocalPlantUML) {
+            if (!m_plantUMLHelper) {
+                m_plantUMLHelper = new VPlantUMLHelper(this);
+                connect(m_plantUMLHelper, &VPlantUMLHelper::resultReady,
+                        this, &VLivePreviewHelper::localAsyncResultReady);
+            }
 
-        m_plantUMLHelper->processAsync(p_idx | LANG_PREFIX_PLANTUML | TYPE_INPLACE_PREVIEW,
-                                       m_timeStamp,
-                                       "svg",
-                                       VEditUtils::removeCodeBlockFence(vcb.m_text));
+            m_plantUMLHelper->processAsync(p_idx | LANG_PREFIX_PLANTUML | TYPE_INPLACE_PREVIEW,
+                                           m_timeStamp,
+                                           "svg",
+                                           VEditUtils::removeCodeBlockFence(vcb.m_text));
+        } else {
+            m_mathJaxHelper->previewDiagram(m_mathJaxID,
+                                            p_idx,
+                                            m_timeStamp,
+                                            vcb.m_lang,
+                                            VEditUtils::removeCodeBlockFence(vcb.m_text));
+        }
     } else if (vcb.m_lang == "flow"
                || vcb.m_lang == "flowchart") {
         m_mathJaxHelper->previewDiagram(m_mathJaxID,
@@ -490,16 +502,21 @@ void VLivePreviewHelper::mathjaxPreviewResultReady(int p_identitifer,
     }
 
     CodeBlockPreviewInfo &cb = m_codeBlocks[p_id];
-    const QString &text = cb.codeBlock().m_text;
+    const VCodeBlock &vcb = cb.codeBlock();
+
+    QString background;
+    if (vcb.m_lang == "puml") {
+        background = g_config->getEditorPreviewImageBg();
+    }
 
     QSharedPointer<CodeBlockImageCacheEntry> entry(new CodeBlockImageCacheEntry(p_timeStamp,
                                                                                 p_format,
                                                                                 p_data,
-                                                                                "",
+                                                                                background,
                                                                                 getScaleFactor(cb)));
-    m_cache.insert(text, entry);
+    m_cache.insert(vcb.m_text, entry);
 
-    cb.updateInplacePreview(m_editor, m_doc, entry->m_image);
+    cb.updateInplacePreview(m_editor, m_doc, entry->m_image, QString(), background);
 
     if (cb.inplacePreview()) {
         entry->m_imageName = cb.inplacePreview()->m_name;
@@ -522,4 +539,45 @@ void VLivePreviewHelper::clearObsoleteCache()
             ++it;
         }
     }
+}
+
+void VLivePreviewHelper::performSmartLivePreview()
+{
+    if (m_cbIndex < 0
+        || m_cbIndex >= m_codeBlocks.size()
+        || !(g_config->getSmartLivePreview() & SmartLivePreview::EditorToWeb)) {
+        return;
+    }
+
+    const CodeBlockPreviewInfo &cb = m_codeBlocks[m_cbIndex];
+    const VCodeBlock &vcb = cb.codeBlock();
+    if (!cb.hasImageData() && !isOnlineLivePreview(vcb.m_lang)) {
+        return;
+    }
+
+    const QTextBlock block = m_editor->textCursorW().block();
+    if (block.blockNumber() <= vcb.m_startBlock
+        || block.blockNumber() >= vcb.m_endBlock) {
+        return;
+    }
+
+    QString keyword, hints;
+    bool isRegex = false;
+    if (vcb.m_lang == "puml") {
+        keyword = VPlantUMLHelper::keywordForSmartLivePreview(block.text(),
+                                                              hints,
+                                                              isRegex);
+    }
+
+    m_document->performSmartLivePreview(vcb.m_lang, keyword, hints, isRegex);
+}
+
+bool VLivePreviewHelper::isOnlineLivePreview(const QString &p_lang) const
+{
+    if (p_lang == "dot"
+        || (p_lang == "puml" && m_plantUMLMode == PlantUMLMode::LocalPlantUML)) {
+        return false;
+    }
+
+    return true;
 }

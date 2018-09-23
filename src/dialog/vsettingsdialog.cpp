@@ -62,6 +62,7 @@ VSettingsDialog::VSettingsDialog(QWidget *p_parent)
     addTab(new VReadEditTab(), tr("Read/Edit"));
     addTab(new VNoteManagementTab(), tr("Note Management"));
     addTab(new VMarkdownTab(), tr("Markdown"));
+    addTab(new VMiscTab(), tr("Misc"));
 
     m_tabList->setMaximumWidth(m_tabList->sizeHintForColumn(0) + 5);
 
@@ -193,6 +194,15 @@ void VSettingsDialog::loadConfiguration()
         }
     }
 
+    // Misc Tab.
+    {
+        VMiscTab *miscTab = dynamic_cast<VMiscTab *>(m_tabs->widget(idx++));
+        Q_ASSERT(miscTab);
+        if (!miscTab->loadConfiguration()) {
+            goto err;
+        }
+    }
+
     return;
 err:
     VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
@@ -249,6 +259,15 @@ void VSettingsDialog::saveConfiguration()
         }
     }
 
+    // Misc Tab.
+    {
+        VMiscTab *miscTab = dynamic_cast<VMiscTab *>(m_tabs->widget(idx++));
+        Q_ASSERT(miscTab);
+        if (!miscTab->saveConfiguration()) {
+            goto err;
+        }
+    }
+
     accept();
     return;
 err:
@@ -283,10 +302,33 @@ VGeneralTab::VGeneralTab(QWidget *p_parent)
     // Startup pages.
     QLayout *startupLayout = setupStartupPagesLayout();
 
+    // Quick access.
+    m_quickAccessEdit = new VLineEdit(this);
+    m_quickAccessEdit->setPlaceholderText(tr("Path of file to quick access"));
+    m_quickAccessEdit->setToolTip(tr("Set the path of a file to quick access "
+                                     "(absolute or relative to configuration folder)"));
+
+    QPushButton *browseBtn = new QPushButton(tr("Browse"), this);
+    connect(browseBtn, &QPushButton::clicked,
+            this, [this]() {
+                QString filePath = QFileDialog::getOpenFileName(this,
+                                                                tr("Select File To Quick Access"),
+                                                                g_config->getDocumentPathOrHomePath());
+
+                if (!filePath.isEmpty()) {
+                    m_quickAccessEdit->setText(filePath);
+                }
+            });
+
+    QHBoxLayout *qaLayout = new QHBoxLayout();
+    qaLayout->addWidget(m_quickAccessEdit);
+    qaLayout->addWidget(browseBtn);
+
     QFormLayout *optionLayout = new QFormLayout();
     optionLayout->addRow(tr("Language:"), m_langCombo);
     optionLayout->addRow(m_systemTray);
     optionLayout->addRow(tr("Startup pages:"), startupLayout);
+    optionLayout->addRow(tr("Quick access:"), qaLayout);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(optionLayout);
@@ -363,6 +405,10 @@ bool VGeneralTab::loadConfiguration()
         return false;
     }
 
+    if (!loadQuickAccess()) {
+        return false;
+    }
+
     return true;
 }
 
@@ -377,6 +423,10 @@ bool VGeneralTab::saveConfiguration()
     }
 
     if (!saveStartupPageType()) {
+        return false;
+    }
+
+    if (!saveQuickAccess()) {
         return false;
     }
 
@@ -463,6 +513,18 @@ bool VGeneralTab::saveStartupPageType()
         g_config->setStartupPages(pages);
     }
 
+    return true;
+}
+
+bool VGeneralTab::loadQuickAccess()
+{
+    m_quickAccessEdit->setText(g_config->getQuickAccess());
+    return true;
+}
+
+bool VGeneralTab::saveQuickAccess()
+{
+    g_config->setQuickAccess(m_quickAccessEdit->text());
     return true;
 }
 
@@ -1041,6 +1103,7 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     m_mathjaxConfigEdit = new VLineEdit();
     m_mathjaxConfigEdit->setToolTip(tr("Location of MathJax JavaScript and its configuration "
                                        "(restart VNote to make it work in in-place preview)"));
+    m_mathjaxConfigEdit->setPlaceholderText(tr("Need to prepend \"file://\" to local path"));
 
     // PlantUML.
     m_plantUMLModeCombo = VUtils::getComboBox();
@@ -1308,5 +1371,47 @@ bool VMarkdownTab::saveGraphviz()
 {
     g_config->setEnableGraphviz(m_graphvizCB->isChecked());
     g_config->setGraphvizDot(m_graphvizDotEdit->text());
+    return true;
+}
+
+VMiscTab::VMiscTab(QWidget *p_parent)
+    : QWidget(p_parent)
+{
+    m_matchesInPageCB = new QCheckBox(tr("Highlight matches of a full-text search in page"),
+                                      this);
+
+    QFormLayout *mainLayout = new QFormLayout();
+    mainLayout->addRow(m_matchesInPageCB);
+
+    setLayout(mainLayout);
+}
+
+bool VMiscTab::loadConfiguration()
+{
+    if (!loadMatchesInPage()) {
+        return false;
+    }
+
+    return true;
+}
+
+bool VMiscTab::saveConfiguration()
+{
+    if (!saveMatchesInPage()) {
+        return false;
+    }
+
+    return true;
+}
+
+bool VMiscTab::loadMatchesInPage()
+{
+    m_matchesInPageCB->setChecked(g_config->getHighlightMatchesInPage());
+    return true;
+}
+
+bool VMiscTab::saveMatchesInPage()
+{
+    g_config->setHighlightMatchesInPage(m_matchesInPageCB->isChecked());
     return true;
 }

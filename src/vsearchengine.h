@@ -22,7 +22,8 @@ public:
     explicit VSearchEngineWorker(QObject *p_parent = nullptr);
 
     void setData(const QStringList &p_files,
-                 const VSearchToken &p_token);
+                 const VSearchToken &p_token,
+                 const QSharedPointer<VSearchConfig> &p_config);
 
 public slots:
     void stop();
@@ -45,6 +46,8 @@ private:
     QStringList m_files;
 
     VSearchToken m_token;
+
+    QSharedPointer<VSearchConfig> m_config;
 
     VSearchState m_state;
 

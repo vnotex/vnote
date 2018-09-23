@@ -151,7 +151,14 @@ void VEditTab::checkFileChangeOutside()
         return;
     }
 
-    if (m_file->isChangedOutside()) {
+    bool missing = false;
+    if (m_file->isChangedOutside(missing)) {
+        // It may be caused by cutting files.
+        if (missing) {
+            qWarning() << "file is missing when check file's outside change" << m_file->fetchPath();
+            return;
+        }
+
         int ret = VUtils::showMessage(QMessageBox::Information,
                                       tr("Information"),
                                       tr("Note <span style=\"%1\">%2</span> has been modified by another program.")

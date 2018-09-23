@@ -1,9 +1,14 @@
-- English is preferred;
-- Make the title as meaningful as possible;
-- One issue for only one thing, since large issues are difficult to remember and handle;
-- When reporting problems, elaborate it as detailed as possible like:
-    - Version of VNote, which operating system;
-    - What is the symptoms;
-    - What action triggered it;
-    - How to reproduce it;
-- Please delete all these text and put whatever you want below. :)
+> **PLEASE elaborate the issue in detail**  
+> **请详细描述问题**
+
+******
+
+OS Version (操作系统): Windows, Linux, macOS
+
+VNote Version (VNote版本): Latest (最新)
+
+Symptoms (表现):
+
+
+How to Repro (如何复现):
+

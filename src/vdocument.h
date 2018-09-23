@@ -75,6 +75,11 @@ public:
 
     void muteWebView(bool p_muted);
 
+    void performSmartLivePreview(const QString &p_lang,
+                                 const QString &p_text,
+                                 const QString &p_hints,
+                                 bool p_isRegex);
+
 public slots:
     // Will be called in the HTML side
 
@@ -134,8 +139,6 @@ signals:
 
     void htmlChanged(const QString &html);
 
-    void logChanged(const QString &p_log);
-
     void keyPressed(int p_key, bool p_ctrl, bool p_shift, bool p_meta);
 
     void requestHighlightText(const QString &p_text, int p_id, unsigned long long p_timeStamp);
@@ -191,6 +194,11 @@ signals:
     void codeBlockPreviewReady(int p_id, const QString &p_lang, const QString &p_html);
 
     void requestMuted(bool p_muted);
+
+    void requestPerformSmartLivePreview(const QString &p_lang,
+                                        const QString &p_text,
+                                        const QString &p_hints,
+                                        bool p_isRegex);
 
 private:
     QString m_toc;

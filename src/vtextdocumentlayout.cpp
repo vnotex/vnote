@@ -84,7 +84,7 @@ void VTextDocumentLayout::blockRangeFromRect(const QRectF &p_rect,
     QTextBlock block = document()->firstBlock();
     while (block.isValid()) {
         const BlockLayoutInfo *info = VTextBlockData::layoutInfo(block);
-        Q_ASSERT(info->hasOffset());
+        V_ASSERT(info->hasOffset());
 
         if (info->top() == y
             || (info->top() < y && info->bottom() >= y)) {
@@ -103,7 +103,7 @@ void VTextDocumentLayout::blockRangeFromRect(const QRectF &p_rect,
     y += p_rect.height();
     while (block.isValid()) {
         const BlockLayoutInfo *info = VTextBlockData::layoutInfo(block);
-        Q_ASSERT(info->hasOffset());
+        V_ASSERT(info->hasOffset());
 
         if (info->bottom() > y) {
             p_last = block.blockNumber();
@@ -140,7 +140,7 @@ void VTextDocumentLayout::blockRangeFromRectBS(const QRectF &p_rect,
     p_last = document()->blockCount() - 1;
     while (block.isValid()) {
         const BlockLayoutInfo *tinfo = VTextBlockData::layoutInfo(block);
-        Q_ASSERT(tinfo->hasOffset());
+        V_ASSERT(tinfo->hasOffset());
 
         if (tinfo->bottom() > y) {
             p_last = block.blockNumber();
@@ -164,7 +164,7 @@ int VTextDocumentLayout::findBlockByPosition(const QPointF &p_point) const
             return -1;
         }
 
-        Q_ASSERT(info->hasOffset());
+        V_ASSERT(info->hasOffset());
         if (info->top() <= y && info->bottom() > y) {
             // Found it.
             return mid;
@@ -203,7 +203,7 @@ void VTextDocumentLayout::draw(QPainter *p_painter, const PaintContext &p_contex
 
     while (block.isValid()) {
         const BlockLayoutInfo *info = VTextBlockData::layoutInfo(block);
-        Q_ASSERT(info->hasOffset());
+        V_ASSERT(info->hasOffset());
 
         const QRectF &rect = info->m_rect;
         QTextLayout *layout = block.layout();
@@ -339,7 +339,7 @@ QVector<QTextLayout::FormatRange> VTextDocumentLayout::formatRangeFromSelection(
             // a position to specify the line. that's more convenience in usage.
             QTextLayout::FormatRange o;
             QTextLine l = p_block.layout()->lineForTextPosition(range.cursor.position() - blpos);
-            Q_ASSERT(l.isValid());
+            V_ASSERT(l.isValid());
             o.start = l.textStart();
             o.length = l.textLength();
             if (o.start + o.length == bllen - 1) {
@@ -363,7 +363,7 @@ int VTextDocumentLayout::hitTest(const QPointF &p_point, Qt::HitTestAccuracy p_a
     }
 
     QTextBlock block = document()->findBlockByNumber(bn);
-    Q_ASSERT(block.isValid());
+    V_ASSERT(block.isValid());
     QTextLayout *layout = block.layout();
     int off = 0;
     QPointF pos = p_point - QPointF(m_margin, VTextBlockData::layoutInfo(block)->top());
@@ -494,7 +494,7 @@ void VTextDocumentLayout::clearBlockLayout(QTextBlock &p_block)
 void VTextDocumentLayout::layoutBlock(const QTextBlock &p_block)
 {
     QTextDocument *doc = document();
-    Q_ASSERT(m_margin == doc->documentMargin());
+    V_ASSERT(m_margin == doc->documentMargin());
 
     QTextLayout *tl = p_block.layout();
     QTextOption option = doc->defaultTextOption();
@@ -529,9 +529,10 @@ void VTextDocumentLayout::layoutBlock(const QTextBlock &p_block)
 void VTextDocumentLayout::updateOffsetBefore(const QTextBlock &p_block)
 {
     BlockLayoutInfo *info = VTextBlockData::layoutInfo(p_block);
-    Q_ASSERT(!info->isNull());
+    V_ASSERT(!info->isNull());
 
-    if (p_block.blockNumber() == 0) {
+    const int blockNum = p_block.blockNumber();
+    if (blockNum == 0) {
         info->m_offset = 0;
     } else {
         QTextBlock blk = p_block.previous();
@@ -554,26 +555,25 @@ void VTextDocumentLayout::updateOffsetBefore(const QTextBlock &p_block)
             // Now we reach a block with offset.
             qreal offset = pinfo->bottom();
             blk = blk.next();
-            while (blk.isValid()) {
+            while (blk.isValid() && blk.blockNumber() <= blockNum) {
                 BlockLayoutInfo *ninfo = VTextBlockData::layoutInfo(blk);
+                Q_ASSERT(!ninfo->isNull());
                 ninfo->m_offset = offset;
-                if (blk.blockNumber() == p_block.blockNumber()) {
-                    break;
-                }
-
                 offset = ninfo->bottom();
                 blk = blk.next();
             }
+
+            break;
         }
 
-        Q_ASSERT(info->hasOffset());
+        V_ASSERT(info->hasOffset());
     }
 }
 
 void VTextDocumentLayout::updateOffsetAfter(const QTextBlock &p_block)
 {
     BlockLayoutInfo *info = VTextBlockData::layoutInfo(p_block);
-    Q_ASSERT(info->hasOffset());
+    V_ASSERT(info->hasOffset());
     qreal offset = info->bottom();
     QTextBlock blk = p_block.next();
     while (blk.isValid()) {
@@ -599,7 +599,7 @@ qreal VTextDocumentLayout::layoutLines(const QTextBlock &p_block,
                                        qreal p_availableWidth,
                                        qreal p_height)
 {
-    Q_ASSERT(p_block.isValid());
+    V_ASSERT(p_block.isValid());
 
     // Handle block inline image.
     bool hasInlineImages = false;
@@ -696,18 +696,18 @@ void VTextDocumentLayout::finishBlockLayout(const QTextBlock &p_block,
                                             const QVector<Marker> &p_markers,
                                             const QVector<ImagePaintInfo> &p_images)
 {
-    Q_ASSERT(p_block.isValid());
+    V_ASSERT(p_block.isValid());
     ImagePaintInfo ipi;
     BlockLayoutInfo *info = VTextBlockData::layoutInfo(p_block);
-    Q_ASSERT(info->isNull());
+    V_ASSERT(info->isNull());
     info->reset();
     info->m_rect = blockRectFromTextLayout(p_block, &ipi);
-    Q_ASSERT(!info->m_rect.isNull());
+    V_ASSERT(!info->m_rect.isNull());
 
     bool hasImage = false;
     if (ipi.isValid()) {
-        Q_ASSERT(p_markers.isEmpty());
-        Q_ASSERT(p_images.isEmpty());
+        V_ASSERT(p_markers.isEmpty());
+        V_ASSERT(p_images.isEmpty());
         info->m_images.append(ipi);
         hasImage = true;
     } else if (!p_markers.isEmpty()) {
@@ -749,7 +749,7 @@ void VTextDocumentLayout::updateDocumentSize()
     QTextBlock blk = document()->firstBlock();
     while (blk.isValid()) {
         const BlockLayoutInfo *ninfo = VTextBlockData::layoutInfo(blk);
-        Q_ASSERT(ninfo->hasOffset());
+        V_ASSERT(ninfo->hasOffset());
         if (m_width < ninfo->m_rect.width()) {
             m_width = ninfo->m_rect.width();
             m_maximumWidthBlockNumber = blk.blockNumber();
@@ -787,7 +787,7 @@ QRectF VTextDocumentLayout::blockRectFromTextLayout(const QTextBlock &p_block,
     // Handle block non-inline image.
     if (m_blockImageEnabled) {
         VTextBlockData *blockData = VTextBlockData::blockData(p_block);
-        Q_ASSERT(blockData);
+        V_ASSERT(blockData);
         const QVector<VPreviewInfo *> &info = blockData->getPreviews();
         if (info.size() == 1) {
             const VPreviewedImageInfo& img = info.first()->m_imageInfo;
@@ -1013,7 +1013,7 @@ qreal VTextDocumentLayout::fetchInlineImagesForOneLine(const QVector<VPreviewInf
 
     for (int i = 0; i < p_info.size(); ++i) {
         const VPreviewedImageInfo &img = p_info[i]->m_imageInfo;
-        Q_ASSERT(img.m_inline);
+        V_ASSERT(img.m_inline);
 
         if (img.m_startPos >= start && img.m_startPos < end) {
             // Start of a new image.
@@ -1098,8 +1098,8 @@ int VTextDocumentLayout::getTextWidthWithinTextLine(const QTextLayout *p_layout,
                                                     int p_length)
 {
     QTextLine line = p_layout->lineForTextPosition(p_pos);
-    Q_ASSERT(line.isValid());
-    Q_ASSERT(p_pos + p_length <= line.textStart() + line.textLength());
+    V_ASSERT(line.isValid());
+    V_ASSERT(p_pos + p_length <= line.textStart() + line.textLength());
     return line.cursorToX(p_pos + p_length) - line.cursorToX(p_pos);
 }
 

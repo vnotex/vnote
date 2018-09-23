@@ -88,6 +88,8 @@ public slots:
 
     void htmlToTextFinished(int p_id, int p_timeStamp, const QString &p_html);
 
+    void parseAndPaste();
+
 // Wrapper functions for QPlainTextEdit/QTextEdit.
 public:
     void setExtraSelectionsW(const QList<QTextEdit::ExtraSelection> &p_selections) Q_DECL_OVERRIDE
@@ -233,6 +235,8 @@ protected:
 
     void mouseMoveEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
 
+    void mouseDoubleClickEvent(QMouseEvent *p_event) Q_DECL_OVERRIDE;
+
     void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
     bool canInsertFromMimeData(const QMimeData *p_source) const Q_DECL_OVERRIDE;
@@ -275,9 +279,11 @@ private:
     // We need to maintain the styles font size.
     void zoomPage(bool p_zoomIn, int p_range = 1);
 
-    void initCopyAsMenu(QAction *p_before, QMenu *p_menu);
+    QAction *initCopyAsMenu(QAction *p_after, QMenu *p_menu);
 
-    void initPasteAsBlockQuoteMenu(QMenu *p_menu);
+    QAction *initPasteAsBlockQuoteMenu(QAction *p_after, QMenu *p_menu);
+
+    QAction *initPasteAfterParseMenu(QAction *p_after, QMenu *p_menu);
 
     void initLinkAndPreviewMenu(QAction *p_before, QMenu *p_menu, const QPoint &p_pos);
 
@@ -300,6 +306,14 @@ private:
     void exportGraphAndCopy(const QString &p_lang,
                             const QString &p_text,
                             const QString &p_format);
+
+    bool processHtmlFromMimeData(const QMimeData *p_source);
+
+    bool processImageFromMimeData(const QMimeData *p_source);
+
+    bool processUrlFromMimeData(const QMimeData *p_source);
+
+    bool processTextFromMimeData(const QMimeData *p_source);
 
     PegMarkdownHighlighter *m_pegHighlighter;
 

@@ -44,6 +44,10 @@ void VFileInfoDialog::setupUI(const QString &p_title, const QString &p_info)
     // Select without suffix.
     m_nameEdit->setSelection(baseStart, baseLength);
 
+    // File path.
+    QLineEdit *filePathEdit = new QLineEdit(m_file->fetchPath());
+    filePathEdit->setReadOnly(true);
+
     // Attachment folder.
     VLineEdit *attachmentFolderEdit = new VLineEdit(m_file->getAttachmentFolder());
     attachmentFolderEdit->setPlaceholderText(tr("Will be assigned when adding attachments"));
@@ -60,13 +64,13 @@ void VFileInfoDialog::setupUI(const QString &p_title, const QString &p_info)
     modifiedTimeLabel->setToolTip(tr("Last modified time within VNote"));
 
     // Tags.
-    QLineEdit *tagEdit = new QLineEdit();
+    QLineEdit *tagEdit = new QLineEdit(m_file->getTags().join(", "));
     tagEdit->setToolTip(tr("Tags of this note separated by ,"));
     tagEdit->setReadOnly(true);
-    tagEdit->setText(m_file->getTags().join(", "));
 
     QFormLayout *topLayout = new QFormLayout();
     topLayout->addRow(tr("Note &name:"), m_nameEdit);
+    topLayout->addRow(tr("File path:"), filePathEdit);
     topLayout->addRow(tr("Attachment folder:"), attachmentFolderEdit);
     topLayout->addRow(tr("Created time:"), createdTimeLabel);
     topLayout->addRow(tr("Modified time:"), modifiedTimeLabel);

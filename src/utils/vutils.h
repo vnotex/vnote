@@ -97,7 +97,8 @@ public:
 
     static QJsonObject readJsonFromDisk(const QString &p_filePath);
 
-    static QString generateImageFileName(const QString &path, const QString &title,
+    static QString generateImageFileName(const QString &path,
+                                         const QString &title,
                                          const QString &format = "png");
 
     // Given the file name @p_fileName and directory path @p_dirPath, generate
@@ -170,7 +171,9 @@ public:
     static bool isImageURLText(const QString &p_url);
     static qreal calculateScaleFactor();
     static bool realEqual(qreal p_a, qreal p_b);
-    static QChar keyToChar(int p_key);
+
+    static QChar keyToChar(int p_key, bool p_smallCase = true);
+
     static QString getLocale();
 
     static void sleepWait(int p_milliseconds);
@@ -192,7 +195,9 @@ public:
                                         bool p_addToc = false);
 
     // @p_renderBg is the background name.
-    static QString generateExportHtmlTemplate(const QString &p_renderBg, bool p_includeMathJax);
+    static QString generateExportHtmlTemplate(const QString &p_renderBg,
+                                              bool p_includeMathJax,
+                                              bool p_outlinePanel);
 
     static QString generateSimpleHtmlTemplate(const QString &p_body);
 
@@ -329,6 +334,8 @@ public:
     static QStringList parseCombinedArgString(const QString &p_program);
 
     static const QTreeWidgetItem *topLevelTreeItem(const QTreeWidgetItem *p_item);
+
+    static int childIndexOfTreeItem(const QTreeWidgetItem *p_item);
 
     // Read QImage from local file @p_filePath.
     // Directly calling QImage(p_filePath) will judge the image format from the suffix,

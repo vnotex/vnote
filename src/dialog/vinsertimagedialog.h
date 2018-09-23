@@ -5,6 +5,8 @@
 #include <QImage>
 #include <QString>
 #include <QByteArray>
+#include <QTemporaryFile>
+#include <QSharedPointer>
 
 class QLabel;
 class VLineEdit;
@@ -71,6 +73,8 @@ private:
     bool m_browsable;
 
     ImageType m_imageType;
+
+    QSharedPointer<QTemporaryFile> m_tempFile;
 };
 
 inline VInsertImageDialog::ImageType VInsertImageDialog::getImageType() const

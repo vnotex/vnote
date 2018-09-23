@@ -50,12 +50,18 @@ public:
     void findText(const QString &p_text, uint p_options, bool p_peek,
                   bool p_forward = true) Q_DECL_OVERRIDE;
 
+    void findText(const VSearchToken &p_token,
+                  bool p_forward = true,
+                  bool p_fromStart = false) Q_DECL_OVERRIDE;
+
     // Replace @p_text with @p_replaceText in current note.
     void replaceText(const QString &p_text, uint p_options,
                      const QString &p_replaceText, bool p_findNext) Q_DECL_OVERRIDE;
 
     void replaceTextAll(const QString &p_text, uint p_options,
                         const QString &p_replaceText) Q_DECL_OVERRIDE;
+
+    void nextMatch(const QString &p_text, uint p_options, bool p_forward) Q_DECL_OVERRIDE;
 
     QString getSelectedText() const Q_DECL_OVERRIDE;
 
@@ -95,7 +101,9 @@ public:
     VWordCountInfo fetchWordCountInfo(bool p_editMode) const Q_DECL_OVERRIDE;
 
     // Toggle live preview in edit mode.
-    void toggleLivePreview() Q_DECL_OVERRIDE;
+    bool toggleLivePreview();
+
+    bool expandRestorePreviewArea();
 
 public slots:
     // Enter edit mode.
@@ -148,6 +156,9 @@ private slots:
     // Handle save page request.
     void handleSavePageRequested();
 
+    // Selection changed in web.
+    void handleWebSelectionChanged();
+
 private:
     enum TabReady { None = 0, ReadMode = 0x1, EditMode = 0x2 };
 
@@ -180,7 +191,8 @@ private:
     // Return true if scroll was made.
     bool scrollWebViewToHeader(const VHeaderPointer &p_header);
 
-    bool scrollEditorToHeader(const VHeaderPointer &p_header);
+    // @p_force: when true, will scroll even current mouse is under the specified header.
+    bool scrollEditorToHeader(const VHeaderPointer &p_header, bool p_force = true);
 
     // Scroll web/editor to given header.
     // Return true if scroll was made.
@@ -230,6 +242,8 @@ private:
 
     void setCurrentMode(Mode p_mode);
 
+    bool previewExpanded() const;
+
     VMdEditor *m_editor;
     VWebView *m_webViewer;
     VDocument *m_document;
@@ -242,6 +256,8 @@ private:
 
     // Timer to write backup file when content has been changed.
     QTimer *m_backupTimer;
+
+    QTimer *m_livePreviewTimer;
 
     bool m_backupFileChecked;
 

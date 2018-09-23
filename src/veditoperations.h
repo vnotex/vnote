@@ -30,6 +30,8 @@ public:
     virtual bool insertLink(const QString &p_linkText,
                             const QString &p_linkUrl) = 0;
 
+    virtual void insertText(const QString &p_text);
+
     // Return true if @p_event has been handled and no need to be further
     // processed.
     virtual bool handleKeyPressEvent(QKeyEvent *p_event) = 0;
@@ -68,8 +70,6 @@ private:
     void updateCursorLineBg();
 
 protected:
-    void insertTextAtCurPos(const QString &p_text);
-
     VEditor *m_editor;
     QPointer<VFile> m_file;
     VEditConfig *m_editConfig;

@@ -67,7 +67,6 @@ void VDocument::setHtml(const QString &html)
 void VDocument::setLog(const QString &p_log)
 {
     qDebug() << "JS:" << p_log;
-    emit logChanged(p_log);
 }
 
 void VDocument::keyPressEvent(int p_key, bool p_ctrl, bool p_shift, bool p_meta)
@@ -201,4 +200,15 @@ void VDocument::setPreviewContent(const QString &p_lang, const QString &p_html)
 void VDocument::previewCodeBlockCB(int p_id, const QString &p_lang, const QString &p_html)
 {
     emit codeBlockPreviewReady(p_id, p_lang, p_html);
+}
+
+void VDocument::performSmartLivePreview(const QString &p_lang,
+                                        const QString &p_text,
+                                        const QString &p_hints,
+                                        bool p_isRegex)
+{
+    if (!p_text.isEmpty()) {
+        qDebug() << "performSmartLivePreview" << p_lang << p_text << p_hints << p_isRegex;
+        emit requestPerformSmartLivePreview(p_lang, p_text, p_hints, p_isRegex);
+    }
 }

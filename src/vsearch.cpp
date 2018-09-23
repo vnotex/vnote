@@ -487,7 +487,8 @@ VSearchResultItem *VSearch::searchForOutline(const VFile *p_file) const
             item = new VSearchResultItem(VSearchResultItem::Note,
                                          VSearchResultItem::OutlineIndex,
                                          p_file->getName(),
-                                         p_file->fetchPath());
+                                         p_file->fetchPath(),
+                                         m_config);
         }
 
         VSearchResultSubItem sitem(it.m_index, it.m_name);
@@ -600,7 +601,8 @@ VSearchResultItem *VSearch::searchForContent(const VFile *p_file) const
                     item = new VSearchResultItem(VSearchResultItem::Note,
                                                  VSearchResultItem::LineNumber,
                                                  p_file->getName(),
-                                                 p_file->fetchPath());
+                                                 p_file->fetchPath(),
+                                                 m_config);
                 }
 
                 VSearchResultSubItem sitem(lineNum, lineText);

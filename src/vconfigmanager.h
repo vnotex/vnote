@@ -60,6 +60,12 @@ enum class KeyMode
     Invalid
 };
 
+enum SmartLivePreview
+{
+    Disabled = 0,
+    EditorToWeb = 0x1,
+    WebToEditor = 0x2
+};
 
 class VConfigManager : public QObject
 {
@@ -308,6 +314,9 @@ public:
     bool getEnableTrailingSpaceHighlight() const;
     void setEnableTrailingSapceHighlight(bool p_enabled);
 
+    bool getEnableTabHighlight() const;
+    void setEnableTabHighlight(bool p_enabled);
+
     KeyMode getKeyMode() const;
     void setKeyMode(KeyMode p_mode);
 
@@ -475,6 +484,12 @@ public:
 
     const QString &getFlashPage() const;
 
+    const QString &getQuickAccess() const;
+    void setQuickAccess(const QString &p_path);
+
+    bool getHighlightMatchesInPage() const;
+    void setHighlightMatchesInPage(bool p_enabled);
+
     // All the themes.
     QList<QString> getThemes() const;
 
@@ -544,6 +559,16 @@ public:
     void setOutlineExpandedLevel(int p_level);
 
     const QString &getImageNamePrefix() const;
+
+    QChar getVimLeaderKey() const;
+
+    int getSmartLivePreview() const;
+    void setSmartLivePreview(int p_preview);
+
+    bool getMultipleKeyboardLayout() const;
+
+    bool getInsertNewNoteInFront() const;
+    void setInsertNewNoteInFront(bool p_enabled);
 
 private:
     // Look up a config from user and default settings.
@@ -782,6 +807,9 @@ private:
     // Enable trailing-space highlight.
     bool m_enableTrailingSpaceHighlight;
 
+    // Enable tab highlight.
+    bool m_enableTabHighlight;
+
     // Editor key mode.
     KeyMode m_keyMode;
 
@@ -901,6 +929,12 @@ private:
     // Absolute path of flash page.
     QString m_flashPage;
 
+    // Absolute path of quick access note.
+    QString m_quickAccess;
+
+    // Whether highlight matches in page when activating a search item.
+    bool m_highlightMatchesInPage;
+
     // The theme name.
     QString m_theme;
 
@@ -978,6 +1012,18 @@ private:
 
     // Max number of tag labels to display.
     int m_maxNumOfTagLabels;
+
+    // Vim leader key.
+    QChar m_vimLeaderKey;
+
+    // Smart live preview.
+    int m_smartLivePreview;
+
+    // Support multiple keyboard layout.
+    bool m_multipleKeyboardLayout;
+
+    // Whether insert new note in front.
+    bool m_insertNewNoteInFront;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -1778,6 +1824,23 @@ inline void VConfigManager::setEnableTrailingSapceHighlight(bool p_enabled)
                         m_enableTrailingSpaceHighlight);
 }
 
+inline bool VConfigManager::getEnableTabHighlight() const
+{
+    return m_enableTabHighlight;
+}
+
+inline void VConfigManager::setEnableTabHighlight(bool p_enabled)
+{
+    if (m_enableTabHighlight == p_enabled) {
+        return;
+    }
+
+    m_enableTabHighlight = p_enabled;
+    setConfigToSettings("editor",
+                        "enable_tab_highlight",
+                        m_enableTabHighlight);
+}
+
 inline KeyMode VConfigManager::getKeyMode() const
 {
     return m_keyMode;
@@ -2528,5 +2591,70 @@ inline int VConfigManager::getMaxTagLabelLength() const
 inline int VConfigManager::getMaxNumOfTagLabels() const
 {
     return m_maxNumOfTagLabels;
+}
+
+inline QChar VConfigManager::getVimLeaderKey() const
+{
+    return m_vimLeaderKey;
+}
+
+inline int VConfigManager::getSmartLivePreview() const
+{
+    return m_smartLivePreview;
+}
+
+inline void VConfigManager::setSmartLivePreview(int p_preview)
+{
+    if (m_smartLivePreview == p_preview) {
+        return;
+    }
+
+    m_smartLivePreview = p_preview;
+    setConfigToSettings("global", "smart_live_preview", m_smartLivePreview);
+}
+
+inline bool VConfigManager::getMultipleKeyboardLayout() const
+{
+    return m_multipleKeyboardLayout;
+}
+
+inline bool VConfigManager::getInsertNewNoteInFront() const
+{
+    return m_insertNewNoteInFront;
+}
+
+inline void VConfigManager::setInsertNewNoteInFront(bool p_enabled)
+{
+    if (m_insertNewNoteInFront == p_enabled) {
+        return;
+    }
+
+    m_insertNewNoteInFront = p_enabled;
+    setConfigToSettings("global", "insert_new_note_in_front", m_insertNewNoteInFront);
+}
+
+inline void VConfigManager::setQuickAccess(const QString &p_path)
+{
+    if (m_quickAccess == p_path) {
+        return;
+    }
+
+    m_quickAccess = p_path;
+    setConfigToSettings("global", "quick_access", m_quickAccess);
+}
+
+inline bool VConfigManager::getHighlightMatchesInPage() const
+{
+    return m_highlightMatchesInPage;
+}
+
+inline void VConfigManager::setHighlightMatchesInPage(bool p_enabled)
+{
+    if (m_highlightMatchesInPage == p_enabled) {
+        return;
+    }
+
+    m_highlightMatchesInPage = p_enabled;
+    setConfigToSettings("global", "highlight_matches_in_page", m_highlightMatchesInPage);
 }
 #endif // VCONFIGMANAGER_H

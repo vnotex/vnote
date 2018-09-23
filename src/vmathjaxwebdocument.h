@@ -38,6 +38,8 @@ public slots:
                             const QString &p_format,
                             const QString &p_data);
 
+    void setLog(const QString &p_log);
+
 signals:
     void requestPreviewMathJax(int p_identifier,
                                int p_id,

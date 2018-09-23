@@ -524,10 +524,10 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
 
                 QString folderPath;
                 if (file->getType() == FileType::Note) {
-                    const VNoteFile *tmpFile = dynamic_cast<const VNoteFile *>((VFile *)file);
+                    const VNoteFile *tmpFile = static_cast<const VNoteFile *>((VFile *)file);
                     folderPath = tmpFile->getNotebook()->getRecycleBinFolderPath();
                 } else if (file->getType() == FileType::Orphan) {
-                    const VOrphanFile *tmpFile = dynamic_cast<const VOrphanFile *>((VFile *)file);
+                    const VOrphanFile *tmpFile = static_cast<const VOrphanFile *>((VFile *)file);
                     folderPath = tmpFile->fetchRecycleBinFolderPath();
                 } else {
                     Q_ASSERT(false);
@@ -598,6 +598,23 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
                 g_mainWin->showStatusMessage(tr("1 note pinned to History"));
             });
 
+    QAction *quickAccessAct = new QAction(VIconUtils::menuIcon(":/resources/icons/quick_access.svg"),
+                                          tr("Set As Quick Access"),
+                                          &menu);
+    quickAccessAct->setToolTip(tr("Set this note as quick access"));
+    connect(quickAccessAct, &QAction::triggered,
+            this, [this](){
+                int tab = GET_TAB_FROM_SENDER();
+                Q_ASSERT(tab != -1);
+
+                VEditTab *editor = getTab(tab);
+                QPointer<VFile> file = editor->getFile();
+                Q_ASSERT(file);
+                QString fp(file->fetchPath());
+                g_config->setQuickAccess(fp);
+                g_mainWin->showStatusMessage(tr("Quick access: %1").arg(fp));
+            });
+
     QAction *noteInfoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/note_info.svg"),
                                        tr("Note Info"),
                                        &menu);
@@ -611,7 +628,7 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
                 QPointer<VFile> file = editor->getFile();
                 Q_ASSERT(file);
                 if (file->getType() == FileType::Note) {
-                    VNoteFile *tmpFile = dynamic_cast<VNoteFile *>((VFile *)file);
+                    VNoteFile *tmpFile = static_cast<VNoteFile *>((VFile *)file);
                     g_mainWin->getFileList()->fileInfo(tmpFile);
                 } else if (file->getType() == FileType::Orphan) {
                     g_mainWin->editOrphanFileInfo(file);
@@ -620,7 +637,10 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
 
     VEditTab *editor = getTab(tab);
     VFile *file = editor->getFile();
-    if (file->getType() == FileType::Note) {
+    bool isNote = file->getType() == FileType::Note;
+    bool isNonSystemOrphan = file->getType() == FileType::Orphan
+                             && !(static_cast<VOrphanFile *>(file)->isSystemFile());
+    if (isNote) {
         // Locate to folder.
         QAction *locateAct = new QAction(VIconUtils::menuIcon(":/resources/icons/locate_note.svg"),
                                          tr("Locate To Folder"),
@@ -633,7 +653,9 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
         menu.addAction(locateAct);
 
         menu.addSeparator();
+    }
 
+    if (isNote || isNonSystemOrphan) {
         recycleBinAct->setData(tab);
         menu.addAction(recycleBinAct);
 
@@ -649,24 +671,8 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
         pinToHistoryAct->setData(tab);
         menu.addAction(pinToHistoryAct);
 
-        noteInfoAct->setData(tab);
-        menu.addAction(noteInfoAct);
-    } else if (file->getType() == FileType::Orphan
-               && !(dynamic_cast<VOrphanFile *>(file)->isSystemFile())) {
-        recycleBinAct->setData(tab);
-        menu.addAction(recycleBinAct);
-
-        openLocationAct->setData(tab);
-        menu.addAction(openLocationAct);
-
-        reloadAct->setData(tab);
-        menu.addAction(reloadAct);
-
-        addToCartAct->setData(tab);
-        menu.addAction(addToCartAct);
-
-        pinToHistoryAct->setData(tab);
-        menu.addAction(pinToHistoryAct);
+        quickAccessAct->setData(tab);
+        menu.addAction(quickAccessAct);
 
         noteInfoAct->setData(tab);
         menu.addAction(noteInfoAct);
@@ -889,7 +895,7 @@ void VEditWindow::scrollToHeader(const VHeaderPointer &p_header)
 
 void VEditWindow::handleTabStatusUpdated(const VEditTabInfo &p_info)
 {
-    int idx = indexOf(dynamic_cast<QWidget *>(sender()));
+    int idx = indexOf(static_cast<QWidget *>(sender()));
 
     if (p_info.m_type == VEditTabInfo::InfoType::All) {
         updateTabInfo(idx);
@@ -904,7 +910,7 @@ void VEditWindow::handleTabStatusUpdated(const VEditTabInfo &p_info)
 
 void VEditWindow::handleTabStatusMessage(const QString &p_msg)
 {
-    int idx = indexOf(dynamic_cast<QWidget *>(sender()));
+    int idx = indexOf(static_cast<QWidget *>(sender()));
     if (idx == currentIndex()) {
         emit statusMessage(p_msg);
     }
@@ -912,7 +918,7 @@ void VEditWindow::handleTabStatusMessage(const QString &p_msg)
 
 void VEditWindow::handleTabVimStatusUpdated(const VVim *p_vim)
 {
-    int idx = indexOf(dynamic_cast<QWidget *>(sender()));
+    int idx = indexOf(static_cast<QWidget *>(sender()));
     if (idx == currentIndex()) {
         emit vimStatusUpdated(p_vim);
     }
@@ -1149,7 +1155,7 @@ bool VEditWindow::showOpenedFileList()
     }
 
     leftBtn->showMenu();
-    VOpenedListMenu *menu = dynamic_cast<VOpenedListMenu *>(leftBtn->menu());
+    VOpenedListMenu *menu = static_cast<VOpenedListMenu *>(leftBtn->menu());
     return menu->isAccepted();
 }
 

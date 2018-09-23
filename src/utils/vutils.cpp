@@ -47,10 +47,12 @@ const QString VUtils::c_imageLinkRegExp = QString("\\!\\[([^\\]]*)\\]\\(\\s*([^\
                                                   "(=(\\d*)x(\\d*))?\\s*"
                                                   "\\)");
 
-const QString VUtils::c_imageTitleRegExp = QString("[\\w\\(\\)@#%\\*\\-\\+=\\?<>\\,\\.\\s]*");
+const QString VUtils::c_imageTitleRegExp = QString("[^\\[\\]]*");
 
-const QString VUtils::c_linkRegExp = QString("\\[([^\\]]*)\\]\\(\\s*([^\\)\"'\\s]+)\\s*"
-                                             "((\"[^\"\\)\\n]*\")|('[^'\\)\\n]*'))?\\s*"
+const QString VUtils::c_linkRegExp = QString("\\[([^\\]]*)\\]"
+                                             "\\(\\s*(\\S+)"
+                                             "(?:\\s+((\"[^\"\\n]*\")"
+                                                     "|('[^'\\n]*')))?\\s*"
                                              "\\)");
 
 const QString VUtils::c_fileNameRegExp = QString("(?:[^\\\\/:\\*\\?\"<>\\|\\s]| )*");
@@ -592,10 +594,11 @@ bool VUtils::realEqual(qreal p_a, qreal p_b)
     return std::abs(p_a - p_b) < 1e-8;
 }
 
-QChar VUtils::keyToChar(int p_key)
+QChar VUtils::keyToChar(int p_key, bool p_smallCase)
 {
-    if (p_key >= Qt::Key_A && p_key <= Qt::Key_Z) {
-        return QChar('a' + p_key - Qt::Key_A);
+    QString key = QKeySequence(p_key).toString();
+    if (key.size() == 1) {
+        return p_smallCase ? key[0].toLower() : key[0];
     }
 
     return QChar();
@@ -865,7 +868,9 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
     return htmlTemplate;
 }
 
-QString VUtils::generateExportHtmlTemplate(const QString &p_renderBg, bool p_includeMathJax)
+QString VUtils::generateExportHtmlTemplate(const QString &p_renderBg,
+                                           bool p_includeMathJax,
+                                           bool p_outlinePanel)
 {
     QString templ = VNote::generateExportHtmlTemplate(g_config->getRenderBackgroundColor(p_renderBg));
     QString extra;
@@ -899,6 +904,18 @@ with 2em, if there are Chinese characters in it, the font will be a mess.
         extra += "<script type=\"text/javascript\" async src=\"" + mj + "\"></script>\n";
     }
 
+    if (p_outlinePanel) {
+        const QString outlineCss(":/resources/export/outline.css");
+        QString css = VUtils::readFileFromDisk(outlineCss);
+        if (!css.isEmpty()) {
+            templ.replace(HtmlHolder::c_outlineStyleHolder, css);
+        }
+
+        const QString outlineJs(":/resources/export/outline.js");
+        QString js = VUtils::readFileFromDisk(outlineJs);
+        extra += QString("<script type=\"text/javascript\">\n%1\n</script>\n").arg(js);
+    }
+
     if (!extra.isEmpty()) {
         templ.replace(HtmlHolder::c_extraHolder, extra);
     }
@@ -908,8 +925,9 @@ with 2em, if there are Chinese characters in it, the font will be a mess.
 
 QString VUtils::generateMathJaxPreviewTemplate()
 {
+    QString mj = g_config->getMathjaxJavascript();
     QString templ = VNote::generateMathJaxPreviewTemplate();
-    templ.replace(HtmlHolder::c_JSHolder, g_config->getMathjaxJavascript());
+    templ.replace(HtmlHolder::c_JSHolder, mj);
 
     QString extraFile;
 
@@ -937,6 +955,11 @@ QString VUtils::generateMathJaxPreviewTemplate()
                  "                    showProcessingMessages: false,\n"
                  "                    messageStyle: \"none\"});\n"
                  "</script>\n";
+
+    // PlantUML.
+    extraFile += "<script type=\"text/javascript\" src=\"" + VNote::c_plantUMLJsFile + "\"></script>\n" +
+                 "<script type=\"text/javascript\" src=\"" + VNote::c_plantUMLZopfliJsFile + "\"></script>\n" +
+                 "<script>var VPlantUMLServer = '" + g_config->getPlantUMLServer() + "';</script>\n";
 
     templ.replace(HtmlHolder::c_extraHolder, extraFile);
 
@@ -1335,6 +1358,10 @@ bool VUtils::isControlModifierForVim(int p_modifiers)
 
 void VUtils::touchFile(const QString &p_file)
 {
+    if (p_file.isEmpty()) {
+        return;
+    }
+
     QFile file(p_file);
     if (!file.open(QIODevice::WriteOnly)) {
         qWarning() << "fail to touch file" << p_file;
@@ -1520,9 +1547,18 @@ const QTreeWidgetItem *VUtils::topLevelTreeItem(const QTreeWidgetItem *p_item)
     }
 
     if (p_item->parent()) {
-        return p_item->parent();
+        return topLevelTreeItem(p_item->parent());
     } else {
         return p_item;
+    }
+}
+
+int VUtils::childIndexOfTreeItem(const QTreeWidgetItem *p_item)
+{
+    if (p_item->parent()) {
+        return p_item->parent()->indexOfChild(const_cast<QTreeWidgetItem *>(p_item));
+    } else {
+        return 0;
     }
 }
 

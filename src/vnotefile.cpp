@@ -453,6 +453,7 @@ bool VNoteFile::copyFile(VDirectory *p_destDir,
                          const QString &p_destName,
                          VNoteFile *p_file,
                          bool p_isCut,
+                         int p_idx,
                          VNoteFile **p_targetFile,
                          QString *p_errMsg)
 {
@@ -506,13 +507,21 @@ bool VNoteFile::copyFile(VDirectory *p_destDir,
     if (p_isCut) {
         srcDir->removeFile(p_file);
         p_file->setName(p_destName);
-        if (p_destDir->addFile(p_file, -1)) {
+        if (p_destDir->addFile(p_file, p_idx)) {
             destFile = p_file;
         } else {
             destFile = NULL;
         }
     } else {
-        destFile = p_destDir->addFile(p_destName, -1);
+        destFile = p_destDir->addFile(p_destName, p_idx);
+        // Copy tags to this file.
+        if (destFile) {
+            const QStringList &tags = p_file->getTags();
+            for (auto const & tag : tags) {
+                destFile->addTag(tag);
+                destFile->getNotebook()->addTag(tag);
+            }
+        }
     }
 
     if (!destFile) {
@@ -636,8 +645,6 @@ void VNoteFile::removeTag(const QString &p_tag)
 
 bool VNoteFile::addTag(const QString &p_tag)
 {
-    Q_ASSERT(isOpened());
-
     if (p_tag.isEmpty() || hasTag(p_tag)) {
         return false;
     }

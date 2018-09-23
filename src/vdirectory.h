@@ -37,7 +37,7 @@ public:
     // If current dir or its sub-dir contains @p_file.
     bool containsFile(const VFile *p_file) const;
 
-    VNoteFile *createFile(const QString &p_name);
+    VNoteFile *createFile(const QString &p_name, bool p_front);
 
     // Remove the file in the config and m_files without deleting it in the disk.
     // It won't change the parent of @p_file to enable it find its path.
@@ -121,6 +121,9 @@ public:
 
     // Return path of files in this directory recursively.
     QList<QString> collectFiles();
+
+    // Return tags of files in this directory recursively.
+    QStringList collectTags();
 
     // Delete directory @p_dir.
     static bool deleteDirectory(VDirectory *p_dir,

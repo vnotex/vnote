@@ -1,6 +1,8 @@
 #ifndef VTEXTDOCUMENTLAYOUTDATA_H
 #define VTEXTDOCUMENTLAYOUTDATA_H
 
+#include "utils/vutils.h"
+
 // Denote the start and end position of a marker line.
 struct Marker
 {
@@ -57,13 +59,13 @@ struct BlockLayoutInfo
 
     qreal top() const
     {
-        Q_ASSERT(hasOffset());
+        V_ASSERT(hasOffset());
         return m_offset;
     }
 
     qreal bottom() const
     {
-        Q_ASSERT(hasOffset());
+        V_ASSERT(hasOffset());
         return m_offset + m_rect.height();
     }
 

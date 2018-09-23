@@ -640,6 +640,20 @@ QToolBar *VMainWindow::initNoteToolBar(QSize p_iconSize)
     connect(flashPageAct, &QAction::triggered,
             this, &VMainWindow::openFlashPage);
 
+    QAction *quickAccessAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/quick_access.svg"),
+                                          tr("Quick Access"),
+                                          this);
+    quickAccessAct->setStatusTip(tr("Open quick access note"));
+    keySeq = g_config->getShortcutKeySequence("QuickAccess");
+    seq = QKeySequence(keySeq);
+    if (!seq.isEmpty()) {
+        quickAccessAct->setText(tr("Quick Access\t%1").arg(VUtils::getShortcutText(keySeq)));
+        quickAccessAct->setShortcut(seq);
+    }
+
+    connect(quickAccessAct, &QAction::triggered,
+            this, &VMainWindow::openQuickAccess);
+
     QAction *universalEntryAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/universal_entry_tb.svg"),
                                              tr("Universal Entry"),
                                              this);
@@ -656,6 +670,7 @@ QToolBar *VMainWindow::initNoteToolBar(QSize p_iconSize)
 
     m_noteToolBar->addWidget(m_attachmentBtn);
     m_noteToolBar->addAction(flashPageAct);
+    m_noteToolBar->addAction(quickAccessAct);
     m_noteToolBar->addAction(universalEntryAct);
 
     return m_noteToolBar;
@@ -1221,6 +1236,15 @@ void VMainWindow::initEditMenu()
     connect(trailingSapceAct, &QAction::triggered,
             this, &VMainWindow::changeHighlightTrailingSapce);
 
+    // Highlight tab.
+    QAction *tabAct = new QAction(tr("Highlight Tabs"), this);
+    tabAct->setToolTip(tr("Highlight all the tabs"));
+    tabAct->setCheckable(true);
+    connect(tabAct, &QAction::triggered,
+            this, [this](bool p_checked) {
+                g_config->setEnableTabHighlight(p_checked);
+            });
+
     QMenu *findReplaceMenu = editMenu->addMenu(tr("Find/Replace"));
     findReplaceMenu->setToolTipsVisible(true);
     findReplaceMenu->addAction(m_findReplaceAct);
@@ -1296,6 +1320,9 @@ void VMainWindow::initEditMenu()
 
     editMenu->addAction(trailingSapceAct);
     trailingSapceAct->setChecked(g_config->getEnableTrailingSpaceHighlight());
+
+    editMenu->addAction(tabAct);
+    tabAct->setChecked(g_config->getEnableTabHighlight());
 }
 
 void VMainWindow::initDockWindows()
@@ -1415,10 +1442,14 @@ void VMainWindow::changeMarkdownConverter(QAction *action)
 
 void VMainWindow::aboutMessage()
 {
-    QString info = tr("<span style=\"font-weight: bold;\">v%1</span>").arg(VConfigManager::c_version);
-    info += "<br/><br/>";
-    info += tr("VNote is a free Vim-inspired note-taking application that knows programmers and Markdown better.");
+    QString info = tr("VNote");
     info += "<br/>";
+    info += tr("Version: %1").arg(VConfigManager::c_version);
+    info += "<br/>";
+    info += tr("Author: Le Tan (tamlok)");
+    info += "<br/><br/>";
+    info += tr("VNote is a free and open source Vim-inspired note-taking application that knows programmers and Markdown better.");
+    info += "<br/><br/>";
     info += tr("Please visit <a href=\"https://github.com/tamlok/vnote.git\">Github</a> for more information.");
     QMessageBox::about(this, tr("About VNote"), info);
 }
@@ -2855,6 +2886,24 @@ void VMainWindow::openFlashPage()
               false,
               OpenFileMode::Edit,
               true);
+}
+
+void VMainWindow::openQuickAccess()
+{
+    const QString &qaPath = g_config->getQuickAccess();
+    if (qaPath.isEmpty()) {
+        VUtils::showMessage(QMessageBox::Information,
+                            tr("Information"),
+                            tr("Quick Access is not set."),
+                            tr("Please specify the note for Quick Access in the settings dialog "
+                               "or the context menu of a note."),
+                            QMessageBox::Ok,
+                            QMessageBox::Ok,
+                            this);
+        return;
+    }
+
+    openFiles(QStringList(qaPath), false, g_config->getNoteOpenMode());
 }
 
 void VMainWindow::initHeadingButton(QToolBar *p_tb)

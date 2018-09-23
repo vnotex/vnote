@@ -9,6 +9,7 @@
 #include "utils/vvim.h"
 #include "vedittabinfo.h"
 #include "vwordcountinfo.h"
+#include "vsearchconfig.h"
 
 class VEditArea;
 class VSnippet;
@@ -59,12 +60,18 @@ public:
     virtual void findText(const QString &p_text, uint p_options, bool p_peek,
                           bool p_forward = true) = 0;
 
+    virtual void findText(const VSearchToken &p_token,
+                          bool p_forward = true,
+                          bool p_fromStart = false) = 0;
+
     // Replace @p_text with @p_replaceText in current note.
     virtual void replaceText(const QString &p_text, uint p_options,
                              const QString &p_replaceText, bool p_findNext) = 0;
 
     virtual void replaceTextAll(const QString &p_text, uint p_options,
                                 const QString &p_replaceText) = 0;
+
+    virtual void nextMatch(const QString &p_text, uint p_options, bool p_forward) = 0;
 
     // Return selected text.
     virtual QString getSelectedText() const = 0;
@@ -118,10 +125,6 @@ public:
 
     // Fetch tab stat info.
     virtual VWordCountInfo fetchWordCountInfo(bool p_editMode) const;
-
-    virtual void toggleLivePreview()
-    {
-    }
 
 public slots:
     // Enter edit mode

@@ -37,6 +37,9 @@ private:
     bool loadStartupPageType();
     bool saveStartupPageType();
 
+    bool loadQuickAccess();
+    bool saveQuickAccess();
+
     // Language
     QComboBox *m_langCombo;
 
@@ -51,6 +54,9 @@ private:
 
     // Startup pages add files button.
     QPushButton *m_startupPagesAddBtn;
+
+    // Quick access note path.
+    VLineEdit *m_quickAccessEdit;
 
     static const QVector<QString> c_availableLangs;
 };
@@ -219,6 +225,22 @@ private:
     // Graphviz.
     QCheckBox *m_graphvizCB;
     VLineEdit *m_graphvizDotEdit;
+};
+
+class VMiscTab : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit VMiscTab(QWidget *p_parent = 0);
+    bool loadConfiguration();
+    bool saveConfiguration();
+
+private:
+    bool loadMatchesInPage();
+    bool saveMatchesInPage();
+
+    // Highlight matches in page.
+    QCheckBox *m_matchesInPageCB;
 };
 
 class VSettingsDialog : public QDialog

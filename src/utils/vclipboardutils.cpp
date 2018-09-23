@@ -9,8 +9,9 @@ void VClipboardUtils::setImageToClipboard(QClipboard *p_clipboard,
                                           const QImage &p_image,
                                           QClipboard::Mode p_mode)
 {
-#if defined(Q_OS_WIN)
+#if defined(Q_OS_WIN) || defined(Q_OS_LINUX)
     // On Windows, setImage() may fail. We will repeatedly retry until succeed.
+    // On Linux, QXcbClipboard::setMimeData: Cannot set X11 selection owner.
     setImageLoop(p_clipboard, p_image, p_mode);
 #else
     p_clipboard->setImage(p_image, p_mode);
@@ -21,7 +22,7 @@ void VClipboardUtils::setImageLoop(QClipboard *p_clipboard,
                                    const QImage &p_image,
                                    QClipboard::Mode p_mode)
 {
-    while (true) {
+    for (int i = 0; i < 100; ++i) {
         p_clipboard->setImage(p_image, p_mode);
 
         QImage image = p_clipboard->image(p_mode);
@@ -29,7 +30,7 @@ void VClipboardUtils::setImageLoop(QClipboard *p_clipboard,
             break;
         }
 
-        qDebug() << "fail to set image, retry";
+        qWarning() << "fail to set image, retry" << i;
 
         VUtils::sleepWait(100 /* ms */);
     }
@@ -41,8 +42,9 @@ void VClipboardUtils::setImageToClipboard(QClipboard *p_clipboard,
 {
     QImage img(p_image.toImage());
 
-#if defined(Q_OS_WIN)
+#if defined(Q_OS_WIN) || defined(Q_OS_LINUX)
     // On Windows, setImage() may fail. We will repeatedly retry until succeed.
+    // On Linux, QXcbClipboard::setMimeData: Cannot set X11 selection owner.
     setImageLoop(p_clipboard, img, p_mode);
 #else
     p_clipboard->setImage(img, p_mode);
@@ -53,8 +55,9 @@ void VClipboardUtils::setMimeDataToClipboard(QClipboard *p_clipboard,
                                              QMimeData *p_mimeData,
                                              QClipboard::Mode p_mode)
 {
-#if defined(Q_OS_WIN)
+#if defined(Q_OS_WIN) || defined(Q_OS_LINUX)
     // On Windows, setMimeData() may fail. We will repeatedly retry until succeed.
+    // On Linux, QXcbClipboard::setMimeData: Cannot set X11 selection owner.
     setMimeDataLoop(p_clipboard, p_mimeData, p_mode);
 #else
     p_clipboard->setMimeData(p_mimeData, p_mode);
@@ -160,7 +163,7 @@ void VClipboardUtils::setMimeDataLoop(QClipboard *p_clipboard,
                                       QMimeData *p_mimeData,
                                       QClipboard::Mode p_mode)
 {
-    while (true) {
+    for (int i = 0; i < 100; ++i) {
         // Make a backup.
         QMimeData *tmp = cloneMimeData(p_mimeData);
 
@@ -171,7 +174,7 @@ void VClipboardUtils::setMimeDataLoop(QClipboard *p_clipboard,
             break;
         }
 
-        qDebug() << "fail to set mimeData, retry";
+        qDebug() << "fail to set mimeData, retry" << i;
         p_mimeData = tmp;
 
         VUtils::sleepWait(100 /* ms */);

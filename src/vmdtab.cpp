@@ -65,6 +65,26 @@ VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
                 writeBackupFile();
             });
 
+    m_livePreviewTimer = new QTimer(this);
+    m_livePreviewTimer->setSingleShot(true);
+    m_livePreviewTimer->setInterval(500);
+    connect(m_livePreviewTimer, &QTimer::timeout,
+            this, [this]() {
+                QString text = m_webViewer->selectedText().trimmed();
+                if (text.isEmpty()) {
+                    return;
+                }
+
+                const LivePreviewInfo &info = m_livePreviewHelper->getLivePreviewInfo();
+                if (info.isValid()) {
+                    m_editor->findTextInRange(text,
+                                              FindOption::CaseSensitive,
+                                              true,
+                                              info.m_startPos,
+                                              info.m_endPos);
+                }
+            });
+
     if (p_mode == OpenFileMode::Edit) {
         showFileEditMode();
     } else {
@@ -148,7 +168,7 @@ bool VMdTab::scrollWebViewToHeader(const VHeaderPointer &p_header)
     return true;
 }
 
-bool VMdTab::scrollEditorToHeader(const VHeaderPointer &p_header)
+bool VMdTab::scrollEditorToHeader(const VHeaderPointer &p_header, bool p_force)
 {
     if (!m_outline.isMatched(p_header)
         || m_outline.getType() != VTableOfContentType::BlockNumber) {
@@ -184,11 +204,13 @@ bool VMdTab::scrollEditorToHeader(const VHeaderPointer &p_header)
 
     // If the cursor are now under the right title, we should not change it right at
     // the title.
-    int curBlockNumber = mdEdit->textCursor().block().blockNumber();
-    if (m_outline.indexOfItemByBlockNumber(curBlockNumber)
-        == m_outline.indexOfItemByBlockNumber(blockNumber)) {
-        m_currentHeader = p_header;
-        return true;
+    if (!p_force) {
+        int curBlockNumber = mdEdit->textCursor().block().blockNumber();
+        if (m_outline.indexOfItemByBlockNumber(curBlockNumber)
+            == m_outline.indexOfItemByBlockNumber(blockNumber)) {
+            m_currentHeader = p_header;
+            return true;
+        }
     }
 
     if (mdEdit->scrollToHeader(blockNumber)) {
@@ -242,7 +264,7 @@ void VMdTab::showFileEditMode()
         VUtils::sleepWait(100);
     }
 
-    scrollEditorToHeader(header);
+    scrollEditorToHeader(header, false);
 
     mdEdit->setFocus();
 }
@@ -405,6 +427,10 @@ void VMdTab::setupMarkdownViewer()
             this, &VMdTab::editFile);
     connect(m_webViewer, &VWebView::requestSavePage,
             this, &VMdTab::handleSavePageRequested);
+    connect(m_webViewer, &VWebView::selectionChanged,
+            this, &VMdTab::handleWebSelectionChanged);
+    connect(m_webViewer, &VWebView::requestExpandRestorePreviewArea,
+            this, &VMdTab::expandRestorePreviewArea);
 
     VPreviewPage *page = new VPreviewPage(m_webViewer);
     m_webViewer->setPage(page);
@@ -663,8 +689,7 @@ void VMdTab::insertLink()
 void VMdTab::findText(const QString &p_text, uint p_options, bool p_peek,
                       bool p_forward)
 {
-    if (m_isEditMode) {
-        Q_ASSERT(m_editor);
+    if (m_isEditMode && !previewExpanded()) {
         if (p_peek) {
             m_editor->peekText(p_text, p_options);
         } else {
@@ -672,6 +697,18 @@ void VMdTab::findText(const QString &p_text, uint p_options, bool p_peek,
         }
     } else {
         findTextInWebView(p_text, p_options, p_peek, p_forward);
+    }
+}
+
+void VMdTab::findText(const VSearchToken &p_token,
+                      bool p_forward,
+                      bool p_fromStart)
+{
+    if (m_isEditMode) {
+        m_editor->findText(p_token, p_forward, p_fromStart);
+    } else {
+        // TODO
+        Q_ASSERT(false);
     }
 }
 
@@ -690,6 +727,16 @@ void VMdTab::replaceTextAll(const QString &p_text, uint p_options,
     if (m_isEditMode) {
         Q_ASSERT(m_editor);
         m_editor->replaceTextAll(p_text, p_options, p_replaceText);
+    }
+}
+
+void VMdTab::nextMatch(const QString &p_text, uint p_options, bool p_forward)
+{
+    if (m_isEditMode) {
+        Q_ASSERT(m_editor);
+        m_editor->nextMatch(p_forward);
+    } else {
+        findTextInWebView(p_text, p_options, false, p_forward);
     }
 }
 
@@ -853,10 +900,27 @@ MarkdownConverterType VMdTab::getMarkdownConverterType() const
 
 void VMdTab::focusChild()
 {
-    if (m_mode == Mode::Read) {
+    switch (m_mode) {
+    case Mode::Read:
         m_webViewer->setFocus();
-    } else {
+        break;
+
+    case Mode::Edit:
         m_editor->setFocus();
+        break;
+
+    case Mode::EditPreview:
+        if (m_editor->isVisible()) {
+            m_editor->setFocus();
+        } else {
+            m_webViewer->setFocus();
+        }
+
+        break;
+
+    default:
+        Q_ASSERT(false);
+        break;
     }
 }
 
@@ -1257,7 +1321,7 @@ void VMdTab::handleVimCmdCommandCancelled()
 
 void VMdTab::handleVimCmdCommandFinished(VVim::CommandLineType p_type, const QString &p_cmd)
 {
-    if (m_isEditMode) {
+    if (m_isEditMode && !previewExpanded()) {
         VVim *vim = getEditor()->getVim();
         if (vim) {
             vim->processCommandLine(p_type, p_cmd);
@@ -1280,7 +1344,7 @@ void VMdTab::handleVimCmdCommandChanged(VVim::CommandLineType p_type, const QStr
 {
     Q_UNUSED(p_type);
     Q_UNUSED(p_cmd);
-    if (m_isEditMode) {
+    if (m_isEditMode && !previewExpanded()) {
         VVim *vim = getEditor()->getVim();
         if (vim) {
             vim->processCommandLineChanged(p_type, p_cmd);
@@ -1525,18 +1589,56 @@ void VMdTab::setCurrentMode(Mode p_mode)
     focusChild();
 }
 
-void VMdTab::toggleLivePreview()
+bool VMdTab::toggleLivePreview()
 {
+    bool ret = false;
+
     switch (m_mode) {
     case Mode::EditPreview:
         setCurrentMode(Mode::Edit);
+        ret = true;
         break;
 
     case Mode::Edit:
         setCurrentMode(Mode::EditPreview);
+        ret = true;
         break;
 
     default:
         break;
     }
+
+    return ret;
+}
+
+void VMdTab::handleWebSelectionChanged()
+{
+    if (m_mode != Mode::EditPreview
+        || !(g_config->getSmartLivePreview() & SmartLivePreview::WebToEditor)) {
+        return;
+    }
+
+    m_livePreviewTimer->start();
+}
+
+bool VMdTab::expandRestorePreviewArea()
+{
+    if (m_mode != Mode::EditPreview) {
+        return false;
+    }
+
+    if (m_editor->isVisible()) {
+        m_editor->hide();
+        m_webViewer->setFocus();
+    } else {
+        m_editor->show();
+        m_editor->setFocus();
+    }
+
+    return true;
+}
+
+bool VMdTab::previewExpanded() const
+{
+    return (m_mode == Mode::EditPreview) && !m_editor->isVisible();
 }

@@ -12,6 +12,7 @@
 #include "vhistorylist.h"
 #include "vexplorer.h"
 #include "vuniversalentry.h"
+#include "vsearchue.h"
 
 extern VNote *g_vnote;
 
@@ -268,40 +269,5 @@ void VSearchResultTree::activateItem(const QTreeWidgetItem *p_item) const
         return;
     }
 
-    const QSharedPointer<VSearchResultItem> &resItem = itemResultData(p_item);
-    switch (resItem->m_type) {
-    case VSearchResultItem::Note:
-    {
-        QStringList files(resItem->m_path);
-        g_mainWin->openFiles(files);
-        break;
-    }
-
-    case VSearchResultItem::Folder:
-    {
-        VDirectory *dir = g_vnote->getInternalDirectory(resItem->m_path);
-        if (dir) {
-            g_mainWin->locateDirectory(dir);
-        } else {
-            // External directory.
-            g_mainWin->showExplorerPanel(true);
-            g_mainWin->getExplorer()->setRootDirectory(resItem->m_path);
-        }
-
-        break;
-    }
-
-    case VSearchResultItem::Notebook:
-    {
-        VNotebook *nb = g_vnote->getNotebook(resItem->m_path);
-        if (nb) {
-            g_mainWin->locateNotebook(nb);
-        }
-
-        break;
-    }
-
-    default:
-        break;
-    }
+    VSearchUE::activateItem(itemResultData(p_item), VUtils::childIndexOfTreeItem(p_item));
 }

@@ -179,9 +179,16 @@ private slots:
     // Handle the timeout signal of file timer.
     void handleFileTimerTimeout();
 
+    // Jump to next match of last find.
+    void nextMatch(bool p_forward);
+
 private:
     void setupUI();
+
+    void initShortcuts();
+
     QVector<QPair<int, int> > findTabsByFile(const VFile *p_file);
+
     int openFileInWindow(int windowIndex, VFile *p_file, OpenFileMode p_mode);
     void setCurrentTab(int windowIndex, int tabIndex, bool setFocus);
     void setCurrentWindow(int windowIndex, bool setFocus);
@@ -233,6 +240,12 @@ private:
 
     // Toggle live preview.
     static bool toggleLivePreviewByCaptain(void *p_target, void *p_data);
+
+    // Expand live preview.
+    static bool expandLivePreviewByCaptain(void *p_target, void *p_data);
+
+    // Parse and paste.
+    static bool parseAndPasteByCaptain(void *p_target, void *p_data);
 
     // End Captain mode functions.
 

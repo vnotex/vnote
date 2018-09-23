@@ -20,6 +20,9 @@ var VMermaidDivClass = 'mermaid-diagram';
 var VFlowchartDivClass = 'flowchart-diagram';
 var VPlantUMLDivClass = 'plantuml-diagram';
 var VMetaDataCodeClass = 'markdown-metadata';
+var VMarkRectDivClass = 'mark-rect';
+
+var VPreviewMode = false;
 
 if (typeof VEnableMermaid == 'undefined') {
     VEnableMermaid = false;
@@ -190,7 +193,9 @@ new QWebChannel(qt.webChannelTransport,
         content.requestPreviewEnabled.connect(setPreviewEnabled);
 
         content.requestPreviewCodeBlock.connect(previewCodeBlock);
+
         content.requestSetPreviewContent.connect(setPreviewContent);
+        content.requestPerformSmartLivePreview.connect(performSmartLivePreview);
 
         if (typeof updateHtml == "function") {
             updateHtml(content.html);
@@ -697,10 +702,7 @@ var renderPlantUML = function(className) {
         var code = codes[i];
         if (code.classList.contains(className)) {
             if (VPlantUMLMode == 1) {
-                if (renderPlantUMLOneOnline(code)) {
-                    // replaceChild() will decrease codes.length.
-                    --i;
-                }
+                renderPlantUMLOneOnline(code);
             } else {
                 renderPlantUMLOneLocal(code);
             }
@@ -708,37 +710,22 @@ var renderPlantUML = function(className) {
     }
 };
 
-// Render @code as PlantUML graph.
-// Returns true if succeeded.
+// Render @code as PlantUML graph asynchronously.
 var renderPlantUMLOneOnline = function(code) {
-    var s = unescape(encodeURIComponent(code.textContent));
-    var arr = [];
-    for (var i = 0; i < s.length; i++) {
-        arr.push(s.charCodeAt(i));
-    }
+    ++asyncJobsCount;
+    code.classList.add(plantUMLCodeClass + plantUMLIdx);
 
-    var compressor = new Zopfli.RawDeflate(arr);
-    var compressed = compressor.compress();
-    var url = VPlantUMLServer + "/" + VPlantUMLFormat + "/" + encode64_(compressed);
-
-    var obj = null;
-    if (VPlantUMLFormat == 'svg') {
-        var svgObj = document.createElement('object');
-        svgObj.type = 'image/svg+xml';
-        svgObj.data = url;
-
-        obj = document.createElement('div');
-        obj.classList.add(VPlantUMLDivClass);
-        obj.appendChild(svgObj);
-    } else {
-        obj = document.createElement('img');
-        obj.src = url;
-        setupIMGToView(obj);
-    }
-
-    var preNode = code.parentNode;
-    preNode.parentNode.replaceChild(obj, preNode);
-    return true;
+    data = { index: plantUMLIdx,
+             setupView: !VPreviewMode
+           };
+    renderPlantUMLOnline(VPlantUMLServer,
+                         VPlantUMLFormat,
+                         code.textContent,
+                         function(data, format, result) {
+                             handlePlantUMLResultExt(data.index, 0, format, result, data.setupView);
+                         },
+                         data);
+    plantUMLIdx++;
 };
 
 var renderPlantUMLOneLocal = function(code) {
@@ -1361,6 +1348,10 @@ var specialCodeBlock = function(lang) {
 };
 
 var handlePlantUMLResult = function(id, timeStamp, format, result) {
+    handlePlantUMLResultExt(id, timeStamp, format, result, true);
+};
+
+var handlePlantUMLResultExt = function(id, timeStamp, format, result, isSetupView) {
     var code = document.getElementsByClassName(plantUMLCodeClass + id)[0];
     if (code && result.length > 0) {
         var obj = null;
@@ -1368,11 +1359,15 @@ var handlePlantUMLResult = function(id, timeStamp, format, result) {
             obj = document.createElement('div');
             obj.classList.add(VPlantUMLDivClass);
             obj.innerHTML = result;
-            setupSVGToView(obj.children[0], true);
+            if (isSetupView) {
+                setupSVGToView(obj.children[0], true);
+            }
         } else {
             obj = document.createElement('img');
             obj.src = "data:image/" + format + ";base64, " + result;
-            setupIMGToView(obj);
+            if (isSetupView) {
+                setupIMGToView(obj);
+            }
         }
 
         var preNode = code.parentNode;
@@ -1418,6 +1413,10 @@ var setPreviewEnabled = function(enabled) {
         previewDiv.style.display = 'none';
         previewDiv.innerHTML = '';
     }
+
+    VPreviewMode = enabled;
+
+    clearMarkRectDivs();
 };
 
 var previewCodeBlock = function(id, lang, text, isLivePreview) {
@@ -1500,7 +1499,8 @@ var htmlToText = function(identifier, id, timeStamp, html) {
         return result;
     };
 
-    var gfm = turndownPluginGfm.gfm
+    turndownPluginGfm.options.autoHead = true;
+
     var ts = new TurndownService({ headingStyle: 'atx',
                                    bulletListMarker: '-',
                                    emDelimiter: '*',
@@ -1514,7 +1514,8 @@ var htmlToText = function(identifier, id, timeStamp, html) {
                                        return node.isBlock ? '\n\n' : ''
                                    }
                                  });
-    ts.use(gfm);
+    ts.use(turndownPluginGfm.gfm);
+
     ts.addRule('emspan', {
         filter: 'span',
         replacement: function(content, node, options) {
@@ -1544,6 +1545,10 @@ var htmlToText = function(identifier, id, timeStamp, html) {
     ts.addRule('mark', {
         filter: 'mark',
         replacement: function(content, node, options) {
+            if (!content) {
+                return '';
+            }
+
             return '<mark>' + content + '</mark>';
         }
     });
@@ -1574,6 +1579,251 @@ var htmlToText = function(identifier, id, timeStamp, html) {
         }
     });
 
+    ts.remove(['head', 'style']);
+
+    var subEnabled = false, supEnabled = false;
+    if (typeof VMarkdownitOption != "undefined") {
+        subEnabled = VMarkdownitOption.sub;
+        supEnabled = VMarkdownitOption.sup;
+    }
+
+    ts.addRule('sub_fix', {
+        filter: 'sub',
+        replacement: function (content, node, options) {
+            if (!content) {
+                return '';
+            }
+
+            if (subEnabled) {
+                return '~' + content + '~';
+            } else {
+                return '<sub>' + content + '</sub>';
+            }
+        }
+    });
+
+    ts.addRule('sup_fix', {
+        filter: 'sup',
+        replacement: function (content, node, options) {
+            if (!content) {
+                return '';
+            }
+
+            if (supEnabled) {
+                return '^' + content + '^';
+            } else {
+                return '<sup>' + content + '</sup>';
+            }
+        }
+    });
+
     var markdown = ts.turndown(html);
     content.htmlToTextCB(identifier, id, timeStamp, markdown);
+};
+
+var printRect = function(rect) {
+    content.setLog('rect ' + rect.left + ' ' + rect.top + ' ' + rect.width + ' ' + rect.height);
+};
+
+var performSmartLivePreview = function(lang, text, hints, isRegex) {
+    if (previewDiv.style.display == 'none'
+        || document.getSelection().type == 'Range') {
+        return;
+    }
+
+    if (lang != 'puml') {
+        return;
+    }
+
+    var previewNode = previewDiv;
+
+    // Accessing contentDocument will fail due to crossing orgin.
+
+    // PlantUML.
+    var targetNode = null;
+    if (hints.indexOf('id') >= 0) {
+        // isRegex is ignored.
+        var result = findNodeWithText(previewNode,
+                                      text,
+                                      function (node, text) {
+                                          if (node.id && node.id == text) {
+                                              var res = { stop: true,
+                                                  node: { node: node,
+                                                      diff: 0
+                                                  }
+                                              };
+                                              return res;
+                                          }
+
+                                          return null;
+                                      });
+        targetNode = result.node;
+    }
+
+    if (!targetNode) {
+        var result;
+        if (isRegex) {
+            var nodeReg = new RegExp(text);
+            result = findNodeWithText(previewNode,
+                                      text,
+                                      function(node, text) {
+                                          var se = nodeReg.exec(node.textContent);
+                                          if (!se) {
+                                              return null;
+                                          }
+
+                                          var diff = node.textContent.length - se[0].length;
+                                          var res = { stop: diff == 0,
+                                              node: { node: node,
+                                                  diff: diff
+                                              }
+                                          };
+                                          return res;
+                                      });
+        } else {
+            result = findNodeWithText(previewNode,
+                                      text,
+                                      function(node, text) {
+                                          var idx = node.textContent.indexOf(text);
+                                          if (idx < 0) {
+                                              return null;
+                                          }
+
+                                          var diff = node.textContent.length - text.length;
+                                          var res = { stop: diff == 0,
+                                              node: { node: node,
+                                                  diff: diff
+                                              }
+                                          };
+                                          return res;
+                                      });
+        }
+
+        targetNode = result.node;
+    }
+
+    if (!targetNode) {
+        return;
+    }
+
+    // (left, top) is relative to the viewport.
+    // Should add window.scrollX and window.scrollY to get the real content offset.
+    var trect = targetNode.getBoundingClientRect();
+
+    var vrect = {
+        left: document.documentElement.scrollLeft || document.body.scrollLeft || window.pageXOffset,
+        top: document.documentElement.scrollTop || document.body.scrollTop || window.pageYOffset,
+        width: document.documentElement.clientWidth || document.body.clientWidth,
+        height: document.documentElement.clientHeight || document.body.clientHeight
+    };
+
+    // Target node rect in the content.
+    var nrect = {
+        left: vrect.left + trect.left,
+        top: vrect.top + trect.top,
+        width: trect.width,
+        height: trect.height
+    };
+
+    var dx = 0, dy = 0;
+
+    // If target is already in, do not scroll.
+    if (trect.left < 0
+        || trect.left + trect.width > vrect.width) {
+        if (trect.width >= vrect.width) {
+            dx = trect.left;
+        } else {
+            dx = trect.left - (vrect.width - trect.width) / 2;
+        }
+    }
+
+    if (trect.top < 0
+        || trect.top + trect.height > vrect.height) {
+        if (trect.height >= vrect.height) {
+            dy = trect.top;
+        } else {
+            dy = trect.top - (vrect.height - trect.height) / 2;
+        }
+    }
+
+    window.scrollBy(dx, dy);
+
+    markNode(nrect);
+}
+
+// isMatched() should return a strut or null:
+// - null to indicates a mismatch;
+// - { stop: whether continue search,
+//     node: { node: the matched node,
+//             diff: a value indicates the match quality (the lower the better)
+//           }
+//   }
+var findNodeWithText = function(node, text, isMatched) {
+    var result = {
+        node: null,
+        diff: 999999
+    };
+
+    findNodeWithTextInternal(node, text, isMatched, result);
+    return result;
+}
+
+// Return true to stop search.
+var findNodeWithTextInternal = function(node, text, isMatched, result) {
+    var children = node.children;
+    if (children.length > 0) {
+        for (var i = 0; i < children.length; ++i) {
+            var ret = findNodeWithTextInternal(children[i], text, isMatched, result);
+            if (ret) {
+                return ret;
+            }
+        }
+    }
+
+    var res = isMatched(node, text);
+    if (res) {
+        if (res.node.diff < result.diff) {
+            result.node = res.node.node;
+            result.diff = res.node.diff;
+        }
+
+        return res.stop;
+    }
+
+    return false;
+}
+
+// Draw a rectangle to mark @rect.
+var markNode = function(rect) {
+    clearMarkRectDivs();
+
+    if (!rect) {
+        return;
+    }
+
+    var div = document.createElement('div');
+    div.id = 'markrect_' + Date.now();
+    div.classList.add(VMarkRectDivClass);
+
+    document.body.appendChild(div);
+
+    var extraW = 8;
+    var extraH = 5;
+    div.style.left = (rect.left - extraW) + 'px';
+    div.style.top = (rect.top - extraH) + 'px';
+    div.style.width = (rect.width + extraW) + 'px';
+    div.style.height = rect.height + 'px';
+
+    setTimeout('var node = document.getElementById("' + div.id + '");'
+               + 'if (node) { node.outerHTML = ""; delete node; }',
+               3000);
+};
+
+var clearMarkRectDivs = function() {
+    var nodes = document.getElementsByClassName(VMarkRectDivClass);
+    while (nodes.length > 0) {
+        var n = nodes[0];
+        n.outerHTML = '';
+        delete n;
+    }
 };

@@ -307,3 +307,8 @@ void VFindReplaceDialog::updateState(DocType p_docType, bool p_editMode)
 
     m_replaceAvailable = p_editMode;
 }
+
+QString VFindReplaceDialog::textToFind() const
+{
+    return m_findEdit->text();
+}

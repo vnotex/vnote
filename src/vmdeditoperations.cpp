@@ -58,8 +58,10 @@ bool VMdEditOperations::insertImageFromMimeData(const QMimeData *source)
     return true;
 }
 
-void VMdEditOperations::insertImageFromQImage(const QString &title, const QString &path,
-                                              const QString &folderInLink, const QImage &image)
+void VMdEditOperations::insertImageFromQImage(const QString &title,
+                                              const QString &path,
+                                              const QString &folderInLink,
+                                              const QImage &image)
 {
     QString fileName = VUtils::generateImageFileName(path, title);
     QString filePath = QDir(path).filePath(fileName);
@@ -90,7 +92,7 @@ void VMdEditOperations::insertImageFromQImage(const QString &title, const QStrin
 
     QString url = QString("%1/%2").arg(folderInLink).arg(fileName);
     QString md = QString("![%1](%2)").arg(title).arg(url);
-    insertTextAtCurPos(md);
+    insertText(md);
 
     qDebug() << "insert image" << title << filePath;
 
@@ -131,7 +133,7 @@ void VMdEditOperations::insertImageFromPath(const QString &title, const QString 
 
     QString url = QString("%1/%2").arg(folderInLink).arg(fileName);
     QString md = QString("![%1](%2)").arg(title).arg(url);
-    insertTextAtCurPos(md);
+    insertText(md);
 
     qDebug() << "insert image" << title << filePath;
 
@@ -184,10 +186,17 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
                                 m_file->getImageFolderInLink(),
                                 imagePath);
         } else {
-            insertImageFromQImage(dialog.getImageTitleInput(),
-                                  m_file->fetchImageFolderPath(),
-                                  m_file->getImageFolderInLink(),
-                                  dialog.getImage());
+            if (dialog.getImageType() == VInsertImageDialog::ImageType::LocalFile) {
+                insertImageFromPath(dialog.getImageTitleInput(),
+                                    m_file->fetchImageFolderPath(),
+                                    m_file->getImageFolderInLink(),
+                                    dialog.getPathInput());
+            } else {
+                insertImageFromQImage(dialog.getImageTitleInput(),
+                                      m_file->fetchImageFolderPath(),
+                                      m_file->getImageFolderInLink(),
+                                      dialog.getImage());
+            }
         }
     }
     return true;
@@ -474,7 +483,9 @@ exit:
         && key != Qt::Key_Tab
         && key != Qt::Key_Backtab
         && key != Qt::Key_Shift
-        && key != Qt::Key_Control) {
+        && key != Qt::Key_Control
+        // For mapping Caps as Ctrl in KDE.
+        && key != Qt::Key_CapsLock) {
         m_autoIndentPos = -1;
     }
 
@@ -529,7 +540,7 @@ bool VMdEditOperations::handleKeyTab(QKeyEvent *p_event)
                 m_autoIndentPos = m_editor->textCursorW().position();
             } else {
                 // Just insert "tab".
-                insertTextAtCurPos(text);
+                insertText(text);
                 m_autoIndentPos = -1;
             }
         }
@@ -1117,9 +1128,7 @@ bool VMdEditOperations::insertLink(const QString &p_linkText,
                                    const QString &p_linkUrl)
 {
     QString link = QString("[%1](%2)").arg(p_linkText).arg(p_linkUrl);
-    QTextCursor cursor = m_editor->textCursorW();
-    cursor.insertText(link);
-    m_editor->setTextCursorW(cursor);
+    insertText(link);
 
     setVimMode(VimMode::Insert);
 

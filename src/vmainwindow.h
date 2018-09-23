@@ -194,6 +194,8 @@ private slots:
     // Open flash page in edit mode.
     void openFlashPage();
 
+    void openQuickAccess();
+
     void customShortcut();
 
     void toggleEditReadMode();

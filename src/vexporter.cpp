@@ -41,7 +41,8 @@ void VExporter::prepareExport(const ExportOption &p_opt)
 {
     bool isPdf = p_opt.m_format == ExportFormat::PDF
                  || p_opt.m_format == ExportFormat::OnePDF
-                 || p_opt.m_format == ExportFormat::Custom;
+                 || (p_opt.m_format == ExportFormat::Custom
+                     && p_opt.m_customOpt.m_pdfLike);
     bool extraToc = isPdf
                     && !p_opt.m_pdfOpt.m_wkhtmltopdf
                     && p_opt.m_pdfOpt.m_enableTableOfContents;
@@ -54,8 +55,13 @@ void VExporter::prepareExport(const ExportOption &p_opt)
                                                   isPdf && p_opt.m_pdfOpt.m_wkhtmltopdf,
                                                   extraToc);
 
+    bool outline = p_opt.m_htmlOpt.m_outlinePanel
+                   && !isPdf
+                   && (p_opt.m_format == ExportFormat::HTML
+                       || p_opt.m_format == ExportFormat::Custom);
     m_exportHtmlTemplate = VUtils::generateExportHtmlTemplate(p_opt.m_renderBg,
-                                                              isPdf && p_opt.m_pdfOpt.m_wkhtmltopdf);
+                                                              isPdf && p_opt.m_pdfOpt.m_wkhtmltopdf,
+                                                              outline);
 
     m_pageLayout = *(p_opt.m_pdfOpt.m_layout);
 

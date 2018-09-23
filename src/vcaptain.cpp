@@ -95,6 +95,11 @@ void VCaptain::keyPressEvent(QKeyEvent *p_event)
         return;
     }
 
+    if (g_config->getMultipleKeyboardLayout()) {
+        // Use virtual key here for different layout.
+        key = p_event->nativeVirtualKey();
+    }
+
     if (handleKeyPress(key, modifiers)) {
         p_event->accept();
     } else {

@@ -22,6 +22,8 @@ signals:
 
     void requestSavePage();
 
+    void requestExpandRestorePreviewArea();
+
 protected:
     void contextMenuEvent(QContextMenuEvent *p_event);
 
@@ -55,6 +57,8 @@ private:
     void initCopyAsMenu(QAction *p_after, QMenu *p_menu);
 
     void initCopyAllAsMenu(QMenu *p_menu);
+
+    void initPreviewTunnelMenu(QAction *p_before, QMenu *p_menu);
 
     VFile *m_file;
 

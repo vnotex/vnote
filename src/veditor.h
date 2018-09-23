@@ -13,6 +13,7 @@
 #include "vfile.h"
 #include "vwordcountinfo.h"
 #include "vtexteditcompleter.h"
+#include "vsearchconfig.h"
 
 class QWidget;
 class VEditorObject;
@@ -30,7 +31,8 @@ enum class SelectionId {
     SearchedKeyword,
     SearchedKeywordUnderCursor,
     IncrementalSearchedKeyword,
-    TrailingSapce,
+    TrailingSpace,
+    Tab,
     MaxSelection
 };
 
@@ -83,6 +85,15 @@ public:
                   QTextCursor::MoveMode p_moveMode = QTextCursor::MoveAnchor,
                   bool p_useLeftSideOfCursor = false);
 
+    bool findText(const VSearchToken &p_token, bool p_forward, bool p_fromStart);
+
+    // Constrain the scope.
+    bool findTextInRange(const QString &p_text,
+                         uint p_options,
+                         bool p_forward,
+                         int p_start,
+                         int p_end);
+
     void replaceText(const QString &p_text,
                      uint p_options,
                      const QString &p_replaceText,
@@ -91,6 +102,9 @@ public:
     void replaceTextAll(const QString &p_text,
                         uint p_options,
                         const QString &p_replaceText);
+
+    // Use m_findInfo to find next match.
+    void nextMatch(bool p_forward = false);
 
     // Scroll the content to make @p_block visible.
     // If the @p_block is too long to hold in one page, just let it occupy the
@@ -269,6 +283,130 @@ protected:
 private:
     friend class VEditorObject;
 
+    // Info about one find-in-page.
+    struct FindInfo
+    {
+        FindInfo()
+            : m_start(0),
+              m_end(-1),
+              m_useToken(false),
+              m_options(0),
+              m_cacheValid(false)
+        {
+        }
+
+        void clear()
+        {
+            m_start = 0;
+            m_end = -1;
+
+            m_useToken = false;
+
+            m_text.clear();
+            m_options = 0;
+
+            m_token.clear();
+
+            m_cacheValid = false;
+            m_result.clear();
+        }
+
+        void clearResult()
+        {
+            m_cacheValid = false;
+            m_result.clear();
+        }
+
+        bool isCached(const QString &p_text,
+                      uint p_options,
+                      int p_start = 0,
+                      int p_end = -1) const
+        {
+            return m_cacheValid
+                   && !m_useToken
+                   && m_text == p_text
+                   && m_options == p_options
+                   && m_start == p_start
+                   && m_end == p_end;
+        }
+
+        bool isCached(const VSearchToken &p_token,
+                      int p_start = 0,
+                      int p_end = -1) const
+        {
+            return m_cacheValid
+                   && m_useToken
+                   && m_token == p_token
+                   && m_start == p_start
+                   && m_end == p_end;
+        }
+
+        void update(const QString &p_text,
+                    uint p_options,
+                    int p_start,
+                    int p_end,
+                    const QList<QTextCursor> &p_result)
+        {
+            m_start = p_start;
+            m_end = p_end;
+
+            m_useToken = false;
+
+            m_text = p_text;
+            m_options = p_options;
+
+            m_cacheValid = true;
+            m_result = p_result;
+
+            m_token.clear();
+        }
+
+        void update(const VSearchToken &p_token,
+                    int p_start,
+                    int p_end,
+                    const QList<QTextCursor> &p_result)
+        {
+            m_start = p_start;
+            m_end = p_end;
+
+            m_useToken = true;
+
+            m_token = p_token;
+
+            m_cacheValid = true;
+            m_result = p_result;
+
+            m_text.clear();
+            m_options = 0;
+        }
+
+        bool isNull() const
+        {
+            if (m_useToken) {
+                return m_token.isEmpty();
+            } else {
+                return m_text.isEmpty();
+            }
+        }
+
+        // Find in [m_start, m_end).
+        int m_start;
+        int m_end;
+
+        bool m_useToken;
+
+        // Use text and options to search.
+        QString m_text;
+        uint m_options;
+
+        // Use token to search.
+        VSearchToken m_token;
+
+        bool m_cacheValid;
+
+        QList<QTextCursor> m_result;
+    };
+
     // Filter out the trailing space right before cursor.
     void filterTrailingSpace(QList<QTextEdit::ExtraSelection> &p_selects,
                              const QList<QTextEdit::ExtraSelection> &p_src);
@@ -286,7 +424,23 @@ private:
                                            QList<QTextEdit::ExtraSelection> &) = NULL);
 
     // Find all the occurences of @p_text.
-    QList<QTextCursor> findTextAll(const QString &p_text, uint p_options);
+    QList<QTextCursor> findTextAll(const QString &p_text,
+                                   uint p_options,
+                                   int p_start = 0,
+                                   int p_end = -1);
+
+    QList<QTextCursor> findTextAll(const VSearchToken &p_token,
+                                   int p_start = 0,
+                                   int p_end = -1);
+
+    const QList<QTextCursor> &findTextAllCached(const QString &p_text,
+                                                uint p_options,
+                                                int p_start = 0,
+                                                int p_end = -1);
+
+    const QList<QTextCursor> &findTextAllCached(const VSearchToken &p_token,
+                                                int p_start = 0,
+                                                int p_end = -1);
 
     // Highlight @p_cursor as the incremental searched keyword.
     void highlightIncrementalSearchedWord(const QTextCursor &p_cursor);
@@ -304,7 +458,7 @@ private:
 
     void showWrapLabel();
 
-    void highlightSearchedWord(const QString &p_text, uint p_options);
+    void highlightSearchedWord(const QList<QTextCursor> &p_matches);
 
     // Highlight @p_cursor as the searched keyword under cursor.
     void highlightSearchedWordUnderCursor(const QTextCursor &p_cursor);
@@ -312,6 +466,34 @@ private:
     QStringList generateCompletionCandidates() const;
 
     void cleanUp();
+
+    bool findTextOne(const QString &p_text, uint p_options, bool p_forward);
+
+    // @p_end, -1 indicates the end of doc.
+    static QList<QTextCursor> findTextAllInRange(const QTextDocument *p_doc,
+                                                 const QString &p_text,
+                                                 QTextDocument::FindFlags p_flags,
+                                                 int p_start = 0,
+                                                 int p_end = -1);
+
+    static QList<QTextCursor> findTextAllInRange(const QTextDocument *p_doc,
+                                                 const QRegExp &p_reg,
+                                                 QTextDocument::FindFlags p_flags,
+                                                 int p_start = 0,
+                                                 int p_end = -1);
+
+    bool findTextInRange(const QString &p_text,
+                         uint p_options,
+                         bool p_forward,
+                         QTextCursor *p_cursor = nullptr,
+                         QTextCursor::MoveMode p_moveMode = QTextCursor::MoveAnchor,
+                         bool p_useLeftSideOfCursor = false,
+                         int p_start = 0,
+                         int p_end = -1);
+
+    void updateTrailingSpaceAndTabHighlights();
+
+    bool needUpdateTrailingSpaceAndTabHighlights();
 
     QLabel *m_wrapLabel;
     QTimer *m_labelTimer;
@@ -335,6 +517,7 @@ private:
     QColor m_incrementalSearchedWordBg;
 
     QColor m_trailingSpaceColor;
+    QColor m_tabColor;
 
     // Timer for extra selections highlight.
     QTimer *m_highlightTimer;
@@ -359,6 +542,11 @@ private:
     // Temp files needed to be delete.
     QStringList m_tempFiles;
 
+    FindInfo m_findInfo;
+
+    bool m_trailingSpaceHighlightEnabled;
+    bool m_tabHighlightEnabled;
+
 // Functions for private slots.
 private:
     void labelTimerTimeout();
@@ -366,9 +554,9 @@ private:
     // Do the real work to highlight extra selections.
     void doHighlightExtraSelections();
 
-    void updateTrailingSpaceHighlights();
+    void doUpdateTrailingSpaceAndTabHighlights();
 
-    void doUpdateTrailingSpaceHighlights();
+    void clearFindCache();
 };
 
 
@@ -417,6 +605,8 @@ signals:
 
     void mouseReleased(QMouseEvent *p_event);
 
+    void mouseDoubleClicked(QMouseEvent *p_event);
+
     void cursorPositionChanged();
 
 private slots:
@@ -432,9 +622,14 @@ private slots:
         m_editor->doHighlightExtraSelections();
     }
 
-    void doUpdateTrailingSpaceHighlights()
+    void doUpdateTrailingSpaceAndTabHighlights()
     {
-        m_editor->doUpdateTrailingSpaceHighlights();
+        m_editor->doUpdateTrailingSpaceAndTabHighlights();
+    }
+
+    void clearFindCache()
+    {
+        m_editor->clearFindCache();
     }
 
 private:
