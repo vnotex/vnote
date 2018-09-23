@@ -1,3 +1,14 @@
+vnote (2.0-0ubuntu2) Bionic; urgency=medium
+
+  * 2.0
+
+ -- itviewer <742966969@qq.com>  Sun, 27 Aug 2018 16:06:12 +0800
+vnote (1.22-0ubuntu2) Bionic; urgency=medium
+
+  * Initial PPA build
+
+ -- itviewer <742966969@qq.com>  Sun, 26 Aug 2018 16:06:12 +0800
+
 vnote (1.8-0ubuntu1) zesty; urgency=medium
 
   * Initial release

@@ -304,25 +304,23 @@ macx {
     INCLUDEPATH += /usr/local/include
 }
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../hoedown/release/ -lhoedown
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../hoedown/debug/ -lhoedown
-else:unix: LIBS += -L$$OUT_PWD/../hoedown/ -lhoedown
-
 INCLUDEPATH += $$PWD/../hoedown
 DEPENDPATH += $$PWD/../hoedown
-
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../peg-highlight/release/ -lpeg-highlight
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../peg-highlight/debug/ -lpeg-highlight
-else:unix: LIBS += -L$$OUT_PWD/../peg-highlight/ -lpeg-highlight
 
 INCLUDEPATH += $$PWD/../peg-highlight
 DEPENDPATH += $$PWD/../peg-highlight
 
-win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../peg-highlight/release/libpeg-highlight.a
-else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../peg-highlight/debug/libpeg-highlight.a
-else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../peg-highlight/release/peg-highlight.lib
-else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../peg-highlight/debug/peg-highlight.lib
-else:unix: PRE_TARGETDEPS += $$OUT_PWD/../peg-highlight/libpeg-highlight.a
+win32-g++:CONFIG(release, debug|release): LIBS += $$OUT_PWD/../hoedown/release/libhoedown.a
+else:win32-g++:CONFIG(debug, debug|release): LIBS += $$OUT_PWD/../hoedown/debug/libhoedown.a
+else:win32:!win32-g++:CONFIG(release, debug|release): LIBS += $$OUT_PWD/../hoedown/release/hoedown.lib
+else:win32:!win32-g++:CONFIG(debug, debug|release): LIBS += $$OUT_PWD/../hoedown/debug/hoedown.lib
+else:unix: LIBS += $$OUT_PWD/../hoedown/libhoedown.a
+
+win32-g++:CONFIG(release, debug|release): LIBS += $$OUT_PWD/../peg-highlight/release/libpeg-highlight.a
+else:win32-g++:CONFIG(debug, debug|release): LIBS += $$OUT_PWD/../peg-highlight/debug/libpeg-highlight.a
+else:win32:!win32-g++:CONFIG(release, debug|release): LIBS += $$OUT_PWD/../peg-highlight/release/peg-highlight.lib
+else:win32:!win32-g++:CONFIG(debug, debug|release): LIBS += $$OUT_PWD/../peg-highlight/debug/peg-highlight.lib
+else:unix: LIBS += $$OUT_PWD/../peg-highlight/libpeg-highlight.a
 
 ## INSTALLS
 unix:!macx {

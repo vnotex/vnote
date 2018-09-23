@@ -1,15 +1,29 @@
 Source: vnote
 Section: editors
 Priority: optional
-Maintainer: Le Tan <tamlokveer@gmail.com>
-Build-Depends: debhelper (>=9), qt5-default (>= 5.7.1), libqt5svg5-dev, qtwebengine5-dev, libqt5webchannel5-dev, qtpositioning5-dev
+Maintainer: itviewer <742966969@qq.com>
+Build-Depends: debhelper (>=9),
+               libqt5svg5-dev,
+               libqt5webchannel5-dev,
+               qt5-default (>= 5.7.1),
+               qtpositioning5-dev,
+               qtwebengine5-dev
 Standards-Version: 3.9.6
 Homepage: https://tamlok.github.io/vnote
 Vcs-Browser: https://github.com/tamlok/vnote.git
 
 Package: vnote
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libQt5WebEngineWidgets (>= 5.7.1), libQt5WebEngineCore, libQt5PrintSupport, libQt5Widgets, libQt5Gui, libQt5WebChannel, libQt5Network, libQt5Core
+Depends: libqt5core5a,
+         libqt5gui5,
+         libqt5network5,
+         libqt5printsupport5,
+         libqt5webchannel5,
+         libqt5webenginecore5,
+         libqt5webenginewidgets5,
+         libqt5widgets5,
+         ${misc:Depends},
+         ${shlibs:Depends}
 Suggests: libssl
 Description: A Vim-inspired note-taking application for Markdown.
  VNote is a cross-platform, free note-taking application, designed especially
