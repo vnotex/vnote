@@ -229,7 +229,6 @@ void VTagPanel::showNavigation()
 
         QString str = QString(m_majorKey) + key;
         QLabel *label = new QLabel(str, this);
-        qDebug() << g_vnote->getNavigationLabelStyle(str, true);
         label->setStyleSheet(g_vnote->getNavigationLabelStyle(str, true));
         label->move(m_btn->geometry().topLeft());
         label->show();

@@ -252,7 +252,9 @@ static QTreeWidgetItem *lastItemOfTree(QTreeWidgetItem *p_item)
     }
 }
 
-QTreeWidgetItem *VTreeWidget::nextSibling(QTreeWidgetItem *p_item, bool p_forward)
+QTreeWidgetItem *VTreeWidget::nextSibling(const QTreeWidget *p_tree,
+                                          QTreeWidgetItem *p_item,
+                                          bool p_forward)
 {
     if (!p_item) {
         return NULL;
@@ -276,10 +278,10 @@ QTreeWidgetItem *VTreeWidget::nextSibling(QTreeWidgetItem *p_item, bool p_forwar
         return pa->child(idx);
     } else {
         // Top level item.
-        int idx = indexOfTopLevelItem(p_item);
+        int idx = p_tree->indexOfTopLevelItem(p_item);
         if (p_forward) {
             ++idx;
-            if (idx >= topLevelItemCount()) {
+            if (idx >= p_tree->topLevelItemCount()) {
                 return NULL;
             }
         } else {
@@ -289,7 +291,7 @@ QTreeWidgetItem *VTreeWidget::nextSibling(QTreeWidgetItem *p_item, bool p_forwar
             }
         }
 
-        return topLevelItem(idx);
+        return p_tree->topLevelItem(idx);
     }
 }
 
@@ -305,13 +307,15 @@ void VTreeWidget::selectNextItem(bool p_forward)
         return;
     }
 
-    QTreeWidgetItem *nItem = nextItem(item, p_forward);
+    QTreeWidgetItem *nItem = nextItem(this, item, p_forward);
     if (nItem) {
         setCurrentItem(nItem, 0, QItemSelectionModel::ClearAndSelect);
     }
 }
 
-QTreeWidgetItem *VTreeWidget::nextItem(QTreeWidgetItem *p_item, bool p_forward)
+QTreeWidgetItem *VTreeWidget::nextItem(const QTreeWidget *p_tree,
+                                       QTreeWidgetItem *p_item,
+                                       bool p_forward)
 {
     QTreeWidgetItem *nItem = NULL;
     if (p_forward) {
@@ -319,12 +323,12 @@ QTreeWidgetItem *VTreeWidget::nextItem(QTreeWidgetItem *p_item, bool p_forward)
             nItem = p_item->child(0);
         } else {
             while (!nItem && p_item) {
-                nItem = nextSibling(p_item, true);
+                nItem = nextSibling(p_tree, p_item, true);
                 p_item = p_item->parent();
             }
         }
     } else {
-        nItem = nextSibling(p_item, false);
+        nItem = nextSibling(p_tree, p_item, false);
         if (!nItem) {
             nItem = p_item->parent();
         } else {

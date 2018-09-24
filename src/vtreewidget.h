@@ -45,6 +45,11 @@ public:
 
     QTreeWidgetItem *getItemFromIndex(const QModelIndex &p_index) const;
 
+    // Next visible item.
+    static QTreeWidgetItem *nextItem(const QTreeWidget* p_tree,
+                                     QTreeWidgetItem *p_item,
+                                     bool p_forward);
+
 protected:
     void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -67,10 +72,9 @@ private:
 
     QGraphicsOpacityEffect *getSearchInputEffect() const;
 
-    QTreeWidgetItem *nextSibling(QTreeWidgetItem *p_item, bool p_forward);
-
-    // Next visible item.
-    QTreeWidgetItem *nextItem(QTreeWidgetItem *p_item, bool p_forward);
+    static QTreeWidgetItem *nextSibling(const QTreeWidget *p_widget,
+                                        QTreeWidgetItem *p_item,
+                                        bool p_forward);
 
     VSimpleSearchInput *m_searchInput;
 

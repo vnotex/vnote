@@ -8,6 +8,7 @@
 
 #include "vnote.h"
 #include "utils/vutils.h"
+#include "vtreewidget.h"
 
 extern VNote *g_vnote;
 
@@ -68,7 +69,19 @@ void VNavigationMode::showNavigation(QListWidget *p_widget)
 QList<QListWidgetItem *> VNavigationMode::getVisibleItems(const QListWidget *p_widget) const
 {
     QList<QListWidgetItem *> items;
-    for (int i = 0; i < p_widget->count(); ++i) {
+    // The first visible item.
+    QListWidgetItem *firstItem = p_widget->itemAt(0, 0);
+    if (!firstItem) {
+        return items;
+    }
+
+    QListWidgetItem *lastItem = NULL;
+    lastItem = p_widget->itemAt(p_widget->viewport()->rect().bottomLeft());
+
+    int first = p_widget->row(firstItem);
+    int last = lastItem ? p_widget->row(lastItem) : (p_widget->count() - 1);
+
+    for (int i = first; i <= last; ++i) {
         QListWidgetItem *item = p_widget->item(i);
         if (!item->isHidden() && item->flags() != Qt::NoItemFlags) {
             items.append(item);
@@ -78,35 +91,27 @@ QList<QListWidgetItem *> VNavigationMode::getVisibleItems(const QListWidget *p_w
     return items;
 }
 
-static QList<QTreeWidgetItem *> getVisibleChildItems(const QTreeWidgetItem *p_item)
-{
-    QList<QTreeWidgetItem *> items;
-    if (p_item && !p_item->isHidden() && p_item->isExpanded()) {
-        for (int i = 0; i < p_item->childCount(); ++i) {
-            QTreeWidgetItem *child = p_item->child(i);
-            if (!child->isHidden()) {
-                items.append(child);
-                if (child->isExpanded()) {
-                    items.append(getVisibleChildItems(child));
-                }
-            }
-        }
-    }
-
-    return items;
-}
-
 QList<QTreeWidgetItem *> VNavigationMode::getVisibleItems(const QTreeWidget *p_widget) const
 {
     QList<QTreeWidgetItem *> items;
-    for (int i = 0; i < p_widget->topLevelItemCount(); ++i) {
-        QTreeWidgetItem *item = p_widget->topLevelItem(i);
-        if (!item->isHidden()) {
-            items.append(item);
-            if (item->isExpanded()) {
-                items.append(getVisibleChildItems(item));
-            }
+
+    // The first visible item.
+    QTreeWidgetItem *firstItem = p_widget->itemAt(0, 0);
+    if (!firstItem) {
+        return items;
+    }
+
+    QTreeWidgetItem *lastItem = NULL;
+    lastItem = p_widget->itemAt(p_widget->viewport()->rect().bottomLeft());
+
+    QTreeWidgetItem *item = firstItem;
+    while (item) {
+        items.append(item);
+        if (item == lastItem) {
+            break;
         }
+
+        item = VTreeWidget::nextItem(p_widget, item, true);
     }
 
     return items;
