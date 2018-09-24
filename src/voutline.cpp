@@ -141,6 +141,7 @@ void VOutline::updateTreeFromOutline(QTreeWidget *p_treeWidget,
     p_treeWidget->clear();
 
     if (p_outline.isEmpty()) {
+        p_treeWidget->update();
         return;
     }
 
