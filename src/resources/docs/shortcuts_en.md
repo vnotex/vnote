@@ -21,6 +21,8 @@ Scroll in all directions.
 Recover last closed file.
 - `Ctrl+Alt+L`  
 Open Flash Page.
+- `Ctrl+Alt+I`  
+Open Quick Access.
 - `Ctrl+T`  
 Edit current note or save changes and exit edit mode.
 - `Ctrl+G`  
@@ -264,8 +266,12 @@ Apply a snippet in edit mode.
 Export notes.
 - `I`  
 Toggle live preview panel.
+- `U`  
+Expand/restore live preview panel.
 - `C`  
 Toggle full-text search.
+- `P`  
+Parse HTML as Markdown text in clipboard and paste.
 - `Shift+?`   
 Display shortcuts documentation.
 
