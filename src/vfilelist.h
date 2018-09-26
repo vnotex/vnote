@@ -209,11 +209,6 @@ private:
     QListWidgetItem *m_itemClicked;
 
     VFile *m_fileToCloseInSingleClick;
-
-    static const QString c_infoShortcutSequence;
-    static const QString c_copyShortcutSequence;
-    static const QString c_cutShortcutSequence;
-    static const QString c_pasteShortcutSequence;
 };
 
 inline void VFileList::setEditArea(VEditArea *editArea)

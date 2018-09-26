@@ -333,10 +333,6 @@ public:
     // From QProcess code.
     static QStringList parseCombinedArgString(const QString &p_program);
 
-    static const QTreeWidgetItem *topLevelTreeItem(const QTreeWidgetItem *p_item);
-
-    static int childIndexOfTreeItem(const QTreeWidgetItem *p_item);
-
     // Read QImage from local file @p_filePath.
     // Directly calling QImage(p_filePath) will judge the image format from the suffix,
     // resulting a null image in wrong suffix case.

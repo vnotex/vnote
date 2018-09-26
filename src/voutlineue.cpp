@@ -55,7 +55,7 @@ void VOutlineUE::init()
 
     connect(m_treeWidget, SIGNAL(itemActivated(QTreeWidgetItem *, int)),
             this, SLOT(activateItem(QTreeWidgetItem *, int)));
-    connect(m_treeWidget, &VTreeWidget::itemExpanded,
+    connect(m_treeWidget, &VTreeWidget::itemExpandedOrCollapsed,
             this, &VOutlineUE::widgetUpdated);
 }
 
@@ -90,12 +90,7 @@ void VOutlineUE::processCommand(int p_id, const QString &p_cmd)
             const VTableOfContent &outline = tab->getOutline();
             VOutline::updateTreeFromOutline(m_treeWidget, outline);
 
-            // expandAll() has some bugs with the first item. Fix it.
-            if (m_treeWidget->topLevelItemCount() > 0) {
-                m_treeWidget->topLevelItem(0)->setExpanded(true);
-            }
-
-            m_treeWidget->expandAll();
+            VTreeWidget::expandCollapseAll(m_treeWidget);
 
             const VHeaderPointer &header = tab->getCurrentHeader();
             if (outline.isMatched(header)) {
@@ -154,7 +149,7 @@ void VOutlineUE::updateWidget()
             delete item;
         }
 
-        wid = m_listWidget;
+        wid = m_treeWidget;
     }
 
     wid->updateGeometry();
@@ -250,5 +245,13 @@ void VOutlineUE::toggleItemExpanded(int p_id)
         if (item) {
             item->setExpanded(!item->isExpanded());
         }
+    }
+}
+
+void VOutlineUE::expandCollapseAll(int p_id)
+{
+    Q_UNUSED(p_id);
+    if (m_listOutline) {
+        VTreeWidget::expandCollapseAll(m_treeWidget);
     }
 }

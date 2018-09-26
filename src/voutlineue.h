@@ -35,6 +35,8 @@ public:
 
     void toggleItemExpanded(int p_id) Q_DECL_OVERRIDE;
 
+    void expandCollapseAll(int p_id) Q_DECL_OVERRIDE;
+
 protected:
     void init() Q_DECL_OVERRIDE;
 

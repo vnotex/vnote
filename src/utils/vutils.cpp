@@ -1540,28 +1540,6 @@ QStringList VUtils::parseCombinedArgString(const QString &p_program)
     return args;
 }
 
-const QTreeWidgetItem *VUtils::topLevelTreeItem(const QTreeWidgetItem *p_item)
-{
-    if (!p_item) {
-        return NULL;
-    }
-
-    if (p_item->parent()) {
-        return topLevelTreeItem(p_item->parent());
-    } else {
-        return p_item;
-    }
-}
-
-int VUtils::childIndexOfTreeItem(const QTreeWidgetItem *p_item)
-{
-    if (p_item->parent()) {
-        return p_item->parent()->indexOfChild(const_cast<QTreeWidgetItem *>(p_item));
-    } else {
-        return 0;
-    }
-}
-
 QImage VUtils::imageFromFile(const QString &p_filePath)
 {
     QImage img;

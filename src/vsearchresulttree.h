@@ -6,8 +6,6 @@
 #include "vtreewidget.h"
 #include "vsearch.h"
 
-class QAction;
-
 
 class VSearchResultTree : public VTreeWidget
 {
@@ -26,6 +24,8 @@ public slots:
 
     void handleContextMenuRequested(QPoint p_pos);
 
+    void expandCollapseAll();
+
 signals:
     void countChanged(int p_count);
 
@@ -39,8 +39,6 @@ private slots:
 private:
     void appendItem(const QSharedPointer<VSearchResultItem> &p_item);
 
-    void initActions();
-
     VSearchResultItem::ItemType itemResultType(const QTreeWidgetItem *p_item) const;
 
     void activateItem(const QTreeWidgetItem *p_item) const;
@@ -52,14 +50,6 @@ private:
     QIcon m_noteIcon;
     QIcon m_folderIcon;
     QIcon m_notebookIcon;
-
-    QAction *m_openAct;
-
-    QAction *m_locateAct;
-
-    QAction *m_addToCartAct;
-
-    QAction *m_pinToHistoryAct;
 };
 
 #endif // VSEARCHRESULTTREE_H

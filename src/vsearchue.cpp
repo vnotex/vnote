@@ -131,7 +131,7 @@ void VSearchUE::init()
     m_treeWidget->hide();
     connect(m_treeWidget, SIGNAL(itemActivated(QTreeWidgetItem *, int)),
             this, SLOT(activateItem(QTreeWidgetItem *, int)));
-    connect(m_treeWidget, &VTreeWidget::itemExpanded,
+    connect(m_treeWidget, &VTreeWidget::itemExpandedOrCollapsed,
             this, &VSearchUE::widgetUpdated);
 }
 
@@ -905,7 +905,7 @@ const QSharedPointer<VSearchResultItem> &VSearchUE::itemResultData(const QListWi
 const QSharedPointer<VSearchResultItem> &VSearchUE::itemResultData(const QTreeWidgetItem *p_item) const
 {
     Q_ASSERT(p_item);
-    const QTreeWidgetItem *topItem = VUtils::topLevelTreeItem(p_item);
+    const QTreeWidgetItem *topItem = VTreeWidget::topLevelTreeItem(p_item);
     int idx = topItem->data(0, Qt::UserRole).toInt();
     Q_ASSERT(idx >= 0 && idx < m_data.size());
     return m_data[idx];
@@ -1002,7 +1002,7 @@ void VSearchUE::activateItem(QTreeWidgetItem *p_item, int p_col)
     }
 
     emit requestHideUniversalEntry();
-    activateItem(itemResultData(p_item), VUtils::childIndexOfTreeItem(p_item));
+    activateItem(itemResultData(p_item), VTreeWidget::childIndexOfTreeItem(p_item));
 }
 
 void VSearchUE::selectNextItem(int p_id, bool p_forward)
@@ -1114,6 +1114,25 @@ void VSearchUE::toggleItemExpanded(int p_id)
             item->setExpanded(!item->isExpanded());
         }
 
+        break;
+    }
+
+    default:
+        break;
+    }
+}
+
+void VSearchUE::expandCollapseAll(int p_id)
+{
+    switch (p_id) {
+    case ID::Content_Note_AllNotebook:
+    case ID::Content_Note_CurrentNotebook:
+    case ID::Content_Note_CurrentFolder:
+    case ID::Content_Note_ExplorerDirectory:
+    case ID::Content_Note_Buffer:
+    case ID::Outline_Note_Buffer:
+    {
+        VTreeWidget::expandCollapseAll(m_treeWidget);
         break;
     }
 

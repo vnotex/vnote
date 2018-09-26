@@ -17,6 +17,7 @@
 #include "vnote.h"
 #include "vconfigmanager.h"
 #include "vexplorer.h"
+#include "vconstants.h"
 
 extern VMainWindow *g_mainWin;
 
@@ -215,6 +216,11 @@ void VSearcher::setupUI()
                 m_clearBtn->setEnabled(p_count > 0);
                 updateNumLabel(p_count);
             });
+
+    QShortcut *expandShortcut = new QShortcut(QKeySequence(Shortcut::c_expand), this);
+    expandShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(expandShortcut, &QShortcut::activated,
+            m_results, &VSearchResultTree::expandCollapseAll);
 
     QFormLayout *formLayout = VUtils::getFormLayout();
     formLayout->addRow(tr("Keywords:"), m_keywordCB);

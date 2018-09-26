@@ -80,6 +80,15 @@ namespace SnippetConfig
     static const QString c_autoIndent = "auto_indent";
 }
 
+namespace Shortcut
+{
+    static const QString c_expand = "Ctrl+B";
+    static const QString c_info = "F2";
+    static const QString c_copy = "Ctrl+C";
+    static const QString c_cut = "Ctrl+X";
+    static const QString c_paste = "Ctrl+V";
+}
+
 static const QString c_emptyHeaderName = "[EMPTY]";
 
 enum class TextDecoration

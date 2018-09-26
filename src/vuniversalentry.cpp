@@ -413,6 +413,18 @@ void VUniversalEntry::keyPressEvent(QKeyEvent *p_event)
 
         break;
 
+    case Qt::Key_B:
+        if (VUtils::isControlModifierForVim(modifiers)) {
+            // Ctrl+B to expand/collapse all the items.
+            if (m_lastEntry) {
+                m_lastEntry->m_entry->expandCollapseAll(m_lastEntry->m_id);
+            }
+
+            return;
+        }
+
+        break;
+
     default:
         break;
     }

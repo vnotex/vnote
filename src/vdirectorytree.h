@@ -163,11 +163,6 @@ private:
 
     // Magic number for clipboard operations.
     int m_magicForClipboard;
-
-    static const QString c_infoShortcutSequence;
-    static const QString c_copyShortcutSequence;
-    static const QString c_cutShortcutSequence;
-    static const QString c_pasteShortcutSequence;
 };
 
 inline QPointer<VDirectory> VDirectoryTree::getVDirectory(QTreeWidgetItem *p_item) const

@@ -13,6 +13,7 @@
 #include "vexplorer.h"
 #include "vuniversalentry.h"
 #include "vsearchue.h"
+#include "vconstants.h"
 
 extern VNote *g_vnote;
 
@@ -33,43 +34,10 @@ VSearchResultTree::VSearchResultTree(QWidget *p_parent)
     m_folderIcon = VIconUtils::treeViewIcon(":/resources/icons/dir_item.svg");
     m_notebookIcon = VIconUtils::treeViewIcon(":/resources/icons/notebook_item.svg");
 
-    initActions();
-
     connect(this, &VTreeWidget::itemActivated,
             this, &VSearchResultTree::activateItem);
     connect(this, &VTreeWidget::customContextMenuRequested,
             this, &VSearchResultTree::handleContextMenuRequested);
-}
-
-void VSearchResultTree::initActions()
-{
-    m_openAct = new QAction(tr("&Open"), this);
-    m_openAct->setToolTip(tr("Open selected notes"));
-    connect(m_openAct, &QAction::triggered,
-            this, [this]() {
-                activateItem(currentItem());
-            });
-
-    m_locateAct = new QAction(VIconUtils::menuIcon(":/resources/icons/locate_note.svg"),
-                              tr("&Locate To Folder"),
-                              this);
-    m_locateAct->setToolTip(tr("Locate the folder of current note"));
-    connect(m_locateAct, &QAction::triggered,
-            this, &VSearchResultTree::locateCurrentItem);
-
-    m_addToCartAct = new QAction(VIconUtils::menuIcon(":/resources/icons/cart.svg"),
-                                 tr("Add To Cart"),
-                                 this);
-    m_addToCartAct->setToolTip(tr("Add selected notes to Cart for further processing"));
-    connect(m_addToCartAct, &QAction::triggered,
-            this, &VSearchResultTree::addSelectedItemsToCart);
-
-    m_pinToHistoryAct = new QAction(VIconUtils::menuIcon(":/resources/icons/pin.svg"),
-                                    tr("Pin To History"),
-                                    this);
-    m_pinToHistoryAct->setToolTip(tr("Pin selected notes to History"));
-    connect(m_pinToHistoryAct, &QAction::triggered,
-            this, &VSearchResultTree::pinSelectedItemsToHistory);
 }
 
 void VSearchResultTree::updateResults(const QList<QSharedPointer<VSearchResultItem> > &p_items)
@@ -158,14 +126,15 @@ void VSearchResultTree::appendItem(const QSharedPointer<VSearchResultItem> &p_it
 
 void VSearchResultTree::handleContextMenuRequested(QPoint p_pos)
 {
-    QTreeWidgetItem *item = itemAt(p_pos);
-    if (!item) {
-        return;
-    }
-
     QMenu menu(this);
     menu.setToolTipsVisible(true);
 
+    QTreeWidgetItem *item = itemAt(p_pos);
+    if (!item) {
+        goto global;
+    }
+
+    {
     QList<QTreeWidgetItem *> items = selectedItems();
 
     bool hasNote = false;
@@ -177,19 +146,59 @@ void VSearchResultTree::handleContextMenuRequested(QPoint p_pos)
     }
 
     if (items.size() == 1) {
-        menu.addAction(m_openAct);
+        QAction *openAct = new QAction(tr("&Open"), &menu);
+        openAct->setToolTip(tr("Open selected notes"));
+        connect(openAct, &QAction::triggered,
+                this, [this]() {
+                    activateItem(currentItem());
+                });
+        menu.addAction(openAct);
 
         if (hasNote) {
-            menu.addAction(m_locateAct);
+            QAction *locateAct = new QAction(VIconUtils::menuIcon(":/resources/icons/locate_note.svg"),
+                                             tr("&Locate To Folder"),
+                                             &menu);
+            locateAct->setToolTip(tr("Locate the folder of current note"));
+            connect(locateAct, &QAction::triggered,
+                    this, &VSearchResultTree::locateCurrentItem);
+            menu.addAction(locateAct);
         }
     }
 
     if (hasNote) {
-        menu.addAction(m_addToCartAct);
-        menu.addAction(m_pinToHistoryAct);
+        QAction *addToCartAct = new QAction(VIconUtils::menuIcon(":/resources/icons/cart.svg"),
+                                            tr("Add To Cart"),
+                                            &menu);
+        addToCartAct->setToolTip(tr("Add selected notes to Cart for further processing"));
+        connect(addToCartAct, &QAction::triggered,
+                this, &VSearchResultTree::addSelectedItemsToCart);
+        menu.addAction(addToCartAct);
+
+        QAction *pinToHistoryAct = new QAction(VIconUtils::menuIcon(":/resources/icons/pin.svg"),
+                                               tr("Pin To History"),
+                                               &menu);
+        pinToHistoryAct->setToolTip(tr("Pin selected notes to History"));
+        connect(pinToHistoryAct, &QAction::triggered,
+                this, &VSearchResultTree::pinSelectedItemsToHistory);
+        menu.addAction(pinToHistoryAct);
+    }
     }
 
-    menu.exec(mapToGlobal(p_pos));
+global:
+    if (topLevelItemCount() > 0) {
+        if (item) {
+            menu.addSeparator();
+        }
+
+        QString shortcutText = VUtils::getShortcutText(Shortcut::c_expand);
+        QAction *expandAct = new QAction(tr("Expand/Collapse All\t%1").arg(shortcutText),
+                                         &menu);
+        connect(expandAct, &QAction::triggered,
+                this, &VSearchResultTree::expandCollapseAll);
+        menu.addAction(expandAct);
+
+        menu.exec(mapToGlobal(p_pos));
+    }
 }
 
 void VSearchResultTree::locateCurrentItem()
@@ -257,7 +266,7 @@ VSearchResultItem::ItemType VSearchResultTree::itemResultType(const QTreeWidgetI
 const QSharedPointer<VSearchResultItem> &VSearchResultTree::itemResultData(const QTreeWidgetItem *p_item) const
 {
     Q_ASSERT(p_item);
-    const QTreeWidgetItem *topItem = VUtils::topLevelTreeItem(p_item);
+    const QTreeWidgetItem *topItem = VTreeWidget::topLevelTreeItem(p_item);
     int idx = topItem->data(0, Qt::UserRole).toInt();
     Q_ASSERT(idx >= 0 && idx < m_data.size());
     return m_data[idx];
@@ -269,5 +278,10 @@ void VSearchResultTree::activateItem(const QTreeWidgetItem *p_item) const
         return;
     }
 
-    VSearchUE::activateItem(itemResultData(p_item), VUtils::childIndexOfTreeItem(p_item));
+    VSearchUE::activateItem(itemResultData(p_item), VTreeWidget::childIndexOfTreeItem(p_item));
+}
+
+void VSearchResultTree::expandCollapseAll()
+{
+    VTreeWidget::expandCollapseAll(this);
 }

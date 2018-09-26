@@ -103,6 +103,11 @@ public:
         m_widgetParent = p_parent;
     }
 
+    virtual void expandCollapseAll(int p_id)
+    {
+        Q_UNUSED(p_id);
+    }
+
 signals:
     void widgetUpdated();
 
