@@ -925,10 +925,10 @@ void VEditUtils::findCurrentWord(QTextCursor p_cursor,
     QString text = p_cursor.block().text();
     int pib = p_cursor.positionInBlock();
 
-    if (pib < text.size() && text[pib].isSpace()) {
+    if (pib < text.size() && isSpaceOrWordSeparator(text[pib])) {
         if (!p_findPrecedingWord
             || pib == 0
-            || text[pib - 1].isSpace()) {
+            || isSpaceOrWordSeparator(text[pib - 1])) {
             p_start = p_end = p_cursor.position();
             return;
         }
@@ -1098,4 +1098,9 @@ QString VEditUtils::removeCodeBlockFence(const QString &p_text)
     Q_ASSERT(text.startsWith("```") && text.endsWith("```"));
     int idx = text.indexOf('\n') + 1;
     return text.mid(idx, text.size() - idx - 3);
+}
+
+bool VEditUtils::isSpaceOrWordSeparator(QChar p_char)
+{
+    return p_char.isSpace() || isWordSeparator(p_char);
 }

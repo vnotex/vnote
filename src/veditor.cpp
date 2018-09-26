@@ -1553,7 +1553,7 @@ QString VEditor::fetchCompletionPrefix() const
     QString prefix;
     while (pos >= blockPos) {
         QChar ch = m_document->characterAt(pos);
-        if (ch.isSpace() || VEditUtils::isWordSeparator(ch)) {
+        if (VEditUtils::isSpaceOrWordSeparator(ch)) {
             break;
         }
 

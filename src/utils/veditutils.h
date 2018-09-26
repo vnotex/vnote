@@ -212,6 +212,8 @@ public:
 
     static bool isWordSeparator(QChar p_char);
 
+    static bool isSpaceOrWordSeparator(QChar p_char);
+
     // Remove the fence of fenced code block.
     static QString removeCodeBlockFence(const QString &p_text);
 
