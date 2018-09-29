@@ -1265,9 +1265,10 @@ QVector<VEditTab *> VEditWindow::getAllTabs() const
 
 void VEditWindow::checkFileChangeOutside()
 {
-    int nrTab = count();
-    for (int i = 0; i < nrTab; ++i) {
-        getTab(i)->checkFileChangeOutside();
+    // Only check current tab.
+    VEditTab *tab = getCurrentTab();
+    if (tab) {
+        tab->checkFileChangeOutside();
     }
 }
 
