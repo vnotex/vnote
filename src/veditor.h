@@ -463,7 +463,7 @@ private:
     // Highlight @p_cursor as the searched keyword under cursor.
     void highlightSearchedWordUnderCursor(const QTextCursor &p_cursor);
 
-    QStringList generateCompletionCandidates() const;
+    QStringList generateCompletionCandidates(bool p_reversed) const;
 
     void cleanUp();
 

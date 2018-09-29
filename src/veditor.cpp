@@ -1504,7 +1504,7 @@ void VEditor::requestCompletion(bool p_reversed)
     cursor.clearSelection();
     setTextCursorW(cursor);
 
-    QStringList words = generateCompletionCandidates();
+    QStringList words = generateCompletionCandidates(p_reversed);
     QString prefix = fetchCompletionPrefix();
     // Smart case.
     Qt::CaseSensitivity cs = completionCaseSensitivity(prefix);
@@ -1526,7 +1526,7 @@ bool VEditor::isCompletionActivated() const
     return false;
 }
 
-QStringList VEditor::generateCompletionCandidates() const
+QStringList VEditor::generateCompletionCandidates(bool p_reversed) const
 {
     QString content = getContent();
     QTextCursor cursor = textCursorW();
@@ -1535,10 +1535,35 @@ QStringList VEditor::generateCompletionCandidates() const
 
     QRegExp reg("\\W+");
 
-    QStringList ret = content.mid(end).split(reg, QString::SkipEmptyParts);
-    ret.append(content.left(start).split(reg, QString::SkipEmptyParts));
-    ret.removeDuplicates();
-    return ret;
+    QStringList above = content.left(start).split(reg, QString::SkipEmptyParts);
+    QStringList below = content.mid(end).split(reg, QString::SkipEmptyParts);
+
+    if (p_reversed) {
+        QStringList rev;
+        rev.reserve(above.size() + below.size());
+        for (auto it = above.rbegin(); it != above.rend(); ++it) {
+            rev.append(*it);
+        }
+
+        for (auto it = below.rbegin(); it != below.rend(); ++it) {
+            rev.append(*it);
+        }
+
+        rev.removeDuplicates();
+
+        QStringList res;
+        res.reserve(rev.size());
+        for (auto it = rev.rbegin(); it != rev.rend(); ++it) {
+            res.append(*it);
+        }
+
+        return res;
+    } else {
+        // below + above.
+        below.append(above);
+        below.removeDuplicates();
+        return below;
+    }
 }
 
 QString VEditor::fetchCompletionPrefix() const
