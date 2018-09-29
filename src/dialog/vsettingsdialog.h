@@ -40,6 +40,9 @@ private:
     bool loadQuickAccess();
     bool saveQuickAccess();
 
+    bool loadKeyboardLayoutMapping();
+    bool saveKeyboardLayoutMapping();
+
     // Language
     QComboBox *m_langCombo;
 
@@ -57,6 +60,9 @@ private:
 
     // Quick access note path.
     VLineEdit *m_quickAccessEdit;
+
+    // Keyboard layout mappings.
+    QComboBox *m_keyboardLayoutCombo;
 
     static const QVector<QString> c_availableLangs;
 };

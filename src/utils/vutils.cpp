@@ -1376,6 +1376,10 @@ bool VUtils::isMetaKey(int p_key)
     return p_key == Qt::Key_Control
            || p_key == Qt::Key_Shift
            || p_key == Qt::Key_Meta
+#if defined(Q_OS_LINUX)
+           // For mapping Caps as Ctrl in KDE.
+           || p_key == Qt::Key_CapsLock
+#endif
            || p_key == Qt::Key_Alt;
 }
 

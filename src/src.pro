@@ -146,7 +146,9 @@ SOURCES += main.cpp\
     pegmarkdownhighlighter.cpp \
     pegparser.cpp \
     peghighlighterresult.cpp \
-    vtexteditcompleter.cpp
+    vtexteditcompleter.cpp \
+    utils/vkeyboardlayoutmanager.cpp \
+    dialog/vkeyboardlayoutmappingdialog.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -285,7 +287,9 @@ HEADERS  += vmainwindow.h \
     pegparser.h \
     peghighlighterresult.h \
     vtexteditcompleter.h \
-    vtextdocumentlayoutdata.h
+    vtextdocumentlayoutdata.h \
+    utils/vkeyboardlayoutmanager.h \
+    dialog/vkeyboardlayoutmappingdialog.h
 
 RESOURCES += \
     vnote.qrc \

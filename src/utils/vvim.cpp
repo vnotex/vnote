@@ -571,11 +571,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
 
         if (m_registerPending) {
             // Ctrl and Shift may be sent out first.
-            if (key == Qt::Key_Control
-                || key == Qt::Key_Shift
-                || key == Qt::Key_Meta
-                // For mapping Caps as Ctrl in KDE.
-                || key == Qt::Key_CapsLock) {
+            if (VUtils::isMetaKey(key)) {
                 goto accept;
             }
 

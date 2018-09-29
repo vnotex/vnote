@@ -9,6 +9,8 @@
 #include "vlineedit.h"
 #include "vplantumlhelper.h"
 #include "vgraphvizhelper.h"
+#include "utils/vkeyboardlayoutmanager.h"
+#include "dialog/vkeyboardlayoutmappingdialog.h"
 
 extern VConfigManager *g_config;
 
@@ -324,11 +326,29 @@ VGeneralTab::VGeneralTab(QWidget *p_parent)
     qaLayout->addWidget(m_quickAccessEdit);
     qaLayout->addWidget(browseBtn);
 
+    // Keyboard layout mappings.
+    m_keyboardLayoutCombo = VUtils::getComboBox(this);
+    m_keyboardLayoutCombo->setToolTip(tr("Choose the keyboard layout mapping to use in shortcuts"));
+
+    QPushButton *editLayoutBtn = new QPushButton(tr("Edit"), this);
+    connect(editLayoutBtn, &QPushButton::clicked,
+            this, [this]() {
+                VKeyboardLayoutMappingDialog dialog(this);
+                dialog.exec();
+                loadKeyboardLayoutMapping();
+            });
+
+    QHBoxLayout *klLayout = new QHBoxLayout();
+    klLayout->addWidget(m_keyboardLayoutCombo);
+    klLayout->addWidget(editLayoutBtn);
+    klLayout->addStretch();
+
     QFormLayout *optionLayout = new QFormLayout();
     optionLayout->addRow(tr("Language:"), m_langCombo);
     optionLayout->addRow(m_systemTray);
     optionLayout->addRow(tr("Startup pages:"), startupLayout);
     optionLayout->addRow(tr("Quick access:"), qaLayout);
+    optionLayout->addRow(tr("Keyboard layout mapping:"), klLayout);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(optionLayout);
@@ -409,6 +429,10 @@ bool VGeneralTab::loadConfiguration()
         return false;
     }
 
+    if (!loadKeyboardLayoutMapping()) {
+        return false;
+    }
+
     return true;
 }
 
@@ -427,6 +451,10 @@ bool VGeneralTab::saveConfiguration()
     }
 
     if (!saveQuickAccess()) {
+        return false;
+    }
+
+    if (!saveKeyboardLayoutMapping()) {
         return false;
     }
 
@@ -525,6 +553,38 @@ bool VGeneralTab::loadQuickAccess()
 bool VGeneralTab::saveQuickAccess()
 {
     g_config->setQuickAccess(m_quickAccessEdit->text());
+    return true;
+}
+
+bool VGeneralTab::loadKeyboardLayoutMapping()
+{
+    m_keyboardLayoutCombo->clear();
+
+    m_keyboardLayoutCombo->addItem(tr("None"), "");
+
+    QStringList layouts = VKeyboardLayoutManager::availableLayouts();
+    for (auto const & layout : layouts) {
+        m_keyboardLayoutCombo->addItem(layout, layout);
+    }
+
+    int idx = 0;
+    const auto &cur = VKeyboardLayoutManager::currentLayout();
+    if (!cur.m_name.isEmpty()) {
+        idx = m_keyboardLayoutCombo->findData(cur.m_name);
+        if (idx == -1) {
+            idx = 0;
+            VKeyboardLayoutManager::setCurrentLayout("");
+        }
+    }
+
+    m_keyboardLayoutCombo->setCurrentIndex(idx);
+    return true;
+}
+
+bool VGeneralTab::saveKeyboardLayoutMapping()
+{
+    g_config->setKeyboardLayout(m_keyboardLayoutCombo->currentData().toString());
+    VKeyboardLayoutManager::update();
     return true;
 }
 

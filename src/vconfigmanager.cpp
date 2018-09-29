@@ -29,6 +29,8 @@ const QString VConfigManager::c_sessionConfigFile = QString("session.ini");
 
 const QString VConfigManager::c_snippetConfigFile = QString("snippet.json");
 
+const QString VConfigManager::c_keyboardLayoutConfigFile = QString("keyboard_layouts.ini");
+
 const QString VConfigManager::c_styleConfigFolder = QString("styles");
 
 const QString VConfigManager::c_themeConfigFolder = QString("themes");
@@ -313,13 +315,6 @@ void VConfigManager::initialize()
 
     m_smartLivePreview = getConfigFromSettings("global",
                                                "smart_live_preview").toInt();
-
-#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
-    m_multipleKeyboardLayout = false;
-#else
-    m_multipleKeyboardLayout = getConfigFromSettings("global",
-                                                     "multiple_keyboard_layout").toBool();
-#endif
 
     m_insertNewNoteInFront = getConfigFromSettings("global",
                                                    "insert_new_note_in_front").toBool();
@@ -860,6 +855,11 @@ const QString &VConfigManager::getSnippetConfigFilePath() const
 {
     static QString path = QDir(getSnippetConfigFolder()).filePath(c_snippetConfigFile);
     return path;
+}
+
+const QString VConfigManager::getKeyboardLayoutConfigFilePath() const
+{
+    return QDir(getConfigFolder()).filePath(c_keyboardLayoutConfigFile);
 }
 
 QString VConfigManager::getThemeFile() const

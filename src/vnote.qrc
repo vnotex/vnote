@@ -274,5 +274,7 @@
         <file>resources/export/export_template.html</file>
         <file>resources/export/outline.css</file>
         <file>resources/export/outline.js</file>
+        <file>resources/icons/add.svg</file>
+        <file>resources/icons/delete.svg</file>
     </qresource>
 </RCC>
