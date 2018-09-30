@@ -6,6 +6,8 @@
 #include <QScopedPointer>
 #include <QClipboard>
 #include <QMimeDatabase>
+#include <QTemporaryFile>
+#include <QProgressDialog>
 
 #include "vdocument.h"
 #include "utils/veditutils.h"
@@ -29,6 +31,7 @@
 #include "vplantumlhelper.h"
 #include "vgraphvizhelper.h"
 #include "vmdtab.h"
+#include "vdownloader.h"
 
 extern VWebUtils *g_webUtils;
 
@@ -1169,7 +1172,15 @@ void VMdEditor::htmlToTextFinished(int p_id, int p_timeStamp, const QString &p_t
 {
     Q_UNUSED(p_id);
     if (m_copyTimeStamp == p_timeStamp && !p_text.isEmpty()) {
-        m_editOps->insertText(p_text);
+        emit m_object->statusMessage(tr("Inserting parsed Markdown text"));
+
+        QString text(p_text);
+        if (g_config->getParsePasteLocalImage()) {
+            // May take long time.
+            replaceTextWithLocalImages(text);
+        }
+
+        m_editOps->insertText(text);
         emit m_object->statusMessage(tr("Parsed Markdown text inserted"));
     }
 }
@@ -1990,4 +2001,101 @@ bool VMdEditor::processTextFromMimeData(const QMimeData *p_source)
 
     Q_ASSERT(p_source->hasText());
     return false;
+}
+
+void VMdEditor::replaceTextWithLocalImages(QString &p_text)
+{
+    QVector<VElementRegion> regs = VUtils::fetchImageRegionsUsingParser(p_text);
+    if (regs.isEmpty()) {
+        return;
+    }
+
+    // Sort it in ascending order.
+    std::sort(regs.begin(), regs.end());
+
+    QProgressDialog proDlg(tr("Fetching images to local..."),
+                           tr("Abort"),
+                           0,
+                           regs.size(),
+                           this);
+    proDlg.setWindowModality(Qt::WindowModal);
+    proDlg.setWindowTitle(tr("Fetching Images To Local"));
+
+    QRegExp regExp(VUtils::c_imageLinkRegExp);
+    for (int i = regs.size() - 1; i >= 0; --i) {
+        proDlg.setValue(regs.size() - 1 - i);
+        if (proDlg.wasCanceled()) {
+            break;
+        }
+
+        const VElementRegion &reg = regs[i];
+        QString linkText = p_text.mid(reg.m_startPos, reg.m_endPos - reg.m_startPos);
+        if (regExp.indexIn(linkText) == -1) {
+            continue;
+        }
+
+        QString imageTitle = regExp.cap(1).trimmed();
+        QString imageUrl = regExp.cap(2).trimmed();
+
+        proDlg.setLabelText(tr("Fetching image: %1").arg(imageUrl));
+
+        QString destImagePath, urlInLink;
+
+        // Only handle absolute file path or network path.
+        QString srcImagePath;
+        QFileInfo info(imageUrl);
+
+        // For network image.
+        QString suffix = info.suffix();
+        QScopedPointer<QTemporaryFile> tmpFile;
+
+        if (info.exists() && info.isAbsolute()) {
+            // Absolute local path.
+            srcImagePath = info.absoluteFilePath();
+        } else {
+            // Network path.
+            QByteArray data = VDownloader::downloadSync(QUrl(imageUrl));
+            if (!data.isEmpty()) {
+                QString xx = suffix.isEmpty() ? "XXXXXX" : "XXXXXX.";
+                tmpFile.reset(new QTemporaryFile(QDir::tempPath()
+                                                 + QDir::separator()
+                                                 + xx
+                                                 + suffix));
+                if (tmpFile->open() && tmpFile->write(data) > -1) {
+                    srcImagePath = tmpFile->fileName();
+                }
+            }
+        }
+
+        if (srcImagePath.isEmpty()) {
+            continue;
+        }
+
+        // Insert image without inserting text.
+        auto ops = static_cast<VMdEditOperations *>(m_editOps);
+        ops->insertImageFromPath(imageTitle,
+                                 m_file->fetchImageFolderPath(),
+                                 m_file->getImageFolderInLink(),
+                                 srcImagePath,
+                                 false,
+                                 destImagePath,
+                                 urlInLink);
+        if (urlInLink.isEmpty()) {
+            continue;
+        }
+
+        // Replace URL in link.
+        QString newLink = QString("![%1](%2%3%4)")
+                                 .arg(imageTitle)
+                                 .arg(urlInLink)
+                                 .arg(regExp.cap(3))
+                                 .arg(regExp.cap(6));
+        p_text.replace(reg.m_startPos,
+                       reg.m_endPos - reg.m_startPos,
+                       newLink);
+
+        qDebug() << "replace link" << linkText << "to" << newLink;
+    }
+
+    proDlg.setValue(regs.size());
 }

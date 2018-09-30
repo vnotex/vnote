@@ -133,6 +133,9 @@ public:
     static QVector<ImageLink> fetchImagesFromMarkdownFile(VFile *p_file,
                                                           ImageLink::ImageLinkType p_type = ImageLink::All);
 
+    // Use PegParser to parse @p_content to get all image link regions.
+    static QVector<VElementRegion> fetchImageRegionsUsingParser(const QString &p_content);
+
     // Return the absolute path of @p_url according to @p_basePath.
     static QString linkUrlToPath(const QString &p_basePath, const QString &p_url);
 
@@ -389,7 +392,7 @@ public:
     // 3. Image Optional Title with double quotes or quotes;
     // 4. Unused;
     // 5. Unused;
-    // 6. Unused;
+    // 6. Width and height text;
     // 7. Width;
     // 8. Height;
     static const QString c_imageLinkRegExp;
@@ -439,9 +442,6 @@ private:
     VUtils() {}
 
     static void initAvailableLanguage();
-
-    // Use PegParser to parse @p_content to get all image link regions.
-    static QVector<VElementRegion> fetchImageRegionsUsingParser(const QString &p_content);
 
     // Delete file/directory specified by @p_path by moving it to the recycle bin
     // folder @p_recycleBinFolderPath.

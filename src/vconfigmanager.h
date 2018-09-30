@@ -575,6 +575,8 @@ public:
 
     QList<int> getKeyboardLayoutMappingKeys() const;
 
+    bool getParsePasteLocalImage() const;
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -1026,6 +1028,9 @@ private:
 
     // Whether insert new note in front.
     bool m_insertNewNoteInFront;
+
+    // Whether download image from parse and paste.
+    bool m_parsePasteLocalImage;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2683,5 +2688,10 @@ inline QList<int> VConfigManager::getKeyboardLayoutMappingKeys() const
     }
 
     return keys;
+}
+
+inline bool VConfigManager::getParsePasteLocalImage() const
+{
+    return m_parsePasteLocalImage;
 }
 #endif // VCONFIGMANAGER_H

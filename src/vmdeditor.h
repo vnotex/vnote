@@ -315,6 +315,8 @@ private:
 
     bool processTextFromMimeData(const QMimeData *p_source);
 
+    void replaceTextWithLocalImages(QString &p_text);
+
     PegMarkdownHighlighter *m_pegHighlighter;
 
     VCodeBlockHighlightHelper *m_cbHighlighter;

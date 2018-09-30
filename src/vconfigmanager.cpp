@@ -356,6 +356,7 @@ void VConfigManager::initEditorConfigs()
     m_enableTabHighlight = getConfigFromSettings("editor",
                                                  "enable_tab_highlight").toBool();
 
+    m_parsePasteLocalImage = getConfigFromSettings("editor", "parse_paste_local_image").toBool();
 }
 
 void VConfigManager::initSettings()

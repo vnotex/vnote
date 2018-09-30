@@ -34,11 +34,22 @@ public:
 
     bool insertImageLink(const QString &p_linkText, const QString &p_linkUrl);
 
+    // @p_urlInLink and @p_destImagePath will be empty on failure.
+    void insertImageFromPath(const QString &p_title,
+                             const QString &p_folderPath,
+                             const QString &p_folderInLink,
+                             const QString &p_srcImagePath,
+                             bool p_insertText,
+                             QString &p_destImagePath,
+                             QString &p_urlInLink);
+
 private:
-    // Insert image from @oriImagePath as @path.
-    // @folderInLink: the folder part in the image link.
-    void insertImageFromPath(const QString &title, const QString &path,
-                             const QString &folderInLink, const QString &oriImagePath);
+    // Insert image from @p_srcImagePath as to @p_folderPath.
+    // @p_folderInLink: the folder part in the image link.
+    void insertImageFromPath(const QString &p_title,
+                             const QString &p_folderPath,
+                             const QString &p_folderInLink,
+                             const QString &p_srcImagePath);
 
     // @title: title of the inserted image;
     // @path: the image folder path to insert the image in;
