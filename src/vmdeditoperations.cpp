@@ -52,28 +52,51 @@ bool VMdEditOperations::insertImageFromMimeData(const QMimeData *source)
         insertImageFromQImage(dialog.getImageTitleInput(),
                               m_file->fetchImageFolderPath(),
                               m_file->getImageFolderInLink(),
-                              image);
+                              image,
+                              dialog.getOverridenWidth());
     }
 
     return true;
 }
 
-void VMdEditOperations::insertImageFromQImage(const QString &title,
-                                              const QString &path,
-                                              const QString &folderInLink,
-                                              const QImage &image)
+// @p_width, @p_height: 0 if no override.
+static QString imageLink(const QString &p_title,
+                         const QString &p_url,
+                         int p_width = 0,
+                         int p_height = 0)
 {
-    QString fileName = VUtils::generateImageFileName(path, title);
-    QString filePath = QDir(path).filePath(fileName);
+    QString scale;
+    if (p_width > 0) {
+        if (p_height > 0) {
+            scale = QString(" =%1x%2").arg(p_width).arg(p_height);
+        } else {
+            scale = QString(" =%1x").arg(p_width);
+        }
+    } else if (p_height > 0) {
+        scale = QString(" =x%1").arg(p_height);
+    }
+
+    return QString("![%1](%2%3)").arg(p_title).arg(p_url).arg(scale);
+}
+
+void VMdEditOperations::insertImageFromQImage(const QString &p_title,
+                                              const QString &p_folderPath,
+                                              const QString &p_folderInLink,
+                                              const QImage &p_image,
+                                              int p_width,
+                                              int p_height)
+{
+    QString fileName = VUtils::generateImageFileName(p_folderPath, p_title);
+    QString filePath = QDir(p_folderPath).filePath(fileName);
     V_ASSERT(!QFile(filePath).exists());
 
     QString errStr;
-    bool ret = VUtils::makePath(path);
+    bool ret = VUtils::makePath(p_folderPath);
     if (!ret) {
         errStr = tr("Fail to create image folder <span style=\"%1\">%2</span>.")
-                   .arg(g_config->c_dataTextStyle).arg(path);
+                   .arg(g_config->c_dataTextStyle).arg(p_folderPath);
     } else {
-        ret = image.save(filePath);
+        ret = p_image.save(filePath);
         if (!ret) {
             errStr = tr("Fail to save image <span style=\"%1\">%2</span>.")
                        .arg(g_config->c_dataTextStyle).arg(filePath);
@@ -82,7 +105,7 @@ void VMdEditOperations::insertImageFromQImage(const QString &title,
 
     if (!ret) {
         VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                            tr("Fail to insert image <span style=\"%1\">%2</span>.").arg(g_config->c_dataTextStyle).arg(title),
+                            tr("Fail to insert image <span style=\"%1\">%2</span>.").arg(g_config->c_dataTextStyle).arg(p_title),
                             errStr,
                             QMessageBox::Ok,
                             QMessageBox::Ok,
@@ -90,11 +113,11 @@ void VMdEditOperations::insertImageFromQImage(const QString &title,
         return;
     }
 
-    QString url = QString("%1/%2").arg(folderInLink).arg(fileName);
-    QString md = QString("![%1](%2)").arg(title).arg(url);
-    insertText(md);
+    QString url = QString("%1/%2").arg(p_folderInLink).arg(fileName);
 
-    qDebug() << "insert image" << title << filePath;
+    insertText(imageLink(p_title, url, p_width, p_height));
+
+    qDebug() << "insert image" << p_title << filePath;
 
     VMdEditor *mdEditor = dynamic_cast<VMdEditor *>(m_editor);
     Q_ASSERT(mdEditor);
@@ -104,7 +127,9 @@ void VMdEditOperations::insertImageFromQImage(const QString &title,
 void VMdEditOperations::insertImageFromPath(const QString &p_title,
                                             const QString &p_folderPath,
                                             const QString &p_folderInLink,
-                                            const QString &p_srcImagePath)
+                                            const QString &p_srcImagePath,
+                                            int p_width,
+                                            int p_height)
 {
     insertImageFromPath(p_title,
                         p_folderPath,
@@ -112,7 +137,9 @@ void VMdEditOperations::insertImageFromPath(const QString &p_title,
                         p_srcImagePath,
                         true,
                         QString(),
-                        QString());
+                        QString(),
+                        p_width,
+                        p_height);
 }
 
 void VMdEditOperations::insertImageFromPath(const QString &p_title,
@@ -121,7 +148,9 @@ void VMdEditOperations::insertImageFromPath(const QString &p_title,
                                             const QString &p_srcImagePath,
                                             bool p_insertText,
                                             QString &p_destImagePath,
-                                            QString &p_urlInLink)
+                                            QString &p_urlInLink,
+                                            int p_width,
+                                            int p_height)
 {
     p_destImagePath.clear();
     p_urlInLink.clear();
@@ -161,8 +190,7 @@ void VMdEditOperations::insertImageFromPath(const QString &p_title,
     p_destImagePath = filePath;
 
     if (p_insertText) {
-        QString md = QString("![%1](%2)").arg(p_title).arg(p_urlInLink);
-        insertText(md);
+        insertText(imageLink(p_title, p_urlInLink, p_width, p_height));
     }
 
     qDebug() << "insert image" << p_title << filePath;
@@ -214,18 +242,21 @@ bool VMdEditOperations::insertImageFromURL(const QUrl &imageUrl)
             insertImageFromPath(dialog.getImageTitleInput(),
                                 m_file->fetchImageFolderPath(),
                                 m_file->getImageFolderInLink(),
-                                imagePath);
+                                imagePath,
+                                dialog.getOverridenWidth());
         } else {
             if (dialog.getImageType() == VInsertImageDialog::ImageType::LocalFile) {
                 insertImageFromPath(dialog.getImageTitleInput(),
                                     m_file->fetchImageFolderPath(),
                                     m_file->getImageFolderInLink(),
-                                    dialog.getPathInput());
+                                    dialog.getPathInput(),
+                                    dialog.getOverridenWidth());
             } else {
                 insertImageFromQImage(dialog.getImageTitleInput(),
                                       m_file->fetchImageFolderPath(),
                                       m_file->getImageFolderInLink(),
-                                      dialog.getImage());
+                                      dialog.getImage(),
+                                      dialog.getOverridenWidth());
             }
         }
     }
@@ -246,14 +277,16 @@ bool VMdEditOperations::insertImage()
             insertImageFromPath(dialog.getImageTitleInput(),
                                 m_file->fetchImageFolderPath(),
                                 m_file->getImageFolderInLink(),
-                                dialog.getPathInput());
+                                dialog.getPathInput(),
+                                dialog.getOverridenWidth());
         } else {
             QImage img = dialog.getImage();
             if (!img.isNull()) {
                 insertImageFromQImage(dialog.getImageTitleInput(),
                                       m_file->fetchImageFolderPath(),
                                       m_file->getImageFolderInLink(),
-                                      img);
+                                      img,
+                                      dialog.getOverridenWidth());
             }
         }
     }
@@ -1168,9 +1201,8 @@ bool VMdEditOperations::insertLink(const QString &p_linkText,
 bool VMdEditOperations::insertImageLink(const QString &p_linkText,
                                         const QString &p_linkUrl)
 {
-    QString link = QString("![%1](%2)").arg(p_linkText).arg(p_linkUrl);
     QTextCursor cursor = m_editor->textCursorW();
-    cursor.insertText(link);
+    cursor.insertText(imageLink(p_linkText, p_linkUrl));
     m_editor->setTextCursorW(cursor);
 
     setVimMode(VimMode::Insert);

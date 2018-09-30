@@ -13,6 +13,9 @@ class VLineEdit;
 class VMetaWordLineEdit;
 class QPushButton;
 class QDialogButtonBox;
+class QScrollArea;
+class QSpinBox;
+class QSlider;
 
 class VInsertImageDialog : public QDialog
 {
@@ -30,17 +33,18 @@ public:
                        bool p_browsable = true,
                        QWidget *p_parent = nullptr);
 
-    ~VInsertImageDialog();
-
     QString getImageTitleInput() const;
 
     QString getPathInput() const;
 
-    void setImage(const QImage &image);
+    void setImage(const QImage &p_image);
 
     QImage getImage() const;
 
     VInsertImageDialog::ImageType getImageType() const;
+
+    // Return 0 if no override.
+    int getOverridenWidth() const;
 
 public slots:
     void imageDownloaded(const QByteArray &data);
@@ -61,13 +65,22 @@ private:
 
     void setPath(const QString &p_path);
 
+    void setImageControlsVisible(bool p_visible);
+
     VMetaWordLineEdit *m_imageTitleEdit;
     VLineEdit *m_pathEdit;
     QPushButton *browseBtn;
-    QDialogButtonBox *m_btnBox;
-    QLabel *imagePreviewLabel;
 
-    QImage *m_image;
+    QSpinBox *m_widthSpin;
+    QSlider *m_scaleSlider;
+    QLabel *m_sliderLabel;
+
+    QDialogButtonBox *m_btnBox;
+
+    QLabel *m_imageLabel;
+    QScrollArea *m_previewArea;
+
+    QSharedPointer<QImage> m_image;
 
     // Whether enable the browse action.
     bool m_browsable;

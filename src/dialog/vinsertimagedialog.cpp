@@ -14,7 +14,6 @@ VInsertImageDialog::VInsertImageDialog(const QString &p_title,
                                        bool p_browsable,
                                        QWidget *p_parent)
     : QDialog(p_parent),
-      m_image(NULL),
       m_browsable(p_browsable)
 {
     setupUI(p_title, p_imageTitle, p_imagePath);
@@ -35,40 +34,81 @@ VInsertImageDialog::VInsertImageDialog(const QString &p_title,
     handleInputChanged();
 }
 
-VInsertImageDialog::~VInsertImageDialog()
-{
-    delete m_image;
-    m_image = NULL;
-}
-
 void VInsertImageDialog::setupUI(const QString &p_title,
                                  const QString &p_imageTitle,
                                  const QString &p_imagePath)
 {
-    QLabel *pathLabel = new QLabel(tr("&From:"));
+    // Path.
     m_pathEdit = new VLineEdit(p_imagePath);
-    pathLabel->setBuddy(m_pathEdit);
-    browseBtn = new QPushButton(tr("&Browse"));
     m_pathEdit->setReadOnly(!m_browsable);
+    browseBtn = new QPushButton(tr("&Browse"));
     browseBtn->setEnabled(m_browsable);
 
-    QLabel *imageTitleLabel = new QLabel(tr("&Image title:"));
+    // Title.
     m_imageTitleEdit = new VMetaWordLineEdit(p_imageTitle);
     m_imageTitleEdit->selectAll();
-    imageTitleLabel->setBuddy(m_imageTitleEdit);
     QValidator *validator = new QRegExpValidator(QRegExp(VUtils::c_imageTitleRegExp),
                                                  m_imageTitleEdit);
     m_imageTitleEdit->setValidator(validator);
 
+    // Scale.
+    m_widthSpin = new QSpinBox();
+    m_widthSpin->setMinimum(1);
+    m_widthSpin->setSingleStep(10);
+    m_widthSpin->setSuffix(" px");
+    connect(m_widthSpin, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            this, [this](int p_val) {
+                if (!m_image) {
+                    return;
+                }
+
+                int height = m_image->height() * (1.0 * p_val / m_image->width());
+                m_imageLabel->resize(p_val, height);
+            });
+
+    // 0.1 to 2.0 -> 1 to 20.
+    m_scaleSlider = new QSlider();
+    m_scaleSlider->setOrientation(Qt::Horizontal);
+    m_scaleSlider->setMinimum(1);
+    m_scaleSlider->setMaximum(20);
+    m_scaleSlider->setValue(10);
+    m_scaleSlider->setSingleStep(1);
+    m_scaleSlider->setPageStep(5);
+    connect(m_scaleSlider, &QSlider::valueChanged,
+            this, [this](int p_val) {
+                if (!m_image) {
+                    return;
+                }
+
+                int width = m_image->width();
+                qreal factor = 1.0;
+                if (p_val != 10) {
+                    factor = p_val / 10.0;
+                    width = m_image->width() * factor;
+                }
+
+                m_widthSpin->setValue(width);
+                m_sliderLabel->setText(QString::number(factor) + "x");
+            });
+
+    m_sliderLabel = new QLabel("1x");
+
     QGridLayout *topLayout = new QGridLayout();
-    topLayout->addWidget(pathLabel, 0, 0);
-    topLayout->addWidget(m_pathEdit, 0, 1);
-    topLayout->addWidget(browseBtn, 0, 2);
-    topLayout->addWidget(imageTitleLabel, 1, 0);
-    topLayout->addWidget(m_imageTitleEdit, 1, 1, 1, 2);
+    topLayout->addWidget(new QLabel(tr("From:")), 0, 0, 1, 1);
+    topLayout->addWidget(m_pathEdit, 0, 1, 1, 3);
+    topLayout->addWidget(browseBtn, 0, 4, 1, 1);
+    topLayout->addWidget(new QLabel(tr("Title:")), 1, 0, 1, 1);
+    topLayout->addWidget(m_imageTitleEdit, 1, 1, 1, 4);
+    topLayout->addWidget(new QLabel(tr("Scaling width:")), 2, 0, 1, 1);
+    topLayout->addWidget(m_widthSpin, 2, 1, 1, 1);
+    topLayout->addWidget(m_scaleSlider, 2, 2, 1, 2);
+    topLayout->addWidget(m_sliderLabel, 2, 4, 1, 1);
+
     topLayout->setColumnStretch(0, 0);
-    topLayout->setColumnStretch(1, 1);
-    topLayout->setColumnStretch(2, 0);
+    topLayout->setColumnStretch(1, 0);
+    topLayout->setColumnStretch(2, 1);
+    topLayout->setColumnStretch(3, 1);
+    topLayout->setColumnStretch(4, 0);
 
     // Ok is the default button.
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -76,15 +116,23 @@ void VInsertImageDialog::setupUI(const QString &p_title,
     connect(m_btnBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
     m_btnBox->button(QDialogButtonBox::Ok)->setProperty("SpecialBtn", true);
 
-    imagePreviewLabel = new QLabel();
-    imagePreviewLabel->setVisible(false);
+    m_imageLabel = new QLabel();
+    m_imageLabel->setScaledContents(true);
+
+    m_previewArea = new QScrollArea();
+    m_previewArea->setBackgroundRole(QPalette::Dark);
+    m_previewArea->setWidget(m_imageLabel);
+    int minWidth = 512 * VUtils::calculateScaleFactor();
+    m_previewArea->setMinimumSize(minWidth, minWidth);
+
+    setImageControlsVisible(false);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(topLayout);
     mainLayout->addWidget(m_btnBox);
-    mainLayout->addWidget(imagePreviewLabel);
+    mainLayout->addWidget(m_previewArea);
     setLayout(mainLayout);
-    mainLayout->setSizeConstraint(QLayout::SetFixedSize);
+
     setWindowTitle(p_title);
 
     m_imageTitleEdit->setFocus();
@@ -133,34 +181,29 @@ void VInsertImageDialog::handleBrowseBtnClicked()
     m_imageTitleEdit->setFocus();
 }
 
-void VInsertImageDialog::setImage(const QImage &image)
+void VInsertImageDialog::setImage(const QImage &p_image)
 {
-    if (image.isNull()) {
-        imagePreviewLabel->setVisible(false);
-        delete m_image;
-        m_image = NULL;
+    if (p_image.isNull()) {
+        m_image.clear();
+        m_imageLabel->clear();
 
-        handleInputChanged();
-        return;
-    }
-
-    int width = 512 * VUtils::calculateScaleFactor();
-    QSize previewSize(width, width);
-    if (!m_image) {
-        m_image = new QImage(image);
+        setImageControlsVisible(false);
     } else {
-        *m_image = image;
-    }
+        m_image.reset(new QImage(p_image));
 
-    QPixmap pixmap;
-    if (image.width() > width || image.height() > width) {
-        pixmap = QPixmap::fromImage(m_image->scaled(previewSize, Qt::KeepAspectRatio));
-    } else {
-        pixmap = QPixmap::fromImage(*m_image);
-    }
+        m_imageLabel->setPixmap(QPixmap::fromImage(*m_image));
 
-    imagePreviewLabel->setPixmap(pixmap);
-    imagePreviewLabel->setVisible(true);
+        m_imageLabel->adjustSize();
+
+        // Set the scaling widgets.
+        m_scaleSlider->setValue(10);
+
+        int width = m_image->width();
+        m_widthSpin->setMaximum(width * 5);
+        m_widthSpin->setValue(width);
+
+        setImageControlsVisible(true);
+    }
 
     handleInputChanged();
 }
@@ -280,4 +323,23 @@ void VInsertImageDialog::setPath(const QString &p_path)
 {
     m_pathEdit->setText(p_path);
     handlePathEditChanged();
+}
+
+void VInsertImageDialog::setImageControlsVisible(bool p_visible)
+{
+    m_widthSpin->setEnabled(p_visible);
+    m_scaleSlider->setEnabled(p_visible);
+    m_sliderLabel->setEnabled(p_visible);
+
+    m_previewArea->setVisible(p_visible);
+}
+
+int VInsertImageDialog::getOverridenWidth() const
+{
+    int width = m_widthSpin->value();
+    if (m_image && m_image->width() != width) {
+        return width;
+    }
+
+    return 0;
 }

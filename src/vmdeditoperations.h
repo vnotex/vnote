@@ -41,7 +41,9 @@ public:
                              const QString &p_srcImagePath,
                              bool p_insertText,
                              QString &p_destImagePath,
-                             QString &p_urlInLink);
+                             QString &p_urlInLink,
+                             int p_width = 0,
+                             int p_height = 0);
 
 private:
     // Insert image from @p_srcImagePath as to @p_folderPath.
@@ -49,14 +51,20 @@ private:
     void insertImageFromPath(const QString &p_title,
                              const QString &p_folderPath,
                              const QString &p_folderInLink,
-                             const QString &p_srcImagePath);
+                             const QString &p_srcImagePath,
+                             int p_width = 0,
+                             int p_height = 0);
 
-    // @title: title of the inserted image;
-    // @path: the image folder path to insert the image in;
-    // @folderInLink: the folder part in the image link.
-    // @image: the image to be inserted;
-    void insertImageFromQImage(const QString &title, const QString &path,
-                               const QString &folderInLink, const QImage &image);
+    // @p_title: title of the inserted image;
+    // @p_folderPath: the image folder path to insert the image in;
+    // @p_folderInLink: the folder part in the image link.
+    // @p_image: the image to be inserted;
+    void insertImageFromQImage(const QString &p_title,
+                               const QString &p_folderPath,
+                               const QString &p_folderInLink,
+                               const QImage &p_image,
+                               int p_width = 0,
+                               int p_height = 0);
 
     // Key press handlers.
     bool handleKeyTab(QKeyEvent *p_event);
