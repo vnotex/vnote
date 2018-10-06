@@ -155,6 +155,12 @@ void VMdEditOperations::insertImageFromPath(const QString &p_title,
     p_destImagePath.clear();
     p_urlInLink.clear();
 
+    // Make sure src image is valid.
+    if (QImage(p_srcImagePath).isNull()) {
+        qWarning() << "fail to insert invalid source image" << p_srcImagePath;
+        return;
+    }
+
     QString fileName = VUtils::generateImageFileName(p_folderPath,
                                                      p_title,
                                                      QFileInfo(p_srcImagePath).suffix());
