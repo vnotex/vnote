@@ -17,7 +17,8 @@ void VDownloader::handleDownloadFinished(QNetworkReply *reply)
 
     data = reply->readAll();
     reply->deleteLater();
-    emit downloadFinished(data, reply->url().toString());
+    // The url() of the reply may be redirected and different from that of the request.
+    emit downloadFinished(data, reply->request().url().toString());
 }
 
 static QNetworkRequest networkRequest(const QUrl &p_url)

@@ -59,7 +59,6 @@ void VPreviewManager::imageDownloaded(const QByteArray &p_data, const QString &p
 
     QPixmap image;
     image.loadFromData(p_data);
-
     if (!image.isNull()) {
         m_editor->addImage(name, image);
         emit requestUpdateImageLinks();

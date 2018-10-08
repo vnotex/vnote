@@ -18,6 +18,7 @@ public:
     static QByteArray downloadSync(const QUrl &p_url);
 
 signals:
+    // Url is the original url of the request.
     void downloadFinished(const QByteArray &data, const QString &url);
 
 private slots:

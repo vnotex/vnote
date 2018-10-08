@@ -1719,6 +1719,7 @@ void VMdEditor::exportGraphAndCopy(const QString &p_lang,
     }
 
     if (out.isEmpty() || m_exportTempFile->write(out) == -1) {
+        m_exportTempFile->close();
         VUtils::showMessage(QMessageBox::Warning,
                             tr("Warning"),
                             tr("Fail to export graph."),
@@ -1727,8 +1728,11 @@ void VMdEditor::exportGraphAndCopy(const QString &p_lang,
                             QMessageBox::Ok,
                             this);
     } else {
+        m_exportTempFile->close();
+
         QClipboard *clipboard = QApplication::clipboard();
         clipboard->clear();
+
         QImage img;
         img.loadFromData(out, p_format.toLocal8Bit().data());
         if (!img.isNull()) {
@@ -1741,8 +1745,6 @@ void VMdEditor::exportGraphAndCopy(const QString &p_lang,
             emit m_object->statusMessage(tr("Fail to read exported image: %1").arg(filePath));
         }
     }
-
-    m_exportTempFile->close();
 }
 
 void VMdEditor::parseAndPaste()
@@ -2064,6 +2066,9 @@ void VMdEditor::replaceTextWithLocalImages(QString &p_text)
                 if (tmpFile->open() && tmpFile->write(data) > -1) {
                     srcImagePath = tmpFile->fileName();
                 }
+
+                // Need to close it explicitly to flush cache of small file.
+                tmpFile->close();
             }
         }
 
