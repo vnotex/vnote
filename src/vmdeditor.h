@@ -313,8 +313,6 @@ private:
 
     bool processUrlFromMimeData(const QMimeData *p_source);
 
-    bool processTextFromMimeData(const QMimeData *p_source);
-
     void replaceTextWithLocalImages(QString &p_text);
 
     PegMarkdownHighlighter *m_pegHighlighter;

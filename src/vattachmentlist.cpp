@@ -287,6 +287,11 @@ void VAttachmentList::handleContextMenuRequested(QPoint p_pos)
     if (selectedSize == 1) {
         menu.addSeparator();
 
+        QAction *copyPathAct = new QAction(tr("Copy File Path"), &menu);
+        connect(copyPathAct, &QAction::triggered,
+                this, &VAttachmentList::copyAttachmentFilePath);
+        menu.addAction(copyPathAct);
+
         QAction *fileInfoAct = new QAction(VIconUtils::menuIcon(":/resources/icons/note_info.svg"),
                                            tr("&Info (Rename)\t%1").arg(VUtils::getShortcutText(c_infoShortcutSequence)),
                                            &menu);
@@ -306,7 +311,7 @@ void VAttachmentList::handleItemActivated(QListWidgetItem *p_item)
     if (p_item) {
         Q_ASSERT(m_file);
 
-        QString name = p_item->text();
+        QString name = p_item->data(Qt::UserRole).toString();
         QString folderPath = m_file->fetchAttachmentFolderPath();
         QUrl url = QUrl::fromLocalFile(QDir(folderPath).filePath(name));
         QDesktopServices::openUrl(url);
@@ -697,4 +702,18 @@ void VAttachmentList::attachmentInfo()
         item->setData(Qt::UserRole, name);
         item->setText(name);
     }
+}
+
+void VAttachmentList::copyAttachmentFilePath()
+{
+    QListWidgetItem *item = m_attachmentList->currentItem();
+    if (!item) {
+        return;
+    }
+
+    QString name = item->data(Qt::UserRole).toString();
+    QString filePath = QDir(m_file->fetchAttachmentFolderPath()).filePath(name);
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setText(filePath);
+    g_mainWin->showStatusMessage(tr("Attachment file path copied %1").arg(filePath));
 }

@@ -52,6 +52,8 @@ private slots:
 
     void attachmentInfo();
 
+    void copyAttachmentFilePath();
+
 private:
     void setupUI();
 
