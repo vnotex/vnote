@@ -23,6 +23,7 @@ class QWebEngineView;
 class QAction;
 class QTreeWidgetItem;
 class QFormLayout;
+class QTemporaryFile;
 
 #if !defined(V_ASSERT)
     #define V_ASSERT(cond) ((!(cond)) ? qt_assert(#cond, __FILE__, __LINE__) : qt_noop())
@@ -383,6 +384,11 @@ public:
     // Return the name of the parent directory of @p_path.
     // @p_path: file path of file or dir.
     static QString parentDirName(const QString &p_path);
+
+    // Remove query in the url (?xxx).
+    static QString purifyUrl(const QString &p_url);
+
+    static QTemporaryFile *createTemporaryFile(QString p_suffix);
 
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt text" =200x100)

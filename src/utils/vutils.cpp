@@ -31,6 +31,7 @@
 #include <QFontDatabase>
 #include <QSvgRenderer>
 #include <QPainter>
+#include <QTemporaryFile>
 
 #include "vorphanfile.h"
 #include "vnote.h"
@@ -1798,4 +1799,30 @@ QString VUtils::parentDirName(const QString &p_path)
     }
 
     return QFileInfo(p_path).dir().dirName();
+}
+
+QString VUtils::purifyUrl(const QString &p_url)
+{
+    int idx = p_url.indexOf('?');
+    if (idx > -1) {
+        return p_url.left(idx);
+    }
+
+    return p_url;
+}
+
+// Suffix size for QTemporaryFile.
+#define MAX_SIZE_SUFFIX_FOR_TEMP_FILE 10
+
+QTemporaryFile *VUtils::createTemporaryFile(QString p_suffix)
+{
+    if (p_suffix.size() > MAX_SIZE_SUFFIX_FOR_TEMP_FILE) {
+        p_suffix.clear();
+    }
+
+    QString xx = p_suffix.isEmpty() ? "XXXXXX" : "XXXXXX.";
+    return new QTemporaryFile(QDir::tempPath()
+                              + QDir::separator()
+                              + xx
+                              + p_suffix);
 }

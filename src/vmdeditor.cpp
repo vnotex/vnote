@@ -1689,9 +1689,7 @@ void VMdEditor::exportGraphAndCopy(const QString &p_lang,
                                    const QString &p_text,
                                    const QString &p_format)
 {
-    m_exportTempFile.reset(new QTemporaryFile(QDir::tempPath()
-                                              + QDir::separator()
-                                              + "XXXXXX." + p_format));
+    m_exportTempFile.reset(VUtils::createTemporaryFile(p_format));
     if (!m_exportTempFile->open()) {
         VUtils::showMessage(QMessageBox::Warning,
                             tr("Warning"),
@@ -2028,13 +2026,13 @@ void VMdEditor::replaceTextWithLocalImages(QString &p_text)
     // Sort it in ascending order.
     std::sort(regs.begin(), regs.end());
 
-    QProgressDialog proDlg(tr("Fetching images to local..."),
+    QProgressDialog proDlg(tr("Fetching images to local folder..."),
                            tr("Abort"),
                            0,
                            regs.size(),
                            this);
     proDlg.setWindowModality(Qt::WindowModal);
-    proDlg.setWindowTitle(tr("Fetching Images To Local"));
+    proDlg.setWindowTitle(tr("Fetching Images To Local Folder"));
 
     QRegExp regExp(VUtils::c_imageLinkRegExp);
     for (int i = regs.size() - 1; i >= 0; --i) {
@@ -2052,16 +2050,20 @@ void VMdEditor::replaceTextWithLocalImages(QString &p_text)
         QString imageTitle = regExp.cap(1).trimmed();
         QString imageUrl = regExp.cap(2).trimmed();
 
-        proDlg.setLabelText(tr("Fetching image: %1").arg(imageUrl));
+        const int maxUrlLength = 100;
+        QString urlToDisplay(imageUrl);
+        if (urlToDisplay.size() > maxUrlLength) {
+            urlToDisplay = urlToDisplay.left(maxUrlLength) + "...";
+        }
+        proDlg.setLabelText(tr("Fetching image: %1").arg(urlToDisplay));
 
         QString destImagePath, urlInLink;
 
         // Only handle absolute file path or network path.
         QString srcImagePath;
-        QFileInfo info(imageUrl);
+        QFileInfo info(VUtils::purifyUrl(imageUrl));
 
         // For network image.
-        QString suffix = info.suffix();
         QScopedPointer<QTemporaryFile> tmpFile;
 
         if (info.exists()) {
@@ -2073,11 +2075,7 @@ void VMdEditor::replaceTextWithLocalImages(QString &p_text)
             // Network path.
             QByteArray data = VDownloader::downloadSync(QUrl(imageUrl));
             if (!data.isEmpty()) {
-                QString xx = suffix.isEmpty() ? "XXXXXX" : "XXXXXX.";
-                tmpFile.reset(new QTemporaryFile(QDir::tempPath()
-                                                 + QDir::separator()
-                                                 + xx
-                                                 + suffix));
+                tmpFile.reset(VUtils::createTemporaryFile(info.suffix()));
                 if (tmpFile->open() && tmpFile->write(data) > -1) {
                     srcImagePath = tmpFile->fileName();
                 }

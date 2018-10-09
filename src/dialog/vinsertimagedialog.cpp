@@ -218,14 +218,12 @@ void VInsertImageDialog::imageDownloaded(const QByteArray &data)
         goto image_data;
     }
 
-    QString format = QFileInfo(getPathInput()).suffix();
+    QString format = QFileInfo(VUtils::purifyUrl(getPathInput())).suffix();
     if (format.isEmpty()) {
         goto image_data;
     }
 
-    m_tempFile.reset(new QTemporaryFile(QDir::tempPath()
-                                        + QDir::separator()
-                                        + "XXXXXX." + format));
+    m_tempFile.reset(VUtils::createTemporaryFile(format));
     if (!m_tempFile->open()) {
         goto image_data;
     }
