@@ -258,6 +258,8 @@ private slots:
     // Copy selected text as HTML.
     void handleCopyAsAction(QAction *p_act);
 
+    void handleLinkToAttachmentAction(QAction *p_act);
+
 private:
     void updateHeadersHelper(const QVector<VElementRegion> &p_headerRegions, bool p_configChanged);
 
@@ -296,6 +298,8 @@ private:
                                QMenu *p_menu,
                                const QTextBlock &p_block,
                                int p_pos);
+
+    void initAttachmentMenu(QMenu *p_menu);
 
     void insertImageLink(const QString &p_text, const QString &p_url);
 

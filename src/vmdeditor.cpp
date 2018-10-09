@@ -413,6 +413,8 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
         if (firstAct) {
             menu->insertSeparator(firstAct);
         }
+
+        initAttachmentMenu(menu.data());
     }
 
     menu->exec(p_event->globalPos());
@@ -776,10 +778,10 @@ void VMdEditor::clearUnusedImages()
         for (auto const & item : unusedImages) {
             bool ret = false;
             if (m_file->getType() == FileType::Note) {
-                const VNoteFile *tmpFile = dynamic_cast<const VNoteFile *>((VFile *)m_file);
+                const VNoteFile *tmpFile = static_cast<const VNoteFile *>((VFile *)m_file);
                 ret = VUtils::deleteFile(tmpFile->getNotebook(), item, false);
             } else if (m_file->getType() == FileType::Orphan) {
-                const VOrphanFile *tmpFile = dynamic_cast<const VOrphanFile *>((VFile *)m_file);
+                const VOrphanFile *tmpFile = static_cast<const VOrphanFile *>((VFile *)m_file);
                 ret = VUtils::deleteFile(tmpFile, item, false);
             } else {
                 Q_ASSERT(false);
@@ -1915,9 +1917,9 @@ bool VMdEditor::processUrlFromMimeData(const QMimeData *p_source)
         case 2:
         {
             // Insert As Link.
-            QString linkText;
+            QString initLinkText;
             if (isLocalFile) {
-                linkText = QFileInfo(url.toLocalFile()).fileName();
+                initLinkText = QFileInfo(url.toLocalFile()).fileName();
             }
 
             QString ut;
@@ -1933,7 +1935,7 @@ bool VMdEditor::processUrlFromMimeData(const QMimeData *p_source)
             VInsertLinkDialog ld(QObject::tr("Insert Link"),
                                  "",
                                  "",
-                                 linkText,
+                                 initLinkText,
                                  ut,
                                  false,
                                  this);
@@ -2074,4 +2076,57 @@ void VMdEditor::replaceTextWithLocalImages(QString &p_text)
     }
 
     proDlg.setValue(regs.size());
+}
+
+void VMdEditor::initAttachmentMenu(QMenu *p_menu)
+{
+    if (m_file->getType() != FileType::Note) {
+        return;
+    }
+
+    const VNoteFile *note = static_cast<const VNoteFile *>((VFile *)m_file);
+    const QVector<VAttachment> &attas = note->getAttachments();
+    if (attas.isEmpty()) {
+        return;
+    }
+
+    QMenu *subMenu = new QMenu(tr("Link To Attachment"), p_menu);
+    for (auto const & att : attas) {
+        QAction *act = new QAction(att.m_name, subMenu);
+        act->setData(att.m_name);
+        subMenu->addAction(act);
+    }
+
+    connect(subMenu, &QMenu::triggered,
+            this, &VMdEditor::handleLinkToAttachmentAction);
+
+    p_menu->addSeparator();
+    p_menu->addMenu(subMenu);
+}
+
+void VMdEditor::handleLinkToAttachmentAction(QAction *p_act)
+{
+    Q_ASSERT(m_file->getType() == FileType::Note);
+    VNoteFile *note = static_cast<VNoteFile *>((VFile *)m_file);
+    QString name = p_act->data().toString();
+    QString folderPath = note->fetchAttachmentFolderPath();
+    QString filePath = QDir(folderPath).filePath(name);
+
+    QDir dir(note->fetchBasePath());
+    QString ut = dir.relativeFilePath(filePath);
+    ut = QUrl(ut).toString(QUrl::EncodeSpaces);
+
+    VInsertLinkDialog ld(QObject::tr("Insert Link"),
+                         "",
+                         "",
+                         name,
+                         ut,
+                         false,
+                         this);
+    if (ld.exec() == QDialog::Accepted) {
+        QString linkText = ld.getLinkText();
+        QString linkUrl = ld.getLinkUrl();
+        Q_ASSERT(!linkText.isEmpty() && !linkUrl.isEmpty());
+        m_editOps->insertLink(linkText, linkUrl);
+    }
 }
