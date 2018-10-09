@@ -131,13 +131,16 @@ void VMdEditOperations::insertImageFromPath(const QString &p_title,
                                             int p_width,
                                             int p_height)
 {
+    QString p_destImagePath;
+    QString p_urlInLink;
+
     insertImageFromPath(p_title,
                         p_folderPath,
                         p_folderInLink,
                         p_srcImagePath,
                         true,
-                        QString(),
-                        QString(),
+                        p_destImagePath,
+                        p_urlInLink,
                         p_width,
                         p_height);
 }
