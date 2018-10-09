@@ -105,6 +105,15 @@ void VEditor::init()
 
     m_config.init(QFontMetrics(m_editor->font()), false);
     updateEditConfig();
+
+    // Init shortcuts.
+    QKeySequence keySeq(g_config->getShortcutKeySequence("PastePlainText"));
+    QShortcut *pastePlainTextShortcut = new QShortcut(keySeq, m_editor);
+    pastePlainTextShortcut->setContext(Qt::WidgetShortcut);
+    QObject::connect(pastePlainTextShortcut, &QShortcut::activated,
+                     m_object, [this]() {
+                        pastePlainText();
+                     });
 }
 
 void VEditor::labelTimerTimeout()
@@ -1680,4 +1689,19 @@ void VEditor::nextMatch(bool p_forward)
                         m_findInfo.m_start,
                         m_findInfo.m_end);
     }
+}
+
+void VEditor::pastePlainText()
+{
+    if (!m_file || !m_file->isModifiable()) {
+        return;
+    }
+
+    QClipboard *clipboard = QApplication::clipboard();
+    QString text(clipboard->text());
+    if (text.isEmpty()) {
+        return;
+    }
+
+    m_editOps->insertText(text);
 }

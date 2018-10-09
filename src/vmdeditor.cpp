@@ -367,6 +367,14 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
         if (mimeData->hasHtml()) {
             initPasteAfterParseMenu(pasteAct, menu.data());
         }
+
+        QAction *pptAct = new QAction(tr("Paste As Plain Text"), menu.data());
+        VUtils::fixTextWithShortcut(pptAct, "PastePlainText");
+        connect(pptAct, &QAction::triggered,
+                this, [this]() {
+                    pastePlainText();
+                });
+        insertActionAfter(pasteAct, pptAct, menu.data());
     }
 
     if (!textCursor().hasSelection()) {

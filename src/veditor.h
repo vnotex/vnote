@@ -270,6 +270,9 @@ protected:
 
     void addTempFile(const QString &p_file);
 
+    // Paste plain text.
+    void pastePlainText();
+
     QWidget *m_editor;
 
     VEditorObject *m_object;
