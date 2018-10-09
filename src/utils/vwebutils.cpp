@@ -932,7 +932,7 @@ QString VWebUtils::dataURI(const QUrl &p_url, bool p_keepTitle) const
     QString uri;
     Q_ASSERT(!p_url.isRelative());
     QString file = p_url.isLocalFile() ? p_url.toLocalFile() : p_url.toString();
-    QString suffix(QFileInfo(file).suffix().toLower());
+    QString suffix(QFileInfo(VUtils::purifyUrl(file)).suffix().toLower());
 
     if (!QImageReader::supportedImageFormats().contains(suffix.toLatin1())) {
         return uri;

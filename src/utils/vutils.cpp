@@ -247,7 +247,7 @@ QVector<ImageLink> VUtils::fetchImagesFromMarkdownFile(VFile *p_file,
 
         ImageLink link;
         link.m_url = imageUrl;
-        QFileInfo info(basePath, imageUrl);
+        QFileInfo info(basePath, purifyUrl(imageUrl));
         if (info.exists()) {
             if (info.isNativePath()) {
                 // Local file.
@@ -288,7 +288,7 @@ QVector<ImageLink> VUtils::fetchImagesFromMarkdownFile(VFile *p_file,
 QString VUtils::linkUrlToPath(const QString &p_basePath, const QString &p_url)
 {
     QString fullPath;
-    QFileInfo info(p_basePath, p_url);
+    QFileInfo info(p_basePath, purifyUrl(p_url));
     if (info.exists()) {
         if (info.isNativePath()) {
             // Local file.
@@ -569,7 +569,7 @@ bool VUtils::isImageURL(const QUrl &p_url)
 
 bool VUtils::isImageURLText(const QString &p_url)
 {
-    QFileInfo info(p_url);
+    QFileInfo info(purifyUrl(p_url));
     return QImageReader::supportedImageFormats().contains(info.suffix().toLower().toLatin1());
 }
 
