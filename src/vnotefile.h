@@ -80,7 +80,7 @@ public:
     void setAttachments(const QVector<VAttachment> &p_attas);
 
     // Add @p_file as an attachment to this note.
-    bool addAttachment(const QString &p_file);
+    bool addAttachment(const QString &p_file, QString *p_destFile = NULL);
 
     // Fetch attachment folder path.
     // Will create it if it does not exist.
@@ -101,6 +101,8 @@ public:
     // Return the index of @p_name in m_attachments.
     // -1 if not found.
     int findAttachment(const QString &p_name, bool p_caseSensitive = true);
+
+    int findAttachmentByPath(const QString &p_file, bool p_caseSensitive = true);
 
     // Rename attachment @p_oldName to @p_newName.
     bool renameAttachment(const QString &p_oldName, const QString &p_newName);

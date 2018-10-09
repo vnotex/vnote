@@ -1884,7 +1884,16 @@ bool VMdEditor::processUrlFromMimeData(const QMimeData *p_source)
     dialog.addSelection(tr("Insert As Link"), 2);
     if (isLocalFile) {
         dialog.addSelection(tr("Insert As Relative Link"), 3);
+
+        // Attach as attachment.
+        if (m_file->getType() == FileType::Note) {
+            VNoteFile *note = static_cast<VNoteFile *>((VFile *)m_file);
+            if (-1 == note->findAttachmentByPath(url.toLocalFile(), false)) {
+                dialog.addSelection(tr("Attach And Insert Link"), 6);
+            }
+        }
     }
+
     dialog.addSelection(tr("Insert As Text"), 4);
     if (!localTextFilePath.isEmpty()) {
         dialog.addSelection(tr("Insert File Content"), 5);
@@ -1907,6 +1916,37 @@ bool VMdEditor::processUrlFromMimeData(const QMimeData *p_source)
             insertImageLink("", url.isLocalFile() ? url.toString(QUrl::EncodeSpaces)
                                                   : url.toString());
             return true;
+        }
+
+        case 6:
+        {
+            // Attach And Insert Link.
+            QString file = url.toLocalFile();
+
+            Q_ASSERT(m_file->getType() == FileType::Note);
+            VNoteFile *note = static_cast<VNoteFile *>((VFile *)m_file);
+            QString destFile;
+            if (!note->addAttachment(file, &destFile)) {
+                VUtils::showMessage(QMessageBox::Warning,
+                                    tr("Warning"),
+                                    tr("Fail to add attachment %1 for note <span style=\"%2\">%3</span>.")
+                                      .arg(file)
+                                      .arg(g_config->c_dataTextStyle)
+                                      .arg(note->getName()),
+                                    "",
+                                    QMessageBox::Ok,
+                                    QMessageBox::Ok,
+                                    this);
+                return true;
+            }
+
+            emit m_object->statusMessage(tr("1 file added as attachment"));
+
+            // Update url to point to the attachment file.
+            Q_ASSERT(!destFile.isEmpty());
+            url = QUrl::fromLocalFile(destFile);
+
+            V_FALLTHROUGH;
         }
 
         case 3:
@@ -2024,9 +2064,11 @@ void VMdEditor::replaceTextWithLocalImages(QString &p_text)
         QString suffix = info.suffix();
         QScopedPointer<QTemporaryFile> tmpFile;
 
-        if (info.exists() && info.isAbsolute()) {
-            // Absolute local path.
-            srcImagePath = info.absoluteFilePath();
+        if (info.exists()) {
+            if (info.isAbsolute()) {
+                // Absolute local path.
+                srcImagePath = info.absoluteFilePath();
+            }
         } else {
             // Network path.
             QByteArray data = VDownloader::downloadSync(QUrl(imageUrl));

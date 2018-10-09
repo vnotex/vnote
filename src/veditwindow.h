@@ -240,7 +240,7 @@ inline QString VEditWindow::generateTabText(int p_index, const VEditTab *p_tab) 
         return "";
     }
 
-    return QString("%1.%2%3%4").arg(QString::number(p_index + c_tabSequenceBase, 10))
+    return QString("%1. %2%3%4").arg(QString::number(p_index + c_tabSequenceBase, 10))
                                .arg(file->getName())
                                .arg(file->isModifiable() ? "" : "#")
                                .arg(p_tab->isModified() ? "*" : "");

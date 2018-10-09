@@ -235,7 +235,7 @@ bool VNoteFile::deleteInternalImages()
     return deleted == images.size();
 }
 
-bool VNoteFile::addAttachment(const QString &p_file)
+bool VNoteFile::addAttachment(const QString &p_file, QString *p_destFile)
 {
     if (p_file.isEmpty() || !QFileInfo::exists(p_file)) {
         return false;
@@ -258,6 +258,10 @@ bool VNoteFile::addAttachment(const QString &p_file)
         qWarning() << "fail to update config of file" << m_name
                    << "in directory" << fetchBasePath();
         return false;
+    }
+
+    if (p_destFile) {
+        *p_destFile = destPath;
     }
 
     return true;
@@ -358,6 +362,28 @@ int VNoteFile::findAttachment(const QString &p_name, bool p_caseSensitive)
     }
 
     return -1;
+}
+
+int VNoteFile::findAttachmentByPath(const QString &p_file, bool p_caseSensitive)
+{
+    QFileInfo fi(p_file);
+    int idx = findAttachment(fi.fileName(), p_caseSensitive);
+    if (idx == -1) {
+        return -1;
+    }
+
+    // Check path.
+    QString attPath = QDir(fetchAttachmentFolderPath()).filePath(m_attachments[idx].m_name);
+
+    bool equal = false;
+    if (p_caseSensitive) {
+        equal = VUtils::equalPath(attPath, fi.absoluteFilePath());
+    } else {
+        equal = VUtils::equalPath(attPath.toLower(),
+                                  fi.absoluteFilePath().toLower());
+    }
+
+    return equal ? idx : -1;
 }
 
 bool VNoteFile::sortAttachments(const QVector<int> &p_sortedIdx)
