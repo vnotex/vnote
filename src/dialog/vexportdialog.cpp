@@ -1034,8 +1034,8 @@ int VExportDialog::doExportMarkdown(VFile *p_file,
         if (!attaFolder.isEmpty()) {
             QString attaFolderPath;
             attaFolderPath = noteFile->fetchAttachmentFolderPath();
-            attaFolder = VUtils::getDirNameWithSequence(outputPath, attaFolder);
-            QString folderPath = QDir(outputPath).filePath(attaFolder);
+            QString relativePath = QDir(noteFile->fetchBasePath()).relativeFilePath(attaFolderPath);
+            QString folderPath = QDir(outputPath).filePath(relativePath);
 
             // Copy attaFolder to folderPath.
             if (!VUtils::copyDirectory(attaFolderPath, folderPath, false)) {
