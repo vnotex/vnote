@@ -83,12 +83,14 @@ void VFileList::setupUI()
 
     titleLayout->setContentsMargins(0, 0, 0, 0);
 
-    fileList = new VListWidget(this);
+    fileList = new VFileListWidget(this);
     fileList->setContextMenuPolicy(Qt::CustomContextMenu);
-    fileList->setSelectionMode(QAbstractItemView::ExtendedSelection);
     fileList->setObjectName("FileList");
     fileList->setAttribute(Qt::WA_MacShowFocusRect, false);
-    fileList->setMouseTracking(true);
+    fileList->setMimeDataGetter([this](const QString &p_format,
+                                       const QList<QListWidgetItem *> &p_items) {
+                return getMimeData(p_format, p_items);
+            });
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addLayout(titleLayout);
@@ -1501,4 +1503,23 @@ void VFileList::selectFiles(const QVector<VNoteFile *> &p_files)
             }
         }
     }
+}
+
+QByteArray VFileList::getMimeData(const QString &p_format,
+                                  const QList<QListWidgetItem *> &p_items) const
+{
+    Q_UNUSED(p_format);
+    Q_ASSERT(p_format ==ClipboardConfig::c_format);
+
+    QJsonArray files;
+    for (int i = 0; i < p_items.size(); ++i) {
+        VNoteFile *file = getVFile(p_items[i]);
+        files.append(file->fetchPath());
+    }
+
+    QJsonObject obj;
+    obj[ClipboardConfig::c_type] = (int)ClipboardOpType::CopyFile;
+    obj[ClipboardConfig::c_files] = files;
+
+    return QJsonDocument(obj).toJson(QJsonDocument::Compact);
 }

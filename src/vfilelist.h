@@ -13,10 +13,9 @@
 #include "vdirectory.h"
 #include "vnotefile.h"
 #include "vnavigationmode.h"
-#include "vlistwidget.h"
+#include "vfilelistwidget.h"
 
 class VNote;
-class QListWidget;
 class QPushButton;
 class VEditArea;
 class QFocusEvent;
@@ -49,6 +48,11 @@ public:
     const VDirectory *currentDirectory() const;
 
     QWidget *getContentWidget() const;
+
+    // Paste files given path by @p_files to destination directory @p_destDir.
+    void pasteFiles(VDirectory *p_destDir,
+                    const QVector<QString> &p_files,
+                    bool p_isCut);
 
     // Implementations for VNavigationMode.
     void showNavigation() Q_DECL_OVERRIDE;
@@ -155,11 +159,6 @@ private:
     // Return the corresponding QListWidgetItem of @p_file.
     QListWidgetItem *findItem(const VNoteFile *p_file);
 
-    // Paste files given path by @p_files to destination directory @p_destDir.
-    void pasteFiles(VDirectory *p_destDir,
-                    const QVector<QString> &p_files,
-                    bool p_isCut);
-
     inline QPointer<VNoteFile> getVFile(QListWidgetItem *p_item) const;
 
     // Fill the info of @p_item according to @p_file.
@@ -190,9 +189,11 @@ private:
 
     void selectFiles(const QVector<VNoteFile *> &p_files);
 
+    QByteArray getMimeData(const QString &p_format, const QList<QListWidgetItem *> &p_items) const;
+
     VEditArea *editArea;
 
-    VListWidget *fileList;
+    VFileListWidget *fileList;
 
     QLabel *m_numLabel;
 

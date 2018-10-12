@@ -30,6 +30,9 @@ VDirectoryTree::VDirectoryTree(QWidget *parent)
     setContextMenuPolicy(Qt::CustomContextMenu);
     setFitContent(true);
 
+    viewport()->setAcceptDrops(true);
+    setDropIndicatorShown(true);
+
     initShortcuts();
 
     connect(this, SIGNAL(itemExpanded(QTreeWidgetItem*)),
@@ -1228,4 +1231,70 @@ void VDirectoryTree::pinDirectoryToHistory()
     V_ASSERT(curItem);
     g_mainWin->getHistoryList()->pinFolder(getVDirectory(curItem)->fetchPath());
     g_mainWin->showStatusMessage(tr("1 folder pinned to History"));
+}
+
+Qt::DropActions VDirectoryTree::supportedDropActions() const
+{
+    return Qt::CopyAction | Qt::MoveAction;
+}
+
+bool VDirectoryTree::dropMimeData(QTreeWidgetItem *p_parent,
+                                  int p_index,
+                                  const QMimeData *p_data,
+                                  Qt::DropAction p_action)
+{
+    Q_UNUSED(p_index);
+
+    if (p_data->hasFormat(ClipboardConfig::c_format)) {
+        VDirectory *dir = getVDirectory(p_parent);
+        if (!dir) {
+            return false;
+        }
+
+        QByteArray ba = p_data->data(ClipboardConfig::c_format);
+        QJsonObject obj = QJsonDocument::fromJson(ba).object();
+        if (obj.isEmpty()) {
+            return false;
+        }
+
+        if (obj[ClipboardConfig::c_type] != (int)ClipboardOpType::CopyFile) {
+            return false;
+        }
+
+        QJsonArray files = obj[ClipboardConfig::c_files].toArray();
+        if (files.isEmpty()) {
+            return false;
+        }
+
+        QVector<QString> filesToPaste;
+        for (auto const & file : files) {
+            filesToPaste.append(file.toString());
+        }
+
+        qDebug() << "paste files from dropped mime data" << dir->getName() << filesToPaste;
+        g_mainWin->getFileList()->pasteFiles(dir, filesToPaste, p_action == Qt::MoveAction);
+        return true;
+    }
+
+    return false;
+}
+
+void VDirectoryTree::dropEvent(QDropEvent *p_event)
+{
+    // Distinguish copy and cut.
+    int modifiers = p_event->keyboardModifiers();
+    if (modifiers & Qt::ControlModifier) {
+        p_event->setDropAction(Qt::CopyAction);
+    } else {
+        // Cut.
+        // Will pass to dropMimeData().
+        p_event->setDropAction(Qt::MoveAction);
+    }
+
+    QTreeWidget::dropEvent(p_event);
+}
+
+QStringList VDirectoryTree::mimeTypes() const
+{
+    return QStringList(ClipboardConfig::c_format);
 }

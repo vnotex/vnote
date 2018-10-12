@@ -25,6 +25,7 @@ namespace ClipboardConfig
     static const QString c_isCut = "is_cut";
     static const QString c_files = "files";
     static const QString c_dirs = "dirs";
+    static const QString c_format = "text/json";
 }
 
 enum class OpenFileMode {Read = 0, Edit, Invalid };

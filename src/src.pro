@@ -148,7 +148,8 @@ SOURCES += main.cpp\
     peghighlighterresult.cpp \
     vtexteditcompleter.cpp \
     utils/vkeyboardlayoutmanager.cpp \
-    dialog/vkeyboardlayoutmappingdialog.cpp
+    dialog/vkeyboardlayoutmappingdialog.cpp \
+    vfilelistwidget.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -289,7 +290,8 @@ HEADERS  += vmainwindow.h \
     vtexteditcompleter.h \
     vtextdocumentlayoutdata.h \
     utils/vkeyboardlayoutmanager.h \
-    dialog/vkeyboardlayoutmappingdialog.h
+    dialog/vkeyboardlayoutmappingdialog.h \
+    vfilelistwidget.h
 
 RESOURCES += \
     vnote.qrc \
