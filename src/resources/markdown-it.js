@@ -133,6 +133,8 @@ var updateText = function(text) {
         text = "[TOC]\n\n" + text;
     }
 
+    startFreshRender();
+
     // There is at least one async job for MathJax.
     asyncJobsCount = 1;
     metaDataText = null;

@@ -265,13 +265,22 @@ window.onwheel = function(e) {
     }
 }
 
+var skipScrollCheckRange = null;
+
 window.onscroll = function() {
     if (g_muteScroll) {
         return;
     }
 
-    currentHeaderIdx = -1;
     var scrollTop = document.documentElement.scrollTop || document.body.scrollTop || window.pageYOffset;
+    if (skipScrollCheckRange
+        && skipScrollCheckRange.start <= scrollTop
+        && skipScrollCheckRange.end > scrollTop) {
+        return;
+    }
+
+    currentHeaderIdx = -1;
+    skipScrollCheckRange = null;
     var eles = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
 
     if (eles.length == 0) {
@@ -279,7 +288,8 @@ window.onscroll = function() {
         return;
     }
 
-    var biaScrollTop = scrollTop + 50;
+    var bias = 50;
+    var biaScrollTop = scrollTop + bias;
     for (var i = 0; i < eles.length; ++i) {
         if (biaScrollTop >= eles[i].offsetTop) {
             currentHeaderIdx = i;
@@ -291,6 +301,17 @@ window.onscroll = function() {
     var curHeader = null;
     if (currentHeaderIdx != -1) {
         curHeader = eles[currentHeaderIdx].getAttribute("id");
+
+        // Update the range which can be skipped to check.
+        var endOffset;
+        if (currentHeaderIdx < eles.length - 1) {
+            endOffset = eles[currentHeaderIdx + 1].offsetTop - bias;
+        } else {
+            endOffset = document.documentElement.scrollHeight;
+        }
+
+        skipScrollCheckRange = { start: eles[currentHeaderIdx].offsetTop - bias,
+                                 end: endOffset };
     }
 
     content.setHeader(curHeader ? curHeader : "");
@@ -1826,4 +1847,9 @@ var clearMarkRectDivs = function() {
         n.outerHTML = '';
         delete n;
     }
+};
+
+// Clean up before a fresh render.
+var startFreshRender = function() {
+    skipScrollCheckRange = null;
 };

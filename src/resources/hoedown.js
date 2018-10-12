@@ -14,6 +14,8 @@ marked.setOptions({
 });
 
 var updateHtml = function(html) {
+    startFreshRender();
+
     // There is at least one async job for MathJax.
     asyncJobsCount = 1;
 
