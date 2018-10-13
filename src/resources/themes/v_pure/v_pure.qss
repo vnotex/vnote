@@ -1358,6 +1358,73 @@ QProgressBar::chunk {
 }
 /* End QProgressBar */
 
+/* QGroupBox */
+QGroupBox {
+    border: 2px solid @groupbox_border;
+    border-radius: 5px;
+    margin-top: 2ex;
+}
+
+QGroupBox::title {
+    color: @groupbox_title_fg;
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    position: absolute;
+    padding: 0 $3px;
+    top: 0px; left: $10px; bottom: 0px;
+}
+/* End QGroupBox */
+
+/* QSlider */
+QSlider::groove:horizontal {
+    border: $1px solid @slider_border_bg;
+    height: $8px;
+    background: @slider_groove_bg;
+    margin: $2px 0;
+}
+
+QSlider::handle:horizontal {
+    border: $1px solid @slider_border_bg;
+    background: @slider_handle_bg;
+    width: $18px;
+    margin: $-2px 0;
+}
+
+QSlider::add-page:horizontal {
+    background: transparent;
+}
+
+QSlider::sub-page:horizontal {
+    border: $1px solid @slider_border_bg;
+    background: @slider_subpage_bg;
+    margin: $2px 0;
+}
+
+QSlider::groove:vertical {
+    border: $1px solid @slider_border_bg;
+    width: $8px;
+    background: @slider_groove_bg;
+    margin: 0 $2px;
+}
+
+QSlider::handle:vertical {
+    border: $1px solid @slider_border_bg;
+    background: @slider_handle_bg;
+    height: $18px;
+    margin: 0 $-2px;
+}
+
+QSlider::add-page:vertical {
+    background: transparent;
+}
+
+QSlider::sub-page:vertical {
+    border: $1px solid @slider_border_bg;
+    background: @slider_subpage_bg;
+    margin: 0 $2px;
+}
+/* End QSlider */
+
 /* QWidget */
 QWidget#FindReplaceTitleWidget {
     background: @title_bg;
@@ -1391,19 +1458,3 @@ VUniversalEntry {
     border: 1px solid @universalentry_border_bg;
 }
 /* End QWidget */
-
-/* QGroupBox */
-QGroupBox {
-    border: 2px solid @groupbox_border;
-    border-radius: 5px;
-    margin-top: 2ex;
-}
-
-QGroupBox::title {
-    color: @groupbox_title_fg;
-    subcontrol-origin: margin;
-    subcontrol-position: top left;
-    position: absolute;
-    padding: 0 $3px;
-    top: 0px; left: $10px; bottom: 0px;
-}

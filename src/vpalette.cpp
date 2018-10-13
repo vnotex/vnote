@@ -308,8 +308,9 @@ void VPalette::fillFontFamily(QString &p_text) const
 
 void VPalette::fillScaledSize(QString &p_text) const
 {
-    // Cap(2) is the number string.
-    QRegExp reg("(\\s|:)\\$(\\d+)(?=\\D)");
+    // Cap(2) is the sign.
+    // Cap(3) is the number string.
+    QRegExp reg("(\\s|:)\\$([+-]?)(\\d+)(?=\\D)");
     const qreal factor = VUtils::calculateScaleFactor();
 
     int pos = 0;
@@ -319,7 +320,7 @@ void VPalette::fillScaledSize(QString &p_text) const
             break;
         }
 
-        QString str = reg.cap(2);
+        QString str = reg.cap(3);
         bool ok;
         int val = str.toInt(&ok);
         if (!ok) {
@@ -328,7 +329,7 @@ void VPalette::fillScaledSize(QString &p_text) const
         }
 
         val = val * factor + 0.5;
-        QString newStr = QString("%1%2").arg(reg.cap(1)).arg(val);
+        QString newStr = QString("%1%2%3").arg(reg.cap(1)).arg(reg.cap(2)).arg(val);
         p_text.replace(idx, reg.matchedLength(), newStr);
         pos = idx + newStr.size();
     }

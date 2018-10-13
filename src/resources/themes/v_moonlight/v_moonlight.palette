@@ -7,7 +7,7 @@ mdhl_file=v_moonlight.mdhl
 css_file=v_moonlight.css
 codeblock_css_file=v_moonlight_codeblock.css
 mermaid_css_file=v_moonlight_mermaid.css
-version=21
+version=22
 
 ; This mapping will be used to translate colors when the content of HTML is copied
 ; without background. You could just specify the foreground colors mapping here.
@@ -384,3 +384,9 @@ doublerowitem_second_row_label_fg=#808080
 ; GroupBox.
 groupbox_border=@border_bg
 groupbox_title_fg=@base_fg
+
+; Slider.
+slider_border_bg=@border_bg
+slider_groove_bg=@edit_bg
+slider_handle_bg=@master_bg
+slider_subpage_bg=@master_dark_bg
