@@ -390,6 +390,8 @@ public:
 
     static QTemporaryFile *createTemporaryFile(QString p_suffix);
 
+    static QString purifyImageTitle(QString p_title);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt text" =200x100)
     // Captured texts (need to be trimmed):

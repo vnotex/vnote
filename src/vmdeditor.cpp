@@ -2055,7 +2055,7 @@ void VMdEditor::replaceTextWithLocalImages(QString &p_text)
             continue;
         }
 
-        QString imageTitle = regExp.cap(1).trimmed();
+        QString imageTitle = VUtils::purifyImageTitle(regExp.cap(1).trimmed());
         QString imageUrl = regExp.cap(2).trimmed();
 
         const int maxUrlLength = 100;

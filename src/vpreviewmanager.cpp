@@ -136,40 +136,57 @@ void VPreviewManager::fetchImageLinksFromRegions(QVector<VElementRegion> p_image
 
     for (int i = 0; i < p_imageRegions.size(); ++i) {
         const VElementRegion &reg = p_imageRegions[i];
-        QTextBlock block = doc->findBlock(reg.m_startPos);
-        if (!block.isValid()) {
+        QTextBlock firstBlock = doc->findBlock(reg.m_startPos);
+        if (!firstBlock.isValid()) {
             continue;
         }
 
-        int blockStart = block.position();
-        int blockEnd = blockStart + block.length() - 1;
-        QString text = block.text();
-
-        // Since the image links update signal is emitted after a timer, during which
-        // the content may be changed.
-        if (reg.m_endPos > blockEnd) {
+        // Image link may cross multiple regions.
+        QTextBlock lastBlock = doc->findBlock(reg.m_endPos - 1);
+        if (!lastBlock.isValid()) {
             continue;
         }
 
-        ImageLinkInfo info(reg.m_startPos,
+        int firstBlockStart = firstBlock.position();
+        int lastBlockStart = lastBlock.position();
+        int lastBlockEnd = lastBlockStart + lastBlock.length() - 1;
+
+        QString text;
+        if (firstBlock.blockNumber() == lastBlock.blockNumber()) {
+            text = firstBlock.text().mid(reg.m_startPos - firstBlockStart,
+                                         reg.m_endPos - reg.m_startPos);
+        } else {
+            text = firstBlock.text().mid(reg.m_startPos - firstBlockStart);
+
+            QTextBlock block = firstBlock.next();
+            while (block.isValid() && block.blockNumber() < lastBlock.blockNumber()) {
+                text += "\n" + block.text();
+                block = block.next();
+            }
+
+            text += "\n" + lastBlock.text().left(reg.m_endPos - lastBlockStart);
+        }
+
+        // Preview the image at the last block.
+        ImageLinkInfo info(qMax(reg.m_startPos, lastBlockStart),
                            reg.m_endPos,
-                           blockStart,
-                           block.blockNumber(),
-                           calculateBlockMargin(block, m_editor->tabStopWidthW()));
-        if ((reg.m_startPos == blockStart
-             || isAllSpaces(text, 0, reg.m_startPos - blockStart))
-            && (reg.m_endPos == blockEnd
-                || isAllSpaces(text, reg.m_endPos - blockStart, blockEnd - blockStart))) {
+                           lastBlockStart,
+                           lastBlock.blockNumber(),
+                           calculateBlockMargin(firstBlock, m_editor->tabStopWidthW()));
+        if ((reg.m_startPos == firstBlockStart
+             || isAllSpaces(firstBlock.text(), 0, reg.m_startPos - firstBlockStart))
+            && (reg.m_endPos == lastBlockEnd
+                || isAllSpaces(lastBlock.text(),
+                               reg.m_endPos - lastBlockStart,
+                               lastBlockEnd - lastBlockStart))) {
             // Image block.
             info.m_isBlock = true;
-            fetchImageInfoToPreview(text, info);
         } else {
             // Inline image.
             info.m_isBlock = false;
-            fetchImageInfoToPreview(text.mid(reg.m_startPos - blockStart,
-                                             reg.m_endPos - reg.m_startPos),
-                                    info);
         }
+
+        fetchImageInfoToPreview(text, info);
 
         if (info.m_linkUrl.isEmpty() || info.m_linkShortUrl.isEmpty()) {
             continue;

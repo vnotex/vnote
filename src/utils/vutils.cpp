@@ -43,7 +43,7 @@ extern VConfigManager *g_config;
 
 QVector<QPair<QString, QString>> VUtils::s_availableLanguages;
 
-const QString VUtils::c_imageLinkRegExp = QString("\\!\\[([^\\]]*)\\]"
+const QString VUtils::c_imageLinkRegExp = QString("\\!\\[([^\\[\\]]*)\\]"
                                                   "\\(\\s*"
                                                   "([^\\)\"'\\s]+)"
                                                   "(\\s*(\"[^\"\\)\\n]*\")|('[^'\\)\\n]*'))?"
@@ -158,33 +158,30 @@ QString VUtils::generateImageFileName(const QString &path,
                                       const QString &title,
                                       const QString &format)
 {
-    QRegExp regExp("\\W");
-    QString baseName(title.toLower());
+    const QChar sep('_');
 
-    // Remove non-character chars.
-    baseName.remove(regExp);
-
-    // Constrain the length of the name.
-    baseName.truncate(10);
-
-    baseName.prepend(g_config->getImageNamePrefix());
-
-    if (!baseName.isEmpty()) {
-        baseName.append('_');
+    QString baseName(g_config->getImageNamePrefix());
+    if (!baseName.isEmpty()
+        && !(baseName.size() == 1 && baseName[0] == sep)) {
+        baseName += sep;
     }
 
-    // Add current time and random number to make the name be most likely unique
-    baseName += QString::number(QDateTime::currentDateTime().toTime_t())
-                + '_'
-                + QString::number(qrand());
+    // Add current time at fixed length.
+    baseName += QDateTime::currentDateTime().toString("yyyyMMddHHmmsszzz");
 
-    QDir dir(path);
-    QString imageName = baseName + "." + format.toLower();
+    // Add random number to make the name be most likely unique.
+    baseName += (sep + QString::number(qrand()));
+
+    QString suffix;
+    if (!format.isEmpty()) {
+        suffix = "." + format.toLower();
+    }
+
+    QString imageName(baseName + suffix);
     int index = 1;
-
+    QDir dir(path);
     while (fileExists(dir, imageName, true)) {
-        imageName = QString("%1_%2.%3").arg(baseName).arg(index++)
-                                       .arg(format.toLower());
+        imageName = QString("%1_%2%3").arg(baseName).arg(index++).arg(suffix);
     }
 
     return imageName;
@@ -1016,11 +1013,12 @@ QString VUtils::getRandomFileName(const QString &p_directory)
 {
     Q_ASSERT(!p_directory.isEmpty());
 
-    QString name;
+    QString baseName(QDateTime::currentDateTime().toString("yyyyMMddHHmmsszzz"));
+
     QDir dir(p_directory);
+    QString name;
     do {
-        name = QString::number(QDateTime::currentDateTimeUtc().toTime_t());
-        name = name + '_' + QString::number(qrand());
+        name = baseName + '_' + QString::number(qrand());
     } while (fileExists(dir, name, true));
 
     return name;
@@ -1825,4 +1823,9 @@ QTemporaryFile *VUtils::createTemporaryFile(QString p_suffix)
                               + QDir::separator()
                               + xx
                               + p_suffix);
+}
+
+QString VUtils::purifyImageTitle(QString p_title)
+{
+    return p_title.remove(QRegExp("[\\r\\n\\[\\]]"));
 }
