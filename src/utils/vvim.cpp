@@ -528,7 +528,21 @@ static bool joinLines(QTextCursor &p_cursor,
 
 bool VVim::handleKeyPressEvent(QKeyEvent *p_event, int *p_autoIndentPos)
 {
-    bool ret = handleKeyPressEvent(p_event->key(), p_event->modifiers(), p_autoIndentPos);
+    int modifiers = p_event->modifiers();
+    QString keyText = p_event->text();
+    if (keyText.size() == 1) {
+        if (keyText[0].isUpper()) {
+            // Upper case.
+            modifiers |= Qt::ShiftModifier;
+        } else if (keyText[0].isLower()) {
+            // Lower case.
+            if (modifiers & Qt::ShiftModifier) {
+                modifiers &= ~Qt::ShiftModifier;
+            }
+        }
+    }
+
+    bool ret = handleKeyPressEvent(p_event->key(), modifiers, p_autoIndentPos);
     if (ret) {
         p_event->accept();
     }
