@@ -396,6 +396,131 @@ QVector<VElementRegion> PegParser::parseImageRegions(const QSharedPointer<PegPar
     return regs;
 }
 
+#define MAX_CODE_POINT 65535
+
+#define X_CHAR 86U
+
+#define HAS_UTF8_BOM(x)         ( ((*x & 0xFF) == 0xEF)\
+                                  && ((*(x+1) & 0xFF) == 0xBB)\
+                                  && ((*(x+2) & 0xFF) == 0xBF) )
+
+// Calculate the UTF8 code point.
+// Return the number of chars consumed.
+static inline int utf8CodePoint(const char *p_ch, int &p_codePoint)
+{
+    unsigned char uch = *p_ch;
+
+    if ((uch & 0x80) == 0) {
+        p_codePoint = uch;
+        return 1;
+    } else if ((uch & 0xE0) == 0xC0) {
+        // 110yyyxx 10xxxxxx -> 00000yyy xxxxxxxx
+        unsigned char uch2 = *(p_ch + 1);
+        p_codePoint = ((uch & 0x1CL) << 6) + ((uch & 0x3L) << 6) + (uch2 & 0x3FL);
+        return 2;
+    } else if ((uch & 0xF0) == 0xE0) {
+        // 1110yyyy 10yyyyxx 10xxxxxx -> yyyyyyyy xxxxxxxx
+        unsigned char uch2 = *(p_ch + 1);
+        unsigned char uch3 = *(p_ch + 2);
+        p_codePoint = ((uch & 0xF) << 12)
+                      + ((uch2 & 0x3CL) << 6) + ((uch2 & 0x3L) << 6)
+                      + (uch3 & 0x3FL);
+        return 3;
+    } else if ((uch & 0xF8) == 0xF0) {
+        // 11110zzz 10zzyyyy 10yyyyxx 10xxxxxx -> 000zzzzz yyyyyyyy xxxxxxxx
+        unsigned char uch2 = *(p_ch + 1);
+        unsigned char uch3 = *(p_ch + 2);
+        unsigned char uch4 = *(p_ch + 3);
+        p_codePoint = ((uch & 0x7L) << 18)
+                      + ((uch2 & 0x30L) << 12) + ((uch2 & 0xFL) << 12)
+                      + ((uch3 & 0x3CL) << 6) + ((uch3 & 0x3L) << 6)
+                      + (uch4 & 0x3FL);
+        return 4;
+    } else {
+        return -1;
+    }
+}
+
+static inline void copyChars(char *p_dest, const char *p_src, int p_num)
+{
+    for (int i = 0; i < p_num; ++i) {
+        *(p_dest + i) = *(p_src + i);
+    }
+}
+
+// @p_data: UTF-8 data array.
+// If @p_data contain unicode characters with code value above 65535, it will break
+// it into two characters with code value below 65536.
+// Return null if there is no fix. Otherwise, return a fixed copy of the data.
+static QSharedPointer<char> tryFixUnicodeData(const char *p_data)
+{
+    bool needFix = false;
+    int sz = 0;
+
+    const char *ch = p_data;
+    bool hasBOM = false;
+    if (HAS_UTF8_BOM(ch)) {
+        hasBOM = true;
+        ch += 3;
+        sz += 3;
+    }
+
+    // Calculate the size of fixed data.
+    while (*ch != '\0') {
+        int cp;
+        int nr = utf8CodePoint(ch, cp);
+        if (nr == -1) {
+            return NULL;
+        }
+
+        if (cp > MAX_CODE_POINT) {
+            needFix = true;
+            ch += nr;
+            // Use two one-byte chars to replace.
+            sz += 2;
+        } else {
+            ch += nr;
+            sz += nr;
+        }
+    }
+
+    if (!needFix) {
+        return NULL;
+    }
+
+    // Replace those chars with two one-byte chars.
+    QSharedPointer<char> res(new char[sz + 1]);
+    char *newChar = res.data();
+    int idx = 0;
+    ch = p_data;
+    if (hasBOM) {
+        copyChars(newChar + idx, ch, 3);
+        ch += 3;
+        idx += 3;
+    }
+
+    while (*ch != '\0') {
+        int cp;
+        int nr = utf8CodePoint(ch, cp);
+        Q_ASSERT(nr > 0);
+        if (cp > MAX_CODE_POINT) {
+            *(newChar + idx) = X_CHAR;
+            *(newChar + idx + 1) = X_CHAR;
+            ch += nr;
+            idx += 2;
+        } else {
+            copyChars(newChar + idx, ch, nr);
+            ch += nr;
+            idx += nr;
+        }
+    }
+
+    Q_ASSERT(idx == sz);
+    *(newChar + sz) = '\0';
+
+    return res;
+}
+
 pmh_element **PegParser::parseMarkdownToElements(const QSharedPointer<PegParseConfig> &p_config)
 {
     if (p_config->m_data.isEmpty()) {
@@ -403,7 +528,19 @@ pmh_element **PegParser::parseMarkdownToElements(const QSharedPointer<PegParseCo
     }
 
     pmh_element **pmhResult = NULL;
+
+    // p_config->m_data is encoding in UTF-8.
+    // QString stores a string of 16-bit QChars. Unicode characters with code values above 65535 are stored using surrogate pairs, i.e., two consecutive QChars.
+    // Hence, a QString using two QChars to save one code value if it's above 65535, with size()
+    // returning 2. pmh_markdown_to_elements() will treat it at the size of 1 (expectively).
+    // To make it work, we split unicode characters whose code value is above 65535 into two unicode
+    // characters whose code value is below 65535.
     char *data = p_config->m_data.data();
+    QSharedPointer<char> fixedData = tryFixUnicodeData(data);
+    if (fixedData) {
+        data = fixedData.data();
+    }
+
     pmh_markdown_to_elements(data, p_config->m_extensions, &pmhResult);
     return pmhResult;
 }
