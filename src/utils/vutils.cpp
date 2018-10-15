@@ -46,7 +46,7 @@ QVector<QPair<QString, QString>> VUtils::s_availableLanguages;
 const QString VUtils::c_imageLinkRegExp = QString("\\!\\[([^\\[\\]]*)\\]"
                                                   "\\(\\s*"
                                                   "([^\\)\"'\\s]+)"
-                                                  "(\\s*(\"[^\"\\)\\n]*\")|('[^'\\)\\n]*'))?"
+                                                  "(\\s*(\"[^\"\\)\\n\\r]*\")|('[^'\\)\\n\\r]*'))?"
                                                   "(\\s*=(\\d*)x(\\d*))?"
                                                   "\\s*\\)");
 
@@ -54,8 +54,8 @@ const QString VUtils::c_imageTitleRegExp = QString("[^\\[\\]]*");
 
 const QString VUtils::c_linkRegExp = QString("\\[([^\\]]*)\\]"
                                              "\\(\\s*(\\S+)"
-                                             "(?:\\s+((\"[^\"\\n]*\")"
-                                                     "|('[^'\\n]*')))?\\s*"
+                                             "(?:\\s+((\"[^\"\\n\\r]*\")"
+                                                     "|('[^'\\n\\r]*')))?\\s*"
                                              "\\)");
 
 const QString VUtils::c_fileNameRegExp = QString("(?:[^\\\\/:\\*\\?\"<>\\|\\s]| )*");
@@ -158,6 +158,8 @@ QString VUtils::generateImageFileName(const QString &path,
                                       const QString &title,
                                       const QString &format)
 {
+    Q_UNUSED(title);
+
     const QChar sep('_');
 
     QString baseName(g_config->getImageNamePrefix());

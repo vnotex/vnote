@@ -1638,6 +1638,26 @@ var htmlToText = function(identifier, id, timeStamp, html) {
         }
     });
 
+    ts.addRule('img_fix', {
+        filter: 'img',
+        replacement: function (content, node) {
+            var alt = node.alt || '';
+            if (/[\r\n\[\]]/g.test(alt)) {
+                alt= '';
+            }
+
+            var src = node.getAttribute('src') || '';
+
+            var title = node.title || '';
+            if (/[\r\n\)"]/g.test(title)) {
+                title = '';
+            }
+
+            var titlePart = title ? ' "' + title + '"' : '';
+            return src ? '![' + alt + ']' + '(' + src + titlePart + ')' : ''
+        }
+    });
+
     var markdown = ts.turndown(html);
     content.htmlToTextCB(identifier, id, timeStamp, markdown);
 };
