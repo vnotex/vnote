@@ -792,6 +792,11 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
                                                     "processClass: \"tex2jax_process|language-mathjax|lang-mathjax\"},\n"
                      "                    showProcessingMessages: false,\n"
                      "                    skipStartupTypeset: " + QString("%1,\n").arg(mathjaxTypeSetOnLoad ? "false" : "true") +
+                     "                    TeX: {\n"
+                     "                          Macros: {\n"
+                     "                              bm: [\"\\\\boldsymbol{#1}\", 1]\n"
+                     "                          }\n"
+                     "                    },\n"
                      "                    messageStyle: \"none\"});\n"
                      "MathJax.Hub.Register.StartupHook(\"End\", function() { handleMathjaxReady(); });\n"
                      "</script>\n"
@@ -894,6 +899,11 @@ with 2em, if there are Chinese characters in it, the font will be a mess.
                                    "}\n"
 #endif
                                  "}\n"
+                             "},\n"
+                             "TeX: {\n"
+                             "    Macros: {\n"
+                             "        bm: [\"\\\\boldsymbol{#1}\", 1]\n"
+                             "    }\n"
                              "}\n"
                          "});\n"
                  "</script>\n";
@@ -955,6 +965,11 @@ QString VUtils::generateMathJaxPreviewTemplate()
                  "                                   scale: " + mathjaxScale + "\n"
                  "                                  },\n"
                  "                    showProcessingMessages: false,\n"
+                 "                    TeX: {\n"
+                 "                          Macros: {\n"
+                 "                              bm: [\"\\\\boldsymbol{#1}\", 1]\n"
+                 "                          }\n"
+                 "                    },\n"
                  "                    messageStyle: \"none\"});\n"
                  "</script>\n";
 

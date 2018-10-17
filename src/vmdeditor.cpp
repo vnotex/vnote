@@ -2042,6 +2042,8 @@ void VMdEditor::replaceTextWithLocalImages(QString &p_text)
     proDlg.setWindowModality(Qt::WindowModal);
     proDlg.setWindowTitle(tr("Fetching Images To Local Folder"));
 
+    QRegExp zhihuRegExp("^https?://www\\.zhihu\\.com/equation\\?tex=(.+)$");
+
     QRegExp regExp(VUtils::c_imageLinkRegExp);
     for (int i = regs.size() - 1; i >= 0; --i) {
         proDlg.setValue(regs.size() - 1 - i);
@@ -2064,6 +2066,25 @@ void VMdEditor::replaceTextWithLocalImages(QString &p_text)
             urlToDisplay = urlToDisplay.left(maxUrlLength) + "...";
         }
         proDlg.setLabelText(tr("Fetching image: %1").arg(urlToDisplay));
+
+        // Handle equation from zhihu.com like http://www.zhihu.com/equation?tex=P.
+        if (zhihuRegExp.indexIn(imageUrl) != -1) {
+            QString tex = zhihuRegExp.cap(1).trimmed();
+
+            // Remove the +.
+            tex.replace(QChar('+'), " ");
+
+            tex = QUrl::fromPercentEncoding(tex.toUtf8());
+            if (tex.isEmpty()) {
+                continue;
+            }
+
+            tex = "$" + tex + "$";
+            p_text.replace(reg.m_startPos,
+                           reg.m_endPos - reg.m_startPos,
+                           tex);
+            continue;
+        }
 
         QString destImagePath, urlInLink;
 
@@ -2119,8 +2140,6 @@ void VMdEditor::replaceTextWithLocalImages(QString &p_text)
         p_text.replace(reg.m_startPos,
                        reg.m_endPos - reg.m_startPos,
                        newLink);
-
-        qDebug() << "replace link" << linkText << "to" << newLink;
     }
 
     proDlg.setValue(regs.size());
