@@ -356,8 +356,8 @@ void VMainWindow::setupNotebookPanel()
     m_nbSplitter->setObjectName("NotebookSplitter");
     m_nbSplitter->addWidget(naviWidget);
     m_nbSplitter->addWidget(m_fileList);
-    m_nbSplitter->setStretchFactor(0, 0);
-    m_nbSplitter->setStretchFactor(1, 1);
+    m_nbSplitter->setStretchFactor(0, 1);
+    m_nbSplitter->setStretchFactor(1, 2);
 
     connect(m_notebookSelector, &VNotebookSelector::curNotebookChanged,
             this, [this](VNotebook *p_notebook) {
@@ -2228,8 +2228,8 @@ void VMainWindow::saveStateAndGeometry()
     g_config->setMainWindowState(saveState());
     g_config->setToolsDockChecked(m_toolDock->isVisible());
     g_config->setSearchDockChecked(m_searchDock->isVisible());
-    g_config->setNotebookSplitterState(m_nbSplitter->saveState());
     g_config->setMainSplitterState(m_mainSplitter->saveState());
+    g_config->setNotebookSplitterState(m_nbSplitter->saveState());
     m_tagExplorer->saveStateAndGeometry();
     g_config->setNaviBoxCurrentIndex(m_naviBox->currentIndex());
 }
