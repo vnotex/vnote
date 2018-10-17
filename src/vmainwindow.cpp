@@ -1097,6 +1097,12 @@ void VMainWindow::initFileMenu()
 
     fileMenu->addSeparator();
 
+    // Restart.
+    QAction *restartAct = new QAction(tr("Restart"), this);
+    connect(restartAct, &QAction::triggered,
+            this, &VMainWindow::restartVNote);
+    fileMenu->addAction(restartAct);
+
     // Exit.
     QAction *exitAct = new QAction(tr("&Quit"), this);
     exitAct->setToolTip(tr("Quit VNote"));
@@ -3393,4 +3399,9 @@ void VMainWindow::initUpdateTimer()
                 m_editToolBar->update();
                 m_noteToolBar->update();
             });
+}
+
+void VMainWindow::restartVNote()
+{
+    QCoreApplication::exit(RESTART_EXIT_CODE);
 }

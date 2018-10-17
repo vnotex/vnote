@@ -28,6 +28,9 @@ public:
     // Whether this instance is asked to show itself.
     bool fetchAskedToShow();
 
+    // A running instance requests to exit.
+    void exit();
+
 private:
     // The count of the entries in the buffer to hold the path of the files to open.
     enum { FilesBufCount = 1024 };
@@ -52,6 +55,8 @@ private:
     // Append @p_file to the shared struct files buffer.
     // Returns true if succeeds or false if there is no enough space.
     bool appendFileToBuffer(SharedStruct *p_str, const QString &p_file);
+
+    bool m_online;
 
     QSharedMemory m_sharedMemory;
 

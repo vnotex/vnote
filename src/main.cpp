@@ -10,6 +10,7 @@
 #include <QDir>
 #include <QSslSocket>
 #include <QOpenGLContext>
+#include <QProcess>
 
 #include "utils/vutils.h"
 #include "vsingleinstanceguard.h"
@@ -233,5 +234,13 @@ int main(int argc, char *argv[])
 
     w.kickOffStartUpTimer(filePaths);
 
-    return app.exec();
+    int ret = app.exec();
+    if (ret == RESTART_EXIT_CODE) {
+        // Ask to restart VNote.
+        guard.exit();
+        QProcess::startDetached(qApp->applicationFilePath(), QStringList());
+        return 0;
+    }
+
+    return ret;
 }

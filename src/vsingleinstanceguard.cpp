@@ -7,12 +7,15 @@ const QString VSingleInstanceGuard::c_memKey = "vnote_shared_memory";
 const int VSingleInstanceGuard::c_magic = 133191933;
 
 VSingleInstanceGuard::VSingleInstanceGuard()
-    : m_sharedMemory(c_memKey)
+    : m_sharedMemory(c_memKey),
+      m_online(false)
 {
 }
 
 bool VSingleInstanceGuard::tryRun()
 {
+    m_online = false;
+
     // If we can attach to the sharedmemory, there is another instance running.
     // In Linux, crashes may cause the shared memory segment remains. In this case,
     // this will attach to the old segment, then exit, freeing the old segment.
@@ -31,6 +34,8 @@ bool VSingleInstanceGuard::tryRun()
         str->m_filesBufIdx = 0;
         str->m_askedToShow = false;
         m_sharedMemory.unlock();
+
+        m_online = true;
         return true;
     } else {
         qDebug() << "fail to create shared memory segment";
@@ -109,6 +114,11 @@ bool VSingleInstanceGuard::appendFileToBuffer(SharedStruct *p_str, const QString
 QStringList VSingleInstanceGuard::fetchFilesToOpen()
 {
     QStringList files;
+
+    if (!m_online) {
+        return files;
+    }
+
     Q_ASSERT(m_sharedMemory.isAttached());
     m_sharedMemory.lock();
     SharedStruct *str = (SharedStruct *)m_sharedMemory.data();
@@ -153,15 +163,28 @@ void VSingleInstanceGuard::showInstance()
 
 bool VSingleInstanceGuard::fetchAskedToShow()
 {
-    bool ret = false;
+    if (!m_online) {
+        return false;
+    }
 
     Q_ASSERT(m_sharedMemory.isAttached());
     m_sharedMemory.lock();
     SharedStruct *str = (SharedStruct *)m_sharedMemory.data();
     Q_ASSERT(str->m_magic == c_magic);
-    ret = str->m_askedToShow;
+    bool ret = str->m_askedToShow;
     str->m_askedToShow = false;
     m_sharedMemory.unlock();
 
     return ret;
+}
+
+void VSingleInstanceGuard::exit()
+{
+    if (!m_online) {
+        return;
+    }
+
+    Q_ASSERT(m_sharedMemory.isAttached());
+    m_sharedMemory.detach();
+    m_online = false;
 }

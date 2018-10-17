@@ -46,6 +46,8 @@ class VHistoryList;
 class VExplorer;
 class VTagExplorer;
 
+#define RESTART_EXIT_CODE   1000
+
 enum class PanelViewState
 {
     ExpandMode = 0,
@@ -129,6 +131,9 @@ public:
     VExplorer *getExplorer() const;
 
     void setCaptainModeEnabled(bool p_enabled);
+
+public slots:
+    void restartVNote();
 
 signals:
     // Emit when editor related configurations were changed by user.
