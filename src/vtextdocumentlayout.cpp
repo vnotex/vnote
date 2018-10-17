@@ -140,6 +140,12 @@ void VTextDocumentLayout::blockRangeFromRectBS(const QRectF &p_rect,
     p_last = document()->blockCount() - 1;
     while (block.isValid()) {
         const BlockLayoutInfo *tinfo = VTextBlockData::layoutInfo(block);
+        if (!tinfo->hasOffset()) {
+            qWarning() << "block without offset"
+                       << block.blockNumber() << tinfo->m_offset
+                       << tinfo->m_rect << tinfo->m_rect.isNull();
+        }
+
         V_ASSERT(tinfo->hasOffset());
 
         if (tinfo->bottom() > y) {
