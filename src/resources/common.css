@@ -5,6 +5,21 @@ div.mark-rect {
     position: absolute;
 }
 
+#vnote-footer {
+    width: 100%;
+    text-align: center;
+    opacity: 0.2;
+    margin-top: 3rem;
+}
+
+#vnote-footer p {
+    font-size: 0.8rem;
+}
+
+#vnote-footer a {
+    color: inherit !important;
+}
+
 /* Mathjax */
 x-eqs {
     display: flex;
@@ -15,7 +30,7 @@ x-eqs {
 
 x-eqs > x-eqn {
     width: 100%;
-    margin-left: 3em;
+    margin-left: 3rem;
 }
 
 x-eqs > span {
@@ -87,3 +102,29 @@ span.modal-close:focus {
     cursor: pointer;
 }
 /* View Image */
+
+/* Print */
+@media print {
+    pre, pre code, td.hljs-ln-code {
+        white-space: pre-wrap !important;
+        word-break: break-all !important;
+    }
+
+    code, a {
+        word-break: break-all !important;
+    }
+
+    div.flowchart-diagram, div.mermaid-diagram, div.plantuml-diagram {
+        overflow: hidden !important;
+    }
+
+    img {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    #vnote-footer {
+        display: none !important;
+    }
+}
+/* Print*/

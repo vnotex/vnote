@@ -197,3 +197,9 @@
 .outline-bold {
     font-weight: bolder !important;
 }
+
+@media print {
+    #floating-button {
+        display: none !important;
+    }
+}

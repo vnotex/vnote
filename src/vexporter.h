@@ -135,6 +135,7 @@ private:
 
     // @p_embedImages: embed <img> as data URI.
     bool outputToHTMLFile(const QString &p_file,
+                          const QString &p_title,
                           const QString &p_headContent,
                           const QString &p_styleContent,
                           const QString &p_bodyContent,

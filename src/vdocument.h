@@ -48,6 +48,8 @@ public:
 
     void setFile(const VFile *p_file);
 
+    const VFile *getFile() const;
+
     bool isReadyToHighlight() const;
 
     bool isReadyToTextToHtml() const;

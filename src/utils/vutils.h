@@ -392,6 +392,8 @@ public:
 
     static QString purifyImageTitle(QString p_title);
 
+    static QString escapeHtml(QString p_text);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt text" =200x100)
     // Captured texts (need to be trimmed):

@@ -51,6 +51,7 @@ namespace HtmlHolder
     static const QString c_headHolder = "<!-- HEAD_PLACE_HOLDER -->";
     static const QString c_styleHolder = "/* STYLE_PLACE_HOLDER */";
     static const QString c_outlineStyleHolder = "/* STYLE_OUTLINE_PLACE_HOLDER */";
+    static const QString c_headTitleHolder = "<!-- HEAD_TITLE_PLACE_HOLDER -->";
 }
 
 // Directory Config file items.

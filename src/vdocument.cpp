@@ -132,6 +132,11 @@ void VDocument::setFile(const VFile *p_file)
     m_file = p_file;
 }
 
+const VFile *VDocument::getFile() const
+{
+    return m_file;
+}
+
 void VDocument::finishLogics()
 {
     qDebug() << "Web side finished logics" << this;

@@ -1846,3 +1846,9 @@ QString VUtils::purifyImageTitle(QString p_title)
 {
     return p_title.remove(QRegExp("[\\r\\n\\[\\]]"));
 }
+
+QString VUtils::escapeHtml(QString p_text)
+{
+    p_text.replace(">", "&gt;").replace("<", "&lt;").replace("&", "&amp;");
+    return p_text;
+}
