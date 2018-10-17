@@ -108,12 +108,12 @@ rules.listItem = {
       .replace(/^\n+/, '') // remove leading newlines
       .replace(/\n+$/, '\n') // replace trailing newlines with just a single one
       .replace(/\n/gm, '\n    '); // indent
-    var prefix = options.bulletListMarker + '   ';
+    var prefix = options.bulletListMarker + ' ';
     var parent = node.parentNode;
     if (parent.nodeName === 'OL') {
       var start = parent.getAttribute('start');
       var index = Array.prototype.indexOf.call(parent.children, node);
-      prefix = (start ? Number(start) + index : index + 1) + '.  ';
+      prefix = (start ? Number(start) + index : index + 1) + '. ';
     }
     return (
       prefix + content + (node.nextSibling && !/\n$/.test(content) ? '\n' : '')
