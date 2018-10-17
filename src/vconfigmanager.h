@@ -457,6 +457,11 @@ public:
     // Get the folder c_codeBlockStyleConfigFolder in the config folder.
     const QString &getCodeBlockStyleConfigFolder() const;
 
+    // Get the folder c_resourceConfigFolder in the config folder.
+    QString getResourceConfigFolder() const;
+
+    const QString &getCommonCssUrl() const;
+
     // All the editor styles.
     QList<QString> getEditorStyles() const;
 
@@ -662,6 +667,8 @@ private:
     void initCodeBlockCssStyles();
 
     QString getEditorStyleFile() const;
+
+    void checkVersion();
 
     // Default font and palette.
     QFont m_defaultEditFont;
@@ -1032,6 +1039,9 @@ private:
     // Whether download image from parse and paste.
     bool m_parsePasteLocalImage;
 
+    // Whether the VNote instance has different version of vnote.ini.
+    bool m_versionChanged;
+
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
 
@@ -1080,6 +1090,9 @@ private:
 
     // The default export output folder name.
     static const QString c_exportFolderName;
+
+    // The folder name of resource files.
+    static const QString c_resourceConfigFolder;
 };
 
 

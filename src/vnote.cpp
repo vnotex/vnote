@@ -120,6 +120,7 @@ QString VNote::generateHtmlTemplate(const QString &p_renderBg,
     g_palette->fillStyle(templ);
 
     // Must replace the code block holder first.
+    templ.replace(HtmlHolder::c_commonCssHolder, g_config->getCommonCssUrl());
     templ.replace(HtmlHolder::c_codeBlockCssHolder, p_codeBlockStyleUrl);
     templ.replace(HtmlHolder::c_cssHolder, p_renderStyleUrl);
 

@@ -18,7 +18,8 @@ function texmath(md, options) {
 
         for (let rule of texmath.rules[delimiters].block) {
             md.block.ruler.before('fence', rule.name, texmath.block(rule));
-            md.renderer.rules[rule.name] = (tokens, idx) => rule.tmpl.replace(/\$1/,texmath.render(tokens[idx].content,true));
+            md.renderer.rules[rule.name] = (tokens, idx) => rule.tmpl.replace(/\$2/,tokens[idx].info)  // equation number
+                                                                     .replace(/\$1/,texmath.render(tokens[idx].content,true));
         }
     }
 }
@@ -58,6 +59,7 @@ texmath.block = (rule) =>
                 let token = state.push(rule.name, 'math', 0);
                 token.block = true;
                 token.content = res[1];
+                token.info = res[2];
                 token.markup = rule.tag;
             }
             for (let line=begLine, endpos=res.lastIndex-1; line < endLine; line++)
@@ -101,6 +103,11 @@ texmath.rules = {
             }
         ],
         block: [
+            {   name: 'math_block_eqno',
+                rex: /\\\[(.+?)\\\]\s*?\(([^)$\r\n]+?)\)\s*$/gmy,
+                tmpl: '<x-eqs><x-eqn class="tex-to-render">$1</x-eqn><span>($2)</span></x-eqs>',
+                tag: '\\['
+            },
             {   name: 'math_block',
                 rex: /\\\[(.+?)\\\]\s*$/gmy,
                 tmpl: '<x-eqn class="tex-to-render">$1</x-eqn>',
@@ -117,6 +124,11 @@ texmath.rules = {
             }
         ],
         block: [
+            {   name: 'math_block_eqno',
+                rex: /`{3}math\s+?([^`]+?)\s+?`{3}\s*?\(([^)$\r\n]+?)\)\s*$/gmy,
+                tmpl: '<x-eqs><x-eqn class="tex-to-render">$1</x-eqn><span>($2)</span></x-eqs>',
+                tag: '```math'
+            },
             {   name: 'math_block',
                 rex: /`{3}math\s+?([^`]+?)\s+?`{3}\s*$/gmy,
                 tmpl: '<x-eqn class="tex-to-render">$1</x-eqn>',
@@ -142,6 +154,11 @@ texmath.rules = {
             }
         ],
         block: [
+            {   name: 'math_block_eqno',
+                rex: /\${2}([^$]*?)\${2}\s*?\(([^)$\r\n]+?)\)\s*$/gmy,
+                tmpl: '<x-eqs><x-eqn class="tex-to-render">$1</x-eqn><span>($2)</span></x-eqs>',
+                tag: '$$'
+            },
             {   name: 'math_block',
                 rex: /\${2}([^$]*?)\${2}\s*$/gmy,
                 tmpl: '<x-eqn class="tex-to-render">$1</x-eqn>',

@@ -41,6 +41,8 @@ const QString VConfigManager::c_templateConfigFolder = QString("templates");
 
 const QString VConfigManager::c_snippetConfigFolder = QString("snippets");
 
+const QString VConfigManager::c_resourceConfigFolder = QString("resources");
+
 const QString VConfigManager::c_warningTextStyle = QString("color: #C9302C; font: bold");
 
 const QString VConfigManager::c_dataTextStyle = QString("font: bold");
@@ -63,6 +65,8 @@ VConfigManager::VConfigManager(QObject *p_parent)
 void VConfigManager::initialize()
 {
     initSettings();
+
+    checkVersion();
 
     initThemes();
 
@@ -858,6 +862,30 @@ const QString &VConfigManager::getSnippetConfigFilePath() const
     return path;
 }
 
+QString VConfigManager::getResourceConfigFolder() const
+{
+    return QDir(getConfigFolder()).filePath(c_resourceConfigFolder);
+}
+
+const QString &VConfigManager::getCommonCssUrl() const
+{
+    static QString cssPath;
+    if (cssPath.isEmpty()) {
+        cssPath = QDir(getResourceConfigFolder()).filePath("common.css");
+        if (m_versionChanged || !QFileInfo::exists(cssPath)) {
+            // Output the default one.
+            if (!VUtils::copyFile(":/resources/common.css", cssPath, false)) {
+                cssPath = "qrc:/resources/common.css";
+                return cssPath;
+            }
+        }
+
+        cssPath = QUrl::fromLocalFile(cssPath).toString();
+    }
+
+    return cssPath;
+}
+
 const QString VConfigManager::getKeyboardLayoutConfigFilePath() const
 {
     return QDir(getConfigFolder()).filePath(c_keyboardLayoutConfigFile);
@@ -1637,3 +1665,12 @@ QString VConfigManager::getRenderBackgroundColor(const QString &p_bgName) const
     return QString();
 }
 
+void VConfigManager::checkVersion()
+{
+    const QString key("version");
+    QString ver = getConfigFromSettings("global", key).toString();
+    m_versionChanged = ver != c_version;
+    if (m_versionChanged) {
+        setConfigToSettings("global", key, c_version);
+    }
+}
