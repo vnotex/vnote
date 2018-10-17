@@ -186,7 +186,7 @@ VNote中，几乎一切都是可以定制的，例如背景颜色、字体以及
 - [Qt 5.9](http://qt-project.org) (L-GPL v3)
 - [PEG Markdown Highlight](http://hasseg.org/peg-markdown-highlight/) (MIT License)
 - [Hoedown 3.0.7](https://github.com/hoedown/hoedown/) (ISC License)
-- [Marked](https://github.com/chjj/marked) (MIT License)
+- [Marked 0.5.1](https://github.com/markedjs/marked) (MIT License)
 - [Highlight.js](https://github.com/isagalaev/highlight.js/) (BSD License)
 - [Ionicons 2.0.1](https://github.com/driftyco/ionicons/) (MIT License)
 - [markdown-it 8.3.1](https://github.com/markdown-it/markdown-it) (MIT License)
