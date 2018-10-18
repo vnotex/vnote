@@ -172,6 +172,19 @@ private:
         int m_height;
     };
 
+    struct UrlImageInfo {
+        UrlImageInfo(const QString &p_name, int p_width, int p_height)
+            : m_name(p_name),
+              m_width(p_width),
+              m_height(p_height)
+        {
+        }
+
+        QString m_name;
+        int m_width;
+        int m_height;
+    };
+
     // Start to preview images according to image links.
     void previewImages(TS p_timeStamp, const QVector<VElementRegion> &p_imageRegions);
 
@@ -228,7 +241,7 @@ private:
 
     // Map from URL to name in the resource manager.
     // Used for downloading images.
-    QHash<QString, QString> m_urlToName;
+    QHash<QString, QSharedPointer<UrlImageInfo>> m_urlMap;
 
     // Timestamp per each preview source.
     TS m_timeStamps[(int)PreviewSource::MaxNumberOfSources];

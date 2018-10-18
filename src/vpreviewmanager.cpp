@@ -39,28 +39,53 @@ void VPreviewManager::updateImageLinks(const QVector<VElementRegion> &p_imageReg
     previewImages(ts, p_imageRegions);
 }
 
+static QPixmap scalePreviewImage(const QPixmap &p_img, int p_width, int p_height)
+{
+    const Qt::TransformationMode tMode = Qt::SmoothTransformation;
+    qreal sf = VUtils::calculateScaleFactor();
+    if (p_width > 0) {
+        if (p_height > 0) {
+            return p_img.scaled(p_width * sf,
+                                p_height * sf,
+                                Qt::IgnoreAspectRatio,
+                                tMode);
+        } else {
+            return p_img.scaledToWidth(p_width * sf, tMode);
+        }
+    } else if (p_height > 0) {
+        return p_img.scaledToHeight(p_height * sf, tMode);
+    } else {
+        if (sf < 1.1) {
+            return p_img;
+        } else {
+            return p_img.scaledToWidth(p_img.width() * sf, tMode);
+        }
+    }
+}
+
 void VPreviewManager::imageDownloaded(const QByteArray &p_data, const QString &p_url)
 {
     if (!m_previewEnabled) {
         return;
     }
 
-    auto it = m_urlToName.find(p_url);
-    if (it == m_urlToName.end()) {
+    auto it = m_urlMap.find(p_url);
+    if (it == m_urlMap.end()) {
         return;
     }
 
-    QString name = it.value();
-    m_urlToName.erase(it);
+    QSharedPointer<UrlImageInfo> info = it.value();
+    m_urlMap.erase(it);
 
-    if (m_editor->containsImage(name) || name.isEmpty()) {
+    if (m_editor->containsImage(info->m_name) || info->m_name.isEmpty()) {
         return;
     }
 
     QPixmap image;
     image.loadFromData(p_data);
     if (!image.isNull()) {
-        m_editor->addImage(name, image);
+        m_editor->addImage(info->m_name,
+                           scalePreviewImage(image, info->m_width, info->m_height));
         emit requestUpdateImageLinks();
     }
 }
@@ -225,38 +250,24 @@ QString VPreviewManager::imageResourceName(const ImageLinkInfo &p_link)
     if (QFileInfo::exists(imgPath)) {
         // Local file.
         image = VUtils::pixmapFromFile(imgPath);
+        if (image.isNull()) {
+            return QString();
+        }
     } else {
         // URL. Try to download it.
+        // qrc:// files will touch this path.
         m_downloader->download(imgPath);
-        m_urlToName.insert(imgPath, name);
-    }
 
-    if (image.isNull()) {
+        QSharedPointer<UrlImageInfo> info(new UrlImageInfo(name,
+                                                           p_link.m_width,
+                                                           p_link.m_height));
+        m_urlMap.insert(imgPath, info);
+
         return QString();
     }
 
-    // Resize the image.
-    Qt::TransformationMode tMode = Qt::SmoothTransformation;
-    qreal sf = VUtils::calculateScaleFactor();
-    if (p_link.m_width > 0) {
-        if (p_link.m_height > 0) {
-            m_editor->addImage(name, image.scaled(p_link.m_width * sf,
-                                                  p_link.m_height * sf,
-                                                  Qt::IgnoreAspectRatio,
-                                                  tMode));
-        } else {
-            m_editor->addImage(name, image.scaledToWidth(p_link.m_width * sf, tMode));
-        }
-    } else if (p_link.m_height > 0) {
-        m_editor->addImage(name, image.scaledToHeight(p_link.m_height * sf, tMode));
-    } else {
-        if (sf < 1.1) {
-            m_editor->addImage(name, image);
-        } else {
-            m_editor->addImage(name, image.scaledToWidth(image.width() * sf, tMode));
-        }
-    }
-
+    m_editor->addImage(name,
+                       scalePreviewImage(image, p_link.m_width, p_link.m_height));
     return name;
 }
 
