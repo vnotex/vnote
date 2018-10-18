@@ -582,6 +582,8 @@ public:
 
     bool getParsePasteLocalImage() const;
 
+    bool versionChanged() const;
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -2706,5 +2708,10 @@ inline QList<int> VConfigManager::getKeyboardLayoutMappingKeys() const
 inline bool VConfigManager::getParsePasteLocalImage() const
 {
     return m_parsePasteLocalImage;
+}
+
+inline bool VConfigManager::versionChanged() const
+{
+    return m_versionChanged;
 }
 #endif // VCONFIGMANAGER_H

@@ -808,7 +808,7 @@ void VMainWindow::initHelpMenu()
     connect(mdGuideAct, &QAction::triggered,
             this, [this](){
                 QString docFile = VUtils::getDocFile(VNote::c_markdownGuideDocFile);
-                VFile *file = vnote->getOrphanFile(docFile, false, true);
+                VFile *file = vnote->getFile(docFile, true);
                 m_editArea->openFile(file, OpenFileMode::Read);
             });
 
@@ -2458,7 +2458,7 @@ void VMainWindow::enableImageCaption(bool p_checked)
 void VMainWindow::shortcutsHelp()
 {
     QString docFile = VUtils::getDocFile(VNote::c_shortcutsDocFile);
-    VFile *file = vnote->getOrphanFile(docFile, false, true);
+    VFile *file = vnote->getFile(docFile, true);
     m_editArea->openFile(file, OpenFileMode::Read);
 }
 
@@ -2577,14 +2577,7 @@ QVector<VFile *> VMainWindow::openFiles(const QStringList &p_files,
             continue;
         }
 
-        VFile *file = NULL;
-        if (!p_forceOrphan) {
-            file = vnote->getInternalFile(p_files[i]);
-        }
-
-        if (!file) {
-            file = vnote->getOrphanFile(p_files[i], true);
-        }
+        VFile *file = vnote->getFile(p_files[i], p_forceOrphan);
 
         m_editArea->openFile(file, p_mode, p_forceMode);
         vfiles.append(file);
@@ -3340,6 +3333,11 @@ void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
         QCoreApplication::sendPostedEvents();
         openStartupPages();
         openFiles(p_files, false, g_config->getNoteOpenMode(), false, true);
+        if (g_config->versionChanged()) {
+            QString docFile = VUtils::getDocFile("welcome.md");
+            VFile *file = vnote->getFile(docFile, true);
+            m_editArea->openFile(file, OpenFileMode::Read);
+        }
     });
 }
 

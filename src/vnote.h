@@ -90,12 +90,7 @@ public:
 
     // Given the path of a file, first try to open it as note file,
     // then try to open it as orphan file.
-    VFile *getFile(const QString &p_path);
-
-    // Given the path of an external file, create a VOrphanFile struct.
-    VOrphanFile *getOrphanFile(const QString &p_path,
-                               bool p_modifiable,
-                               bool p_systemFile = false);
+    VFile *getFile(const QString &p_path, bool p_forceOrphan = false);
 
     // Given the path of a file, try to find it in all notebooks.
     // Returns a VNoteFile struct if it is a note in one notebook.
@@ -131,6 +126,11 @@ public slots:
 
 private:
     const QString &getMonospacedFont() const;
+
+    // Given the path of an external file, create a VOrphanFile struct.
+    VOrphanFile *getOrphanFile(const QString &p_path,
+                               bool p_modifiable,
+                               bool p_systemFile = false);
 
     // Maintain all the notebooks. Other holder should use QPointer.
     QVector<VNotebook *> m_notebooks;

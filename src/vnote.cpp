@@ -323,9 +323,13 @@ VNoteFile *VNote::getInternalFile(const QString &p_path)
     return file;
 }
 
-VFile *VNote::getFile(const QString &p_path)
+VFile *VNote::getFile(const QString &p_path, bool p_forceOrphan)
 {
-    VFile *file = getInternalFile(p_path);
+    VFile *file = NULL;
+    if (!p_forceOrphan) {
+        file = getInternalFile(p_path);
+    }
+
     if (!file) {
         QFileInfo fi(p_path);
         if (fi.isNativePath()) {

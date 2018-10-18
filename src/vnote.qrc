@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file>resources/welcome.html</file>
         <file>resources/qwebchannel.js</file>
         <file>utils/marked/marked.min.js</file>
         <file>utils/highlightjs/highlight.pack.js</file>
@@ -275,5 +274,7 @@
         <file>resources/export/outline.js</file>
         <file>resources/icons/add.svg</file>
         <file>resources/icons/delete.svg</file>
+        <file>resources/docs/welcome_en.md</file>
+        <file>resources/docs/welcome_zh.md</file>
     </qresource>
 </RCC>
