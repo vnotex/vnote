@@ -304,7 +304,7 @@ void VMetaWordManager::init()
     // %w%
     addMetaWord(MetaWordType::Dynamic,
                 "w",
-                tr("returns the week number (1 to 53)"),
+                tr("the week number (`1` to `53`)"),
                 [](const VMetaWord *) {
                    return QString::number(p_metaWord->getManager()->getDateTime().date().weekNumber());
                 });
