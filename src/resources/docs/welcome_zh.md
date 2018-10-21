@@ -1,11 +1,20 @@
 # 欢迎使用VNote
 ![VNote](qrc:/resources/icons/vnote.svg =128x)
 
-[VNote](https://tamlok.github.io/vnote) 是一个受Vim启发的、更懂程序员和Markdown的笔记软件。VNote提供了美妙的Markdown体验以及强大的笔记管理。
+> 一个受Vim启发的、更懂程序员和Markdown的笔记软件。
+
+[VNote](https://tamlok.github.io/vnote) 提供了美妙的Markdown体验以及强大的笔记管理。
 
 VNote是**开源**的，当前主要由个人在业余时间进行开发和维护。因此，如果VNote给您的效率带来了提升，请考虑帮助VNote成长。
 
 ## 问题解决指南
+VNote有两种使用方式：
+
+1. 提供笔记本、文件夹和笔记的笔记软件。VNote管理所有的数据并提供诸如附件和标签的额外功能。
+2. 编辑器。VNote提供浏览器来浏览本地文件系统并打开编辑外部文件。
+
+问题诊断步骤：
+
 1. 浏览上下文菜单、菜单栏、工具栏、设置以及帮助菜单；
 2. 更改配置可能需要重新打开当前标签页或重启VNote；
 3. 帮助菜单中包含了一份Markdown语法指南和一份快捷键指南；

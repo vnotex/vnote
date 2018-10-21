@@ -1,11 +1,20 @@
 # Welcome to VNote
 ![VNote](qrc:/resources/icons/vnote.svg =128x)
 
-[VNote](https://tamlok.github.io/vnote) is a Vim-inspired note-taking application that knows programmers and Markdown better. VNote provides fancy Markdown experience as well as powerful notes management.
+> A Vim-inspired note-taking application that knows programmers and Markdown better.
+
+[VNote](https://tamlok.github.io/vnote) provides fancy Markdown experience as well as powerful notes management.
 
 VNote is **open source** and currently mainly developed and maintained by one single person in spare time. Hence, please don't hesitate to give VNote a hand if she does improve your productivity.
 
 ## Troubleshooting Guide
+VNote could be used in two ways:
+
+1. Note-taking application via notebooks, folders and notes. VNote manages all the data and provides additional functionality such as attachment and tag.
+2. Editor. VNote provides the explorer for local file system to open external files to edit.
+
+Steps to troubleshoot:
+
 1. Go through the context menu, menu bar, tool bar, settings, and help menu to check if you miss something;
 2. Changes to configuration may need re-opening current tabs or restarting VNote;
 3. There is a Markdown guide and shortcuts guide in the help menu, which might be helpful;
