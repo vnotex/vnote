@@ -306,7 +306,7 @@ void VMetaWordManager::init()
                 "w",
                 tr("returns the week number (1 to 53)"),
                 [](const VMetaWord *) {
-                   return QString::number(QDate::currentDate().weekNumber());
+                   return QString::number(p_metaWord->getManager()->getDateTime().date().weekNumber());
                 });
 
     // Custom meta words.
