@@ -33,7 +33,7 @@ public:
     virtual bool save();
 
     // Reload content from disk.
-    virtual void reload();
+    virtual bool reload();
 
     const QString &getName() const;
 
@@ -163,7 +163,6 @@ inline FileType VFile::getType() const
 
 inline const QString &VFile::getContent() const
 {
-    Q_ASSERT(m_opened);
     return m_content;
 }
 

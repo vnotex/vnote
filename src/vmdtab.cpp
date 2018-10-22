@@ -45,7 +45,16 @@ VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
 {
     V_ASSERT(m_file->getDocType() == DocType::Markdown);
 
-    m_file->open();
+    if (!m_file->open()) {
+        VUtils::showMessage(QMessageBox::Warning,
+                            tr("Warning"),
+                            tr("Fail to open note <span style=\"%1\">%2</span>.")
+                              .arg(g_config->c_dataTextStyle).arg(m_file->getName()),
+                            tr("Please check if file %1 exists.").arg(m_file->fetchPath()),
+                            QMessageBox::Ok,
+                            QMessageBox::Ok,
+                            this);
+    }
 
     HeadingSequenceType headingSequenceType = g_config->getHeadingSequenceType();
     if (headingSequenceType == HeadingSequenceType::Enabled) {

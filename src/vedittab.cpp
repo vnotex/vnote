@@ -187,9 +187,21 @@ void VEditTab::checkFileChangeOutside()
 
 void VEditTab::reloadFromDisk()
 {
-    m_file->reload();
-    m_fileDiverged = false;
-    m_checkFileChange = true;
+    bool ret = m_file->reload();
+    if (!ret) {
+        VUtils::showMessage(QMessageBox::Warning,
+                            tr("Warning"),
+                            tr("Fail to reload note <span style=\"%1\">%2</span>.")
+                              .arg(g_config->c_dataTextStyle).arg(m_file->getName()),
+                            tr("Please check if file %1 exists.").arg(m_file->fetchPath()),
+                            QMessageBox::Ok,
+                            QMessageBox::Ok,
+                            this);
+    }
+
+    m_fileDiverged = !ret;
+    m_checkFileChange = ret;
+
     reload();
 }
 

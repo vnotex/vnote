@@ -302,7 +302,7 @@ void VMetaWordManager::init()
                 });
 
     // %w%
-    addMetaWord(MetaWordType::Dynamic,
+    addMetaWord(MetaWordType::FunctionBased,
                 "w",
                 tr("the week number (`1` to `53`)"),
                 [](const VMetaWord *p_metaWord) {

@@ -126,14 +126,21 @@ bool VFile::isChangedOutside(bool &p_missing) const
     return lm.toSecsSinceEpoch() != m_lastModified.toSecsSinceEpoch();
 }
 
-void VFile::reload()
+bool VFile::reload()
 {
-    Q_ASSERT(m_opened);
+    if (!m_opened) {
+        return false;
+    }
 
     QString filePath = fetchPath();
-    Q_ASSERT(QFileInfo::exists(filePath));
+    if (!QFileInfo::exists(filePath)) {
+        m_content.clear();
+        return false;
+    }
+
     m_content = VUtils::readFileFromDisk(filePath);
     m_lastModified = QFileInfo(filePath).lastModified();
+    return true;
 }
 
 QString VFile::backupFileOfPreviousSession() const

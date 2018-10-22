@@ -211,5 +211,4 @@ private slots:
     // Called when app focus changed.
     void handleFocusChanged(QWidget *p_old, QWidget *p_now);
 };
-
 #endif // VEDITTAB_H
