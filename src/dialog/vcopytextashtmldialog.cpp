@@ -31,7 +31,7 @@ void VCopyTextAsHtmlDialog::setupUI()
     m_textEdit->setProperty("LineEdit", true);
 
     m_htmlLabel = new QLabel(tr("HTML:"));
-    m_htmlViewer = VUtils::getWebEngineView();
+    m_htmlViewer = VUtils::getWebEngineView(g_config->getBaseBackground());
     m_htmlViewer->setContextMenuPolicy(Qt::NoContextMenu);
     m_htmlViewer->setMinimumSize(600, 400);
 

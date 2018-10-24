@@ -450,7 +450,8 @@ void VMdTab::setupMarkdownViewer()
             this, &VMdTab::statusMessage);
 
     // Avoid white flash before loading content.
-    page->setBackgroundColor(Qt::transparent);
+    // Setting Qt::transparent will force GrayScale antialias rendering.
+    page->setBackgroundColor(g_config->getBaseBackground());
 
     m_document = new VDocument(m_file, m_webViewer);
     m_documentID = m_document->registerIdentifier();

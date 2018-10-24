@@ -1417,11 +1417,16 @@ void VUtils::setDynamicProperty(QWidget *p_widget, const char *p_prop, bool p_va
     p_widget->style()->polish(p_widget);
 }
 
-QWebEngineView *VUtils::getWebEngineView(QWidget *p_parent)
+QWebEngineView *VUtils::getWebEngineView(const QColor &p_background, QWidget *p_parent)
 {
     QWebEngineView *viewer = new QWebEngineView(p_parent);
     VPreviewPage *page = new VPreviewPage(viewer);
-    page->setBackgroundColor(Qt::transparent);
+
+    // Setting the background to Qt::transparent will force GrayScale antialiasing.
+    if (p_background.isValid() && p_background != Qt::transparent) {
+        page->setBackgroundColor(p_background);
+    }
+
     viewer->setPage(page);
     viewer->setZoomFactor(g_config->getWebZoomFactor());
 

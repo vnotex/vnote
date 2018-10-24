@@ -35,7 +35,7 @@ void VUpdater::setupUI()
     m_proBar = new QProgressBar();
     m_proBar->setTextVisible(false);
 
-    m_descriptionWV = VUtils::getWebEngineView();
+    m_descriptionWV = VUtils::getWebEngineView(g_config->getBaseBackground());
     m_descriptionWV->setContextMenuPolicy(Qt::NoContextMenu);
     m_descriptionWV->setHtml(VUtils::generateSimpleHtmlTemplate(VNote::s_sloganTemplate),
                              QUrl("qrc:/resources"));

@@ -234,6 +234,8 @@ int main(int argc, char *argv[])
 
     w.show();
 
+    g_config->setBaseBackground(w.palette().color(QPalette::Window));
+
     w.kickOffStartUpTimer(filePaths);
 
     int ret = app.exec();

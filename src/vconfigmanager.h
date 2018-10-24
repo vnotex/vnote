@@ -584,6 +584,9 @@ public:
 
     bool versionChanged() const;
 
+    const QColor &getBaseBackground() const;
+    void setBaseBackground(const QColor &p_bg);
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -1043,6 +1046,9 @@ private:
 
     // Whether the VNote instance has different version of vnote.ini.
     bool m_versionChanged;
+
+    // Base background of MainWindow.
+    QColor m_baseBackground;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2713,5 +2719,15 @@ inline bool VConfigManager::getParsePasteLocalImage() const
 inline bool VConfigManager::versionChanged() const
 {
     return m_versionChanged;
+}
+
+inline const QColor &VConfigManager::getBaseBackground() const
+{
+    return m_baseBackground;
+}
+
+inline void VConfigManager::setBaseBackground(const QColor &p_bg)
+{
+    m_baseBackground = p_bg;
 }
 #endif // VCONFIGMANAGER_H

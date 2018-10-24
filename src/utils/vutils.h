@@ -314,7 +314,7 @@ public:
     // Create and return a QComboBox.
     static QComboBox *getComboBox(QWidget *p_parent = nullptr);
 
-    static QWebEngineView *getWebEngineView(QWidget *p_parent = nullptr);
+    static QWebEngineView *getWebEngineView(const QColor &p_background, QWidget *p_parent = nullptr);
 
     static void setDynamicProperty(QWidget *p_widget, const char *p_prop, bool p_val = true);
 
