@@ -2630,7 +2630,13 @@ void VMainWindow::initTrayIcon()
     connect(exitAct, &QAction::triggered,
             this, &VMainWindow::quitApp);
 
-    m_trayIcon = new QSystemTrayIcon(QIcon(":/resources/icons/32x32/vnote.png"), this);
+    QIcon sysIcon(":/resources/icons/256x256/vnote.png");
+
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    sysIcon.setIsMask(true);
+#endif
+
+    m_trayIcon = new QSystemTrayIcon(sysIcon, this);
     m_trayIcon->setToolTip(tr("VNote"));
     m_trayIcon->setContextMenu(menu);
 

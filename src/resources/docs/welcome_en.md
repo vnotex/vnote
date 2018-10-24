@@ -1,5 +1,5 @@
 # Welcome to VNote
-![VNote](qrc:/resources/icons/vnote.svg =128x)
+![VNote](qrc:/resources/icons/256x256/vnote.png)
 
 > A Vim-inspired note-taking application that knows programmers and Markdown better.
 

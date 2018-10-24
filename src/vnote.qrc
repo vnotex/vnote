@@ -75,7 +75,6 @@
         <file>resources/icons/strikethrough.svg</file>
         <file>resources/icons/inline_code.svg</file>
         <file>resources/icons/close_note_tb.svg</file>
-        <file>resources/icons/32x32/vnote.png</file>
         <file>resources/icons/editing_modified.svg</file>
         <file>resources/docs/markdown_guide_en.md</file>
         <file>resources/docs/markdown_guide_zh.md</file>
@@ -276,5 +275,6 @@
         <file>resources/icons/delete.svg</file>
         <file>resources/docs/welcome_en.md</file>
         <file>resources/docs/welcome_zh.md</file>
+        <file>resources/icons/256x256/vnote.png</file>
     </qresource>
 </RCC>

@@ -1,5 +1,5 @@
 # 欢迎使用VNote
-![VNote](qrc:/resources/icons/vnote.svg =128x)
+![VNote](qrc:/resources/icons/256x256/vnote.png)
 
 > 一个受Vim启发的、更懂程序员和Markdown的笔记软件。
 
