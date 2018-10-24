@@ -211,9 +211,9 @@ void VTabIndicator::update(const VEditTabInfo &p_info)
 
             int lineCount = p_info.m_blockCount < 1 ? 1 : p_info.m_blockCount;
 
-            QString cursorText = tr("<span><span style=\"font-weight:bold;\">Line</span>: %1 - %2(%3%)  "
-                                    "<span style=\"font-weight:bold;\">Col</span>: %4</span>")
-                                   .arg(line).arg(lineCount)
+            QString cursorText = tr("Line: %1 - %2(%3%)   Col: %4")
+                                   .arg(line)
+                                   .arg(lineCount)
                                    .arg((int)(line * 1.0 / lineCount * 100), 2)
                                    .arg(col, 3);
             m_cursorLabel->setText(cursorText);
