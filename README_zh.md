@@ -22,6 +22,7 @@
 VNote不支持**XP**，因为QtWebEngineProcess无法在XP上运行。
 
 ### 使用scoop安装
+你可以在[scoop wiki](https://github.com/lukesampson/scoop/wiki)找到更多的帮助信息。  
 1. powershell安装[scoop](https://github.com/lukesampson/scoop) `iex (new-object net.webclient).downloadstring('https://get.scoop.sh')`
 2. scoop添加extras仓库 `scoop bucket add extras`
 3. scoop安装vnote `scoop install scoop`
