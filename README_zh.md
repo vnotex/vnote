@@ -13,12 +13,20 @@
 国内的用户可以尝试在[百度云盘](http://pan.baidu.com/s/1jI5HROq)下载VNote的最新发行版本。
 
 ## Windows
+### 下载安装
 ![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/tamlok/vnote?svg=true)
 
 - [Github releases](https://github.com/tamlok/vnote/releases)
 - master分支的最新构建：[ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
 
 VNote不支持**XP**，因为QtWebEngineProcess无法在XP上运行。
+
+### 使用scoop安装
+你可以在[scoop wiki](https://github.com/lukesampson/scoop/wiki)找到更多的帮助信息。  
+1. powershell安装[scoop](https://github.com/lukesampson/scoop) `iex (new-object net.webclient).downloadstring('https://get.scoop.sh')`
+2. scoop添加extras仓库 `scoop bucket add extras`
+3. scoop安装vnote `scoop install scoop`
+4. 以后更新 `scoop update vnote` / `scoop update *`
 
 ## Linux
 

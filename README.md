@@ -13,12 +13,21 @@ Designed specially for **Markdown**, **VNote** is a Vim-inspired note-taking app
 Users from China can download the latest release of VNote from [Baidu Netdisk](http://pan.baidu.com/s/1jI5HROq).
 
 ## Windows
+
+### download
 ![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/tamlok/vnote?svg=true)
 
 - [Github releases](https://github.com/tamlok/vnote/releases)
 - Latest builds on master: [ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
 
 **NOT** supported in XP since QtWebEngineProcess used by VNote could not work in XP.
+
+### scoop install
+you can find more help document on [scoop wiki](https://github.com/lukesampson/scoop/wiki).  
+1. install [scoop](https://github.com/lukesampson/scoop) with powershell. `iex (new-object net.webclient).downloadstring('https://get.scoop.sh')`
+2. add the optional 'extras' bucket in scoop. `scoop bucket add extras`
+3. install vnote with scoop. `scoop install scoop`
+4. update `scoop update vnote` / `scoop update *`
 
 ## Linux
 
