@@ -1252,6 +1252,10 @@ void VExportDialog::handleCurrentFormatChanged(int p_index)
 
     m_wkTitleEdit->setEnabled(pdfTitleNameEnabled);
     m_wkTargetFileNameEdit->setEnabled(pdfTitleNameEnabled);
+
+    QTimer::singleShot(100, [this]() {
+                resize(size().width(), minimumSizeHint().height());
+            });
 }
 
 void VExportDialog::handleCurrentSrcChanged(int p_index)

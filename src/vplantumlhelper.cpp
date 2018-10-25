@@ -70,8 +70,10 @@ void VPlantUMLHelper::prepareCommand(QString &p_program,
     p_args << "-jar" << (p_jar.isEmpty() ? g_config->getPlantUMLJar() : p_jar);
     p_args << "-charset" << "UTF-8";
 
+    /*
     int nbthread = QThread::idealThreadCount();
     p_args << "-nbthread" << QString::number(nbthread > 0 ? nbthread : 1);
+    */
 
     const QString &dot = g_config->getGraphvizDot();
     if (!dot.isEmpty()) {

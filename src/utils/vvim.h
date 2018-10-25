@@ -838,6 +838,8 @@ private:
 
     void clearSelectionAndEnterNormalMode();
 
+    bool isKeyShouldBeIgnored(int p_key) const;
+
     VEditor *m_editor;
     const VEditConfig *m_editConfig;
     VimMode m_mode;

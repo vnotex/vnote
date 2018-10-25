@@ -149,7 +149,8 @@ SOURCES += main.cpp\
     vtexteditcompleter.cpp \
     utils/vkeyboardlayoutmanager.cpp \
     dialog/vkeyboardlayoutmappingdialog.cpp \
-    vfilelistwidget.cpp
+    vfilelistwidget.cpp \
+    widgets/vcombobox.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -291,7 +292,8 @@ HEADERS  += vmainwindow.h \
     vtextdocumentlayoutdata.h \
     utils/vkeyboardlayoutmanager.h \
     dialog/vkeyboardlayoutmappingdialog.h \
-    vfilelistwidget.h
+    vfilelistwidget.h \
+    widgets/vcombobox.h
 
 RESOURCES += \
     vnote.qrc \

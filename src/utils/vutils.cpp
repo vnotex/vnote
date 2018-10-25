@@ -38,6 +38,7 @@
 #include "vnotebook.h"
 #include "vpreviewpage.h"
 #include "pegparser.h"
+#include "widgets/vcombobox.h"
 
 extern VConfigManager *g_config;
 
@@ -1403,7 +1404,7 @@ bool VUtils::isMetaKey(int p_key)
 
 QComboBox *VUtils::getComboBox(QWidget *p_parent)
 {
-    QComboBox *box = new QComboBox(p_parent);
+    QComboBox *box = new VComboBox(p_parent);
     QStyledItemDelegate *itemDelegate = new QStyledItemDelegate(box);
     box->setItemDelegate(itemDelegate);
 

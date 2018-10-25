@@ -617,7 +617,7 @@ bool VVim::handleKeyPressEvent(int key, int modifiers, int *p_autoIndentPos)
     }
 
     // Ctrl and Shift may be sent out first.
-    if (key == Qt::Key_Control || key == Qt::Key_Shift || key == Qt::Key_Meta) {
+    if (isKeyShouldBeIgnored(key)) {
         goto accept;
     }
 
@@ -6482,4 +6482,13 @@ void VVim::clearSelectionAndEnterNormalMode()
     }
 
     setMode(VimMode::Normal, true, position);
+}
+
+bool VVim::isKeyShouldBeIgnored(int p_key) const
+{
+    if (VUtils::isMetaKey(p_key)) {
+        return true;
+    }
+
+    return false;
 }
