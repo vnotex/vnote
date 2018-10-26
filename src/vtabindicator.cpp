@@ -215,7 +215,7 @@ void VTabIndicator::update(const VEditTabInfo &p_info)
                                    .arg(line)
                                    .arg(lineCount)
                                    .arg((int)(line * 1.0 / lineCount * 100), 2)
-                                   .arg(col, 3);
+                                   .arg(col, -3);
             m_cursorLabel->setText(cursorText);
             m_cursorLabel->show();
         } else {
