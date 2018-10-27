@@ -173,6 +173,10 @@ VNote also supports displayed mathematics via fenced code block with language `m
     $$
     ```
 
+Equation number of displayed mathematics is supported:
+
+    $$vnote x markdown = awesome$$ (1.2.1)
+
 ### Inline Code
 ```md
 Here is a `inline code`.

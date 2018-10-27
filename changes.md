@@ -1,4 +1,21 @@
 # Changes History
+## v2.1
+- UniversalEntry/Searcher: `Ctrl+B` to expand/collapse all items;
+- Captain mode: support specifying keyboard layout mappings, such as Russian or French;
+- Editor
+    - Support downloading images to local when Parse&Paste;
+    - Support scaling image when inserting image;
+    - Support Parse&Paste as table from Microsoft Excel;
+    - Support attach a file as attachment and insert as link by Drag&Drop;
+    - Support `Ctrl+Sfhit+V` to paste as plain text;
+    - Fix Unicode issue;
+- Attachment
+    - Support copying file path;
+- Support Drag&Drop to copy/move notes;
+- Support MathJax euqation number in read mode;
+- Fix blurry toolbar icon on macOS;
+- Fix blurry renderring in read mode on Windows;
+
 ## v2.0
 - Vim: support specifying leader key via "[editor]/vim_leader_key";
 - LivePreview

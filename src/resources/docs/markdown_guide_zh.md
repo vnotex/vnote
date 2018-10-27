@@ -174,6 +174,10 @@ VNote也可以使用标明语言`mathjax`的代码块来实现块公式。
     $$
     ```
 
+块公式支持公式序号：
+
+    $$vnote x markdown = awesome$$ (1.2.1)
+
 ### 行内代码
 ```md
 Here is a `inline code`.
