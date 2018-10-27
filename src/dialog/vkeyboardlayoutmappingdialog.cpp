@@ -187,7 +187,7 @@ void VKeyboardLayoutMappingDialog::deleteCurrentMapping()
 
     int ret = VUtils::showMessage(QMessageBox::Warning,
                                   tr("Warning"),
-                                  tr("Are you sure to delete mapping <span style=\"%1\">%2</span>.")
+                                  tr("Are you sure to delete mapping <span style=\"%1\">%2</span>?")
                                     .arg(g_config->c_dataTextStyle)
                                     .arg(mapping),
                                   "",
