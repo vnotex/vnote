@@ -131,7 +131,10 @@ int main(int argc, char *argv[])
     // Or set environment QT_OPENGL to "angle/desktop/software".
     // QCoreApplication::setAttribute(Qt::AA_UseOpenGLES, true);
     QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+
+    // This only takes effect on Win, X11 and Android.
+    // It will disturb original scaling. Just disable it for now.
+    // QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
     QApplication app(argc, argv);
 
