@@ -5199,7 +5199,7 @@ Modified Time: %3</source>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="1128"/>
-        <source>Enabled for intrenal notes only</source>
+        <source>Enabled for internal notes only</source>
         <translation>仅对内部笔记启用</translation>
     </message>
     <message>
