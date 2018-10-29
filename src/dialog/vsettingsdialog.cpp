@@ -1125,7 +1125,7 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     m_headingSequenceTypeCombo->setToolTip(tr("Enable auto sequence for all headings (in the form like 1.2.3.4.)"));
     m_headingSequenceTypeCombo->addItem(tr("Disabled"), (int)HeadingSequenceType::Disabled);
     m_headingSequenceTypeCombo->addItem(tr("Enabled"), (int)HeadingSequenceType::Enabled);
-    m_headingSequenceTypeCombo->addItem(tr("Enabled for intrenal notes only"), (int)HeadingSequenceType::EnabledNoteOnly);
+    m_headingSequenceTypeCombo->addItem(tr("Enabled for internal notes only"), (int)HeadingSequenceType::EnabledNoteOnly);
 
     m_headingSequenceLevelCombo = VUtils::getComboBox();
     m_headingSequenceLevelCombo->setToolTip(tr("Base level to start heading sequence"));
