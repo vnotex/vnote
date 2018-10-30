@@ -406,7 +406,8 @@ int VEditUtils::selectedBlockCount(const QTextCursor &p_cursor)
 
 void VEditUtils::scrollBlockInPage(QTextEdit *p_edit,
                                    int p_blockNum,
-                                   int p_dest)
+                                   int p_dest,
+                                   int p_margin)
 {
     QTextDocument *doc = p_edit->document();
     QTextCursor cursor = p_edit->textCursor();
@@ -416,9 +417,9 @@ void VEditUtils::scrollBlockInPage(QTextEdit *p_edit,
 
     QTextBlock block = doc->findBlockByNumber(p_blockNum);
 
-    int pib = cursor.positionInBlock();
     if (cursor.block().blockNumber() != p_blockNum) {
         // Move the cursor to the block.
+        int pib = cursor.positionInBlock();
         if (pib >= block.length()) {
             pib = block.length() - 1;
         }
@@ -427,14 +428,19 @@ void VEditUtils::scrollBlockInPage(QTextEdit *p_edit,
         p_edit->setTextCursor(cursor);
     }
 
-    // Scroll to let current cursor locate in proper position.
-    p_edit->ensureCursorVisible();
     QScrollBar *vsbar = p_edit->verticalScrollBar();
-
     if (!vsbar || !vsbar->isVisible()) {
         // No vertical scrollbar. No need to scroll.
         return;
     }
+
+    int sstep = vsbar->singleStep();
+    if (p_margin < sstep) {
+        p_margin = sstep;
+    }
+
+    // Scroll to let current cursor locate in proper position.
+    p_edit->ensureCursorVisible();
 
     QRect rect = p_edit->cursorRect();
     int height = p_edit->rect().height();
@@ -443,13 +449,15 @@ void VEditUtils::scrollBlockInPage(QTextEdit *p_edit,
         height -= sbar->height();
     }
 
+    bool moved = false;
     switch (p_dest) {
     case 0:
     {
         // Top.
-        while (rect.y() > 0 && vsbar->value() < vsbar->maximum()) {
-            vsbar->setValue(vsbar->value() + vsbar->singleStep());
+        while (rect.y() > p_margin && vsbar->value() < vsbar->maximum()) {
+            vsbar->setValue(vsbar->value() + sstep);
             rect = p_edit->cursorRect();
+            moved = true;
         }
 
         break;
@@ -459,15 +467,19 @@ void VEditUtils::scrollBlockInPage(QTextEdit *p_edit,
     {
         // Center.
         height = qMax(height / 2, 1);
-        if (rect.y() > height) {
-            while (rect.y() > height && vsbar->value() < vsbar->maximum()) {
-                vsbar->setValue(vsbar->value() + vsbar->singleStep());
+        int upBound = height + p_margin;
+        int lowBound = height - p_margin;
+        if (rect.y() > upBound) {
+            while (rect.y() > upBound && vsbar->value() < vsbar->maximum()) {
+                vsbar->setValue(vsbar->value() + sstep);
                 rect = p_edit->cursorRect();
+                moved = true;
             }
-        } else if (rect.y() < height) {
-            while (rect.y() < height && vsbar->value() > vsbar->minimum()) {
-                vsbar->setValue(vsbar->value() - vsbar->singleStep());
+        } else if (rect.y() < lowBound) {
+            while (rect.y() < lowBound && vsbar->value() > vsbar->minimum()) {
+                vsbar->setValue(vsbar->value() - sstep);
                 rect = p_edit->cursorRect();
+                moved = true;
             }
         }
 
@@ -475,24 +487,31 @@ void VEditUtils::scrollBlockInPage(QTextEdit *p_edit,
     }
 
     case 2:
+    {
         // Bottom.
-        while (rect.y() < height && vsbar->value() > vsbar->minimum()) {
-            vsbar->setValue(vsbar->value() - vsbar->singleStep());
+        int lowBound = height - p_margin;
+        while (rect.y() < lowBound && vsbar->value() > vsbar->minimum()) {
+            vsbar->setValue(vsbar->value() - sstep);
             rect = p_edit->cursorRect();
+            moved = true;
         }
 
         break;
+    }
 
     default:
         break;
     }
 
-    p_edit->ensureCursorVisible();
+    if (moved) {
+        p_edit->ensureCursorVisible();
+    }
 }
 
 void VEditUtils::scrollBlockInPage(QPlainTextEdit *p_edit,
                                    int p_blockNum,
-                                   int p_dest)
+                                   int p_dest,
+                                   int p_margin)
 {
     QTextDocument *doc = p_edit->document();
     QTextCursor cursor = p_edit->textCursor();
@@ -502,9 +521,9 @@ void VEditUtils::scrollBlockInPage(QPlainTextEdit *p_edit,
 
     QTextBlock block = doc->findBlockByNumber(p_blockNum);
 
-    int pib = cursor.positionInBlock();
     if (cursor.block().blockNumber() != p_blockNum) {
         // Move the cursor to the block.
+        int pib = cursor.positionInBlock();
         if (pib >= block.length()) {
             pib = block.length() - 1;
         }
@@ -513,14 +532,19 @@ void VEditUtils::scrollBlockInPage(QPlainTextEdit *p_edit,
         p_edit->setTextCursor(cursor);
     }
 
-    // Scroll to let current cursor locate in proper position.
-    p_edit->ensureCursorVisible();
     QScrollBar *vsbar = p_edit->verticalScrollBar();
-
     if (!vsbar || !vsbar->isVisible()) {
         // No vertical scrollbar. No need to scroll.
         return;
     }
+
+    int sstep = vsbar->singleStep();
+    if (p_margin < sstep) {
+        p_margin = sstep;
+    }
+
+    // Scroll to let current cursor locate in proper position.
+    p_edit->ensureCursorVisible();
 
     QRect rect = p_edit->cursorRect();
     int height = p_edit->rect().height();
@@ -529,12 +553,13 @@ void VEditUtils::scrollBlockInPage(QPlainTextEdit *p_edit,
         height -= sbar->height();
     }
 
+    bool moved = false;
     switch (p_dest) {
     case 0:
     {
         // Top.
-        while (rect.y() > 0 && vsbar->value() < vsbar->maximum()) {
-            vsbar->setValue(vsbar->value() + vsbar->singleStep());
+        while (rect.y() > p_margin && vsbar->value() < vsbar->maximum()) {
+            vsbar->setValue(vsbar->value() + sstep);
             rect = p_edit->cursorRect();
         }
 
@@ -545,15 +570,19 @@ void VEditUtils::scrollBlockInPage(QPlainTextEdit *p_edit,
     {
         // Center.
         height = qMax(height / 2, 1);
-        if (rect.y() > height) {
-            while (rect.y() > height && vsbar->value() < vsbar->maximum()) {
-                vsbar->setValue(vsbar->value() + vsbar->singleStep());
+        int upBound = height + p_margin;
+        int lowBound = height - p_margin;
+        if (rect.y() > upBound) {
+            while (rect.y() > upBound && vsbar->value() < vsbar->maximum()) {
+                vsbar->setValue(vsbar->value() + sstep);
                 rect = p_edit->cursorRect();
+                moved = true;
             }
-        } else if (rect.y() < height) {
-            while (rect.y() < height && vsbar->value() > vsbar->minimum()) {
-                vsbar->setValue(vsbar->value() - vsbar->singleStep());
+        } else if (rect.y() < lowBound) {
+            while (rect.y() < lowBound && vsbar->value() > vsbar->minimum()) {
+                vsbar->setValue(vsbar->value() - sstep);
                 rect = p_edit->cursorRect();
+                moved = true;
             }
         }
 
@@ -561,19 +590,25 @@ void VEditUtils::scrollBlockInPage(QPlainTextEdit *p_edit,
     }
 
     case 2:
+    {
         // Bottom.
-        while (rect.y() < height && vsbar->value() > vsbar->minimum()) {
-            vsbar->setValue(vsbar->value() - vsbar->singleStep());
+        int lowBound = height - p_margin;
+        while (rect.y() < lowBound && vsbar->value() > vsbar->minimum()) {
+            vsbar->setValue(vsbar->value() - sstep);
             rect = p_edit->cursorRect();
+            moved = true;
         }
 
         break;
+    }
 
     default:
         break;
     }
 
-    p_edit->ensureCursorVisible();
+    if (moved) {
+        p_edit->ensureCursorVisible();
+    }
 }
 
 bool VEditUtils::isBlockQuoteBlock(const QTextBlock &p_block)

@@ -815,7 +815,7 @@ void VMainWindow::initHelpMenu()
     QAction *docAct = new QAction(tr("&Documentation"), this);
     docAct->setToolTip(tr("View VNote's documentation"));
     connect(docAct, &QAction::triggered,
-            this, [this]() {
+            this, []() {
                 QString url("http://vnote.readthedocs.io");
                 QDesktopServices::openUrl(url);
             });
@@ -823,7 +823,7 @@ void VMainWindow::initHelpMenu()
     QAction *donateAct = new QAction(tr("Do&nate"), this);
     donateAct->setToolTip(tr("Donate to VNote or view the donate list"));
     connect(donateAct, &QAction::triggered,
-            this, [this]() {
+            this, []() {
                 QString url("https://github.com/tamlok/vnote#donate");
                 QDesktopServices::openUrl(url);
             });
@@ -839,7 +839,7 @@ void VMainWindow::initHelpMenu()
     QAction *starAct = new QAction(tr("Star VNote on &Github"), this);
     starAct->setToolTip(tr("Give a star to VNote on Github project"));
     connect(starAct, &QAction::triggered,
-            this, [this]() {
+            this, []() {
                 QString url("https://github.com/tamlok/vnote");
                 QDesktopServices::openUrl(url);
             });
@@ -847,7 +847,7 @@ void VMainWindow::initHelpMenu()
     QAction *feedbackAct = new QAction(tr("&Feedback"), this);
     feedbackAct->setToolTip(tr("Open an issue on Github"));
     connect(feedbackAct, &QAction::triggered,
-            this, [this]() {
+            this, []() {
                 QString url("https://github.com/tamlok/vnote/issues");
                 QDesktopServices::openUrl(url);
             });
@@ -958,7 +958,7 @@ void VMainWindow::initMarkdownMenu()
     lineNumberAct->setToolTip(tr("Enable line number in code blocks in read mode"));
     lineNumberAct->setCheckable(true);
     connect(lineNumberAct, &QAction::triggered,
-            this, [this](bool p_checked){
+            this, [](bool p_checked){
                 g_config->setEnableCodeBlockLineNumber(p_checked);
             });
     markdownMenu->addAction(lineNumberAct);
@@ -1081,7 +1081,7 @@ void VMainWindow::initFileMenu()
     QAction *openConfigAct = new QAction(tr("Open Configuration Folder"), this);
     openConfigAct->setToolTip(tr("Open configuration folder of VNote"));
     connect(openConfigAct, &QAction::triggered,
-            this, [this](){
+            this, [](){
                 QUrl url = QUrl::fromLocalFile(g_config->getConfigFolder());
                 QDesktopServices::openUrl(url);
             });
@@ -1247,7 +1247,7 @@ void VMainWindow::initEditMenu()
     tabAct->setToolTip(tr("Highlight all the tabs"));
     tabAct->setCheckable(true);
     connect(tabAct, &QAction::triggered,
-            this, [this](bool p_checked) {
+            this, [](bool p_checked) {
                 g_config->setEnableTabHighlight(p_checked);
             });
 
@@ -1329,6 +1329,8 @@ void VMainWindow::initEditMenu()
 
     editMenu->addAction(tabAct);
     tabAct->setChecked(g_config->getEnableTabHighlight());
+
+    initAutoScrollCursorLineMenu(editMenu);
 }
 
 void VMainWindow::initDockWindows()
@@ -1582,7 +1584,7 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
     htmlAct->setCheckable(true);
     htmlAct->setChecked(opt.m_html);
     connect(htmlAct, &QAction::triggered,
-            this, [this](bool p_checked) {
+            this, [](bool p_checked) {
                 MarkdownitOption opt = g_config->getMarkdownitOption();
                 opt.m_html = p_checked;
                 g_config->setMarkdownitOption(opt);
@@ -1593,7 +1595,7 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
     breaksAct->setCheckable(true);
     breaksAct->setChecked(opt.m_breaks);
     connect(breaksAct, &QAction::triggered,
-            this, [this](bool p_checked) {
+            this, [](bool p_checked) {
                 MarkdownitOption opt = g_config->getMarkdownitOption();
                 opt.m_breaks = p_checked;
                 g_config->setMarkdownitOption(opt);
@@ -1604,7 +1606,7 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
     linkifyAct->setCheckable(true);
     linkifyAct->setChecked(opt.m_linkify);
     connect(linkifyAct, &QAction::triggered,
-            this, [this](bool p_checked) {
+            this, [](bool p_checked) {
                 MarkdownitOption opt = g_config->getMarkdownitOption();
                 opt.m_linkify = p_checked;
                 g_config->setMarkdownitOption(opt);
@@ -1615,7 +1617,7 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
     supAct->setCheckable(true);
     supAct->setChecked(opt.m_sup);
     connect(supAct, &QAction::triggered,
-            this, [this](bool p_checked) {
+            this, [](bool p_checked) {
                 MarkdownitOption opt = g_config->getMarkdownitOption();
                 opt.m_sup = p_checked;
                 g_config->setMarkdownitOption(opt);
@@ -1626,7 +1628,7 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
     subAct->setCheckable(true);
     subAct->setChecked(opt.m_sub);
     connect(subAct, &QAction::triggered,
-            this, [this](bool p_checked) {
+            this, [](bool p_checked) {
                 MarkdownitOption opt = g_config->getMarkdownitOption();
                 opt.m_sub = p_checked;
                 g_config->setMarkdownitOption(opt);
@@ -1637,7 +1639,7 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
     metadataAct->setCheckable(true);
     metadataAct->setChecked(opt.m_metadata);
     connect(metadataAct, &QAction::triggered,
-            this, [this](bool p_checked) {
+            this, [](bool p_checked) {
                 MarkdownitOption opt = g_config->getMarkdownitOption();
                 opt.m_metadata = p_checked;
                 g_config->setMarkdownitOption(opt);
@@ -1648,7 +1650,7 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
     emojiAct->setCheckable(true);
     emojiAct->setChecked(opt.m_emoji);
     connect(emojiAct, &QAction::triggered,
-            this, [this](bool p_checked) {
+            this, [](bool p_checked) {
                 MarkdownitOption opt = g_config->getMarkdownitOption();
                 opt.m_emoji = p_checked;
                 g_config->setMarkdownitOption(opt);
@@ -1740,14 +1742,10 @@ void VMainWindow::initRenderStyleMenu(QMenu *p_menu)
 
     QActionGroup *ag = new QActionGroup(this);
     connect(ag, &QActionGroup::triggered,
-            this, [this](QAction *p_action) {
-                if (!p_action) {
-                    return;
-                }
-
+            this, [](QAction *p_action) {
                 QString data = p_action->data().toString();
                 g_config->setCssStyle(data);
-                vnote->updateTemplate();
+                g_vnote->updateTemplate();
             });
 
     QList<QString> styles = g_config->getCssStyles();
@@ -1793,14 +1791,10 @@ void VMainWindow::initCodeBlockStyleMenu(QMenu *p_menu)
 
     QActionGroup *ag = new QActionGroup(this);
     connect(ag, &QActionGroup::triggered,
-            this, [this](QAction *p_action) {
-                if (!p_action) {
-                    return;
-                }
-
+            this, [](QAction *p_action) {
                 QString data = p_action->data().toString();
                 g_config->setCodeBlockCssStyle(data);
-                vnote->updateTemplate();
+                g_vnote->updateTemplate();
             });
 
     QList<QString> styles = g_config->getCodeBlockCssStyles();
@@ -1942,11 +1936,7 @@ void VMainWindow::initEditorStyleMenu(QMenu *p_menu)
 
     QActionGroup *ag = new QActionGroup(this);
     connect(ag, &QActionGroup::triggered,
-            this, [this](QAction *p_action) {
-                if (!p_action) {
-                    return;
-                }
-
+            this, [](QAction *p_action) {
                 QString data = p_action->data().toString();
                 g_config->setEditorStyle(data);
             });
@@ -1965,6 +1955,49 @@ void VMainWindow::initEditorStyleMenu(QMenu *p_menu)
         if (style == item) {
             act->setChecked(true);
         }
+    }
+}
+
+void VMainWindow::initAutoScrollCursorLineMenu(QMenu *p_menu)
+{
+    QMenu *subMenu = p_menu->addMenu(tr("Auto Scroll Cursor Line"));
+    subMenu->setToolTipsVisible(true);
+
+    QActionGroup *ag = new QActionGroup(this);
+    connect(ag, &QActionGroup::triggered,
+            this, [](QAction *p_action) {
+                g_config->setAutoScrollCursorLine(p_action->data().toInt());
+            });
+
+    int mode = g_config->getAutoScrollCursorLine();
+
+    int data = AutoScrollDisabled;
+    QAction *act = new QAction(tr("Disabled"), ag);
+    act->setCheckable(true);
+    act->setData(data);
+    subMenu->addAction(act);
+    if (mode == data) {
+        act->setChecked(true);
+    }
+
+    data = AutoScrollEndOfDoc;
+    act = new QAction(tr("End Of Document"), ag);
+    act->setToolTip(tr("Scroll cursor line into the center when it locates at the end of document"));
+    act->setCheckable(true);
+    act->setData(data);
+    subMenu->addAction(act);
+    if (mode == data) {
+        act->setChecked(true);
+    }
+
+    data = AutoScrollAlways;
+    act = new QAction(tr("Always"), ag);
+    act->setToolTip(tr("Always scroll cursor line into the center"));
+    act->setCheckable(true);
+    act->setData(data);
+    subMenu->addAction(act);
+    if (mode == data) {
+        act->setChecked(true);
     }
 }
 
@@ -3018,11 +3051,7 @@ void VMainWindow::initThemeMenu(QMenu *p_menu)
 
     QActionGroup *ag = new QActionGroup(this);
     connect(ag, &QActionGroup::triggered,
-            this, [this](QAction *p_action) {
-                if (!p_action) {
-                    return;
-                }
-
+            this, [](QAction *p_action) {
                 QString data = p_action->data().toString();
                 g_config->setTheme(data);
             });

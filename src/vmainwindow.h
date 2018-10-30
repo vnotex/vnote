@@ -260,7 +260,9 @@ private:
     // Init the Line Number submenu in Edit menu.
     void initEditorLineNumberMenu(QMenu *p_menu);
 
-    void initEditorStyleMenu(QMenu *p_emnu);
+    void initEditorStyleMenu(QMenu *p_menu);
+
+    void initAutoScrollCursorLineMenu(QMenu *p_menu);
 
     void updateWindowTitle(const QString &str);
 

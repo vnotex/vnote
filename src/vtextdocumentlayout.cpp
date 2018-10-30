@@ -41,7 +41,8 @@ VTextDocumentLayout::VTextDocumentLayout(QTextDocument *p_doc,
       m_lastCursorBlockWidth(-1),
       m_highlightCursorLineBlock(false),
       m_cursorLineBlockBg("#C0C0C0"),
-      m_cursorLineBlockNumber(-1)
+      m_cursorLineBlockNumber(-1),
+      m_extraBufferHeight(0)
 {
 }
 
@@ -396,7 +397,7 @@ int VTextDocumentLayout::pageCount() const
 
 QSizeF VTextDocumentLayout::documentSize() const
 {
-    return QSizeF(m_width, m_height);
+    return QSizeF(m_width, m_height + m_extraBufferHeight);
 }
 
 QRectF VTextDocumentLayout::frameBoundingRect(QTextFrame *p_frame) const

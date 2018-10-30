@@ -67,6 +67,13 @@ enum SmartLivePreview
     WebToEditor = 0x2
 };
 
+enum
+{
+    AutoScrollDisabled = 0,
+    AutoScrollEndOfDoc = 1,
+    AutoScrollAlways = 2
+};
+
 class VConfigManager : public QObject
 {
 public:
@@ -587,6 +594,11 @@ public:
     const QColor &getBaseBackground() const;
     void setBaseBackground(const QColor &p_bg);
 
+    bool getEnableExtraBuffer() const;
+
+    int getAutoScrollCursorLine() const;
+    void setAutoScrollCursorLine(int p_mode);
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -1049,6 +1061,16 @@ private:
 
     // Base background of MainWindow.
     QColor m_baseBackground;
+
+    // Whether enable extra buffer at the bottom of editor.
+    bool m_enableExtraBuffer;
+
+    // Whether auto scroll cursor line to the middle of the window when
+    // cursor is at the bottom part of the content.
+    // 0 - disalbed
+    // 1 - end of doc
+    // 2 - always
+    int m_autoScrollCursorLine;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2729,5 +2751,34 @@ inline const QColor &VConfigManager::getBaseBackground() const
 inline void VConfigManager::setBaseBackground(const QColor &p_bg)
 {
     m_baseBackground = p_bg;
+}
+
+inline bool VConfigManager::getEnableExtraBuffer() const
+{
+    return m_enableExtraBuffer;
+}
+
+inline int VConfigManager::getAutoScrollCursorLine() const
+{
+    if (m_enableExtraBuffer) {
+        return m_autoScrollCursorLine;
+    } else {
+        return AutoScrollDisabled;
+    }
+}
+
+inline void VConfigManager::setAutoScrollCursorLine(int p_mode)
+{
+    m_autoScrollCursorLine = p_mode;
+    if (p_mode == AutoScrollDisabled) {
+        setConfigToSettings("editor", "auto_scroll_cursor_line", m_autoScrollCursorLine);
+    } else {
+        if (!m_enableExtraBuffer) {
+            m_enableExtraBuffer = true;
+            setConfigToSettings("editor", "enable_extra_buffer", m_enableExtraBuffer);
+        }
+
+        setConfigToSettings("editor", "auto_scroll_cursor_line", m_autoScrollCursorLine);
+    }
 }
 #endif // VCONFIGMANAGER_H

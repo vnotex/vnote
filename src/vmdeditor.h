@@ -58,7 +58,7 @@ public:
     // Return true if @p_blockNumber is valid to scroll to.
     bool scrollToHeader(int p_blockNumber);
 
-    void scrollBlockInPage(int p_blockNum, int p_dest) Q_DECL_OVERRIDE;
+    void scrollBlockInPage(int p_blockNum, int p_dest, int p_margin = 0) Q_DECL_OVERRIDE;
 
     void updateConfig() Q_DECL_OVERRIDE;
 

@@ -129,7 +129,8 @@ public:
     // Will set the cursor to the block.
     static void scrollBlockInPage(QTextEdit *p_edit,
                                   int p_blockNum,
-                                  int p_dest);
+                                  int p_dest,
+                                  int p_margin = 0);
 
     // Scroll block @p_blockNum into the visual window.
     // @p_dest is the position of the window: 0 for top, 1 for center, 2 for bottom.
@@ -137,7 +138,8 @@ public:
     // Will set the cursor to the block.
     static void scrollBlockInPage(QPlainTextEdit *p_edit,
                                   int p_blockNum,
-                                  int p_dest);
+                                  int p_dest,
+                                  int p_margin = 0);
 
     // Check if @p_block is a auto list block.
     // @p_seq will be the seq number of the ordered list, or -1.

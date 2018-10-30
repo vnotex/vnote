@@ -154,7 +154,7 @@ public:
     // @p_dest is the position of the window: 0 for top, 1 for center, 2 for bottom.
     // @p_blockNum is based on 0.
     // Will set the cursor to the block.
-    virtual void scrollBlockInPage(int p_blockNum, int p_dest) = 0;
+    virtual void scrollBlockInPage(int p_blockNum, int p_dest, int p_margin = 0) = 0;
 
     // Update config according to global configurations.
     virtual void updateConfig();
@@ -272,6 +272,9 @@ protected:
 
     // Paste plain text.
     void pastePlainText();
+
+    // Scroll cursor line if in need.
+    void scrollCursorLineIfNecessary();
 
     QWidget *m_editor;
 

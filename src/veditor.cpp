@@ -1705,3 +1705,39 @@ void VEditor::pastePlainText()
 
     m_editOps->insertText(text);
 }
+
+void VEditor::scrollCursorLineIfNecessary()
+{
+    bool moved = false;
+    QTextCursor cursor = textCursorW();
+    int mode = g_config->getAutoScrollCursorLine();
+    switch (mode) {
+    case AutoScrollEndOfDoc:
+        V_FALLTHROUGH;
+    case AutoScrollAlways:
+    {
+        const int bc = m_document->blockCount();
+        int bn = cursor.blockNumber();
+        int margin = -1;
+        if (mode == AutoScrollAlways) {
+            margin = m_editor->rect().height() / 8;
+        } else if (bn == bc - 1) {
+            margin = m_editor->rect().height() / 4;
+        }
+
+        if (margin > -1) {
+            moved = true;
+            scrollBlockInPage(bn, 1, margin);
+        }
+
+        break;
+    }
+
+    default:
+        break;
+    }
+
+    if (!moved) {
+        makeBlockVisible(cursor.block());
+    }
+}

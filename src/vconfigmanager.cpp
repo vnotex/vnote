@@ -361,6 +361,10 @@ void VConfigManager::initEditorConfigs()
                                                  "enable_tab_highlight").toBool();
 
     m_parsePasteLocalImage = getConfigFromSettings("editor", "parse_paste_local_image").toBool();
+
+    m_enableExtraBuffer = getConfigFromSettings("editor", "enable_extra_buffer").toBool();
+
+    m_autoScrollCursorLine = getConfigFromSettings("editor", "auto_scroll_cursor_line").toInt();
 }
 
 void VConfigManager::initSettings()

@@ -91,7 +91,7 @@ VMdEditor::VMdEditor(VFile *p_file,
     // in this case.
     connect(m_pegHighlighter, &PegMarkdownHighlighter::highlightCompleted,
             this, [this]() {
-            makeBlockVisible(textCursor().block());
+            scrollCursorLineIfNecessary();
 
             if (m_freshEdit) {
                 m_freshEdit = false;
@@ -215,7 +215,7 @@ bool VMdEditor::scrollToBlock(int p_blockNumber)
 {
     QTextBlock block = document()->findBlockByNumber(p_blockNumber);
     if (block.isValid()) {
-        VEditUtils::scrollBlockInPage(this, block.blockNumber(), 0);
+        scrollBlockInPage(block.blockNumber(), 0);
         moveCursor(QTextCursor::EndOfBlock);
         return true;
     }
@@ -1014,9 +1014,9 @@ bool VMdEditor::jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat)
     return false;
 }
 
-void VMdEditor::scrollBlockInPage(int p_blockNum, int p_dest)
+void VMdEditor::scrollBlockInPage(int p_blockNum, int p_dest, int p_margin)
 {
-    VEditUtils::scrollBlockInPage(this, p_blockNum, p_dest);
+    VEditUtils::scrollBlockInPage(this, p_blockNum, p_dest, p_margin);
 }
 
 void VMdEditor::updateTextEditConfig()
@@ -1028,6 +1028,8 @@ void VMdEditor::updateTextEditConfig()
     setLineLeading(m_config.m_lineDistanceHeight);
 
     setImageLineColor(g_config->getEditorPreviewImageLineFg());
+
+    setEnableExtraBuffer(g_config->getEnableExtraBuffer());
 
     int lineNumber = g_config->getEditorLineNumber();
     if (lineNumber < (int)LineNumberType::None || lineNumber >= (int)LineNumberType::Invalid) {

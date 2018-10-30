@@ -52,6 +52,8 @@ void VTextEdit::init()
 
     m_highlightCursorLineBlock = false;
 
+    m_enableExtraBuffer = false;
+
     m_imageMgr = new VImageResourceManager2();
 
     QTextDocument *doc = document();
@@ -106,12 +108,16 @@ void VTextEdit::resizeEvent(QResizeEvent *p_event)
 {
     QTextEdit::resizeEvent(p_event);
 
+    QRect rect = contentsRect();
     if (m_lineNumberType != LineNumberType::None) {
-        QRect rect = contentsRect();
         m_lineNumberArea->setGeometry(QRect(rect.left(),
                                             rect.top(),
                                             m_lineNumberArea->calculateWidth(),
                                             rect.height()));
+    }
+
+    if (m_enableExtraBuffer) {
+        getLayout()->setExtraBufferHeight(rect.height() / 2);
     }
 }
 

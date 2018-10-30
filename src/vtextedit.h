@@ -78,6 +78,8 @@ public:
 
     void setDisplayScaleFactor(qreal p_factor);
 
+    void setEnableExtraBuffer(bool p_enable);
+
 protected:
     void resizeEvent(QResizeEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -112,6 +114,8 @@ private:
     bool m_highlightCursorLineBlock;
 
     int m_defaultCursorWidth;
+
+    bool m_enableExtraBuffer;
 };
 
 inline void VTextEdit::setLineNumberType(LineNumberType p_type)
@@ -130,5 +134,16 @@ inline void VTextEdit::setLineNumberColor(const QColor &p_foreground,
 {
     m_lineNumberArea->setForegroundColor(p_foreground);
     m_lineNumberArea->setBackgroundColor(p_background);
+}
+
+inline void VTextEdit::setEnableExtraBuffer(bool p_enable)
+{
+    if (m_enableExtraBuffer == p_enable) {
+        return;
+    }
+
+    m_enableExtraBuffer = p_enable;
+    getLayout()->setExtraBufferHeight(m_enableExtraBuffer ? contentsRect().height() / 2
+                                                          : 0);
 }
 #endif // VTEXTEDIT_H

@@ -77,6 +77,8 @@ public:
     // Request update block by block number.
     void updateBlockByNumber(int p_blockNumber);
 
+    void setExtraBufferHeight(int p_height);
+
 signals:
     // Emit to update current cursor block width if m_cursorBlockMode is enabled.
     void cursorBlockWidthUpdated(int p_width);
@@ -196,7 +198,7 @@ private:
     // The block number of the block which contains the m_width.
     int m_maximumWidthBlockNumber;
 
-    // Height of all the document (all the blocks).
+    // Height of all the document (all the blocks, excluding m_extraBufferHeight).
     qreal m_height;
 
     // Set the leading space of a line.
@@ -237,6 +239,9 @@ private:
 
     // The block containing the cursor.
     int m_cursorLineBlockNumber;
+
+    // Extra buffer height in document size.
+    int m_extraBufferHeight;
 };
 
 inline qreal VTextDocumentLayout::getLineLeading() const
@@ -324,5 +329,15 @@ inline void VTextDocumentLayout::updateOffset(const QTextBlock &p_block)
 {
     updateOffsetBefore(p_block);
     updateOffsetAfter(p_block);
+}
+
+inline void VTextDocumentLayout::setExtraBufferHeight(int p_height)
+{
+    if (m_extraBufferHeight == p_height) {
+        return;
+    }
+
+    m_extraBufferHeight = p_height;
+    emit documentSizeChanged(documentSize());
 }
 #endif // VTEXTDOCUMENTLAYOUT_H
