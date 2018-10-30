@@ -8,18 +8,24 @@
 'use strict';
 
 function texmath(md, options) {
-    let delimiters = options && options.delimiters || 'dollars';
+    let delimiters = ['dollars'];
+    if (options && options.delimiters) {
+        delimiters = options.delimiters;
+    }
 
-    if (delimiters in texmath.rules) {
-        for (let rule of texmath.rules[delimiters].inline) {
-            md.inline.ruler.before('escape', rule.name, texmath.inline(rule));  // ! important
-            md.renderer.rules[rule.name] = (tokens, idx) => rule.tmpl.replace(/\$1/,texmath.render(tokens[idx].content,false));
-        }
+    for (let i = 0; i < delimiters.length; ++i) {
+        let deli = delimiters[i];
+        if (deli in texmath.rules) {
+            for (let rule of texmath.rules[deli].inline) {
+                md.inline.ruler.before('escape', rule.name, texmath.inline(rule));  // ! important
+                md.renderer.rules[rule.name] = (tokens, idx) => rule.tmpl.replace(/\$1/,texmath.render(tokens[idx].content,false));
+            }
 
-        for (let rule of texmath.rules[delimiters].block) {
-            md.block.ruler.before('fence', rule.name, texmath.block(rule));
-            md.renderer.rules[rule.name] = (tokens, idx) => rule.tmpl.replace(/\$2/,tokens[idx].info)  // equation number
-                                                                     .replace(/\$1/,texmath.render(tokens[idx].content,true));
+            for (let rule of texmath.rules[deli].block) {
+                md.block.ruler.before('fence', rule.name, texmath.block(rule));
+                md.renderer.rules[rule.name] = (tokens, idx) => rule.tmpl.replace(/\$2/,tokens[idx].info)  // equation number
+                                                                         .replace(/\$1/,texmath.render(tokens[idx].content,true));
+            }
         }
     }
 }
@@ -166,6 +172,17 @@ texmath.rules = {
             }
         ]
     },
+    raw: {
+        inline: [],
+        block: [
+            {
+                name: 'math_block',
+                rex: /(\\begin\s*\{([^{}\s\r\n]+)\}(?:[^\\]|\\(?!end\s*\{\2\}))*\\end\s*\{\2\})\s*$/gmy,
+                tmpl: '<x-eqn class="tex-to-render">$1</x-eqn>',
+                tag: '\\begin'
+            }
+        ]
+    }
 };
 
 if (typeof module === "object" && module.exports)

@@ -109,7 +109,7 @@ mdit = mdit.use(window.markdownitFootnote);
 mdit = mdit.use(window["markdown-it-imsize.js"]);
 
 if (typeof texmath != 'undefined') {
-    mdit = mdit.use(texmath, { delimiters: 'dollars' });
+    mdit = mdit.use(texmath, { delimiters: ['dollars', 'raw'] });
 }
 
 var mdHasTocSection = function(markdown) {
