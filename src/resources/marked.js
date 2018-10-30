@@ -72,7 +72,8 @@ var updateText = function(text) {
     // finishLoading logic.
     if (VEnableMathjax) {
         try {
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub, contentDiv, postProcessMathJax]);
+            MathJax.Hub.Queue(["resetEquationNumbers",MathJax.InputJax.TeX],
+                              ["Typeset", MathJax.Hub, contentDiv, postProcessMathJax]);
         } catch (err) {
             content.setLog("err: " + err);
             finishOneAsyncJob();

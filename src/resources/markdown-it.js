@@ -169,7 +169,8 @@ var updateText = function(text) {
         }
 
         try {
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub, eles, postProcessMathJax]);
+            MathJax.Hub.Queue(["resetEquationNumbers",MathJax.InputJax.TeX],
+                              ["Typeset", MathJax.Hub, eles, postProcessMathJax]);
         } catch (err) {
             content.setLog("err: " + err);
             finishOneAsyncJob();
@@ -254,7 +255,8 @@ var handleMathjaxReady = function() {
     }
 
     try {
-        MathJax.Hub.Queue(["Typeset", MathJax.Hub, eles, postProcessMathJaxWhenMathjaxReady]);
+        MathJax.Hub.Queue(["resetEquationNumbers",MathJax.InputJax.TeX],
+                          ["Typeset", MathJax.Hub, eles, postProcessMathJaxWhenMathjaxReady]);
     } catch (err) {
         content.setLog("err: " + err);
         finishOneAsyncJob();

@@ -72,7 +72,8 @@ var previewMathJax = function(identifier, id, timeStamp, text, isHtml) {
     }
 
     try {
-        MathJax.Hub.Queue(["Typeset",
+        MathJax.Hub.Queue(["resetEquationNumbers",MathJax.InputJax.TeX],
+                          ["Typeset",
                            MathJax.Hub,
                            p,
                            [postProcessMathJax, identifier, id, timeStamp, p, isBlock]]);

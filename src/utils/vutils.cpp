@@ -796,6 +796,9 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
                      "                    TeX: {\n"
                      "                          Macros: {\n"
                      "                              bm: [\"\\\\boldsymbol{#1}\", 1]\n"
+                     "                          },\n"
+                     "                          equationNumbers: {\n"
+                     "                              autoNumber: \"AMS\"\n"
                      "                          }\n"
                      "                    },\n"
                      "                    messageStyle: \"none\"});\n"
@@ -884,29 +887,32 @@ QString VUtils::generateExportHtmlTemplate(const QString &p_renderBg,
     QString extra;
     if (p_includeMathJax) {
         extra += "<script type=\"text/x-mathjax-config\">\n"
-                         "MathJax.Hub.Config({\n"
-                             "showProcessingMessages: false,\n"
-                             "messageStyle: \"none\",\n"
-                             "SVG: {\n"
-                                 "minScaleAdjust: 100,\n"
-                                 "styles: {\n"
+                 "MathJax.Hub.Config({\n"
+                 "                    showProcessingMessages: false,\n"
+                 "                    messageStyle: \"none\",\n"
+                 "                    SVG: {\n"
+                 "                          minScaleAdjust: 100,\n"
+                 "                          styles: {\n"
 /*
 FIXME: Using wkhtmltopdf, without 2em, the math formula will be very small. However,
 with 2em, if there are Chinese characters in it, the font will be a mess.
 */
 #if defined(Q_OS_WIN)
-                                   "\".MathJax_SVG\": {\n"
-                                        "\"font-size\": \"2em !important\"\n"
-                                   "}\n"
+                 "                                   \".MathJax_SVG\": {\n"
+                 "                                                      \"font-size\": \"2em !important\"\n"
+                 "                                   }\n"
 #endif
-                                 "}\n"
-                             "},\n"
-                             "TeX: {\n"
-                             "    Macros: {\n"
-                             "        bm: [\"\\\\boldsymbol{#1}\", 1]\n"
-                             "    }\n"
-                             "}\n"
-                         "});\n"
+                 "                          }\n"
+                 "                    },\n"
+                 "                    TeX: {\n"
+                 "                          Macros: {\n"
+                 "                                   bm: [\"\\\\boldsymbol{#1}\", 1]\n"
+                 "                          },\n"
+                 "                          equationNumbers: {\n"
+                 "                                            autoNumber: \"AMS\"\n"
+                 "                          }\n"
+                 "                    }\n"
+                 "});\n"
                  "</script>\n";
 
         QString mj = g_config->getMathjaxJavascript();
@@ -969,6 +975,9 @@ QString VUtils::generateMathJaxPreviewTemplate()
                  "                    TeX: {\n"
                  "                          Macros: {\n"
                  "                              bm: [\"\\\\boldsymbol{#1}\", 1]\n"
+                 "                          },\n"
+                 "                          equationNumbers: {\n"
+                 "                              autoNumber: \"AMS\"\n"
                  "                          }\n"
                  "                    },\n"
                  "                    messageStyle: \"none\"});\n"

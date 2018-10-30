@@ -85,7 +85,8 @@ var updateHtml = function(html) {
     // MathJax may be not loaded for now.
     if (VEnableMathjax && (typeof MathJax != "undefined")) {
         try {
-            MathJax.Hub.Queue(["Typeset", MathJax.Hub, contentDiv, postProcessMathJax]);
+            MathJax.Hub.Queue(["resetEquationNumbers",MathJax.InputJax.TeX],
+                              ["Typeset", MathJax.Hub, contentDiv, postProcessMathJax]);
         } catch (err) {
             content.setLog("err: " + err);
             finishOneAsyncJob();
