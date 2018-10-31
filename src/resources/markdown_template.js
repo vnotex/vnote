@@ -1873,3 +1873,4 @@ var clearMarkRectDivs = function() {
 var startFreshRender = function() {
     skipScrollCheckRange = null;
 };
+

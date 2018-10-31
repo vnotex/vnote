@@ -161,12 +161,12 @@ texmath.rules = {
         ],
         block: [
             {   name: 'math_block_eqno',
-                rex: /\${2}([^$]*?)\${2}\s*?\(([^)$\r\n]+?)\)\s*$/gmy,
+                rex: /\${2}((?:[^$]|\$(?!\$))*?)\${2}\s*?\(([^)$\r\n]+?)\)\s*$/gmy,
                 tmpl: '<x-eqs><x-eqn class="tex-to-render">$1</x-eqn><span>($2)</span></x-eqs>',
                 tag: '$$'
             },
             {   name: 'math_block',
-                rex: /\${2}([^$]*?)\${2}\s*$/gmy,
+                rex: /\${2}((?:[^$]|\$(?!\$))*?)\${2}\s*$/gmy,
                 tmpl: '<x-eqn class="tex-to-render">$1</x-eqn>',
                 tag: '$$'
             }
