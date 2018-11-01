@@ -711,6 +711,10 @@ QTabWidget {
 QTabWidget::pane {
     border: none;
 }
+
+QTabWidget::tab-bar {
+    alignment: left;
+}
 /* End QTabWidget */
 
 /* QTabBar */
