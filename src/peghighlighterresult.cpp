@@ -267,6 +267,16 @@ void PegHighlighterResult::parseFencedCodeBlocks(const PegMarkdownHighlighter *p
     }
 }
 
+static inline bool isDisplayFormulaRawEnd(const QString &p_text)
+{
+    QRegExp regex("\\\\end\\{[^{}\\s\\r\\n]+\\}$");
+    if (p_text.indexOf(regex) > -1) {
+        return true;
+    }
+
+    return false;
+}
+
 void PegHighlighterResult::parseMathjaxBlocks(const PegMarkdownHighlighter *p_peg,
                                               const QSharedPointer<PegParseResult> &p_result)
 {
@@ -302,6 +312,7 @@ void PegHighlighterResult::parseMathjaxBlocks(const PegMarkdownHighlighter *p_pe
     VMathjaxBlock item;
     bool inBlock = false;
     QString marker("$$");
+    QString rawMarkerStart("\\begin{");
     for (auto it = formulaRegs.begin(); it != formulaRegs.end(); ++it) {
         const VElementRegion &r = *it;
         QTextBlock block = doc->findBlock(r.m_startPos);
@@ -321,7 +332,8 @@ void PegHighlighterResult::parseMathjaxBlocks(const PegMarkdownHighlighter *p_pe
             QString text = block.text().mid(pib, length);
             if (inBlock) {
                 item.m_text = item.m_text + "\n" + text;
-                if (text.endsWith(marker)) {
+                if (text.endsWith(marker)
+                    || (blockNum == lastBlock && isDisplayFormulaRawEnd(text))) {
                     // End of block.
                     inBlock = false;
                     item.m_blockNumber = blockNum;
@@ -330,11 +342,13 @@ void PegHighlighterResult::parseMathjaxBlocks(const PegMarkdownHighlighter *p_pe
                     m_mathjaxBlocks.append(item);
                 }
             } else {
-                if (!text.startsWith(marker)) {
+                if (!text.startsWith(marker)
+                    && !text.startsWith(rawMarkerStart)) {
                     break;
                 }
 
-                if (text.size() > 2 && text.endsWith(marker)) {
+                if ((text.size() > 2 && text.endsWith(marker))
+                    || (blockNum == lastBlock && isDisplayFormulaRawEnd(text))) {
                     // Within one block.
                     item.m_blockNumber = blockNum;
                     item.m_previewedAsBlock = true;

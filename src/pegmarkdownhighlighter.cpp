@@ -37,7 +37,7 @@ void PegMarkdownHighlighter::init(const QVector<HighlightingStyle> &p_styles,
     m_codeBlockStyles = p_codeBlockStyles;
 
     if (p_mathjaxEnabled) {
-        m_parserExts |= pmh_EXT_MATH;
+        m_parserExts |= (pmh_EXT_MATH | pmh_EXT_MATH_RAW);
     }
 
     m_parseInterval = p_timerInterval;

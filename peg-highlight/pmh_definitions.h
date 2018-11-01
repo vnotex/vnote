@@ -128,6 +128,7 @@ enum pmh_extensions
     pmh_EXT_FRONTMATTER  = (1 << 2),  /**< YAML meta data */
     pmh_EXT_MATH         = (1 << 3),  /**< Math */
     pmh_EXT_MARK         = (1 << 4),  /**< HTML <mark> tag content */
+    pmh_EXT_MATH_RAW     = (1 << 5),  /**< Math in format \begin and \end */
 };
 
 #endif
