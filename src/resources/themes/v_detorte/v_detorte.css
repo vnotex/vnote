@@ -208,7 +208,7 @@ img.img-center {
     margin-right: auto;
 }
 
-div.img-caption {
+span.img-caption {
     min-width: 20%;
     max-width: 80%;
     display: inline-block;

@@ -875,10 +875,10 @@ var insertImageCaption = function() {
         }
 
         // Add caption.
-        var captionDiv = document.createElement('div');
-        captionDiv.classList.add(VImageCaptionClass);
-        captionDiv.textContent = img.alt;
-        img.insertAdjacentElement('afterend', captionDiv);
+        var captionSpan = document.createElement('span');
+        captionSpan.classList.add(VImageCaptionClass);
+        captionSpan.textContent = img.alt;
+        img.insertAdjacentElement('afterend', captionSpan);
     }
 };
 
