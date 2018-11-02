@@ -131,6 +131,7 @@ VMdEditor::VMdEditor(VFile *p_file,
 void VMdEditor::updateFontAndPalette()
 {
     QFont font(g_config->getMdEditFont());
+    font.setPointSize(font.pointSize() + m_zoomDelta);
     setFont(font);
 
     const QPalette &palette = g_config->getMdEditPalette();
@@ -1204,6 +1205,10 @@ void VMdEditor::wheelEvent(QWheelEvent *p_event)
 
 void VMdEditor::zoomPage(bool p_zoomIn, int p_range)
 {
+    if (p_range == 0) {
+        return;
+    }
+
     const int minSize = 2;
 
     int delta = p_zoomIn ? p_range : -p_range;

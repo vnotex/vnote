@@ -181,6 +181,10 @@ public:
 
     virtual void insertCompletion(const QString &p_prefix, const QString &p_completion);
 
+    QFont getFont() const;
+
+    virtual void updateFontAndPalette() = 0;
+
 // Wrapper functions for QPlainTextEdit/QTextEdit.
 // Ends with W to distinguish it from the original interfaces.
 public:
@@ -234,8 +238,6 @@ public:
 
 protected:
     void init();
-
-    virtual void updateFontAndPalette() = 0;
 
     // Update m_config according to VConfigManager.
     void updateEditConfig();

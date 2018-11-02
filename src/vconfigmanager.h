@@ -118,7 +118,7 @@ public:
     // Reset the layout.
     void resetLayoutConfigurations();
 
-    const QFont &getMdEditFont() const;
+    QFont getMdEditFont() const;
 
     const QPalette &getMdEditPalette() const;
 
@@ -599,6 +599,9 @@ public:
     int getAutoScrollCursorLine() const;
     void setAutoScrollCursorLine(int p_mode);
 
+    const QString &getEditorFontFamily() const;
+    void setEditorFontFamily(const QString &p_font);
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -1072,6 +1075,9 @@ private:
     // 2 - always
     int m_autoScrollCursorLine;
 
+    // Editor font family to override the value set by the style
+    QString m_editorFontFamily;
+
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
 
@@ -1126,9 +1132,15 @@ private:
 };
 
 
-inline const QFont &VConfigManager::getMdEditFont() const
+inline QFont VConfigManager::getMdEditFont() const
 {
-    return mdEditFont;
+    if (m_editorFontFamily.isEmpty()) {
+        return mdEditFont;
+    } else {
+        QFont font(mdEditFont);
+        font.setFamily(m_editorFontFamily);
+        return font;
+    }
 }
 
 inline const QPalette &VConfigManager::getMdEditPalette() const
@@ -2780,5 +2792,21 @@ inline void VConfigManager::setAutoScrollCursorLine(int p_mode)
 
         setConfigToSettings("editor", "auto_scroll_cursor_line", m_autoScrollCursorLine);
     }
+}
+
+inline const QString &VConfigManager::getEditorFontFamily() const
+{
+    return m_editorFontFamily;
+}
+
+inline void VConfigManager::setEditorFontFamily(const QString &p_font)
+{
+    if (m_editorFontFamily == p_font) {
+        return;
+    }
+
+    m_editorFontFamily = p_font;
+
+    setConfigToSettings("editor", "editor_font_family", m_editorFontFamily);
 }
 #endif // VCONFIGMANAGER_H

@@ -319,6 +319,8 @@ private:
 
     void showNotebookPanel();
 
+    void updateFontOfAllTabs();
+
     // Captain mode functions.
 
     // Popup the attachment list if it is enabled.

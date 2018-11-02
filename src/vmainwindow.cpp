@@ -3,6 +3,7 @@
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QPainter>
+
 #include "vmainwindow.h"
 #include "vdirectorytree.h"
 #include "vnote.h"
@@ -49,6 +50,7 @@
 #include "vexplorer.h"
 #include "vlistue.h"
 #include "vtagexplorer.h"
+#include "vmdeditor.h"
 
 extern VConfigManager *g_config;
 
@@ -2429,7 +2431,11 @@ void VMainWindow::openFindDialog()
 void VMainWindow::viewSettings()
 {
     VSettingsDialog settingsDialog(this);
-    settingsDialog.exec();
+    if (settingsDialog.exec()) {
+        if (settingsDialog.getNeedUpdateEditorFont()) {
+            updateFontOfAllTabs();
+        }
+    }
 }
 
 void VMainWindow::closeCurrentFile()
@@ -3437,4 +3443,15 @@ void VMainWindow::initUpdateTimer()
 void VMainWindow::restartVNote()
 {
     QCoreApplication::exit(RESTART_EXIT_CODE);
+}
+
+void VMainWindow::updateFontOfAllTabs()
+{
+    QVector<VEditTab *> tabs = m_editArea->getAllTabs();
+    for (auto tab : tabs) {
+        const VMdTab *mdTab = dynamic_cast<const VMdTab *>(tab);
+        if (mdTab && mdTab->getEditor()) {
+            mdTab->getEditor()->updateFontAndPalette();
+        }
+    }
 }

@@ -146,6 +146,10 @@ QToolButton::menu-arrow {
     width: $16px;
     height: $16px;
 }
+
+QToolBarExtension {
+    background: @toolbar_extension_bg;
+}
 /* End QToolButton*/
 
 /* DockWidget */

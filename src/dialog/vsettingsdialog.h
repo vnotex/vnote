@@ -16,6 +16,9 @@ class QStackedLayout;
 class QListWidget;
 class QPlainTextEdit;
 class QVBoxLayout;
+class QFontComboBox;
+
+class VSettingsDialog;
 
 class VGeneralTab : public QWidget
 {
@@ -87,7 +90,8 @@ class VReadEditTab : public QWidget
 {
     Q_OBJECT
 public:
-    explicit VReadEditTab(QWidget *p_parent = 0);
+    explicit VReadEditTab(VSettingsDialog *p_dlg, QWidget *p_parent = 0);
+
     bool loadConfiguration();
     bool saveConfiguration();
 
@@ -112,6 +116,11 @@ private:
     bool loadEditorZoomDelta();
     bool saveEditorZoomDelta();
 
+    bool loadEditorFontFamily();
+    bool saveEditorFontFamily();
+
+    VSettingsDialog *m_settingsDlg;
+
     // Web zoom factor.
     QCheckBox *m_customWebZoom;
     QDoubleSpinBox *m_webZoomFactorSpin;
@@ -133,6 +142,10 @@ private:
 
     // Editor zoom delta.
     QSpinBox *m_editorZoomDeltaSpin;
+
+    // Editor font family.
+    QCheckBox *m_customEditorFont;
+    QFontComboBox *m_editorFontFamilyCB;
 
     QGroupBox *m_readBox;
     QGroupBox *m_editBox;
@@ -255,6 +268,9 @@ class VSettingsDialog : public QDialog
 public:
     explicit VSettingsDialog(QWidget *p_parent = 0);
 
+    void setNeedUpdateEditorFont(bool p_need);
+    bool getNeedUpdateEditorFont() const;
+
 private slots:
     void saveConfiguration();
 
@@ -276,6 +292,17 @@ private:
 
     // Reset the layout.
     QPushButton *m_resetLayoutBtn;
+
+    bool m_needUpdateEditorFont;
 };
 
+inline void VSettingsDialog::setNeedUpdateEditorFont(bool p_need)
+{
+    m_needUpdateEditorFont = p_need;
+}
+
+inline bool VSettingsDialog::getNeedUpdateEditorFont() const
+{
+    return m_needUpdateEditorFont;
+}
 #endif // VSETTINGSDIALOG_H

@@ -624,6 +624,17 @@ QVector<VEditTabInfo> VEditArea::getAllTabsInfo() const
     return tabs;
 }
 
+QVector<VEditTab *> VEditArea::getAllTabs() const
+{
+    QVector<VEditTab *> tabs;
+    int nrWin = splitter->count();
+    for (int i = 0; i < nrWin; ++i) {
+        tabs.append(getWindow(i)->getAllTabs());
+    }
+
+    return tabs;
+}
+
 int VEditArea::windowIndex(const VEditWindow *p_window) const
 {
     int nrWin = splitter->count();

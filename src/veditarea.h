@@ -54,6 +54,8 @@ public:
     // Return VEditTabInfo of all edit tabs.
     QVector<VEditTabInfo> getAllTabsInfo() const;
 
+    QVector<VEditTab *> getAllTabs() const;
+
     // Return the count of VEditWindow.
     int windowCount() const;
 

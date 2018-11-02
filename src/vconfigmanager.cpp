@@ -365,6 +365,8 @@ void VConfigManager::initEditorConfigs()
     m_enableExtraBuffer = getConfigFromSettings("editor", "enable_extra_buffer").toBool();
 
     m_autoScrollCursorLine = getConfigFromSettings("editor", "auto_scroll_cursor_line").toInt();
+
+    m_editorFontFamily = getConfigFromSettings("editor", "editor_font_family").toString();
 }
 
 void VConfigManager::initSettings()

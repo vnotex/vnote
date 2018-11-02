@@ -159,6 +159,7 @@ tooltip_fg=@master_fg
 ; Toolbar.
 toolbar_bg=@main_bg
 toolbar_separator_bg=@separator_bg
+toolbar_extension_bg=@base_fg
 toolbutton_hover_bg=@hover_bg
 toolbutton_pressed_bg=@pressed_bg
 toolbutton_checked_bg=@selected_bg

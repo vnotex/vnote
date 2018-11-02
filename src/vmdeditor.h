@@ -81,6 +81,8 @@ public:
 
     void updateHeaderSequenceByConfigChange();
 
+    void updateFontAndPalette() Q_DECL_OVERRIDE;
+
 public slots:
     bool jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat) Q_DECL_OVERRIDE;
 
@@ -224,8 +226,6 @@ signals:
     void requestHtmlToText(const QString &p_html, int p_id, int p_timeStamp);
 
 protected:
-    void updateFontAndPalette() Q_DECL_OVERRIDE;
-
     void contextMenuEvent(QContextMenuEvent *p_event) Q_DECL_OVERRIDE;
 
     // Used to implement dragging mouse with Ctrl and left button pressed to scroll.

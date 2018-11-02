@@ -1741,3 +1741,8 @@ void VEditor::scrollCursorLineIfNecessary()
         makeBlockVisible(cursor.block());
     }
 }
+
+QFont VEditor::getFont() const
+{
+    return m_editor->font();
+}

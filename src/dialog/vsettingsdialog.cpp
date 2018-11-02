@@ -15,7 +15,8 @@
 extern VConfigManager *g_config;
 
 VSettingsDialog::VSettingsDialog(QWidget *p_parent)
-    : QDialog(p_parent)
+    : QDialog(p_parent),
+      m_needUpdateEditorFont(false)
 {
     m_tabList = new QListWidget(this);
     m_tabList->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
@@ -61,7 +62,7 @@ VSettingsDialog::VSettingsDialog(QWidget *p_parent)
     // Add tabs.
     addTab(new VGeneralTab(), tr("General"));
     addTab(new VLookTab(), tr("Appearance"));
-    addTab(new VReadEditTab(), tr("Read/Edit"));
+    addTab(new VReadEditTab(this), tr("Read/Edit"));
     addTab(new VNoteManagementTab(), tr("Note Management"));
     addTab(new VMarkdownTab(), tr("Markdown"));
     addTab(new VMiscTab(), tr("Misc"));
@@ -633,8 +634,9 @@ bool VLookTab::saveToolBarIconSize()
     return true;
 }
 
-VReadEditTab::VReadEditTab(QWidget *p_parent)
-    : QWidget(p_parent)
+VReadEditTab::VReadEditTab(VSettingsDialog *p_dlg, QWidget *p_parent)
+    : QWidget(p_parent),
+      m_settingsDlg(p_dlg)
 {
     m_readBox = new QGroupBox(tr("Read Mode (For Markdown Only)"));
     m_editBox = new QGroupBox(tr("Edit Mode"));
@@ -685,6 +687,18 @@ VReadEditTab::VReadEditTab(QWidget *p_parent)
     m_smartIM = new QCheckBox(tr("Smart input method in Vim mode"));
     m_smartIM->setToolTip(tr("Disable input method when leaving Insert mode in Vim mode"));
 
+    // Editor font family.
+    m_customEditorFont = new QCheckBox(tr("Custom editor font"));
+    m_customEditorFont->setToolTip(tr("Set the font of editor to override style configuration"));
+    connect(m_customEditorFont, &QCheckBox::stateChanged,
+            this, [this](int p_state) {
+                m_editorFontFamilyCB->setEnabled(p_state == Qt::Checked);
+            });
+    m_editorFontFamilyCB = new QFontComboBox();
+    QHBoxLayout *editorFontLayout = new QHBoxLayout();
+    editorFontLayout->addWidget(m_customEditorFont);
+    editorFontLayout->addWidget(m_editorFontFamilyCB);
+
     // Editor zoom delta.
     m_editorZoomDeltaSpin = new QSpinBox();
     m_editorZoomDeltaSpin->setToolTip(tr("Set the zoom delta of the editor font"));
@@ -703,6 +717,7 @@ VReadEditTab::VReadEditTab(QWidget *p_parent)
     editLayout->addRow(tr("Key mode:"), m_keyModeCB);
     editLayout->addWidget(m_smartIM);
     editLayout->addRow(tr("Editor zoom delta:"), m_editorZoomDeltaSpin);
+    editLayout->addRow(editorFontLayout);
     m_editBox->setLayout(editLayout);
 
     m_smartIM->hide();
@@ -748,6 +763,10 @@ bool VReadEditTab::loadConfiguration()
         return false;
     }
 
+    if (!loadEditorFontFamily()) {
+        return false;
+    }
+
     if (!loadKeyMode()) {
         return false;
     }
@@ -774,6 +793,10 @@ bool VReadEditTab::saveConfiguration()
     }
 
     if (!saveEditorZoomDelta()) {
+        return false;
+    }
+
+    if (!saveEditorFontFamily()) {
         return false;
     }
 
@@ -823,6 +846,32 @@ bool VReadEditTab::loadEditorZoomDelta()
 bool VReadEditTab::saveEditorZoomDelta()
 {
     g_config->setEditorZoomDelta(m_editorZoomDeltaSpin->value());
+    return true;
+}
+
+bool VReadEditTab::loadEditorFontFamily()
+{
+    const QString &family = g_config->getEditorFontFamily();
+    m_customEditorFont->setChecked(!family.isEmpty());
+
+    m_editorFontFamilyCB->setCurrentFont(g_config->getMdEditFont());
+    m_editorFontFamilyCB->setEnabled(m_customEditorFont->isChecked());
+    return true;
+}
+
+bool VReadEditTab::saveEditorFontFamily()
+{
+    QString family;
+    if (m_customEditorFont->isChecked()) {
+        QFont font = m_editorFontFamilyCB->currentFont();
+        family = font.family();
+    }
+
+    if (family != g_config->getEditorFontFamily()) {
+        g_config->setEditorFontFamily(family);
+        m_settingsDlg->setNeedUpdateEditorFont(true);
+    }
+
     return true;
 }
 
