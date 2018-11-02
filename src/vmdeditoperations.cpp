@@ -113,8 +113,7 @@ void VMdEditOperations::insertImageFromQImage(const QString &p_title,
         return;
     }
 
-    QString url = QString("%1/%2").arg(p_folderInLink).arg(fileName);
-
+    QString url = QDir::fromNativeSeparators(QString("%1/%2").arg(p_folderInLink).arg(fileName));
     insertText(imageLink(p_title, url, p_width, p_height));
 
     qDebug() << "insert image" << p_title << filePath;
@@ -195,7 +194,7 @@ void VMdEditOperations::insertImageFromPath(const QString &p_title,
         return;
     }
 
-    p_urlInLink = QString("%1/%2").arg(p_folderInLink).arg(fileName);
+    p_urlInLink = QDir::fromNativeSeparators(QString("%1/%2").arg(p_folderInLink).arg(fileName));
     p_destImagePath = filePath;
 
     if (p_insertText) {
@@ -1199,7 +1198,7 @@ void VMdEditOperations::decorateStrikethrough()
 bool VMdEditOperations::insertLink(const QString &p_linkText,
                                    const QString &p_linkUrl)
 {
-    QString link = QString("[%1](%2)").arg(p_linkText).arg(p_linkUrl);
+    QString link = QString("[%1](%2)").arg(p_linkText).arg(QDir::fromNativeSeparators(p_linkUrl));
     insertText(link);
 
     setVimMode(VimMode::Insert);
@@ -1211,7 +1210,7 @@ bool VMdEditOperations::insertImageLink(const QString &p_linkText,
                                         const QString &p_linkUrl)
 {
     QTextCursor cursor = m_editor->textCursorW();
-    cursor.insertText(imageLink(p_linkText, p_linkUrl));
+    cursor.insertText(imageLink(p_linkText, QDir::fromNativeSeparators(p_linkUrl)));
     m_editor->setTextCursorW(cursor);
 
     setVimMode(VimMode::Insert);

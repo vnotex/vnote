@@ -1080,7 +1080,7 @@ bool VNoteManagementTab::loadImageFolderExt()
 bool VNoteManagementTab::saveImageFolderExt()
 {
     if (m_customImageFolderExt->isChecked()) {
-        g_config->setImageFolderExt(m_imageFolderEditExt->text());
+        g_config->setImageFolderExt(QDir::fromNativeSeparators(m_imageFolderEditExt->text()));
     } else {
         g_config->setImageFolderExt("");
     }

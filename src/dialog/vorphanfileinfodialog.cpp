@@ -58,7 +58,7 @@ void VOrphanFileInfoDialog::setupUI()
 
 QString VOrphanFileInfoDialog::getImageFolder() const
 {
-    return m_imageFolderEdit->text();
+    return QDir::fromNativeSeparators(m_imageFolderEdit->text());
 }
 
 void VOrphanFileInfoDialog::handleInputChanged()
