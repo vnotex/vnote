@@ -210,6 +210,8 @@ private slots:
 
     void stayOnTop(bool p_enabled);
 
+    void splitFileListOut(bool p_enabled);
+
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 
@@ -223,6 +225,8 @@ private:
     void setupNaviBox();
 
     void setupNotebookPanel();
+
+    void setupFileListSplitOut(bool p_enabled);
 
     void initToolBar();
 

@@ -54,6 +54,8 @@ public:
                     const QVector<QString> &p_files,
                     bool p_isCut);
 
+    void setEnableSplitOut(bool p_enabled);
+
     // Implementations for VNavigationMode.
     void showNavigation() Q_DECL_OVERRIDE;
     bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE;
@@ -75,6 +77,9 @@ signals:
                      bool p_forceMode = false);
 
     void fileUpdated(const VNoteFile *p_file, UpdateAction p_act);
+
+    // Request to split self out of the notebook panel.
+    void requestSplitOut(bool p_enabled);
 
 private slots:
     void contextMenuRequested(QPoint pos);
@@ -195,6 +200,8 @@ private:
 
     VFileListWidget *fileList;
 
+    QPushButton *m_splitBtn;
+
     QLabel *m_numLabel;
 
     QPointer<VDirectory> m_directory;
@@ -232,5 +239,4 @@ inline QWidget *VFileList::getContentWidget() const
 {
     return fileList;
 }
-
 #endif // VFILELIST_H

@@ -83,8 +83,8 @@ void VTagExplorer::setupUI()
     m_splitter->setObjectName("TagExplorerSplitter");
     m_splitter->addWidget(m_tagList);
     m_splitter->addWidget(fileWidget);
-    m_splitter->setStretchFactor(0, 0);
-    m_splitter->setStretchFactor(1, 1);
+    m_splitter->setStretchFactor(0, 1);
+    m_splitter->setStretchFactor(1, 2);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addWidget(m_notebookLabel);

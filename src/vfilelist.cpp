@@ -61,7 +61,9 @@ void VFileList::setupUI()
     QLabel *titleLabel = new QLabel(tr("Notes"), this);
     titleLabel->setProperty("TitleLabel", true);
 
-    QPushButton *viewBtn = new QPushButton(VIconUtils::buttonIcon(":/resources/icons/view.svg"), "", this);
+    QPushButton *viewBtn = new QPushButton(VIconUtils::buttonIcon(":/resources/icons/view.svg"),
+                                           "",
+                                           this);
     viewBtn->setToolTip(tr("View"));
     viewBtn->setProperty("CornerBtn", true);
     viewBtn->setFocusPolicy(Qt::NoFocus);
@@ -73,11 +75,24 @@ void VFileList::setupUI()
             });
     viewBtn->setMenu(viewMenu);
 
+    m_splitBtn = new QPushButton(VIconUtils::buttonIcon(":/resources/icons/split_window.svg"),
+                                 "",
+                                 this);
+    m_splitBtn->setToolTip(tr("Split"));
+    m_splitBtn->setCheckable(true);
+    m_splitBtn->setProperty("CornerBtn", true);
+    m_splitBtn->setFocusPolicy(Qt::NoFocus);
+    connect(m_splitBtn, &QPushButton::clicked,
+            this, [this](bool p_checked) {
+                emit requestSplitOut(p_checked);
+            });
+
     m_numLabel = new QLabel(this);
 
     QHBoxLayout *titleLayout = new QHBoxLayout();
     titleLayout->addWidget(titleLabel);
     titleLayout->addWidget(viewBtn);
+    titleLayout->addWidget(m_splitBtn);
     titleLayout->addStretch();
     titleLayout->addWidget(m_numLabel);
 
@@ -1522,4 +1537,9 @@ QByteArray VFileList::getMimeData(const QString &p_format,
     obj[ClipboardConfig::c_files] = files;
 
     return QJsonDocument(obj).toJson(QJsonDocument::Compact);
+}
+
+void VFileList::setEnableSplitOut(bool p_enabled)
+{
+    m_splitBtn->setChecked(p_enabled);
 }

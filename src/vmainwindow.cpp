@@ -326,6 +326,9 @@ void VMainWindow::setupNaviBox()
                        tr("Tags"));
     connect(m_notebookSelector, &VNotebookSelector::curNotebookChanged,
             m_tagExplorer, &VTagExplorer::setNotebook);
+
+    connect(m_fileList, &VFileList::requestSplitOut,
+            this, &VMainWindow::splitFileListOut);
 }
 
 void VMainWindow::setupNotebookPanel()
@@ -354,12 +357,11 @@ void VMainWindow::setupNotebookPanel()
     m_fileList->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
     m_nbSplitter = new QSplitter();
-    m_nbSplitter->setOrientation(Qt::Vertical);
     m_nbSplitter->setObjectName("NotebookSplitter");
     m_nbSplitter->addWidget(naviWidget);
     m_nbSplitter->addWidget(m_fileList);
-    m_nbSplitter->setStretchFactor(0, 1);
-    m_nbSplitter->setStretchFactor(1, 2);
+
+    setupFileListSplitOut(g_config->getEnableSplitFileList());
 
     connect(m_notebookSelector, &VNotebookSelector::curNotebookChanged,
             this, [this](VNotebook *p_notebook) {
@@ -3453,5 +3455,28 @@ void VMainWindow::updateFontOfAllTabs()
         if (mdTab && mdTab->getEditor()) {
             mdTab->getEditor()->updateFontAndPalette();
         }
+    }
+}
+
+void VMainWindow::splitFileListOut(bool p_enabled)
+{
+    showNotebookPanel();
+
+    g_config->setEnableSplitFileList(p_enabled);
+
+    setupFileListSplitOut(p_enabled);
+}
+
+void VMainWindow::setupFileListSplitOut(bool p_enabled)
+{
+    m_fileList->setEnableSplitOut(p_enabled);
+    if (p_enabled) {
+        m_nbSplitter->setOrientation(Qt::Horizontal);
+        m_nbSplitter->setStretchFactor(0, 1);
+        m_nbSplitter->setStretchFactor(1, 1);
+    } else {
+        m_nbSplitter->setOrientation(Qt::Vertical);
+        m_nbSplitter->setStretchFactor(0, 1);
+        m_nbSplitter->setStretchFactor(1, 2);
     }
 }

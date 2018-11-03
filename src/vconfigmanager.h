@@ -602,6 +602,9 @@ public:
     const QString &getEditorFontFamily() const;
     void setEditorFontFamily(const QString &p_font);
 
+    bool getEnableSplitFileList() const;
+    void setEnableSplitFileList(bool p_enable);
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -1075,7 +1078,7 @@ private:
     // 2 - always
     int m_autoScrollCursorLine;
 
-    // Editor font family to override the value set by the style
+    // Editor font family to override the value set by the style.
     QString m_editorFontFamily;
 
     // The name of the config file in each directory.
@@ -2808,5 +2811,15 @@ inline void VConfigManager::setEditorFontFamily(const QString &p_font)
     m_editorFontFamily = p_font;
 
     setConfigToSettings("editor", "editor_font_family", m_editorFontFamily);
+}
+
+inline bool VConfigManager::getEnableSplitFileList() const
+{
+    return getConfigFromSettings("global", "split_file_list").toBool();
+}
+
+inline void VConfigManager::setEnableSplitFileList(bool p_enable)
+{
+    setConfigToSettings("global", "split_file_list", p_enable);
 }
 #endif // VCONFIGMANAGER_H
