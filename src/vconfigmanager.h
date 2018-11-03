@@ -605,6 +605,9 @@ public:
     bool getEnableSplitFileList() const;
     void setEnableSplitFileList(bool p_enable);
 
+    bool getEnableSplitTagFileList() const;
+    void setEnableSplitTagFileList(bool p_enable);
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -2821,5 +2824,15 @@ inline bool VConfigManager::getEnableSplitFileList() const
 inline void VConfigManager::setEnableSplitFileList(bool p_enable)
 {
     setConfigToSettings("global", "split_file_list", p_enable);
+}
+
+inline bool VConfigManager::getEnableSplitTagFileList() const
+{
+    return getConfigFromSettings("global", "split_tag_file_list").toBool();
+}
+
+inline void VConfigManager::setEnableSplitTagFileList(bool p_enable)
+{
+    setConfigToSettings("global", "split_tag_file_list", p_enable);
 }
 #endif // VCONFIGMANAGER_H

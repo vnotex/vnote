@@ -59,8 +59,35 @@ void VTagExplorer::setupUI()
                 }
             });
 
+    QVBoxLayout *tagLayout = new QVBoxLayout();
+    tagLayout->addWidget(m_notebookLabel);
+    tagLayout->addWidget(m_tagList);
+    tagLayout->setContentsMargins(0, 0, 0, 0);
+
+    QWidget *tagWidget = new QWidget(this);
+    tagWidget->setLayout(tagLayout);
+
     m_tagLabel = new QLabel(tr("Notes"), this);
     m_tagLabel->setProperty("TitleLabel", true);
+
+    m_splitBtn = new QPushButton(VIconUtils::buttonIcon(":/resources/icons/split_window.svg"),
+                                 "",
+                                 this);
+    m_splitBtn->setToolTip(tr("Split"));
+    m_splitBtn->setCheckable(true);
+    m_splitBtn->setProperty("CornerBtn", true);
+    m_splitBtn->setFocusPolicy(Qt::NoFocus);
+    connect(m_splitBtn, &QPushButton::clicked,
+            this, [this](bool p_checked) {
+                g_config->setEnableSplitTagFileList(p_checked);
+                setupFileListSplitOut(p_checked);
+            });
+
+    QHBoxLayout *titleLayout = new QHBoxLayout();
+    titleLayout->addWidget(m_tagLabel);
+    titleLayout->addWidget(m_splitBtn);
+    titleLayout->addStretch();
+    titleLayout->setContentsMargins(0, 0, 0, 0);
 
     m_fileList = new VListWidget(this);
     m_fileList->setAttribute(Qt::WA_MacShowFocusRect, false);
@@ -71,23 +98,22 @@ void VTagExplorer::setupUI()
     connect(m_fileList, &QListWidget::customContextMenuRequested,
             this, &VTagExplorer::handleFileListContextMenuRequested);
 
-    QWidget *fileWidget = new QWidget(this);
     QVBoxLayout *fileLayout = new QVBoxLayout();
-    fileLayout->addWidget(m_tagLabel);
+    fileLayout->addLayout(titleLayout);
     fileLayout->addWidget(m_fileList);
     fileLayout->setContentsMargins(0, 0, 0, 0);
+
+    QWidget *fileWidget = new QWidget(this);
     fileWidget->setLayout(fileLayout);
 
     m_splitter = new QSplitter(this);
-    m_splitter->setOrientation(Qt::Vertical);
     m_splitter->setObjectName("TagExplorerSplitter");
-    m_splitter->addWidget(m_tagList);
+    m_splitter->addWidget(tagWidget);
     m_splitter->addWidget(fileWidget);
-    m_splitter->setStretchFactor(0, 1);
-    m_splitter->setStretchFactor(1, 2);
+
+    setupFileListSplitOut(g_config->getEnableSplitTagFileList());
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
-    mainLayout->addWidget(m_notebookLabel);
     mainLayout->addWidget(m_splitter);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
@@ -511,4 +537,18 @@ void VTagExplorer::registerNavigationTarget()
 
     VNavigationModeListWidgetWrapper *fileWrapper = new VNavigationModeListWidgetWrapper(m_fileList, this);
     g_mainWin->getCaptain()->registerNavigationTarget(fileWrapper);
+}
+
+void VTagExplorer::setupFileListSplitOut(bool p_enabled)
+{
+    m_splitBtn->setChecked(p_enabled);
+    if (p_enabled) {
+        m_splitter->setOrientation(Qt::Horizontal);
+        m_splitter->setStretchFactor(0, 1);
+        m_splitter->setStretchFactor(1, 1);
+    } else {
+        m_splitter->setOrientation(Qt::Vertical);
+        m_splitter->setStretchFactor(0, 1);
+        m_splitter->setStretchFactor(1, 2);
+    }
 }

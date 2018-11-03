@@ -81,11 +81,15 @@ private:
 
     void promptToRemoveEmptyTag(const QString &p_tag);
 
+    void setupFileListSplitOut(bool p_enabled);
+
     bool m_uiInitialized;
 
     QLabel *m_notebookLabel;
 
     QLabel *m_tagLabel;
+
+    QPushButton *m_splitBtn;
 
     VListWidget *m_tagList;
 
