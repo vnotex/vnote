@@ -127,14 +127,37 @@ int main(int argc, char *argv[])
         QTextCodec::setCodecForLocale(codec);
     }
 
-    // Set openGL version.
-    // Or set environment QT_OPENGL to "angle/desktop/software".
-    // QCoreApplication::setAttribute(Qt::AA_UseOpenGLES, true);
     QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 
     // This only takes effect on Win, X11 and Android.
     // It will disturb original scaling. Just disable it for now.
     // QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+
+    // Set openGL version.
+    // Or set environment QT_OPENGL to "angle/desktop/software".
+    // QCoreApplication::setAttribute(Qt::AA_UseOpenGLES, true);
+#if defined(Q_OS_WIN)
+    int winOpenGL = VConfigManager::getWindowsOpenGL();
+    qInfo() << "OpenGL option" << winOpenGL;
+    switch (winOpenGL) {
+    case 1:
+        QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+        break;
+
+    case 2:
+        QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
+        break;
+
+    case 3:
+        QCoreApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
+        break;
+
+    case 0:
+        V_FALLTHROUGH;
+    default:
+        break;
+    }
+#endif
 
     QApplication app(argc, argv);
 
@@ -186,8 +209,8 @@ int main(int argc, char *argv[])
 
     // Check the openSSL.
     if (checkSSL) {
-        qDebug() << "openGL" << QOpenGLContext::openGLModuleType();
-        qDebug() << "openSSL"
+        qInfo() << "openGL" << QOpenGLContext::openGLModuleType();
+        qInfo() << "openSSL"
                  << QSslSocket::sslLibraryBuildVersionString()
                  << QSslSocket::sslLibraryVersionNumber();
     }

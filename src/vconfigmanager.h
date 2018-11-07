@@ -74,6 +74,14 @@ enum
     AutoScrollAlways = 2
 };
 
+enum
+{
+    OpenGLDefault = 0,
+    OpenGLDesktop = 1,
+    OpenGLAngle = 2,
+    OpenGLSoftware = 3
+};
+
 class VConfigManager : public QObject
 {
 public:
@@ -101,6 +109,12 @@ public:
 
     static QString getDocumentPathOrHomePath();
 
+    // Get windows_opengl config.
+    // Because we may call this before QApplication initialization, we only
+    // read/write the config to the user folder.
+    static int getWindowsOpenGL();
+    static void setWindowsOpenGL(int p_openGL);
+
     // Constants
     static const QString orgName;
     static const QString appName;
@@ -125,8 +139,6 @@ public:
     QVector<HighlightingStyle> getMdHighlightingStyles() const;
 
     QHash<QString, QTextCharFormat> getCodeBlockStyles() const;
-
-    QString getWelcomePagePath() const;
 
     QString getLogFilePath() const;
 
@@ -711,8 +723,6 @@ private:
     QVector<HighlightingStyle> mdHighlightingStyles;
     QHash<QString, QTextCharFormat> m_codeBlockStyles;
 
-    QString welcomePagePath;
-
     // Index of current notebook.
     int curNotebookIndex;
 
@@ -1162,11 +1172,6 @@ inline QVector<HighlightingStyle> VConfigManager::getMdHighlightingStyles() cons
 inline QHash<QString, QTextCharFormat> VConfigManager::getCodeBlockStyles() const
 {
     return m_codeBlockStyles;
-}
-
-inline QString VConfigManager::getWelcomePagePath() const
-{
-    return welcomePagePath;
 }
 
 inline QFont VConfigManager::getBaseEditFont() const

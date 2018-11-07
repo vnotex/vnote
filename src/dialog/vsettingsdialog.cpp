@@ -331,6 +331,12 @@ VGeneralTab::VGeneralTab(QWidget *p_parent)
     m_keyboardLayoutCombo = VUtils::getComboBox(this);
     m_keyboardLayoutCombo->setToolTip(tr("Choose the keyboard layout mapping to use in shortcuts"));
 
+    // OpenGL option.
+#if defined(Q_OS_WIN)
+    m_openGLCombo = VUtils::getComboBox(this);
+    m_openGLCombo->setToolTip(tr("Choose the OpenGL implementation to load (restart VNote to make it work)"));
+#endif
+
     QPushButton *editLayoutBtn = new QPushButton(tr("Edit"), this);
     connect(editLayoutBtn, &QPushButton::clicked,
             this, [this]() {
@@ -350,6 +356,10 @@ VGeneralTab::VGeneralTab(QWidget *p_parent)
     optionLayout->addRow(tr("Startup pages:"), startupLayout);
     optionLayout->addRow(tr("Quick access:"), qaLayout);
     optionLayout->addRow(tr("Keyboard layout mapping:"), klLayout);
+
+#if defined(Q_OS_WIN)
+    optionLayout->addRow(tr("OpenGL:"), m_openGLCombo);
+#endif
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(optionLayout);
@@ -434,6 +444,10 @@ bool VGeneralTab::loadConfiguration()
         return false;
     }
 
+    if (!loadOpenGL()) {
+        return false;
+    }
+
     return true;
 }
 
@@ -456,6 +470,10 @@ bool VGeneralTab::saveConfiguration()
     }
 
     if (!saveKeyboardLayoutMapping()) {
+        return false;
+    }
+
+    if (!saveOpenGL()) {
         return false;
     }
 
@@ -586,6 +604,34 @@ bool VGeneralTab::saveKeyboardLayoutMapping()
 {
     g_config->setKeyboardLayout(m_keyboardLayoutCombo->currentData().toString());
     VKeyboardLayoutManager::update();
+    return true;
+}
+
+bool VGeneralTab::loadOpenGL()
+{
+#if defined(Q_OS_WIN)
+    m_openGLCombo->clear();
+
+    m_openGLCombo->addItem(tr("System"), OpenGLDefault);
+    m_openGLCombo->addItem(tr("DesktopOpenGL"), OpenGLDesktop);
+    m_openGLCombo->addItem(tr("OpenGLES"), OpenGLAngle);
+    m_openGLCombo->addItem(tr("SoftwareOpenGL"), OpenGLSoftware);
+
+    int opt = VConfigManager::getWindowsOpenGL();
+    int idx = m_openGLCombo->findData(opt);
+    if (idx == -1) {
+        idx = 0;
+    }
+    m_openGLCombo->setCurrentIndex(idx);
+#endif
+    return true;
+}
+
+bool VGeneralTab::saveOpenGL()
+{
+#if defined(Q_OS_WIN)
+    VConfigManager::setWindowsOpenGL(m_openGLCombo->currentData().toInt());
+#endif
     return true;
 }
 

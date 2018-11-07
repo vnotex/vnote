@@ -46,6 +46,9 @@ private:
     bool loadKeyboardLayoutMapping();
     bool saveKeyboardLayoutMapping();
 
+    bool loadOpenGL();
+    bool saveOpenGL();
+
     // Language
     QComboBox *m_langCombo;
 
@@ -66,6 +69,11 @@ private:
 
     // Keyboard layout mappings.
     QComboBox *m_keyboardLayoutCombo;
+
+#if defined(Q_OS_WIN)
+    // Windows OpenGL.
+    QComboBox *m_openGLCombo;
+#endif
 
     static const QVector<QString> c_availableLangs;
 };

@@ -9,6 +9,8 @@
 #include <QTextEdit>
 #include <QStandardPaths>
 #include <QCoreApplication>
+#include <QScopedPointer>
+
 #include "utils/vutils.h"
 #include "vstyleparser.h"
 #include "vpalette.h"
@@ -85,8 +87,6 @@ void VConfigManager::initialize()
     m_codeBlockCssStyle = getConfigFromSettings("global", "code_block_css_style").toString();
 
     m_defaultEditPalette = QTextEdit().palette();
-
-    welcomePagePath = getConfigFromSettings("global", "welcome_page_path").toString();
 
     markdownExtensions = hoedown_extensions(HOEDOWN_EXT_TABLES | HOEDOWN_EXT_FENCED_CODE |
                                             HOEDOWN_EXT_HIGHLIGHT | HOEDOWN_EXT_AUTOLINK |
@@ -1679,4 +1679,41 @@ void VConfigManager::checkVersion()
     if (m_versionChanged) {
         setConfigToSettings("global", key, c_version);
     }
+}
+
+int VConfigManager::getWindowsOpenGL()
+{
+    const char *codecForIni = "UTF-8";
+
+    QScopedPointer<QSettings> userSet(new QSettings(QSettings::IniFormat,
+                                                    QSettings::UserScope,
+                                                    orgName,
+                                                    appName));
+    userSet->setIniCodec(codecForIni);
+
+    QString fullKey("global/windows_opengl");
+    QVariant val = userSet->value(fullKey);
+    if (!val.isNull()) {
+        return val.toInt();
+    }
+
+    // Default vnote.ini from resource file.
+    QScopedPointer<QSettings> defaultSet(new QSettings(c_defaultConfigFilePath,
+                                                       QSettings::IniFormat));
+    defaultSet->setIniCodec(codecForIni);
+    return defaultSet->value(fullKey).toInt();
+}
+
+void VConfigManager::setWindowsOpenGL(int p_openGL)
+{
+    const char *codecForIni = "UTF-8";
+
+    QScopedPointer<QSettings> userSet(new QSettings(QSettings::IniFormat,
+                                                    QSettings::UserScope,
+                                                    orgName,
+                                                    appName));
+    userSet->setIniCodec(codecForIni);
+
+    QString fullKey("global/windows_opengl");
+    userSet->setValue(fullKey, p_openGL);
 }
