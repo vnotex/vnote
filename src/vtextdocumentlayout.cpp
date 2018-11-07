@@ -441,6 +441,7 @@ void VTextDocumentLayout::documentChanged(int p_from, int p_charsRemoved, int p_
     // May be an invalid block.
     QTextBlock changeEndBlock;
     if (p_charsRemoved == p_charsAdded
+        && newBlockCount == m_blockCount
         && changeStartBlock.position() == p_from
         && changeStartBlock.length() == p_charsAdded) {
         // TODO: we may need one more next block.
@@ -481,6 +482,8 @@ void VTextDocumentLayout::documentChanged(int p_from, int p_charsRemoved, int p_
 
         updateOffset(changeStartBlock);
     }
+
+    m_blockCount = newBlockCount;
 
     updateDocumentSize();
 
