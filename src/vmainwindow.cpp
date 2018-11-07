@@ -3465,6 +3465,8 @@ void VMainWindow::splitFileListOut(bool p_enabled)
     g_config->setEnableSplitFileList(p_enabled);
 
     setupFileListSplitOut(p_enabled);
+
+    g_config->setNotebookSplitterState(m_nbSplitter->saveState());
 }
 
 void VMainWindow::setupFileListSplitOut(bool p_enabled)

@@ -81,6 +81,7 @@ void VTagExplorer::setupUI()
             this, [this](bool p_checked) {
                 g_config->setEnableSplitTagFileList(p_checked);
                 setupFileListSplitOut(p_checked);
+                saveStateAndGeometry();
             });
 
     QHBoxLayout *titleLayout = new QHBoxLayout();
