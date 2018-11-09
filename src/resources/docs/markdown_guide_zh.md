@@ -217,6 +217,36 @@ This is the 1^st^ superscript.
 This is the H~2~O subscript.
 ```
 
+### 警告
+使用`Markdown-it`渲染引擎时，可以添加警告信息。
+
+```md
+::: alert-info
+
+这是一个信息文本。
+
+:::
+
+::: alert-danger
+
+这是一个危险文本。
+
+:::
+```
+
+可用的一些警告形式如下：
+
+```
+alert-primary
+alert-secondary
+alert-success
+alert-info
+alert-warning
+alert-danger
+alert-light
+alert-dark
+```
+
 ### 换行和段落
 如果需要换行，您应该在当前行末尾添加两个空格，然后换行。VNote提供快捷键`Shift+Enter`来辅助用户输入两个空格并换行。
 

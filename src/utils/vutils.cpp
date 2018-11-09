@@ -705,7 +705,8 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
                     "<script src=\"qrc" + VNote::c_markdownitAnchorExtraFile + "\"></script>\n" +
                     "<script src=\"qrc" + VNote::c_markdownitTaskListExtraFile + "\"></script>\n" +
                     "<script src=\"qrc" + VNote::c_markdownitImsizeExtraFile + "\"></script>\n" +
-                    "<script src=\"qrc" + VNote::c_markdownitFootnoteExtraFile + "\"></script>\n";
+                    "<script src=\"qrc" + VNote::c_markdownitFootnoteExtraFile + "\"></script>\n" +
+                    "<script src=\"qrc" + VNote::c_markdownitContainerExtraFile + "\"></script>\n";
 
         if (g_config->getEnableMathjax()) {
             extraFile += "<script src=\"qrc" + VNote::c_markdownitTexMathExtraFile + "\"></script>\n";

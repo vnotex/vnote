@@ -39,3 +39,7 @@ Vitaly Puzrin
 # [markdown-it-texmath](https://github.com/goessner/markdown-it-texmath)
 v0.0.0
 Stefan Goessner
+
+# [markdown-it-container](https://github.com/markdown-it/markdown-it-container)
+v2.0.0
+Vitaly Puzrin

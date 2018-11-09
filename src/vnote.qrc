@@ -276,5 +276,6 @@
         <file>resources/docs/welcome_en.md</file>
         <file>resources/docs/welcome_zh.md</file>
         <file>resources/icons/256x256/vnote.png</file>
+        <file>utils/markdown-it/markdown-it-container.min.js</file>
     </qresource>
 </RCC>

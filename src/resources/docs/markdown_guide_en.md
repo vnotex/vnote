@@ -216,6 +216,36 @@ This is the 1^st^ superscript.
 This is the H~2~O subscript.
 ```
 
+### Alert
+With `Markdown-it` renderer, you can add some alert text.
+
+```md
+::: alert-info
+
+This is an info text.
+
+:::
+
+::: alert-danger
+
+This is a danger text.
+
+:::
+```
+
+Available variants:
+
+```
+alert-primary
+alert-secondary
+alert-success
+alert-info
+alert-warning
+alert-danger
+alert-light
+alert-dark
+```
+
 ### New Line and Paragraph
 If you want to enter a new line, you should add two spaces after current line and then continue your input. VNote provides `Shift+Enter` to help.
 

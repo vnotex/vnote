@@ -112,6 +112,24 @@ if (typeof texmath != 'undefined') {
     mdit = mdit.use(texmath, { delimiters: ['dollars', 'raw'] });
 }
 
+mdit.use(window.markdownitContainer, 'alert', {
+    validate: function(params) {
+        return params.trim().match(/^alert-\S+$/);
+    },
+
+    render: function (tokens, idx) {
+        let type = tokens[idx].info.trim().match(/^(alert-\S+)$/);
+        if (tokens[idx].nesting === 1) {
+            // opening tag
+            let alertClass = type[1];
+            return '<div class="alert ' + alertClass + '" role="alert">';
+        } else {
+            // closing tag
+            return '</div>\n';
+        }
+    }
+});
+
 var mdHasTocSection = function(markdown) {
     var n = markdown.search(/(\n|^)\[toc\]/i);
     return n != -1;
