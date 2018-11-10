@@ -662,7 +662,7 @@ var renderFlowchart = function(classNames) {
         }
 
         if (matched) {
-            if (renderFlowchartOne(code, flowchartIdx)) {
+            if (renderFlowchartOne(code)) {
                 // replaceChild() will decrease codes.length.
                 --i;
             }
@@ -736,9 +736,9 @@ var renderPlantUMLOneOnline = function(code) {
     ++asyncJobsCount;
     code.classList.add(plantUMLCodeClass + plantUMLIdx);
 
-    data = { index: plantUMLIdx,
-             setupView: !VPreviewMode
-           };
+    let data = { index: plantUMLIdx,
+                 setupView: !VPreviewMode
+    };
     renderPlantUMLOnline(VPlantUMLServer,
                          VPlantUMLFormat,
                          code.textContent,
