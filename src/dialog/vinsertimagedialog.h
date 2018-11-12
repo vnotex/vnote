@@ -67,6 +67,8 @@ private:
 
     void setImageControlsVisible(bool p_visible);
 
+    void autoCompleteTitleFromPath();
+
     VMetaWordLineEdit *m_imageTitleEdit;
     VLineEdit *m_pathEdit;
     QPushButton *browseBtn;

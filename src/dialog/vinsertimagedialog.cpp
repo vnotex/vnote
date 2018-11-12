@@ -31,6 +31,8 @@ VInsertImageDialog::VInsertImageDialog(const QString &p_title,
         fetchImageFromClipboard();
     }
 
+    autoCompleteTitleFromPath();
+
     handleInputChanged();
 }
 
@@ -177,6 +179,8 @@ void VInsertImageDialog::handleBrowseBtnClicked()
     m_imageType = ImageType::LocalFile;
 
     setPath(filePath);
+
+    autoCompleteTitleFromPath();
 
     m_imageTitleEdit->setFocus();
 }
@@ -340,4 +344,19 @@ int VInsertImageDialog::getOverridenWidth() const
     }
 
     return 0;
+}
+
+void VInsertImageDialog::autoCompleteTitleFromPath()
+{
+    if (!m_imageTitleEdit->text().isEmpty()) {
+        return;
+    }
+
+    QString imgPath = m_pathEdit->text();
+    if (imgPath.isEmpty()) {
+        return;
+    }
+
+    m_imageTitleEdit->setText(QFileInfo(imgPath).baseName());
+    m_imageTitleEdit->selectAll();
 }

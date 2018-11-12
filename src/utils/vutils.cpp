@@ -1580,7 +1580,12 @@ QStringList VUtils::parseCombinedArgString(const QString &p_program)
 
 QImage VUtils::imageFromFile(const QString &p_filePath)
 {
-    QImage img;
+    QImage img(p_filePath);
+    if (!img.isNull()) {
+        return img;
+    }
+
+    // @p_filePath may has a wrong suffix which indicates a wrong image format.
     QFile file(p_filePath);
     if (!file.open(QIODevice::ReadOnly)) {
         qWarning() << "fail to open image file" << p_filePath;
