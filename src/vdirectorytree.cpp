@@ -1245,6 +1245,17 @@ bool VDirectoryTree::dropMimeData(QTreeWidgetItem *p_parent,
 {
     Q_UNUSED(p_index);
 
+    if (!p_parent) {
+        VUtils::showMessage(QMessageBox::Warning,
+                            tr("Warning"),
+                            tr("Please drop it on a folder item."),
+                            "",
+                            QMessageBox::Ok,
+                            QMessageBox::Ok,
+                            this);
+        return false;
+    }
+
     if (p_data->hasFormat(ClipboardConfig::c_format)) {
         VDirectory *dir = getVDirectory(p_parent);
         if (!dir) {
