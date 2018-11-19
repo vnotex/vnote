@@ -447,14 +447,20 @@ void VTextDocumentLayout::documentChanged(int p_from, int p_charsRemoved, int p_
         // TODO: we may need one more next block.
         changeEndBlock = changeStartBlock;
     } else {
-        changeEndBlock = doc->findBlock(qMax(0, p_from + charsChanged));
+        changeEndBlock = doc->findBlock(p_from + charsChanged);
     }
 
+    qDebug() << "documentChanged" << p_from << p_charsRemoved << p_charsAdded
+             << m_blockCount << newBlockCount
+             << changeStartBlock.blockNumber() << changeEndBlock.blockNumber();
+
+    bool needRelayout = true;
     if (changeStartBlock == changeEndBlock
         && newBlockCount == m_blockCount) {
         // Change single block internal only.
         QTextBlock block = changeStartBlock;
         if (block.isValid() && block.length()) {
+            needRelayout = false;
             QRectF oldBr = blockBoundingRect(block);
             clearBlockLayout(block);
             layoutBlockAndUpdateOffset(block);
@@ -468,7 +474,9 @@ void VTextDocumentLayout::documentChanged(int p_from, int p_charsRemoved, int p_
                 return;
             }
         }
-    } else {
+    }
+
+    if (needRelayout) {
         QTextBlock block = changeStartBlock;
         do {
             clearBlockLayout(block);
