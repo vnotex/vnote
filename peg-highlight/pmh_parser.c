@@ -1048,6 +1048,15 @@ bool inline_equation_predict_post(char *buf, int pos)
 #define IEP_PRE         inline_equation_predict_pre(G->buf, G->pos)
 #define IEP_POST        inline_equation_predict_post(G->buf, G->pos)
 
+// Do not allow whitespace before ending ~~
+bool strike_predict_post(char *buf, int pos)
+{
+    unsigned char ch = buf[pos - 1];
+    return ch != '\n' && ch != '\r' && ch != ' ' && ch != '\t';
+}
+
+#define STRIKE_POST     strike_predict_post(G->buf, G->pos)
+
 // Number of display formula raw opening
 unsigned char nr_dfr = 0;
 
@@ -3926,7 +3935,7 @@ YY_RULE(int) yy_Strike(GREG *G)
   l632:;	  G->pos= yypos632; G->thunkpos= yythunkpos632;
   }  if (!yy_Inline(G)) { goto l630; }  goto l629;
   l630:;	  G->pos= yypos630; G->thunkpos= yythunkpos630;
-  }  if (!yymatchString(G, "~~")) goto l627;  yyText(G, G->begin, G->end);  if (!(YY_END)) goto l627;  yyDo(G, yy_1_Strike, G->begin, G->end);
+  }  yyText(G, G->begin, G->end);  if (!( STRIKE_POST )) goto l627;  if (!yymatchString(G, "~~")) goto l627;  yyText(G, G->begin, G->end);  if (!(YY_END)) goto l627;  yyDo(G, yy_1_Strike, G->begin, G->end);
   yyprintf((stderr, "  ok   %s @ %s\n", "Strike", G->buf+G->pos));  yyDo(G, yyPop, 1, 0);
   return 1;
   l627:;	  G->pos= yypos0; G->thunkpos= yythunkpos0;
