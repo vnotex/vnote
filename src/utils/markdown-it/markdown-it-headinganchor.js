@@ -39,14 +39,21 @@ function makeRule(md, options) {
 
       if (options.addHeadingAnchor) {
         var anchorToken = new state.Token('html_inline', '', 0);
-        anchorToken.content =
-          '<a name="' +
-          anchorName +
-          '" class="' +
-          options.anchorClass +
-          '" href="#"></a>';
+        if (options.addHeadingID) {
+          // No need to add id in anchor.
+          anchorToken.content = '<a class="' + options.anchorClass + '" ' +
+                                'href="#' + anchorName + '" ' +
+                                'data-anchor-icon="' + options.anchorIcon + '" ' +
+                                '></a>';
+        } else {
+          anchorToken.content = '<a id="' + anchorName + '" ' +
+                                'class="' + options.anchorClass + '" ' +
+                                'href="#' + anchorName + '" ' +
+                                'data-anchor-icon="' + options.anchorIcon + '" ' +
+                                '></a>';
+        }
 
-        headingInlineToken.children.unshift(anchorToken);
+        headingInlineToken.children.push(anchorToken);
       }
 
       // Advance past the inline and heading_close tokens.
@@ -61,6 +68,7 @@ module.exports = function headinganchor_plugin(md, opts) {
     addHeadingID: true,
     addHeadingAnchor: true,
     // Added by Le Tan (github.com/tamlok)
+    anchorIcon: '#',
     slugify: slugify,
     headingHook: function(openToken, inlineToken, anchor) {}
   };

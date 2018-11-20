@@ -13,33 +13,34 @@ v1.4.0
 Revin Guillen
 
 # [markdown-it-footnote](https://github.com/markdown-it/markdown-it-footnote)
-v3.0.1
+v3.0.1  
 Vitaly Puzrin
 
 # [markdown-it-sub](https://github.com/markdown-it/markdown-it-sub)
-v1.0.0
+v1.0.0  
 Vitaly Puzrin
 
 # [markdown-it-sup](https://github.com/markdown-it/markdown-it-sup)
-v1.0.0
+v1.0.0  
 Vitaly Puzrin
 
 # [markddown-it-front-matter](https://github.com/craigdmckenna/markdown-it-front-matter)
-v0.1.2
+v0.1.2  
 Craig McKenna
 
 # [markdown-it-imsize](https://github.com/tatsy/markdown-it-imsize)
-v2.0.1
+v2.0.1  
 Tatsuya Yatagawa
 
 # [markdown-it-emoji](https://github.com/markdown-it/markdown-it-emoji)
-v1.4.0
+v1.4.0  
 Vitaly Puzrin
 
 # [markdown-it-texmath](https://github.com/goessner/markdown-it-texmath)
-v0.0.0
+v0.0.0  
 Stefan Goessner
+Modified by Le Tan
 
 # [markdown-it-container](https://github.com/markdown-it/markdown-it-container)
-v2.0.0
+v2.0.0  
 Vitaly Puzrin

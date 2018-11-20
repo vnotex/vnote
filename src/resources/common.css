@@ -186,3 +186,25 @@ span.modal-close:focus {
     border-color: #c6c8ca;
 }
 /* Alert */
+
+/* Anchor */
+.vnote-anchor {
+    font-weight: 400;
+    color: rgba(0,123,255,.5);
+    transition: color .16s linear;
+    padding-left: 0.375em;
+    -webkit-font-smoothing: antialiased;
+    text-decoration: none;
+    opacity: 0;
+}
+
+.vnote-anchor:hover {
+    color: rgba(0,123,255,1);
+    text-decoration: none;
+    opacity: 1;
+}
+
+.vnote-anchor::after {
+    content: attr(data-anchor-icon);
+}
+/* Anchor */

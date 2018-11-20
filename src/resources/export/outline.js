@@ -46,6 +46,19 @@ window.addEventListener('load', function() {
     var outlineContent = document.getElementById('outline-content');
     var postContent = document.getElementById('post-content');
 
+    // Escape @text to Html.
+    var escapeHtml = function(text) {
+        var map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
     // Fetch the outline.
     var headers = postContent.querySelectorAll("h1, h2, h3, h4, h5, h6");
     toc = [];
@@ -55,7 +68,7 @@ window.addEventListener('load', function() {
         toc.push({
             level: parseInt(header.tagName.substr(1)),
             anchor: header.id,
-            title: header.textContent
+            title: escapeHtml(header.textContent)
         });
     }
 

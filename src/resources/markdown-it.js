@@ -60,6 +60,7 @@ mdit = mdit.use(window.markdownitHeadingAnchor, {
     anchorClass: 'vnote-anchor',
     addHeadingID: true,
     addHeadingAnchor: true,
+    anchorIcon: '#',
     slugify: function(md, s) {
         return 'toc_' + nameCounter++;
     },

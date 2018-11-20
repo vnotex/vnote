@@ -88,19 +88,20 @@ QUrl VFile::getBaseUrl() const
 {
     // Need to judge the path: Url, local file, resource file.
     QUrl baseUrl;
-    QString basePath = fetchBasePath();
-    QFileInfo pathInfo(basePath);
+    // Use file path to make in page anchor work.
+    QString filePath = fetchPath();
+    QFileInfo pathInfo(filePath);
     if (pathInfo.exists()) {
         if (pathInfo.isNativePath()) {
             // Local file.
-            baseUrl = QUrl::fromLocalFile(basePath + QDir::separator());
+            baseUrl = QUrl::fromLocalFile(filePath);
         } else {
             // Resource file.
-            baseUrl = QUrl("qrc" + basePath + QDir::separator());
+            baseUrl = QUrl("qrc" + filePath);
         }
     } else {
         // Url.
-        baseUrl = QUrl(basePath + QDir::separator());
+        baseUrl = QUrl(filePath);
     }
 
     return baseUrl;
