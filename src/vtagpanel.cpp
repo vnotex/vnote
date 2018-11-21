@@ -84,7 +84,9 @@ void VTagPanel::setupUI()
                     g_mainWin->showStatusMessage(tr("Tag \"%1\" added").arg(text));
                 }
 
-                m_tagEdit->clear();
+                // Clear after a wait since it may be triggered by the completion.
+                // The activated() of completion will add text to the edit.
+                QTimer::singleShot(100, m_tagEdit, SLOT(clear()));
             });
 
     QValidator *validator = new QRegExpValidator(QRegExp("[^,]+"), m_tagEdit);
