@@ -33,8 +33,8 @@ QString VCodeBlockHighlightHelper::unindentCodeBlock(const QString &p_text)
     }
 
     QStringList lines = p_text.split('\n');
-    V_ASSERT(lines[0].trimmed().startsWith("```"));
-    V_ASSERT(lines.size() > 1);
+    Q_ASSERT(lines[0].trimmed().startsWith("```") || lines[0].trimmed().startsWith("~~~"));
+    Q_ASSERT(lines.size() > 1);
 
     QRegExp regExp("(^\\s*)");
     regExp.indexIn(lines[0]);

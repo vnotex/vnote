@@ -112,9 +112,13 @@ As VNote suggests:
     This is a fenced code block.
     ```
 
+    ~~~
+    This is another fenced code block.
+    ~~~
+
 **Notes**:
 
-- `lang` is optional to specify the language of the code;
+- `lang` is optional to specify the language of the code; if not specified, VNote won't highlight the code;
 
 ### Diagrams
 

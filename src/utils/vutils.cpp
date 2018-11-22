@@ -61,9 +61,9 @@ const QString VUtils::c_linkRegExp = QString("\\[([^\\]]*)\\]"
 
 const QString VUtils::c_fileNameRegExp = QString("(?:[^\\\\/:\\*\\?\"<>\\|\\s]| )*");
 
-const QString VUtils::c_fencedCodeBlockStartRegExp = QString("^(\\s*)```([^`\\s]*)\\s*[^`]*$");
+const QString VUtils::c_fencedCodeBlockStartRegExp = QString("^(\\s*)([`~])\\2{2}((?:(?!\\2)[^\\r\\n])*)$");
 
-const QString VUtils::c_fencedCodeBlockEndRegExp = QString("^(\\s*)```$");
+const QString VUtils::c_fencedCodeBlockEndRegExp = QString("^(\\s*)([`~])\\2{2}\\s*$");
 
 const QString VUtils::c_previewImageBlockRegExp = QString("[\\n|^][ |\\t]*\\xfffc[ |\\t]*(?=\\n)");
 

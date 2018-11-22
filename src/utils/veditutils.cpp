@@ -1130,9 +1130,16 @@ bool VEditUtils::isWordSeparator(QChar p_char)
 QString VEditUtils::removeCodeBlockFence(const QString &p_text)
 {
     QString text = VCodeBlockHighlightHelper::unindentCodeBlock(p_text);
-    Q_ASSERT(text.startsWith("```") && text.endsWith("```"));
+    Q_ASSERT(text.startsWith("```") || text.startsWith("~~~"));
     int idx = text.indexOf('\n') + 1;
-    return text.mid(idx, text.size() - idx - 3);
+    int lidx = text.size() - 1;
+    // Trim spaces at the end.
+    while (lidx >= 0 && text[lidx].isSpace()) {
+        --lidx;
+    }
+
+    Q_ASSERT(text[lidx] == '`' || text[lidx] == '~');
+    return text.mid(idx, lidx + 1 - idx - 3);
 }
 
 bool VEditUtils::isSpaceOrWordSeparator(QChar p_char)

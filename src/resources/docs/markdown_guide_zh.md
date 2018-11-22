@@ -113,9 +113,13 @@ As VNote suggests:
     This is a fenced code block.
     ```
 
+    ~~~
+    This is another fenced code block.
+    ~~~
+
 **注意**：
 
-- `lang`用于指定代码块的代码语言，可选；
+- `lang`用于指定代码块的代码语言，可选；如果不指定，VNote不会尝试高亮代码；
 
 ### 图表
 

@@ -2,6 +2,7 @@
 #define PEGHIGHLIGHTERRESULT_H
 
 #include <QSet>
+#include <QRegularExpression>
 
 #include "vconstants.h"
 #include "pegparser.h"
@@ -114,8 +115,8 @@ private:
                                      unsigned long p_end);
 #endif
 
-    QRegExp m_codeBlockStartExp;
-    QRegExp m_codeBlockEndExp;
+    QRegularExpression m_codeBlockStartExp;
+    QRegularExpression m_codeBlockEndExp;
 };
 
 inline bool PegHighlighterResult::matched(TimeStamp p_timeStamp) const

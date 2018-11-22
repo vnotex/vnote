@@ -607,10 +607,10 @@ void PegMarkdownHighlighter::updateAllBlocksUserState(const QSharedPointer<PegHi
             case HighlightBlockState::CodeBlockStart:
             {
                 int startLeadingSpaces = 0;
-                QRegExp reg(VUtils::c_fencedCodeBlockStartRegExp);
-                int idx = reg.indexIn(block.text());
-                if (idx >= 0) {
-                    startLeadingSpaces = reg.capturedTexts()[1].size();
+                QRegularExpression reg(VUtils::c_fencedCodeBlockStartRegExp);
+                auto match = reg.match(block.text());
+                if (match.hasMatch()) {
+                    startLeadingSpaces = match.captured(1).size();
                 }
 
                 blockData->setCodeBlockIndentation(startLeadingSpaces);

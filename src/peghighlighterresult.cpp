@@ -25,8 +25,8 @@ PegHighlighterResult::PegHighlighterResult()
       m_codeBlockTimeStamp(0),
       m_numOfCodeBlockHighlightsToRecv(0)
 {
-    m_codeBlockStartExp = QRegExp(VUtils::c_fencedCodeBlockStartRegExp);
-    m_codeBlockEndExp = QRegExp(VUtils::c_fencedCodeBlockEndRegExp);
+    m_codeBlockStartExp = QRegularExpression(VUtils::c_fencedCodeBlockStartRegExp);
+    m_codeBlockEndExp = QRegularExpression(VUtils::c_fencedCodeBlockEndRegExp);
 }
 
 PegHighlighterResult::PegHighlighterResult(const PegMarkdownHighlighter *p_peg,
@@ -37,8 +37,8 @@ PegHighlighterResult::PegHighlighterResult(const PegMarkdownHighlighter *p_peg,
       m_codeBlockTimeStamp(0),
       m_numOfCodeBlockHighlightsToRecv(0)
 {
-    m_codeBlockStartExp = QRegExp(VUtils::c_fencedCodeBlockStartRegExp);
-    m_codeBlockEndExp = QRegExp(VUtils::c_fencedCodeBlockEndRegExp);
+    m_codeBlockStartExp = QRegularExpression(VUtils::c_fencedCodeBlockStartRegExp);
+    m_codeBlockEndExp = QRegularExpression(VUtils::c_fencedCodeBlockEndRegExp);
 
     parseBlocksHighlights(m_blocksHighlights, p_peg, p_result);
 
@@ -215,6 +215,7 @@ void PegHighlighterResult::parseFencedCodeBlocks(const PegMarkdownHighlighter *p
     const QTextDocument *doc = p_peg->getDocument();
     VCodeBlock item;
     bool inBlock = false;
+    QString marker;
     for (auto it = regs.begin(); it != regs.end(); ++it) {
         QTextBlock block = doc->findBlock(it.value().m_startPos);
         int lastBlock = doc->findBlock(it.value().m_endPos - 1).blockNumber();
@@ -232,10 +233,12 @@ void PegHighlighterResult::parseFencedCodeBlocks(const PegMarkdownHighlighter *p
             QString text = block.text();
             if (inBlock) {
                 item.m_text = item.m_text + "\n" + text;
-                int idx = m_codeBlockEndExp.indexIn(text);
-                if (idx >= 0) {
+                auto match = m_codeBlockEndExp.match(text);
+                if (match.hasMatch() && marker == match.captured(2)) {
                     // End block.
                     inBlock = false;
+                    marker.clear();
+
                     state = HighlightBlockState::CodeBlockEnd;
                     item.m_endBlock = blockNumber;
                     m_codeBlocks.append(item);
@@ -244,17 +247,17 @@ void PegHighlighterResult::parseFencedCodeBlocks(const PegMarkdownHighlighter *p
                     state = HighlightBlockState::CodeBlock;
                 }
             } else {
-                int idx = m_codeBlockStartExp.indexIn(text);
-                if (idx >= 0) {
+                auto match = m_codeBlockStartExp.match(text);
+                if (match.hasMatch()) {
                     // Start block.
                     inBlock = true;
+                    marker = match.captured(2);
+
                     state = HighlightBlockState::CodeBlockStart;
                     item.m_startBlock = blockNumber;
                     item.m_startPos = block.position();
                     item.m_text = text;
-                    if (m_codeBlockStartExp.captureCount() == 2) {
-                        item.m_lang = m_codeBlockStartExp.capturedTexts()[2];
-                    }
+                    item.m_lang = match.captured(3).trimmed();
                 }
             }
 
