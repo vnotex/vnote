@@ -1111,9 +1111,7 @@ void VDirectoryTree::showNavigation()
 
 bool VDirectoryTree::handleKeyNavigation(int p_key, bool &p_succeed)
 {
-    static bool secondKey = false;
     return VNavigationMode::handleKeyNavigation(this,
-                                                secondKey,
                                                 p_key,
                                                 p_succeed);
 }

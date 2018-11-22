@@ -38,12 +38,10 @@ protected:
     void showNavigation(QTreeWidget *p_widget);
 
     bool handleKeyNavigation(QListWidget *p_widget,
-                             bool &p_secondKey,
                              int p_key,
                              bool &p_succeed);
 
     bool handleKeyNavigation(QTreeWidget *p_widget,
-                             bool &p_secondKey,
                              int p_key,
                              bool &p_succeed);
 
@@ -51,6 +49,8 @@ protected:
 
     // Map second key to item.
     QMap<QChar, void *> m_keyMap;
+
+    bool m_isSecondKey;
 
     QVector<QLabel *> m_naviLabels;
 
@@ -79,10 +79,7 @@ public:
 
     bool handleKeyNavigation(int p_key, bool &p_succeed) Q_DECL_OVERRIDE
     {
-        static bool secondKey = false;
-
         return VNavigationMode::handleKeyNavigation(m_widget,
-                                                    secondKey,
                                                     p_key,
                                                     p_succeed);
     }

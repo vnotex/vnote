@@ -482,11 +482,9 @@ void VHistoryList::showNavigation()
 
 bool VHistoryList::handleKeyNavigation(int p_key, bool &p_succeed)
 {
-    static bool secondKey = false;
     setupUI();
 
     return VNavigationMode::handleKeyNavigation(m_itemList,
-                                                secondKey,
                                                 p_key,
                                                 p_succeed);
 }

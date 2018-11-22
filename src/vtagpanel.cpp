@@ -253,12 +253,11 @@ void VTagPanel::showNavigation()
 
 bool VTagPanel::handleKeyNavigation(int p_key, bool &p_succeed)
 {
-    static bool secondKey = false;
     bool ret = false;
     p_succeed = false;
     QChar keyChar = VUtils::keyToChar(p_key);
-    if (secondKey && !keyChar.isNull()) {
-        secondKey = false;
+    if (m_isSecondKey && !keyChar.isNull()) {
+        m_isSecondKey = false;
         p_succeed = true;
         auto it = m_keyMap.find(keyChar);
         if (it != m_keyMap.end()) {
@@ -280,7 +279,7 @@ bool VTagPanel::handleKeyNavigation(int p_key, bool &p_succeed)
         if (m_keyMap.isEmpty()) {
             p_succeed = true;
         } else {
-            secondKey = true;
+            m_isSecondKey = true;
         }
 
         ret = true;

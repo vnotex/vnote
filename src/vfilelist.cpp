@@ -1130,8 +1130,7 @@ void VFileList::showNavigation()
 
 bool VFileList::handleKeyNavigation(int p_key, bool &p_succeed)
 {
-    static bool secondKey = false;
-    return VNavigationMode::handleKeyNavigation(fileList, secondKey, p_key, p_succeed);
+    return VNavigationMode::handleKeyNavigation(fileList, p_key, p_succeed);
 }
 
 int VFileList::getNewMagic()

@@ -338,13 +338,11 @@ void VOutline::showNavigation()
 
 bool VOutline::handleKeyNavigation(int p_key, bool &p_succeed)
 {
-    static bool secondKey = false;
     bool ret = VNavigationMode::handleKeyNavigation(m_tree,
-                                                    secondKey,
                                                     p_key,
                                                     p_succeed);
 
-    if (ret && p_succeed && !secondKey) {
+    if (ret && p_succeed && !m_isSecondKey) {
         g_mainWin->focusEditArea();
     }
 

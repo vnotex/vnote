@@ -582,11 +582,9 @@ void VSearcher::showNavigation()
 
 bool VSearcher::handleKeyNavigation(int p_key, bool &p_succeed)
 {
-    static bool secondKey = false;
     setupUI();
 
     return VNavigationMode::handleKeyNavigation(m_results,
-                                                secondKey,
                                                 p_key,
                                                 p_succeed);
 }

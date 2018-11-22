@@ -481,11 +481,9 @@ void VSnippetList::showNavigation()
 
 bool VSnippetList::handleKeyNavigation(int p_key, bool &p_succeed)
 {
-    static bool secondKey = false;
     setupUI();
 
     return VNavigationMode::handleKeyNavigation(m_snippetList,
-                                                secondKey,
                                                 p_key,
                                                 p_succeed);
 }

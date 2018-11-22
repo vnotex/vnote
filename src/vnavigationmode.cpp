@@ -13,6 +13,7 @@
 extern VNote *g_vnote;
 
 VNavigationMode::VNavigationMode()
+    : m_isSecondKey(false)
 {
 }
 
@@ -118,15 +119,14 @@ QList<QTreeWidgetItem *> VNavigationMode::getVisibleItems(const QTreeWidget *p_w
 }
 
 bool VNavigationMode::handleKeyNavigation(QListWidget *p_widget,
-                                          bool &p_secondKey,
                                           int p_key,
                                           bool &p_succeed)
 {
     bool ret = false;
     p_succeed = false;
     QChar keyChar = VUtils::keyToChar(p_key);
-    if (p_secondKey && !keyChar.isNull()) {
-        p_secondKey = false;
+    if (m_isSecondKey && !keyChar.isNull()) {
+        m_isSecondKey = false;
         p_succeed = true;
         auto it = m_keyMap.find(keyChar);
         if (it != m_keyMap.end()) {
@@ -141,7 +141,7 @@ bool VNavigationMode::handleKeyNavigation(QListWidget *p_widget,
         if (m_keyMap.isEmpty()) {
             p_succeed = true;
         } else {
-            p_secondKey = true;
+            m_isSecondKey = true;
         }
 
         ret = true;
@@ -175,6 +175,8 @@ void VNavigationMode::showNavigation(QTreeWidget *p_widget)
 
 void VNavigationMode::clearNavigation()
 {
+    m_isSecondKey = false;
+
     m_keyMap.clear();
     for (auto label : m_naviLabels) {
         delete label;
@@ -184,15 +186,14 @@ void VNavigationMode::clearNavigation()
 }
 
 bool VNavigationMode::handleKeyNavigation(QTreeWidget *p_widget,
-                                          bool &p_secondKey,
                                           int p_key,
                                           bool &p_succeed)
 {
     bool ret = false;
     p_succeed = false;
     QChar keyChar = VUtils::keyToChar(p_key);
-    if (p_secondKey && !keyChar.isNull()) {
-        p_secondKey = false;
+    if (m_isSecondKey && !keyChar.isNull()) {
+        m_isSecondKey = false;
         p_succeed = true;
         auto it = m_keyMap.find(keyChar);
         if (it != m_keyMap.end()) {
@@ -206,7 +207,7 @@ bool VNavigationMode::handleKeyNavigation(QTreeWidget *p_widget,
         if (m_keyMap.isEmpty()) {
             p_succeed = true;
         } else {
-            p_secondKey = true;
+            m_isSecondKey = true;
         }
 
         ret = true;
