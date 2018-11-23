@@ -21,7 +21,11 @@ PegMarkdownHighlighter::PegMarkdownHighlighter(QTextDocument *p_doc, VMdEditor *
       m_timeStamp(0),
       m_codeBlockTimeStamp(0),
       m_parser(NULL),
-      m_parserExts(pmh_EXT_NOTES | pmh_EXT_STRIKE | pmh_EXT_FRONTMATTER | pmh_EXT_MARK),
+      m_parserExts(pmh_EXT_NOTES
+                   | pmh_EXT_STRIKE
+                   | pmh_EXT_FRONTMATTER
+                   | pmh_EXT_MARK
+                   | pmh_EXT_TABLE),
       m_parseInterval(50),
       m_notifyHighlightComplete(false),
       m_fastParseInterval(30)

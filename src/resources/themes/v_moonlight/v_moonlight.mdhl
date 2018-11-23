@@ -203,3 +203,10 @@ font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
 MARK
 foreground: abb2bf
 background: 551560
+
+TABLE
+font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
+
+TABLEBORDER
+foreground: e06c75
+background: 393f4a
