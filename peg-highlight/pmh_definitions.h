@@ -58,6 +58,9 @@ typedef enum
     pmh_DISPLAYFORMULA,     /**< Math display formula */
     pmh_INLINEEQUATION,     /**< Math inline equation */
     pmh_MARK,               /**< HTML <mark> tag content */
+    pmh_TABLE,              /**< GFM table */
+    pmh_TABLEHEADER,        /**< GFM table header */
+    pmh_TABLEBORDER,        /**< GFM table border | */
 
     // Utility types used by the parser itself:
 
@@ -89,7 +92,7 @@ typedef enum
 * \brief Number of types in pmh_element_type.
 * \sa pmh_element_type
 */
-#define pmh_NUM_TYPES 36
+#define pmh_NUM_TYPES 39
 
 /**
 * \brief Number of *language element* types in pmh_element_type.
@@ -129,6 +132,7 @@ enum pmh_extensions
     pmh_EXT_MATH         = (1 << 3),  /**< Math */
     pmh_EXT_MARK         = (1 << 4),  /**< HTML <mark> tag content */
     pmh_EXT_MATH_RAW     = (1 << 5),  /**< Math in format \begin and \end */
+    pmh_EXT_TABLE        = (1 << 6),  /** GFM Table */
 };
 
 #endif
