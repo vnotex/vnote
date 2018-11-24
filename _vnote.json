@@ -1,0 +1,19 @@
+{
+    "attachment_folder": "_v_attachments",
+    "created_time": "2018-11-24T05:00:58Z",
+    "files": [
+    ],
+    "image_folder": "",
+    "recycle_bin_folder": "_v_recycle_bin",
+    "sub_directories": [
+        {
+            "name": "en_US"
+        },
+        {
+            "name": "zh_CN"
+        }
+    ],
+    "tags": [
+    ],
+    "version": "1"
+}

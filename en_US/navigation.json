@@ -1,0 +1,53 @@
+{
+    "navigation":
+    [
+        {
+            "text": "Home",
+            "target": "index.md",
+            "toc": false
+        },
+        {
+            "text": "Downloads",
+            "target": "downloads.md"
+        },
+        {
+            "text": "Screenshots",
+            "target": "screenshots.md",
+            "toc": false
+        },
+        {
+            "text": "Blogs",
+            "target": "blogs/_vnote.json",
+            "navi": true
+        },
+        {
+            "text": "Documentation",
+            "target": "docs/_vnote.json",
+            "navi": true,
+            "navi_index": "welcome.md"
+        },
+        {
+            "text": "Donate",
+            "target": "donate.md",
+            "toc": false
+        },
+        {
+            "text": "Language",
+            "children":
+            [
+                {
+                    "text": "中文 Chinese",
+                    "target": "#"
+                }
+            ]
+        }
+    ],
+    "actions":
+    [
+        {
+            "text": "GitHub",
+            "icon": "css/github.svg",
+            "target": "https://github.com/tamlok/vnote"
+        }
+    ]
+}
