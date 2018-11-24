@@ -3,6 +3,12 @@
     "files": [
     ],
     "sub_directories": [
+        {
+            "name": "Users"
+        },
+        {
+            "name": "Developers"
+        }
     ],
     "version": "1"
 }

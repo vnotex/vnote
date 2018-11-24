@@ -24,7 +24,7 @@
             "text": "文档",
             "target": "docs/_vnote.json",
             "navi": true,
-            "navi_index": "welcome.md"
+            "navi_index": "用户/welcome.md"
         },
         {
             "text": "捐赠",
@@ -48,6 +48,11 @@
             "text": "GitHub",
             "icon": "css/github.svg",
             "target": "https://github.com/tamlok/vnote"
+        },
+        {
+            "text": "Slack",
+            "icon": "css/slack.svg",
+            "target": "https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTQ1Yzk1YjA5MjAyYTU0MjJkMTUxNmRiYWQ2YjlkOWU0ZGZlMTFlZTAxNzg0ZGUyNzI0ZGY2NDg4MmU1M2FkMDg"
         }
     ]
 }
