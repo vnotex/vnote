@@ -24,7 +24,7 @@
             "text": "文档",
             "target": "docs/_vnote.json",
             "navi": true,
-            "navi_index": "用户/welcome.md"
+            "navi_index": "用户/欢迎使用.md"
         },
         {
             "text": "捐赠",
