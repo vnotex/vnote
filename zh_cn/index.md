@@ -65,3 +65,9 @@ VNote v2.1 已经释出！ 看看都有 [哪些更新](https://github.com/tamlok
 - 贴心顺手的快捷键
 
 ![](_v_images/20181124161508229_152845752.svg =512x)
+
+::: alert-success
+
+[**下载VNote**](downloads.md)，开始Markdown之旅！
+
+:::

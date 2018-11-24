@@ -65,3 +65,9 @@ VNote v2.1 is released! Check out [what's new](https://github.com/tamlok/vnote/r
 - Versatile shortcuts
 
 ![](_v_images/20181124161508229_152845752.svg =512x)
+
+::: alert-success
+
+[**Get VNote**](downloads.md) and enjoy Markdown!
+
+:::
