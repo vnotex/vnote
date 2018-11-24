@@ -1,67 +1,67 @@
 ![](resources/vnote.svg =256x)
 
 # VNote
-**A note-taking application that knows programmers and markdown better.**
+**一个更懂程序员和Markdown的笔记！**
 
 ::: alert-success
 
-VNote v2.1 is released! Check out [what's new](https://github.com/tamlok/vnote/releases/latest)!
+VNote v2.1 已经释出！ 看看都有 [哪些更新](https://github.com/tamlok/vnote/releases/latest)！
 
 :::
 
-- Join VNote on [Github](https://github.com/tamlok/vnote)
-- Chat on [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTQ1Yzk1YjA5MjAyYTU0MjJkMTUxNmRiYWQ2YjlkOWU0ZGZlMTFlZTAxNzg0ZGUyNzI0ZGY2NDg4MmU1M2FkMDg)
-- Subscribe to WeChat **vnote_md**
+- 加入VNote [Github](https://github.com/tamlok/vnote)
+- 聊聊VNote [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTQ1Yzk1YjA5MjAyYTU0MjJkMTUxNmRiYWQ2YjlkOWU0ZGZlMTFlZTAxNzg0ZGUyNzI0ZGY2NDg4MmU1M2FkMDg)
+- 关注VNote微信公众号 **vnote_md**
 
-## Open source and free
-- Open source in [MIT](http://opensource.org/licenses/MIT) license
-- Powered by Qt and C++
-- Available on Linux, Windows, and macOS
+## 开源和自由
+- 遵从 [MIT](http://opensource.org/licenses/MIT) 开源协议
+- 由Qt和C++提供强劲性能
+- 主流操作系统Linux，Windows，和macOS
 
 ![](_v_images/20181124154422086_1815676907.svg =512x)
 
-## Simple notes management
-- All plain text, no database
-- Self-contained **notebooks**, infinite levels of **folders**, plain **notes**
-- Tags and attachments
-- Explore and edit external files
+## 直观的笔记管理
+- 只有纯文本，不依赖数据库
+- 独立的**笔记本** ，无限层级的**文件夹** ，开放的**笔记**
+- 支持标签和附件
+- 浏览和编辑外部文件
 
 ![](_v_images/20181124155022977_806133500.svg =512x)
 
-## Own your data
-- All files on your local disk
-- One notebook is exactly one directory
-- Work from anywhere seamlessly via third-party service of your choice
+## 数据自主掌控
+- 所有文件都在本地存储
+- 一个笔记本对应一个目录
+- 自由选择第三方同步服务，实现多端无缝工作
 
 ![](_v_images/20181124155408890_125984506.svg =512x)
 
-## Concentration
-- **No** live preview side by side
-- Focus on your note in both **read** and **edit** mode
+## 专注
+- 没有双边实时预览
+- 通过**阅读**和**编辑**模式以专注于笔记
 
 ![](_v_images/20181124155541581_1337512834.svg =512x)
 
-## Pleasant Markdown experience
-- Minimized gap between read and write of Markdown
-- Syntax highlights and in-place preview
-- Effective images management
-- Interactive outline
-- UML diagrams, flowcharts, and math formulas
+## 舒适的Markdown体验
+- 最小化Markdown阅读和书写的鸿沟
+- 语法高亮和原地预览
+- 高效的图片管理
+- 交互式的大纲
+- UML图表，流程图和数学公式
 
 ![](_v_images/20181124160539465_1974001899.svg =512x)
 
-## Highly customizable
-- Themes and styles
-- Shortcuts and behaviors
+## 高度可定制
+- 主题和样式
+- 快捷键和软件行为
 
 ![](_v_images/20181124160655553_1770055980.svg =512x)
 
-## By programmers, for programmers
-- Vim mode and Vim-like navigation
-- Line number in editor
-- Multiple tabs
-- Window splits
-- Fuzzy search and jump
-- Versatile shortcuts
+## 程序员为程序员优化打造
+- Vim模式和Vim式导航
+- 编辑器行号
+- 多标签页
+- 窗口分割
+- 模糊查找和跳转
+- 贴心顺手的快捷键
 
 ![](_v_images/20181124161508229_152845752.svg =512x)
