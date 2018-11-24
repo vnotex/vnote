@@ -7,10 +7,10 @@
     "recycle_bin_folder": "_v_recycle_bin",
     "sub_directories": [
         {
-            "name": "en_US"
+            "name": "en_us"
         },
         {
-            "name": "zh_CN"
+            "name": "zh_cn"
         }
     ],
     "tags": [

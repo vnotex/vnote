@@ -8,9 +8,9 @@
             var language = languageString.split(/[_-]/)[0].toLowerCase();
             switch (language) {
             case 'zh':
-                return "/zh_CN/";
+                return "zh_cn/";
             default:
-                return "/en_US/";
+                return "en_us/";
             }
         })();
         window.location.href = redir;
