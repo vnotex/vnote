@@ -1,0 +1,53 @@
+{
+    "navigation":
+    [
+        {
+            "text": "首页",
+            "target": "index.md",
+            "toc": false
+        },
+        {
+            "text": "下载",
+            "target": "downloads.md"
+        },
+        {
+            "text": "使用截图",
+            "target": "screenshots.md",
+            "toc": false
+        },
+        {
+            "text": "博客",
+            "target": "blogs/_vnote.json",
+            "navi": true
+        },
+        {
+            "text": "文档",
+            "target": "docs/_vnote.json",
+            "navi": true,
+            "navi_index": "welcome.md"
+        },
+        {
+            "text": "捐赠",
+            "target": "donate.md",
+            "toc": false
+        },
+        {
+            "text": "语言",
+            "children":
+            [
+                {
+                    "text": "English",
+                    "target": "https://tamlok.github.io/vnote/en_us/"
+                }
+            ]
+        }
+    ],
+    "actions":
+    [
+        {
+            "text": "GitHub",
+            "icon": "css/github.svg",
+            "target": "https://github.com/tamlok/vnote"
+        }
+    ]
+}
