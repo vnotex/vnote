@@ -8,7 +8,7 @@ To upgrade VNote, you could just simply remove the old package and download the 
 ## Windows
 ### Official Zip ![](https://ci.appveyor.com/api/projects/status/github/tamlok/vnote?svg=true)
 
-- [Github releases](https://github.com/tamlok/vnote/releases)
+- [GitHub releases](https://github.com/tamlok/vnote/releases)
 - Latest builds on master: [ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
 
 ::: alert-warning
@@ -31,7 +31,7 @@ scoop update vnote
 
 There is an AppImage format standalone executable of VNote for major Linux distributions. **Any help for packaging and distribution on Linux is appreciated!**
 
-- [Github releases](https://github.com/tamlok/vnote/releases)
+- [GitHub releases](https://github.com/tamlok/vnote/releases)
 - Latest builds on master: [ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
 
 ### openSUSE
@@ -60,7 +60,7 @@ There is also a development version that tracks the latest master [vnote-git](ht
 
 ## MacOS ![](https://travis-ci.org/tamlok/vnote.svg?branch=master)
 
-- [Github releases](https://github.com/tamlok/vnote/releases)
+- [GitHub releases](https://github.com/tamlok/vnote/releases)
 - Latest builds on master: [ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
 
 You can also install VNote using homebrew, through the cask tap:

@@ -1,24 +1,26 @@
-# Downloads
+# 下载
 ::: alert-info
 
-To upgrade VNote, you could just simply remove the old package and download the new one.
+如果是更新VNote版本，可以直接删除原来的旧版本并下载最新版本。
 
 :::
 
-## Windows
-### Official Zip ![](https://ci.appveyor.com/api/projects/status/github/tamlok/vnote?svg=true)
+国内的用户可以尝试在[百度云盘](http://pan.baidu.com/s/1jI5HROq)下载VNote的最新发行版本。
 
-- [Github releases](https://github.com/tamlok/vnote/releases)
-- Latest builds on master: [ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
+## Windows
+### 官方压缩包 ![](https://ci.appveyor.com/api/projects/status/github/tamlok/vnote?svg=true)
+
+- [GitHub releases](https://github.com/tamlok/vnote/releases)
+- master分支的最新构建：[ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
 
 ::: alert-warning
 
-**NOT** supported in XP since QtWebEngineProcess used by VNote could not work in XP.
+VNote不支持**XP**，因为QtWebEngineProcess无法在XP上运行。
 
 :::
 
 ### Scoop
-VNote can be installed from `extras` bucket of Scoop.
+VNote也可以通过Scoop的`extras`仓库进行安装。
 
 ```shell
 scoop bucket add extras
@@ -27,15 +29,15 @@ scoop update vnote
 ```
 
 ## Linux
-### AppImage ![](https://travis-ci.org/tamlok/vnote.svg?branch=master)
+### AppImage ![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)
 
-There is an AppImage format standalone executable of VNote for major Linux distributions. **Any help for packaging and distribution on Linux is appreciated!**
+VNote当前为主要Linux发行版提供了一个AppImage格式的独立可执行文件。希望了解Linux系统下打包发布的开发人员能提供这方面进一步的帮助！
 
-- [Github releases](https://github.com/tamlok/vnote/releases)
-- Latest builds on master: [ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
+- [GitHub releases](https://github.com/tamlok/vnote/releases)
+- master分支的最新构建：[ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
 
 ### openSUSE
-Currently `vnote` on openSUSE Tumbleweed can be installed from `home:opensuse_zh` project on OBS. You can execute the following command directly:
+目前 openSUSE Tumbleweed 可以通过 OBS 上的 `home:opensuse_zh` 源直接安装。您可以直接执行以下命令：
 
 ```shell
 sudo zypper ar https://download.opensuse.org/repositories/home:/opensuse_zh/openSUSE_Tumbleweed/ home:opensuse_zh
@@ -43,12 +45,12 @@ sudo zypper ref
 sudo zypper in vnote
 ```
 
-For other architectures, please search for `vnote` at [software.opensuse.org](https://software.opensuse.org).
+其他架构请直接在 [software.opensuse.org](https://software.opensuse.org) 搜索 `vnote`。
 
-We don't support Leap 42 and below due to the Qt version. Please use AppImage or build it yourself.
+由于 Leap 42 及以下版本的 Qt 版本过低，我们无法在 OBS 上进行打包。请使用 AppImage 或自行构建。
 
 ### Arch Linux
-VNote on Arch Linux can be installed from the AUR as [vnote](https://aur.archlinux.org/packages/vnote-bin/):
+Arch Linux可以通过AUR中的 [vnote-bin](https://aur.archlinux.org/packages/vnote-bin/) 进行安装：
 
 ```shell
 git clone https://aur.archlinux.org/vnote-bin.git
@@ -56,14 +58,14 @@ cd vnote-bin
 makepkg -sic
 ```
 
-There is also a development version that tracks the latest master [vnote-git](https://aur.archlinux.org/packages/vnote-git/).
+AUR也提供一个和最新master分支同步的开发版本 [vnote-git](https://aur.archlinux.org/packages/vnote-git/) 。
 
-## MacOS ![](https://travis-ci.org/tamlok/vnote.svg?branch=master)
+## MacOS ![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)
 
-- [Github releases](https://github.com/tamlok/vnote/releases)
-- Latest builds on master: [ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
+- [GitHub releases](https://github.com/tamlok/vnote/releases)
+- master分支的最新构建：[ ![Download](https://api.bintray.com/packages/tamlok/vnote/vnote/images/download.svg) ](https://bintray.com/tamlok/vnote/vnote/_latestVersion)
 
-You can also install VNote using homebrew, through the cask tap:
+也可以通过 homebrew cask 进行安装：
 
 ```shell
 brew cask install vnote

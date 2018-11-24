@@ -1,7 +1,7 @@
 ![](resources/vnote.svg =256x)
 
 # VNote
-**A note-taking application that knows programmers and markdown better.**
+**A note-taking application that knows programmers and markdown better!**
 
 ::: alert-success
 
@@ -9,7 +9,7 @@ VNote v2.1 is released! Check out [what's new](https://github.com/tamlok/vnote/r
 
 :::
 
-- Join VNote on [Github](https://github.com/tamlok/vnote)
+- Join VNote on [GitHub](https://github.com/tamlok/vnote)
 - Chat on [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTQ1Yzk1YjA5MjAyYTU0MjJkMTUxNmRiYWQ2YjlkOWU0ZGZlMTFlZTAxNzg0ZGUyNzI0ZGY2NDg4MmU1M2FkMDg)
 - Subscribe to WeChat **vnote_md**
 

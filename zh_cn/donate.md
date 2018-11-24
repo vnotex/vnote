@@ -1,13 +1,13 @@
-# Donate
-VNote is an open source and free project maintained by the author in part time. Please consider helping VNote to grow up.
+# 捐赠
+VNote是一个由作者业余时间维护的开源自由项目。需要大家帮助VNote成长。
 
-- Keep monitoring VNote and sending feedback for improvement.
-- Spread and promote VNote to your friends.
-- Participate in the development of VNote and send Pull Request to make VNote perfect.
-- Really appreciate your donate to VNote.
-    - Alipay: `tamlokveer@gmail.com`  
+- 关注VNote并反馈使用意见；
+- 传播和推荐VNote给您的好友；
+- 参与VNote的开发或书写文档，帮助VNote变得更好；
+- 非常感谢您的捐赠;
+    - 支付宝： `tamlokveer@gmail.com`  
     ![](_v_images/20181124165109541_999429459.png =256x)
-    - WeChat  
+    - 微信  
     ![](_v_images/20181124165142716_2035299364.png =256x)
 
-Thanks for [those](https://github.com/tamlok/vnote/wiki/Donate-List) who donated to VNote!
+感谢[这些用户](https://github.com/tamlok/vnote/wiki/Donate-List)对VNote的捐赠和帮助！

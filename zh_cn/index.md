@@ -5,18 +5,18 @@
 
 ::: alert-success
 
-VNote v2.1 已经释出！ 看看都有 [哪些更新](https://github.com/tamlok/vnote/releases/latest)！
+VNote v2.1 已发布！ 看看都有 [哪些更新](https://github.com/tamlok/vnote/releases/latest)！
 
 :::
 
-- 加入VNote [Github](https://github.com/tamlok/vnote)
+- 加入VNote [GitHub](https://github.com/tamlok/vnote)
 - 聊聊VNote [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTQ1Yzk1YjA5MjAyYTU0MjJkMTUxNmRiYWQ2YjlkOWU0ZGZlMTFlZTAxNzg0ZGUyNzI0ZGY2NDg4MmU1M2FkMDg)
 - 关注VNote微信公众号 **vnote_md**
 
 ## 开源和自由
 - 遵从 [MIT](http://opensource.org/licenses/MIT) 开源协议
 - 由Qt和C++提供强劲性能
-- 主流操作系统Linux，Windows，和macOS
+- 支持主流操作系统Linux，Windows，和macOS
 
 ![](_v_images/20181124154422086_1815676907.svg =512x)
 
