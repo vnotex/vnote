@@ -1748,7 +1748,10 @@ QPixmap VUtils::svgToPixmap(const QByteArray &p_content,
     }
 
     QPixmap pm(deSz);
-    if (!p_background.isEmpty()) {
+    if (p_background.isEmpty()) {
+        // Fill a transparent background to avoid glitchy preview.
+        pm.fill(QColor(255, 255, 255, 0));
+    } else {
         pm.fill(p_background);
     }
 
