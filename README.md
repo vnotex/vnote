@@ -1,11 +1,9 @@
 # VNote
-- [中文 Chinese](./README_zh.md)
-- [VNote Homepage](https://tamlok.github.io/vnote)
-- [Documentation](http://vnote.readthedocs.io/en/latest/)
-- [Screenshots](https://tamlok.github.io/vnote/gallery.html)
-- [VNote Posts](https://github.com/tamlok/vnote-posts)
+[中文 Chinese](./README_zh.md)
 
-Designed specially for **Markdown**, **VNote** is a Vim-inspired note-taking application, which knows programmers and Markdown better.
+**VNote is a note-taking application that knows programmers and Markdown better.**
+
+For more information, please visit [**VNote's Homepage**](https://tamlok.github.io/vnote).
 
 ![VNote](screenshots/vnote.png)
 
@@ -86,7 +84,8 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 
 # Supports
 - [Github issues](https://github.com/tamlok/vnote/issues);
-- Email: tamlokveer at gmail.com;
+- Email: `tamlokveer at gmail.com`;
+- [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTQ1Yzk1YjA5MjAyYTU0MjJkMTUxNmRiYWQ2YjlkOWU0ZGZlMTFlZTAxNzg0ZGUyNzI0ZGY2NDg4MmU1M2FkMDg);
 - WeChat Public Account: VNote笔记 (vnote_md);  
 ![VNote WeChat](screenshots/vnote_md.jpg)
 
@@ -99,7 +98,7 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 - Side-by-side live preview for diagrams;
 - Outline in both edit and read mode;
 - Custom styles in both edit and read mode;
-- Vim mode and a set of powerful shortcuts;
+- **Vim** mode and a set of powerful shortcuts;
 - Infinite levels of folders;
 - Multiple tabs and splitting windows;
 - [Mermaid](http://knsv.github.io/mermaid/), [Flowchart.js](http://flowchart.js.org/), [MathJax](https://www.mathjax.org/), [PlantUML](http://plantuml.com/), and [Graphviz](http://www.graphviz.org/);
@@ -117,9 +116,9 @@ You could help VNote's development in many ways.
 - Last, really appreciate your donate to VNote if you think VNote really helps you and you want to help VNote.
     - PayPal: [PayPal.Me/vnotemd](https://www.paypal.me/vnotemd)
     - Alipay: `tamlokveer@gmail.com`  
-    ![Alipay](screenshots/alipay.png)
+    <img src="screenshots/alipay.png" width="256px" height="256px" />
     - WeChat  
-    ![WeChat Pay](screenshots/wechat_pay.png)
+    <img src="screenshots/wechat_pay.png" width="256px" height="256px" />
 
 Thanks very much to [them](https://github.com/tamlok/vnote/wiki/Donate-List) who donated to VNote!
 
@@ -168,12 +167,8 @@ VNote supports powerful **in-place preview** for images, diagrams, and formulas 
 ## Pleasant Image Experience
 Just paste your image into the Markdown note, VNote will manage all other stuffs. VNote stores images in a specified folder in the same folder with the note. VNote will pop up a window to preview the image when you insert an image. Furthermore, VNote will delete the useless image files automatically after you remove the image links.
 
-![Pleasant Image Experience](screenshots/_1513485753_394180887.png)
-
 ## Universal Entry & Full-Text Search
 VNote has powerful built-in full-text search with **Regular Expression** and **Fuzzy Search** support. The search could be executed wihtin all notebooks, current notebook, or current folder, targeted at name or content.
-
-![Full-Text Search](screenshots/_1522894671_1711734243.png)
 
 Like the `CtrlP` in Vim, VNote supports **Universal Entry** to reach anything by typing in a simple input.
 

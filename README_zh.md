@@ -1,11 +1,9 @@
 # VNote
 - [英文 English](./README.md)
-- [VNote主页](https://tamlok.github.io/vnote)
-- [文档](http://vnote.readthedocs.io/en/latest/)
-- [使用截图](https://tamlok.github.io/vnote/gallery.html)
-- [相关文章](https://github.com/tamlok/vnote-posts)
 
-**VNote** 是一个受Vim启发开发的专门为 **Markdown** 而优化、设计的笔记软件。VNote是一个更了解程序员和Markdown的笔记软件。
+**VNote是一个更懂程序员和Markdown的笔记！**
+
+更多信息，请访问 [**VNote主页**](https://tamlok.github.io/vnote) 。
 
 ![VNote](screenshots/vnote.png)
 
@@ -87,7 +85,8 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 
 # 支持
 - [Github issues](https://github.com/tamlok/vnote/issues)；
-- 邮箱: tamlokveer at gmail.com；
+- 邮箱: `tamlokveer at gmail.com` ；
+- [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTQ1Yzk1YjA5MjAyYTU0MjJkMTUxNmRiYWQ2YjlkOWU0ZGZlMTFlZTAxNzg0ZGUyNzI0ZGY2NDg4MmU1M2FkMDg)；
 - 微信公众号: VNote笔记（vnote_md）；  
 ![VNote WeChat](screenshots/vnote_md.jpg)
 
@@ -100,7 +99,7 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 - 针对图表的两边实时预览；
 - 编辑和阅读模式下的大纲；
 - 自定义编辑和阅读模式的样式；
-- Vim模式以及一系列强大的快捷键；
+- **Vim** 模式以及一系列强大的快捷键；
 - 无限层级的文件夹；
 - 多个标签页和窗口分割；
 - [Mermaid](http://knsv.github.io/mermaid/)、 [Flowchart.js](http://flowchart.js.org/)、 [MathJax](https://www.mathjax.org/)、 [PlantUML](http://plantuml.com/) 和 [Graphviz](http://www.graphviz.org/)；
@@ -118,11 +117,11 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 - 最后，如果您觉得VNote真的帮助到您并且想回馈VNote，非常感谢您的捐赠。
     - PayPal: [PayPal.Me/vnotemd](https://www.paypal.me/vnotemd)
     - 支付宝: `tamlokveer@gmail.com`  
-    ![Alipay](screenshots/alipay.png)
+    <img src="screenshots/alipay.png" width="256px" height="256px" />
     - 微信  
-    ![WeChat Pay](screenshots/wechat_pay.png)
+    <img src="screenshots/wechat_pay.png" width="256px" height="256px" />
 
-非常感谢这些对VNote的 [捐赠者](https://github.com/tamlok/vnote/wiki/Donate-List) !
+非常感谢这些VNote的 [捐赠者](https://github.com/tamlok/vnote/wiki/Donate-List) !
 
 # 开发VNote的动机
 ## Markdown编辑器与笔记管理
@@ -169,12 +168,8 @@ VNote支持在编辑时原地预览图片、图表和公式。
 ## 良好的图片体验
 编辑时，支持像其他富文本编辑器一样直接粘贴插入图片，VNote会帮您管理所插入的图片。VNote将这些图片保存在和笔记同一目录下的一个指定目录中。插入图片时，VNote会弹出一个窗口预览即将要插入的图片。另外，当您移除笔记中的图片链接时，VNote会自动删除对应的图片文件。
 
-![Pleasant Image Experience](screenshots/_1513485753_394180887.png)
-
 ## 通用入口和全文搜索
 VNote内置强大的全文搜索，支持**正则表达式**和**模糊搜索**。搜索可以指定范围，包括全部笔记本、当前笔记本和当前文件夹，也可以指定目标，如名字或内容。
-
-![Full-Text Search](screenshots/_1522894671_1711734243.png)
 
 类似于Vim中的`CtrlP`，VNote支持**通用入口**，可以在一个输入框中进行搜索或跳转。
 
