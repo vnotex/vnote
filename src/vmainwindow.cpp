@@ -1460,9 +1460,9 @@ void VMainWindow::aboutMessage()
     info += "<br/>";
     info += tr("Author: Le Tan (tamlok)");
     info += "<br/><br/>";
-    info += tr("VNote is a free and open source Vim-inspired note-taking application that knows programmers and Markdown better.");
+    info += tr("VNote is a free and open source note-taking application that knows programmers and Markdown better.");
     info += "<br/><br/>";
-    info += tr("Please visit <a href=\"https://github.com/tamlok/vnote.git\">Github</a> for more information.");
+    info += tr("Please visit <a href=\"https://tamlok.github.io/vnote\">VNote</a> for more information.");
     QMessageBox::about(this, tr("About VNote"), info);
 }
 
