@@ -11,7 +11,8 @@ VNote v2.1 已发布！ 看看都有 [哪些更新](https://github.com/tamlok/vn
 
 - 加入VNote [GitHub](https://github.com/tamlok/vnote)
 - 聊聊VNote [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTQ1Yzk1YjA5MjAyYTU0MjJkMTUxNmRiYWQ2YjlkOWU0ZGZlMTFlZTAxNzg0ZGUyNzI0ZGY2NDg4MmU1M2FkMDg)
-- 关注VNote微信公众号 **vnote_md**
+- 关注VNote微信公众号 **vnote_md**  
+![扫码关注](_v_images/20181125110021007_339926743.jpg =248x)
 
 ## 开源和自由
 - 遵从 [MIT](http://opensource.org/licenses/MIT) 开源协议
