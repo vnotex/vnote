@@ -115,10 +115,8 @@ You could help VNote's development in many ways.
 - Participate in the development of VNote and send PullRequest to make VNote perfect.
 - Last, really appreciate your donate to VNote if you think VNote really helps you and you want to help VNote.
     - PayPal: [PayPal.Me/vnotemd](https://www.paypal.me/vnotemd)
-    - Alipay: `tamlokveer@gmail.com`  
-    <img src="screenshots/alipay.png" width="256px" height="256px" />
-    - WeChat  
-    <img src="screenshots/wechat_pay.png" width="256px" height="256px" />
+    - Alipay: `tamlokveer@gmail.com` <img src="screenshots/alipay.png" width="256px" height="256px" />
+    - WeChat <img src="screenshots/wechat_pay.png" width="256px" height="256px" />
 
 Thanks very much to [them](https://github.com/tamlok/vnote/wiki/Donate-List) who donated to VNote!
 
