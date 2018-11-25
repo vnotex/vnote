@@ -115,9 +115,16 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 - 向您的朋友们推广和传播VNote。普及度是驱动开发者的一股强大力量。
 - 参与到VNote的开发中，发送PullRequest来帮助VNote变得更完美。
 - 最后，如果您觉得VNote真的帮助到您并且想回馈VNote，非常感谢您的捐赠。
-    - PayPal: [PayPal.Me/vnotemd](https://www.paypal.me/vnotemd)
-    - 支付宝: `tamlokveer@gmail.com` <img src="screenshots/alipay.png" width="256px" height="256px" />
-    - 微信 <img src="screenshots/wechat_pay.png" width="256px" height="256px" />
+
+**PayPal**: [PayPal.Me/vnotemd](https://www.paypal.me/vnotemd)
+
+**支付宝**: `tamlokveer@gmail.com`
+
+<img src="screenshots/alipay.png" width="256px" height="256px" />
+
+**微信**
+
+<img src="screenshots/wechat_pay.png" width="256px" height="256px" />
 
 非常感谢这些VNote的 [捐赠者](https://github.com/tamlok/vnote/wiki/Donate-List) !
 
