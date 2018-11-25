@@ -419,6 +419,14 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
 
     menu.addSeparator();
 
+    if (! item->parent()) { 	// only the root have this menu action
+        QAction *rebuildNotebookAct = new QAction(tr("&Rebuild Notebook"), &menu);
+        rebuildNotebookAct->setToolTip(tr("Rebuild the current notebook based on the real directory structure"));
+        connect(rebuildNotebookAct, &QAction::triggered,
+                this, &VDirectoryTree::rebuildNotebook);
+        menu.addAction(rebuildNotebookAct);
+    }
+
     QAction *reloadAct = new QAction(tr("&Reload From Disk"), &menu);
     reloadAct->setToolTip(tr("Reload the content of this folder (or notebook) from disk"));
     connect(reloadAct, &QAction::triggered,
@@ -650,6 +658,21 @@ void VDirectoryTree::openDirectoryLocation() const
     V_ASSERT(curItem);
     QUrl url = QUrl::fromLocalFile(getVDirectory(curItem)->fetchPath());
     QDesktopServices::openUrl(url);
+}
+
+void VDirectoryTree::rebuildNotebook()
+{
+    if (!m_notebook) {
+        return;
+    }
+
+    VNotebook::buildNotebook(m_notebook->getName(),
+                             m_notebook->getPath(),
+                             m_notebook->getImageFolder(),
+                             m_notebook->getAttachmentFolder()
+                             );
+    // reload after rebuilding
+    reloadFromDisk();
 }
 
 void VDirectoryTree::reloadFromDisk()

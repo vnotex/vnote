@@ -87,6 +87,8 @@ private slots:
     // Open the folder's parent directory in system's file browser.
     void openDirectoryLocation() const;
 
+    void rebuildNotebook();
+
     // Reload the content of current directory.
     void reloadFromDisk();
 
