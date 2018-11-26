@@ -419,8 +419,8 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
 
     menu.addSeparator();
 
-    if (! item->parent()) { 	// only the root have this menu action
-        QAction *rebuildNotebookAct = new QAction(tr("&Rebuild Notebook"), &menu);
+    if (!item->parent()) { 	// only the root have this menu action
+        QAction *rebuildNotebookAct = new QAction(tr("Rebuild Notebook"), &menu);
         rebuildNotebookAct->setToolTip(tr("Rebuild the current notebook based on the real directory structure"));
         connect(rebuildNotebookAct, &QAction::triggered,
                 this, &VDirectoryTree::rebuildNotebook);
