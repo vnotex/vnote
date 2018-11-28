@@ -77,7 +77,7 @@ void VHistoryList::setupUI()
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(btnLayout);
     mainLayout->addWidget(m_itemList);
-    mainLayout->setContentsMargins(3, 0, 3, 0);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
 
     setLayout(mainLayout);
 }

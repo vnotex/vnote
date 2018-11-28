@@ -303,6 +303,7 @@ void VMainWindow::setupUI()
 void VMainWindow::setupNaviBox()
 {
     m_naviBox = new VToolBox();
+    m_naviBox->setObjectName("MainToolBox");
 
     setupNotebookPanel();
     m_naviBox->addItem(m_nbSplitter,

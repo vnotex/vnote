@@ -244,7 +244,7 @@ void VExplorer::setupUI()
     mainLayout->addWidget(m_imgFolderEdit);
     mainLayout->addLayout(btnLayout);
     mainLayout->addWidget(m_tree);
-    mainLayout->setContentsMargins(3, 0, 3, 0);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
 
     setLayout(mainLayout);
 }
