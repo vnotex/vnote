@@ -126,6 +126,8 @@ private slots:
     // Hanlde Open With action's triggered signal.
     void handleOpenWithActionTriggered();
 
+    void openCurrentItemViaDefaultProgram();
+
 protected:
     void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
 

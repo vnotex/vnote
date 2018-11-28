@@ -158,6 +158,14 @@ void VFileList::initShortcuts()
             this, [this](){
                 pasteFilesFromClipboard();
             });
+
+    QKeySequence seq(g_config->getShortcutKeySequence("OpenViaDefaultProgram"));
+    if (!seq.isEmpty()) {
+        QShortcut *defaultProgramShortcut = new QShortcut(seq, this);
+        defaultProgramShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+        connect(defaultProgramShortcut, &QShortcut::activated,
+                this, &VFileList::openCurrentItemViaDefaultProgram);
+    }
 }
 
 void VFileList::setDirectory(VDirectory *p_directory)
@@ -1279,32 +1287,10 @@ QMenu *VFileList::getOpenWithMenu()
         name = QString("%1\t%2").arg(name)
                                 .arg(VUtils::getShortcutText(g_config->getShortcutKeySequence("OpenViaDefaultProgram")));
     }
-
     QAction *defaultAct = new QAction(name, this);
     defaultAct->setToolTip(tr("Open current note with system's default program"));
-    if (!seq.isEmpty()) {
-        QShortcut *shortcut = new QShortcut(seq, this);
-        shortcut->setContext(Qt::WidgetWithChildrenShortcut);
-        connect(shortcut, &QShortcut::activated,
-                this, [defaultAct](){
-                    defaultAct->trigger();
-                });
-    }
-
     connect(defaultAct, &QAction::triggered,
-            this, [this]() {
-                QListWidgetItem *item = fileList->currentItem();
-                if (item) {
-                    VNoteFile *file = getVFile(item);
-                    if (file
-                        && (!g_config->getCloseBeforeExternalEditor()
-                            || !editArea->isFileOpened(file)
-                            || editArea->closeFile(file, false))) {
-                        QUrl url = QUrl::fromLocalFile(file->fetchPath());
-                        QDesktopServices::openUrl(url);
-                    }
-                }
-            });
+            this, &VFileList::openCurrentItemViaDefaultProgram);
 
     m_openWithMenu->addAction(defaultAct);
 
@@ -1541,4 +1527,19 @@ QByteArray VFileList::getMimeData(const QString &p_format,
 void VFileList::setEnableSplitOut(bool p_enabled)
 {
     m_splitBtn->setChecked(p_enabled);
+}
+
+void VFileList::openCurrentItemViaDefaultProgram()
+{
+    QListWidgetItem *item = fileList->currentItem();
+    if (item) {
+        VNoteFile *file = getVFile(item);
+        if (file
+            && (!g_config->getCloseBeforeExternalEditor()
+                || !editArea->isFileOpened(file)
+                || editArea->closeFile(file, false))) {
+            QUrl url = QUrl::fromLocalFile(file->fetchPath());
+            QDesktopServices::openUrl(url);
+        }
+    }
 }
