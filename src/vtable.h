@@ -10,6 +10,25 @@ class VEditor;
 class VTable
 {
 public:
+    enum Alignment {
+        None,
+        Left,
+        Center,
+        Right
+    };
+
+    VTable(VEditor *p_editor, const VTableBlock &p_block);
+
+    VTable(VEditor *p_editor, int p_nrBodyRow, int p_nrCol, VTable::Alignment p_alignment);
+
+    bool isValid() const;
+
+    void format();
+
+    // Write a formatted table.
+    void write();
+
+private:
     struct Cell
     {
         Cell()
@@ -53,12 +72,13 @@ public:
 
         bool isValid() const
         {
-            return m_block.isValid();
+            return !m_cells.isEmpty();
         }
 
         void clear()
         {
             m_block = QTextBlock();
+            m_preText.clear();
             m_cells.clear();
         }
 
@@ -75,31 +95,11 @@ public:
         }
 
         QTextBlock m_block;
+        // Text before table row.
+        QString m_preText;
         QVector<Cell> m_cells;
     };
 
-    enum Alignment
-    {
-        None,
-        Left,
-        Center,
-        Right
-    };
-
-    VTable(VEditor *p_editor, const VTableBlock &p_block);
-
-    bool isValid() const;
-
-    void format();
-
-    // Write a formatted table.
-    void write();
-
-    VTable::Row *header() const;
-
-    VTable::Row *delimiter() const;
-
-private:
     // Used to hold info about a cell when formatting a column.
     struct CellInfo
     {
@@ -163,9 +163,20 @@ private:
                              const Cell &p_cell,
                              const CellInfo &p_info,
                              int p_targetWidth,
-                             VTable::Alignment p_align) const;
+                             Alignment p_align) const;
+
+    void writeExist();
+
+    void writeNonExist();
+
+    VTable::Row *header() const;
+
+    VTable::Row *delimiter() const;
 
     VEditor *m_editor;
+
+    // Whether this table exist already.
+    bool m_exist;
 
     // Header, delimiter, and body.
     QVector<Row> m_rows;
@@ -176,6 +187,8 @@ private:
     int m_defaultDelimiterWidth;
 
     static const QString c_defaultDelimiter;
+
+    static const QChar c_borderChar;
 };
 
 #endif // VTABLE_H

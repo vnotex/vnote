@@ -1,7 +1,6 @@
 #include "vtablehelper.h"
 
 #include "veditor.h"
-#include "vtable.h"
 
 VTableHelper::VTableHelper(VEditor *p_editor, QObject *p_parent)
     : QObject(p_parent),
@@ -51,4 +50,14 @@ int VTableHelper::currentCursorTableBlock(const QVector<VTableBlock> &p_blocks) 
     }
 
     return -1;
+}
+
+void VTableHelper::insertTable(int p_nrRow, int p_nrCol, VTable::Alignment p_alignment)
+{
+    VTable table(m_editor, p_nrRow, p_nrCol, p_alignment);
+    if (!table.isValid()) {
+        return;
+    }
+
+    table.write();
 }

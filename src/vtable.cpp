@@ -7,12 +7,71 @@
 
 const QString VTable::c_defaultDelimiter = "---";
 
+const QChar VTable::c_borderChar = '|';
+
 enum { HeaderRowIndex = 0, DelimiterRowIndex = 1 };
 
 VTable::VTable(VEditor *p_editor, const VTableBlock &p_block)
-    : m_editor(p_editor)
+    : m_editor(p_editor),
+      m_exist(true),
+      m_spaceWidth(10),
+      m_minusWidth(10),
+      m_colonWidth(10),
+      m_defaultDelimiterWidth(10)
 {
     parseFromTableBlock(p_block);
+}
+
+VTable::VTable(VEditor *p_editor, int p_nrBodyRow, int p_nrCol, VTable::Alignment p_alignment)
+    : m_editor(p_editor),
+      m_exist(false),
+      m_spaceWidth(10),
+      m_minusWidth(10),
+      m_colonWidth(10),
+      m_defaultDelimiterWidth(10)
+{
+    Q_ASSERT(p_nrBodyRow >= 0 && p_nrCol > 0);
+    m_rows.resize(p_nrBodyRow + 2);
+
+    // PreText for each row.
+    QString preText;
+    QTextCursor cursor = m_editor->textCursorW();
+    Q_ASSERT(cursor.atBlockEnd());
+    if (!cursor.atBlockStart()) {
+        preText = cursor.block().text();
+    }
+
+    QString core(c_defaultDelimiter);
+    switch (p_alignment) {
+    case Alignment::Left:
+        core[0] = ':';
+        break;
+
+    case Alignment::Center:
+        core[0] = ':';
+        core[core.size() - 1] = ':';
+        break;
+
+    case Alignment::Right:
+        core[core.size() - 1] = ':';
+        break;
+
+    default:
+        break;
+    }
+    const QString delimiterCell = generateFormattedText(core, 0);
+    const QString contentCell = generateFormattedText(QString(c_defaultDelimiter.size(), ' '), 0);
+
+    for (int rowIdx = 0; rowIdx < m_rows.size(); ++rowIdx) {
+        auto & row = m_rows[rowIdx];
+        row.m_preText = preText;
+        row.m_cells.resize(p_nrCol);
+
+        const QString &content = isDelimiterRow(rowIdx) ? delimiterCell : contentCell;
+        for (auto & cell : row.m_cells) {
+            cell.m_text = content;
+        }
+    }
 }
 
 bool VTable::isValid() const
@@ -82,6 +141,13 @@ bool VTable::parseOneRow(const QTextBlock &p_block,
         return false;
     }
 
+    // Get pre text.
+    int firstCellOffset = p_borders[p_borderIdx] - startPos;
+    if (text[firstCellOffset] != c_borderChar) {
+        return false;
+    }
+    p_row.m_preText = text.left(firstCellOffset);
+
     for (; p_borderIdx < p_borders.size(); ++p_borderIdx) {
         int border = p_borders[p_borderIdx];
         if (border >= endPos) {
@@ -89,7 +155,7 @@ bool VTable::parseOneRow(const QTextBlock &p_block,
         }
 
         int offset = border - startPos;
-        if (text[offset] != '|') {
+        if (text[offset] != c_borderChar) {
             return false;
         }
 
@@ -101,7 +167,7 @@ bool VTable::parseOneRow(const QTextBlock &p_block,
         }
 
         int nextOffset = p_borders[nextIdx] - startPos;
-        if (text[nextOffset] != '|') {
+        if (text[nextOffset] != c_borderChar) {
             return false;
         }
 
@@ -186,7 +252,7 @@ void VTable::formatOneColumn(int p_idx, int p_cursorRowIdx, int p_cursorPib)
     fetchCellInfoOfColumn(p_idx, cells, targetWidth);
 
     // Get the alignment of this column.
-    const VTable::Alignment align = getColumnAlignment(p_idx);
+    const Alignment align = getColumnAlignment(p_idx);
 
     // Calculate the formatted text of each cell.
     for (int rowIdx = 0; rowIdx < cells.size(); ++rowIdx) {
@@ -246,10 +312,7 @@ void VTable::formatOneColumn(int p_idx, int p_cursorRowIdx, int p_cursorPib)
                     break;
                 }
 
-                Alignment fakeAlign = align == Alignment::None ? Alignment::Left : align;
-                cell.m_formattedText = generateFormattedText(core,
-                                                             0,
-                                                             fakeAlign);
+                cell.m_formattedText = generateFormattedText(core, 0);
             }
         } else {
             Alignment fakeAlign = align;
@@ -385,9 +448,10 @@ QString VTable::generateFormattedText(const QString &p_core,
         rightSpaces = 0;
     }
 
-    return QString("| %1%2%3 ").arg(QString(leftSpaces, ' '))
-                               .arg(p_core)
-                               .arg(QString(rightSpaces, ' '));
+    return QString("%1 %2%3%4 ").arg(c_borderChar)
+                                .arg(QString(leftSpaces, ' '))
+                                .arg(p_core)
+                                .arg(QString(rightSpaces, ' '));
 }
 
 VTable::Alignment VTable::getColumnAlignment(int p_idx) const
@@ -450,7 +514,7 @@ bool VTable::isCellWellFormatted(const Row &p_row,
                                  const Cell &p_cell,
                                  const CellInfo &p_info,
                                  int p_targetWidth,
-                                 VTable::Alignment p_align) const
+                                 Alignment p_align) const
 {
     Q_ASSERT(p_align != Alignment::None);
 
@@ -508,6 +572,15 @@ bool VTable::isCellWellFormatted(const Row &p_row,
 
 void VTable::write()
 {
+    if (m_exist) {
+        writeExist();
+    } else {
+        writeNonExist();
+    }
+}
+
+void VTable::writeExist()
+{
     bool changed = false;
     QTextCursor cursor = m_editor->textCursorW();
     int cursorBlock = -1, cursorPib = -1;
@@ -535,14 +608,7 @@ void VTable::write()
         }
 
         // Construct the block text.
-        QString newBlockText;
-        int firstOffset = row.m_cells.first().m_offset;
-        if (firstOffset > 0) {
-            // Get the prefix text.
-            QString text = row.m_block.text();
-            newBlockText = text.left(firstOffset);
-        }
-
+        QString newBlockText(row.m_preText);
         for (auto & cell : row.m_cells) {
             int pos = newBlockText.size();
             if (cell.m_formattedText.isEmpty()) {
@@ -560,7 +626,7 @@ void VTable::write()
             }
         }
 
-        newBlockText += "|";
+        newBlockText += c_borderChar;
 
         // Replace the whole block.
         cursor.setPosition(row.m_block.position());
@@ -582,4 +648,31 @@ void VTable::write()
             m_editor->setTextCursorW(cur);
         }
     }
+}
+
+void VTable::writeNonExist()
+{
+    // Generate the text of the whole table.
+    QString tableText;
+    for (int rowIdx = 0; rowIdx < m_rows.size(); ++rowIdx) {
+        const auto & row = m_rows[rowIdx];
+        tableText += row.m_preText;
+        for (auto & cell : row.m_cells) {
+            tableText += cell.m_text;
+        }
+
+        tableText += c_borderChar;
+
+        if (rowIdx < m_rows.size() - 1) {
+            tableText += '\n';
+        }
+    }
+
+    QTextCursor cursor = m_editor->textCursorW();
+    int pos = cursor.position() + 2;
+    cursor.movePosition(QTextCursor::StartOfBlock, QTextCursor::MoveAnchor);
+    cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+    cursor.insertText(tableText);
+    cursor.setPosition(pos);
+    m_editor->setTextCursorW(cursor);
 }

@@ -96,6 +96,8 @@ Insert inline code. Press `Ctrl+;` again to exit. Current selected text will be 
 Insert fenced code block. Press `Ctrl+M` again to exit. Current selected text will be wrapped into a code block if exists.
 - `Ctrl+L`  
 Insert link.
+- `Ctrl+.`  
+Insert table.
 - `Ctrl+'`  
 Insert image.
 - `Ctrl+H`  

@@ -72,6 +72,9 @@ public:
     // User requests to insert a link.
     void insertLink();
 
+    // User requests to insert a table.
+    virtual void insertTable() = 0;
+
     // Used for incremental search.
     // User has enter the content to search, but does not enter the "find" button yet.
     bool peekText(const QString &p_text, uint p_options, bool p_forward = true);

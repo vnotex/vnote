@@ -419,7 +419,7 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
 
     menu.addSeparator();
 
-    QAction *reloadAct = new QAction(tr("&Reload From Disk"), &menu);
+    QAction *reloadAct = new QAction(tr("Reload From Disk"), &menu);
     reloadAct->setToolTip(tr("Reload the content of this folder (or notebook) from disk"));
     connect(reloadAct, &QAction::triggered,
             this, &VDirectoryTree::reloadFromDisk);

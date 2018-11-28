@@ -84,6 +84,8 @@ public:
 
     void updateFontAndPalette() Q_DECL_OVERRIDE;
 
+    void insertTable() Q_DECL_OVERRIDE;
+
 public slots:
     bool jumpTitle(bool p_forward, int p_relativeLevel, int p_repeat) Q_DECL_OVERRIDE;
 

@@ -696,6 +696,16 @@ void VMdTab::insertLink()
     m_editor->insertLink();
 }
 
+void VMdTab::insertTable()
+{
+    if (!m_isEditMode) {
+        return;
+    }
+
+    Q_ASSERT(m_editor);
+    m_editor->insertTable();
+}
+
 void VMdTab::findText(const QString &p_text, uint p_options, bool p_peek,
                       bool p_forward)
 {

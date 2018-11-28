@@ -159,7 +159,8 @@ SOURCES += main.cpp\
     vfilelistwidget.cpp \
     widgets/vcombobox.cpp \
     vtablehelper.cpp \
-    vtable.cpp
+    vtable.cpp \
+    dialog/vinserttabledialog.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -304,7 +305,8 @@ HEADERS  += vmainwindow.h \
     vfilelistwidget.h \
     widgets/vcombobox.h \
     vtablehelper.h \
-    vtable.h
+    vtable.h \
+    dialog/vinserttabledialog.h
 
 RESOURCES += \
     vnote.qrc \

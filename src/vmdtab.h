@@ -44,6 +44,8 @@ public:
 
     void insertImage() Q_DECL_OVERRIDE;
 
+    void insertTable() Q_DECL_OVERRIDE;
+
     void insertLink() Q_DECL_OVERRIDE;
 
     // Search @p_text in current note.

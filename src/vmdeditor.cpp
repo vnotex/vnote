@@ -33,6 +33,7 @@
 #include "vmdtab.h"
 #include "vdownloader.h"
 #include "vtablehelper.h"
+#include "dialog/vinserttabledialog.h"
 
 extern VWebUtils *g_webUtils;
 
@@ -2210,4 +2211,41 @@ void VMdEditor::handleLinkToAttachmentAction(QAction *p_act)
         Q_ASSERT(!linkText.isEmpty() && !linkUrl.isEmpty());
         m_editOps->insertLink(linkText, linkUrl);
     }
+}
+
+void VMdEditor::insertTable()
+{
+    // Get the dialog info.
+    VInsertTableDialog td(this);
+    if (td.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    int rowCount = td.getRowCount();
+    int colCount = td.getColumnCount();
+    VTable::Alignment alignment = td.getAlignment();
+
+    QTextCursor cursor = textCursorW();
+    if (cursor.hasSelection()) {
+        cursor.clearSelection();
+        setTextCursorW(cursor);
+    }
+
+    bool newBlock = !cursor.atBlockEnd();
+    if (!newBlock && !cursor.atBlockStart()) {
+        QString text = cursor.block().text().trimmed();
+        if (!text.isEmpty() && text != ">") {
+            // Insert a new block before inserting table.
+            newBlock = true;
+        }
+    }
+
+    if (newBlock) {
+        VEditUtils::insertBlock(cursor, false);
+        VEditUtils::indentBlockAsBlock(cursor, false);
+        setTextCursorW(cursor);
+    }
+
+    // Insert table right at cursor.
+    m_tableHelper->insertTable(rowCount, colCount, alignment);
 }

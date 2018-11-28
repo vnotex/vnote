@@ -573,6 +573,19 @@ QToolBar *VMainWindow::initEditToolBar(QSize p_iconSize)
 
     m_editToolBar->addAction(codeBlockAct);
 
+    QAction *tableAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/table.svg"),
+                                    tr("Table\t%1").arg(VUtils::getShortcutText("Ctrl+.")),
+                                    this);
+    tableAct->setStatusTip(tr("Insert a table"));
+    connect(tableAct, &QAction::triggered,
+            this, [this](){
+                if (m_curTab) {
+                    m_curTab->insertTable();
+                }
+            });
+
+    m_editToolBar->addAction(tableAct);
+
     // Insert link.
     QAction *insetLinkAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/link.svg"),
                                         tr("Insert Link\t%1").arg(VUtils::getShortcutText("Ctrl+L")),

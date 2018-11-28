@@ -543,6 +543,17 @@ bool VMdEditOperations::handleKeyPressEvent(QKeyEvent *p_event)
         break;
     }
 
+    case Qt::Key_Period:
+    {
+        if (modifiers == Qt::ControlModifier) {
+            m_editor->insertTable();
+            p_event->accept();
+            ret = true;
+        }
+
+        break;
+    }
+
     default:
         break;
     }

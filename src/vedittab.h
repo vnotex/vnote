@@ -56,6 +56,9 @@ public:
     // User requests to insert link.
     virtual void insertLink();
 
+    // User requests to table.
+    virtual void insertTable();
+
     // Search @p_text in current note.
     virtual void findText(const QString &p_text, uint p_options, bool p_peek,
                           bool p_forward = true) = 0;
