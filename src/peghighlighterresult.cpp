@@ -51,6 +51,8 @@ PegHighlighterResult::PegHighlighterResult(const PegMarkdownHighlighter *p_peg,
     parseMathjaxBlocks(p_peg, p_result);
 
     parseHRuleBlocks(p_peg, p_result);
+
+    parseTableBlocks(p_peg, p_result);
 }
 
 static bool compHLUnit(const HLUnit &p_a, const HLUnit &p_b)
@@ -270,6 +272,66 @@ void PegHighlighterResult::parseFencedCodeBlocks(const PegMarkdownHighlighter *p
     }
 }
 
+void PegHighlighterResult::parseTableBlocks(const PegMarkdownHighlighter *p_peg,
+                                            const QSharedPointer<PegParseResult> &p_result)
+{
+    const QVector<VElementRegion> &tableRegs = p_result->m_tableRegions;
+    const QVector<VElementRegion> &headerRegs = p_result->m_tableHeaderRegions;
+    const QVector<VElementRegion> &borderRegs = p_result->m_tableBorderRegions;
+
+    VTableBlock item;
+    int headerIdx = 0, borderIdx = 0;
+    for (int tableIdx = 0; tableIdx < tableRegs.size(); ++tableIdx) {
+        const auto &reg = tableRegs[tableIdx];
+        if (headerIdx < headerRegs.size()) {
+            if (reg.contains(headerRegs[headerIdx])) {
+                // A new table.
+                if (item.isValid()) {
+                    // Save previous table.
+                    m_tableBlocks.append(item);
+
+                    auto &table = m_tableBlocks.back();
+                    // Fill borders.
+                    for (; borderIdx < borderRegs.size(); ++borderIdx) {
+                        if (borderRegs[borderIdx].m_startPos >= table.m_startPos
+                            && borderRegs[borderIdx].m_endPos <= table.m_endPos) {
+                            table.m_borders.append(borderRegs[borderIdx].m_startPos);
+                        } else {
+                            break;
+                        }
+                    }
+                }
+
+                item.clear();
+                item.m_startPos = reg.m_startPos;
+                item.m_endPos = reg.m_endPos;
+
+                ++headerIdx;
+                continue;
+            }
+        }
+
+        // Continue previous table.
+        item.m_endPos = reg.m_endPos;
+    }
+
+    if (item.isValid()) {
+        // Another table.
+        m_tableBlocks.append(item);
+
+        // Fill borders.
+        auto &table = m_tableBlocks.back();
+        for (; borderIdx < borderRegs.size(); ++borderIdx) {
+            if (borderRegs[borderIdx].m_startPos >= table.m_startPos
+                && borderRegs[borderIdx].m_endPos <= table.m_endPos) {
+                table.m_borders.append(borderRegs[borderIdx].m_startPos);
+            } else {
+                break;
+            }
+        }
+    }
+}
+
 static inline bool isDisplayFormulaRawEnd(const QString &p_text)
 {
     QRegExp regex("\\\\end\\{[^{}\\s\\r\\n]+\\}$");
@@ -330,8 +392,8 @@ void PegHighlighterResult::parseMathjaxBlocks(const PegMarkdownHighlighter *p_pe
                 break;
             }
 
-            int pib = r.m_startPos - block.position();
-            int length = r.m_endPos - r.m_startPos;
+            int pib = qMax(r.m_startPos - block.position(), 0);
+            int length = qMin(r.m_endPos - block.position() - pib, block.length() - 1);
             QString text = block.text().mid(pib, length);
             if (inBlock) {
                 item.m_text = item.m_text + "\n" + text;

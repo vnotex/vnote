@@ -121,6 +121,40 @@ struct VMathjaxBlock
 };
 
 
+struct VTableBlock
+{
+    VTableBlock()
+        : m_startPos(-1),
+          m_endPos(-1)
+    {
+    }
+
+    bool isValid() const
+    {
+        return m_startPos > -1 && m_endPos >= m_startPos;
+    }
+
+    void clear()
+    {
+        m_startPos = m_endPos = -1;
+        m_borders.clear();
+    }
+
+    QString toString() const
+    {
+        return QString("table [%1,%2) borders %3").arg(m_startPos)
+                                                  .arg(m_endPos)
+                                                  .arg(m_borders.size());
+    }
+
+    int m_startPos;
+    int m_endPos;
+
+    // Global position of the table borders in ascending order.
+    QVector<int> m_borders;
+};
+
+
 // Highlight unit with global position and string style name.
 struct HLUnitPos
 {
@@ -155,6 +189,11 @@ struct VElementRegion
     bool contains(int p_pos) const
     {
         return m_startPos <= p_pos && m_endPos > p_pos;
+    }
+
+    bool contains(const VElementRegion &p_reg) const
+    {
+        return m_startPos <= p_reg.m_startPos && m_endPos >= p_reg.m_endPos;
     }
 
     bool intersect(int p_start, int p_end) const

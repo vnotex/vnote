@@ -203,7 +203,7 @@ static bool containSpecialChar(const QString &p_str)
     QChar la = p_str[p_str.size() - 1];
 
     return fi == '#'
-           || la == '`' || la == '$' || la == '*' || la == '_';
+           || la == '`' || la == '$' || la == '~' || la == '*' || la == '_';
 }
 
 bool PegMarkdownHighlighter::preHighlightSingleFormatBlock(const QVector<QVector<HLUnit>> &p_highlights,
@@ -756,6 +756,8 @@ void PegMarkdownHighlighter::completeHighlight(QSharedPointer<PegHighlighterResu
     if (isMathJaxEnabled()) {
         emit mathjaxBlocksUpdated(p_result->m_mathjaxBlocks);
     }
+
+    emit tableBlocksUpdated(p_result->m_tableBlocks);
 
     emit imageLinksUpdated(p_result->m_imageRegions);
     emit headersUpdated(p_result->m_headerRegions);

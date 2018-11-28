@@ -114,6 +114,16 @@ struct PegParseResult
     // HRule regions.
     QVector<VElementRegion> m_hruleRegions;
 
+    // All table regions.
+    // Sorted by start position.
+    QVector<VElementRegion> m_tableRegions;
+
+    // All table header regions.
+    QVector<VElementRegion> m_tableHeaderRegions;
+
+    // All table border regions.
+    QVector<VElementRegion> m_tableBorderRegions;
+
 private:
     void parseImageRegions(QAtomicInt &p_stop);
 
@@ -126,6 +136,17 @@ private:
     void parseDisplayFormulaRegions(QAtomicInt &p_stop);
 
     void parseHRuleRegions(QAtomicInt &p_stop);
+
+    void parseTableRegions(QAtomicInt &p_stop);
+
+    void parseTableHeaderRegions(QAtomicInt &p_stop);
+
+    void parseTableBorderRegions(QAtomicInt &p_stop);
+
+    void parseRegions(QAtomicInt &p_stop,
+                      pmh_element_type p_type,
+                      QVector<VElementRegion> &p_result,
+                      bool p_sort = false);
 };
 
 class PegParserWorker : public QThread

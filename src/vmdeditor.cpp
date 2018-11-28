@@ -32,6 +32,7 @@
 #include "vgraphvizhelper.h"
 #include "vmdtab.h"
 #include "vdownloader.h"
+#include "vtablehelper.h"
 
 extern VWebUtils *g_webUtils;
 
@@ -108,6 +109,10 @@ VMdEditor::VMdEditor(VFile *p_file,
             m_previewMgr, &VPreviewManager::updateImageLinks);
     connect(m_previewMgr, &VPreviewManager::requestUpdateImageLinks,
             m_pegHighlighter, &PegMarkdownHighlighter::updateHighlight);
+
+    m_tableHelper = new VTableHelper(this);
+    connect(m_pegHighlighter, &PegMarkdownHighlighter::tableBlocksUpdated,
+            m_tableHelper, &VTableHelper::updateTableBlocks);
 
     m_editOps = new VMdEditOperations(this, m_file);
     connect(m_editOps, &VEditOperations::statusMessage,
@@ -1446,7 +1451,8 @@ void VMdEditor::initLinkAndPreviewMenu(QAction *p_before, QMenu *p_menu, const Q
     if (regExp.indexIn(text) > -1) {
         const QVector<VElementRegion> &imgRegs = m_pegHighlighter->getImageRegions();
         for (auto const & reg : imgRegs) {
-            if (!reg.contains(pos)) {
+            if (!reg.contains(pos)
+                && (!reg.contains(pos - 1) || pos != (block.position() + text.size()))) {
                 continue;
             }
 
@@ -1608,7 +1614,8 @@ bool VMdEditor::initInPlacePreviewMenu(QAction *p_before,
     int pib = p_pos - p_block.position();
     for (auto info : previews) {
         const VPreviewedImageInfo &pii = info->m_imageInfo;
-        if (pii.contains(pib)) {
+        if (pii.contains(pib)
+            || (pii.contains(pib - 1) && pib == p_block.length() - 1)) {
             const QPixmap *img = findImage(pii.m_imageName);
             if (img) {
                 image = *img;

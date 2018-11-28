@@ -213,6 +213,7 @@ public:
     virtual bool findW(const QRegExp &p_exp,
                        QTextDocument::FindFlags p_options = QTextDocument::FindFlags()) = 0;
 
+    virtual bool isReadOnlyW() const = 0;
     virtual void setReadOnlyW(bool p_ro) = 0;
 
     virtual QWidget *viewportW() const = 0;

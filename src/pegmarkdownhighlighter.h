@@ -70,6 +70,9 @@ signals:
     // Emitted when Mathjax blocks updated.
     void mathjaxBlocksUpdated(const QVector<VMathjaxBlock> &p_mathjaxBlocks);
 
+    // Emitted when table blocks updated.
+    void tableBlocksUpdated(const QVector<VTableBlock> &p_tableBlocks);
+
 protected:
     void highlightBlock(const QString &p_text) Q_DECL_OVERRIDE;
 

@@ -75,7 +75,7 @@ struct VPreviewedImageInfo
 
     QString toString() const
     {
-        return QString("previewed image (%1): [%2, %3] padding %4 inline %5 (%6,%7) bg(%8)")
+        return QString("previewed image (%1): [%2, %3) padding %4 inline %5 (%6,%7) bg(%8)")
                       .arg(m_imageName)
                       .arg(m_startPos)
                       .arg(m_endPos)

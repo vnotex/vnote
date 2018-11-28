@@ -25,30 +25,20 @@ void PegParseResult::parse(QAtomicInt &p_stop, bool p_fast)
     parseDisplayFormulaRegions(p_stop);
 
     parseHRuleRegions(p_stop);
+
+    parseTableRegions(p_stop);
+
+    parseTableHeaderRegions(p_stop);
+
+    parseTableBorderRegions(p_stop);
 }
 
 void PegParseResult::parseImageRegions(QAtomicInt &p_stop)
 {
-    // From Qt5.7, the capacity is preserved.
-    m_imageRegions.clear();
-    if (isEmpty()) {
-        return;
-    }
-
-    pmh_element *elem = m_pmhElements[pmh_IMAGE];
-    while (elem != NULL) {
-        if (elem->end <= elem->pos) {
-            elem = elem->next;
-            continue;
-        }
-
-        if (p_stop.load() == 1) {
-            return;
-        }
-
-        m_imageRegions.push_back(VElementRegion(m_offset + elem->pos, m_offset + elem->end));
-        elem = elem->next;
-    }
+    parseRegions(p_stop,
+                 pmh_IMAGE,
+                 m_imageRegions,
+                 false);
 }
 
 void PegParseResult::parseHeaderRegions(QAtomicInt &p_stop)
@@ -113,64 +103,63 @@ void PegParseResult::parseFencedCodeBlockRegions(QAtomicInt &p_stop)
 
 void PegParseResult::parseInlineEquationRegions(QAtomicInt &p_stop)
 {
-    m_inlineEquationRegions.clear();
-    if (isEmpty()) {
-        return;
-    }
-
-    pmh_element *elem = m_pmhElements[pmh_INLINEEQUATION];
-    while (elem != NULL) {
-        if (elem->end <= elem->pos) {
-            elem = elem->next;
-            continue;
-        }
-
-        if (p_stop.load() == 1) {
-            return;
-        }
-
-        m_inlineEquationRegions.push_back(VElementRegion(m_offset + elem->pos, m_offset + elem->end));
-        elem = elem->next;
-    }
+    parseRegions(p_stop,
+                 pmh_INLINEEQUATION,
+                 m_inlineEquationRegions,
+                 false);
 }
 
 void PegParseResult::parseDisplayFormulaRegions(QAtomicInt &p_stop)
 {
-    m_displayFormulaRegions.clear();
-    if (isEmpty()) {
-        return;
-    }
-
-    pmh_element *elem = m_pmhElements[pmh_DISPLAYFORMULA];
-    while (elem != NULL) {
-        if (elem->end <= elem->pos) {
-            elem = elem->next;
-            continue;
-        }
-
-        if (p_stop.load() == 1) {
-            return;
-        }
-
-        m_displayFormulaRegions.push_back(VElementRegion(m_offset + elem->pos, m_offset + elem->end));
-        elem = elem->next;
-    }
-
-    if (p_stop.load() == 1) {
-        return;
-    }
-
-    std::sort(m_displayFormulaRegions.begin(), m_displayFormulaRegions.end());
+    parseRegions(p_stop,
+                 pmh_DISPLAYFORMULA,
+                 m_displayFormulaRegions,
+                 true);
 }
 
 void PegParseResult::parseHRuleRegions(QAtomicInt &p_stop)
 {
-    m_hruleRegions.clear();
+    parseRegions(p_stop,
+                 pmh_HRULE,
+                 m_hruleRegions,
+                 false);
+}
+
+void PegParseResult::parseTableRegions(QAtomicInt &p_stop)
+{
+    parseRegions(p_stop,
+                 pmh_TABLE,
+                 m_tableRegions,
+                 true);
+}
+
+void PegParseResult::parseTableHeaderRegions(QAtomicInt &p_stop)
+{
+    parseRegions(p_stop,
+                 pmh_TABLEHEADER,
+                 m_tableHeaderRegions,
+                 true);
+}
+
+void PegParseResult::parseTableBorderRegions(QAtomicInt &p_stop)
+{
+    parseRegions(p_stop,
+                 pmh_TABLEBORDER,
+                 m_tableBorderRegions,
+                 true);
+}
+
+void PegParseResult::parseRegions(QAtomicInt &p_stop,
+                                  pmh_element_type p_type,
+                                  QVector<VElementRegion> &p_result,
+                                  bool p_sort)
+{
+    p_result.clear();
     if (isEmpty()) {
         return;
     }
 
-    pmh_element *elem = m_pmhElements[pmh_HRULE];
+    pmh_element *elem = m_pmhElements[p_type];
     while (elem != NULL) {
         if (elem->end <= elem->pos) {
             elem = elem->next;
@@ -181,8 +170,12 @@ void PegParseResult::parseHRuleRegions(QAtomicInt &p_stop)
             return;
         }
 
-        m_hruleRegions.push_back(VElementRegion(m_offset + elem->pos, m_offset + elem->end));
+        p_result.push_back(VElementRegion(m_offset + elem->pos, m_offset + elem->end));
         elem = elem->next;
+    }
+
+    if (p_sort && p_stop.load() != 1) {
+        std::sort(p_result.begin(), p_result.end());
     }
 }
 

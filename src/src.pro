@@ -19,6 +19,13 @@ ICON = resources/icons/vnote.icns
 
 TRANSLATIONS += translations/vnote_zh_CN.ts
 
+*-g++ {
+    QMAKE_CFLAGS_WARN_ON += -Wno-class-memaccess
+    QMAKE_CXXFLAGS_WARN_ON += -Wno-class-memaccess
+    QMAKE_CFLAGS += -Wno-class-memaccess
+    QMAKE_CXXFLAGS += -Wno-class-memaccess
+}
+
 SOURCES += main.cpp\
     vmainwindow.cpp \
     vdirectorytree.cpp \
@@ -150,7 +157,9 @@ SOURCES += main.cpp\
     utils/vkeyboardlayoutmanager.cpp \
     dialog/vkeyboardlayoutmappingdialog.cpp \
     vfilelistwidget.cpp \
-    widgets/vcombobox.cpp
+    widgets/vcombobox.cpp \
+    vtablehelper.cpp \
+    vtable.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -293,7 +302,9 @@ HEADERS  += vmainwindow.h \
     utils/vkeyboardlayoutmanager.h \
     dialog/vkeyboardlayoutmappingdialog.h \
     vfilelistwidget.h \
-    widgets/vcombobox.h
+    widgets/vcombobox.h \
+    vtablehelper.h \
+    vtable.h
 
 RESOURCES += \
     vnote.qrc \

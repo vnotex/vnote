@@ -820,7 +820,7 @@ void VMainWindow::initHelpMenu()
     docAct->setToolTip(tr("View VNote's documentation"));
     connect(docAct, &QAction::triggered,
             this, []() {
-                QString url("http://vnote.readthedocs.io");
+                QString url("https://tamlok.github.io/vnote");
                 QDesktopServices::openUrl(url);
             });
 
@@ -828,7 +828,7 @@ void VMainWindow::initHelpMenu()
     donateAct->setToolTip(tr("Donate to VNote or view the donate list"));
     connect(donateAct, &QAction::triggered,
             this, []() {
-                QString url("https://github.com/tamlok/vnote#donate");
+                QString url("https://tamlok.github.io/vnote/en_us/#!donate.md");
                 QDesktopServices::openUrl(url);
             });
 
