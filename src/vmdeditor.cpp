@@ -1900,6 +1900,9 @@ bool VMdEditor::processUrlFromMimeData(const QMimeData *p_source)
     if (isImage) {
         dialog.addSelection(tr("Insert As Image"), 0);
         dialog.addSelection(tr("Insert As Image Link"), 1);
+        if (isLocalFile) {
+            dialog.addSelection(tr("Insert As Relative Image Link"), 7);
+        }
     }
 
     dialog.addSelection(tr("Insert As Link"), 2);
@@ -1931,11 +1934,25 @@ bool VMdEditor::processUrlFromMimeData(const QMimeData *p_source)
             return true;
         }
 
+        case 7:
+            // Insert As Relative Image Link.
+            relativeLink = true;
+            V_FALLTHROUGH;
+
         case 1:
         {
             // Insert As Image Link.
-            insertImageLink("", url.isLocalFile() ? url.toString(QUrl::EncodeSpaces)
-                                                  : url.toString());
+            QString ut;
+            if (relativeLink) {
+                QDir dir(m_file->fetchBasePath());
+                ut = dir.relativeFilePath(url.toLocalFile());
+                ut = QUrl(ut).toString(QUrl::EncodeSpaces);
+            } else {
+                ut = url.isLocalFile() ? url.toString(QUrl::EncodeSpaces)
+                                       : url.toString();
+            }
+
+            insertImageLink("", ut);
             return true;
         }
 
