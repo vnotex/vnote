@@ -7,6 +7,9 @@
 #include "vmetawordlineedit.h"
 #include "vdownloader.h"
 #include "vlineedit.h"
+#include "vconfigmanager.h"
+
+extern VConfigManager *g_config;
 
 VInsertImageDialog::VInsertImageDialog(const QString &p_title,
                                        const QString &p_imageTitle,
@@ -166,15 +169,22 @@ QString VInsertImageDialog::getPathInput() const
 
 void VInsertImageDialog::handleBrowseBtnClicked()
 {
-    static QString lastPath = QDir::homePath();
+    QString bpath(m_browsePath);
+    if (bpath.isEmpty()) {
+        bpath = g_config->getImageBrowsePath();
+        if (bpath.isEmpty()) {
+            bpath = QDir::homePath();
+        }
+    }
+
     QString filePath = QFileDialog::getOpenFileName(this, tr("Select The Image To Be Inserted"),
-                                                    lastPath, tr("Images (*.png *.xpm *.jpg *.bmp *.gif *.svg)"));
+                                                    bpath, tr("Images (*.png *.xpm *.jpg *.bmp *.gif *.svg)"));
     if (filePath.isEmpty()) {
         return;
     }
 
-    // Update lastPath
-    lastPath = QFileInfo(filePath).path();
+    // Update browse path.
+    g_config->setImageBrowsePath(QFileInfo(filePath).path());
 
     m_imageType = ImageType::LocalFile;
 
@@ -359,4 +369,9 @@ void VInsertImageDialog::autoCompleteTitleFromPath()
 
     m_imageTitleEdit->setText(QFileInfo(imgPath).baseName());
     m_imageTitleEdit->selectAll();
+}
+
+void VInsertImageDialog::setBrowsePath(const QString &p_path)
+{
+    m_browsePath = p_path;
 }

@@ -46,6 +46,8 @@ public:
     // Return 0 if no override.
     int getOverridenWidth() const;
 
+    void setBrowsePath(const QString &p_path);
+
 public slots:
     void imageDownloaded(const QByteArray &data);
 
@@ -90,6 +92,9 @@ private:
     ImageType m_imageType;
 
     QSharedPointer<QTemporaryFile> m_tempFile;
+
+    // Default path when browsing images to insert.
+    QString m_browsePath;
 };
 
 inline VInsertImageDialog::ImageType VInsertImageDialog::getImageType() const

@@ -620,6 +620,10 @@ public:
     bool getEnableSplitTagFileList() const;
     void setEnableSplitTagFileList(bool p_enable);
 
+    // Get the path to browse when inserting image.
+    QString getImageBrowsePath() const;
+    void setImageBrowsePath(const QString &p_path);
+
 private:
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
@@ -2839,5 +2843,15 @@ inline bool VConfigManager::getEnableSplitTagFileList() const
 inline void VConfigManager::setEnableSplitTagFileList(bool p_enable)
 {
     setConfigToSettings("global", "split_tag_file_list", p_enable);
+}
+
+inline QString VConfigManager::getImageBrowsePath() const
+{
+    return getConfigFromSessionSettings("global", "image_browse_path").toString();
+}
+
+inline void VConfigManager::setImageBrowsePath(const QString &p_path)
+{
+    setConfigToSessionSettings("global", "image_browse_path", p_path);
 }
 #endif // VCONFIGMANAGER_H
