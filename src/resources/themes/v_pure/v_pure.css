@@ -86,6 +86,9 @@ pre {
     display: block;
     overflow-y: hidden;
     overflow-x: auto;
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
 }
 
 code {
@@ -104,6 +107,9 @@ pre code {
     line-height: 1.5;
     font-family: Consolas, Monaco, Monospace, Courier;
     white-space: pre;
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
 }
 
 pre code.markdown-metadata {

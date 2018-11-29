@@ -222,7 +222,7 @@ QString VNote::getNavigationLabelStyle(const QString &p_str, bool p_small) const
     static int pxHeight = 24;
     const int fontPt = p_small ? 12 : 15;
 
-    QString fontFamily = getMonospacedFont();
+    QString fontFamily = getMonospaceFont();
 
     if (p_str.size() != lastLen) {
         QFont font(fontFamily, fontPt);
@@ -261,7 +261,7 @@ QString VNote::getNavigationLabelStyle(const QString &p_str, bool p_small) const
     return style;
 }
 
-const QString &VNote::getMonospacedFont() const
+const QString &VNote::getMonospaceFont()
 {
     static QString font;
     if (font.isNull()) {

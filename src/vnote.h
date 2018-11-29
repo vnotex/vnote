@@ -120,14 +120,14 @@ public:
 
     static QString generateMathJaxPreviewTemplate();
 
+    static const QString &getMonospaceFont();
+
 public slots:
     void updateTemplate();
 
     void updateSimpletHtmlTemplate();
 
 private:
-    const QString &getMonospacedFont() const;
-
     // Given the path of an external file, create a VOrphanFile struct.
     VOrphanFile *getOrphanFile(const QString &p_path,
                                bool p_modifiable,

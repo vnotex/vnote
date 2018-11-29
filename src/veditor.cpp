@@ -10,6 +10,7 @@
 #include "dialog/vinsertlinkdialog.h"
 #include "utils/vmetawordmanager.h"
 #include "utils/vvim.h"
+#include "vnote.h"
 
 extern VConfigManager *g_config;
 
@@ -217,7 +218,10 @@ void VEditor::doUpdateTrailingSpaceAndTabHighlights()
 
 void VEditor::updateEditConfig()
 {
-    m_config.update(QFontMetrics(m_editor->font()));
+    // FIXME: we need to use font of the code block here.
+    QFont font(m_editor->font());
+    font.setFamily(VNote::getMonospaceFont());
+    m_config.update(QFontMetrics(font));
 
     if (m_config.m_tabStopWidth > 0) {
         setTabStopWidthW(m_config.m_tabStopWidth);

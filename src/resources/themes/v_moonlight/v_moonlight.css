@@ -90,6 +90,9 @@ pre {
     display: block;
     overflow-y: hidden;
     overflow-x: auto;
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
 }
 
 code {
@@ -107,6 +110,9 @@ pre code {
     line-height: 1.5;
     font-family: Consolas, Monaco, Monospace, Courier;
     white-space: pre;
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
 }
 
 pre code.markdown-metadata {
@@ -335,6 +341,6 @@ table.hljs-ln tr td.hljs-ln-code {
 }
 
 ::selection {
-  background: #1976D2;
-  color: #BCBCBC;
+  background: #8CBAE8;
+  color: #D0D0D0;
 }
