@@ -208,6 +208,8 @@ void VTable::format()
     }
 
     int nrCols = calculateColumnCount();
+    pruneColumns(nrCols);
+
     for (int i = 0; i < nrCols; ++i) {
         formatOneColumn(i, curRowIdx, curPib);
     }
@@ -215,16 +217,9 @@ void VTable::format()
 
 int VTable::calculateColumnCount() const
 {
-    int nr = 0;
-
-    // Find the longest row.
-    for (const auto & row : m_rows) {
-        if (row.m_cells.size() > nr) {
-            nr = row.m_cells.size();
-        }
-    }
-
-    return nr;
+    // We use the width of the header as the width of the table.
+    // With this, we could add or remove one column by just changing the header row.
+    return header()->m_cells.size();
 }
 
 VTable::Row *VTable::header() const
@@ -354,7 +349,7 @@ void VTable::fetchCellInfoOfColumn(int p_idx,
 
         // Get the info of this cell.
         const auto & cell = row.m_cells[p_idx];
-        int first = 1, last = cell.m_length - 2;
+        int first = 1, last = cell.m_length - 1;
         for (; first <= last; ++first) {
             if (cell.m_text[first] != ' ') {
                 // Found the core content.
@@ -589,7 +584,7 @@ void VTable::writeExist()
     for (auto & row : m_rows) {
         bool needChange = false;
         for (const auto & cell : row.m_cells) {
-            if (!cell.m_formattedText.isEmpty()) {
+            if (!cell.m_formattedText.isEmpty() || cell.m_deleted) {
                 needChange = true;
                 break;
             }
@@ -610,6 +605,10 @@ void VTable::writeExist()
         // Construct the block text.
         QString newBlockText(row.m_preText);
         for (auto & cell : row.m_cells) {
+            if (cell.m_deleted) {
+                continue;
+            }
+
             int pos = newBlockText.size();
             if (cell.m_formattedText.isEmpty()) {
                 newBlockText += cell.m_text;
@@ -658,6 +657,10 @@ void VTable::writeNonExist()
         const auto & row = m_rows[rowIdx];
         tableText += row.m_preText;
         for (auto & cell : row.m_cells) {
+            if (cell.m_deleted) {
+                continue;
+            }
+
             tableText += cell.m_text;
         }
 
@@ -675,4 +678,13 @@ void VTable::writeNonExist()
     cursor.insertText(tableText);
     cursor.setPosition(pos);
     m_editor->setTextCursorW(cursor);
+}
+
+void VTable::pruneColumns(int p_nrCols)
+{
+    for (auto & row : m_rows) {
+        for (int i = p_nrCols; i < row.m_cells.size(); ++i) {
+            row.m_cells[i].m_deleted = true;
+        }
+    }
 }

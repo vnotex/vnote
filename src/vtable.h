@@ -34,7 +34,8 @@ private:
         Cell()
             : m_offset(-1),
               m_length(0),
-              m_cursorCoreOffset(-1)
+              m_cursorCoreOffset(-1),
+              m_deleted(false)
         {
         }
 
@@ -45,6 +46,7 @@ private:
             m_text.clear();
             m_formattedText.clear();
             m_cursorCoreOffset = -1;
+            m_deleted = false;
         }
 
         // Start offset within block, including the starting border |.
@@ -62,6 +64,9 @@ private:
 
         // If cursor is within this cell, this will not be -1.
         int m_cursorCoreOffset;
+
+        // Whether this cell need to be deleted.
+        bool m_deleted;
     };
 
     struct Row
@@ -168,6 +173,9 @@ private:
     void writeExist();
 
     void writeNonExist();
+
+    // Prune unwanted columns beyond the header row.
+    void pruneColumns(int p_nrCols);
 
     VTable::Row *header() const;
 
