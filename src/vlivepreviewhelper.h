@@ -282,6 +282,7 @@ private:
 
     bool m_flowchartEnabled;
     bool m_mermaidEnabled;
+    bool m_wavedromEnabled;
     int m_plantUMLMode;
     bool m_graphvizEnabled;
     bool m_mathjaxEnabled;

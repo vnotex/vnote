@@ -122,9 +122,15 @@ As VNote suggests:
 
 ### Diagrams
 
-> You need to enable Flowchart.js or Mermaid in the `Markdown` menu.
+> You need to enable Flowchart.js or Mermaid or WaveDrom in the `Markdown` menu and restart current opened tabs.
 
-VNote supports [Flowchart.js](http://flowchart.js.org/) and [Mermaid](https://mermaidjs.github.io/) to draw diagrams such as *flowchart* and *sequence diagram*. You should use `flow` or `flowchart` and `mermaid` specified as the language of the fenced code block and write the definition of your diagram within it.
+VNote supports the following engines to draw diagrams. You should specify particular language of the fenced code block and write the definition of your diagram within it.
+
+- [Flowchart.js](http://flowchart.js.org/) for *flowchart* with language `flow` or `flowchart`;
+- [Mermaid](https://mermaidjs.github.io/) with language `mermaid`;
+- [WaveDrom](https://wavedrom.com/) for *digital timing diagram* with language `wavedrom`;
+
+For example,
 
     ```flowchart
     st=>start: Start:>http://www.google.com[blank]

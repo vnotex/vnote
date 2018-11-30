@@ -52,7 +52,7 @@ PegHighlighterResult::PegHighlighterResult(const PegMarkdownHighlighter *p_peg,
 
     parseHRuleBlocks(p_peg, p_result);
 
-    parseTableBlocks(p_peg, p_result);
+    parseTableBlocks(p_result);
 }
 
 static bool compHLUnit(const HLUnit &p_a, const HLUnit &p_b)
@@ -272,8 +272,7 @@ void PegHighlighterResult::parseFencedCodeBlocks(const PegMarkdownHighlighter *p
     }
 }
 
-void PegHighlighterResult::parseTableBlocks(const PegMarkdownHighlighter *p_peg,
-                                            const QSharedPointer<PegParseResult> &p_result)
+void PegHighlighterResult::parseTableBlocks(const QSharedPointer<PegParseResult> &p_result)
 {
     const QVector<VElementRegion> &tableRegs = p_result->m_tableRegions;
     const QVector<VElementRegion> &headerRegs = p_result->m_tableHeaderRegions;

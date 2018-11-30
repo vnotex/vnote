@@ -58,6 +58,9 @@ const QString VNote::c_mermaidForestCssFile = ":/utils/mermaid/mermaid.forest.cs
 const QString VNote::c_flowchartJsFile = ":/utils/flowchart.js/flowchart.min.js";
 const QString VNote::c_raphaelJsFile = ":/utils/flowchart.js/raphael.min.js";
 
+const QString VNote::c_wavedromJsFile = ":/utils/wavedrom/wavedrom.min.js";
+const QString VNote::c_wavedromThemeFile = ":/utils/wavedrom/wavedrom-theme.js";
+
 const QString VNote::c_plantUMLJsFile = "http://s.plantuml.com/synchro2.js";
 const QString VNote::c_plantUMLZopfliJsFile = "http://s.plantuml.com/zopfli.raw.min.js";
 

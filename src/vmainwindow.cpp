@@ -453,7 +453,7 @@ QToolBar *VMainWindow::initViewToolBar(QSize p_iconSize)
     viewMenu->addAction(menuBarAct);
 
     expandViewAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/expand.svg"),
-                                tr("Expand"),
+                                tr("Expand Edit Area"),
                                 this);
     VUtils::fixTextWithCaptainShortcut(expandViewAct, "ExpandMode");
     expandViewAct->setStatusTip(tr("Expand the edit area"));
@@ -933,34 +933,7 @@ void VMainWindow::initMarkdownMenu()
 
     markdownMenu->addSeparator();
 
-    QAction *mermaidAct = new QAction(tr("&Mermaid Diagram"), this);
-    mermaidAct->setToolTip(tr("Enable Mermaid for graph and diagram (re-open current tabs to make it work)"));
-    mermaidAct->setCheckable(true);
-    connect(mermaidAct, &QAction::triggered,
-            this, &VMainWindow::enableMermaid);
-    markdownMenu->addAction(mermaidAct);
-
-    mermaidAct->setChecked(g_config->getEnableMermaid());
-
-    QAction *flowchartAct = new QAction(tr("&Flowchart.js"), this);
-    flowchartAct->setToolTip(tr("Enable Flowchart.js for flowchart diagram (re-open current tabs to make it work)"));
-    flowchartAct->setCheckable(true);
-    connect(flowchartAct, &QAction::triggered,
-            this, [this](bool p_enabled){
-                g_config->setEnableFlowchart(p_enabled);
-                VUtils::promptForReopen(this);
-            });
-    markdownMenu->addAction(flowchartAct);
-    flowchartAct->setChecked(g_config->getEnableFlowchart());
-
-    QAction *mathjaxAct = new QAction(tr("Math&Jax"), this);
-    mathjaxAct->setToolTip(tr("Enable MathJax for math support in Markdown (re-open current tabs to make it work)"));
-    mathjaxAct->setCheckable(true);
-    connect(mathjaxAct, &QAction::triggered,
-            this, &VMainWindow::enableMathjax);
-    markdownMenu->addAction(mathjaxAct);
-
-    mathjaxAct->setChecked(g_config->getEnableMathjax());
+    initMarkdownExtensionMenu(markdownMenu);
 
     markdownMenu->addSeparator();
 
@@ -1681,6 +1654,50 @@ void VMainWindow::initMarkdownitOptionMenu(QMenu *p_menu)
     optMenu->addAction(subAct);
     optMenu->addAction(metadataAct);
     optMenu->addAction(emojiAct);
+}
+
+void VMainWindow::initMarkdownExtensionMenu(QMenu *p_menu)
+{
+    QMenu *optMenu = p_menu->addMenu(tr("Extensions"));
+    optMenu->setToolTipsVisible(true);
+
+    QAction *mermaidAct = new QAction(tr("&Mermaid Diagram"), optMenu);
+    mermaidAct->setToolTip(tr("Enable Mermaid for graph and diagram (re-open current tabs to make it work)"));
+    mermaidAct->setCheckable(true);
+    mermaidAct->setChecked(g_config->getEnableMermaid());
+    connect(mermaidAct, &QAction::triggered,
+            this, &VMainWindow::enableMermaid);
+    optMenu->addAction(mermaidAct);
+
+    QAction *flowchartAct = new QAction(tr("&Flowchart.js"), optMenu);
+    flowchartAct->setToolTip(tr("Enable Flowchart.js for flowchart diagram (re-open current tabs to make it work)"));
+    flowchartAct->setCheckable(true);
+    flowchartAct->setChecked(g_config->getEnableFlowchart());
+    connect(flowchartAct, &QAction::triggered,
+            this, [this](bool p_enabled){
+                g_config->setEnableFlowchart(p_enabled);
+                VUtils::promptForReopen(this);
+            });
+    optMenu->addAction(flowchartAct);
+
+    QAction *mathjaxAct = new QAction(tr("Math&Jax"), optMenu);
+    mathjaxAct->setToolTip(tr("Enable MathJax for math support in Markdown (re-open current tabs to make it work)"));
+    mathjaxAct->setCheckable(true);
+    mathjaxAct->setChecked(g_config->getEnableMathjax());
+    connect(mathjaxAct, &QAction::triggered,
+            this, &VMainWindow::enableMathjax);
+    optMenu->addAction(mathjaxAct);
+
+    QAction *wavedromAct = new QAction(tr("&WaveDrom"), optMenu);
+    wavedromAct->setToolTip(tr("Enable WaveDrom for digital timing diagram (re-open current tabs to make it work)"));
+    wavedromAct->setCheckable(true);
+    wavedromAct->setChecked(g_config->getEnableWavedrom());
+    connect(wavedromAct, &QAction::triggered,
+            this, [this](bool p_enabled){
+                g_config->setEnableWavedrom(p_enabled);
+                VUtils::promptForReopen(this);
+            });
+    optMenu->addAction(wavedromAct);
 }
 
 void VMainWindow::initRenderBackgroundMenu(QMenu *menu)

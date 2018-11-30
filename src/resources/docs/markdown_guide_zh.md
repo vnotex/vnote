@@ -123,9 +123,15 @@ As VNote suggests:
 
 ### 图表
 
-> 需要在`Markdown`菜单中启用Flowchart.js或Mermaid。
+> 需要在`Markdown`菜单中启用Flowchart.js或Mermaid或WaveDrom，并重新打开当前标签页。
 
-VNote支持 [Flowchart.js](http://flowchart.js.org/) 和 [Mermaid](https://mermaidjs.github.io/) 来实现诸如*流程图*和*序列图*等图表。您需要使用代码块，并标明语言为`flow`或`flowchart`或`mermaid`，然后在代码块里面定义图表。
+VNote支持使用以下引擎来绘制图表。您需要使用代码块，并标明特定语言，然后在代码块里面定义图表。
+
+- [Flowchart.js](http://flowchart.js.org/)，语言为`flow`或`flowchart`；
+- [Mermaid](https://mermaidjs.github.io/)，语言为`mermaid`；
+- [WaveDrom](https://wavedrom.com/)，数字时序图，语言为`wavedrom`；
+
+例如，
 
     ```flowchart
     st=>start: Start:>http://www.google.com[blank]

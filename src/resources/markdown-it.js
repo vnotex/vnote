@@ -44,6 +44,10 @@ var mdit = window.markdownit({
     langPrefix: 'lang-',
     highlight: function(str, lang) {
         if (lang && (!specialCodeBlock(lang) || highlightSpecialBlocks)) {
+            if (lang === 'wavedrom') {
+                lang = 'json';
+            }
+
             if (hljs.getLanguage(lang)) {
                 return hljs.highlight(lang, str, true).value;
             } else {
@@ -167,6 +171,7 @@ var updateText = function(text) {
     handleMetaData();
     renderMermaid('lang-mermaid');
     renderFlowchart(['lang-flowchart', 'lang-flow']);
+    renderWavedrom('lang-wavedrom');
     renderPlantUML('lang-puml');
     renderGraphviz('lang-dot');
     addClassToCodeBlock();

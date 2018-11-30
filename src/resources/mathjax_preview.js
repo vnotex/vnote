@@ -6,6 +6,7 @@ var content;
 
 var VMermaidDivClass = 'mermaid-diagram';
 var VFlowchartDivClass = 'flowchart-diagram';
+var VWavedromDivClass = 'wavedrom-diagram';
 var VPlantUMLDivClass = 'plantuml-diagram';
 
 if (typeof VPlantUMLServer == 'undefined') {
@@ -112,6 +113,8 @@ var mermaidIdx = 0;
 
 var flowchartIdx = 0;
 
+var wavedromIdx = 0;
+
 if (typeof mermaidAPI != "undefined") {
     mermaidAPI.parseError = function(err, hash) {
         mermaidParserErr = true;
@@ -135,6 +138,8 @@ var previewDiagram = function(identifier, id, timeStamp, lang, text) {
     var div = null;
     if (lang == 'flow' || lang == 'flowchart') {
         div = renderFlowchartOne(identifier, id, timeStamp, text);
+    } else if (lang === 'wavedrom') {
+        div = renderWavedromOne(identifier, id, timeStamp, text);
     } else if (lang == 'mermaid') {
         div = renderMermaidOne(identifier, id, timeStamp, text);
     } else if (lang == 'puml') {
@@ -220,6 +225,38 @@ var renderFlowchartOne = function(identifier, id, timeStamp, text) {
         return null;
     }
 
+    return div;
+};
+
+var renderWavedromOne = function(identifier, id, timeStamp, text) {
+    // Create a script element.
+    var script = document.createElement('script');
+    script.setAttribute('type', 'WaveDrom');
+    script.textContent = text;
+    script.setAttribute('id', 'WaveDrom_JSON_' + wavedromIdx);
+
+    contentDiv.appendChild(script);
+
+    // Create a div element.
+    var div = document.createElement('div');
+    div.setAttribute('id', 'WaveDrom_Display_' + wavedromIdx);
+    div.classList.add(VWavedromDivClass);
+    script.insertAdjacentElement('afterend', div);
+
+    try {
+        WaveDrom.RenderWaveForm(wavedromIdx,
+                                WaveDrom.eva(script.getAttribute('id')),
+                                'WaveDrom_Display_');
+    } catch (err) {
+        content.setLog("err: " + err);
+        contentDiv.removeChild(script);
+        contentDiv.removeChild(div);
+        wavedromIdx++;
+        return null;
+    }
+
+    contentDiv.removeChild(script);
+    wavedromIdx++;
     return div;
 };
 

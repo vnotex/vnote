@@ -104,6 +104,7 @@ VLivePreviewHelper::VLivePreviewHelper(VEditor *p_editor,
 
     m_flowchartEnabled = g_config->getEnableFlowchart();
     m_mermaidEnabled = g_config->getEnableMermaid();
+    m_wavedromEnabled = g_config->getEnableWavedrom();
     m_plantUMLMode = g_config->getPlantUMLMode();
     m_graphvizEnabled = g_config->getEnableGraphviz();
     m_mathjaxEnabled = g_config->getEnableMathjax();
@@ -123,6 +124,9 @@ void VLivePreviewHelper::checkLang(const QString &p_lang,
 {
     if (m_flowchartEnabled && (p_lang == "flow" || p_lang == "flowchart")) {
         p_livePreview = p_inplacePreview = true;
+    } else if (m_wavedromEnabled && p_lang == "wavedrom") {
+        p_livePreview = true;
+        p_inplacePreview = false;
     } else if (m_plantUMLMode != PlantUMLMode::DisablePlantUML && p_lang == "puml") {
         p_livePreview = p_inplacePreview = true;
     } else if (m_graphvizEnabled && p_lang == "dot") {

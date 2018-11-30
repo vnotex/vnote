@@ -813,6 +813,12 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
         }
     }
 
+    if (g_config->getEnableWavedrom()) {
+        extraFile += "<script src=\"qrc" + VNote::c_wavedromThemeFile + "\"></script>\n" +
+                     "<script src=\"qrc" + VNote::c_wavedromJsFile + "\"></script>\n" +
+                     "<script>var VEnableWavedrom = true;</script>\n";
+    }
+
     int plantUMLMode = g_config->getPlantUMLMode();
     if (plantUMLMode != PlantUMLMode::DisablePlantUML) {
         if (plantUMLMode == PlantUMLMode::OnlinePlantUML) {
@@ -983,6 +989,9 @@ QString VUtils::generateMathJaxPreviewTemplate()
                  "                    },\n"
                  "                    messageStyle: \"none\"});\n"
                  "</script>\n";
+
+    extraFile += "<script src=\"qrc" + VNote::c_wavedromThemeFile + "\"></script>\n" +
+                 "<script src=\"qrc" + VNote::c_wavedromJsFile + "\"></script>\n";
 
     // PlantUML.
     extraFile += "<script type=\"text/javascript\" src=\"" + VNote::c_plantUMLJsFile + "\"></script>\n" +

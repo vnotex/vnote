@@ -258,7 +258,11 @@ private:
     void initCodeBlockStyleMenu(QMenu *p_menu);
 
     void initConverterMenu(QMenu *p_menu);
+
     void initMarkdownitOptionMenu(QMenu *p_menu);
+
+    void initMarkdownExtensionMenu(QMenu *p_menu);
+
     void initEditorBackgroundMenu(QMenu *menu);
 
     // Init the Line Number submenu in Edit menu.

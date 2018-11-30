@@ -113,8 +113,7 @@ private:
                           const QSharedPointer<PegParseResult> &p_result);
 
     // Parse table blocks from parse results.
-    void parseTableBlocks(const PegMarkdownHighlighter *p_peg,
-                          const QSharedPointer<PegParseResult> &p_result);
+    void parseTableBlocks(const QSharedPointer<PegParseResult> &p_result);
 
 #if 0
     void parseBlocksElementRegionOne(QHash<int, QVector<VElementRegion>> &p_regs,

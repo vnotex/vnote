@@ -18,6 +18,7 @@ var pendingKeys = [];
 
 var VMermaidDivClass = 'mermaid-diagram';
 var VFlowchartDivClass = 'flowchart-diagram';
+var VWavedromDivClass = 'wavedrom-diagram';
 var VPlantUMLDivClass = 'plantuml-diagram';
 var VMetaDataCodeClass = 'markdown-metadata';
 var VMarkRectDivClass = 'mark-rect';
@@ -38,6 +39,10 @@ if (typeof VEnableFlowchart == 'undefined') {
 
 if (typeof VEnableMathjax == 'undefined') {
     VEnableMathjax = false;
+}
+
+if (typeof VEnableWavedrom == 'undefined') {
+    VEnableWavedrom = false;
 }
 
 if (typeof VEnableHighlightLineNumber == 'undefined') {
@@ -707,6 +712,58 @@ var renderFlowchartOne = function(code) {
     return true;
 };
 
+var wavedromIdx = 0;
+
+var renderWavedrom = function(className) {
+    if (!VEnableWavedrom) {
+        return;
+    }
+
+    var codes = document.getElementsByTagName('code');
+    wavedromIdx = 0;
+    for (var i = 0; i < codes.length; ++i) {
+        var code = codes[i];
+        if (code.classList.contains(className)) {
+            if (renderWavedromOne(code)) {
+                // replaceChild() will decrease codes.length.
+                --i;
+            }
+        }
+    }
+};
+
+var renderWavedromOne = function(code) {
+    // Create a script element.
+    var script = document.createElement('script');
+    script.setAttribute('type', 'WaveDrom');
+    script.textContent = code.textContent;
+    script.setAttribute('id', 'WaveDrom_JSON_' + wavedromIdx);
+
+    var preNode = code.parentNode;
+    preNode.parentNode.replaceChild(script, preNode);
+
+    // Create a div element.
+    var div = document.createElement('div');
+    div.setAttribute('id', 'WaveDrom_Display_' + wavedromIdx);
+    div.classList.add(VWavedromDivClass);
+    script.insertAdjacentElement('afterend', div);
+
+    try {
+        WaveDrom.RenderWaveForm(wavedromIdx,
+                                WaveDrom.eva(script.getAttribute('id')),
+                                'WaveDrom_Display_');
+    } catch (err) {
+        wavedromIdx++;
+        content.setLog("err: " + err);
+        return false;
+    }
+
+    script.parentNode.removeChild(script);
+
+    wavedromIdx++;
+    return true;
+};
+
 var plantUMLIdx = 0;
 var plantUMLCodeClass = 'plantuml_code_';
 
@@ -1365,7 +1422,8 @@ var specialCodeBlock = function(lang) {
            || (VEnableMermaid && lang == 'mermaid')
            || (VEnableFlowchart && (lang == 'flowchart' || lang == 'flow'))
            || (VPlantUMLMode != 0 && lang == 'puml')
-           || (VEnableGraphviz && lang == 'dot');
+           || (VEnableGraphviz && lang == 'dot')
+           || (VEnableWavedrom && lang === 'wavedrom');
 };
 
 var handlePlantUMLResult = function(id, timeStamp, format, result) {
@@ -1449,6 +1507,7 @@ var previewCodeBlock = function(id, lang, text, isLivePreview) {
         || (lang != 'flow'
             && lang != 'flowchart'
             && lang != 'mermaid'
+            && lang != 'wavedrom'
             && (lang != 'puml' || VPlantUMLMode != 1 || !isLivePreview))) {
         return;
     }
@@ -1464,6 +1523,8 @@ var previewCodeBlock = function(id, lang, text, isLivePreview) {
         renderFlowchartOne(code);
     } else if (lang == 'mermaid') {
         renderMermaidOne(code);
+    } else if (lang == 'wavedrom') {
+        renderWavedromOne(code);
     } else if (lang == 'puml') {
         renderPlantUMLOneOnline(code);
     }
@@ -1873,4 +1934,3 @@ var clearMarkRectDivs = function() {
 var startFreshRender = function() {
     skipScrollCheckRange = null;
 };
-

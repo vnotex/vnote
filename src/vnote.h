@@ -73,6 +73,10 @@ public:
     static const QString c_flowchartJsFile;
     static const QString c_raphaelJsFile;
 
+    // WaveDrom
+    static const QString c_wavedromJsFile;
+    static const QString c_wavedromThemeFile;
+
     // PlantUML
     static const QString c_plantUMLJsFile;
     static const QString c_plantUMLZopfliJsFile;

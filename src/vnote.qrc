@@ -278,5 +278,7 @@
         <file>resources/icons/256x256/vnote.png</file>
         <file>utils/markdown-it/markdown-it-container.min.js</file>
         <file>resources/icons/table.svg</file>
+        <file>utils/wavedrom/wavedrom.min.js</file>
+        <file>utils/wavedrom/wavedrom-theme.js</file>
     </qresource>
 </RCC>

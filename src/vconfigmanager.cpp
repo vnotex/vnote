@@ -327,26 +327,30 @@ void VConfigManager::initialize()
                                                      "highlight_matches_in_page").toBool();
 
     initEditorConfigs();
+
+    initMarkdownConfigs();
 }
 
 void VConfigManager::initEditorConfigs()
 {
-    m_autoIndent = getConfigFromSettings("editor", "auto_indent").toBool();
+    const QString section("editor");
 
-    m_autoList = getConfigFromSettings("editor", "auto_list").toBool();
+    m_autoIndent = getConfigFromSettings(section, "auto_indent").toBool();
 
-    m_autoQuote = getConfigFromSettings("editor", "auto_quote").toBool();
+    m_autoList = getConfigFromSettings(section, "auto_list").toBool();
 
-    int keyMode = getConfigFromSettings("editor", "key_mode").toInt();
+    m_autoQuote = getConfigFromSettings(section, "auto_quote").toBool();
+
+    int keyMode = getConfigFromSettings(section, "key_mode").toInt();
     if (keyMode < 0 || keyMode >= (int)KeyMode::Invalid) {
         keyMode = 0;
     }
     m_keyMode = (KeyMode)keyMode;
 
-    m_enableSmartImInVimMode = getConfigFromSettings("editor",
+    m_enableSmartImInVimMode = getConfigFromSettings(section,
                                                      "enable_smart_im_in_vim_mode").toBool();
 
-    QString tmpLeader = getConfigFromSettings("editor",
+    QString tmpLeader = getConfigFromSettings(section,
                                               "vim_leader_key").toString();
     if (tmpLeader.isEmpty()) {
         m_vimLeaderKey = QChar(' ');
@@ -357,16 +361,22 @@ void VConfigManager::initEditorConfigs()
         }
     }
 
-    m_enableTabHighlight = getConfigFromSettings("editor",
+    m_enableTabHighlight = getConfigFromSettings(section,
                                                  "enable_tab_highlight").toBool();
 
-    m_parsePasteLocalImage = getConfigFromSettings("editor", "parse_paste_local_image").toBool();
+    m_parsePasteLocalImage = getConfigFromSettings(section, "parse_paste_local_image").toBool();
 
-    m_enableExtraBuffer = getConfigFromSettings("editor", "enable_extra_buffer").toBool();
+    m_enableExtraBuffer = getConfigFromSettings(section, "enable_extra_buffer").toBool();
 
-    m_autoScrollCursorLine = getConfigFromSettings("editor", "auto_scroll_cursor_line").toInt();
+    m_autoScrollCursorLine = getConfigFromSettings(section, "auto_scroll_cursor_line").toInt();
 
-    m_editorFontFamily = getConfigFromSettings("editor", "editor_font_family").toString();
+    m_editorFontFamily = getConfigFromSettings(section, "editor_font_family").toString();
+}
+
+void VConfigManager::initMarkdownConfigs()
+{
+    const QString section("markdown");
+    m_enableWavedrom = getConfigFromSettings(section, "enable_wavedrom").toBool();
 }
 
 void VConfigManager::initSettings()

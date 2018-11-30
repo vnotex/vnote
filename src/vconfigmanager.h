@@ -89,8 +89,6 @@ public:
 
     void initialize();
 
-    void initEditorConfigs();
-
     // Read config from the directory config json file into a QJsonObject.
     // @path is the directory containing the config json file.
     static QJsonObject readDirectoryConfig(const QString &path);
@@ -265,6 +263,9 @@ public:
 
     bool getEnableMathjax() const;
     void setEnableMathjax(bool p_enabled);
+
+    bool getEnableWavedrom() const;
+    void setEnableWavedrom(bool p_enabled);
 
     bool getEnableGraphviz() const;
     void setEnableGraphviz(bool p_enabled);
@@ -625,6 +626,10 @@ public:
     void setImageBrowsePath(const QString &p_path);
 
 private:
+    void initEditorConfigs();
+
+    void initMarkdownConfigs();
+
     // Look up a config from user and default settings.
     QVariant getConfigFromSettings(const QString &section, const QString &key) const;
 
@@ -781,6 +786,9 @@ private:
 
     // Enable Mathjax.
     bool m_enableMathjax;
+
+    // Enable WaveDrom.
+    bool m_enableWavedrom;
 
     // Enable Graphviz.
     bool m_enableGraphviz;
@@ -1603,6 +1611,21 @@ inline void VConfigManager::setEnableMathjax(bool p_enabled)
 
     m_enableMathjax = p_enabled;
     setConfigToSettings("global", "enable_mathjax", m_enableMathjax);
+}
+
+inline bool VConfigManager::getEnableWavedrom() const
+{
+    return m_enableWavedrom;
+}
+
+inline void VConfigManager::setEnableWavedrom(bool p_enabled)
+{
+    if (m_enableWavedrom == p_enabled) {
+        return;
+    }
+
+    m_enableWavedrom = p_enabled;
+    setConfigToSettings("markdown", "enable_wavedrom", m_enableWavedrom);
 }
 
 inline bool VConfigManager::getEnableGraphviz() const

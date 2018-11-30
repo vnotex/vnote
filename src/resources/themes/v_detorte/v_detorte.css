@@ -196,6 +196,15 @@ div.flowchart-diagram {
     color: #222222;
 }
 
+div.wavedrom-diagram {
+    padding: 0px 5px 0px 5px;
+    margin: 16px 0px 16px 0px;
+    width: fit-content;
+    overflow: hidden;
+    background: #949494;
+    color: #222222;
+}
+
 div.plantuml-diagram {
     padding: 5px 5px 0px 5px;
     margin: 16px 0px 16px 0px;

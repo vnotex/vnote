@@ -18,6 +18,10 @@ renderer.heading = function(text, level) {
 marked.setOptions({
     highlight: function(code, lang) {
         if (lang && (!specialCodeBlock(lang) || highlightSpecialBlocks)) {
+            if (lang === 'wavedrom') {
+                lang = 'json';
+            }
+
             if (hljs.getLanguage(lang)) {
                 return hljs.highlight(lang, code, true).value;
             } else {
@@ -63,6 +67,7 @@ var updateText = function(text) {
     setupImageView();
     renderMermaid('language-mermaid');
     renderFlowchart(['language-flowchart', 'language-flow']);
+    renderWavedrom('language-wavedrom');
     renderPlantUML('language-puml');
     renderGraphviz('language-dot');
     addClassToCodeBlock();
