@@ -165,7 +165,7 @@ void VUpdater::parseResult(const QByteArray &p_data)
                               .arg(g_config->c_version).arg(tag));
     if (isNewerVersion(g_config->c_version, tag)) {
         m_proLabel->setText(tr("<span style=\"font-weight: bold;\">Updates Available!</span><br/>"
-                               "Please visit <a href=\"%1\">Github Releases</a> to download the latest version.")
+                               "Please visit <a href=\"%1\">GitHub Releases</a> to download the latest version.")
                               .arg(releaseUrl));
     } else {
         m_proLabel->setText(tr("VNote is already the latest version."));

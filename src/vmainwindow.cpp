@@ -854,8 +854,8 @@ void VMainWindow::initHelpMenu()
                 updater.exec();
             });
 
-    QAction *starAct = new QAction(tr("Star VNote on &Github"), this);
-    starAct->setToolTip(tr("Give a star to VNote on Github project"));
+    QAction *starAct = new QAction(tr("Star VNote on &GitHub"), this);
+    starAct->setToolTip(tr("Give a star to VNote on GitHub project"));
     connect(starAct, &QAction::triggered,
             this, []() {
                 QString url("https://github.com/tamlok/vnote");
@@ -863,7 +863,7 @@ void VMainWindow::initHelpMenu()
             });
 
     QAction *feedbackAct = new QAction(tr("&Feedback"), this);
-    feedbackAct->setToolTip(tr("Open an issue on Github"));
+    feedbackAct->setToolTip(tr("Open an issue on GitHub"));
     connect(feedbackAct, &QAction::triggered,
             this, []() {
                 QString url("https://github.com/tamlok/vnote/issues");
@@ -1661,7 +1661,7 @@ void VMainWindow::initMarkdownExtensionMenu(QMenu *p_menu)
     QMenu *optMenu = p_menu->addMenu(tr("Extensions"));
     optMenu->setToolTipsVisible(true);
 
-    QAction *mermaidAct = new QAction(tr("&Mermaid Diagram"), optMenu);
+    QAction *mermaidAct = new QAction(tr("&Mermaid"), optMenu);
     mermaidAct->setToolTip(tr("Enable Mermaid for graph and diagram (re-open current tabs to make it work)"));
     mermaidAct->setCheckable(true);
     mermaidAct->setChecked(g_config->getEnableMermaid());
