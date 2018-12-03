@@ -377,6 +377,8 @@ void VConfigManager::initMarkdownConfigs()
 {
     const QString section("markdown");
     m_enableWavedrom = getConfigFromSettings(section, "enable_wavedrom").toBool();
+
+    m_prependDotInRelativePath = getConfigFromSettings(section, "prepend_dot_in_relative_path").toBool();
 }
 
 void VConfigManager::initSettings()

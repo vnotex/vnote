@@ -1947,6 +1947,9 @@ bool VMdEditor::processUrlFromMimeData(const QMimeData *p_source)
                 QDir dir(m_file->fetchBasePath());
                 ut = dir.relativeFilePath(url.toLocalFile());
                 ut = QUrl(ut).toString(QUrl::EncodeSpaces);
+                if (g_config->getPrependDotInRelativePath()) {
+                    VUtils::prependDotIfRelative(ut);
+                }
             } else {
                 ut = url.isLocalFile() ? url.toString(QUrl::EncodeSpaces)
                                        : url.toString();
@@ -2005,6 +2008,9 @@ bool VMdEditor::processUrlFromMimeData(const QMimeData *p_source)
                 QDir dir(m_file->fetchBasePath());
                 ut = dir.relativeFilePath(url.toLocalFile());
                 ut = QUrl(ut).toString(QUrl::EncodeSpaces);
+                if (g_config->getPrependDotInRelativePath()) {
+                    VUtils::prependDotIfRelative(ut);
+                }
             } else {
                 ut = url.isLocalFile() ? url.toString(QUrl::EncodeSpaces)
                                        : url.toString();
@@ -2214,6 +2220,9 @@ void VMdEditor::handleLinkToAttachmentAction(QAction *p_act)
     QDir dir(note->fetchBasePath());
     QString ut = dir.relativeFilePath(filePath);
     ut = QUrl(ut).toString(QUrl::EncodeSpaces);
+    if (g_config->getPrependDotInRelativePath()) {
+        VUtils::prependDotIfRelative(ut);
+    }
 
     VInsertLinkDialog ld(QObject::tr("Insert Link"),
                          "",

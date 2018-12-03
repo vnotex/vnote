@@ -1885,3 +1885,18 @@ QString VUtils::escapeHtml(QString p_text)
     p_text.replace(">", "&gt;").replace("<", "&lt;").replace("&", "&amp;");
     return p_text;
 }
+
+QString VUtils::encodeSpacesInPath(const QString &p_path)
+{
+    QString tmp(p_path);
+    tmp.replace(' ', "%20");
+    return tmp;
+}
+
+void VUtils::prependDotIfRelative(QString &p_path)
+{
+    if (QFileInfo(p_path).isRelative()
+        && !p_path.startsWith("../") && !p_path.startsWith("./")) {
+        p_path.prepend("./");
+    }
+}

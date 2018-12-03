@@ -625,6 +625,9 @@ public:
     QString getImageBrowsePath() const;
     void setImageBrowsePath(const QString &p_path);
 
+    bool getPrependDotInRelativePath() const;
+    void setPrependDotInRelativePath(bool p_enabled);
+
 private:
     void initEditorConfigs();
 
@@ -1105,6 +1108,9 @@ private:
 
     // Editor font family to override the value set by the style.
     QString m_editorFontFamily;
+
+    // Whether prepend a dot in the relative path of images and attachments.
+    bool m_prependDotInRelativePath;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2876,5 +2882,20 @@ inline QString VConfigManager::getImageBrowsePath() const
 inline void VConfigManager::setImageBrowsePath(const QString &p_path)
 {
     setConfigToSessionSettings("global", "image_browse_path", p_path);
+}
+
+inline bool VConfigManager::getPrependDotInRelativePath() const
+{
+    return m_prependDotInRelativePath;
+}
+
+inline void VConfigManager::setPrependDotInRelativePath(bool p_enabled)
+{
+    if (m_prependDotInRelativePath == p_enabled) {
+        return;
+    }
+
+    m_prependDotInRelativePath = p_enabled;
+    setConfigToSettings("markdown", "prepend_dot_in_relative_path", m_prependDotInRelativePath);
 }
 #endif // VCONFIGMANAGER_H

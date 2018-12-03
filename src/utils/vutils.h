@@ -394,6 +394,10 @@ public:
 
     static QString escapeHtml(QString p_text);
 
+    static QString encodeSpacesInPath(const QString &p_path);
+
+    static void prependDotIfRelative(QString &p_path);
+
     // Regular expression for image link.
     // ![image title]( http://github.com/tamlok/vnote.jpg "alt text" =200x100)
     // Captured texts (need to be trimmed):

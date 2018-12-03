@@ -114,6 +114,11 @@ void VMdEditOperations::insertImageFromQImage(const QString &p_title,
     }
 
     QString url = QDir::fromNativeSeparators(QString("%1/%2").arg(p_folderInLink).arg(fileName));
+    url = VUtils::encodeSpacesInPath(url);
+    if (g_config->getPrependDotInRelativePath()) {
+        VUtils::prependDotIfRelative(url);
+    }
+
     insertText(imageLink(p_title, url, p_width, p_height));
 
     qDebug() << "insert image" << p_title << filePath;
@@ -195,6 +200,11 @@ void VMdEditOperations::insertImageFromPath(const QString &p_title,
     }
 
     p_urlInLink = QDir::fromNativeSeparators(QString("%1/%2").arg(p_folderInLink).arg(fileName));
+    p_urlInLink = VUtils::encodeSpacesInPath(p_urlInLink);
+    if (g_config->getPrependDotInRelativePath()) {
+        VUtils::prependDotIfRelative(p_urlInLink);
+    }
+
     p_destImagePath = filePath;
 
     if (p_insertText) {
