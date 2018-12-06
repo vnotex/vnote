@@ -450,9 +450,11 @@ void VTextDocumentLayout::documentChanged(int p_from, int p_charsRemoved, int p_
         changeEndBlock = doc->findBlock(p_from + charsChanged);
     }
 
+    /*
     qDebug() << "documentChanged" << p_from << p_charsRemoved << p_charsAdded
              << m_blockCount << newBlockCount
              << changeStartBlock.blockNumber() << changeEndBlock.blockNumber();
+    */
 
     bool needRelayout = true;
     if (changeStartBlock == changeEndBlock

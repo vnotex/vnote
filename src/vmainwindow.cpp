@@ -2310,6 +2310,9 @@ void VMainWindow::saveStateAndGeometry()
 
 void VMainWindow::restoreStateAndGeometry()
 {
+    m_toolDock->setVisible(g_config->getToolsDockChecked());
+    m_searchDock->setVisible(g_config->getSearchDockChecked());
+
     const QByteArray geometry = g_config->getMainWindowGeometry();
     if (!geometry.isEmpty()) {
         restoreGeometry(geometry);
@@ -2319,9 +2322,6 @@ void VMainWindow::restoreStateAndGeometry()
     if (!state.isEmpty()) {
         restoreState(state);
     }
-
-    m_toolDock->setVisible(g_config->getToolsDockChecked());
-    m_searchDock->setVisible(g_config->getSearchDockChecked());
 
     const QByteArray splitterState = g_config->getMainSplitterState();
     if (!splitterState.isEmpty()) {
@@ -2334,8 +2334,6 @@ void VMainWindow::restoreStateAndGeometry()
     }
 
     m_naviBox->setCurrentIndex(g_config->getNaviBoxCurrentIndex());
-
-    centralWidget()->updateGeometry();
 }
 
 void VMainWindow::handleCurrentDirectoryChanged(const VDirectory *p_dir)
@@ -2867,7 +2865,6 @@ bool VMainWindow::toggleToolsDockByCaptain(void *p_target, void *p_data)
     Q_UNUSED(p_data);
     VMainWindow *obj = static_cast<VMainWindow *>(p_target);
     obj->m_toolDock->setVisible(!obj->m_toolDock->isVisible());
-    obj->centralWidget()->updateGeometry();
     return true;
 }
 
@@ -2877,7 +2874,6 @@ bool VMainWindow::toggleSearchDockByCaptain(void *p_target, void *p_data)
     VMainWindow *obj = static_cast<VMainWindow *>(p_target);
     bool visible = obj->m_searchDock->isVisible();
     obj->m_searchDock->setVisible(!visible);
-    obj->centralWidget()->updateGeometry();
     if (!visible) {
         obj->m_searcher->focusToSearch();
         return false;
