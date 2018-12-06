@@ -2310,9 +2310,6 @@ void VMainWindow::saveStateAndGeometry()
 
 void VMainWindow::restoreStateAndGeometry()
 {
-    m_toolDock->setVisible(g_config->getToolsDockChecked());
-    m_searchDock->setVisible(g_config->getSearchDockChecked());
-
     const QByteArray geometry = g_config->getMainWindowGeometry();
     if (!geometry.isEmpty()) {
         restoreGeometry(geometry);
@@ -2320,6 +2317,7 @@ void VMainWindow::restoreStateAndGeometry()
 
     const QByteArray state = g_config->getMainWindowState();
     if (!state.isEmpty()) {
+        // restoreState() will restore the state of dock widgets.
         restoreState(state);
     }
 
