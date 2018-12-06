@@ -1335,6 +1335,14 @@ void VMainWindow::initDockWindows()
 
     initToolsDock();
     initSearchDock();
+
+    // Manual resize it to fix the empty-panel bug in Linux.
+    QList<QDockWidget *> docks;
+    docks.append(m_toolDock);
+    docks.append(m_searchDock);
+    QList<int> sizes;
+    sizes << 200 << 200;
+    resizeDocks(docks, sizes, Qt::Horizontal);
 }
 
 void VMainWindow::initToolsDock()
