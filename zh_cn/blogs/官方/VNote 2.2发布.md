@@ -23,7 +23,7 @@ VNote现在能对GFM表格进行语法高亮以及自动对齐：
 将来会持续添加表格相关的快捷键和上下文菜单。
 
 ## 自动滚动光标行
-Now you could have VNote's cursor line being locked at the center of the editor while editing, even at the end of the document.
+
 VNote可以锁定光标所在行在编辑器的中央，包括光标在文档末尾的情况下。
 
 ![自动滚动光标行](_v_images/20181215103813075_446800707.png)
