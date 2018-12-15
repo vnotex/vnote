@@ -1,4 +1,21 @@
 # Changes History
+## v2.2
+- Editor
+    - Support smart GFM table;
+    - support auto scrolling cursor into center;
+    - Support specifying font via settings to override style config;
+    - Guess image title from the file name;
+    - Support ~~~ as fenced code block marker;
+- MathJax
+    - Support equation number;
+    - Support \begin and \end directly;
+    - Support $..$ in \text{} within $$...$$;
+- NotebookPanel: support spliting file list out;
+- Add openGL option in settings on Windows;
+- Markdown-it
+    - Support alert text via markdown-it-container plugin;
+- Support WaveDrom for digital timing diagram;
+
 ## v2.1
 - UniversalEntry/Searcher: `Ctrl+B` to expand/collapse all items;
 - Captain mode: support specifying keyboard layout mappings, such as Russian or French;
