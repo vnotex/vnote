@@ -10,8 +10,8 @@
     </message>
     <message>
         <location filename="../veditor.cpp" line="624"/>
-        <location filename="../vmdeditor.cpp" line="2013"/>
-        <location filename="../vmdeditor.cpp" line="2218"/>
+        <location filename="../vmdeditor.cpp" line="2019"/>
+        <location filename="../vmdeditor.cpp" line="2227"/>
         <source>Insert Link</source>
         <translation>插入链接</translation>
     </message>
@@ -3737,17 +3737,17 @@ Modified Time: %3</source>
         <translation>设置为编辑器的背景色（需要重新打开当前标签页）</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="2974"/>
+        <location filename="../vmainwindow.cpp" line="2972"/>
         <source>Quick Access is not set.</source>
         <translation>快速访问未设置。</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="2975"/>
+        <location filename="../vmainwindow.cpp" line="2973"/>
         <source>Please specify the note for Quick Access in the settings dialog or the context menu of a note.</source>
         <translation>请在设置对话框或笔记上下文菜单中设置一个笔记用于快速访问。</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3250"/>
+        <location filename="../vmainwindow.cpp" line="3248"/>
         <source>Edit current note</source>
         <translation>编辑当前笔记</translation>
     </message>
@@ -3757,7 +3757,7 @@ Modified Time: %3</source>
         <translation>放弃对当前笔记的更改并退出编辑模式</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3257"/>
+        <location filename="../vmainwindow.cpp" line="3255"/>
         <source>Save changes and exit edit mode</source>
         <translation>保存对当前笔记的更改并退出编辑模式</translation>
     </message>
@@ -4247,18 +4247,18 @@ Modified Time: %3</source>
         <translation>设置为编辑器的样式（需要重新打开当前标签页）</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="2697"/>
+        <location filename="../vmainwindow.cpp" line="2695"/>
         <source>Show VNote</source>
         <translation>显示VNote</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="2701"/>
+        <location filename="../vmainwindow.cpp" line="2699"/>
         <source>Quit</source>
         <translation>退出VNote</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="1444"/>
-        <location filename="../vmainwindow.cpp" line="2712"/>
+        <location filename="../vmainwindow.cpp" line="2710"/>
         <source>VNote</source>
         <translation>VNote</translation>
     </message>
@@ -4276,6 +4276,16 @@ Modified Time: %3</source>
         <location filename="../vmainwindow.cpp" line="327"/>
         <source>Tags</source>
         <translation>标签</translation>
+    </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="592"/>
+        <source>Link	%1</source>
+        <translation>链接	%1</translation>
+    </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="606"/>
+        <source>Image	%1</source>
+        <translation>图片	%1</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="625"/>
@@ -4594,48 +4604,48 @@ Modified Time: %3</source>
         <translation>添加编辑器的自定义样式</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="2991"/>
+        <location filename="../vmainwindow.cpp" line="2989"/>
         <source>Headings</source>
         <translation>标题</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="2997"/>
+        <location filename="../vmainwindow.cpp" line="2995"/>
         <source>Heading %1</source>
         <translation>标题%1</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="2998"/>
+        <location filename="../vmainwindow.cpp" line="2996"/>
         <source>Heading %1	%2</source>
         <translation>标题%1	%2</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3049"/>
+        <location filename="../vmainwindow.cpp" line="3047"/>
         <source>Clear</source>
         <translation>清空标题</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3050"/>
+        <location filename="../vmainwindow.cpp" line="3048"/>
         <source>Clear	%1</source>
         <translation>清空标题	%1</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3070"/>
+        <location filename="../vmainwindow.cpp" line="3068"/>
         <source>Theme</source>
         <translation>主题</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3074"/>
-        <location filename="../vmainwindow.cpp" line="3080"/>
+        <location filename="../vmainwindow.cpp" line="3072"/>
+        <location filename="../vmainwindow.cpp" line="3078"/>
         <source>Add Theme</source>
         <translation>添加主题</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3076"/>
+        <location filename="../vmainwindow.cpp" line="3074"/>
         <source>Add custom theme</source>
         <translation>添加自定义主题</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3102"/>
+        <location filename="../vmainwindow.cpp" line="3100"/>
         <source>Set as the theme of VNote (restart VNote to make it work)</source>
         <translation>设置为VNote的主题（重启VNote生效）</translation>
     </message>
@@ -4695,7 +4705,7 @@ Modified Time: %3</source>
         <translation>稍后可以进入设置改变该选项。</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="2547"/>
+        <location filename="../vmainwindow.cpp" line="2545"/>
         <source>Print Note</source>
         <translation>打印笔记</translation>
     </message>
@@ -4735,16 +4745,6 @@ Modified Time: %3</source>
         <translation>代码块	%1</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="592"/>
-        <source>Insert Link	%1</source>
-        <translation>插入链接	%1</translation>
-    </message>
-    <message>
-        <location filename="../vmainwindow.cpp" line="606"/>
-        <source>Insert Image	%1</source>
-        <translation>插入图片	%1</translation>
-    </message>
-    <message>
         <location filename="../vmainwindow.cpp" line="648"/>
         <source>Flash Page</source>
         <translation>灵犀页</translation>
@@ -4756,7 +4756,7 @@ Modified Time: %3</source>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="1082"/>
-        <location filename="../vmainwindow.cpp" line="3118"/>
+        <location filename="../vmainwindow.cpp" line="3116"/>
         <source>Customize Shortcuts</source>
         <translation>自定义快捷键</translation>
     </message>
@@ -4791,27 +4791,27 @@ Modified Time: %3</source>
         <translation>总是滚动光标所在行到编辑区域中部</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="2973"/>
+        <location filename="../vmainwindow.cpp" line="2971"/>
         <source>Information</source>
         <translation>信息</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3236"/>
+        <location filename="../vmainwindow.cpp" line="3234"/>
         <source>Edit	%1</source>
         <translation>编辑	%1</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3237"/>
+        <location filename="../vmainwindow.cpp" line="3235"/>
         <source>Save Changes And Read	%1</source>
         <translation>保存更改并阅读	%1</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3241"/>
+        <location filename="../vmainwindow.cpp" line="3239"/>
         <source>Edit</source>
         <translation>编辑</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3242"/>
+        <location filename="../vmainwindow.cpp" line="3240"/>
         <source>Save Changes And Read</source>
         <translation>保存更改并阅读</translation>
     </message>
@@ -5329,7 +5329,7 @@ Modified Time: %3</source>
     </message>
     <message>
         <location filename="../vmdeditoperations.cpp" line="96"/>
-        <location filename="../vmdeditoperations.cpp" line="175"/>
+        <location filename="../vmdeditoperations.cpp" line="180"/>
         <source>Fail to create image folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
         <translation>新建图片目录 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; 失败。</translation>
     </message>
@@ -5340,33 +5340,33 @@ Modified Time: %3</source>
     </message>
     <message>
         <location filename="../vmdeditoperations.cpp" line="107"/>
-        <location filename="../vmdeditoperations.cpp" line="187"/>
+        <location filename="../vmdeditoperations.cpp" line="192"/>
         <source>Warning</source>
         <translation>警告</translation>
     </message>
     <message>
         <location filename="../vmdeditoperations.cpp" line="108"/>
-        <location filename="../vmdeditoperations.cpp" line="188"/>
+        <location filename="../vmdeditoperations.cpp" line="193"/>
         <source>Fail to insert image &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
         <translation>插入图片 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; 失败。</translation>
     </message>
     <message>
-        <location filename="../vmdeditoperations.cpp" line="180"/>
+        <location filename="../vmdeditoperations.cpp" line="185"/>
         <source>Fail to copy image &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
         <translation>复制图片 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; 失败。</translation>
     </message>
     <message>
-        <location filename="../vmdeditoperations.cpp" line="227"/>
+        <location filename="../vmdeditoperations.cpp" line="237"/>
         <source>Insert Image From File</source>
         <translation>从文件插入图片</translation>
     </message>
     <message>
-        <location filename="../vmdeditoperations.cpp" line="230"/>
+        <location filename="../vmdeditoperations.cpp" line="240"/>
         <source>Insert Image From Network</source>
         <translation>从网络插入图片</translation>
     </message>
     <message>
-        <location filename="../vmdeditoperations.cpp" line="277"/>
+        <location filename="../vmdeditoperations.cpp" line="287"/>
         <source>Insert Image</source>
         <translation>插入图片</translation>
     </message>
@@ -5463,7 +5463,7 @@ Modified Time: %3</source>
         <location filename="../vmdeditor.cpp" line="1126"/>
         <location filename="../vmdeditor.cpp" line="1718"/>
         <location filename="../vmdeditor.cpp" line="1743"/>
-        <location filename="../vmdeditor.cpp" line="1969"/>
+        <location filename="../vmdeditor.cpp" line="1972"/>
         <source>Warning</source>
         <translation>警告</translation>
     </message>
@@ -5638,37 +5638,37 @@ Modified Time: %3</source>
         <translation>插入文本内容</translation>
     </message>
     <message>
-        <location filename="../vmdeditor.cpp" line="1970"/>
+        <location filename="../vmdeditor.cpp" line="1973"/>
         <source>Fail to add attachment %1 for note &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;.</source>
         <translation>为笔记 &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; 添加附件 %1 失败。</translation>
     </message>
     <message>
-        <location filename="../vmdeditor.cpp" line="1981"/>
+        <location filename="../vmdeditor.cpp" line="1984"/>
         <source>1 file added as attachment</source>
         <translation>1个文件添加为附件</translation>
     </message>
     <message>
-        <location filename="../vmdeditor.cpp" line="2069"/>
+        <location filename="../vmdeditor.cpp" line="2075"/>
         <source>Fetching images to local folder...</source>
         <translation>正在获取图片到本地文件夹...</translation>
     </message>
     <message>
-        <location filename="../vmdeditor.cpp" line="2070"/>
+        <location filename="../vmdeditor.cpp" line="2076"/>
         <source>Abort</source>
         <translation>终止</translation>
     </message>
     <message>
-        <location filename="../vmdeditor.cpp" line="2075"/>
+        <location filename="../vmdeditor.cpp" line="2081"/>
         <source>Fetching Images To Local Folder</source>
         <translation>正在获取图片到本地文件夹</translation>
     </message>
     <message>
-        <location filename="../vmdeditor.cpp" line="2100"/>
+        <location filename="../vmdeditor.cpp" line="2106"/>
         <source>Fetching image: %1</source>
         <translation>获取图片: %1</translation>
     </message>
     <message>
-        <location filename="../vmdeditor.cpp" line="2192"/>
+        <location filename="../vmdeditor.cpp" line="2198"/>
         <source>Link To Attachment</source>
         <translation>链接到附件</translation>
     </message>

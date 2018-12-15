@@ -589,7 +589,7 @@ QToolBar *VMainWindow::initEditToolBar(QSize p_iconSize)
 
     // Insert link.
     QAction *insetLinkAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/link.svg"),
-                                        tr("Insert Link\t%1").arg(VUtils::getShortcutText("Ctrl+L")),
+                                        tr("Link\t%1").arg(VUtils::getShortcutText("Ctrl+L")),
                                         this);
     insetLinkAct->setStatusTip(tr("Insert a link"));
     connect(insetLinkAct, &QAction::triggered,
@@ -603,7 +603,7 @@ QToolBar *VMainWindow::initEditToolBar(QSize p_iconSize)
 
     // Insert image.
     QAction *insertImageAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/insert_image.svg"),
-                                          tr("Insert Image\t%1").arg(VUtils::getShortcutText("Ctrl+'")),
+                                          tr("Image\t%1").arg(VUtils::getShortcutText("Ctrl+'")),
                                           this);
     insertImageAct->setStatusTip(tr("Insert an image from file or URL"));
     connect(insertImageAct, &QAction::triggered,
