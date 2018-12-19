@@ -3405,7 +3405,9 @@ void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
         QCoreApplication::sendPostedEvents();
         openStartupPages();
         openFiles(p_files, false, g_config->getNoteOpenMode(), false, true);
-        if (g_config->versionChanged()) {
+
+        if (g_config->versionChanged()
+            || (QDate::currentDate().dayOfYear() % 64 == 1)) {
             QString docFile = VUtils::getDocFile("welcome.md");
             VFile *file = vnote->getFile(docFile, true);
             m_editArea->openFile(file, OpenFileMode::Read);

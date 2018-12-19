@@ -5,7 +5,7 @@
 
 [VNote](https://tamlok.github.io/vnote) provides fancy Markdown experience as well as powerful notes management.
 
-VNote is **open source** and currently mainly developed and maintained by one single person in spare time. Hence, please don't hesitate to give VNote a hand if she does improve your productivity.
+VNote is **open source** and currently mainly developed and maintained by one single person in spare time. Hence, please don't hesitate to give VNote a hand if she does improve your productivity. Thank [users who donated to VNote](https://github.com/tamlok/vnote/wiki/Donate-List)!
 
 ## Troubleshooting Guide
 VNote could be used in two ways:

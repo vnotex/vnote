@@ -126,7 +126,7 @@ VNote不是一个简单的Markdown编辑器。通过提供笔记管理功能，V
 
 <img src="screenshots/wechat_pay.png" width="256px" height="256px" />
 
-非常感谢这些VNote的 [捐赠者](https://github.com/tamlok/vnote/wiki/Donate-List) !
+非常感谢[这些用户](https://github.com/tamlok/vnote/wiki/Donate-List)对VNote的捐赠！
 
 # 开发VNote的动机
 ## Markdown编辑器与笔记管理

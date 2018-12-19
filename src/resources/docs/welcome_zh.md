@@ -5,7 +5,7 @@
 
 [VNote](https://tamlok.github.io/vnote) 提供了美妙的Markdown体验以及强大的笔记管理。
 
-VNote是**开源**的，当前主要由个人在业余时间进行开发和维护。因此，如果VNote给您的效率带来了提升，请考虑帮助VNote成长。
+VNote是**开源**的，当前主要由个人在业余时间进行开发和维护。因此，如果VNote给您的效率带来了提升，请考虑帮助VNote成长。非常感谢[这些用户](https://github.com/tamlok/vnote/wiki/Donate-List)对VNote的捐赠！
 
 ## 问题解决指南
 VNote有两种使用方式：

@@ -125,7 +125,7 @@ You could help VNote's development in many ways.
 
 <img src="screenshots/wechat_pay.png" width="256px" height="256px" />
 
-Thanks very much to [them](https://github.com/tamlok/vnote/wiki/Donate-List) who donated to VNote!
+Thank [users who donated to VNote](https://github.com/tamlok/vnote/wiki/Donate-List)!
 
 # Why VNote
 ## Markdown Editor & Notes Management

@@ -325,6 +325,12 @@ void VTable::formatOneColumn(int p_idx, int p_cursorRowIdx, int p_cursorPib)
                 QString core = cell.m_text.mid(info.m_coreOffset, info.m_coreLength);
                 int nr = (targetWidth - info.m_coreWidth + m_spaceWidth / 2) / m_spaceWidth;
                 cell.m_formattedText = generateFormattedText(core, nr, fakeAlign);
+
+                // For cells crossing lines and having spaces at the end of one line,
+                // Qt will collapse those spaces, which make it not well formatted.
+                if (cell.m_text == cell.m_formattedText) {
+                    cell.m_formattedText.clear();
+                }
             }
         }
     }
@@ -407,12 +413,28 @@ void VTable::calculateBasicWidths(const QTextBlock &p_block, int p_borderPos)
 
 int VTable::calculateTextWidth(const QTextBlock &p_block, int p_pib, int p_length) const
 {
-    QTextLine line = p_block.layout()->lineForTextPosition(p_pib);
-    if (line.isValid()) {
-        return line.cursorToX(p_pib + p_length) - line.cursorToX(p_pib);
+    // The block may cross multiple lines.
+    int width = 0;
+    QTextLayout *layout = p_block.layout();
+    QTextLine line = layout->lineForTextPosition(p_pib);
+    while (line.isValid()) {
+        int lineEnd = line.textStart() + line.textLength();
+        if (lineEnd >= p_pib + p_length) {
+            // The last line.
+            width += line.cursorToX(p_pib + p_length) - line.cursorToX(p_pib);
+            break;
+        } else {
+            // Cross lines.
+            width += line.cursorToX(lineEnd) - line.cursorToX(p_pib);
+
+            // Move to next line.
+            p_length = p_length - (lineEnd - p_pib);
+            p_pib = lineEnd;
+            line = layout->lineForTextPosition(p_pib + 1);
+        }
     }
 
-    return -1;
+    return width > 0 ? width : -1;
 }
 
 bool VTable::isHeaderRow(int p_idx) const
