@@ -1951,8 +1951,7 @@ bool VMdEditor::processUrlFromMimeData(const QMimeData *p_source)
                     VUtils::prependDotIfRelative(ut);
                 }
             } else {
-                ut = url.isLocalFile() ? url.toString(QUrl::EncodeSpaces)
-                                       : url.toString();
+                ut = url.toString(QUrl::EncodeSpaces);
             }
 
             insertImageLink("", ut);
@@ -2012,8 +2011,7 @@ bool VMdEditor::processUrlFromMimeData(const QMimeData *p_source)
                     VUtils::prependDotIfRelative(ut);
                 }
             } else {
-                ut = url.isLocalFile() ? url.toString(QUrl::EncodeSpaces)
-                                       : url.toString();
+                ut = url.toString(QUrl::EncodeSpaces);
             }
 
             VInsertLinkDialog ld(QObject::tr("Insert Link"),
