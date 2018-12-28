@@ -24,7 +24,7 @@ VWordCountPanel::VWordCountPanel(QWidget *p_parent)
     m_charWithSpacesLabel = new QLabel();
     m_charWithSpacesLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
-    QFormLayout *readLayout = new QFormLayout();
+    auto *readLayout = new QFormLayout();
     readLayout->addRow(tr("Words"), m_wordLabel);
     readLayout->addRow(tr("Characters (no spaces)"), m_charWithoutSpacesLabel);
     readLayout->addRow(tr("Characters (with spaces)"), m_charWithSpacesLabel);
@@ -38,19 +38,19 @@ VWordCountPanel::VWordCountPanel(QWidget *p_parent)
     m_charWithSpacesEditLabel = new QLabel();
     m_charWithSpacesEditLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
-    QLabel *cwsLabel = new QLabel(tr("Characters (with spaces)"));
+    auto cwsLabel = new QLabel(tr("Characters (with spaces)"));
     cwsLabel->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
 
-    QFormLayout *editLayout = new QFormLayout();
+    auto *editLayout = new QFormLayout();
     editLayout->addRow(tr("Words"), m_wordEditLabel);
     editLayout->addRow(tr("Characters (no spaces)"), m_charWithoutSpacesEditLabel);
     editLayout->addRow(cwsLabel, m_charWithSpacesEditLabel);
     m_editBox = new QGroupBox(tr("Edit"));
     m_editBox->setLayout(editLayout);
 
-    QLabel *titleLabel = new QLabel(tr("Word Count"));
+    auto titleLabel = new QLabel(tr("Word Count"));
     titleLabel->setProperty("TitleLabel", true);
-    QVBoxLayout *mainLayout = new QVBoxLayout();
+    auto *mainLayout = new QVBoxLayout();
     mainLayout->addWidget(titleLabel);
     mainLayout->addWidget(m_readBox);
     mainLayout->addWidget(m_editBox);
@@ -98,7 +98,7 @@ void VWordCountPanel::clear()
 
 VTabIndicator::VTabIndicator(QWidget *p_parent)
     : QWidget(p_parent),
-      m_editTab(NULL)
+      m_editTab(nullptr)
 {
     setupUI();
 }
@@ -141,7 +141,7 @@ void VTabIndicator::setupUI()
     connect(m_wordCountBtn, &VButtonWithWidget::popupWidgetAboutToShow,
             this, &VTabIndicator::updateWordCountInfo);
 
-    QHBoxLayout *mainLayout = new QHBoxLayout(this);
+    auto *mainLayout = new QHBoxLayout(this);
     mainLayout->addWidget(m_tagPanel);
     mainLayout->addWidget(m_cursorLabel);
     mainLayout->addWidget(m_wordCountBtn);
@@ -185,7 +185,7 @@ static QString docTypeToString(DocType p_type)
 
 void VTabIndicator::update(const VEditTabInfo &p_info)
 {
-    VFile *file = NULL;
+    VFile *file = nullptr;
     DocType docType = DocType::Html;
     bool readonly = false;
     bool external = false;
@@ -225,7 +225,7 @@ void VTabIndicator::update(const VEditTabInfo &p_info)
 
     m_tagPanel->setVisible(!external);
     if (external) {
-        m_tagPanel->updateTags(NULL);
+        m_tagPanel->updateTags(nullptr);
     } else {
         m_tagPanel->updateTags(dynamic_cast<VNoteFile *>(file));
     }
@@ -244,7 +244,7 @@ void VTabIndicator::update(const VEditTabInfo &p_info)
 
 void VTabIndicator::updateWordCountInfo(QWidget *p_widget)
 {
-    VWordCountPanel *wcp = dynamic_cast<VWordCountPanel *>(p_widget);
+    auto *wcp = dynamic_cast<VWordCountPanel *>(p_widget);
 
     if (!m_editTab) {
         wcp->clear();

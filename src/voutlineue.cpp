@@ -16,8 +16,8 @@ extern VMainWindow *g_mainWin;
 
 VOutlineUE::VOutlineUE(QObject *p_parent)
     : IUniversalEntry(p_parent),
-      m_listWidget(NULL),
-      m_treeWidget(NULL),
+      m_listWidget(nullptr),
+      m_treeWidget(nullptr),
       m_listOutline(true)
 {
 }
@@ -122,7 +122,7 @@ void VOutlineUE::processCommand(int p_id, const QString &p_cmd)
                 }
 
                 // Add item to list.
-                QListWidgetItem *item = new QListWidgetItem(it.m_name, m_listWidget);
+                auto *item = new QListWidgetItem(it.m_name, m_listWidget);
                 item->setData(Qt::UserRole, it.m_index);
                 item->setToolTip(it.m_name);
 

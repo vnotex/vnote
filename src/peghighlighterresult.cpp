@@ -83,7 +83,7 @@ void PegHighlighterResult::parseBlocksHighlights(QVector<QVector<HLUnit>> &p_blo
     {
         const HighlightingStyle &style = styles[i];
         pmh_element *elem_cursor = pmhResult[style.type];
-        while (elem_cursor != NULL)
+        while (elem_cursor != nullptr)
         {
             // elem_cursor->pos and elem_cursor->end is the start
             // and end position of the element in document.
@@ -102,9 +102,9 @@ void PegHighlighterResult::parseBlocksHighlights(QVector<QVector<HLUnit>> &p_blo
     }
 
     // Sort p_blocksHighlights.
-    for (int i = 0; i < p_blocksHighlights.size(); ++i) {
-        if (p_blocksHighlights[i].size() > 1) {
-            std::sort(p_blocksHighlights[i].begin(), p_blocksHighlights[i].end(), compHLUnit);
+    for (auto &p_blocksHighlight : p_blocksHighlights) {
+        if (p_blocksHighlight.size() > 1) {
+            std::sort(p_blocksHighlight.begin(), p_blocksHighlight.end(), compHLUnit);
         }
     }
 }
@@ -117,7 +117,7 @@ void PegHighlighterResult::parseBlocksHighlightOne(QVector<QVector<HLUnit>> &p_b
 {
     // When the the highlight element is at the end of document, @p_end will equals
     // to the characterCount.
-    unsigned int nrChar = (unsigned int)p_doc->characterCount();
+    auto nrChar = (unsigned int)p_doc->characterCount();
     if (p_end >= nrChar && nrChar > 0) {
         p_end = nrChar - 1;
     }
@@ -280,8 +280,7 @@ void PegHighlighterResult::parseTableBlocks(const QSharedPointer<PegParseResult>
 
     VTableBlock item;
     int headerIdx = 0, borderIdx = 0;
-    for (int tableIdx = 0; tableIdx < tableRegs.size(); ++tableIdx) {
-        const auto &reg = tableRegs[tableIdx];
+    for (auto reg : tableRegs) {
         if (headerIdx < headerRegs.size()) {
             if (reg.contains(headerRegs[headerIdx])) {
                 // A new table.
@@ -333,12 +332,9 @@ void PegHighlighterResult::parseTableBlocks(const QSharedPointer<PegParseResult>
 
 static inline bool isDisplayFormulaRawEnd(const QString &p_text)
 {
-    QRegExp regex("\\\\end\\{[^{}\\s\\r\\n]+\\}$");
-    if (p_text.indexOf(regex) > -1) {
-        return true;
-    }
+    QRegExp regex(R"(\\end\{[^{}\s\r\n]+\}$)");
+    return p_text.indexOf(regex) > -1;
 
-    return false;
 }
 
 void PegHighlighterResult::parseMathjaxBlocks(const PegMarkdownHighlighter *p_peg,
@@ -349,8 +345,7 @@ void PegHighlighterResult::parseMathjaxBlocks(const PegMarkdownHighlighter *p_pe
     // Inline equations.
     const QVector<VElementRegion> &inlineRegs = p_result->m_inlineEquationRegions;
 
-    for (auto it = inlineRegs.begin(); it != inlineRegs.end(); ++it) {
-        const VElementRegion &r = *it;
+    for (auto r : inlineRegs) {
         QTextBlock block = doc->findBlock(r.m_startPos);
         if (!block.isValid()) {
             continue;
@@ -377,8 +372,7 @@ void PegHighlighterResult::parseMathjaxBlocks(const PegMarkdownHighlighter *p_pe
     bool inBlock = false;
     QString marker("$$");
     QString rawMarkerStart("\\begin{");
-    for (auto it = formulaRegs.begin(); it != formulaRegs.end(); ++it) {
-        const VElementRegion &r = *it;
+    for (auto r : formulaRegs) {
         QTextBlock block = doc->findBlock(r.m_startPos);
         int lastBlock = doc->findBlock(r.m_endPos - 1).blockNumber();
         if (lastBlock >= p_result->m_numOfBlocks) {
@@ -438,9 +432,9 @@ void PegHighlighterResult::parseHRuleBlocks(const PegMarkdownHighlighter *p_peg,
     const QTextDocument *doc = p_peg->getDocument();
     const QVector<VElementRegion> &regs = p_result->m_hruleRegions;
 
-    for (auto it = regs.begin(); it != regs.end(); ++it) {
-        QTextBlock block = doc->findBlock(it->m_startPos);
-        int lastBlock = doc->findBlock(it->m_endPos - 1).blockNumber();
+    for (auto reg : regs) {
+        QTextBlock block = doc->findBlock(reg.m_startPos);
+        int lastBlock = doc->findBlock(reg.m_endPos - 1).blockNumber();
         if (lastBlock >= p_result->m_numOfBlocks) {
             lastBlock = p_result->m_numOfBlocks - 1;
         }

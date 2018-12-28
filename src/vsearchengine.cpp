@@ -71,11 +71,11 @@ VSearchResultItem *VSearchEngineWorker::searchFile(const QString &p_fileName)
 {
     QFile file(p_fileName);
     if (!file.open(QIODevice::ReadOnly)) {
-        return NULL;
+        return nullptr;
     }
 
     int lineNum = 1;
-    VSearchResultItem *item = NULL;
+    VSearchResultItem *item = nullptr;
     QString line;
     QTextStream in(&file);
 
@@ -94,7 +94,7 @@ VSearchResultItem *VSearchEngineWorker::searchFile(const QString &p_fileName)
         }
 
         line = in.readLine();
-        bool matched = false;
+        bool matched;
         if (singleToken) {
             matched = m_token.matched(line);
         } else {
@@ -127,7 +127,7 @@ VSearchResultItem *VSearchEngineWorker::searchFile(const QString &p_fileName)
 
         if (!allMatched && item) {
             delete item;
-            item = NULL;
+            item = nullptr;
         }
     }
 
@@ -198,7 +198,7 @@ void VSearchEngine::search(const QSharedPointer<VSearchConfig> &p_config,
             len = totalSize - start;
         }
 
-        VSearchEngineWorker *th = new VSearchEngineWorker(this);
+        auto *th = new VSearchEngineWorker(this);
         th->setData(m_result->m_secondPhaseItems.mid(start, len),
                     p_config->m_contentToken,
                     p_config);

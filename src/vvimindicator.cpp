@@ -17,7 +17,7 @@
 extern VConfigManager *g_config;
 
 VVimIndicator::VVimIndicator(QWidget *p_parent)
-    : QWidget(p_parent), m_vim(NULL)
+    : QWidget(p_parent), m_vim(nullptr)
 {
     setupUI();
 }
@@ -27,7 +27,7 @@ void VVimIndicator::setupUI()
     m_modeLabel = new QLabel(this);
     m_modeLabel->setProperty("VimIndicatorModeLabel", true);
 
-    QTreeWidget *regTree = new QTreeWidget(this);
+    auto *regTree = new QTreeWidget(this);
     regTree->setProperty("ItemBorder", true);
     regTree->setRootIsDecorated(false);
     regTree->setColumnCount(2);
@@ -45,7 +45,7 @@ void VVimIndicator::setupUI()
     connect(m_regBtn, &VButtonWithWidget::popupWidgetAboutToShow,
             this, &VVimIndicator::updateRegistersTree);
 
-    QTreeWidget *markTree = new QTreeWidget(this);
+    auto *markTree = new QTreeWidget(this);
     markTree->setProperty("ItemBorder", true);
     markTree->setRootIsDecorated(false);
     markTree->setColumnCount(4);
@@ -68,7 +68,7 @@ void VVimIndicator::setupUI()
     QFontMetrics metric(font());
     m_keyLabel->setMinimumWidth(metric.width('A') * 5);
 
-    QHBoxLayout *mainLayout = new QHBoxLayout(this);
+    auto *mainLayout = new QHBoxLayout(this);
     mainLayout->addWidget(m_modeLabel);
     mainLayout->addWidget(m_regBtn);
     mainLayout->addWidget(m_markBtn);
@@ -155,7 +155,7 @@ static void fillTreeItemsWithRegisters(QTreeWidget *p_tree,
 
         QStringList itemStr;
         itemStr << reg.m_name << reg.m_value;
-        QTreeWidgetItem *item = new QTreeWidgetItem(p_tree, itemStr);
+        auto *item = new QTreeWidgetItem(p_tree, itemStr);
         item->setFlags(item->flags() | Qt::ItemIsSelectable | Qt::ItemIsEditable);
     }
 
@@ -195,7 +195,7 @@ void VVimIndicator::update(const VVim *p_vim)
 
 void VVimIndicator::updateRegistersTree(QWidget *p_widget)
 {
-    QTreeWidget *regTree = dynamic_cast<QTreeWidget *>(p_widget);
+    auto *regTree = dynamic_cast<QTreeWidget *>(p_widget);
     if (!m_vim) {
         regTree->clear();
         return;
@@ -217,7 +217,7 @@ static void fillTreeItemsWithMarks(QTreeWidget *p_tree,
         QStringList itemStr;
         itemStr << mark.m_name << QString::number(mark.m_location.m_blockNumber + 1)
                 << QString::number(mark.m_location.m_positionInBlock) << mark.m_text;
-        QTreeWidgetItem *item = new QTreeWidgetItem(p_tree, itemStr);
+        auto *item = new QTreeWidgetItem(p_tree, itemStr);
         item->setFlags(item->flags() | Qt::ItemIsSelectable | Qt::ItemIsEditable);
     }
 
@@ -229,7 +229,7 @@ static void fillTreeItemsWithMarks(QTreeWidget *p_tree,
 
 void VVimIndicator::updateMarksTree(QWidget *p_widget)
 {
-    QTreeWidget *markTree = dynamic_cast<QTreeWidget *>(p_widget);
+    auto *markTree = dynamic_cast<QTreeWidget *>(p_widget);
     if (!m_vim) {
         markTree->clear();
         return;

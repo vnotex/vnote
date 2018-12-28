@@ -80,8 +80,7 @@ void VSearchResultTree::appendItem(const QSharedPointer<VSearchResultItem> &p_it
 {
     m_data.append(p_item);
 
-    QTreeWidgetItem *item = new QTreeWidgetItem(this);
-    item->setData(0, Qt::UserRole, m_data.size() - 1);
+    auto *item = new QTreeWidgetItem(this); item->setData(0, Qt::UserRole, m_data.size() - 1);
     QString text;
     if (p_item->m_text.isEmpty()) {
         text = p_item->m_path;
@@ -111,7 +110,7 @@ void VSearchResultTree::appendItem(const QSharedPointer<VSearchResultItem> &p_it
     }
 
     for (auto const & it: p_item->m_matches) {
-        QTreeWidgetItem *subItem = new QTreeWidgetItem(item);
+        auto *subItem = new QTreeWidgetItem(item);
         QString text;
         if (it.m_lineNumber > -1) {
             text = QString("[%1] %2").arg(it.m_lineNumber).arg(it.m_text);
@@ -223,8 +222,8 @@ void VSearchResultTree::addSelectedItemsToCart()
     VCart *cart = g_mainWin->getCart();
 
     int nrAdded = 0;
-    for (int i = 0; i < items.size(); ++i) {
-        const QSharedPointer<VSearchResultItem> &resItem = itemResultData(items[i]);
+    for (auto &item : items) {
+        const QSharedPointer<VSearchResultItem> &resItem = itemResultData(item);
         if (resItem->m_type == VSearchResultItem::Note) {
             cart->addFile(resItem->m_path);
             ++nrAdded;
@@ -242,8 +241,8 @@ void VSearchResultTree::pinSelectedItemsToHistory()
 {
     QList<QTreeWidgetItem *> items = selectedItems();
     QStringList files;
-    for (int i = 0; i < items.size(); ++i) {
-        const QSharedPointer<VSearchResultItem> &resItem = itemResultData(items[i]);
+    for (auto &item : items) {
+        const QSharedPointer<VSearchResultItem> &resItem = itemResultData(item);
         if (resItem->m_type == VSearchResultItem::Note) {
             files << resItem->m_path;
         }

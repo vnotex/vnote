@@ -33,15 +33,15 @@ extern VConfigManager *g_config;
 VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
                OpenFileMode p_mode, QWidget *p_parent)
     : VEditTab(p_file, p_editArea, p_parent),
-      m_editor(NULL),
-      m_webViewer(NULL),
-      m_document(NULL),
+      m_editor(nullptr),
+      m_webViewer(nullptr),
+      m_document(nullptr),
       m_mdConType(g_config->getMdConverterType()),
       m_enableHeadingSequence(false),
       m_backupFileChecked(false),
       m_mode(Mode::InvalidMode),
-      m_livePreviewHelper(NULL),
-      m_mathjaxPreviewHelper(NULL)
+      m_livePreviewHelper(nullptr),
+      m_mathjaxPreviewHelper(nullptr)
 {
     V_ASSERT(m_file->getDocType() == DocType::Markdown);
 
@@ -49,7 +49,7 @@ VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
         VUtils::showMessage(QMessageBox::Warning,
                             tr("Warning"),
                             tr("Fail to open note <span style=\"%1\">%2</span>.")
-                              .arg(g_config->c_dataTextStyle).arg(m_file->getName()),
+                              .arg(VConfigManager::c_dataTextStyle).arg(m_file->getName()),
                             tr("Please check if file %1 exists.").arg(m_file->fetchPath()),
                             QMessageBox::Ok,
                             QMessageBox::Ok,
@@ -109,9 +109,9 @@ void VMdTab::setupUI()
     setupMarkdownViewer();
 
     // Setup editor when we really need it.
-    m_editor = NULL;
+    m_editor = nullptr;
 
-    QVBoxLayout *layout = new QVBoxLayout();
+    auto *layout = new QVBoxLayout();
     layout->addWidget(m_splitter);
     layout->setContentsMargins(0, 0, 0, 0);
     setLayout(layout);
@@ -441,7 +441,7 @@ void VMdTab::setupMarkdownViewer()
     connect(m_webViewer, &VWebView::requestExpandRestorePreviewArea,
             this, &VMdTab::expandRestorePreviewArea);
 
-    VPreviewPage *page = new VPreviewPage(m_webViewer);
+    auto *page = new VPreviewPage(m_webViewer);
     m_webViewer->setPage(page);
     m_webViewer->setZoomFactor(g_config->getWebZoomFactor());
     connect(page->profile(), &QWebEngineProfile::downloadRequested,
@@ -456,7 +456,7 @@ void VMdTab::setupMarkdownViewer()
     m_document = new VDocument(m_file, m_webViewer);
     m_documentID = m_document->registerIdentifier();
 
-    QWebChannel *channel = new QWebChannel(m_webViewer);
+    auto *channel = new QWebChannel(m_webViewer);
     channel->registerObject(QStringLiteral("content"), m_document);
     connect(m_document, &VDocument::tocChanged,
             this, &VMdTab::updateOutlineFromHtml);
@@ -949,7 +949,7 @@ void VMdTab::requestUpdateVimStatus()
     if (m_editor) {
         m_editor->requestUpdateVimStatus();
     } else {
-        emit vimStatusUpdated(NULL);
+        emit vimStatusUpdated(nullptr);
     }
 }
 
@@ -1106,11 +1106,7 @@ void VMdTab::applySnippet()
 
 static bool selectorItemCmp(const VInsertSelectorItem &p_a, const VInsertSelectorItem &p_b)
 {
-    if (p_a.m_shortcut < p_b.m_shortcut) {
-        return true;
-    }
-
-    return false;
+    return p_a.m_shortcut < p_b.m_shortcut;
 }
 
 VInsertSelector *VMdTab::prepareSnippetSelector(QWidget *p_parent)
@@ -1126,13 +1122,13 @@ VInsertSelector *VMdTab::prepareSnippetSelector(QWidget *p_parent)
     }
 
     if (items.isEmpty()) {
-        return NULL;
+        return nullptr;
     }
 
     // Sort items by shortcut.
     std::sort(items.begin(), items.end(), selectorItemCmp);
 
-    VInsertSelector *sel = new VInsertSelector(7, items, p_parent);
+    auto *sel = new VInsertSelector(7, items, p_parent);
     return sel;
 }
 
@@ -1470,7 +1466,7 @@ void VMdTab::handleDownloadRequested(QWebEngineDownloadItem *p_item)
 
 void VMdTab::handleSavePageRequested()
 {
-    static QString lastPath = g_config->getDocumentPathOrHomePath();
+    static QString lastPath = VConfigManager::getDocumentPathOrHomePath();
 
     QStringList filters;
     filters << tr("Single HTML (*.html)") << tr("Complete HTML (*.html)") << tr("MIME HTML (*.mht)");

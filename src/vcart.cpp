@@ -52,7 +52,7 @@ void VCart::setupUI()
 
     m_numLabel = new QLabel();
 
-    QHBoxLayout *btnLayout = new QHBoxLayout;
+    auto *btnLayout = new QHBoxLayout;
     btnLayout->addWidget(m_clearBtn);
     btnLayout->addStretch();
     btnLayout->addWidget(m_numLabel);
@@ -68,7 +68,7 @@ void VCart::setupUI()
     connect(m_itemList, &QListWidget::itemActivated,
             this, &VCart::openItem);
 
-    QVBoxLayout *mainLayout = new QVBoxLayout();
+    auto *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(btnLayout);
     mainLayout->addWidget(m_itemList);
     mainLayout->setContentsMargins(3, 0, 3, 0);

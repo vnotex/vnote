@@ -29,9 +29,9 @@ extern VMainWindow *g_mainWin;
 VFileList::VFileList(QWidget *parent)
     : QWidget(parent),
       VNavigationMode(),
-      m_openWithMenu(NULL),
-      m_itemClicked(NULL),
-      m_fileToCloseInSingleClick(NULL)
+      m_openWithMenu(nullptr),
+      m_itemClicked(nullptr),
+      m_fileToCloseInSingleClick(nullptr)
 {
     setupUI();
     initShortcuts();
@@ -43,9 +43,9 @@ VFileList::VFileList(QWidget *parent)
     // effect as opening file in current tab.
     connect(m_clickTimer, &QTimer::timeout,
             this, [this]() {
-                m_itemClicked = NULL;
+                m_itemClicked = nullptr;
                 VFile *file = m_fileToCloseInSingleClick;
-                m_fileToCloseInSingleClick = NULL;
+                m_fileToCloseInSingleClick = nullptr;
 
                 if (file) {
                     editArea->closeFile(file, false);
@@ -68,7 +68,7 @@ void VFileList::setupUI()
     viewBtn->setProperty("CornerBtn", true);
     viewBtn->setFocusPolicy(Qt::NoFocus);
 
-    QMenu *viewMenu = new QMenu(this);
+    auto *viewMenu = new QMenu(this);
     connect(viewMenu, &QMenu::aboutToShow,
             this, [this, viewMenu]() {
                 updateViewMenu(viewMenu);
@@ -89,7 +89,7 @@ void VFileList::setupUI()
 
     m_numLabel = new QLabel(this);
 
-    QHBoxLayout *titleLayout = new QHBoxLayout();
+    auto *titleLayout = new QHBoxLayout();
     titleLayout->addWidget(titleLabel);
     titleLayout->addWidget(viewBtn);
     titleLayout->addWidget(m_splitBtn);
@@ -107,7 +107,7 @@ void VFileList::setupUI()
                 return getMimeData(p_format, p_items);
             });
 
-    QVBoxLayout *mainLayout = new QVBoxLayout;
+    auto *mainLayout = new QVBoxLayout;
     mainLayout->addLayout(titleLayout);
     mainLayout->addWidget(fileList);
     mainLayout->setContentsMargins(0, 0, 0, 0);
@@ -161,7 +161,7 @@ void VFileList::initShortcuts()
 
     QKeySequence seq(g_config->getShortcutKeySequence("OpenViaDefaultProgram"));
     if (!seq.isEmpty()) {
-        QShortcut *defaultProgramShortcut = new QShortcut(seq, this);
+        auto *defaultProgramShortcut = new QShortcut(seq, this);
         defaultProgramShortcut->setContext(Qt::WidgetWithChildrenShortcut);
         connect(defaultProgramShortcut, &QShortcut::activated,
                 this, &VFileList::openCurrentItemViaDefaultProgram);
@@ -202,8 +202,7 @@ void VFileList::updateFileList()
     QVector<VNoteFile *> files = m_directory->getFiles();
     sortFiles(files, (ViewOrder)g_config->getNoteListViewOrder());
 
-    for (int i = 0; i < files.size(); ++i) {
-        VNoteFile *file = files[i];
+    for (auto file : files) {
         insertFileListItem(file);
     }
 
@@ -232,8 +231,8 @@ void VFileList::addFileToCart() const
     QList<QListWidgetItem *> items = fileList->selectedItems();
     VCart *cart = g_mainWin->getCart();
 
-    for (int i = 0; i < items.size(); ++i) {
-        cart->addFile(getVFile(items[i])->fetchPath());
+    for (auto &item : items) {
+        cart->addFile(getVFile(item)->fetchPath());
     }
 
     g_mainWin->showStatusMessage(tr("%1 %2 added to Cart")
@@ -246,8 +245,8 @@ void VFileList::pinFileToHistory() const
     QList<QListWidgetItem *> items = fileList->selectedItems();
 
     QStringList files;
-    for (int i = 0; i < items.size(); ++i) {
-        files << getVFile(items[i])->fetchPath();
+    for (auto &item : items) {
+        files << getVFile(item)->fetchPath();
     }
 
     g_mainWin->getHistoryList()->pinFiles(files);
@@ -286,7 +285,7 @@ void VFileList::fileInfo(VNoteFile *p_file)
         if (!p_file->rename(name)) {
             VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                 tr("Fail to rename note <span style=\"%1\">%2</span>.")
-                                  .arg(g_config->c_dataTextStyle).arg(curName), "",
+                                  .arg(VConfigManager::c_dataTextStyle).arg(curName), "",
                                 QMessageBox::Ok, QMessageBox::Ok, this);
             return;
         }
@@ -302,7 +301,7 @@ void VFileList::fileInfo(VNoteFile *p_file)
 
 void VFileList::fillItem(QListWidgetItem *p_item, const VNoteFile *p_file)
 {
-    qulonglong ptr = (qulonglong)p_file;
+    auto ptr = (qulonglong)p_file;
     p_item->setData(Qt::UserRole, ptr);
     p_item->setText(p_file->getName());
 
@@ -319,7 +318,7 @@ void VFileList::fillItem(QListWidgetItem *p_item, const VNoteFile *p_file)
 QListWidgetItem* VFileList::insertFileListItem(VNoteFile *file, bool atFront)
 {
     V_ASSERT(file);
-    QListWidgetItem *item = new QListWidgetItem();
+    auto *item = new QListWidgetItem();
     fillItem(item, file);
 
     if (atFront) {
@@ -371,7 +370,7 @@ void VFileList::newFile()
     }
 
     QString info = tr("Create a note in <span style=\"%1\">%2</span>.")
-                     .arg(g_config->c_dataTextStyle).arg(m_directory->getName());
+                     .arg(VConfigManager::c_dataTextStyle).arg(m_directory->getName());
     info = info + "<br>" + tr("Note with name ending with \"%1\" will be treated as Markdown type.")
                              .arg(suffixStr);
     QString defaultName = QString("new_note.%1").arg(defaultSuf);
@@ -385,7 +384,7 @@ void VFileList::newFile()
         if (!file) {
             VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                 tr("Fail to create note <span style=\"%1\">%2</span>.")
-                                  .arg(g_config->c_dataTextStyle).arg(dialog.getNameInput()), "",
+                                  .arg(VConfigManager::c_dataTextStyle).arg(dialog.getNameInput()), "",
                                 QMessageBox::Ok, QMessageBox::Ok, this);
             return;
         }
@@ -491,7 +490,7 @@ void VFileList::deleteFiles(const QVector<VNoteFile *> &p_files)
                       "bin of these notes.<br>"
                       "Click \"Cancel\" to leave them untouched.<br>"
                       "The operation is IRREVERSIBLE!")
-                     .arg(g_config->c_warningTextStyle);
+                     .arg(VConfigManager::c_warningTextStyle);
 
     VConfirmDeletionDialog dialog(tr("Confirm Deleting Notes"),
                                   text,
@@ -523,7 +522,7 @@ void VFileList::deleteFiles(const QVector<VNoteFile *> &p_files)
                                     tr("Warning"),
                                     tr("Fail to delete note <span style=\"%1\">%2</span>.<br>"
                                        "Please check <span style=\"%1\">%3</span> and manually delete it.")
-                                      .arg(g_config->c_dataTextStyle)
+                                      .arg(VConfigManager::c_dataTextStyle)
                                       .arg(fileName)
                                       .arg(filePath),
                                     errMsg,
@@ -721,7 +720,7 @@ void VFileList::contextMenuRequested(QPoint pos)
 QListWidgetItem* VFileList::findItem(const VNoteFile *p_file)
 {
     if (!p_file || p_file->getDirectory() != m_directory) {
-        return NULL;
+        return nullptr;
     }
 
     int nrChild = fileList->count();
@@ -732,7 +731,7 @@ QListWidgetItem* VFileList::findItem(const VNoteFile *p_file)
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 void VFileList::handleItemClicked(QListWidgetItem *p_item)
@@ -749,15 +748,15 @@ void VFileList::handleItemClicked(QListWidgetItem *p_item)
         // Timer will not trigger.
         if (m_itemClicked == p_item) {
             // Double clicked.
-            m_itemClicked = NULL;
-            m_fileToCloseInSingleClick = NULL;
+            m_itemClicked = nullptr;
+            m_fileToCloseInSingleClick = nullptr;
             return;
         } else {
             // Handle previous clicked item as single click.
-            m_itemClicked = NULL;
+            m_itemClicked = nullptr;
             if (m_fileToCloseInSingleClick) {
                 editArea->closeFile(m_fileToCloseInSingleClick, false);
-                m_fileToCloseInSingleClick = NULL;
+                m_fileToCloseInSingleClick = nullptr;
             }
         }
     }
@@ -776,14 +775,14 @@ void VFileList::handleItemClicked(QListWidgetItem *p_item)
         // EditArea will open Unknown file using system's default program, in which
         // case we should now close current file even after single click.
         if (file->getDocType() == DocType::Unknown) {
-            m_fileToCloseInSingleClick = NULL;
+            m_fileToCloseInSingleClick = nullptr;
         } else {
             // Get current tab which will be closed if click timer timeouts.
             VEditTab *tab = editArea->getCurrentTab();
             if (tab) {
                 m_fileToCloseInSingleClick = tab->getFile();
             } else {
-                m_fileToCloseInSingleClick = NULL;
+                m_fileToCloseInSingleClick = nullptr;
             }
         }
     }
@@ -818,7 +817,7 @@ void VFileList::showStatusTipAboutItem(QListWidgetItem *p_item)
 void VFileList::activateItem(QListWidgetItem *p_item, bool p_restoreFocus)
 {
     if (!p_item) {
-        emit fileClicked(NULL);
+        emit fileClicked(nullptr);
         return;
     }
 
@@ -918,8 +917,8 @@ void VFileList::copySelectedFiles(bool p_isCut)
     }
 
     QJsonArray files;
-    for (int i = 0; i < items.size(); ++i) {
-        VNoteFile *file = getVFile(items[i]);
+    for (auto &item : items) {
+        VNoteFile *file = getVFile(item);
         files.append(file->fetchPath());
     }
 
@@ -975,15 +974,15 @@ void VFileList::pasteFiles(VDirectory *p_destDir,
     }
 
     int nrPasted = 0;
-    for (int i = 0; i < p_files.size(); ++i) {
-        VNoteFile *file = g_vnote->getInternalFile(p_files[i]);
+    for (const auto &p_file : p_files) {
+        VNoteFile *file = g_vnote->getInternalFile(p_file);
         if (!file) {
-            qWarning() << "Copied file is not an internal note" << p_files[i];
+            qWarning() << "Copied file is not an internal note" << p_file;
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Warning"),
                                 tr("Fail to paste note <span style=\"%1\">%2</span>.")
-                                  .arg(g_config->c_dataTextStyle)
-                                  .arg(p_files[i]),
+                                  .arg(VConfigManager::c_dataTextStyle)
+                                  .arg(p_file),
                                 tr("VNote could not find this note in any notebook."),
                                 QMessageBox::Ok,
                                 QMessageBox::Ok,
@@ -1010,8 +1009,8 @@ void VFileList::pasteFiles(VDirectory *p_destDir,
                     VUtils::showMessage(QMessageBox::Warning,
                                         tr("Warning"),
                                         tr("Fail to copy note <span style=\"%1\">%2</span>.")
-                                          .arg(g_config->c_dataTextStyle)
-                                          .arg(p_files[i]),
+                                          .arg(VConfigManager::c_dataTextStyle)
+                                          .arg(p_file),
                                         tr("VNote does not allow copy and paste notes with internal images "
                                            "in the same folder."),
                                         QMessageBox::Ok,
@@ -1033,7 +1032,7 @@ void VFileList::pasteFiles(VDirectory *p_destDir,
         }
 
         QString msg;
-        VNoteFile *destFile = NULL;
+        VNoteFile *destFile = nullptr;
         bool ret = VNoteFile::copyFile(p_destDir,
                                        fileName,
                                        file,
@@ -1045,8 +1044,8 @@ void VFileList::pasteFiles(VDirectory *p_destDir,
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Warning"),
                                 tr("Fail to copy note <span style=\"%1\">%2</span>.")
-                                  .arg(g_config->c_dataTextStyle)
-                                  .arg(p_files[i]),
+                                  .arg(VConfigManager::c_dataTextStyle)
+                                  .arg(p_file),
                                 msg,
                                 QMessageBox::Ok,
                                 QMessageBox::Ok,
@@ -1078,7 +1077,7 @@ void VFileList::keyPressEvent(QKeyEvent *p_event)
     {
         QListWidgetItem *item = fileList->currentItem();
         if (item) {
-            VFile *fileToClose = NULL;
+            VFile *fileToClose = nullptr;
             VFile *file = getVFile(item);
             Q_ASSERT(file);
             if (p_event->modifiers() == Qt::NoModifier
@@ -1195,7 +1194,7 @@ void VFileList::sortItems()
     VSortDialog dialog(tr("Sort Notes"),
                        tr("Sort notes in folder <span style=\"%1\">%2</span> "
                           "in the configuration file.")
-                         .arg(g_config->c_dataTextStyle)
+                         .arg(VConfigManager::c_dataTextStyle)
                          .arg(m_directory->getName()),
                        this);
     QTreeWidget *tree = dialog.getTreeWidget();
@@ -1211,7 +1210,7 @@ void VFileList::sortItems()
         QString modifiedTime = VUtils::displayDateTime(file->getModifiedTimeUtc().toLocalTime(), true);
         QStringList cols;
         cols << file->getName() << createdTime << modifiedTime;
-        QTreeWidgetItem *item = new QTreeWidgetItem(tree, cols);
+        auto *item = new QTreeWidgetItem(tree, cols);
 
         item->setData(0, Qt::UserRole, i);
     }
@@ -1231,7 +1230,7 @@ void VFileList::sortItems()
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Warning"),
                                 tr("Fail to sort notes in folder <span style=\"%1\">%2</span>.")
-                                  .arg(g_config->c_dataTextStyle)
+                                  .arg(VConfigManager::c_dataTextStyle)
                                   .arg(m_directory->getName()),
                                 "",
                                 QMessageBox::Ok,
@@ -1261,13 +1260,13 @@ QMenu *VFileList::getOpenWithMenu()
                                     .arg(VUtils::getShortcutText(pa.m_shortcut));
         }
 
-        QAction *act = new QAction(name, this);
+        auto *act = new QAction(name, this);
         act->setToolTip(tr("Open current note with %1").arg(pa.m_name));
         act->setStatusTip(pa.m_cmd);
         act->setData(pa.m_cmd);
 
         if (!seq.isEmpty()) {
-            QShortcut *shortcut = new QShortcut(seq, this);
+            auto *shortcut = new QShortcut(seq, this);
             shortcut->setContext(Qt::WidgetWithChildrenShortcut);
             connect(shortcut, &QShortcut::activated,
                     this, [act](){
@@ -1287,16 +1286,16 @@ QMenu *VFileList::getOpenWithMenu()
         name = QString("%1\t%2").arg(name)
                                 .arg(VUtils::getShortcutText(g_config->getShortcutKeySequence("OpenViaDefaultProgram")));
     }
-    QAction *defaultAct = new QAction(name, this);
+    auto *defaultAct = new QAction(name, this);
     defaultAct->setToolTip(tr("Open current note with system's default program"));
     connect(defaultAct, &QAction::triggered,
             this, &VFileList::openCurrentItemViaDefaultProgram);
 
     m_openWithMenu->addAction(defaultAct);
 
-    QAction *addAct = new QAction(VIconUtils::menuIcon(":/resources/icons/add_program.svg"),
-                                  tr("Add External Program"),
-                                  this);
+    auto addAct = new QAction(VIconUtils::menuIcon(":/resources/icons/add_program.svg"),
+                              tr("Add External Program"),
+                              this);
     addAct->setToolTip(tr("Add external program"));
     connect(addAct, &QAction::triggered,
             this, [this]() {
@@ -1322,7 +1321,7 @@ QMenu *VFileList::getOpenWithMenu()
 
 void VFileList::handleOpenWithActionTriggered()
 {
-    QAction *act = static_cast<QAction *>(sender());
+    auto *act = dynamic_cast<QAction *>(sender());
     QString cmd = act->data().toString();
 
     QListWidgetItem *item = fileList->currentItem();
@@ -1333,7 +1332,7 @@ void VFileList::handleOpenWithActionTriggered()
                 || !editArea->isFileOpened(file)
                 || editArea->closeFile(file, false))) {
             cmd.replace("%0", file->fetchPath());
-            QProcess *process = new QProcess(this);
+            auto *process = new QProcess(this);
             connect(process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
                     process, &QProcess::deleteLater);
             process->start(cmd);
@@ -1351,9 +1350,9 @@ void VFileList::updateNumberLabel() const
 void VFileList::updateViewMenu(QMenu *p_menu)
 {
     if (p_menu->isEmpty()) {
-        QActionGroup *ag = new QActionGroup(p_menu);
+        auto *ag = new QActionGroup(p_menu);
 
-        QAction *act = new QAction(tr("View By Configuration File"), ag);
+        auto act = new QAction(tr("View By Configuration File"), ag);
         act->setCheckable(true);
         act->setData(ViewOrder::Config);
         act->setChecked(true);
@@ -1512,8 +1511,8 @@ QByteArray VFileList::getMimeData(const QString &p_format,
     Q_ASSERT(p_format ==ClipboardConfig::c_format);
 
     QJsonArray files;
-    for (int i = 0; i < p_items.size(); ++i) {
-        VNoteFile *file = getVFile(p_items[i]);
+    for (auto p_item : p_items) {
+        VNoteFile *file = getVFile(p_item);
         files.append(file->fetchPath());
     }
 

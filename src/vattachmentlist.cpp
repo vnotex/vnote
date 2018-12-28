@@ -22,7 +22,7 @@ VAttachmentList::VAttachmentList(QWidget *p_parent)
     : QWidget(p_parent),
       VButtonPopupWidget(this),
       m_initialized(false),
-      m_file(NULL)
+      m_file(nullptr)
 {
 }
 
@@ -44,15 +44,15 @@ void VAttachmentList::setupUI()
                     int ret = VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                                   tr("Are you sure to clear attachments of note "
                                                      "<span style=\"%1\">%2</span>?")
-                                                    .arg(g_config->c_dataTextStyle)
+                                                    .arg(VConfigManager::c_dataTextStyle)
                                                     .arg(m_file->getName()),
                                                   tr("<span style=\"%1\">WARNING</span>: "
                                                      "VNote will delete all the files in directory "
                                                      "<span style=\"%2\">%3</span>."
                                                      "Deleted files could be found in the recycle bin "
                                                      "of this note.<br>The operation is IRREVERSIBLE!")
-                                                    .arg(g_config->c_warningTextStyle)
-                                                    .arg(g_config->c_dataTextStyle)
+                                                    .arg(VConfigManager::c_warningTextStyle)
+                                                    .arg(VConfigManager::c_dataTextStyle)
                                                     .arg(m_file->fetchAttachmentFolderPath()),
                                                   QMessageBox::Ok | QMessageBox::Cancel,
                                                   QMessageBox::Ok,
@@ -63,7 +63,7 @@ void VAttachmentList::setupUI()
                             VUtils::showMessage(QMessageBox::Warning,
                                                 tr("Warning"),
                                                 tr("Fail to clear attachments of note <span style=\"%1\">%2</span>.")
-                                                  .arg(g_config->c_dataTextStyle)
+                                                  .arg(VConfigManager::c_dataTextStyle)
                                                   .arg(m_file->getName()),
                                                 tr("Please check the attachments folder and "
                                                    "maintain the configuration file manually."),
@@ -92,7 +92,7 @@ void VAttachmentList::setupUI()
 
     m_numLabel = new QLabel();
 
-    QHBoxLayout *btnLayout = new QHBoxLayout;
+    auto *btnLayout = new QHBoxLayout;
     btnLayout->addWidget(m_addBtn);
     btnLayout->addWidget(m_clearBtn);
     btnLayout->addWidget(m_locateBtn);
@@ -112,7 +112,7 @@ void VAttachmentList::setupUI()
     connect(m_attachmentList->itemDelegate(), &QAbstractItemDelegate::commitData,
             this, &VAttachmentList::handleListItemCommitData);
 
-    QVBoxLayout *mainLayout = new QVBoxLayout();
+    auto *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(btnLayout);
     mainLayout->addWidget(m_attachmentList);
 
@@ -130,20 +130,20 @@ void VAttachmentList::setFile(VNoteFile *p_file)
 
 void VAttachmentList::updateContent()
 {
-    bool enableAdd = true, enableDelete = true, enableClear = true, enableLocate = true;
+    bool enableAdd = true, enableClear = true, enableLocate = true;
     m_attachmentList->clear();
 
     if (!m_file) {
-        enableAdd = enableDelete = enableClear = enableLocate = false;
+        enableAdd = enableClear = enableLocate = false;
     } else {
         QString folder = m_file->getAttachmentFolder();
         const QVector<VAttachment> &attas = m_file->getAttachments();
 
         if (folder.isEmpty()) {
             Q_ASSERT(attas.isEmpty());
-            enableDelete = enableClear = enableLocate = false;
+            enableClear = enableLocate = false;
         } else if (attas.isEmpty()) {
-            enableDelete = enableClear = false;
+            enableClear = false;
         } else {
             fillAttachmentList(attas);
         }
@@ -169,9 +169,8 @@ void VAttachmentList::updateContent()
 void VAttachmentList::fillAttachmentList(const QVector<VAttachment> &p_attachments)
 {
     Q_ASSERT(m_attachmentList->count() == 0);
-    for (int i = 0; i < p_attachments.size(); ++i) {
-        const VAttachment &atta = p_attachments[i];
-        QListWidgetItem *item = new QListWidgetItem(atta.m_name);
+    for (const auto &atta : p_attachments) {
+        auto *item = new QListWidgetItem(atta.m_name);
         item->setFlags(item->flags() | Qt::ItemIsEditable);
         item->setData(Qt::UserRole, atta.m_name);
 
@@ -207,13 +206,13 @@ void VAttachmentList::addAttachments(const QStringList &p_files)
 {
     Q_ASSERT(m_file);
     int addedFiles = 0;
-    for (int i = 0; i < p_files.size(); ++i) {
-        if (!m_file->addAttachment(p_files[i])) {
+    for (const auto &p_file: p_files) {
+        if (!m_file->addAttachment(p_file)) {
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Warning"),
                                 tr("Fail to add attachment %1 for note <span style=\"%2\">%3</span>.")
-                                  .arg(p_files[i])
-                                  .arg(g_config->c_dataTextStyle)
+                                  .arg(p_file)
+                                  .arg(VConfigManager::c_dataTextStyle)
                                   .arg(m_file->getName()),
                                 "",
                                 QMessageBox::Ok,
@@ -249,7 +248,7 @@ void VAttachmentList::handleContextMenuRequested(QPoint p_pos)
         }
 
         if (selectedSize == 1) {
-            QAction *openAct = new QAction(tr("&Open"), &menu);
+            auto openAct = new QAction(tr("&Open"), &menu);
             openAct->setToolTip(tr("Open current attachment file"));
             connect(openAct, &QAction::triggered,
                     this, [this]() {
@@ -259,9 +258,9 @@ void VAttachmentList::handleContextMenuRequested(QPoint p_pos)
             menu.addAction(openAct);
         }
 
-        QAction *deleteAct = new QAction(VIconUtils::menuDangerIcon(":/resources/icons/delete_attachment.svg"),
-                                         tr("&Delete"),
-                                         &menu);
+        auto deleteAct = new QAction(VIconUtils::menuDangerIcon(":/resources/icons/delete_attachment.svg"),
+                                     tr("&Delete"),
+                                     &menu);
         deleteAct->setToolTip(tr("Delete selected attachments"));
         connect(deleteAct, &QAction::triggered,
                 this, &VAttachmentList::deleteSelectedItems);
@@ -275,9 +274,9 @@ void VAttachmentList::handleContextMenuRequested(QPoint p_pos)
             menu.addSeparator();
         }
 
-        QAction *sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
-                                       tr("&Sort"),
-                                       &menu);
+        auto sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
+                                   tr("&Sort"),
+                                   &menu);
         sortAct->setToolTip(tr("Sort attachments manually"));
         connect(sortAct, &QAction::triggered,
                 this, &VAttachmentList::sortItems);
@@ -331,12 +330,12 @@ void VAttachmentList::deleteSelectedItems()
         items.push_back(ConfirmItemInfo(item->text(),
                                         item->text(),
                                         "",
-                                        NULL));
+                                        nullptr));
     }
 
     QString text = tr("Are you sure to delete these attachments of note "
                       "<span style=\"%1\">%2</span>?")
-                     .arg(g_config->c_dataTextStyle).arg(m_file->getName());
+                     .arg(VConfigManager::c_dataTextStyle).arg(m_file->getName());
 
     QString info = tr("Deleted files could be found in the recycle "
                       "bin of this note.<br>"
@@ -362,7 +361,7 @@ void VAttachmentList::deleteSelectedItems()
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Warning"),
                                 tr("Fail to delete attachments of note <span style=\"%1\">%2</span>.")
-                                  .arg(g_config->c_dataTextStyle)
+                                  .arg(VConfigManager::c_dataTextStyle)
                                   .arg(m_file->getName()),
                                 tr("Please check the attachments folder and "
                                    "maintain the configuration file manually."),
@@ -387,7 +386,7 @@ void VAttachmentList::sortItems()
     VSortDialog dialog(tr("Sort Attachments"),
                        tr("Sort attachments of note <span style=\"%1\">%2</span> "
                           "in the configuration file.")
-                         .arg(g_config->c_dataTextStyle)
+                         .arg(VConfigManager::c_dataTextStyle)
                          .arg(m_file->getName()),
                        g_mainWin);
     QTreeWidget *tree = dialog.getTreeWidget();
@@ -415,7 +414,7 @@ void VAttachmentList::sortItems()
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Warning"),
                                 tr("Fail to sort attachments of note <span style=\"%1\">%2</span>.")
-                                  .arg(g_config->c_dataTextStyle)
+                                  .arg(VConfigManager::c_dataTextStyle)
                                   .arg(m_file->getName()),
                                 "",
                                 QMessageBox::Ok,
@@ -463,7 +462,7 @@ void VAttachmentList::handleListItemCommitData(QWidget *p_itemEdit)
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Rename Attachment"),
                                 tr("Fail to rename attachment <span style=\"%1\">%2</span>.")
-                                  .arg(g_config->c_dataTextStyle)
+                                  .arg(VConfigManager::c_dataTextStyle)
                                   .arg(oldText),
                                 "",
                                 QMessageBox::Ok,
@@ -521,10 +520,10 @@ bool VAttachmentList::handleDropEvent(QDropEvent *p_event)
         // Add attachments.
         QStringList files;
         QList<QUrl> urls = mime->urls();
-        for (int i = 0; i < urls.size(); ++i) {
+        for (auto &url : urls) {
             QString file;
-            if (urls[i].isLocalFile()) {
-                file = urls[i].toLocalFile();
+            if (url.isLocalFile()) {
+                file = url.toLocalFile();
                 QFileInfo fi(file);
                 if (fi.exists() && fi.isFile()) {
                     file = QDir::cleanPath(fi.absoluteFilePath());
@@ -590,13 +589,13 @@ void VAttachmentList::checkAttachments()
         items.push_back(ConfirmItemInfo(atta,
                                         atta,
                                         "",
-                                        NULL));
+                                        nullptr));
     }
 
     QString text = tr("VNote detects that these attachments of note "
                       "<span style=\"%1\">%2</span> are missing in disk. "
                       "Would you like to remove them from the note?")
-                     .arg(g_config->c_dataTextStyle)
+                     .arg(VConfigManager::c_dataTextStyle)
                      .arg(m_file->getName());
 
     QString info = tr("Click \"Cancel\" to leave them untouched.");
@@ -621,7 +620,7 @@ void VAttachmentList::checkAttachments()
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Warning"),
                                 tr("Fail to delete attachments of note <span style=\"%1\">%2</span>.")
-                                  .arg(g_config->c_dataTextStyle)
+                                  .arg(VConfigManager::c_dataTextStyle)
                                   .arg(m_file->getName()),
                                 tr("Please check the attachments folder and "
                                    "maintain the configuration file manually."),
@@ -675,11 +674,7 @@ void VAttachmentList::attachmentInfo()
                                              tr("Rename attachment (%1):").arg(oldName),
                                              oldName,
                                              [this](const QString &p_name) {
-                                                if (m_file->findAttachment(p_name, false) > -1) {
-                                                    return true;
-                                                }
-
-                                                return false;
+                                                 return m_file->findAttachment(p_name, false) > -1;
                                              },
                                              g_mainWin);
 
@@ -691,7 +686,7 @@ void VAttachmentList::attachmentInfo()
         VUtils::showMessage(QMessageBox::Warning,
                             tr("Attachment Information"),
                             tr("Fail to rename attachment <span style=\"%1\">%2</span>.")
-                              .arg(g_config->c_dataTextStyle)
+                              .arg(VConfigManager::c_dataTextStyle)
                               .arg(oldName),
                             "",
                             QMessageBox::Ok,

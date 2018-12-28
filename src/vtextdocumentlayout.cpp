@@ -327,8 +327,7 @@ QVector<QTextLayout::FormatRange> VTextDocumentLayout::formatRangeFromSelection(
 
     int blpos = p_block.position();
     int bllen = p_block.length();
-    for (int i = 0; i < p_selections.size(); ++i) {
-        const QAbstractTextDocumentLayout::Selection &range = p_selections.at(i);
+    for (const auto &range : p_selections) {
         const int selStart = range.cursor.selectionStart() - blpos;
         const int selEnd = range.cursor.selectionEnd() - blpos;
         if (selStart < bllen
@@ -625,7 +624,7 @@ qreal VTextDocumentLayout::layoutLines(const QTextBlock &p_block,
 
     // Handle block inline image.
     bool hasInlineImages = false;
-    const QVector<VPreviewInfo *> *info = NULL;
+    const QVector<VPreviewInfo *> *info = nullptr;
     if (m_blockImageEnabled) {
         VTextBlockData *blockData = VTextBlockData::blockData(p_block);
         info = &(blockData->getPreviews());

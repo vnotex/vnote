@@ -30,11 +30,11 @@ extern VConfigManager *g_config;
 
 VSearchUE::VSearchUE(QObject *p_parent)
     : IUniversalEntry(p_parent),
-      m_search(NULL),
+      m_search(nullptr),
       m_inSearch(false),
       m_id(ID::Name_Notebook_AllNotebook),
-      m_listWidget(NULL),
-      m_treeWidget(NULL)
+      m_listWidget(nullptr),
+      m_treeWidget(nullptr)
 {
 }
 
@@ -162,7 +162,7 @@ QWidget *VSearchUE::widget(int p_id)
 
     default:
         Q_ASSERT(false);
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -648,7 +648,7 @@ void VSearchUE::handleSearchItemAdded(const QSharedPointer<VSearchResultItem> &p
     static int itemAdded = 0;
     ++itemAdded;
 
-    QCoreApplication::sendPostedEvents(NULL, QEvent::KeyPress);
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::KeyPress);
 
     switch (m_id) {
     case ID::Name_Notebook_AllNotebook:
@@ -693,7 +693,7 @@ void VSearchUE::handleSearchItemAdded(const QSharedPointer<VSearchResultItem> &p
 
 void VSearchUE::handleSearchItemsAdded(const QList<QSharedPointer<VSearchResultItem> > &p_items)
 {
-    QCoreApplication::sendPostedEvents(NULL, QEvent::KeyPress);
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::KeyPress);
 
     switch (m_id) {
     case ID::Name_Notebook_AllNotebook:
@@ -754,7 +754,7 @@ void VSearchUE::appendItemToList(const QSharedPointer<VSearchResultItem> &p_item
         second = p_item->m_path;
     }
 
-    QIcon *icon = NULL;
+    QIcon *icon = nullptr;
     // We put notebook and folder before note.
     int row = 0;
     switch (p_item->m_type) {
@@ -788,7 +788,7 @@ void VSearchUE::appendItemToTree(const QSharedPointer<VSearchResultItem> &p_item
 {
     m_data.append(p_item);
 
-    QTreeWidgetItem *item = new QTreeWidgetItem(m_treeWidget);
+    auto *item = new QTreeWidgetItem(m_treeWidget);
     item->setData(0, Qt::UserRole, m_data.size() - 1);
     QString text;
     if (p_item->m_text.isEmpty()) {
@@ -819,7 +819,7 @@ void VSearchUE::appendItemToTree(const QSharedPointer<VSearchResultItem> &p_item
     }
 
     for (auto const & it: p_item->m_matches) {
-        QTreeWidgetItem *subItem = new QTreeWidgetItem(item);
+        auto *subItem = new QTreeWidgetItem(item);
         QString text;
         if (it.m_lineNumber > -1) {
             text = QString("[%1] %2").arg(it.m_lineNumber).arg(it.m_text);

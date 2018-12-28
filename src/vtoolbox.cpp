@@ -32,7 +32,7 @@ void VToolBox::setupUI()
 
     m_widgetLayout = new QStackedLayout();
 
-    QVBoxLayout *mainLayout = new QVBoxLayout();
+    auto *mainLayout = new QVBoxLayout();
     mainLayout->addWidget(wid);
     mainLayout->addLayout(m_widgetLayout);
     mainLayout->setContentsMargins(3, 0, 3, 0);
@@ -125,10 +125,10 @@ void VToolBox::setCurrentWidget(QWidget *p_widget, bool p_focus)
 void VToolBox::setCurrentButtonIndex(int p_idx)
 {
     // Remove the text of all button.
-    for (int i = 0; i < m_items.size(); ++i) {
-        QPushButton *btn = m_items[i].m_btn;
+    for (auto &m_item : m_items) {
+        QPushButton *btn = m_item.m_btn;
         btn->setText("");
-        btn->setIcon(m_items[i].m_icon);
+        btn->setIcon(m_item.m_icon);
         btn->clearFocus();
         VUtils::setDynamicProperty(btn, "ToolBoxActiveBtn", false);
     }
@@ -179,7 +179,7 @@ bool VToolBox::handleKeyNavigation(int p_key, bool &p_succeed)
         auto it = m_keyMap.find(keyChar);
         if (it != m_keyMap.end()) {
             ret = true;
-            QWidget *widget = static_cast<QWidget *>(it.value());
+            auto *widget = static_cast<QWidget *>(it.value());
             setCurrentWidget(widget);
         }
     } else if (keyChar == m_majorKey) {

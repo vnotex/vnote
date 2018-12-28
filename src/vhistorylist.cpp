@@ -60,7 +60,7 @@ void VHistoryList::setupUI()
                 }
             });
 
-    QHBoxLayout *btnLayout = new QHBoxLayout;
+    auto *btnLayout = new QHBoxLayout;
     btnLayout->addWidget(m_clearBtn);
     btnLayout->addStretch();
     btnLayout->setContentsMargins(0, 0, 0, 0);
@@ -74,7 +74,7 @@ void VHistoryList::setupUI()
     connect(m_itemList, &QListWidget::itemActivated,
             this, &VHistoryList::openItem);
 
-    QVBoxLayout *mainLayout = new QVBoxLayout();
+    auto *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(btnLayout);
     mainLayout->addWidget(m_itemList);
     mainLayout->setContentsMargins(0, 0, 0, 0);
@@ -267,25 +267,25 @@ void VHistoryList::updateList()
 
     QIcon noteIcon(VIconUtils::treeViewIcon(":/resources/icons/note_item.svg"));
     QIcon folderIcon(VIconUtils::treeViewIcon(":/resources/icons/dir_item.svg"));
-    for (auto it = m_histories.cbegin(); it != m_histories.cend(); ++it) {
-        QListWidgetItem *item = new QListWidgetItem(VUtils::fileNameFromPath(it->m_file));
-        item->setToolTip(it->m_file);
-        item->setData(Qt::UserRole, (qulonglong)&(*it));
+    for (const auto &m_historie : m_histories) {
+        QListWidgetItem *item = new QListWidgetItem(VUtils::fileNameFromPath(m_historie.m_file));
+        item->setToolTip(m_historie.m_file);
+        item->setData(Qt::UserRole, (qulonglong)&m_historie);
 
-        if (it->m_isFolder) {
+        if (m_historie.m_isFolder) {
             item->setIcon(folderIcon);
         } else {
             item->setIcon(noteIcon);
         }
 
-        if (it->m_isPinned) {
+        if (m_historie.m_isPinned) {
             m_itemList->insertItem(m_itemList->row(pinItem.m_item) + 1, item);
             pinItem.m_valid = true;
             continue;
         }
 
         for (int i = 0; i < sepSize; ++i) {
-            if (it->m_date >= seps[i].m_date) {
+            if (m_historie.m_date >= seps[i].m_date) {
                 m_itemList->insertItem(m_itemList->row(seps[i].m_item) + 1, item);
                 seps[i].m_valid = true;
                 break;
@@ -494,8 +494,8 @@ void VHistoryList::addFileToCart() const
     QList<QListWidgetItem *> items = m_itemList->selectedItems();
     VCart *cart = g_mainWin->getCart();
 
-    for (int i = 0; i < items.size(); ++i) {
-        cart->addFile(getFilePath(items[i]));
+    for (auto &item : items) {
+        cart->addFile(getFilePath(item));
     }
 
     g_mainWin->showStatusMessage(tr("%1 %2 added to Cart")

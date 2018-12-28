@@ -15,7 +15,7 @@ QWidget *LineEditDelegate::createEditor(QWidget *p_parent,
     Q_UNUSED(p_option);
     Q_UNUSED(p_index);
 
-    VLineEdit *edit = new VLineEdit(p_parent);
+    auto edit = new VLineEdit(p_parent);
     return edit;
 }
 
@@ -23,7 +23,7 @@ void LineEditDelegate::setEditorData(QWidget *p_editor, const QModelIndex &p_ind
 {
     QString text = p_index.model()->data(p_index, Qt::EditRole).toString();
 
-    VLineEdit *edit = static_cast<VLineEdit *>(p_editor);
+    auto edit = static_cast<VLineEdit *>(p_editor);
     edit->setText(text);
 }
 
@@ -31,7 +31,7 @@ void LineEditDelegate::setModelData(QWidget *p_editor,
                                     QAbstractItemModel *p_model,
                                     const QModelIndex &p_index) const
 {
-    VLineEdit *edit = static_cast<VLineEdit *>(p_editor);
+    auto edit = static_cast<VLineEdit *>(p_editor);
 
     p_model->setData(p_index, edit->text(), Qt::EditRole);
 }

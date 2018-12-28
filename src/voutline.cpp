@@ -86,7 +86,7 @@ void VOutline::setupUI()
                 g_mainWin->showStatusMessage(tr("Set Outline Expanded Level to %1").arg(level));
             });
 
-    QHBoxLayout *btnLayout = new QHBoxLayout();
+    auto *btnLayout = new QHBoxLayout();
     btnLayout->addStretch();
     btnLayout->addWidget(m_deLevelBtn);
     btnLayout->addWidget(m_inLevelBtn);
@@ -109,7 +109,7 @@ void VOutline::setupUI()
                 activateItem(p_item, true);
             });
 
-    QVBoxLayout *layout = new QVBoxLayout();
+    auto *layout = new QVBoxLayout();
     layout->addLayout(btnLayout);
     layout->addWidget(m_tree);
     layout->setContentsMargins(3, 0, 3, 0);
@@ -147,7 +147,7 @@ void VOutline::updateTreeFromOutline(QTreeWidget *p_treeWidget,
 
     const QVector<VTableOfContentItem> &headers = p_outline.getTable();
     int idx = 0;
-    updateTreeByLevel(p_treeWidget, headers, idx, NULL, NULL, 1);
+    updateTreeByLevel(p_treeWidget, headers, idx, nullptr, nullptr, 1);
 }
 
 void VOutline::updateTreeByLevel(QTreeWidget *p_treeWidget,
@@ -174,7 +174,7 @@ void VOutline::updateTreeByLevel(QTreeWidget *p_treeWidget,
         } else if (header.m_level < p_level) {
             return;
         } else {
-            updateTreeByLevel(p_treeWidget, p_headers, p_index, p_last, NULL, p_level + 1);
+            updateTreeByLevel(p_treeWidget, p_headers, p_index, p_last, nullptr, p_level + 1);
         }
     }
 }
@@ -266,7 +266,7 @@ void VOutline::selectHeader(QTreeWidget *p_treeWidget,
                             const VTableOfContent &p_outline,
                             const VHeaderPointer &p_header)
 {
-    p_treeWidget->setCurrentItem(NULL);
+    p_treeWidget->setCurrentItem(nullptr);
 
     if (!p_outline.getItem(p_header)) {
         return;

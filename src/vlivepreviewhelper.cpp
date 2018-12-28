@@ -31,8 +31,7 @@ extern VMainWindow *g_mainWin;
 #define INDEX_MASK 0x00ffffffUL
 
 CodeBlockPreviewInfo::CodeBlockPreviewInfo()
-{
-}
+= default;
 
 CodeBlockPreviewInfo::CodeBlockPreviewInfo(const VCodeBlock &p_cb)
     : m_codeBlock(p_cb)
@@ -47,7 +46,7 @@ void CodeBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
 {
     QTextBlock block = p_doc->findBlockByNumber(m_codeBlock.m_endBlock);
     if (block.isValid()) {
-        VImageToPreview *preview = new VImageToPreview();
+        auto *preview = new VImageToPreview();
 
         preview->m_startPos = block.position();
         preview->m_endPos = block.position() + block.length();
@@ -86,8 +85,8 @@ VLivePreviewHelper::VLivePreviewHelper(VEditor *p_editor,
       m_cbIndex(-1),
       m_livePreviewEnabled(false),
       m_inplacePreviewEnabled(false),
-      m_graphvizHelper(NULL),
-      m_plantUMLHelper(NULL),
+      m_graphvizHelper(nullptr),
+      m_plantUMLHelper(nullptr),
       m_lastInplacePreviewSize(0),
       m_timeStamp(0),
       m_scaleFactor(VUtils::calculateScaleFactor()),
@@ -158,8 +157,7 @@ void VLivePreviewHelper::updateCodeBlocks(TimeStamp p_timeStamp, const QVector<V
     bool manualInplacePreview = m_inplacePreviewEnabled;
     m_codeBlocks.clear();
 
-    for (int i = 0; i < p_codeBlocks.size(); ++i) {
-        const VCodeBlock &vcb = p_codeBlocks[i];
+    for (const auto &vcb : p_codeBlocks) {
         bool livePreview = false, inplacePreview = false;
         checkLang(vcb.m_lang, livePreview, inplacePreview);
         if (!livePreview && !inplacePreview) {
@@ -464,8 +462,7 @@ void VLivePreviewHelper::updateInplacePreview()
 {
     QSet<int> blocks;
     QVector<QSharedPointer<VImageToPreview> > images;
-    for (int i = 0; i < m_codeBlocks.size(); ++i) {
-        CodeBlockPreviewInfo &cb = m_codeBlocks[i];
+    for (auto &cb : m_codeBlocks) {
         if (cb.inplacePreviewReady()) {
             if (!cb.inplacePreview()->m_image.isNull()) {
                 images.append(cb.inplacePreview());

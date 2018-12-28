@@ -23,7 +23,7 @@ extern VNote *g_vnote;
 VDirectoryTree::VDirectoryTree(QWidget *parent)
     : VTreeWidget(parent),
       VNavigationMode(),
-      m_editArea(NULL)
+      m_editArea(nullptr)
 {
     setColumnCount(1);
     setHeaderHidden(true);
@@ -77,7 +77,7 @@ void VDirectoryTree::initShortcuts()
 
     QKeySequence seq = QKeySequence(g_config->getShortcutKeySequence("NewSubfolder"));
     if (!seq.isEmpty()) {
-        QShortcut *newSubDirShortcut = new QShortcut(seq, this);
+        auto *newSubDirShortcut = new QShortcut(seq, this);
         newSubDirShortcut->setContext(Qt::ApplicationShortcut);
         connect(newSubDirShortcut, &QShortcut::activated,
                 this, [this](){
@@ -134,12 +134,9 @@ void VDirectoryTree::updateDirectoryTree()
 
     VDirectory *rootDir = m_notebook->getRootDir();
     const QVector<VDirectory *> &subDirs = rootDir->getSubDirs();
-    for (int i = 0; i < subDirs.size(); ++i) {
-        VDirectory *dir = subDirs[i];
-        QTreeWidgetItem *item = new QTreeWidgetItem(this);
-
+    for (auto dir : subDirs) {
+        auto *item = new QTreeWidgetItem(this);
         fillTreeItem(item, dir);
-
         buildSubTree(item, 1);
     }
 
@@ -196,9 +193,8 @@ void VDirectoryTree::buildSubTree(QTreeWidgetItem *p_parent, int p_depth)
         }
     } else {
         const QVector<VDirectory *> &subDirs = dir->getSubDirs();
-        for (int i = 0; i < subDirs.size(); ++i) {
-            VDirectory *subDir = subDirs[i];
-            QTreeWidgetItem *item = new QTreeWidgetItem(p_parent);
+        for (auto subDir : subDirs) {
+            auto *item = new QTreeWidgetItem(p_parent);
             fillTreeItem(item, subDir);
             buildSubTree(item, p_depth - 1);
         }
@@ -265,7 +261,7 @@ void VDirectoryTree::updateItemDirectChildren(QTreeWidgetItem *p_item)
 
     for (int i = 0; i < dirs.size(); ++i) {
         VDirectory *dir = dirs[i];
-        QTreeWidgetItem *item = itemDirMap.value(dir, NULL);
+        QTreeWidgetItem *item = itemDirMap.value(dir, nullptr);
         if (item) {
             if (p_item) {
                 p_item->removeChild(item);
@@ -527,7 +523,7 @@ void VDirectoryTree::newRootDirectory()
             return;
         }
 
-        updateItemDirectChildren(NULL);
+        updateItemDirectChildren(nullptr);
 
         locateDirectory(dir);
     }
@@ -595,7 +591,7 @@ void VDirectoryTree::deleteSelectedDirectory()
 void VDirectoryTree::currentDirectoryItemChanged(QTreeWidgetItem *currentItem)
 {
     if (!currentItem) {
-        emit currentDirectoryChanged(NULL);
+        emit currentDirectoryChanged(nullptr);
         return;
     }
 
@@ -660,7 +656,7 @@ void VDirectoryTree::reloadFromDisk()
 
     QString msg;
     QString info;
-    VDirectory *curDir = NULL;
+    VDirectory *curDir = nullptr;
     QTreeWidgetItem *curItem = currentItem();
     if (curItem) {
         // Reload current directory.
@@ -705,7 +701,7 @@ void VDirectoryTree::reloadFromDisk()
             return;
         }
 
-        setCurrentItem(NULL);
+        setCurrentItem(nullptr);
 
         curItem->setExpanded(false);
         curDir->setExpanded(false);
@@ -714,8 +710,8 @@ void VDirectoryTree::reloadFromDisk()
 
         // Remove all its children.
         QList<QTreeWidgetItem *> children = curItem->takeChildren();
-        for (int i = 0; i < children.size(); ++i) {
-            delete children[i];
+        for  (auto child : children) {
+            delete child;
         }
 
         buildSubTree(curItem, 1);
@@ -755,8 +751,8 @@ void VDirectoryTree::copySelectedDirectories(bool p_isCut)
     }
 
     QJsonArray dirs;
-    for (int i = 0; i < items.size(); ++i) {
-        VDirectory *dir = getVDirectory(items[i]);
+    for (auto & item : items) {
+        VDirectory *dir = getVDirectory(item);
         dirs.append(dir->fetchPath());
     }
 
@@ -820,15 +816,15 @@ void VDirectoryTree::pasteDirectories(VDirectory *p_destDir,
     }
 
     int nrPasted = 0;
-    for (int i = 0; i < p_dirs.size(); ++i) {
-        VDirectory *dir = g_vnote->getInternalDirectory(p_dirs[i]);
+    for (const auto & p_dir : p_dirs) {
+        VDirectory *dir = g_vnote->getInternalDirectory(p_dir);
         if (!dir) {
-            qWarning() << "Copied dir is not an internal folder" << p_dirs[i];
+            qWarning() << "Copied dir is not an internal folder" << p_dir;
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Warning"),
                                 tr("Fail to paste folder <span style=\"%1\">%2</span>.")
                                   .arg(g_config->c_dataTextStyle)
-                                  .arg(p_dirs[i]),
+                                  .arg(p_dir),
                                 tr("VNote could not find this folder in any notebook."),
                                 QMessageBox::Ok,
                                 QMessageBox::Ok,
@@ -857,7 +853,7 @@ void VDirectoryTree::pasteDirectories(VDirectory *p_destDir,
         }
 
         QString msg;
-        VDirectory *destDir = NULL;
+        VDirectory *destDir = nullptr;
         bool ret = VDirectory::copyDirectory(p_destDir,
                                              dirName,
                                              dir,
@@ -869,7 +865,7 @@ void VDirectoryTree::pasteDirectories(VDirectory *p_destDir,
                                 tr("Warning"),
                                 tr("Fail to copy folder <span style=\"%1\">%2</span>.")
                                   .arg(g_config->c_dataTextStyle)
-                                  .arg(p_dirs[i]),
+                                  .arg(p_dir),
                                 msg,
                                 QMessageBox::Ok,
                                 QMessageBox::Ok,
@@ -943,7 +939,7 @@ void VDirectoryTree::mousePressEvent(QMouseEvent *event)
 {
     QTreeWidgetItem *item = itemAt(event->pos());
     if (!item) {
-        setCurrentItem(NULL);
+        setCurrentItem(nullptr);
     }
 
     VTreeWidget::mousePressEvent(event);
@@ -993,14 +989,14 @@ QTreeWidgetItem *VDirectoryTree::findVDirectory(const VDirectory *p_dir, bool *p
     }
 
     if (!p_dir) {
-        return NULL;
+        return nullptr;
     } else if (p_dir->getNotebookName() != m_notebook->getName()) {
-        return NULL;
+        return nullptr;
     } else if (p_dir == m_notebook->getRootDir()) {
         if (p_widget) {
             *p_widget = true;
         }
-        return NULL;
+        return nullptr;
     }
 
     bool isWidget;
@@ -1025,7 +1021,7 @@ QTreeWidgetItem *VDirectoryTree::findVDirectory(const VDirectory *p_dir, bool *p
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 bool VDirectoryTree::locateDirectory(const VDirectory *p_directory)
@@ -1051,7 +1047,7 @@ QTreeWidgetItem *VDirectoryTree::expandToVDirectory(const VDirectory *p_director
     if (!p_directory
         || p_directory->getNotebook() != m_notebook
         || p_directory == m_notebook->getRootDir()) {
-        return NULL;
+        return nullptr;
     }
 
     if (p_directory->getParentDirectory() == m_notebook->getRootDir()) {
@@ -1066,7 +1062,7 @@ QTreeWidgetItem *VDirectoryTree::expandToVDirectory(const VDirectory *p_director
     } else {
         QTreeWidgetItem *pItem = expandToVDirectory(p_directory->getParentDirectory());
         if (!pItem) {
-            return NULL;
+            return nullptr;
         }
 
         int nrChild = pItem->childCount();
@@ -1083,7 +1079,7 @@ QTreeWidgetItem *VDirectoryTree::expandToVDirectory(const VDirectory *p_director
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 void VDirectoryTree::expandSubTree(QTreeWidgetItem *p_item)
@@ -1158,7 +1154,7 @@ void VDirectoryTree::sortItems(VDirectory *p_dir)
         return;
     }
 
-    bool isNotebook = p_dir->parent() == NULL;
+    bool isNotebook = p_dir->parent() == nullptr;
 
     VSortDialog dialog(tr("Sort Folders"),
                        tr("Sort folders in %1 <span style=\"%2\">%3</span> "
@@ -1167,7 +1163,7 @@ void VDirectoryTree::sortItems(VDirectory *p_dir)
                          .arg(g_config->c_dataTextStyle)
                          .arg(isNotebook ? p_dir->getNotebook()->getName() : p_dir->getName()),
                        this);
-    QTreeWidget *tree = dialog.getTreeWidget();
+    auto *tree = dialog.getTreeWidget();
     tree->clear();
     tree->setColumnCount(2);
     QStringList headers;
@@ -1180,7 +1176,7 @@ void VDirectoryTree::sortItems(VDirectory *p_dir)
         QString createdTime = VUtils::displayDateTime(dir->getCreatedTimeUtc().toLocalTime(), true);
         QStringList cols;
         cols << dir->getName() << createdTime;
-        QTreeWidgetItem *item = new QTreeWidgetItem(tree, cols);
+        auto *item = new QTreeWidgetItem(tree, cols);
 
         item->setData(0, Qt::UserRole, i);
     }
@@ -1220,7 +1216,7 @@ VDirectory *VDirectoryTree::currentDirectory() const
         return getVDirectory(item);
     }
 
-    return NULL;
+    return nullptr;
 }
 
 void VDirectoryTree::pinDirectoryToHistory()

@@ -24,7 +24,7 @@ extern VNote *g_vnote;
 
 VListUE::VListUE(QObject *p_parent)
     : IUniversalEntry(p_parent),
-      m_listWidget(NULL)
+      m_listWidget(nullptr)
 {
 }
 
@@ -183,7 +183,7 @@ void VListUE::addResultItem(const QSharedPointer<VSearchResultItem> &p_item)
         second = p_item->m_path;
     }
 
-    QIcon *icon = NULL;
+    QIcon *icon = nullptr;
     switch (p_item->m_type) {
     case VSearchResultItem::Note:
         icon = &m_noteIcon;

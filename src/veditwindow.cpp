@@ -29,11 +29,11 @@ extern VNote *g_vnote;
 VEditWindow::VEditWindow(VEditArea *editArea, QWidget *parent)
     : QTabWidget(parent),
       m_editArea(editArea),
-      m_curTabWidget(NULL),
-      m_lastTabWidget(NULL),
-      m_removeSplitAct(NULL),
-      m_maximizeSplitAct(NULL),
-      m_distributeSplitsAct(NULL)
+      m_curTabWidget(nullptr),
+      m_lastTabWidget(nullptr),
+      m_removeSplitAct(nullptr),
+      m_maximizeSplitAct(nullptr),
+      m_distributeSplitsAct(nullptr)
 {
     setAcceptDrops(true);
     setupCornerWidget();
@@ -84,7 +84,7 @@ void VEditWindow::setupCornerWidget()
         leftBtn->setToolTip(QString("%1\t%2").arg(leftBtn->toolTip()).arg(keyText));
     }
 
-    VOpenedListMenu *leftMenu = new VOpenedListMenu(this);
+    auto *leftMenu = new VOpenedListMenu(this);
     leftMenu->setToolTipsVisible(true);
     connect(leftMenu, &VOpenedListMenu::fileTriggered,
             this, &VEditWindow::tabListJump);
@@ -95,7 +95,7 @@ void VEditWindow::setupCornerWidget()
                                "", this);
     rightBtn->setProperty("CornerBtn", true);
     rightBtn->setToolTip(tr("Menu"));
-    QMenu *rightMenu = new QMenu(this);
+    auto *rightMenu = new QMenu(this);
     rightMenu->setToolTipsVisible(true);
     rightBtn->setMenu(rightMenu);
     connect(rightMenu, &QMenu::aboutToShow,
@@ -104,8 +104,8 @@ void VEditWindow::setupCornerWidget()
             });
 
     // Move all buttons to the right corner.
-    QWidget *widget = new QWidget(this);
-    QHBoxLayout *layout = new QHBoxLayout();
+    auto widget = new QWidget(this);
+    auto *layout = new QHBoxLayout();
     layout->addWidget(leftBtn);
     layout->addWidget(rightBtn);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -272,7 +272,7 @@ bool VEditWindow::closeAllFiles(bool p_forced)
 
 int VEditWindow::openFileInTab(VFile *p_file, OpenFileMode p_mode)
 {
-    VEditTab *editor = NULL;
+    VEditTab *editor = nullptr;
     switch (p_file->getDocType()) {
     case DocType::Markdown:
         editor = new VMdTab(p_file, m_editArea, p_mode, this);
@@ -524,10 +524,10 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
 
                 QString folderPath;
                 if (file->getType() == FileType::Note) {
-                    const VNoteFile *tmpFile = static_cast<const VNoteFile *>((VFile *)file);
+                    const auto *tmpFile = static_cast<const VNoteFile *>((VFile *)file);
                     folderPath = tmpFile->getNotebook()->getRecycleBinFolderPath();
                 } else if (file->getType() == FileType::Orphan) {
-                    const VOrphanFile *tmpFile = static_cast<const VOrphanFile *>((VFile *)file);
+                    const auto *tmpFile = static_cast<const VOrphanFile *>((VFile *)file);
                     folderPath = tmpFile->fetchRecycleBinFolderPath();
                 } else {
                     Q_ASSERT(false);
@@ -628,7 +628,7 @@ void VEditWindow::tabbarContextMenuRequested(QPoint p_pos)
                 QPointer<VFile> file = editor->getFile();
                 Q_ASSERT(file);
                 if (file->getType() == FileType::Note) {
-                    VNoteFile *tmpFile = static_cast<VNoteFile *>((VFile *)file);
+                    auto *tmpFile = static_cast<VNoteFile *>((VFile *)file);
                     g_mainWin->getFileList()->fileInfo(tmpFile);
                 } else if (file->getType() == FileType::Orphan) {
                     g_mainWin->editOrphanFileInfo(file);
@@ -852,7 +852,7 @@ void VEditWindow::updateSplitMenu(QMenu *p_menu)
 
 bool VEditWindow::canRemoveSplit()
 {
-    QSplitter *splitter = dynamic_cast<QSplitter *>(parent());
+    auto *splitter = dynamic_cast<QSplitter *>(parent());
     Q_ASSERT(splitter);
     return splitter->count() > 1;
 }
@@ -974,7 +974,7 @@ VEditTab *VEditWindow::getCurrentTab() const
 {
     int idx = currentIndex();
     if (idx == -1) {
-        return NULL;
+        return nullptr;
     }
 
     return getTab(idx);
@@ -1047,7 +1047,7 @@ void VEditWindow::moveTabOneSplit(int p_tabIdx, bool p_right)
     removeTab(p_tabIdx);
 
     // Disconnect all the signals.
-    disconnect(editor, 0, this, 0);
+    disconnect(editor, nullptr, this, nullptr);
 
     m_editArea->moveTab(editor, idx, newIdx);
 
@@ -1073,7 +1073,7 @@ bool VEditWindow::addEditTab(QWidget *p_widget)
         return false;
     }
 
-    VEditTab *editor = dynamic_cast<VEditTab *>(p_widget);
+    auto *editor = dynamic_cast<VEditTab *>(p_widget);
     if (!editor) {
         return false;
     }
@@ -1155,7 +1155,7 @@ bool VEditWindow::showOpenedFileList()
     }
 
     leftBtn->showMenu();
-    VOpenedListMenu *menu = static_cast<VOpenedListMenu *>(leftBtn->menu());
+    auto *menu = static_cast<VOpenedListMenu *>(leftBtn->menu());
     return menu->isAccepted();
 }
 
@@ -1181,7 +1181,7 @@ bool VEditWindow::alternateTab()
             setCurrentWidget(m_lastTabWidget);
             return true;
         } else {
-            m_lastTabWidget = NULL;
+            m_lastTabWidget = nullptr;
         }
     }
     return false;
@@ -1287,7 +1287,7 @@ void VEditWindow::tabRequestToClose(VEditTab *p_tab)
         removeTab(indexOf(p_tab));
 
         // Disconnect all the signals.
-        disconnect(p_tab, 0, this, 0);
+        disconnect(p_tab, nullptr, this, nullptr);
 
         p_tab->deleteLater();
     }
@@ -1320,7 +1320,7 @@ QVector<TabNavigationInfo> VEditWindow::getTabsNavigationInfo() const
 bool VEditWindow::eventFilter(QObject *p_obj, QEvent *p_event)
 {
     if (p_obj == tabBar() && p_event->type() == QEvent::MouseButtonRelease) {
-        QMouseEvent *me = static_cast<QMouseEvent *>(p_event);
+        auto *me = static_cast<QMouseEvent *>(p_event);
         if (me->button() == Qt::MiddleButton) {
             // Close current tab.
             int idx = tabBar()->tabAt(me->pos());

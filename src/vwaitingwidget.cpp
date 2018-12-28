@@ -17,12 +17,12 @@ void VWaitingWidget::setupUI()
     QLabel *logoLabel = new QLabel();
     logoLabel->setPixmap(QPixmap(":/resources/icons/vnote.svg").scaled(imgSize, Qt::KeepAspectRatio));
 
-    QHBoxLayout *layout = new QHBoxLayout();
+    auto *layout = new QHBoxLayout();
     layout->addStretch();
     layout->addWidget(logoLabel);
     layout->addStretch();
 
-    QVBoxLayout *mainLayout = new QVBoxLayout();
+    auto *mainLayout = new QVBoxLayout();
     mainLayout->addStretch();
     mainLayout->addLayout(layout);
     mainLayout->addStretch();

@@ -46,7 +46,7 @@ void VHtmlTab::setupUI()
 
     m_editor->reloadFile();
 
-    QVBoxLayout *mainLayout = new QVBoxLayout();
+    auto *mainLayout = new QVBoxLayout();
     mainLayout->addWidget(m_editor);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     setLayout(mainLayout);
@@ -107,7 +107,7 @@ void VHtmlTab::readFile(bool p_discard)
         int ret = VUtils::showMessage(QMessageBox::Information,
                                       tr("Information"),
                                       tr("Note <span style=\"%1\">%2</span> has been modified.")
-                                        .arg(g_config->c_dataTextStyle).arg(m_file->getName()),
+                                        .arg(VConfigManager::c_dataTextStyle).arg(m_file->getName()),
                                       tr("Do you want to save your changes?"),
                                       modifiable ? (QMessageBox::Save
                                                     | QMessageBox::Discard
@@ -158,7 +158,7 @@ bool VHtmlTab::saveFile()
         VUtils::showMessage(QMessageBox::Warning,
                             tr("Warning"),
                             tr("Could not modify a read-only note <span style=\"%1\">%2</span>.")
-                              .arg(g_config->c_dataTextStyle).arg(filePath),
+                              .arg(VConfigManager::c_dataTextStyle).arg(filePath),
                             tr("Please save your changes to other notes manually."),
                             QMessageBox::Ok,
                             QMessageBox::Ok,
@@ -232,7 +232,6 @@ void VHtmlTab::findText(const VSearchToken &p_token,
     Q_UNUSED(p_token);
     Q_UNUSED(p_forward);
     Q_UNUSED(p_fromStart);
-    return;
 }
 
 void VHtmlTab::replaceText(const QString &p_text, uint p_options,
@@ -283,11 +282,7 @@ void VHtmlTab::requestUpdateVimStatus()
 
 bool VHtmlTab::restoreFromTabInfo(const VEditTabInfo &p_info)
 {
-    if (p_info.m_editTab != this) {
-        return false;
-    }
-
-    return true;
+    return p_info.m_editTab == this;
 }
 
 void VHtmlTab::reload()

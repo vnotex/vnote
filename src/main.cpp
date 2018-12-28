@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     // The file path passed via command line arguments.
-    QStringList filePaths = VUtils::filterFilePathsToOpen(app.arguments().mid(1));
+    QStringList filePaths = VUtils::filterFilePathsToOpen(QApplication::arguments().mid(1));
 
     if (!canRun) {
         // Ask another instance to open files passed in.
@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
 
     qInstallMessageHandler(VLogger);
 
-    qInfo() << "VNote started" << g_config->c_version << QDateTime::currentDateTime().toString();
+    qInfo() << "VNote started" << VConfigManager::c_version << QDateTime::currentDateTime().toString();
 
     QString locale = VUtils::getLocale();
     // Set default locale.

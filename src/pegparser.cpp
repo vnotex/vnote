@@ -50,9 +50,9 @@ void PegParseResult::parseHeaderRegions(QAtomicInt &p_stop)
     }
 
     pmh_element_type hx[6] = {pmh_H1, pmh_H2, pmh_H3, pmh_H4, pmh_H5, pmh_H6};
-    for (int i = 0; i < 6; ++i) {
-        pmh_element *elem = m_pmhElements[hx[i]];
-        while (elem != NULL) {
+    for (auto &i : hx) {
+        pmh_element *elem = m_pmhElements[i];
+        while (elem != nullptr) {
             if (elem->end <= elem->pos) {
                 elem = elem->next;
                 continue;
@@ -82,7 +82,7 @@ void PegParseResult::parseFencedCodeBlockRegions(QAtomicInt &p_stop)
     }
 
     pmh_element *elem = m_pmhElements[pmh_FENCEDCODEBLOCK];
-    while (elem != NULL) {
+    while (elem != nullptr) {
         if (elem->end <= elem->pos) {
             elem = elem->next;
             continue;
@@ -160,7 +160,7 @@ void PegParseResult::parseRegions(QAtomicInt &p_stop,
     }
 
     pmh_element *elem = m_pmhElements[p_type];
-    while (elem != NULL) {
+    while (elem != nullptr) {
         if (elem->end <= elem->pos) {
             elem = elem->next;
             continue;
@@ -254,7 +254,7 @@ PegParser::PegParser(QObject *p_parent)
 void PegParser::init()
 {
     for (int i = 0; i < NUM_OF_THREADS; ++i) {
-        PegParserWorker *th = new PegParserWorker(this);
+        auto *th = new PegParserWorker(this);
         connect(th, &PegParserWorker::finished,
                 this, [this, th]() {
                     handleWorkerFinished(th);
@@ -374,7 +374,7 @@ QVector<VElementRegion> PegParser::parseImageRegions(const QSharedPointer<PegPar
 
     int offset = p_config->m_offset;
     pmh_element *elem = res[pmh_IMAGE];
-    while (elem != NULL) {
+    while (elem != nullptr) {
         if (elem->end <= elem->pos) {
             elem = elem->next;
             continue;
@@ -463,7 +463,7 @@ static QSharedPointer<char> tryFixUnicodeData(const char *p_data)
         int cp;
         int nr = utf8CodePoint(ch, cp);
         if (nr == -1) {
-            return NULL;
+            return nullptr;
         }
 
         if (cp > MAX_CODE_POINT) {
@@ -478,7 +478,7 @@ static QSharedPointer<char> tryFixUnicodeData(const char *p_data)
     }
 
     if (!needFix) {
-        return NULL;
+        return nullptr;
     }
 
     // Replace those chars with two one-byte chars.
@@ -517,10 +517,10 @@ static QSharedPointer<char> tryFixUnicodeData(const char *p_data)
 pmh_element **PegParser::parseMarkdownToElements(const QSharedPointer<PegParseConfig> &p_config)
 {
     if (p_config->m_data.isEmpty()) {
-        return NULL;
+        return nullptr;
     }
 
-    pmh_element **pmhResult = NULL;
+    pmh_element **pmhResult = nullptr;
 
     // p_config->m_data is encoding in UTF-8.
     // QString stores a string of 16-bit QChars. Unicode characters with code values above 65535 are stored using surrogate pairs, i.e., two consecutive QChars.

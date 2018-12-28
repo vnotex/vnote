@@ -22,7 +22,7 @@ extern VNote *g_vnote;
 
 VListFolderUE::VListFolderUE(QObject *p_parent)
     : IUniversalEntry(p_parent),
-      m_listWidget(NULL)
+      m_listWidget(nullptr)
 {
 }
 
@@ -187,7 +187,7 @@ void VListFolderUE::addResultItem(const QSharedPointer<VSearchResultItem> &p_ite
         text = p_item->m_text;
     }
 
-    QIcon *icon = NULL;
+    QIcon *icon = nullptr;
     switch (p_item->m_type) {
     case VSearchResultItem::Note:
         icon = &m_noteIcon;
@@ -201,7 +201,7 @@ void VListFolderUE::addResultItem(const QSharedPointer<VSearchResultItem> &p_ite
         break;
     }
 
-    QListWidgetItem *item = new QListWidgetItem(*icon, text);
+    auto *item = new QListWidgetItem(*icon, text);
     item->setData(Qt::UserRole, m_data.size() - 1);
     item->setToolTip(p_item->m_path);
 

@@ -112,7 +112,7 @@ void VExplorer::setupUI()
                 }
             });
 
-    QHBoxLayout *dirLayout = new QHBoxLayout();
+    auto *dirLayout = new QHBoxLayout();
     dirLayout->addWidget(dirLabel);
     dirLayout->addStretch();
     dirLayout->addWidget(m_openBtn);
@@ -136,8 +136,8 @@ void VExplorer::setupUI()
                     setCurrentEntry(idx);
                 }
             });
-    QCompleter *completer = new QCompleter(this);
-    QFileSystemModel *fsModel = new QFileSystemModel(completer);
+    auto *completer = new QCompleter(this);
+    auto *fsModel = new QFileSystemModel(completer);
     fsModel->setRootPath("");
     completer->setModel(fsModel);
     // Enable styling the popup list via QListView::item.
@@ -195,13 +195,13 @@ void VExplorer::setupUI()
     connect(m_newDirBtn, &QPushButton::clicked,
             this, &VExplorer::newFolder);
 
-    QHBoxLayout *btnLayout = new QHBoxLayout();
+    auto *btnLayout = new QHBoxLayout();
     btnLayout->addStretch();
     btnLayout->addWidget(m_newFileBtn);
     btnLayout->addWidget(m_newDirBtn);
     btnLayout->setContentsMargins(0, 0, 0, 0);
 
-    QFileSystemModel *dirModel = new QFileSystemModel(this);
+    auto *dirModel = new QFileSystemModel(this);
     dirModel->setRootPath("");
     m_tree = new QTreeView(this);
     m_tree->setModel(dirModel);
@@ -211,7 +211,7 @@ void VExplorer::setupUI()
             this, &VExplorer::handleContextMenuRequested);
     connect(m_tree, &QTreeView::activated,
             this, [this](const QModelIndex &p_index) {
-                QFileSystemModel *model = static_cast<QFileSystemModel *>(m_tree->model());
+                auto *model = static_cast<QFileSystemModel *>(m_tree->model());
                 if (!model->isDir(p_index)) {
                     QStringList files;
                     files << model->filePath(p_index);
@@ -237,7 +237,7 @@ void VExplorer::setupUI()
         m_tree->hideColumn(i);
     }
 
-    QVBoxLayout *mainLayout = new QVBoxLayout();
+    auto *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(dirLayout);
     mainLayout->addWidget(m_dirCB);
     mainLayout->addWidget(imgLabel);
@@ -265,7 +265,7 @@ void VExplorer::init()
             this, [this]() {
                 QModelIndexList selectedIdx = m_tree->selectionModel()->selectedRows();
                 if (selectedIdx.size() == 1) {
-                    QFileSystemModel *model = static_cast<QFileSystemModel *>(m_tree->model());
+                    auto model = static_cast<QFileSystemModel *>(m_tree->model());
                     QString filePath = model->filePath(selectedIdx[0]);
                     renameFile(filePath);
                 }
@@ -445,7 +445,7 @@ void VExplorer::updateTree()
 {
     if (checkIndex()) {
         QString pa = QDir::cleanPath(m_entries[m_index].m_directory);
-        QFileSystemModel *model = static_cast<QFileSystemModel *>(m_tree->model());
+        auto *model = static_cast<QFileSystemModel *>(m_tree->model());
         model->setRootPath(pa);
         const QModelIndex rootIndex = model->index(pa);
         if (rootIndex.isValid()) {
@@ -471,7 +471,7 @@ void VExplorer::handleContextMenuRequested(QPoint p_pos)
     QMenu menu(this);
     menu.setToolTipsVisible(true);
 
-    QFileSystemModel *model = static_cast<QFileSystemModel *>(m_tree->model());
+    auto model = static_cast<QFileSystemModel *>(m_tree->model());
     QModelIndexList selectedIdx = m_tree->selectionModel()->selectedRows();
     if (selectedIdx.size() == 1 && model->isDir(selectedIdx[0])) {
         QString filePath = model->filePath(selectedIdx[0]);
@@ -642,7 +642,7 @@ void VExplorer::newFile()
 
     QString parentDir;
 
-    QFileSystemModel *model = static_cast<QFileSystemModel *>(m_tree->model());
+    auto *model = static_cast<QFileSystemModel *>(m_tree->model());
     QModelIndexList selectedIdx = m_tree->selectionModel()->selectedRows();
     if (selectedIdx.size() == 1 && model->isDir(selectedIdx[0])) {
         parentDir = model->filePath(selectedIdx[0]);
@@ -699,7 +699,7 @@ void VExplorer::newFolder()
 
     QString parentDir;
 
-    QFileSystemModel *model = static_cast<QFileSystemModel *>(m_tree->model());
+    auto *model = static_cast<QFileSystemModel *>(m_tree->model());
     QModelIndexList selectedIdx = m_tree->selectionModel()->selectedRows();
     if (selectedIdx.size() == 1 && model->isDir(selectedIdx[0])) {
         parentDir = model->filePath(selectedIdx[0]);

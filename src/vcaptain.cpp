@@ -15,7 +15,7 @@ extern VConfigManager *g_config;
 VCaptain::VCaptain(QWidget *p_parent)
     : QWidget(p_parent),
       m_mode(CaptainMode::Normal),
-      m_widgetBeforeCaptain(NULL),
+      m_widgetBeforeCaptain(nullptr),
       m_nextMajorKey('a'),
       m_ignoreFocusChange(false)
 {
@@ -107,7 +107,7 @@ void VCaptain::keyPressEvent(QKeyEvent *p_event)
 
 bool VCaptain::handleKeyPress(int p_key, Qt::KeyboardModifiers p_modifiers)
 {
-    bool ret = true;
+    bool ret;
 
     m_ignoreFocusChange = true;
 
@@ -142,7 +142,7 @@ bool VCaptain::handleKeyPressNavigationMode(int p_key,
                 hasConsumed = true;
                 if (succeed) {
                     // Exit.
-                    m_widgetBeforeCaptain = NULL;
+                    m_widgetBeforeCaptain = nullptr;
                 } else {
                     // Consumed but not succeed. Need more keys.
                     pending = true;
@@ -187,7 +187,7 @@ void VCaptain::restoreFocus()
 {
     if (m_widgetBeforeCaptain) {
         m_widgetBeforeCaptain->setFocus();
-        m_widgetBeforeCaptain = NULL;
+        m_widgetBeforeCaptain = nullptr;
     }
 }
 
@@ -246,14 +246,14 @@ void VCaptain::triggerCaptainTarget(const QString &p_key)
 
     CaptainData data(m_widgetBeforeCaptain);
     if (!target.m_function(target.m_target, (void *)&data)) {
-        m_widgetBeforeCaptain = NULL;
+        m_widgetBeforeCaptain = nullptr;
     }
 }
 
 bool VCaptain::navigationModeByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VCaptain *obj = static_cast<VCaptain *>(p_target);
+    auto *obj = static_cast<VCaptain *>(p_target);
     obj->triggerNavigationMode();
     return true;
 }

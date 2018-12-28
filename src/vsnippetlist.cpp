@@ -52,7 +52,7 @@ void VSnippetList::setupUI()
 
     m_numLabel = new QLabel();
 
-    QHBoxLayout *btnLayout = new QHBoxLayout;
+    auto btnLayout = new QHBoxLayout;
     btnLayout->addWidget(m_addBtn);
     btnLayout->addWidget(m_locateBtn);
     btnLayout->addStretch();
@@ -68,7 +68,7 @@ void VSnippetList::setupUI()
     connect(m_snippetList, &QListWidget::itemActivated,
             this, &VSnippetList::handleItemActivated);
 
-    QVBoxLayout *mainLayout = new QVBoxLayout();
+    auto *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(btnLayout);
     mainLayout->addWidget(m_snippetList);
     mainLayout->setContentsMargins(3, 0, 3, 0);
@@ -207,7 +207,7 @@ void VSnippetList::deleteSelectedItems()
         items.push_back(ConfirmItemInfo(name,
                                         name,
                                         "",
-                                        NULL));
+                                        nullptr));
     }
 
     QString text = tr("Are you sure to delete these snippets?");
@@ -365,12 +365,11 @@ void VSnippetList::updateContent()
 {
     m_snippetList->clearAll();
 
-    for (int i = 0; i < m_snippets.size(); ++i) {
-        const VSnippet &snip = m_snippets[i];
+    for (const auto &snip : m_snippets) {
         QString text = QString("%1%2").arg(snip.getName())
                                       .arg(snip.getShortcut().isNull()
                                            ? "" : QString(" [%1]").arg(snip.getShortcut()));
-        QListWidgetItem *item = new QListWidgetItem(text);
+        auto *item = new QListWidgetItem(text);
         item->setToolTip(snip.getName());
         item->setData(Qt::UserRole, snip.getName());
 
@@ -416,8 +415,8 @@ bool VSnippetList::writeSnippetsToConfig() const
     snippetJson[SnippetConfig::c_version] = "1";
 
     QJsonArray snippetArray;
-    for (int i = 0; i < m_snippets.size(); ++i) {
-        snippetArray.append(m_snippets[i].toJson());
+    for (const auto &m_snippet : m_snippets) {
+        snippetArray.append(m_snippet.toJson());
     }
 
     snippetJson[SnippetConfig::c_snippets] = snippetArray;
@@ -443,8 +442,8 @@ bool VSnippetList::readSnippetsFromConfig()
     // [snippets] section.
     bool ret = true;
     QJsonArray snippetArray = snippets[SnippetConfig::c_snippets].toArray();
-    for (int i = 0; i < snippetArray.size(); ++i) {
-        VSnippet snip = VSnippet::fromJson(snippetArray[i].toObject());
+    for (auto &&i : snippetArray) {
+        VSnippet snip = VSnippet::fromJson(i.toObject());
 
         // Read the content.
         QString filePath(QDir(g_config->getSnippetConfigFolder()).filePath(snip.getName()));
@@ -509,7 +508,7 @@ VSnippet *VSnippetList::getSnippet(QListWidgetItem *p_item)
 {
     int idx = getSnippetIndex(p_item);
     if (idx == -1) {
-        return NULL;
+        return nullptr;
     } else {
         return &m_snippets[idx];
     }

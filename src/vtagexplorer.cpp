@@ -27,9 +27,9 @@ extern VNote *g_vnote;
 VTagExplorer::VTagExplorer(QWidget *p_parent)
     : QWidget(p_parent),
       m_uiInitialized(false),
-      m_notebook(NULL),
+      m_notebook(nullptr),
       m_notebookChanged(true),
-      m_search(NULL)
+      m_search(nullptr)
 {
 }
 
@@ -59,7 +59,7 @@ void VTagExplorer::setupUI()
                 }
             });
 
-    QVBoxLayout *tagLayout = new QVBoxLayout();
+    auto *tagLayout = new QVBoxLayout();
     tagLayout->addWidget(m_notebookLabel);
     tagLayout->addWidget(m_tagList);
     tagLayout->setContentsMargins(0, 0, 0, 0);
@@ -84,7 +84,7 @@ void VTagExplorer::setupUI()
                 saveStateAndGeometry();
             });
 
-    QHBoxLayout *titleLayout = new QHBoxLayout();
+    auto *titleLayout = new QHBoxLayout();
     titleLayout->addWidget(m_tagLabel);
     titleLayout->addWidget(m_splitBtn);
     titleLayout->addStretch();
@@ -99,7 +99,7 @@ void VTagExplorer::setupUI()
     connect(m_fileList, &QListWidget::customContextMenuRequested,
             this, &VTagExplorer::handleFileListContextMenuRequested);
 
-    QVBoxLayout *fileLayout = new QVBoxLayout();
+    auto *fileLayout = new QVBoxLayout();
     fileLayout->addLayout(titleLayout);
     fileLayout->addWidget(m_fileList);
     fileLayout->setContentsMargins(0, 0, 0, 0);
@@ -114,7 +114,7 @@ void VTagExplorer::setupUI()
 
     setupFileListSplitOut(g_config->getEnableSplitTagFileList());
 
-    QVBoxLayout *mainLayout = new QVBoxLayout();
+    auto *mainLayout = new QVBoxLayout();
     mainLayout->addWidget(m_splitter);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
@@ -333,7 +333,7 @@ void VTagExplorer::appendItemToFileList(const QSharedPointer<VSearchResultItem> 
 {
     Q_ASSERT(p_item->m_type == VSearchResultItem::Note);
 
-    QListWidgetItem *item = new QListWidgetItem(m_noteIcon,
+    auto *item = new QListWidgetItem(m_noteIcon,
                                                 p_item->m_text.isEmpty() ? p_item->m_path : p_item->m_text);
     item->setData(Qt::UserRole, p_item->m_path);
     item->setToolTip(p_item->m_path);
@@ -479,8 +479,8 @@ void VTagExplorer::addFileToCart() const
     QList<QListWidgetItem *> items = m_fileList->selectedItems();
     VCart *cart = g_mainWin->getCart();
 
-    for (int i = 0; i < items.size(); ++i) {
-        cart->addFile(getFilePath(items[i]));
+    for (auto &item : items) {
+        cart->addFile(getFilePath(item));
     }
 
     g_mainWin->showStatusMessage(tr("%1 %2 added to Cart")
@@ -493,8 +493,8 @@ void VTagExplorer::pinFileToHistory() const
     QList<QListWidgetItem *> items = m_fileList->selectedItems();
 
     QStringList files;
-    for (int i = 0; i < items.size(); ++i) {
-        files << getFilePath(items[i]);
+    for (auto &item : items) {
+        files << getFilePath(item);
     }
 
     g_mainWin->getHistoryList()->pinFiles(files);
@@ -513,7 +513,7 @@ void VTagExplorer::promptToRemoveEmptyTag(const QString &p_tag)
                                   tr("Empty tag detected! Do you want to remove it?"),
                                   tr("The tag <span style=\"%1\">%2</span> seems not to "
                                      "be assigned to any note currently.")
-                                    .arg(g_config->c_dataTextStyle)
+                                    .arg(VConfigManager::c_dataTextStyle)
                                     .arg(p_tag),
                                   QMessageBox::Ok | QMessageBox::Cancel,
                                   QMessageBox::Cancel,
@@ -533,10 +533,10 @@ void VTagExplorer::registerNavigationTarget()
 {
     setupUI();
 
-    VNavigationModeListWidgetWrapper *tagWrapper = new VNavigationModeListWidgetWrapper(m_tagList, this);
+    auto *tagWrapper = new VNavigationModeListWidgetWrapper(m_tagList, this);
     g_mainWin->getCaptain()->registerNavigationTarget(tagWrapper);
 
-    VNavigationModeListWidgetWrapper *fileWrapper = new VNavigationModeListWidgetWrapper(m_fileList, this);
+    auto *fileWrapper = new VNavigationModeListWidgetWrapper(m_fileList, this);
     g_mainWin->getCaptain()->registerNavigationTarget(fileWrapper);
 }
 

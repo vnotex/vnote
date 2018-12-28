@@ -10,7 +10,7 @@ VAllTagsPanel::VAllTagsPanel(QWidget *p_parent)
 {
     m_list = new QListWidget(this);
 
-    QVBoxLayout *layout = new QVBoxLayout();
+    auto layout = new QVBoxLayout();
     layout->addWidget(m_list);
 
     setLayout(layout);
@@ -25,7 +25,7 @@ void VAllTagsPanel::clear()
 
 void VAllTagsPanel::removeItem(QListWidgetItem *p_item)
 {
-    QWidget *wid = m_list->itemWidget(p_item);
+    auto *wid = m_list->itemWidget(p_item);
     m_list->removeItemWidget(p_item);
     wid->deleteLater();
 
@@ -37,11 +37,11 @@ void VAllTagsPanel::removeItem(QListWidgetItem *p_item)
 
 VTagLabel *VAllTagsPanel::addTag(const QString &p_text)
 {
-    VTagLabel *label = new VTagLabel(p_text, true, this);
+    auto label = new VTagLabel(p_text, true, this);
     QSize sz = label->sizeHint();
     sz.setHeight(sz.height() * 2 + 10);
 
-    QListWidgetItem *item = new QListWidgetItem();
+    auto item = new QListWidgetItem();
     item->setSizeHint(sz);
 
     connect(label, &VTagLabel::removalRequested,

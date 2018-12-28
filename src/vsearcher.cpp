@@ -86,7 +86,7 @@ void VSearcher::setupUI()
 
     m_numLabel = new QLabel(this);
 
-    QHBoxLayout *btnLayout = new QHBoxLayout();
+    auto *btnLayout = new QHBoxLayout();
     btnLayout->addWidget(m_searchBtn);
     btnLayout->addWidget(m_clearBtn);
     btnLayout->addWidget(m_advBtn);
@@ -194,7 +194,7 @@ void VSearcher::setupUI()
                 }
             });
 
-    QHBoxLayout *proLayout = new QHBoxLayout();
+    auto *proLayout = new QHBoxLayout();
     proLayout->addWidget(m_proBar);
     proLayout->addWidget(m_cancelBtn);
     proLayout->setContentsMargins(0, 0, 0, 0);
@@ -229,7 +229,7 @@ void VSearcher::setupUI()
     formLayout->addRow(tr("Target:"), m_searchTargetCB);
     formLayout->setContentsMargins(0, 0, 0, 0);
 
-    QVBoxLayout *mainLayout = new QVBoxLayout();
+    auto *mainLayout = new QVBoxLayout();
     mainLayout->addLayout(btnLayout);
     mainLayout->addLayout(formLayout);
     mainLayout->addWidget(m_advWidget);
@@ -606,13 +606,13 @@ void VSearcher::init()
     connect(&m_search, &VSearch::resultItemAdded,
             this, [this](const QSharedPointer<VSearchResultItem> &p_item) {
                 // Not sure if it works.
-                QCoreApplication::sendPostedEvents(NULL, QEvent::MouseButtonRelease);
+                QCoreApplication::sendPostedEvents(nullptr, QEvent::MouseButtonRelease);
                 m_results->addResultItem(p_item);
             });
     connect(&m_search, &VSearch::resultItemsAdded,
             this, [this](const QList<QSharedPointer<VSearchResultItem> > &p_items) {
                 // Not sure if it works.
-                QCoreApplication::sendPostedEvents(NULL, QEvent::MouseButtonRelease);
+                QCoreApplication::sendPostedEvents(nullptr, QEvent::MouseButtonRelease);
                 m_results->addResultItems(p_items);
             });
     connect(&m_search, &VSearch::finished,

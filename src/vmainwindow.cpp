@@ -84,8 +84,8 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
       m_guard(p_guard),
       m_windowOldState(Qt::WindowNoState),
       m_requestQuit(false),
-      m_printer(NULL),
-      m_ue(NULL)
+      m_printer(nullptr),
+      m_ue(nullptr)
 {
     qsrand(QDateTime::currentDateTime().toTime_t());
 
@@ -344,7 +344,7 @@ void VMainWindow::setupNotebookPanel()
 
     m_dirTree = new VDirectoryTree;
 
-    QVBoxLayout *naviLayout = new QVBoxLayout;
+    auto *naviLayout = new QVBoxLayout;
     naviLayout->addWidget(m_notebookSelector);
     naviLayout->addWidget(directoryLabel);
     naviLayout->addWidget(m_dirTree);
@@ -446,7 +446,7 @@ QToolBar *VMainWindow::initViewToolBar(QSize p_iconSize)
                 g_config->setMenuBarChecked(p_checked);
             });
 
-    QMenu *viewMenu = new QMenu(this);
+    auto *viewMenu = new QMenu(this);
     viewMenu->setToolTipsVisible(true);
     viewMenu->addAction(fullScreenAct);
     viewMenu->addAction(stayOnTopAct);
@@ -499,7 +499,7 @@ QToolBar *VMainWindow::initEditToolBar(QSize p_iconSize)
     connect(m_headingSequenceAct, &QAction::triggered,
             this, [this](bool p_checked){
                 if (isHeadingSequenceApplicable()) {
-                    VMdTab *tab = dynamic_cast<VMdTab *>(m_curTab.data());
+                    auto *tab = dynamic_cast<VMdTab *>(m_curTab.data());
                     Q_ASSERT(tab);
                     tab->enableHeadingSequence(p_checked);
                 }
@@ -754,7 +754,7 @@ QToolBar *VMainWindow::initFileToolBar(QSize p_iconSize)
                 m_editArea->readFile(true);
             });
 
-    updateEditReadAct(NULL);
+    updateEditReadAct(nullptr);
 
     saveNoteAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/save_note.svg"),
                               tr("Save"), this);
@@ -1182,7 +1182,7 @@ void VMainWindow::initEditMenu()
             this, &VMainWindow::changeExpandTab);
 
     // Tab stop width.
-    QActionGroup *tabStopWidthAct = new QActionGroup(this);
+    auto *tabStopWidthAct = new QActionGroup(this);
     QAction *twoSpaceTabAct = new QAction(tr("2 Spaces"), tabStopWidthAct);
     twoSpaceTabAct->setToolTip(tr("Expand Tab to 2 spaces"));
     twoSpaceTabAct->setCheckable(true);
@@ -1512,7 +1512,7 @@ void VMainWindow::initConverterMenu(QMenu *p_menu)
     QMenu *converterMenu = p_menu->addMenu(tr("&Renderer"));
     converterMenu->setToolTipsVisible(true);
 
-    QActionGroup *converterAct = new QActionGroup(this);
+    auto *converterAct = new QActionGroup(this);
     QAction *markedAct = new QAction(tr("Marked"), converterAct);
     markedAct->setToolTip(tr("Use Marked to convert Markdown to HTML (re-open current tabs to make it work)"));
     markedAct->setCheckable(true);
@@ -1702,7 +1702,7 @@ void VMainWindow::initMarkdownExtensionMenu(QMenu *p_menu)
 
 void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
 {
-    QActionGroup *renderBackgroundAct = new QActionGroup(this);
+    auto *renderBackgroundAct = new QActionGroup(this);
     connect(renderBackgroundAct, &QActionGroup::triggered,
             this, &VMainWindow::setRenderBackgroundColor);
 
@@ -1730,21 +1730,21 @@ void VMainWindow::initRenderBackgroundMenu(QMenu *menu)
     renderBgMenu->addAction(tmpAct);
 
     const QVector<VColor> &bgColors = g_config->getCustomColors();
-    for (int i = 0; i < bgColors.size(); ++i) {
-        tmpAct = new QAction(bgColors[i].m_name, renderBackgroundAct);
+    for (const auto & bgColor : bgColors) {
+        tmpAct = new QAction(bgColor.m_name, renderBackgroundAct);
         tmpAct->setToolTip(tr("Set as the background color for Markdown rendering "
                               "(re-open current tabs to make it work)"));
         tmpAct->setCheckable(true);
-        tmpAct->setData(bgColors[i].m_name);
+        tmpAct->setData(bgColor.m_name);
 
 #if !defined(Q_OS_MACOS) && !defined(Q_OS_MAC)
-        QColor color(bgColors[i].m_color);
+        QColor color(bgColor.m_color);
         QPixmap pixmap(COLOR_PIXMAP_ICON_SIZE, COLOR_PIXMAP_ICON_SIZE);
         pixmap.fill(color);
         tmpAct->setIcon(QIcon(pixmap));
 #endif
 
-        if (curBgColor == bgColors[i].m_name) {
+        if (curBgColor == bgColor.m_name) {
             tmpAct->setChecked(true);
         }
 
@@ -1775,7 +1775,7 @@ void VMainWindow::initRenderStyleMenu(QMenu *p_menu)
 
     styleMenu->addAction(addAct);
 
-    QActionGroup *ag = new QActionGroup(this);
+    auto *ag = new QActionGroup(this);
     connect(ag, &QActionGroup::triggered,
             this, [](QAction *p_action) {
                 QString data = p_action->data().toString();
@@ -1786,7 +1786,7 @@ void VMainWindow::initRenderStyleMenu(QMenu *p_menu)
     QList<QString> styles = g_config->getCssStyles();
     QString curStyle = g_config->getCssStyle();
     for (auto const &style : styles) {
-        QAction *act = new QAction(style, ag);
+        auto *act = new QAction(style, ag);
         act->setToolTip(tr("Set as the CSS style for Markdown rendering "
                            "(re-open current tabs to make it work)"));
         act->setCheckable(true);
@@ -1824,7 +1824,7 @@ void VMainWindow::initCodeBlockStyleMenu(QMenu *p_menu)
 
     styleMenu->addAction(addAct);
 
-    QActionGroup *ag = new QActionGroup(this);
+    auto ag = new QActionGroup(this);
     connect(ag, &QActionGroup::triggered,
             this, [](QAction *p_action) {
                 QString data = p_action->data().toString();
@@ -1835,7 +1835,7 @@ void VMainWindow::initCodeBlockStyleMenu(QMenu *p_menu)
     QList<QString> styles = g_config->getCodeBlockCssStyles();
     QString curStyle = g_config->getCodeBlockCssStyle();
     for (auto const &style : styles) {
-        QAction *act = new QAction(style, ag);
+        auto act = new QAction(style, ag);
         act->setToolTip(tr("Set as the code block CSS style for Markdown rendering "
                            "(re-open current tabs to make it work)"));
         act->setCheckable(true);
@@ -1855,7 +1855,7 @@ void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
     QMenu *backgroundColorMenu = menu->addMenu(tr("&Background Color"));
     backgroundColorMenu->setToolTipsVisible(true);
 
-    QActionGroup *backgroundColorAct = new QActionGroup(this);
+    auto backgroundColorAct = new QActionGroup(this);
     connect(backgroundColorAct, &QActionGroup::triggered,
             this, &VMainWindow::setEditorBackgroundColor);
 
@@ -1870,20 +1870,20 @@ void VMainWindow::initEditorBackgroundMenu(QMenu *menu)
     }
     backgroundColorMenu->addAction(tmpAct);
     const QVector<VColor> &bgColors = g_config->getCustomColors();
-    for (int i = 0; i < bgColors.size(); ++i) {
-        tmpAct = new QAction(bgColors[i].m_name, backgroundColorAct);
+    for (const auto & bgColor : bgColors) {
+        tmpAct = new QAction(bgColor.m_name, backgroundColorAct);
         tmpAct->setToolTip(tr("Set as the background color for editor (re-open current tabs to make it work)"));
         tmpAct->setCheckable(true);
-        tmpAct->setData(bgColors[i].m_name);
+        tmpAct->setData(bgColor.m_name);
 
 #if !defined(Q_OS_MACOS) && !defined(Q_OS_MAC)
-        QColor color(bgColors[i].m_color);
+        QColor color(bgColor.m_color);
         QPixmap pixmap(COLOR_PIXMAP_ICON_SIZE, COLOR_PIXMAP_ICON_SIZE);
         pixmap.fill(color);
         tmpAct->setIcon(QIcon(pixmap));
 #endif
 
-        if (curBgColor == bgColors[i].m_name) {
+        if (curBgColor == bgColor.m_name) {
             tmpAct->setChecked(true);
         }
 
@@ -1896,7 +1896,7 @@ void VMainWindow::initEditorLineNumberMenu(QMenu *p_menu)
     QMenu *lineNumMenu = p_menu->addMenu(tr("Line Number"));
     lineNumMenu->setToolTipsVisible(true);
 
-    QActionGroup *lineNumAct = new QActionGroup(lineNumMenu);
+    auto lineNumAct = new QActionGroup(lineNumMenu);
     connect(lineNumAct, &QActionGroup::triggered,
             this, [this](QAction *p_action){
                 if (!p_action) {
@@ -1969,7 +1969,7 @@ void VMainWindow::initEditorStyleMenu(QMenu *p_menu)
 
     styleMenu->addAction(addAct);
 
-    QActionGroup *ag = new QActionGroup(this);
+    auto ag = new QActionGroup(this);
     connect(ag, &QActionGroup::triggered,
             this, [](QAction *p_action) {
                 QString data = p_action->data().toString();
@@ -1979,7 +1979,7 @@ void VMainWindow::initEditorStyleMenu(QMenu *p_menu)
     QList<QString> styles = g_config->getEditorStyles();
     QString style = g_config->getEditorStyle();
     for (auto const &item : styles) {
-        QAction *act = new QAction(item, ag);
+        auto act = new QAction(item, ag);
         act->setToolTip(tr("Set as the editor style (re-open current tabs to make it work)"));
         act->setCheckable(true);
         act->setData(item);
@@ -1998,7 +1998,7 @@ void VMainWindow::initAutoScrollCursorLineMenu(QMenu *p_menu)
     QMenu *subMenu = p_menu->addMenu(tr("Auto Scroll Cursor Line"));
     subMenu->setToolTipsVisible(true);
 
-    QActionGroup *ag = new QActionGroup(this);
+    auto ag = new QActionGroup(this);
     connect(ag, &QActionGroup::triggered,
             this, [](QAction *p_action) {
                 g_config->setAutoScrollCursorLine(p_action->data().toInt());
@@ -2048,7 +2048,7 @@ void VMainWindow::setRenderBackgroundColor(QAction *action)
 
 void VMainWindow::updateActionsStateFromTab(const VEditTab *p_tab)
 {
-    const VFile *file = p_tab ? p_tab->getFile() : NULL;
+    const VFile *file = p_tab ? p_tab->getFile() : nullptr;
     bool editMode = p_tab ? p_tab->isEditMode() : false;
     bool systemFile = file
                       && file->getType() == FileType::Orphan
@@ -2072,7 +2072,7 @@ void VMainWindow::updateActionsStateFromTab(const VEditTab *p_tab)
     m_headingSequenceAct->setEnabled(editMode
                                      && file->isModifiable()
                                      && isHeadingSequenceApplicable());
-    const VMdTab *mdTab = dynamic_cast<const VMdTab *>(p_tab);
+    auto mdTab = dynamic_cast<const VMdTab *>(p_tab);
     m_headingSequenceAct->setChecked(mdTab
                                      && editMode
                                      && file->isModifiable()
@@ -2102,7 +2102,7 @@ void VMainWindow::handleAreaTabStatusUpdated(const VEditTabInfo &p_info)
             }
 
             // Disconnect the trigger signal from edit tab.
-            disconnect((VEditTab *)m_curTab, 0, m_vimCmd, 0);
+            disconnect((VEditTab *)m_curTab, nullptr, m_vimCmd, nullptr);
         }
 
         m_curTab = p_info.m_editTab;
@@ -2117,7 +2117,7 @@ void VMainWindow::handleAreaTabStatusUpdated(const VEditTabInfo &p_info)
     if (m_curTab) {
         m_curFile = m_curTab->getFile();
     } else {
-        m_curFile = NULL;
+        m_curFile = nullptr;
     }
 
     if (p_info.m_type == VEditTabInfo::InfoType::All) {
@@ -2131,7 +2131,7 @@ void VMainWindow::handleAreaTabStatusUpdated(const VEditTabInfo &p_info)
                                              m_curTab->isEditMode());
 
             if (m_curFile->getType() == FileType::Note) {
-                const VNoteFile *tmpFile = dynamic_cast<const VNoteFile *>((VFile *)m_curFile);
+                auto tmpFile = dynamic_cast<const VNoteFile *>((VFile *)m_curFile);
                 title = QString("[%1] %2").arg(tmpFile->getNotebookName()).arg(tmpFile->fetchPath());
             } else {
                 title = QString("%1").arg(m_curFile->fetchPath());
@@ -2190,11 +2190,11 @@ void VMainWindow::curEditFileInfo()
     Q_ASSERT(m_curFile);
 
     if (m_curFile->getType() == FileType::Note) {
-        VNoteFile *file = dynamic_cast<VNoteFile *>((VFile *)m_curFile);
+        auto file = dynamic_cast<VNoteFile *>((VFile *)m_curFile);
         Q_ASSERT(file);
         m_fileList->fileInfo(file);
     } else if (m_curFile->getType() == FileType::Orphan) {
-        VOrphanFile *file = dynamic_cast<VOrphanFile *>((VFile *)m_curFile);
+        auto file = dynamic_cast<VOrphanFile *>((VFile *)m_curFile);
         Q_ASSERT(file);
         if (!file->isSystemFile()) {
             editOrphanFileInfo(m_curFile);
@@ -2208,7 +2208,7 @@ void VMainWindow::deleteCurNote()
         return;
     }
 
-    VNoteFile *file = dynamic_cast<VNoteFile *>((VFile *)m_curFile);
+    auto file = dynamic_cast<VNoteFile *>((VFile *)m_curFile);
     m_fileList->deleteFile(file);
 }
 
@@ -2366,7 +2366,7 @@ bool VMainWindow::locateFile(VFile *p_file)
         return ret;
     }
 
-    VNoteFile *file = dynamic_cast<VNoteFile *>(p_file);
+    auto file = dynamic_cast<VNoteFile *>(p_file);
     VNotebook *notebook = file->getNotebook();
     if (m_notebookSelector->locateNotebook(notebook)) {
         while (m_dirTree->currentNotebook() != notebook) {
@@ -2546,7 +2546,7 @@ void VMainWindow::printNote()
 
     V_ASSERT(m_curTab);
 
-    VMdTab *mdTab = dynamic_cast<VMdTab *>((VEditTab *)m_curTab);
+    auto mdTab = dynamic_cast<VMdTab *>((VEditTab *)m_curTab);
     VWebView *webView = mdTab->getWebViewer();
 
     V_ASSERT(webView);
@@ -2559,11 +2559,11 @@ void VMainWindow::printNote()
         webView->page()->print(m_printer, [this](bool p_succ) {
                     qDebug() << "print web page callback" << p_succ;
                     delete m_printer;
-                    m_printer = NULL;
+                    m_printer = nullptr;
                 });
     } else {
         delete m_printer;
-        m_printer = NULL;
+        m_printer = nullptr;
     }
 }
 
@@ -2662,7 +2662,7 @@ QVector<VFile *> VMainWindow::openFiles(const QStringList &p_files,
 
 void VMainWindow::editOrphanFileInfo(VFile *p_file)
 {
-    VOrphanFile *file = dynamic_cast<VOrphanFile *>(p_file);
+    auto file = dynamic_cast<VOrphanFile *>(p_file);
     Q_ASSERT(file);
 
     VOrphanFileInfoDialog dialog(file, this);
@@ -2691,7 +2691,7 @@ void VMainWindow::checkSharedMemory()
 
 void VMainWindow::initTrayIcon()
 {
-    QMenu *menu = new QMenu(this);
+    auto menu = new QMenu(this);
     QAction *showMainWindowAct = menu->addAction(tr("Show VNote"));
     connect(showMainWindowAct, &QAction::triggered,
             this, &VMainWindow::showMainWindow);
@@ -2723,7 +2723,7 @@ void VMainWindow::initTrayIcon()
 void VMainWindow::changeEvent(QEvent *p_event)
 {
     if (p_event->type() == QEvent::WindowStateChange) {
-        QWindowStateChangeEvent *eve = dynamic_cast<QWindowStateChangeEvent *>(p_event);
+        auto eve = dynamic_cast<QWindowStateChangeEvent *>(p_event);
         m_windowOldState = eve->oldState();
     }
 
@@ -2794,7 +2794,7 @@ bool VMainWindow::isHeadingSequenceApplicable() const
 bool VMainWindow::showAttachmentListByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    auto obj = static_cast<VMainWindow *>(p_target);
     if (obj->m_attachmentBtn->isEnabled()) {
         // Show tool bar first.
         bool toolBarChecked = obj->m_toolBarAct->isChecked();
@@ -2818,7 +2818,7 @@ bool VMainWindow::showAttachmentListByCaptain(void *p_target, void *p_data)
 bool VMainWindow::locateCurrentFileByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    auto obj = static_cast<VMainWindow *>(p_target);
     if (obj->m_curFile) {
         if (obj->locateFile(obj->m_curFile)) {
             return false;
@@ -2831,7 +2831,7 @@ bool VMainWindow::locateCurrentFileByCaptain(void *p_target, void *p_data)
 bool VMainWindow::toggleExpandModeByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    auto obj = static_cast<VMainWindow *>(p_target);
     obj->expandViewAct->trigger();
     return true;
 }
@@ -2839,7 +2839,7 @@ bool VMainWindow::toggleExpandModeByCaptain(void *p_target, void *p_data)
 bool VMainWindow::discardAndReadByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    auto obj = static_cast<VMainWindow *>(p_target);
     if (obj->m_curTab) {
         obj->m_discardExitAct->trigger();
         obj->m_curTab->setFocus();
@@ -2853,7 +2853,7 @@ bool VMainWindow::discardAndReadByCaptain(void *p_target, void *p_data)
 bool VMainWindow::toggleToolBarByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    auto obj = static_cast<VMainWindow *>(p_target);
     obj->m_toolBarAct->trigger();
     return true;
 }
@@ -2861,7 +2861,7 @@ bool VMainWindow::toggleToolBarByCaptain(void *p_target, void *p_data)
 bool VMainWindow::toggleToolsDockByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    auto obj = static_cast<VMainWindow *>(p_target);
     obj->m_toolDock->setVisible(!obj->m_toolDock->isVisible());
     return true;
 }
@@ -2869,7 +2869,7 @@ bool VMainWindow::toggleToolsDockByCaptain(void *p_target, void *p_data)
 bool VMainWindow::toggleSearchDockByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    auto obj = static_cast<VMainWindow *>(p_target);
     bool visible = obj->m_searchDock->isVisible();
     obj->m_searchDock->setVisible(!visible);
     if (!visible) {
@@ -2883,7 +2883,7 @@ bool VMainWindow::toggleSearchDockByCaptain(void *p_target, void *p_data)
 bool VMainWindow::closeFileByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    auto obj = static_cast<VMainWindow *>(p_target);
     obj->closeCurrentFile();
 
     QWidget *nextFocus = obj->m_editArea->getCurrentTab();
@@ -2899,7 +2899,7 @@ bool VMainWindow::closeFileByCaptain(void *p_target, void *p_data)
 bool VMainWindow::shortcutsHelpByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    auto obj = static_cast<VMainWindow *>(p_target);
     obj->shortcutsHelp();
     return false;
 }
@@ -2921,7 +2921,7 @@ bool VMainWindow::exportByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
 
-    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    auto obj = static_cast<VMainWindow *>(p_target);
     QTimer::singleShot(50, obj, SLOT(handleExportAct()));
 
     return true;
@@ -2931,7 +2931,7 @@ bool VMainWindow::focusEditAreaByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
 
-    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    auto obj = static_cast<VMainWindow *>(p_target);
     obj->focusEditArea();
     return false;
 }
@@ -2991,10 +2991,10 @@ void VMainWindow::initHeadingButton(QToolBar *p_tb)
     m_headingBtn->setFocusPolicy(Qt::NoFocus);
     m_headingBtn->setEnabled(false);
 
-    QMenu *menu = new QMenu(this);
+    auto menu = new QMenu(this);
     QString text(tr("Heading %1"));
     QString tooltip(tr("Heading %1\t%2"));
-    QWidgetAction *wact = new QWidgetAction(menu);
+    auto wact = new QWidgetAction(menu);
     wact->setData(1);
     VButtonMenuItem *w = new VButtonMenuItem(wact, text.arg(1), this);
     w->setToolTip(tooltip.arg(1).arg(VUtils::getShortcutText("Ctrl+1")));
@@ -3086,7 +3086,7 @@ void VMainWindow::initThemeMenu(QMenu *p_menu)
 
     themeMenu->addAction(addAct);
 
-    QActionGroup *ag = new QActionGroup(this);
+    auto ag = new QActionGroup(this);
     connect(ag, &QActionGroup::triggered,
             this, [](QAction *p_action) {
                 QString data = p_action->data().toString();
@@ -3096,7 +3096,7 @@ void VMainWindow::initThemeMenu(QMenu *p_menu)
     QList<QString> themes = g_config->getThemes();
     QString theme = g_config->getTheme();
     for (auto const &item : themes) {
-        QAction *act = new QAction(item, ag);
+        auto act = new QAction(item, ag);
         act->setToolTip(tr("Set as the theme of VNote (restart VNote to make it work)"));
         act->setCheckable(true);
         act->setData(item);
@@ -3321,7 +3321,7 @@ void VMainWindow::initUniversalEntry()
             });
 
     // Register entries.
-    VSearchUE *searchUE = new VSearchUE(this);
+    auto searchUE = new VSearchUE(this);
     m_ue->registerEntry('q', searchUE, VSearchUE::Name_FolderNote_AllNotebook);
     m_ue->registerEntry('a', searchUE, VSearchUE::Content_Note_AllNotebook);
     m_ue->registerEntry('z', searchUE, VSearchUE::Tag_Note_AllNotebook);
@@ -3482,7 +3482,7 @@ void VMainWindow::updateFontOfAllTabs()
 {
     QVector<VEditTab *> tabs = m_editArea->getAllTabs();
     for (auto tab : tabs) {
-        const VMdTab *mdTab = dynamic_cast<const VMdTab *>(tab);
+        auto mdTab = dynamic_cast<const VMdTab *>(tab);
         if (mdTab && mdTab->getEditor()) {
             mdTab->getEditor()->updateFontAndPalette();
         }

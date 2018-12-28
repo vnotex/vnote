@@ -11,8 +11,7 @@
 extern VMainWindow *g_mainWin;
 
 MathjaxBlockPreviewInfo::MathjaxBlockPreviewInfo()
-{
-}
+= default;
 
 MathjaxBlockPreviewInfo::MathjaxBlockPreviewInfo(const VMathjaxBlock &p_mb)
     : m_mathjaxBlock(p_mb)
@@ -26,7 +25,7 @@ void MathjaxBlockPreviewInfo::updateInplacePreview(const VEditor *p_editor,
 {
     QTextBlock block = p_doc->findBlockByNumber(m_mathjaxBlock.m_blockNumber);
     if (block.isValid()) {
-        VImageToPreview *preview = new VImageToPreview();
+        auto *preview = new VImageToPreview();
 
         preview->m_startPos = block.position() + m_mathjaxBlock.m_index;
         preview->m_endPos = preview->m_startPos + m_mathjaxBlock.m_length;
@@ -99,8 +98,7 @@ void VMathJaxInplacePreviewHelper::updateMathjaxBlocks(const QVector<VMathjaxBlo
     m_mathjaxBlocks.clear();
     m_mathjaxBlocks.reserve(p_blocks.size());
     bool manualUpdate = true;
-    for (int i = 0; i < p_blocks.size(); ++i) {
-        const VMathjaxBlock &vmb = p_blocks[i];
+    for (const auto &vmb : p_blocks) {
         const QString &text = vmb.m_text;
         bool cached = false;
 
@@ -160,8 +158,7 @@ void VMathJaxInplacePreviewHelper::updateInplacePreview()
 {
     QSet<int> blocks;
     QVector<QSharedPointer<VImageToPreview> > images;
-    for (int i = 0; i < m_mathjaxBlocks.size(); ++i) {
-        MathjaxBlockPreviewInfo &mb = m_mathjaxBlocks[i];
+    for (auto &mb : m_mathjaxBlocks) {
         if (mb.inplacePreviewReady()) {
             if (!mb.inplacePreview()->m_image.isNull()) {
                 images.append(mb.inplacePreview());

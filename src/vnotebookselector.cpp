@@ -9,6 +9,7 @@
 #include <QLabel>
 #include <QDesktopServices>
 #include <QUrl>
+#include <QKeyEvent>
 
 #include "vnotebook.h"
 #include "vconfigmanager.h"
@@ -37,7 +38,7 @@ VNotebookSelector::VNotebookSelector(QWidget *p_parent)
       m_notebooks(g_vnote->getNotebooks()),
       m_lastValidIndex(-1),
       m_muted(false),
-      m_naviLabel(NULL)
+      m_naviLabel(nullptr)
 {
     m_listWidget = new QListWidget(this);
     m_listWidget->setItemDelegate(new VNoFocusItemDelegate(this));
@@ -65,8 +66,8 @@ void VNotebookSelector::updateComboBox()
 
     insertAddNotebookItem();
 
-    for (int i = 0; i < m_notebooks.size(); ++i) {
-        addNotebookItem(m_notebooks[i]);
+    for (auto &m_notebook : m_notebooks) {
+        addNotebookItem(m_notebook);
     }
 
     setCurrentIndex(-1);
@@ -86,7 +87,7 @@ void VNotebookSelector::restoreCurrentNotebook()
         index = 0;
     }
 
-    const VNotebook *nb = NULL;
+    const VNotebook *nb = nullptr;
     if (index < m_notebooks.size()) {
         nb = m_notebooks[index];
     }
@@ -107,7 +108,7 @@ int VNotebookSelector::itemIndexOfNotebook(const VNotebook *p_notebook) const
         return -1;
     }
 
-    qulonglong ptr = (qulonglong)p_notebook;
+    auto ptr = (qulonglong)p_notebook;
     int cnt = m_listWidget->count();
     for (int i = 0; i < cnt; ++i) {
         QListWidgetItem *item = m_listWidget->item(i);
@@ -121,7 +122,7 @@ int VNotebookSelector::itemIndexOfNotebook(const VNotebook *p_notebook) const
 
 void VNotebookSelector::insertAddNotebookItem()
 {
-    QListWidgetItem *item = new QListWidgetItem();
+    auto *item = new QListWidgetItem();
     item->setIcon(VIconUtils::comboBoxIcon(":/resources/icons/create_notebook.svg"));
     item->setText(tr("Add Notebook"));
     QFont font;
@@ -139,7 +140,7 @@ void VNotebookSelector::handleCurIndexChanged(int p_index)
     }
 
     QString tooltip = tr("View and edit notebooks");
-    VNotebook *nb = NULL;
+    VNotebook *nb = nullptr;
     if (p_index > -1) {
         nb = getNotebook(p_index);
         if (!nb) {
@@ -388,7 +389,7 @@ void VNotebookSelector::editNotebookInfo()
 
 void VNotebookSelector::addNotebookItem(const VNotebook *p_notebook)
 {
-    QListWidgetItem *item = new QListWidgetItem(m_listWidget);
+    auto *item = new QListWidgetItem(m_listWidget);
     fillItem(item, p_notebook);
 }
 
@@ -624,7 +625,7 @@ void VNotebookSelector::hideNavigation()
 {
     if (m_naviLabel) {
         delete m_naviLabel;
-        m_naviLabel = NULL;
+        m_naviLabel = nullptr;
     }
 }
 
@@ -658,7 +659,7 @@ bool VNotebookSelector::handlePopupKeyPress(QKeyEvent *p_event)
 
 VNotebook *VNotebookSelector::getNotebook(int p_itemIdx) const
 {
-    VNotebook *nb = NULL;
+    VNotebook *nb = nullptr;
     QListWidgetItem *item = m_listWidget->item(p_itemIdx);
     if (item) {
         nb = (VNotebook *)item->data(Qt::UserRole).toULongLong();
@@ -673,7 +674,7 @@ VNotebook *VNotebookSelector::getNotebook(const QListWidgetItem *p_item) const
         return (VNotebook *)p_item->data(Qt::UserRole).toULongLong();
     }
 
-    return NULL;
+    return nullptr;
 }
 
 VNotebook *VNotebookSelector::currentNotebook() const

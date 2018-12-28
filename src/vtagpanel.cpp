@@ -22,8 +22,8 @@ extern VConfigManager *g_config;
 
 VTagPanel::VTagPanel(QWidget *parent)
     : QWidget(parent),
-      m_file(NULL),
-      m_notebookOfCompleter(NULL)
+      m_file(nullptr),
+      m_notebookOfCompleter(nullptr)
 {
     setupUI();
 }
@@ -32,7 +32,7 @@ void VTagPanel::setupUI()
 {
     const int maxNum = g_config->getMaxNumOfTagLabels();
     for (int i = 0; i < maxNum; ++i) {
-        VTagLabel *label = new VTagLabel(this);
+        auto *label = new VTagLabel(this);
         connect(label, &VTagLabel::removalRequested,
                 this, [this](const QString &p_text) {
                     removeTag(p_text);
@@ -94,13 +94,13 @@ void VTagPanel::setupUI()
 
     // Completer.
     m_tagsModel = new QStringListModel(this);
-    QCompleter *completer = new QCompleter(m_tagsModel, this);
+    auto *completer = new QCompleter(m_tagsModel, this);
     completer->setCaseSensitivity(Qt::CaseSensitive);
     completer->popup()->setItemDelegate(new QStyledItemDelegate(this));
     m_tagEdit->setCompleter(completer);
     m_tagEdit->installEventFilter(this);
 
-    QHBoxLayout *mainLayout = new QHBoxLayout();
+    auto *mainLayout = new QHBoxLayout();
     for (auto label : m_labels) {
         mainLayout->addWidget(label);
         label->hide();
@@ -190,7 +190,7 @@ bool VTagPanel::eventFilter(QObject *p_obj, QEvent *p_event)
     Q_ASSERT(p_obj == m_tagEdit);
 
     if (p_event->type() == QEvent::FocusIn) {
-        QFocusEvent *eve = static_cast<QFocusEvent *>(p_event);
+        auto *eve = static_cast<QFocusEvent *>(p_event);
         if (eve->gotFocus()) {
             // Just check completer.
             updateCompleter(m_file);
@@ -202,7 +202,7 @@ bool VTagPanel::eventFilter(QObject *p_obj, QEvent *p_event)
 
 void VTagPanel::updateCompleter(const VNoteFile *p_file)
 {
-    const VNotebook *nb = p_file ? p_file->getNotebook() : NULL;
+    const VNotebook *nb = p_file ? p_file->getNotebook() : nullptr;
     if (nb == m_notebookOfCompleter) {
         // No need to update.
         return;

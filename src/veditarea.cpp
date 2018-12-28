@@ -37,7 +37,7 @@ VEditArea::VEditArea(QWidget *parent)
 
     initShortcuts();
 
-    QTimer *timer = new QTimer(this);
+    auto *timer = new QTimer(this);
     timer->setSingleShot(false);
     timer->setInterval(g_config->getFileTimerInterval());
     connect(timer, &QTimer::timeout,
@@ -63,7 +63,7 @@ void VEditArea::setupUI()
     m_findReplace->setOption(FindOption::IncrementalSearch,
                              g_config->getFindIncrementalSearch());
 
-    QVBoxLayout *mainLayout = new QVBoxLayout();
+    auto *mainLayout = new QVBoxLayout();
     mainLayout->addWidget(splitter);
     mainLayout->addWidget(m_findReplace);
     mainLayout->setContentsMargins(0, 0, 0, 0);
@@ -153,7 +153,7 @@ void VEditArea::initShortcuts()
 
 void VEditArea::insertSplitWindow(int idx)
 {
-    VEditWindow *win = new VEditWindow(this);
+    auto *win = new VEditWindow(this);
     splitter->insertWidget(idx, win);
     connect(win, &VEditWindow::tabStatusUpdated,
             this, &VEditArea::handleWindowTabStatusUpdated);
@@ -202,7 +202,7 @@ void VEditArea::removeSplitWindow(VEditWindow *win)
 
     win->hide();
     win->setParent(this);
-    disconnect(win, 0, this, 0);
+    disconnect(win, nullptr, this, nullptr);
     // Should be deleted later
     win->deleteLater();
 }
@@ -210,7 +210,7 @@ void VEditArea::removeSplitWindow(VEditWindow *win)
 VEditTab *VEditArea::openFile(VFile *p_file, OpenFileMode p_mode, bool p_forceMode)
 {
     if (!p_file) {
-        return NULL;
+        return nullptr;
     }
 
     // Update auto save settings.
@@ -220,7 +220,7 @@ VEditTab *VEditArea::openFile(VFile *p_file, OpenFileMode p_mode, bool p_forceMo
     if (p_file->getDocType() == DocType::Unknown) {
         QUrl url = QUrl::fromLocalFile(p_file->fetchPath());
         QDesktopServices::openUrl(url);
-        return NULL;
+        return nullptr;
     }
 
     // Find if it has been opened already
@@ -232,10 +232,10 @@ VEditTab *VEditArea::openFile(VFile *p_file, OpenFileMode p_mode, bool p_forceMo
         // Current window first
         winIdx = tabs[0].first;
         tabIdx = tabs[0].second;
-        for (int i = 0; i < tabs.size(); ++i) {
-            if (tabs[i].first == curWindowIndex) {
-                winIdx = tabs[i].first;
-                tabIdx = tabs[i].second;
+        for (auto &tab : tabs) {
+            if (tab.first == curWindowIndex) {
+                winIdx = tab.first;
+                tabIdx = tab.second;
                 break;
             }
         }
@@ -582,7 +582,7 @@ void VEditArea::handleNotebookUpdated(const VNotebook *p_notebook)
 VEditTab *VEditArea::getCurrentTab() const
 {
     if (curWindowIndex == -1) {
-        return NULL;
+        return nullptr;
     }
 
     VEditWindow *win = getWindow(curWindowIndex);
@@ -593,7 +593,7 @@ VEditTab *VEditArea::getTab(int p_winIdx, int p_tabIdx) const
 {
     VEditWindow *win = getWindow(p_winIdx);
     if (!win) {
-        return NULL;
+        return nullptr;
     }
 
     return win->getTab(p_tabIdx);
@@ -763,7 +763,7 @@ void VEditArea::moveCurrentTabOneSplit(bool p_right)
 VEditWindow *VEditArea::getCurrentWindow() const
 {
     if (curWindowIndex < 0) {
-        return NULL;
+        return nullptr;
     }
 
     return getWindow(curWindowIndex);
@@ -847,7 +847,7 @@ bool VEditArea::handleKeyNavigation(int p_key, bool &p_succeed)
 
 int VEditArea::openFiles(const QVector<VFileSessionInfo> &p_files, bool p_oneByOne)
 {
-    VFile *curFile = NULL;
+    VFile *curFile = nullptr;
     int nrOpened = 0;
     for (auto const & info : p_files) {
         QString filePath = VUtils::validFilePathToOpen(info.m_file);
@@ -1000,7 +1000,7 @@ void VEditArea::registerCaptainTargets()
 bool VEditArea::activateTabByCaptain(void *p_target, void *p_data, int p_idx)
 {
     Q_UNUSED(p_data);
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    auto *obj = static_cast<VEditArea *>(p_target);
     VEditWindow *win = obj->getCurrentWindow();
     if (win) {
         if (win->activateTab(p_idx)) {
@@ -1014,7 +1014,7 @@ bool VEditArea::activateTabByCaptain(void *p_target, void *p_data, int p_idx)
 bool VEditArea::alternateTabByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    auto *obj = static_cast<VEditArea *>(p_target);
     VEditWindow *win = obj->getCurrentWindow();
     if (win) {
         if (win->alternateTab()) {
@@ -1028,7 +1028,7 @@ bool VEditArea::alternateTabByCaptain(void *p_target, void *p_data)
 bool VEditArea::showOpenedFileListByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    auto *obj = static_cast<VEditArea *>(p_target);
     VEditWindow *win = obj->getCurrentWindow();
     if (win) {
         if (win->showOpenedFileList()) {
@@ -1042,7 +1042,7 @@ bool VEditArea::showOpenedFileListByCaptain(void *p_target, void *p_data)
 bool VEditArea::activateSplitLeftByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    auto *obj = static_cast<VEditArea *>(p_target);
     if (obj->focusNextWindow(-1) > -1) {
         return false;
     }
@@ -1053,7 +1053,7 @@ bool VEditArea::activateSplitLeftByCaptain(void *p_target, void *p_data)
 bool VEditArea::activateSplitRightByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    auto *obj = static_cast<VEditArea *>(p_target);
     if (obj->focusNextWindow(1) > -1) {
         return false;
     }
@@ -1064,7 +1064,7 @@ bool VEditArea::activateSplitRightByCaptain(void *p_target, void *p_data)
 bool VEditArea::moveTabSplitLeftByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    auto *obj = static_cast<VEditArea *>(p_target);
     obj->moveCurrentTabOneSplit(false);
     return true;
 }
@@ -1072,7 +1072,7 @@ bool VEditArea::moveTabSplitLeftByCaptain(void *p_target, void *p_data)
 bool VEditArea::moveTabSplitRightByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    auto *obj = static_cast<VEditArea *>(p_target);
     obj->moveCurrentTabOneSplit(true);
     return true;
 }
@@ -1080,7 +1080,7 @@ bool VEditArea::moveTabSplitRightByCaptain(void *p_target, void *p_data)
 bool VEditArea::activateNextTabByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    auto *obj = static_cast<VEditArea *>(p_target);
     VEditWindow *win = obj->getCurrentWindow();
     if (win) {
         win->focusNextTab(true);
@@ -1093,7 +1093,7 @@ bool VEditArea::activateNextTabByCaptain(void *p_target, void *p_data)
 bool VEditArea::activatePreviousTabByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    auto *obj = static_cast<VEditArea *>(p_target);
     VEditWindow *win = obj->getCurrentWindow();
     if (win) {
         win->focusNextTab(false);
@@ -1106,7 +1106,7 @@ bool VEditArea::activatePreviousTabByCaptain(void *p_target, void *p_data)
 bool VEditArea::verticalSplitByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    auto *obj = static_cast<VEditArea *>(p_target);
     obj->splitCurrentWindow();
     return false;
 }
@@ -1114,7 +1114,7 @@ bool VEditArea::verticalSplitByCaptain(void *p_target, void *p_data)
 bool VEditArea::removeSplitByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    auto *obj = static_cast<VEditArea *>(p_target);
     obj->removeCurrentWindow();
 
     QWidget *nextFocus = obj->getCurrentTab();
@@ -1130,7 +1130,7 @@ bool VEditArea::removeSplitByCaptain(void *p_target, void *p_data)
 bool VEditArea::maximizeSplitByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    auto *obj = static_cast<VEditArea *>(p_target);
 
     obj->maximizeCurrentSplit();
     return true;
@@ -1139,7 +1139,7 @@ bool VEditArea::maximizeSplitByCaptain(void *p_target, void *p_data)
 bool VEditArea::distributeSplitsByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    auto *obj = static_cast<VEditArea *>(p_target);
 
     obj->distributeSplits();
     return true;
@@ -1147,8 +1147,8 @@ bool VEditArea::distributeSplitsByCaptain(void *p_target, void *p_data)
 
 bool VEditArea::evaluateMagicWordsByCaptain(void *p_target, void *p_data)
 {
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
-    CaptainData *data = static_cast<CaptainData *>(p_data);
+    auto *obj = static_cast<VEditArea *>(p_target);
+    auto *data = static_cast<CaptainData *>(p_data);
 
     VEditTab *tab = obj->getCurrentTab();
     if (tab
@@ -1162,8 +1162,8 @@ bool VEditArea::evaluateMagicWordsByCaptain(void *p_target, void *p_data)
 
 bool VEditArea::applySnippetByCaptain(void *p_target, void *p_data)
 {
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
-    CaptainData *data = static_cast<CaptainData *>(p_data);
+    auto *obj = static_cast<VEditArea *>(p_target);
+    auto *data = static_cast<CaptainData *>(p_data);
 
     VEditTab *tab = obj->getCurrentTab();
     if (tab
@@ -1178,9 +1178,9 @@ bool VEditArea::applySnippetByCaptain(void *p_target, void *p_data)
 bool VEditArea::toggleLivePreviewByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    auto *obj = static_cast<VEditArea *>(p_target);
 
-    VMdTab *tab = dynamic_cast<VMdTab *>(obj->getCurrentTab());
+    auto *tab = dynamic_cast<VMdTab *>(obj->getCurrentTab());
     if (tab) {
         if (tab->toggleLivePreview()) {
             return false;
@@ -1193,9 +1193,9 @@ bool VEditArea::toggleLivePreviewByCaptain(void *p_target, void *p_data)
 bool VEditArea::expandLivePreviewByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    auto *obj = static_cast<VEditArea *>(p_target);
 
-    VMdTab *tab = dynamic_cast<VMdTab *>(obj->getCurrentTab());
+    auto *tab = dynamic_cast<VMdTab *>(obj->getCurrentTab());
     if (tab) {
         if (tab->expandRestorePreviewArea()) {
             return false;
@@ -1208,9 +1208,9 @@ bool VEditArea::expandLivePreviewByCaptain(void *p_target, void *p_data)
 bool VEditArea::parseAndPasteByCaptain(void *p_target, void *p_data)
 {
     Q_UNUSED(p_data);
-    VEditArea *obj = static_cast<VEditArea *>(p_target);
+    auto *obj = static_cast<VEditArea *>(p_target);
 
-    const VMdTab *tab = dynamic_cast<const VMdTab *>(obj->getCurrentTab());
+    const auto *tab = dynamic_cast<const VMdTab *>(obj->getCurrentTab());
     if (tab && tab->isEditMode()) {
         VMdEditor *editor = tab->getEditor();
         editor->parseAndPaste();
@@ -1302,8 +1302,8 @@ void VEditArea::distributeSplits()
         return;
     }
 
-    for (int i = 0; i < sizes.size(); ++i) {
-        sizes[i] = newWidth;
+    for (int &size : sizes) {
+        size = newWidth;
     }
 
     splitter->setSizes(sizes);

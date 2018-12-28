@@ -153,7 +153,7 @@ bool VTextEditCompleter::eventFilter(QObject *p_obj, QEvent *p_eve)
 
         bool exited = false;
 
-        QKeyEvent *ke = static_cast<QKeyEvent *>(p_eve);
+        auto *ke = dynamic_cast<QKeyEvent *>(p_eve);
         const int key = ke->key();
         const int modifiers = ke->modifiers();
         switch (key) {
@@ -300,7 +300,7 @@ void VTextEditCompleter::cleanUp()
 {
     // Do not clean up m_editor and m_insertedCompletion, since activated()
     // signal is after the HideEvent.
-    setWidget(NULL);
+    setWidget(nullptr);
     g_mainWin->setCaptainModeEnabled(true);
 }
 

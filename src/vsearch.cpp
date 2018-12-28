@@ -14,7 +14,7 @@ extern VMainWindow *g_mainWin;
 VSearch::VSearch(QObject *p_parent)
     : QObject(p_parent),
       m_askedToStop(false),
-      m_engine(NULL)
+      m_engine(nullptr)
 {
     m_slashReg = QRegExp("[\\/]");
 }
@@ -468,12 +468,12 @@ VSearchResultItem *VSearch::searchForOutline(const VFile *p_file) const
 {
     VEditTab *tab = g_mainWin->getEditArea()->getTab(p_file);
     if (!tab) {
-        return NULL;
+        return nullptr;
     }
 
     const VTableOfContent &toc = tab->getOutline();
     const QVector<VTableOfContentItem> &table = toc.getTable();
-    VSearchResultItem *item = NULL;
+    VSearchResultItem *item = nullptr;
     for (auto const & it: table) {
         if (it.isEmpty()) {
             continue;
@@ -501,10 +501,10 @@ VSearchResultItem *VSearch::searchForOutline(const VFile *p_file) const
 VSearchResultItem *VSearch::searchForTag(const VFile *p_file) const
 {
     if (p_file->getType() != FileType::Note) {
-        return NULL;
+        return nullptr;
     }
 
-    const VNoteFile *file = static_cast<const VNoteFile *>(p_file);
+    const auto *file = static_cast<const VNoteFile *>(p_file);
     const QStringList &tags = file->getTags();
 
     VSearchToken &contentToken = m_config->m_contentToken;
@@ -513,7 +513,7 @@ VSearchResultItem *VSearch::searchForTag(const VFile *p_file) const
         contentToken.startBatchMode();
     }
 
-    VSearchResultItem *item = NULL;
+    VSearchResultItem *item = nullptr;
     bool allMatched = false;
 
     for (int i = 0; i < tags.size(); ++i) {
@@ -522,7 +522,7 @@ VSearchResultItem *VSearch::searchForTag(const VFile *p_file) const
             continue;
         }
 
-        bool matched = false;
+        bool matched;
         if (singleToken) {
             matched = contentToken.matched(tag);
         } else {
@@ -553,7 +553,7 @@ VSearchResultItem *VSearch::searchForTag(const VFile *p_file) const
         if (!allMatched && item) {
             // This file does not meet all the tokens.
             delete item;
-            item = NULL;
+            item = nullptr;
         }
     }
 
@@ -565,10 +565,10 @@ VSearchResultItem *VSearch::searchForContent(const VFile *p_file) const
     Q_ASSERT(p_file->isOpened());
     const QString &content = p_file->getContent();
     if (content.isEmpty()) {
-        return NULL;
+        return nullptr;
     }
 
-    VSearchResultItem *item = NULL;
+    VSearchResultItem *item = nullptr;
     int lineNum = 1;
     int pos = 0;
     int size = content.size();
@@ -629,7 +629,7 @@ VSearchResultItem *VSearch::searchForContent(const VFile *p_file) const
         if (!allMatched && item) {
             // This file does not meet all the tokens.
             delete item;
-            item = NULL;
+            item = nullptr;
         }
     }
 
@@ -639,7 +639,7 @@ VSearchResultItem *VSearch::searchForContent(const VFile *p_file) const
 void VSearch::searchSecondPhase(const QSharedPointer<VSearchResult> &p_result)
 {
     delete m_engine;
-    m_engine = NULL;
+    m_engine = nullptr;
 
     switch (m_config->m_engine) {
     case VSearchConfig::Internal:
@@ -670,7 +670,7 @@ void VSearch::clear()
         m_engine->clear();
 
         delete m_engine;
-        m_engine = NULL;
+        m_engine = nullptr;
     }
 
     m_askedToStop = false;

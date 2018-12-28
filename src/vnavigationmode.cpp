@@ -18,8 +18,7 @@ VNavigationMode::VNavigationMode()
 }
 
 VNavigationMode::~VNavigationMode()
-{
-}
+= default;
 
 void VNavigationMode::registerNavigation(QChar p_majorKey)
 {
@@ -76,7 +75,7 @@ QList<QListWidgetItem *> VNavigationMode::getVisibleItems(const QListWidget *p_w
         return items;
     }
 
-    QListWidgetItem *lastItem = NULL;
+    QListWidgetItem *lastItem = nullptr;
     lastItem = p_widget->itemAt(p_widget->viewport()->rect().bottomLeft());
 
     int first = p_widget->row(firstItem);
@@ -102,7 +101,7 @@ QList<QTreeWidgetItem *> VNavigationMode::getVisibleItems(const QTreeWidget *p_w
         return items;
     }
 
-    QTreeWidgetItem *lastItem = NULL;
+    QTreeWidgetItem *lastItem = nullptr;
     lastItem = p_widget->itemAt(p_widget->viewport()->rect().bottomLeft());
 
     QTreeWidgetItem *item = firstItem;

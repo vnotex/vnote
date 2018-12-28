@@ -20,7 +20,7 @@ PegMarkdownHighlighter::PegMarkdownHighlighter(QTextDocument *p_doc, VMdEditor *
       m_editor(p_editor),
       m_timeStamp(0),
       m_codeBlockTimeStamp(0),
-      m_parser(NULL),
+      m_parser(nullptr),
       m_parserExts(pmh_EXT_NOTES
                    | pmh_EXT_STRIKE
                    | pmh_EXT_FRONTMATTER
@@ -47,10 +47,10 @@ void PegMarkdownHighlighter::init(const QVector<HighlightingStyle> &p_styles,
     m_parseInterval = p_timerInterval;
 
     m_codeBlockFormat.setForeground(QBrush(Qt::darkYellow));
-    for (int index = 0; index < m_styles.size(); ++index) {
-        switch (m_styles[index].type) {
+    for (auto &m_style : m_styles) {
+        switch (m_style.type) {
         case pmh_FENCEDCODEBLOCK:
-            m_codeBlockFormat = m_styles[index].format;
+            m_codeBlockFormat = m_style.format;
             break;
 
         default:
@@ -122,7 +122,7 @@ void PegMarkdownHighlighter::highlightBlock(const QString &p_text)
     int blockNum = block.blockNumber();
 
     bool isCodeBlock = currentBlockState() == HighlightBlockState::CodeBlock;
-    bool isNewBlock = block.userData() == NULL;
+    bool isNewBlock = block.userData() == nullptr;
     VTextBlockData *blockData = VTextBlockData::blockData(block);
     QVector<HLUnit> *cache = &blockData->getBlockHighlightCache();
 
@@ -158,7 +158,7 @@ void PegMarkdownHighlighter::highlightBlock(const QString &p_text)
                                                blockNum,
                                                p_text,
                                                isCodeBlock)) {
-                highlightBlockOne(m_fastResult->m_blocksHighlights, blockNum, NULL);
+                highlightBlockOne(m_fastResult->m_blocksHighlights, blockNum, nullptr);
             }
 
             cacheValid = false;
@@ -604,7 +604,7 @@ void PegMarkdownHighlighter::updateAllBlocksUserState(const QSharedPointer<PegHi
 
         // Set code block indentation.
         if (hlColumn) {
-            VTextBlockData *blockData = static_cast<VTextBlockData *>(block.userData());
+            auto blockData = static_cast<VTextBlockData *>(block.userData());
             Q_ASSERT(blockData);
 
             switch (it.value()) {
