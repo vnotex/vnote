@@ -1423,13 +1423,17 @@ void VMdEditor::setFontAndPaletteByStyleSheet(const QFont &p_font, const QPalett
                            "font-family: \"%1\";"
                            "font-size: %2pt;"
                            "color: %3;"
-                           "background-color: %4; } "
+                           "background-color: %4;"
+                           "selection-color: %5;"
+                           "selection-background-color: %6; } "
                            "VLineNumberArea {"
-                           "font-size: %5pt; }")
+                           "font-size: %7pt; }")
                           .arg(p_font.family())
                           .arg(p_font.pointSize())
                           .arg(p_palette.color(QPalette::Text).name())
                           .arg(p_palette.color(QPalette::Base).name())
+                          .arg(p_palette.color(QPalette::HighlightedText).name())
+                          .arg(p_palette.color(QPalette::Highlight).name())
                           .arg(p_font.pointSize() + LINE_NUMBER_AREA_FONT_DELTA));
 
     setStyleSheet(styles);
