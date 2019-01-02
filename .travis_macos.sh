@@ -1,6 +1,13 @@
 #!/bin/bash
 project_dir=$(pwd)
 
+# Complain when not in Travis environment
+if [ -z ${TRAVIS_COMMIT+x} ]; then
+    echo "This script is intended to be used only in Travis CI environment."
+    echo "To build VNote from source, please see the [documentation](https://tamlok.github.io/vnote/en_us/#!docs/Developers/Build%20VNote.md)."
+    exit 1
+fi
+
 brew update > /dev/null
 
 # Use Qt5.9.3 instead of 5.10

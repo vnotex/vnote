@@ -14,12 +14,12 @@ editor
 font-family: Hiragino Sans GB, 冬青黑体, Microsoft YaHei, 微软雅黑, Microsoft YaHei UI, WenQuanYi Micro Hei, 文泉驿雅黑, Dengxian, 等线体, STXihei, 华文细黑, Liberation Sans, Droid Sans, NSimSun, 新宋体, SimSun, 宋体, Verdana, Helvetica, sans-serif, Tahoma, Arial, Geneva, Georgia, Times New Roman
 font-size: 12
 foreground: 222222
-background: f5f5f5
+background: eeeeee
 # [VNote] Style for trailing space
 trailing-space: a8a8a8
 # [VNote] Style for line number
-line-number-background: eaeaea
-line-number-foreground: 424242
+line-number-background: eeeeee
+line-number-foreground: 666666
 # [VNote] Style for selected word highlight
 selected-word-foreground: 222222
 selected-word-background: dfdf00
@@ -39,7 +39,7 @@ color-column-foreground: ffff00
 preview-image-line-foreground: 9575cd
 
 editor-selection
-foreground: f5f5f5
+foreground: eeeeee
 background: 1976d2
 
 editor-current-line

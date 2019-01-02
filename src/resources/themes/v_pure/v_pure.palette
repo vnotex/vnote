@@ -7,7 +7,7 @@ mdhl_file=v_pure.mdhl
 css_file=v_pure.css
 codeblock_css_file=v_pure_codeblock.css
 mermaid_css_file=v_pure_mermaid.css
-version=25
+version=26
 
 [phony]
 ; Abstract color attributes.
@@ -56,7 +56,7 @@ pressed_fg=@base_fg
 pressed_bg=#B2B2B2
 
 edit_fg=#222222
-edit_bg=#F5F5F5
+edit_bg=#EEEEEE
 edit_focus_bg=#E0F2F1
 edit_focus_border=@master_bg
 edit_hover_bg=#F2FAF9

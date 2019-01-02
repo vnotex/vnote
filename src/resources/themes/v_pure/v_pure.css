@@ -4,7 +4,7 @@ body {
     color: #222222;
     line-height: 1.5;
     padding: 15px;
-    background: #F5F5F5;
+    background: #EEEEEE;
     font-size: 16px;
 }
 
@@ -345,7 +345,7 @@ table.hljs-ln tr td.hljs-ln-code {
 
 ::selection {
   background: #1976D2;
-  color: #F5F5F5;
+  color: #EEEEEE;
 }
 
 .modal-box {
