@@ -1,5 +1,6 @@
 # VNote
 [中文 Chinese](./README_zh.md)
+[英語 English](./README.md)
 
 **VNote は、プログラマとMarkdownをよく理解するノート作成アプリケーションです。**
 

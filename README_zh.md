@@ -1,5 +1,6 @@
 # VNote
 [英文 English](./README.md)
+[日文 Japanese](./README_ja.md)
 
 **VNote是一个更懂程序员和Markdown的笔记！**
 
