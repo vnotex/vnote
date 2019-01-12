@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.13)
+cmake_minimum_required (VERSION 3.12)
 project(VNote
         VERSION 2.2.0
         DESCRIPTION "VNote is a markdown note taking application"
@@ -11,7 +11,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
-set(Qt5_DIR "$ENV{HOME}/Qt5.9.7/5.9.7/gcc_64/lib/cmake/Qt5/" CACHE PATH "directory where Qt5Config.cmake exists.")
+if(WIN32)
+  set(Qt5_DIR "c:/Qt/Qt5.9.7/5.9.7/msvc2017_64/lib/cmake/Qt5/" CACHE PATH "directory where Qt5Config.cmake exists.")
+elseif(APPLE)
+  set(Qt5_DIR "/usr/local/Cellar/qt/5.9.7/clang_64/lib/cmake/Qt5/" CACHE PATH "directory where Qt5Config.cmake exists.")
+else()
+  set(Qt5_DIR "$ENV{HOME}/Qt5.9.7/5.9.7/gcc_64/lib/cmake/Qt5/" CACHE PATH "directory where Qt5Config.cmake exists.")
+endif()
 find_package(Qt5 COMPONENTS Core Gui Network PrintSupport WebChannel WebEngine
              WebEngineWidgets Positioning Svg Widgets LinguistTools
              REQUIRED NO_DEFAULT_PATH)
@@ -24,6 +30,7 @@ target_link_libraries(hoedown PRIVATE Qt5::Core Qt5::Gui)
 ## peg-highlight library
 add_library(peg-highlight STATIC peg-highlight/pmh_parser.c peg-highlight/pmh_styleparser.c)
 target_link_libraries(peg-highlight PRIVATE Qt5::Core Qt5::Gui)
+
 ## project sources
 add_subdirectory(src)
 
@@ -52,7 +59,6 @@ if(CMake_RUN_CLANG_TIDY)
   unset(clang_tidy_sha1)
 
 endif()
-configure_file(.clang-tidy .clang-tidy COPYONLY)
 
 option(CMake_RUN_IWYU "Run include-what-you-use with the compiler." OFF)
 if(CMake_RUN_IWYU)
@@ -76,5 +82,6 @@ if(ENABLE_CLAZY)
     message(AUTHOR_WARNING "clazy not found.")
   endif()
 endif()
+
 
 # vim: ts=2 sw=2 sts=2 et

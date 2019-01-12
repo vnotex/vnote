@@ -205,3 +205,5 @@ elseif(DARWIN)
 
     set_source_files_properties(${MACOSX_BUNDLE_ICON_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/Packaging.cmake)
