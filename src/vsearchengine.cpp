@@ -151,13 +151,16 @@ VSearchEngine::VSearchEngine(QObject *p_parent)
 
 VSearchEngine::~VSearchEngine()
 {
+    // stop()
     for (auto const & th : m_workers) {
         th->stop();
-        th->quit();
-        th->wait();
-        delete th;
     }
-    m_workers.clear();
+
+    // clear()
+    clearAllWorkers();
+
+    m_finishedWorkers = 0;
+
     m_result.clear();
 }
 
