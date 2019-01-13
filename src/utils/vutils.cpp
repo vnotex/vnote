@@ -83,6 +83,7 @@ void VUtils::initAvailableLanguage()
 
     s_availableLanguages.append(QPair<QString, QString>("en_US", "English (US)"));
     s_availableLanguages.append(QPair<QString, QString>("zh_CN", "Chinese"));
+    s_availableLanguages.append(QPair<QString, QString>("ja_JP", "Japanese"));
 }
 
 QString VUtils::readFileFromDisk(const QString &filePath)

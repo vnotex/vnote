@@ -279,7 +279,7 @@ err:
                         QMessageBox::Ok, QMessageBox::Ok, NULL);
 }
 
-const QVector<QString> VGeneralTab::c_availableLangs = { "System", "English", "Chinese" };
+const QVector<QString> VGeneralTab::c_availableLangs = { "System", "English", "Chinese", "Japanese" };
 
 VGeneralTab::VGeneralTab(QWidget *p_parent)
     : QWidget(p_parent)

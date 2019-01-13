@@ -1,6 +1,5 @@
 # VNote
-[中文 Chinese](./README_zh.md)
-[英語 English](./README.md)
+[中文 Chinese](./README_zh.md) | [英語 English](./README.md)
 
 **VNote は、プログラマとMarkdownをよく理解するノート作成アプリケーションです。**
 
@@ -87,7 +86,6 @@ Qtを使用し、VNoteは、**Linux**, **Windows**そして、**macOS**で利用
 - [Github issues](https://github.com/tamlok/vnote/issues);
 - Email: `tamlokveer at gmail.com`;
 - [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTQ1Yzk1YjA5MjAyYTU0MjJkMTUxNmRiYWQ2YjlkOWU0ZGZlMTFlZTAxNzg0ZGUyNzI0ZGY2NDg4MmU1M2FkMDg);
-- WeChat 公開アカウント:VNote醇@u(vnote_md); ![VNote WeChat](screenshots/vnote_md.jpg);
 
 # ハイライト
 - 強力な**全文検索**;

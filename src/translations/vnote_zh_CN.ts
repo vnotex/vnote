@@ -3034,7 +3034,7 @@ Modified Time: %3</source>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="311"/>
         <source>Set the path of a file to quick access (absolute or relative to configuration folder)</source>
-        <translation>设置一个文件路径以快速访问（绝对路径或者相对于配置文件家的相对路径）</translation>
+        <translation>设置一个文件路径以快速访问（绝对路径或者相对于配置文件夹的相对路径）</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="318"/>

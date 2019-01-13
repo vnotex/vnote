@@ -1,6 +1,5 @@
 # VNote
-[中文 Chinese](./README_zh.md)
-[日本語 Japanese](./README_ja.md)
+[中文 Chinese](./README_zh.md) | [日本語 Japanese](./README_ja.md)
 
 **VNote is a note-taking application that knows programmers and Markdown better.**
 
