@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>translations/vnote_zh_CN.qm</file>
-        <file>translations/vnote_ja_JP.qm</file>
+        <file>translations/vnote_ja.qm</file>
     </qresource>
 </RCC>
