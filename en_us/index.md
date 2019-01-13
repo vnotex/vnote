@@ -1,7 +1,5 @@
-![](resources/vnote.svg =256x)
-
 # VNote
-**A note-taking application that knows programmers and markdown better!**
+**A note-taking application that knows programmers and Markdown better!**
 
 ::: alert-success
 

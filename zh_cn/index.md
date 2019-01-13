@@ -1,5 +1,3 @@
-![](resources/vnote.svg =256x)
-
 # VNote
 **一个更懂程序员和Markdown的笔记！**
 
