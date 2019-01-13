@@ -17,7 +17,8 @@ TEMPLATE = app
 RC_ICONS = resources/icons/vnote.ico
 ICON = resources/icons/vnote.icns
 
-TRANSLATIONS += translations/vnote_zh_CN.ts
+TRANSLATIONS += translations/vnote_zh_CN.ts \
+                translations/vnote_ja.ts
 
 *-g++ {
     QMAKE_CFLAGS_WARN_ON += -Wno-class-memaccess
