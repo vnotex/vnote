@@ -628,6 +628,9 @@ public:
     bool getPrependDotInRelativePath() const;
     void setPrependDotInRelativePath(bool p_enabled);
 
+    bool getEnableSmartTable() const;
+    void setEnableSmartTable(bool p_enabled);
+
 private:
     void initEditorConfigs();
 
@@ -1111,6 +1114,9 @@ private:
 
     // Whether prepend a dot in the relative path of images and attachments.
     bool m_prependDotInRelativePath;
+
+    // Whether enable smart table.
+    bool m_enableSmartTable;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2897,5 +2903,20 @@ inline void VConfigManager::setPrependDotInRelativePath(bool p_enabled)
 
     m_prependDotInRelativePath = p_enabled;
     setConfigToSettings("markdown", "prepend_dot_in_relative_path", m_prependDotInRelativePath);
+}
+
+inline bool VConfigManager::getEnableSmartTable() const
+{
+    return m_enableSmartTable;
+}
+
+inline void VConfigManager::setEnableSmartTable(bool p_enabled)
+{
+    if (m_enableSmartTable == p_enabled) {
+        return;
+    }
+
+    m_enableSmartTable = p_enabled;
+    setConfigToSettings("editor", "enable_smart_table", m_enableSmartTable);
 }
 #endif // VCONFIGMANAGER_H

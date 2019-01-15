@@ -1322,6 +1322,17 @@ void VMainWindow::initEditMenu()
     tabAct->setChecked(g_config->getEnableTabHighlight());
 
     initAutoScrollCursorLineMenu(editMenu);
+
+    // Smart table.
+    QAction *smartTableAct = new QAction(tr("Smart Table"), this);
+    smartTableAct->setToolTip(tr("Format table automatically"));
+    smartTableAct->setCheckable(true);
+    connect(smartTableAct, &QAction::triggered,
+            this, [](bool p_checked) {
+                g_config->setEnableSmartTable(p_checked);
+            });
+    editMenu->addAction(smartTableAct);
+    smartTableAct->setChecked(g_config->getEnableSmartTable());
 }
 
 void VMainWindow::initDockWindows()

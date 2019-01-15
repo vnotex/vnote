@@ -371,6 +371,8 @@ void VConfigManager::initEditorConfigs()
     m_autoScrollCursorLine = getConfigFromSettings(section, "auto_scroll_cursor_line").toInt();
 
     m_editorFontFamily = getConfigFromSettings(section, "editor_font_family").toString();
+
+    m_enableSmartTable = getConfigFromSettings(section, "enable_smart_table").toBool();
 }
 
 void VConfigManager::initMarkdownConfigs()

@@ -1,6 +1,9 @@
 #include "vtablehelper.h"
 
 #include "veditor.h"
+#include "vconfigmanager.h"
+
+extern VConfigManager *g_config;
 
 VTableHelper::VTableHelper(VEditor *p_editor, QObject *p_parent)
     : QObject(p_parent),
@@ -10,7 +13,9 @@ VTableHelper::VTableHelper(VEditor *p_editor, QObject *p_parent)
 
 void VTableHelper::updateTableBlocks(const QVector<VTableBlock> &p_blocks)
 {
-    if (m_editor->isReadOnlyW() || !m_editor->isModified()) {
+    if (m_editor->isReadOnlyW() ||
+        !m_editor->isModified() ||
+        !g_config->getEnableSmartTable()) {
         return;
     }
 
