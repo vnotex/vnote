@@ -3516,7 +3516,7 @@ void VMainWindow::setupFileListSplitOut(bool p_enabled)
     m_fileList->setEnableSplitOut(p_enabled);
     if (p_enabled) {
         m_nbSplitter->setOrientation(Qt::Horizontal);
-        m_nbSplitter->setStretchFactor(0, 1);
+        m_nbSplitter->setStretchFactor(0, 0);
         m_nbSplitter->setStretchFactor(1, 1);
     } else {
         m_nbSplitter->setOrientation(Qt::Vertical);

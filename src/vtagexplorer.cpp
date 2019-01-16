@@ -545,7 +545,7 @@ void VTagExplorer::setupFileListSplitOut(bool p_enabled)
     m_splitBtn->setChecked(p_enabled);
     if (p_enabled) {
         m_splitter->setOrientation(Qt::Horizontal);
-        m_splitter->setStretchFactor(0, 1);
+        m_splitter->setStretchFactor(0, 0);
         m_splitter->setStretchFactor(1, 1);
     } else {
         m_splitter->setOrientation(Qt::Vertical);
