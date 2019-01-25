@@ -212,6 +212,8 @@ private slots:
 
     void splitFileListOut(bool p_enabled);
 
+    void collectUserStat() const;
+
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 

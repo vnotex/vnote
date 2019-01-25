@@ -3,6 +3,7 @@
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QPainter>
+#include <QWebEnginePage>
 
 #include "vmainwindow.h"
 #include "vdirectorytree.h"
@@ -3423,6 +3424,23 @@ void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
             VFile *file = vnote->getFile(docFile, true);
             m_editArea->openFile(file, OpenFileMode::Read);
         }
+
+        if (g_config->versionChanged()) {
+            // Ask user whether allow tracking.
+            int ret = VUtils::showMessage(QMessageBox::Information,
+                                          tr("Collect User Statistics"),
+                                          tr("VNote would like to send a request to count active users."
+                                             "Do you allow this request?"),
+                                          tr("A request to https://tajs.qq.com/stats will be sent if allowed."),
+                                          QMessageBox::Ok | QMessageBox::No,
+                                          QMessageBox::Ok,
+                                          this);
+            g_config->setAllowUserTrack(ret == QMessageBox::Ok);
+        }
+
+        if (g_config->getAllowUserTrack()) {
+            QTimer::singleShot(60000, this, SLOT(collectUserStat()));
+        }
     });
 }
 
@@ -3524,3 +3542,15 @@ void VMainWindow::setupFileListSplitOut(bool p_enabled)
         m_nbSplitter->setStretchFactor(1, 2);
     }
 }
+
+void VMainWindow::collectUserStat() const
+{
+    QWebEnginePage *page = new QWebEnginePage;
+    page->load(QUrl("qrc:/resources/user_stat.html"));
+    connect(page, &QWebEnginePage::loadFinished,
+            this, [page](bool) {
+                VUtils::sleepWait(2000);
+                page->deleteLater();
+            });
+}
+

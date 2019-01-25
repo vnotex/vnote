@@ -631,6 +631,9 @@ public:
     bool getEnableSmartTable() const;
     void setEnableSmartTable(bool p_enabled);
 
+    bool getAllowUserTrack() const;
+    void setAllowUserTrack(bool p_enabled);
+
 private:
     void initEditorConfigs();
 
@@ -2918,5 +2921,15 @@ inline void VConfigManager::setEnableSmartTable(bool p_enabled)
 
     m_enableSmartTable = p_enabled;
     setConfigToSettings("editor", "enable_smart_table", m_enableSmartTable);
+}
+
+inline bool VConfigManager::getAllowUserTrack() const
+{
+    return getConfigFromSettings("global", "allow_user_track").toBool();
+}
+
+inline void VConfigManager::setAllowUserTrack(bool p_enabled)
+{
+    setConfigToSettings("global", "allow_user_track", p_enabled);
 }
 #endif // VCONFIGMANAGER_H
