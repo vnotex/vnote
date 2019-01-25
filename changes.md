@@ -1,4 +1,12 @@
 # Changes History
+## v2.3
+- Add Japanese translations (thanks to @miurahr);
+- Editor
+    - Bug fix of smart table;
+    - Allow to disable smart table;
+- Update to Qt 5.9.7 in CI in Linux;
+- Add user track logics for users counting;
+
 ## v2.2
 - Editor
     - Support smart GFM table;
