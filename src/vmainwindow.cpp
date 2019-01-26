@@ -3546,7 +3546,7 @@ void VMainWindow::setupFileListSplitOut(bool p_enabled)
 void VMainWindow::collectUserStat() const
 {
     QWebEnginePage *page = new QWebEnginePage;
-    page->load(QUrl("qrc:/resources/user_stat.html"));
+    page->load(QUrl("https://tamlok.github.io/user_track/vnote.html"));
     connect(page, &QWebEnginePage::loadFinished,
             this, [page](bool) {
                 VUtils::sleepWait(2000);

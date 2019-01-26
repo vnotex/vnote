@@ -287,6 +287,5 @@
         <file>resources/icons/table.svg</file>
         <file>utils/wavedrom/wavedrom.min.js</file>
         <file>utils/wavedrom/wavedrom-theme.js</file>
-        <file>resources/user_stat.html</file>
     </qresource>
 </RCC>
