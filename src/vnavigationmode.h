@@ -5,6 +5,7 @@
 #include <QVector>
 #include <QMap>
 #include <QList>
+#include <QObject>
 
 class QLabel;
 class QListWidget;
