@@ -2,6 +2,7 @@
 #define VNOTEBOOKSELECTOR_H
 
 #include <QComboBox>
+#include <QKeyEvent>
 #include <QVector>
 #include <QString>
 #include "vnavigationmode.h"
