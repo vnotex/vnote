@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE TS []>
 <TS version="2.1" language="ja_JP">
 <context>
     <name>QObject</name>
@@ -28,7 +28,7 @@
         <location filename="../utils/vutils.cpp" line="1680"/>
         <location filename="../utils/vutils.cpp" line="1716"/>
         <source>Name already exists. Please try again:</source>
-        <translation type="unfinished">名前は既につかわれています。再実施してください：</translation>
+        <translation type="unfinished">名前は既に使われています。再実施してください：</translation>
     </message>
     <message>
         <location filename="../utils/vwebutils.cpp" line="691"/>
@@ -137,18 +137,18 @@
     </message>
     <message>
         <location filename="../vattachmentlist.cpp" line="45"/>
-        <source>Are you sure to clear attachments of note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;?</source>
-        <translation type="unfinished">ほんとうにノート&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;の添付を削除してよいですか？</translation>
+        <source>Are you sure to clear attachments of note &lt;span style=&quot;%1&quot;>%2&lt;/span>?</source>
+        <translation type="unfinished">ほんとうにノート&lt;span style=&quot;%1&quot;>%2&lt;/span>の添付を削除してよいですか？</translation>
     </message>
     <message>
         <location filename="../vattachmentlist.cpp" line="49"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: VNote will delete all the files in directory &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;.Deleted files could be found in the recycle bin of this note.&lt;br&gt;The operation is IRREVERSIBLE!</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;:VNoteは、ディレクトリ&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;内のすべてのファイルを削除します。削除したファイルはこのノートのゴミ箱にいきます。&lt;br&gt;操作は取消できません！</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: VNote will delete all the files in directory &lt;span style=&quot;%2&quot;>%3&lt;/span>.Deleted files could be found in the recycle bin of this note.&lt;br>The operation is IRREVERSIBLE!</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>:VNoteは、ディレクトリ&lt;span style=&quot;%2&quot;>%3&lt;/span>内のすべてのファイルを削除します。削除したファイルはこのノートのゴミ箱にいきます。&lt;br>操作は取消できません！</translation>
     </message>
     <message>
         <location filename="../vattachmentlist.cpp" line="65"/>
-        <source>Fail to clear attachments of note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">ノートの添付の削除に失敗&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;</translation>
+        <source>Fail to clear attachments of note &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">ノートの添付の削除に失敗&lt;span style=&quot;%1&quot;>%2&lt;/span></translation>
     </message>
     <message>
         <location filename="../vattachmentlist.cpp" line="68"/>
@@ -184,13 +184,13 @@
     </message>
     <message>
         <location filename="../vattachmentlist.cpp" line="214"/>
-        <source>Fail to add attachment %1 for note &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;.</source>
-        <translation type="unfinished">ノート&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;の添付ファイル%1を追加できません。</translation>
+        <source>Fail to add attachment %1 for note &lt;span style=&quot;%2&quot;>%3&lt;/span>.</source>
+        <translation type="unfinished">ノート&lt;span style=&quot;%2&quot;>%3&lt;/span>の添付ファイル%1を追加できません。</translation>
     </message>
     <message>
         <location filename="../vattachmentlist.cpp" line="228"/>
         <source>%1 %2 added as attachments</source>
-        <translation type="unfinished">%1 %2 added as attachments</translation>
+        <translation type="unfinished">%1 %2 は添付ファイルとして追加されました</translation>
     </message>
     <message>
         <location filename="../vattachmentlist.cpp" line="230"/>
@@ -249,13 +249,13 @@
     </message>
     <message>
         <location filename="../vattachmentlist.cpp" line="337"/>
-        <source>Are you sure to delete these attachments of note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;?</source>
-        <translation type="unfinished">ほんとうにノート&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;のこれらの添付を削除してよいですか？</translation>
+        <source>Are you sure to delete these attachments of note &lt;span style=&quot;%1&quot;>%2&lt;/span>?</source>
+        <translation type="unfinished">ほんとうにノート&lt;span style=&quot;%1&quot;>%2&lt;/span>のこれらの添付を削除してよいですか？</translation>
     </message>
     <message>
         <location filename="../vattachmentlist.cpp" line="341"/>
-        <source>Deleted files could be found in the recycle bin of this note.&lt;br&gt;Click &quot;Cancel&quot; to leave them untouched.</source>
-        <translation type="unfinished">削除したファイルはこのノートのゴミ箱にいきます。&lt;br&gt;&quot;キャンセル&quot;をクリックすると、そのままにします。</translation>
+        <source>Deleted files could be found in the recycle bin of this note.&lt;br>Click &quot;Cancel&quot; to leave them untouched.</source>
+        <translation type="unfinished">削除したファイルはこのノートのゴミ箱にいきます。&lt;br>&quot;キャンセル&quot;をクリックすると、そのままにします。</translation>
     </message>
     <message>
         <location filename="../vattachmentlist.cpp" line="345"/>
@@ -266,8 +266,8 @@
     <message>
         <location filename="../vattachmentlist.cpp" line="364"/>
         <location filename="../vattachmentlist.cpp" line="623"/>
-        <source>Fail to delete attachments of note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;の添付の削除に失敗しました。</translation>
+        <source>Fail to delete attachments of note &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;>%2&lt;/span>の添付の削除に失敗しました。</translation>
     </message>
     <message>
         <location filename="../vattachmentlist.cpp" line="387"/>
@@ -276,8 +276,8 @@
     </message>
     <message>
         <location filename="../vattachmentlist.cpp" line="388"/>
-        <source>Sort attachments of note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; in the configuration file.</source>
-        <translation type="unfinished">構成ファイル内のノート&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;の添付ファイルをソートします。</translation>
+        <source>Sort attachments of note &lt;span style=&quot;%1&quot;>%2&lt;/span> in the configuration file.</source>
+        <translation type="unfinished">構成ファイル内のノート&lt;span style=&quot;%1&quot;>%2&lt;/span>の添付ファイルをソートします。</translation>
     </message>
     <message>
         <location filename="../vattachmentlist.cpp" line="396"/>
@@ -286,8 +286,8 @@
     </message>
     <message>
         <location filename="../vattachmentlist.cpp" line="417"/>
-        <source>Fail to sort attachments of note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;の添付のソートに失敗しました。</translation>
+        <source>Fail to sort attachments of note &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;>%2&lt;/span>の添付のソートに失敗しました。</translation>
     </message>
     <message>
         <location filename="../vattachmentlist.cpp" line="464"/>
@@ -297,13 +297,13 @@
     <message>
         <location filename="../vattachmentlist.cpp" line="465"/>
         <location filename="../vattachmentlist.cpp" line="693"/>
-        <source>Fail to rename attachment &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">Fail to rename attachment &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</translation>
+        <source>Fail to rename attachment &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">添付ファイル&lt;span style=&quot;%1&quot;>%2&lt;/span>の名前変更に失敗しました。</translation>
     </message>
     <message>
         <location filename="../vattachmentlist.cpp" line="596"/>
-        <source>VNote detects that these attachments of note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; are missing in disk. Would you like to remove them from the note?</source>
-        <translation type="unfinished">VNoteは、ノート &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;の添付ファイルがディスク上に無いことにきづきました。ノートからこれらを削除しますか？</translation>
+        <source>VNote detects that these attachments of note &lt;span style=&quot;%1&quot;>%2&lt;/span> are missing in disk. Would you like to remove them from the note?</source>
+        <translation type="unfinished">VNoteは、ノート &lt;span style=&quot;%1&quot;>%2&lt;/span>の添付ファイルがディスク上に無いことにきづきました。ノートからこれらを削除しますか？</translation>
     </message>
     <message>
         <location filename="../vattachmentlist.cpp" line="602"/>
@@ -370,7 +370,7 @@
     <message>
         <location filename="../vcart.cpp" line="96"/>
         <source>Locate the folder of current note</source>
-        <translation type="unfinished">現在のノートのフォルダを検索します。</translation>
+        <translation type="unfinished">現在のノートのフォルダを指定します。</translation>
     </message>
     <message>
         <location filename="../vcart.cpp" line="103"/>
@@ -433,7 +433,7 @@
     <message>
         <location filename="../dialog/vconfirmdeletiondialog.cpp" line="247"/>
         <source>%1/%2 Items</source>
-        <translation type="unfinished">%1/%2 Items</translation>
+        <translation type="unfinished">%1/%2アイテム</translation>
     </message>
 </context>
 <context>
@@ -468,8 +468,8 @@
     <name>VDeleteNotebookDialog</name>
     <message>
         <location filename="../dialog/vdeletenotebookdialog.cpp" line="17"/>
-        <source>Are you sure to delete notebook &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;?</source>
-        <translation type="unfinished">ほんとうにノートブック &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;を削除してよいですか?</translation>
+        <source>Are you sure to delete notebook &lt;span style=&quot;%1&quot;>%2&lt;/span>?</source>
+        <translation type="unfinished">ほんとうにノートブック &lt;span style=&quot;%1&quot;>%2&lt;/span>を削除してよいですか?</translation>
     </message>
     <message>
         <location filename="../dialog/vdeletenotebookdialog.cpp" line="22"/>
@@ -483,13 +483,13 @@
     </message>
     <message>
         <location filename="../dialog/vdeletenotebookdialog.cpp" line="112"/>
-        <source>VNote won&apos;t delete files in directory &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">VNoteは、ディレクトリ &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;のファイル削除をしません。</translation>
+        <source>VNote won&apos;t delete files in directory &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">VNoteは、ディレクトリ &lt;span style=&quot;%1&quot;>%2&lt;/span>のファイル削除をしません。</translation>
     </message>
     <message>
         <location filename="../dialog/vdeletenotebookdialog.cpp" line="115"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: VNote may delete &lt;b&gt;ANY&lt;/b&gt; files in directory &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; and directory &lt;span style=&quot;%2&quot;&gt;%4&lt;/span&gt;!&lt;br&gt;VNote will try to delete all the root folders within this notebook one by one.&lt;br&gt;It may be UNRECOVERABLE!</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: VNoteはディレクトリ&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;およびディレクトリ&lt;span style=&quot;%2&quot;&gt;%4&lt;/span&gt;の&lt;b&gt;あらゆる&lt;/b&gt;ファイルを削除します。&lt;br&gt;VNoteはこのノートブック内のすべてのルートフォルダを一つずつ削除しようとします&lt;br&gt;復旧はできません!</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: VNote may delete &lt;b>ANY&lt;/b> files in directory &lt;span style=&quot;%2&quot;>%3&lt;/span> and directory &lt;span style=&quot;%2&quot;>%4&lt;/span>!&lt;br>VNote will try to delete all the root folders within this notebook one by one.&lt;br>It may be UNRECOVERABLE!</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: VNoteはディレクトリ&lt;span style=&quot;%2&quot;>%3&lt;/span>およびディレクトリ&lt;span style=&quot;%2&quot;>%4&lt;/span>の&lt;b>あらゆる&lt;/b>ファイルを削除します。&lt;br>VNoteはこのノートブック内のすべてのルートフォルダを一つずつ削除しようとします&lt;br>復旧はできません!</translation>
     </message>
 </context>
 <context>
@@ -502,17 +502,17 @@
     <message>
         <location filename="../dialog/vdirinfodialog.cpp" line="44"/>
         <source>Created time:</source>
-        <translation type="unfinished">作成された時間:</translation>
+        <translation type="unfinished">作成日時:</translation>
     </message>
     <message>
         <location filename="../dialog/vdirinfodialog.cpp" line="84"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Name (case-insensitive) &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; already exists. Please choose another name.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 名前(大文字と小文字を区別しない)&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;は既に存在しています。別の名前を選択してください。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Name (case-insensitive) &lt;span style=&quot;%2&quot;>%3&lt;/span> already exists. Please choose another name.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 名前(大文字と小文字を区別しない)&lt;span style=&quot;%2&quot;>%3&lt;/span>は既に存在しています。別の名前を選択してください。</translation>
     </message>
     <message>
         <location filename="../dialog/vdirinfodialog.cpp" line="93"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Name &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; contains illegal characters (after magic word evaluation).</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 名前&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;には、不正な文字が含まれています(マジックワード評価の後)。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Name &lt;span style=&quot;%2&quot;>%3&lt;/span> contains illegal characters (after magic word evaluation).</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 名前&lt;span style=&quot;%2&quot;>%3&lt;/span>には、不正な文字が含まれています(マジックワード評価の後)。</translation>
     </message>
 </context>
 <context>
@@ -606,23 +606,23 @@
     <message>
         <location filename="../vdirectorytree.cpp" line="104"/>
         <location filename="../vdirectorytree.cpp" line="733"/>
-        <source>Fail to open notebook &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">ノートブック&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;を開くことができません。</translation>
+        <source>Fail to open notebook &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">ノートブック&lt;span style=&quot;%1&quot;>%2&lt;/span>を開くことができません。</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="107"/>
-        <source>Please check if the notebook&apos;s root folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; exists.</source>
-        <translation type="unfinished">ノートブックのルートフォルダ&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;が存在するかどうかを確認してください。</translation>
+        <source>Please check if the notebook&apos;s root folder &lt;span style=&quot;%1&quot;>%2&lt;/span> exists.</source>
+        <translation type="unfinished">ノートブックのルートフォルダ&lt;span style=&quot;%1&quot;>%2&lt;/span>が存在するかどうかを確認してください。</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="179"/>
-        <source>Fail to open folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">フォルダ&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;を開くことができません。</translation>
+        <source>Fail to open folder &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">フォルダ&lt;span style=&quot;%1&quot;>%2&lt;/span>を開くことができません。</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="182"/>
-        <source>Please check if directory &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; exists.</source>
-        <translation type="unfinished">ディレクトリ&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;が存在するかどうかを確認してください。</translation>
+        <source>Please check if directory &lt;span style=&quot;%1&quot;>%2&lt;/span> exists.</source>
+        <translation type="unfinished">ディレクトリ&lt;span style=&quot;%1&quot;>%2&lt;/span>が存在するかどうかを確認してください。</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="321"/>
@@ -746,8 +746,8 @@
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="470"/>
-        <source>Create a subfolder in &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;にサブフォルダを作成します。</translation>
+        <source>Create a subfolder in &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>%2&lt;/span>にサブフォルダを作成します。</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="475"/>
@@ -756,13 +756,13 @@
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="483"/>
-        <source>Fail to create subfolder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">サブフォルダ&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;の作成に失敗しました。</translation>
+        <source>Fail to create subfolder &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">サブフォルダ&lt;span style=&quot;%1&quot;>%2&lt;/span>の作成に失敗しました。</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="507"/>
-        <source>Create a root folder in notebook &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">ノートブック&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;にルートフォルダを作成します。</translation>
+        <source>Create a root folder in notebook &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">ノートブック&lt;span style=&quot;%1&quot;>%2&lt;/span>にルートフォルダを作成します。</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="512"/>
@@ -771,23 +771,23 @@
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="520"/>
-        <source>Fail to create root folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">ルートフォルダ&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;の作成に失敗しました。</translation>
+        <source>Fail to create root folder &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">ルートフォルダ&lt;span style=&quot;%1&quot;>%2&lt;/span>の作成に失敗しました。</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="548"/>
-        <source>Are you sure to delete folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;?</source>
-        <translation type="unfinished">フォルダ&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;を削除してもよろしいですか?</translation>
+        <source>Are you sure to delete folder &lt;span style=&quot;%1&quot;>%2&lt;/span>?</source>
+        <translation type="unfinished">フォルダ&lt;span style=&quot;%1&quot;>%2&lt;/span>を削除してもよろしいですか?</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="551"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: VNote will delete the whole directory &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;.Deleted files could be found in the recycle bin of this folder.&lt;br&gt;The operation is IRREVERSIBLE!</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;:VNoteは、ディレクトリ&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;内のすべてのファイルを削除します。削除したファイルはこのフォルダのゴミ箱にいきます。&lt;br&gt;操作は取消できません！</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: VNote will delete the whole directory &lt;span style=&quot;%2&quot;>%3&lt;/span>.Deleted files could be found in the recycle bin of this folder.&lt;br>The operation is IRREVERSIBLE!</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>:VNoteは、ディレクトリ&lt;span style=&quot;%2&quot;>%3&lt;/span>内のすべてのファイルを削除します。削除したファイルはこのフォルダのゴミ箱にいきます。&lt;br>操作は取消できません！</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="578"/>
-        <source>Fail to delete folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.&lt;br&gt;Please check &lt;span style=&quot;%1&quot;&gt;%3&lt;/span&gt; and manually delete it.</source>
-        <translation type="unfinished">フォルダ&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;を削除できません。&lt;br&gt;&lt;span style=&quot;%1&quot;&gt;%3&lt;/span&gt;を確認して、手動で削除してください。</translation>
+        <source>Fail to delete folder &lt;span style=&quot;%1&quot;>%2&lt;/span>.&lt;br>Please check &lt;span style=&quot;%1&quot;>%3&lt;/span> and manually delete it.</source>
+        <translation type="unfinished">フォルダ&lt;span style=&quot;%1&quot;>%2&lt;/span>を削除できません。&lt;br>&lt;span style=&quot;%1&quot;>%3&lt;/span>を確認して、手動で削除してください。</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="588"/>
@@ -817,13 +817,13 @@
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="631"/>
-        <source>Fail to rename folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">フォルダ&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;の名前変更に失敗しました。</translation>
+        <source>Fail to rename folder &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">フォルダ&lt;span style=&quot;%1&quot;>%2&lt;/span>の名前変更に失敗しました。</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="668"/>
-        <source>Are you sure to reload folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;?</source>
-        <translation type="unfinished">フォルダ&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;を再ロードしますか?</translation>
+        <source>Are you sure to reload folder &lt;span style=&quot;%1&quot;>%2&lt;/span>?</source>
+        <translation type="unfinished">フォルダ&lt;span style=&quot;%1&quot;>%2&lt;/span>を再ロードしますか?</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="670"/>
@@ -832,8 +832,8 @@
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="673"/>
-        <source>Are you sure to reload notebook &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;?</source>
-        <translation type="unfinished">ノートブック&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;を再ロードしますか?</translation>
+        <source>Are you sure to reload notebook &lt;span style=&quot;%1&quot;>%2&lt;/span>?</source>
+        <translation type="unfinished">ノートブック&lt;span style=&quot;%1&quot;>%2&lt;/span>を再ロードしますか?</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="675"/>
@@ -852,8 +852,8 @@
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="735"/>
-        <source>Please check if path &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; exists.</source>
-        <translation type="unfinished">パス&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;が存在するかどうかを確認してください。</translation>
+        <source>Please check if path &lt;span style=&quot;%1&quot;>%2&lt;/span> exists.</source>
+        <translation type="unfinished">パス&lt;span style=&quot;%1&quot;>%2&lt;/span>が存在するかどうかを確認してください。</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="775"/>
@@ -872,8 +872,8 @@
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="829"/>
-        <source>Fail to paste folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">フォルダ&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;の貼り付けに失敗しました。</translation>
+        <source>Fail to paste folder &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">フォルダ&lt;span style=&quot;%1&quot;>%2&lt;/span>の貼り付けに失敗しました。</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="832"/>
@@ -882,8 +882,8 @@
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="870"/>
-        <source>Fail to copy folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">フォルダ&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;のコピーに失敗しました。</translation>
+        <source>Fail to copy folder &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">フォルダ&lt;span style=&quot;%1&quot;>%2&lt;/span>のコピーに失敗しました。</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="903"/>
@@ -897,8 +897,8 @@
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="1164"/>
-        <source>Sort folders in %1 &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; in the configuration file.</source>
-        <translation type="unfinished">構成ファイル内の%1&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;のフォルダをソートします。</translation>
+        <source>Sort folders in %1 &lt;span style=&quot;%2&quot;>%3&lt;/span> in the configuration file.</source>
+        <translation type="unfinished">構成ファイル内の%1&lt;span style=&quot;%2&quot;>%3&lt;/span>のフォルダをソートします。</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="1166"/>
@@ -914,12 +914,12 @@
     <message>
         <location filename="../vdirectorytree.cpp" line="1174"/>
         <source>Created Time</source>
-        <translation type="unfinished">作成された時間</translation>
+        <translation type="unfinished">作成日時間</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="1202"/>
-        <source>Fail to sort folders in %1 &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;.</source>
-        <translation type="unfinished">%1&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;内のフォルダを並べ替えることができません。</translation>
+        <source>Fail to sort folders in %1 &lt;span style=&quot;%2&quot;>%3&lt;/span>.</source>
+        <translation type="unfinished">%1&lt;span style=&quot;%2&quot;>%3&lt;/span>内のフォルダを並べ替えることができません。</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="1231"/>
@@ -1197,23 +1197,23 @@
     </message>
     <message>
         <location filename="../dialog/veditsnippetdialog.cpp" line="157"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Name (case-insensitive) &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; already exists. Please choose another name.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 名前(大文字と小文字を区別しない)&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;は既に存在しています。別の名前を選択してください。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Name (case-insensitive) &lt;span style=&quot;%2&quot;>%3&lt;/span> already exists. Please choose another name.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 名前(大文字と小文字を区別しない)&lt;span style=&quot;%2&quot;>%3&lt;/span>は既に存在しています。別の名前を選択してください。</translation>
     </message>
     <message>
         <location filename="../dialog/veditsnippetdialog.cpp" line="166"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Name &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; contains illegal characters (after magic word evaluation).</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 名前&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;には、不正な文字が含まれています(マジックワード評価の後)。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Name &lt;span style=&quot;%2&quot;>%3&lt;/span> contains illegal characters (after magic word evaluation).</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 名前&lt;span style=&quot;%2&quot;>%3&lt;/span>には、不正な文字が含まれています(マジックワード評価の後)。</translation>
     </message>
     <message>
         <location filename="../dialog/veditsnippetdialog.cpp" line="190"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Cursor mark &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; occurs more than once in the content (after magic word evaluation). Please choose another mark.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;:カーソル・マーク&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;は、(マジック・ワード評価後)コンテンツ内で複数回発生します。別のマークを選んでください。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Cursor mark &lt;span style=&quot;%2&quot;>%3&lt;/span> occurs more than once in the content (after magic word evaluation). Please choose another mark.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>:カーソル・マーク&lt;span style=&quot;%2&quot;>%3&lt;/span>は、(マジック・ワード評価後)コンテンツ内で複数回発生します。別のマークを選んでください。</translation>
     </message>
     <message>
         <location filename="../dialog/veditsnippetdialog.cpp" line="202"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Cursor mark &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; conflicts with selection mark. Please choose another mark.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;:カーソル・マーク&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;は選択マークと競合します。別のマークを選んでください。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Cursor mark &lt;span style=&quot;%2&quot;>%3&lt;/span> conflicts with selection mark. Please choose another mark.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>:カーソル・マーク&lt;span style=&quot;%2&quot;>%3&lt;/span>は選択マークと競合します。別のマークを選んでください。</translation>
     </message>
 </context>
 <context>
@@ -1225,13 +1225,13 @@
     </message>
     <message>
         <location filename="../vedittab.cpp" line="168"/>
-        <source>Note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; has been modified by another program.</source>
-        <translation type="unfinished">Note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; has been modified by another program.</translation>
+        <source>Note &lt;span style=&quot;%1&quot;>%2&lt;/span> has been modified by another program.</source>
+        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;>%2&lt;/span>が他のプログラムから変更されました。</translation>
     </message>
     <message>
         <location filename="../vedittab.cpp" line="170"/>
         <source>Do you want to reload it?</source>
-        <translation type="unfinished">Do you want to reload it?</translation>
+        <translation type="unfinished">再ロードしますか？</translation>
     </message>
     <message>
         <location filename="../vedittab.cpp" line="197"/>
@@ -1240,8 +1240,8 @@
     </message>
     <message>
         <location filename="../vedittab.cpp" line="198"/>
-        <source>Fail to reload note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">Fail to reload note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</translation>
+        <source>Fail to reload note &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;>%2&lt;/span>を再ロードできません。</translation>
     </message>
     <message>
         <location filename="../vedittab.cpp" line="200"/>
@@ -1264,12 +1264,12 @@
     <message>
         <location filename="../veditwindow.cpp" line="479"/>
         <source>Remove Split</source>
-        <translation type="unfinished">Remove Split</translation>
+        <translation type="unfinished">分割終了</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="481"/>
         <source>Remove current split window</source>
-        <translation type="unfinished">Remove current split window</translation>
+        <translation type="unfinished">現在の分割ウインドウを削除する</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="513"/>
@@ -1279,17 +1279,17 @@
     <message>
         <location filename="../veditwindow.cpp" line="515"/>
         <source>Open the recycle bin of this note</source>
-        <translation type="unfinished">Open the recycle bin of this note</translation>
+        <translation type="unfinished">このノートのゴミ箱を開く</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="541"/>
         <source>Open Note Location</source>
-        <translation type="unfinished">Open Note Location</translation>
+        <translation type="unfinished">ノートの場所を開く</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="543"/>
         <source>Explore the folder containing this note in operating system</source>
-        <translation type="unfinished">Explore the folder containing this note in operating system</translation>
+        <translation type="unfinished">オペレーティング・システムでこのノートのあるフォルダを表示します。</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="556"/>
@@ -1299,7 +1299,7 @@
     <message>
         <location filename="../veditwindow.cpp" line="557"/>
         <source>Reload the content of this note from disk</source>
-        <translation type="unfinished">Reload the content of this note from disk</translation>
+        <translation type="unfinished">このノートの内容をディスクから再ロードします。</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="568"/>
@@ -1309,7 +1309,7 @@
     <message>
         <location filename="../veditwindow.cpp" line="570"/>
         <source>Add this note to Cart for further processing</source>
-        <translation type="unfinished">このメモをカートに追加して、さらに処理を行います。</translation>
+        <translation type="unfinished">このノートをカートに追加して、さらに処理を行います。</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="580"/>
@@ -1324,7 +1324,7 @@
     <message>
         <location filename="../veditwindow.cpp" line="586"/>
         <source>Pin this note to History</source>
-        <translation type="unfinished">このメモを履歴にピンで固定する</translation>
+        <translation type="unfinished">このノートを履歴にピンで固定する</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="598"/>
@@ -1339,7 +1339,7 @@
     <message>
         <location filename="../veditwindow.cpp" line="604"/>
         <source>Set this note as quick access</source>
-        <translation type="unfinished">このメモをクイックアクセスに設定します。</translation>
+        <translation type="unfinished">このノートをクイックアクセスに設定します。</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="615"/>
@@ -1359,12 +1359,12 @@
     <message>
         <location filename="../veditwindow.cpp" line="646"/>
         <source>Locate To Folder</source>
-        <translation type="unfinished">Locate To Folder</translation>
+        <translation type="unfinished">フォルダを指定</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="648"/>
         <source>Locate the folder of current note</source>
-        <translation type="unfinished">現在のノートのフォルダを検索します。</translation>
+        <translation type="unfinished">現在のノートのフォルダを指定します。</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="688"/>
@@ -1374,7 +1374,7 @@
     <message>
         <location filename="../veditwindow.cpp" line="690"/>
         <source>Move current tab to the split on the left</source>
-        <translation type="unfinished">Move current tab to the split on the left</translation>
+        <translation type="unfinished">現在のタブを左側の分割ウインドウへ移動する</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="698"/>
@@ -1384,7 +1384,7 @@
     <message>
         <location filename="../veditwindow.cpp" line="700"/>
         <source>Move current tab to the split on the right</source>
-        <translation type="unfinished">Move current tab to the split on the right</translation>
+        <translation type="unfinished">現在のタブを右側の分割ウインドウへ移動する</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="712"/>
@@ -1409,12 +1409,12 @@
     <message>
         <location filename="../veditwindow.cpp" line="755"/>
         <source>Close Tabs To The Right</source>
-        <translation type="unfinished">Close Tabs To The Right</translation>
+        <translation type="unfinished">右側のタブを閉じる</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="756"/>
         <source>Close all the note tabs to the right of current tab</source>
-        <translation type="unfinished">Close all the note tabs to the right of current tab</translation>
+        <translation type="unfinished">現在のタブの右側の全てのノートを閉じる。</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="774"/>
@@ -1449,12 +1449,12 @@
     <message>
         <location filename="../veditwindow.cpp" line="832"/>
         <source>Distribute Splits</source>
-        <translation type="unfinished">Distribute Splits</translation>
+        <translation type="unfinished">分割を整列する</translation>
     </message>
     <message>
         <location filename="../veditwindow.cpp" line="833"/>
         <source>Distribute all the split windows evenly</source>
-        <translation type="unfinished">Distribute all the split windows evenly</translation>
+        <translation type="unfinished">全ての分割ウインドウを平等に整列する。</translation>
     </message>
 </context>
 <context>
@@ -1462,7 +1462,7 @@
     <message>
         <location filename="../vexplorer.cpp" line="39"/>
         <source>Directory</source>
-        <translation type="unfinished">Directory</translation>
+        <translation type="unfinished">ディレクトリ</translation>
     </message>
     <message>
         <location filename="../vexplorer.cpp" line="44"/>
@@ -1493,17 +1493,17 @@
     <message>
         <location filename="../vexplorer.cpp" line="127"/>
         <source>Path of the root directory to explore</source>
-        <translation type="unfinished">Path of the root directory to explore</translation>
+        <translation type="unfinished">探索するルートディレクトリのパス</translation>
     </message>
     <message>
         <location filename="../vexplorer.cpp" line="128"/>
         <source>Root path to explore</source>
-        <translation type="unfinished">Root path to explore</translation>
+        <translation type="unfinished">探索するルートパス</translation>
     </message>
     <message>
         <location filename="../vexplorer.cpp" line="156"/>
         <source>Image Folder</source>
-        <translation type="unfinished">イメージフォルダ</translation>
+        <translation type="unfinished">画像フォルダ</translation>
     </message>
     <message>
         <location filename="../vexplorer.cpp" line="159"/>
@@ -1514,7 +1514,7 @@
         <location filename="../vexplorer.cpp" line="161"/>
         <source>Set the path of the image folder to store images of files within the root directory.
 If absolute path is used, VNote will not manage those images.(empty to use global configuration)</source>
-        <translation type="unfinished">Set the path of the image folder to store images of files within the root directory.
+        <translation type="unfinished">画像フォルダのパスを設定して、ルートディレクトリ内のファイルの画像を保存します。
 絶対パスを使用した場合、VNoteはそれらのイメージを管理しません(グローバル構成を使用するには空にします)。</translation>
     </message>
     <message>
@@ -1538,8 +1538,8 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     </message>
     <message>
         <location filename="../vexplorer.cpp" line="378"/>
-        <source>Fail to open directory &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">Fail to open directory &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</translation>
+        <source>Fail to open directory &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">ディレクトリ&lt;span style=&quot;%1&quot;>%2&lt;/span>を開くことができません。</translation>
     </message>
     <message>
         <location filename="../vexplorer.cpp" line="381"/>
@@ -1559,12 +1559,12 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../vexplorer.cpp" line="482"/>
         <source>Set current folder as the root directory to explore</source>
-        <translation type="unfinished">Set current folder as the root directory to explore</translation>
+        <translation type="unfinished">現在のフォルダを探索するルートディレクトリに設定する</translation>
     </message>
     <message>
         <location filename="../vexplorer.cpp" line="490"/>
         <source>Open Folder Location</source>
-        <translation type="unfinished">Open Folder Location</translation>
+        <translation type="unfinished">フォルダの場所を開く</translation>
     </message>
     <message>
         <location filename="../vexplorer.cpp" line="492"/>
@@ -1610,7 +1610,7 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../vexplorer.cpp" line="558"/>
         <source>Explore the folder containing this file in operating system</source>
-        <translation type="unfinished">Explore the folder containing this file in operating system</translation>
+        <translation type="unfinished">オペレーティング・システムでこのファイルのあるフォルダを表示します。</translation>
     </message>
     <message>
         <location filename="../vexplorer.cpp" line="569"/>
@@ -1620,7 +1620,7 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../vexplorer.cpp" line="571"/>
         <source>Add selected files to Cart for further processing</source>
-        <translation type="unfinished">Add selected files to Cart for further processing</translation>
+        <translation type="unfinished">後続処理のために、選択したフィアルをカートに追加します</translation>
     </message>
     <message>
         <location filename="../vexplorer.cpp" line="579"/>
@@ -1647,7 +1647,7 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../vexplorer.cpp" line="588"/>
         <source>Pin selected files to History</source>
-        <translation type="unfinished">Pin selected files to History</translation>
+        <translation type="unfinished">選択したファイルを履歴にピンで固定</translation>
     </message>
     <message>
         <location filename="../vexplorer.cpp" line="592"/>
@@ -1666,8 +1666,8 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     </message>
     <message>
         <location filename="../vexplorer.cpp" line="672"/>
-        <source>Fail to create file &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">ファイル&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;の作成に失敗しました。</translation>
+        <source>Fail to create file &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">ファイル&lt;span style=&quot;%1&quot;>%2&lt;/span>の作成に失敗しました。</translation>
     </message>
     <message>
         <location filename="../vexplorer.cpp" line="713"/>
@@ -1676,8 +1676,8 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     </message>
     <message>
         <location filename="../vexplorer.cpp" line="728"/>
-        <source>Fail to create folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">フォルダ&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;の作成に失敗しました。</translation>
+        <source>Fail to create folder &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">フォルダ&lt;span style=&quot;%1&quot;>%2&lt;/span>の作成に失敗しました。</translation>
     </message>
     <message>
         <location filename="../vexplorer.cpp" line="756"/>
@@ -1692,8 +1692,8 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     </message>
     <message>
         <location filename="../vexplorer.cpp" line="771"/>
-        <source>Fail to rename file &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">ファイル&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;の名前変更に失敗しました。</translation>
+        <source>Fail to rename file &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">ファイル&lt;span style=&quot;%1&quot;>%2&lt;/span>の名前変更に失敗しました。</translation>
     </message>
 </context>
 <context>
@@ -1808,22 +1808,22 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="197"/>
         <source>Markdown rendering background:</source>
-        <translation type="unfinished">Markdown rendering background:</translation>
+        <translation type="unfinished">Markdownレンダリング背景:</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="198"/>
         <source>Markdown rendering style:</source>
-        <translation type="unfinished">Markdown rendering style:</translation>
+        <translation type="unfinished">Markdownレンダリングスタイル:</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="199"/>
         <source>Markdown rendering code block style:</source>
-        <translation type="unfinished">Markdown rendering code block style:</translation>
+        <translation type="unfinished">Markdownレンダリングのコードブロックスタイル:</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="200"/>
         <source>Output directory:</source>
-        <translation type="unfinished">Output directory:</translation>
+        <translation type="unfinished">出力ディレクトリ:</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="233"/>
@@ -1833,39 +1833,39 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="245"/>
         <source>Enable Table Of Contents</source>
-        <translation type="unfinished">Enable Table Of Contents</translation>
+        <translation type="unfinished">目次を有効にする</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="246"/>
         <source>Add a table of contents to the document</source>
-        <translation type="unfinished">Add a table of contents to the document</translation>
+        <translation type="unfinished">ドキュメントに目次を追加する</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="249"/>
         <source>Use wkhtmltopdf</source>
-        <translation type="unfinished">Use wkhtmltopdf</translation>
+        <translation type="unfinished">wkhtmltopdfを使用</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="250"/>
         <source>Use wkhtmltopdf tool to generate PDF (wkhtmltopdf needed to be installed)</source>
-        <translation type="unfinished">Use wkhtmltopdf tool to generate PDF (wkhtmltopdf needed to be installed)</translation>
+        <translation type="unfinished"> PDF (wkhtmltopdf のインストールが必要)生成にwkhtmltopdf ツールを使用する</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="261"/>
         <source>Download wkhtmltopdf</source>
-        <translation type="unfinished">Download wkhtmltopdf</translation>
+        <translation type="unfinished">wkhtmltopdfをダウンロード</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="270"/>
         <source>Tell VNote where to find wkhtmltopdf tool</source>
-        <translation type="unfinished">Tell VNote where to find wkhtmltopdf tool</translation>
+        <translation type="unfinished">wkhtmltopdf ツールの場所をVNoteに指示する</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="279"/>
         <location filename="../dialog/vexportdialog.cpp" line="284"/>
         <location filename="../dialog/vexportdialog.cpp" line="1395"/>
         <source>Empty to use the name of the first source file</source>
-        <translation type="unfinished">Empty to use the name of the first source file</translation>
+        <translation type="unfinished">最初のソースファイルの名前をつかうには、空にします。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="280"/>
@@ -1880,27 +1880,27 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="292"/>
         <source>Enable background</source>
-        <translation type="unfinished">Enable background</translation>
+        <translation type="unfinished">バックグラウンドを有効にする</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="293"/>
         <source>Enable background when printing</source>
-        <translation type="unfinished">Enable background when printing</translation>
+        <translation type="unfinished">印刷時にバックグラウンドを有効にする</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="298"/>
         <source>Append page number as footer</source>
-        <translation type="unfinished">Append page number as footer</translation>
+        <translation type="unfinished">ページ番号をフッターとして追加する</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="303"/>
         <source>Additional global options passed to wkhtmltopdf</source>
-        <translation type="unfinished">Additional global options passed to wkhtmltopdf</translation>
+        <translation type="unfinished">wkhtmltopdfに追加のグローバルオプションをわたす</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="304"/>
         <source>Use &quot; to enclose options containing spaces</source>
-        <translation type="unfinished">Use &quot; to enclose options containing spaces</translation>
+        <translation type="unfinished">オプションの値に空白文字が含まれるときは、&quot; で囲んでください。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="308"/>
@@ -1910,7 +1910,7 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="316"/>
         <source>wkhtmltopdf path:</source>
-        <translation type="unfinished">wkhtmltopdf path:</translation>
+        <translation type="unfinished">wkhtmltopdf パス:</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="320"/>
@@ -1931,7 +1931,7 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="330"/>
         <source>Additional options:</source>
-        <translation type="unfinished">Additional options:</translation>
+        <translation type="unfinished">追加オプション：</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="344"/>
@@ -1941,7 +1941,7 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="345"/>
         <source>Embed CSS styles in HTML file</source>
-        <translation type="unfinished">Embed CSS styles in HTML file</translation>
+        <translation type="unfinished">HTMLファイルにCSSスタイルをうめこむ</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="348"/>
@@ -1951,12 +1951,12 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="349"/>
         <source>Embed images as data URI</source>
-        <translation type="unfinished">Embed images as data URI</translation>
+        <translation type="unfinished">画像をデータURIとして埋め込み</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="352"/>
         <source>Complete page</source>
-        <translation type="unfinished">Complete page</translation>
+        <translation type="unfinished">完全なページ</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="353"/>
@@ -2011,7 +2011,7 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="430"/>
         <source>Cart (%1)</source>
-        <translation type="unfinished">Cart (%1)</translation>
+        <translation type="unfinished">カート(%1)</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="437"/>
@@ -2033,12 +2033,12 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="440"/>
         <source>PDF (All In One)</source>
-        <translation type="unfinished">PDF (All In One)</translation>
+        <translation type="unfinished">PDF(オールインワン)</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="441"/>
         <source>Custom</source>
-        <translation type="unfinished">Custom</translation>
+        <translation type="unfinished">カスタム</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="445"/>
@@ -2093,17 +2093,17 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="539"/>
         <source>Fail to start wkhtmltopdf (%1).</source>
-        <translation type="unfinished">Fail to start wkhtmltopdf (%1).</translation>
+        <translation type="unfinished">wkhtmltopdf (%1)の実行に失敗しました。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="543"/>
         <source>wkhtmltopdf crashed (%1).</source>
-        <translation type="unfinished">wkhtmltopdf crashed (%1).</translation>
+        <translation type="unfinished">wkhtmltopdf  がクラッシュ(%1)。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="547"/>
         <source>Use %1 (%2).</source>
-        <translation type="unfinished">Use %1 (%2).</translation>
+        <translation type="unfinished">%1を使用する(%2)</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="611"/>
@@ -2113,12 +2113,12 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="647"/>
         <source>Invalid configurations for custom export.</source>
-        <translation type="unfinished">Invalid configurations for custom export.</translation>
+        <translation type="unfinished">カスタムエクスポートの設定が無効です。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="735"/>
         <source>User cancelled the export. Aborted!</source>
-        <translation type="unfinished">User cancelled the export. 中止しました!</translation>
+        <translation type="unfinished">ユーザーがエクスポートをキャンセルしました。中止しました!</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="742"/>
@@ -2128,32 +2128,32 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="743"/>
         <source>Errors found during export.</source>
-        <translation type="unfinished">Errors found during export.</translation>
+        <translation type="unfinished">エクスポート中にエラーが検出されました。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="750"/>
         <source>%1 notes exported.</source>
-        <translation type="unfinished">%1 notes exported.</translation>
+        <translation type="unfinished">%1 個のノートが書き出されました。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="772"/>
         <source>Select Output Directory To Export To</source>
-        <translation type="unfinished">Select Output Directory To Export To</translation>
+        <translation type="unfinished">エクスポート先の出力ディレクトリを選択</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="791"/>
         <source>Executable (*.exe)</source>
-        <translation type="unfinished">Executable (*.exe)</translation>
+        <translation type="unfinished">実行可能ファイル(*.exe)</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="797"/>
         <source>Select wkhtmltopdf Executable</source>
-        <translation type="unfinished">Select wkhtmltopdf Executable</translation>
+        <translation type="unfinished">wkhtmltopdfの実行ファイルを選択</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="840"/>
         <source>Exporting note %1.</source>
-        <translation type="unfinished">Exporting note %1.</translation>
+        <translation type="unfinished">ノート%1をエクスポートしています。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="879"/>
@@ -2170,37 +2170,37 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
         <location filename="../dialog/vexportdialog.cpp" line="1289"/>
         <location filename="../dialog/vexportdialog.cpp" line="1325"/>
         <source>Fail to create directory %1.</source>
-        <translation type="unfinished">Fail to create directory %1.</translation>
+        <translation type="unfinished">ディレクトリ%1の作成に失敗しました。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="931"/>
         <source>Fail to open notebook %1.</source>
-        <translation type="unfinished">Fail to open notebook %1.</translation>
+        <translation type="unfinished">ノートブック%1を開くことができません。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="976"/>
         <source>Fail to open file %1.</source>
-        <translation type="unfinished">Fail to open file %1.</translation>
+        <translation type="unfinished">ファイル%1を開くことができません。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="997"/>
         <source>Skip exporting non-Markdown file %1 as Markdown.</source>
-        <translation type="unfinished">Skip exporting non-Markdown file %1 as Markdown.</translation>
+        <translation type="unfinished">非Markdownファイル%1の Markdown形式でのエクスポートをスキップします。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1012"/>
         <source>Fail to copy the note file %1.</source>
-        <translation type="unfinished">Fail to copy the note file %1.</translation>
+        <translation type="unfinished">ノートファイル%1のコピーに失敗しました。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1027"/>
         <source>Fail to copy images of note %1.</source>
-        <translation type="unfinished">Fail to copy images of note %1.</translation>
+        <translation type="unfinished">ノート%1の画像をコピーできません。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1042"/>
         <source>Fail to copy attachments folder %1 to %2.</source>
-        <translation type="unfinished">Fail to copy attachments folder %1 to %2.</translation>
+        <translation type="unfinished">添付ファイルのフォルダ%1を%2にコピーできません。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1054"/>
@@ -2208,85 +2208,85 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
         <location filename="../dialog/vexportdialog.cpp" line="1130"/>
         <location filename="../dialog/vexportdialog.cpp" line="1169"/>
         <source>Note %1 exported to %2.</source>
-        <translation type="unfinished">Note %1 exported to %2.</translation>
+        <translation type="unfinished">ノート%1は%2にエクスポートされました。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1071"/>
         <source>Skip exporting non-Markdown file %1 as PDF.</source>
-        <translation type="unfinished">Skip exporting non-Markdown file %1 as PDF.</translation>
+        <translation type="unfinished">非Markdownファイル%1のPDF形式でのエクスポートをスキップします。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1094"/>
         <location filename="../dialog/vexportdialog.cpp" line="1133"/>
         <location filename="../dialog/vexportdialog.cpp" line="1172"/>
         <source>Fail to export note %1.</source>
-        <translation type="unfinished">Fail to export note %1.</translation>
+        <translation type="unfinished">ノート%1をエクスポートできません。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1110"/>
         <source>Skip exporting non-Markdown file %1 as HTML.</source>
-        <translation type="unfinished">Skip exporting non-Markdown file %1 as HTML.</translation>
+        <translation type="unfinished">非Markdownファイル%1のHTML形式でのエクスポートをスキップします。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1149"/>
         <source>Skip exporting non-Markdown file %1.</source>
-        <translation type="unfinished">Skip exporting non-Markdown file %1.</translation>
+        <translation type="unfinished">非Markdownファイル%1のエクスポートをスキップします。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1212"/>
         <source>Portrait</source>
-        <translation type="unfinished">Portrait</translation>
+        <translation type="unfinished">縦長書式</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1212"/>
         <source>Landscape</source>
-        <translation type="unfinished">Landscape</translation>
+        <translation type="unfinished">横長書式</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1307"/>
         <location filename="../dialog/vexportdialog.cpp" line="1343"/>
         <source>%1 notes exported to %2.</source>
-        <translation type="unfinished">%1 notes exported to %2.</translation>
+        <translation type="unfinished">%1個のノートが、%2にエクスポートされました。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1309"/>
         <source>Fail to export %1 notes in one PDF.</source>
-        <translation type="unfinished">Fail to export %1 notes in one PDF.</translation>
+        <translation type="unfinished">%1 個のノートを一つのPDFへエキスポートするのに失敗しました。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1345"/>
         <source>Fail to export %1 notes in one.</source>
-        <translation type="unfinished">Fail to export %1 notes in one.</translation>
+        <translation type="unfinished">%1 個のノートを一つにエキスポートするのに失敗しました。</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1355"/>
         <source>Choose format of the input</source>
-        <translation type="unfinished">Choose format of the input</translation>
+        <translation type="unfinished">入力フォーマットを選択</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1359"/>
         <source>Without the preceding dot</source>
-        <translation type="unfinished">Without the preceding dot</translation>
+        <translation type="unfinished">先頭のドット文字なし</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1360"/>
         <source>Suffix of the output file without the preceding dot</source>
-        <translation type="unfinished">Suffix of the output file without the preceding dot</translation>
+        <translation type="unfinished">先頭のドット文字なしの出力ファイルの拡張子</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1365"/>
-        <source>&lt;span&gt;&lt;span style=&quot;font-weight:bold;&quot;&gt;%0&lt;/span&gt; for the input file; &lt;span style=&quot;font-weight:bold;&quot;&gt;%1&lt;/span&gt; for the output file; &lt;span style=&quot;font-weight:bold;&quot;&gt;%2&lt;/span&gt; for the rendering CSS style file; &lt;span style=&quot;font-weight:bold;&quot;&gt;%3&lt;/span&gt; for the input file directory; &lt;span style=&quot;font-weight:bold;&quot;&gt;%4&lt;/span&gt; for the rendering code block CSS style file.&lt;/span&gt;</source>
-        <translation type="unfinished">&lt;span&gt;&lt;span style=&quot;font-weight:bold;&quot;&gt;%0&lt;/span&gt; for the input file; &lt;span style=&quot;font-weight:bold;&quot;&gt;%1&lt;/span&gt; for the output file; &lt;span style=&quot;font-weight:bold;&quot;&gt;%2&lt;/span&gt; for the rendering CSS style file; &lt;span style=&quot;font-weight:bold;&quot;&gt;%3&lt;/span&gt; for the input file directory; &lt;span style=&quot;font-weight:bold;&quot;&gt;%4&lt;/span&gt; for the rendering code block CSS style file.&lt;/span&gt;</translation>
+        <source>&lt;span>&lt;span style=&quot;font-weight:bold;&quot;>%0&lt;/span> for the input file; &lt;span style=&quot;font-weight:bold;&quot;>%1&lt;/span> for the output file; &lt;span style=&quot;font-weight:bold;&quot;>%2&lt;/span> for the rendering CSS style file; &lt;span style=&quot;font-weight:bold;&quot;>%3&lt;/span> for the input file directory; &lt;span style=&quot;font-weight:bold;&quot;>%4&lt;/span> for the rendering code block CSS style file.&lt;/span></source>
+        <translation type="unfinished">&lt;span>&lt;span style=&quot;font-weight:bold;&quot;>%0&lt;/span> for the input file; &lt;span style=&quot;font-weight:bold;&quot;>%1&lt;/span> for the output file; &lt;span style=&quot;font-weight:bold;&quot;>%2&lt;/span> for the rendering CSS style file; &lt;span style=&quot;font-weight:bold;&quot;>%3&lt;/span> for the input file directory; &lt;span style=&quot;font-weight:bold;&quot;>%4&lt;/span> for the rendering code block CSS style file.&lt;/span></translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1374"/>
         <source>Enable All In One</source>
-        <translation type="unfinished">Enable All In One</translation>
+        <translation type="unfinished">オールインワンを有効にする</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1375"/>
         <source>Pass a list of input files to the custom command</source>
-        <translation type="unfinished">Pass a list of input files to the custom command</translation>
+        <translation type="unfinished">カスタムコマンドへ入力ファイルのリストを渡す</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1384"/>
@@ -2296,38 +2296,38 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1385"/>
         <source>Treat the exported file as PDF, such as wrapping line</source>
-        <translation type="unfinished">Treat the exported file as PDF, such as wrapping line</translation>
+        <translation type="unfinished">行の折り返しなどで、エクスポートしたファイルをPDFのように扱う</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1389"/>
         <location filename="../dialog/vexportdialog.cpp" line="1390"/>
         <source>Separator to concatenate input files directories</source>
-        <translation type="unfinished">Separator to concatenate input files directories</translation>
+        <translation type="unfinished">入力ファイルのディレクトリを連結する区切り文字</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1396"/>
         <source>Name of the generated All-In-One file</source>
-        <translation type="unfinished">Name of the generated All-In-One file</translation>
+        <translation type="unfinished">生成されるオールインワンファイルの名前</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1407"/>
         <source>Custom command to be executed</source>
-        <translation type="unfinished">Custom command to be executed</translation>
+        <translation type="unfinished">実行するカスタムコマンド</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1411"/>
         <source>Source format:</source>
-        <translation type="unfinished">Source format:</translation>
+        <translation type="unfinished">ソースのフォーマット:</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1414"/>
         <source>Output suffix:</source>
-        <translation type="unfinished">Output suffix:</translation>
+        <translation type="unfinished">出力ファイルの拡張子:</translation>
     </message>
     <message>
         <location filename="../dialog/vexportdialog.cpp" line="1423"/>
         <source>Input directories separator:</source>
-        <translation type="unfinished">Input directories separator:</translation>
+        <translation type="unfinished">入力ディレクトリ区切り文字:</translation>
     </message>
 </context>
 <context>
@@ -2335,27 +2335,27 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../vexporter.cpp" line="822"/>
         <source>Fail to start wkhtmltopdf (%1).</source>
-        <translation type="unfinished">Fail to start wkhtmltopdf (%1).</translation>
+        <translation type="unfinished">wkhtmltopdf (%1)の実行に失敗しました。</translation>
     </message>
     <message>
         <location filename="../vexporter.cpp" line="826"/>
         <source>wkhtmltopdf crashed (%1).</source>
-        <translation type="unfinished">wkhtmltopdf crashed (%1).</translation>
+        <translation type="unfinished">wkhtmltopdf  がクラッシュ(%1)。</translation>
     </message>
     <message>
         <location filename="../vexporter.cpp" line="872"/>
         <source>Fail to start custom command (%1).</source>
-        <translation type="unfinished">Fail to start custom command (%1).</translation>
+        <translation type="unfinished">カスタムコマンド(%1)の実行に失敗しました。</translation>
     </message>
     <message>
         <location filename="../vexporter.cpp" line="876"/>
         <source>Custom command crashed (%1).</source>
-        <translation type="unfinished">Custom command crashed (%1).</translation>
+        <translation type="unfinished">カスタムコマンド(%1)がクラッシュしました。</translation>
     </message>
     <message>
         <location filename="../vexporter.cpp" line="909"/>
         <source>QProcess error %1.</source>
-        <translation type="unfinished">QProcess error %1.</translation>
+        <translation type="unfinished">QProcessエラー %1</translation>
     </message>
 </context>
 <context>
@@ -2363,22 +2363,22 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../dialog/vfileinfodialog.cpp" line="53"/>
         <source>Will be assigned when adding attachments</source>
-        <translation type="unfinished">Will be assigned when adding attachments</translation>
+        <translation type="unfinished">添付ファイルを追加するときに割り当てられる</translation>
     </message>
     <message>
         <location filename="../dialog/vfileinfodialog.cpp" line="54"/>
         <source>The folder to hold attachments of this note</source>
-        <translation type="unfinished">The folder to hold attachments of this note</translation>
+        <translation type="unfinished">このノートの添付ファイルを保持するフォルダ</translation>
     </message>
     <message>
         <location filename="../dialog/vfileinfodialog.cpp" line="64"/>
         <source>Last modified time within VNote</source>
-        <translation type="unfinished">Last modified time within VNote</translation>
+        <translation type="unfinished">VNote内での最終更新日時</translation>
     </message>
     <message>
         <location filename="../dialog/vfileinfodialog.cpp" line="68"/>
         <source>Tags of this note separated by ,</source>
-        <translation type="unfinished">Tags of this note separated by ,</translation>
+        <translation type="unfinished">カンマ(,)区切りの、このノートに付与するタグ</translation>
     </message>
     <message>
         <location filename="../dialog/vfileinfodialog.cpp" line="72"/>
@@ -2398,7 +2398,7 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../dialog/vfileinfodialog.cpp" line="75"/>
         <source>Created time:</source>
-        <translation type="unfinished">作成された時間:</translation>
+        <translation type="unfinished">作成日時:</translation>
     </message>
     <message>
         <location filename="../dialog/vfileinfodialog.cpp" line="76"/>
@@ -2412,18 +2412,18 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     </message>
     <message>
         <location filename="../dialog/vfileinfodialog.cpp" line="118"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Name (case-insensitive) &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; already exists. Please choose another name.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 名前(大文字と小文字を区別しない)&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;は既に存在しています。別の名前を選択してください。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Name (case-insensitive) &lt;span style=&quot;%2&quot;>%3&lt;/span> already exists. Please choose another name.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 名前(大文字と小文字を区別しない)&lt;span style=&quot;%2&quot;>%3&lt;/span>は既に存在しています。別の名前を選択してください。</translation>
     </message>
     <message>
         <location filename="../dialog/vfileinfodialog.cpp" line="128"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Changing type of the note is not supported. Please use the same suffix as the old one.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Changing type of the note is not supported. 古いものと同じサフィックスを使ってください。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Changing type of the note is not supported. Please use the same suffix as the old one.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>:ノートのタイプ変更はサポートされません。。古いものと同じサフィックスを使ってください。</translation>
     </message>
     <message>
         <location filename="../dialog/vfileinfodialog.cpp" line="135"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Name &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; contains illegal characters (after magic word evaluation).</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 名前&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;には、不正な文字が含まれています(マジックワード評価の後)。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Name &lt;span style=&quot;%2&quot;>%3&lt;/span> contains illegal characters (after magic word evaluation).</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 名前&lt;span style=&quot;%2&quot;>%3&lt;/span>には、不正な文字が含まれています(マジックワード評価の後)。</translation>
     </message>
 </context>
 <context>
@@ -2479,7 +2479,7 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../vfilelist.cpp" line="279"/>
         <source>Note Information</source>
-        <translation type="unfinished">Note Information</translation>
+        <translation type="unfinished">ノート情報</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="287"/>
@@ -2494,8 +2494,8 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="288"/>
-        <source>Fail to rename note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">Fail to rename note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</translation>
+        <source>Fail to rename note &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;>%2&lt;/span>の名前変更に失敗しました。</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="311"/>
@@ -2503,50 +2503,48 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
 
 Created Time: %2
 Modified Time: %3</source>
-        <translation type="unfinished">%1
-
-Created Time: %2
-Modified Time: %3</translation>
+        <translation type="unfinished">作成された日時: %2
+修正された日時: %3</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="373"/>
-        <source>Create a note in &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">Create a note in &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</translation>
+        <source>Create a note in &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>%2&lt;/span>にノートを作成します。</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="375"/>
         <source>Note with name ending with &quot;%1&quot; will be treated as Markdown type.</source>
-        <translation type="unfinished">Note with name ending with &quot;%1&quot; will be treated as Markdown type.</translation>
+        <translation type="unfinished">&quot;%1&quot;でおわる名前のノートは、Markdownタイプとして扱われます。</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="381"/>
         <source>Create Note</source>
-        <translation type="unfinished">Create Note</translation>
+        <translation type="unfinished">ノートを作成</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="387"/>
-        <source>Fail to create note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">Fail to create note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</translation>
+        <source>Fail to create note &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;>%2&lt;/span>の作成に失敗しました。</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="485"/>
         <source>Are you sure to delete these notes?</source>
-        <translation type="unfinished">Are you sure to delete these notes?</translation>
+        <translation type="unfinished">これらのノートを削除しますか？</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="487"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: VNote will delete notes as well as all their images and attachments managed by VNote. Deleted files could be found in the recycle bin of these notes.&lt;br&gt;Click &quot;Cancel&quot; to leave them untouched.&lt;br&gt;The operation is IRREVERSIBLE!</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: VNote will delete notes as well as all their images and attachments managed by VNote. Deleted files could be found in the recycle bin of these notes.&lt;br&gt;Click &quot;Cancel&quot; to leave them untouched.&lt;br&gt;The operation is IRREVERSIBLE!</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: VNote will delete notes as well as all their images and attachments managed by VNote. Deleted files could be found in the recycle bin of these notes.&lt;br>Click &quot;Cancel&quot; to leave them untouched.&lt;br>The operation is IRREVERSIBLE!</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>:VNoteは、VNoteが管理するすべての画像と添付ファイルをノートとともに削除します。削除したファイルはこれらのノートのゴミ箱にいきます。&lt;br>&quot;キャンセル&quot;をクリックすると、そのままにします。&lt;br>復旧はできません!</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="496"/>
         <source>Confirm Deleting Notes</source>
-        <translation type="unfinished">Confirm Deleting Notes</translation>
+        <translation type="unfinished">削除するノートの確認</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="524"/>
-        <source>Fail to delete note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.&lt;br&gt;Please check &lt;span style=&quot;%1&quot;&gt;%3&lt;/span&gt; and manually delete it.</source>
-        <translation type="unfinished">Fail to delete note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.&lt;br&gt;Please check &lt;span style=&quot;%1&quot;&gt;%3&lt;/span&gt; and manually delete it.</translation>
+        <source>Fail to delete note &lt;span style=&quot;%1&quot;>%2&lt;/span>.&lt;br>Please check &lt;span style=&quot;%1&quot;>%3&lt;/span> and manually delete it.</source>
+        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;>%2&lt;/span>を削除できません。&lt;br>&lt;span style=&quot;%1&quot;>%3&lt;/span>を確認して、手動で削除してください。</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="540"/>
@@ -2556,22 +2554,22 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vfilelist.cpp" line="565"/>
         <source>&amp;Open In Read Mode</source>
-        <translation type="unfinished">&amp;Open In Read Mode</translation>
+        <translation type="unfinished">読み取りモードで開く(&amp;O)</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="567"/>
         <source>Open current note in read mode</source>
-        <translation type="unfinished">Open current note in read mode</translation>
+        <translation type="unfinished">現在のノートを読み取りモードで開く</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="578"/>
         <source>Open In &amp;Edit Mode</source>
-        <translation type="unfinished">Open In &amp;Edit Mode</translation>
+        <translation type="unfinished">編集モードで開く(&amp;E)</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="580"/>
         <source>Open current note in edit mode</source>
-        <translation type="unfinished">Open current note in edit mode</translation>
+        <translation type="unfinished">現在のノートを編集モードで開く</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="598"/>
@@ -2581,7 +2579,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vfilelist.cpp" line="601"/>
         <source>Create a note in current folder</source>
-        <translation type="unfinished">現在のフォルダにメモを作成する</translation>
+        <translation type="unfinished">現在のフォルダにノートを作成する</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="608"/>
@@ -2591,7 +2589,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vfilelist.cpp" line="610"/>
         <source>Sort notes in this folder manually</source>
-        <translation type="unfinished">Sort notes in this folder manually</translation>
+        <translation type="unfinished">このフォルダ内のノートを手動で並べ替える</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="620"/>
@@ -2641,7 +2639,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vfilelist.cpp" line="664"/>
         <source>Explore the folder containing this note in operating system</source>
-        <translation type="unfinished">Explore the folder containing this note in operating system</translation>
+        <translation type="unfinished">オペレーティング・システムでこのノートのあるフォルダを表示します。</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="669"/>
@@ -2651,7 +2649,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vfilelist.cpp" line="677"/>
         <source>File path copied %1</source>
-        <translation type="unfinished">File path copied %1</translation>
+        <translation type="unfinished">ファイルパスを、 %1 へコピー</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="684"/>
@@ -2681,7 +2679,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vfilelist.cpp" line="702"/>
         <source>Set current note as quick access</source>
-        <translation type="unfinished">Set current note as quick access</translation>
+        <translation type="unfinished">現在のノートをクイックアクセスに設定します。</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="709"/>
@@ -2696,22 +2694,22 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vfilelist.cpp" line="851"/>
         <source>Skip importing non-exist file %1.</source>
-        <translation type="unfinished">Skip importing non-exist file %1.</translation>
+        <translation type="unfinished">存在しないファイル %1 のインポートをスキップします。</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="864"/>
         <source>Skip importing file %1. A note with the same name (case-insensitive) in the same directory already exists.</source>
-        <translation type="unfinished">Skip importing file %1. A note with the same name (case-insensitive) in the same directory already exists.</translation>
+        <translation type="unfinished">ファイル %1 のインポートをスキップ同じ名前(大文字、小文字区別なし)のノートが同じディレクトリに既に存在しています。</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="882"/>
         <source>Fail to copy file %1 as %2.</source>
-        <translation type="unfinished">Fail to copy file %1 as %2.</translation>
+        <translation type="unfinished">ファイル %1 の %2へのコピーに失敗</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="897"/>
         <source>Fail to add the note %1 to target folder&apos;s configuration.</source>
-        <translation type="unfinished">Fail to add the note %1 to target folder&apos;s configuration.</translation>
+        <translation type="unfinished">ノート %1 をターゲットフォルダの設定へ追加できません。</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="938"/>
@@ -2730,24 +2728,24 @@ Modified Time: %3</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="984"/>
-        <source>Fail to paste note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">Fail to paste note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</translation>
+        <source>Fail to paste note &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;>%2&lt;/span>の貼り付けに失敗しました。</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="987"/>
         <source>VNote could not find this note in any notebook.</source>
-        <translation type="unfinished">VNote could not find this note in any notebook.</translation>
+        <translation type="unfinished">どのノートブックにも、このノートが見つかりません。</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1012"/>
         <location filename="../vfilelist.cpp" line="1047"/>
-        <source>Fail to copy note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">Fail to copy note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</translation>
+        <source>Fail to copy note &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;>%2&lt;/span>のコピーに失敗しました。</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1015"/>
         <source>VNote does not allow copy and paste notes with internal images in the same folder.</source>
-        <translation type="unfinished">VNote does not allow copy and paste notes with internal images in the same folder.</translation>
+        <translation type="unfinished">VNoteでは、同じフォルダ内の画像つきのノートを、コピー&amp;ペーストすることはできません。</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1064"/>
@@ -2757,12 +2755,12 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vfilelist.cpp" line="1195"/>
         <source>Sort Notes</source>
-        <translation type="unfinished">Sort Notes</translation>
+        <translation type="unfinished">ノートの整列</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1196"/>
-        <source>Sort notes in folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; in the configuration file.</source>
-        <translation type="unfinished">Sort notes in folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; in the configuration file.</translation>
+        <source>Sort notes in folder &lt;span style=&quot;%1&quot;>%2&lt;/span> in the configuration file.</source>
+        <translation type="unfinished">構成ファイル内のフォルダ&lt;span style=&quot;%1&quot;>%2&lt;/span>のノートを整列します。</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1205"/>
@@ -2772,48 +2770,48 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vfilelist.cpp" line="1205"/>
         <source>Created Time</source>
-        <translation type="unfinished">作成された時間</translation>
+        <translation type="unfinished">作成日時間</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1205"/>
         <source>Modified Time</source>
-        <translation type="unfinished">修正された時間</translation>
+        <translation type="unfinished">修正日時</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1233"/>
-        <source>Fail to sort notes in folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">Fail to sort notes in folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</translation>
+        <source>Fail to sort notes in folder &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">フォルダ&lt;span style=&quot;%1&quot;>%2&lt;/span>内のノートを並べ替えることができませんでした。</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1252"/>
         <source>Open With</source>
-        <translation type="unfinished">Open With</translation>
+        <translation type="unfinished">指定して開く</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1265"/>
         <source>Open current note with %1</source>
-        <translation type="unfinished">Open current note with %1</translation>
+        <translation type="unfinished">現在のノートを %1 を用いて開く</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1285"/>
         <source>System&apos;s Default Program</source>
-        <translation type="unfinished">System&apos;s Default Program</translation>
+        <translation type="unfinished">システム既定のプログラム</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1291"/>
         <source>Open current note with system&apos;s default program</source>
-        <translation type="unfinished">Open current note with system&apos;s default program</translation>
+        <translation type="unfinished">現在のノートをシステム既定のプログラムで開く</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1298"/>
         <location filename="../vfilelist.cpp" line="1304"/>
         <source>Add External Program</source>
-        <translation type="unfinished">Add External Program</translation>
+        <translation type="unfinished">外部プログラムを追加</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1300"/>
         <source>Add external program</source>
-        <translation type="unfinished">Add external program</translation>
+        <translation type="unfinished">外部プログラムを追加します</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1347"/>
@@ -2833,37 +2831,37 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vfilelist.cpp" line="1356"/>
         <source>View By Configuration File</source>
-        <translation type="unfinished">View By Configuration File</translation>
+        <translation type="unfinished">構成ファイル毎の表示</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1362"/>
         <source>View By Name</source>
-        <translation type="unfinished">View By Name</translation>
+        <translation type="unfinished">名前順による表示</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1367"/>
         <source>View By Name (Reverse)</source>
-        <translation type="unfinished">View By Name (Reverse)</translation>
+        <translation type="unfinished">名前順による表示(逆順)</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1372"/>
         <source>View By Created Time</source>
-        <translation type="unfinished">View By Created Time</translation>
+        <translation type="unfinished">作成日時順の表示</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1377"/>
         <source>View By Created Time (Reverse)</source>
-        <translation type="unfinished">View By Created Time (Reverse)</translation>
+        <translation type="unfinished">作成日時順の表示(逆順)</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1382"/>
         <source>View By Modified Time</source>
-        <translation type="unfinished">View By Modified Time</translation>
+        <translation type="unfinished">修正日時順の表示</translation>
     </message>
     <message>
         <location filename="../vfilelist.cpp" line="1387"/>
         <source>View By Modified Time (Reverse)</source>
-        <translation type="unfinished">View By Modified Time (Reverse)</translation>
+        <translation type="unfinished">修正日時順の表示(逆順)</translation>
     </message>
 </context>
 <context>
@@ -2921,8 +2919,8 @@ Modified Time: %3</translation>
     <message>
         <location filename="../dialog/vfindreplacedialog.cpp" line="52"/>
         <location filename="../dialog/vfindreplacedialog.cpp" line="204"/>
-        <source>&amp;Advanced &gt;&gt;&gt;</source>
-        <translation type="unfinished">詳細(&amp;A)&gt;&gt;&gt;</translation>
+        <source>&amp;Advanced >>></source>
+        <translation type="unfinished">詳細(&amp;A)>>></translation>
     </message>
     <message>
         <location filename="../dialog/vfindreplacedialog.cpp" line="57"/>
@@ -2947,15 +2945,15 @@ Modified Time: %3</translation>
     <message>
         <location filename="../dialog/vfindreplacedialog.cpp" line="202"/>
         <source>B&amp;asic &lt;&lt;&lt;</source>
-        <translation type="unfinished">B&amp;asic &lt;&lt;&lt;</translation>
+        <translation type="unfinished">基本&amp;B) &lt;&lt;&lt;</translation>
     </message>
 </context>
 <context>
     <name>VFixNotebookDialog</name>
     <message>
         <location filename="../dialog/vfixnotebookdialog.cpp" line="24"/>
-        <source>VNote could not find the root folder of notebook &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;. Please specify the new path to the root folder if you moved it somewhere, or VNote will just remove this notebook.</source>
-        <translation type="unfinished">VNote could not find the root folder of notebook &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;. Please specify the new path to the root folder if you moved it somewhere, or VNote will just remove this notebook.</translation>
+        <source>VNote could not find the root folder of notebook &lt;span style=&quot;%1&quot;>%2&lt;/span>. Please specify the new path to the root folder if you moved it somewhere, or VNote will just remove this notebook.</source>
+        <translation type="unfinished">Vnoteはノートブック&lt;span style=&quot;%1&quot;>%2&lt;/span>のルートフォルダを見つけることができませんでした。ルートフォルダをどこかに移動した場合、またはVNoteでこのノートブックを削除した場合は、ルートフォルダへの新しいパスを指定してください。</translation>
     </message>
     <message>
         <location filename="../dialog/vfixnotebookdialog.cpp" line="38"/>
@@ -2975,17 +2973,17 @@ Modified Time: %3</translation>
     <message>
         <location filename="../dialog/vfixnotebookdialog.cpp" line="53"/>
         <source>Notebook name:</source>
-        <translation type="unfinished">Notebook name:</translation>
+        <translation type="unfinished">ノートブック名:</translation>
     </message>
     <message>
         <location filename="../dialog/vfixnotebookdialog.cpp" line="54"/>
         <source>Notebook root folder:</source>
-        <translation type="unfinished">Notebook root folder:</translation>
+        <translation type="unfinished">ノートブックルートフォルダ:</translation>
     </message>
     <message>
         <location filename="../dialog/vfixnotebookdialog.cpp" line="79"/>
         <source>Fix Notebook</source>
-        <translation type="unfinished">Fix Notebook</translation>
+        <translation type="unfinished">ノートブックの固定</translation>
     </message>
     <message>
         <location filename="../dialog/vfixnotebookdialog.cpp" line="94"/>
@@ -2994,23 +2992,23 @@ Modified Time: %3</translation>
     </message>
     <message>
         <location filename="../dialog/vfixnotebookdialog.cpp" line="111"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: The folder chosen is NOT a valid root folder of a notebook.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: The folder chosen is NOT a valid root folder of a notebook.</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: The folder chosen is NOT a valid root folder of a notebook.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>:選択されたフォルダは、ノートブックの有効なルートフォルダではありません。</translation>
     </message>
     <message>
         <location filename="../dialog/vfixnotebookdialog.cpp" line="119"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Please specify absolute path.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 絶対パスを指定してください。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Please specify absolute path.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 絶対パスを指定してください。</translation>
     </message>
     <message>
         <location filename="../dialog/vfixnotebookdialog.cpp" line="139"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: The folder chosen has already been a root folder of existing notebook &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; in VNote.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 選択したフォルダは、VNoteで作成された既存のノートブック&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;です。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: The folder chosen has already been a root folder of existing notebook &lt;span style=&quot;%2&quot;>%3&lt;/span> in VNote.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 選択したフォルダは、VNoteで作成された既存のノートブック&lt;span style=&quot;%2&quot;>%3&lt;/span>です。</translation>
     </message>
     <message>
         <location filename="../dialog/vfixnotebookdialog.cpp" line="153"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Please choose a folder in the same drive as &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; when relative path is enabled.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 相対パスが有効なときは、&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;と同じドライブのフォルダを選択してください。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Please choose a folder in the same drive as &lt;span style=&quot;%2&quot;>%3&lt;/span> when relative path is enabled.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 相対パスが有効なときは、&lt;span style=&quot;%2&quot;>%3&lt;/span>と同じドライブのフォルダを選択してください。</translation>
     </message>
 </context>
 <context>
@@ -3018,7 +3016,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="289"/>
         <source>Choose the language of VNote interface</source>
-        <translation type="unfinished">Choose the language of VNote interface</translation>
+        <translation type="unfinished">VNoteインタフェースの言語を選択します。</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="290"/>
@@ -3029,43 +3027,43 @@ Modified Time: %3</translation>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="297"/>
         <source>System tray</source>
-        <translation type="unfinished">System tray</translation>
+        <translation type="unfinished">システムトレイ</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="298"/>
         <source>Minimized to the system tray after closing VNote (not supported in macOS)</source>
-        <translation type="unfinished">Minimized to the system tray after closing VNote (not supported in macOS)</translation>
+        <translation type="unfinished">VNoteを閉じた後、システムトレイに最小化されます(macOSではサポートされていません)。</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="310"/>
         <source>Path of file to quick access</source>
-        <translation type="unfinished">Path of file to quick access</translation>
+        <translation type="unfinished">ファイルのパスがすばやくアクセスできるようにする</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="311"/>
         <source>Set the path of a file to quick access (absolute or relative to configuration folder)</source>
-        <translation type="unfinished">Set the path of a file to quick access (absolute or relative to configuration folder)</translation>
+        <translation type="unfinished">ファイルのパスをクイックアクセス(設定フォルダに対して絶対または相対)するように設定します。</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="314"/>
         <location filename="../dialog/vsettingsdialog.cpp" line="389"/>
         <source>Browse</source>
-        <translation type="unfinished">Browse</translation>
+        <translation type="unfinished">ブラウズ</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="318"/>
         <source>Select File To Quick Access</source>
-        <translation type="unfinished">Select File To Quick Access</translation>
+        <translation type="unfinished">クイックアクセスにファイルを選択</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="332"/>
         <source>Choose the keyboard layout mapping to use in shortcuts</source>
-        <translation type="unfinished">Choose the keyboard layout mapping to use in shortcuts</translation>
+        <translation type="unfinished">ショートカットで使用するキーボードレイアウトマッピングを選択します。</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="337"/>
         <source>Choose the OpenGL implementation to load (restart VNote to make it work)</source>
-        <translation type="unfinished">Choose the OpenGL implementation to load (restart VNote to make it work)</translation>
+        <translation type="unfinished">ロードするOpenGLの実装を選択する(VNoteを動作させるために再起動します)</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="340"/>
@@ -3075,17 +3073,17 @@ Modified Time: %3</translation>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="354"/>
         <source>Language:</source>
-        <translation type="unfinished">Language:</translation>
+        <translation type="unfinished">言語:</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="356"/>
         <source>Startup pages:</source>
-        <translation type="unfinished">Startup pages:</translation>
+        <translation type="unfinished">スタートアップページ:</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="357"/>
         <source>Quick access:</source>
-        <translation type="unfinished">Quick access:</translation>
+        <translation type="unfinished">クイックアクセス:</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="358"/>
@@ -3100,7 +3098,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="373"/>
         <source>Restore tabs or open specific notes on startup</source>
-        <translation type="unfinished">Restore tabs or open specific notes on startup</translation>
+        <translation type="unfinished">起動時に、タブを復元するか、特定のノートを開く</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="374"/>
@@ -3111,27 +3109,27 @@ Modified Time: %3</translation>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="375"/>
         <source>Continue where you left off</source>
-        <translation type="unfinished">Continue where you left off</translation>
+        <translation type="unfinished">終了時の状態を継続</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="376"/>
         <source>Open specific pages</source>
-        <translation type="unfinished">Open specific pages</translation>
+        <translation type="unfinished">特定のページを開く</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="387"/>
         <source>Absolute path of the notes to open on startup (one note per line)</source>
-        <translation type="unfinished">Absolute path of the notes to open on startup (one note per line)</translation>
+        <translation type="unfinished">起動時に開くノートの絶対パス(各行毎にノートのファイル名)</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="390"/>
         <source>Select files to add as startup pages</source>
-        <translation type="unfinished">Select files to add as startup pages</translation>
+        <translation type="unfinished">スタートアップページとして追加するファイルを選択してください</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="395"/>
         <source>Select Files As Startup Pages</source>
-        <translation type="unfinished">Select Files As Startup Pages</translation>
+        <translation type="unfinished">スタートアップページとしてファイルを選択</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="616"/>
@@ -3154,97 +3152,97 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vhelpue.cpp" line="27"/>
         <source>View help information about Universal Entry</source>
-        <translation type="unfinished">View help information about Universal Entry</translation>
+        <translation type="unfinished">ユニバーサルエントリに関するヘルプ情報を表示する</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="63"/>
         <source>Esc or Ctrl+[: Hide Universal Entry</source>
-        <translation type="unfinished">Esc or Ctrl+[: Hide Universal Entry</translation>
+        <translation type="unfinished">Esc or Ctrl+[: ユニバーサルエントリを隠す</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="64"/>
         <source>Ctrl+U: Clear the command input</source>
-        <translation type="unfinished">Ctrl+U: Clear the command input</translation>
+        <translation type="unfinished">Ctrl+U: コマンド入力をクリアします。</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="65"/>
         <source>Ctrl+E: Clear the command input except the entry key</source>
-        <translation type="unfinished">Ctrl+E: Clear the command input except the entry key</translation>
+        <translation type="unfinished">Ctrl+E: 入力キー以外のコマンド入力をクリアします。</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="66"/>
         <source>Ctrl+F: Select the entry key to change</source>
-        <translation type="unfinished">Ctrl+F: Select the entry key to change</translation>
+        <translation type="unfinished">Ctrl+F: 変更するエントリキーを選択します。</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="67"/>
         <source>Ctrl+D: Cancel the command</source>
-        <translation type="unfinished">Ctrl+D: Cancel the command</translation>
+        <translation type="unfinished">Ctrl+D:コマンドをキャンセルします。</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="68"/>
         <source>Ctrl+J: Go to next item</source>
-        <translation type="unfinished">Ctrl+J: Go to next item</translation>
+        <translation type="unfinished">Ctrl+J: 次の項目に移動します。</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="69"/>
         <source>Ctrl+K: Go to previous item</source>
-        <translation type="unfinished">Ctrl+K: Go to previous item</translation>
+        <translation type="unfinished">Ctrl+K: 前の項目に移動します。</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="70"/>
         <source>Ctrl+L: Go to current item&apos;s parent item</source>
-        <translation type="unfinished">Ctrl+L: Go to current item&apos;s parent item</translation>
+        <translation type="unfinished">Ctrl+L: 現在の項目の親アイテムに移動します。</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="71"/>
         <source>Ctrl+I: Expand/Collapse current item</source>
-        <translation type="unfinished">Ctrl+I: Expand/Collapse current item</translation>
+        <translation type="unfinished">Ctrl+I: 現在の項目の展開/折り畳み</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="72"/>
         <source>Ctrl+B: Expand/Collapse all items</source>
-        <translation type="unfinished">Ctrl+B: Expand/Collapse all items</translation>
+        <translation type="unfinished">Ctrl+B: 全ての項目の展開/折り畳み</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="73"/>
         <source>Ctrl+S: Sort items</source>
-        <translation type="unfinished">Ctrl+S: Sort items</translation>
+        <translation type="unfinished">Ctrl+S: 項目のソート</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="74"/>
         <source>Enter: Activate current item</source>
-        <translation type="unfinished">Enter: Activate current item</translation>
+        <translation type="unfinished">Enter: 現在の項目をアクティブにします。</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="75"/>
         <source>Ctrl+M: Browse current item folder or the folder containing current item</source>
-        <translation type="unfinished">Ctrl+M: Browse current item folder or the folder containing current item</translation>
+        <translation type="unfinished">Ctrl+M: 現在の項目フォルダまたはその項目を含むフォルダを参照します。</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="76"/>
         <source>Magic Switches:</source>
-        <translation type="unfinished">Magic Switches:</translation>
+        <translation type="unfinished">マジックスイッチ：</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="77"/>
         <source>\c or \C: Case insensitive or sensitive</source>
-        <translation type="unfinished">\c or \C: Case insensitive or sensitive</translation>
+        <translation type="unfinished">\c または \C: 大文字/小文字の区別の切り替え</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="78"/>
         <source>\r or \R: Disable or enable regular expression</source>
-        <translation type="unfinished">\r or \R: Disable or enable regular expression</translation>
+        <translation type="unfinished">\rまたは\R:正規表現を無効または有効にします。</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="79"/>
         <source>\f or \F: Disable or enable fuzzy search</source>
-        <translation type="unfinished">\f or \F: Disable or enable fuzzy search</translation>
+        <translation type="unfinished">\fまたは\f:ファジー検索を無効または有効にします。</translation>
     </message>
     <message>
         <location filename="../vhelpue.cpp" line="80"/>
         <source>\w or \W: Disable or enable whole word only</source>
-        <translation type="unfinished">\w or \W: Disable or enable whole word only</translation>
+        <translation type="unfinished">\wまたは\W:単語全体を無効または有効にしますか?</translation>
     </message>
 </context>
 <context>
@@ -3307,12 +3305,12 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vhistorylist.cpp" line="328"/>
         <source>Locate the folder of current note</source>
-        <translation type="unfinished">現在のノートのフォルダを検索します。</translation>
+        <translation type="unfinished">現在のノートのフォルダを指定します。</translation>
     </message>
     <message>
         <location filename="../vhistorylist.cpp" line="345"/>
         <source>Pin</source>
-        <translation type="unfinished">Pin</translation>
+        <translation type="unfinished">ピン</translation>
     </message>
     <message>
         <location filename="../vhistorylist.cpp" line="347"/>
@@ -3364,8 +3362,8 @@ Modified Time: %3</translation>
     </message>
     <message>
         <location filename="../vhtmltab.cpp" line="109"/>
-        <source>Note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; has been modified.</source>
-        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;が変更されました。</translation>
+        <source>Note &lt;span style=&quot;%1&quot;>%2&lt;/span> has been modified.</source>
+        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;>%2&lt;/span>が変更されました。</translation>
     </message>
     <message>
         <location filename="../vhtmltab.cpp" line="111"/>
@@ -3381,8 +3379,8 @@ Modified Time: %3</translation>
     </message>
     <message>
         <location filename="../vhtmltab.cpp" line="160"/>
-        <source>Could not modify a read-only note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">読み取り専用のノート&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;を変更できませんでした。</translation>
+        <source>Could not modify a read-only note &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">読み取り専用のノート&lt;span style=&quot;%1&quot;>%2&lt;/span>を変更できませんでした。</translation>
     </message>
     <message>
         <location filename="../vhtmltab.cpp" line="162"/>
@@ -3393,17 +3391,17 @@ Modified Time: %3</translation>
         <location filename="../vhtmltab.cpp" line="173"/>
         <location filename="../vhtmltab.cpp" line="183"/>
         <source>Fail to save note.</source>
-        <translation type="unfinished">メモを保存できません。</translation>
+        <translation type="unfinished">ノートを保存できません。</translation>
     </message>
     <message>
         <location filename="../vhtmltab.cpp" line="174"/>
-        <source>File &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; being written has been removed.</source>
-        <translation type="unfinished">書き込み中のファイル&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;は削除されました。</translation>
+        <source>File &lt;span style=&quot;%1&quot;>%2&lt;/span> being written has been removed.</source>
+        <translation type="unfinished">書き込み中のファイル&lt;span style=&quot;%1&quot;>%2&lt;/span>は削除されました。</translation>
     </message>
     <message>
         <location filename="../vhtmltab.cpp" line="184"/>
         <source>Fail to write to disk when saving a note. Please try it again.</source>
-        <translation type="unfinished">メモを保存するときにディスクへの書き込みに失敗しました。もう一度試してみてください。</translation>
+        <translation type="unfinished">ノートを保存するときにディスクへの書き込みに失敗しました。もう一度試してみてください。</translation>
     </message>
 </context>
 <context>
@@ -3426,17 +3424,17 @@ Modified Time: %3</translation>
     <message>
         <location filename="../dialog/vinsertimagedialog.cpp" line="107"/>
         <source>Scaling width:</source>
-        <translation type="unfinished">Scaling width:</translation>
+        <translation type="unfinished">スケール幅:</translation>
     </message>
     <message>
         <location filename="../dialog/vinsertimagedialog.cpp" line="180"/>
         <source>Select The Image To Be Inserted</source>
-        <translation type="unfinished">Select The Image To Be Inserted</translation>
+        <translation type="unfinished">挿入する画像を選択</translation>
     </message>
     <message>
         <location filename="../dialog/vinsertimagedialog.cpp" line="181"/>
         <source>Images (*.png *.xpm *.jpg *.bmp *.gif *.svg)</source>
-        <translation type="unfinished">Images (*.png *.xpm *.jpg *.bmp *.gif *.svg)</translation>
+        <translation type="unfinished">画像(*.png*.xpm*.jpg*.bmp*.gif*.svg)</translation>
     </message>
 </context>
 <context>
@@ -3444,12 +3442,12 @@ Modified Time: %3</translation>
     <message>
         <location filename="../dialog/vinsertlinkdialog.cpp" line="46"/>
         <source>Absolute or relative path of the link</source>
-        <translation type="unfinished">Absolute or relative path of the link</translation>
+        <translation type="unfinished">リンクの絶対パスまたは相対パス</translation>
     </message>
     <message>
         <location filename="../dialog/vinsertlinkdialog.cpp" line="49"/>
         <source>&amp;Text:</source>
-        <translation type="unfinished">&amp;Text:</translation>
+        <translation type="unfinished">テキスト(&amp;T):</translation>
     </message>
     <message>
         <location filename="../dialog/vinsertlinkdialog.cpp" line="50"/>
@@ -3462,12 +3460,12 @@ Modified Time: %3</translation>
     <message>
         <location filename="../dialog/vinserttabledialog.cpp" line="23"/>
         <source>Number of rows of the table body</source>
-        <translation type="unfinished">Number of rows of the table body</translation>
+        <translation type="unfinished">テーブル本体の行数</translation>
     </message>
     <message>
         <location filename="../dialog/vinserttabledialog.cpp" line="28"/>
         <source>Number of columns of the table</source>
-        <translation type="unfinished">Number of columns of the table</translation>
+        <translation type="unfinished">テーブルの列数</translation>
     </message>
     <message>
         <location filename="../dialog/vinserttabledialog.cpp" line="32"/>
@@ -3492,17 +3490,17 @@ Modified Time: %3</translation>
     <message>
         <location filename="../dialog/vinserttabledialog.cpp" line="58"/>
         <source>Row:</source>
-        <translation type="unfinished">Row:</translation>
+        <translation type="unfinished">行:</translation>
     </message>
     <message>
         <location filename="../dialog/vinserttabledialog.cpp" line="60"/>
         <source>Column:</source>
-        <translation type="unfinished">Column:</translation>
+        <translation type="unfinished">列:</translation>
     </message>
     <message>
         <location filename="../dialog/vinserttabledialog.cpp" line="63"/>
         <source>Alignment:</source>
-        <translation type="unfinished">Alignment:</translation>
+        <translation type="unfinished">整列:</translation>
     </message>
     <message>
         <location filename="../dialog/vinserttabledialog.cpp" line="79"/>
@@ -3515,12 +3513,12 @@ Modified Time: %3</translation>
     <message>
         <location filename="../dialog/vkeyboardlayoutmappingdialog.cpp" line="25"/>
         <source>Manage keybaord layout mappings to used in shortcuts.</source>
-        <translation type="unfinished">Manage keybaord layout mappings to used in shortcuts.</translation>
+        <translation type="unfinished">ショートカットで使用するキーバーレイアウトマッピングを管理します。</translation>
     </message>
     <message>
         <location filename="../dialog/vkeyboardlayoutmappingdialog.cpp" line="27"/>
         <source>Double click an item to set mapping key.</source>
-        <translation type="unfinished">Double click an item to set mapping key.</translation>
+        <translation type="unfinished">アイテムをダブルクリックすると、マッピングキーが設定されます。</translation>
     </message>
     <message>
         <location filename="../dialog/vkeyboardlayoutmappingdialog.cpp" line="39"/>
@@ -3573,8 +3571,8 @@ Modified Time: %3</translation>
     </message>
     <message>
         <location filename="../dialog/vkeyboardlayoutmappingdialog.cpp" line="154"/>
-        <source>Fail to add mapping &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">Fail to add mapping &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</translation>
+        <source>Fail to add mapping &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">マッピング&lt;span style=&quot;%1&quot;>%2&lt;/span>の追加に失敗しました。</translation>
     </message>
     <message>
         <location filename="../dialog/vkeyboardlayoutmappingdialog.cpp" line="157"/>
@@ -3582,27 +3580,27 @@ Modified Time: %3</translation>
         <location filename="../dialog/vkeyboardlayoutmappingdialog.cpp" line="384"/>
         <location filename="../dialog/vkeyboardlayoutmappingdialog.cpp" line="410"/>
         <source>Please check the configuration file and try again.</source>
-        <translation type="unfinished">Please check the configuration file and try again.</translation>
+        <translation type="unfinished">構成ファイルを確認してからもう一度実行してください。</translation>
     </message>
     <message>
         <location filename="../dialog/vkeyboardlayoutmappingdialog.cpp" line="190"/>
-        <source>Are you sure to delete mapping &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;?</source>
-        <translation type="unfinished">Are you sure to delete mapping &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;?</translation>
+        <source>Are you sure to delete mapping &lt;span style=&quot;%1&quot;>%2&lt;/span>?</source>
+        <translation type="unfinished">マッピング&lt;span style=&quot;%1&quot;>%2&lt;/span>?を削除してもよろしいですか?</translation>
     </message>
     <message>
         <location filename="../dialog/vkeyboardlayoutmappingdialog.cpp" line="204"/>
-        <source>Fail to delete mapping &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">Fail to delete mapping &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</translation>
+        <source>Fail to delete mapping &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">マッピング&lt;span style=&quot;%1&quot;>%2&lt;/span>の削除に失敗しました。</translation>
     </message>
     <message>
         <location filename="../dialog/vkeyboardlayoutmappingdialog.cpp" line="381"/>
-        <source>Fail to rename mapping &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">Fail to rename mapping &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</translation>
+        <source>Fail to rename mapping &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">マッピング&lt;span style=&quot;%1&quot;>%2&lt;/span>の名前変更に失敗しました。</translation>
     </message>
     <message>
         <location filename="../dialog/vkeyboardlayoutmappingdialog.cpp" line="407"/>
-        <source>Fail to update mapping &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">Fail to update mapping &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</translation>
+        <source>Fail to update mapping &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">マッピング&lt;span style=&quot;%1&quot;>%2&lt;/span>の更新に失敗しました。</translation>
     </message>
     <message>
         <location filename="../dialog/vkeyboardlayoutmappingdialog.cpp" line="496"/>
@@ -3615,7 +3613,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vlistfolderue.cpp" line="33"/>
         <source>List and search the folders and notes of current folder</source>
-        <translation type="unfinished">カレントフォルダのフォルダやメモを一覧表示して検索します。</translation>
+        <translation type="unfinished">カレントフォルダのフォルダやノートを一覧表示して検索します。</translation>
     </message>
 </context>
 <context>
@@ -3641,7 +3639,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="642"/>
         <source>Icon size in pixel of tool bar (restart VNote to make it work)</source>
-        <translation type="unfinished">Icon size in pixel of tool bar (restart VNote to make it work)</translation>
+        <translation type="unfinished">ツールバーのピクセル単位のアイコンサイズ(動作するためにVNoteを再起動します)</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="647"/>
@@ -3794,12 +3792,12 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmainwindow.cpp" line="496"/>
         <source>Heading Sequence</source>
-        <translation type="unfinished">Heading Sequence</translation>
+        <translation type="unfinished">見出しシーケンス:</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="498"/>
         <source>Enable heading sequence in current note in edit mode</source>
-        <translation type="unfinished">Enable heading sequence in current note in edit mode</translation>
+        <translation type="unfinished">編集モードで現在のノートの見出しシーケンスを有効にする</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="514"/>
@@ -3809,7 +3807,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmainwindow.cpp" line="516"/>
         <source>Insert bold text or change selected text to bold</source>
-        <translation type="unfinished">Insert bold text or change selected text to bold</translation>
+        <translation type="unfinished">太字のテキストを挿入するか、選択したテキストを太字に変更</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="527"/>
@@ -3819,7 +3817,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmainwindow.cpp" line="529"/>
         <source>Insert italic text or change selected text to italic</source>
-        <translation type="unfinished">Insert italic text or change selected text to italic</translation>
+        <translation type="unfinished">斜体のテキストを挿入するか、選択されたテキストを斜体に変更します</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="540"/>
@@ -3829,7 +3827,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmainwindow.cpp" line="542"/>
         <source>Insert strikethrough text or change selected text to strikethroughed</source>
-        <translation type="unfinished">Insert strikethrough text or change selected text to strikethroughed</translation>
+        <translation type="unfinished">取り消し線つきテキストを挿入するか、選択されたテキストを取り消し線つきに変更します</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="553"/>
@@ -3839,17 +3837,17 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmainwindow.cpp" line="555"/>
         <source>Insert inline-code text or change selected text to inline-coded</source>
-        <translation type="unfinished">Insert inline-code text or change selected text to inline-coded</translation>
+        <translation type="unfinished">インライン・コードのテキストを挿入するか、選択されたテキストをインライン・コード化します。</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="566"/>
         <source>Code Block	%1</source>
-        <translation type="unfinished">Code Block	%1</translation>
+        <translation type="unfinished">コードブロック%1</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="568"/>
         <source>Insert fenced code block text or wrap selected text into a fenced code block</source>
-        <translation type="unfinished">Insert fenced code block text or wrap selected text into a fenced code block</translation>
+        <translation type="unfinished">囲み付きコードブロックのテキストを挿入するか、選択されたテキストをフェンス付きコードブロックにラップします</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="579"/>
@@ -3874,52 +3872,52 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmainwindow.cpp" line="607"/>
         <source>Image	%1</source>
-        <translation type="unfinished">Image	%1</translation>
+        <translation type="unfinished">画像 %1</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="609"/>
         <source>Insert an image from file or URL</source>
-        <translation type="unfinished">Insert an image from file or URL</translation>
+        <translation type="unfinished">ファイルまたはURLからイメージを挿入する</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="626"/>
         <source>Note Toolbar</source>
-        <translation type="unfinished">Note Toolbar</translation>
+        <translation type="unfinished">ノート・ツールバー</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="643"/>
         <source>Attachments (drag files here to add attachments)</source>
-        <translation type="unfinished">Attachments (drag files here to add attachments)</translation>
+        <translation type="unfinished">添付ファイル(添付ファイルを追加するにはここにファイルをドラッグします)</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="649"/>
         <source>Flash Page</source>
-        <translation type="unfinished">Flash Page</translation>
+        <translation type="unfinished">一時メモ(FlasH) ページ</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="651"/>
         <source>Open the Flash Page to edit</source>
-        <translation type="unfinished">Open the Flash Page to edit</translation>
+        <translation type="unfinished">一時メモ (Flash) ページを開き、編集する</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="655"/>
         <source>Flash Page	%1</source>
-        <translation type="unfinished">Flash Page	%1</translation>
+        <translation type="unfinished">一時メモ(Flash)ページ  %1</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="663"/>
         <source>Quick Access</source>
-        <translation type="unfinished">Quick Access</translation>
+        <translation type="unfinished">クイックアクセス</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="665"/>
         <source>Open quick access note</source>
-        <translation type="unfinished">Open quick access note</translation>
+        <translation type="unfinished">クイックアクセスノートを開く</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="669"/>
         <source>Quick Access	%1</source>
-        <translation type="unfinished">Quick Access	%1</translation>
+        <translation type="unfinished">クイックアクセス %1</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="677"/>
@@ -3964,7 +3962,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmainwindow.cpp" line="721"/>
         <source>Create a note in current folder</source>
-        <translation type="unfinished">現在のフォルダにメモを作成する</translation>
+        <translation type="unfinished">現在のフォルダにノートを作成する</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="725"/>
@@ -4134,7 +4132,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmainwindow.cpp" line="920"/>
         <source>Constrain the width of images to the window in read mode (re-open current tabs to make it work)</source>
-        <translation type="unfinished">Constrain the width of images to the window in read mode (re-open current tabs to make it work)</translation>
+        <translation type="unfinished">読み取りモードで画像表示をウィンドウ幅に制限します(現在のタブを再開して有効にします)。</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="927"/>
@@ -4144,17 +4142,17 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmainwindow.cpp" line="928"/>
         <source>Center the images and display the alt text as caption (re-open current tabs to make it work)</source>
-        <translation type="unfinished">Center the images and display the alt text as caption (re-open current tabs to make it work)</translation>
+        <translation type="unfinished">イメージを中央に配置し、代替テキストを表示します(現在のタブを再開して有効にします)。</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="941"/>
         <source>Highlight Code Blocks In Edit Mode</source>
-        <translation type="unfinished">編集モードでコードブロックをハイライト表示する</translation>
+        <translation type="unfinished">編集モードでコードブロックを強調表示する</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="942"/>
         <source>Enable syntax highlight within code blocks in edit mode</source>
-        <translation type="unfinished">編集モードのコードブロック内で構文のハイライトを有効にする</translation>
+        <translation type="unfinished">編集モードのコードブロック内で構文の強調表示を有効にする</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="949"/>
@@ -4376,7 +4374,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmainwindow.cpp" line="1172"/>
         <source>Highlight Searched Pattern</source>
-        <translation type="unfinished">検索されたパターンをハイライト表示</translation>
+        <translation type="unfinished">検索されたパターンを強調表示</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="1173"/>
@@ -4446,17 +4444,17 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmainwindow.cpp" line="1217"/>
         <source>Highlight Cursor Line</source>
-        <translation type="unfinished">カーソル行をハイライト表示</translation>
+        <translation type="unfinished">カーソル行を強調表示</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="1218"/>
         <source>Highlight current cursor line</source>
-        <translation type="unfinished">現在のカーソル行をハイライト表示</translation>
+        <translation type="unfinished">現在のカーソル行を強調表示</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="1224"/>
         <source>Highlight Selected Words</source>
-        <translation type="unfinished">選択された単語をハイライト表示</translation>
+        <translation type="unfinished">選択された単語を強調表示</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="1225"/>
@@ -4471,17 +4469,17 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmainwindow.cpp" line="1232"/>
         <source>Highlight all the spaces at the end of a line</source>
-        <translation type="unfinished">線の端にあるすべてのスペースをハイライト表示します。</translation>
+        <translation type="unfinished">線の端にあるすべてのスペースを強調表示します。</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="1238"/>
         <source>Highlight Tabs</source>
-        <translation type="unfinished">タブをハイライト表示</translation>
+        <translation type="unfinished">タブを強調表示</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="1239"/>
         <source>Highlight all the tabs</source>
-        <translation type="unfinished">すべてのタブをハイライト表示する</translation>
+        <translation type="unfinished">すべてのタブを強調表示する</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="1275"/>
@@ -4491,12 +4489,12 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmainwindow.cpp" line="1328"/>
         <source>Smart Table</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">スマートテーブル</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="1329"/>
         <source>Format table automatically</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">テーブルの自動フォーマット</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="1354"/>
@@ -4546,7 +4544,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmainwindow.cpp" line="1430"/>
         <source>Fail to create notes for all the files.</source>
-        <translation type="unfinished">すべてのファイルに対してメモを作成できません。</translation>
+        <translation type="unfinished">すべてのファイルに対してノートを作成できません。</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="1437"/>
@@ -4586,8 +4584,8 @@ Modified Time: %3</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="1464"/>
-        <source>Please visit &lt;a href=&quot;https://tamlok.github.io/vnote&quot;&gt;VNote&lt;/a&gt; for more information.</source>
-        <translation type="unfinished">詳細については、&lt;a href=&quot;https://tamlok.github.io/vnote&quot;&gt;VNote&lt;/a&gt;を参照してください。</translation>
+        <source>Please visit &lt;a href=&quot;https://tamlok.github.io/vnote&quot;>VNote&lt;/a> for more information.</source>
+        <translation type="unfinished">詳細については、&lt;a href=&quot;https://tamlok.github.io/vnote&quot;>VNote&lt;/a>を参照してください。</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="1465"/>
@@ -4762,7 +4760,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmainwindow.cpp" line="1721"/>
         <source>&amp;Rendering Background</source>
-        <translation type="unfinished">&amp;Rendering Background</translation>
+        <translation type="unfinished">背景レンダリング(&amp;R)</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="1724"/>
@@ -5059,17 +5057,17 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmainwindow.cpp" line="3431"/>
         <source>Collect User Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Collect User Statistics</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="3432"/>
         <source>VNote would like to send a request to count active users.Do you allow this request?</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">VNote would like to send a request to count active users.Do you allow this request?</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="3434"/>
         <source>A request to https://tajs.qq.com/stats will be sent if allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">A request to https://tajs.qq.com/stats will be sent if allowed.</translation>
     </message>
 </context>
 <context>
@@ -5148,7 +5146,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="1249"/>
         <source>Specify the screen column in fenced code block which will be highlighted</source>
-        <translation type="unfinished">Specify the screen column in fenced code block which will be highlighted</translation>
+        <translation type="unfinished">強調表示される囲み付きコードブロック内のスクリーン列を指定します。</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="1254"/>
@@ -5332,12 +5330,12 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmdedit.cpp" line="304"/>
         <source>Following images seems not to be used in this note anymore. Please confirm the deletion of these images.</source>
-        <translation type="unfinished">このメモでは、次のイメージは使用されないようです。これらの画像の削除を確認してください。</translation>
+        <translation type="unfinished">このノートでは、次のイメージは使用されないようです。これらの画像の削除を確認してください。</translation>
     </message>
     <message>
         <location filename="../vmdedit.cpp" line="307"/>
-        <source>Deleted files could be found in the recycle bin of this note.&lt;br&gt;Click &quot;Cancel&quot; to leave them untouched.</source>
-        <translation type="unfinished">削除したファイルはこのノートのゴミ箱にいきます。&lt;br&gt;&quot;キャンセル&quot;をクリックすると、そのままにします。</translation>
+        <source>Deleted files could be found in the recycle bin of this note.&lt;br>Click &quot;Cancel&quot; to leave them untouched.</source>
+        <translation type="unfinished">削除したファイルはこのノートのゴミ箱にいきます。&lt;br>&quot;キャンセル&quot;をクリックすると、そのままにします。</translation>
     </message>
     <message>
         <location filename="../vmdedit.cpp" line="311"/>
@@ -5355,13 +5353,13 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmdeditoperations.cpp" line="96"/>
         <location filename="../vmdeditoperations.cpp" line="180"/>
-        <source>Fail to create image folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">イメージフォルダ&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;の作成に失敗しました。</translation>
+        <source>Fail to create image folder &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">イメージフォルダ&lt;span style=&quot;%1&quot;>%2&lt;/span>の作成に失敗しました。</translation>
     </message>
     <message>
         <location filename="../vmdeditoperations.cpp" line="101"/>
-        <source>Fail to save image &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">Fail to save image &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</translation>
+        <source>Fail to save image &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">画像&lt;span style=&quot;%1&quot;>%2&lt;/span>の保存に失敗しました。</translation>
     </message>
     <message>
         <location filename="../vmdeditoperations.cpp" line="107"/>
@@ -5372,13 +5370,13 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmdeditoperations.cpp" line="108"/>
         <location filename="../vmdeditoperations.cpp" line="193"/>
-        <source>Fail to insert image &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">Fail to insert image &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</translation>
+        <source>Fail to insert image &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">画像&lt;span style=&quot;%1&quot;>%2&lt;/span>の挿入に失敗しました。</translation>
     </message>
     <message>
         <location filename="../vmdeditoperations.cpp" line="185"/>
-        <source>Fail to copy image &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">Fail to copy image &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</translation>
+        <source>Fail to copy image &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">画像&lt;span style=&quot;%1&quot;>%2&lt;/span>のコピーに失敗しました。</translation>
     </message>
     <message>
         <location filename="../vmdeditoperations.cpp" line="237"/>
@@ -5436,12 +5434,12 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmdeditor.cpp" line="766"/>
         <source>Following images seems not to be used in this note anymore. Please confirm the deletion of these images.</source>
-        <translation type="unfinished">このメモでは、次のイメージは使用されないようです。これらの画像の削除を確認してください。</translation>
+        <translation type="unfinished">このノートでは、次のイメージは使用されないようです。これらの画像の削除を確認してください。</translation>
     </message>
     <message>
         <location filename="../vmdeditor.cpp" line="769"/>
-        <source>Deleted files could be found in the recycle bin of this note.&lt;br&gt;Click &quot;Cancel&quot; to leave them untouched.</source>
-        <translation type="unfinished">削除したファイルはこのノートのゴミ箱にいきます。&lt;br&gt;&quot;キャンセル&quot;をクリックすると、そのままにします。</translation>
+        <source>Deleted files could be found in the recycle bin of this note.&lt;br>Click &quot;Cancel&quot; to leave them untouched.</source>
+        <translation type="unfinished">削除したファイルはこのノートのゴミ箱にいきます。&lt;br>&quot;キャンセル&quot;をクリックすると、そのままにします。</translation>
     </message>
     <message>
         <location filename="../vmdeditor.cpp" line="773"/>
@@ -5664,8 +5662,8 @@ Modified Time: %3</translation>
     </message>
     <message>
         <location filename="../vmdeditor.cpp" line="1976"/>
-        <source>Fail to add attachment %1 for note &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;.</source>
-        <translation type="unfinished">ノート&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;の添付ファイル%1を追加できません。</translation>
+        <source>Fail to add attachment %1 for note &lt;span style=&quot;%2&quot;>%3&lt;/span>.</source>
+        <translation type="unfinished">ノート&lt;span style=&quot;%2&quot;>%3&lt;/span>の添付ファイル%1を追加できません。</translation>
     </message>
     <message>
         <location filename="../vmdeditor.cpp" line="1987"/>
@@ -5710,8 +5708,8 @@ Modified Time: %3</translation>
     </message>
     <message>
         <location filename="../vmdtab.cpp" line="51"/>
-        <source>Fail to open note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;を開くことができません。</translation>
+        <source>Fail to open note &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;>%2&lt;/span>を開くことができません。</translation>
     </message>
     <message>
         <location filename="../vmdtab.cpp" line="53"/>
@@ -5725,8 +5723,8 @@ Modified Time: %3</translation>
     </message>
     <message>
         <location filename="../vmdtab.cpp" line="316"/>
-        <source>Note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; has been modified.</source>
-        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;が変更されました。</translation>
+        <source>Note &lt;span style=&quot;%1&quot;>%2&lt;/span> has been modified.</source>
+        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;>%2&lt;/span>が変更されました。</translation>
     </message>
     <message>
         <location filename="../vmdtab.cpp" line="318"/>
@@ -5735,8 +5733,8 @@ Modified Time: %3</translation>
     </message>
     <message>
         <location filename="../vmdtab.cpp" line="373"/>
-        <source>Could not modify a read-only note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">読み取り専用のノート&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;を変更できませんでした。</translation>
+        <source>Could not modify a read-only note &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">読み取り専用のノート&lt;span style=&quot;%1&quot;>%2&lt;/span>を変更できませんでした。</translation>
     </message>
     <message>
         <location filename="../vmdtab.cpp" line="375"/>
@@ -5747,17 +5745,17 @@ Modified Time: %3</translation>
         <location filename="../vmdtab.cpp" line="387"/>
         <location filename="../vmdtab.cpp" line="399"/>
         <source>Fail to save note.</source>
-        <translation type="unfinished">メモを保存できません。</translation>
+        <translation type="unfinished">ノートを保存できません。</translation>
     </message>
     <message>
         <location filename="../vmdtab.cpp" line="388"/>
-        <source>File &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; being written has been removed.</source>
-        <translation type="unfinished">書き込み中のファイル&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;は削除されました。</translation>
+        <source>File &lt;span style=&quot;%1&quot;>%2&lt;/span> being written has been removed.</source>
+        <translation type="unfinished">書き込み中のファイル&lt;span style=&quot;%1&quot;>%2&lt;/span>は削除されました。</translation>
     </message>
     <message>
         <location filename="../vmdtab.cpp" line="400"/>
         <source>Fail to write to disk when saving a note. Please try it again.</source>
-        <translation type="unfinished">メモを保存するときにディスクへの書き込みに失敗しました。もう一度試してみてください。</translation>
+        <translation type="unfinished">ノートを保存するときにディスクへの書き込みに失敗しました。もう一度試してみてください。</translation>
     </message>
     <message>
         <location filename="../vmdtab.cpp" line="1061"/>
@@ -5772,12 +5770,12 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vmdtab.cpp" line="1073"/>
         <source>Snippets are not applicable</source>
-        <translation type="unfinished">Snippets are not applicable</translation>
+        <translation type="unfinished">スニペットは適用されません</translation>
     </message>
     <message>
         <location filename="../vmdtab.cpp" line="1081"/>
         <source>No available snippets defined with shortcuts</source>
-        <translation type="unfinished">No available snippets defined with shortcuts</translation>
+        <translation type="unfinished">ショートカットで定義された使用可能なスニペットはありません</translation>
     </message>
     <message>
         <location filename="../vmdtab.cpp" line="1232"/>
@@ -5786,13 +5784,13 @@ Modified Time: %3</translation>
     </message>
     <message>
         <location filename="../vmdtab.cpp" line="1233"/>
-        <source>Found backup file &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; when opening note &lt;span style=&quot;%1&quot;&gt;%3&lt;/span&gt;.</source>
-        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;&gt;%3&lt;/span&gt;を開くときにバックアップファイル&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; が見付かりました。</translation>
+        <source>Found backup file &lt;span style=&quot;%1&quot;>%2&lt;/span> when opening note &lt;span style=&quot;%1&quot;>%3&lt;/span>.</source>
+        <translation type="unfinished">ノート&lt;span style=&quot;%1&quot;>%3&lt;/span>を開くときにバックアップファイル&lt;span style=&quot;%1&quot;>%2&lt;/span> が見付かりました。</translation>
     </message>
     <message>
         <location filename="../vmdtab.cpp" line="1240"/>
-        <source>VNote may crash while editing this note before.&lt;br/&gt;Please choose to recover from the backup file or delete it.&lt;br/&gt;&lt;br/&gt;Note file last modified: &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;&lt;br/&gt;Backup file last modified: &lt;span style=&quot;%1&quot;&gt;%3&lt;/span&gt;</source>
-        <translation type="unfinished">VNoteが以前このノートを編集したときにクラッシュしたようです。&lt;br/&gt;バックアップから復旧するか、バックアップファイルを削除するか選択してください。&lt;br/&gt;&lt;br/&gt;ノートファイルの最終編集日時: &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;&lt;br/&gt;バックアップファイルの最終編集日時: &lt;span style=&quot;%1&quot;&gt;%3&lt;/span&gt;</translation>
+        <source>VNote may crash while editing this note before.&lt;br/>Please choose to recover from the backup file or delete it.&lt;br/>&lt;br/>Note file last modified: &lt;span style=&quot;%1&quot;>%2&lt;/span>&lt;br/>Backup file last modified: &lt;span style=&quot;%1&quot;>%3&lt;/span></source>
+        <translation type="unfinished">VNoteが以前このノートを編集したときにクラッシュしたようです。&lt;br/>バックアップから復旧するか、バックアップファイルを削除するか選択してください。&lt;br/>&lt;br/>ノートファイルの最終編集日時: &lt;span style=&quot;%1&quot;>%2&lt;/span>&lt;br/>バックアップファイルの最終編集日時: &lt;span style=&quot;%1&quot;>%3&lt;/span></translation>
     </message>
     <message>
         <location filename="../vmdtab.cpp" line="1248"/>
@@ -6027,13 +6025,13 @@ Modified Time: %3</translation>
     </message>
     <message>
         <location filename="../dialog/vnewdirdialog.cpp" line="81"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Name (case-insensitive) &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; already exists. Please choose another name.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 名前(大文字と小文字を区別しない)&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;は既に存在しています。別の名前を選択してください。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Name (case-insensitive) &lt;span style=&quot;%2&quot;>%3&lt;/span> already exists. Please choose another name.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 名前(大文字と小文字を区別しない)&lt;span style=&quot;%2&quot;>%3&lt;/span>は既に存在しています。別の名前を選択してください。</translation>
     </message>
     <message>
         <location filename="../dialog/vnewdirdialog.cpp" line="90"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Name &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; contains illegal characters (after magic word evaluation).</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 名前&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;には、不正な文字が含まれています(マジックワード評価の後)。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Name &lt;span style=&quot;%2&quot;>%3&lt;/span> contains illegal characters (after magic word evaluation).</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 名前&lt;span style=&quot;%2&quot;>%3&lt;/span>には、不正な文字が含まれています(マジックワード評価の後)。</translation>
     </message>
 </context>
 <context>
@@ -6051,7 +6049,7 @@ Modified Time: %3</translation>
     <message>
         <location filename="../dialog/vnewfiledialog.cpp" line="85"/>
         <source>Insert note name as title (for Markdown only)</source>
-        <translation type="unfinished">タイトルとしてメモ名を挿入(Markdownのみ)</translation>
+        <translation type="unfinished">タイトルとしてノート名を挿入(Markdownのみ)</translation>
     </message>
     <message>
         <location filename="../dialog/vnewfiledialog.cpp" line="86"/>
@@ -6070,13 +6068,13 @@ Modified Time: %3</translation>
     </message>
     <message>
         <location filename="../dialog/vnewfiledialog.cpp" line="142"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Name (case-insensitive) &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; already exists. Please choose another name.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 名前(大文字と小文字を区別しない)&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;は既に存在しています。別の名前を選択してください。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Name (case-insensitive) &lt;span style=&quot;%2&quot;>%3&lt;/span> already exists. Please choose another name.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 名前(大文字と小文字を区別しない)&lt;span style=&quot;%2&quot;>%3&lt;/span>は既に存在しています。別の名前を選択してください。</translation>
     </message>
     <message>
         <location filename="../dialog/vnewfiledialog.cpp" line="151"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Name &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; contains illegal characters (after magic word evaluation).</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 名前&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;には、不正な文字が含まれています(マジックワード評価の後)。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Name &lt;span style=&quot;%2&quot;>%3&lt;/span> contains illegal characters (after magic word evaluation).</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 名前&lt;span style=&quot;%2&quot;>%3&lt;/span>には、不正な文字が含まれています(マジックワード評価の後)。</translation>
     </message>
     <message>
         <location filename="../dialog/vnewfiledialog.cpp" line="197"/>
@@ -6144,43 +6142,43 @@ Modified Time: %3</translation>
     </message>
     <message>
         <location filename="../dialog/vnewnotebookdialog.cpp" line="222"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Please specify absolute path.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 絶対パスを指定してください。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Please specify absolute path.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 絶対パスを指定してください。</translation>
     </message>
     <message>
         <location filename="../dialog/vnewnotebookdialog.cpp" line="232"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;INFO&lt;/span&gt;: The folder chosen seems to be a root folder of a notebook created by VNote before. VNote will try to import it by reading the configuration file.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;情報&lt;/span&gt;: 選択したフォルダはあ、以前VNoteで作成されノートブックのルートフォルダです。VNoteは、構成ファイルを読み込んでインポートしようとします。</translation>
+        <source>&lt;span style=&quot;%1&quot;>INFO&lt;/span>: The folder chosen seems to be a root folder of a notebook created by VNote before. VNote will try to import it by reading the configuration file.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>情報&lt;/span>: 選択したフォルダはあ、以前VNoteで作成されノートブックのルートフォルダです。VNoteは、構成ファイルを読み込んでインポートしようとします。</translation>
     </message>
     <message>
         <location filename="../dialog/vnewnotebookdialog.cpp" line="238"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: The folder chosen is NOT empty! It is highly recommended to use an EMPTY and EXCLUSIVE folder for a new notebook. If continue, VNote will try to create a notebook based on existing folders and files recursively.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;:選択されたフォルダは空ではありません!新しいノートブックには、空で排他的に利用できるフォルダを使用することを強くお勧めします。継続すると、VNoteは、既存のフォルダとファイルを再帰的に探索して、ノートブックを作成します。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: The folder chosen is NOT empty! It is highly recommended to use an EMPTY and EXCLUSIVE folder for a new notebook. If continue, VNote will try to create a notebook based on existing folders and files recursively.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>:選択されたフォルダは空ではありません!新しいノートブックには、空で排他的に利用できるフォルダを使用することを強くお勧めします。継続すると、VNoteは、既存のフォルダとファイルを再帰的に探索して、ノートブックを作成します。</translation>
     </message>
     <message>
         <location filename="../dialog/vnewnotebookdialog.cpp" line="262"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: The path seems to be illegal. Please choose another one.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;:  このパスは不正のようです。別のパスを選択してください。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: The path seems to be illegal. Please choose another one.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>:  このパスは不正のようです。別のパスを選択してください。</translation>
     </message>
     <message>
         <location filename="../dialog/vnewnotebookdialog.cpp" line="281"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: The folder chosen has already been a root folder of existing notebook &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; in VNote.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 選択したフォルダは、VNoteで作成された既存のノートブック&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;です。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: The folder chosen has already been a root folder of existing notebook &lt;span style=&quot;%2&quot;>%3&lt;/span> in VNote.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 選択したフォルダは、VNoteで作成された既存のノートブック&lt;span style=&quot;%2&quot;>%3&lt;/span>です。</translation>
     </message>
     <message>
         <location filename="../dialog/vnewnotebookdialog.cpp" line="294"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Please choose a folder in the same drive as &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; when relative path is enabled.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 相対パスが有効なときは、&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;と同じドライブのフォルダを選択してください。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Please choose a folder in the same drive as &lt;span style=&quot;%2&quot;>%3&lt;/span> when relative path is enabled.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 相対パスが有効なときは、&lt;span style=&quot;%2&quot;>%3&lt;/span>と同じドライブのフォルダを選択してください。</translation>
     </message>
     <message>
         <location filename="../dialog/vnewnotebookdialog.cpp" line="318"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Name (case-insensitive) &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; already exists. Please choose another name.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 名前(大文字と小文字を区別しない)&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;は既に存在しています。別の名前を選択してください。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Name (case-insensitive) &lt;span style=&quot;%2&quot;>%3&lt;/span> already exists. Please choose another name.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 名前(大文字と小文字を区別しない)&lt;span style=&quot;%2&quot;>%3&lt;/span>は既に存在しています。別の名前を選択してください。</translation>
     </message>
     <message>
         <location filename="../dialog/vnewnotebookdialog.cpp" line="327"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Name &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; contains illegal characters (after magic word evaluation).</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 名前&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;には、不正な文字が含まれています(マジックワード評価の後)。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Name &lt;span style=&quot;%2&quot;>%3&lt;/span> contains illegal characters (after magic word evaluation).</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 名前&lt;span style=&quot;%2&quot;>%3&lt;/span>には、不正な文字が含まれています(マジックワード評価の後)。</translation>
     </message>
 </context>
 <context>
@@ -6188,12 +6186,12 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vnotefile.cpp" line="197"/>
         <source>Fail to delete images of this note.</source>
-        <translation type="unfinished">このメモの画像を削除できません。</translation>
+        <translation type="unfinished">このノートの画像を削除できません。</translation>
     </message>
     <message>
         <location filename="../vnotefile.cpp" line="204"/>
         <source>Fail to delete attachments of this note.</source>
-        <translation type="unfinished">このメモの添付ファイルを削除できません。</translation>
+        <translation type="unfinished">このノートの添付ファイルを削除できません。</translation>
     </message>
     <message>
         <location filename="../vnotefile.cpp" line="213"/>
@@ -6245,17 +6243,17 @@ Modified Time: %3</translation>
     <message>
         <location filename="../vnotefile.cpp" line="626"/>
         <source>Source image %1 does not exist.</source>
-        <translation type="unfinished">Source image %1 does not exist.</translation>
+        <translation type="unfinished">ソース画像%1は存在しません。</translation>
     </message>
     <message>
         <location filename="../vnotefile.cpp" line="636"/>
         <source>Skip image with the same source and target path %1.</source>
-        <translation type="unfinished">Skip image with the same source and target path %1.</translation>
+        <translation type="unfinished">同じソースパスとターゲットパス%1である画像をスキップします。</translation>
     </message>
     <message>
         <location filename="../vnotefile.cpp" line="643"/>
         <source>Fail to %1 image %2 to %3. Please manually %1 it and modify the note.</source>
-        <translation type="unfinished">Fail to %1 image %2 to %3. Please manually %1 it and modify the note.</translation>
+        <translation type="unfinished">画像%2を%3の %1 に失敗しました。手動で%1を実行し、ノートを修正してください。</translation>
     </message>
 </context>
 <context>
@@ -6274,52 +6272,52 @@ Modified Time: %3</translation>
         <location filename="../dialog/vsettingsdialog.cpp" line="982"/>
         <location filename="../dialog/vsettingsdialog.cpp" line="1028"/>
         <source>Custom image folder</source>
-        <translation type="unfinished">Custom image folder</translation>
+        <translation type="unfinished">カスタムイメージフォルダ</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="983"/>
         <source>Set the global name of the image folder to hold images of notes (restart VNote to make it work)</source>
-        <translation type="unfinished">Set the global name of the image folder to hold images of notes (restart VNote to make it work)</translation>
+        <translation type="unfinished">ノートの画像を保持するイメージフォルダのグローバル名を設定します(再起動するにはVNoteを再起動します)。</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="989"/>
         <location filename="../dialog/vsettingsdialog.cpp" line="1039"/>
         <source>Name of the image folder</source>
-        <translation type="unfinished">Name of the image folder</translation>
+        <translation type="unfinished">画像フォルダの名前</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="999"/>
         <source>Custom attachment folder</source>
-        <translation type="unfinished">Custom attachment folder</translation>
+        <translation type="unfinished">カスタム添付ファイルフォルダ</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="1000"/>
         <source>Set the global name of the attachment folder to hold attachments of notes (restart VNote to make it work)</source>
-        <translation type="unfinished">Set the global name of the attachment folder to hold attachments of notes (restart VNote to make it work)</translation>
+        <translation type="unfinished">添付ファイルを保持する添付ファイルフォルダのグローバル名を設定します(再起動するには、Vnoteを再起動してください)。</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="1006"/>
         <source>Name of the attachment folder</source>
-        <translation type="unfinished">Name of the attachment folder</translation>
+        <translation type="unfinished">添付フォルダの名前</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="1016"/>
         <source>Single click to open a note in current tab</source>
-        <translation type="unfinished">Single click to open a note in current tab</translation>
+        <translation type="unfinished">クリックすると、現在のタブにノートが表示されます。</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="1017"/>
         <source>Single click a note in the notes list to open it in current tab, double click to open it in a new tab</source>
-        <translation type="unfinished">Single click a note in the notes list to open it in current tab, double click to open it in a new tab</translation>
+        <translation type="unfinished">ノートの一覧でメモをクリックして、現在のタブで開き、ダブルクリックして新しいタブで開きます。</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="1029"/>
         <source>Set the path of the global image folder to hold images of external files (restart VNote to make it work).
 You could use both absolute or relative path here. If absolute path is used, VNote will not manage
 those images, so you need to clean up unused images manually.</source>
-        <translation type="unfinished">Set the path of the global image folder to hold images of external files (restart VNote to make it work).
-You could use both absolute or relative path here. If absolute path is used, VNote will not manage
-those images, so you need to clean up unused images manually.</translation>
+        <translation type="unfinished">グローバル画像フォルダのパスを設定して、外部ファイルの画像を保持します(VNoteを再起動して動作させます)。
+絶対パスと相対パスの両方をここで使用できます。絶対パスが使用されている場合、VNoteは管理されません
+これらの画像は、未使用画像を手動でクリーンアップする必要があります。</translation>
     </message>
 </context>
 <context>
@@ -6381,17 +6379,17 @@ those images, so you need to clean up unused images manually.</translation>
     <message>
         <location filename="../dialog/vnotebookinfodialog.cpp" line="74"/>
         <source>Created time:</source>
-        <translation type="unfinished">作成された時間:</translation>
+        <translation type="unfinished">作成日時:</translation>
     </message>
     <message>
         <location filename="../dialog/vnotebookinfodialog.cpp" line="123"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Name (case-insensitive) &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; already exists. Please choose another name.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 名前(大文字と小文字を区別しない)&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;は既に存在しています。別の名前を選択してください。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Name (case-insensitive) &lt;span style=&quot;%2&quot;>%3&lt;/span> already exists. Please choose another name.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 名前(大文字と小文字を区別しない)&lt;span style=&quot;%2&quot;>%3&lt;/span>は既に存在しています。別の名前を選択してください。</translation>
     </message>
     <message>
         <location filename="../dialog/vnotebookinfodialog.cpp" line="132"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: Name &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; contains illegal characters (after magic word evaluation).</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;: 名前&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;には、不正な文字が含まれています(マジックワード評価の後)。</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: Name &lt;span style=&quot;%2&quot;>%3&lt;/span> contains illegal characters (after magic word evaluation).</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>: 名前&lt;span style=&quot;%2&quot;>%3&lt;/span>には、不正な文字が含まれています(マジックワード評価の後)。</translation>
     </message>
 </context>
 <context>
@@ -6457,8 +6455,8 @@ those images, so you need to clean up unused images manually.</translation>
     </message>
     <message>
         <location filename="../vnotebookselector.cpp" line="271"/>
-        <source>Fail to create notebook &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; in &lt;span style=&quot;%1&quot;&gt;%3&lt;/span&gt;.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;%3&lt;/span&gt;に、ノートブック&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;の作成に失敗しました。</translation>
+        <source>Fail to create notebook &lt;span style=&quot;%1&quot;>%2&lt;/span> in &lt;span style=&quot;%1&quot;>%3&lt;/span>.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>%3&lt;/span>に、ノートブック&lt;span style=&quot;%1&quot;>%2&lt;/span>の作成に失敗しました。</translation>
     </message>
     <message>
         <location filename="../vnotebookselector.cpp" line="297"/>
@@ -6472,8 +6470,8 @@ those images, so you need to clean up unused images manually.</translation>
     </message>
     <message>
         <location filename="../vnotebookselector.cpp" line="324"/>
-        <source>Fail to delete the root folder of notebook &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; from disk. You may open the folder and check it manually.</source>
-        <translation type="unfinished">ディスクからノートブック &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;のフォルダの削除に失敗しました。フォルダを手動で開いて</translation>
+        <source>Fail to delete the root folder of notebook &lt;span style=&quot;%1&quot;>%2&lt;/span> from disk. You may open the folder and check it manually.</source>
+        <translation type="unfinished">ディスクからノートブック &lt;span style=&quot;%1&quot;>%2&lt;/span>のフォルダの削除に失敗しました。フォルダを手動で開いて</translation>
     </message>
     <message>
         <location filename="../vnotebookselector.cpp" line="356"/>
@@ -6512,23 +6510,23 @@ those images, so you need to clean up unused images manually.</translation>
     </message>
     <message>
         <location filename="../vnotebookselector.cpp" line="469"/>
-        <source>Are you sure to empty recycle bin of notebook &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;?</source>
-        <translation type="unfinished">ノートブック&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;のごみ箱を空にしますか?</translation>
+        <source>Are you sure to empty recycle bin of notebook &lt;span style=&quot;%1&quot;>%2&lt;/span>?</source>
+        <translation type="unfinished">ノートブック&lt;span style=&quot;%1&quot;>%2&lt;/span>のごみ箱を空にしますか?</translation>
     </message>
     <message>
         <location filename="../vnotebookselector.cpp" line="473"/>
-        <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: VNote will delete all the files in directory &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;.&lt;br&gt;It may be UNRECOVERABLE!</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;:VNoteは、ディレクトリ&lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;内のすべてのファイルを削除します。&lt;br&gt;復旧はできません！</translation>
+        <source>&lt;span style=&quot;%1&quot;>WARNING&lt;/span>: VNote will delete all the files in directory &lt;span style=&quot;%2&quot;>%3&lt;/span>.&lt;br>It may be UNRECOVERABLE!</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>警告&lt;/span>:VNoteは、ディレクトリ&lt;span style=&quot;%2&quot;>%3&lt;/span>内のすべてのファイルを削除します。&lt;br>復旧はできません！</translation>
     </message>
     <message>
         <location filename="../vnotebookselector.cpp" line="487"/>
-        <source>Successfully emptied recycle bin of notebook &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;!</source>
-        <translation type="unfinished">ノートブック&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;のごみ箱を空にしました!</translation>
+        <source>Successfully emptied recycle bin of notebook &lt;span style=&quot;%1&quot;>%2&lt;/span>!</source>
+        <translation type="unfinished">ノートブック&lt;span style=&quot;%1&quot;>%2&lt;/span>のごみ箱を空にしました!</translation>
     </message>
     <message>
         <location filename="../vnotebookselector.cpp" line="492"/>
-        <source>Fail to empty recycle bin of notebook &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;!</source>
-        <translation type="unfinished">ノートブック&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;のごみ箱を空にすることができません!</translation>
+        <source>Fail to empty recycle bin of notebook &lt;span style=&quot;%1&quot;>%2&lt;/span>!</source>
+        <translation type="unfinished">ノートブック&lt;span style=&quot;%1&quot;>%2&lt;/span>のごみ箱を空にすることができません!</translation>
     </message>
     <message>
         <location filename="../vnotebookselector.cpp" line="513"/>
@@ -6586,7 +6584,7 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../voutline.cpp" line="54"/>
         <source>Decrease Expanded Level</source>
-        <translation type="unfinished">Decrease Expanded Level</translation>
+        <translation type="unfinished">拡張レベルの縮小</translation>
     </message>
     <message>
         <location filename="../voutline.cpp" line="67"/>
@@ -6633,12 +6631,12 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="706"/>
         <source>Flash current heading</source>
-        <translation type="unfinished">Flash current heading</translation>
+        <translation type="unfinished">一時メモ(Flash) 現在の見出し</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="707"/>
         <source>Flash current heading on change</source>
-        <translation type="unfinished">Flash current heading on change</translation>
+        <translation type="unfinished">変更時に現在の見出しをflash</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="710"/>
@@ -6744,7 +6742,7 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../vsearchresulttree.cpp" line="161"/>
         <source>Locate the folder of current note</source>
-        <translation type="unfinished">現在のノートのフォルダを検索します。</translation>
+        <translation type="unfinished">現在のノートのフォルダを指定します。</translation>
     </message>
     <message>
         <location filename="../vsearchresulttree.cpp" line="170"/>
@@ -6849,17 +6847,17 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../vsearchue.cpp" line="75"/>
         <source>List and search the name of opened notes in buffer</source>
-        <translation type="unfinished">バッファ内の開いているメモの名前を一覧表示して検索</translation>
+        <translation type="unfinished">バッファ内の開いているノートの名前を一覧表示して検索</translation>
     </message>
     <message>
         <location filename="../vsearchue.cpp" line="78"/>
         <source>Search the content of opened notes in buffer</source>
-        <translation type="unfinished">バッファ内の開いているメモの内容を検索</translation>
+        <translation type="unfinished">バッファ内の開いているノートの内容を検索</translation>
     </message>
     <message>
         <location filename="../vsearchue.cpp" line="81"/>
         <source>Search the outline of opened notes in buffer</source>
-        <translation type="unfinished">バッファ内の開いたメモのアウトラインを検索</translation>
+        <translation type="unfinished">バッファ内の開いたノートのアウトラインを検索</translation>
     </message>
     <message>
         <location filename="../vsearchue.cpp" line="84"/>
@@ -6869,12 +6867,12 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../vsearchue.cpp" line="87"/>
         <source>Search the path of folders/notes in current notebook</source>
-        <translation type="unfinished">現在のノートブック内のフォルダ/メモのパスを検索</translation>
+        <translation type="unfinished">現在のノートブック内のフォルダ/ノートのパスを検索</translation>
     </message>
     <message>
         <location filename="../vsearchue.cpp" line="90"/>
         <source>Search the content of notes in Explorer root directory</source>
-        <translation type="unfinished">エクスプローラのルートディレクトリにあるメモの内容を検索</translation>
+        <translation type="unfinished">エクスプローラのルートディレクトリにあるノートの内容を検索</translation>
     </message>
     <message>
         <location filename="../vsearchue.cpp" line="94"/>
@@ -7269,7 +7267,7 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../vsimplesearchinput.cpp" line="31"/>
         <source>Type to search</source>
-        <translation type="unfinished">Type to search</translation>
+        <translation type="unfinished">検索するタイプ</translation>
     </message>
     <message>
         <location filename="../vsimplesearchinput.cpp" line="236"/>
@@ -7311,8 +7309,8 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     </message>
     <message>
         <location filename="../vsnippetlist.cpp" line="113"/>
-        <source>Fail to create snippet &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">スニペット&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;の作成に失敗しました。</translation>
+        <source>Fail to create snippet &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">スニペット&lt;span style=&quot;%1&quot;>%2&lt;/span>の作成に失敗しました。</translation>
     </message>
     <message>
         <location filename="../vsnippetlist.cpp" line="136"/>
@@ -7409,8 +7407,8 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     </message>
     <message>
         <location filename="../vsnippetlist.cpp" line="344"/>
-        <source>Fail to update information of snippet &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">スニペット&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;の情報を更新できません。</translation>
+        <source>Fail to update information of snippet &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">スニペット&lt;span style=&quot;%1&quot;>%2&lt;/span>の情報を更新できません。</translation>
     </message>
     <message>
         <location filename="../vsnippetlist.cpp" line="524"/>
@@ -7439,8 +7437,8 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     </message>
     <message>
         <location filename="../vsnippetlist.cpp" line="635"/>
-        <source>Fail to read snippets from &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
-        <translation type="unfinished">&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;からスニペットを読み取ることができません。</translation>
+        <source>Fail to read snippets from &lt;span style=&quot;%1&quot;>%2&lt;/span>.</source>
+        <translation type="unfinished">&lt;span style=&quot;%1&quot;>%2&lt;/span>からスニペットを読み取ることができません。</translation>
     </message>
 </context>
 <context>
@@ -7537,7 +7535,7 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../vtabindicator.cpp" line="214"/>
         <source>Line: %1 - %2(%3%)   Col: %4</source>
-        <translation type="unfinished">Line: %1 - %2(%3%)   Col: %4</translation>
+        <translation type="unfinished">行: %1 -%2(%3%) %4 文字目</translation>
     </message>
     <message>
         <location filename="../vtabindicator.cpp" line="296"/>
@@ -7577,7 +7575,7 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../vtagexplorer.cpp" line="196"/>
         <source>Tags (%1)</source>
-        <translation type="unfinished">Tags (%1)</translation>
+        <translation type="unfinished">タグ(%1)</translation>
     </message>
     <message>
         <location filename="../vtagexplorer.cpp" line="230"/>
@@ -7627,7 +7625,7 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../vtagexplorer.cpp" line="437"/>
         <source>Locate the folder of current note</source>
-        <translation type="unfinished">現在のノートのフォルダを検索します。</translation>
+        <translation type="unfinished">現在のノートのフォルダを指定します。</translation>
     </message>
     <message>
         <location filename="../vtagexplorer.cpp" line="446"/>
@@ -7683,8 +7681,8 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     </message>
     <message>
         <location filename="../vtagexplorer.cpp" line="514"/>
-        <source>The tag &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; seems not to be assigned to any note currently.</source>
-        <translation type="unfinished">タグ&lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;は現在、どのノートにも割り当てられていません。</translation>
+        <source>The tag &lt;span style=&quot;%1&quot;>%2&lt;/span> seems not to be assigned to any note currently.</source>
+        <translation type="unfinished">タグ&lt;span style=&quot;%1&quot;>%2&lt;/span>は現在、どのノートにも割り当てられていません。</translation>
     </message>
 </context>
 <context>
@@ -7715,12 +7713,12 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
     <message>
         <location filename="../vtagpanel.cpp" line="84"/>
         <source>Tag &quot;%1&quot; added</source>
-        <translation type="unfinished">Tag &quot;%1&quot; added</translation>
+        <translation type="unfinished">タグ&quot;%1&quot;が追加されました</translation>
     </message>
     <message>
         <location filename="../vtagpanel.cpp" line="175"/>
         <source>Tag &quot;%1&quot; removed</source>
-        <translation type="unfinished">Tag &quot;%1&quot; removed</translation>
+        <translation type="unfinished">タグ&quot;%1&quot;は削除されました</translation>
     </message>
 </context>
 <context>
@@ -7772,8 +7770,8 @@ Latest Version: v%2</source>
     </message>
     <message>
         <location filename="../dialog/vupdater.cpp" line="167"/>
-        <source>&lt;span style=&quot;font-weight: bold;&quot;&gt;Updates Available!&lt;/span&gt;&lt;br/&gt;Please visit &lt;a href=&quot;%1&quot;&gt;GitHub Releases&lt;/a&gt; to download the latest version.</source>
-        <translation type="unfinished">&lt;span style=&quot;font-weight: bold;&quot;&gt;Updates Available!&lt;/span&gt;&lt;br/&gt;Please visit &lt;a href=&quot;%1&quot;&gt;GitHub Releases&lt;/a&gt; to download the latest version.</translation>
+        <source>&lt;span style=&quot;font-weight: bold;&quot;>Updates Available!&lt;/span>&lt;br/>Please visit &lt;a href=&quot;%1&quot;>GitHub Releases&lt;/a> to download the latest version.</source>
+        <translation type="unfinished">&lt;span style=&quot;font-weight: bold;&quot;>更新版があります!&lt;/span>&lt;br/>&lt;br/>&lt;br/>&lt;a href=&quot;%1&quot;>GitHub Releases&lt;/a>から最新版をダウンロードしてください。</translation>
     </message>
     <message>
         <location filename="../dialog/vupdater.cpp" line="171"/>
@@ -8012,7 +8010,7 @@ Latest Version: v%2</source>
     <message>
         <location filename="../vwebview.cpp" line="407"/>
         <source>Copy All As</source>
-        <translation type="unfinished">Copy All As</translation>
+        <translation type="unfinished">すべてコピー</translation>
     </message>
     <message>
         <location filename="../vwebview.cpp" line="412"/>
@@ -8031,13 +8029,13 @@ Latest Version: v%2</source>
     </message>
     <message>
         <location filename="../vwebview.cpp" line="453"/>
-        <source>Editor -&gt; Preview</source>
-        <translation type="unfinished">エディタ-&gt;プレビュー</translation>
+        <source>Editor -> Preview</source>
+        <translation type="unfinished">エディタ->プレビュー</translation>
     </message>
     <message>
         <location filename="../vwebview.cpp" line="460"/>
-        <source>Preview -&gt; Editor</source>
-        <translation type="unfinished">プレビュー-&gt;エディタ(Preview-&gt;Editor)</translation>
+        <source>Preview -> Editor</source>
+        <translation type="unfinished">プレビュー->エディタ(Preview->Editor)</translation>
     </message>
     <message>
         <location filename="../vwebview.cpp" line="467"/>
