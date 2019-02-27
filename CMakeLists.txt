@@ -11,13 +11,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
+
+## Default Qt5 path
 if(WIN32)
   set(Qt5_DIR "c:/Qt/Qt5.9.7/5.9.7/msvc2017_64/lib/cmake/Qt5/" CACHE PATH "directory where Qt5Config.cmake exists.")
 elseif(APPLE)
   set(Qt5_DIR "/usr/local/Cellar/qt/5.9.7/clang_64/lib/cmake/Qt5/" CACHE PATH "directory where Qt5Config.cmake exists.")
 else()
-  set(Qt5_DIR "$ENV{HOME}/Qt5.9.7/5.9.7/gcc_64/lib/cmake/Qt5/" CACHE PATH "directory where Qt5Config.cmake exists.")
+  set(Qt5_DIR "" CACHE PATH "directory where Qt5Config.cmake exists.")
 endif()
+
 find_package(Qt5 COMPONENTS Core Gui Network PrintSupport WebChannel WebEngine
              WebEngineWidgets Positioning Svg Widgets LinguistTools
              REQUIRED NO_DEFAULT_PATH)
