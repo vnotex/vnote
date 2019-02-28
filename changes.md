@@ -6,6 +6,27 @@
     - Allow to disable smart table;
 - Update to Qt 5.9.7 in CI in Linux;
 - Add user track logics for users counting;
+- Add CMake build system;
+    - Support multiple packaging genration;
+      - QtIFW GUI installer
+      - Debian package
+      - RPM package
+      - AppImage
+      - Tar.gz package
+      - ZIP package
+      - Windows Nullsoft installer
+      - Windows NuGet package
+      - Mac OS X dmg package
+    - Support staic code checkers;
+      - clang-tidy
+      - crazy
+      - include-what-you-see
+    - Support modern IDEs;
+      - Microsoft Visual Studio 2017
+      - JetBrains CLion
+      - QtCreator
+      - XCode
+      - VSCode
 
 ## v2.2
 - Editor
