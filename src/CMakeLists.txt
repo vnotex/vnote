@@ -1,5 +1,5 @@
 add_executable(VNote main.cpp
-    vmainwindow.cpp
+               vmainwindow.cpp
                vdirectorytree.cpp
                vnote.cpp
                vnotebook.cpp
