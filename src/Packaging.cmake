@@ -3,7 +3,7 @@ find_package(Qt5Core REQUIRED)
 get_target_property(_qmake_executable Qt5::qmake IMPORTED_LOCATION)
 get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
 find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
-find_program(LINUXDEPLOYQT_EXECUTABLE linuxdeployqt HINTS "${_qt_bin_dir}")
+find_program(LINUXDEPLOYQT_EXECUTABLE linuxdeployqt linuxdeployqt-continuous-x86_64.AppImage HINTS "${_qt_bin_dir}")
 find_program(MACDEPLOYQT_EXECUTABLE macdeployqt HINTS "${_qt_bin_dir}")
 find_program(MACDEPLOYQTFIX_EXECUTABLE macdeployqtfix.py HINTS "${_qt_bin_dir}")
 find_package(Python)
@@ -12,19 +12,18 @@ mark_as_advanced(WINDEPLOYQT_EXECUTABLE LINUXDEPLOYQT_EXECUTABLE)
 mark_as_advanced(MACDEPLOYQT_EXECUTABLE MACDEPLOYQTFIX_EXECUTABLE)
 
 function(linuxdeployqt destdir desktopfile)
+    add_custom_command(TARGET bundle PRE_BUILD
+                       COMMAND "${CMAKE_MAKE_PROGRAM}" DESTDIR=${destdir} install
+                       WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
     add_custom_command(TARGET bundle POST_BUILD
-                       COMMAND make DESTDIR=${destdir} install
                        COMMAND "${LINUXDEPLOYQT_EXECUTABLE}" ${destdir}/${CMAKE_INSTALL_PREFIX}/${desktopfile} -bundle-non-qt-libs
                                -qmake=${_qmake_executable}
-                               #-exclude-libs="libnss3,libnssutil3"
                        # hot fix for a known issue for libnss3 and libnssutils3.
-                       COMMAND ${CMAKE_COMMAND} -E copy_directory /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/nss
+                       COMMAND ${CMAKE_COMMAND} -E copy_directory ${NSS3_PLUGIN_PATH}
                                                                   ${destdir}/${CMAKE_INSTALL_PREFIX}/lib/
                        COMMAND "${LINUXDEPLOYQT_EXECUTABLE}"  ${destdir}/${CMAKE_INSTALL_PREFIX}/${desktopfile}
                                -appimage -qmake=${_qmake_executable}
-                               # -exclude-libs="libnss3,libnssutil3"
-                       COMMAND ${CMAKE_COMMAND} -E rename VNote-x86_64.AppImage packaging/VNote-x86_64.AppImage
-                       WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+                       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/packaging)
 endfunction()
 
 function(windeployqt target)
@@ -89,6 +88,7 @@ add_custom_target(bundle
                   COMMAND ${CMAKE_CPACK_COMMAND} "--config" "${CMAKE_BINARY_DIR}/BundleConfig.cmake"
                   COMMENT "Running CPACK. Please wait..."
                   DEPENDS VNote)
+
 if(WIN32 AND NOT UNIX)
     #--------------------------------------------------------------------------
     # Windows specific
@@ -145,9 +145,8 @@ elseif(APPLE)
 else()
     #-----------------------------------------------------------------------------
     # Linux specific
-    set(CPACK_GENERATOR "DEB;TBZ2;TXZ")
+    set(CPACK_GENERATOR "TBZ2;TXZ")
     message(STATUS "Package generation - UNIX")
-    message(STATUS "   + DEB                                  YES ")
     message(STATUS "   + TBZ2                                 YES ")
     message(STATUS "   + TXZ                                  YES ")
 
@@ -160,14 +159,35 @@ else()
         message(STATUS "   + RPM                                  NO ")
     endif()
 
+    set(CPACK_GENERATOR "${CPACK_GENERATOR};DEB")
+    message(STATUS "   + DEB                                  YES ")
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
     set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)
     set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://tamlok.github.io/vnote")
-    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS OFF)
+    find_path(QT5WEBENGINEWIDGET_PATH
+              NAMES libQt5WebEngineWidgets.so
+              PATHS /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE} /usr/lib
+              NO_DEFAULT_PATH)
+    if(QT5WEBENGINEWIDGET_PATH)
+        set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+    else()
+        set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS OFF)
+        if(NOT CPACK_DEBIAN_PACKAGE_DEPENDS)
+            set(CPACK_DEBIAN_PACKAGE_DEPENDS   libqt5core5a libqt5gui5 libqt5positioning5 libqt5webenginewidgets5)
+        endif()
+    endif()
 
     if(LINUXDEPLOYQT_EXECUTABLE)
         message(STATUS "   + AppImage                             YES ")
-        linuxdeployqt("${CPACK_PACKAGE_DIRECTORY}/_AppDir" "share/applications/vnote.desktop")
+        find_path(NSS3_PLUGIN_PATH NAMES libsoftokn3.so PATHS /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE} /usr/lib /usr/local/lib
+                  PATH_SUFFIXES nss NO_DEFAULT_PATH)
+        if(CMAKE_VERSION VERSION_LESS 3.13)
+            linuxdeployqt("${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/Linux/AppImage" "share/applications/vnote.desktop")
+        else()
+            set(CPACK_GENERATOR "External;${CPACK_GENERATOR}")
+            configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CPackLinuxDeployQt.cmake.in "${CMAKE_BINARY_DIR}/CPackLinuxDeployQt.cmake")
+            set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_BINARY_DIR}/CPackLinuxDeployQt.cmake")
+        endif()
     else()
         message(STATUS "   + AppImage                              NO ")
     endif()
