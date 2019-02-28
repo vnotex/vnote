@@ -8,19 +8,24 @@ find_program(MACDEPLOYQT_EXECUTABLE macdeployqt HINTS "${_qt_bin_dir}")
 find_program(MACDEPLOYQTFIX_EXECUTABLE macdeployqtfix.py HINTS "${_qt_bin_dir}")
 find_package(Python)
 
+set(CPACK_IFW_ROOT $ENV{HOME}/Qt/QtIFW-3.0.6/ CACHE PATH "Qt Installer Framework installation base path")
+find_program(BINARYCREATOR_EXECUTABLE binarycreator HINTS ${CPACK_IFW_ROOT}/bin)
+
 mark_as_advanced(WINDEPLOYQT_EXECUTABLE LINUXDEPLOYQT_EXECUTABLE)
 mark_as_advanced(MACDEPLOYQT_EXECUTABLE MACDEPLOYQTFIX_EXECUTABLE)
 
 function(linuxdeployqt destdir desktopfile)
+    # creating AppDir
     add_custom_command(TARGET bundle PRE_BUILD
                        COMMAND "${CMAKE_MAKE_PROGRAM}" DESTDIR=${destdir} install
-                       WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-    add_custom_command(TARGET bundle POST_BUILD
                        COMMAND "${LINUXDEPLOYQT_EXECUTABLE}" ${destdir}/${CMAKE_INSTALL_PREFIX}/${desktopfile} -bundle-non-qt-libs
                                -qmake=${_qmake_executable}
                        # hot fix for a known issue for libnss3 and libnssutils3.
                        COMMAND ${CMAKE_COMMAND} -E copy_directory ${NSS3_PLUGIN_PATH}
                                                                   ${destdir}/${CMAKE_INSTALL_PREFIX}/lib/
+                       WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+    # packaging AppImage
+    add_custom_command(TARGET bundle POST_BUILD
                        COMMAND "${LINUXDEPLOYQT_EXECUTABLE}"  ${destdir}/${CMAKE_INSTALL_PREFIX}/${desktopfile}
                                -appimage -qmake=${_qmake_executable}
                        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/packaging)
@@ -194,6 +199,15 @@ else()
 
    # set package icon
     set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/src/resources/icons/vnote.png")
+endif()
+
+# Qt IFW packaging framework
+if(BINARYCREATOR_EXECUTABLE)
+    set(CPACK_GENERATOR "${CPACK_GENERATOR};IFW")
+    message(STATUS "   + Qt Installer Framework               YES ")
+    set(CPACK_IFW_PACKAGE_RESOURCES ${CMAKE_SOURCE_DIR}/src/vnote.qrc ${CMAKE_SOURCE_DIR}/src/translations.qrc)
+else()
+    message(STATUS "   + Qt Installer Framework                NO ")
 endif()
 
 include(CPack)
