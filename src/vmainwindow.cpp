@@ -3431,7 +3431,7 @@ void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
                                           tr("Collect User Statistics"),
                                           tr("VNote would like to send a request to count active users."
                                              "Do you allow this request?"),
-                                          tr("A request to https://tajs.qq.com/stats will be sent if allowed."),
+                                          tr("A request to https://tamlok.github.io/user_track/vnote.html will be sent if allowed."),
                                           QMessageBox::Ok | QMessageBox::No,
                                           QMessageBox::Ok,
                                           this);

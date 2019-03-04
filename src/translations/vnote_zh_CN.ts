@@ -4671,8 +4671,12 @@ Modified Time: %3</source>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="3434"/>
+        <source>A request to https://tamlok.github.io/user_track/vnote.html will be sent if allowed.</source>
+        <translation>如果允许，会发送一个到 https://tamlok.github.io/user_track/vnote.html 的请求。</translation>
+    </message>
+    <message>
         <source>A request to https://tajs.qq.com/stats will be sent if allowed.</source>
-        <translation>如果允许，会发送一个到 https://tajs.qq.com/stats 的请求。</translation>
+        <translation type="vanished">如果允许，会发送一个到 https://tajs.qq.com/stats 的请求。</translation>
     </message>
     <message>
         <location filename="../vmainwindow.cpp" line="1908"/>
