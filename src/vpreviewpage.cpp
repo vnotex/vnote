@@ -24,6 +24,9 @@ bool VPreviewPage::acceptNavigationRequest(const QUrl &p_url,
         }
     } else if (!p_isMainFrame) {
         return true;
+    } else if (p_url.scheme() == "data") {
+        // Qt 5.12 will trigger this when calling QWebEngineView.setHtml().
+        return true;
     }
 
     QDesktopServices::openUrl(p_url);
