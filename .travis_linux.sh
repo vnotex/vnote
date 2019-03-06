@@ -8,12 +8,24 @@ if [ -z ${TRAVIS_COMMIT+x} ]; then
     exit 1
 fi
 
+# Install qt5ct for a native look
+sudo add-apt-repository ppa:hda-me/qt5ct -y
+
 # Install qt5.9
 sudo add-apt-repository ppa:george-edison55/cmake-3.x -y
 sudo add-apt-repository ppa:beineri/opt-qt597-trusty -y
 sudo apt-get update -qq
 sudo apt-get -y install qt59base qt59webengine qt59webchannel qt59svg qt59location qt59tools qt59translations
 source /opt/qt*/bin/qt*-env.sh
+
+# Install qt5ct for a native look
+sudo apt-get -y install qt5ct
+
+tree /usr/lib/x86_64-linux-gnu/qt5/plugins
+
+sudo cp -r -n /usr/lib/x86_64-linux-gnu/qt5/plugins/platformthemes /opt/qt*/plugins/
+
+tree /opt/qt*/plugins/
 
 # Compile newer version fcitx-qt5
 sudo apt-get -y install fcitx-libs-dev libgl1-mesa-dev bison
@@ -76,13 +88,13 @@ cp vnote-utils.git/linuxdeployqt-continuous-x86_64.AppImage ./linuxdeployqt-cont
 # wget -c "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
 chmod a+x linuxdeployqt*.AppImage
 unset QTDIR; unset QT_PLUGIN_PATH ; unset LD_LIBRARY_PATH
-./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -bundle-non-qt-libs -exclude-libs=libnss3,libnssutil3
+./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -bundle-non-qt-libs -exclude-libs=libnss3,libnssutil3 -extra-plugins=platformthemes/libqt5ct.so
 
 # Copy translations
 cp /opt/qt59/translations/*_zh_CN.qm ./dist/usr/translations/
 
 # Package it for the second time.
-./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -appimage -exclude-libs=libnss3,libnssutil3
+./linuxdeployqt*.AppImage ./dist/usr/share/applications/*.desktop -appimage -exclude-libs=libnss3,libnssutil3 -extra-plugins=platformthemes/libqt5ct.so
 
 tree dist/
 
