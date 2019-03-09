@@ -3,7 +3,7 @@
 
 ::: alert-success
 
-VNote 2.2 已发布！ 看看都有 [哪些更新](blogs/官方/VNote%202.2发布.md) ！
+VNote 2.3 已发布！ 看看都有 [哪些更新](https://github.com/tamlok/vnote/releases) ！
 
 :::
 
