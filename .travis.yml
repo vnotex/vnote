@@ -8,7 +8,7 @@ matrix:
   include:
     - os: osx
       compiler: clang
-      osx_image: xcode9.4
+      osx_image: xcode10.1
     - os: linux
       compiler: g++
 
