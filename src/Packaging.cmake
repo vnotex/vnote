@@ -9,7 +9,7 @@ find_program(MACDEPLOYQTFIX_EXECUTABLE macdeployqtfix.py HINTS "${_qt_bin_dir}")
 find_package(Python)
 
 set(CPACK_IFW_ROOT $ENV{HOME}/Qt/QtIFW-3.0.6/ CACHE PATH "Qt Installer Framework installation base path")
-find_program(BINARYCREATOR_EXECUTABLE binarycreator HINTS ${CPACK_IFW_ROOT}/bin)
+find_program(BINARYCREATOR_EXECUTABLE binarycreator HINTS "${_qt_bin_dir}" ${CPACK_IFW_ROOT}/bin)
 
 mark_as_advanced(WINDEPLOYQT_EXECUTABLE LINUXDEPLOYQT_EXECUTABLE)
 mark_as_advanced(MACDEPLOYQT_EXECUTABLE MACDEPLOYQTFIX_EXECUTABLE)
@@ -32,39 +32,45 @@ function(linuxdeployqt destdir desktopfile)
 endfunction()
 
 function(windeployqt target)
+
+    # Bundle Library Files
+    if(CMAKE_BUILD_TYPE_UPPER STREQUAL "DEBUG")
+        set(WINDEPLOYQT_ARGS --debug)
+    else()
+        set(WINDEPLOYQT_ARGS --release)
+    endif()
+
     add_custom_command(TARGET ${target} POST_BUILD
                        COMMAND "${CMAKE_COMMAND}" -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/winqt/"
                        COMMAND "${CMAKE_COMMAND}" -E
                                env PATH="${_qt_bin_dir}" "${WINDEPLOYQT_EXECUTABLE}"
+                               ${WINDEPLOYQT_ARGS}
                                --verbose 0
                                --no-compiler-runtime
                                --no-angle
                                --no-opengl-sw
                                --dir "${CMAKE_CURRENT_BINARY_DIR}/winqt/"
-                               ${target}.exe
+                               $<TARGET_FILE:${target}>
                        COMMENT "Deploying Qt..."
-	)
-	install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/winqt/" DESTINATION bin)
-
+    )
+    install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/winqt/" DESTINATION bin)
     set(CMAKE_INSTALL_UCRT_LIBRARIES TRUE)
     include(InstallRequiredSystemLibraries)
 endfunction()
 
-function(macdeployqt target)
-    add_custom_command(TARGET bundle POST_BUILD
-                       COMMAND "${MACDEPLOYQT_EXECUTABLE}"
-                           \"$<TARGET_FILE_DIR:${target}>/../..\"
-                           -always-overwrite
-                       COMMAND ${Python_EXECUTABLE} "${MACDEPLOYQTFIX_EXECUTABLE}"
-                           \"$<TARGET_FILE_DIR:${target}>/Contents/MacOS/VNote\"
-                           ${qt_bin_dir}/../
-                       COMMAND "${MACDEPLOYQT_EXECUTABLE}"
-                           \"$<TARGET_FILE_DIR:${target}>/Contents/Frameworks/QtWebEngineCore.framework/Versions/5/Helpers/QtWebEngineProcess.app
-                       COMMAND ${Python_EXECUTABLE} "${MACDEPLOYQTFIX_EXECUTABLE}"
-                           \"$<TARGET_FILE_DIR:${target}>/Contents/Frameworks/QtWebEngineCore.framework/Versions/5/Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess
-                           ${qt_bin_dir}/../
-                       COMMENT "Deploying Qt..."
+function(macdeployqt bundle targetdir _PACKAGER)
+    file(GENERATE OUTPUT ${CMAKE_BINARY_DIR}/CPackMacDeployQt-${_PACKAGER}.cmake
+         CONTENT "set(APP_BUNDLE_DIR \"${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/Darwin/${_PACKAGER}/${targetdir}/${bundle}\")
+                  execute_process(
+                    COMMAND \"${MACDEPLOYQT_EXECUTABLE}\" \"${APP_BUNDLE_DIR}}\" -always-overwrite
+                    COMMAND ${Python_EXECUTABLE} \"${MACDEPLOYQTFIX_EXECUTABLE}\" \"${APP_BUNDLE_DIR}/Contents/MacOS/VNote\" ${qt_bin_dir}/../
+                    COMMAND \"${MACDEPLOYQT_EXECUTABLE}\" \"${APP_BUNDLE_DIR}>/Contents/Frameworks/QtWebEngineCore.framework/Versions/5/Helpers/QtWebEngineProcess.app
+                    COMMAND ${Python_EXECUTABLE} \"${MACDEPLOYQTFIX_EXECUTABLE}\" \"${APP_BUNDLE_DIR}>/Contents/Frameworks/QtWebEngineCore.framework/Versions/5/Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess\" ${qt_bin_dir}/../
+                  )"
     )
+
+    install(SCRIPT ${CMAKE_BINARY_DIR}/CPackMacDeployQt-${_PACKAGER}.cmake COMPONENT Runtime)
+    include(InstallRequiredSystemLibraries)
 endfunction()
 
 set(CPACK_PACKAGE_VENDOR "Le Tan")
@@ -81,7 +87,7 @@ set(CPACK_PACKAGE_INSTALL_DIRECTORY "vnote")
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_BINARY_DIR}/packaging")
 
 # set human names to exetuables
-set(CPACK_PACKAGE_EXECUTABLES "VNote")
+set(CPACK_PACKAGE_EXECUTABLES "VNote" "VNote")
 set(CPACK_CREATE_DESKTOP_LINKS "VNote")
 set(CPACK_STRIP_FILES TRUE)
 
@@ -93,20 +99,29 @@ add_custom_target(bundle
                   COMMAND ${CMAKE_CPACK_COMMAND} "--config" "${CMAKE_BINARY_DIR}/BundleConfig.cmake"
                   COMMENT "Running CPACK. Please wait..."
                   DEPENDS VNote)
+set(CPACK_GENERATOR)
+
+# Qt IFW packaging framework
+if(BINARYCREATOR_EXECUTABLE)
+    list(APPEND CPACK_GENERATOR IFW)
+    message(STATUS "   + Qt Installer Framework               YES ")
+else()
+    message(STATUS "   + Qt Installer Framework                NO ")
+endif()
 
 if(WIN32 AND NOT UNIX)
     #--------------------------------------------------------------------------
     # Windows specific
-    set(CPACK_GENERATOR "ZIP")
+    list(APPEND CPACK_GENERATOR ZIP)
     message(STATUS "Package generation - Windows")
     message(STATUS "   + ZIP                                  YES ")
-    
+
     set(PACKAGE_ICON "${CMAKE_SOURCE_DIR}/src/resources/icons/vnote.ico")
 
     # NSIS windows installer
     find_program(NSIS_PATH nsis PATH_SUFFIXES nsis)
     if(NSIS_PATH)
-        set(CPACK_GENERATOR "${CPACK_GENERATOR};NSIS")
+        list(APPEND CPACK_GENERATOR NSIS)
         message(STATUS "   + NSIS                                 YES ")
 
         set(CPACK_NSIS_DISPLAY_NAME ${CPACK_PACKAGE_NAME})
@@ -122,7 +137,7 @@ if(WIN32 AND NOT UNIX)
     # NuGet package
     find_program(NUGET_EXECUTABLE nuget)
     if(NUGET_EXECUTABLE)
-        set(CPACK_GENERATOR "${CPACK_GENERATOR};NuGET")
+        list(APPEND CPACK_GENERATOR NuGET)
         message(STATUS "   + NuGET                               YES ")
         set(CPACK_NUGET_PACKAGE_NAME "VNote")
     else()
@@ -136,21 +151,31 @@ elseif(APPLE)
     # Apple specific
     message(STATUS "Package generation - Mac OS X")
     message(STATUS "   + TBZ2                                 YES ")
-    message(STATUS "   + DragNDrop                            YES ")
 
-    set(CPACK_GENERATOR "TBZ2;DragNDrop")
-    set(CPACK_PACKAGING_INSTALL_PREFIX "/")
-    set(CPACK_DMG_VOLUME_NAME "VNote")
-    # set(CPACK_DMG_DS_STORE_SETUP_SCRIPT "${CMAKE_SOURCE_DIR}/DS_Store.scpt")
+    list(APPEND CPACK_GENERATOR TBZ2)
+    set(CPACK_PACKAGE_ICON ${CMAKE_SOURCE_DIR}/resources/Icon.icns)
+    set(CMAKE_INSTALL_RPATH "@executable_path/../Frameworks")
+    macdeployqt("${PROJECT_NAME}.app" "${PROJECT_NAME}-${PROJECT_VERSION}-Darwin" "TBZ")
+
+    # XXX: not working settings for bundle and dragndrop generator
+    set(CPACK_BUNDLE_NAME "${PROJECT_NAME}" )
+    set(CPACK_BUNDLE_PLIST "${CMAKE_BINARY_DIR}/Info.plist")
+    set(CPACK_BUNDLE_ICON ${CMAKE_PACKAGE_ICON})
+    set(CPACK_DMG_VOLUME_NAME "${PROJECT_NAME}")
+    set(CPACK_DMG_FORMAT "UDBZ")
     set(CPACK_DMG_BACKGROUND_IMAGE "${CMAKE_SOURCE_DIR}/src/resources/icons/vnote.png")
-    set(CPACK_OSX_PACKAGE_VERSION "10.6") #min package version
 
-    macdeployqt(VNote)
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
+        list(APPEND CPACK_GENERATOR External)
+        message(STATUS "   + macdeployqt -dmg                     YES ")
+        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CPackMacDeployQt.cmake.in "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
+        set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
+    endif()
 
 else()
     #-----------------------------------------------------------------------------
     # Linux specific
-    set(CPACK_GENERATOR "TBZ2;TXZ")
+    list(APPEND CPACK_GENERATOR TBZ2 TXZ)
     message(STATUS "Package generation - UNIX")
     message(STATUS "   + TBZ2                                 YES ")
     message(STATUS "   + TXZ                                  YES ")
@@ -164,7 +189,7 @@ else()
         message(STATUS "   + RPM                                  NO ")
     endif()
 
-    set(CPACK_GENERATOR "${CPACK_GENERATOR};DEB")
+    list(APPEND CPACK_GENERATOR DEB)
     message(STATUS "   + DEB                                  YES ")
     # use default, that is an output of `dpkg --print-architecture`
     #set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
@@ -194,24 +219,15 @@ else()
             linuxdeployqt("${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/Linux/AppImage" "share/applications/vnote.desktop")
         else()
             set(CPACK_GENERATOR "External;${CPACK_GENERATOR}")
-            configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CPackLinuxDeployQt.cmake.in "${CMAKE_BINARY_DIR}/CPackLinuxDeployQt.cmake")
-            set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_BINARY_DIR}/CPackLinuxDeployQt.cmake")
+            configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CPackLinuxDeployQt.cmake.in "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
+            set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
         endif()
     else()
         message(STATUS "   + AppImage                              NO ")
     endif()
 
-   # set package icon
+    # set package icon
     set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/src/resources/icons/vnote.png")
-endif()
-
-# Qt IFW packaging framework
-if(BINARYCREATOR_EXECUTABLE)
-    set(CPACK_GENERATOR "${CPACK_GENERATOR};IFW")
-    message(STATUS "   + Qt Installer Framework               YES ")
-    set(CPACK_IFW_PACKAGE_RESOURCES ${CMAKE_SOURCE_DIR}/src/vnote.qrc ${CMAKE_SOURCE_DIR}/src/translations.qrc)
-else()
-    message(STATUS "   + Qt Installer Framework                NO ")
 endif()
 
 include(CPack)
