@@ -166,9 +166,12 @@ else()
 
     set(CPACK_GENERATOR "${CPACK_GENERATOR};DEB")
     message(STATUS "   + DEB                                  YES ")
-    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+    # use default, that is an output of `dpkg --print-architecture`
+    #set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
     set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)
     set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://tamlok.github.io/vnote")
+    # check if dependencies exist in standard path, i.e standard package
+    # ubuntu bionic or later has it.
     find_path(QT5WEBENGINEWIDGET_PATH
               NAMES libQt5WebEngineWidgets.so
               PATHS /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE} /usr/lib
@@ -177,10 +180,11 @@ else()
         set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
     else()
         set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS OFF)
-        if(NOT CPACK_DEBIAN_PACKAGE_DEPENDS)
-            set(CPACK_DEBIAN_PACKAGE_DEPENDS   libqt5core5a libqt5gui5 libqt5positioning5 libqt5webenginewidgets5)
-        endif()
+        set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5core5a, libqt5gui5, libqt5positioning5, libqt5webenginewidgets5")
     endif()
+    set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "graphviz")
+    set(CPACK_DEBIAN_PACKAGE_SUGGESTS "libjs-mathjax")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
 
     if(LINUXDEPLOYQT_EXECUTABLE)
         message(STATUS "   + AppImage                             YES ")
