@@ -472,7 +472,7 @@ void VWebView::initPreviewTunnelMenu(QAction *p_before, QMenu *p_menu)
     }
 
     connect(ag, &QActionGroup::triggered,
-            this, [this](QAction *p_act) {
+            this, [](QAction *p_act) {
                 int data = p_act->data().toInt();
                 g_config->setSmartLivePreview(data);
             });

@@ -62,7 +62,7 @@ void VNewFileDialog::setupUI(const QString &p_title,
     templateBtn->setToolTip(tr("Manage Templates"));
     templateBtn->setProperty("FlatBtn", true);
     connect(templateBtn, &QPushButton::clicked,
-            this, [this]() {
+            this, []() {
                 QUrl url = QUrl::fromLocalFile(g_config->getTemplateConfigFolder());
                 QDesktopServices::openUrl(url);
             });
@@ -86,7 +86,7 @@ void VNewFileDialog::setupUI(const QString &p_title,
     m_insertTitleCB->setToolTip(tr("Insert note name into the new note as a title"));
     m_insertTitleCB->setChecked(g_config->getInsertTitleFromNoteName());
     connect(m_insertTitleCB, &QCheckBox::stateChanged,
-            this, [this](int p_state) {
+            this, [](int p_state) {
                 g_config->setInsertTitleFromNoteName(p_state == Qt::Checked);
             });
 

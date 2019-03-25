@@ -346,7 +346,7 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
         VUtils::fixTextWithShortcut(newNoteAct, "NewNote");
         newNoteAct->setToolTip(tr("Create a note in selected folder"));
         connect(newNoteAct, &QAction::triggered,
-                this, [this]() {
+                this, []() {
                     g_mainWin->getFileList()->newFile();
                 });
 

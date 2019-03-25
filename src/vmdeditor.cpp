@@ -411,7 +411,7 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
             toggleLivePreviewAct->setToolTip(tr("Toggle live preview panel for graphs"));
             VUtils::fixTextWithCaptainShortcut(toggleLivePreviewAct, "LivePreview");
             connect(toggleLivePreviewAct, &QAction::triggered,
-                    this, [this, mdtab]() {
+                    this, [mdtab]() {
                         mdtab->toggleLivePreview();
                     });
 
@@ -1477,14 +1477,14 @@ void VMdEditor::initLinkAndPreviewMenu(QAction *p_before, QMenu *p_menu, const Q
 
             QAction *viewImageAct = new QAction(tr("View Image"), p_menu);
             connect(viewImageAct, &QAction::triggered,
-                    this, [this, imgPath]() {
+                    this, [imgPath]() {
                         QDesktopServices::openUrl(VUtils::pathToUrl(imgPath));
                     });
             p_menu->insertAction(p_before, viewImageAct);
 
             QAction *copyImageLinkAct = new QAction(tr("Copy Image URL"), p_menu);
             connect(copyImageLinkAct, &QAction::triggered,
-                    this, [this, imgPath]() {
+                    this, [imgPath]() {
                         QClipboard *clipboard = QApplication::clipboard();
                         VClipboardUtils::setLinkToClipboard(clipboard,
                                                             imgPath,
@@ -1495,7 +1495,7 @@ void VMdEditor::initLinkAndPreviewMenu(QAction *p_before, QMenu *p_menu, const Q
             if (isLocalFile) {
                 QAction *copyImagePathAct = new QAction(tr("Copy Image Path"), p_menu);
                 connect(copyImagePathAct, &QAction::triggered,
-                        this, [this, imgPath]() {
+                        this, [imgPath]() {
                             QClipboard *clipboard = QApplication::clipboard();
                             QMimeData *data = new QMimeData();
                             data->setText(imgPath);
@@ -1552,14 +1552,14 @@ void VMdEditor::initLinkAndPreviewMenu(QAction *p_before, QMenu *p_menu, const Q
 
         QAction *viewLinkAct = new QAction(tr("View Link"), p_menu);
         connect(viewLinkAct, &QAction::triggered,
-                this, [this, linkUrl]() {
+                this, [linkUrl]() {
                     QDesktopServices::openUrl(VUtils::pathToUrl(linkUrl));
                 });
         p_menu->insertAction(p_before, viewLinkAct);
 
         QAction *copyLinkAct = new QAction(tr("Copy Link URL"), p_menu);
         connect(copyLinkAct, &QAction::triggered,
-                this, [this, linkUrl]() {
+                this, [linkUrl]() {
                     QClipboard *clipboard = QApplication::clipboard();
                     VClipboardUtils::setLinkToClipboard(clipboard,
                                                         linkUrl,
@@ -1570,7 +1570,7 @@ void VMdEditor::initLinkAndPreviewMenu(QAction *p_before, QMenu *p_menu, const Q
         if (isLocalFile) {
             QAction *copyLinkPathAct = new QAction(tr("Copy Link Path"), p_menu);
             connect(copyLinkPathAct, &QAction::triggered,
-                    this, [this, linkUrl]() {
+                    this, [linkUrl]() {
                         QClipboard *clipboard = QApplication::clipboard();
                         QMimeData *data = new QMimeData();
                         data->setText(linkUrl);

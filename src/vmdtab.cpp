@@ -1085,7 +1085,7 @@ void VMdTab::applySnippet()
     QWidgetAction *act = new QWidgetAction(&menu);
     act->setDefaultWidget(sel);
     connect(sel, &VInsertSelector::accepted,
-            this, [this, &menu]() {
+            this, [&menu]() {
                 QKeyEvent *escEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_Escape,
                                                     Qt::NoModifier);
                 QCoreApplication::postEvent(&menu, escEvent);
