@@ -64,7 +64,7 @@ public:
     VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent = 0);
 
     // Returns true if the location succeeds.
-    bool locateFile(VFile *p_file);
+    bool locateFile(VFile *p_file, bool p_focus = true, bool p_show = true);
 
     // Returns true if the location succeeds.
     bool locateDirectory(VDirectory *p_directory);
@@ -505,6 +505,9 @@ private:
     VExplorer *m_explorer;
 
     VTagExplorer *m_tagExplorer;
+
+    // Whether sync note list to current tab.
+    bool m_syncNoteListToCurrentTab;
 
     // Interval of the shared memory timer in ms.
     static const int c_sharedMemTimerInterval;

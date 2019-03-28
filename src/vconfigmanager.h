@@ -634,6 +634,9 @@ public:
     bool getAllowUserTrack() const;
     void setAllowUserTrack(bool p_enabled);
 
+    bool getSyncNoteListToTab() const;
+    void setSyncNoteListToTab(bool p_enabled);
+
 private:
     void initEditorConfigs();
 
@@ -1120,6 +1123,9 @@ private:
 
     // Whether enable smart table.
     bool m_enableSmartTable;
+
+    // Whether auto locate to current tab in note list.
+    bool m_syncNoteListToCurrentTab;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2931,5 +2937,20 @@ inline bool VConfigManager::getAllowUserTrack() const
 inline void VConfigManager::setAllowUserTrack(bool p_enabled)
 {
     setConfigToSettings("global", "allow_user_track", p_enabled);
+}
+
+inline bool VConfigManager::getSyncNoteListToTab() const
+{
+    return m_syncNoteListToCurrentTab;
+}
+
+inline void VConfigManager::setSyncNoteListToTab(bool p_enabled)
+{
+    if (m_syncNoteListToCurrentTab == p_enabled) {
+        return;
+    }
+
+    m_syncNoteListToCurrentTab = p_enabled;
+    setConfigToSettings("global", "sync_note_list_to_current_tab", m_syncNoteListToCurrentTab);
 }
 #endif // VCONFIGMANAGER_H

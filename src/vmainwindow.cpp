@@ -86,7 +86,8 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
       m_windowOldState(Qt::WindowNoState),
       m_requestQuit(false),
       m_printer(NULL),
-      m_ue(NULL)
+      m_ue(NULL),
+      m_syncNoteListToCurrentTab(true)
 {
     qsrand(QDateTime::currentDateTime().toTime_t());
 
@@ -2137,6 +2138,10 @@ void VMainWindow::handleAreaTabStatusUpdated(const VEditTabInfo &p_info)
 
         m_attachmentList->setFile(dynamic_cast<VNoteFile *>(m_curFile.data()));
 
+        if (m_syncNoteListToCurrentTab && g_config->getSyncNoteListToTab()) {
+            locateFile(m_curFile, false, false);
+        }
+
         QString title;
         if (m_curFile) {
             m_findReplaceDialog->updateState(m_curFile->getDocType(),
@@ -2290,9 +2295,12 @@ void VMainWindow::closeEvent(QCloseEvent *event)
             }
         }
 
+        m_syncNoteListToCurrentTab = false;
+
         if (!m_editArea->closeAllFiles(false)) {
             // Fail to close all the opened files, cancel closing app.
             event->ignore();
+            m_syncNoteListToCurrentTab = true;
             return;
         }
 
@@ -2371,7 +2379,7 @@ void VMainWindow::keyPressEvent(QKeyEvent *event)
     QMainWindow::keyPressEvent(event);
 }
 
-bool VMainWindow::locateFile(VFile *p_file)
+bool VMainWindow::locateFile(VFile *p_file, bool p_focus, bool p_show)
 {
     bool ret = false;
     if (!p_file || p_file->getType() != FileType::Note) {
@@ -2393,13 +2401,15 @@ bool VMainWindow::locateFile(VFile *p_file)
 
             if (m_fileList->locateFile(file)) {
                 ret = true;
-                m_fileList->setFocus();
+                if (p_focus) {
+                    m_fileList->setFocus();
+                }
             }
         }
     }
 
     // Open the directory and file panels after location.
-    if (ret) {
+    if (ret && p_show) {
         showNotebookPanel();
     }
 
@@ -3411,6 +3421,8 @@ void VMainWindow::setToolBarVisible(bool p_visible)
 void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
 {
     QTimer::singleShot(300, [this, p_files]() {
+        m_syncNoteListToCurrentTab = false;
+
         checkNotebooks();
         QCoreApplication::sendPostedEvents();
         promptNewNotebookIfEmpty();
@@ -3441,6 +3453,8 @@ void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
         if (g_config->getAllowUserTrack()) {
             QTimer::singleShot(60000, this, SLOT(collectUserStat()));
         }
+
+        m_syncNoteListToCurrentTab = true;
     });
 }
 

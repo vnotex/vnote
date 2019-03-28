@@ -114,7 +114,7 @@ foreground: 56b6c2
 
 CODE
 foreground: 98c379
-font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
+font-family: YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New
 
 EMPH
 font-style: italic
@@ -136,11 +136,11 @@ foreground: 6e7686
 
 VERBATIM
 foreground: 98c379
-font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
+font-family: YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New
 
 FENCEDCODEBLOCK
 foreground: 98c379
-font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
+font-family: YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New
 # [VNote] Codeblock sylte from HighlightJS (bold, italic, underlined, strikeout, color)
 # The last occurence of the same attribute takes effect
 # Could specify multiple attribute in one line
@@ -194,18 +194,18 @@ foreground: 6e7686
 
 INLINEEQUATION
 foreground: 4db6ac
-font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
+font-family: YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New
 
 DISPLAYFORMULA
 foreground: 4db6ac
-font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
+font-family: YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New
 
 MARK
 foreground: abb2bf
 background: 551560
 
 TABLE
-font-family: Consolas, Monaco, Andale Mono, Monospace, Courier New
+font-family: YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New
 
 TABLEBORDER
 foreground: e06c75

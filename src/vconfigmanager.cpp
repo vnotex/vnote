@@ -326,6 +326,9 @@ void VConfigManager::initialize()
     m_highlightMatchesInPage = getConfigFromSettings("global",
                                                      "highlight_matches_in_page").toBool();
 
+    m_syncNoteListToCurrentTab = getConfigFromSettings("global",
+                                                       "sync_note_list_to_current_tab").toBool();
+
     initEditorConfigs();
 
     initMarkdownConfigs();
