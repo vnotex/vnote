@@ -266,12 +266,13 @@ void VMdTab::showFileEditMode()
     // Generally, beginEdit() will generate the headers. Wait is needed when
     // highlight completion is going to re-generate the headers.
     int nrRetry = 10;
-    while (header.m_index > -1
-           && nrRetry-- > 0
-           && (m_outline.isEmpty() || m_outline.getType() != VTableOfContentType::BlockNumber)) {
-        qDebug() << "wait another 100 ms for editor's headers ready";
+    do {
+        // We still need to wait even when there is no header to scroll since
+        // setCurrentMode()'s sendPostedEvents().
         VUtils::sleepWait(100);
-    }
+    } while (header.m_index > -1
+             && nrRetry-- >= 0
+             && (m_outline.isEmpty() || m_outline.getType() != VTableOfContentType::BlockNumber));
 
     scrollEditorToHeader(header, false);
 
