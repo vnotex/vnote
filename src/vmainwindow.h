@@ -340,6 +340,8 @@ private:
 
     static bool toggleExpandModeByCaptain(void *p_target, void *p_data);
 
+    static bool currentNoteInfoByCaptain(void *p_target, void *p_data);
+
     static bool discardAndReadByCaptain(void *p_target, void *p_data);
 
     static bool toggleToolBarByCaptain(void *p_target, void *p_data);

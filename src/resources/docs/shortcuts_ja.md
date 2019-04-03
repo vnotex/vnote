@@ -265,6 +265,8 @@ RemoveSplit=R
 全文検索を切り替えます。
 - `P`
 クリップボードのHTMLをMarksownテキストとして貼り付けます。
+- `N`  
+View and edit current note's information.
 - `Shift+?` 
 ショートカットのドキュメントを表示します。
 
@@ -273,6 +275,12 @@ RemoveSplit=R
 
 # Vimモード
 VNoteは、**Normal**、**Insert**、**Visual**、および**VisualLine**の各モードを含む、単純で有用なVimモードをサポートしています。
+
+::: alert-info
+
+Open `Settings` dialog via the `File` menu, then jump to `Read/Edit` tab and you could enable Vim via the combo box in `Key mode`. Restart VNote to take effect.
+
+:::
 
 VNoteはVimの次の機能をサポートしています：
 

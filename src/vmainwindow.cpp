@@ -197,6 +197,10 @@ void VMainWindow::registerCaptainAndNavigationTargets()
                                      g_config->getCaptainShortcutKeySequence("ExpandMode"),
                                      this,
                                      toggleExpandModeByCaptain);
+    m_captain->registerCaptainTarget(tr("CurrentNoteInfo"),
+                                     g_config->getCaptainShortcutKeySequence("CurrentNoteInfo"),
+                                     this,
+                                     currentNoteInfoByCaptain);
     m_captain->registerCaptainTarget(tr("DiscardAndRead"),
                                      g_config->getCaptainShortcutKeySequence("DiscardAndRead"),
                                      this,
@@ -731,7 +735,9 @@ QToolBar *VMainWindow::initFileToolBar(QSize p_iconSize)
             m_fileList, &VFileList::newFile);
 
     noteInfoAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/note_info_tb.svg"),
-                              tr("Note Info"), this);
+                              tr("Note Info"),
+                              this);
+    VUtils::fixTextWithCaptainShortcut(noteInfoAct, "CurrentNoteInfo");
     noteInfoAct->setStatusTip(tr("View and edit current note's information"));
     connect(noteInfoAct, &QAction::triggered,
             this, &VMainWindow::curEditFileInfo);
@@ -2855,6 +2861,17 @@ bool VMainWindow::toggleExpandModeByCaptain(void *p_target, void *p_data)
     Q_UNUSED(p_data);
     VMainWindow *obj = static_cast<VMainWindow *>(p_target);
     obj->expandViewAct->trigger();
+    return true;
+}
+
+bool VMainWindow::currentNoteInfoByCaptain(void *p_target, void *p_data)
+{
+    Q_UNUSED(p_data);
+    VMainWindow *obj = static_cast<VMainWindow *>(p_target);
+    if (obj->noteInfoAct->isEnabled()) {
+        obj->curEditFileInfo();
+    }
+
     return true;
 }
 
