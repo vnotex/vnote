@@ -8,6 +8,16 @@
 VNoteは**オープンソース**で、現在は主に1人の個人によって開発され、スペアタイムで管理されています。ですから、生産性を向上させてくれるなら、どんどんVNoteを利用してよいのです。[VNoteヘ寄付されたユーザに](https://github.com/tamlok/vnote/wiki/Donate-List)感謝いたします!
 
 ## トラブルシューティング・ガイド
+::: alert-info
+
+**How to enable Vim mode?**
+
+Open `Settings` dialog via the `File` menu, then jump to `Read/Edit` tab and you could enable Vim via the combo box in `Key mode`. Restart VNote to take effect.
+
+If you do not know what Vim is, please do not enable it!
+
+:::
+
 VNoteは、次の2つの方法で使用できます。
 
 1. ノートブック、フォルダ、ノートを使用してノートを作成することができます。VNoteはすべてのデータを管理し、添付ファイルやタグなどの追加機能を提供します。
@@ -20,8 +30,6 @@ VNoteは、次の2つの方法で使用できます。
 3. ヘルプメニューには、マークダウンガイドとショートカットガイドが用意されています。このガイドを参考にしてください。
 4. [GitHub Issues](https://github.com/tamlok/vnote/issues) およびVNoteの[ドキュメント](https://tamlok.github.io/vnote/en_us/#!docs/_vnote.json)でクイック検索をおこなってください;
 5. 助けをもとめるには、GitHubで、*詳細に*Issueを投稿してください。
-
-<mark>追加の一言</mark>: Vimとは何かわからないなら、決して設定ダイアログでVimモードをオンにしないでください。😁ちなみに、Vimは編集効率を向上させるための魔法のツールです。VimモードとVNoteのショートカットを強くお勧めします。後悔するなよ。
 
 `Ctrl+G`を押して、**ユニバーサルエントリ**から今日の仕事をはじめてはどうでしょうか？
 

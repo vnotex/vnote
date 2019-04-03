@@ -8,6 +8,16 @@
 VNote is **open source** and currently mainly developed and maintained by one single person in spare time. Hence, please don't hesitate to give VNote a hand if she does improve your productivity. Thank [users who donated to VNote](https://github.com/tamlok/vnote/wiki/Donate-List)!
 
 ## Troubleshooting Guide
+::: alert-info
+
+**How to enable Vim mode?**
+
+Open `Settings` dialog via the `File` menu, then jump to `Read/Edit` tab and you could enable Vim via the combo box in `Key mode`. Restart VNote to take effect.
+
+If you do not know what Vim is, please do not enable it!
+
+:::
+
 VNote could be used in two ways:
 
 1. Note-taking application via notebooks, folders and notes. VNote manages all the data and provides additional functionality such as attachment and tag.
@@ -20,8 +30,6 @@ Steps to troubleshoot:
 3. There is a Markdown guide and shortcuts guide in the help menu, which might be helpful;
 4. Do a quick search in [GitHub Issues](https://github.com/tamlok/vnote/issues) and VNote's [Documentation](https://tamlok.github.io/vnote/en_us/#!docs/_vnote.json);
 5. Post an issue *in detail* on GitHub to ask for help.
-
-<mark>One More Thing</mark>: If you do not know what is Vim, please do not turn on Vim mode in the settings dialog. 😁 By the way, Vim is really a magic tool to improve edit efficiency. Highly recommend Vim mode and VNote's shortcuts. You won't regret it.
 
 Now, how about pressing `Ctrl+G` and start today's work from **Universal Entry**?
 
