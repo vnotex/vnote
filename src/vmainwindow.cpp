@@ -3456,7 +3456,7 @@ void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
             m_editArea->openFile(file, OpenFileMode::Read);
         }
 
-        if (g_config->versionChanged()) {
+        if (g_config->versionChanged() && !g_config->getAllowUserTrack()) {
             // Ask user whether allow tracking.
             int ret = VUtils::showMessage(QMessageBox::Information,
                                           tr("Collect User Statistics"),

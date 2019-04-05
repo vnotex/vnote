@@ -1,4 +1,12 @@
 # Changes History
+## v2.4
+- Bundle qt5ct in Linux for native look support;
+- Use `Return` or `Enter` to confirm selection in macOS (besides `Cmd+O`);
+- Support sync note list to current note automatically via config `global/sync_note_list_to_current_tab`;
+- Add `Ctrl+E N` to view and edit current note's information;
+- Fix Markdown highlighter to handle fenced code block without a leading empty line;
+- Prompt for restart after changing theme;
+
 ## v2.3
 - Add Japanese translations (thanks to @miurahr);
 - Editor
