@@ -3127,9 +3127,11 @@ void VMainWindow::initThemeMenu(QMenu *p_menu)
 
     QActionGroup *ag = new QActionGroup(this);
     connect(ag, &QActionGroup::triggered,
-            this, [](QAction *p_action) {
+            this, [this](QAction *p_action) {
                 QString data = p_action->data().toString();
                 g_config->setTheme(data);
+
+                promptForVNoteRestart();
             });
 
     QList<QString> themes = g_config->getThemes();
@@ -3585,3 +3587,16 @@ void VMainWindow::collectUserStat() const
             });
 }
 
+void VMainWindow::promptForVNoteRestart()
+{
+    int ret = VUtils::showMessage(QMessageBox::Information,
+                                  tr("Restart Needed"),
+                                  tr("Do you want to restart VNote now?"),
+                                  tr("VNote needs to restart to apply new configurations."),
+                                  QMessageBox::Ok | QMessageBox::No,
+                                  QMessageBox::Ok,
+                                  this);
+    if (ret == QMessageBox::Ok) {
+        restartVNote();
+    }
+}

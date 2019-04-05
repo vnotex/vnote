@@ -331,6 +331,8 @@ private:
 
     void updateFontOfAllTabs();
 
+    void promptForVNoteRestart();
+
     // Captain mode functions.
 
     // Popup the attachment list if it is enabled.
