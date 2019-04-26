@@ -256,15 +256,43 @@ void VTextDocumentLayout::draw(QPainter *p_painter, const PaintContext &p_contex
         int cursorWidth = m_cursorWidth;
         int cursorPosition = p_context.cursorPosition - blpos;
         if (drawCursor && m_cursorBlockMode != CursorBlock::None) {
-            if (cursorPosition > 0 && m_cursorBlockMode == CursorBlock::LeftSide) {
-                --cursorPosition;
+            auto direction = layout->textOption().textDirection();
+            bool needUpdateWidthViaSelection = true;
+            int deltaPosition = direction == Qt::RightToLeft ? -1 : 1;
+            // FIXME: the rect to update is error in RTL case.
+            if (m_cursorBlockMode == CursorBlock::LeftSide) {
+                if (direction == Qt::RightToLeft) {
+                    if (cursorPosition == 0) {
+                        cursorWidth = 1;
+                        needUpdateWidthViaSelection = false;
+                    }
+                } else {
+                    if (cursorPosition > 0) {
+                        --cursorPosition;
+                    } else {
+                        cursorWidth = 1;
+                        needUpdateWidthViaSelection = false;
+                    }
+                }
+            } else if (m_cursorBlockMode == CursorBlock::RightSide) {
+                if (direction == Qt::RightToLeft) {
+                    if (cursorPosition < bllen - 1) {
+                        ++cursorPosition;
+                    } else {
+                        cursorWidth = 1;
+                        needUpdateWidthViaSelection = false;
+                    }
+                } else {
+                    if (cursorPosition == bllen - 1) {
+                        cursorWidth = m_virtualCursorBlockWidth;
+                        needUpdateWidthViaSelection = false;
+                    }
+                }
             }
 
-            if (cursorPosition == bllen - 1) {
-                cursorWidth = m_virtualCursorBlockWidth;
-            } else {
+            if (needUpdateWidthViaSelection) {
                 // Get the width of the selection to update cursor width.
-                cursorWidth = getTextWidthWithinTextLine(layout, cursorPosition, 1);
+                cursorWidth = getTextWidthWithinTextLine(layout, cursorPosition, deltaPosition);
                 if (cursorWidth < m_cursorWidth) {
                     cursorWidth = m_cursorWidth;
                 }
@@ -274,6 +302,8 @@ void VTextDocumentLayout::draw(QPainter *p_painter, const PaintContext &p_contex
                 m_lastCursorBlockWidth = cursorWidth;
                 emit cursorBlockWidthUpdated(m_lastCursorBlockWidth);
             }
+
+            Q_ASSERT(cursorWidth > 0);
         }
 
         // Draw cursor line block.
@@ -511,6 +541,26 @@ void VTextDocumentLayout::clearBlockLayout(QTextBlock &p_block)
     info->reset();
 }
 
+// From Qt's qguiapplication_p.h.
+static Qt::Alignment visualAlignment(Qt::LayoutDirection p_direction,
+                                     Qt::Alignment p_alignment)
+{
+    if (!(p_alignment & Qt::AlignHorizontal_Mask)) {
+        p_alignment |= Qt::AlignLeft;
+    }
+
+    if (!(p_alignment & Qt::AlignAbsolute)
+        && (p_alignment & (Qt::AlignLeft | Qt::AlignRight))) {
+        if (p_direction == Qt::RightToLeft) {
+            p_alignment ^= (Qt::AlignLeft | Qt::AlignRight);
+        }
+
+        p_alignment |= Qt::AlignAbsolute;
+    }
+
+    return p_alignment;
+}
+
 void VTextDocumentLayout::layoutBlock(const QTextBlock &p_block)
 {
     QTextDocument *doc = document();
@@ -518,6 +568,21 @@ void VTextDocumentLayout::layoutBlock(const QTextBlock &p_block)
 
     QTextLayout *tl = p_block.layout();
     QTextOption option = doc->defaultTextOption();
+
+    {
+    auto direction = p_block.textDirection();
+    option.setTextDirection(direction);
+
+    auto alignment = option.alignment();
+    QTextBlockFormat blockFormat = p_block.blockFormat();
+    if (blockFormat.hasProperty(QTextFormat::BlockAlignment)) {
+        alignment = blockFormat.alignment();
+    }
+
+    // For paragraph that are RTL, alignment is auto-reversed.
+    option.setAlignment(visualAlignment(direction, alignment));
+    }
+
     tl->setTextOption(option);
 
     int extraMargin = 0;
@@ -1125,7 +1190,8 @@ int VTextDocumentLayout::getTextWidthWithinTextLine(const QTextLayout *p_layout,
     QTextLine line = p_layout->lineForTextPosition(p_pos);
     V_ASSERT(line.isValid());
     V_ASSERT(p_pos + p_length <= line.textStart() + line.textLength());
-    return line.cursorToX(p_pos + p_length) - line.cursorToX(p_pos);
+    V_ASSERT(p_pos + p_length >= 0);
+    return qAbs(line.cursorToX(p_pos + p_length) - line.cursorToX(p_pos));
 }
 
 void VTextDocumentLayout::updateBlockByNumber(int p_blockNumber)
