@@ -276,7 +276,14 @@ void VMainWindow::setupUI()
     connect(m_fileList, &VFileList::fileClicked,
             m_editArea, &VEditArea::openFile);
     connect(m_fileList, &VFileList::fileCreated,
-            m_editArea, &VEditArea::openFile);
+            m_editArea, [this](VNoteFile *p_file,
+                               OpenFileMode p_mode,
+                               bool p_forceMode) {
+                if (p_file->getDocType() == DocType::Markdown
+                    || p_file->getDocType() == DocType::Html) {
+                    m_editArea->openFile(p_file, p_mode, p_forceMode);
+                }
+            });
     connect(m_fileList, &VFileList::fileUpdated,
             m_editArea, &VEditArea::handleFileUpdated);
     connect(m_editArea, &VEditArea::tabStatusUpdated,

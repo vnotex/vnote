@@ -659,14 +659,14 @@ void VFileList::contextMenuRequested(QPoint pos)
         menu.addSeparator();
         if (selectedSize == 1) {
             QAction *openLocationAct = new QAction(VIconUtils::menuIcon(":/resources/icons/open_location.svg"),
-                                                   tr("&Open Note Location"),
+                                                   tr("Open Note &Location"),
                                                    &menu);
             openLocationAct->setToolTip(tr("Explore the folder containing this note in operating system"));
             connect(openLocationAct, &QAction::triggered,
                     this, &VFileList::openFileLocation);
             menu.addAction(openLocationAct);
 
-            QAction *copyPathAct = new QAction(tr("Copy File Path"), &menu);
+            QAction *copyPathAct = new QAction(tr("Copy File &Path"), &menu);
             connect(copyPathAct, &QAction::triggered,
                     this, [this]() {
                         QList<QListWidgetItem *> items = fileList->selectedItems();
