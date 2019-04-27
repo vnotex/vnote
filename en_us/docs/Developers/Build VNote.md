@@ -1,5 +1,5 @@
 # Build VNote
-You need **Qt 5.9** to build VNote from source.
+You need **Qt 5.9** and above to build VNote from source.
 
 ## Get the Source Code of VNote
 VNote's source code is available on [Github](https://github.com/tamlok/vnote). You could download the ZIP archive of the code. Please be aware of that VNote depends on some submodules, so you should also download the source codes of these modules.
