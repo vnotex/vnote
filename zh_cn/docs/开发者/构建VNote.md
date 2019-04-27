@@ -1,5 +1,5 @@
 # 构建VNote
-您需要**Qt 5.9**才能从源代码创建VNote。
+您需要**Qt 5.9**或以上版本才能从源代码创建VNote。
 
 ## 获取VNote的源代码
 VNote的源代码可在 [Github](https://github.com/tamlok/vnote) 上获取。您可以下载代码的ZIP存档。请注意，VNote依赖于某些子模块，因此您还应该下载这些模块的源代码。
