@@ -3477,7 +3477,7 @@ void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
         }
 
         if (g_config->getAllowUserTrack()) {
-            QTimer::singleShot(60000, this, SLOT(collectUserStat()));
+            QTimer::singleShot(30 * 1000, this, SLOT(collectUserStat()));
         }
 
         m_syncNoteListToCurrentTab = true;
@@ -3585,13 +3585,23 @@ void VMainWindow::setupFileListSplitOut(bool p_enabled)
 
 void VMainWindow::collectUserStat() const
 {
-    QWebEnginePage *page = new QWebEnginePage;
-    page->load(QUrl("https://tamlok.github.io/user_track/vnote.html"));
-    connect(page, &QWebEnginePage::loadFinished,
-            this, [page](bool) {
-                VUtils::sleepWait(2000);
-                page->deleteLater();
-            });
+    // One request per day.
+    auto lastCheckDate = g_config->getLastUserTrackDate();
+    if (lastCheckDate != QDate::currentDate()) {
+        g_config->updateLastUserTrackDate();
+
+        qDebug() << "send user track" << QDate::currentDate();
+
+        QWebEnginePage *page = new QWebEnginePage;
+        page->load(QUrl("https://tamlok.github.io/user_track/vnote.html"));
+        connect(page, &QWebEnginePage::loadFinished,
+                this, [page](bool) {
+                    VUtils::sleepWait(2000);
+                    page->deleteLater();
+                });
+    }
+
+    QTimer::singleShot(30 * 60 * 1000, this, SLOT(collectUserStat()));
 }
 
 void VMainWindow::promptForVNoteRestart()

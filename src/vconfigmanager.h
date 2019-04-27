@@ -637,6 +637,9 @@ public:
     bool getSyncNoteListToTab() const;
     void setSyncNoteListToTab(bool p_enabled);
 
+    QDate getLastUserTrackDate() const;
+    void updateLastUserTrackDate();
+
 private:
     void initEditorConfigs();
 

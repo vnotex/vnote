@@ -1734,3 +1734,19 @@ void VConfigManager::setWindowsOpenGL(int p_openGL)
     QString fullKey("global/windows_opengl");
     userSet->setValue(fullKey, p_openGL);
 }
+
+QDate VConfigManager::getLastUserTrackDate() const
+{
+
+    auto dateStr = getConfigFromSessionSettings("global",
+                                                "last_user_track_date").toString();
+    return QDate::fromString(dateStr, Qt::ISODate);
+}
+
+void VConfigManager::updateLastUserTrackDate()
+{
+    auto date = QDate::currentDate();
+    setConfigToSessionSettings("global",
+                               "last_user_track_date",
+                               date.toString(Qt::ISODate));
+}
