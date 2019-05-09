@@ -640,6 +640,9 @@ public:
     QDate getLastUserTrackDate() const;
     void updateLastUserTrackDate();
 
+    QDateTime getLastStartDateTime() const;
+    void updateLastStartDateTime();
+
 private:
     void initEditorConfigs();
 

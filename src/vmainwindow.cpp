@@ -3456,12 +3456,7 @@ void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
         openStartupPages();
         openFiles(p_files, false, g_config->getNoteOpenMode(), false, true);
 
-        if (g_config->versionChanged()
-            || (QDate::currentDate().dayOfYear() % 64 == 1)) {
-            QString docFile = VUtils::getDocFile("welcome.md");
-            VFile *file = vnote->getFile(docFile, true);
-            m_editArea->openFile(file, OpenFileMode::Read);
-        }
+        checkIfNeedToShowWelcomePage();
 
         if (g_config->versionChanged() && !g_config->getAllowUserTrack()) {
             // Ask user whether allow tracking.
@@ -3481,6 +3476,8 @@ void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
         }
 
         m_syncNoteListToCurrentTab = true;
+
+        g_config->updateLastStartDateTime();
     });
 }
 
@@ -3615,5 +3612,16 @@ void VMainWindow::promptForVNoteRestart()
                                   this);
     if (ret == QMessageBox::Ok) {
         restartVNote();
+    }
+}
+
+void VMainWindow::checkIfNeedToShowWelcomePage()
+{
+    if (g_config->versionChanged()
+        || (QDate::currentDate().dayOfYear() % 64 == 1
+            && g_config->getLastStartDateTime().date() != QDate::currentDate())) {
+        QString docFile = VUtils::getDocFile("welcome.md");
+        VFile *file = vnote->getFile(docFile, true);
+        m_editArea->openFile(file, OpenFileMode::Read);
     }
 }

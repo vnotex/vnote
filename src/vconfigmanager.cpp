@@ -10,6 +10,7 @@
 #include <QStandardPaths>
 #include <QCoreApplication>
 #include <QScopedPointer>
+#include <QDateTime>
 
 #include "utils/vutils.h"
 #include "vstyleparser.h"
@@ -1749,4 +1750,17 @@ void VConfigManager::updateLastUserTrackDate()
     setConfigToSessionSettings("global",
                                "last_user_track_date",
                                date.toString(Qt::ISODate));
+}
+
+QDateTime VConfigManager::getLastStartDateTime() const
+{
+    auto dateStr = getConfigFromSessionSettings("global",
+                                                "last_start_time").toString();
+    return QDateTime::fromString(dateStr, Qt::ISODate);
+}
+
+void VConfigManager::updateLastStartDateTime()
+{
+    auto dateTime = QDateTime::currentDateTime();
+    setConfigToSessionSettings("global", "last_start_time", dateTime.toString(Qt::ISODate));
 }

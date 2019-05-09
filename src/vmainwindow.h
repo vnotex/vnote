@@ -333,6 +333,8 @@ private:
 
     void promptForVNoteRestart();
 
+    void checkIfNeedToShowWelcomePage();
+
     // Captain mode functions.
 
     // Popup the attachment list if it is enabled.
