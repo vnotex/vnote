@@ -1,4 +1,9 @@
 # Changes History
+## v2.5
+- Do not open unknown type file when creating a new note;
+- Support Right-To-Left text in edit mode (with Vim mode disabled);
+- Remove credict information in export template;
+
 ## v2.4
 - Bundle qt5ct in Linux for native look support;
 - Use `Return` or `Enter` to confirm selection in macOS (besides `Cmd+O`);
