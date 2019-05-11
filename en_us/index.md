@@ -3,7 +3,7 @@
 
 ::: alert-success
 
-VNote 2.4 is released! Check out [what's new](https://github.com/tamlok/vnote/releases)!
+VNote 2.5 is released! Check out [what's new](https://github.com/tamlok/vnote/releases)!
 
 :::
 
