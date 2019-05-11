@@ -16,7 +16,7 @@ sudo apt-get -y install qt59base qt59webengine qt59webchannel qt59svg qt59locati
 source /opt/qt*/bin/qt*-env.sh
 
 # Compile qt5ct
-wget -c https://jaist.dl.sourceforge.net/project/qt5ct/qt5ct-0.37.tar.bz2
+wget -c https://excellmedia.dl.sourceforge.net/project/qt5ct/qt5ct-0.37.tar.bz2
 tar xf qt5ct-0.*.tar.bz2
 cd qt5ct-0.*/
 QT_SELECT=5 qmake
