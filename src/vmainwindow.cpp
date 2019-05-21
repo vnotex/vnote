@@ -3590,7 +3590,9 @@ void VMainWindow::collectUserStat() const
         qDebug() << "send user track" << QDate::currentDate();
 
         QWebEnginePage *page = new QWebEnginePage;
-        page->load(QUrl("https://tamlok.github.io/user_track/vnote.html"));
+
+        QString url = QString("https://tamlok.github.io/user_track/vnote/vnote_%1.html").arg(VConfigManager::c_version);
+        page->load(QUrl(url));
         connect(page, &QWebEnginePage::loadFinished,
                 this, [page](bool) {
                     VUtils::sleepWait(2000);
