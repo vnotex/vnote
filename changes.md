@@ -1,4 +1,7 @@
 # Changes History
+## v2.6
+- Version-specific user track;
+
 ## v2.5
 - Do not open unknown type file when creating a new note;
 - Support Right-To-Left text in edit mode (with Vim mode disabled);

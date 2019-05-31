@@ -73,6 +73,11 @@ AUR也提供一个和最新master分支同步的开发版本 [vnote-git](https:/
 brew cask install vnote
 ```
 
+### NixOS
+@kuznero packaged VNote in NixOS. It should be available in `unstable` and `unstable-small` channels.
+
+感谢 @kuznero 在NixOS上打包VNote。可以在`unstable`和`unstable-small`频道中找到VNote。
+
 # 简介
 
 **VNote**是一个基于Qt框架的、免费的开源笔记软件。VNote专注于Markdown的编辑与阅读，以提供舒适的编辑体验为设计目标。

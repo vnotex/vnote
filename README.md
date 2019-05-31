@@ -61,6 +61,9 @@ makepkg -sic
 
 There is also a development version that tracks the latest master [vnote-git](https://aur.archlinux.org/packages/vnote-git/).
 
+### NixOS
+Thank @kuznero for packaging VNote in NixOS. It should be available in `unstable` and `unstable-small` channels.
+
 ## MacOS
 [![Build Status](https://travis-ci.org/tamlok/vnote.svg?branch=master)](https://travis-ci.org/tamlok/vnote)
 

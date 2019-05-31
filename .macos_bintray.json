@@ -16,10 +16,10 @@
     },
 
     "version": {
-        "name": "2.5",
+        "name": "2.6",
         "desc": "VNote Releases",
-        "released": "2019-05-11",
-        "vcs_tag": "2.5",
+        "released": "2019-05-31",
+        "vcs_tag": "2.6",
         "gpgSign": false
     },
 
