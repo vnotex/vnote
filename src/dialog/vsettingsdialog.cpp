@@ -707,14 +707,15 @@ VReadEditTab::VReadEditTab(VSettingsDialog *p_dlg, QWidget *p_parent)
     m_flashAnchor->setToolTip(tr("Flash current heading on change"));
 
     // Swap file.
-    m_swapFile = new QCheckBox(tr("Swap file"));
+    m_swapFile = new QCheckBox(tr("Swap file (Recommended)"));
     m_swapFile->setToolTip(tr("Automatically save changes to a swap file for backup"));
     connect(m_swapFile, &QCheckBox::stateChanged,
             this, &VReadEditTab::showTipsAboutAutoSave);
 
     // Auto save.
-    m_autoSave = new QCheckBox(tr("Auto save"));
-    m_autoSave->setToolTip(tr("Automatically save the note when editing"));
+    m_autoSave = new QCheckBox(tr("Auto save (Buggy)"));
+    m_autoSave->setToolTip(tr("Automatically save the note when editing"
+                              " (may DELETE images on save)"));
     connect(m_autoSave, &QCheckBox::stateChanged,
             this, &VReadEditTab::showTipsAboutAutoSave);
 
