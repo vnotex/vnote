@@ -4688,17 +4688,17 @@ Modified Time: %3</source>
         <translation>如果允许，会发送一个到 https://tamlok.github.io/user_track/vnote.html 的请求。</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3607"/>
+        <location filename="../vmainwindow.cpp" line="3609"/>
         <source>Restart Needed</source>
         <translation>需要重启</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3608"/>
+        <location filename="../vmainwindow.cpp" line="3610"/>
         <source>Do you want to restart VNote now?</source>
         <translation>是否现在重启VNote？</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3609"/>
+        <location filename="../vmainwindow.cpp" line="3611"/>
         <source>VNote needs to restart to apply new configurations.</source>
         <translation>VNote需要重启以应用新的配置。</translation>
     </message>
@@ -5107,239 +5107,239 @@ Modified Time: %3</source>
 <context>
     <name>VMarkdownTab</name>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1214"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1215"/>
         <source>Default mode to open a file</source>
         <translation>文件默认打开模式</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1215"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1216"/>
         <source>Read Mode</source>
         <translation>阅读模式</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1216"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1217"/>
         <source>Edit Mode</source>
         <translation>编辑模式</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1259"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1260"/>
         <source>Location of MathJax JavaScript and its configuration (restart VNote to make it work in in-place preview)</source>
         <translation>MathJax JavaScript脚本的位置和配置（重启VNote使其在原地预览中生效）</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1261"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1262"/>
         <source>Need to prepend &quot;file://&quot; to local path</source>
         <translation>本地路径需要在前面添加“file://”</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1265"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1266"/>
         <source>Enable PlantUML support in Markdown</source>
         <translation>启用PlantUML渲染图表</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1267"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1268"/>
         <source>Online Service</source>
         <translation>在线服务</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1268"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1269"/>
         <source>Local JAR</source>
         <translation>本地JAR</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1271"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1272"/>
         <source>Server address for online PlantUML</source>
         <translation>PlantUML在线服务器地址</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1274"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1275"/>
         <source>Location to the PlantUML JAR executable for local PlantUML</source>
         <translation>PlantUML本地JAR可执行文件位置</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1276"/>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1326"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1277"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1327"/>
         <source>Test</source>
         <translation>测试</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1277"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1278"/>
         <source>Test PlantUML JAR configuration</source>
         <translation>测试PlantUML JAR配置</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1283"/>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1294"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1284"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1295"/>
         <source>Warning</source>
         <translation>警告</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1284"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1285"/>
         <source>The JAR file specified does not exist.</source>
         <translation>指定的JAR文件不存在。</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1285"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1286"/>
         <source>Please input the right absolute file path to the JAR file.</source>
         <translation>请输入正确的JAR文件的绝对文件路径。</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1295"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1296"/>
         <source>Please specify the absolute file path to the JAR file.</source>
         <translation>请输入JAR文件的绝对文件路径。</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1296"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1297"/>
         <source>It should be something like &quot;/path/to/plantuml.jar&quot;.</source>
         <translation>应该是类似于“/path/to/plantuml.jar”。</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1306"/>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1338"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1307"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1339"/>
         <source>Information</source>
         <translation>信息</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1307"/>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1339"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1308"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1340"/>
         <source>Test %1.</source>
         <translation>测试 %1。</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1307"/>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1339"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1308"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1340"/>
         <source>succeeded</source>
         <translation>成功</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1307"/>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1339"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1308"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1340"/>
         <source>failed</source>
         <translation>失败</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1319"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1320"/>
         <source>Graphviz</source>
         <translation>Graphviz</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1320"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1321"/>
         <source>Enable Graphviz for drawing graph</source>
         <translation>启用Graphviz渲染图表</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1323"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1324"/>
         <source>Empty to detect automatically</source>
         <translation>自动检测</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1324"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1325"/>
         <source>Location to the GraphViz dot executable</source>
         <translation>Graphviz dot可执行文件位置</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1327"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1328"/>
         <source>Test Graphviz executable configuration</source>
         <translation>测试Graphviz可执行文件配置</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1354"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1355"/>
         <source>MathJax configuration:</source>
         <translation>MathJax配置:</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1355"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1356"/>
         <source>PlantUML:</source>
         <translation>PlantUML:</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1356"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1357"/>
         <source>PlantUML server:</source>
         <translation>PlantUML服务器:</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1357"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1358"/>
         <source>PlantUML JAR:</source>
         <translation>PlantUML JAR:</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1359"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1360"/>
         <source>Graphviz executable:</source>
         <translation>Graphviz可执行文件:</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1220"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1221"/>
         <source>Enable auto sequence for all headings (in the form like 1.2.3.4.)</source>
         <translation>自动为所有标题添加序列（类似于1.2.3.4.）</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1221"/>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1266"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1222"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1267"/>
         <source>Disabled</source>
         <translation>关闭</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1222"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1223"/>
         <source>Enabled</source>
         <translation>启用</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1223"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1224"/>
         <source>Enabled for internal notes only</source>
         <translation>仅对内部笔记启用</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1226"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1227"/>
         <source>Base level to start heading sequence</source>
         <translation>标题序列起始级别</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1227"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1228"/>
         <source>1</source>
         <translation>1</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1228"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1229"/>
         <source>2</source>
         <translation>2</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1229"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1230"/>
         <source>3</source>
         <translation>3</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1230"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1231"/>
         <source>4</source>
         <translation>4</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1231"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1232"/>
         <source>5</source>
         <translation>5</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1232"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1233"/>
         <source>6</source>
         <translation>6</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1249"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1250"/>
         <source>Specify the screen column in fenced code block which will be highlighted</source>
         <translation>指定编辑模式下代码块中的高亮列</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1254"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1255"/>
         <source>Color column:</source>
         <translation>高亮列:</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1351"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1352"/>
         <source>Open mode:</source>
         <translation>打开模式:</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1352"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1353"/>
         <source>Heading sequence:</source>
         <translation>标题序列:</translation>
     </message>
@@ -6045,7 +6045,7 @@ Modified Time: %3</source>
 <context>
     <name>VMiscTab</name>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1535"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1536"/>
         <source>Highlight matches of a full-text search in page</source>
         <translation>在页面内高亮全文搜索的匹配</translation>
     </message>
@@ -6293,53 +6293,53 @@ Modified Time: %3</source>
 <context>
     <name>VNoteManagementTab</name>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="977"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="978"/>
         <source>Notes</source>
         <translation>笔记</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="978"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="979"/>
         <source>External Files</source>
         <translation>外部文件</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="982"/>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1028"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="983"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1029"/>
         <source>Custom image folder</source>
         <translation>自定义图片文件夹</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="983"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="984"/>
         <source>Set the global name of the image folder to hold images of notes (restart VNote to make it work)</source>
         <translation>全局设置图片文件夹的名字以保存笔记的图片（重启VNote生效）</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="999"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1000"/>
         <source>Custom attachment folder</source>
         <translation>自定义附件文件夹</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1000"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1001"/>
         <source>Set the global name of the attachment folder to hold attachments of notes (restart VNote to make it work)</source>
         <translation>全局设置附件文件夹的名字以保存笔记的附件（重启VNote生效）</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1006"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1007"/>
         <source>Name of the attachment folder</source>
         <translation>附件文件夹的名字</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1016"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1017"/>
         <source>Single click to open a note in current tab</source>
         <translation>单击在当前标签页打开笔记</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1017"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1018"/>
         <source>Single click a note in the notes list to open it in current tab, double click to open it in a new tab</source>
         <translation>在笔记列表中单击一个笔记在当前标签页打开，双击在新标签页中打开</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1029"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1030"/>
         <source>Set the path of the global image folder to hold images of external files (restart VNote to make it work).
 You could use both absolute or relative path here. If absolute path is used, VNote will not manage
 those images, so you need to clean up unused images manually.</source>
@@ -6348,8 +6348,8 @@ those images, so you need to clean up unused images manually.</source>
 这些图片，需要由用户手动清理不再使用的图片。</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="989"/>
-        <location filename="../dialog/vsettingsdialog.cpp" line="1039"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="990"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="1040"/>
         <source>Name of the image folder</source>
         <translation>图片文件夹的名字</translation>
     </message>
@@ -6673,9 +6673,8 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
         <translation>当前标题发生改变时闪烁</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="710"/>
         <source>Swap file</source>
-        <translation>交换文件</translation>
+        <translation type="vanished">交换文件</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="711"/>
@@ -6683,67 +6682,80 @@ If absolute path is used, VNote will not manage those images.(empty to use globa
         <translation>自动将更改保存到交换文件中以备份</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="716"/>
         <source>Auto save</source>
-        <translation>自动保存</translation>
+        <translation type="vanished">自动保存</translation>
+    </message>
+    <message>
+        <source>Automatically save the note when editing</source>
+        <translation type="vanished">编辑时自动保存笔记</translation>
+    </message>
+    <message>
+        <location filename="../dialog/vsettingsdialog.cpp" line="710"/>
+        <source>Swap file (Recommended)</source>
+        <translation>交换文件 (推荐)</translation>
+    </message>
+    <message>
+        <location filename="../dialog/vsettingsdialog.cpp" line="716"/>
+        <source>Auto save (Buggy)</source>
+        <translation>自动保存 (不稳定)</translation>
     </message>
     <message>
         <location filename="../dialog/vsettingsdialog.cpp" line="717"/>
-        <source>Automatically save the note when editing</source>
-        <translation>编辑时自动保存笔记</translation>
+        <source>Automatically save the note when editing (may DELETE images on save)</source>
+        <translation>编辑时自动保存笔记 (可能会在保存的时候删除图片)</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="723"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="724"/>
         <source>Choose the key mode in editor</source>
         <translation>选择编辑器的按键模式</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="724"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="725"/>
         <source>Normal</source>
         <translation>普通</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="725"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="726"/>
         <source>Vim</source>
         <translation>Vim</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="733"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="734"/>
         <source>Smart input method in Vim mode</source>
         <translation>Vim模式智能输入法</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="734"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="735"/>
         <source>Disable input method when leaving Insert mode in Vim mode</source>
         <translation>Vim模式中，退出插入模式时禁用输入法</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="737"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="738"/>
         <source>Custom editor font</source>
         <translation>自定义编辑器字体</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="738"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="739"/>
         <source>Set the font of editor to override style configuration</source>
         <translation>设置编辑器的字体以覆盖样式的配置</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="750"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="751"/>
         <source>Set the zoom delta of the editor font</source>
         <translation>设置编辑器字体的缩放大小</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="763"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="764"/>
         <source>Key mode:</source>
         <translation>按键模式:</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="765"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="766"/>
         <source>Editor zoom delta:</source>
         <translation>编辑器缩放大小:</translation>
     </message>
     <message>
-        <location filename="../dialog/vsettingsdialog.cpp" line="784"/>
+        <location filename="../dialog/vsettingsdialog.cpp" line="785"/>
         <source>It&apos;s recommended to enable &quot;Swap file&quot; or &quot;Auto save&quot;, not both</source>
         <translation>推荐启用“交换文件”或“自动保存”，但不推荐两者都启用</translation>
     </message>
