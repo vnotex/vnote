@@ -4,7 +4,6 @@
 #include <QPrintDialog>
 #include <QPainter>
 #include <QWebEnginePage>
-#include <QRandomGenerator>
 
 #include "vmainwindow.h"
 #include "vdirectorytree.h"
@@ -3473,7 +3472,7 @@ void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
         }
 
         if (g_config->getAllowUserTrack()) {
-            int interval = (30 + QRandomGenerator::global()->generate() % 60) * 1000;
+            int interval = (30 + qrand() % 60) * 1000;
             QTimer::singleShot(interval, this, SLOT(collectUserStat()));
         }
 
