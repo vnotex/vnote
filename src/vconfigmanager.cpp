@@ -377,6 +377,8 @@ void VConfigManager::initEditorConfigs()
     m_editorFontFamily = getConfigFromSettings(section, "editor_font_family").toString();
 
     m_enableSmartTable = getConfigFromSettings(section, "enable_smart_table").toBool();
+
+    m_tableFormatIntervalMS = getConfigFromSettings(section, "table_format_interval").toInt();
 }
 
 void VConfigManager::initMarkdownConfigs()

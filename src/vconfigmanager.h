@@ -643,6 +643,8 @@ public:
     QDateTime getLastStartDateTime() const;
     void updateLastStartDateTime();
 
+    int getTableFormatInterval() const;
+
 private:
     void initEditorConfigs();
 
@@ -1132,6 +1134,9 @@ private:
 
     // Whether auto locate to current tab in note list.
     bool m_syncNoteListToCurrentTab;
+
+    // Interval (milliseconds) to format table.
+    int m_tableFormatIntervalMS;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2958,5 +2963,10 @@ inline void VConfigManager::setSyncNoteListToTab(bool p_enabled)
 
     m_syncNoteListToCurrentTab = p_enabled;
     setConfigToSettings("global", "sync_note_list_to_current_tab", m_syncNoteListToCurrentTab);
+}
+
+inline int VConfigManager::getTableFormatInterval() const
+{
+    return m_tableFormatIntervalMS;
 }
 #endif // VCONFIGMANAGER_H

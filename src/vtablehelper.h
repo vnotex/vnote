@@ -2,6 +2,7 @@
 #define VTABLEHELPER_H
 
 #include <QObject>
+#include <QTimer>
 
 #include "markdownhighlighterdata.h"
 #include "vtable.h"
@@ -24,7 +25,13 @@ private:
     // Return the block index which contains the cursor.
     int currentCursorTableBlock(const QVector<VTableBlock> &p_blocks) const;
 
+    void formatTables();
+
     VEditor *m_editor;
+
+    QTimer *m_timer;
+
+    VTableBlock m_block;
 };
 
 #endif // VTABLEHELPER_H

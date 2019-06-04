@@ -4,6 +4,7 @@
 #include <QPrintDialog>
 #include <QPainter>
 #include <QWebEnginePage>
+#include <QRandomGenerator>
 
 #include "vmainwindow.h"
 #include "vdirectorytree.h"
@@ -3472,7 +3473,8 @@ void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
         }
 
         if (g_config->getAllowUserTrack()) {
-            QTimer::singleShot(30 * 1000, this, SLOT(collectUserStat()));
+            int interval = (30 + QRandomGenerator::global()->generate() % 60) * 1000;
+            QTimer::singleShot(interval, this, SLOT(collectUserStat()));
         }
 
         m_syncNoteListToCurrentTab = true;

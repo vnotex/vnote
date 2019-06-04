@@ -1,5 +1,7 @@
 #include "vtablehelper.h"
 
+#include <QTimer>
+
 #include "veditor.h"
 #include "vconfigmanager.h"
 
@@ -9,10 +11,17 @@ VTableHelper::VTableHelper(VEditor *p_editor, QObject *p_parent)
     : QObject(p_parent),
       m_editor(p_editor)
 {
+    m_timer = new QTimer(this);
+    m_timer->setSingleShot(true);
+    m_timer->setInterval(g_config->getTableFormatInterval());
+    connect(m_timer, &QTimer::timeout,
+            this, &VTableHelper::formatTables);
 }
 
 void VTableHelper::updateTableBlocks(const QVector<VTableBlock> &p_blocks)
 {
+    m_timer->stop();
+
     if (m_editor->isReadOnlyW() ||
         !m_editor->isModified() ||
         !g_config->getEnableSmartTable()) {
@@ -24,14 +33,8 @@ void VTableHelper::updateTableBlocks(const QVector<VTableBlock> &p_blocks)
         return;
     }
 
-    VTable table(m_editor, p_blocks[idx]);
-    if (!table.isValid()) {
-        return;
-    }
-
-    table.format();
-
-    table.write();
+    m_block = p_blocks[idx];
+    m_timer->start();
 }
 
 int VTableHelper::currentCursorTableBlock(const QVector<VTableBlock> &p_blocks) const
@@ -63,6 +66,22 @@ void VTableHelper::insertTable(int p_nrRow, int p_nrCol, VTable::Alignment p_ali
     if (!table.isValid()) {
         return;
     }
+
+    table.write();
+}
+
+void VTableHelper::formatTables()
+{
+    if (!m_block.isValid()) {
+        return;
+    }
+
+    VTable table(m_editor, m_block);
+    if (!table.isValid()) {
+        return;
+    }
+
+    table.format();
 
     table.write();
 }
