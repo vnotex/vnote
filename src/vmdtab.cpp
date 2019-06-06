@@ -94,11 +94,13 @@ VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
                 }
             });
 
-    if (p_mode == OpenFileMode::Edit) {
-        showFileEditMode();
-    } else {
-        showFileReadMode();
-    }
+    QTimer::singleShot(50, this, [this, p_mode]() {
+                if (p_mode == OpenFileMode::Edit) {
+                    showFileEditMode();
+                } else {
+                    showFileReadMode();
+                }
+            });
 }
 
 void VMdTab::setupUI()
@@ -940,7 +942,7 @@ void VMdTab::focusChild()
         break;
 
     default:
-        Q_ASSERT(false);
+        this->setFocus();
         break;
     }
 }
