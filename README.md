@@ -176,7 +176,7 @@ VNote supports powerful **in-place preview** for images, diagrams, and formulas 
 Just paste your image into the Markdown note, VNote will manage all other stuffs. VNote stores images in a specified folder in the same folder with the note. VNote will pop up a window to preview the image when you insert an image. Furthermore, VNote will delete the useless image files automatically after you remove the image links.
 
 ## Universal Entry & Full-Text Search
-VNote has powerful built-in full-text search with **Regular Expression** and **Fuzzy Search** support. The search could be executed wihtin all notebooks, current notebook, or current folder, targeted at name or content.
+VNote has powerful built-in full-text search with **Regular Expression** and **Fuzzy Search** support. The search could be executed within all notebooks, current notebook, or current folder, targeted at name or content.
 
 Like the `CtrlP` in Vim, VNote supports **Universal Entry** to reach anything by typing in a simple input.
 
