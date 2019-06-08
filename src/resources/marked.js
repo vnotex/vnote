@@ -71,6 +71,7 @@ var updateText = function(text) {
     renderPlantUML('language-puml');
     renderGraphviz('language-dot');
     addClassToCodeBlock();
+    addCopyButtonToCodeBlock();
     renderCodeBlockLineNumber();
 
     // If you add new logics after handling MathJax, please pay attention to

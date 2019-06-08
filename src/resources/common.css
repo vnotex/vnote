@@ -208,3 +208,40 @@ span.modal-close:focus {
     content: attr(data-anchor-icon);
 }
 /* Anchor */
+
+/* Button */
+.vnote-btn {
+    position: relative;
+    display: inline-block;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 20px;
+    white-space: nowrap;
+    vertical-align: middle;
+    cursor: pointer;
+    border: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-appearance: none;
+}
+
+.vnote-copy-clipboard-btn {
+    transition: opacity .3s ease-in-out;
+    opacity: 0;
+    padding: 2px 6px;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+}
+
+pre:hover .vnote-copy-clipboard-btn {
+    opacity: 1;
+}
+
+pre.vnote-snippet {
+    position: relative;
+}
+/* Button */

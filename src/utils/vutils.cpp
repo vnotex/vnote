@@ -943,6 +943,18 @@ with 2em, if there are Chinese characters in it, the font will be a mess.
         extra += QString("<script type=\"text/javascript\">\n%1\n</script>\n").arg(js);
     }
 
+    // Clipboard.js.
+    {
+    const QString clipboardjs(":/utils/clipboard.js/clipboard.min.js");
+    QString js = VUtils::readFileFromDisk(clipboardjs);
+    extra += QString("<script type=\"text/javascript\">\n%1\n</script>\n").arg(js);
+    extra += "<script type=\"text/javascript\">"
+                 "window.addEventListener('load', function() {"
+                     "new ClipboardJS('.vnote-copy-clipboard-btn');"
+                 "});"
+             "</script>\n";
+    }
+
     if (!extra.isEmpty()) {
         templ.replace(HtmlHolder::c_extraHolder, extra);
     }

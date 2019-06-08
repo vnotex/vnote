@@ -23,6 +23,8 @@ var VPlantUMLDivClass = 'plantuml-diagram';
 var VMetaDataCodeClass = 'markdown-metadata';
 var VMarkRectDivClass = 'mark-rect';
 
+var hljsClass = 'hljs';
+
 var VPreviewMode = false;
 
 if (typeof VEnableMermaid == 'undefined') {
@@ -271,6 +273,10 @@ window.onwheel = function(e) {
 }
 
 var skipScrollCheckRange = null;
+
+window.addEventListener('load', function() {
+    new ClipboardJS('.vnote-copy-clipboard-btn');
+});
 
 window.onscroll = function() {
     if (g_muteScroll) {
@@ -1247,7 +1253,6 @@ var renderCodeBlockLineNumber = function() {
 };
 
 var addClassToCodeBlock = function() {
-    var hljsClass = 'hljs';
     var codes = document.getElementsByTagName('code');
     for (var i = 0; i < codes.length; ++i) {
         var code = codes[i];
@@ -1264,6 +1269,23 @@ var addClassToCodeBlock = function() {
                 pare.classList.add("tex-to-render");
             }
         }
+    }
+};
+
+var addCopyButtonToCodeBlock = function() {
+    var codes = document.getElementsByClassName(hljsClass);
+    for (var i = 0; i < codes.length; ++i) {
+        var code = codes[i];
+        var pare = code.parentElement;
+        pare.classList.add('vnote-snippet');
+
+        var btn = document.createElement('button');
+        btn.innerHTML = '&#x1f4cb;';
+        btn.classList.add('vnote-btn');
+        btn.classList.add('vnote-copy-clipboard-btn');
+        btn.setAttribute('type', 'button');
+        btn.setAttribute('data-clipboard-text', code.textContent);
+        code.insertAdjacentElement('beforebegin', btn);
     }
 };
 
