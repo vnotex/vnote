@@ -5,6 +5,7 @@ VNote is an open source and free project maintained by the author in part time. 
 - Spread and promote VNote to your friends.
 - Participate in the development of VNote or refine VNote's documentation to make VNote perfect.
 - Really appreciate your donate to VNote.
+    - **PayPal**: [PayPal.Me/vnotemd](https://www.paypal.me/vnotemd)
     - Alipay: `tamlokveer@gmail.com`  
     ![](_v_images/20181124165109541_999429459.png =256x)
     - WeChat  
