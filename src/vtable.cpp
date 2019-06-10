@@ -2,6 +2,7 @@
 
 #include <QTextDocument>
 #include <QTextLayout>
+#include <QDebug>
 
 #include "veditor.h"
 
@@ -465,10 +466,10 @@ QString VTable::generateFormattedText(const QString &p_core,
         rightSpaces = 0;
     }
 
-    return QString("%1 %2%3%4 ").arg(c_borderChar)
-                                .arg(QString(leftSpaces, ' '))
-                                .arg(p_core)
-                                .arg(QString(rightSpaces, ' '));
+    return QString("%1 %2%3%4 ").arg(c_borderChar,
+                                     QString(leftSpaces, ' '),
+                                     p_core,
+                                     QString(rightSpaces, ' '));
 }
 
 VTable::Alignment VTable::getColumnAlignment(int p_idx) const
