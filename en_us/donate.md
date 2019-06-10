@@ -11,4 +11,4 @@ VNote is an open source and free project maintained by the author in part time. 
     - WeChat  
     ![](_v_images/20181124165142716_2035299364.png =256x)
 
-Thanks for [those](https://github.com/tamlok/vnote/wiki/Donate-List) who donated to VNote!
+Thank [those](https://github.com/tamlok/vnote/wiki/Donate-List) who donated to VNote!
