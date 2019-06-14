@@ -2,6 +2,8 @@ var renderer = new marked.Renderer();
 var toc = []; // Table of contents as a list
 var nameCounter = 0;
 
+var VRenderer = 'marked';
+
 renderer.heading = function(text, level) {
     // Use number to avoid issues with Chinese
     var escapedText = 'toc_' + nameCounter++;

@@ -34,6 +34,8 @@ var getHeadingLevel = function(h) {
     return level;
 }
 
+var VRenderer = 'markdown-it';
+
 // There is a VMarkdownitOption struct passed in.
 // var VMarkdownitOption = { html, breaks, linkify, sub, sup };
 var mdit = window.markdownit({

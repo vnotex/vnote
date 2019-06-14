@@ -1,3 +1,5 @@
+var VRenderer = 'hoedown';
+
 // Use Marked to highlight code blocks in edit mode.
 marked.setOptions({
     highlight: function(code, lang) {

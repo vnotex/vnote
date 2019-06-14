@@ -102,6 +102,10 @@ if (typeof VOS == 'undefined') {
     VOS = 'win';
 }
 
+if (typeof VRenderer == 'undefined') {
+    VRenderer = 'markdown-it';
+}
+
 if (typeof handleMathjaxReady == 'undefined') {
     var handleMathjaxReady = function() {};
 }
@@ -1241,13 +1245,15 @@ var renderCodeBlockLineNumber = function() {
         }
     }
 
-    // Delete the last extra row.
-    var tables = document.getElementsByTagName('table');
-    for (var i = 0; i < tables.length; ++i) {
-        var table = tables[i];
-        if (table.classList.contains("hljs-ln")) {
-            var rowCount = table.rows.length;
-            table.deleteRow(rowCount - 1);
+    if (VRenderer != 'marked') {
+        // Delete the last extra row.
+        var tables = document.getElementsByTagName('table');
+        for (var i = 0; i < tables.length; ++i) {
+            var table = tables[i];
+            if (table.classList.contains("hljs-ln")) {
+                var rowCount = table.rows.length;
+                table.deleteRow(rowCount - 1);
+            }
         }
     }
 };

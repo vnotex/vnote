@@ -1,3 +1,5 @@
+var VRenderer = 'showdown';
+
 var renderer = new showdown.Converter({simplifiedAutoLink: 'true',
                                        excludeTrailingPunctuationFromURLs: 'true',
                                        strikethrough: 'true',
