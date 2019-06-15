@@ -10,11 +10,12 @@ VNoteは**オープンソース**で、現在は主に1人の個人によって�
 ## トラブルシューティング・ガイド
 ::: alert-info
 
-**How to enable Vim mode?**
+**Vim modeを有効化する**
 
-Open `Settings` dialog via the `File` menu, then jump to `Read/Edit` tab and you could enable Vim via the combo box in `Key mode`. Restart VNote to take effect.
+`ファイル`メニューから、`設定`ダイアログを開き、 `読み取り/編集` タブへすすみます。 コンボボックスの`キーモード`を
+選択することでVimモードを有効にできます。 すぐに稼動させるには、VNoteの再起動が必要です。
 
-If you do not know what Vim is, please do not enable it!
+Vimが何か知らない場合は、有効にしないでください。
 
 :::
 
