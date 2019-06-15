@@ -278,8 +278,19 @@ window.onwheel = function(e) {
 
 var skipScrollCheckRange = null;
 
+var VClipboardDataTextAttr = 'source-text';
+
 window.addEventListener('load', function() {
-    new ClipboardJS('.vnote-copy-clipboard-btn');
+    new ClipboardJS('.vnote-copy-clipboard-btn', {
+        text: function(trigger) {
+            var t = trigger.getAttribute(VClipboardDataTextAttr);
+            if (t[t.length - 1] == '\n') {
+                return t.substring(0, t.length - 1);
+            } else {
+                return t;
+            }
+        }
+    });
 });
 
 window.onscroll = function() {
@@ -1290,7 +1301,7 @@ var addCopyButtonToCodeBlock = function() {
         btn.classList.add('vnote-btn');
         btn.classList.add('vnote-copy-clipboard-btn');
         btn.setAttribute('type', 'button');
-        btn.setAttribute('data-clipboard-text', code.textContent);
+        btn.setAttribute(VClipboardDataTextAttr, code.textContent);
         code.insertAdjacentElement('beforebegin', btn);
     }
 };
