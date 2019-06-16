@@ -278,7 +278,8 @@ VNoteは、**Normal**、**Insert**、**Visual**、および**VisualLine**の各�
 
 ::: alert-info
 
-Open `Settings` dialog via the `File` menu, then jump to `Read/Edit` tab and you could enable Vim via the combo box in `Key mode`. Restart VNote to take effect.
+`ファイル`メニューから、`設定`ダイアログを開き、 `読み取り/編集` タブへすすみます。 コンボボックスの`キーモード`を
+選択することでVimモードを有効にできます。 すぐに稼動させるには、VNoteの再起動が必要です。
 
 :::
 
