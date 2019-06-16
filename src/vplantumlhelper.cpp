@@ -65,8 +65,15 @@ void VPlantUMLHelper::prepareCommand(QString &p_program,
                                      QStringList &p_args,
                                      const QString &p_jar) const
 {
-    p_program = "java";
+#if defined(Q_OS_WIN)
+    p_program = "cmd.exe";
+    p_args << "/c";
+#else
+    p_program = "/bin/sh";
+    p_args << "-c";
+#endif
 
+    p_args << "java";
     p_args << "-jar" << (p_jar.isEmpty() ? g_config->getPlantUMLJar() : p_jar);
     p_args << "-charset" << "UTF-8";
 
