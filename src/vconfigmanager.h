@@ -603,6 +603,7 @@ public:
     bool getParsePasteLocalImage() const;
 
     bool versionChanged() const;
+    bool isFreshInstall() const;
 
     const QColor &getBaseBackground() const;
     void setBaseBackground(const QColor &p_bg);
@@ -1109,6 +1110,9 @@ private:
 
     // Whether the VNote instance has different version of vnote.ini.
     bool m_versionChanged;
+
+    // Whether VNote is first installed on this machine.
+    bool m_freshInstall;
 
     // Base background of MainWindow.
     QColor m_baseBackground;
@@ -2823,6 +2827,11 @@ inline bool VConfigManager::getParsePasteLocalImage() const
 inline bool VConfigManager::versionChanged() const
 {
     return m_versionChanged;
+}
+
+inline bool VConfigManager::isFreshInstall() const
+{
+    return m_freshInstall;
 }
 
 inline const QColor &VConfigManager::getBaseBackground() const

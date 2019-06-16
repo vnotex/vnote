@@ -1696,6 +1696,7 @@ void VConfigManager::checkVersion()
     const QString key("version");
     QString ver = getConfigFromSettings("global", key).toString();
     m_versionChanged = ver != c_version;
+    m_freshInstall = ver.isEmpty();
     if (m_versionChanged) {
         setConfigToSettings("global", key, c_version);
     }

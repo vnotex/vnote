@@ -3478,6 +3478,24 @@ void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
 
         m_syncNoteListToCurrentTab = true;
 
+#if defined(Q_OS_WIN)
+        if (g_config->isFreshInstall()) {
+            VUtils::showMessage(QMessageBox::Information,
+                                tr("Notices for Windows Users"),
+                                tr("OpenGL requried by VNote may not work well on Windows by default."
+                                   "You may update your display card driver or set another openGL option in VNote's Settings dialog."
+                                   "Check <a href=\"https://github.com/tamlok/vnote/issues/853\">GitHub issue</a> for details."),
+                                tr("Strange behaviors includes:<br/>"
+                                   "* Interface freezes and does not response;<br/>"
+                                   "* Widgets are out of order after maximizing and restoring the main window;<br/>"
+                                   "* No cursor in edit mode;<br/>"
+                                   "* Menus are not clickable in full screen mode."),
+                                QMessageBox::Ok,
+                                QMessageBox::Ok,
+                                this);
+        }
+#endif
+
         g_config->updateLastStartDateTime();
     });
 }
