@@ -3485,7 +3485,7 @@ void VMainWindow::kickOffStartUpTimer(const QStringList &p_files)
                                 tr("OpenGL requried by VNote may not work well on Windows by default."
                                    "You may update your display card driver or set another openGL option in VNote's Settings dialog."
                                    "Check <a href=\"https://github.com/tamlok/vnote/issues/853\">GitHub issue</a> for details."),
-                                tr("Strange behaviors includes:<br/>"
+                                tr("Strange behaviors include:<br/>"
                                    "* Interface freezes and does not response;<br/>"
                                    "* Widgets are out of order after maximizing and restoring the main window;<br/>"
                                    "* No cursor in edit mode;<br/>"
