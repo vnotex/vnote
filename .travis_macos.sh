@@ -19,17 +19,17 @@ mkdir build
 cd build
 
 export VERBOSE=1
-export QT_CI_PACKAGES="qt.qt5.5123.clang_64,qt.qt5.5123.qtwebengine"
+export QT_CI_PACKAGES="qt.qt5.5121.clang_64,qt.qt5.5121.qtwebengine"
 
 git clone https://github.com/tamlok/qtci.git
 source qtci/path.env
 
-install-qt 5.12.3
-source qt-5.12.3.env
+install-qt 5.12.1
+source qt-5.12.1.env
 
 echo $PATH
 
-QTDIR="${project_dir}/build/Qt/5.12.3/clang_64"
+QTDIR="${project_dir}/build/Qt/5.12.1/clang_64"
 LDFLAGS=-L$QTDIR/lib
 CPPFLAGS=-I$QTDIR/include
 
