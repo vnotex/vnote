@@ -288,5 +288,39 @@
         <file>utils/wavedrom/wavedrom.min.js</file>
         <file>utils/wavedrom/wavedrom-theme.js</file>
         <file>utils/clipboard.js/clipboard.min.js</file>
+        <file>resources/themes/v_simple/arrow_dropdown.svg</file>
+        <file>resources/themes/v_simple/arrow_dropdown_disabled.svg</file>
+        <file>resources/themes/v_simple/branch_closed.svg</file>
+        <file>resources/themes/v_simple/branch_end.svg</file>
+        <file>resources/themes/v_simple/branch_more.svg</file>
+        <file>resources/themes/v_simple/branch_open.svg</file>
+        <file>resources/themes/v_simple/checkbox_checked.svg</file>
+        <file>resources/themes/v_simple/checkbox_checked_disabled.svg</file>
+        <file>resources/themes/v_simple/checkbox_unchecked.svg</file>
+        <file>resources/themes/v_simple/checkbox_unchecked_disabled.svg</file>
+        <file>resources/themes/v_simple/close.svg</file>
+        <file>resources/themes/v_simple/close_grey.svg</file>
+        <file>resources/themes/v_simple/down.svg</file>
+        <file>resources/themes/v_simple/down_disabled.svg</file>
+        <file>resources/themes/v_simple/float.svg</file>
+        <file>resources/themes/v_simple/left.svg</file>
+        <file>resources/themes/v_simple/left_disabled.svg</file>
+        <file>resources/themes/v_simple/line.svg</file>
+        <file>resources/themes/v_simple/menu_checkbox.svg</file>
+        <file>resources/themes/v_simple/menu_radiobutton.svg</file>
+        <file>resources/themes/v_simple/radiobutton_checked.svg</file>
+        <file>resources/themes/v_simple/radiobutton_checked_disabled.svg</file>
+        <file>resources/themes/v_simple/radiobutton_unchecked.svg</file>
+        <file>resources/themes/v_simple/radiobutton_unchecked_disabled.svg</file>
+        <file>resources/themes/v_simple/right.svg</file>
+        <file>resources/themes/v_simple/right_disabled.svg</file>
+        <file>resources/themes/v_simple/up.svg</file>
+        <file>resources/themes/v_simple/up_disabled.svg</file>
+        <file>resources/themes/v_simple/v_simple.css</file>
+        <file>resources/themes/v_simple/v_simple.mdhl</file>
+        <file>resources/themes/v_simple/v_simple.palette</file>
+        <file>resources/themes/v_simple/v_simple.qss</file>
+        <file>resources/themes/v_simple/v_simple_codeblock.css</file>
+        <file>resources/themes/v_simple/v_simple_mermaid.css</file>
     </qresource>
 </RCC>
