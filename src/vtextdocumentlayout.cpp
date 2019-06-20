@@ -710,7 +710,8 @@ qreal VTextDocumentLayout::layoutLines(const QTextBlock &p_block,
             break;
         }
 
-        line.setLeadingIncluded(true);
+        // Will introduce extra space on macOS.
+        // line.setLeadingIncluded(true);
         line.setLineWidth(p_availableWidth);
         p_height += m_lineLeading;
 
