@@ -1,4 +1,15 @@
 # Changes History
+## v2.7
+- Editor
+    - Fix smart table bugs;
+    - Fix improper leading line space on macOS;
+- Fix bug which will open two tabs for the same file;
+- Add copy button to copy code block in read mode;
+- PluatUML: use shell to launch Java;
+- Use qt 5.12.1 on macOS for better performance;
+- Add theme `v_simple` provided by user LuoshuiTianyi;
+- Support adding sibling folder in context menu;
+
 ## v2.6
 - Version-specific user track;
 
