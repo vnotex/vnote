@@ -325,7 +325,7 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
             this, &VDirectoryTree::newRootDirectory);
 
     QAction *sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
-                                   tr("S&ort"),
+                                   tr("&Sort"),
                                    &menu);
     sortAct->setToolTip(tr("Sort folders in this folder/notebook manually"));
     connect(sortAct, SIGNAL(triggered(bool)),
@@ -363,7 +363,7 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
                 });
 
         QAction *newSubDirAct = new QAction(VIconUtils::menuIcon(":/resources/icons/create_subdir.svg"),
-                                            tr("New &Subfolder"),
+                                            tr("New Sub&folder"),
                                             &menu);
         newSubDirAct->setToolTip(tr("Create a subfolder"));
         VUtils::fixTextWithShortcut(newSubDirAct, "NewSubfolder");

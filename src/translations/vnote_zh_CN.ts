@@ -73,14 +73,14 @@
         <translation>请重新打开当前打开页面以生效。</translation>
     </message>
     <message>
-        <location filename="../utils/vutils.cpp" line="1675"/>
-        <location filename="../utils/vutils.cpp" line="1711"/>
+        <location filename="../utils/vutils.cpp" line="1687"/>
+        <location filename="../utils/vutils.cpp" line="1723"/>
         <source>Illegal name. Please try again:</source>
         <translation>非法名字。请重试：</translation>
     </message>
     <message>
-        <location filename="../utils/vutils.cpp" line="1680"/>
-        <location filename="../utils/vutils.cpp" line="1716"/>
+        <location filename="../utils/vutils.cpp" line="1692"/>
+        <location filename="../utils/vutils.cpp" line="1728"/>
         <source>Name already exists. Please try again:</source>
         <translation>名字已存在。请重试：</translation>
     </message>
@@ -588,7 +588,7 @@
 <context>
     <name>VDirectoryTree</name>
     <message>
-        <location filename="../vdirectorytree.cpp" line="382"/>
+        <location filename="../vdirectorytree.cpp" line="394"/>
         <source>&amp;Delete</source>
         <translation>删除 (&amp;D)</translation>
     </message>
@@ -598,52 +598,51 @@
         <translation>新建根文件夹 (&amp;R)</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="384"/>
+        <location filename="../vdirectorytree.cpp" line="396"/>
         <source>Delete selected folder</source>
         <translation>删除选定文件夹</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="448"/>
+        <location filename="../vdirectorytree.cpp" line="460"/>
         <source>View and edit current folder&apos;s information</source>
         <translation>查看并编辑当前文件夹的信息</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="390"/>
+        <location filename="../vdirectorytree.cpp" line="402"/>
         <source>&amp;Copy	%1</source>
         <translation>复制 (&amp;C)	%1</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="392"/>
+        <location filename="../vdirectorytree.cpp" line="404"/>
         <source>Copy selected folders</source>
         <translation>复制选定文件夹</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="398"/>
+        <location filename="../vdirectorytree.cpp" line="410"/>
         <source>C&amp;ut	%1</source>
         <translation>剪切 (&amp;U)	%1</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="400"/>
+        <location filename="../vdirectorytree.cpp" line="412"/>
         <source>Cut selected folders</source>
         <translation>剪切选定文件夹</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="412"/>
+        <location filename="../vdirectorytree.cpp" line="424"/>
         <source>&amp;Paste	%1</source>
         <translation>粘贴 (&amp;P)	%1</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="414"/>
+        <location filename="../vdirectorytree.cpp" line="426"/>
         <source>Paste folders in this folder</source>
         <translation>在当前文件夹中粘贴所复制的文件夹</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="430"/>
         <source>&amp;Open Folder Location</source>
-        <translation>打开文件夹所在位置 (&amp;O)</translation>
+        <translation type="vanished">打开文件夹所在位置 (&amp;O)</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="423"/>
+        <location filename="../vdirectorytree.cpp" line="435"/>
         <source>Reload the content of this folder (or notebook) from disk</source>
         <translation>从磁盘中重新加载该文件夹（或笔记本）的内容</translation>
     </message>
@@ -660,22 +659,22 @@
     <message>
         <location filename="../vdirectorytree.cpp" line="103"/>
         <location filename="../vdirectorytree.cpp" line="178"/>
-        <location filename="../vdirectorytree.cpp" line="482"/>
-        <location filename="../vdirectorytree.cpp" line="519"/>
-        <location filename="../vdirectorytree.cpp" line="547"/>
-        <location filename="../vdirectorytree.cpp" line="577"/>
-        <location filename="../vdirectorytree.cpp" line="630"/>
-        <location filename="../vdirectorytree.cpp" line="732"/>
-        <location filename="../vdirectorytree.cpp" line="828"/>
-        <location filename="../vdirectorytree.cpp" line="869"/>
-        <location filename="../vdirectorytree.cpp" line="1201"/>
-        <location filename="../vdirectorytree.cpp" line="1248"/>
+        <location filename="../vdirectorytree.cpp" line="498"/>
+        <location filename="../vdirectorytree.cpp" line="535"/>
+        <location filename="../vdirectorytree.cpp" line="563"/>
+        <location filename="../vdirectorytree.cpp" line="593"/>
+        <location filename="../vdirectorytree.cpp" line="646"/>
+        <location filename="../vdirectorytree.cpp" line="748"/>
+        <location filename="../vdirectorytree.cpp" line="844"/>
+        <location filename="../vdirectorytree.cpp" line="885"/>
+        <location filename="../vdirectorytree.cpp" line="1217"/>
+        <location filename="../vdirectorytree.cpp" line="1264"/>
         <source>Warning</source>
         <translation>警告</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="104"/>
-        <location filename="../vdirectorytree.cpp" line="733"/>
+        <location filename="../vdirectorytree.cpp" line="749"/>
         <source>Fail to open notebook &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
         <translation>打开笔记本 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; 失败。</translation>
     </message>
@@ -695,65 +694,74 @@
         <translation>请检查目录 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; 是否存在。</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="470"/>
+        <location filename="../vdirectorytree.cpp" line="366"/>
+        <source>New Sub&amp;folder</source>
+        <translation>新建子文件夹 (&amp;F)</translation>
+    </message>
+    <message>
+        <location filename="../vdirectorytree.cpp" line="486"/>
         <source>Create a subfolder in &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
         <translation>在文件夹 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; 中新建子文件夹。</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="483"/>
+        <location filename="../vdirectorytree.cpp" line="499"/>
         <source>Fail to create subfolder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
         <translation>新建子文件夹 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; 失败。</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="520"/>
+        <location filename="../vdirectorytree.cpp" line="536"/>
         <source>Fail to create root folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
         <translation>新建根文件夹 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; 失败。</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="551"/>
+        <location filename="../vdirectorytree.cpp" line="567"/>
         <source>&lt;span style=&quot;%1&quot;&gt;WARNING&lt;/span&gt;: VNote will delete the whole directory &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;.Deleted files could be found in the recycle bin of this folder.&lt;br&gt;The operation is IRREVERSIBLE!</source>
         <translation>&lt;span style=&quot;%1&quot;&gt;警告&lt;/span&gt;：VNote会删除整个目录 &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;。被删除的文件可以在该文件夹的回收站中找回。&lt;br&gt;该操作是不可逆的！</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="903"/>
+        <location filename="../vdirectorytree.cpp" line="919"/>
         <source>%1 %2 pasted</source>
         <translation>粘贴了%1个%2</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="1163"/>
+        <location filename="../vdirectorytree.cpp" line="1179"/>
         <source>Sort Folders</source>
         <translation>排序文件夹</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="1164"/>
+        <location filename="../vdirectorytree.cpp" line="1180"/>
         <source>Sort folders in %1 &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; in the configuration file.</source>
         <translation>对%1 &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt; 的文件夹在配置文件中进行排序。</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="1166"/>
-        <location filename="../vdirectorytree.cpp" line="1203"/>
+        <location filename="../vdirectorytree.cpp" line="1182"/>
+        <location filename="../vdirectorytree.cpp" line="1219"/>
         <source>notebook</source>
         <translation>笔记本</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="1174"/>
+        <location filename="../vdirectorytree.cpp" line="1190"/>
         <source>Name</source>
         <translation>名字</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="1174"/>
+        <location filename="../vdirectorytree.cpp" line="1190"/>
         <source>Created Time</source>
         <translation>创建时间</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="1202"/>
+        <location filename="../vdirectorytree.cpp" line="1218"/>
         <source>Fail to sort folders in %1 &lt;span style=&quot;%2&quot;&gt;%3&lt;/span&gt;.</source>
         <translation>对%1 &lt;span style=&quot;%2&quot;&gt;%3&lt;/spacn&gt; 的文件夹排序失败。</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="475"/>
+        <location filename="../vdirectorytree.cpp" line="491"/>
         <source>Create Folder</source>
         <translation>新建文件夹</translation>
+    </message>
+    <message>
+        <source>S&amp;ort</source>
+        <translation type="obsolete">排序 (&amp;S)</translation>
     </message>
     <message>
         <location filename="../vdirectorytree.cpp" line="344"/>
@@ -766,158 +774,172 @@
         <translation>在选定文件夹中新建笔记</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="356"/>
-        <source>New &amp;Subfolder</source>
-        <translation>新建子文件夹 (&amp;S)</translation>
+        <location filename="../vdirectorytree.cpp" line="355"/>
+        <source>New Si&amp;bling Folder</source>
+        <translation>新建同级文件夹 (&amp;B)</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="422"/>
+        <location filename="../vdirectorytree.cpp" line="356"/>
+        <source>Create a folder in the same parent folder</source>
+        <translation>在同一父文件夹下新建文件夹</translation>
+    </message>
+    <message>
+        <source>New &amp;Subfolder</source>
+        <translation type="vanished">新建子文件夹 (&amp;S)</translation>
+    </message>
+    <message>
+        <location filename="../vdirectorytree.cpp" line="434"/>
         <source>Reload From Disk</source>
         <translation>从磁盘中重新加载</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="432"/>
+        <location filename="../vdirectorytree.cpp" line="442"/>
+        <source>Open Folder &amp;Location</source>
+        <translation>打开文件夹所在位置 (&amp;L)</translation>
+    </message>
+    <message>
+        <location filename="../vdirectorytree.cpp" line="444"/>
         <source>Explore this folder in operating system</source>
         <translation>在操作系统中浏览该文件夹</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="438"/>
+        <location filename="../vdirectorytree.cpp" line="450"/>
         <source>Pin To History</source>
         <translation>钉到历史中</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="440"/>
+        <location filename="../vdirectorytree.cpp" line="452"/>
         <source>Pin selected folder to History</source>
         <translation>将选定文件夹钉到历史中</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="446"/>
+        <location filename="../vdirectorytree.cpp" line="458"/>
         <source>&amp;Info (Rename)	%1</source>
         <translation>信息 (重命名)(&amp;I)	%1</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="507"/>
+        <location filename="../vdirectorytree.cpp" line="523"/>
         <source>Create a root folder in notebook &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
         <translation>在笔记本 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; 中新建根文件夹。</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="512"/>
+        <location filename="../vdirectorytree.cpp" line="528"/>
         <source>Create Root Folder</source>
         <translation>新建根文件夹</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="548"/>
+        <location filename="../vdirectorytree.cpp" line="564"/>
         <source>Are you sure to delete folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;?</source>
         <translation>确认删除文件夹 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;？</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="578"/>
+        <location filename="../vdirectorytree.cpp" line="594"/>
         <source>Fail to delete folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.&lt;br&gt;Please check &lt;span style=&quot;%1&quot;&gt;%3&lt;/span&gt; and manually delete it.</source>
         <translation>删除文件夹 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; 失败。&lt;br&gt;请检查 &lt;span style=&quot;%1&quot;&gt;%3&lt;/span&gt; 并手动删除。</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="588"/>
+        <location filename="../vdirectorytree.cpp" line="604"/>
         <source>%1 %2 deleted</source>
         <translation>删除了%1个%2</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="590"/>
-        <location filename="../vdirectorytree.cpp" line="777"/>
-        <location filename="../vdirectorytree.cpp" line="905"/>
+        <location filename="../vdirectorytree.cpp" line="606"/>
+        <location filename="../vdirectorytree.cpp" line="793"/>
+        <location filename="../vdirectorytree.cpp" line="921"/>
         <source>folders</source>
         <translation>文件夹</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="590"/>
-        <location filename="../vdirectorytree.cpp" line="777"/>
-        <location filename="../vdirectorytree.cpp" line="905"/>
-        <location filename="../vdirectorytree.cpp" line="1166"/>
-        <location filename="../vdirectorytree.cpp" line="1203"/>
+        <location filename="../vdirectorytree.cpp" line="606"/>
+        <location filename="../vdirectorytree.cpp" line="793"/>
+        <location filename="../vdirectorytree.cpp" line="921"/>
+        <location filename="../vdirectorytree.cpp" line="1182"/>
+        <location filename="../vdirectorytree.cpp" line="1219"/>
         <source>folder</source>
         <translation>文件夹</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="617"/>
+        <location filename="../vdirectorytree.cpp" line="633"/>
         <source>Folder Information</source>
         <translation>文件夹信息</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="631"/>
+        <location filename="../vdirectorytree.cpp" line="647"/>
         <source>Fail to rename folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
         <translation>重命名文件夹 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; 失败。</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="668"/>
+        <location filename="../vdirectorytree.cpp" line="684"/>
         <source>Are you sure to reload folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;?</source>
         <translation>确认重新加载文件夹 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;？</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="670"/>
+        <location filename="../vdirectorytree.cpp" line="686"/>
         <source>Folder %1 reloaded from disk</source>
         <translation>文件夹 %1 已从磁盘中重新加载</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="673"/>
+        <location filename="../vdirectorytree.cpp" line="689"/>
         <source>Are you sure to reload notebook &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;?</source>
         <translation>确认重新加载笔记本 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;？</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="675"/>
+        <location filename="../vdirectorytree.cpp" line="691"/>
         <source>Notebook %1 reloaded from disk</source>
         <translation>笔记本 %1 已从磁盘中重新加载</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="679"/>
+        <location filename="../vdirectorytree.cpp" line="695"/>
         <source>Information</source>
         <translation>注意</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="681"/>
+        <location filename="../vdirectorytree.cpp" line="697"/>
         <source>VNote will close all the related notes before reload.</source>
         <translation>VNote会在重新加载前关闭所有相关笔记。</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="735"/>
+        <location filename="../vdirectorytree.cpp" line="751"/>
         <source>Please check if path &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; exists.</source>
         <translation>请检查路径 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; 是否存在。</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="775"/>
+        <location filename="../vdirectorytree.cpp" line="791"/>
         <source>%1 %2 %3</source>
         <translation>%3了%1个%2</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="778"/>
+        <location filename="../vdirectorytree.cpp" line="794"/>
         <source>cut</source>
         <translation>剪切</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="778"/>
+        <location filename="../vdirectorytree.cpp" line="794"/>
         <source>copied</source>
         <translation>复制</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="829"/>
+        <location filename="../vdirectorytree.cpp" line="845"/>
         <source>Fail to paste folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
         <translation>粘贴文件夹 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; 失败。</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="832"/>
+        <location filename="../vdirectorytree.cpp" line="848"/>
         <source>VNote could not find this folder in any notebook.</source>
         <translation>VNote无法在任何笔记本中找到该文件夹。</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="870"/>
+        <location filename="../vdirectorytree.cpp" line="886"/>
         <source>Fail to copy folder &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
         <translation>复制文件夹 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; 失败。</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="1231"/>
+        <location filename="../vdirectorytree.cpp" line="1247"/>
         <source>1 folder pinned to History</source>
         <translation>1个文件夹被钉到历史中</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="1249"/>
+        <location filename="../vdirectorytree.cpp" line="1265"/>
         <source>Please drop it on a folder item.</source>
         <translation>请在一个文件夹项上释放。</translation>
     </message>
@@ -927,7 +949,7 @@
         <translation>在当前笔记本中新建根文件夹</translation>
     </message>
     <message>
-        <location filename="../vdirectorytree.cpp" line="358"/>
+        <location filename="../vdirectorytree.cpp" line="368"/>
         <source>Create a subfolder</source>
         <translation>新建子文件夹</translation>
     </message>
@@ -4688,17 +4710,32 @@ Modified Time: %3</source>
         <translation>如果允许，会发送一个到 https://tamlok.github.io/user_track/vnote.html 的请求。</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3609"/>
+        <location filename="../vmainwindow.cpp" line="3484"/>
+        <source>Notices for Windows Users</source>
+        <translation>Windows用户注意</translation>
+    </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="3485"/>
+        <source>OpenGL requried by VNote may not work well on Windows by default.You may update your display card driver or set another openGL option in VNote&apos;s Settings dialog.Check &lt;a href=&quot;https://github.com/tamlok/vnote/issues/853&quot;&gt;GitHub issue&lt;/a&gt; for details.</source>
+        <translation>VNote运行所需的openGL组件在默认配置下可能在Windows系统上无法工作。您可能需要更新显卡驱动或者在VNote的设置对话框里面设置openGL选项。详情查看 &lt;a href=&quot;https://github.com/tamlok/vnote/issues/853&quot;&gt;GitHub issue&lt;/a&gt; 。</translation>
+    </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="3488"/>
+        <source>Strange behaviors include:&lt;br/&gt;* Interface freezes and does not response;&lt;br/&gt;* Widgets are out of order after maximizing and restoring the main window;&lt;br/&gt;* No cursor in edit mode;&lt;br/&gt;* Menus are not clickable in full screen mode.</source>
+        <translation>异常的表现包括：&lt;br/&gt;* 界面卡顿冻结，没有响应；&lt;br/&gt;* 最大化并还原主窗口后，部件错乱；&lt;br/&gt;* 编辑模式下无法看到光标；&lt;br/&gt;* 全屏模式下菜单无法点击。</translation>
+    </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="3628"/>
         <source>Restart Needed</source>
         <translation>需要重启</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3610"/>
+        <location filename="../vmainwindow.cpp" line="3629"/>
         <source>Do you want to restart VNote now?</source>
         <translation>是否现在重启VNote？</translation>
     </message>
     <message>
-        <location filename="../vmainwindow.cpp" line="3611"/>
+        <location filename="../vmainwindow.cpp" line="3630"/>
         <source>VNote needs to restart to apply new configurations.</source>
         <translation>VNote需要重启以应用新的配置。</translation>
     </message>
@@ -5733,25 +5770,25 @@ Modified Time: %3</source>
 <context>
     <name>VMdTab</name>
     <message>
-        <location filename="../vmdtab.cpp" line="316"/>
+        <location filename="../vmdtab.cpp" line="318"/>
         <source>Information</source>
         <translation>注意</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="317"/>
+        <location filename="../vmdtab.cpp" line="319"/>
         <source>Note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; has been modified.</source>
         <translation>笔记 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; 已经被更改。</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="319"/>
+        <location filename="../vmdtab.cpp" line="321"/>
         <source>Do you want to save your changes?</source>
         <translation>是否保存更改？</translation>
     </message>
     <message>
         <location filename="../vmdtab.cpp" line="50"/>
-        <location filename="../vmdtab.cpp" line="373"/>
-        <location filename="../vmdtab.cpp" line="388"/>
-        <location filename="../vmdtab.cpp" line="399"/>
+        <location filename="../vmdtab.cpp" line="375"/>
+        <location filename="../vmdtab.cpp" line="390"/>
+        <location filename="../vmdtab.cpp" line="401"/>
         <source>Warning</source>
         <translation>警告</translation>
     </message>
@@ -5766,123 +5803,123 @@ Modified Time: %3</source>
         <translation>请检查文件 %1 是否存在。</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="374"/>
+        <location filename="../vmdtab.cpp" line="376"/>
         <source>Could not modify a read-only note &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;.</source>
         <translation>无法修改只读笔记 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;。</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="376"/>
+        <location filename="../vmdtab.cpp" line="378"/>
         <source>Please save your changes to other notes manually.</source>
         <translation>请手动保存更改到其他笔记。</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="388"/>
-        <location filename="../vmdtab.cpp" line="400"/>
+        <location filename="../vmdtab.cpp" line="390"/>
+        <location filename="../vmdtab.cpp" line="402"/>
         <source>Fail to save note.</source>
         <translation>保存笔记失败。</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="389"/>
+        <location filename="../vmdtab.cpp" line="391"/>
         <source>File &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; being written has been removed.</source>
         <translation>将要写入的文件 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; 已经被移除。</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="401"/>
+        <location filename="../vmdtab.cpp" line="403"/>
         <source>Fail to write to disk when saving a note. Please try it again.</source>
         <translation>保存笔记时，写入文件失败。请稍后再试。</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1062"/>
+        <location filename="../vmdtab.cpp" line="1064"/>
         <source>Snippet applied</source>
         <translation>片段已应用</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1067"/>
+        <location filename="../vmdtab.cpp" line="1069"/>
         <source>Snippet %1 is not applicable</source>
         <translation>片段 %1 不适用</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1074"/>
+        <location filename="../vmdtab.cpp" line="1076"/>
         <source>Snippets are not applicable</source>
         <translation>无法应用片段</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1082"/>
+        <location filename="../vmdtab.cpp" line="1084"/>
         <source>No available snippets defined with shortcuts</source>
         <translation>当前没有定义带有快捷键的片段可用</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1233"/>
+        <location filename="../vmdtab.cpp" line="1235"/>
         <source>Backup File Found</source>
         <translation>发现备份文件</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1234"/>
+        <location filename="../vmdtab.cpp" line="1236"/>
         <source>Found backup file &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt; when opening note &lt;span style=&quot;%1&quot;&gt;%3&lt;/span&gt;.</source>
         <translation>打开笔记 &lt;span style=&quot;%1&quot;&gt;%3&lt;/span&gt; 时发现备份文件 &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;。</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1241"/>
+        <location filename="../vmdtab.cpp" line="1243"/>
         <source>VNote may crash while editing this note before.&lt;br/&gt;Please choose to recover from the backup file or delete it.&lt;br/&gt;&lt;br/&gt;Note file last modified: &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;&lt;br/&gt;Backup file last modified: &lt;span style=&quot;%1&quot;&gt;%3&lt;/span&gt;</source>
         <translation>VNote此前编辑该笔记时可能意外退出。&lt;br/&gt;请选择从该备份文件恢复或者删除该备份文件。&lt;br/&gt;&lt;br/&gt;笔记文件上次修改时间： &lt;span style=&quot;%1&quot;&gt;%2&lt;/span&gt;&lt;br/&gt;备份文件上次修改时间： &lt;span style=&quot;%1&quot;&gt;%3&lt;/span&gt;</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1249"/>
+        <location filename="../vmdtab.cpp" line="1251"/>
         <source>Recover From Backup File</source>
         <translation>从备份文件恢复</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1250"/>
+        <location filename="../vmdtab.cpp" line="1252"/>
         <source>Discard Backup File</source>
         <translation>放弃备份文件</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1251"/>
+        <location filename="../vmdtab.cpp" line="1253"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1434"/>
+        <location filename="../vmdtab.cpp" line="1436"/>
         <source>Quit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1443"/>
+        <location filename="../vmdtab.cpp" line="1445"/>
         <source>Not an editor command: %1</source>
         <translation>不是一个编辑器命令：%1</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1458"/>
+        <location filename="../vmdtab.cpp" line="1460"/>
         <source>Page saved to %1</source>
         <translation>页面保存为 %1</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1463"/>
+        <location filename="../vmdtab.cpp" line="1465"/>
         <source>Fail to save page to %1</source>
         <translation>保存页面为 %1 失败</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1477"/>
+        <location filename="../vmdtab.cpp" line="1479"/>
         <source>Single HTML (*.html)</source>
         <translation>仅HTML (*.html)</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1477"/>
+        <location filename="../vmdtab.cpp" line="1479"/>
         <source>Complete HTML (*.html)</source>
         <translation>完整HTML (*.html)</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1477"/>
+        <location filename="../vmdtab.cpp" line="1479"/>
         <source>MIME HTML (*.mht)</source>
         <translation>MIME HTML (*.mht)</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1485"/>
+        <location filename="../vmdtab.cpp" line="1487"/>
         <source>Save Page</source>
         <translation>保存页面</translation>
     </message>
     <message>
-        <location filename="../vmdtab.cpp" line="1499"/>
+        <location filename="../vmdtab.cpp" line="1501"/>
         <source>Saving page to %1</source>
         <translation>正在保存页面为 %1</translation>
     </message>
