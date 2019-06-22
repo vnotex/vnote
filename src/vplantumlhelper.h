@@ -41,6 +41,8 @@ private:
 
     void prepareCommand(QString &p_cmd, QStringList &p_args, const QString &p_jar= QString()) const;
 
+    static QStringList refineArgsForUse(const QStringList &p_args);
+
     QString m_program;
 
     QStringList m_args;
