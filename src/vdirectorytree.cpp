@@ -325,7 +325,7 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
             this, &VDirectoryTree::newRootDirectory);
 
     QAction *sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
-                                   tr("&Sort"),
+                                   tr("S&ort"),
                                    &menu);
     sortAct->setToolTip(tr("Sort folders in this folder/notebook manually"));
     connect(sortAct, SIGNAL(triggered(bool)),
@@ -352,6 +352,16 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
 
         menu.addAction(newNoteAct);
 
+        QAction *newSiblingFolder = new QAction(tr("New Si&bling Folder"), &menu);
+        newSiblingFolder->setToolTip(tr("Create a folder in the same parent folder"));
+        connect(newSiblingFolder, &QAction::triggered,
+                this, [this]() {
+                    auto item = currentItem();
+                    if (item) {
+                        newDirectory(item->parent());
+                    }
+                });
+
         QAction *newSubDirAct = new QAction(VIconUtils::menuIcon(":/resources/icons/create_subdir.svg"),
                                             tr("New &Subfolder"),
                                             &menu);
@@ -359,8 +369,10 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
         VUtils::fixTextWithShortcut(newSubDirAct, "NewSubfolder");
         connect(newSubDirAct, &QAction::triggered,
                 this, &VDirectoryTree::newSubDirectory);
+
         if (item->parent()) {
             // Low-level item
+            menu.addAction(newSiblingFolder);
             menu.addAction(newSubDirAct);
 
             if (item->parent()->childCount() > 1) {
@@ -427,7 +439,7 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
 
     if (item) {
         QAction *openLocationAct = new QAction(VIconUtils::menuIcon(":/resources/icons/open_location.svg"),
-                                               tr("&Open Folder Location"),
+                                               tr("Open Folder &Location"),
                                                &menu);
         openLocationAct->setToolTip(tr("Explore this folder in operating system"));
         connect(openLocationAct, &QAction::triggered,
@@ -460,12 +472,16 @@ void VDirectoryTree::newSubDirectory()
         return;
     }
 
-    QTreeWidgetItem *curItem = currentItem();
-    if (!curItem) {
+    newDirectory(currentItem());
+}
+
+void VDirectoryTree::newDirectory(QTreeWidgetItem *p_parentItem)
+{
+    if (!p_parentItem) {
         return;
     }
 
-    VDirectory *curDir = getVDirectory(curItem);
+    VDirectory *curDir = getVDirectory(p_parentItem);
 
     QString info = tr("Create a subfolder in <span style=\"%1\">%2</span>.")
                      .arg(g_config->c_dataTextStyle)
@@ -490,7 +506,7 @@ void VDirectoryTree::newSubDirectory()
             return;
         }
 
-        updateItemDirectChildren(curItem);
+        updateItemDirectChildren(p_parentItem);
 
         locateDirectory(subDir);
     }

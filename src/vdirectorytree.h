@@ -71,6 +71,8 @@ private slots:
     // Create sub-directory of current item's directory.
     void newSubDirectory();
 
+    void newDirectory(QTreeWidgetItem *p_parentItem);
+
     // Current tree item changed.
     void currentDirectoryItemChanged(QTreeWidgetItem *currentItem);
 
