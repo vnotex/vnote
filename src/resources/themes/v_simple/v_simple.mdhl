@@ -55,18 +55,23 @@ vim-replace-background: f8bbd0
 
 H1
 foreground: 222222
+font-size: +5
 
 H2
 foreground: 222222
+font-size: +4
 
 H3
 foreground: 222222
+font-size: +3
 
 H4
 foreground: 222222
+font-size: +2
 
 H5
 foreground: 222222
+font-size: +1
 
 H6
 foreground: 222222
