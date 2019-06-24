@@ -646,6 +646,8 @@ public:
 
     int getTableFormatInterval() const;
 
+    bool getEnableCodeBlockCopyButton() const;
+
 private:
     void initEditorConfigs();
 
@@ -1141,6 +1143,9 @@ private:
 
     // Interval (milliseconds) to format table.
     int m_tableFormatIntervalMS;
+
+    // Whether enable copy button in code block in read mode.
+    bool m_enableCodeBlockCopyButton;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2978,4 +2983,10 @@ inline int VConfigManager::getTableFormatInterval() const
 {
     return m_tableFormatIntervalMS;
 }
+
+inline bool VConfigManager::getEnableCodeBlockCopyButton() const
+{
+    return m_enableCodeBlockCopyButton;
+}
+
 #endif // VCONFIGMANAGER_H

@@ -333,6 +333,9 @@ void VConfigManager::initialize()
     initEditorConfigs();
 
     initMarkdownConfigs();
+
+    m_enableCodeBlockCopyButton = getConfigFromSettings("web",
+                                                        "enable_code_block_copy_button").toBool();
 }
 
 void VConfigManager::initEditorConfigs()

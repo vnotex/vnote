@@ -857,6 +857,10 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
         extraFile += "<script>var VEnableFlashAnchor = true;</script>\n";
     }
 
+    if (g_config->getEnableCodeBlockCopyButton()) {
+        extraFile += "<script>var VEnableCodeBlockCopyButton = true;</script>\n";
+    }
+
     if (p_addToc) {
         extraFile += "<script>var VAddTOC = true;</script>\n";
         extraFile += "<style type=\"text/css\">\n"
@@ -944,15 +948,24 @@ with 2em, if there are Chinese characters in it, the font will be a mess.
     }
 
     // Clipboard.js.
-    {
-    const QString clipboardjs(":/utils/clipboard.js/clipboard.min.js");
-    QString js = VUtils::readFileFromDisk(clipboardjs);
-    extra += QString("<script type=\"text/javascript\">\n%1\n</script>\n").arg(js);
-    extra += "<script type=\"text/javascript\">"
-                 "window.addEventListener('load', function() {"
-                     "new ClipboardJS('.vnote-copy-clipboard-btn');"
-                 "});"
-             "</script>\n";
+    if (g_config->getEnableCodeBlockCopyButton()) {
+        const QString clipboardjs(":/utils/clipboard.js/clipboard.min.js");
+        QString js = VUtils::readFileFromDisk(clipboardjs);
+        extra += QString("<script type=\"text/javascript\">\n%1\n</script>\n").arg(js);
+        extra += "<script type=\"text/javascript\">"
+                     "window.addEventListener('load', function() {"
+                         "new ClipboardJS('.vnote-copy-clipboard-btn', {"
+                            "text: function(trigger) {"
+                                "var t = trigger.getAttribute('source-text');"
+                                "if (t[t.length - 1] == '\\n') {"
+                                    "return t.substring(0, t.length - 1);"
+                                "} else {"
+                                    "return t;"
+                                "}"
+                            "}"
+                        "});"
+                     "});"
+                 "</script>\n";
     }
 
     if (!extra.isEmpty()) {

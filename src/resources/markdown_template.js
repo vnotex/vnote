@@ -51,6 +51,10 @@ if (typeof VEnableHighlightLineNumber == 'undefined') {
     VEnableHighlightLineNumber = false;
 }
 
+if (typeof VEnableCodeBlockCopyButton == 'undefined') {
+    VEnableCodeBlockCopyButton = false;
+}
+
 if (typeof VStylesToInline == 'undefined') {
     VStylesToInline = '';
 }
@@ -1290,6 +1294,10 @@ var addClassToCodeBlock = function() {
 };
 
 var addCopyButtonToCodeBlock = function() {
+    if (!VEnableCodeBlockCopyButton) {
+        return;
+    }
+
     var codes = document.getElementsByClassName(hljsClass);
     for (var i = 0; i < codes.length; ++i) {
         var code = codes[i];
