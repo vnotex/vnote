@@ -1,4 +1,9 @@
 # Changes History
+## v2.7.1
+- Fix PlantUML command;
+- Use 5.12.0 on macOS;
+- Add config [web]/enable_code_block_copy_button for copy button in code block in read mode;
+
 ## v2.7
 - Editor
     - Fix smart table bugs;
