@@ -360,9 +360,11 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
     pasteAct = getActionByObjectName(actions, "edit-paste");
     }
 
+    /*
     if (copyAct && copyAct->isEnabled()) {
         initCopyAsMenu(copyAct, menu.data());
     }
+    */
 
     if (pasteAct && pasteAct->isEnabled()) {
         QClipboard *clipboard = QApplication::clipboard();
@@ -371,9 +373,11 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
             initPasteAsBlockQuoteMenu(pasteAct, menu.data());
         }
 
+        /*
         if (mimeData->hasHtml()) {
             initPasteAfterParseMenu(pasteAct, menu.data());
         }
+        */
 
         QAction *pptAct = new QAction(tr("Paste As Plain Text"), menu.data());
         VUtils::fixTextWithShortcut(pptAct, "PastePlainText");
@@ -386,44 +390,6 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
 
     if (!textCursor().hasSelection()) {
         initLinkAndPreviewMenu(firstAct, menu.data(), p_event->pos());
-
-        QAction *saveExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/save_exit.svg"),
-                                           tr("&Save Changes And Read"),
-                                           menu.data());
-        saveExitAct->setToolTip(tr("Save changes and exit edit mode"));
-        connect(saveExitAct, &QAction::triggered,
-                this, [this]() {
-                    emit m_object->saveAndRead();
-                });
-
-        QAction *discardExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/discard_exit.svg"),
-                                              tr("&Discard Changes And Read"),
-                                              menu.data());
-        discardExitAct->setToolTip(tr("Discard changes and exit edit mode"));
-        connect(discardExitAct, &QAction::triggered,
-                this, [this]() {
-                    emit m_object->discardAndRead();
-                });
-
-        VMdTab *mdtab = dynamic_cast<VMdTab *>(m_editTab);
-        if (mdtab) {
-            QAction *toggleLivePreviewAct = new QAction(tr("Live Preview For Graphs"), menu.data());
-            toggleLivePreviewAct->setToolTip(tr("Toggle live preview panel for graphs"));
-            VUtils::fixTextWithCaptainShortcut(toggleLivePreviewAct, "LivePreview");
-            connect(toggleLivePreviewAct, &QAction::triggered,
-                    this, [mdtab]() {
-                        mdtab->toggleLivePreview();
-                    });
-
-            menu->insertAction(firstAct, toggleLivePreviewAct);
-            menu->insertAction(toggleLivePreviewAct, discardExitAct);
-            menu->insertAction(discardExitAct, saveExitAct);
-            menu->insertSeparator(toggleLivePreviewAct);
-        } else {
-            menu->insertAction(firstAct, discardExitAct);
-            menu->insertAction(discardExitAct, saveExitAct);
-            menu->insertSeparator(discardExitAct);
-        }
 
         if (firstAct) {
             menu->insertSeparator(firstAct);

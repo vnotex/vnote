@@ -319,8 +319,6 @@ private:
 
     void initThemeMenu(QMenu *p_emnu);
 
-    void updateEditReadAct(const VEditTab *p_tab);
-
     void initUniversalEntry();
 
     void setMenuBarVisible(bool p_visible);
@@ -421,20 +419,13 @@ private:
 
     QAction *deleteNoteAct;
 
-    // Toggle read and edit note.
-    QAction *m_editReadAct;
-
     QAction *saveNoteAct;
 
-    QAction *m_discardExitAct;
+    QAction *m_discardAct;
 
     QAction *expandViewAct;
 
     QAction *m_importNoteAct;
-
-    QAction *m_printAct;
-
-    QAction *m_exportAct;
 
     QAction *m_findReplaceAct;
 

@@ -23,7 +23,6 @@
 #include <QKeySequence>
 #include <QComboBox>
 #include <QStyledItemDelegate>
-#include <QWebEngineView>
 #include <QAction>
 #include <QTreeWidgetItem>
 #include <QFormLayout>
@@ -32,11 +31,11 @@
 #include <QSvgRenderer>
 #include <QPainter>
 #include <QTemporaryFile>
+#include <QTextBrowser>
 
 #include "vorphanfile.h"
 #include "vnote.h"
 #include "vnotebook.h"
-#include "vpreviewpage.h"
 #include "pegparser.h"
 #include "widgets/vcombobox.h"
 
@@ -1463,20 +1462,10 @@ void VUtils::setDynamicProperty(QWidget *p_widget, const char *p_prop, bool p_va
     p_widget->style()->polish(p_widget);
 }
 
-QWebEngineView *VUtils::getWebEngineView(const QColor &p_background, QWidget *p_parent)
+QTextBrowser *VUtils::getTextBrowser(const QColor &p_background, QWidget *p_parent)
 {
-    QWebEngineView *viewer = new QWebEngineView(p_parent);
-    VPreviewPage *page = new VPreviewPage(viewer);
-
-    // Setting the background to Qt::transparent will force GrayScale antialiasing.
-    if (p_background.isValid() && p_background != Qt::transparent) {
-        page->setBackgroundColor(p_background);
-    }
-
-    viewer->setPage(page);
-    viewer->setZoomFactor(g_config->getWebZoomFactor());
-
-    return viewer;
+    QTextBrowser *browser = new QTextBrowser(p_parent);
+    return browser;
 }
 
 QString VUtils::getFileNameWithLocale(const QString &p_name, const QString &p_locale)

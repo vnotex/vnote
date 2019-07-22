@@ -1,10 +1,10 @@
 #include "vmathjaxpreviewhelper.h"
 
-#include <QWebEngineView>
-#include <QWebChannel>
+// #include <QWebEngineView>
+// #include <QWebChannel>
 
 #include "utils/vutils.h"
-#include "vmathjaxwebdocument.h"
+// #include "vmathjaxwebdocument.h"
 #include "vconfigmanager.h"
 
 extern VConfigManager *g_config;
@@ -14,7 +14,7 @@ VMathJaxPreviewHelper::VMathJaxPreviewHelper(QWidget *p_parentWidget, QObject *p
       m_parentWidget(p_parentWidget),
       m_initialized(false),
       m_nextID(0),
-      m_webView(NULL),
+      // m_webView(NULL),
       m_webReady(false)
 {
 }
@@ -30,6 +30,7 @@ void VMathJaxPreviewHelper::doInit()
 
     m_initialized = true;
 
+    /*
     m_webView = new QWebEngineView(m_parentWidget);
     connect(m_webView, &QWebEngineView::loadFinished,
             this, [this]() {
@@ -79,6 +80,7 @@ void VMathJaxPreviewHelper::doInit()
     QUrl baseUrl(QUrl::fromLocalFile(g_config->getDocumentPathOrHomePath() + QDir::separator()));
     m_webView->setHtml(VUtils::generateMathJaxPreviewTemplate(), baseUrl);
     m_webView->setEnabled(true);
+    */
 }
 
 void VMathJaxPreviewHelper::previewMathJax(int p_identifier,
@@ -88,18 +90,7 @@ void VMathJaxPreviewHelper::previewMathJax(int p_identifier,
 {
     init();
 
-    if (!m_webReady) {
-        auto func = std::bind(&VMathJaxWebDocument::previewMathJax,
-                              m_webDoc,
-                              p_identifier,
-                              p_id,
-                              p_timeStamp,
-                              p_text,
-                              false);
-        m_pendingFunc.append(func);
-    } else {
-        m_webDoc->previewMathJax(p_identifier, p_id, p_timeStamp, p_text, false);
-    }
+    emit mathjaxPreviewResultReady(p_identifier, p_id, p_timeStamp, "png", "");
 }
 
 void VMathJaxPreviewHelper::previewMathJaxFromHtml(int p_identifier,
@@ -109,18 +100,7 @@ void VMathJaxPreviewHelper::previewMathJaxFromHtml(int p_identifier,
 {
     init();
 
-    if (!m_webReady) {
-        auto func = std::bind(&VMathJaxWebDocument::previewMathJax,
-                              m_webDoc,
-                              p_identifier,
-                              p_id,
-                              p_timeStamp,
-                              p_html,
-                              true);
-        m_pendingFunc.append(func);
-    } else {
-        m_webDoc->previewMathJax(p_identifier, p_id, p_timeStamp, p_html, true);
-    }
+    emit mathjaxPreviewResultReady(p_identifier, p_id, p_timeStamp, "png", "");
 }
 
 void VMathJaxPreviewHelper::previewDiagram(int p_identifier,
@@ -131,16 +111,5 @@ void VMathJaxPreviewHelper::previewDiagram(int p_identifier,
 {
     init();
 
-    if (!m_webReady) {
-        auto func = std::bind(&VMathJaxWebDocument::previewDiagram,
-                              m_webDoc,
-                              p_identifier,
-                              p_id,
-                              p_timeStamp,
-                              p_lang,
-                              p_text);
-        m_pendingFunc.append(func);
-    } else {
-        m_webDoc->previewDiagram(p_identifier, p_id, p_timeStamp, p_lang, p_text);
-    }
+    emit diagramPreviewResultReady(p_identifier, p_id, p_timeStamp, "png", "");
 }

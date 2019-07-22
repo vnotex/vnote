@@ -292,7 +292,7 @@ int VEditArea::openFileInWindow(int windowIndex, VFile *p_file, OpenFileMode p_m
 {
     Q_ASSERT(windowIndex < splitter->count());
     VEditWindow *win = getWindow(windowIndex);
-    return win->openFile(p_file, p_mode);
+    return win->openFile(p_file, OpenFileMode::Edit);
 }
 
 void VEditArea::setCurrentTab(int windowIndex, int tabIndex, bool setFocus)

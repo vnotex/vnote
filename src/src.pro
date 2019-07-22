@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui webenginewidgets webchannel network svg printsupport
+QT       += core gui network svg printsupport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -39,7 +39,6 @@ SOURCES += main.cpp\
     vedit.cpp \
     vdocument.cpp \
     utils/vutils.cpp \
-    vpreviewpage.cpp \
     vstyleparser.cpp \
     dialog/vnewnotebookdialog.cpp \
     vmarkdownconverter.cpp \
@@ -69,7 +68,6 @@ SOURCES += main.cpp\
     vnavigationmode.cpp \
     vorphanfile.cpp \
     vcodeblockhighlighthelper.cpp \
-    vwebview.cpp \
     vmdtab.cpp \
     vhtmltab.cpp \
     utils/vvim.cpp \
@@ -77,7 +75,6 @@ SOURCES += main.cpp\
     vvimindicator.cpp \
     vbuttonwithwidget.cpp \
     vtabindicator.cpp \
-    dialog/vupdater.cpp \
     dialog/vorphanfileinfodialog.cpp \
     vtextblockdata.cpp \
     utils/vpreviewutils.cpp \
@@ -122,8 +119,6 @@ SOURCES += main.cpp\
     vsimplesearchinput.cpp \
     vstyleditemdelegate.cpp \
     vtreewidget.cpp \
-    dialog/vexportdialog.cpp \
-    vexporter.cpp \
     vsearcher.cpp \
     vsearch.cpp \
     vsearchresulttree.cpp \
@@ -140,7 +135,6 @@ SOURCES += main.cpp\
     vgraphvizhelper.cpp \
     vlivepreviewhelper.cpp \
     vmathjaxpreviewhelper.cpp \
-    vmathjaxwebdocument.cpp \
     vmathjaxinplacepreviewhelper.cpp \
     vhistorylist.cpp \
     vexplorer.cpp \
@@ -175,7 +169,6 @@ HEADERS  += vmainwindow.h \
     vconstants.h \
     vdocument.h \
     utils/vutils.h \
-    vpreviewpage.h \
     vstyleparser.h \
     dialog/vnewnotebookdialog.h \
     vmarkdownconverter.h \
@@ -205,7 +198,6 @@ HEADERS  += vmainwindow.h \
     vnavigationmode.h \
     vorphanfile.h \
     vcodeblockhighlighthelper.h \
-    vwebview.h \
     vmdtab.h \
     vhtmltab.h \
     utils/vvim.h \
@@ -214,7 +206,6 @@ HEADERS  += vmainwindow.h \
     vbuttonwithwidget.h \
     vedittabinfo.h \
     vtabindicator.h \
-    dialog/vupdater.h \
     dialog/vorphanfileinfodialog.h \
     vtextblockdata.h \
     utils/vpreviewutils.h \
@@ -259,8 +250,6 @@ HEADERS  += vmainwindow.h \
     vsimplesearchinput.h \
     vstyleditemdelegate.h \
     vtreewidget.h \
-    dialog/vexportdialog.h \
-    vexporter.h \
     vwordcountinfo.h \
     vsearcher.h \
     vsearch.h \
@@ -281,7 +270,6 @@ HEADERS  += vmainwindow.h \
     vgraphvizhelper.h \
     vlivepreviewhelper.h \
     vmathjaxpreviewhelper.h \
-    vmathjaxwebdocument.h \
     vmathjaxinplacepreviewhelper.h \
     markdownitoption.h \
     vhistorylist.h \

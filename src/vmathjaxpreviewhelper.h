@@ -7,8 +7,8 @@
 
 #include "vconstants.h"
 
-class QWebEngineView;
-class VMathJaxWebDocument;
+// class QWebEngineView;
+// class VMathJaxWebDocument;
 class QWidget;
 
 typedef std::function<void(void)> PendingFunc;
@@ -67,9 +67,9 @@ private:
 
     int m_nextID;
 
-    QWebEngineView *m_webView;
+    // QWebEngineView *m_webView;
 
-    VMathJaxWebDocument *m_webDoc;
+    // VMathJaxWebDocument *m_webDoc;
 
     bool m_webReady;
 

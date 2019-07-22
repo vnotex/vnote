@@ -232,7 +232,7 @@ QString VNote::getNavigationLabelStyle(const QString &p_str, bool p_small) const
         font.setBold(true);
         QFontMetrics fm(font);
         pxWidth = fm.width(p_str);
-        pxHeight = fm.capHeight() + 5;
+        pxHeight = fm.height() + 5;
         lastLen = p_str.size();
     }
 

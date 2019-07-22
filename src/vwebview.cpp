@@ -27,7 +27,7 @@ extern VWebUtils *g_webUtils;
 static const QString c_ClipboardPropertyMark = "CopiedImageURLAltered";
 
 VWebView::VWebView(VFile *p_file, QWidget *p_parent)
-    : QWebEngineView(p_parent),
+    : QTextBrowser(p_parent),
       m_file(p_file),
       m_copyImageUrlActionHooked(false),
       m_afterCopyImage(false),
@@ -480,4 +480,15 @@ void VWebView::initPreviewTunnelMenu(QAction *p_before, QMenu *p_menu)
     subMenu->addActions(ag->actions());
 
     p_menu->insertMenu(p_before, subMenu);
+}
+
+QString VWebView::selectedText() const
+{
+    return QString();
+}
+
+void VWebView::setHtml(const QString &p_html, const QUrl &p_baseUrl)
+{
+    QTextBrowser::setHtml(p_html);
+    setSource(p_baseUrl);
 }

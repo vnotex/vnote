@@ -463,7 +463,7 @@ static QSharedPointer<char> tryFixUnicodeData(const char *p_data)
         int cp;
         int nr = utf8CodePoint(ch, cp);
         if (nr == -1) {
-            return NULL;
+            return QSharedPointer<char>();
         }
 
         if (cp > MAX_CODE_POINT) {
@@ -478,7 +478,7 @@ static QSharedPointer<char> tryFixUnicodeData(const char *p_data)
     }
 
     if (!needFix) {
-        return NULL;
+        return QSharedPointer<char>();
     }
 
     // Replace those chars with two one-byte chars.

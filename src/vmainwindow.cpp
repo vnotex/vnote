@@ -3,7 +3,6 @@
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QPainter>
-#include <QWebEnginePage>
 
 #include "vmainwindow.h"
 #include "vdirectorytree.h"
@@ -18,13 +17,11 @@
 #include "dialog/vsettingsdialog.h"
 #include "vcaptain.h"
 #include "vedittab.h"
-#include "vwebview.h"
-#include "vexporter.h"
 #include "vmdtab.h"
 #include "vvimindicator.h"
 #include "vvimcmdlineedit.h"
 #include "vtabindicator.h"
-#include "dialog/vupdater.h"
+// #include "dialog/vupdater.h"
 #include "vorphanfile.h"
 #include "dialog/vorphanfileinfodialog.h"
 #include "vsingleinstanceguard.h"
@@ -39,7 +36,6 @@
 #include "utils/viconutils.h"
 #include "dialog/vtipsdialog.h"
 #include "vcart.h"
-#include "dialog/vexportdialog.h"
 #include "vsearcher.h"
 #include "vuniversalentry.h"
 #include "vsearchue.h"
@@ -755,21 +751,15 @@ QToolBar *VMainWindow::initFileToolBar(QSize p_iconSize)
     connect(deleteNoteAct, &QAction::triggered,
             this, &VMainWindow::deleteCurNote);
 
-    m_editReadAct = new QAction(this);
-    connect(m_editReadAct, &QAction::triggered,
-            this, &VMainWindow::toggleEditReadMode);
-
-    m_discardExitAct = new QAction(VIconUtils::menuIcon(":/resources/icons/discard_exit.svg"),
-                                   tr("Discard Changes And Read"),
+    m_discardAct = new QAction(VIconUtils::menuIcon(":/resources/icons/discard_exit.svg"),
+                                   tr("Discard Changes"),
                                    this);
-    VUtils::fixTextWithCaptainShortcut(m_discardExitAct, "DiscardAndRead");
-    m_discardExitAct->setStatusTip(tr("Discard changes and exit edit mode"));
-    connect(m_discardExitAct, &QAction::triggered,
+    VUtils::fixTextWithCaptainShortcut(m_discardAct, "DiscardAndRead");
+    m_discardAct->setStatusTip(tr("Discard changes"));
+    connect(m_discardAct, &QAction::triggered,
             this, [this]() {
                 m_editArea->readFile(true);
             });
-
-    updateEditReadAct(NULL);
 
     saveNoteAct = new QAction(VIconUtils::toolButtonIcon(":/resources/icons/save_note.svg"),
                               tr("Save"), this);
@@ -788,8 +778,7 @@ QToolBar *VMainWindow::initFileToolBar(QSize p_iconSize)
     newNoteAct->setEnabled(false);
     noteInfoAct->setEnabled(false);
     deleteNoteAct->setEnabled(false);
-    m_editReadAct->setEnabled(false);
-    m_discardExitAct->setEnabled(false);
+    m_discardAct->setEnabled(false);
     saveNoteAct->setEnabled(false);
 
     m_fileToolBar->addWidget(m_avatarBtn);
@@ -797,8 +786,7 @@ QToolBar *VMainWindow::initFileToolBar(QSize p_iconSize)
     m_fileToolBar->addAction(newNoteAct);
     m_fileToolBar->addAction(deleteNoteAct);
     m_fileToolBar->addAction(noteInfoAct);
-    m_fileToolBar->addAction(m_editReadAct);
-    m_fileToolBar->addAction(m_discardExitAct);
+    m_fileToolBar->addAction(m_discardAct);
     m_fileToolBar->addAction(saveNoteAct);
 
     return m_fileToolBar;
@@ -861,6 +849,7 @@ void VMainWindow::initHelpMenu()
                 QDesktopServices::openUrl(url);
             });
 
+    /*
     QAction *updateAct = new QAction(tr("Check For &Updates"), this);
     updateAct->setToolTip(tr("Check for updates of VNote"));
     connect(updateAct, &QAction::triggered,
@@ -868,6 +857,7 @@ void VMainWindow::initHelpMenu()
                 VUpdater updater(this);
                 updater.exec();
             });
+    */
 
     QAction *starAct = new QAction(tr("Star VNote on &GitHub"), this);
     starAct->setToolTip(tr("Give a star to VNote on GitHub project"));
@@ -901,7 +891,7 @@ void VMainWindow::initHelpMenu()
     helpMenu->addAction(mdGuideAct);
     helpMenu->addAction(docAct);
     helpMenu->addAction(donateAct);
-    helpMenu->addAction(updateAct);
+    // helpMenu->addAction(updateAct);
     helpMenu->addAction(starAct);
     helpMenu->addAction(feedbackAct);
 
@@ -918,6 +908,7 @@ void VMainWindow::initMarkdownMenu()
     QMenu *markdownMenu = menuBar()->addMenu(tr("&Markdown"));
     markdownMenu->setToolTipsVisible(true);
 
+    /*
     initConverterMenu(markdownMenu);
 
     initMarkdownitOptionMenu(markdownMenu);
@@ -969,6 +960,7 @@ void VMainWindow::initMarkdownMenu()
             });
     markdownMenu->addAction(lineNumberAct);
     lineNumberAct->setChecked(g_config->getEnableCodeBlockLineNumber());
+    */
 
     QAction *previewImageAct = new QAction(tr("In-Place Preview"), this);
     previewImageAct->setToolTip(tr("Enable in-place preview (images, diagrams, and formulas) in edit mode (re-open current tabs to make it work)"));
@@ -1051,6 +1043,7 @@ void VMainWindow::initFileMenu()
     fileMenu->addSeparator();
 
     // Export as PDF.
+    /*
     m_exportAct = new QAction(tr("E&xport"), this);
     m_exportAct->setToolTip(tr("Export notes"));
     VUtils::fixTextWithCaptainShortcut(m_exportAct, "Export");
@@ -1058,8 +1051,10 @@ void VMainWindow::initFileMenu()
             this, &VMainWindow::handleExportAct);
 
     fileMenu->addAction(m_exportAct);
+    */
 
     // Print.
+    /*
     m_printAct = new QAction(VIconUtils::menuIcon(":/resources/icons/print.svg"),
                              tr("&Print"), this);
     m_printAct->setToolTip(tr("Print current note"));
@@ -1070,6 +1065,7 @@ void VMainWindow::initFileMenu()
     fileMenu->addAction(m_printAct);
 
     fileMenu->addSeparator();
+    */
 
     // Themes.
     initThemeMenu(fileMenu);
@@ -2080,13 +2076,13 @@ void VMainWindow::updateActionsStateFromTab(const VEditTab *p_tab)
                       && file->getType() == FileType::Orphan
                       && dynamic_cast<const VOrphanFile *>(file)->isSystemFile();
 
-    m_printAct->setEnabled(file && file->getDocType() == DocType::Markdown);
 
-    updateEditReadAct(p_tab);
+    m_discardAct->setEnabled(file && editMode && p_tab->isModified());
 
     saveNoteAct->setEnabled(file && editMode && file->isModifiable());
     deleteNoteAct->setEnabled(file && file->getType() == FileType::Note);
     noteInfoAct->setEnabled(file && !systemFile);
+
 
     m_attachmentBtn->setEnabled(file && file->getType() == FileType::Note);
 
@@ -2569,6 +2565,7 @@ void VMainWindow::shortcutsHelp()
 
 void VMainWindow::printNote()
 {
+    /*
     if (m_printer
         || !m_curFile
         || m_curFile->getDocType() != DocType::Markdown) {
@@ -2600,6 +2597,7 @@ void VMainWindow::printNote()
         delete m_printer;
         m_printer = NULL;
     }
+    */
 }
 
 QAction *VMainWindow::newAction(const QIcon &p_icon,
@@ -2887,7 +2885,7 @@ bool VMainWindow::discardAndReadByCaptain(void *p_target, void *p_data)
     Q_UNUSED(p_data);
     VMainWindow *obj = static_cast<VMainWindow *>(p_target);
     if (obj->m_curTab) {
-        obj->m_discardExitAct->trigger();
+        obj->m_discardAct->trigger();
         obj->m_curTab->setFocus();
 
         return false;
@@ -3267,56 +3265,8 @@ void VMainWindow::toggleEditReadMode()
     }
 }
 
-void VMainWindow::updateEditReadAct(const VEditTab *p_tab)
-{
-    static QIcon editIcon = VIconUtils::toolButtonIcon(":/resources/icons/edit_note.svg");
-    static QString editText;
-    static QIcon readIcon = VIconUtils::toolButtonIcon(":/resources/icons/save_exit.svg");
-    static QString readText;
-
-    if (editText.isEmpty()) {
-        QString keySeq = g_config->getShortcutKeySequence("EditReadNote");
-        QKeySequence seq(keySeq);
-        if (!seq.isEmpty()) {
-            QString shortcutText = VUtils::getShortcutText(keySeq);
-            editText = tr("Edit\t%1").arg(shortcutText);
-            readText = tr("Save Changes And Read\t%1").arg(shortcutText);
-
-            m_editReadAct->setShortcut(seq);
-        } else {
-            editText = tr("Edit");
-            readText = tr("Save Changes And Read");
-        }
-    }
-
-    if (!p_tab || !p_tab->isEditMode()) {
-        // Edit.
-        m_editReadAct->setIcon(editIcon);
-        m_editReadAct->setText(editText);
-        m_editReadAct->setStatusTip(tr("Edit current note"));
-
-        m_discardExitAct->setEnabled(false);
-    } else {
-        // Read.
-        m_editReadAct->setIcon(readIcon);
-        m_editReadAct->setText(readText);
-        m_editReadAct->setStatusTip(tr("Save changes and exit edit mode"));
-
-        m_discardExitAct->setEnabled(true);
-    }
-
-    m_editReadAct->setEnabled(p_tab);
-}
-
 void VMainWindow::handleExportAct()
 {
-    VExportDialog dialog(m_notebookSelector->currentNotebook(),
-                         m_dirTree->currentDirectory(),
-                         m_curFile,
-                         m_cart,
-                         g_config->getMdConverterType(),
-                         this);
-    dialog.exec();
 }
 
 VNotebook *VMainWindow::getCurrentNotebook() const
@@ -3601,6 +3551,7 @@ void VMainWindow::setupFileListSplitOut(bool p_enabled)
 
 void VMainWindow::collectUserStat() const
 {
+    /*
     // One request per day.
     auto lastCheckDate = g_config->getLastUserTrackDate();
     if (lastCheckDate != QDate::currentDate()) {
@@ -3620,6 +3571,7 @@ void VMainWindow::collectUserStat() const
     }
 
     QTimer::singleShot(30 * 60 * 1000, this, SLOT(collectUserStat()));
+    */
 }
 
 void VMainWindow::promptForVNoteRestart()

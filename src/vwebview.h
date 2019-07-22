@@ -1,14 +1,14 @@
 #ifndef VWEBVIEW_H
 #define VWEBVIEW_H
 
-#include <QWebEngineView>
+#include <QTextBrowser>
 #include <QClipboard>
 #include <QRegExp>
 
 class VFile;
 class QMenu;
 
-class VWebView : public QWebEngineView
+class VWebView : public QTextBrowser
 {
     Q_OBJECT
 public:
@@ -16,6 +16,10 @@ public:
     explicit VWebView(VFile *p_file, QWidget *p_parent = Q_NULLPTR);
 
     void setInPreview(bool p_preview);
+
+    QString selectedText() const;
+
+    void setHtml(const QString &p_html, const QUrl &p_baseUrl = QUrl());
 
 signals:
     void editNote();

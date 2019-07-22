@@ -561,31 +561,18 @@ void VFileList::contextMenuRequested(QPoint pos)
         VNoteFile *file = getVFile(item);
         if (file) {
             if (file->getDocType() == DocType::Markdown) {
-                QAction *openInReadAct = new QAction(VIconUtils::menuIcon(":/resources/icons/reading.svg"),
-                                                     tr("&Open In Read Mode"),
+                QAction *openAct = new QAction(VIconUtils::menuIcon(":/resources/icons/editing.svg"),
+                                                     tr("Open"),
                                                      &menu);
-                openInReadAct->setToolTip(tr("Open current note in read mode"));
-                connect(openInReadAct, &QAction::triggered,
-                        this, [this]() {
-                            QListWidgetItem *item = fileList->currentItem();
-                            if (item) {
-                                emit fileClicked(getVFile(item), OpenFileMode::Read, true);
-                            }
-                        });
-                menu.addAction(openInReadAct);
-
-                QAction *openInEditAct = new QAction(VIconUtils::menuIcon(":/resources/icons/editing.svg"),
-                                                     tr("Open In &Edit Mode"),
-                                                     &menu);
-                openInEditAct->setToolTip(tr("Open current note in edit mode"));
-                connect(openInEditAct, &QAction::triggered,
+                openAct->setToolTip(tr("Open and edit current note"));
+                connect(openAct, &QAction::triggered,
                         this, [this]() {
                             QListWidgetItem *item = fileList->currentItem();
                             if (item) {
                                 emit fileClicked(getVFile(item), OpenFileMode::Edit, true);
                             }
                         });
-                menu.addAction(openInEditAct);
+                menu.addAction(openAct);
             }
 
             menu.addMenu(getOpenWithMenu());
@@ -824,7 +811,8 @@ void VFileList::activateItem(QListWidgetItem *p_item, bool p_restoreFocus)
 
     // Qt seems not to update the QListWidget correctly. Manually force it to repaint.
     fileList->update();
-    emit fileClicked(getVFile(p_item), g_config->getNoteOpenMode());
+    // emit fileClicked(getVFile(p_item), g_config->getNoteOpenMode());
+    emit fileClicked(getVFile(p_item), OpenFileMode::Edit);
 
     if (p_restoreFocus) {
         fileList->setFocus();

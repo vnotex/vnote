@@ -9,12 +9,12 @@
 #include "vmarkdownconverter.h"
 #include "vconfigmanager.h"
 
-class VWebView;
+// class VWebView;
 class VDocument;
 class VMdEditor;
 class VInsertSelector;
 class QTimer;
-class QWebEngineDownloadItem;
+// class QWebEngineDownloadItem;
 class QSplitter;
 class VLivePreviewHelper;
 class VMathJaxInplacePreviewHelper;
@@ -69,7 +69,7 @@ public:
 
     void clearSearchedWordHighlight() Q_DECL_OVERRIDE;
 
-    VWebView *getWebViewer() const;
+    // VWebView *getWebViewer() const;
 
     VMdEditor *getEditor() const;
 
@@ -153,10 +153,10 @@ private slots:
     void restoreFromTabInfo();
 
     // Handle download request from web page.
-    void handleDownloadRequested(QWebEngineDownloadItem *p_item);
+    // void handleDownloadRequested(QWebEngineDownloadItem *p_item);
 
     // Handle save page request.
-    void handleSavePageRequested();
+    // void handleSavePageRequested();
 
     // Selection changed in web.
     void handleWebSelectionChanged();
@@ -247,7 +247,7 @@ private:
     bool previewExpanded() const;
 
     VMdEditor *m_editor;
-    VWebView *m_webViewer;
+    // VWebView *m_webViewer;
     VDocument *m_document;
     MarkdownConverterType m_mdConType;
 

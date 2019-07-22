@@ -505,7 +505,7 @@ struct VSearchResultItem
                       VSearchResultItem::MatchType p_matchType,
                       const QString &p_text,
                       const QString &p_path,
-                      const QSharedPointer<VSearchConfig> &p_config = nullptr)
+                      const QSharedPointer<VSearchConfig> &p_config = QSharedPointer<VSearchConfig>())
         : m_type(p_type),
           m_matchType(p_matchType),
           m_text(p_text),

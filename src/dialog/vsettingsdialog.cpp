@@ -62,7 +62,7 @@ VSettingsDialog::VSettingsDialog(QWidget *p_parent)
     // Add tabs.
     addTab(new VGeneralTab(), tr("General"));
     addTab(new VLookTab(), tr("Appearance"));
-    addTab(new VReadEditTab(this), tr("Read/Edit"));
+    addTab(new VReadEditTab(this), tr("Edit"));
     addTab(new VNoteManagementTab(), tr("Note Management"));
     addTab(new VMarkdownTab(), tr("Markdown"));
     addTab(new VMiscTab(), tr("Misc"));
@@ -684,7 +684,9 @@ VReadEditTab::VReadEditTab(VSettingsDialog *p_dlg, QWidget *p_parent)
     : QWidget(p_parent),
       m_settingsDlg(p_dlg)
 {
-    m_readBox = new QGroupBox(tr("Read Mode (For Markdown Only)"));
+    m_readBox = new QGroupBox(tr("Read Mode (For Markdown Only)"), this);
+    m_readBox->setVisible(false);
+
     m_editBox = new QGroupBox(tr("Edit Mode"));
 
     // Web Zoom Factor.
@@ -771,7 +773,7 @@ VReadEditTab::VReadEditTab(VSettingsDialog *p_dlg, QWidget *p_parent)
     m_keyModeCB->setCurrentIndex(0);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
-    mainLayout->addWidget(m_readBox);
+    // mainLayout->addWidget(m_readBox);
     mainLayout->addWidget(m_editBox);
     setLayout(mainLayout);
 }
@@ -1211,10 +1213,11 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     : QWidget(p_parent)
 {
     // Default note open mode.
-    m_openModeCombo = VUtils::getComboBox();
+    m_openModeCombo = VUtils::getComboBox(this);
     m_openModeCombo->setToolTip(tr("Default mode to open a file"));
     m_openModeCombo->addItem(tr("Read Mode"), (int)OpenFileMode::Read);
     m_openModeCombo->addItem(tr("Edit Mode"), (int)OpenFileMode::Edit);
+    m_openModeCombo->setVisible(false);
 
     // Heading sequence.
     m_headingSequenceTypeCombo = VUtils::getComboBox();
@@ -1256,20 +1259,22 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     colorColumnLabel->setToolTip(m_colorColumnEdit->toolTip());
 
     // MathJax.
-    m_mathjaxConfigEdit = new VLineEdit();
+    m_mathjaxConfigEdit = new VLineEdit(this);
     m_mathjaxConfigEdit->setToolTip(tr("Location of MathJax JavaScript and its configuration "
                                        "(restart VNote to make it work in in-place preview)"));
     m_mathjaxConfigEdit->setPlaceholderText(tr("Need to prepend \"file://\" to local path"));
+    m_mathjaxConfigEdit->setVisible(false);
 
     // PlantUML.
     m_plantUMLModeCombo = VUtils::getComboBox();
     m_plantUMLModeCombo->setToolTip(tr("Enable PlantUML support in Markdown"));
     m_plantUMLModeCombo->addItem(tr("Disabled"), PlantUMLMode::DisablePlantUML);
-    m_plantUMLModeCombo->addItem(tr("Online Service"), PlantUMLMode::OnlinePlantUML);
+    // m_plantUMLModeCombo->addItem(tr("Online Service"), PlantUMLMode::OnlinePlantUML);
     m_plantUMLModeCombo->addItem(tr("Local JAR"), PlantUMLMode::LocalPlantUML);
 
-    m_plantUMLServerEdit = new VLineEdit();
+    m_plantUMLServerEdit = new VLineEdit(this);
     m_plantUMLServerEdit->setToolTip(tr("Server address for online PlantUML"));
+    m_plantUMLServerEdit->setVisible(false);
 
     m_plantUMLJarEdit = new VLineEdit();
     m_plantUMLJarEdit->setToolTip(tr("Location to the PlantUML JAR executable for local PlantUML"));
@@ -1349,12 +1354,12 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     graphvizLayout->addWidget(graphvizTestBtn);
 
     QFormLayout *mainLayout = new QFormLayout();
-    mainLayout->addRow(tr("Open mode:"), m_openModeCombo);
+    // mainLayout->addRow(tr("Open mode:"), m_openModeCombo);
     mainLayout->addRow(tr("Heading sequence:"), headingSequenceLayout);
     mainLayout->addRow(colorColumnLabel, m_colorColumnEdit);
-    mainLayout->addRow(tr("MathJax configuration:"), m_mathjaxConfigEdit);
+    // mainLayout->addRow(tr("MathJax configuration:"), m_mathjaxConfigEdit);
     mainLayout->addRow(tr("PlantUML:"), m_plantUMLModeCombo);
-    mainLayout->addRow(tr("PlantUML server:"), m_plantUMLServerEdit);
+    // mainLayout->addRow(tr("PlantUML server:"), m_plantUMLServerEdit);
     mainLayout->addRow(tr("PlantUML JAR:"), plantUMLLayout);
     mainLayout->addRow(m_graphvizCB);
     mainLayout->addRow(tr("Graphviz executable:"), graphvizLayout);

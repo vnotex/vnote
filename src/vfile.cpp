@@ -124,7 +124,7 @@ bool VFile::isChangedOutside(bool &p_missing) const
 
     p_missing = false;
     QDateTime lm = QFileInfo(fetchPath()).lastModified();
-    return lm.toSecsSinceEpoch() != m_lastModified.toSecsSinceEpoch();
+    return lm.toMSecsSinceEpoch() != m_lastModified.toMSecsSinceEpoch();
 }
 
 bool VFile::reload()

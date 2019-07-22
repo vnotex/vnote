@@ -19,11 +19,11 @@ class VOrphanFile;
 class VNotebook;
 class QWidget;
 class QComboBox;
-class QWebEngineView;
 class QAction;
 class QTreeWidgetItem;
 class QFormLayout;
 class QTemporaryFile;
+class QTextBrowser;
 
 #if !defined(V_ASSERT)
     #define V_ASSERT(cond) ((!(cond)) ? qt_assert(#cond, __FILE__, __LINE__) : qt_noop())
@@ -314,7 +314,7 @@ public:
     // Create and return a QComboBox.
     static QComboBox *getComboBox(QWidget *p_parent = nullptr);
 
-    static QWebEngineView *getWebEngineView(const QColor &p_background, QWidget *p_parent = nullptr);
+    static QTextBrowser *getTextBrowser(const QColor &p_background, QWidget *p_parent = nullptr);
 
     static void setDynamicProperty(QWidget *p_widget, const char *p_prop, bool p_val = true);
 

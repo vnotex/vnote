@@ -1,7 +1,6 @@
 #include "vcopytextashtmldialog.h"
 
 #include <QtWidgets>
-#include <QWebEngineView>
 #include <QClipboard>
 #include <QMimeData>
 #include <QApplication>
@@ -31,8 +30,8 @@ void VCopyTextAsHtmlDialog::setupUI()
     m_textEdit->setProperty("LineEdit", true);
 
     m_htmlLabel = new QLabel(tr("HTML:"));
-    m_htmlViewer = VUtils::getWebEngineView(g_config->getBaseBackground());
-    m_htmlViewer->setContextMenuPolicy(Qt::NoContextMenu);
+    m_htmlViewer = VUtils::getTextBrowser(g_config->getBaseBackground());
+    // m_htmlViewer->setContextMenuPolicy(Qt::NoContextMenu);
     m_htmlViewer->setMinimumSize(600, 400);
 
     m_infoLabel = new QLabel(tr("Converting text to HTML ..."));
@@ -66,7 +65,8 @@ void VCopyTextAsHtmlDialog::setConvertedHtml(const QUrl &p_baseUrl,
                                              const QString &p_html)
 {
     QString html = p_html;
-    m_htmlViewer->setHtml("<html><body>" + html + "</body></html>", p_baseUrl);
+    m_htmlViewer->setHtml("<html><body>" + html + "</body></html>");
+    m_htmlViewer->setSource(p_baseUrl);
     setHtmlVisible(true);
 
     g_webUtils->alterHtmlAsTarget(p_baseUrl, html, m_copyTarget);
