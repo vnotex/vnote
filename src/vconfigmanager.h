@@ -648,6 +648,8 @@ public:
 
     bool getEnableCodeBlockCopyButton() const;
 
+    const QString &getPygmentPrg() const;
+
 private:
     void initEditorConfigs();
 
@@ -1146,6 +1148,9 @@ private:
 
     // Whether enable copy button in code block in read mode.
     bool m_enableCodeBlockCopyButton;
+
+    // Pygment program to call for code block highlight in editor.
+    QString m_pygmentPrg;
 
     // The name of the config file in each directory.
     static const QString c_dirConfigFile;
@@ -2987,6 +2992,11 @@ inline int VConfigManager::getTableFormatInterval() const
 inline bool VConfigManager::getEnableCodeBlockCopyButton() const
 {
     return m_enableCodeBlockCopyButton;
+}
+
+inline const QString &VConfigManager::getPygmentPrg() const
+{
+    return m_pygmentPrg;
 }
 
 #endif // VCONFIGMANAGER_H

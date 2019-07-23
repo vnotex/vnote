@@ -1019,11 +1019,12 @@ VNoteManagementTab::VNoteManagementTab(QWidget *p_parent)
     m_singleClickOpen = new QCheckBox(tr("Single click to open a note in current tab"), this);
     m_singleClickOpen->setToolTip(tr("Single click a note in the notes list to open it in current tab, "
                                      "double click to open it in a new tab"));
+    m_singleClickOpen->setVisible(false);
 
     QFormLayout *noteLayout = new QFormLayout();
     noteLayout->addRow(imageFolderLayout);
     noteLayout->addRow(attachmentFolderLayout);
-    noteLayout->addRow(m_singleClickOpen);
+    // noteLayout->addRow(m_singleClickOpen);
     m_noteBox->setLayout(noteLayout);
 
     // External File.

@@ -101,9 +101,7 @@ VMdEditor::VMdEditor(VFile *p_file,
             }
     });
 
-    m_cbHighlighter = new VCodeBlockHighlightHelper(m_pegHighlighter,
-                                                    p_doc,
-                                                    p_type);
+    m_cbHighlighter = new VCodeBlockHighlightHelper(m_pegHighlighter, p_type);
 
     m_previewMgr = new VPreviewManager(this, m_pegHighlighter);
     connect(m_pegHighlighter, &PegMarkdownHighlighter::imageLinksUpdated,

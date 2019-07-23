@@ -6,10 +6,11 @@
 #include <QAtomicInteger>
 #include <QXmlStreamReader>
 #include <QHash>
+#include <QProcess>
+#include <QStringList>
 
 #include "vconfigmanager.h"
 
-class VDocument;
 class PegMarkdownHighlighter;
 
 class VCodeBlockHighlightHelper : public QObject
@@ -17,7 +18,7 @@ class VCodeBlockHighlightHelper : public QObject
     Q_OBJECT
 public:
     VCodeBlockHighlightHelper(PegMarkdownHighlighter *p_highlighter,
-                              VDocument *p_vdoc, MarkdownConverterType p_type);
+                              MarkdownConverterType p_type);
 
     // @p_text: text of fenced code block.
     // Get the indent level of the first line (fence) and unindent the whole block
@@ -30,6 +31,8 @@ private slots:
     void handleCodeBlocksUpdated(TimeStamp p_timeStamp, const QVector<VCodeBlock> &p_codeBlocks);
 
     void handleTextHighlightResult(const QString &p_html, int p_id, unsigned long long p_timeStamp);
+
+    void handleProcessFinished(int p_exitCode, QProcess::ExitStatus p_exitStatus);
 
 private:
     struct HLResult
@@ -65,8 +68,12 @@ private:
                              TimeStamp p_timeStamp,
                              const QVector<HLUnitPos> &p_units);
 
+    void highlightTextAsync(const QString &p_text,
+                            const QString &p_lang,
+                            int p_id,
+                            unsigned long long p_timeStamp);
+
     PegMarkdownHighlighter *m_highlighter;
-    VDocument *m_vdocument;
     MarkdownConverterType m_type;
 
     TimeStamp m_timeStamp;
@@ -76,6 +83,10 @@ private:
     // Cache for highlight result, using the code block text as key.
     // The HLResult has relative position only.
     QHash<QString, HLResult> m_cache;
+
+    QString m_program;
+
+    QStringList m_args;
 };
 
 #endif // VCODEBLOCKHIGHLIGHTHELPER_H

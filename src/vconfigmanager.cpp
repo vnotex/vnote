@@ -20,7 +20,7 @@ const QString VConfigManager::orgName = QString("vnote");
 
 const QString VConfigManager::appName = QString("vnote");
 
-const QString VConfigManager::c_version = QString("2.7.1");
+const QString VConfigManager::c_version = QString("2.7.56");
 
 const QString VConfigManager::c_dirConfigFile = QString("_vnote.json");
 
@@ -382,6 +382,8 @@ void VConfigManager::initEditorConfigs()
     m_enableSmartTable = getConfigFromSettings(section, "enable_smart_table").toBool();
 
     m_tableFormatIntervalMS = getConfigFromSettings(section, "table_format_interval").toInt();
+
+    m_pygmentPrg = getConfigFromSettings(section, "pygment_prg").toString();
 }
 
 void VConfigManager::initMarkdownConfigs()
