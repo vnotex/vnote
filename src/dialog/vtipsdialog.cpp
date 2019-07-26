@@ -1,6 +1,7 @@
 #include "vtipsdialog.h"
 
 #include <QtWidgets>
+#include <QWebView>
 
 #include "vconfigmanager.h"
 #include "vmarkdownconverter.h"
@@ -22,8 +23,8 @@ VTipsDialog::VTipsDialog(const QString &p_tipFile,
 
 void VTipsDialog::setupUI(const QString &p_actionText)
 {
-    m_viewer = VUtils::getTextBrowser(g_config->getBaseBackground());
-    // m_viewer->setContextMenuPolicy(Qt::NoContextMenu);
+    m_viewer = VUtils::getWebView(g_config->getBaseBackground());
+    m_viewer->setContextMenuPolicy(Qt::NoContextMenu);
 
     m_btnBox = new QDialogButtonBox(QDialogButtonBox::Ok);
     connect(m_btnBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
@@ -58,10 +59,9 @@ void VTipsDialog::readFile(const QString &p_tipFile)
     QString html = mdConverter.generateHtml(content,
                                             g_config->getMarkdownExtensions(),
                                             toc);
-    // html = VUtils::generateSimpleHtmlTemplate(html);
+    html = VUtils::generateSimpleHtmlTemplate(html);
     // Add a base URL to enable it to access local style files.
-    m_viewer->setHtml(html);
-    // m_viewer->setSource(QUrl("qrc:/resources"));
+    m_viewer->setHtml(html, QUrl("qrc:/resources"));
 }
 
 void VTipsDialog::showEvent(QShowEvent *p_event)

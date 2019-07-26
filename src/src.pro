@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network svg printsupport
+QT       += core gui network svg printsupport webkitwidgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -155,7 +155,8 @@ SOURCES += main.cpp\
     widgets/vcombobox.cpp \
     vtablehelper.cpp \
     vtable.cpp \
-    dialog/vinserttabledialog.cpp
+    dialog/vinserttabledialog.cpp \
+    vpreviewpage.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -295,7 +296,8 @@ HEADERS  += vmainwindow.h \
     widgets/vcombobox.h \
     vtablehelper.h \
     vtable.h \
-    dialog/vinserttabledialog.h
+    dialog/vinserttabledialog.h \
+    vpreviewpage.h
 
 RESOURCES += \
     vnote.qrc \

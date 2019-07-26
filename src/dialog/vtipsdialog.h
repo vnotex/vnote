@@ -8,7 +8,7 @@
 class QDialogButtonBox;
 class QPushButton;
 class QShowEvent;
-class QTextBrowser;
+class QWebView;
 
 typedef std::function<void()> TipsDialogFunc;
 
@@ -29,7 +29,7 @@ private:
 
     void readFile(const QString &p_tipFile);
 
-    QTextBrowser *m_viewer;
+    QWebView *m_viewer;
 
     QDialogButtonBox *m_btnBox;
 
