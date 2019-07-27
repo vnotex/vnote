@@ -53,7 +53,7 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
     const QList<QAction *> actions = menu->actions();
     QAction *firstAction = actions.isEmpty() ? NULL : actions[0];
 
-    bool selection = hasSelection();
+    bool selection = hasSelection() && !selectedText().isEmpty();
 
 #if defined(Q_OS_WIN)
     if (!m_copyImageUrlActionHooked) {
@@ -99,11 +99,6 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
                     menu->insertSeparator(firstAction);
                 }
             }
-
-            QAction *savePageAct = new QAction(QWebPage::tr("Save &Page"), menu);
-            connect(savePageAct, &QAction::triggered,
-                    this, &VWebView::requestSavePage);
-            menu->addAction(savePageAct);
         }
     }
 
