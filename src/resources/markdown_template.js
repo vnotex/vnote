@@ -1338,7 +1338,7 @@ var listContainsRegex = function(strs, exp) {
 var StylesToInline = null;
 
 var initStylesToInline = function() {
-    StylesToInline = new Map();
+    StylesToInline = new Object();
 
     if (VStylesToInline.length == 0) {
         return;
@@ -1354,7 +1354,7 @@ var initStylesToInline = function() {
         var tags = vals[0].split(':');
         var pros = vals[1].split(':');
         for (var j = 0; j < tags.length; ++j) {
-            StylesToInline.set(tags[j].toLowerCase(), pros);
+            StylesToInline[tags[j].toLowerCase()] = pros;
         }
     }
 };
@@ -1363,9 +1363,9 @@ var initStylesToInline = function() {
 // StylesToInline need to be init before.
 var embedInlineStyles = function(ele) {
     var tagName = ele.tagName.toLowerCase();
-    var props = StylesToInline.get(tagName);
+    var props = StylesToInline[tagName];
     if (!props) {
-        props = StylesToInline.get('all');
+        props = StylesToInline['all'];
 
         if (!props) {
             return;
