@@ -68,6 +68,7 @@ SOURCES += main.cpp\
     vnavigationmode.cpp \
     vorphanfile.cpp \
     vcodeblockhighlighthelper.cpp \
+    vcodeblockhighlighthelper2.cpp \
     vmdtab.cpp \
     vhtmltab.cpp \
     utils/vvim.cpp \
@@ -202,6 +203,7 @@ HEADERS  += vmainwindow.h \
     vnavigationmode.h \
     vorphanfile.h \
     vcodeblockhighlighthelper.h \
+    vcodeblockhighlighthelper2.h \
     vmdtab.h \
     vhtmltab.h \
     utils/vvim.h \

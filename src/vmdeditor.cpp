@@ -13,7 +13,7 @@
 #include "utils/veditutils.h"
 #include "vedittab.h"
 #include "pegmarkdownhighlighter.h"
-#include "vcodeblockhighlighthelper.h"
+#include "vcodeblockhighlighthelper2.h"
 #include "vmdeditoperations.h"
 #include "vtableofcontent.h"
 #include "utils/veditutils.h"
@@ -101,7 +101,7 @@ VMdEditor::VMdEditor(VFile *p_file,
             }
     });
 
-    m_cbHighlighter = new VCodeBlockHighlightHelper(m_pegHighlighter, p_type);
+    m_cbHighlighter = new VCodeBlockHighlightHelper2(m_pegHighlighter, p_doc, p_type);
 
     m_previewMgr = new VPreviewManager(this, m_pegHighlighter);
     connect(m_pegHighlighter, &PegMarkdownHighlighter::imageLinksUpdated,

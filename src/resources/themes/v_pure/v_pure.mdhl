@@ -139,70 +139,42 @@ font-family: YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Co
 FENCEDCODEBLOCK
 foreground: 673ab7
 font-family: YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New
-# [VNote] Codeblock sylte from Pygment (bold, italic, underlined, strikeout, color)
+# [VNote] Codeblock sylte from HighlightJS (bold, italic, underlined, strikeout, color)
 # The last occurence of the same attribute takes effect
 # Could specify multiple attribute in one line
-hll: ffffcc
-c: 888888
-err: FF0000
-k: 008800
-o: 333333
-ch: 888888
-cm: 888888
-cp: 557799
-cpf: 4d99bf
-c1: 888888
-cs: cc0000
-gd: A00000
-ge: italic
-gr: FF0000
-gh: 000080
-gi: 00A000
-go: 888888
-gp: c65d09
-gs: bold
-gu: bold, 800080
-gt: bold, 0044DD
-kc: bold, 008800
-kd: bold, 008800
-kn: bold, 008800
-kp: bold, 003388
-kr: bold, 008800
-kt: bold, 333399
-m: bold, 6600EE
-s: af00d7
-na: 0000CC
-nb: 007020
-nc: bold, BB0066
-no: bold, 003366
-nd: bold, 555555
-ni: bold, 880000
-ne: bold, FF0000
-nf: bold, 0066BB
-nl: bold, 997700
-nn: bold, 0e84b5
-nt: 007700
-nv: 996633
-ow: bold, 000000
-w: bbbbbb
-mb: bold, 6600EE
-mf: bold, 6600EE
-mh: bold, 005588
-mi: bold, 0000DD
-mo: bold, 4400EE
-sc: 0044DD
-sd: DD4422
-se: 666666
-sx: DD2200
-sr: 000000
-ss: AA6600
-bp: 007020
-fm: bold, 0066BB
-vc: 336699
-vg: bold, dd7700
-vi: 3333BB
-vm: 996633
-il: bold, 0000DD
+hljs-comment: 6c6c6c
+hljs-keyword: 0000ee
+hljs-attribute: 0000ee
+hljs-selector-tag: 0000ee
+hljs-meta-keyword: 0000ee
+hljs-doctag: 0000ee
+hljs-name: 0000ee
+hljs-type: 880000
+hljs-string: 880000
+hljs-number: 880000
+hljs-selector-id: 880000
+hljs-selector-class: 880000
+hljs-quote: 880000
+hljs-template-tag: 880000
+hljs-deletion: 880000
+hljs-title: bold, 880000
+hljs-section: bold, 880000
+hljs-regexp: bc6060
+hljs-symbol: bc6060
+hljs-variable: bc6060
+hljs-template-variable: bc6060
+hljs-link: bc6060
+hljs-selector-attr: bc6060
+hljs-selector-pseudo: bc6060
+hljs-literal: af00d7
+hljs-built_in: 008700
+hljs-bullet: 008700
+hljs-code: 008700
+hljs-addition: 008700
+hljs-meta: 1f7199
+hljs-meta-string: 4d99bf
+hljs-emphasis: italic
+hljs-strong: bold
 
 BLOCKQUOTE
 foreground: 00af00

@@ -146,83 +146,39 @@ font-family: YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Co
 # [VNote] Codeblock sylte from HighlightJS (bold, italic, underlined, strikeout, color)
 # The last occurence of the same attribute takes effect
 # Could specify multiple attribute in one line
-hll: 404040
-c: 999999
-err: a61717
-esc: d0d0d0
-g: d0d0d0
-k: bold, 6ab825
-l: d0d0d0
-n: d0d0d0
-o: d0d0d0
-x: d0d0d0
-p: d0d0d0
-ch: italic, 999999
-cm: italic, 999999
-cp: bold, cd2828
-cpf: italic, 999999
-c1: italic, 999999
-cs: bold, e50808
-gd: d22323
-ge: italic, d0d0d0
-gr: d22323
-gh: bold, ffffff
-gi: 589819
-go: cccccc
-gp: aaaaaa
-gs: bold, d0d0d0
-gu: underlined, ffffff
-gt: d22323
-kc: bold, 6ab825
-kd: bold, 6ab825
-kn: bold, 6ab825
-kp: 6ab825
-kr: bold, 6ab825
-kt: bold, 6ab825
-ld: d0d0d0
-m: 3677a9
-s: ed9d13
-na: bbbbbb
-nb: 24909d
-nc: underlined, 447fcf
-no: 40ffff
-nd: ffa500
-ni: d0d0d0
-ne: bbbbbb
-nf: 447fcf
-nl: d0d0d0
-nn: underlined, 447fcf
-nx: d0d0d0
-py: d0d0d0
-nt: bold, 6ab825
-nv: 40ffff
-ow: bold, 6ab825
-w: 666666
-mb: 3677a9
-mf: 3677a9
-mh: 3677a9
-mi: 3677a9
-mo: 3677a9
-sa: ed9d13
-sb: ed9d13
-sc: ed9d13
-dl: ed9d13
-sd: ed9d13
-s2: ed9d13
-se: ed9d13
-sh: ed9d13
-si: ed9d13
-sx: ffa500
-sr: ed9d13
-s1: ed9d13
-ss: ed9d13
-bp: 24909d
-fm: 447fcf
-vc: 40ffff
-vg: 40ffff
-vi: 40ffff
-vm: 40ffff
-il: 3677a9
+hljs-comment: af8787
+hljs-quote: af8787
+hljs-doctag: ccb24c
+hljs-keyword: ccb24c
+hljs-formula: ccb24c
+hljs-section: e37c84
+hljs-name: e37c84
+hljs-selector-tag: e37c84
+hljs-deletion: e37c84
+hljs-subst: e37c84
+hljs-literal: 56b6c2
+hljs-string: f06292
+hljs-regexp: f06292
+hljs-addition: f06292
+hljs-attribute: f06292
+hljs-meta-string: f06292
+hljs-built_in: 80cbc4
+hljs-attr: ce93db
+hljs-variable: ce93db
+hljs-template-variable: ce93db
+hljs-type: ce93db
+hljs-selector-class: ce93db
+hljs-selector-attr: ce93db
+hljs-selector-pseudo: ce93db
+hljs-number: ce93db
+hljs-symbol: 84c0f2
+hljs-link: underlined, 84c0f2
+hljs-bullet: 84c0f2
+hljs-meta: 84c0f2
+hljs-selector-id: 84c0f2
+hljs-title: bold, 84c0f2
+hljs-emphasis: italic
+hljs-strong: bold
 
 BLOCKQUOTE
 foreground: ccb24c
