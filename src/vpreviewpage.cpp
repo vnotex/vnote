@@ -18,24 +18,19 @@ bool VPreviewPage::acceptNavigationRequest(QWebFrame *p_frame,
                                            const QNetworkRequest &p_request,
                                            QWebPage::NavigationType p_type)
 {
-    Q_UNUSED(p_frame);
-    Q_UNUSED(p_type);
-
-    auto url = p_request.url();
-    if (url.isLocalFile()) {
-        QString filePath = url.toLocalFile();
-        if (g_mainWin->tryOpenInternalFile(filePath)) {
-            return false;
+    if (p_type == QWebPage::NavigationTypeLinkClicked) {
+        auto url = p_request.url();
+        if (url.isLocalFile()) {
+            QString filePath = url.toLocalFile();
+            if (g_mainWin->tryOpenInternalFile(filePath)) {
+                return false;
+            }
         }
-    } else if (p_frame) {
-        return true;
-    } else if (url.scheme() == "data") {
-        // Qt 5.12 will trigger this when calling QWebEngineView.setHtml().
-        return true;
+
+        QDesktopServices::openUrl(url);
     }
 
-    QDesktopServices::openUrl(url);
-    return false;
+    return QWebPage::acceptNavigationRequest(p_frame, p_request, p_type);
 }
 
 void VPreviewPage::setBackgroundColor(const QColor &p_background)

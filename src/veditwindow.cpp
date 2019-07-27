@@ -150,7 +150,6 @@ int VEditWindow::insertEditTab(int p_index, VFile *p_file, QWidget *p_page)
 
 int VEditWindow::openFile(VFile *p_file, OpenFileMode p_mode)
 {
-    qDebug() << "open" << p_file->getName();
     // Find if it has been opened already
     int idx = findTabByFile(p_file);
     if (idx > -1) {

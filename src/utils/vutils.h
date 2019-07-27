@@ -186,7 +186,7 @@ public:
     static DocType docTypeFromName(const QString &p_name);
 
     // Generate HTML template.
-    static QString generateHtmlTemplate(MarkdownConverterType p_conType);
+    static QString generateHtmlTemplate(MarkdownConverterType p_conType, quint16 p_port);
 
     // @p_renderBg is the background name.
     // @p_wkhtmltopdf: whether this template is used for wkhtmltopdf.
@@ -464,6 +464,7 @@ private:
 
     static QString generateHtmlTemplate(const QString &p_template,
                                         MarkdownConverterType p_conType,
+                                        quint16 p_port,
                                         bool p_isPDF = false,
                                         bool p_wkhtmltopdf = false,
                                         bool p_addToc = false);

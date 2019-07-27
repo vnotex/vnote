@@ -7,6 +7,7 @@
 
 class VFile;
 class QMenu;
+class QWebChannel;
 
 class VWebView : public QWebView
 {
@@ -16,6 +17,8 @@ public:
     explicit VWebView(VFile *p_file, QWidget *p_parent = Q_NULLPTR);
 
     void setInPreview(bool p_preview);
+
+    void bindToChannel(quint16 p_port, const QString &p_name, QObject *p_object);
 
 signals:
     void editNote();
@@ -73,6 +76,8 @@ private:
 
     // Whether in preview mode.
     bool m_inPreview;
+
+    QWebChannel *m_channel;
 };
 
 inline void VWebView::setInPreview(bool p_preview)

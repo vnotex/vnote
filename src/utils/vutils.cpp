@@ -655,9 +655,9 @@ QString VUtils::generateSimpleHtmlTemplate(const QString &p_body)
     return html.replace(HtmlHolder::c_bodyHolder, p_body);
 }
 
-QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType)
+QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType, quint16 p_port)
 {
-    return generateHtmlTemplate(VNote::s_markdownTemplate, p_conType);
+    return generateHtmlTemplate(VNote::s_markdownTemplate, p_conType, p_port);
 }
 
 QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType,
@@ -675,11 +675,12 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType,
                                                 g_config->getCodeBlockCssStyleUrl(p_renderCodeBlockStyle),
                                                 p_isPDF);
 
-    return generateHtmlTemplate(templ, p_conType, p_isPDF, p_wkhtmltopdf, p_addToc);
+    return generateHtmlTemplate(templ, p_conType, 0, p_isPDF, p_wkhtmltopdf, p_addToc);
 }
 
 QString VUtils::generateHtmlTemplate(const QString &p_template,
                                      MarkdownConverterType p_conType,
+                                     quint16 p_port,
                                      bool p_isPDF,
                                      bool p_wkhtmltopdf,
                                      bool p_addToc)
@@ -881,6 +882,8 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
 #else
     extraFile += "<script>var VOS = 'linux';</script>\n";
 #endif
+
+    extraFile += "<script>var VWebChannelPort = '" + QString::number(p_port) + "';</script>\n";
 
     QString htmlTemplate(p_template);
     htmlTemplate.replace(HtmlHolder::c_JSHolder, jsFile);

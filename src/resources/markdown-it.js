@@ -125,10 +125,10 @@ mdit.use(window.markdownitContainer, 'alert', {
     },
 
     render: function (tokens, idx) {
-        let type = tokens[idx].info.trim().match(/^(alert-\S+)$/);
+        var type = tokens[idx].info.trim().match(/^(alert-\S+)$/);
         if (tokens[idx].nesting === 1) {
             // opening tag
-            let alertClass = type[1];
+            var alertClass = type[1];
             return '<div class="alert ' + alertClass + '" role="alert">';
         } else {
             // closing tag

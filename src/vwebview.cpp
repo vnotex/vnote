@@ -3,20 +3,25 @@
 #include <QMenu>
 #include <QPoint>
 #include <QContextMenuEvent>
-#include <QWebEnginePage>
+#include <QWebPage>
 #include <QAction>
 #include <QList>
 #include <QClipboard>
 #include <QMimeData>
 #include <QApplication>
 #include <QImage>
+#include <QWebChannel>
 #include <QFileInfo>
+#include <QWebSocketServer>
+
 #include "vfile.h"
 #include "utils/vclipboardutils.h"
 #include "utils/viconutils.h"
 #include "vconfigmanager.h"
 #include "utils/vwebutils.h"
 #include "utils/vutils.h"
+#include "websocketclientwrapper.h"
+#include "websockettransport.h"
 
 extern VConfigManager *g_config;
 
@@ -31,7 +36,8 @@ VWebView::VWebView(VFile *p_file, QWidget *p_parent)
       m_file(p_file),
       m_copyImageUrlActionHooked(false),
       m_afterCopyImage(false),
-      m_inPreview(false)
+      m_inPreview(false),
+      m_channel(nullptr)
 {
     setAcceptDrops(false);
 
@@ -55,7 +61,7 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
         // and the URL as URLs. If the URL contains Chinese, OneNote or Word could not
         // recognize it.
         // We need to change it to only-space-encoded text.
-        QAction *copyImageUrlAct = pageAction(QWebEnginePage::CopyImageUrlToClipboard);
+        QAction *copyImageUrlAct = pageAction(QWebPage::CopyImageUrlToClipboard);
         if (actions.contains(copyImageUrlAct)) {
             connect(copyImageUrlAct, &QAction::triggered,
                     this, &VWebView::handleCopyImageUrlAction);
@@ -94,7 +100,7 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
                 }
             }
 
-            QAction *savePageAct = new QAction(QWebEnginePage::tr("Save &Page"), menu);
+            QAction *savePageAct = new QAction(QWebPage::tr("Save &Page"), menu);
             connect(savePageAct, &QAction::triggered,
                     this, &VWebView::requestSavePage);
             menu->addAction(savePageAct);
@@ -103,7 +109,7 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
 
     // Add Copy As menu.
     {
-        QAction *copyAct = pageAction(QWebEnginePage::Copy);
+        QAction *copyAct = pageAction(QWebPage::Copy);
         if (actions.contains(copyAct) && !m_inPreview) {
             initCopyAsMenu(copyAct, menu);
         }
@@ -113,7 +119,7 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
     // - the default one use the fully-encoded URL to fetch the image while
     // Windows seems to not recognize it.
     // - We need to remove the html to let it be recognized by some web pages.
-    QAction *defaultCopyImageAct = pageAction(QWebEnginePage::CopyImageToClipboard);
+    QAction *defaultCopyImageAct = pageAction(QWebPage::CopyImageToClipboard);
     if (actions.contains(defaultCopyImageAct)) {
         QAction *copyImageAct = new QAction(defaultCopyImageAct->text(), menu);
         copyImageAct->setToolTip(defaultCopyImageAct->toolTip());
@@ -156,9 +162,9 @@ void VWebView::copyImage()
 {
 #if defined(Q_OS_WIN)
     Q_ASSERT(m_copyImageUrlActionHooked);
-    // triggerPageAction(QWebEnginePage::CopyImageUrlToClipboard) will not really
+    // triggerPageAction(QWebPage::CopyImageUrlToClipboard) will not really
     // trigger the corresponding action. It just do the stuff directly.
-    QAction *copyImageUrlAct = pageAction(QWebEnginePage::CopyImageUrlToClipboard);
+    QAction *copyImageUrlAct = pageAction(QWebPage::CopyImageUrlToClipboard);
     copyImageUrlAct->trigger();
 
     QCoreApplication::processEvents();
@@ -189,7 +195,7 @@ void VWebView::copyImage()
     m_afterCopyImage = true;
 
     // Fall back.
-    triggerPageAction(QWebEnginePage::CopyImageToClipboard);
+    triggerPageAction(QWebPage::CopyImageToClipboard);
 }
 
 void VWebView::handleCopyImageUrlAction()
@@ -230,9 +236,9 @@ void VWebView::hideUnusedActions(QMenu *p_menu)
     // QWebEnginePage uses different actions of Back/Forward/Reload.
     // [Woboq](https://code.woboq.org/qt5/qtwebengine/src/webenginewidgets/api/qwebenginepage.cpp.html#1652)
     // We tell these three actions by name.
-   const QStringList actionNames({QWebEnginePage::tr("&Back"),
-                                  QWebEnginePage::tr("&Forward"),
-                                  QWebEnginePage::tr("&Reload")});
+   const QStringList actionNames({QWebPage::tr("&Back"),
+                                  QWebPage::tr("&Forward"),
+                                  QWebPage::tr("&Reload")});
 
     const QList<QAction *> actions = p_menu->actions();
     for (auto it : actions) {
@@ -242,15 +248,15 @@ void VWebView::hideUnusedActions(QMenu *p_menu)
     }
 
     // ViewSource.
-    QAction *act = pageAction(QWebEnginePage::ViewSource);
-    unusedActions.append(act);
+    // QAction *act = pageAction(QWebPage::ViewSource);
+    // unusedActions.append(act);
 
     // DownloadImageToDisk.
-    act = pageAction(QWebEnginePage::DownloadImageToDisk);
+    auto act = pageAction(QWebPage::DownloadImageToDisk);
     unusedActions.append(act);
 
     // DownloadLinkToDisk.
-    act = pageAction(QWebEnginePage::DownloadLinkToDisk);
+    act = pageAction(QWebPage::DownloadLinkToDisk);
     unusedActions.append(act);
 
     for (auto it : unusedActions) {
@@ -394,7 +400,7 @@ void VWebView::handleCopyAsAction(QAction *p_act)
 
     m_copyTarget = p_act->data().toString();
 
-    triggerPageAction(QWebEnginePage::Copy);
+    triggerPageAction(QWebPage::Copy);
 }
 
 void VWebView::initCopyAllAsMenu(QMenu *p_menu)
@@ -427,13 +433,13 @@ void VWebView::handleCopyAllAsAction(QAction *p_act)
         return;
     }
 
-    triggerPageAction(QWebEnginePage::SelectAll);
+    triggerPageAction(QWebPage::SelectAll);
 
     m_copyTarget = p_act->data().toString();
 
-    triggerPageAction(QWebEnginePage::Copy);
+    triggerPageAction(QWebPage::Copy);
 
-    triggerPageAction(QWebEnginePage::Unselect);
+    // triggerPageAction(QWebPage::Unselect);
 }
 
 void VWebView::initPreviewTunnelMenu(QAction *p_before, QMenu *p_menu)
@@ -470,7 +476,6 @@ void VWebView::initPreviewTunnelMenu(QAction *p_before, QMenu *p_menu)
     if (act->data().toInt() == config) {
         act->setChecked(true);
     }
-
     connect(ag, &QActionGroup::triggered,
             this, [](QAction *p_act) {
                 int data = p_act->data().toInt();
@@ -480,4 +485,24 @@ void VWebView::initPreviewTunnelMenu(QAction *p_before, QMenu *p_menu)
     subMenu->addActions(ag->actions());
 
     p_menu->insertMenu(p_before, subMenu);
+}
+
+void VWebView::bindToChannel(quint16 p_port, const QString &p_name, QObject *p_object)
+{
+    Q_ASSERT(!m_channel);
+    auto server = new QWebSocketServer("Web View for VNote",
+                                       QWebSocketServer::NonSecureMode,
+                                       this);
+    quint16 port = p_port;
+    if (!server->listen(QHostAddress::LocalHost, port)) {
+        qWarning() << "fail to open web socket server on port" << port;
+        delete server;
+        return;
+    }
+
+    auto clientWrapper = new WebSocketClientWrapper(server, this);
+    m_channel = new QWebChannel(this);
+    connect(clientWrapper, &WebSocketClientWrapper::clientConnected,
+            m_channel, &QWebChannel::connectTo);
+    m_channel->registerObject(p_name, p_object);
 }

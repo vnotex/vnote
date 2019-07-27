@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file>resources/qwebchannel.js</file>
         <file>utils/marked/marked.min.js</file>
         <file>utils/highlightjs/highlight.pack.js</file>
         <file>resources/vnote.ini</file>

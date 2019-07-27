@@ -4,12 +4,14 @@
 #include <QString>
 #include <QPointer>
 #include <QSharedPointer>
+#include <QSet>
+
 #include "vedittab.h"
 #include "vconstants.h"
 #include "vmarkdownconverter.h"
 #include "vconfigmanager.h"
 
-// class VWebView;
+class VWebView;
 class VDocument;
 class VMdEditor;
 class VInsertSelector;
@@ -25,6 +27,8 @@ class VMdTab : public VEditTab
 
 public:
     VMdTab(VFile *p_file, VEditArea *p_editArea, OpenFileMode p_mode, QWidget *p_parent = 0);
+
+    ~VMdTab();
 
     // Close current tab.
     // @p_forced: if true, discard the changes.
@@ -69,7 +73,7 @@ public:
 
     void clearSearchedWordHighlight() Q_DECL_OVERRIDE;
 
-    // VWebView *getWebViewer() const;
+    VWebView *getWebViewer() const;
 
     VMdEditor *getEditor() const;
 
@@ -156,7 +160,7 @@ private slots:
     // void handleDownloadRequested(QWebEngineDownloadItem *p_item);
 
     // Handle save page request.
-    // void handleSavePageRequested();
+    void handleSavePageRequested();
 
     // Selection changed in web.
     void handleWebSelectionChanged();
@@ -246,8 +250,12 @@ private:
 
     bool previewExpanded() const;
 
+    static quint16 getNextPort();
+    static void releasePort(quint16 p_port);
+
     VMdEditor *m_editor;
-    // VWebView *m_webViewer;
+    VWebView *m_webViewer;
+    quint16 m_port;
     VDocument *m_document;
     MarkdownConverterType m_mdConType;
 
@@ -277,6 +285,10 @@ private:
     VMathJaxInplacePreviewHelper *m_mathjaxPreviewHelper;
 
     int m_documentID;
+
+    static const quint16 c_basePort;
+
+    static QSet<quint16> s_usedPorts;
 };
 
 inline VMdEditor *VMdTab::getEditor()

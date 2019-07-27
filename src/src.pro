@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network svg printsupport webkitwidgets
+QT       += core gui network svg printsupport webkitwidgets webchannel websockets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -156,7 +156,10 @@ SOURCES += main.cpp\
     vtablehelper.cpp \
     vtable.cpp \
     dialog/vinserttabledialog.cpp \
-    vpreviewpage.cpp
+    vpreviewpage.cpp \
+    vwebview.cpp \
+    websocketclientwrapper.cpp \
+    websockettransport.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -297,7 +300,10 @@ HEADERS  += vmainwindow.h \
     vtablehelper.h \
     vtable.h \
     dialog/vinserttabledialog.h \
-    vpreviewpage.h
+    vpreviewpage.h \
+    vwebview.h \
+    websocketclientwrapper.h \
+    websockettransport.h
 
 RESOURCES += \
     vnote.qrc \

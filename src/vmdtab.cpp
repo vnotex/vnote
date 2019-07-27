@@ -1,13 +1,13 @@
 #include <QtWidgets>
-// #include <QWebChannel>
 #include <QFileInfo>
 #include <QCoreApplication>
 // #include <QWebEngineProfile>
+
 #include "vmdtab.h"
 #include "vdocument.h"
 #include "vnote.h"
 #include "utils/vutils.h"
-// #include "vpreviewpage.h"
+#include "vpreviewpage.h"
 #include "pegmarkdownhighlighter.h"
 #include "vconfigmanager.h"
 #include "vmarkdownconverter.h"
@@ -29,12 +29,15 @@ extern VMainWindow *g_mainWin;
 
 extern VConfigManager *g_config;
 
+const quint16 VMdTab::c_basePort = 10999;
+QSet<quint16> VMdTab::s_usedPorts;
 
 VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
                OpenFileMode p_mode, QWidget *p_parent)
     : VEditTab(p_file, p_editArea, p_parent),
       m_editor(NULL),
-      // m_webViewer(NULL),
+      m_webViewer(NULL),
+      m_port(getNextPort()),
       m_document(NULL),
       m_mdConType(g_config->getMdConverterType()),
       m_enableHeadingSequence(false),
@@ -79,8 +82,6 @@ VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
     m_livePreviewTimer->setInterval(500);
     connect(m_livePreviewTimer, &QTimer::timeout,
             this, [this]() {
-                Q_ASSERT(false);
-                /*
                 QString text = m_webViewer->selectedText().trimmed();
                 if (text.isEmpty()) {
                     return;
@@ -94,7 +95,6 @@ VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
                                               info.m_startPos,
                                               info.m_endPos);
                 }
-                */
             });
 
     QTimer::singleShot(50, this, [this, p_mode]() {
@@ -104,6 +104,11 @@ VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
                     showFileReadMode();
                 }
             });
+}
+
+VMdTab::~VMdTab()
+{
+    releasePort(m_port);
 }
 
 void VMdTab::setupUI()
@@ -124,7 +129,6 @@ void VMdTab::setupUI()
 
 void VMdTab::showFileReadMode()
 {
-    Q_ASSERT(false);
     m_isEditMode = false;
 
     // Will recover the header when web side is ready.
@@ -292,11 +296,13 @@ bool VMdTab::closeFile(bool p_forced)
         Q_ASSERT(m_editor);
         m_editor->reloadFile();
         m_editor->endEdit();
+
+        showFileReadMode();
+    } else {
+        readFile();
     }
 
-    readFile();
-
-    return !isModified();
+    return !m_isEditMode;
 }
 
 void VMdTab::editFile()
@@ -355,7 +361,7 @@ void VMdTab::readFile(bool p_discard)
         m_editor->endEdit();
     }
 
-    showFileEditMode();
+    showFileReadMode();
 }
 
 bool VMdTab::saveFile()
@@ -436,8 +442,8 @@ void VMdTab::discardAndRead()
 
 void VMdTab::setupMarkdownViewer()
 {
-    /*
     m_webViewer = new VWebView(m_file, this);
+
     connect(m_webViewer, &VWebView::editNote,
             this, &VMdTab::editFile);
     connect(m_webViewer, &VWebView::requestSavePage,
@@ -450,22 +456,24 @@ void VMdTab::setupMarkdownViewer()
     VPreviewPage *page = new VPreviewPage(m_webViewer);
     m_webViewer->setPage(page);
     m_webViewer->setZoomFactor(g_config->getWebZoomFactor());
+    /*
     connect(page->profile(), &QWebEngineProfile::downloadRequested,
             this, &VMdTab::handleDownloadRequested);
     connect(page, &QWebEnginePage::linkHovered,
             this, &VMdTab::statusMessage);
+    */
 
     // Avoid white flash before loading content.
     // Setting Qt::transparent will force GrayScale antialias rendering.
     page->setBackgroundColor(g_config->getBaseBackground());
-    */
 
-    m_document = new VDocument(m_file, this);
+    page->settings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
+
+    m_document = new VDocument(m_file, m_webViewer);
     m_documentID = m_document->registerIdentifier();
 
-    /*
-    QWebChannel *channel = new QWebChannel(m_webViewer);
-    channel->registerObject(QStringLiteral("content"), m_document);
+    m_webViewer->bindToChannel(m_port, QStringLiteral("content"), m_document);
+
     connect(m_document, &VDocument::tocChanged,
             this, &VMdTab::updateOutlineFromHtml);
     connect(m_document, SIGNAL(headerChanged(const QString &)),
@@ -514,13 +522,10 @@ void VMdTab::setupMarkdownViewer()
                 emit statusUpdated(info);
             });
 
-    page->setWebChannel(channel);
-
-    m_webViewer->setHtml(VUtils::generateHtmlTemplate(m_mdConType),
+    m_webViewer->setHtml(VUtils::generateHtmlTemplate(m_mdConType, m_port),
                          m_file->getBaseUrl());
 
     m_splitter->addWidget(m_webViewer);
-    */
 }
 
 void VMdTab::setupMarkdownEditor()
@@ -772,20 +777,18 @@ void VMdTab::nextMatch(const QString &p_text, uint p_options, bool p_forward)
 void VMdTab::findTextInWebView(const QString &p_text, uint p_options,
                                bool /* p_peek */, bool p_forward)
 {
-    V_ASSERT(false);
+    V_ASSERT(m_webViewer);
 
-    /*
-    QWebEnginePage::FindFlags flags;
+    QWebPage::FindFlags flags;
     if (p_options & FindOption::CaseSensitive) {
-        flags |= QWebEnginePage::FindCaseSensitively;
+        flags |= QWebPage::FindCaseSensitively;
     }
 
     if (!p_forward) {
-        flags |= QWebEnginePage::FindBackward;
+        flags |= QWebPage::FindBackward;
     }
 
     m_webViewer->findText(p_text, flags);
-    */
 }
 
 QString VMdTab::getSelectedText() const
@@ -795,19 +798,15 @@ QString VMdTab::getSelectedText() const
         QTextCursor cursor = m_editor->textCursor();
         return cursor.selectedText();
     } else {
-        Q_ASSERT(false);
-        // return m_webViewer->selectedText();
-        return QString();
+        return m_webViewer->selectedText();
     }
 }
 
 void VMdTab::clearSearchedWordHighlight()
 {
-    /*
     if (m_webViewer) {
         m_webViewer->findText("");
     }
-    */
 
     if (m_editor) {
         m_editor->clearSearchedWordHighlight();
@@ -816,7 +815,7 @@ void VMdTab::clearSearchedWordHighlight()
 
 void VMdTab::handleWebKeyPressed(int p_key, bool p_ctrl, bool p_shift, bool p_meta)
 {
-    Q_ASSERT(false);
+    Q_ASSERT(m_webViewer);
 #if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
     bool macCtrl = p_meta;
 #else
@@ -852,7 +851,7 @@ void VMdTab::handleWebKeyPressed(int p_key, bool p_ctrl, bool p_shift, bool p_me
     case 48:
         if (p_ctrl || macCtrl) {
             // Recover zoom.
-            // m_webViewer->setZoomFactor(1);
+            m_webViewer->setZoomFactor(1);
         }
 
         break;
@@ -910,7 +909,6 @@ void VMdTab::zoom(bool p_zoomIn, qreal p_step)
 void VMdTab::zoomWebPage(bool p_zoomIn, qreal p_step)
 {
     Q_ASSERT(false);
-    /*
     V_ASSERT(m_webViewer);
 
     qreal curFactor = m_webViewer->zoomFactor();
@@ -922,7 +920,11 @@ void VMdTab::zoomWebPage(bool p_zoomIn, qreal p_step)
     }
 
     m_webViewer->setZoomFactor(newFactor);
-    */
+}
+
+VWebView *VMdTab::getWebViewer() const
+{
+    return m_webViewer;
 }
 
 MarkdownConverterType VMdTab::getMarkdownConverterType() const
@@ -934,8 +936,7 @@ void VMdTab::focusChild()
 {
     switch (m_mode) {
     case Mode::Read:
-        Q_ASSERT(false);
-        // m_webViewer->setFocus();
+        m_webViewer->setFocus();
         break;
 
     case Mode::Edit:
@@ -943,11 +944,10 @@ void VMdTab::focusChild()
         break;
 
     case Mode::EditPreview:
-        Q_ASSERT(false);
         if (m_editor->isVisible()) {
             m_editor->setFocus();
         } else {
-            // m_webViewer->setFocus();
+            m_webViewer->setFocus();
         }
 
         break;
@@ -1169,7 +1169,7 @@ void VMdTab::reload()
 
     // Reload web viewer.
     m_ready &= ~TabReady::ReadMode;
-    // m_webViewer->reload();
+    m_webViewer->reload();
 
     if (!m_isEditMode) {
         VUtils::sleepWait(500);
@@ -1298,10 +1298,8 @@ void VMdTab::handleFileOrDirectoryChange(bool p_isFile, UpdateAction p_act)
 {
     // Reload the web view with new base URL.
     m_headerFromEditMode = m_currentHeader;
-    /*
-    m_webViewer->setHtml(VUtils::generateHtmlTemplate(m_mdConType),
+    m_webViewer->setHtml(VUtils::generateHtmlTemplate(m_mdConType, m_port),
                          m_file->getBaseUrl());
-    */
 
     if (m_editor) {
         m_editor->updateInitAndInsertedImages(p_isFile, p_act);
@@ -1449,8 +1447,7 @@ bool VMdTab::executeVimCommandInWebView(const QString &p_cmd)
         msg = tr("Quit");
     } else if (p_cmd == "nohlsearch" || p_cmd == "noh") {
         // :nohlsearch, clear highlight search.
-        Q_ASSERT(false);
-        // m_webViewer->findText("");
+        m_webViewer->findText("");
     } else {
         validCommand = false;
     }
@@ -1485,9 +1482,11 @@ void VMdTab::handleDownloadRequested(QWebEngineDownloadItem *p_item)
                 }
             });
 }
+*/
 
 void VMdTab::handleSavePageRequested()
 {
+    /*
     Q_ASSERT(false);
     static QString lastPath = g_config->getDocumentPathOrHomePath();
 
@@ -1517,8 +1516,8 @@ void VMdTab::handleSavePageRequested()
     emit statusMessage(tr("Saving page to %1").arg(fileName));
 
     // m_webViewer->page()->save(fileName, format);
+    */
 }
-*/
 
 VWordCountInfo VMdTab::fetchWordCountInfo(bool p_editMode) const
 {
@@ -1544,8 +1543,7 @@ void VMdTab::setCurrentMode(Mode p_mode)
         return;
     }
 
-    // qreal factor = m_webViewer->zoomFactor();
-    qreal factor = 1.0;
+    qreal factor = m_webViewer->zoomFactor();
     if (m_mode == Mode::Read) {
         m_readWebViewState->m_zoomFactor = factor;
     } else if (m_mode == Mode::EditPreview) {
@@ -1557,13 +1555,12 @@ void VMdTab::setCurrentMode(Mode p_mode)
 
     switch (p_mode) {
     case Mode::Read:
-        Q_ASSERT(false);
         if (m_editor) {
             m_editor->hide();
         }
 
-        // m_webViewer->setInPreview(false);
-        // m_webViewer->show();
+        m_webViewer->setInPreview(false);
+        m_webViewer->show();
 
         // Fix the bug introduced by 051088be31dbffa3c04e2d382af15beec40d5fdb
         // which replace QStackedLayout with QSplitter.
@@ -1573,7 +1570,7 @@ void VMdTab::setCurrentMode(Mode p_mode)
             m_readWebViewState.reset(new WebViewState());
             m_readWebViewState->m_zoomFactor = factor;
         } else if (factor != m_readWebViewState->m_zoomFactor) {
-            // m_webViewer->setZoomFactor(m_readWebViewState->m_zoomFactor);
+            m_webViewer->setZoomFactor(m_readWebViewState->m_zoomFactor);
         }
 
         m_document->setPreviewEnabled(false);
@@ -1581,7 +1578,7 @@ void VMdTab::setCurrentMode(Mode p_mode)
 
     case Mode::Edit:
         m_document->muteWebView(true);
-        // m_webViewer->hide();
+        m_webViewer->hide();
         m_editor->show();
 
         QCoreApplication::sendPostedEvents();
@@ -1590,10 +1587,9 @@ void VMdTab::setCurrentMode(Mode p_mode)
 
     case Mode::EditPreview:
         Q_ASSERT(m_editor);
-        Q_ASSERT(false);
         m_document->muteWebView(true);
-        // m_webViewer->setInPreview(true);
-        // m_webViewer->show();
+        m_webViewer->setInPreview(true);
+        m_webViewer->show();
         m_editor->show();
 
         QCoreApplication::sendPostedEvents();
@@ -1617,7 +1613,7 @@ void VMdTab::setCurrentMode(Mode p_mode)
             newSizes.append(b);
             m_splitter->setSizes(newSizes);
         } else if (factor != m_previewWebViewState->m_zoomFactor) {
-            // m_webViewer->setZoomFactor(m_previewWebViewState->m_zoomFactor);
+            m_webViewer->setZoomFactor(m_previewWebViewState->m_zoomFactor);
         }
 
         m_document->setPreviewEnabled(true);
@@ -1670,10 +1666,9 @@ bool VMdTab::expandRestorePreviewArea()
         return false;
     }
 
-    Q_ASSERT(false);
     if (m_editor->isVisible()) {
         m_editor->hide();
-        // m_webViewer->setFocus();
+        m_webViewer->setFocus();
     } else {
         m_editor->show();
         m_editor->setFocus();
@@ -1685,4 +1680,20 @@ bool VMdTab::expandRestorePreviewArea()
 bool VMdTab::previewExpanded() const
 {
     return (m_mode == Mode::EditPreview) && !m_editor->isVisible();
+}
+
+quint16 VMdTab::getNextPort()
+{
+    auto port = c_basePort;
+    while (s_usedPorts.find(port) != s_usedPorts.end()) {
+        ++port;
+    }
+
+    s_usedPorts.insert(port);
+    return port;
+}
+
+void VMdTab::releasePort(quint16 p_port)
+{
+    s_usedPorts.remove(p_port);
 }

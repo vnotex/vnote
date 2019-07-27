@@ -1,6 +1,6 @@
 var imageViewDiv = document.getElementById('image-view-div');
 
-var viewImage = function(imgSrc, background = 'transparent') {
+var viewImage = function(imgSrc, background) {
     viewBoxImageMouseDown = false;
 
     imageViewDiv.style.display = 'block';
@@ -16,10 +16,10 @@ var viewImage = function(imgSrc, background = 'transparent') {
 };
 
 var viewIMG = function(imgNode) {
-    viewImage(imgNode.src);
+    viewImage(imgNode.src, 'transparent');
 };
 
-var viewSVG = function(svgNode, background = 'transparent') {
+var viewSVG = function(svgNode, background) {
     var svg = svgNode.outerHTML.replace(/#/g, '%23').replace(/[\r\n]/g, '');
     var src = 'data:image/svg+xml;utf8,' + svg;
 
@@ -173,14 +173,14 @@ var onSVGDoubleClick = function(forceBackground, e) {
                 viewSVG(this, style.backgroundColor);
             }
         } else {
-            viewSVG(this);
+            viewSVG(this, 'transparent');
         }
 
         e.preventDefault();
     }
 };
 
-var setupSVGToView = function(node, forceBackground = false) {
+var setupSVGToView = function(node, forceBackground) {
     if (!node || node.nodeName.toLowerCase() != 'svg') {
         return;
     }
