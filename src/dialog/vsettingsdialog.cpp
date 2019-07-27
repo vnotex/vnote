@@ -62,7 +62,7 @@ VSettingsDialog::VSettingsDialog(QWidget *p_parent)
     // Add tabs.
     addTab(new VGeneralTab(), tr("General"));
     addTab(new VLookTab(), tr("Appearance"));
-    addTab(new VReadEditTab(this), tr("Edit"));
+    addTab(new VReadEditTab(this), tr("Read/Edit"));
     addTab(new VNoteManagementTab(), tr("Note Management"));
     addTab(new VMarkdownTab(), tr("Markdown"));
     addTab(new VMiscTab(), tr("Misc"));
@@ -684,8 +684,7 @@ VReadEditTab::VReadEditTab(VSettingsDialog *p_dlg, QWidget *p_parent)
     : QWidget(p_parent),
       m_settingsDlg(p_dlg)
 {
-    m_readBox = new QGroupBox(tr("Read Mode (For Markdown Only)"), this);
-    m_readBox->setVisible(false);
+    m_readBox = new QGroupBox(tr("Read Mode (For Markdown Only)"));
 
     m_editBox = new QGroupBox(tr("Edit Mode"));
 
@@ -773,7 +772,7 @@ VReadEditTab::VReadEditTab(VSettingsDialog *p_dlg, QWidget *p_parent)
     m_keyModeCB->setCurrentIndex(0);
 
     QVBoxLayout *mainLayout = new QVBoxLayout();
-    // mainLayout->addWidget(m_readBox);
+    mainLayout->addWidget(m_readBox);
     mainLayout->addWidget(m_editBox);
     setLayout(mainLayout);
 }
@@ -1019,12 +1018,11 @@ VNoteManagementTab::VNoteManagementTab(QWidget *p_parent)
     m_singleClickOpen = new QCheckBox(tr("Single click to open a note in current tab"), this);
     m_singleClickOpen->setToolTip(tr("Single click a note in the notes list to open it in current tab, "
                                      "double click to open it in a new tab"));
-    m_singleClickOpen->setVisible(false);
 
     QFormLayout *noteLayout = new QFormLayout();
     noteLayout->addRow(imageFolderLayout);
     noteLayout->addRow(attachmentFolderLayout);
-    // noteLayout->addRow(m_singleClickOpen);
+    noteLayout->addRow(m_singleClickOpen);
     m_noteBox->setLayout(noteLayout);
 
     // External File.
@@ -1214,11 +1212,10 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     : QWidget(p_parent)
 {
     // Default note open mode.
-    m_openModeCombo = VUtils::getComboBox(this);
+    m_openModeCombo = VUtils::getComboBox();
     m_openModeCombo->setToolTip(tr("Default mode to open a file"));
     m_openModeCombo->addItem(tr("Read Mode"), (int)OpenFileMode::Read);
     m_openModeCombo->addItem(tr("Edit Mode"), (int)OpenFileMode::Edit);
-    m_openModeCombo->setVisible(false);
 
     // Heading sequence.
     m_headingSequenceTypeCombo = VUtils::getComboBox();
@@ -1260,11 +1257,10 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     colorColumnLabel->setToolTip(m_colorColumnEdit->toolTip());
 
     // MathJax.
-    m_mathjaxConfigEdit = new VLineEdit(this);
+    m_mathjaxConfigEdit = new VLineEdit();
     m_mathjaxConfigEdit->setToolTip(tr("Location of MathJax JavaScript and its configuration "
                                        "(restart VNote to make it work in in-place preview)"));
     m_mathjaxConfigEdit->setPlaceholderText(tr("Need to prepend \"file://\" to local path"));
-    m_mathjaxConfigEdit->setVisible(false);
 
     // PlantUML.
     m_plantUMLModeCombo = VUtils::getComboBox();
@@ -1355,12 +1351,12 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     graphvizLayout->addWidget(graphvizTestBtn);
 
     QFormLayout *mainLayout = new QFormLayout();
-    // mainLayout->addRow(tr("Open mode:"), m_openModeCombo);
+    mainLayout->addRow(tr("Open mode:"), m_openModeCombo);
     mainLayout->addRow(tr("Heading sequence:"), headingSequenceLayout);
     mainLayout->addRow(colorColumnLabel, m_colorColumnEdit);
-    // mainLayout->addRow(tr("MathJax configuration:"), m_mathjaxConfigEdit);
+    mainLayout->addRow(tr("MathJax configuration:"), m_mathjaxConfigEdit);
     mainLayout->addRow(tr("PlantUML:"), m_plantUMLModeCombo);
-    // mainLayout->addRow(tr("PlantUML server:"), m_plantUMLServerEdit);
+    mainLayout->addRow(tr("PlantUML server:"), m_plantUMLServerEdit);
     mainLayout->addRow(tr("PlantUML JAR:"), plantUMLLayout);
     mainLayout->addRow(m_graphvizCB);
     mainLayout->addRow(tr("Graphviz executable:"), graphvizLayout);
