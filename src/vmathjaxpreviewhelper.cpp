@@ -34,6 +34,9 @@ void VMathJaxPreviewHelper::doInit()
 
     m_initialized = true;
 
+    // FIXME.
+    return;
+
     m_webView = new QWebView(m_parentWidget);
     connect(m_webView, &QWebView::loadFinished,
             this, [this]() {
@@ -90,6 +93,9 @@ void VMathJaxPreviewHelper::previewMathJax(int p_identifier,
                                            TimeStamp p_timeStamp,
                                            const QString &p_text)
 {
+    emit mathjaxPreviewResultReady(p_identifier, p_id, p_timeStamp, "png", "");
+    return;
+
     init();
 
     if (!m_webReady) {
@@ -111,6 +117,9 @@ void VMathJaxPreviewHelper::previewMathJaxFromHtml(int p_identifier,
                                                    TimeStamp p_timeStamp,
                                                    const QString &p_html)
 {
+    emit mathjaxPreviewResultReady(p_identifier, p_id, p_timeStamp, "png", "");
+    return;
+
     init();
 
     if (!m_webReady) {
@@ -133,6 +142,9 @@ void VMathJaxPreviewHelper::previewDiagram(int p_identifier,
                                            const QString &p_lang,
                                            const QString &p_text)
 {
+    emit diagramPreviewResultReady(p_identifier, p_id, p_timeStamp, "png", "");
+    return;
+
     init();
 
     if (!m_webReady) {
