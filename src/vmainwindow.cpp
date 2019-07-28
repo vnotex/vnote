@@ -4,6 +4,7 @@
 #include <QPrintDialog>
 #include <QPainter>
 #include <QWebPage>
+#include <QWebFrame>
 
 #include "vmainwindow.h"
 #include "vdirectorytree.h"
@@ -917,7 +918,6 @@ void VMainWindow::initMarkdownMenu()
     QMenu *markdownMenu = menuBar()->addMenu(tr("&Markdown"));
     markdownMenu->setToolTipsVisible(true);
 
-    /*
     initConverterMenu(markdownMenu);
 
     initMarkdownitOptionMenu(markdownMenu);
@@ -969,7 +969,6 @@ void VMainWindow::initMarkdownMenu()
             });
     markdownMenu->addAction(lineNumberAct);
     lineNumberAct->setChecked(g_config->getEnableCodeBlockLineNumber());
-    */
 
     QAction *previewImageAct = new QAction(tr("In-Place Preview"), this);
     previewImageAct->setToolTip(tr("Enable in-place preview (images, diagrams, and formulas) in edit mode (re-open current tabs to make it work)"));
@@ -1716,6 +1715,8 @@ void VMainWindow::initMarkdownExtensionMenu(QMenu *p_menu)
     mathjaxAct->setChecked(g_config->getEnableMathjax());
     connect(mathjaxAct, &QAction::triggered,
             this, &VMainWindow::enableMathjax);
+    mathjaxAct->setChecked(false);
+    mathjaxAct->setEnabled(false);
     optMenu->addAction(mathjaxAct);
 
     QAction *wavedromAct = new QAction(tr("&WaveDrom"), optMenu);
@@ -2089,7 +2090,6 @@ void VMainWindow::updateActionsStateFromTab(const VEditTab *p_tab)
     saveNoteAct->setEnabled(file && editMode && file->isModifiable());
     deleteNoteAct->setEnabled(file && file->getType() == FileType::Note);
     noteInfoAct->setEnabled(file && !systemFile);
-
 
     m_attachmentBtn->setEnabled(file && file->getType() == FileType::Note);
 
@@ -3599,7 +3599,6 @@ void VMainWindow::setupFileListSplitOut(bool p_enabled)
 
 void VMainWindow::collectUserStat() const
 {
-    /*
     // One request per day.
     auto lastCheckDate = g_config->getLastUserTrackDate();
     if (lastCheckDate != QDate::currentDate()) {
@@ -3607,11 +3606,11 @@ void VMainWindow::collectUserStat() const
 
         qDebug() << "send user track" << QDate::currentDate();
 
-        QWebEnginePage *page = new QWebEnginePage;
+        QWebPage *page = new QWebPage;
 
         QString url = QString("https://tamlok.github.io/user_track/vnote/vnote_%1.html").arg(VConfigManager::c_version);
-        page->load(QUrl(url));
-        connect(page, &QWebEnginePage::loadFinished,
+        page->mainFrame()->load(QUrl(url));
+        connect(page, &QWebPage::loadFinished,
                 this, [page](bool) {
                     VUtils::sleepWait(2000);
                     page->deleteLater();
@@ -3619,7 +3618,6 @@ void VMainWindow::collectUserStat() const
     }
 
     QTimer::singleShot(30 * 60 * 1000, this, SLOT(collectUserStat()));
-    */
 }
 
 void VMainWindow::promptForVNoteRestart()
