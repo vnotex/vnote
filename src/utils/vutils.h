@@ -206,7 +206,7 @@ public:
     static QString generateSimpleHtmlTemplate(const QString &p_body);
 
     // Generate template for MathJax preview.
-    static QString generateMathJaxPreviewTemplate();
+    static QString generateMathJaxPreviewTemplate(quint16 p_port);
 
     // Get an available file name in @p_directory with base @p_baseFileName.
     // If there already exists a file named @p_baseFileName, try to add sequence

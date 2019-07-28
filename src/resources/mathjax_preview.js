@@ -13,17 +13,28 @@ if (typeof VPlantUMLServer == 'undefined') {
     VPlantUMLServer = 'http://www.plantuml.com/plantuml';
 }
 
-new QWebChannel(qt.webChannelTransport,
-    function(channel) {
-        content = channel.objects.content;
+if (typeof VWebChannelPort == 'undefined') {
+    var VWebChannelPort = '20001';
+}
 
-        content.requestPreviewMathJax.connect(previewMathJax);
-        content.requestPreviewDiagram.connect(previewDiagram);
+window.addEventListener('load', function() {
+    var baseUrl = 'ws://localhost:' + VWebChannelPort;
+    var socket = new WebSocket(baseUrl);
+    socket.onopen = function() {
+        console.log('WebSocket connected to ' + baseUrl);
+        new QWebChannel(socket,
+            function(channel) {
+                content = channel.objects.content;
 
-        channelInitialized = true;
-    });
+                content.requestPreviewMathJax.connect(previewMathJax);
+                content.requestPreviewDiagram.connect(previewDiagram);
 
-var timeStamps = new Map();
+                channelInitialized = true;
+            });
+    }
+});
+
+var timeStamps = new Object();
 
 var htmlToElement = function(html) {
     var template = document.createElement('template');
@@ -37,7 +48,7 @@ var isEmptyMathJax = function(text) {
 };
 
 var previewMathJax = function(identifier, id, timeStamp, text, isHtml) {
-    timeStamps.set(identifier, timeStamp);
+    timeStamps[identifier] = timeStamp;
 
     if (isEmptyMathJax(text)) {
         content.mathjaxResultReady(identifier, id, timeStamp, 'png', '');
@@ -87,7 +98,7 @@ var previewMathJax = function(identifier, id, timeStamp, text, isHtml) {
 };
 
 var postProcessMathJax = function(identifier, id, timeStamp, container, isBlock) {
-    if (timeStamps.get(identifier) != timeStamp) {
+    if (timeStamps[identifier] != timeStamp) {
         contentDiv.removeChild(container);
         delete container;
         return;

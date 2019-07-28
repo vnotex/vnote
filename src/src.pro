@@ -160,7 +160,8 @@ SOURCES += main.cpp\
     vpreviewpage.cpp \
     vwebview.cpp \
     websocketclientwrapper.cpp \
-    websockettransport.cpp
+    websockettransport.cpp \
+    vmathjaxwebdocument.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -305,7 +306,8 @@ HEADERS  += vmainwindow.h \
     vpreviewpage.h \
     vwebview.h \
     websocketclientwrapper.h \
-    websockettransport.h
+    websockettransport.h \
+    vmathjaxwebdocument.h
 
 RESOURCES += \
     vnote.qrc \

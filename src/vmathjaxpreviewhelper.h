@@ -7,8 +7,9 @@
 
 #include "vconstants.h"
 
-// class QWebEngineView;
-// class VMathJaxWebDocument;
+class QWebView;
+class QWebChannel;
+class VMathJaxWebDocument;
 class QWidget;
 
 typedef std::function<void(void)> PendingFunc;
@@ -61,15 +62,19 @@ private:
 
     void doInit();
 
+    void bindToChannel(quint16 p_port, const QString &p_name, QObject *p_object);
+
     QWidget *m_parentWidget;
 
     int m_initialized;
 
     int m_nextID;
 
-    // QWebEngineView *m_webView;
+    QWebView *m_webView;
 
-    // VMathJaxWebDocument *m_webDoc;
+    QWebChannel *m_channel;
+
+    VMathJaxWebDocument *m_webDoc;
 
     bool m_webReady;
 

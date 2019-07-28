@@ -978,7 +978,7 @@ with 2em, if there are Chinese characters in it, the font will be a mess.
     return templ;
 }
 
-QString VUtils::generateMathJaxPreviewTemplate()
+QString VUtils::generateMathJaxPreviewTemplate(quint16 p_port)
 {
     QString mj = g_config->getMathjaxJavascript();
     QString templ = VNote::generateMathJaxPreviewTemplate();
@@ -1026,6 +1026,8 @@ QString VUtils::generateMathJaxPreviewTemplate()
     extraFile += "<script type=\"text/javascript\" src=\"" + VNote::c_plantUMLJsFile + "\"></script>\n" +
                  "<script type=\"text/javascript\" src=\"" + VNote::c_plantUMLZopfliJsFile + "\"></script>\n" +
                  "<script>var VPlantUMLServer = '" + g_config->getPlantUMLServer() + "';</script>\n";
+
+    extraFile += "<script>var VWebChannelPort = '" + QString::number(p_port) + "';</script>\n";
 
     templ.replace(HtmlHolder::c_extraHolder, extraFile);
 
