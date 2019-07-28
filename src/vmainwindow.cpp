@@ -1472,7 +1472,7 @@ void VMainWindow::aboutMessage()
 {
     QString info = tr("VNote");
     info += "<br/>";
-    info += tr("Version: %1").arg(VConfigManager::c_version);
+    info += tr("Version: %1").arg(VConfigManager::c_version) + " (for Loongson)";
     info += "<br/>";
     info += tr("Author: Le Tan (tamlok)");
     info += "<br/><br/>";
