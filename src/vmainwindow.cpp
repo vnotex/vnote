@@ -1061,7 +1061,6 @@ void VMainWindow::initFileMenu()
     */
 
     // Print.
-    /*
     m_printAct = new QAction(VIconUtils::menuIcon(":/resources/icons/print.svg"),
                              tr("&Print"), this);
     m_printAct->setToolTip(tr("Print current note"));
@@ -1072,7 +1071,6 @@ void VMainWindow::initFileMenu()
     fileMenu->addAction(m_printAct);
 
     fileMenu->addSeparator();
-    */
 
     // Themes.
     initThemeMenu(fileMenu);
@@ -2085,6 +2083,8 @@ void VMainWindow::updateActionsStateFromTab(const VEditTab *p_tab)
                       && file->getType() == FileType::Orphan
                       && dynamic_cast<const VOrphanFile *>(file)->isSystemFile();
 
+	m_printAct->setEnabled(file && file->getDocType() == DocType::Markdown);
+
     updateEditReadAct(p_tab);
 
     saveNoteAct->setEnabled(file && editMode && file->isModifiable());
@@ -2572,7 +2572,6 @@ void VMainWindow::shortcutsHelp()
 
 void VMainWindow::printNote()
 {
-    /*
     if (m_printer
         || !m_curFile
         || m_curFile->getDocType() != DocType::Markdown) {
@@ -2595,16 +2594,11 @@ void VMainWindow::printNote()
     }
 
     if (dialog.exec() == QDialog::Accepted) {
-        webView->page()->print(m_printer, [this](bool p_succ) {
-                    qDebug() << "print web page callback" << p_succ;
-                    delete m_printer;
-                    m_printer = NULL;
-                });
-    } else {
-        delete m_printer;
-        m_printer = NULL;
+        webView->print(m_printer);
     }
-    */
+
+	delete m_printer;
+	m_printer = NULL;
 }
 
 QAction *VMainWindow::newAction(const QIcon &p_icon,
