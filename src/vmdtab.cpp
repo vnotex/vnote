@@ -29,7 +29,6 @@ extern VMainWindow *g_mainWin;
 
 extern VConfigManager *g_config;
 
-const quint16 VMdTab::c_basePort = 10999;
 QSet<quint16> VMdTab::s_usedPorts;
 
 VMdTab::VMdTab(VFile *p_file, VEditArea *p_editArea,
@@ -1684,7 +1683,7 @@ bool VMdTab::previewExpanded() const
 
 quint16 VMdTab::getNextPort()
 {
-    auto port = c_basePort;
+    quint16 port = WebSocketPort::LastSpecialPort;
     while (s_usedPorts.find(port) != s_usedPorts.end()) {
         ++port;
     }

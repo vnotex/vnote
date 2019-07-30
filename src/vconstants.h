@@ -18,6 +18,10 @@ enum class FileType { Note, Orphan };
 
 enum class ClipboardOpType { CopyFile, CopyDir, Invalid };
 
+enum WebSocketPort { PreviewHelperPort = 10900,
+                     ExportWebViewPort,
+                     LastSpecialPort };
+
 namespace ClipboardConfig
 {
     static const QString c_type = "type";

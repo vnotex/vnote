@@ -161,7 +161,9 @@ SOURCES += main.cpp\
     vwebview.cpp \
     websocketclientwrapper.cpp \
     websockettransport.cpp \
-    vmathjaxwebdocument.cpp
+    vmathjaxwebdocument.cpp \
+    vexporter.cpp \
+    dialog/vexportdialog.cpp
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
@@ -307,7 +309,9 @@ HEADERS  += vmainwindow.h \
     vwebview.h \
     websocketclientwrapper.h \
     websockettransport.h \
-    vmathjaxwebdocument.h
+    vmathjaxwebdocument.h \
+    vexporter.h \
+    dialog/vexportdialog.h
 
 RESOURCES += \
     vnote.qrc \

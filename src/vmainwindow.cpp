@@ -50,6 +50,8 @@
 #include "vlistue.h"
 #include "vtagexplorer.h"
 #include "vmdeditor.h"
+#include "vexporter.h"
+#include "dialog/vexportdialog.h"
 
 extern VConfigManager *g_config;
 
@@ -1050,7 +1052,6 @@ void VMainWindow::initFileMenu()
 
     fileMenu->addSeparator();
 
-    /*
     m_exportAct = new QAction(tr("E&xport"), this);
     m_exportAct->setToolTip(tr("Export notes"));
     VUtils::fixTextWithCaptainShortcut(m_exportAct, "Export");
@@ -1058,7 +1059,6 @@ void VMainWindow::initFileMenu()
             this, &VMainWindow::handleExportAct);
 
     fileMenu->addAction(m_exportAct);
-    */
 
     // Print.
     m_printAct = new QAction(VIconUtils::menuIcon(":/resources/icons/print.svg"),
@@ -3309,6 +3309,13 @@ void VMainWindow::updateEditReadAct(const VEditTab *p_tab)
 
 void VMainWindow::handleExportAct()
 {
+    VExportDialog dialog(m_notebookSelector->currentNotebook(),
+                         m_dirTree->currentDirectory(),
+                         m_curFile,
+                         m_cart,
+                         g_config->getMdConverterType(),
+                         this);
+    dialog.exec();
 }
 
 VNotebook *VMainWindow::getCurrentNotebook() const

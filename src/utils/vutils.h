@@ -194,6 +194,7 @@ public:
                                         const QString &p_renderBg,
                                         const QString &p_renderStyle,
                                         const QString &p_renderCodeBlockStyle,
+                                        quint16 p_port,
                                         bool p_isPDF,
                                         bool p_wkhtmltopdf = false,
                                         bool p_addToc = false);

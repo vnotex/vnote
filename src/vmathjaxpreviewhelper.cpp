@@ -9,6 +9,7 @@
 #include "vconfigmanager.h"
 #include "websocketclientwrapper.h"
 #include "websockettransport.h"
+#include "vconstants.h"
 
 extern VConfigManager *g_config;
 
@@ -78,7 +79,7 @@ void VMathJaxPreviewHelper::doInit()
                 emit diagramPreviewResultReady(p_identifier, p_id, p_timeStamp, p_format, ba);
             });
 
-    quint16 port = 20001;
+    quint16 port = WebSocketPort::PreviewHelperPort;
     bindToChannel(port, "content", m_webDoc);
 
     // setHtml() will change focus if it is not disabled.

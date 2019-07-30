@@ -664,6 +664,7 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType,
                                      const QString &p_renderBg,
                                      const QString &p_renderStyle,
                                      const QString &p_renderCodeBlockStyle,
+                                     quint16 p_port,
                                      bool p_isPDF,
                                      bool p_wkhtmltopdf,
                                      bool p_addToc)
@@ -675,7 +676,7 @@ QString VUtils::generateHtmlTemplate(MarkdownConverterType p_conType,
                                                 g_config->getCodeBlockCssStyleUrl(p_renderCodeBlockStyle),
                                                 p_isPDF);
 
-    return generateHtmlTemplate(templ, p_conType, 0, p_isPDF, p_wkhtmltopdf, p_addToc);
+    return generateHtmlTemplate(templ, p_conType, p_port, p_isPDF, p_wkhtmltopdf, p_addToc);
 }
 
 QString VUtils::generateHtmlTemplate(const QString &p_template,

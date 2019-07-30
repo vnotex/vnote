@@ -286,8 +286,6 @@ private:
 
     int m_documentID;
 
-    static const quint16 c_basePort;
-
     static QSet<quint16> s_usedPorts;
 };
 
