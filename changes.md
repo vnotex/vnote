@@ -1,4 +1,8 @@
 # Changes History
+## v2.7.2
+- Use 5.9.8 on macOS;
+- Call Java (PlantUML) directly on Win;
+
 ## v2.7.1
 - Fix PlantUML command;
 - Use 5.12.0 on macOS;
