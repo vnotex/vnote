@@ -37,7 +37,7 @@
             [
                 {
                     "text": "English",
-                    "target": "https://tamlok.github.io/vnote/en_us/"
+                    "target": "../en_us/"
                 }
             ]
         }
