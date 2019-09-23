@@ -1507,6 +1507,8 @@ void VConfigManager::initThemes()
     m_themes.insert(VPalette::themeName(file), file);
     file = ":/resources/themes/v_simple/v_simple.palette";
     m_themes.insert(VPalette::themeName(file), file);
+    file = ":/resources/themes/v_next/v_next.palette";
+    m_themes.insert(VPalette::themeName(file), file);
 
     outputBuiltInThemes();
 

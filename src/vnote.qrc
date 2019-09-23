@@ -322,5 +322,39 @@
         <file>resources/themes/v_simple/v_simple.qss</file>
         <file>resources/themes/v_simple/v_simple_codeblock.css</file>
         <file>resources/themes/v_simple/v_simple_mermaid.css</file>
+        <file>resources/themes/v_next/arrow_dropdown.svg</file>
+        <file>resources/themes/v_next/arrow_dropdown_disabled.svg</file>
+        <file>resources/themes/v_next/branch_closed.svg</file>
+        <file>resources/themes/v_next/branch_end.svg</file>
+        <file>resources/themes/v_next/branch_more.svg</file>
+        <file>resources/themes/v_next/branch_open.svg</file>
+        <file>resources/themes/v_next/checkbox_checked.svg</file>
+        <file>resources/themes/v_next/checkbox_checked_disabled.svg</file>
+        <file>resources/themes/v_next/checkbox_unchecked.svg</file>
+        <file>resources/themes/v_next/checkbox_unchecked_disabled.svg</file>
+        <file>resources/themes/v_next/close.svg</file>
+        <file>resources/themes/v_next/close_grey.svg</file>
+        <file>resources/themes/v_next/down.svg</file>
+        <file>resources/themes/v_next/down_disabled.svg</file>
+        <file>resources/themes/v_next/float.svg</file>
+        <file>resources/themes/v_next/left.svg</file>
+        <file>resources/themes/v_next/left_disabled.svg</file>
+        <file>resources/themes/v_next/line.svg</file>
+        <file>resources/themes/v_next/menu_checkbox.svg</file>
+        <file>resources/themes/v_next/menu_radiobutton.svg</file>
+        <file>resources/themes/v_next/radiobutton_checked.svg</file>
+        <file>resources/themes/v_next/radiobutton_checked_disabled.svg</file>
+        <file>resources/themes/v_next/radiobutton_unchecked.svg</file>
+        <file>resources/themes/v_next/radiobutton_unchecked_disabled.svg</file>
+        <file>resources/themes/v_next/right.svg</file>
+        <file>resources/themes/v_next/right_disabled.svg</file>
+        <file>resources/themes/v_next/up.svg</file>
+        <file>resources/themes/v_next/up_disabled.svg</file>
+        <file>resources/themes/v_next/v_next.css</file>
+        <file>resources/themes/v_next/v_next.mdhl</file>
+        <file>resources/themes/v_next/v_next.palette</file>
+        <file>resources/themes/v_next/v_next.qss</file>
+        <file>resources/themes/v_next/v_next_codeblock.css</file>
+        <file>resources/themes/v_next/v_next_mermaid.css</file>
     </qresource>
 </RCC>
