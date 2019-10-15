@@ -270,6 +270,32 @@ private:
     QCheckBox *m_matchesInPageCB;
 };
 
+class VGithubImageBedTab : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit VGithubImageBedTab(QWidget *p_parent = 0);
+    bool loadConfiguration();
+    bool saveConfiguration();
+
+private:
+    bool loadPersionalAccessToken();
+    bool savePersionalAccessToken();
+
+    bool loadReposName();
+    bool saveReposName();
+
+    bool loadUserName();
+    bool saveUserName();
+
+    // persionalAccessToken
+    VLineEdit *m_persionalAccessTokenEdit;
+    // reposName
+    VLineEdit *m_reposNameEdit;
+    // userName
+    VLineEdit *m_userNameEdit;
+};
+
 class VSettingsDialog : public QDialog
 {
     Q_OBJECT

@@ -66,6 +66,7 @@ VSettingsDialog::VSettingsDialog(QWidget *p_parent)
     addTab(new VNoteManagementTab(), tr("Note Management"));
     addTab(new VMarkdownTab(), tr("Markdown"));
     addTab(new VMiscTab(), tr("Misc"));
+    addTab(new VGithubImageBedTab(), tr("Github ImageBed"));
 
     m_tabList->setMaximumWidth(m_tabList->sizeHintForColumn(0) + 5);
 
@@ -206,6 +207,15 @@ void VSettingsDialog::loadConfiguration()
         }
     }
 
+    // Github ImageBed Tab
+    {
+        VGithubImageBedTab *githubImageBedTab = dynamic_cast<VGithubImageBedTab *>(m_tabs->widget(idx++));
+        Q_ASSERT(githubImageBedTab);
+        if (!githubImageBedTab->loadConfiguration()) {
+            goto err;
+        }
+    }
+
     return;
 err:
     VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
@@ -267,6 +277,15 @@ void VSettingsDialog::saveConfiguration()
         VMiscTab *miscTab = dynamic_cast<VMiscTab *>(m_tabs->widget(idx++));
         Q_ASSERT(miscTab);
         if (!miscTab->saveConfiguration()) {
+            goto err;
+        }
+    }
+
+    // Github ImageBed Tab.
+    {
+        VGithubImageBedTab *githubImageBedTab = dynamic_cast<VGithubImageBedTab *>(m_tabs->widget(idx++));
+        Q_ASSERT(githubImageBedTab);
+        if (!githubImageBedTab->saveConfiguration()) {
             goto err;
         }
     }
@@ -1569,5 +1588,94 @@ bool VMiscTab::loadMatchesInPage()
 bool VMiscTab::saveMatchesInPage()
 {
     g_config->setHighlightMatchesInPage(m_matchesInPageCB->isChecked());
+    return true;
+}
+
+VGithubImageBedTab::VGithubImageBedTab(QWidget *p_parent)
+    : QWidget (p_parent)
+{
+    // github persionalAccessToken
+    m_persionalAccessTokenEdit = new VLineEdit();
+    m_persionalAccessTokenEdit->setToolTip(tr("Please input your github persion access token!"));
+
+    // imageBed of github repositoryy
+    m_reposNameEdit = new VLineEdit();
+    m_reposNameEdit->setToolTip(tr("Please input the imagebed of github repository name!"));
+
+    // username of github
+    m_userNameEdit = new VLineEdit();
+    m_userNameEdit->setToolTip(tr("Please input the username of github!"));
+
+    QFormLayout *mainLayout = new QFormLayout();
+    mainLayout->addRow(tr("persionalAccessToken:"), m_persionalAccessTokenEdit);
+    mainLayout->addRow(tr("reposName:"), m_reposNameEdit);
+    mainLayout->addRow(tr("userName:"), m_userNameEdit);
+    setLayout(mainLayout);
+}
+
+bool VGithubImageBedTab::loadPersionalAccessToken()
+{
+    m_persionalAccessTokenEdit->setText(g_config->getPersionalAccessToken());
+    return true;
+}
+
+bool VGithubImageBedTab::savePersionalAccessToken()
+{
+    g_config->setPersionalAccessToken(m_persionalAccessTokenEdit->text());
+    return true;
+}
+
+bool VGithubImageBedTab::loadReposName()
+{
+    m_reposNameEdit->setText(g_config->getReposName());
+    return true;
+}
+
+bool VGithubImageBedTab::saveReposName()
+{
+    g_config->setReposName(m_reposNameEdit->text());
+    return true;
+}
+
+bool VGithubImageBedTab::loadUserName()
+{
+    m_userNameEdit->setText(g_config->getUserName());
+    return true;
+}
+
+bool VGithubImageBedTab::saveUserName()
+{
+    g_config->setUserName(m_userNameEdit->text());
+    return true;
+}
+
+bool VGithubImageBedTab::loadConfiguration()
+{
+    if(!loadPersionalAccessToken()){
+        return false;
+    }
+
+    if(!loadReposName()){
+        return false;
+    }
+
+    if(!loadUserName()){
+        return false;
+    }
+    return true;
+}
+
+bool VGithubImageBedTab::saveConfiguration()
+{
+
+    if(!savePersionalAccessToken()){
+        return false;
+    }
+    if(!saveReposName()){
+        return false;
+    }
+    if(!saveUserName()){
+        return false;
+    }
     return true;
 }

@@ -648,6 +648,17 @@ public:
 
     bool getEnableCodeBlockCopyButton() const;
 
+    // github imageBed setting
+    const QString &getPersionalAccessToken() const;
+    void setPersionalAccessToken(const QString &p_token);
+
+    const QString &getReposName() const;
+    void setReposName(const QString &p_reposName);
+
+    const QString &getUserName() const;
+    void setUserName(const QString &p_userName);
+
+
 private:
     void initEditorConfigs();
 
@@ -1070,6 +1081,11 @@ private:
     QStringList m_plantUMLArgs;
 
     QString m_plantUMLCmd;
+
+    // github imagebed
+    QString m_persionalAccessToken;
+    QString m_reposName;
+    QString m_userName;
 
     // Size of history.
     int m_historySize;
@@ -2987,6 +3003,52 @@ inline int VConfigManager::getTableFormatInterval() const
 inline bool VConfigManager::getEnableCodeBlockCopyButton() const
 {
     return m_enableCodeBlockCopyButton;
+}
+
+
+inline const QString &VConfigManager::getPersionalAccessToken() const
+{
+    return m_persionalAccessToken;
+}
+
+inline void VConfigManager::setPersionalAccessToken(const QString &p_token)
+{
+    if (m_persionalAccessToken == p_token) {
+        return;
+    }
+
+    m_persionalAccessToken = p_token;
+    setConfigToSettings("imagebed", "persional_access_token", p_token);
+}
+
+inline const QString &VConfigManager::getReposName() const
+{
+    return m_reposName;
+}
+
+inline void VConfigManager::setReposName(const QString &p_reposName)
+{
+    if (m_reposName == p_reposName) {
+        return;
+    }
+
+    m_reposName = p_reposName;
+    setConfigToSettings("imagebed", "repos_name", p_reposName);
+}
+
+inline const QString &VConfigManager::getUserName() const
+{
+    return m_userName;
+}
+
+inline void VConfigManager::setUserName(const QString &p_userName)
+{
+    if (m_userName == p_userName) {
+        return;
+    }
+
+    m_userName = p_userName;
+    setConfigToSettings("imagebed", "user_name", p_userName);
 }
 
 #endif // VCONFIGMANAGER_H
