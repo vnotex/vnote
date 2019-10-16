@@ -113,6 +113,8 @@ void VMdTab::setupUI()
     // Setup editor when we really need it.
     m_editor = NULL;
 
+    reply = Q_NULLPTR;  // 记得初始化为空
+
     QVBoxLayout *layout = new QVBoxLayout();
     layout->addWidget(m_splitter);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -443,6 +445,8 @@ void VMdTab::setupMarkdownViewer()
             this, &VMdTab::handleWebSelectionChanged);
     connect(m_webViewer, &VWebView::requestExpandRestorePreviewArea,
             this, &VMdTab::expandRestorePreviewArea);
+    connect(m_webViewer, &VWebView::requestUploadImageToGithub,
+            this, &VMdTab::handleUploadImageToGithubRequested);
 
     VPreviewPage *page = new VPreviewPage(m_webViewer);
     m_webViewer->setPage(page);
@@ -1501,6 +1505,278 @@ void VMdTab::handleSavePageRequested()
     emit statusMessage(tr("Saving page to %1").arg(fileName));
 
     m_webViewer->page()->save(fileName, format);
+}
+
+void VMdTab::handleUploadImageToGithubRequested()
+{
+    qDebug() << "开始处理图片上传至github的请求";
+    // 0. 拿到设置中的参数, 判断参数是否为空
+    QString persional_access_token = g_config->getPersionalAccessToken();
+    QString repos_name = g_config->getReposName();
+    QString user_name = g_config->getUserName();
+
+    if(persional_access_token.isEmpty() || repos_name.isEmpty() || user_name.isEmpty())
+    {
+        qDebug() << "请设置好github图床的参数!";
+        return;
+    }
+    // qDebug() << "各参数为: " << persional_access_token << ":"<< repos_name << ":" << user_name;
+
+    // 1. github认证, 认证成功后获取路径, 找到路径下的所有图片链接
+    githubImageBedAuthentication(persional_access_token);
+
+    // 4. 上传并替换
+}
+
+void VMdTab::githubImageBedAuthentication(QString token)
+{
+    qDebug() << "开始认证";
+    QNetworkRequest request;
+    QUrl url = QUrl("https://api.github.com");
+    QString ptoken = "token "+token;
+    request.setRawHeader("Authorization", ptoken.toLocal8Bit());
+    request.setUrl(url);
+    if(reply != Q_NULLPTR) {  // 更改reply指向位置前一定要保证之前的定义了自动delete
+        reply->deleteLater();
+    }
+    reply = manager.get(request);
+    connect(reply, &QNetworkReply::finished, this, &VMdTab::githubImageBedAuthFinished);
+}
+
+void VMdTab::githubImageBedAuthFinished()
+{
+    switch (reply->error()) {
+        case QNetworkReply::NoError:
+        {
+            QByteArray bytes = reply->readAll();
+
+            if(bytes.contains("Bad credentials")){
+                qDebug() << "认证失败";
+            }else{
+                qDebug() << "认证完成";
+
+                QString persional_access_token = g_config->getPersionalAccessToken();
+                QString repos_name = g_config->getReposName();
+                QString user_name = g_config->getUserName();
+
+                if(persional_access_token.isEmpty() || repos_name.isEmpty() || user_name.isEmpty())
+                {
+                    qDebug() << "请设置好github图床的参数!";
+                    return;
+                }
+
+                // 获取当前文章路径
+                qDebug() << "当前文章路径是: " << m_file->fetchPath();
+                // qDebug() << "基本路径是" << m_file->fetchBasePath();
+                imageBasePath = m_file->fetchBasePath();
+                //qDebug() << "当前文章内容是: " << m_file->getContent();
+
+                // 找到路径下的所有图片链接
+                QVector<ImageLink> images = VUtils::fetchImagesFromMarkdownFile(m_file,ImageLink::LocalRelativeInternal);
+                if(images.size() > 0)
+                {
+                    for(int i=0;i<images.size() ;i++)
+                    {
+                        // qDebug() << images[i].m_path;
+                        imageUrlMap.insert(images[i].m_url,"");
+                    }
+
+                    githubImageBedUploadManager();
+                }
+                else
+                {
+                    qDebug() << m_file->getName() << " 没有需要上传的图片";
+                }
+
+            }
+            break;
+        }
+        default:
+        {
+            qDebug()<<"认证出现错误: " << reply->errorString() << " error " << reply->error();
+        }
+    }
+}
+
+void VMdTab::githubImageBedUploadManager()
+{
+    // 1. 找出 imageUrlMap 中值为空的 一个key, 也就是图片
+    QString image_to_upload = "";
+    QMapIterator<QString, QString> it(imageUrlMap);//迭代器的使用,it一开始指向的是第0个元素之前的位置
+    while(it.hasNext())//根据迭代器获取元素
+    {
+        it.next();
+        // qDebug() << it.key() << " : " << it.value();
+        if(it.value() == ""){
+            image_to_upload = it.key();
+            break;
+        }
+
+    }
+
+    if(image_to_upload == ""){
+        qDebug() << "所有图片已经上传完成";
+        return;
+    }
+
+    // 2. 获取github图床参数
+
+    QString persional_access_token = g_config->getPersionalAccessToken();
+    QString repos_name = g_config->getReposName();
+    QString user_name = g_config->getUserName();
+
+    if(persional_access_token.isEmpty() || repos_name.isEmpty() || user_name.isEmpty())
+    {
+        qDebug() << "请设置好github图床的参数!";
+        return;
+    }
+
+    // 3. 调用githubImageBedUploadImage上传图片
+    QString path = imageBasePath + QDir::separator();
+    path += image_to_upload;
+    githubImageBedUploadImage(user_name, repos_name, path, persional_access_token);
+}
+
+void VMdTab::githubImageBedUploadImage(QString username, QString repository, QString image_path, QString token)
+{
+    QFileInfo fileInfo(image_path.toLocal8Bit());
+    if(!fileInfo.exists()){
+        qDebug() << "该路径下图片不存在: " << image_path.toLocal8Bit();
+        return;
+    }
+    QString file_suffix = fileInfo.suffix();  // 文件扩展名
+    QString file_name = fileInfo.fileName();  // 文件名
+    QString upload_url;  // 图片上传的url
+    upload_url = "https://api.github.com/repos/" + username + "/" + repository + "/contents/"  +  QString::number(QDateTime::currentDateTime().toTime_t()) +"_" + file_name;
+    if(file_suffix != QString::fromLocal8Bit("jpg") && file_suffix != QString::fromLocal8Bit("png") && file_suffix != QString::fromLocal8Bit("gif")){
+        qDebug() << "不支持的类型...";
+        return;
+    }
+
+    // qDebug() << "要上传的url链接为: " << upload_url;
+
+    QNetworkRequest request;
+    QUrl url = QUrl(upload_url);
+    QString ptoken = "token " + token;
+    request.setRawHeader("Authorization", ptoken.toLocal8Bit());
+    request.setUrl(url);
+    if(reply != Q_NULLPTR) {//更改reply指向位置钱一定要保证之前的定义了自动delete
+        reply->deleteLater();
+    }
+
+    QString param = githubImageBedGenerateParam(image_path);
+    QByteArray postData;
+    postData.append(param);
+    reply = manager.put(request, postData);
+    // qDebug() << "上传图片: " + image_path;
+    connect(reply, &QNetworkReply::finished, this, &VMdTab::githubImageBedUploadFinished);
+}
+
+void VMdTab::githubImageBedUploadFinished()
+{
+    switch (reply->error()) {
+        case QNetworkReply::NoError:
+        {
+            QByteArray bytes = reply->readAll();
+            int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            // qDebug() << "status状态: " << httpStatus;
+            if(httpStatus == 201){
+                qDebug() <<  "上传成功";
+
+                // 解析在线的图片链接
+                QJsonParseError jsonError;
+                QString downloadUrl;
+                QString imageName;
+                QJsonDocument doucment = QJsonDocument::fromJson(bytes);
+                if (!doucment.isNull() )
+                {
+                    if (doucment.isObject()) {  // JSON 文档为对象
+                        QJsonObject object = doucment.object();  // 转化为对象
+                        if (object.contains("content")) {
+                            QJsonValue value = object.value("content");
+                            if (value.isObject()) {
+                                QJsonObject obj = value.toObject();
+                                if (obj.contains("download_url")) {
+                                    QJsonValue value = obj.value("download_url");
+                                    if (value.isString()) {
+                                        downloadUrl = value.toString();
+                                        qDebug() << "json decode: download_url : " << downloadUrl;
+
+                                    }
+                                }
+                                if(obj.contains("name")){
+                                    QJsonValue value = obj.value("name");
+                                    if(value.isString()){
+                                        imageName = value.toString();
+                                        // qDebug() << "json decode: imagename: " << imageName;
+                                    }
+                                }
+
+                                // 遍历imageUrlMap中的key
+                                QList<QString> klist =  imageUrlMap.keys();
+                                QString temp;
+                                for(int i=0;i<klist.count();i++)
+                                {
+
+                                    temp = klist[i].split("/")[1];
+                                    if(imageName.contains(temp))
+                                    {
+                                        imageUrlMap.insert(klist[i], downloadUrl);
+                                        break;
+                                    }
+                                }
+                                githubImageBedUploadManager();
+                            }
+                        }
+                    }
+                }
+                else{
+                    qDebug() << "解析失败!";
+                    qDebug() << "解析失败的json: " << bytes;
+                }
+
+
+            }else{
+                qDebug() << "上传失败";
+            }
+            break;
+        }
+        default:
+        {
+            qDebug()<<"上传出现错误: " << reply->errorString() << " error " << reply->error();
+            QByteArray bytes = reply->readAll();
+            qDebug() << bytes;
+            int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            qDebug() << "status状态: " << httpStatus;
+        }
+    }
+}
+
+void VMdTab::githubImageBedReplaceLink(QString file_content, QString file_path)
+{
+
+}
+
+QString VMdTab::githubImageBedGenerateParam(QString image_path){
+    // img to base64
+    QImage image(image_path);
+    QByteArray ba;
+    QBuffer buf(&ba);
+    image.save(&buf, "png");
+    QByteArray hexed = ba.toBase64();
+    buf.close();
+    QString img_base64 = hexed;  // 图片的base64编码
+
+    QJsonObject json;
+    json.insert("message", QString("updatetest"));
+    json.insert("content", img_base64);
+
+    QJsonDocument document;
+    document.setObject(json);
+    QByteArray byte_array = document.toJson(QJsonDocument::Compact);
+    QString json_str(byte_array);
+    //qDebug() << "参数是: " << json_str;
+    return json_str;
 }
 
 VWordCountInfo VMdTab::fetchWordCountInfo(bool p_editMode) const

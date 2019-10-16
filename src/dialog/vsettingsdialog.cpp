@@ -1566,7 +1566,6 @@ bool VMiscTab::loadConfiguration()
     if (!loadMatchesInPage()) {
         return false;
     }
-
     return true;
 }
 

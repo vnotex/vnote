@@ -132,6 +132,7 @@ VMdEditor::VMdEditor(VFile *p_file,
     updateFontAndPalette();
 
     updateConfig();
+
 }
 
 void VMdEditor::updateFontAndPalette()

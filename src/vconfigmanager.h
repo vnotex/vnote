@@ -3018,7 +3018,7 @@ inline void VConfigManager::setPersionalAccessToken(const QString &p_token)
     }
 
     m_persionalAccessToken = p_token;
-    setConfigToSettings("imagebed", "persional_access_token", p_token);
+    setConfigToSettings("global", "github_persional_access_token", p_token);
 }
 
 inline const QString &VConfigManager::getReposName() const
@@ -3033,7 +3033,7 @@ inline void VConfigManager::setReposName(const QString &p_reposName)
     }
 
     m_reposName = p_reposName;
-    setConfigToSettings("imagebed", "repos_name", p_reposName);
+    setConfigToSettings("global", "github_repos_name", p_reposName);
 }
 
 inline const QString &VConfigManager::getUserName() const
@@ -3048,7 +3048,7 @@ inline void VConfigManager::setUserName(const QString &p_userName)
     }
 
     m_userName = p_userName;
-    setConfigToSettings("imagebed", "user_name", p_userName);
+    setConfigToSettings("global", "github_user_name", p_userName);
 }
 
 #endif // VCONFIGMANAGER_H

@@ -24,6 +24,8 @@ signals:
 
     void requestExpandRestorePreviewArea();
 
+    void requestUploadImageToGithub();
+
 protected:
     void contextMenuEvent(QContextMenuEvent *p_event);
 

@@ -98,6 +98,11 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
             connect(savePageAct, &QAction::triggered,
                     this, &VWebView::requestSavePage);
             menu->addAction(savePageAct);
+
+            // 在预览模式下, 添加右键菜单, 上传图片至github图床
+            QAction *uploadImageToGithub = new QAction(QWebEngineView::tr("&Upload Image To Github"),menu);
+            connect(uploadImageToGithub, &QAction::triggered, this, &VWebView::requestUploadImageToGithub);
+            menu->addAction(uploadImageToGithub);
         }
     }
 

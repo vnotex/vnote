@@ -1,6 +1,7 @@
 #ifndef VMDTAB_H
 #define VMDTAB_H
 
+#include <QtNetwork>
 #include <QString>
 #include <QPointer>
 #include <QSharedPointer>
@@ -107,6 +108,17 @@ public:
 
     bool expandRestorePreviewArea();
 
+    // github身份认证
+    void githubImageBedAuthentication(QString token);
+    // 上传单张图片
+    void githubImageBedUploadImage(QString username,QString repository,QString image_path,QString token);
+    // 生成上传图片所需的参数
+    QString githubImageBedGenerateParam(QString image_path);
+    // 控制图片一张张上传
+    void githubImageBedUploadManager();
+    // 用图片的新链接替换旧链接
+    void githubImageBedReplaceLink(QString file_content, QString file_path);
+
 public slots:
     // Enter edit mode.
     void editFile() Q_DECL_OVERRIDE;
@@ -160,6 +172,15 @@ private slots:
 
     // Selection changed in web.
     void handleWebSelectionChanged();
+
+    // 处理图片上传至github的请求
+    void handleUploadImageToGithubRequested();
+
+    // github 图床身份认证完成
+    void githubImageBedAuthFinished();
+
+    // github 图床图片上传完成
+    void githubImageBedUploadFinished();
 
 private:
     enum TabReady { None = 0, ReadMode = 0x1, EditMode = 0x2 };
@@ -277,6 +298,11 @@ private:
     VMathJaxInplacePreviewHelper *m_mathjaxPreviewHelper;
 
     int m_documentID;
+
+    QNetworkAccessManager manager;
+    QNetworkReply *reply;
+    QMap<QString, QString> imageUrlMap;
+    QString imageBasePath;
 };
 
 inline VMdEditor *VMdTab::getEditor()
