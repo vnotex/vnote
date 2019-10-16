@@ -114,6 +114,7 @@ void VMdTab::setupUI()
     m_editor = NULL;
 
     reply = Q_NULLPTR;  // 记得初始化为空
+    image_uploaded = false;
 
     QVBoxLayout *layout = new QVBoxLayout();
     layout->addWidget(m_splitter);
@@ -1702,7 +1703,7 @@ void VMdTab::githubImageBedUploadFinished()
                                     if (value.isString()) {
                                         downloadUrl = value.toString();
                                         qDebug() << "json decode: download_url : " << downloadUrl;
-
+                                        image_uploaded = true;
                                     }
                                 }
                                 if(obj.contains("name")){
@@ -1738,11 +1739,17 @@ void VMdTab::githubImageBedUploadFinished()
                 else{
                     qDebug() << "解析失败!";
                     qDebug() << "解析失败的json: " << bytes;
+                    if(image_uploaded){
+                        githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
+                    }
                 }
 
 
             }else{
                 qDebug() << "上传失败";
+                if(image_uploaded){
+                    githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
+                }
             }
             break;
         }
@@ -1753,6 +1760,10 @@ void VMdTab::githubImageBedUploadFinished()
             qDebug() << bytes;
             int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
             qDebug() << "status状态: " << httpStatus;
+
+            if(image_uploaded){
+                githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
+            }
         }
     }
 }
@@ -1761,12 +1772,14 @@ void VMdTab::githubImageBedReplaceLink(QString file_content, QString file_path)
 {
     // 上传完成或者中途失败都要执行该函数
     // 将内容写进文件
-    qDebug() << "将要写进的文件内容如下: ";
-    qDebug() << file_content;
+    // qDebug() << "将要写进的文件内容如下: ";
+    // qDebug() << file_content;
     QFile file(file_path);
     file.open(QIODevice::WriteOnly | QIODevice::Text);
     file.write(file_content.toUtf8());
     file.close();
+
+    image_uploaded = false;  // 重置
 }
 
 QString VMdTab::githubImageBedGenerateParam(QString image_path){

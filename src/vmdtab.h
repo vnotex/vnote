@@ -302,8 +302,9 @@ private:
     QNetworkAccessManager manager;
     QNetworkReply *reply;
     QMap<QString, QString> imageUrlMap;
-    QString imageBasePath;
+    QString imageBasePath;     // 类似 _v_image/
     QString new_file_content;  // 用新链接替换后的文件内容
+    bool image_uploaded;       // 是否上传成功过图片
 };
 
 inline VMdEditor *VMdTab::getEditor()
