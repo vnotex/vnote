@@ -1570,6 +1570,7 @@ void VMdTab::githubImageBedAuthFinished()
                 // qDebug() << "基本路径是" << m_file->fetchBasePath();
                 imageBasePath = m_file->fetchBasePath();
                 //qDebug() << "当前文章内容是: " << m_file->getContent();
+                new_file_content = m_file->getContent();
 
                 // 找到路径下的所有图片链接
                 QVector<ImageLink> images = VUtils::fetchImagesFromMarkdownFile(m_file,ImageLink::LocalRelativeInternal);
@@ -1616,6 +1617,7 @@ void VMdTab::githubImageBedUploadManager()
 
     if(image_to_upload == ""){
         qDebug() << "所有图片已经上传完成";
+        githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
         return;
     }
 
@@ -1684,7 +1686,6 @@ void VMdTab::githubImageBedUploadFinished()
                 qDebug() <<  "上传成功";
 
                 // 解析在线的图片链接
-                QJsonParseError jsonError;
                 QString downloadUrl;
                 QString imageName;
                 QJsonDocument doucment = QJsonDocument::fromJson(bytes);
@@ -1722,6 +1723,10 @@ void VMdTab::githubImageBedUploadFinished()
                                     if(imageName.contains(temp))
                                     {
                                         imageUrlMap.insert(klist[i], downloadUrl);
+
+                                        // 替换原文中的链接
+                                        new_file_content.replace(klist[i], downloadUrl);
+
                                         break;
                                     }
                                 }
@@ -1754,7 +1759,14 @@ void VMdTab::githubImageBedUploadFinished()
 
 void VMdTab::githubImageBedReplaceLink(QString file_content, QString file_path)
 {
-
+    // 上传完成或者中途失败都要执行该函数
+    // 将内容写进文件
+    qDebug() << "将要写进的文件内容如下: ";
+    qDebug() << file_content;
+    QFile file(file_path);
+    file.open(QIODevice::WriteOnly | QIODevice::Text);
+    file.write(file_content.toUtf8());
+    file.close();
 }
 
 QString VMdTab::githubImageBedGenerateParam(QString image_path){

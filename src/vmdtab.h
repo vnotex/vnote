@@ -303,6 +303,7 @@ private:
     QNetworkReply *reply;
     QMap<QString, QString> imageUrlMap;
     QString imageBasePath;
+    QString new_file_content;  // 用新链接替换后的文件内容
 };
 
 inline VMdEditor *VMdTab::getEditor()
