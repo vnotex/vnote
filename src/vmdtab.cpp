@@ -1519,14 +1519,13 @@ void VMdTab::handleUploadImageToGithubRequested()
     if(persional_access_token.isEmpty() || repos_name.isEmpty() || user_name.isEmpty())
     {
         qDebug() << "请设置好github图床的参数!";
+        QMessageBox::warning(NULL, "Github ImageBed", "Please set the github imagebed parameters first !");
         return;
     }
-    // qDebug() << "各参数为: " << persional_access_token << ":"<< repos_name << ":" << user_name;
 
     // 1. github认证, 认证成功后获取路径, 找到路径下的所有图片链接
     githubImageBedAuthentication(persional_access_token);
 
-    // 4. 上传并替换
 }
 
 void VMdTab::githubImageBedAuthentication(QString token)
@@ -1553,18 +1552,10 @@ void VMdTab::githubImageBedAuthFinished()
 
             if(bytes.contains("Bad credentials")){
                 qDebug() << "认证失败";
+                QMessageBox::warning(NULL, "Github ImageBed", "Bad credentials!! Please check the github imagebed parameters !!");
+                return;
             }else{
                 qDebug() << "认证完成";
-
-                QString persional_access_token = g_config->getPersionalAccessToken();
-                QString repos_name = g_config->getReposName();
-                QString user_name = g_config->getUserName();
-
-                if(persional_access_token.isEmpty() || repos_name.isEmpty() || user_name.isEmpty())
-                {
-                    qDebug() << "请设置好github图床的参数!";
-                    return;
-                }
 
                 // 获取当前文章路径
                 qDebug() << "当前文章路径是: " << m_file->fetchPath();
@@ -1599,6 +1590,8 @@ void VMdTab::githubImageBedAuthFinished()
                 else
                 {
                     qDebug() << m_file->getName() << " 没有需要上传的图片";
+                    QString info = m_file->getName() + " 没有需要上传的图片";
+                    QMessageBox::information(NULL, "Github ImageBed", info);
                 }
 
             }
@@ -1607,6 +1600,7 @@ void VMdTab::githubImageBedAuthFinished()
         default:
         {
             qDebug()<<"认证出现错误: " << reply->errorString() << " error " << reply->error();
+            QMessageBox::warning(NULL, "Github ImageBed", "Network error!!");
         }
     }
 }
@@ -1626,6 +1620,10 @@ void VMdTab::githubImageBedUploadManager()
             proDlg->setValue(upload_image_count - 1 - upload_image_count_index);
             if (proDlg->wasCanceled()) {
                 qDebug() << "用户终止上传";
+                // 之前上传成功的时候还要传上去
+                if(image_uploaded){
+                    githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
+                }
                 return;
             }
             proDlg->setLabelText(tr("Uploaading image: %1").arg(image_to_upload));
@@ -1652,6 +1650,7 @@ void VMdTab::githubImageBedUploadManager()
     if(persional_access_token.isEmpty() || repos_name.isEmpty() || user_name.isEmpty())
     {
         qDebug() << "请设置好github图床的参数!";
+        QMessageBox::warning(NULL, "Github ImageBed", "Please set the github imagebed parameters first !");
         return;
     }
 
@@ -1666,6 +1665,11 @@ void VMdTab::githubImageBedUploadImage(QString username, QString repository, QSt
     QFileInfo fileInfo(image_path.toLocal8Bit());
     if(!fileInfo.exists()){
         qDebug() << "该路径下图片不存在: " << image_path.toLocal8Bit();
+        QString info = "The picture does not exist in this path: " + image_path.toLocal8Bit();
+        QMessageBox::warning(NULL, "Github ImageBed", info);
+        if(image_uploaded){
+            githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
+        }
         return;
     }
     QString file_suffix = fileInfo.suffix();  // 文件扩展名
@@ -1674,6 +1678,11 @@ void VMdTab::githubImageBedUploadImage(QString username, QString repository, QSt
     upload_url = "https://api.github.com/repos/" + username + "/" + repository + "/contents/"  +  QString::number(QDateTime::currentDateTime().toTime_t()) +"_" + file_name;
     if(file_suffix != QString::fromLocal8Bit("jpg") && file_suffix != QString::fromLocal8Bit("png") && file_suffix != QString::fromLocal8Bit("gif")){
         qDebug() << "不支持的类型...";
+        QString info = "Unsupported type: " +file_suffix;
+        QMessageBox::warning(NULL, "Github ImageBed", info);
+        if(image_uploaded){
+            githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
+        }
         return;
     }
 
@@ -1684,7 +1693,7 @@ void VMdTab::githubImageBedUploadImage(QString username, QString repository, QSt
     QString ptoken = "token " + token;
     request.setRawHeader("Authorization", ptoken.toLocal8Bit());
     request.setUrl(url);
-    if(reply != Q_NULLPTR) {//更改reply指向位置钱一定要保证之前的定义了自动delete
+    if(reply != Q_NULLPTR) {
         reply->deleteLater();
     }
 
@@ -1764,6 +1773,8 @@ void VMdTab::githubImageBedUploadFinished()
                     if(image_uploaded){
                         githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
                     }
+                    QString info = "Json decode error, Please contact the developer~";
+                    QMessageBox::warning(NULL, "Github ImageBed", info);
                 }
 
 
@@ -1772,6 +1783,8 @@ void VMdTab::githubImageBedUploadFinished()
                 if(image_uploaded){
                     githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
                 }
+                QString info = "github status code != 201, Please contact the developer~";
+                QMessageBox::warning(NULL, "Github ImageBed", info);
             }
             break;
         }
@@ -1786,6 +1799,8 @@ void VMdTab::githubImageBedUploadFinished()
             if(image_uploaded){
                 githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
             }
+            QString info = "network error: " + reply->errorString() + " error " + reply->error();
+            QMessageBox::warning(NULL, "Github ImageBed", info);
         }
     }
 }
@@ -1802,6 +1817,7 @@ void VMdTab::githubImageBedReplaceLink(QString file_content, QString file_path)
     file.close();
 
     image_uploaded = false;  // 重置
+    // QMessageBox::information(NULL, "Github ImageBed", "Upload successful!");
 }
 
 QString VMdTab::githubImageBedGenerateParam(QString image_path){
