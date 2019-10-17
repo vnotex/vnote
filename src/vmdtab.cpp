@@ -1531,6 +1531,7 @@ void VMdTab::handleUploadImageToGithubRequested()
 void VMdTab::githubImageBedAuthentication(QString token)
 {
     qDebug() << "开始认证";
+    QApplication::setOverrideCursor(Qt::WaitCursor); // 设置鼠标为等待状态
     QNetworkRequest request;
     QUrl url = QUrl("https://api.github.com");
     QString ptoken = "token "+token;
@@ -1540,6 +1541,7 @@ void VMdTab::githubImageBedAuthentication(QString token)
         reply->deleteLater();
     }
     reply = manager.get(request);
+
     connect(reply, &QNetworkReply::finished, this, &VMdTab::githubImageBedAuthFinished);
 }
 
@@ -1552,7 +1554,8 @@ void VMdTab::githubImageBedAuthFinished()
 
             if(bytes.contains("Bad credentials")){
                 qDebug() << "认证失败";
-                QMessageBox::warning(NULL, "Github ImageBed", "Bad credentials!! Please check the github imagebed parameters !!");
+                QApplication::restoreOverrideCursor();  // 恢复指针
+                QMessageBox::warning(NULL, "Github ImageBed", "Bad credentials!! Please check your github imagebed parameters !!");
                 return;
             }else{
                 qDebug() << "认证完成";
@@ -1566,6 +1569,7 @@ void VMdTab::githubImageBedAuthFinished()
 
                 // 找到路径下的所有图片链接
                 QVector<ImageLink> images = VUtils::fetchImagesFromMarkdownFile(m_file,ImageLink::LocalRelativeInternal);
+                QApplication::restoreOverrideCursor();  // 恢复指针
                 if(images.size() > 0)
                 {
 
@@ -1584,7 +1588,6 @@ void VMdTab::githubImageBedAuthFinished()
                         imageUrlMap.insert(images[i].m_url,"");
                     }
 
-
                     githubImageBedUploadManager();
                 }
                 else
@@ -1594,15 +1597,18 @@ void VMdTab::githubImageBedAuthFinished()
                     QMessageBox::information(NULL, "Github ImageBed", info);
                 }
 
+
             }
             break;
         }
         default:
         {
+            QApplication::restoreOverrideCursor();  // 恢复指针
             qDebug()<<"认证出现错误: " << reply->errorString() << " error " << reply->error();
-            QMessageBox::warning(NULL, "Github ImageBed", "Network error!!");
+            QMessageBox::warning(NULL, "Github ImageBed", "Authentication error!! Please check your github imagebed parameters ");
         }
     }
+
 }
 
 void VMdTab::githubImageBedUploadManager()
@@ -1733,7 +1739,7 @@ void VMdTab::githubImageBedUploadFinished()
                                     if (value.isString()) {
                                         downloadUrl = value.toString();
                                         qDebug() << "json decode: download_url : " << downloadUrl;
-                                        image_uploaded = true;
+                                        image_uploaded = true;  // 代表成功上传图片过
                                         proDlg->setValue(upload_image_count);
                                     }
                                 }
@@ -1817,7 +1823,6 @@ void VMdTab::githubImageBedReplaceLink(QString file_content, QString file_path)
     file.close();
 
     image_uploaded = false;  // 重置
-    // QMessageBox::information(NULL, "Github ImageBed", "Upload successful!");
 }
 
 QString VMdTab::githubImageBedGenerateParam(QString image_path){
