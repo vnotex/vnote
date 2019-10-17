@@ -1577,11 +1577,22 @@ void VMdTab::githubImageBedAuthFinished()
                 QVector<ImageLink> images = VUtils::fetchImagesFromMarkdownFile(m_file,ImageLink::LocalRelativeInternal);
                 if(images.size() > 0)
                 {
+
+                    proDlg = new QProgressDialog(tr("Uploading images to github..."),
+                                           tr("Abort"),
+                                           0,
+                                           images.size(),
+                                           this);
+                    proDlg->setWindowModality(Qt::WindowModal);
+                    proDlg->setWindowTitle(tr("Uploading Images To Github"));
+                    upload_image_count = images.size();
+                    upload_image_count_index  = upload_image_count;
                     for(int i=0;i<images.size() ;i++)
                     {
                         // qDebug() << images[i].m_path;
                         imageUrlMap.insert(images[i].m_url,"");
                     }
+
 
                     githubImageBedUploadManager();
                 }
@@ -1602,6 +1613,7 @@ void VMdTab::githubImageBedAuthFinished()
 
 void VMdTab::githubImageBedUploadManager()
 {
+    upload_image_count_index--;
     // 1. 找出 imageUrlMap 中值为空的 一个key, 也就是图片
     QString image_to_upload = "";
     QMapIterator<QString, QString> it(imageUrlMap);//迭代器的使用,it一开始指向的是第0个元素之前的位置
@@ -1611,6 +1623,12 @@ void VMdTab::githubImageBedUploadManager()
         // qDebug() << it.key() << " : " << it.value();
         if(it.value() == ""){
             image_to_upload = it.key();
+            proDlg->setValue(upload_image_count - 1 - upload_image_count_index);
+            if (proDlg->wasCanceled()) {
+                qDebug() << "用户终止上传";
+                return;
+            }
+            proDlg->setLabelText(tr("Uploaading image: %1").arg(image_to_upload));
             break;
         }
 
@@ -1621,6 +1639,9 @@ void VMdTab::githubImageBedUploadManager()
         githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
         return;
     }
+
+
+
 
     // 2. 获取github图床参数
 
@@ -1704,6 +1725,7 @@ void VMdTab::githubImageBedUploadFinished()
                                         downloadUrl = value.toString();
                                         qDebug() << "json decode: download_url : " << downloadUrl;
                                         image_uploaded = true;
+                                        proDlg->setValue(upload_image_count);
                                     }
                                 }
                                 if(obj.contains("name")){

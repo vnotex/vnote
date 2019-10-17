@@ -5,6 +5,7 @@
 #include <QString>
 #include <QPointer>
 #include <QSharedPointer>
+#include <QProgressDialog>
 #include "vedittab.h"
 #include "vconstants.h"
 #include "vmarkdownconverter.h"
@@ -305,6 +306,9 @@ private:
     QString imageBasePath;     // 类似 _v_image/
     QString new_file_content;  // 用新链接替换后的文件内容
     bool image_uploaded;       // 是否上传成功过图片
+    QProgressDialog *proDlg;    // 图片上传进度条
+    int upload_image_count;    // 要上传图片总数
+    int upload_image_count_index;
 };
 
 inline VMdEditor *VMdTab::getEditor()
