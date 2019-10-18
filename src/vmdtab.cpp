@@ -1826,15 +1826,31 @@ void VMdTab::githubImageBedReplaceLink(QString file_content, QString file_path)
 }
 
 QString VMdTab::githubImageBedGenerateParam(QString image_path){
+    QFileInfo fileInfo(image_path.toLocal8Bit());
+    QString file_suffix = fileInfo.suffix();
+    qDebug() << "GenerateParam: " << "后缀是: " << file_suffix;
+
     // img to base64
     QImage image(image_path);
     QByteArray ba;
     QBuffer buf(&ba);
-    image.save(&buf, "png");
+    buf.open(QIODevice::WriteOnly);
+    if(file_suffix == QString::fromLocal8Bit("jpg")){
+        image.save(&buf, "jpg");
+    }else if(file_suffix == QString::fromLocal8Bit("png")){
+        qDebug() << "ba内容: " << ba.data();
+        image.save(&buf, "png");
+    }else if(file_suffix == QString::fromLocal8Bit("gif")){
+        qDebug() << "ba内容: " << ba.data();
+        image.save(&buf, "GIF");
+
+    }
+
+
     QByteArray hexed = ba.toBase64();
     buf.close();
     QString img_base64 = hexed;  // 图片的base64编码
-
+    qDebug() << "图片的base64: " << img_base64;
     QJsonObject json;
     json.insert("message", QString("updatetest"));
     json.insert("content", img_base64);
@@ -1843,7 +1859,7 @@ QString VMdTab::githubImageBedGenerateParam(QString image_path){
     document.setObject(json);
     QByteArray byte_array = document.toJson(QJsonDocument::Compact);
     QString json_str(byte_array);
-    //qDebug() << "参数是: " << json_str;
+    qDebug() << "参数是: " << json_str;
     return json_str;
 }
 
