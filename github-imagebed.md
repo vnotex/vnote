@@ -1,4 +1,7 @@
 # vnote-github图床
+## 前言
+**注意**: 仅仅支持`jpg`, `png`, `gif`
+
 ## 0x00 生成github token
 ![](https://raw.githubusercontent.com/fengwenhua/ImageBed/master/1571293866_20191017141511042_562972322.png)
 
@@ -34,4 +37,4 @@
 
 ![](https://raw.githubusercontent.com/fengwenhua/ImageBed/master/1571293886_20191017142419286_587012225.png)
 
-![演示](./test.gif)
+![演示](./githubBedDemonstrate.gif)
