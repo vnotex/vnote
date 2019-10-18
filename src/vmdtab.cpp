@@ -1711,7 +1711,7 @@ void VMdTab::githubImageBedUploadImage(QString username, QString repository, QSt
     QByteArray postData;
     postData.append(param);
     reply = manager.put(request, postData);
-    // qDebug() << "上传图片: " + image_path;
+    qDebug() << "开始上传图片: " + image_path + " 等等上传ing";
     connect(reply, &QNetworkReply::finished, this, &VMdTab::githubImageBedUploadFinished);
 }
 
@@ -1780,6 +1780,7 @@ void VMdTab::githubImageBedUploadFinished()
                     }
                 }
                 else{
+                    delete proDlg;
                     qDebug() << "解析失败!";
                     qDebug() << "解析失败的json: " << bytes;
                     if(image_uploaded){
@@ -1792,6 +1793,7 @@ void VMdTab::githubImageBedUploadFinished()
 
             }else{
                 // status不是201就代表有问题
+                delete proDlg;
                 qDebug() << "上传失败";
                 if(image_uploaded){
                     githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
@@ -1803,6 +1805,7 @@ void VMdTab::githubImageBedUploadFinished()
         }
         default:
         {
+            delete proDlg;
             qDebug()<<"网络错误: " << reply->errorString() << " error " << reply->error();
             QByteArray bytes = reply->readAll();
             qDebug() << bytes;
