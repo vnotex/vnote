@@ -1826,29 +1826,12 @@ void VMdTab::githubImageBedReplaceLink(QString file_content, QString file_path)
 }
 
 QString VMdTab::githubImageBedGenerateParam(QString image_path){
-    QFileInfo fileInfo(image_path.toLocal8Bit());
-    QString file_suffix = fileInfo.suffix();
-    qDebug() << "GenerateParam: " << "后缀是: " << file_suffix;
-
     // img to base64
-    QImage image(image_path);
-    QByteArray ba;
-    QBuffer buf(&ba);
-    buf.open(QIODevice::WriteOnly);
-    if(file_suffix == QString::fromLocal8Bit("jpg")){
-        image.save(&buf, "jpg");
-    }else if(file_suffix == QString::fromLocal8Bit("png")){
-        qDebug() << "ba内容: " << ba.data();
-        image.save(&buf, "png");
-    }else if(file_suffix == QString::fromLocal8Bit("gif")){
-        qDebug() << "ba内容: " << ba.data();
-        image.save(&buf, "GIF");
+    QByteArray hexed;
+    QFile img_file(image_path);
+    img_file.open(QIODevice::ReadOnly);
+    hexed = img_file.readAll().toBase64();
 
-    }
-
-
-    QByteArray hexed = ba.toBase64();
-    buf.close();
     QString img_base64 = hexed;  // 图片的base64编码
     qDebug() << "图片的base64: " << img_base64;
     QJsonObject json;
