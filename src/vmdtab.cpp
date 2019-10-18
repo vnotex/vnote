@@ -1712,6 +1712,7 @@ void VMdTab::githubImageBedUploadImage(QString username, QString repository, QSt
     postData.append(param);
     reply = manager.put(request, postData);
     qDebug() << "开始上传图片: " + image_path + " 等等上传ing";
+    currentUploadImage = image_path;
     connect(reply, &QNetworkReply::finished, this, &VMdTab::githubImageBedUploadFinished);
 }
 
@@ -1815,7 +1816,7 @@ void VMdTab::githubImageBedUploadFinished()
             if(image_uploaded){
                 githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
             }
-            QString info = "network error: " + reply->errorString();
+            QString info = "Uploading "+ currentUploadImage+ " \n\nNetwork error: " + reply->errorString() + "\n\nPlease check the network or image size";
             QMessageBox::warning(NULL, "Github ImageBed", info);
         }
     }

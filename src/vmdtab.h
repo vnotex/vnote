@@ -303,12 +303,13 @@ private:
     QNetworkAccessManager manager;
     QNetworkReply *reply;
     QMap<QString, QString> imageUrlMap;
-    QString imageBasePath;     // 类似 _v_image/
-    QString new_file_content;  // 用新链接替换后的文件内容
-    bool image_uploaded;       // 是否上传成功过图片
+    QString imageBasePath;      // 类似 _v_image/
+    QString new_file_content;   // 用新链接替换后的文件内容
+    bool image_uploaded;        // 是否上传成功过图片
     QProgressDialog *proDlg;    // 图片上传进度条
-    int upload_image_count;    // 要上传图片总数
+    int upload_image_count;     // 要上传图片总数
     int upload_image_count_index;
+    QString currentUploadImage; // 当前上传图片名
 };
 
 inline VMdEditor *VMdTab::getEditor()
