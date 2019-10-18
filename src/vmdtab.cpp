@@ -1560,14 +1560,14 @@ void VMdTab::githubImageBedAuthFinished()
             }else{
                 qDebug() << "认证完成";
 
-                // 获取当前文章路径
+                // 1. 获取当前文章路径
                 qDebug() << "当前文章路径是: " << m_file->fetchPath();
                 // qDebug() << "基本路径是" << m_file->fetchBasePath();
                 imageBasePath = m_file->fetchBasePath();
                 //qDebug() << "当前文章内容是: " << m_file->getContent();
                 new_file_content = m_file->getContent();
 
-                // 找到路径下的所有图片链接
+                // 2. 找到路径下的所有图片链接
                 QVector<ImageLink> images = VUtils::fetchImagesFromMarkdownFile(m_file,ImageLink::LocalRelativeInternal);
                 QApplication::restoreOverrideCursor();  // 恢复指针
                 if(images.size() > 0)
@@ -1585,6 +1585,7 @@ void VMdTab::githubImageBedAuthFinished()
                     for(int i=0;i<images.size() ;i++)
                     {
                         // qDebug() << images[i].m_path;
+                        // 3. 将要上传的图片本地链接放入 map中, key为本地连接, value为github链接
                         imageUrlMap.insert(images[i].m_url,"");
                     }
 
@@ -1604,8 +1605,9 @@ void VMdTab::githubImageBedAuthFinished()
         default:
         {
             QApplication::restoreOverrideCursor();  // 恢复指针
-            qDebug()<<"认证出现错误: " << reply->errorString() << " error " << reply->error();
-            QMessageBox::warning(NULL, "Github ImageBed", "Authentication error!! Please check your github imagebed parameters ");
+            qDebug() << "网络出现错误: " << reply->errorString() << " error " << reply->error();
+            QString info ="Network error: " + reply->errorString();
+            QMessageBox::warning(NULL, "Github ImageBed", info);
         }
     }
 
@@ -1614,10 +1616,11 @@ void VMdTab::githubImageBedAuthFinished()
 void VMdTab::githubImageBedUploadManager()
 {
     upload_image_count_index--;
-    // 1. 找出 imageUrlMap 中值为空的 一个key, 也就是图片
+
+    // 1. 找出 imageUrlMap 中值为空的 一个key, 也就是没上传的本地图片链接
     QString image_to_upload = "";
-    QMapIterator<QString, QString> it(imageUrlMap);//迭代器的使用,it一开始指向的是第0个元素之前的位置
-    while(it.hasNext())//根据迭代器获取元素
+    QMapIterator<QString, QString> it(imageUrlMap);
+    while(it.hasNext())
     {
         it.next();
         // qDebug() << it.key() << " : " << it.value();
@@ -1638,17 +1641,14 @@ void VMdTab::githubImageBedUploadManager()
 
     }
 
+    // 2. 如果找不到, 说明图片已经全部上传, 可以替换文章的链接了
     if(image_to_upload == ""){
         qDebug() << "所有图片已经上传完成";
         githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
         return;
     }
 
-
-
-
-    // 2. 获取github图床参数
-
+    // 3. 获取github图床参数
     QString persional_access_token = g_config->getPersionalAccessToken();
     QString repos_name = g_config->getReposName();
     QString user_name = g_config->getUserName();
@@ -1660,7 +1660,7 @@ void VMdTab::githubImageBedUploadManager()
         return;
     }
 
-    // 3. 调用githubImageBedUploadImage上传图片
+    // 4. 调用githubImageBedUploadImage上传图片
     QString path = imageBasePath + QDir::separator();
     path += image_to_upload;
     githubImageBedUploadImage(user_name, repos_name, path, persional_access_token);
@@ -1668,6 +1668,7 @@ void VMdTab::githubImageBedUploadManager()
 
 void VMdTab::githubImageBedUploadImage(QString username, QString repository, QString image_path, QString token)
 {
+    // 1. 判断该路径下图片是否存在, 这一步其实可以省略
     QFileInfo fileInfo(image_path.toLocal8Bit());
     if(!fileInfo.exists()){
         qDebug() << "该路径下图片不存在: " << image_path.toLocal8Bit();
@@ -1678,6 +1679,8 @@ void VMdTab::githubImageBedUploadImage(QString username, QString repository, QSt
         }
         return;
     }
+
+    // 2. 判断文件扩展名, 这一步其实也可以省略
     QString file_suffix = fileInfo.suffix();  // 文件扩展名
     QString file_name = fileInfo.fileName();  // 文件名
     QString upload_url;  // 图片上传的url
@@ -1694,6 +1697,7 @@ void VMdTab::githubImageBedUploadImage(QString username, QString repository, QSt
 
     // qDebug() << "要上传的url链接为: " << upload_url;
 
+    // 3. 设置参数, 调用github接口上传
     QNetworkRequest request;
     QUrl url = QUrl(upload_url);
     QString ptoken = "token " + token;
@@ -1722,7 +1726,7 @@ void VMdTab::githubImageBedUploadFinished()
             if(httpStatus == 201){
                 qDebug() <<  "上传成功";
 
-                // 解析在线的图片链接
+                // 1. 解析返回的图片链接, 这一步可以用正则解析, 都一样
                 QString downloadUrl;
                 QString imageName;
                 QJsonDocument doucment = QJsonDocument::fromJson(bytes);
@@ -1760,6 +1764,7 @@ void VMdTab::githubImageBedUploadFinished()
                                     temp = klist[i].split("/")[1];
                                     if(imageName.contains(temp))
                                     {
+                                        // 可以给map中的value赋值了
                                         imageUrlMap.insert(klist[i], downloadUrl);
 
                                         // 替换原文中的链接
@@ -1768,6 +1773,7 @@ void VMdTab::githubImageBedUploadFinished()
                                         break;
                                     }
                                 }
+                                // 开始调该方法, map中的value是否为空决定是否停止
                                 githubImageBedUploadManager();
                             }
                         }
@@ -1785,6 +1791,7 @@ void VMdTab::githubImageBedUploadFinished()
 
 
             }else{
+                // status不是201就代表有问题
                 qDebug() << "上传失败";
                 if(image_uploaded){
                     githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
@@ -1796,7 +1803,7 @@ void VMdTab::githubImageBedUploadFinished()
         }
         default:
         {
-            qDebug()<<"上传出现错误: " << reply->errorString() << " error " << reply->error();
+            qDebug()<<"网络错误: " << reply->errorString() << " error " << reply->error();
             QByteArray bytes = reply->readAll();
             qDebug() << bytes;
             int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
@@ -1805,7 +1812,7 @@ void VMdTab::githubImageBedUploadFinished()
             if(image_uploaded){
                 githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
             }
-            QString info = "network error: " + reply->errorString() + " error " + reply->error();
+            QString info = "network error: " + reply->errorString();
             QMessageBox::warning(NULL, "Github ImageBed", info);
         }
     }
@@ -1826,6 +1833,7 @@ void VMdTab::githubImageBedReplaceLink(QString file_content, QString file_path)
 }
 
 QString VMdTab::githubImageBedGenerateParam(QString image_path){
+    // 根据github接口要求, 图片必须要是base64格式
     // img to base64
     QByteArray hexed;
     QFile img_file(image_path);
@@ -1833,7 +1841,7 @@ QString VMdTab::githubImageBedGenerateParam(QString image_path){
     hexed = img_file.readAll().toBase64();
 
     QString img_base64 = hexed;  // 图片的base64编码
-    qDebug() << "图片的base64: " << img_base64;
+    // qDebug() << "图片的base64: " << img_base64;
     QJsonObject json;
     json.insert("message", QString("updatetest"));
     json.insert("content", img_base64);
@@ -1842,7 +1850,7 @@ QString VMdTab::githubImageBedGenerateParam(QString image_path){
     document.setObject(json);
     QByteArray byte_array = document.toJson(QJsonDocument::Compact);
     QString json_str(byte_array);
-    qDebug() << "参数是: " << json_str;
+    // qDebug() << "参数是: " << json_str;
     return json_str;
 }
 
