@@ -1537,16 +1537,19 @@ void VMdTab::githubImageBedAuthentication(QString token)
     QString ptoken = "token "+token;
     request.setRawHeader("Authorization", ptoken.toLocal8Bit());
     request.setUrl(url);
+    qDebug() << "进来1";
     if(reply != Q_NULLPTR) {  // 更改reply指向位置前一定要保证之前的定义了自动delete
         reply->deleteLater();
     }
+    qDebug() << "进来2";
     reply = manager.get(request);
-
+    qDebug() << "进来3";
     connect(reply, &QNetworkReply::finished, this, &VMdTab::githubImageBedAuthFinished);
 }
 
 void VMdTab::githubImageBedAuthFinished()
 {
+    qDebug() << "进来4";
     switch (reply->error()) {
         case QNetworkReply::NoError:
         {
@@ -1627,14 +1630,6 @@ void VMdTab::githubImageBedUploadManager()
         if(it.value() == ""){
             image_to_upload = it.key();
             proDlg->setValue(upload_image_count - 1 - upload_image_count_index);
-            if (proDlg->wasCanceled()) {
-                qDebug() << "用户终止上传";
-                // 之前上传成功的时候还要传上去
-                if(image_uploaded){
-                    githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
-                }
-                return;
-            }
             proDlg->setLabelText(tr("Uploaading image: %1").arg(image_to_upload));
             break;
         }
@@ -1711,13 +1706,24 @@ void VMdTab::githubImageBedUploadImage(QString username, QString repository, QSt
     QByteArray postData;
     postData.append(param);
     reply = manager.put(request, postData);
-    qDebug() << "开始上传图片: " + image_path + " 等等上传ing";
+    qDebug() << "开始上传图片: " + image_path + " 等待上传完成ing";
+    upload_image_status = true;
     currentUploadImage = image_path;
     connect(reply, &QNetworkReply::finished, this, &VMdTab::githubImageBedUploadFinished);
 }
 
 void VMdTab::githubImageBedUploadFinished()
 {
+    if (proDlg->wasCanceled()) {
+        qDebug() << "用户终止上传";
+        reply->abort();        // 停止请求
+        // 之前上传成功的还是要留下来的
+        if(image_uploaded){
+            githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
+        }
+        return;
+    }
+
     switch (reply->error()) {
         case QNetworkReply::NoError:
         {

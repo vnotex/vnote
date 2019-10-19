@@ -310,6 +310,7 @@ private:
     int upload_image_count;     // 要上传图片总数
     int upload_image_count_index;
     QString currentUploadImage; // 当前上传图片名
+    bool upload_image_status;   // 图片上传状态
 };
 
 inline VMdEditor *VMdTab::getEditor()
