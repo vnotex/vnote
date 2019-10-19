@@ -1537,19 +1537,15 @@ void VMdTab::githubImageBedAuthentication(QString token)
     QString ptoken = "token "+token;
     request.setRawHeader("Authorization", ptoken.toLocal8Bit());
     request.setUrl(url);
-    qDebug() << "进来1";
     if(reply != Q_NULLPTR) {  // 更改reply指向位置前一定要保证之前的定义了自动delete
         reply->deleteLater();
     }
-    qDebug() << "进来2";
     reply = manager.get(request);
-    qDebug() << "进来3";
     connect(reply, &QNetworkReply::finished, this, &VMdTab::githubImageBedAuthFinished);
 }
 
 void VMdTab::githubImageBedAuthFinished()
 {
-    qDebug() << "进来4";
     switch (reply->error()) {
         case QNetworkReply::NoError:
         {
