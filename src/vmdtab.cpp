@@ -1579,6 +1579,7 @@ void VMdTab::githubImageBedAuthFinished()
                                            this);
                     proDlg->setWindowModality(Qt::WindowModal);
                     proDlg->setWindowTitle(tr("Uploading Images To Github"));
+                    proDlg->setMinimumDuration(1);
                     upload_image_count = images.size();
                     upload_image_count_index  = upload_image_count;
                     for(int i=0;i<images.size() ;i++)
