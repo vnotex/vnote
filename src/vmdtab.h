@@ -109,6 +109,7 @@ public:
 
     bool expandRestorePreviewArea();
 
+    // github image bed
     // github身份认证
     void githubImageBedAuthentication(QString token);
     // 上传单张图片
@@ -119,6 +120,9 @@ public:
     void githubImageBedUploadManager();
     // 用图片的新链接替换旧链接
     void githubImageBedReplaceLink(QString file_content, QString file_path);
+
+    // wechat image bed
+    void wechatImageBedAuthentication(QString appid, QString secret);
 
 public slots:
     // Enter edit mode.
@@ -176,12 +180,19 @@ private slots:
 
     // 处理图片上传至github的请求
     void handleUploadImageToGithubRequested();
+    // 处理图片上传至wechat的请求
+    void handleUploadImageToWechatRequested();
 
     // github 图床身份认证完成
     void githubImageBedAuthFinished();
+    // wechat 图床身份认证完成
+    void wechatImageBedAuthFinished();
 
     // github 图床图片上传完成
     void githubImageBedUploadFinished();
+    // wechat 图床图片上传完成
+    //void wechatImageBedUploadFinished();
+
 
 private:
     enum TabReady { None = 0, ReadMode = 0x1, EditMode = 0x2 };
@@ -311,6 +322,8 @@ private:
     int upload_image_count_index;
     QString currentUploadImage; // 当前上传图片名
     bool upload_image_status;   // 图片上传状态
+
+    QString wechat_access_token; // 微信认证成功后返回的token
 };
 
 inline VMdEditor *VMdTab::getEditor()

@@ -658,7 +658,7 @@ public:
     const QString &getUserName() const;
     void setUserName(const QString &p_userName);
 
-    // wetchat imageBed setting
+    // wechat imageBed setting
     const QString &getAppid() const;
     void setAppid(const QString &p_appid);
 

@@ -1595,9 +1595,9 @@ VImageBedTab::VImageBedTab(QWidget *p_parent)
 {
     QTabWidget *imageBedTabWeg = new QTabWidget(this);
     QWidget *githubImageBedTab = new QWidget();
-    QWidget *wetchatImageBedTab = new QWidget();
+    QWidget *wechatImageBedTab = new QWidget();
     imageBedTabWeg->addTab(githubImageBedTab, "github");
-    imageBedTabWeg->addTab(wetchatImageBedTab, "wetchat");
+    imageBedTabWeg->addTab(wechatImageBedTab, "wechat");
     imageBedTabWeg->setCurrentIndex(0);
 
     // 设置github图床的tab
@@ -1630,7 +1630,7 @@ VImageBedTab::VImageBedTab(QWidget *p_parent)
     wechatLayout->addRow(tr("appid:"), m_appidEdit);
     wechatLayout->addRow(tr("secret:"), m_secretEdit);
 
-    wetchatImageBedTab->setLayout(wechatLayout);
+    wechatImageBedTab->setLayout(wechatLayout);
 }
 
 bool VImageBedTab::loadAppid()

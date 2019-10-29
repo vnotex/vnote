@@ -448,6 +448,8 @@ void VMdTab::setupMarkdownViewer()
             this, &VMdTab::expandRestorePreviewArea);
     connect(m_webViewer, &VWebView::requestUploadImageToGithub,
             this, &VMdTab::handleUploadImageToGithubRequested);
+    connect(m_webViewer, &VWebView::requestUploadImageToWechat,
+            this, &VMdTab::handleUploadImageToWechatRequested);
 
     VPreviewPage *page = new VPreviewPage(m_webViewer);
     m_webViewer->setPage(page);
@@ -1859,6 +1861,96 @@ QString VMdTab::githubImageBedGenerateParam(QString image_path){
     QString json_str(byte_array);
     // qDebug() << "参数是: " << json_str;
     return json_str;
+}
+
+void VMdTab::handleUploadImageToWechatRequested()
+{
+    qDebug() << "开始处理图片上传至wechat的请求";
+    // 1. 拿到设置中的参数, 判断参数是否为空
+    QString appid = g_config->getAppid();
+    QString secret = g_config->getSecret();
+    if(appid.isEmpty() || secret.isEmpty())
+    {
+        qDebug() << "请设置好wechat图床的参数";
+        QMessageBox::warning(NULL, "Wechat ImageBed", "Please set the wechat imagebed parameters first !");
+        return;
+    }
+
+    // 2. wechat认证, 认证成功后获取路径, 找到路径下的所有图片链接
+    wechatImageBedAuthentication(appid, secret);
+
+}
+
+void VMdTab::wechatImageBedAuthentication(QString appid, QString secret)
+{
+    qDebug() << "开始认证";
+    QApplication::setOverrideCursor(Qt::WaitCursor); // 设置鼠标为等待状态
+    QNetworkRequest request;
+    QString auth_url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid="+ appid.toLocal8Bit() + "&secret=" + secret.toLocal8Bit();
+    QUrl url = QUrl(auth_url);
+//    request.setRawHeader("grant_type", "client_credential");
+//    request.setRawHeader("appid", appid.toLocal8Bit());
+//    request.setRawHeader("secret", secret.toLocal8Bit());
+    request.setUrl(url);
+    if(reply != Q_NULLPTR) {  // 更改reply指向位置前一定要保证之前的定义了自动delete
+        reply->deleteLater();
+    }
+    reply = manager.get(request);
+    connect(reply, &QNetworkReply::finished, this, &VMdTab::wechatImageBedAuthFinished);
+}
+
+void VMdTab::wechatImageBedAuthFinished()
+{
+    switch (reply->error()) {
+        case QNetworkReply::NoError:
+        {
+            QByteArray bytes = reply->readAll();
+            QJsonDocument document = QJsonDocument::fromJson(bytes);
+            if(!document.isNull()){
+                if(document.isObject()){
+                    QJsonObject object = document.object();
+                    if(object.contains("access_token")){
+                        QJsonValue value = object.value("access_token");
+                        if(value.isString()){
+                            qDebug() << "认证成功, 拿到token";
+                            // 解析token
+                            wechat_access_token = value.toString();
+                            // qDebug() << "wechat_access_token: " << wechat_access_token;
+
+
+                        }
+                    }else{
+                        qDebug() << "认证失败";
+                        QString string = bytes;
+                        qDebug() << string;
+                        // 这里可以细化一下错误
+                        QApplication::restoreOverrideCursor();
+                        QMessageBox::warning(NULL, "Wechat ImageBed", "Bad credentials!! Please check your wechat imagebed parameters !!");
+                        return;
+                    }
+                }
+            }else{
+                delete proDlg;
+                qDebug() << "解析失败!";
+                qDebug() << "解析失败的json: " << bytes;
+                if(image_uploaded){
+                    githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
+                }
+                QString info = "Json decode error, Please contact the developer~";
+                QMessageBox::warning(NULL, "Wechat ImageBed", info);
+            }
+
+
+            break;
+        }
+        default:
+        {
+            QApplication::restoreOverrideCursor();
+            qDebug() << "网络出现错误: " << reply->errorString() << " error " << reply->error();
+            QString info = "Network error: " + reply->errorString();
+            QMessageBox::warning(NULL, "Wechat ImageBed", info);
+        }
+    }
 }
 
 VWordCountInfo VMdTab::fetchWordCountInfo(bool p_editMode) const
