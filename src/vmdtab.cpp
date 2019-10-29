@@ -2028,8 +2028,8 @@ void VMdTab::wechatImageBedUploadManager()
 
 void VMdTab::wechatImageBedUploadImage(QString image_path, QString token)
 {
-    //QString upload_img_url = "https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=" + token;
-    QString upload_img_url = "http://httpbin.org/post?access_token=" + token;
+    QString upload_img_url = "https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=" + token;
+    //QString upload_img_url = "http://httpbin.org/post?access_token=" + token;
 
     QNetworkRequest request;
     request.setUrl(upload_img_url);
@@ -2050,6 +2050,13 @@ void VMdTab::wechatImageBedUploadImage(QString image_path, QString token)
     imagePart.setBodyDevice(file);
     file->setParent(multiPart);
     multiPart->append(imagePart);
+
+    // 设置boundary
+    // 因为boundary被QNetworkAccessManager加上了引号, 导致微信接口不识别...
+    QByteArray m_boundary;
+    m_boundary.append("multipart/form-data; boundary=");
+    m_boundary.append(multiPart->boundary());
+    request.setRawHeader(QByteArray("Content-Type"), m_boundary);
 
     reply = manager.post(request, multiPart);
     multiPart->setParent(reply);
@@ -2136,6 +2143,7 @@ void VMdTab::wechatImageBedReplaceLink(QString file_content, QString file_path)
     // 将内容写进剪切板
     QClipboard *board = QApplication::clipboard();
     board->setText(file_content);
+    QMessageBox::warning(NULL, "Wechat ImageBed", "文章已经复制到剪切板, 请赶紧找个文本文件保存下来吧!!");
     image_uploaded = false;  // 重置
 }
 
