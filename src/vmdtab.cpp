@@ -1917,7 +1917,44 @@ void VMdTab::wechatImageBedAuthFinished()
                             wechat_access_token = value.toString();
                             // qDebug() << "wechat_access_token: " << wechat_access_token;
 
+                            // 1. 获取当前文章路径
+                            qDebug() << "当前文章路径是: " << m_file->fetchPath();
+                            // qDebug() << "基本路径是" << m_file->fetchBasePath();
+                            imageBasePath = m_file->fetchBasePath();
+                            //qDebug() << "当前文章内容是: " << m_file->getContent();
+                            new_file_content = m_file->getContent();
 
+                            // 2. 找到路径下的所有图片链接
+                            QVector<ImageLink> images = VUtils::fetchImagesFromMarkdownFile(m_file,ImageLink::LocalRelativeInternal);
+                            QApplication::restoreOverrideCursor();  // 恢复指针
+                            if(images.size() > 0)
+                            {
+
+                                proDlg = new QProgressDialog(tr("Uploading images to github..."),
+                                                       tr("Abort"),
+                                                       0,
+                                                       images.size(),
+                                                       this);
+                                proDlg->setWindowModality(Qt::WindowModal);
+                                proDlg->setWindowTitle(tr("Uploading Images To Github"));
+                                proDlg->setMinimumDuration(1);
+                                upload_image_count = images.size();
+                                upload_image_count_index  = upload_image_count;
+                                for(int i=0;i<images.size() ;i++)
+                                {
+                                    // qDebug() << images[i].m_path;
+                                    // 3. 将要上传的图片本地链接放入 map中, key为本地连接, value为wechat链接
+                                    imageUrlMap.insert(images[i].m_url,"");
+                                }
+
+                                wechatImageBedUploadManager();
+                            }
+                            else
+                            {
+                                qDebug() << m_file->getName() << " 没有需要上传的图片";
+                                QString info = m_file->getName() + " 没有需要上传的图片";
+                                QMessageBox::information(NULL, "Wechat ImageBed", info);
+                            }
                         }
                     }else{
                         qDebug() << "认证失败";
@@ -1951,6 +1988,155 @@ void VMdTab::wechatImageBedAuthFinished()
             QMessageBox::warning(NULL, "Wechat ImageBed", info);
         }
     }
+}
+
+void VMdTab::wechatImageBedUploadManager()
+{
+    upload_image_count_index--;
+
+    // 1. 找出 imageUrlMap 中值为空的 一个key, 也就是没上传的本地图片链接
+    QString image_to_upload = "";
+    QMapIterator<QString, QString> it(imageUrlMap);
+    while(it.hasNext())
+    {
+        it.next();
+        // qDebug() << it.key() << " : " << it.value();
+        if(it.value() == ""){
+            image_to_upload = it.key();
+            proDlg->setValue(upload_image_count - 1 - upload_image_count_index);
+            proDlg->setLabelText(tr("Uploaading image: %1").arg(image_to_upload));
+            break;
+        }
+
+    }
+
+    // 2. 如果找不到, 说明图片已经全部上传, 可以替换文章的链接了
+    if(image_to_upload == ""){
+        qDebug() << "所有图片已经上传完成";
+        // 弹框将内容复制到剪切板
+        wechatImageBedReplaceLink(new_file_content, m_file->fetchPath());
+        return;
+    }
+
+    // 3. 调用wechatImageBedUploadImage上传图片
+    QString path = imageBasePath + QDir::separator();
+    path += image_to_upload;
+    currentUploadRelativeImagePah = image_to_upload;
+    // qDebug() << "当前相对路径为: " << currentUploadRelativeImagePah;
+    wechatImageBedUploadImage(path, wechat_access_token);
+}
+
+void VMdTab::wechatImageBedUploadImage(QString image_path, QString token)
+{
+    //QString upload_img_url = "https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=" + token;
+    QString upload_img_url = "http://httpbin.org/post?access_token=" + token;
+
+    QNetworkRequest request;
+    request.setUrl(upload_img_url);
+    if(reply != Q_NULLPTR){
+        reply->deleteLater();
+    }
+
+    QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
+    QHttpPart imagePart;
+    imagePart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("image/png"));
+    QString filename = image_path.split(QDir::separator()).last();
+    QString contentVariant = QString("form-data; name=\"media\"; filename=\"%1\";").arg(filename);
+    imagePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant(contentVariant));
+    QFile *file = new QFile(image_path);
+    if(!file->open(QIODevice::ReadOnly)){
+        qDebug() << "文件打开失败";
+    }
+    imagePart.setBodyDevice(file);
+    file->setParent(multiPart);
+    multiPart->append(imagePart);
+
+    reply = manager.post(request, multiPart);
+    multiPart->setParent(reply);
+
+
+    qDebug() << "开始上传图片: " + image_path + " 等待上传完成ing";
+    upload_image_status=true;
+    currentUploadImage = image_path;
+    connect(reply, &QNetworkReply::finished, this, &VMdTab::wechatImageBedUploadFinished);
+
+}
+
+void VMdTab::wechatImageBedUploadFinished()
+{
+    if(proDlg->wasCanceled()){
+        qDebug() << "用户终止上传";
+        reply->abort();
+        // 之前上传成功的直接不要了!!!
+        return;
+    }
+
+    switch (reply->error()) {
+        case QNetworkReply::NoError:
+        {
+            QByteArray bytes = reply->readAll();
+
+            qDebug() << "返回内容如下: ";
+            QString a = bytes;
+            qDebug() << qPrintable(a);
+
+            QJsonDocument document = QJsonDocument::fromJson(bytes);
+            if(!document.isNull()){
+                if(document.isObject()){
+                    QJsonObject object = document.object();
+                    if(object.contains("url")){
+                        QJsonValue value = object.value("url");
+                        if(value.isString()){
+                            qDebug() << "认证成功, 拿到在线链接";
+                            image_uploaded = true;
+                            proDlg->setValue(upload_image_count);
+
+                            imageUrlMap.insert(currentUploadRelativeImagePah, value.toString());
+                            new_file_content.replace(currentUploadRelativeImagePah, value.toString());
+                            // 开始调该方法, map中的value是否为空决定是否停止
+                            wechatImageBedUploadManager();
+                        }
+                    }else{
+                        delete proDlg;
+                        qDebug() << "上传失败: ";
+                        QString error = bytes;
+                        qDebug() << bytes;
+                        QString info = "upload failed! Please contact the developer~";
+                        QMessageBox::warning(NULL, "Wechat ImageBed", info);
+                    }
+                }
+            }else{
+                delete proDlg;
+                qDebug() << "解析失败!";
+                qDebug() << "解析失败的json: " << bytes;
+                if(image_uploaded){
+                    githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
+                }
+                QString info = "Json decode error, Please contact the developer~";
+                QMessageBox::warning(NULL, "Wechat ImageBed", info);
+            }
+
+            break;
+        }
+        default:
+        {
+            delete proDlg;
+            qDebug()<<"网络错误: " << reply->errorString() << " error " << reply->error();
+
+            QString info = "Uploading "+ currentUploadImage+ " \n\nNetwork error: " + reply->errorString() + "\n\nPlease check the network or image size";
+            QMessageBox::warning(NULL, "Wechat ImageBed", info);
+
+        }
+
+    }
+}
+void VMdTab::wechatImageBedReplaceLink(QString file_content, QString file_path)
+{
+    // 中断或中途失败怎么办????不要了!!
+    // 将内容写进剪切板
+    QClipboard *board = QApplication::clipboard();
+    board->setText(file_content);
+    image_uploaded = false;  // 重置
 }
 
 VWordCountInfo VMdTab::fetchWordCountInfo(bool p_editMode) const

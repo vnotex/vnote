@@ -123,6 +123,12 @@ public:
 
     // wechat image bed
     void wechatImageBedAuthentication(QString appid, QString secret);
+    // 控制图片一张张上传
+    void wechatImageBedUploadManager();
+    // 用图片的新链接替换旧链接
+    void wechatImageBedReplaceLink(QString file_content, QString file_path);
+    // 上传单张图片
+    void wechatImageBedUploadImage(QString image_path,QString token);
 
 public slots:
     // Enter edit mode.
@@ -191,7 +197,7 @@ private slots:
     // github 图床图片上传完成
     void githubImageBedUploadFinished();
     // wechat 图床图片上传完成
-    //void wechatImageBedUploadFinished();
+    void wechatImageBedUploadFinished();
 
 
 private:
@@ -324,6 +330,7 @@ private:
     bool upload_image_status;   // 图片上传状态
 
     QString wechat_access_token; // 微信认证成功后返回的token
+    QString currentUploadRelativeImagePah; // 当前上传的相对图片路径
 };
 
 inline VMdEditor *VMdTab::getEditor()
