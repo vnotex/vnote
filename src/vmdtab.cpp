@@ -1962,7 +1962,11 @@ void VMdTab::wechatImageBedAuthFinished()
                         qDebug() << string;
                         // 这里可以细化一下错误
                         QApplication::restoreOverrideCursor();
-                        QMessageBox::warning(NULL, "Wechat ImageBed", "Bad credentials!! Please check your wechat imagebed parameters !!");
+                        if(string.contains("invalid ip")){
+                            QMessageBox::warning(NULL, "Wechat ImageBed", "Please check whether your IP address is in the whitelist !!");
+                        }else{
+                            QMessageBox::warning(NULL, "Wechat ImageBed", "Please check your wechat imagebed parameters !!");
+                        }
                         return;
                     }
                 }
