@@ -658,6 +658,13 @@ public:
     const QString &getUserName() const;
     void setUserName(const QString &p_userName);
 
+    // wetchat imageBed setting
+    const QString &getAppid() const;
+    void setAppid(const QString &p_appid);
+
+    const QString &getSecret() const;
+    void setSecret(const QString &p_secret);
+
 
 private:
     void initEditorConfigs();
@@ -1086,6 +1093,10 @@ private:
     QString m_persionalAccessToken;
     QString m_reposName;
     QString m_userName;
+
+    // wechat imagebed
+    QString m_appid;
+    QString m_secret;
 
     // Size of history.
     int m_historySize;
@@ -3005,6 +3016,33 @@ inline bool VConfigManager::getEnableCodeBlockCopyButton() const
     return m_enableCodeBlockCopyButton;
 }
 
+inline const QString &VConfigManager::getAppid() const
+{
+    return m_appid;
+}
+
+inline void VConfigManager::setAppid(const QString &p_appid)
+{
+    if(m_appid == p_appid){
+        return;
+    }
+    m_appid = p_appid;
+    setConfigToSettings("global", "wechat_appid", p_appid);
+}
+
+inline const QString &VConfigManager::getSecret() const
+{
+    return m_secret;
+}
+
+inline void VConfigManager::setSecret(const QString &p_secret)
+{
+    if(m_secret == p_secret){
+        return;
+    }
+    m_secret = p_secret;
+    setConfigToSettings("global", "wechat_secret", p_secret);
+}
 
 inline const QString &VConfigManager::getPersionalAccessToken() const
 {

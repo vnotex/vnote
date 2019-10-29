@@ -280,6 +280,7 @@ public:
     bool saveConfiguration();
 
 private:
+    // githubImageBed
     bool loadPersionalAccessToken();
     bool savePersionalAccessToken();
 
@@ -289,7 +290,6 @@ private:
     bool loadUserName();
     bool saveUserName();
 
-    // githubImageBed
     // persionalAccessToken
     VLineEdit *m_persionalAccessTokenEdit;
     // reposName
@@ -298,6 +298,12 @@ private:
     VLineEdit *m_userNameEdit;
 
     // wechatImageBed
+    bool loadAppid();
+    bool saveAppid();
+
+    bool loadSecret();
+    bool saveSecret();
+
     // appid
     VLineEdit *m_appidEdit;
     // secret

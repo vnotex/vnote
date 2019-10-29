@@ -281,7 +281,7 @@ void VSettingsDialog::saveConfiguration()
         }
     }
 
-    // Github ImageBed Tab.
+    // ImageBed Tab.
     {
         VImageBedTab *imageBedTab = dynamic_cast<VImageBedTab *>(m_tabs->widget(idx++));
         Q_ASSERT(imageBedTab);
@@ -1633,6 +1633,30 @@ VImageBedTab::VImageBedTab(QWidget *p_parent)
     wetchatImageBedTab->setLayout(wechatLayout);
 }
 
+bool VImageBedTab::loadAppid()
+{
+    m_appidEdit->setText(g_config->getAppid());
+    return true;
+}
+
+bool VImageBedTab::saveAppid()
+{
+    g_config->setAppid(m_appidEdit->text());
+    return true;
+}
+
+bool VImageBedTab::loadSecret()
+{
+    m_secretEdit->setText(g_config->getSecret());
+    return true;
+}
+
+bool VImageBedTab::saveSecret()
+{
+    g_config->setSecret(m_secretEdit->text());
+    return true;
+}
+
 bool VImageBedTab::loadPersionalAccessToken()
 {
     m_persionalAccessTokenEdit->setText(g_config->getPersionalAccessToken());
@@ -1682,6 +1706,14 @@ bool VImageBedTab::loadConfiguration()
     if(!loadUserName()){
         return false;
     }
+
+    if(!loadAppid()){
+        return false;
+    }
+
+    if(!loadSecret()){
+        return false;
+    }
     return true;
 }
 
@@ -1695,6 +1727,12 @@ bool VImageBedTab::saveConfiguration()
         return false;
     }
     if(!saveUserName()){
+        return false;
+    }
+    if(!saveAppid()){
+        return false;
+    }
+    if(!saveSecret()){
         return false;
     }
     return true;
