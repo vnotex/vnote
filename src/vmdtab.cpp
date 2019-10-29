@@ -2083,9 +2083,9 @@ void VMdTab::wechatImageBedUploadFinished()
         {
             QByteArray bytes = reply->readAll();
 
-            qDebug() << "返回内容如下: ";
-            QString a = bytes;
-            qDebug() << qPrintable(a);
+            //qDebug() << "返回内容如下: ";
+            //QString a = bytes;
+            //qDebug() << qPrintable(a);
 
             QJsonDocument document = QJsonDocument::fromJson(bytes);
             if(!document.isNull()){
