@@ -66,7 +66,7 @@ VSettingsDialog::VSettingsDialog(QWidget *p_parent)
     addTab(new VNoteManagementTab(), tr("Note Management"));
     addTab(new VMarkdownTab(), tr("Markdown"));
     addTab(new VMiscTab(), tr("Misc"));
-    addTab(new VGithubImageBedTab(), tr("Github ImageBed"));
+    addTab(new VImageBedTab(), tr("ImageBed"));
 
     m_tabList->setMaximumWidth(m_tabList->sizeHintForColumn(0) + 5);
 
@@ -207,11 +207,11 @@ void VSettingsDialog::loadConfiguration()
         }
     }
 
-    // Github ImageBed Tab
+    // ImageBed Tab
     {
-        VGithubImageBedTab *githubImageBedTab = dynamic_cast<VGithubImageBedTab *>(m_tabs->widget(idx++));
-        Q_ASSERT(githubImageBedTab);
-        if (!githubImageBedTab->loadConfiguration()) {
+        VImageBedTab *imageBedTab = dynamic_cast<VImageBedTab *>(m_tabs->widget(idx++));
+        Q_ASSERT(imageBedTab);
+        if (!imageBedTab->loadConfiguration()) {
             goto err;
         }
     }
@@ -283,9 +283,9 @@ void VSettingsDialog::saveConfiguration()
 
     // Github ImageBed Tab.
     {
-        VGithubImageBedTab *githubImageBedTab = dynamic_cast<VGithubImageBedTab *>(m_tabs->widget(idx++));
-        Q_ASSERT(githubImageBedTab);
-        if (!githubImageBedTab->saveConfiguration()) {
+        VImageBedTab *imageBedTab = dynamic_cast<VImageBedTab *>(m_tabs->widget(idx++));
+        Q_ASSERT(imageBedTab);
+        if (!imageBedTab->saveConfiguration()) {
             goto err;
         }
     }
@@ -1590,9 +1590,17 @@ bool VMiscTab::saveMatchesInPage()
     return true;
 }
 
-VGithubImageBedTab::VGithubImageBedTab(QWidget *p_parent)
+VImageBedTab::VImageBedTab(QWidget *p_parent)
     : QWidget (p_parent)
 {
+    QTabWidget *imageBedTabWeg = new QTabWidget(this);
+    QWidget *githubImageBedTab = new QWidget();
+    QWidget *wetchatImageBedTab = new QWidget();
+    imageBedTabWeg->addTab(githubImageBedTab, "github");
+    imageBedTabWeg->addTab(wetchatImageBedTab, "wetchat");
+    imageBedTabWeg->setCurrentIndex(0);
+
+    // 设置github图床的tab
     // github persionalAccessToken
     m_persionalAccessTokenEdit = new VLineEdit();
     m_persionalAccessTokenEdit->setToolTip(tr("Please input your github persion access token!"));
@@ -1605,50 +1613,63 @@ VGithubImageBedTab::VGithubImageBedTab(QWidget *p_parent)
     m_userNameEdit = new VLineEdit();
     m_userNameEdit->setToolTip(tr("Please input the username of github!"));
 
-    QFormLayout *mainLayout = new QFormLayout();
-    mainLayout->addRow(tr("persionalAccessToken:"), m_persionalAccessTokenEdit);
-    mainLayout->addRow(tr("reposName:"), m_reposNameEdit);
-    mainLayout->addRow(tr("userName:"), m_userNameEdit);
-    setLayout(mainLayout);
+    QFormLayout *githubLayout = new QFormLayout();
+    githubLayout->addRow(tr("persionalAccessToken:"), m_persionalAccessTokenEdit);
+    githubLayout->addRow(tr("reposName:"), m_reposNameEdit);
+    githubLayout->addRow(tr("userName:"), m_userNameEdit);
+
+    githubImageBedTab->setLayout(githubLayout);
+
+    // 设置wechat图床的tab
+    m_appidEdit = new VLineEdit();
+    m_appidEdit->setToolTip(tr("Please input wechat appid!"));
+    m_secretEdit = new VLineEdit();
+    m_secretEdit->setToolTip(tr("Please input wechat secret"));
+
+    QFormLayout *wechatLayout = new QFormLayout();
+    wechatLayout->addRow(tr("appid:"), m_appidEdit);
+    wechatLayout->addRow(tr("secret:"), m_secretEdit);
+
+    wetchatImageBedTab->setLayout(wechatLayout);
 }
 
-bool VGithubImageBedTab::loadPersionalAccessToken()
+bool VImageBedTab::loadPersionalAccessToken()
 {
     m_persionalAccessTokenEdit->setText(g_config->getPersionalAccessToken());
     return true;
 }
 
-bool VGithubImageBedTab::savePersionalAccessToken()
+bool VImageBedTab::savePersionalAccessToken()
 {
     g_config->setPersionalAccessToken(m_persionalAccessTokenEdit->text());
     return true;
 }
 
-bool VGithubImageBedTab::loadReposName()
+bool VImageBedTab::loadReposName()
 {
     m_reposNameEdit->setText(g_config->getReposName());
     return true;
 }
 
-bool VGithubImageBedTab::saveReposName()
+bool VImageBedTab::saveReposName()
 {
     g_config->setReposName(m_reposNameEdit->text());
     return true;
 }
 
-bool VGithubImageBedTab::loadUserName()
+bool VImageBedTab::loadUserName()
 {
     m_userNameEdit->setText(g_config->getUserName());
     return true;
 }
 
-bool VGithubImageBedTab::saveUserName()
+bool VImageBedTab::saveUserName()
 {
     g_config->setUserName(m_userNameEdit->text());
     return true;
 }
 
-bool VGithubImageBedTab::loadConfiguration()
+bool VImageBedTab::loadConfiguration()
 {
     if(!loadPersionalAccessToken()){
         return false;
@@ -1664,7 +1685,7 @@ bool VGithubImageBedTab::loadConfiguration()
     return true;
 }
 
-bool VGithubImageBedTab::saveConfiguration()
+bool VImageBedTab::saveConfiguration()
 {
 
     if(!savePersionalAccessToken()){

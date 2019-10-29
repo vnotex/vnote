@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QVector>
 #include <QString>
+#include <QTabWidget>
 
 class QDialogButtonBox;
 class QComboBox;
@@ -270,11 +271,11 @@ private:
     QCheckBox *m_matchesInPageCB;
 };
 
-class VGithubImageBedTab : public QWidget
+class VImageBedTab : public QWidget
 {
     Q_OBJECT
 public:
-    explicit VGithubImageBedTab(QWidget *p_parent = 0);
+    explicit VImageBedTab(QWidget *p_parent = 0);
     bool loadConfiguration();
     bool saveConfiguration();
 
@@ -288,12 +289,19 @@ private:
     bool loadUserName();
     bool saveUserName();
 
+    // githubImageBed
     // persionalAccessToken
     VLineEdit *m_persionalAccessTokenEdit;
     // reposName
     VLineEdit *m_reposNameEdit;
     // userName
     VLineEdit *m_userNameEdit;
+
+    // wechatImageBed
+    // appid
+    VLineEdit *m_appidEdit;
+    // secret
+    VLineEdit *m_secretEdit;
 };
 
 class VSettingsDialog : public QDialog
