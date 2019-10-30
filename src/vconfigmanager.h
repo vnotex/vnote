@@ -665,6 +665,9 @@ public:
     const QString &getSecret() const;
     void setSecret(const QString &p_secret);
 
+    const QString &getMarkdown2WechatToolUrl() const;
+    void setMarkdown2WechatToolUrl(const QString &p_markdown2WechatToolUrl);
+
 
 private:
     void initEditorConfigs();
@@ -1097,6 +1100,7 @@ private:
     // wechat imagebed
     QString m_appid;
     QString m_secret;
+    QString m_markdown2WechatToolUrl;
 
     // Size of history.
     int m_historySize;
@@ -3043,6 +3047,21 @@ inline void VConfigManager::setSecret(const QString &p_secret)
     m_secret = p_secret;
     setConfigToSettings("global", "wechat_secret", p_secret);
 }
+
+inline const QString &VConfigManager::getMarkdown2WechatToolUrl() const
+{
+    return m_markdown2WechatToolUrl;
+}
+
+inline void VConfigManager::setMarkdown2WechatToolUrl(const QString &p_markdown2WechatToolUrl)
+{
+    if(m_markdown2WechatToolUrl == p_markdown2WechatToolUrl){
+        return;
+    }
+    m_markdown2WechatToolUrl = p_markdown2WechatToolUrl;
+    setConfigToSettings("global", "wechat_markdown_to_wechat_tool_url", p_markdown2WechatToolUrl);
+}
+
 
 inline const QString &VConfigManager::getPersionalAccessToken() const
 {

@@ -1625,10 +1625,13 @@ VImageBedTab::VImageBedTab(QWidget *p_parent)
     m_appidEdit->setToolTip(tr("Please input wechat appid!"));
     m_secretEdit = new VLineEdit();
     m_secretEdit->setToolTip(tr("Please input wechat secret"));
+    m_markdown2WechatToolUrlEdit = new VLineEdit();
+    m_markdown2WechatToolUrlEdit->setToolTip(tr("Please input markdown to wechat tool's url"));
 
     QFormLayout *wechatLayout = new QFormLayout();
     wechatLayout->addRow(tr("appid:"), m_appidEdit);
     wechatLayout->addRow(tr("secret:"), m_secretEdit);
+    wechatLayout->addRow(tr("markdown2WechatToolUrl"), m_markdown2WechatToolUrlEdit);
 
     wechatImageBedTab->setLayout(wechatLayout);
 }
@@ -1656,6 +1659,19 @@ bool VImageBedTab::saveSecret()
     g_config->setSecret(m_secretEdit->text());
     return true;
 }
+
+bool VImageBedTab::loadMarkdown2WechatToolUrl()
+{
+    m_markdown2WechatToolUrlEdit->setText(g_config->getMarkdown2WechatToolUrl());
+    return true;
+}
+
+bool VImageBedTab::saveMarkdown2WechatToolUrl()
+{
+    g_config->setMarkdown2WechatToolUrl(m_markdown2WechatToolUrlEdit->text());
+    return true;
+}
+
 
 bool VImageBedTab::loadPersionalAccessToken()
 {
@@ -1714,6 +1730,9 @@ bool VImageBedTab::loadConfiguration()
     if(!loadSecret()){
         return false;
     }
+    if(!loadMarkdown2WechatToolUrl()){
+        return false;
+    }
     return true;
 }
 
@@ -1733,6 +1752,9 @@ bool VImageBedTab::saveConfiguration()
         return false;
     }
     if(!saveSecret()){
+        return false;
+    }
+    if(!saveMarkdown2WechatToolUrl()){
         return false;
     }
     return true;

@@ -85,6 +85,7 @@ void VConfigManager::initialize()
 
     m_appid = getConfigFromSettings("global", "wechat_appid").toString();
     m_secret = getConfigFromSettings("global", "wechat_secret").toString();
+    m_markdown2WechatToolUrl = getConfigFromSettings("global", "wechat_markdown_to_wechat_tool_url").toString();
 
     m_theme = getConfigFromSettings("global", "theme").toString();
 

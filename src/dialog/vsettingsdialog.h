@@ -304,10 +304,15 @@ private:
     bool loadSecret();
     bool saveSecret();
 
+    bool loadMarkdown2WechatToolUrl();
+    bool saveMarkdown2WechatToolUrl();
+
     // appid
     VLineEdit *m_appidEdit;
     // secret
     VLineEdit *m_secretEdit;
+    // markdown to wechat tools url
+    VLineEdit *m_markdown2WechatToolUrlEdit;
 };
 
 class VSettingsDialog : public QDialog
