@@ -2032,6 +2032,37 @@ void VMdTab::wechatImageBedUploadManager()
 
 void VMdTab::wechatImageBedUploadImage(QString image_path, QString token)
 {
+    // 1. 判断该路径下图片是否存在, 这一步其实可以省略, 但是最怕有shadiao在上传过程中跑去删图片了...
+    QFileInfo fileInfo(image_path.toLocal8Bit());
+    if(!fileInfo.exists()){
+        delete proDlg;
+        qDebug() << "该路径下图片不存在: " << image_path.toLocal8Bit();
+        QString info = "The picture does not exist in this path: " + image_path.toLocal8Bit();
+        QMessageBox::warning(NULL, "Wechat ImageBed", info);
+        return;
+    }
+
+    // 2. 判断文件扩展名, 这一步其实也可以省略
+    QString file_suffix = fileInfo.suffix();  // 文件扩展名
+    QString file_name = fileInfo.fileName();  // 文件名
+    if(file_suffix != QString::fromLocal8Bit("jpg") && file_suffix != QString::fromLocal8Bit("png")){
+        delete proDlg;
+        qDebug() << "不支持的类型...";
+        QString info = "Unsupported type: " +file_suffix;
+        QMessageBox::warning(NULL, "Wechat ImageBed", info);
+        return;
+    }
+
+    // 3. 判断文件大小是否在1M之内
+    qint64 file_size = fileInfo.size();  // 单位是byte
+    if(file_size > 1024){
+        delete proDlg;
+        qDebug() << "文件大小大于1M了";
+        QString info = "Image size is greater than 1M!Wechat API does not support!!";
+        QMessageBox::warning(NULL, "Wechat ImageBed", info);
+        return;
+    }
+
     QString upload_img_url = "https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=" + token;
     //QString upload_img_url = "http://httpbin.org/post?access_token=" + token;
 
