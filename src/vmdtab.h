@@ -131,10 +131,6 @@ public:
     // 上传单张图片
     void wechatImageBedUploadImage(QString image_path,QString token);
 
-    // imagebed util
-    // 清空imageUrlMap
-    void imageBedEraseMap();
-
 public slots:
     // Enter edit mode.
     void editFile() Q_DECL_OVERRIDE;

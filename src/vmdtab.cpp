@@ -1651,7 +1651,7 @@ void VMdTab::githubImageBedUploadManager()
     {
         qDebug() << "请设置好github图床的参数!";
         QMessageBox::warning(NULL, "Github ImageBed", "Please set the github imagebed parameters first !");
-        imageBedEraseMap();
+        imageUrlMap.clear();
         return;
     }
 
@@ -1669,7 +1669,7 @@ void VMdTab::githubImageBedUploadImage(QString username, QString repository, QSt
         qDebug() << "该路径下图片不存在: " << image_path.toLocal8Bit();
         QString info = "The picture does not exist in this path: " + image_path.toLocal8Bit();
         QMessageBox::warning(NULL, "Github ImageBed", info);
-        imageBedEraseMap();
+        imageUrlMap.clear();
         if(image_uploaded){
             githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
         }
@@ -1685,7 +1685,7 @@ void VMdTab::githubImageBedUploadImage(QString username, QString repository, QSt
         qDebug() << "不支持的类型...";
         QString info = "Unsupported type: " + file_suffix;
         QMessageBox::warning(NULL, "Github ImageBed", info);
-        imageBedEraseMap();
+        imageUrlMap.clear();
         if(image_uploaded){
             githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
         }
@@ -1719,7 +1719,7 @@ void VMdTab::githubImageBedUploadFinished()
     if (proDlg->wasCanceled()) {
         qDebug() << "用户终止上传";
         reply->abort();        // 停止请求
-        imageBedEraseMap();
+        imageUrlMap.clear();
         // 之前上传成功的还是要留下来的
         if(image_uploaded){
             githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
@@ -1791,7 +1791,7 @@ void VMdTab::githubImageBedUploadFinished()
                 }
                 else{
                     delete proDlg;
-                    imageBedEraseMap();
+                    imageUrlMap.clear();
                     qDebug() << "解析失败!";
                     qDebug() << "解析失败的json: " << bytes;
                     if(image_uploaded){
@@ -1805,7 +1805,7 @@ void VMdTab::githubImageBedUploadFinished()
             }else{
                 // status不是201就代表有问题
                 delete proDlg;
-                imageBedEraseMap();
+                imageUrlMap.clear();
                 qDebug() << "上传失败";
                 if(image_uploaded){
                     githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
@@ -1818,7 +1818,7 @@ void VMdTab::githubImageBedUploadFinished()
         default:
         {
             delete proDlg;
-            imageBedEraseMap();
+            imageUrlMap.clear();
             qDebug()<<"网络错误: " << reply->errorString() << " error " << reply->error();
             QByteArray bytes = reply->readAll();
             qDebug() << bytes;
@@ -1844,7 +1844,7 @@ void VMdTab::githubImageBedReplaceLink(QString file_content, QString file_path)
     file.open(QIODevice::WriteOnly | QIODevice::Text);
     file.write(file_content.toUtf8());
     file.close();
-    imageBedEraseMap();
+    imageUrlMap.clear();
     image_uploaded = false;  // 重置
 }
 
@@ -1983,7 +1983,7 @@ void VMdTab::wechatImageBedAuthFinished()
                 }
             }else{
                 delete proDlg;
-                imageBedEraseMap();
+                imageUrlMap.clear();
                 qDebug() << "解析失败!";
                 qDebug() << "解析失败的json: " << bytes;
                 QString info = "Json decode error, Please contact the developer~";
@@ -2046,7 +2046,7 @@ void VMdTab::wechatImageBedUploadImage(QString image_path, QString token)
     QFileInfo fileInfo(image_path.toLocal8Bit());
     if(!fileInfo.exists()){
         delete proDlg;
-        imageBedEraseMap();
+        imageUrlMap.clear();
         qDebug() << "该路径下图片不存在: " << image_path.toLocal8Bit();
         QString info = "The picture does not exist in this path: " + image_path.toLocal8Bit();
         QMessageBox::warning(NULL, "Wechat ImageBed", info);
@@ -2058,7 +2058,7 @@ void VMdTab::wechatImageBedUploadImage(QString image_path, QString token)
     QString file_name = fileInfo.fileName();  // 文件名
     if(file_suffix != QString::fromLocal8Bit("jpg") && file_suffix != QString::fromLocal8Bit("png")){
         delete proDlg;
-        imageBedEraseMap();
+        imageUrlMap.clear();
         qDebug() << "不支持的类型...";
         QString info = "Unsupported type: " + file_suffix;
         QMessageBox::warning(NULL, "Wechat ImageBed", info);
@@ -2070,7 +2070,7 @@ void VMdTab::wechatImageBedUploadImage(QString image_path, QString token)
     qDebug() << "图片大小: " << file_size;
     if(file_size > 1024*1024){
         delete proDlg;
-        imageBedEraseMap();
+        imageUrlMap.clear();
         qDebug() << "文件大小大于1M了";
         QString info = "Image size is greater than 1M!Wechat API does not support!!";
         QMessageBox::warning(NULL, "Wechat ImageBed", info);
@@ -2124,7 +2124,7 @@ void VMdTab::wechatImageBedUploadFinished()
         qDebug() << "用户终止上传";
         reply->abort();
         // 之前上传成功的直接不要了!!!
-        imageBedEraseMap();
+        imageUrlMap.clear();
         return;
     }
 
@@ -2155,7 +2155,7 @@ void VMdTab::wechatImageBedUploadFinished()
                         }
                     }else{
                         delete proDlg;
-                        imageBedEraseMap();
+                        imageUrlMap.clear();
                         qDebug() << "上传失败: ";
                         QString error = bytes;
                         qDebug() << bytes;
@@ -2165,7 +2165,7 @@ void VMdTab::wechatImageBedUploadFinished()
                 }
             }else{
                 delete proDlg;
-                imageBedEraseMap();
+                imageUrlMap.clear();
                 qDebug() << "解析失败!";
                 qDebug() << "解析失败的json: " << bytes;
                 QString info = "Json decode error, Please contact the developer~";
@@ -2200,18 +2200,11 @@ void VMdTab::wechatImageBedReplaceLink(QString file_content, QString file_path)
         QString url = g_config->getMarkdown2WechatToolUrl();
         QDesktopServices::openUrl(QUrl(url));
     }
-    imageBedEraseMap();
+    imageUrlMap.clear();
     image_uploaded = false;  // 重置
 }
 
-void VMdTab::imageBedEraseMap()
-{
-    QMap<QString, QString>::iterator it;
-    for(it=imageUrlMap.begin();it!=imageUrlMap.end();it++)
-    {
-        imageUrlMap.erase(it);
-    }
-}
+
 
 VWordCountInfo VMdTab::fetchWordCountInfo(bool p_editMode) const
 {
