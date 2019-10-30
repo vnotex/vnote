@@ -1588,7 +1588,18 @@ void VMdTab::githubImageBedAuthFinished()
                     {
                         // qDebug() << images[i].m_path;
                         // 3. 将要上传的图片本地链接放入 map中, key为本地连接, value为github链接
-                        imageUrlMap.insert(images[i].m_url,"");
+                        if(images[i].m_url.contains(".png") || images[i].m_url.contains(".jpg")|| images[i].m_url.contains(".gif")){
+                            imageUrlMap.insert(images[i].m_url,"");
+                        }else{
+                            delete proDlg;
+                            imageUrlMap.clear();
+                            qDebug() << "不支持的类型...";
+                            QFileInfo file_info(images[i].m_path.toLocal8Bit());
+                            QString file_suffix = file_info.suffix();
+                            QString info = "Unsupported type: " + file_suffix;
+                            QMessageBox::warning(NULL, "Wechat ImageBed", info);
+                            return;
+                        }
                     }
 
                     githubImageBedUploadManager();
@@ -1949,9 +1960,19 @@ void VMdTab::wechatImageBedAuthFinished()
                                 upload_image_count_index  = upload_image_count;
                                 for(int i=0;i<images.size() ;i++)
                                 {
-                                    // qDebug() << images[i].m_path;
                                     // 3. 将要上传的图片本地链接放入 map中, key为本地连接, value为wechat链接
-                                    imageUrlMap.insert(images[i].m_url,"");
+                                    if(images[i].m_url.contains(".png") || images[i].m_url.contains(".jpg")){
+                                        imageUrlMap.insert(images[i].m_url,"");
+                                    }else{
+                                        delete proDlg;
+                                        imageUrlMap.clear();
+                                        qDebug() << "不支持的类型...";
+                                        QFileInfo file_info(images[i].m_path.toLocal8Bit());
+                                        QString file_suffix = file_info.suffix();
+                                        QString info = "Unsupported type: " + file_suffix;
+                                        QMessageBox::warning(NULL, "Wechat ImageBed", info);
+                                        return;
+                                    }
                                 }
 
                                 wechatImageBedUploadManager();
