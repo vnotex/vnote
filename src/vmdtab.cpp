@@ -1963,9 +1963,13 @@ void VMdTab::wechatImageBedAuthFinished()
                         // 这里可以细化一下错误
                         QApplication::restoreOverrideCursor();
                         if(string.contains("invalid ip")){
-                            QMessageBox::warning(NULL, "Wechat ImageBed", "Please check whether your IP address is in the whitelist !!");
+                            QString ip = string.split(" ")[2];
+                            // qDebug() << ip;
+                            QClipboard *board = QApplication::clipboard();
+                            board->setText(ip);
+                            QMessageBox::warning(NULL, "Wechat ImageBed", "Your ip address was set to the Clipboard! \nPlease add the  IP address: " + ip + " to the wechat ip whitelist!");
                         }else{
-                            QMessageBox::warning(NULL, "Wechat ImageBed", "Please check your wechat imagebed parameters !!");
+                            QMessageBox::warning(NULL, "Wechat ImageBed", "Please check your wechat imagebed parameters !!\n"+string);
                         }
                         return;
                     }
