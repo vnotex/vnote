@@ -6,6 +6,7 @@
 #include <QPointer>
 #include <QSharedPointer>
 #include <QProgressDialog>
+#include <QDesktopServices>
 #include "vedittab.h"
 #include "vconstants.h"
 #include "vmarkdownconverter.h"
@@ -129,6 +130,10 @@ public:
     void wechatImageBedReplaceLink(QString file_content, QString file_path);
     // 上传单张图片
     void wechatImageBedUploadImage(QString image_path,QString token);
+
+    // imagebed util
+    // 清空imageUrlMap
+    void imageBedEraseMap();
 
 public slots:
     // Enter edit mode.
