@@ -2213,13 +2213,15 @@ void VMdTab::wechatImageBedReplaceLink(QString file_content, QString file_path)
     // 将内容写进剪切板
     QClipboard *board = QApplication::clipboard();
     board->setText(file_content);
-    //QMessageBox::warning(NULL, "Wechat ImageBed", "文章已经复制到剪切板, 请赶紧找个文本文件保存下来吧!!");
-
-    QMessageBox::StandardButton result; // 返回选择的按钮
-    result = QMessageBox::question(this, "Wechat ImageBed", "文章已经复制到剪切板, 是否打开设置好的markdown转微信的工具链接?", QMessageBox::Yes|QMessageBox::No);
-    if(result == QMessageBox::Yes){
-        QString url = g_config->getMarkdown2WechatToolUrl();
-        QDesktopServices::openUrl(QUrl(url));
+    QString url = g_config->getMarkdown2WechatToolUrl();
+    if(url.isEmpty()){
+        QMessageBox::warning(NULL, "Wechat ImageBed", "文章已经复制到剪切板, 请赶紧找个文本文件保存下来吧!!");
+    }else{
+        QMessageBox::StandardButton result; // 返回选择的按钮
+        result = QMessageBox::question(this, "Wechat ImageBed", "文章已经复制到剪切板, 是否打开设置好的markdown转微信的工具链接?", QMessageBox::Yes|QMessageBox::No,QMessageBox::Yes);
+        if(result == QMessageBox::Yes){
+            QDesktopServices::openUrl(QUrl(url));
+        }
     }
     imageUrlMap.clear();
     image_uploaded = false;  // 重置
