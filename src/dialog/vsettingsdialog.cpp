@@ -1591,38 +1591,38 @@ bool VMiscTab::saveMatchesInPage()
 }
 
 VImageBedTab::VImageBedTab(QWidget *p_parent)
-    : QWidget (p_parent)
+    : QWidget(p_parent)
 {
     QTabWidget *imageBedTabWeg = new QTabWidget(this);
     QWidget *githubImageBedTab = new QWidget();
     QWidget *wechatImageBedTab = new QWidget();
-    imageBedTabWeg->addTab(githubImageBedTab, "github");
-    imageBedTabWeg->addTab(wechatImageBedTab, "wechat");
+    imageBedTabWeg->addTab(githubImageBedTab, tr("GitHub"));
+    imageBedTabWeg->addTab(wechatImageBedTab, tr("WeChat"));
     imageBedTabWeg->setCurrentIndex(0);
 
     // 设置github图床的tab
-    // github persionalAccessToken
-    m_persionalAccessTokenEdit = new VLineEdit();
-    m_persionalAccessTokenEdit->setToolTip(tr("Please input your github persion access token!"));
+    // GitHub personal access token.
+    m_personalAccessTokenEdit = new VLineEdit();
+    m_persionalAccessTokenEdit->setToolTip(tr("GitHub personal access token"));
 
     // imageBed of github repositoryy
-    m_reposNameEdit = new VLineEdit();
-    m_reposNameEdit->setToolTip(tr("Please input the imagebed of github repository name!"));
+    m_repoNameEdit = new VLineEdit();
+    m_reposNameEdit->setToolTip(tr("Name of GitHub repository for image hosting"));
 
     // username of github
     m_userNameEdit = new VLineEdit();
-    m_userNameEdit->setToolTip(tr("Please input the username of github!"));
+    m_userNameEdit->setToolTip(tr("User name of GitHub"));
 
     QFormLayout *githubLayout = new QFormLayout();
-    githubLayout->addRow(tr("persionalAccessToken:"), m_persionalAccessTokenEdit);
-    githubLayout->addRow(tr("reposName:"), m_reposNameEdit);
-    githubLayout->addRow(tr("userName:"), m_userNameEdit);
+    githubLayout->addRow(tr("Personal access token:"), m_persionalAccessTokenEdit);
+    githubLayout->addRow(tr("Repo name:"), m_reposNameEdit);
+    githubLayout->addRow(tr("User name:"), m_userNameEdit);
 
     githubImageBedTab->setLayout(githubLayout);
 
     // 设置wechat图床的tab
     m_appidEdit = new VLineEdit();
-    m_appidEdit->setToolTip(tr("Please input wechat appid!"));
+    m_appidEdit->setToolTip(tr("WeChat appid"));
     m_secretEdit = new VLineEdit();
     m_secretEdit->setToolTip(tr("Please input wechat secret"));
     m_markdown2WechatToolUrlEdit = new VLineEdit();
