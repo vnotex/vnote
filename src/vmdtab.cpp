@@ -1549,81 +1549,78 @@ void VMdTab::githubImageBedAuthentication(QString token)
 void VMdTab::githubImageBedAuthFinished()
 {
     switch (reply->error()) {
-        case QNetworkReply::NoError:
-        {
-            QByteArray bytes = reply->readAll();
+    case QNetworkReply::NoError:
+    {
+        QByteArray bytes = reply->readAll();
 
-            if(bytes.contains("Bad credentials")){
-                qDebug() << "Authentication failed";
-                QApplication::restoreOverrideCursor();  // Recovery pointer
-                QMessageBox::warning(NULL, "Github Image Hosting", "Bad credentials!! Please check your Github Image Hosting parameters !!");
-                return;
-            }else{
-                qDebug() << "Authentication completed";
-
-                // 1. Get current article path
-                qDebug() << "The current article path is: " << m_file->fetchPath();
-                // qDebug() << "The basic path is: " << m_file->fetchBasePath();
-                imageBasePath = m_file->fetchBasePath();
-                //qDebug() << "The content of the current article is: " << m_file->getContent();
-                new_file_content = m_file->getContent();
-
-                // 2. Find all image links under the path
-                QVector<ImageLink> images = VUtils::fetchImagesFromMarkdownFile(m_file,ImageLink::LocalRelativeInternal);
-                QApplication::restoreOverrideCursor();  // Recovery pointer
-                if(images.size() > 0)
-                {
-
-                    proDlg = new QProgressDialog(tr("Uploading images to github..."),
-                                           tr("Abort"),
-                                           0,
-                                           images.size(),
-                                           this);
-                    proDlg->setWindowModality(Qt::WindowModal);
-                    proDlg->setWindowTitle(tr("Uploading Images To Github"));
-                    proDlg->setMinimumDuration(1);
-                    upload_image_count = images.size();
-                    upload_image_count_index  = upload_image_count;
-                    for(int i=0;i<images.size() ;i++)
-                    {
-                        // qDebug() << images[i].m_path;
-                        // 3. Put the local link of the image to be uploaded into the map. The key is the local link and the value is the GitHub link
-                        if(images[i].m_url.contains(".png") || images[i].m_url.contains(".jpg")|| images[i].m_url.contains(".gif")){
-                            imageUrlMap.insert(images[i].m_url,"");
-                        }else{
-                            delete proDlg;
-                            imageUrlMap.clear();
-                            qDebug() << "Unsupported type...";
-                            QFileInfo file_info(images[i].m_path.toLocal8Bit());
-                            QString file_suffix = file_info.suffix();
-                            QString info = "Unsupported type: " + file_suffix;
-                            QMessageBox::warning(NULL, "Wechat Image Hosting", info);
-                            return;
-                        }
-                    }
-
-                    githubImageBedUploadManager();
-                }
-                else
-                {
-                    qDebug() << m_file->getName() << " No images to upload";
-                    QString info = m_file->getName() + " No pictures to upload";
-                    QMessageBox::information(NULL, "Github Image Hosting", info);
-                }
-
-
-            }
-            break;
-        }
-        default:
-        {
+        if(bytes.contains("Bad credentials")){
+            qDebug() << "Authentication failed";
             QApplication::restoreOverrideCursor();  // Recovery pointer
-            qDebug() << "Network error: " << reply->errorString() << " error " << reply->error();
-            QString info ="Network error: " + reply->errorString();
-            QMessageBox::warning(NULL, "Github Image Hosting", info);
-        }
-    }
+            QMessageBox::warning(NULL, "Github Image Hosting", "Bad credentials!! Please check your Github Image Hosting parameters !!");
+            return;
+        }else{
+            qDebug() << "Authentication completed";
 
+            // 1. Get current article path
+            qDebug() << "The current article path is: " << m_file->fetchPath();
+            // qDebug() << "The basic path is: " << m_file->fetchBasePath();
+            imageBasePath = m_file->fetchBasePath();
+            //qDebug() << "The content of the current article is: " << m_file->getContent();
+            new_file_content = m_file->getContent();
+
+            // 2. Find all image links under the path
+            QVector<ImageLink> images = VUtils::fetchImagesFromMarkdownFile(m_file,ImageLink::LocalRelativeInternal);
+            QApplication::restoreOverrideCursor();  // Recovery pointer
+            if(images.size() > 0)
+            {
+
+                proDlg = new QProgressDialog(tr("Uploading images to github..."),
+                                       tr("Abort"),
+                                       0,
+                                       images.size(),
+                                       this);
+                proDlg->setWindowModality(Qt::WindowModal);
+                proDlg->setWindowTitle(tr("Uploading Images To Github"));
+                proDlg->setMinimumDuration(1);
+                upload_image_count = images.size();
+                upload_image_count_index  = upload_image_count;
+                for(int i=0;i<images.size() ;i++)
+                {
+                    // qDebug() << images[i].m_path;
+                    // 3. Put the local link of the image to be uploaded into the map. The key is the local link and the value is the GitHub link
+                    if(images[i].m_url.contains(".png") || images[i].m_url.contains(".jpg")|| images[i].m_url.contains(".gif")){
+                        imageUrlMap.insert(images[i].m_url,"");
+                    }else{
+                        delete proDlg;
+                        imageUrlMap.clear();
+                        qDebug() << "Unsupported type...";
+                        QFileInfo file_info(images[i].m_path.toLocal8Bit());
+                        QString file_suffix = file_info.suffix();
+                        QString info = "Unsupported type: " + file_suffix;
+                        QMessageBox::warning(NULL, "Wechat Image Hosting", info);
+                        return;
+                    }
+                }
+
+                githubImageBedUploadManager();
+            }
+            else
+            {
+                qDebug() << m_file->getName() << " No images to upload";
+                QString info = m_file->getName() + " No pictures to upload";
+                QMessageBox::information(NULL, "Github Image Hosting", info);
+            }
+        }
+        break;
+    }
+    default:
+    {
+        QApplication::restoreOverrideCursor();  // Recovery pointer
+        qDebug() << "Network error: " << reply->errorString() << " error " << reply->error();
+        QString info ="Network error: " + reply->errorString();
+        QMessageBox::warning(NULL, "Github Image Hosting", info);
+    }
+    }
 }
 
 void VMdTab::githubImageBedUploadManager()
