@@ -99,12 +99,12 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
                     this, &VWebView::requestSavePage);
             menu->addAction(savePageAct);
 
-            // 在预览模式下, 添加右键菜单, 上传图片至github图床
+            // In preview mode, add the right-click menu and upload the image to GitHub image hosting
             QAction *uploadImageToGithub = new QAction(tr("Upload Image To &GitHub"),menu);
             connect(uploadImageToGithub, &QAction::triggered, this, &VWebView::requestUploadImageToGithub);
             menu->addAction(uploadImageToGithub);
 
-            // 在预览模式下, 添加右键菜单, 上传图片至wechat图床
+            // In preview mode, add the right-click menu and upload the image to Wechat image hosting
             QAction *uploadImageToWechat = new QAction(tr("Upload Image To &Wechat"),menu);
             connect(uploadImageToWechat, &QAction::triggered, this, &VWebView::requestUploadImageToWechat);
             menu->addAction(uploadImageToWechat);

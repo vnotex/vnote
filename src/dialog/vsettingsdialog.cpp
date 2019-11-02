@@ -209,7 +209,7 @@ void VSettingsDialog::loadConfiguration()
 
     // ImageBed Tab
     {
-        VImageBedTab *imageBedTab = dynamic_cast<VImageBedTab *>(m_tabs->widget(idx++));
+        VImageHostingTab *imageBedTab = dynamic_cast<VImageHostingTab *>(m_tabs->widget(idx++));
         Q_ASSERT(imageBedTab);
         if (!imageBedTab->loadConfiguration()) {
             goto err;
@@ -281,9 +281,9 @@ void VSettingsDialog::saveConfiguration()
         }
     }
 
-    // ImageBed Tab.
+    // Image Hosting Tab.
     {
-        VImageBedTab *imageBedTab = dynamic_cast<VImageBedTab *>(m_tabs->widget(idx++));
+        VImageHostingTab *imageBedTab = dynamic_cast<VImageHostingTab *>(m_tabs->widget(idx++));
         Q_ASSERT(imageBedTab);
         if (!imageBedTab->saveConfiguration()) {
             goto err;
@@ -1590,7 +1590,7 @@ bool VMiscTab::saveMatchesInPage()
     return true;
 }
 
-VImageBedTab::VImageBedTab(QWidget *p_parent)
+VImageHostingTab::VImageHostingTab(QWidget *p_parent)
     : QWidget(p_parent)
 {
     QTabWidget *imageBedTabWeg = new QTabWidget(this);
@@ -1600,27 +1600,27 @@ VImageBedTab::VImageBedTab(QWidget *p_parent)
     imageBedTabWeg->addTab(wechatImageBedTab, tr("WeChat"));
     imageBedTabWeg->setCurrentIndex(0);
 
-    // 设置github图床的tab
+    // Set the tab of GitHub image Hosting
     // GitHub personal access token.
     m_personalAccessTokenEdit = new VLineEdit();
-    m_persionalAccessTokenEdit->setToolTip(tr("GitHub personal access token"));
+    m_personalAccessTokenEdit->setToolTip(tr("GitHub personal access token"));
 
     // imageBed of github repositoryy
     m_repoNameEdit = new VLineEdit();
-    m_reposNameEdit->setToolTip(tr("Name of GitHub repository for image hosting"));
+    m_repoNameEdit->setToolTip(tr("Name of GitHub repository for image hosting"));
 
     // username of github
     m_userNameEdit = new VLineEdit();
     m_userNameEdit->setToolTip(tr("User name of GitHub"));
 
     QFormLayout *githubLayout = new QFormLayout();
-    githubLayout->addRow(tr("Personal access token:"), m_persionalAccessTokenEdit);
-    githubLayout->addRow(tr("Repo name:"), m_reposNameEdit);
+    githubLayout->addRow(tr("Personal access token:"), m_personalAccessTokenEdit);
+    githubLayout->addRow(tr("Repo name:"), m_repoNameEdit);
     githubLayout->addRow(tr("User name:"), m_userNameEdit);
 
     githubImageBedTab->setLayout(githubLayout);
 
-    // 设置wechat图床的tab
+    // Set the tab of GitHub image Hosting
     m_appidEdit = new VLineEdit();
     m_appidEdit->setToolTip(tr("WeChat appid"));
     m_secretEdit = new VLineEdit();
@@ -1636,97 +1636,92 @@ VImageBedTab::VImageBedTab(QWidget *p_parent)
     wechatImageBedTab->setLayout(wechatLayout);
 }
 
-bool VImageBedTab::loadAppid()
+bool VImageHostingTab::loadAppid()
 {
     m_appidEdit->setText(g_config->getAppid());
     return true;
 }
 
-bool VImageBedTab::saveAppid()
+bool VImageHostingTab::saveAppid()
 {
     g_config->setAppid(m_appidEdit->text());
     return true;
 }
 
-bool VImageBedTab::loadSecret()
+bool VImageHostingTab::loadSecret()
 {
     m_secretEdit->setText(g_config->getSecret());
     return true;
 }
 
-bool VImageBedTab::saveSecret()
+bool VImageHostingTab::saveSecret()
 {
     g_config->setSecret(m_secretEdit->text());
     return true;
 }
 
-bool VImageBedTab::loadMarkdown2WechatToolUrl()
+bool VImageHostingTab::loadMarkdown2WechatToolUrl()
 {
     m_markdown2WechatToolUrlEdit->setText(g_config->getMarkdown2WechatToolUrl());
     return true;
 }
 
-bool VImageBedTab::saveMarkdown2WechatToolUrl()
+bool VImageHostingTab::saveMarkdown2WechatToolUrl()
 {
     g_config->setMarkdown2WechatToolUrl(m_markdown2WechatToolUrlEdit->text());
     return true;
 }
 
-
-bool VImageBedTab::loadPersionalAccessToken()
+bool VImageHostingTab::loadPersionalAccessToken()
 {
-    m_persionalAccessTokenEdit->setText(g_config->getPersionalAccessToken());
+    m_personalAccessTokenEdit->setText(g_config->getPersionalAccessToken());
     return true;
 }
 
-bool VImageBedTab::savePersionalAccessToken()
+bool VImageHostingTab::savePersionalAccessToken()
 {
-    g_config->setPersionalAccessToken(m_persionalAccessTokenEdit->text());
+    g_config->setPersionalAccessToken(m_personalAccessTokenEdit->text());
     return true;
 }
 
-bool VImageBedTab::loadReposName()
+bool VImageHostingTab::loadReposName()
 {
-    m_reposNameEdit->setText(g_config->getReposName());
+    m_repoNameEdit->setText(g_config->getReposName());
     return true;
 }
 
-bool VImageBedTab::saveReposName()
+bool VImageHostingTab::saveReposName()
 {
-    g_config->setReposName(m_reposNameEdit->text());
+    g_config->setReposName(m_repoNameEdit->text());
     return true;
 }
 
-bool VImageBedTab::loadUserName()
+bool VImageHostingTab::loadUserName()
 {
     m_userNameEdit->setText(g_config->getUserName());
     return true;
 }
 
-bool VImageBedTab::saveUserName()
+bool VImageHostingTab::saveUserName()
 {
     g_config->setUserName(m_userNameEdit->text());
     return true;
 }
 
-bool VImageBedTab::loadConfiguration()
+bool VImageHostingTab::loadConfiguration()
 {
     if(!loadPersionalAccessToken()){
         return false;
     }
-
     if(!loadReposName()){
         return false;
     }
-
     if(!loadUserName()){
         return false;
     }
-
     if(!loadAppid()){
         return false;
     }
-
     if(!loadSecret()){
         return false;
     }
@@ -1736,9 +1731,8 @@ bool VImageBedTab::loadConfiguration()
     return true;
 }
 
-bool VImageBedTab::saveConfiguration()
+bool VImageHostingTab::saveConfiguration()
 {
-
     if(!savePersionalAccessToken()){
         return false;
     }

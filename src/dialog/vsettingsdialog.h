@@ -271,16 +271,15 @@ private:
     QCheckBox *m_matchesInPageCB;
 };
 
-class VImageBedTab : public QWidget
+class VImageHostingTab : public QWidget
 {
     Q_OBJECT
 public:
-    explicit VImageBedTab(QWidget *p_parent = 0);
+    explicit VImageHostingTab(QWidget *p_parent = 0);
     bool loadConfiguration();
     bool saveConfiguration();
 
 private:
-    // githubImageBed
     bool loadPersionalAccessToken();
     bool savePersionalAccessToken();
 
@@ -290,14 +289,6 @@ private:
     bool loadUserName();
     bool saveUserName();
 
-    // persionalAccessToken
-    VLineEdit *m_persionalAccessTokenEdit;
-    // reposName
-    VLineEdit *m_reposNameEdit;
-    // userName
-    VLineEdit *m_userNameEdit;
-
-    // wechatImageBed
     bool loadAppid();
     bool saveAppid();
 
@@ -307,6 +298,12 @@ private:
     bool loadMarkdown2WechatToolUrl();
     bool saveMarkdown2WechatToolUrl();
 
+    // persionalAccessToken
+    VLineEdit *m_personalAccessTokenEdit;
+    // reposName
+    VLineEdit *m_repoNameEdit;
+    // userName
+    VLineEdit *m_userNameEdit;
     // appid
     VLineEdit *m_appidEdit;
     // secret

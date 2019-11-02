@@ -786,7 +786,6 @@ void VEdit::contextMenuEvent(QContextMenuEvent *p_event)
                 menu->insertSeparator(actions[0]);
             }
         } else if (m_file->isModifiable()) {
-
             // HTML.
             QAction *editAct= new QAction(VIconUtils::menuIcon(":/resources/icons/edit_note.svg"),
                                           tr("&Edit"), this);
@@ -798,7 +797,6 @@ void VEdit::contextMenuEvent(QContextMenuEvent *p_event)
             if (!actions.isEmpty()) {
                 menu->insertSeparator(actions[0]);
             }
-
         }
     }
 

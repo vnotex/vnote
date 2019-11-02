@@ -110,25 +110,25 @@ public:
 
     bool expandRestorePreviewArea();
 
-    // github image bed
-    // github身份认证
+    // github image hosting
+    // GitHub identity authentication
     void githubImageBedAuthentication(QString token);
-    // 上传单张图片
+    // Upload a single image
     void githubImageBedUploadImage(QString username,QString repository,QString image_path,QString token);
-    // 生成上传图片所需的参数
+    // Parameters needed to generate uploaded images
     QString githubImageBedGenerateParam(QString image_path);
-    // 控制图片一张张上传
+    // Control image upload
     void githubImageBedUploadManager();
-    // 用图片的新链接替换旧链接
+    // Replace old links with new ones for images
     void githubImageBedReplaceLink(QString file_content, QString file_path);
 
-    // wechat image bed
+    // wechat image hosting
     void wechatImageBedAuthentication(QString appid, QString secret);
-    // 控制图片一张张上传
+    // Control image upload
     void wechatImageBedUploadManager();
-    // 用图片的新链接替换旧链接
+    // Replace old links with new ones for images
     void wechatImageBedReplaceLink(QString file_content, QString file_path);
-    // 上传单张图片
+    // Upload a single image
     void wechatImageBedUploadImage(QString image_path,QString token);
 
 public slots:
@@ -185,21 +185,23 @@ private slots:
     // Selection changed in web.
     void handleWebSelectionChanged();
 
-    // 处理图片上传至github的请求
+    // Process the image upload request to GitHub
     void handleUploadImageToGithubRequested();
-    // 处理图片上传至wechat的请求
+
+    // GitHub image hosting identity authentication completed
+    void githubImageBedAuthFinished();
+
+    // GitHub image hosting upload completed
+    void githubImageBedUploadFinished();
+
+    // Process image upload request to wechat
     void handleUploadImageToWechatRequested();
 
-    // github 图床身份认证完成
-    void githubImageBedAuthFinished();
-    // wechat 图床身份认证完成
+    // Wechat mage hosting identity authentication completed
     void wechatImageBedAuthFinished();
 
-    // github 图床图片上传完成
-    void githubImageBedUploadFinished();
-    // wechat 图床图片上传完成
+    // Wechat image hosting upload completed
     void wechatImageBedUploadFinished();
-
 
 private:
     enum TabReady { None = 0, ReadMode = 0x1, EditMode = 0x2 };
@@ -321,17 +323,25 @@ private:
     QNetworkAccessManager manager;
     QNetworkReply *reply;
     QMap<QString, QString> imageUrlMap;
-    QString imageBasePath;      // 类似 _v_image/
-    QString new_file_content;   // 用新链接替换后的文件内容
-    bool image_uploaded;        // 是否上传成功过图片
-    QProgressDialog *proDlg;    // 图片上传进度条
-    int upload_image_count;     // 要上传图片总数
+    // Similar to _v_image/
+    QString imageBasePath;
+    // Replace the file content with the new link
+    QString new_file_content;
+    // Whether the picture has been uploaded successfully
+    bool image_uploaded;
+    // Image upload progress bar
+    QProgressDialog *proDlg;
+    // Total number of images to upload
+    int upload_image_count;
     int upload_image_count_index;
-    QString currentUploadImage; // 当前上传图片名
-    bool upload_image_status;   // 图片上传状态
-
-    QString wechat_access_token; // 微信认证成功后返回的token
-    QString currentUploadRelativeImagePah; // 当前上传的相对图片路径
+    // Currently uploaded picture name
+    QString currentUploadImage;
+    // Image upload status
+    bool upload_image_status;
+    // Token returned after successful wechat authentication
+    QString wechat_access_token;
+    // Relative image path currently Uploaded
+    QString currentUploadRelativeImagePah;
 };
 
 inline VMdEditor *VMdTab::getEditor()

@@ -648,7 +648,7 @@ public:
 
     bool getEnableCodeBlockCopyButton() const;
 
-    // github imageBed setting
+    // github image hosting setting
     const QString &getPersionalAccessToken() const;
     void setPersionalAccessToken(const QString &p_token);
 
@@ -658,7 +658,7 @@ public:
     const QString &getUserName() const;
     void setUserName(const QString &p_userName);
 
-    // wechat imageBed setting
+    // wechat image hosting setting
     const QString &getAppid() const;
     void setAppid(const QString &p_appid);
 

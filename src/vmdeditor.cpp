@@ -132,7 +132,6 @@ VMdEditor::VMdEditor(VFile *p_file,
     updateFontAndPalette();
 
     updateConfig();
-
 }
 
 void VMdEditor::updateFontAndPalette()
@@ -1801,13 +1800,13 @@ bool VMdEditor::processHtmlFromMimeData(const QMimeData *p_source)
         if (p_source->hasImage()) {
             // Both image data and URL are embedded.
             VSelectDialog dialog(tr("Insert From Clipboard"), this);
-            dialog.addSelection(tr("Insert From Image Data"), 0);
-            dialog.addSelection(tr("Insert From URL"), 1);
+            dialog.addSelection(tr("Insert From URL"), 0);
+            dialog.addSelection(tr("Insert From Image Data"), 1);
             dialog.addSelection(tr("Insert As Image Link"), 2);
 
             if (dialog.exec() == QDialog::Accepted) {
                 int selection = dialog.getSelection();
-                if (selection == 0) {
+                if (selection == 1) {
                     // Insert from image data.
                     m_editOps->insertImageFromMimeData(p_source);
                     return true;
