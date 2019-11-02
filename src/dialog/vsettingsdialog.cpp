@@ -66,7 +66,7 @@ VSettingsDialog::VSettingsDialog(QWidget *p_parent)
     addTab(new VNoteManagementTab(), tr("Note Management"));
     addTab(new VMarkdownTab(), tr("Markdown"));
     addTab(new VMiscTab(), tr("Misc"));
-    addTab(new VImageBedTab(), tr("ImageBed"));
+    addTab(new VImageHostingTab(), tr("Image Hosting"));
 
     m_tabList->setMaximumWidth(m_tabList->sizeHintForColumn(0) + 5);
 

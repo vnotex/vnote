@@ -89,7 +89,7 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 - [Github issues](https://github.com/tamlok/vnote/issues);
 - Email: `tamlokveer at gmail.com`;
 - [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTQ1Yzk1YjA5MjAyYTU0MjJkMTUxNmRiYWQ2YjlkOWU0ZGZlMTFlZTAxNzg0ZGUyNzI0ZGY2NDg4MmU1M2FkMDg);
-- WeChat Public Account: VNote笔记 (vnote_md);
+- WeChat Public Account: VNote笔记 (vnote_md);  
 ![VNote WeChat](screenshots/vnote_md.jpg)
 
 # Highlights
@@ -109,7 +109,7 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 - Attachments of notes;
 - Themes and dark mode;
 - Rich and extensible export, such as HTML, PDF, PDF (All In One), and images;
-- Supported github imagebed, [usage](./github-imagebed.md)
+- GitHub and WeChat image hosting;
 
 # Donate
 You could help VNote's development in many ways.

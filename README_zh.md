@@ -90,7 +90,7 @@ VNote 不是一个简单的 Markdown 编辑器。通过提供笔记管理功能�
 - [Github issues](https://github.com/tamlok/vnote/issues)；
 - 邮箱: `tamlokveer at gmail.com` ；
 - [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTQ1Yzk1YjA5MjAyYTU0MjJkMTUxNmRiYWQ2YjlkOWU0ZGZlMTFlZTAxNzg0ZGUyNzI0ZGY2NDg4MmU1M2FkMDg)；
-- 微信公众号: VNote笔记（vnote_md）；
+- 微信公众号: VNote笔记（vnote_md）；  
 ![VNote WeChat](screenshots/vnote_md.jpg)
 
 # 亮点
@@ -109,8 +109,8 @@ VNote 不是一个简单的 Markdown 编辑器。通过提供笔记管理功能�
 - 支持高分辨率；
 - 笔记附件；
 - 主题以及深色模式；
-- 丰富、可扩展的导出，包括HTML、PDF、PDF（多合一）和图片；
-- 支持github图床, [使用教程](./github-imagebed.md)
+- 丰富、可扩展的导出，包括 HTML、PDF、PDF（多合一）和图片；
+- GitHub和微信图床；
 
 # 捐赠
 您可以通过很多途径帮助 VNote 的开发。
