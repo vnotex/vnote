@@ -280,8 +280,8 @@ public:
     bool saveConfiguration();
 
 private:
-    bool loadPersionalAccessToken();
-    bool savePersionalAccessToken();
+    bool loadpersonalAccessToken();
+    bool savepersonalAccessToken();
 
     bool loadReposName();
     bool saveReposName();
@@ -298,7 +298,7 @@ private:
     bool loadMarkdown2WechatToolUrl();
     bool saveMarkdown2WechatToolUrl();
 
-    // persionalAccessToken
+    // personalAccessToken
     VLineEdit *m_personalAccessTokenEdit;
     // reposName
     VLineEdit *m_repoNameEdit;

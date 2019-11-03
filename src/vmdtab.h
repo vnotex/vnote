@@ -326,20 +326,20 @@ private:
     // Similar to _v_image/
     QString imageBasePath;
     // Replace the file content with the new link
-    QString new_file_content;
+    QString newFileContent;
     // Whether the picture has been uploaded successfully
-    bool image_uploaded;
+    bool imageUploaded;
     // Image upload progress bar
     QProgressDialog *proDlg;
     // Total number of images to upload
-    int upload_image_count;
-    int upload_image_count_index;
+    int uploadImageCount;
+    int uploadImageCountIndex;
     // Currently uploaded picture name
     QString currentUploadImage;
     // Image upload status
-    bool upload_image_status;
+    bool uploadImageStatus;
     // Token returned after successful wechat authentication
-    QString wechat_access_token;
+    QString wechatAccessToken;
     // Relative image path currently Uploaded
     QString currentUploadRelativeImagePah;
 };

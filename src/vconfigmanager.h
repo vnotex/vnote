@@ -649,8 +649,8 @@ public:
     bool getEnableCodeBlockCopyButton() const;
 
     // github image hosting setting
-    const QString &getPersionalAccessToken() const;
-    void setPersionalAccessToken(const QString &p_token);
+    const QString &getpersonalAccessToken() const;
+    void setpersonalAccessToken(const QString &p_token);
 
     const QString &getReposName() const;
     void setReposName(const QString &p_reposName);
@@ -1093,7 +1093,7 @@ private:
     QString m_plantUMLCmd;
 
     // github imagebed
-    QString m_persionalAccessToken;
+    QString m_personalAccessToken;
     QString m_reposName;
     QString m_userName;
 
@@ -3063,19 +3063,19 @@ inline void VConfigManager::setMarkdown2WechatToolUrl(const QString &p_markdown2
 }
 
 
-inline const QString &VConfigManager::getPersionalAccessToken() const
+inline const QString &VConfigManager::getpersonalAccessToken() const
 {
-    return m_persionalAccessToken;
+    return m_personalAccessToken;
 }
 
-inline void VConfigManager::setPersionalAccessToken(const QString &p_token)
+inline void VConfigManager::setpersonalAccessToken(const QString &p_token)
 {
-    if (m_persionalAccessToken == p_token) {
+    if (m_personalAccessToken == p_token) {
         return;
     }
 
-    m_persionalAccessToken = p_token;
-    setConfigToSettings("global", "github_persional_access_token", p_token);
+    m_personalAccessToken = p_token;
+    setConfigToSettings("global", "github_personal_access_token", p_token);
 }
 
 inline const QString &VConfigManager::getReposName() const

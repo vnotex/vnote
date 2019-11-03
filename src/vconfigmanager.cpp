@@ -79,7 +79,7 @@ void VConfigManager::initialize()
 
     initCodeBlockCssStyles();
 
-    m_persionalAccessToken = getConfigFromSettings("global", "github_persional_access_token").toString();
+    m_personalAccessToken = getConfigFromSettings("global", "github_personal_access_token").toString();
     m_reposName = getConfigFromSettings("global", "github_repos_name").toString();
     m_userName = getConfigFromSettings("global", "github_user_name").toString();
 

@@ -1672,15 +1672,15 @@ bool VImageHostingTab::saveMarkdown2WechatToolUrl()
     return true;
 }
 
-bool VImageHostingTab::loadPersionalAccessToken()
+bool VImageHostingTab::loadpersonalAccessToken()
 {
-    m_personalAccessTokenEdit->setText(g_config->getPersionalAccessToken());
+    m_personalAccessTokenEdit->setText(g_config->getpersonalAccessToken());
     return true;
 }
 
-bool VImageHostingTab::savePersionalAccessToken()
+bool VImageHostingTab::savepersonalAccessToken()
 {
-    g_config->setPersionalAccessToken(m_personalAccessTokenEdit->text());
+    g_config->setpersonalAccessToken(m_personalAccessTokenEdit->text());
     return true;
 }
 
@@ -1710,7 +1710,7 @@ bool VImageHostingTab::saveUserName()
 
 bool VImageHostingTab::loadConfiguration()
 {
-    if(!loadPersionalAccessToken()){
+    if(!loadpersonalAccessToken()){
         return false;
     }
     if(!loadReposName()){
@@ -1733,7 +1733,7 @@ bool VImageHostingTab::loadConfiguration()
 
 bool VImageHostingTab::saveConfiguration()
 {
-    if(!savePersionalAccessToken()){
+    if(!savepersonalAccessToken()){
         return false;
     }
     if(!saveReposName()){

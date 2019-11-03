@@ -113,8 +113,8 @@ void VMdTab::setupUI()
     // Setup editor when we really need it.
     m_editor = NULL;
 
-    reply = Q_NULLPTR;  // 记得初始化为空
-    image_uploaded = false;
+    reply = Q_NULLPTR;
+    imageUploaded = false;
 
     QVBoxLayout *layout = new QVBoxLayout();
     layout->addWidget(m_splitter);
@@ -1513,26 +1513,21 @@ void VMdTab::handleSavePageRequested()
 void VMdTab::handleUploadImageToGithubRequested()
 {
     qDebug() << "Start processing the image upload request to GitHub";
-    // 0. Get the parameter in the setting and judge whether the parameter is empty
-    QString persional_access_token = g_config->getPersionalAccessToken();
-    QString repos_name = g_config->getReposName();
-    QString user_name = g_config->getUserName();
 
-    if(persional_access_token.isEmpty() || repos_name.isEmpty() || user_name.isEmpty())
+    if(g_config->getpersonalAccessToken().isEmpty() || g_config->getReposName().isEmpty() || g_config->getUserName().isEmpty())
     {
         qDebug() << "Please set the parameters of GitHub image hosting!!";
         QMessageBox::warning(NULL, tr("Github Image Hosting"), tr("Please set the Github Image Hosting parameters first !"));
         return;
     }
 
-    // 1. GitHub authentication. After the authentication is successful, obtain the path and find all picture links under the path
-    githubImageBedAuthentication(persional_access_token);
+    githubImageBedAuthentication(g_config->getpersonalAccessToken());
 }
 
 void VMdTab::githubImageBedAuthentication(QString token)
 {
     qDebug() << "start the authentication process ";
-    QApplication::setOverrideCursor(Qt::WaitCursor); // 设置鼠标为等待状态
+    QApplication::setOverrideCursor(Qt::WaitCursor);
     QNetworkRequest request;
     QUrl url = QUrl("https://api.github.com");
     QString ptoken = "token " + token;
@@ -1560,14 +1555,10 @@ void VMdTab::githubImageBedAuthFinished()
         }else{
             qDebug() << "Authentication completed";
 
-            // 1. Get current article path
             qDebug() << "The current article path is: " << m_file->fetchPath();
-            // qDebug() << "The basic path is: " << m_file->fetchBasePath();
             imageBasePath = m_file->fetchBasePath();
-            //qDebug() << "The content of the current article is: " << m_file->getContent();
-            new_file_content = m_file->getContent();
+            newFileContent = m_file->getContent();
 
-            // 2. Find all image links under the path
             QVector<ImageLink> images = VUtils::fetchImagesFromMarkdownFile(m_file,ImageLink::LocalRelativeInternal);
             QApplication::restoreOverrideCursor();  // Recovery pointer
             if(images.size() > 0)
@@ -1581,21 +1572,19 @@ void VMdTab::githubImageBedAuthFinished()
                 proDlg->setWindowModality(Qt::WindowModal);
                 proDlg->setWindowTitle(tr("Uploading Images To Github"));
                 proDlg->setMinimumDuration(1);
-                upload_image_count = images.size();
-                upload_image_count_index  = upload_image_count;
+                uploadImageCount = images.size();
+                uploadImageCountIndex  = uploadImageCount;
                 for(int i=0;i<images.size() ;i++)
                 {
-                    // qDebug() << images[i].m_path;
-                    // 3. Put the local link of the image to be uploaded into the map. The key is the local link and the value is the GitHub link
                     if(images[i].m_url.contains(".png") || images[i].m_url.contains(".jpg")|| images[i].m_url.contains(".gif")){
                         imageUrlMap.insert(images[i].m_url,"");
                     }else{
                         delete proDlg;
                         imageUrlMap.clear();
                         qDebug() << "Unsupported type...";
-                        QFileInfo file_info(images[i].m_path.toLocal8Bit());
-                        QString file_suffix = file_info.suffix();
-                        QString info = tr("Unsupported type: ") + file_suffix;
+                        QFileInfo fileInfo(images[i].m_path.toLocal8Bit());
+                        QString fileSuffix = fileInfo.suffix();
+                        QString info = tr("Unsupported type: ") + fileSuffix;
                         QMessageBox::warning(NULL, tr("Wechat Image Hosting"), info);
                         return;
                     }
@@ -1623,37 +1612,29 @@ void VMdTab::githubImageBedAuthFinished()
 
 void VMdTab::githubImageBedUploadManager()
 {
-    upload_image_count_index--;
+    uploadImageCountIndex--;
 
-    // 1. Find out the key whose value is empty in imageurlmap, that is, the local image link that has not been uploaded
-    QString image_to_upload = "";
+    QString imageToUpload = "";
     QMapIterator<QString, QString> it(imageUrlMap);
     while(it.hasNext())
     {
         it.next();
-        // qDebug() << it.key() << " : " << it.value();
         if(it.value() == ""){
-            image_to_upload = it.key();
-            proDlg->setValue(upload_image_count - 1 - upload_image_count_index);
-            proDlg->setLabelText(tr("Uploaading image: %1").arg(image_to_upload));
+            imageToUpload = it.key();
+            proDlg->setValue(uploadImageCount - 1 - uploadImageCountIndex);
+            proDlg->setLabelText(tr("Uploaading image: %1").arg(imageToUpload));
             break;
         }
 
     }
 
-    // 2. If you can't find it, all the images have been uploaded. You can replace the link of the article
-    if(image_to_upload == ""){
+    if(imageToUpload == ""){
         qDebug() << "All images have been uploaded";
-        githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
+        githubImageBedReplaceLink(newFileContent, m_file->fetchPath());
         return;
     }
 
-    // 3. Get GitHub image hosting parameters
-    QString persional_access_token = g_config->getPersionalAccessToken();
-    QString repos_name = g_config->getReposName();
-    QString user_name = g_config->getUserName();
-
-    if(persional_access_token.isEmpty() || repos_name.isEmpty() || user_name.isEmpty())
+    if(g_config->getpersonalAccessToken().isEmpty() || g_config->getReposName().isEmpty() || g_config->getUserName().isEmpty())
     {
         qDebug() << "Please set the parameters of GitHub image hosting!";
         QMessageBox::warning(NULL, tr("Github Image Hosting"), tr("Please set the Github Image Hosting parameters first !"));
@@ -1661,46 +1642,42 @@ void VMdTab::githubImageBedUploadManager()
         return;
     }
 
-    // 4. Call githubimagebeduploadimage to upload the picture
     QString path = imageBasePath + QDir::separator();
-    path += image_to_upload;
-    githubImageBedUploadImage(user_name, repos_name, path, persional_access_token);
+    path += imageToUpload;
+    githubImageBedUploadImage(g_config->getUserName(), g_config->getReposName(), path, g_config->getpersonalAccessToken());
 }
 
-void VMdTab::githubImageBedUploadImage(QString username, QString repository, QString image_path, QString token)
+void VMdTab::githubImageBedUploadImage(QString username, QString repository, QString imagePath, QString token)
 {
-    // 1. Call githubimagebeduploadimage to upload the image to determine whether the image exists in the path. In fact, this step can be omitted
-    QFileInfo fileInfo(image_path.toLocal8Bit());
+    QFileInfo fileInfo(imagePath.toLocal8Bit());
     if(!fileInfo.exists()){
-        qDebug() << "The picture does not exist in this path: " << image_path.toLocal8Bit();
-        QString info = tr("The picture does not exist in this path: ") + image_path.toLocal8Bit();
+        qDebug() << "The picture does not exist in this path: " << imagePath.toLocal8Bit();
+        QString info = tr("The picture does not exist in this path: ") + imagePath.toLocal8Bit();
         QMessageBox::warning(NULL, tr("Github Image Hosting"), info);
         imageUrlMap.clear();
-        if(image_uploaded){
-            githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
+        if(imageUploaded){
+            githubImageBedReplaceLink(newFileContent, m_file->fetchPath());
         }
         return;
     }
 
-    // 2. Determine the file extension. This step can also be omitted
-    QString file_suffix = fileInfo.suffix();  // file extension
-    QString file_name = fileInfo.fileName();  // filename
-    QString upload_url;  // Image upload URL
-    upload_url = "https://api.github.com/repos/" + username + "/" + repository + "/contents/"  +  QString::number(QDateTime::currentDateTime().toTime_t()) +"_" + file_name;
-    if(file_suffix != QString::fromLocal8Bit("jpg") && file_suffix != QString::fromLocal8Bit("png") && file_suffix != QString::fromLocal8Bit("gif")){
+    QString fileSuffix = fileInfo.suffix();  // file extension
+    QString fileName = fileInfo.fileName();  // filename
+    QString uploadUrl;  // Image upload URL
+    uploadUrl = "https://api.github.com/repos/" + username + "/" + repository + "/contents/"  +  QString::number(QDateTime::currentDateTime().toTime_t()) +"_" + fileName;
+    if(fileSuffix != QString::fromLocal8Bit("jpg") && fileSuffix != QString::fromLocal8Bit("png") && fileSuffix != QString::fromLocal8Bit("gif")){
         qDebug() << "Unsupported type...";
-        QString info = tr("Unsupported type: ") + file_suffix;
+        QString info = tr("Unsupported type: ") + fileSuffix;
         QMessageBox::warning(NULL, tr("Github Image Hosting"), info);
         imageUrlMap.clear();
-        if(image_uploaded){
-            githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
+        if(imageUploaded){
+            githubImageBedReplaceLink(newFileContent, m_file->fetchPath());
         }
         return;
     }
 
-    // 3. Set parameters, call GitHub api to upload
     QNetworkRequest request;
-    QUrl url = QUrl(upload_url);
+    QUrl url = QUrl(uploadUrl);
     QString ptoken = "token " + token;
     request.setRawHeader("Authorization", ptoken.toLocal8Bit());
     request.setUrl(url);
@@ -1708,13 +1685,13 @@ void VMdTab::githubImageBedUploadImage(QString username, QString repository, QSt
         reply->deleteLater();
     }
 
-    QString param = githubImageBedGenerateParam(image_path);
+    QString param = githubImageBedGenerateParam(imagePath);
     QByteArray postData;
     postData.append(param);
     reply = manager.put(request, postData);
-    qDebug() << "Start uploading images: " + image_path + " Waiting for upload to complete";
-    upload_image_status = true;
-    currentUploadImage = image_path;
+    qDebug() << "Start uploading images: " + imagePath + " Waiting for upload to complete";
+    uploadImageStatus = true;
+    currentUploadImage = imagePath;
     connect(reply, &QNetworkReply::finished, this, &VMdTab::githubImageBedUploadFinished);
 }
 
@@ -1725,8 +1702,8 @@ void VMdTab::githubImageBedUploadFinished()
         reply->abort();        // Stop network request
         imageUrlMap.clear();
         // The ones that have been uploaded successfully before still need to stay
-        if(image_uploaded){
-            githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
+        if(imageUploaded){
+            githubImageBedReplaceLink(newFileContent, m_file->fetchPath());
         }
         return;
     }
@@ -1736,11 +1713,9 @@ void VMdTab::githubImageBedUploadFinished()
         {
             QByteArray bytes = reply->readAll();
             int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-            // qDebug() << "status: " << httpStatus;
             if(httpStatus == 201){
                 qDebug() <<  "Upload success";
 
-                // 1. Parse the returned image link. This step can be parsed by regular. It is the same
                 QString downloadUrl;
                 QString imageName;
                 QJsonDocument doucment = QJsonDocument::fromJson(bytes);
@@ -1757,15 +1732,14 @@ void VMdTab::githubImageBedUploadFinished()
                                     if (value.isString()) {
                                         downloadUrl = value.toString();
                                         qDebug() << "json decode: download_url : " << downloadUrl;
-                                        image_uploaded = true;  // On behalf of successfully uploaded images
-                                        proDlg->setValue(upload_image_count);
+                                        imageUploaded = true;  // On behalf of successfully uploaded images
+                                        proDlg->setValue(uploadImageCount);
                                     }
                                 }
                                 if(obj.contains("name")){
                                     QJsonValue value = obj.value("name");
                                     if(value.isString()){
                                         imageName = value.toString();
-                                        // qDebug() << "json decode: imagename: " << imageName;
                                     }
                                 }
 
@@ -1782,7 +1756,7 @@ void VMdTab::githubImageBedUploadFinished()
                                         imageUrlMap.insert(klist[i], downloadUrl);
 
                                         // Replace the link in the original
-                                        new_file_content.replace(klist[i], downloadUrl);
+                                        newFileContent.replace(klist[i], downloadUrl);
 
                                         break;
                                     }
@@ -1798,8 +1772,8 @@ void VMdTab::githubImageBedUploadFinished()
                     imageUrlMap.clear();
                     qDebug() << "Resolution failure!";
                     qDebug() << "Resolution failure's json: " << bytes;
-                    if(image_uploaded){
-                        githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
+                    if(imageUploaded){
+                        githubImageBedReplaceLink(newFileContent, m_file->fetchPath());
                     }
                     QString info = tr("Json decode error, Please contact the developer~");
                     QMessageBox::warning(NULL, tr("Github Image Hosting"), info);
@@ -1811,8 +1785,8 @@ void VMdTab::githubImageBedUploadFinished()
                 delete proDlg;
                 imageUrlMap.clear();
                 qDebug() << "Upload failure";
-                if(image_uploaded){
-                    githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
+                if(imageUploaded){
+                    githubImageBedReplaceLink(newFileContent, m_file->fetchPath());
                 }
                 QString info = tr("github status code != 201, Please contact the developer~");
                 QMessageBox::warning(NULL, tr("Github Image Hosting"), info);
@@ -1829,8 +1803,8 @@ void VMdTab::githubImageBedUploadFinished()
             int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
             qDebug() << "status: " << httpStatus;
 
-            if(image_uploaded){
-                githubImageBedReplaceLink(new_file_content, m_file->fetchPath());
+            if(imageUploaded){
+                githubImageBedReplaceLink(newFileContent, m_file->fetchPath());
             }
             QString info = tr("Uploading ") + currentUploadImage + tr(" \n\nNetwork error: ") + reply->errorString() + tr("\n\nPlease check the network or image size");
             QMessageBox::warning(NULL, tr("Github Image Hosting"), info);
@@ -1838,46 +1812,42 @@ void VMdTab::githubImageBedUploadFinished()
     }
 }
 
-void VMdTab::githubImageBedReplaceLink(QString file_content, QString file_path)
+void VMdTab::githubImageBedReplaceLink(QString fileContent, QString filePath)
 {
     // This function must be executed when the upload is completed or fails in the middle
     // Write content to file
-    // qDebug() << "The contents of the file to be written are as follows: ";
-    // qDebug() << file_content;
-    QFile file(file_path);
+    QFile file(filePath);
     file.open(QIODevice::WriteOnly | QIODevice::Text);
-    file.write(file_content.toUtf8());
+    file.write(fileContent.toUtf8());
     file.close();
+    // Reset
     imageUrlMap.clear();
-    image_uploaded = false;  // Reset
+    imageUploaded = false;
 }
 
-QString VMdTab::githubImageBedGenerateParam(QString image_path){
+QString VMdTab::githubImageBedGenerateParam(QString imagePath){
     // According to the requirements of GitHub interface, pictures must be in Base64 format
     // img to base64
     QByteArray hexed;
-    QFile img_file(image_path);
-    img_file.open(QIODevice::ReadOnly);
-    hexed = img_file.readAll().toBase64();
+    QFile imgFile(imagePath);
+    imgFile.open(QIODevice::ReadOnly);
+    hexed = imgFile.readAll().toBase64();
 
-    QString img_base64 = hexed;  // Base64 encoding of images
-    // qDebug() << "Base64 encoding of images: " << img_base64;
+    QString imgBase64 = hexed;  // Base64 encoding of images
     QJsonObject json;
     json.insert("message", QString("updatetest"));
-    json.insert("content", img_base64);
+    json.insert("content", imgBase64);
 
     QJsonDocument document;
     document.setObject(json);
-    QByteArray byte_array = document.toJson(QJsonDocument::Compact);
-    QString json_str(byte_array);
-    // qDebug() << "Parameter is: " << json_str;
-    return json_str;
+    QByteArray byteArray = document.toJson(QJsonDocument::Compact);
+    QString jsonStr(byteArray);
+    return jsonStr;
 }
 
 void VMdTab::handleUploadImageToWechatRequested()
 {
     qDebug() << "Start processing image upload request to wechat";
-    // 1. Get the parameter in the setting and judge whether the parameter is empty
     QString appid = g_config->getAppid();
     QString secret = g_config->getSecret();
     if(appid.isEmpty() || secret.isEmpty())
@@ -1887,7 +1857,6 @@ void VMdTab::handleUploadImageToWechatRequested()
         return;
     }
 
-    // 2. Wechat authentication. After the authentication is successful, obtain the path and find all picture links under the path
     wechatImageBedAuthentication(appid, secret);
 }
 
@@ -1924,17 +1893,12 @@ void VMdTab::wechatImageBedAuthFinished()
                         if(value.isString()){
                             qDebug() << "Authentication successful, get token";
                             // Parsing token
-                            wechat_access_token = value.toString();
-                            // qDebug() << "wechat_access_token: " << wechat_access_token;
+                            wechatAccessToken = value.toString();
 
-                            // 1. Get current article path
                             qDebug() << "The current article path is: " << m_file->fetchPath();
-                            // qDebug() << "The basic path is: " << m_file->fetchBasePath();
                             imageBasePath = m_file->fetchBasePath();
-                            //qDebug() << "The content of the current article is: " << m_file->getContent();
-                            new_file_content = m_file->getContent();
+                            newFileContent = m_file->getContent();
 
-                            // 2. Find all image links under the path
                             QVector<ImageLink> images = VUtils::fetchImagesFromMarkdownFile(m_file,ImageLink::LocalRelativeInternal);
                             QApplication::restoreOverrideCursor();  // Recovery pointer
                             if(images.size() > 0)
@@ -1948,11 +1912,10 @@ void VMdTab::wechatImageBedAuthFinished()
                                 proDlg->setWindowModality(Qt::WindowModal);
                                 proDlg->setWindowTitle(tr("Uploading Images To Github"));
                                 proDlg->setMinimumDuration(1);
-                                upload_image_count = images.size();
-                                upload_image_count_index  = upload_image_count;
+                                uploadImageCount = images.size();
+                                uploadImageCountIndex  = uploadImageCount;
                                 for(int i=0;i<images.size() ;i++)
                                 {
-                                    // 3. Put the local link of the image to be uploaded into the map. The key is the local link and the value is the wechat link
                                     if(images[i].m_url.contains(".png") || images[i].m_url.contains(".jpg")){
                                         imageUrlMap.insert(images[i].m_url,"");
                                     }else{
@@ -1983,7 +1946,6 @@ void VMdTab::wechatImageBedAuthFinished()
                         QApplication::restoreOverrideCursor();
                         if(string.contains("invalid ip")){
                             QString ip = string.split(" ")[2];
-                            // qDebug() << ip;
                             QClipboard *board = QApplication::clipboard();
                             board->setText(ip);
                             QMessageBox::warning(NULL, tr("Wechat Image Hosting"), tr("Your ip address was set to the Clipboard! \nPlease add the  IP address: ") + ip + tr(" to the wechat ip whitelist!"));
@@ -2017,44 +1979,38 @@ void VMdTab::wechatImageBedAuthFinished()
 
 void VMdTab::wechatImageBedUploadManager()
 {
-    upload_image_count_index--;
+    uploadImageCountIndex--;
 
-    // 1. Find out the key whose value is empty in imageurlmap, that is, the local image link that has not been uploaded
     QString image_to_upload = "";
     QMapIterator<QString, QString> it(imageUrlMap);
     while(it.hasNext())
     {
         it.next();
-        // qDebug() << it.key() << " : " << it.value();
         if(it.value() == ""){
             image_to_upload = it.key();
-            proDlg->setValue(upload_image_count - 1 - upload_image_count_index);
+            proDlg->setValue(uploadImageCount - 1 - uploadImageCountIndex);
             proDlg->setLabelText(tr("Uploaading image: %1").arg(image_to_upload));
             break;
         }
 
     }
 
-    // 2. If you can't find it, all the images have been uploaded. You can replace the link of the article
     if(image_to_upload == ""){
         qDebug() << "All pictures have been uploaded";
         // Copy content to clipboard
-        wechatImageBedReplaceLink(new_file_content, m_file->fetchPath());
+        wechatImageBedReplaceLink(newFileContent, m_file->fetchPath());
         return;
     }
 
-    // 3. Call wechatimagebeduploadimage to upload the picture
     QString path = imageBasePath + QDir::separator();
     path += image_to_upload;
     currentUploadRelativeImagePah = image_to_upload;
-    // qDebug() << "The current relative path is: " << currentUploadRelativeImagePah;
-    wechatImageBedUploadImage(path, wechat_access_token);
+    wechatImageBedUploadImage(path, wechatAccessToken);
 }
 
 void VMdTab::wechatImageBedUploadImage(QString image_path, QString token)
 {
     qDebug() << "To deal with: " << image_path;
-    // 1. It can be omitted to judge whether the image exists in this path, but it's afraid that shadio will delete the image during the upload process
     QFileInfo fileInfo(image_path.toLocal8Bit());
     if(!fileInfo.exists()){
         delete proDlg;
@@ -2065,7 +2021,6 @@ void VMdTab::wechatImageBedUploadImage(QString image_path, QString token)
         return;
     }
 
-    // 2. Determine the file extension. This step can also be omitted
     QString file_suffix = fileInfo.suffix();  // File extension
     QString file_name = fileInfo.fileName();  // filename
     if(file_suffix != QString::fromLocal8Bit("jpg") && file_suffix != QString::fromLocal8Bit("png")){
@@ -2077,7 +2032,6 @@ void VMdTab::wechatImageBedUploadImage(QString image_path, QString token)
         return;
     }
 
-    // 3. Determine whether the file size is within 1m
     qint64 file_size = fileInfo.size();  // Unit is byte
     qDebug() << "Image size: " << file_size;
     if(file_size > 1024*1024){
@@ -2090,7 +2044,6 @@ void VMdTab::wechatImageBedUploadImage(QString image_path, QString token)
     }
 
     QString upload_img_url = "https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=" + token;
-    //QString upload_img_url = "http://httpbin.org/post?access_token=" + token;
 
     QNetworkRequest request;
     request.setUrl(upload_img_url);
@@ -2124,7 +2077,7 @@ void VMdTab::wechatImageBedUploadImage(QString image_path, QString token)
 
 
     qDebug() << "Start uploading images: " + image_path + " Waiting for upload to complete";
-    upload_image_status=true;
+    uploadImageStatus=true;
     currentUploadImage = image_path;
     connect(reply, &QNetworkReply::finished, this, &VMdTab::wechatImageBedUploadFinished);
 
@@ -2157,11 +2110,11 @@ void VMdTab::wechatImageBedUploadFinished()
                         QJsonValue value = object.value("url");
                         if(value.isString()){
                             qDebug() << "Authentication successful, get online link";
-                            image_uploaded = true;
-                            proDlg->setValue(upload_image_count);
+                            imageUploaded = true;
+                            proDlg->setValue(uploadImageCount);
 
                             imageUrlMap.insert(currentUploadRelativeImagePah, value.toString());
-                            new_file_content.replace(currentUploadRelativeImagePah, value.toString());
+                            newFileContent.replace(currentUploadRelativeImagePah, value.toString());
                             // Start calling the method. Whether the value in the map is empty determines whether to stop
                             wechatImageBedUploadManager();
                         }
@@ -2214,10 +2167,8 @@ void VMdTab::wechatImageBedReplaceLink(QString file_content, QString file_path)
         }
     }
     imageUrlMap.clear();
-    image_uploaded = false;  // reset
+    imageUploaded = false;  // reset
 }
-
-
 
 VWordCountInfo VMdTab::fetchWordCountInfo(bool p_editMode) const
 {
