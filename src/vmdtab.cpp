@@ -1516,21 +1516,21 @@ void VMdTab::handleUploadImageToGithubRequested()
 
     if(g_config->getpersonalAccessToken().isEmpty() || g_config->getReposName().isEmpty() || g_config->getUserName().isEmpty())
     {
-        qDebug() << "Please set the parameters of GitHub image hosting!!";
-        QMessageBox::warning(NULL, tr("Github Image Hosting"), tr("Please set the Github Image Hosting parameters first !"));
+        qDebug() << "Please configure the GitHub image hosting first!";
+        QMessageBox::warning(NULL, tr("Github Image Hosting"), tr("Please configure the GitHub image hosting first!"));
         return;
     }
 
-    githubImageBedAuthentication(g_config->getpersonalAccessToken());
+    authenticateGithubImageHosting(g_config->getpersonalAccessToken());
 }
 
-void VMdTab::githubImageBedAuthentication(QString token)
+void VMdTab::authenticateGithubImageHosting(QString p_token)
 {
     qDebug() << "start the authentication process ";
     QApplication::setOverrideCursor(Qt::WaitCursor);
     QNetworkRequest request;
     QUrl url = QUrl("https://api.github.com");
-    QString ptoken = "token " + token;
+    QString ptoken = "token " + p_token;
     request.setRawHeader("Authorization", ptoken.toLocal8Bit());
     request.setUrl(url);
     if(reply != Q_NULLPTR) {
@@ -1625,7 +1625,6 @@ void VMdTab::githubImageBedUploadManager()
             proDlg->setLabelText(tr("Uploaading image: %1").arg(imageToUpload));
             break;
         }
-
     }
 
     if(imageToUpload == ""){
@@ -1636,8 +1635,8 @@ void VMdTab::githubImageBedUploadManager()
 
     if(g_config->getpersonalAccessToken().isEmpty() || g_config->getReposName().isEmpty() || g_config->getUserName().isEmpty())
     {
-        qDebug() << "Please set the parameters of GitHub image hosting!";
-        QMessageBox::warning(NULL, tr("Github Image Hosting"), tr("Please set the Github Image Hosting parameters first !"));
+        qDebug() << "Please configure the GitHub image hosting first!";
+        QMessageBox::warning(NULL, tr("Github Image Hosting"), tr("Please configure the GitHub image hosting first!"));
         imageUrlMap.clear();
         return;
     }
@@ -1852,15 +1851,15 @@ void VMdTab::handleUploadImageToWechatRequested()
     QString secret = g_config->getSecret();
     if(appid.isEmpty() || secret.isEmpty())
     {
-        qDebug() << "Please set the parameters of wechat image hosting";
-        QMessageBox::warning(NULL, tr("Wechat Image Hosting"), tr("Please set the Wechat Image Hosting parameters first !"));
+        qDebug() << "Please configure the Wechat image hosting first!";
+        QMessageBox::warning(NULL, tr("Wechat Image Hosting"), tr("Please configure the Wechat image hosting first!"));
         return;
     }
 
-    wechatImageBedAuthentication(appid, secret);
+    authenticateWechatImageHosting(appid, secret);
 }
 
-void VMdTab::wechatImageBedAuthentication(QString appid, QString secret)
+void VMdTab::authenticateWechatImageHosting(QString appid, QString secret)
 {
     qDebug() << "Start certification";
     QApplication::setOverrideCursor(Qt::WaitCursor); // Set the mouse to wait

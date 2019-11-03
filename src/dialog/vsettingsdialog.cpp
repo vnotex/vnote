@@ -1593,23 +1593,18 @@ bool VMiscTab::saveMatchesInPage()
 VImageHostingTab::VImageHostingTab(QWidget *p_parent)
     : QWidget(p_parent)
 {
-    QTabWidget *imageBedTabWeg = new QTabWidget(this);
-    QWidget *githubImageBedTab = new QWidget();
-    QWidget *wechatImageBedTab = new QWidget();
-    imageBedTabWeg->addTab(githubImageBedTab, tr("GitHub"));
-    imageBedTabWeg->addTab(wechatImageBedTab, tr("WeChat"));
-    imageBedTabWeg->setCurrentIndex(0);
+    QTabWidget *imageHostingTabWeg = new QTabWidget(this);
+    QWidget *githubImageHostingTab = new QWidget();
+    QWidget *wechatImageHostingTab = new QWidget();
+    imageHostingTabWeg->addTab(githubImageHostingTab, tr("GitHub"));
+    imageHostingTabWeg->addTab(wechatImageHostingTab, tr("WeChat"));
+    imageHostingTabWeg->setCurrentIndex(0);
 
     // Set the tab of GitHub image Hosting
-    // GitHub personal access token.
     m_personalAccessTokenEdit = new VLineEdit();
     m_personalAccessTokenEdit->setToolTip(tr("GitHub personal access token"));
-
-    // imageBed of github repositoryy
     m_repoNameEdit = new VLineEdit();
     m_repoNameEdit->setToolTip(tr("Name of GitHub repository for image hosting"));
-
-    // username of github
     m_userNameEdit = new VLineEdit();
     m_userNameEdit->setToolTip(tr("User name of GitHub"));
 
@@ -1618,7 +1613,7 @@ VImageHostingTab::VImageHostingTab(QWidget *p_parent)
     githubLayout->addRow(tr("Repo name:"), m_repoNameEdit);
     githubLayout->addRow(tr("User name:"), m_userNameEdit);
 
-    githubImageBedTab->setLayout(githubLayout);
+    githubImageHostingTab->setLayout(githubLayout);
 
     // Set the tab of GitHub image Hosting
     m_appidEdit = new VLineEdit();
@@ -1633,7 +1628,7 @@ VImageHostingTab::VImageHostingTab(QWidget *p_parent)
     wechatLayout->addRow(tr("secret:"), m_secretEdit);
     wechatLayout->addRow(tr("markdown2WechatToolUrl"), m_markdown2WechatToolUrlEdit);
 
-    wechatImageBedTab->setLayout(wechatLayout);
+    wechatImageHostingTab->setLayout(wechatLayout);
 }
 
 bool VImageHostingTab::loadAppid()

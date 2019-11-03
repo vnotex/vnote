@@ -112,7 +112,7 @@ public:
 
     // github image hosting
     // GitHub identity authentication
-    void githubImageBedAuthentication(QString token);
+    void authenticateGithubImageHosting(QString p_token);
     // Upload a single image
     void githubImageBedUploadImage(QString username,QString repository,QString image_path,QString token);
     // Parameters needed to generate uploaded images
@@ -123,7 +123,7 @@ public:
     void githubImageBedReplaceLink(QString file_content, QString file_path);
 
     // wechat image hosting
-    void wechatImageBedAuthentication(QString appid, QString secret);
+    void authenticateWechatImageHosting(QString appid, QString secret);
     // Control image upload
     void wechatImageBedUploadManager();
     // Replace old links with new ones for images
