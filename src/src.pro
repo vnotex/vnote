@@ -28,6 +28,7 @@ TRANSLATIONS += translations/vnote_zh_CN.ts \
 }
 
 SOURCES += main.cpp\
+    vimageHosting.cpp \
     vmainwindow.cpp \
     vdirectorytree.cpp \
     vnote.cpp \
@@ -165,6 +166,7 @@ SOURCES += main.cpp\
 
 HEADERS  += vmainwindow.h \
     vdirectorytree.h \
+    vimageHosting.h \
     vnote.h \
     vnotebook.h \
     dialog/vnewdirdialog.h \
