@@ -98,6 +98,16 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
             connect(savePageAct, &QAction::triggered,
                     this, &VWebView::requestSavePage);
             menu->addAction(savePageAct);
+
+            // In preview mode, add the right-click menu and upload the image to GitHub image hosting
+            QAction *uploadImageToGithub = new QAction(tr("Upload Image To &GitHub"),menu);
+            connect(uploadImageToGithub, &QAction::triggered, this, &VWebView::requestUploadImageToGithub);
+            menu->addAction(uploadImageToGithub);
+
+            // In preview mode, add the right-click menu and upload the image to Wechat image hosting
+            QAction *uploadImageToWechat = new QAction(tr("Upload Image To &Wechat"),menu);
+            connect(uploadImageToWechat, &QAction::triggered, this, &VWebView::requestUploadImageToWechat);
+            menu->addAction(uploadImageToWechat);
         }
     }
 

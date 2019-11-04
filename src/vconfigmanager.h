@@ -648,6 +648,27 @@ public:
 
     bool getEnableCodeBlockCopyButton() const;
 
+    // github image hosting setting
+    const QString &getpersonalAccessToken() const;
+    void setpersonalAccessToken(const QString &p_token);
+
+    const QString &getReposName() const;
+    void setReposName(const QString &p_reposName);
+
+    const QString &getUserName() const;
+    void setUserName(const QString &p_userName);
+
+    // wechat image hosting setting
+    const QString &getAppid() const;
+    void setAppid(const QString &p_appid);
+
+    const QString &getSecret() const;
+    void setSecret(const QString &p_secret);
+
+    const QString &getMarkdown2WechatToolUrl() const;
+    void setMarkdown2WechatToolUrl(const QString &p_markdown2WechatToolUrl);
+
+
 private:
     void initEditorConfigs();
 
@@ -1070,6 +1091,16 @@ private:
     QStringList m_plantUMLArgs;
 
     QString m_plantUMLCmd;
+
+    // github imagebed
+    QString m_personalAccessToken;
+    QString m_reposName;
+    QString m_userName;
+
+    // wechat imagebed
+    QString m_appid;
+    QString m_secret;
+    QString m_markdown2WechatToolUrl;
 
     // Size of history.
     int m_historySize;
@@ -2987,6 +3018,94 @@ inline int VConfigManager::getTableFormatInterval() const
 inline bool VConfigManager::getEnableCodeBlockCopyButton() const
 {
     return m_enableCodeBlockCopyButton;
+}
+
+inline const QString &VConfigManager::getAppid() const
+{
+    return m_appid;
+}
+
+inline void VConfigManager::setAppid(const QString &p_appid)
+{
+    if(m_appid == p_appid){
+        return;
+    }
+    m_appid = p_appid;
+    setConfigToSettings("global", "wechat_appid", p_appid);
+}
+
+inline const QString &VConfigManager::getSecret() const
+{
+    return m_secret;
+}
+
+inline void VConfigManager::setSecret(const QString &p_secret)
+{
+    if(m_secret == p_secret){
+        return;
+    }
+    m_secret = p_secret;
+    setConfigToSettings("global", "wechat_secret", p_secret);
+}
+
+inline const QString &VConfigManager::getMarkdown2WechatToolUrl() const
+{
+    return m_markdown2WechatToolUrl;
+}
+
+inline void VConfigManager::setMarkdown2WechatToolUrl(const QString &p_markdown2WechatToolUrl)
+{
+    if(m_markdown2WechatToolUrl == p_markdown2WechatToolUrl){
+        return;
+    }
+    m_markdown2WechatToolUrl = p_markdown2WechatToolUrl;
+    setConfigToSettings("global", "wechat_markdown_to_wechat_tool_url", p_markdown2WechatToolUrl);
+}
+
+
+inline const QString &VConfigManager::getpersonalAccessToken() const
+{
+    return m_personalAccessToken;
+}
+
+inline void VConfigManager::setpersonalAccessToken(const QString &p_token)
+{
+    if (m_personalAccessToken == p_token) {
+        return;
+    }
+
+    m_personalAccessToken = p_token;
+    setConfigToSettings("global", "github_personal_access_token", p_token);
+}
+
+inline const QString &VConfigManager::getReposName() const
+{
+    return m_reposName;
+}
+
+inline void VConfigManager::setReposName(const QString &p_reposName)
+{
+    if (m_reposName == p_reposName) {
+        return;
+    }
+
+    m_reposName = p_reposName;
+    setConfigToSettings("global", "github_repos_name", p_reposName);
+}
+
+inline const QString &VConfigManager::getUserName() const
+{
+    return m_userName;
+}
+
+inline void VConfigManager::setUserName(const QString &p_userName)
+{
+    if (m_userName == p_userName) {
+        return;
+    }
+
+    m_userName = p_userName;
+    setConfigToSettings("global", "github_user_name", p_userName);
 }
 
 #endif // VCONFIGMANAGER_H

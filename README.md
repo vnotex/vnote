@@ -109,6 +109,7 @@ Utilizing Qt, VNote could run on **Linux**, **Windows**, and **macOS**.
 - Attachments of notes;
 - Themes and dark mode;
 - Rich and extensible export, such as HTML, PDF, PDF (All In One), and images;
+- GitHub and WeChat image hosting;
 
 # Donate
 You could help VNote's development in many ways.

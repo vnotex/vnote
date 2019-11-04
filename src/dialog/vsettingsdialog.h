@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QVector>
 #include <QString>
+#include <QTabWidget>
 
 class QDialogButtonBox;
 class QComboBox;
@@ -268,6 +269,47 @@ private:
 
     // Highlight matches in page.
     QCheckBox *m_matchesInPageCB;
+};
+
+class VImageHostingTab : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit VImageHostingTab(QWidget *p_parent = 0);
+    bool loadConfiguration();
+    bool saveConfiguration();
+
+private:
+    bool loadpersonalAccessToken();
+    bool savepersonalAccessToken();
+
+    bool loadReposName();
+    bool saveReposName();
+
+    bool loadUserName();
+    bool saveUserName();
+
+    bool loadAppid();
+    bool saveAppid();
+
+    bool loadSecret();
+    bool saveSecret();
+
+    bool loadMarkdown2WechatToolUrl();
+    bool saveMarkdown2WechatToolUrl();
+
+    // personalAccessToken
+    VLineEdit *m_personalAccessTokenEdit;
+    // reposName
+    VLineEdit *m_repoNameEdit;
+    // userName
+    VLineEdit *m_userNameEdit;
+    // appid
+    VLineEdit *m_appidEdit;
+    // secret
+    VLineEdit *m_secretEdit;
+    // markdown to wechat tools url
+    VLineEdit *m_markdown2WechatToolUrlEdit;
 };
 
 class VSettingsDialog : public QDialog

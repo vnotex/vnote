@@ -66,6 +66,7 @@ VSettingsDialog::VSettingsDialog(QWidget *p_parent)
     addTab(new VNoteManagementTab(), tr("Note Management"));
     addTab(new VMarkdownTab(), tr("Markdown"));
     addTab(new VMiscTab(), tr("Misc"));
+    addTab(new VImageHostingTab(), tr("Image Hosting"));
 
     m_tabList->setMaximumWidth(m_tabList->sizeHintForColumn(0) + 5);
 
@@ -206,6 +207,15 @@ void VSettingsDialog::loadConfiguration()
         }
     }
 
+    // ImageBed Tab
+    {
+        VImageHostingTab *imageBedTab = dynamic_cast<VImageHostingTab *>(m_tabs->widget(idx++));
+        Q_ASSERT(imageBedTab);
+        if (!imageBedTab->loadConfiguration()) {
+            goto err;
+        }
+    }
+
     return;
 err:
     VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
@@ -267,6 +277,15 @@ void VSettingsDialog::saveConfiguration()
         VMiscTab *miscTab = dynamic_cast<VMiscTab *>(m_tabs->widget(idx++));
         Q_ASSERT(miscTab);
         if (!miscTab->saveConfiguration()) {
+            goto err;
+        }
+    }
+
+    // Image Hosting Tab.
+    {
+        VImageHostingTab *imageBedTab = dynamic_cast<VImageHostingTab *>(m_tabs->widget(idx++));
+        Q_ASSERT(imageBedTab);
+        if (!imageBedTab->saveConfiguration()) {
             goto err;
         }
     }
@@ -1547,7 +1566,6 @@ bool VMiscTab::loadConfiguration()
     if (!loadMatchesInPage()) {
         return false;
     }
-
     return true;
 }
 
@@ -1569,5 +1587,164 @@ bool VMiscTab::loadMatchesInPage()
 bool VMiscTab::saveMatchesInPage()
 {
     g_config->setHighlightMatchesInPage(m_matchesInPageCB->isChecked());
+    return true;
+}
+
+VImageHostingTab::VImageHostingTab(QWidget *p_parent)
+    : QWidget(p_parent)
+{
+    QTabWidget *imageHostingTabWeg = new QTabWidget(this);
+    QWidget *githubImageHostingTab = new QWidget();
+    QWidget *wechatImageHostingTab = new QWidget();
+    imageHostingTabWeg->addTab(githubImageHostingTab, tr("GitHub"));
+    imageHostingTabWeg->addTab(wechatImageHostingTab, tr("WeChat"));
+    imageHostingTabWeg->setCurrentIndex(0);
+
+    // Set the tab of GitHub image Hosting
+    m_personalAccessTokenEdit = new VLineEdit();
+    m_personalAccessTokenEdit->setToolTip(tr("GitHub personal access token"));
+    m_repoNameEdit = new VLineEdit();
+    m_repoNameEdit->setToolTip(tr("Name of GitHub repository for image hosting"));
+    m_userNameEdit = new VLineEdit();
+    m_userNameEdit->setToolTip(tr("User name of GitHub"));
+
+    QFormLayout *githubLayout = new QFormLayout();
+    githubLayout->addRow(tr("Personal access token:"), m_personalAccessTokenEdit);
+    githubLayout->addRow(tr("Repo name:"), m_repoNameEdit);
+    githubLayout->addRow(tr("User name:"), m_userNameEdit);
+
+    githubImageHostingTab->setLayout(githubLayout);
+
+    // Set the tab of GitHub image Hosting
+    m_appidEdit = new VLineEdit();
+    m_appidEdit->setToolTip(tr("WeChat appid"));
+    m_secretEdit = new VLineEdit();
+    m_secretEdit->setToolTip(tr("Please input wechat secret"));
+    m_markdown2WechatToolUrlEdit = new VLineEdit();
+    m_markdown2WechatToolUrlEdit->setToolTip(tr("Please input markdown to wechat tool's url"));
+
+    QFormLayout *wechatLayout = new QFormLayout();
+    wechatLayout->addRow(tr("appid:"), m_appidEdit);
+    wechatLayout->addRow(tr("secret:"), m_secretEdit);
+    wechatLayout->addRow(tr("markdown2WechatToolUrl"), m_markdown2WechatToolUrlEdit);
+
+    wechatImageHostingTab->setLayout(wechatLayout);
+}
+
+bool VImageHostingTab::loadAppid()
+{
+    m_appidEdit->setText(g_config->getAppid());
+    return true;
+}
+
+bool VImageHostingTab::saveAppid()
+{
+    g_config->setAppid(m_appidEdit->text());
+    return true;
+}
+
+bool VImageHostingTab::loadSecret()
+{
+    m_secretEdit->setText(g_config->getSecret());
+    return true;
+}
+
+bool VImageHostingTab::saveSecret()
+{
+    g_config->setSecret(m_secretEdit->text());
+    return true;
+}
+
+bool VImageHostingTab::loadMarkdown2WechatToolUrl()
+{
+    m_markdown2WechatToolUrlEdit->setText(g_config->getMarkdown2WechatToolUrl());
+    return true;
+}
+
+bool VImageHostingTab::saveMarkdown2WechatToolUrl()
+{
+    g_config->setMarkdown2WechatToolUrl(m_markdown2WechatToolUrlEdit->text());
+    return true;
+}
+
+bool VImageHostingTab::loadpersonalAccessToken()
+{
+    m_personalAccessTokenEdit->setText(g_config->getpersonalAccessToken());
+    return true;
+}
+
+bool VImageHostingTab::savepersonalAccessToken()
+{
+    g_config->setpersonalAccessToken(m_personalAccessTokenEdit->text());
+    return true;
+}
+
+bool VImageHostingTab::loadReposName()
+{
+    m_repoNameEdit->setText(g_config->getReposName());
+    return true;
+}
+
+bool VImageHostingTab::saveReposName()
+{
+    g_config->setReposName(m_repoNameEdit->text());
+    return true;
+}
+
+bool VImageHostingTab::loadUserName()
+{
+    m_userNameEdit->setText(g_config->getUserName());
+    return true;
+}
+
+bool VImageHostingTab::saveUserName()
+{
+    g_config->setUserName(m_userNameEdit->text());
+    return true;
+}
+
+bool VImageHostingTab::loadConfiguration()
+{
+    if(!loadpersonalAccessToken()){
+        return false;
+    }
+    if(!loadReposName()){
+        return false;
+    }
+    if(!loadUserName()){
+        return false;
+    }
+    if(!loadAppid()){
+        return false;
+    }
+    if(!loadSecret()){
+        return false;
+    }
+    if(!loadMarkdown2WechatToolUrl()){
+        return false;
+    }
+    return true;
+}
+
+bool VImageHostingTab::saveConfiguration()
+{
+    if(!savepersonalAccessToken()){
+        return false;
+    }
+    if(!saveReposName()){
+        return false;
+    }
+    if(!saveUserName()){
+        return false;
+    }
+    if(!saveAppid()){
+        return false;
+    }
+    if(!saveSecret()){
+        return false;
+    }
+    if(!saveMarkdown2WechatToolUrl()){
+        return false;
+    }
     return true;
 }

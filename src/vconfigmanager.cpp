@@ -79,6 +79,14 @@ void VConfigManager::initialize()
 
     initCodeBlockCssStyles();
 
+    m_personalAccessToken = getConfigFromSettings("global", "github_personal_access_token").toString();
+    m_reposName = getConfigFromSettings("global", "github_repos_name").toString();
+    m_userName = getConfigFromSettings("global", "github_user_name").toString();
+
+    m_appid = getConfigFromSettings("global", "wechat_appid").toString();
+    m_secret = getConfigFromSettings("global", "wechat_secret").toString();
+    m_markdown2WechatToolUrl = getConfigFromSettings("global", "wechat_markdown_to_wechat_tool_url").toString();
+
     m_theme = getConfigFromSettings("global", "theme").toString();
 
     m_editorStyle = getConfigFromSettings("global", "editor_style").toString();

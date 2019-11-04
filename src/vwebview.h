@@ -24,6 +24,10 @@ signals:
 
     void requestExpandRestorePreviewArea();
 
+    void requestUploadImageToGithub();
+
+    void requestUploadImageToWechat();
+
 protected:
     void contextMenuEvent(QContextMenuEvent *p_event);
 
