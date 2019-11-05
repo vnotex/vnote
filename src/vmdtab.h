@@ -288,29 +288,8 @@ private:
 
     int m_documentID;
 
-//    QNetworkAccessManager manager;
-//    QNetworkReply *reply;
-//    QMap<QString, QString> imageUrlMap;
-//    // Similar to _v_image/
-//    QString imageBasePath;
-//    // Replace the file content with the new link
-//    QString newFileContent;
-//    // Whether the picture has been uploaded successfully
-//    bool imageUploaded;
-//    // Image upload progress bar
-//    QProgressDialog *proDlg;
-//    // Total number of images to upload
-//    int uploadImageCount;
-//    int uploadImageCountIndex;
-//    // Currently uploaded picture name
-//    QString currentUploadImage;
-//    // Image upload status
-//    bool uploadImageStatus;
-//    // Token returned after successful wechat authentication
-//    QString wechatAccessToken;
-//    // Relative image path currently Uploaded
-//    QString currentUploadRelativeImagePah;
-    VImageHosting *vImageHosting;
+    VGithubImageHosting *vGithubImageHosting;
+    VWechatImageHosting *vWechatImageHosting;
 };
 
 inline VMdEditor *VMdTab::getEditor()

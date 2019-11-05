@@ -4,7 +4,7 @@
 
 extern VConfigManager *g_config;
 
-VImageHosting::VImageHosting(VFile *p_file, QWidget *p_parent)
+VGithubImageHosting::VGithubImageHosting(VFile *p_file, QWidget *p_parent)
     : m_file(p_file),
       parent(p_parent)
 {
@@ -12,7 +12,15 @@ VImageHosting::VImageHosting(VFile *p_file, QWidget *p_parent)
     imageUploaded = false;
 }
 
-void VImageHosting::handleUploadImageToGithubRequested()
+VWechatImageHosting::VWechatImageHosting(VFile *p_file, QWidget *p_parent)
+    :m_file(p_file),
+      parent(p_parent)
+{
+    reply = Q_NULLPTR;
+    imageUploaded = false;
+}
+
+void VGithubImageHosting::handleUploadImageToGithubRequested()
 {
     qDebug() << "Start processing the image upload request to GitHub";
 
@@ -27,7 +35,7 @@ void VImageHosting::handleUploadImageToGithubRequested()
 }
 
 
-void VImageHosting::authenticateGithubImageHosting(QString p_token)
+void VGithubImageHosting::authenticateGithubImageHosting(QString p_token)
 {
     qDebug() << "start the authentication process ";
     QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -40,10 +48,10 @@ void VImageHosting::authenticateGithubImageHosting(QString p_token)
         reply->deleteLater();
     }
     reply = manager.get(request);
-    connect(reply, &QNetworkReply::finished, this, &VImageHosting::githubImageBedAuthFinished);
+    connect(reply, &QNetworkReply::finished, this, &VGithubImageHosting::githubImageBedAuthFinished);
 }
 
-void VImageHosting::githubImageBedAuthFinished()
+void VGithubImageHosting::githubImageBedAuthFinished()
 {
     switch (reply->error()) {
     case QNetworkReply::NoError:
@@ -113,7 +121,7 @@ void VImageHosting::githubImageBedAuthFinished()
     }
 }
 
-void VImageHosting::githubImageBedUploadManager()
+void VGithubImageHosting::githubImageBedUploadManager()
 {
     uploadImageCountIndex--;
 
@@ -149,7 +157,7 @@ void VImageHosting::githubImageBedUploadManager()
     githubImageBedUploadImage(g_config->getUserName(), g_config->getReposName(), path, g_config->getpersonalAccessToken());
 }
 
-void VImageHosting::githubImageBedUploadImage(QString username, QString repository, QString imagePath, QString token)
+void VGithubImageHosting::githubImageBedUploadImage(QString username, QString repository, QString imagePath, QString token)
 {
     QFileInfo fileInfo(imagePath.toLocal8Bit());
     if(!fileInfo.exists()){
@@ -194,10 +202,10 @@ void VImageHosting::githubImageBedUploadImage(QString username, QString reposito
     qDebug() << "Start uploading images: " + imagePath + " Waiting for upload to complete";
     uploadImageStatus = true;
     currentUploadImage = imagePath;
-    connect(reply, &QNetworkReply::finished, this, &VImageHosting::githubImageBedUploadFinished);
+    connect(reply, &QNetworkReply::finished, this, &VGithubImageHosting::githubImageBedUploadFinished);
 }
 
-void VImageHosting::githubImageBedUploadFinished()
+void VGithubImageHosting::githubImageBedUploadFinished()
 {
     if (proDlg->wasCanceled()) {
         qDebug() << "User stops uploading";
@@ -314,7 +322,7 @@ void VImageHosting::githubImageBedUploadFinished()
     }
 }
 
-void VImageHosting::githubImageBedReplaceLink(QString fileContent, QString filePath)
+void VGithubImageHosting::githubImageBedReplaceLink(QString fileContent, QString filePath)
 {
     // This function must be executed when the upload is completed or fails in the middle
     // Write content to file
@@ -327,7 +335,7 @@ void VImageHosting::githubImageBedReplaceLink(QString fileContent, QString fileP
     imageUploaded = false;
 }
 
-QString VImageHosting::githubImageBedGenerateParam(QString imagePath){
+QString VGithubImageHosting::githubImageBedGenerateParam(QString imagePath){
     // According to the requirements of GitHub interface, pictures must be in Base64 format
     // img to base64
     QByteArray hexed;
@@ -347,7 +355,7 @@ QString VImageHosting::githubImageBedGenerateParam(QString imagePath){
     return jsonStr;
 }
 
-void VImageHosting::handleUploadImageToWechatRequested()
+void VWechatImageHosting::handleUploadImageToWechatRequested()
 {
     qDebug() << "Start processing image upload request to wechat";
     QString appid = g_config->getAppid();
@@ -362,7 +370,7 @@ void VImageHosting::handleUploadImageToWechatRequested()
     authenticateWechatImageHosting(appid, secret);
 }
 
-void VImageHosting::authenticateWechatImageHosting(QString appid, QString secret)
+void VWechatImageHosting::authenticateWechatImageHosting(QString appid, QString secret)
 {
     qDebug() << "Start certification";
     QApplication::setOverrideCursor(Qt::WaitCursor); // Set the mouse to wait
@@ -377,10 +385,10 @@ void VImageHosting::authenticateWechatImageHosting(QString appid, QString secret
         reply->deleteLater();
     }
     reply = manager.get(request);
-    connect(reply, &QNetworkReply::finished, this, &VImageHosting::wechatImageBedAuthFinished);
+    connect(reply, &QNetworkReply::finished, this, &VWechatImageHosting::wechatImageBedAuthFinished);
 }
 
-void VImageHosting::wechatImageBedAuthFinished()
+void VWechatImageHosting::wechatImageBedAuthFinished()
 {
     switch (reply->error()) {
         case QNetworkReply::NoError:
@@ -436,7 +444,7 @@ void VImageHosting::wechatImageBedAuthFinished()
                             {
                                 qDebug() << m_file->getName() << " No pictures to upload";
                                 QString info = m_file->getName() + tr(" No pictures to upload");
-                                QMessageBox::information(NULL, tr("Wechat Image Hosting"), info);
+                                QMessageBox::information(parent, tr("Wechat Image Hosting"), info);
                             }
                         }
                     }else{
@@ -478,7 +486,7 @@ void VImageHosting::wechatImageBedAuthFinished()
     }
 }
 
-void VImageHosting::wechatImageBedUploadManager()
+void VWechatImageHosting::wechatImageBedUploadManager()
 {
     uploadImageCountIndex--;
 
@@ -509,7 +517,7 @@ void VImageHosting::wechatImageBedUploadManager()
     wechatImageBedUploadImage(path, wechatAccessToken);
 }
 
-void VImageHosting::wechatImageBedUploadImage(QString image_path, QString token)
+void VWechatImageHosting::wechatImageBedUploadImage(QString image_path, QString token)
 {
     qDebug() << "To deal with: " << image_path;
     QFileInfo fileInfo(image_path.toLocal8Bit());
@@ -580,11 +588,11 @@ void VImageHosting::wechatImageBedUploadImage(QString image_path, QString token)
     qDebug() << "Start uploading images: " + image_path + " Waiting for upload to complete";
     uploadImageStatus=true;
     currentUploadImage = image_path;
-    connect(reply, &QNetworkReply::finished, this, &VImageHosting::wechatImageBedUploadFinished);
+    connect(reply, &QNetworkReply::finished, this, &VWechatImageHosting::wechatImageBedUploadFinished);
 
 }
 
-void VImageHosting::wechatImageBedUploadFinished()
+void VWechatImageHosting::wechatImageBedUploadFinished()
 {
     if(proDlg->wasCanceled()){
         qDebug() << "User stops uploading";
@@ -652,7 +660,7 @@ void VImageHosting::wechatImageBedUploadFinished()
 
     }
 }
-void VImageHosting::wechatImageBedReplaceLink(QString file_content, QString file_path)
+void VWechatImageHosting::wechatImageBedReplaceLink(QString file_content, QString file_path)
 {
     // Write content to clipboard
     QClipboard *board = QApplication::clipboard();

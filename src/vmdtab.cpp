@@ -114,7 +114,9 @@ void VMdTab::setupUI()
     // Setup editor when we really need it.
     m_editor = NULL;
 
-    vImageHosting = new VImageHosting(m_file, this);
+    // The following is the image hosting initialization
+    vGithubImageHosting = new VGithubImageHosting(m_file, this);
+    vWechatImageHosting = new VWechatImageHosting(m_file, this);
 
     QVBoxLayout *layout = new QVBoxLayout();
     layout->addWidget(m_splitter);
@@ -1513,12 +1515,12 @@ void VMdTab::handleSavePageRequested()
 
 void VMdTab::handleUploadImageToGithubRequested()
 {
-      vImageHosting->handleUploadImageToGithubRequested();
+      vGithubImageHosting->handleUploadImageToGithubRequested();
 }
 
 void VMdTab::handleUploadImageToWechatRequested()
 {
-    vImageHosting->handleUploadImageToWechatRequested();
+    vWechatImageHosting->handleUploadImageToWechatRequested();
 }
 
 VWordCountInfo VMdTab::fetchWordCountInfo(bool p_editMode) const
