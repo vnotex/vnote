@@ -106,7 +106,7 @@ void VGithubImageHosting::githubImageBedAuthFinished()
             {
                 qDebug() << m_file->getName() << " No images to upload";
                 QString info = m_file->getName() + " No pictures to upload";
-                QMessageBox::information(NULL, tr("Github Image Hosting"), info);
+                QMessageBox::information(parent, tr("Github Image Hosting"), info);
             }
         }
         break;
