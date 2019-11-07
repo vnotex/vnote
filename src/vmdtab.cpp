@@ -25,7 +25,6 @@
 #include "vlivepreviewhelper.h"
 #include "vmathjaxinplacepreviewhelper.h"
 
-
 extern VMainWindow *g_mainWin;
 
 extern VConfigManager *g_config;

@@ -1,17 +1,14 @@
 #ifndef VMDTAB_H
 #define VMDTAB_H
 
-//#include <QtNetwork>
 #include <QString>
 #include <QPointer>
 #include <QSharedPointer>
-//#include <QProgressDialog>
-//#include <QDesktopServices>
 #include "vedittab.h"
 #include "vconstants.h"
 #include "vmarkdownconverter.h"
 #include "vconfigmanager.h"
-#include "vimageHosting.h"
+#include "vimagehosting.h"
 
 class VWebView;
 class VDocument;
