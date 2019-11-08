@@ -1,16 +1,14 @@
 #ifndef VMDTAB_H
 #define VMDTAB_H
 
-#include <QtNetwork>
 #include <QString>
 #include <QPointer>
 #include <QSharedPointer>
-#include <QProgressDialog>
-#include <QDesktopServices>
 #include "vedittab.h"
 #include "vconstants.h"
 #include "vmarkdownconverter.h"
 #include "vconfigmanager.h"
+#include "vimagehosting.h"
 
 class VWebView;
 class VDocument;
@@ -110,27 +108,6 @@ public:
 
     bool expandRestorePreviewArea();
 
-    // github image hosting
-    // GitHub identity authentication
-    void authenticateGithubImageHosting(QString p_token);
-    // Upload a single image
-    void githubImageBedUploadImage(QString username,QString repository,QString image_path,QString token);
-    // Parameters needed to generate uploaded images
-    QString githubImageBedGenerateParam(QString image_path);
-    // Control image upload
-    void githubImageBedUploadManager();
-    // Replace old links with new ones for images
-    void githubImageBedReplaceLink(QString file_content, QString file_path);
-
-    // wechat image hosting
-    void authenticateWechatImageHosting(QString appid, QString secret);
-    // Control image upload
-    void wechatImageBedUploadManager();
-    // Replace old links with new ones for images
-    void wechatImageBedReplaceLink(QString file_content, QString file_path);
-    // Upload a single image
-    void wechatImageBedUploadImage(QString image_path,QString token);
-
 public slots:
     // Enter edit mode.
     void editFile() Q_DECL_OVERRIDE;
@@ -188,20 +165,8 @@ private slots:
     // Process the image upload request to GitHub
     void handleUploadImageToGithubRequested();
 
-    // GitHub image hosting identity authentication completed
-    void githubImageBedAuthFinished();
-
-    // GitHub image hosting upload completed
-    void githubImageBedUploadFinished();
-
     // Process image upload request to wechat
     void handleUploadImageToWechatRequested();
-
-    // Wechat mage hosting identity authentication completed
-    void wechatImageBedAuthFinished();
-
-    // Wechat image hosting upload completed
-    void wechatImageBedUploadFinished();
 
 private:
     enum TabReady { None = 0, ReadMode = 0x1, EditMode = 0x2 };
@@ -320,28 +285,8 @@ private:
 
     int m_documentID;
 
-    QNetworkAccessManager manager;
-    QNetworkReply *reply;
-    QMap<QString, QString> imageUrlMap;
-    // Similar to _v_image/
-    QString imageBasePath;
-    // Replace the file content with the new link
-    QString newFileContent;
-    // Whether the picture has been uploaded successfully
-    bool imageUploaded;
-    // Image upload progress bar
-    QProgressDialog *proDlg;
-    // Total number of images to upload
-    int uploadImageCount;
-    int uploadImageCountIndex;
-    // Currently uploaded picture name
-    QString currentUploadImage;
-    // Image upload status
-    bool uploadImageStatus;
-    // Token returned after successful wechat authentication
-    QString wechatAccessToken;
-    // Relative image path currently Uploaded
-    QString currentUploadRelativeImagePah;
+    VGithubImageHosting *vGithubImageHosting;
+    VWechatImageHosting *vWechatImageHosting;
 };
 
 inline VMdEditor *VMdTab::getEditor()
