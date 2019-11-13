@@ -191,5 +191,4 @@ private:
     QString new_file_name;
     VFile *m_file;
 };
-
 #endif // VGITHUBIMAGEHOSTING_H
