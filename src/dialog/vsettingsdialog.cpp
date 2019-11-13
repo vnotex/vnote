@@ -1596,8 +1596,10 @@ VImageHostingTab::VImageHostingTab(QWidget *p_parent)
     QTabWidget *imageHostingTabWeg = new QTabWidget(this);
     QWidget *githubImageHostingTab = new QWidget();
     QWidget *wechatImageHostingTab = new QWidget();
+    QWidget *tencentImageHostingTab = new QWidget();
     imageHostingTabWeg->addTab(githubImageHostingTab, tr("GitHub"));
     imageHostingTabWeg->addTab(wechatImageHostingTab, tr("WeChat"));
+    imageHostingTabWeg->addTab(tencentImageHostingTab, tr("Tencent"));
     imageHostingTabWeg->setCurrentIndex(0);
 
     // Set the tab of GitHub image Hosting
@@ -1629,6 +1631,21 @@ VImageHostingTab::VImageHostingTab(QWidget *p_parent)
     wechatLayout->addRow(tr("markdown2WechatToolUrl"), m_markdown2WechatToolUrlEdit);
 
     wechatImageHostingTab->setLayout(wechatLayout);
+
+    // Set the tab of Tencent image Hosting.
+    m_accessDomainNameEdit = new VLineEdit();
+    m_accessDomainNameEdit->setToolTip(tr("Tencent access domain name"));
+    m_secretIdEdit = new VLineEdit();
+    m_secretIdEdit->setToolTip(tr("Tencent secret id"));
+    m_secretKeyEdit = new VLineEdit();
+    m_secretKeyEdit->setToolTip(tr("Tencent secret key"));
+
+    QFormLayout *tencentLayout = new QFormLayout();
+    tencentLayout->addRow(tr("accessDomainName"), m_accessDomainNameEdit);
+    tencentLayout->addRow(tr("secretId"), m_secretIdEdit);
+    tencentLayout->addRow(tr("secretKey"), m_secretKeyEdit);
+
+    tencentImageHostingTab->setLayout(tencentLayout);
 }
 
 bool VImageHostingTab::loadAppid()
@@ -1703,6 +1720,42 @@ bool VImageHostingTab::saveUserName()
     return true;
 }
 
+bool VImageHostingTab::loadAccessDomainName()
+{
+    m_accessDomainNameEdit->setText(g_config->getAccessDomainName());
+    return true;
+}
+
+bool VImageHostingTab::saveAccessDomainName()
+{
+    g_config->setAccessDomainName(m_accessDomainNameEdit->text());
+    return true;
+}
+
+bool VImageHostingTab::loadSecretId()
+{
+    m_secretIdEdit->setText(g_config->getSecretId());
+    return true;
+}
+
+bool VImageHostingTab::saveSecretId()
+{
+    g_config->setSecretId(m_secretIdEdit->text());
+    return true;
+}
+
+bool VImageHostingTab::loadSecretKey()
+{
+    m_secretKeyEdit->setText(g_config->getSecretKey());
+    return true;
+}
+
+bool VImageHostingTab::saveSecretKey()
+{
+    g_config->setSecretKey(m_secretKeyEdit->text());
+    return true;
+}
+
 bool VImageHostingTab::loadConfiguration()
 {
     if(!loadpersonalAccessToken()){
@@ -1721,6 +1774,15 @@ bool VImageHostingTab::loadConfiguration()
         return false;
     }
     if(!loadMarkdown2WechatToolUrl()){
+        return false;
+    }
+    if(!loadAccessDomainName()){
+        return false;
+    }
+    if(!loadSecretId()){
+        return false;
+    }
+    if(!loadSecretKey()){
         return false;
     }
     return true;
@@ -1745,6 +1807,15 @@ bool VImageHostingTab::saveConfiguration()
     }
     if(!saveMarkdown2WechatToolUrl()){
         return false;
+    }
+    if(!saveAccessDomainName()){
+        return false;
+    }
+    if(!saveSecretId()){
+        return false;
+    }
+    if(!saveSecretKey()){
+
     }
     return true;
 }

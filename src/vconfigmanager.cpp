@@ -87,6 +87,10 @@ void VConfigManager::initialize()
     m_secret = getConfigFromSettings("global", "wechat_secret").toString();
     m_markdown2WechatToolUrl = getConfigFromSettings("global", "wechat_markdown_to_wechat_tool_url").toString();
 
+    m_accessDomainName = getConfigFromSettings("global", "tencent_access_domain_name").toString();
+    m_secretId = getConfigFromSettings("global", "tencent_secret_id").toString();
+    m_secretKey = getConfigFromSettings("global", "tencent_secret_key").toString();
+
     m_theme = getConfigFromSettings("global", "theme").toString();
 
     m_editorStyle = getConfigFromSettings("global", "editor_style").toString();

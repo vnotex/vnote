@@ -668,6 +668,15 @@ public:
     const QString &getMarkdown2WechatToolUrl() const;
     void setMarkdown2WechatToolUrl(const QString &p_markdown2WechatToolUrl);
 
+    // tencent image hosting setting
+    const QString &getAccessDomainName() const;
+    void setAccessDomainName(const QString &p_accessDomainName);
+
+    const QString &getSecretId() const;
+    void setSecretId(const QString &p_secretId);
+
+    const QString &getSecretKey() const;
+    void setSecretKey(const QString &p_secretKey);
 
 private:
     void initEditorConfigs();
@@ -1092,15 +1101,20 @@ private:
 
     QString m_plantUMLCmd;
 
-    // github imagebed
+    // github image hosting
     QString m_personalAccessToken;
     QString m_reposName;
     QString m_userName;
 
-    // wechat imagebed
+    // wechat image hosting
     QString m_appid;
     QString m_secret;
     QString m_markdown2WechatToolUrl;
+
+    // tencent image hosting
+    QString m_accessDomainName;
+    QString m_secretId;
+    QString m_secretKey;
 
     // Size of history.
     int m_historySize;
@@ -3108,4 +3122,48 @@ inline void VConfigManager::setUserName(const QString &p_userName)
     setConfigToSettings("global", "github_user_name", p_userName);
 }
 
+inline const QString &VConfigManager::getAccessDomainName() const
+{
+    return m_accessDomainName;
+}
+
+inline void VConfigManager::setAccessDomainName(const QString &p_accessDomainName)
+{
+    if (m_accessDomainName == p_accessDomainName) {
+        return;
+    }
+
+    m_accessDomainName = p_accessDomainName;
+    setConfigToSettings("global", "tencent_access_domain_name", p_accessDomainName);
+}
+
+inline const QString &VConfigManager::getSecretId() const
+{
+    return m_secretId;
+}
+
+inline void VConfigManager::setSecretId(const QString &p_secretId)
+{
+    if (m_secretId == p_secretId) {
+        return;
+    }
+
+    m_secretId = p_secretId;
+    setConfigToSettings("global", "tencent_secret_id", p_secretId);
+}
+
+inline const QString &VConfigManager::getSecretKey() const
+{
+    return m_secretKey;
+}
+
+inline void VConfigManager::setSecretKey(const QString &p_secretKey)
+{
+    if (m_secretKey == p_secretKey) {
+        return;
+    }
+
+    m_secretKey = p_secretKey;
+    setConfigToSettings("global", "tencent_secret_key", p_secretKey);
+}
 #endif // VCONFIGMANAGER_H

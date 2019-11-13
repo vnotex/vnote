@@ -16,10 +16,14 @@ void VGithubImageHosting::handleUploadImageToGithubRequested()
 {
     qDebug() << "Start processing the image upload request to GitHub";
 
-    if(g_config->getpersonalAccessToken().isEmpty() || g_config->getReposName().isEmpty() || g_config->getUserName().isEmpty())
+    if(g_config->getpersonalAccessToken().isEmpty() ||
+            g_config->getReposName().isEmpty() ||
+            g_config->getUserName().isEmpty())
     {
         qDebug() << "Please configure the GitHub image hosting first!";
-        QMessageBox::warning(NULL, tr("Github Image Hosting"), tr("Please configure the GitHub image hosting first!"));
+        QMessageBox::warning(nullptr,
+                             tr("Github Image Hosting"),
+                             tr("Please configure the GitHub image hosting first!"));
         return;
     }
 
@@ -52,7 +56,7 @@ void VGithubImageHosting::githubImageBedAuthFinished()
         if(bytes.contains("Bad credentials")){
             qDebug() << "Authentication failed";
             QApplication::restoreOverrideCursor();  // Recovery pointer
-            QMessageBox::warning(NULL, tr("Github Image Hosting"), tr("Bad credentials!! ") +
+            QMessageBox::warning(nullptr, tr("Github Image Hosting"), tr("Bad credentials!! ") +
                                  tr("Please check your Github Image Hosting parameters !!"));
             return;
         }else{
@@ -70,7 +74,7 @@ void VGithubImageHosting::githubImageBedAuthFinished()
                                        tr("Abort"),
                                        0,
                                        images.size(),
-                                       NULL);
+                                       nullptr);
                 proDlg->setWindowModality(Qt::WindowModal);
                 proDlg->setWindowTitle(tr("Uploading Images To Github"));
                 proDlg->setMinimumDuration(1);
@@ -88,7 +92,7 @@ void VGithubImageHosting::githubImageBedAuthFinished()
                         QFileInfo fileInfo(images[i].m_path.toLocal8Bit());
                         QString fileSuffix = fileInfo.suffix();
                         QString info = tr("Unsupported type: ") + fileSuffix;
-                        QMessageBox::warning(NULL, tr("Wechat Image Hosting"), info);
+                        QMessageBox::warning(nullptr, tr("Github Image Hosting"), info);
                         return;
                     }
                 }
@@ -98,7 +102,7 @@ void VGithubImageHosting::githubImageBedAuthFinished()
             {
                 qDebug() << m_file->getName() << " No images to upload";
                 QString info = m_file->getName() + " No pictures to upload";
-                QMessageBox::information(NULL, tr("Github Image Hosting"), info);
+                QMessageBox::information(nullptr, tr("Github Image Hosting"), info);
             }
         }
         break;
@@ -107,8 +111,8 @@ void VGithubImageHosting::githubImageBedAuthFinished()
     {
         QApplication::restoreOverrideCursor();  // Recovery pointer
         qDebug() << "Network error: " << reply->errorString() << " error " << reply->error();
-        QString info = tr("Network error: ") + reply->errorString();
-        QMessageBox::warning(NULL, tr("Github Image Hosting"), info);
+        QString info = tr("Network error: ") + reply->errorString() + tr("\n\nPlease check your network!");
+        QMessageBox::warning(nullptr, tr("Github Image Hosting"), info);
     }
     }
 }
@@ -141,7 +145,7 @@ void VGithubImageHosting::githubImageBedUploadManager()
             g_config->getUserName().isEmpty())
     {
         qDebug() << "Please configure the GitHub image hosting first!";
-        QMessageBox::warning(NULL, tr("Github Image Hosting"), tr("Please configure the GitHub image hosting first!"));
+        QMessageBox::warning(nullptr, tr("Github Image Hosting"), tr("Please configure the GitHub image hosting first!"));
         imageUrlMap.clear();
         return;
     }
@@ -163,7 +167,7 @@ void VGithubImageHosting::githubImageBedUploadImage(const QString &p_username,
     if(!fileInfo.exists()){
         qDebug() << "The picture does not exist in this path: " << p_image_path.toLocal8Bit();
         QString info = tr("The picture does not exist in this path: ") + p_image_path.toLocal8Bit();
-        QMessageBox::warning(NULL, tr("Github Image Hosting"), info);
+        QMessageBox::warning(nullptr, tr("Github Image Hosting"), info);
         imageUrlMap.clear();
         if(imageUploaded){
             githubImageBedReplaceLink(newFileContent, m_file->fetchPath());
@@ -180,7 +184,7 @@ void VGithubImageHosting::githubImageBedUploadImage(const QString &p_username,
             && fileSuffix != QString::fromLocal8Bit("gif")){
         qDebug() << "Unsupported type...";
         QString info = tr("Unsupported type: ") + fileSuffix;
-        QMessageBox::warning(NULL, tr("Github Image Hosting"), info);
+        QMessageBox::warning(nullptr, tr("Github Image Hosting"), info);
         imageUrlMap.clear();
         if(imageUploaded){
             githubImageBedReplaceLink(newFileContent, m_file->fetchPath());
@@ -288,7 +292,7 @@ void VGithubImageHosting::githubImageBedUploadFinished()
                         githubImageBedReplaceLink(newFileContent, m_file->fetchPath());
                     }
                     QString info = tr("Json decode error, Please contact the developer~");
-                    QMessageBox::warning(NULL, tr("Github Image Hosting"), info);
+                    QMessageBox::warning(nullptr, tr("Github Image Hosting"), info);
                 }
             }else{
                 // If status is not 201, it means there is a problem.
@@ -299,7 +303,7 @@ void VGithubImageHosting::githubImageBedUploadFinished()
                     githubImageBedReplaceLink(newFileContent, m_file->fetchPath());
                 }
                 QString info = tr("github status code != 201, Please contact the developer~");
-                QMessageBox::warning(NULL, tr("Github Image Hosting"), info);
+                QMessageBox::warning(nullptr, tr("Github Image Hosting"), info);
             }
             break;
         }
@@ -318,18 +322,24 @@ void VGithubImageHosting::githubImageBedUploadFinished()
             }
             QString info = tr("Uploading ") + currentUploadImage + tr(" \n\nNetwork error: ") +
                     reply->errorString() + tr("\n\nPlease check the network or image size");
-            QMessageBox::warning(NULL, tr("Github Image Hosting"), info);
+            QMessageBox::warning(nullptr, tr("Github Image Hosting"), info);
         }
     }
 }
 
-void VGithubImageHosting::githubImageBedReplaceLink(const QString p_fileContent, const QString p_filePath)
+void VGithubImageHosting::githubImageBedReplaceLink(const QString p_file_content, const QString p_file_path)
 {
     // This function must be executed when the upload is completed or fails in the middle.
+
+    QString file_content = p_file_content;
+
+    // delete image scale
+    file_content.replace(QRegExp("\\s+=\\d+x"),"");
+
     // Write content to file.
-    QFile file(p_filePath);
+    QFile file(p_file_path);
     file.open(QIODevice::WriteOnly | QIODevice::Text);
-    file.write(p_fileContent.toUtf8());
+    file.write(p_file_content.toUtf8());
     file.close();
 
     // Reset.
@@ -373,7 +383,7 @@ void VWechatImageHosting::handleUploadImageToWechatRequested()
     if(appid.isEmpty() || secret.isEmpty())
     {
         qDebug() << "Please configure the Wechat image hosting first!";
-        QMessageBox::warning(NULL, tr("Wechat Image Hosting"),
+        QMessageBox::warning(nullptr, tr("Wechat Image Hosting"),
                              tr("Please configure the Wechat image hosting first!"));
         return;
     }
@@ -423,13 +433,13 @@ void VWechatImageHosting::wechatImageBedAuthFinished()
                             QApplication::restoreOverrideCursor();  // Recovery pointer
                             if(images.size() > 0)
                             {
-                                proDlg = new QProgressDialog(tr("Uploading images to github..."),
+                                proDlg = new QProgressDialog(tr("Uploading images to wechat..."),
                                                        tr("Abort"),
                                                        0,
                                                        images.size(),
-                                                       NULL);
+                                                       nullptr);
                                 proDlg->setWindowModality(Qt::WindowModal);
-                                proDlg->setWindowTitle(tr("Uploading Images To Github"));
+                                proDlg->setWindowTitle(tr("Uploading Images To wechat"));
                                 proDlg->setMinimumDuration(1);
                                 uploadImageCount = images.size();
                                 uploadImageCountIndex  = uploadImageCount;
@@ -444,7 +454,7 @@ void VWechatImageHosting::wechatImageBedAuthFinished()
                                         QFileInfo file_info(images[i].m_path.toLocal8Bit());
                                         QString file_suffix = file_info.suffix();
                                         QString info = tr("Unsupported type: ") + file_suffix;
-                                        QMessageBox::warning(NULL, tr("Wechat Image Hosting"), info);
+                                        QMessageBox::warning(nullptr, tr("Wechat Image Hosting"), info);
                                         return;
                                     }
                                 }
@@ -454,7 +464,7 @@ void VWechatImageHosting::wechatImageBedAuthFinished()
                             {
                                 qDebug() << m_file->getName() << " No pictures to upload";
                                 QString info = m_file->getName() + tr(" No pictures to upload");
-                                QMessageBox::information(NULL, tr("Wechat Image Hosting"), info);
+                                QMessageBox::information(nullptr, tr("Wechat Image Hosting"), info);
                             }
                         }
                     }else{
@@ -467,12 +477,12 @@ void VWechatImageHosting::wechatImageBedAuthFinished()
                             QString ip = string.split(" ")[2];
                             QClipboard *board = QApplication::clipboard();
                             board->setText(ip);
-                            QMessageBox::warning(NULL, tr("Wechat Image Hosting"),
+                            QMessageBox::warning(nullptr, tr("Wechat Image Hosting"),
                                                  tr("Your ip address was set to the Clipboard!") +
                                                  tr("\nPlease add the  IP address: ") +
                                                  ip + tr(" to the wechat ip whitelist!"));
                         }else{
-                            QMessageBox::warning(NULL, tr("Wechat Image Hosting"),
+                            QMessageBox::warning(nullptr, tr("Wechat Image Hosting"),
                                                  tr("Please check your Wechat Image Hosting parameters !!\n") +
                                                  string);
                         }
@@ -485,7 +495,7 @@ void VWechatImageHosting::wechatImageBedAuthFinished()
                 qDebug() << "Resolution failure!";
                 qDebug() << "Resolution failure's json: " << bytes;
                 QString info = tr("Json decode error, Please contact the developer~");
-                QMessageBox::warning(NULL, tr("Wechat Image Hosting"), info);
+                QMessageBox::warning(nullptr, tr("Wechat Image Hosting"), info);
             }
 
             break;
@@ -494,8 +504,8 @@ void VWechatImageHosting::wechatImageBedAuthFinished()
         {
             QApplication::restoreOverrideCursor();
             qDebug() << "Network error: " << reply->errorString() << " error " << reply->error();
-            QString info = tr("Network error: ") + reply->errorString();
-            QMessageBox::warning(NULL, tr("Wechat Image Hosting"), info);
+            QString info = tr("Network error: ") + reply->errorString() + tr("\n\nPlease check your network!");
+            QMessageBox::warning(nullptr, tr("Wechat Image Hosting"), info);
         }
     }
 }
@@ -539,7 +549,7 @@ void VWechatImageHosting::wechatImageBedUploadImage(const QString p_image_path, 
         imageUrlMap.clear();
         qDebug() << "The picture does not exist in this path: " << p_image_path.toLocal8Bit();
         QString info = tr("The picture does not exist in this path: ") + p_image_path.toLocal8Bit();
-        QMessageBox::warning(NULL, tr("Wechat Image Hosting"), info);
+        QMessageBox::warning(nullptr, tr("Wechat Image Hosting"), info);
         return;
     }
 
@@ -550,7 +560,7 @@ void VWechatImageHosting::wechatImageBedUploadImage(const QString p_image_path, 
         imageUrlMap.clear();
         qDebug() << "Unsupported type...";
         QString info = tr("Unsupported type: ") + file_suffix;
-        QMessageBox::warning(NULL, tr("Wechat Image Hosting"), info);
+        QMessageBox::warning(nullptr, tr("Wechat Image Hosting"), info);
         return;
     }
 
@@ -561,7 +571,7 @@ void VWechatImageHosting::wechatImageBedUploadImage(const QString p_image_path, 
         imageUrlMap.clear();
         qDebug() << "The size of the picture is more than 1M";
         QString info = tr("The size of the picture is more than 1M! Wechat API does not support!!");
-        QMessageBox::warning(NULL, tr("Wechat Image Hosting"), info);
+        QMessageBox::warning(nullptr, tr("Wechat Image Hosting"), info);
         return;
     }
 
@@ -642,7 +652,7 @@ void VWechatImageHosting::wechatImageBedUploadFinished()
                         QString error = bytes;
                         qDebug() << bytes;
                         QString info = tr("upload failed! Please contact the developer~");
-                        QMessageBox::warning(NULL, tr("Wechat Image Hosting"), info);
+                        QMessageBox::warning(nullptr, tr("Wechat Image Hosting"), info);
                     }
                 }
             }else{
@@ -651,7 +661,7 @@ void VWechatImageHosting::wechatImageBedUploadFinished()
                 qDebug() << "Resolution failure!";
                 qDebug() << "Resolution failure's json: " << bytes;
                 QString info = tr("Json decode error, Please contact the developer~");
-                QMessageBox::warning(NULL, tr("Wechat Image Hosting"), info);
+                QMessageBox::warning(nullptr, tr("Wechat Image Hosting"), info);
             }
 
             break;
@@ -663,23 +673,28 @@ void VWechatImageHosting::wechatImageBedUploadFinished()
 
             QString info = tr("Uploading ") + currentUploadImage + tr(" \n\nNetwork error: ") +
                     reply->errorString() + tr("\n\nPlease check the network or image size");
-            QMessageBox::warning(NULL, tr("Wechat Image Hosting"), info);
+            QMessageBox::warning(nullptr, tr("Wechat Image Hosting"), info);
         }
     }
 }
 
 void VWechatImageHosting::wechatImageBedReplaceLink(const QString p_file_content)
 {
+    QString file_content = p_file_content;
+
+    // delete image scale
+    file_content.replace(QRegExp("\\s+=\\d+x"),"");
+
     // Write content to clipboard.
     QClipboard *board = QApplication::clipboard();
-    board->setText(p_file_content);
+    board->setText(file_content);
     QString url = g_config->getMarkdown2WechatToolUrl();
     if(url.isEmpty()){
-        QMessageBox::warning(NULL, tr("Wechat Image Hosting"),
+        QMessageBox::warning(nullptr, tr("Wechat Image Hosting"),
                              tr("The article has been copied to the clipboard. Please find a text file and save it!!"));
     }else{
         QMessageBox::StandardButton result;
-        result = QMessageBox::question(NULL, tr("Wechat Image Hosting"),
+        result = QMessageBox::question(nullptr, tr("Wechat Image Hosting"),
                                        tr("The article has been copied to the clipboard.") +
                                        tr("Do you want to open the tool link of mark down to wechat?"),
                                        QMessageBox::Yes|QMessageBox::No,QMessageBox::Yes);
@@ -689,4 +704,338 @@ void VWechatImageHosting::wechatImageBedReplaceLink(const QString p_file_content
     }
     imageUrlMap.clear();
     imageUploaded = false;  // Reset.
+}
+
+VTencentImageHosting::VTencentImageHosting(VFile *p_file, QWidget *p_parent)
+    :QObject(p_parent),
+     m_file(p_file)
+{
+    reply = Q_NULLPTR;
+    imageUploaded = false;
+}
+
+void VTencentImageHosting::handleUploadImageToTencentRequested()
+{
+    qDebug() << "Start processing the image upload request to Tencent";
+
+    if(g_config->getAccessDomainName().isEmpty() || g_config->getSecretId().isEmpty() || g_config->getSecretKey().isEmpty())
+    {
+        qDebug() << "Please configure the Tencent image hosting first!";
+        QMessageBox::warning(nullptr, tr("Tencent Image Hosting"), tr("Please configure the Tencent image hosting first!"));
+        return;
+    }
+
+    findAndStartUploadImage();
+}
+
+void VTencentImageHosting::findAndStartUploadImage()
+{
+    qDebug() << "The current article path is: " << m_file->fetchPath();
+    imageBasePath = m_file->fetchBasePath();
+    newFileContent = m_file->getContent();
+
+    QVector<ImageLink> images = VUtils::fetchImagesFromMarkdownFile(m_file,ImageLink::LocalRelativeInternal);
+    if(images.size() > 0)
+    {
+        proDlg = new QProgressDialog(tr("Uploading images to tencent..."),
+                               tr("Abort"),
+                               0,
+                               images.size(),
+                               nullptr);
+        proDlg->setWindowModality(Qt::WindowModal);
+        proDlg->setWindowTitle(tr("Uploading Images To Tencent"));
+        proDlg->setMinimumDuration(1);
+
+        uploadImageCount = images.size();
+        uploadImageCountIndex  = uploadImageCount;
+        for(int i=0;i<images.size() ;i++)
+        {
+            if(images[i].m_url.contains(".png") || images[i].m_url.contains(".jpg")){
+                imageUrlMap.insert(images[i].m_url,"");
+            }else{
+                delete proDlg;
+                imageUrlMap.clear();
+                qDebug() << "Unsupported type...";
+                QFileInfo fileInfo(images[i].m_path.toLocal8Bit());
+                QString fileSuffix = fileInfo.suffix();
+                QString info = tr("Unsupported type: ") + fileSuffix;
+                QMessageBox::warning(nullptr, tr("Tencent Image Hosting"), info);
+                return;
+            }
+        }
+        tencentImageBedUploadManager();
+    }
+    else
+    {
+        qDebug() << m_file->getName() << " No images to upload";
+        QString info = m_file->getName() + " No pictures to upload";
+        QMessageBox::information(nullptr, tr("Tencent Image Hosting"), info);
+    }
+}
+
+void VTencentImageHosting::tencentImageBedUploadManager()
+{
+    uploadImageCountIndex--;
+
+    QString image_to_upload = "";
+    QMapIterator<QString, QString> it(imageUrlMap);
+    while(it.hasNext())
+    {
+        it.next();
+        if(it.value() == ""){
+            image_to_upload = it.key();
+            proDlg->setValue(uploadImageCount - 1 - uploadImageCountIndex);
+            proDlg->setLabelText(tr("Uploaading image: %1").arg(image_to_upload));
+            break;
+        }
+    }
+
+    if(image_to_upload == ""){
+        qDebug() << "All pictures have been uploaded";
+        tencentImageBedReplaceLink(newFileContent, m_file->fetchPath());
+        return;
+    }
+
+    QString path = imageBasePath + QDir::separator();
+    path += image_to_upload;
+    currentUploadRelativeImagePah = image_to_upload;
+    tencentImageBedUploadImage(path,
+                               g_config->getAccessDomainName(),
+                               g_config->getSecretId(),
+                               g_config->getSecretKey());
+}
+
+void VTencentImageHosting::tencentImageBedUploadImage(const QString &p_image_path,
+                                                      const QString &p_access_domain_name,
+                                                      const QString &p_secret_id,
+                                                      const QString &p_secret_key)
+{
+    QFileInfo fileInfo(p_image_path.toLocal8Bit());
+    if(!fileInfo.exists()){
+        qDebug() << "The picture does not exist in this path: " << p_image_path.toLocal8Bit();
+        QString info = tr("The picture does not exist in this path: ") + p_image_path.toLocal8Bit();
+        QMessageBox::warning(nullptr, tr("Tencent Image Hosting"), info);
+        imageUrlMap.clear();
+        if(imageUploaded){
+            tencentImageBedReplaceLink(newFileContent, m_file->fetchPath());
+        }
+        return;
+    }
+
+    QString fileSuffix = fileInfo.suffix();  // file extension
+    QString fileName = fileInfo.fileName();  // filename
+    QString uploadUrl;  // Image upload URL
+    new_file_name = QString::number(QDateTime::currentDateTime().toTime_t()) +"_" + fileName;
+
+    if(fileSuffix != QString::fromLocal8Bit("jpg") && fileSuffix != QString::fromLocal8Bit("png")){
+        qDebug() << "Unsupported type...";
+        QString info = tr("Unsupported type: ") + fileSuffix;
+        QMessageBox::warning(nullptr, tr("Tencent Image Hosting"), info);
+        imageUrlMap.clear();
+        if(imageUploaded){
+            tencentImageBedReplaceLink(newFileContent, m_file->fetchPath());
+        }
+        return;
+    }
+
+    QByteArray postData = getImgContent(p_image_path);
+    QNetworkRequest request;
+    uploadUrl = "https://" + p_access_domain_name + "/" + new_file_name;
+    request.setRawHeader(QByteArray("Host"), p_access_domain_name.toUtf8());
+    if(fileSuffix == QString::fromLocal8Bit("jpg"))
+    {
+        request.setHeader(QNetworkRequest::ContentTypeHeader, "image/jpeg");
+    }
+    else if(fileSuffix == QString::fromLocal8Bit("png"))
+    {
+        request.setHeader(QNetworkRequest::ContentTypeHeader, "image/png");
+    }
+
+    request.setHeader(QNetworkRequest::ContentLengthHeader, postData.size());
+    QString str = getAuthorizationString(p_secret_id, p_secret_key, new_file_name);
+    request.setRawHeader(QByteArray("Authorization"), str.toUtf8());
+    request.setRawHeader(QByteArray("Connection"), QByteArray("close"));
+
+    request.setUrl(QUrl(uploadUrl));
+    if(reply != Q_NULLPTR) {
+        reply->deleteLater();
+    }
+
+    reply = manager.put(request, postData);
+
+    qDebug() << "Start uploading images: " + p_image_path + " Waiting for upload to complete";
+    uploadImageStatus = true;
+    currentUploadImage = p_image_path;
+    connect(reply, &QNetworkReply::finished, this, &VTencentImageHosting::tencentImageBedUploadFinished);
+}
+
+void VTencentImageHosting::tencentImageBedUploadFinished()
+{
+    if(proDlg->wasCanceled()){
+        qDebug() << "User stops uploading";
+        reply->abort();        // Stop network request
+        imageUrlMap.clear();
+        // The ones that have been uploaded successfully before still need to stay
+        if(imageUploaded){
+            tencentImageBedReplaceLink(newFileContent, m_file->fetchPath());
+        }
+        return;
+    }
+
+    switch (reply->error())
+    {
+    case QNetworkReply::NoError:
+    {
+        QByteArray bytes = reply->readAll();
+        QString replyContent = bytes;
+        if(replyContent.size() > 0){
+            // 如果返回有值, 说明有问题, it means there is a problem.
+            qDebug() << "Upload failure";
+            qDebug() << replyContent;
+            delete proDlg;
+            imageUrlMap.clear();
+            if(imageUploaded){
+                tencentImageBedReplaceLink(newFileContent, m_file->fetchPath());
+            }
+            QMessageBox::warning(nullptr, tr("Tencent Image Hosting"), replyContent);
+        }else{
+            qDebug() <<  "Upload success";
+            imageUploaded = true;  // On behalf of successfully uploaded images
+            proDlg->setValue(uploadImageCount);
+
+            QString downloadUrl = "https://" + g_config->getAccessDomainName() + "/" + new_file_name;
+
+            imageUrlMap.insert(currentUploadRelativeImagePah, downloadUrl);
+            newFileContent.replace(currentUploadRelativeImagePah, downloadUrl);
+            // Start calling the method.
+            // Whether the value in the map is empty determines whether to stop.
+            tencentImageBedUploadManager();
+        }
+        break;
+    }
+    default:
+    {
+        delete proDlg;
+        imageUrlMap.clear();
+        if(imageUploaded){
+            tencentImageBedReplaceLink(newFileContent, m_file->fetchPath());
+        }
+
+        qDebug()<<"network error: " << reply->error();
+        if(reply->error() == 3)  // HostNotFoundError
+        {
+            QString info = tr(" \n\nNetwork error: HostNotFoundError") +
+                    tr("\n\nPlease check your network");
+            QMessageBox::warning(nullptr, tr("Tencent Image Hosting"), info);
+        }
+        else
+        {
+            QByteArray bytes = reply->readAll();
+            QString replyContent = bytes;
+            qDebug() << replyContent;
+
+            QString errorCode;
+            QString errorMessage;
+            QRegExp rc("<Code>([a-zA-Z0-9 ]+)</Code>");
+            QRegExp rx("<Message>([a-zA-Z0-9 ]+)</Message>");
+            if(rc.indexIn(replyContent) != -1)
+            {
+                qDebug() << "Error Code: " + rc.cap(1);
+                errorCode = rc.cap(1);
+            }
+            if(rx.indexIn(replyContent) != -1)
+            {
+                qDebug() << "Error Message: " + rx.cap(1);
+                errorMessage = rx.cap(1);
+            }
+
+            QString info = tr("Uploading ") + currentUploadImage + " \n\n" + errorCode + "\n\n" + errorMessage;
+            QMessageBox::warning(nullptr, tr("Tencent Image Hosting"), info);
+        }
+    }
+    }
+}
+
+void VTencentImageHosting::tencentImageBedReplaceLink(const QString &p_file_content, const QString &p_file_path)
+{
+    // This function must be executed when the upload is completed or fails in the middle.
+
+    QString file_content = p_file_content;
+
+    // delete image scale
+    file_content.replace(QRegExp("\\s+=\\d+x"),"");
+
+    // Write content to clipboard.
+    QClipboard *board = QApplication::clipboard();
+    board->setText(file_content);
+
+    // Write content to file.
+    QFile file(p_file_path);
+    file.open(QIODevice::WriteOnly | QIODevice::Text);
+    file.write(file_content.toUtf8());
+    file.close();
+
+    // Reset.
+    imageUrlMap.clear();
+    imageUploaded = false;
+}
+
+QByteArray VTencentImageHosting::hmacSha1(const QByteArray &p_key, const QByteArray &p_base_string)
+{
+    int blockSize = 64;
+    QByteArray key = p_key;
+    if (key.length() > blockSize)
+    {
+        key = QCryptographicHash::hash(key, QCryptographicHash::Sha1);
+    }
+    QByteArray innerPadding(blockSize, char(0x36));
+    QByteArray outerPadding(blockSize, char(0x5c));
+
+    for (int i = 0; i < key.length(); i++) {
+        innerPadding[i] = innerPadding[i] ^ key.at(i);
+        outerPadding[i] = outerPadding[i] ^ key.at(i);
+    }
+    QByteArray total = outerPadding;
+    QByteArray part = innerPadding;
+    part.append(p_base_string);
+
+    total.append(QCryptographicHash::hash(part, QCryptographicHash::Sha1));
+    QByteArray hashed = QCryptographicHash::hash(total, QCryptographicHash::Sha1);
+
+    return hashed.toHex();
+}
+
+QString VTencentImageHosting::getAuthorizationString(const QString &p_secret_id,
+                               const QString &p_secret_key,
+                               const QString &p_img_name)
+{
+    unsigned int now=QDateTime::currentDateTime().toTime_t();
+    QString keyTime=QString::number(now) + ";" + QString::number(now+3600);
+    QString SignKey=hmacSha1(p_secret_key.toUtf8(), keyTime.toUtf8());
+    QString HttpString="put\n/" + p_img_name + "\n\n\n";
+    QString StringToSign="sha1\n" + keyTime + "\n" +
+            QCryptographicHash::hash(HttpString.toUtf8(), QCryptographicHash::Sha1).toHex() + "\n";
+    QString signature=hmacSha1(SignKey.toUtf8(), StringToSign.toUtf8());
+    QString Authorization;
+    Authorization = "q-sign-algorithm=sha1";
+    Authorization += "&q-ak=";
+    Authorization += p_secret_id;
+    Authorization += "&q-sign-time=";
+    Authorization += keyTime;
+    Authorization += "&q-key-time=";
+    Authorization += keyTime;
+    Authorization += "&q-header-list=";
+    Authorization += "&q-url-param-list=";
+    Authorization += "&q-signature=";
+    Authorization += signature;
+    return Authorization;
+}
+
+QByteArray VTencentImageHosting::getImgContent(const QString &p_image_path)
+{
+    QFile file(p_image_path);
+    file.open(QIODevice::ReadOnly);
+    QByteArray fdata = file.readAll();
+    file.close();
+    return fdata;
 }

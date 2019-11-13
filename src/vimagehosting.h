@@ -13,6 +13,8 @@
 #include <QApplication>
 #include <vfile.h>
 #include <QClipboard>
+#include <QCryptographicHash>
+#include <QRegExp>
 
 class VGithubImageHosting : public QObject
 {
@@ -125,6 +127,68 @@ private:
     QString wechatAccessToken;
     // Relative image path currently Uploaded.
     QString currentUploadRelativeImagePah;
+    VFile *m_file;
+};
+
+class VTencentImageHosting : public QObject
+{
+    Q_OBJECT
+public:
+    explicit VTencentImageHosting(VFile *p_file, QWidget *p_parent = nullptr);
+
+    QByteArray hmacSha1(const QByteArray &p_key, const QByteArray &p_base_string);
+
+    QString getAuthorizationString(const QString &p_secret_id,
+                                   const QString &p_secret_key,
+                                   const QString &p_img_name);
+
+    void findAndStartUploadImage();
+
+    QByteArray getImgContent(const QString &p_image_path);
+
+    // Control image to upload.
+    void tencentImageBedUploadManager();
+
+    // Replace old links with new ones for images.
+    void tencentImageBedReplaceLink(const QString &p_file_content, const QString &p_file_path);
+
+    // Upload a single image.
+    void tencentImageBedUploadImage(const QString &p_image_path,
+                                    const QString &p_access_domain_name,
+                                    const QString &p_secret_id,
+                                    const QString &p_secret_key);
+
+    // Process image upload request to tencent.
+    void handleUploadImageToTencentRequested();
+
+public slots:
+    // Tencent image hosting upload completed.
+    void tencentImageBedUploadFinished();
+
+private:
+    QNetworkAccessManager manager;
+    QNetworkReply *reply;
+    QMap<QString, QString> imageUrlMap;
+    // Similar to "_v_image/".
+    QString imageBasePath;
+    // Replace the file content with the new link.
+    QString newFileContent;
+    // Whether the picture has been uploaded successfully.
+    bool imageUploaded;
+    // Image upload progress bar.
+    QProgressDialog *proDlg;
+    // Total number of images to upload.
+    int uploadImageCount;
+    int uploadImageCountIndex;
+    // Currently uploaded picture name.
+    QString currentUploadImage;
+    // Image upload status
+    bool uploadImageStatus;
+    // Token returned after successful wechat authentication.
+    QString wechatAccessToken;
+    // Relative image path currently Uploaded.
+    QString currentUploadRelativeImagePah;
+    QString new_file_name;
     VFile *m_file;
 };
 

@@ -298,6 +298,15 @@ private:
     bool loadMarkdown2WechatToolUrl();
     bool saveMarkdown2WechatToolUrl();
 
+    bool loadAccessDomainName();
+    bool saveAccessDomainName();
+
+    bool loadSecretId();
+    bool saveSecretId();
+
+    bool loadSecretKey();
+    bool saveSecretKey();
+
     // personalAccessToken
     VLineEdit *m_personalAccessTokenEdit;
     // reposName
@@ -310,6 +319,12 @@ private:
     VLineEdit *m_secretEdit;
     // markdown to wechat tools url
     VLineEdit *m_markdown2WechatToolUrlEdit;
+    // access_domain_name
+    VLineEdit *m_accessDomainNameEdit;
+    // secret_id
+    VLineEdit *m_secretIdEdit;
+    // secret_key
+    VLineEdit *m_secretKeyEdit;
 };
 
 class VSettingsDialog : public QDialog
