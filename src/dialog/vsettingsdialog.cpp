@@ -1605,10 +1605,13 @@ VImageHostingTab::VImageHostingTab(QWidget *p_parent)
     // Set the tab of GitHub image Hosting
     m_personalAccessTokenEdit = new VLineEdit();
     m_personalAccessTokenEdit->setToolTip(tr("GitHub personal access token"));
+    m_personalAccessTokenEdit->setMinimumWidth(250 * VUtils::calculateScaleFactor());
     m_repoNameEdit = new VLineEdit();
     m_repoNameEdit->setToolTip(tr("Name of GitHub repository for image hosting"));
+    m_repoNameEdit->setMinimumWidth(250 * VUtils::calculateScaleFactor());
     m_userNameEdit = new VLineEdit();
     m_userNameEdit->setToolTip(tr("User name of GitHub"));
+    m_userNameEdit->setMinimumWidth(250 * VUtils::calculateScaleFactor());
     m_githubKeepImgScaleCB = new QCheckBox(tr("Keep image scale(such as '=100x')"));
     m_githubDoNotReplaceLinkCB = new QCheckBox(tr("Don't replace new image link"));
 
@@ -1624,10 +1627,13 @@ VImageHostingTab::VImageHostingTab(QWidget *p_parent)
     // Set the tab of Wechat image Hosting
     m_appidEdit = new VLineEdit();
     m_appidEdit->setToolTip(tr("WeChat appid"));
+    m_appidEdit->setMinimumWidth(250 * VUtils::calculateScaleFactor());
     m_secretEdit = new VLineEdit();
     m_secretEdit->setToolTip(tr("Please input wechat secret"));
+    m_secretEdit->setMinimumWidth(250 * VUtils::calculateScaleFactor());
     m_markdown2WechatToolUrlEdit = new VLineEdit();
     m_markdown2WechatToolUrlEdit->setToolTip(tr("Please input markdown to wechat tool's url"));
+    m_markdown2WechatToolUrlEdit->setMinimumWidth(250 * VUtils::calculateScaleFactor());
     m_wechatKeepImgScaleCB = new QCheckBox(tr("Keep image scale(such as '=100x')"));
     m_wechatDoNotReplaceLinkCB = new QCheckBox(tr("Don't replace new image link"));
 
@@ -1643,10 +1649,13 @@ VImageHostingTab::VImageHostingTab(QWidget *p_parent)
     // Set the tab of Tencent image Hosting.
     m_accessDomainNameEdit = new VLineEdit();
     m_accessDomainNameEdit->setToolTip(tr("Tencent access domain name"));
+    m_accessDomainNameEdit->setMinimumWidth(250 * VUtils::calculateScaleFactor());
     m_secretIdEdit = new VLineEdit();
     m_secretIdEdit->setToolTip(tr("Tencent secret id"));
+    m_secretIdEdit->setMinimumWidth(250 * VUtils::calculateScaleFactor());
     m_secretKeyEdit = new VLineEdit();
     m_secretKeyEdit->setToolTip(tr("Tencent secret key"));
+    m_secretKeyEdit->setMinimumWidth(250 * VUtils::calculateScaleFactor());
     m_tencentKeepImgScaleCB = new QCheckBox(tr("Keep image scale(such as '=100x')"));
     m_tencentDoNotReplaceLinkCB = new QCheckBox(tr("Don't replace new image link"));
 
