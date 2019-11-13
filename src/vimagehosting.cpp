@@ -333,14 +333,23 @@ void VGithubImageHosting::githubImageBedReplaceLink(const QString p_file_content
 
     QString file_content = p_file_content;
 
-    // delete image scale
-    file_content.replace(QRegExp("\\s+=\\d+x"),"");
+    if(!g_config->getGithubKeepImgScale()){
+        // delete image scale
+        file_content.replace(QRegExp("\\s+=\\d+x"),"");
+    }
 
-    // Write content to file.
-    QFile file(p_file_path);
-    file.open(QIODevice::WriteOnly | QIODevice::Text);
-    file.write(p_file_content.toUtf8());
-    file.close();
+    if(!g_config->getGithubDoNotReplaceLink()){
+        // Write content to file.
+        QFile file(p_file_path);
+        file.open(QIODevice::WriteOnly | QIODevice::Text);
+        file.write(p_file_content.toUtf8());
+        file.close();
+    }
+
+    // Write content to clipboard.
+    QClipboard *board = QApplication::clipboard();
+    board->setText(file_content);
+    QMessageBox::warning(nullptr, tr("Github Image Hosting"), tr("The article has been copied to the clipboard!"));
 
     // Reset.
     imageUrlMap.clear();
@@ -530,7 +539,7 @@ void VWechatImageHosting::wechatImageBedUploadManager()
     if(image_to_upload == ""){
         qDebug() << "All pictures have been uploaded";
         // Copy content to clipboard.
-        wechatImageBedReplaceLink(newFileContent);
+        wechatImageBedReplaceLink(newFileContent, m_file->fetchPath());
         return;
     }
 
@@ -678,12 +687,22 @@ void VWechatImageHosting::wechatImageBedUploadFinished()
     }
 }
 
-void VWechatImageHosting::wechatImageBedReplaceLink(const QString p_file_content)
+void VWechatImageHosting::wechatImageBedReplaceLink(const QString &p_file_content, const QString &p_file_path)
 {
     QString file_content = p_file_content;
 
-    // delete image scale
-    file_content.replace(QRegExp("\\s+=\\d+x"),"");
+    if(!g_config->getWechatKeepImgScale()){
+        // delete image scale
+        file_content.replace(QRegExp("\\s+=\\d+x"),"");
+    }
+
+    if(!g_config->getWechatDoNotReplaceLink()){
+        // Write content to file.
+        QFile file(p_file_path);
+        file.open(QIODevice::WriteOnly | QIODevice::Text);
+        file.write(file_content.toUtf8());
+        file.close();
+    }
 
     // Write content to clipboard.
     QClipboard *board = QApplication::clipboard();
@@ -702,8 +721,10 @@ void VWechatImageHosting::wechatImageBedReplaceLink(const QString p_file_content
             QDesktopServices::openUrl(QUrl(url));
         }
     }
+
+    // Reset.
     imageUrlMap.clear();
-    imageUploaded = false;  // Reset.
+    imageUploaded = false;
 }
 
 VTencentImageHosting::VTencentImageHosting(VFile *p_file, QWidget *p_parent)
@@ -962,18 +983,24 @@ void VTencentImageHosting::tencentImageBedReplaceLink(const QString &p_file_cont
 
     QString file_content = p_file_content;
 
-    // delete image scale
-    file_content.replace(QRegExp("\\s+=\\d+x"),"");
+    if(!g_config->getTencentKeepImgScale()){
+        // delete image scale
+        file_content.replace(QRegExp("\\s+=\\d+x"),"");
+    }
+
+    if(!g_config->getTencentDoNotReplaceLink()){
+        // Write content to file.
+        QFile file(p_file_path);
+        file.open(QIODevice::WriteOnly | QIODevice::Text);
+        file.write(file_content.toUtf8());
+        file.close();
+    }
 
     // Write content to clipboard.
     QClipboard *board = QApplication::clipboard();
     board->setText(file_content);
-
-    // Write content to file.
-    QFile file(p_file_path);
-    file.open(QIODevice::WriteOnly | QIODevice::Text);
-    file.write(file_content.toUtf8());
-    file.close();
+    QMessageBox::warning(nullptr, tr("Tencent Image Hosting"),
+                         tr("The article has been copied to the clipboard!!"));
 
     // Reset.
     imageUrlMap.clear();

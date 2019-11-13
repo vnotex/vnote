@@ -658,6 +658,12 @@ public:
     const QString &getUserName() const;
     void setUserName(const QString &p_userName);
 
+    const bool &getGithubKeepImgScale() const;
+    void setGithubKeepImgScale(const bool &p_githubKeepImgScale);
+
+    const bool &getGithubDoNotReplaceLink() const;
+    void setGithubDoNotReplaceLink(const bool &p_githubDoNotReplaceLink);
+
     // wechat image hosting setting
     const QString &getAppid() const;
     void setAppid(const QString &p_appid);
@@ -668,6 +674,12 @@ public:
     const QString &getMarkdown2WechatToolUrl() const;
     void setMarkdown2WechatToolUrl(const QString &p_markdown2WechatToolUrl);
 
+    const bool &getWechatKeepImgScale() const;
+    void setWechatKeepImgScale(const bool &p_wechatKeepImgScale);
+
+    const bool &getWechatDoNotReplaceLink() const;
+    void setWechatDoNotReplaceLink(const bool &p_wechatDoNotReplaceLink);
+
     // tencent image hosting setting
     const QString &getAccessDomainName() const;
     void setAccessDomainName(const QString &p_accessDomainName);
@@ -677,6 +689,12 @@ public:
 
     const QString &getSecretKey() const;
     void setSecretKey(const QString &p_secretKey);
+
+    const bool &getTencentKeepImgScale() const;
+    void setTencentKeepImgScale(const bool &p_tencentKeepImgScale);
+
+    const bool &getTencentDoNotReplaceLink() const;
+    void setTencentDoNotReplaceLink(const bool &p_tencentDoNotReplaceLink);
 
 private:
     void initEditorConfigs();
@@ -1105,16 +1123,22 @@ private:
     QString m_personalAccessToken;
     QString m_reposName;
     QString m_userName;
+    bool m_githubKeepImgScale;
+    bool m_githubDoNotReplaceLink;
 
     // wechat image hosting
     QString m_appid;
     QString m_secret;
     QString m_markdown2WechatToolUrl;
+    bool m_wechatKeepImgScale;
+    bool m_wechatDoNotReplaceLink;
 
     // tencent image hosting
     QString m_accessDomainName;
     QString m_secretId;
     QString m_secretKey;
+    bool m_tencentKeepImgScale;
+    bool m_tencentDoNotReplaceLink;
 
     // Size of history.
     int m_historySize;
@@ -3076,6 +3100,35 @@ inline void VConfigManager::setMarkdown2WechatToolUrl(const QString &p_markdown2
     setConfigToSettings("global", "wechat_markdown_to_wechat_tool_url", p_markdown2WechatToolUrl);
 }
 
+inline const bool &VConfigManager::getWechatKeepImgScale() const
+{
+    return m_wechatKeepImgScale;
+}
+
+inline void VConfigManager::setWechatKeepImgScale(const bool &p_wechatKeepImgScale)
+{
+    if (m_wechatKeepImgScale == p_wechatKeepImgScale) {
+        return;
+    }
+
+    m_wechatKeepImgScale = p_wechatKeepImgScale;
+    setConfigToSettings("global", "wechat_keep_img_scale", p_wechatKeepImgScale);
+}
+
+inline const bool &VConfigManager::getWechatDoNotReplaceLink() const
+{
+    return m_wechatDoNotReplaceLink;
+}
+
+inline void VConfigManager::setWechatDoNotReplaceLink(const bool &p_wechatDoNotReplaceLink)
+{
+    if (m_wechatDoNotReplaceLink == p_wechatDoNotReplaceLink) {
+        return;
+    }
+
+    m_wechatDoNotReplaceLink = p_wechatDoNotReplaceLink;
+    setConfigToSettings("global", "wechat_do_not_replace_link", p_wechatDoNotReplaceLink);
+}
 
 inline const QString &VConfigManager::getpersonalAccessToken() const
 {
@@ -3122,6 +3175,36 @@ inline void VConfigManager::setUserName(const QString &p_userName)
     setConfigToSettings("global", "github_user_name", p_userName);
 }
 
+inline const bool &VConfigManager::getGithubKeepImgScale() const
+{
+    return m_githubKeepImgScale;
+}
+
+inline void VConfigManager::setGithubKeepImgScale(const bool &p_githubKeepImgScale)
+{
+    if (m_githubKeepImgScale == p_githubKeepImgScale) {
+        return;
+    }
+
+    m_githubKeepImgScale = p_githubKeepImgScale;
+    setConfigToSettings("global", "github_keep_img_scale", p_githubKeepImgScale);
+}
+
+inline const bool &VConfigManager::getGithubDoNotReplaceLink() const
+{
+    return m_githubDoNotReplaceLink;
+}
+
+inline void VConfigManager::setGithubDoNotReplaceLink(const bool &p_githubDoNotReplaceLink)
+{
+    if (m_githubDoNotReplaceLink == p_githubDoNotReplaceLink) {
+        return;
+    }
+
+    m_githubDoNotReplaceLink = p_githubDoNotReplaceLink;
+    setConfigToSettings("global", "github_do_not_replace_link", p_githubDoNotReplaceLink);
+}
+
 inline const QString &VConfigManager::getAccessDomainName() const
 {
     return m_accessDomainName;
@@ -3165,5 +3248,35 @@ inline void VConfigManager::setSecretKey(const QString &p_secretKey)
 
     m_secretKey = p_secretKey;
     setConfigToSettings("global", "tencent_secret_key", p_secretKey);
+}
+
+inline const bool &VConfigManager::getTencentKeepImgScale() const
+{
+    return m_tencentKeepImgScale;
+}
+
+inline void VConfigManager::setTencentKeepImgScale(const bool &p_tencentKeepImgScale)
+{
+    if (m_tencentKeepImgScale == p_tencentKeepImgScale) {
+        return;
+    }
+
+    m_tencentKeepImgScale = p_tencentKeepImgScale;
+    setConfigToSettings("global", "tencent_keep_img_scale", p_tencentKeepImgScale);
+}
+
+inline const bool &VConfigManager::getTencentDoNotReplaceLink() const
+{
+    return m_tencentDoNotReplaceLink;
+}
+
+inline void VConfigManager::setTencentDoNotReplaceLink(const bool &p_tencentDoNotReplaceLink)
+{
+    if (m_tencentDoNotReplaceLink == p_tencentDoNotReplaceLink) {
+        return;
+    }
+
+    m_tencentDoNotReplaceLink = p_tencentDoNotReplaceLink;
+    setConfigToSettings("global", "tencent_do_not_replace_link", p_tencentDoNotReplaceLink);
 }
 #endif // VCONFIGMANAGER_H

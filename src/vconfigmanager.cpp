@@ -82,14 +82,20 @@ void VConfigManager::initialize()
     m_personalAccessToken = getConfigFromSettings("global", "github_personal_access_token").toString();
     m_reposName = getConfigFromSettings("global", "github_repos_name").toString();
     m_userName = getConfigFromSettings("global", "github_user_name").toString();
+    m_githubKeepImgScale = getConfigFromSettings("global", "github_keep_img_scale").toBool();
+    m_githubDoNotReplaceLink = getConfigFromSettings("global", "github_do_not_replace_link").toBool();
 
     m_appid = getConfigFromSettings("global", "wechat_appid").toString();
     m_secret = getConfigFromSettings("global", "wechat_secret").toString();
     m_markdown2WechatToolUrl = getConfigFromSettings("global", "wechat_markdown_to_wechat_tool_url").toString();
+    m_wechatKeepImgScale = getConfigFromSettings("global", "wechat_keep_img_scale").toBool();
+    m_wechatDoNotReplaceLink = getConfigFromSettings("global", "wechat_do_not_replace_link").toBool();
 
     m_accessDomainName = getConfigFromSettings("global", "tencent_access_domain_name").toString();
     m_secretId = getConfigFromSettings("global", "tencent_secret_id").toString();
     m_secretKey = getConfigFromSettings("global", "tencent_secret_key").toString();
+    m_tencentKeepImgScale = getConfigFromSettings("global", "tencent_keep_img_scale").toBool();
+    m_tencentDoNotReplaceLink = getConfigFromSettings("global", "tencent_do_not_replace_link").toBool();
 
     m_theme = getConfigFromSettings("global", "theme").toString();
 

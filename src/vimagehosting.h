@@ -89,7 +89,7 @@ public:
     void wechatImageBedUploadManager();
 
     // Replace old links with new ones for images.
-    void wechatImageBedReplaceLink(const QString p_file_content);
+    void wechatImageBedReplaceLink(const QString &p_file_content, const QString &p_file_path);
 
     // Upload a single image.
     void wechatImageBedUploadImage(const QString p_image_path, const QString p_token);

@@ -307,24 +307,48 @@ private:
     bool loadSecretKey();
     bool saveSecretKey();
 
+    bool loadGithubKeepImgScale();
+    bool saveGithubKeepImgScale();
+
+    bool loadGithubDoNotReplaceLink();
+    bool saveGithubDoNotReplaceLink();
+
+    bool loadWechatKeepImgScale();
+    bool saveWechatKeepImgScale();
+
+    bool loadWechatDoNotReplaceLink();
+    bool saveWechatDoNotReplaceLink();
+
+    bool loadTencentKeepImgScale();
+    bool saveTencentKeepImgScale();
+
+    bool loadTencentDoNotReplaceLink();
+    bool saveTencentDoNotReplaceLink();
+
     // personalAccessToken
     VLineEdit *m_personalAccessTokenEdit;
     // reposName
     VLineEdit *m_repoNameEdit;
     // userName
     VLineEdit *m_userNameEdit;
+    QCheckBox *m_githubKeepImgScaleCB;
+    QCheckBox *m_githubDoNotReplaceLinkCB;
     // appid
     VLineEdit *m_appidEdit;
     // secret
     VLineEdit *m_secretEdit;
     // markdown to wechat tools url
     VLineEdit *m_markdown2WechatToolUrlEdit;
+    QCheckBox *m_wechatKeepImgScaleCB;
+    QCheckBox *m_wechatDoNotReplaceLinkCB;
     // access_domain_name
     VLineEdit *m_accessDomainNameEdit;
     // secret_id
     VLineEdit *m_secretIdEdit;
     // secret_key
     VLineEdit *m_secretKeyEdit;
+    QCheckBox *m_tencentKeepImgScaleCB;
+    QCheckBox *m_tencentDoNotReplaceLinkCB;
 };
 
 class VSettingsDialog : public QDialog
