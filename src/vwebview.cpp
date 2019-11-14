@@ -107,6 +107,11 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
             connect(uploadImageToGithub, &QAction::triggered, this, &VWebView::requestUploadImageToGithub);
             uploadImageMenu->addAction(uploadImageToGithub);
 
+            // Upload the image to Gitee image hosting.
+            QAction *uploadImageToGitee = new QAction(tr("&Gitee"), uploadImageMenu);
+            connect(uploadImageToGitee, &QAction::triggered, this, &VWebView::requestUploadImageToGitee);
+            uploadImageMenu->addAction(uploadImageToGitee);
+
             // Upload the image to Wechat image hosting
             QAction *uploadImageToWechat = new QAction(tr("&Wechat"), uploadImageMenu);
             connect(uploadImageToWechat, &QAction::triggered, this, &VWebView::requestUploadImageToWechat);

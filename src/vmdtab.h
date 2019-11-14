@@ -165,6 +165,9 @@ private slots:
     // Process the image upload request to GitHub.
     void handleUploadImageToGithubRequested();
 
+    // Process the image upload request to Gitee.
+    void handleUploadImageToGiteeRequested();
+
     // Process image upload request to wechat.
     void handleUploadImageToWechatRequested();
 
@@ -289,6 +292,7 @@ private:
     int m_documentID;
 
     VGithubImageHosting *vGithubImageHosting;
+    VGiteeImageHosting *vGiteeImageHosting;
     VWechatImageHosting *vWechatImageHosting;
     VTencentImageHosting * vTencentImageHosting;
 };

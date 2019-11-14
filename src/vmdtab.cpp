@@ -115,6 +115,7 @@ void VMdTab::setupUI()
 
     // The following is the image hosting initialization
     vGithubImageHosting = new VGithubImageHosting(m_file, this);
+    vGiteeImageHosting = new VGiteeImageHosting(m_file, this);
     vWechatImageHosting = new VWechatImageHosting(m_file, this);
     vTencentImageHosting = new VTencentImageHosting(m_file, this);
 
@@ -451,6 +452,8 @@ void VMdTab::setupMarkdownViewer()
 
     connect(m_webViewer, &VWebView::requestUploadImageToGithub,
             this, &VMdTab::handleUploadImageToGithubRequested);
+    connect(m_webViewer, &VWebView::requestUploadImageToGitee,
+            this, &VMdTab::handleUploadImageToGiteeRequested);
     connect(m_webViewer, &VWebView::requestUploadImageToWechat,
             this, &VMdTab::handleUploadImageToWechatRequested);
     connect(m_webViewer, &VWebView::requestUploadImageToTencent,
@@ -1518,6 +1521,11 @@ void VMdTab::handleSavePageRequested()
 void VMdTab::handleUploadImageToGithubRequested()
 {
       vGithubImageHosting->handleUploadImageToGithubRequested();
+}
+
+void VMdTab::handleUploadImageToGiteeRequested()
+{
+      vGiteeImageHosting->handleUploadImageToGiteeRequested();
 }
 
 void VMdTab::handleUploadImageToWechatRequested()

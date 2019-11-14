@@ -26,6 +26,8 @@ signals:
 
     void requestUploadImageToGithub();
 
+    void requestUploadImageToGitee();
+
     void requestUploadImageToWechat();
 
     void requestUploadImageToTencent();
