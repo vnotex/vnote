@@ -28,17 +28,17 @@ public:
     // Upload a single image.
     void githubImageBedUploadImage(const QString &p_username,
                                    const QString &p_repository,
-                                   const QString &p_image_path,
+                                   const QString &p_imagePath,
                                    const QString &p_token);
 
     // Parameters needed to generate uploaded images.
-    QString githubImageBedGenerateParam(const QString p_image_path);
+    QString githubImageBedGenerateParam(const QString p_imagePath);
 
     // Control image to upload.
     void githubImageBedUploadManager();
 
     // Replace old links with new ones for images.
-    void githubImageBedReplaceLink(const QString p_file_content, const QString p_file_path);
+    void githubImageBedReplaceLink(QString p_fileContent, const QString p_filePath);
 
     // Process the image upload request to GitHub.
     void handleUploadImageToGithubRequested();
@@ -85,18 +85,18 @@ public:
 
     // Upload a single image.
     void giteeImageBedUploadImage(const QString &p_username,
-                                   const QString &p_repository,
-                                   const QString &p_image_path,
-                                   const QString &p_token);
+                                  const QString &p_repository,
+                                  const QString &p_imagePath,
+                                  const QString &p_token);
 
     // Parameters needed to generate uploaded images.
-    QString giteeImageBedGenerateParam(const QString &p_image_path, const QString &p_token);
+    QString giteeImageBedGenerateParam(const QString &p_imagePath, const QString &p_token);
 
     // Control image to upload.
     void giteeImageBedUploadManager();
 
     // Replace old links with new ones for images.
-    void giteeImageBedReplaceLink(const QString p_file_content, const QString p_file_path);
+    void giteeImageBedReplaceLink(QString p_fileContent, const QString p_filePath);
 
     // Process the image upload request to Gitee.
     void handleUploadImageToGiteeRequested();
@@ -143,10 +143,10 @@ public:
     void wechatImageBedUploadManager();
 
     // Replace old links with new ones for images.
-    void wechatImageBedReplaceLink(const QString &p_file_content, const QString &p_file_path);
+    void wechatImageBedReplaceLink(QString &p_fileContent, const QString &p_filePath);
 
     // Upload a single image.
-    void wechatImageBedUploadImage(const QString p_image_path, const QString p_token);
+    void wechatImageBedUploadImage(const QString p_imagePath, const QString p_token);
 
     // Process image upload request to wechat.
     void handleUploadImageToWechatRequested();
@@ -190,27 +190,27 @@ class VTencentImageHosting : public QObject
 public:
     explicit VTencentImageHosting(VFile *p_file, QWidget *p_parent = nullptr);
 
-    QByteArray hmacSha1(const QByteArray &p_key, const QByteArray &p_base_string);
+    QByteArray hmacSha1(const QByteArray &p_key, const QByteArray &p_baseString);
 
-    QString getAuthorizationString(const QString &p_secret_id,
-                                   const QString &p_secret_key,
-                                   const QString &p_img_name);
+    QString getAuthorizationString(const QString &p_secretId,
+                                   const QString &p_secretKey,
+                                   const QString &p_imgName);
 
     void findAndStartUploadImage();
 
-    QByteArray getImgContent(const QString &p_image_path);
+    QByteArray getImgContent(const QString &p_imagePath);
 
     // Control image to upload.
     void tencentImageBedUploadManager();
 
     // Replace old links with new ones for images.
-    void tencentImageBedReplaceLink(const QString &p_file_content, const QString &p_file_path);
+    void tencentImageBedReplaceLink(QString &p_fileContent, const QString &p_filePath);
 
     // Upload a single image.
-    void tencentImageBedUploadImage(const QString &p_image_path,
-                                    const QString &p_access_domain_name,
-                                    const QString &p_secret_id,
-                                    const QString &p_secret_key);
+    void tencentImageBedUploadImage(const QString &p_imagePath,
+                                    const QString &p_accessDomainName,
+                                    const QString &p_secretId,
+                                    const QString &p_secretKey);
 
     // Process image upload request to tencent.
     void handleUploadImageToTencentRequested();

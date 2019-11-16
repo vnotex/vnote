@@ -1598,10 +1598,10 @@ VImageHostingTab::VImageHostingTab(QWidget *p_parent)
     QWidget *wechatImageHostingTab = new QWidget();
     QWidget *tencentImageHostingTab = new QWidget();
     QWidget *giteeImageHostingTab = new QWidget();
-    imageHostingTabWeg->addTab(githubImageHostingTab, tr("  GitHub  "));
-    imageHostingTabWeg->addTab(giteeImageHostingTab, tr("  Gitee  "));
-    imageHostingTabWeg->addTab(wechatImageHostingTab, tr("  WeChat  "));
-    imageHostingTabWeg->addTab(tencentImageHostingTab, tr("  Tencent  "));
+    imageHostingTabWeg->addTab(githubImageHostingTab, tr("GitHub"));
+    imageHostingTabWeg->addTab(giteeImageHostingTab, tr("Gitee"));
+    imageHostingTabWeg->addTab(wechatImageHostingTab, tr("WeChat"));
+    imageHostingTabWeg->addTab(tencentImageHostingTab, tr("Tencent"));
     imageHostingTabWeg->setCurrentIndex(0);
 
     // Set the tab of GitHub image Hosting
