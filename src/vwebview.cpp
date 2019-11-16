@@ -99,15 +99,30 @@ void VWebView::contextMenuEvent(QContextMenuEvent *p_event)
                     this, &VWebView::requestSavePage);
             menu->addAction(savePageAct);
 
-            // In preview mode, add the right-click menu and upload the image to GitHub image hosting
-            QAction *uploadImageToGithub = new QAction(tr("Upload Image To &GitHub"),menu);
-            connect(uploadImageToGithub, &QAction::triggered, this, &VWebView::requestUploadImageToGithub);
-            menu->addAction(uploadImageToGithub);
+            // In preview mode, add the right-click upload menu.
+            QMenu *uploadImageMenu = new QMenu(tr("&Upload Image To"), menu);
 
-            // In preview mode, add the right-click menu and upload the image to Wechat image hosting
-            QAction *uploadImageToWechat = new QAction(tr("Upload Image To &Wechat"),menu);
+            // Upload the image to GitHub image hosting.
+            QAction *uploadImageToGithub = new QAction(tr("&GitHub"), uploadImageMenu);
+            connect(uploadImageToGithub, &QAction::triggered, this, &VWebView::requestUploadImageToGithub);
+            uploadImageMenu->addAction(uploadImageToGithub);
+
+            // Upload the image to Gitee image hosting.
+            QAction *uploadImageToGitee = new QAction(tr("&Gitee"), uploadImageMenu);
+            connect(uploadImageToGitee, &QAction::triggered, this, &VWebView::requestUploadImageToGitee);
+            uploadImageMenu->addAction(uploadImageToGitee);
+
+            // Upload the image to Wechat image hosting
+            QAction *uploadImageToWechat = new QAction(tr("&Wechat"), uploadImageMenu);
             connect(uploadImageToWechat, &QAction::triggered, this, &VWebView::requestUploadImageToWechat);
-            menu->addAction(uploadImageToWechat);
+            uploadImageMenu->addAction(uploadImageToWechat);
+
+            // Upload the image to Tencent image hosting.
+            QAction *uploadImageToTencent = new QAction(tr("&Tencent"), uploadImageMenu);
+            connect(uploadImageToTencent, &QAction::triggered, this, &VWebView::requestUploadImageToTencent);
+            uploadImageMenu->addAction(uploadImageToTencent);
+
+            menu->addMenu(uploadImageMenu);
         }
     }
 

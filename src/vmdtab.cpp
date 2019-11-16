@@ -115,7 +115,9 @@ void VMdTab::setupUI()
 
     // The following is the image hosting initialization
     vGithubImageHosting = new VGithubImageHosting(m_file, this);
+    vGiteeImageHosting = new VGiteeImageHosting(m_file, this);
     vWechatImageHosting = new VWechatImageHosting(m_file, this);
+    vTencentImageHosting = new VTencentImageHosting(m_file, this);
 
     QVBoxLayout *layout = new QVBoxLayout();
     layout->addWidget(m_splitter);
@@ -450,8 +452,12 @@ void VMdTab::setupMarkdownViewer()
 
     connect(m_webViewer, &VWebView::requestUploadImageToGithub,
             this, &VMdTab::handleUploadImageToGithubRequested);
+    connect(m_webViewer, &VWebView::requestUploadImageToGitee,
+            this, &VMdTab::handleUploadImageToGiteeRequested);
     connect(m_webViewer, &VWebView::requestUploadImageToWechat,
             this, &VMdTab::handleUploadImageToWechatRequested);
+    connect(m_webViewer, &VWebView::requestUploadImageToTencent,
+            this, &VMdTab::handleUploadImageToTencentRequested);
 
     VPreviewPage *page = new VPreviewPage(m_webViewer);
     m_webViewer->setPage(page);
@@ -1517,9 +1523,19 @@ void VMdTab::handleUploadImageToGithubRequested()
       vGithubImageHosting->handleUploadImageToGithubRequested();
 }
 
+void VMdTab::handleUploadImageToGiteeRequested()
+{
+      vGiteeImageHosting->handleUploadImageToGiteeRequested();
+}
+
 void VMdTab::handleUploadImageToWechatRequested()
 {
     vWechatImageHosting->handleUploadImageToWechatRequested();
+}
+
+void VMdTab::handleUploadImageToTencentRequested()
+{
+    vTencentImageHosting->handleUploadImageToTencentRequested();
 }
 
 VWordCountInfo VMdTab::fetchWordCountInfo(bool p_editMode) const

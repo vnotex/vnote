@@ -26,7 +26,11 @@ signals:
 
     void requestUploadImageToGithub();
 
+    void requestUploadImageToGitee();
+
     void requestUploadImageToWechat();
+
+    void requestUploadImageToTencent();
 
 protected:
     void contextMenuEvent(QContextMenuEvent *p_event);

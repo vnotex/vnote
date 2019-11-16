@@ -280,36 +280,93 @@ public:
     bool saveConfiguration();
 
 private:
-    bool loadpersonalAccessToken();
-    bool savepersonalAccessToken();
+    bool loadGithubPersonalAccessToken();
+    bool saveGithubPersonalAccessToken();
 
-    bool loadReposName();
-    bool saveReposName();
+    bool loadGithubReposName();
+    bool saveGithubReposName();
 
-    bool loadUserName();
-    bool saveUserName();
+    bool loadGithubUserName();
+    bool saveGithubUserName();
 
-    bool loadAppid();
-    bool saveAppid();
+    bool loadGithubKeepImgScale();
+    bool saveGithubKeepImgScale();
 
-    bool loadSecret();
-    bool saveSecret();
+    bool loadGithubDoNotReplaceLink();
+    bool saveGithubDoNotReplaceLink();
+
+    bool loadWechatAppid();
+    bool saveWechatAppid();
+
+    bool loadWechatSecret();
+    bool saveWechatSecret();
 
     bool loadMarkdown2WechatToolUrl();
     bool saveMarkdown2WechatToolUrl();
 
-    // personalAccessToken
-    VLineEdit *m_personalAccessTokenEdit;
-    // reposName
-    VLineEdit *m_repoNameEdit;
-    // userName
-    VLineEdit *m_userNameEdit;
-    // appid
-    VLineEdit *m_appidEdit;
-    // secret
-    VLineEdit *m_secretEdit;
-    // markdown to wechat tools url
+    bool loadWechatKeepImgScale();
+    bool saveWechatKeepImgScale();
+
+    bool loadWechatDoNotReplaceLink();
+    bool saveWechatDoNotReplaceLink();
+
+    bool loadTencentAccessDomainName();
+    bool saveTencentAccessDomainName();
+
+    bool loadTencentSecretId();
+    bool saveTencentSecretId();
+
+    bool loadTencentSecretKey();
+    bool saveTencentSecretKey();
+
+    bool loadTencentKeepImgScale();
+    bool saveTencentKeepImgScale();
+
+    bool loadTencentDoNotReplaceLink();
+    bool saveTencentDoNotReplaceLink();
+
+    bool loadGiteePersonalAccessToken();
+    bool saveGiteePersonalAccessToken();
+
+    bool loadGiteeReposName();
+    bool saveGiteeReposName();
+
+    bool loadGiteeUserName();
+    bool saveGiteeUserName();
+
+    bool loadGiteeKeepImgScale();
+    bool saveGiteeKeepImgScale();
+
+    bool loadGiteeDoNotReplaceLink();
+    bool saveGiteeDoNotReplaceLink();
+
+    // Github configuration edit.
+    VLineEdit *m_githubPersonalAccessTokenEdit;
+    VLineEdit *m_githubRepoNameEdit;
+    VLineEdit *m_githubUserNameEdit;
+    QCheckBox *m_githubKeepImgScaleCB;
+    QCheckBox *m_githubDoNotReplaceLinkCB;
+
+    // Gitee configuration edit.
+    VLineEdit *m_giteePersonalAccessTokenEdit;
+    VLineEdit *m_giteeRepoNameEdit;
+    VLineEdit *m_giteeUserNameEdit;
+    QCheckBox *m_giteeKeepImgScaleCB;
+    QCheckBox *m_giteeDoNotReplaceLinkCB;
+
+    // Wechat configuration edit.
+    VLineEdit *m_wechatAppidEdit;
+    VLineEdit *m_wechatSecretEdit;
     VLineEdit *m_markdown2WechatToolUrlEdit;
+    QCheckBox *m_wechatKeepImgScaleCB;
+    QCheckBox *m_wechatDoNotReplaceLinkCB;
+
+    // Tencent configuration edit.
+    VLineEdit *m_tencentAccessDomainNameEdit;
+    VLineEdit *m_tencentSecretIdEdit;
+    VLineEdit *m_tencentSecretKeyEdit;
+    QCheckBox *m_tencentKeepImgScaleCB;
+    QCheckBox *m_tencentDoNotReplaceLinkCB;
 };
 
 class VSettingsDialog : public QDialog
