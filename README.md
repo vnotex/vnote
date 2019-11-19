@@ -77,7 +77,7 @@ brew cask install vnote
 ```
 
 # Description
-**VNote** is a Qt-based, free and open source note-taking application, focusing on Markdown. VNote is designed to provide comfortable edit experience, especially for programmers.
+**VNote** is a Qt-based, free and open source note-taking application, focusing on Markdown. VNote is designed to provide a comfortable editing experience, especially for programmers.
 
 VNote is **NOT** just a simple editor for Markdown. By providing notes management, VNote makes taking notes in Markdown simpler and more pleasant.
 
