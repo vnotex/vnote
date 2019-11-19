@@ -7,7 +7,7 @@ mdhl_file=v_native.mdhl
 css_file=v_native.css
 codeblock_css_file=v_native_codeblock.css
 mermaid_css_file=v_native_mermaid.css
-version=23
+version=24
 
 [phony]
 ; Abstract color attributes.

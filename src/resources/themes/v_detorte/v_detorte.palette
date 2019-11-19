@@ -9,7 +9,7 @@ mdhl_file=v_detorte.mdhl
 css_file=v_detorte.css
 codeblock_css_file=v_detorte_codeblock.css
 mermaid_css_file=v_detorte_mermaid.css
-version=14
+version=15
 
 ; This mapping will be used to translate colors when the content of HTML is copied
 ; without background. You could just specify the foreground colors mapping here.

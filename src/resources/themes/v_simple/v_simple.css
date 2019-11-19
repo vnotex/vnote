@@ -110,7 +110,7 @@ a {
     padding: 0;
     vertical-align: baseline;
     text-decoration: none;
-    word-break: break-all;
+    word-break: break-word;
 }
 
 a:hover {
@@ -152,7 +152,7 @@ pre {
 
 code {
     font-family: Courier, 'Courier New', monospace;
-    word-break: break-all;
+    word-break: break-word;
     color: #314659;
     line-height: 1;
     vertical-align: middle;

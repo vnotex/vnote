@@ -7,7 +7,7 @@ mdhl_file=v_simple.mdhl
 css_file=v_simple.css
 codeblock_css_file=v_simple_codeblock.css
 mermaid_css_file=v_simple_mermaid.css
-version=26
+version=27
 
 [phony]
 ; Abstract color attributes.

@@ -52,7 +52,7 @@ a {
     padding: 0;
     vertical-align: baseline;
     text-decoration: none;
-    word-break: break-all;
+    word-break: break-word;
 }
 
 a:hover {
@@ -98,7 +98,7 @@ pre {
 code {
     font-family: Consolas, Monaco, Monospace, Courier;
     color: #98C379;
-    word-break: break-all;
+    word-break: break-word;
 }
 
 pre code {

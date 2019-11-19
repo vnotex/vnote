@@ -7,7 +7,7 @@ mdhl_file=v_moonlight.mdhl
 css_file=v_moonlight.css
 codeblock_css_file=v_moonlight_codeblock.css
 mermaid_css_file=v_moonlight_mermaid.css
-version=25
+version=26
 
 ; This mapping will be used to translate colors when the content of HTML is copied
 ; without background. You could just specify the foreground colors mapping here.
