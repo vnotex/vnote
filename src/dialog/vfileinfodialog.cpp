@@ -65,7 +65,9 @@ void VFileInfoDialog::setupUI(const QString &p_title, const QString &p_info)
 
     // Tags.
     QLineEdit *tagEdit = new QLineEdit(m_file->getTags().join(", "));
-    tagEdit->setToolTip(tr("Tags of this note separated by ,"));
+    QString tagTip = tr("Add tags to a note at the right bottom status bar when it is opened");
+    tagEdit->setPlaceholderText(tagTip);
+    tagEdit->setToolTip(tr("Tags of this note separated by , (%1)").arg(tagTip));
     tagEdit->setReadOnly(true);
 
     QFormLayout *topLayout = new QFormLayout();

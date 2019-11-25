@@ -24,6 +24,7 @@
 #include "vmainwindow.h"
 #include "utils/vimnavigationforwidget.h"
 #include "utils/viconutils.h"
+#include "dialog/vsortdialog.h"
 
 extern VConfigManager *g_config;
 
@@ -428,6 +429,16 @@ void VNotebookSelector::popupListContextMenuRequested(QPoint p_pos)
             this, SLOT(deleteNotebook()));
     menu.addAction(deleteNotebookAct);
 
+    if (m_notebooks.size() > 1) {
+        QAction *sortAct = new QAction(VIconUtils::menuIcon(":/resources/icons/sort.svg"),
+                                       tr("&Sort"),
+                                       &menu);
+        sortAct->setToolTip(tr("Sort notebooks"));
+        connect(sortAct, SIGNAL(triggered(bool)),
+                this, SLOT(sortItems()));
+        menu.addAction(sortAct);
+    }
+
     if (nb->isValid()) {
         menu.addSeparator();
 
@@ -679,4 +690,59 @@ VNotebook *VNotebookSelector::getNotebook(const QListWidgetItem *p_item) const
 VNotebook *VNotebookSelector::currentNotebook() const
 {
     return getNotebook(currentIndex());
+}
+
+void VNotebookSelector::sortItems()
+{
+    if (m_notebooks.size() < 2) {
+        return;
+    }
+
+    VSortDialog dialog(tr("Sort Notebooks"),
+                       tr("Sort notebooks in the configuration file."),
+                       this);
+    QTreeWidget *tree = dialog.getTreeWidget();
+    tree->clear();
+    tree->setColumnCount(1);
+    QStringList headers;
+    headers << tr("Name");
+    tree->setHeaderLabels(headers);
+    for (int i = 0; i < m_notebooks.size(); ++i) {
+        QStringList cols;
+        cols << m_notebooks[i]->getName();
+        QTreeWidgetItem *item = new QTreeWidgetItem(tree, cols);
+        item->setData(0, Qt::UserRole, i);
+    }
+
+    dialog.treeUpdated();
+
+    if (dialog.exec()) {
+        QVector<QVariant> data = dialog.getSortedData();
+        Q_ASSERT(data.size() == m_notebooks.size());
+        QVector<int> sortedIdx(data.size(), -1);
+        for (int i = 0; i < data.size(); ++i) {
+            sortedIdx[i] = data[i].toInt();
+        }
+
+        // Sort m_notebooks.
+        auto ori = m_notebooks;
+        auto curNotebook = currentNotebook();
+        int curNotebookIdx = -1;
+        for (int i = 0; i < sortedIdx.size(); ++i) {
+            m_notebooks[i] = ori[sortedIdx[i]];
+            if (m_notebooks[i] == curNotebook) {
+                curNotebookIdx = i;
+            }
+        }
+
+        Q_ASSERT(ori.size() == m_notebooks.size());
+        Q_ASSERT(curNotebookIdx != -1);
+
+        g_config->setNotebooks(m_notebooks);
+        g_config->setCurNotebookIndex(curNotebookIdx);
+
+        update();
+
+        setCurrentItemToNotebook(m_notebooks[curNotebookIdx]);
+    }
 }

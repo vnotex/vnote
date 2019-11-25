@@ -65,6 +65,9 @@ private slots:
     // View and edit notebook information of selected notebook.
     void editNotebookInfo();
 
+    // Sort notebooks.
+    void sortItems();
+
 private:
     // Update Combox from m_notebooks.
     void updateComboBox();
