@@ -135,6 +135,7 @@ add_executable(VNote main.cpp
                dialog/vinserttabledialog.cpp
                isearchengine.cpp
                iuniversalentry.cpp
+               vimagehosting.cpp
                vnote.qrc translations.qrc)
 
 # Qt5 libraries

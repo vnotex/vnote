@@ -233,6 +233,14 @@ signals:
     // Request to convert @p_html to Markdown text.
     void requestHtmlToText(const QString &p_html, int p_id, int p_timeStamp);
 
+    void requestUploadImageToGithub();
+
+    void requestUploadImageToGitee();
+
+    void requestUploadImageToWechat();
+
+    void requestUploadImageToTencent();
+
 protected:
     void contextMenuEvent(QContextMenuEvent *p_event) Q_DECL_OVERRIDE;
 
@@ -308,6 +316,8 @@ private:
                                int p_pos);
 
     void initAttachmentMenu(QMenu *p_menu);
+
+    void initImageHostingMenu(QMenu *p_menu);
 
     void insertImageLink(const QString &p_text, const QString &p_url);
 

@@ -219,3 +219,10 @@ void VClipboardUtils::setImageAndLinkToClipboard(QClipboard *p_clipboard,
                                             data,
                                             p_mode);
 }
+
+void VClipboardUtils::setTextToClipboard(QClipboard *p_clipboard,
+                                         const QString &p_text,
+                                         QClipboard::Mode p_mode)
+{
+    p_clipboard->setText(p_text, p_mode);
+}

@@ -430,6 +430,8 @@ void VMdEditor::contextMenuEvent(QContextMenuEvent *p_event)
         }
 
         initAttachmentMenu(menu.data());
+
+        initImageHostingMenu(menu.data());
     }
 
     menu->exec(p_event->globalPos());
@@ -2276,4 +2278,32 @@ void VMdEditor::insertTable()
 
     // Insert table right at cursor.
     m_tableHelper->insertTable(rowCount, colCount, alignment);
+}
+
+void VMdEditor::initImageHostingMenu(QMenu *p_menu)
+{
+    QMenu *uploadImageMenu = new QMenu(tr("&Upload Image To"), p_menu);
+
+    // Upload the image to GitHub image hosting.
+    QAction *uploadImageToGithub = new QAction(tr("&GitHub"), uploadImageMenu);
+    connect(uploadImageToGithub, &QAction::triggered, this, &VMdEditor::requestUploadImageToGithub);
+    uploadImageMenu->addAction(uploadImageToGithub);
+
+    // Upload the image to Gitee image hosting.
+    QAction *uploadImageToGitee = new QAction(tr("&Gitee"), uploadImageMenu);
+    connect(uploadImageToGitee, &QAction::triggered, this, &VMdEditor::requestUploadImageToGitee);
+    uploadImageMenu->addAction(uploadImageToGitee);
+
+    // Upload the image to Wechat image hosting
+    QAction *uploadImageToWechat = new QAction(tr("&Wechat"), uploadImageMenu);
+    connect(uploadImageToWechat, &QAction::triggered, this, &VMdEditor::requestUploadImageToWechat);
+    uploadImageMenu->addAction(uploadImageToWechat);
+
+    // Upload the image to Tencent image hosting.
+    QAction *uploadImageToTencent = new QAction(tr("&Tencent"), uploadImageMenu);
+    connect(uploadImageToTencent, &QAction::triggered, this, &VMdEditor::requestUploadImageToTencent);
+    uploadImageMenu->addAction(uploadImageToTencent);
+
+    p_menu->addSeparator();
+    p_menu->addMenu(uploadImageMenu);
 }

@@ -11,16 +11,18 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QApplication>
-#include <vfile.h>
 #include <QClipboard>
 #include <QCryptographicHash>
 #include <QRegExp>
+
+class VEditor;
+class VFile;
 
 class VGithubImageHosting : public QObject
 {
     Q_OBJECT
 public:
-    explicit VGithubImageHosting(VFile *p_file, QWidget *p_parent = nullptr);
+    explicit VGithubImageHosting(VFile *p_file, QObject *p_parent = nullptr);
 
     // GitHub identity authentication.
     void authenticateGithubImageHosting(QString p_token);
@@ -42,6 +44,8 @@ public:
 
     // Process the image upload request to GitHub.
     void handleUploadImageToGithubRequested();
+
+    void setEditor(VEditor *p_editor);
 
 public slots:
     // GitHub image hosting identity authentication completed.
@@ -70,13 +74,15 @@ private:
     // Image upload status.
     bool uploadImageStatus;
     VFile *m_file;
+
+    VEditor *m_editor = nullptr;
 };
 
 class VGiteeImageHosting : public QObject
 {
     Q_OBJECT
 public:
-    explicit VGiteeImageHosting(VFile *p_file, QWidget *p_parent = nullptr);
+    explicit VGiteeImageHosting(VFile *p_file, QObject *p_parent = nullptr);
 
     // GitHub identity authentication.
     void authenticateGiteeImageHosting(const QString &p_username,
@@ -100,6 +106,8 @@ public:
 
     // Process the image upload request to Gitee.
     void handleUploadImageToGiteeRequested();
+
+    void setEditor(VEditor *p_editor);
 
 public slots:
     // Gitee image hosting identity authentication completed.
@@ -128,13 +136,15 @@ private:
     // Image upload status.
     bool uploadImageStatus;
     VFile *m_file;
+
+    VEditor *m_editor = nullptr;
 };
 
 class VWechatImageHosting : public QObject
 {
     Q_OBJECT
 public:
-    explicit VWechatImageHosting(VFile *p_file, QWidget *p_parent = nullptr);
+    explicit VWechatImageHosting(VFile *p_file, QObject *p_parent = nullptr);
 
     // Wechat identity authentication.
     void authenticateWechatImageHosting(const QString p_appid, const QString p_secret);
@@ -150,6 +160,8 @@ public:
 
     // Process image upload request to wechat.
     void handleUploadImageToWechatRequested();
+
+    void setEditor(VEditor *p_editor);
 
 public slots:
     // Wechat mage hosting identity authentication completed.
@@ -182,13 +194,15 @@ private:
     // Relative image path currently Uploaded.
     QString currentUploadRelativeImagePah;
     VFile *m_file;
+
+    VEditor *m_editor = nullptr;
 };
 
 class VTencentImageHosting : public QObject
 {
     Q_OBJECT
 public:
-    explicit VTencentImageHosting(VFile *p_file, QWidget *p_parent = nullptr);
+    explicit VTencentImageHosting(VFile *p_file, QObject *p_parent = nullptr);
 
     QByteArray hmacSha1(const QByteArray &p_key, const QByteArray &p_baseString);
 
@@ -214,6 +228,8 @@ public:
 
     // Process image upload request to tencent.
     void handleUploadImageToTencentRequested();
+
+    void setEditor(VEditor *p_editor);
 
 public slots:
     // Tencent image hosting upload completed.
@@ -243,6 +259,9 @@ private:
     // Relative image path currently Uploaded.
     QString currentUploadRelativeImagePah;
     QString new_file_name;
+
     VFile *m_file;
+
+    VEditor *m_editor = nullptr;
 };
 #endif // VGITHUBIMAGEHOSTING_H

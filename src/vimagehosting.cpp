@@ -1,10 +1,12 @@
 #include "vimagehosting.h"
 #include "utils/vutils.h"
-#include "vedittab.h"
+#include "veditor.h"
+#include "vfile.h"
+#include "utils/vclipboardutils.h"
 
 extern VConfigManager *g_config;
 
-VGithubImageHosting::VGithubImageHosting(VFile *p_file, QWidget *p_parent)
+VGithubImageHosting::VGithubImageHosting(VFile *p_file, QObject *p_parent)
     :QObject(p_parent),
      m_file(p_file)
 {
@@ -109,8 +111,8 @@ void VGithubImageHosting::githubImageBedAuthFinished()
             }
             else
             {
-                qDebug() << m_file->getName() << " No images to upload";
-                QString info = m_file->getName() + " No pictures to upload";
+                qDebug() << m_file->getName() << " No local images to upload";
+                QString info = tr("No local images to upload: %1").arg(m_file->getName());
                 QMessageBox::information(nullptr, tr("Github Image Hosting"), info);
             }
         }
@@ -139,7 +141,7 @@ void VGithubImageHosting::githubImageBedUploadManager()
         {
             imageToUpload = it.key();
             proDlg->setValue(uploadImageCount - 1 - uploadImageCountIndex);
-            proDlg->setLabelText(tr("Uploaading image: %1").arg(imageToUpload));
+            proDlg->setLabelText(tr("Uploading image: %1").arg(imageToUpload));
             break;
         }
     }
@@ -372,6 +374,8 @@ void VGithubImageHosting::githubImageBedUploadFinished()
 
 void VGithubImageHosting::githubImageBedReplaceLink(QString p_fileContent, const QString p_filePath)
 {
+    Q_UNUSED(p_filePath);
+
     // This function must be executed when the upload is completed or fails in the middle.
     if(!g_config->getGithubKeepImgScale())
     {
@@ -379,21 +383,13 @@ void VGithubImageHosting::githubImageBedReplaceLink(QString p_fileContent, const
         p_fileContent.replace(QRegExp("\\s+=\\d+x"),"");
     }
 
-    if(!g_config->getGithubDoNotReplaceLink())
-    {
+    if(!g_config->getGithubDoNotReplaceLink()) {
         // Write content to file.
-        QFile file(p_filePath);
-        file.open(QIODevice::WriteOnly | QIODevice::Text);
-        file.write(p_fileContent.toUtf8());
-        file.close();
+        m_editor->setContent(p_fileContent, true);
+    } else {
+        VClipboardUtils::setTextToClipboard(QApplication::clipboard(), p_fileContent);
+        emit m_editor->object()->statusMessage(tr("Copied contents with new image links"));
     }
-
-    // Write content to clipboard.
-    QClipboard *board = QApplication::clipboard();
-    board->setText(p_fileContent);
-    QMessageBox::warning(nullptr,
-                         tr("Github Image Hosting"),
-                         tr("The article has been copied to the clipboard!"));
 
     // Reset.
     imageUrlMap.clear();
@@ -421,7 +417,12 @@ QString VGithubImageHosting::githubImageBedGenerateParam(const QString p_imagePa
     return jsonStr;
 }
 
-VGiteeImageHosting::VGiteeImageHosting(VFile *p_file, QWidget *p_parent)
+void VGithubImageHosting::setEditor(VEditor *p_editor)
+{
+    m_editor = p_editor;
+}
+
+VGiteeImageHosting::VGiteeImageHosting(VFile *p_file, QObject *p_parent)
     :QObject(p_parent),
      m_file(p_file)
 {
@@ -525,7 +526,7 @@ void VGiteeImageHosting::giteeImageBedAuthFinished()
         else
         {
             qDebug() << m_file->getName() << " No images to upload";
-            QString info = m_file->getName() + " No pictures to upload";
+            QString info = tr("No local images to upload: %1").arg(m_file->getName());
             QMessageBox::information(nullptr, tr("Gitee Image Hosting"), info);
         }
         break;
@@ -565,7 +566,7 @@ void VGiteeImageHosting::giteeImageBedUploadManager()
         {
             imageToUpload = it.key();
             proDlg->setValue(uploadImageCount - 1 - uploadImageCountIndex);
-            proDlg->setLabelText(tr("Uploaading image: %1").arg(imageToUpload));
+            proDlg->setLabelText(tr("Uploading image: %1").arg(imageToUpload));
             break;
         }
     }
@@ -794,8 +795,10 @@ void VGiteeImageHosting::giteeImageBedUploadFinished()
     }
 }
 
-void VGiteeImageHosting::giteeImageBedReplaceLink(QString p_fileContent, const QString p_file_path)
+void VGiteeImageHosting::giteeImageBedReplaceLink(QString p_fileContent, const QString p_filePath)
 {
+    Q_UNUSED(p_filePath);
+
     // This function must be executed when the upload is completed or fails in the middle.
     if(!g_config->getGiteeKeepImgScale())
     {
@@ -806,18 +809,11 @@ void VGiteeImageHosting::giteeImageBedReplaceLink(QString p_fileContent, const Q
     if(!g_config->getGiteeDoNotReplaceLink())
     {
         // Write content to file.
-        QFile file(p_file_path);
-        file.open(QIODevice::WriteOnly | QIODevice::Text);
-        file.write(p_fileContent.toUtf8());
-        file.close();
+        m_editor->setContent(p_fileContent, true);
+    } else {
+        VClipboardUtils::setTextToClipboard(QApplication::clipboard(), p_fileContent);
+        emit m_editor->object()->statusMessage(tr("Copied contents with new image links"));
     }
-
-    // Write content to clipboard.
-    QClipboard *board = QApplication::clipboard();
-    board->setText(p_fileContent);
-    QMessageBox::warning(nullptr,
-                         tr("Gitee Image Hosting"),
-                         tr("The article has been copied to the clipboard!"));
 
     // Reset.
     imageUrlMap.clear();
@@ -846,7 +842,12 @@ QString VGiteeImageHosting::giteeImageBedGenerateParam(const QString &p_imagePat
     return jsonStr;
 }
 
-VWechatImageHosting::VWechatImageHosting(VFile *p_file, QWidget *p_parent)
+void VGiteeImageHosting::setEditor(VEditor *p_editor)
+{
+    m_editor = p_editor;
+}
+
+VWechatImageHosting::VWechatImageHosting(VFile *p_file, QObject *p_parent)
     :QObject(p_parent),
      m_file(p_file)
 {
@@ -953,7 +954,7 @@ void VWechatImageHosting::wechatImageBedAuthFinished()
                         else
                         {
                             qDebug() << m_file->getName() << " No pictures to upload";
-                            QString info = m_file->getName() + tr(" No pictures to upload");
+                            QString info = tr("No local images to upload: %1").arg(m_file->getName());
                             QMessageBox::information(nullptr, tr("Wechat Image Hosting"), info);
                         }
                     }
@@ -1023,7 +1024,7 @@ void VWechatImageHosting::wechatImageBedUploadManager()
         {
             image_to_upload = it.key();
             proDlg->setValue(uploadImageCount - 1 - uploadImageCountIndex);
-            proDlg->setLabelText(tr("Uploaading image: %1").arg(image_to_upload));
+            proDlg->setLabelText(tr("Uploading image: %1").arg(image_to_upload));
             break;
         }
     }
@@ -1200,6 +1201,8 @@ void VWechatImageHosting::wechatImageBedUploadFinished()
 
 void VWechatImageHosting::wechatImageBedReplaceLink(QString &p_fileContent, const QString &p_filePath)
 {
+    Q_UNUSED(p_filePath);
+
     if(!g_config->getWechatKeepImgScale())
     {
         // delete image scale
@@ -1209,30 +1212,21 @@ void VWechatImageHosting::wechatImageBedReplaceLink(QString &p_fileContent, cons
     if(!g_config->getWechatDoNotReplaceLink())
     {
         // Write content to file.
-        QFile file(p_filePath);
-        file.open(QIODevice::WriteOnly | QIODevice::Text);
-        file.write(p_fileContent.toUtf8());
-        file.close();
+        m_editor->setContent(p_fileContent, true);
     }
 
-    // Write content to clipboard.
-    QClipboard *board = QApplication::clipboard();
-    board->setText(p_fileContent);
+    VClipboardUtils::setTextToClipboard(QApplication::clipboard(), p_fileContent);
+    emit m_editor->object()->statusMessage(tr("Copied contents with new image links"));
+
     QString url = g_config->getMarkdown2WechatToolUrl();
-    if(url.isEmpty())
-    {
-        QMessageBox::warning(nullptr,
-                             tr("Wechat Image Hosting"),
-                             tr("The article has been copied to the clipboard. Please find a text file and save it!!"));
-    }
-    else
-    {
+    if(!url.isEmpty()) {
         QMessageBox::StandardButton result;
         result = QMessageBox::question(nullptr,
                                        tr("Wechat Image Hosting"),
-                                       tr("The article has been copied to the clipboard.") +
+                                       tr("Contents with new image links are copied. ") +
                                        tr("Do you want to open the tool link of mark down to wechat?"),
-                                       QMessageBox::Yes|QMessageBox::No,QMessageBox::Yes);
+                                       QMessageBox::Yes | QMessageBox::No,
+                                       QMessageBox::Yes);
         if(result == QMessageBox::Yes)
         {
             QDesktopServices::openUrl(QUrl(url));
@@ -1244,7 +1238,12 @@ void VWechatImageHosting::wechatImageBedReplaceLink(QString &p_fileContent, cons
     imageUploaded = false;
 }
 
-VTencentImageHosting::VTencentImageHosting(VFile *p_file, QWidget *p_parent)
+void VWechatImageHosting::setEditor(VEditor *p_editor)
+{
+    m_editor = p_editor;
+}
+
+VTencentImageHosting::VTencentImageHosting(VFile *p_file, QObject *p_parent)
     :QObject(p_parent),
      m_file(p_file)
 {
@@ -1313,7 +1312,7 @@ void VTencentImageHosting::findAndStartUploadImage()
     else
     {
         qDebug() << m_file->getName() << " No images to upload";
-        QString info = m_file->getName() + " No pictures to upload";
+        QString info = tr("No local images to upload: %1").arg(m_file->getName());
         QMessageBox::information(nullptr, tr("Tencent Image Hosting"), info);
     }
 }
@@ -1331,7 +1330,7 @@ void VTencentImageHosting::tencentImageBedUploadManager()
         {
             image_to_upload = it.key();
             proDlg->setValue(uploadImageCount - 1 - uploadImageCountIndex);
-            proDlg->setLabelText(tr("Uploaading image: %1").arg(image_to_upload));
+            proDlg->setLabelText(tr("Uploading image: %1").arg(image_to_upload));
             break;
         }
     }
@@ -1525,6 +1524,8 @@ void VTencentImageHosting::tencentImageBedUploadFinished()
 
 void VTencentImageHosting::tencentImageBedReplaceLink(QString &p_fileContent, const QString &p_filePath)
 {
+    Q_UNUSED(p_filePath);
+
     if(!g_config->getTencentKeepImgScale())
     {
         // delete image scale
@@ -1534,18 +1535,11 @@ void VTencentImageHosting::tencentImageBedReplaceLink(QString &p_fileContent, co
     if(!g_config->getTencentDoNotReplaceLink())
     {
         // Write content to file.
-        QFile file(p_filePath);
-        file.open(QIODevice::WriteOnly | QIODevice::Text);
-        file.write(p_fileContent.toUtf8());
-        file.close();
+        m_editor->setContent(p_fileContent, true);
+    } else {
+        VClipboardUtils::setTextToClipboard(QApplication::clipboard(), p_fileContent);
+        emit m_editor->object()->statusMessage(tr("Copied contents with new image links"));
     }
-
-    // Write content to clipboard.
-    QClipboard *board = QApplication::clipboard();
-    board->setText(p_fileContent);
-    QMessageBox::warning(nullptr,
-                         tr("Tencent Image Hosting"),
-                         tr("The article has been copied to the clipboard!!"));
 
     // Reset.
     imageUrlMap.clear();
@@ -1614,4 +1608,9 @@ QByteArray VTencentImageHosting::getImgContent(const QString &p_imagePath)
     QByteArray fdata = file.readAll();
     file.close();
     return fdata;
+}
+
+void VTencentImageHosting::setEditor(VEditor *p_editor)
+{
+    m_editor = p_editor;
 }

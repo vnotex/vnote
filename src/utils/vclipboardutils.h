@@ -34,6 +34,10 @@ public:
                                    const QString &p_link,
                                    QClipboard::Mode p_mode = QClipboard::Clipboard);
 
+    static void setTextToClipboard(QClipboard *p_clipboard,
+                                   const QString &p_text,
+                                    QClipboard::Mode p_mode = QClipboard::Clipboard);
+
 private:
     VClipboardUtils()
     {

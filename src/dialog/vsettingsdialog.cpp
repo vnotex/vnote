@@ -1601,7 +1601,7 @@ VImageHostingTab::VImageHostingTab(QWidget *p_parent)
     imageHostingTabWeg->addTab(githubImageHostingTab, tr("GitHub"));
     imageHostingTabWeg->addTab(giteeImageHostingTab, tr("Gitee"));
     imageHostingTabWeg->addTab(wechatImageHostingTab, tr("WeChat"));
-    imageHostingTabWeg->addTab(tencentImageHostingTab, tr("Tencent"));
+    imageHostingTabWeg->addTab(tencentImageHostingTab, tr("Tencent Cloud"));
     imageHostingTabWeg->setCurrentIndex(0);
 
     // Set the tab of GitHub image Hosting
@@ -1615,7 +1615,7 @@ VImageHostingTab::VImageHostingTab(QWidget *p_parent)
     m_githubUserNameEdit->setToolTip(tr("User name of GitHub"));
     m_githubUserNameEdit->setMinimumWidth(250 * VUtils::calculateScaleFactor());
     m_githubKeepImgScaleCB = new QCheckBox(tr("Keep image scale(such as '=100x')"));
-    m_githubDoNotReplaceLinkCB = new QCheckBox(tr("Don't replace new image link"));
+    m_githubDoNotReplaceLinkCB = new QCheckBox(tr("Copy the new content instead of replacing"));
 
     QFormLayout *githubLayout = new QFormLayout();
     githubLayout->addRow(tr("Personal access token:"), m_githubPersonalAccessTokenEdit);
@@ -1637,7 +1637,7 @@ VImageHostingTab::VImageHostingTab(QWidget *p_parent)
     m_giteeUserNameEdit->setToolTip(tr("User name of Gitee"));
     m_giteeUserNameEdit->setMinimumWidth(250 * VUtils::calculateScaleFactor());
     m_giteeKeepImgScaleCB = new QCheckBox(tr("Keep image scale(such as '=100x')"));
-    m_giteeDoNotReplaceLinkCB = new QCheckBox(tr("Don't replace new image link"));
+    m_giteeDoNotReplaceLinkCB = new QCheckBox(tr("Copy the new content instead of replacing"));
 
     QFormLayout *giteeLayout = new QFormLayout();
     giteeLayout->addRow(tr("Personal access token:"), m_giteePersonalAccessTokenEdit);
@@ -1650,21 +1650,18 @@ VImageHostingTab::VImageHostingTab(QWidget *p_parent)
 
     // Set the tab of Wechat image Hosting
     m_wechatAppidEdit = new VLineEdit();
-    m_wechatAppidEdit->setToolTip(tr("WeChat appid"));
     m_wechatAppidEdit->setMinimumWidth(250 * VUtils::calculateScaleFactor());
     m_wechatSecretEdit = new VLineEdit();
-    m_wechatSecretEdit->setToolTip(tr("Please input wechat secret"));
     m_wechatSecretEdit->setMinimumWidth(250 * VUtils::calculateScaleFactor());
     m_markdown2WechatToolUrlEdit = new VLineEdit();
-    m_markdown2WechatToolUrlEdit->setToolTip(tr("Please input markdown to wechat tool's url"));
     m_markdown2WechatToolUrlEdit->setMinimumWidth(250 * VUtils::calculateScaleFactor());
     m_wechatKeepImgScaleCB = new QCheckBox(tr("Keep image scale(such as '=100x')"));
-    m_wechatDoNotReplaceLinkCB = new QCheckBox(tr("Don't replace new image link"));
+    m_wechatDoNotReplaceLinkCB = new QCheckBox(tr("Copy the new content instead of replacing"));
 
     QFormLayout *wechatLayout = new QFormLayout();
-    wechatLayout->addRow(tr("appid:"), m_wechatAppidEdit);
-    wechatLayout->addRow(tr("secret:"), m_wechatSecretEdit);
-    wechatLayout->addRow(tr("markdown2WechatToolUrl"), m_markdown2WechatToolUrlEdit);
+    wechatLayout->addRow(tr("AppId:"), m_wechatAppidEdit);
+    wechatLayout->addRow(tr("AppSecret:"), m_wechatSecretEdit);
+    wechatLayout->addRow(tr("markdown2WechatToolUrl:"), m_markdown2WechatToolUrlEdit);
     wechatLayout->addRow(m_wechatKeepImgScaleCB);
     wechatLayout->addRow(m_wechatDoNotReplaceLinkCB);
 
@@ -1675,18 +1672,16 @@ VImageHostingTab::VImageHostingTab(QWidget *p_parent)
     m_tencentAccessDomainNameEdit->setToolTip(tr("Tencent access domain name"));
     m_tencentAccessDomainNameEdit->setMinimumWidth(250 * VUtils::calculateScaleFactor());
     m_tencentSecretIdEdit = new VLineEdit();
-    m_tencentSecretIdEdit->setToolTip(tr("Tencent secret id"));
     m_tencentSecretIdEdit->setMinimumWidth(250 * VUtils::calculateScaleFactor());
     m_tencentSecretKeyEdit = new VLineEdit();
-    m_tencentSecretKeyEdit->setToolTip(tr("Tencent secret key"));
     m_tencentSecretKeyEdit->setMinimumWidth(250 * VUtils::calculateScaleFactor());
     m_tencentKeepImgScaleCB = new QCheckBox(tr("Keep image scale(such as '=100x')"));
-    m_tencentDoNotReplaceLinkCB = new QCheckBox(tr("Don't replace new image link"));
+    m_tencentDoNotReplaceLinkCB = new QCheckBox(tr("Copy the new content instead of replacing"));
 
     QFormLayout *tencentLayout = new QFormLayout();
-    tencentLayout->addRow(tr("accessDomainName"), m_tencentAccessDomainNameEdit);
-    tencentLayout->addRow(tr("secretId"), m_tencentSecretIdEdit);
-    tencentLayout->addRow(tr("secretKey"), m_tencentSecretKeyEdit);
+    tencentLayout->addRow(tr("Access domain name:"), m_tencentAccessDomainNameEdit);
+    tencentLayout->addRow(tr("SecretId:"), m_tencentSecretIdEdit);
+    tencentLayout->addRow(tr("SecretKey:"), m_tencentSecretKeyEdit);
     tencentLayout->addRow(m_tencentKeepImgScaleCB);
     tencentLayout->addRow(m_tencentDoNotReplaceLinkCB);
 
