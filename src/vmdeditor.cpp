@@ -2290,7 +2290,7 @@ void VMdEditor::initImageHostingMenu(QMenu *p_menu)
     uploadImageMenu->addAction(uploadImageToGithub);
 
     // Upload the image to Gitee image hosting.
-    QAction *uploadImageToGitee = new QAction(tr("&Gitee"), uploadImageMenu);
+    QAction *uploadImageToGitee = new QAction(tr("G&itee"), uploadImageMenu);
     connect(uploadImageToGitee, &QAction::triggered, this, &VMdEditor::requestUploadImageToGitee);
     uploadImageMenu->addAction(uploadImageToGitee);
 
