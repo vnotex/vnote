@@ -1,4 +1,9 @@
 # Changes History
+## v2.8
+- Add supports for image hosting, including service GitHub, Gitee, Wechat, and Tencent Cloud; (@fengwenhua)
+- Support sorting notebooks in context menu;
+- Add theme v_next; (@hzhu212)
+
 ## v2.7.2
 - Use 5.9.8 on macOS;
 - Call Java (PlantUML) directly on Win;
