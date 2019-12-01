@@ -23,4 +23,6 @@ cd build
 qmake -v
 qmake CONFIG-=debug CONFIG+=release ../VNote.pro
 make -j2
+
+编译成功, 可执行文件位置:  build/src/VNote
 ```
