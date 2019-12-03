@@ -52,6 +52,9 @@
 #include "vlistue.h"
 #include "vtagexplorer.h"
 #include "vmdeditor.h"
+#ifdef Q_OS_MAC
+    #include "objectivec.h"
+#endif
 
 extern VConfigManager *g_config;
 
@@ -2254,6 +2257,13 @@ void VMainWindow::closeEvent(QCloseEvent *event)
     isExit = true;
 #endif
 
+    qWarning() << "11111111111111";
+#ifdef Q_OS_MAC
+    ObjectiveC *obc = new ObjectiveC();
+    obc->HideWindow();
+#endif
+    event->ignore();
+    return;
     if (!isExit && g_config->getMinimizeToStystemTray() == -1) {
         // Not initialized yet. Prompt for user.
         int ret = VUtils::showMessage(QMessageBox::Information,
