@@ -2257,14 +2257,12 @@ void VMainWindow::closeEvent(QCloseEvent *event)
     isExit = true;
 #endif
 
-    qWarning() << "11111111111111";
 #ifdef Q_OS_MAC
-    qWarning() << "haha";
     ObjectiveC *obc = new ObjectiveC();
     obc->HideWindow();
 #endif
     event->ignore();
-    qWarning() << "22222222222222";
+    qWarning() << "11111111111111";
     return;
     if (!isExit && g_config->getMinimizeToStystemTray() == -1) {
         // Not initialized yet. Prompt for user.

@@ -7,3 +7,8 @@ void ObjectiveC::HideWindow()
 {
     [NSApp hide:nil];
 }
+
+void ObjectiveC::ShowWindow()
+{
+    [NSApp show:nil];
+}
