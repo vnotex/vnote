@@ -4,3 +4,5 @@ CMakeLists.txt.user
 
 build/*
 !build/README
+cmake-build-debug/
+.idea/
