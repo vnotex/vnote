@@ -2758,7 +2758,7 @@ void VMainWindow::initTrayIcon()
     connect(m_trayIcon, &QSystemTrayIcon::activated,
             this, [this](QSystemTrayIcon::ActivationReason p_reason){
                 if (p_reason == QSystemTrayIcon::Trigger) {
-                    this->showMainWindow();
+//                    this->showMainWindow();
                 }
             });
 
@@ -2778,16 +2778,23 @@ void VMainWindow::changeEvent(QEvent *p_event)
 void VMainWindow::showMainWindow()
 {
     if (this->isMinimized()) {
-        qWarning() << "3333333333333";
         if (m_windowOldState & Qt::WindowMaximized) {
+            qWarning() << "5";
             this->showMaximized();
         } else if (m_windowOldState & Qt::WindowFullScreen) {
+            qWarning() << "6";
             this->showFullScreen();
         } else {
+            qWarning() << "7";
             this->showNormal();
         }
     } else {
         qWarning() << "4444444444444";
+#ifdef Q_OS_MAC
+        ObjectiveC *obc = new ObjectiveC();
+        obc->ShowWindow();
+#endif
+        return;
         this->show();
         // Need to call raise() in macOS.
         this->raise();

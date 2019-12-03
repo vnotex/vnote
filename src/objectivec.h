@@ -6,6 +6,7 @@ class ObjectiveC
 {
 public:
     static void HideWindow();
+    static void ShowWindow();
 };
 
 #endif
