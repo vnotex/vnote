@@ -2259,10 +2259,12 @@ void VMainWindow::closeEvent(QCloseEvent *event)
 
     qWarning() << "11111111111111";
 #ifdef Q_OS_MAC
+    qWarning() << "haha";
     ObjectiveC *obc = new ObjectiveC();
     obc->HideWindow();
 #endif
     event->ignore();
+    qWarning() << "22222222222222";
     return;
     if (!isExit && g_config->getMinimizeToStystemTray() == -1) {
         // Not initialized yet. Prompt for user.
@@ -2778,6 +2780,7 @@ void VMainWindow::changeEvent(QEvent *p_event)
 void VMainWindow::showMainWindow()
 {
     if (this->isMinimized()) {
+        qWarning() << "3333333333333";
         if (m_windowOldState & Qt::WindowMaximized) {
             this->showMaximized();
         } else if (m_windowOldState & Qt::WindowFullScreen) {
@@ -2786,6 +2789,7 @@ void VMainWindow::showMainWindow()
             this->showNormal();
         }
     } else {
+        qWarning() << "4444444444444";
         this->show();
         // Need to call raise() in macOS.
         this->raise();
