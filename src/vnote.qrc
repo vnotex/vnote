@@ -287,6 +287,8 @@
         <file>resources/icons/table.svg</file>
         <file>utils/wavedrom/wavedrom.min.js</file>
         <file>utils/wavedrom/wavedrom-theme.js</file>
+        <file>utils/plantuml/synchro2.js</file>
+        <file>utils/plantuml/zopfli.raw.min.js</file>
         <file>utils/clipboard.js/clipboard.min.js</file>
         <file>resources/themes/v_simple/arrow_dropdown.svg</file>
         <file>resources/themes/v_simple/arrow_dropdown_disabled.svg</file>
