@@ -61,8 +61,8 @@ const QString VNote::c_raphaelJsFile = ":/utils/flowchart.js/raphael.min.js";
 const QString VNote::c_wavedromJsFile = ":/utils/wavedrom/wavedrom.min.js";
 const QString VNote::c_wavedromThemeFile = ":/utils/wavedrom/wavedrom-theme.js";
 
-const QString VNote::c_plantUMLJsFile = "http://s.plantuml.com/synchro2.js";
-const QString VNote::c_plantUMLZopfliJsFile = "http://s.plantuml.com/zopfli.raw.min.js";
+const QString VNote::c_plantUMLJsFile = ":/utils/plantuml/synchro2.js";
+const QString VNote::c_plantUMLZopfliJsFile = ":/utils/plantuml/zopfli.raw.min.js";
 
 const QString VNote::c_highlightjsLineNumberExtraFile = ":/utils/highlightjs/highlightjs-line-numbers.min.js";
 

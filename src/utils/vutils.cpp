@@ -823,8 +823,8 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
     int plantUMLMode = g_config->getPlantUMLMode();
     if (plantUMLMode != PlantUMLMode::DisablePlantUML) {
         if (plantUMLMode == PlantUMLMode::OnlinePlantUML) {
-            extraFile += "<script type=\"text/javascript\" src=\"" + VNote::c_plantUMLJsFile + "\"></script>\n" +
-                         "<script type=\"text/javascript\" src=\"" + VNote::c_plantUMLZopfliJsFile + "\"></script>\n" +
+            extraFile += "<script src=\"qrc" + VNote::c_plantUMLJsFile + "\"></script>\n" +
+                         "<script src=\"qrc" + VNote::c_plantUMLZopfliJsFile + "\"></script>\n" +
                          "<script>var VPlantUMLServer = '" + g_config->getPlantUMLServer() + "';</script>\n";
         }
 
