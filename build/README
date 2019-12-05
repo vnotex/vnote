@@ -13,6 +13,7 @@ xattr -d com.apple.quarantine  *.xip
 
 2. 安装Qt 5.9.1
 brew install qt@5.9.1  或者 (建议)从qt官网下载 qt-unified-mac-x64-3.1.1-online.dmg 安装
+或者 https://mirrors4.tuna.tsinghua.edu.cn/qt/official_releases/qt/5.9/5.9.8/
 ```
 
 
