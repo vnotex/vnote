@@ -131,7 +131,9 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
     initUpdateTimer();
 
     registerCaptainAndNavigationTargets();
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
     QApplication::setQuitOnLastWindowClosed(false);
+#endif
 }
 
 void VMainWindow::initSharedMemoryWatcher()
@@ -1123,7 +1125,6 @@ void VMainWindow::initFileMenu()
 
 void VMainWindow::quitApp()
 {
-    qWarning() << "VMainWindow::quitApp";
     m_requestQuit = true;
     close();
 }
@@ -2752,9 +2753,11 @@ void VMainWindow::initTrayIcon()
 
     connect(m_trayIcon, &QSystemTrayIcon::activated,
             this, [this](QSystemTrayIcon::ActivationReason p_reason){
+#if !defined(Q_OS_MACOS) && !defined(Q_OS_MAC)
                 if (p_reason == QSystemTrayIcon::Trigger) {
-//                    this->showMainWindow();
+                    this->showMainWindow();
                 }
+#endif
             });
 
     m_trayIcon->show();
@@ -2779,22 +2782,13 @@ void VMainWindow::showMainWindow()
 {
     if (this->isMinimized()) {
         if (m_windowOldState & Qt::WindowMaximized) {
-            qWarning() << "5";
             this->showMaximized();
         } else if (m_windowOldState & Qt::WindowFullScreen) {
-            qWarning() << "6";
             this->showFullScreen();
         } else {
-            qWarning() << "7";
             this->showNormal();
         }
     } else {
-//        qWarning() << "4444444444444";
-//#ifdef Q_OS_MAC
-//        ObjectiveC *obc = new ObjectiveC();
-//        obc->ShowWindow();
-//#endif
-//        return;
         this->show();
         // Need to call raise() in macOS.
         this->raise();
