@@ -2247,7 +2247,6 @@ void VMainWindow::deleteCurNote()
     m_fileList->deleteFile(file);
 }
 
-/*
 void VMainWindow::closeEvent(QCloseEvent *event)
 {
     bool isExit = m_requestQuit || !g_config->getMinimizeToStystemTray();
@@ -2257,7 +2256,10 @@ void VMainWindow::closeEvent(QCloseEvent *event)
 
 #if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
     // Do not support minimized to tray on macOS.
-    isExit = true;
+    if (!m_requestQuit) {
+        event->accept();
+        return;
+    }
 #endif
 
 //#ifdef Q_OS_MAC
@@ -2341,7 +2343,6 @@ void VMainWindow::closeEvent(QCloseEvent *event)
         event->ignore();
     }
 }
-*/
 
 void VMainWindow::saveStateAndGeometry()
 {
