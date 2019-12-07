@@ -2,7 +2,6 @@ VNote.pro.user*
 CMakeLists.txt.user
 .DS_Store
 
-build/*
-!build/README
+build/
 cmake-build-debug/
 .idea/
