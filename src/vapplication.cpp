@@ -15,9 +15,3 @@ void VApplication::onApplicationStateChanged(Qt::ApplicationState state)
         this->window->raise();
     }
 }
-
-bool VApplication::event(QEvent *event)
-{
-    qWarning() << "VApplication::event =" << event->type();
-    return QApplication::event(event);
-}

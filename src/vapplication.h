@@ -20,9 +20,6 @@ public:
 public slots:
     void onApplicationStateChanged(Qt::ApplicationState state);
 
-protected:
-    bool event(QEvent * event);
-
 private:
     VMainWindow *window;
 };

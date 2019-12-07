@@ -2763,11 +2763,6 @@ void VMainWindow::initTrayIcon()
     m_trayIcon->show();
 }
 
-bool VMainWindow::event(QEvent *event) {
-    qWarning() << "VMainWindow::event = " << event->type();
-    return QMainWindow::event(event);
-}
-
 void VMainWindow::changeEvent(QEvent *p_event)
 {
     if (p_event->type() == QEvent::WindowStateChange) {
