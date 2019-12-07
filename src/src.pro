@@ -320,11 +320,6 @@ RESOURCES += \
 macx {
     LIBS += -L/usr/local/lib
     INCLUDEPATH += /usr/local/include
-
-    LIBS += -framework Foundation
-    LIBS += -framework AppKit
-    OBJECTIVE_SOURCES += objectivec.mm
-    HEADERS += objectivec.h
 }
 
 INCLUDEPATH += $$PWD/../peg-highlight
