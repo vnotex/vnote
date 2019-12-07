@@ -215,11 +215,13 @@ private slots:
     void collectUserStat() const;
 
 protected:
-    void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
+//    void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
 
     void changeEvent(QEvent *p_event) Q_DECL_OVERRIDE;
+
+    bool event(QEvent *event) Q_DECL_OVERRIDE;
 
 private:
     void setupUI();

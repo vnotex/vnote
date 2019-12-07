@@ -134,6 +134,7 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
     initUpdateTimer();
 
     registerCaptainAndNavigationTargets();
+    QApplication::setQuitOnLastWindowClosed(false);
 }
 
 void VMainWindow::initSharedMemoryWatcher()
@@ -1125,6 +1126,7 @@ void VMainWindow::initFileMenu()
 
 void VMainWindow::quitApp()
 {
+    qWarning() << "VMainWindow::quitApp";
     m_requestQuit = true;
     close();
 }
@@ -2245,6 +2247,7 @@ void VMainWindow::deleteCurNote()
     m_fileList->deleteFile(file);
 }
 
+/*
 void VMainWindow::closeEvent(QCloseEvent *event)
 {
     bool isExit = m_requestQuit || !g_config->getMinimizeToStystemTray();
@@ -2257,13 +2260,13 @@ void VMainWindow::closeEvent(QCloseEvent *event)
     isExit = true;
 #endif
 
-#ifdef Q_OS_MAC
-    ObjectiveC *obc = new ObjectiveC();
-    obc->HideWindow();
-#endif
-    event->ignore();
-    qWarning() << "11111111111111";
-    return;
+//#ifdef Q_OS_MAC
+//    ObjectiveC *obc = new ObjectiveC();
+//    obc->HideWindow();
+//#endif
+//    event->ignore();
+//    qWarning() << "11111111111111";
+//    return;
     if (!isExit && g_config->getMinimizeToStystemTray() == -1) {
         // Not initialized yet. Prompt for user.
         int ret = VUtils::showMessage(QMessageBox::Information,
@@ -2338,6 +2341,7 @@ void VMainWindow::closeEvent(QCloseEvent *event)
         event->ignore();
     }
 }
+*/
 
 void VMainWindow::saveStateAndGeometry()
 {
@@ -2765,6 +2769,11 @@ void VMainWindow::initTrayIcon()
     m_trayIcon->show();
 }
 
+bool VMainWindow::event(QEvent *event) {
+    qWarning() << "VMainWindow::event = " << event->type();
+    return QMainWindow::event(event);
+}
+
 void VMainWindow::changeEvent(QEvent *p_event)
 {
     if (p_event->type() == QEvent::WindowStateChange) {
@@ -2789,12 +2798,12 @@ void VMainWindow::showMainWindow()
             this->showNormal();
         }
     } else {
-        qWarning() << "4444444444444";
-#ifdef Q_OS_MAC
-        ObjectiveC *obc = new ObjectiveC();
-        obc->ShowWindow();
-#endif
-        return;
+//        qWarning() << "4444444444444";
+//#ifdef Q_OS_MAC
+//        ObjectiveC *obc = new ObjectiveC();
+//        obc->ShowWindow();
+//#endif
+//        return;
         this->show();
         // Need to call raise() in macOS.
         this->raise();
