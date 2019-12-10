@@ -16,6 +16,7 @@
 #include "vsingleinstanceguard.h"
 #include "vconfigmanager.h"
 #include "vpalette.h"
+#include "vapplication.h"
 
 VConfigManager *g_config;
 
@@ -159,7 +160,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
-    QApplication app(argc, argv);
+    VApplication app(argc, argv);
 
     // The file path passed via command line arguments.
     QStringList filePaths = VUtils::filterFilePathsToOpen(app.arguments().mid(1));
@@ -264,6 +265,7 @@ int main(int argc, char *argv[])
 
     w.kickOffStartUpTimer(filePaths);
 
+    app.setWindow(&w);
     int ret = app.exec();
     if (ret == RESTART_EXIT_CODE) {
         // Ask to restart VNote.

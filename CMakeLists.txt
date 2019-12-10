@@ -13,6 +13,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 ## Default Qt5 path
+set(Qt5_DIR "$ENV{QTDIR}/lib/cmake/Qt5")
 if(WIN32)
   set(Qt5_DIR "c:/Qt/Qt5.9.7/5.9.7/msvc2017_64/lib/cmake/Qt5/" CACHE PATH "directory where Qt5Config.cmake exists.")
 elseif(APPLE)

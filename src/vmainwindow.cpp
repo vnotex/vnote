@@ -131,6 +131,9 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
     initUpdateTimer();
 
     registerCaptainAndNavigationTargets();
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    QApplication::setQuitOnLastWindowClosed(false);
+#endif
 }
 
 void VMainWindow::initSharedMemoryWatcher()
@@ -2251,7 +2254,10 @@ void VMainWindow::closeEvent(QCloseEvent *event)
 
 #if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
     // Do not support minimized to tray on macOS.
-    isExit = true;
+    if (!isExit) {
+        event->accept();
+        return;
+    }
 #endif
 
     if (!isExit && g_config->getMinimizeToStystemTray() == -1) {
@@ -2747,9 +2753,11 @@ void VMainWindow::initTrayIcon()
 
     connect(m_trayIcon, &QSystemTrayIcon::activated,
             this, [this](QSystemTrayIcon::ActivationReason p_reason){
+#if !defined(Q_OS_MACOS) && !defined(Q_OS_MAC)
                 if (p_reason == QSystemTrayIcon::Trigger) {
                     this->showMainWindow();
                 }
+#endif
             });
 
     m_trayIcon->show();
