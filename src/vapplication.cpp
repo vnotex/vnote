@@ -8,6 +8,7 @@ VApplication::VApplication(int &argc, char **argv)
 
 void VApplication::onApplicationStateChanged(Qt::ApplicationState state)
 {
+    Q_UNUSED(state);
 #if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
     if(state == Qt::ApplicationActive) {
         this->window->show();
