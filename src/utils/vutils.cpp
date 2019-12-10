@@ -1020,8 +1020,8 @@ QString VUtils::generateMathJaxPreviewTemplate()
                  "<script src=\"qrc" + VNote::c_wavedromJsFile + "\"></script>\n";
 
     // PlantUML.
-    extraFile += "<script type=\"text/javascript\" src=\"" + VNote::c_plantUMLJsFile + "\"></script>\n" +
-                 "<script type=\"text/javascript\" src=\"" + VNote::c_plantUMLZopfliJsFile + "\"></script>\n" +
+    extraFile += "<script type=\"text/javascript\" src=\"qrc" + VNote::c_plantUMLJsFile + "\"></script>\n" +
+                 "<script type=\"text/javascript\" src=\"qrc" + VNote::c_plantUMLZopfliJsFile + "\"></script>\n" +
                  "<script>var VPlantUMLServer = '" + g_config->getPlantUMLServer() + "';</script>\n";
 
     templ.replace(HtmlHolder::c_extraHolder, extraFile);
