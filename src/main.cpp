@@ -120,8 +120,19 @@ void VLogger(QtMsgType type, const QMessageLogContext &context, const QString &m
 
 int main(int argc, char *argv[])
 {
+    bool allowMultiInstances = false;
+    for (int i = 1; i < argc; ++i) {
+        if (!qstrcmp(argv[i], "-m")) {
+            allowMultiInstances = true;
+            break;
+        }
+    }
+
     VSingleInstanceGuard guard;
-    bool canRun = guard.tryRun();
+    bool canRun = true;
+    if (!allowMultiInstances) {
+        canRun = guard.tryRun();
+    }
 
     QTextCodec *codec = QTextCodec::codecForName("UTF8");
     if (codec) {
