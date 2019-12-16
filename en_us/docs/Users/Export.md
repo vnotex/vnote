@@ -87,10 +87,16 @@ Advanced settings:
         - `%3`: the input file directories;
         - `%4`: the rendering code block CSS style file to be used;
 
-An example to use [pandoc](http://pandoc.org) to export notes:
+An example to use [Pandoc](http://pandoc.org) to export notes:
 
 ```sh
 pandoc --resource-path=.:"%3" --css="%2" --css="%4" -s -o "%1" "%0"
 ```
 
-Then if the output suffix is `pdf`, it will generate the PDF file; if it is `docx`, it will generate the DOCX file.
+::: alert-info
+
+On Windows, you need to change the separator from `:` to `;` according to Pandoc.
+
+:::
+
+If the output suffix is `pdf`, it will generate the PDF file; if it is `docx`, it will generate the DOCX file; and if it is `pptx`, it will generate the PPTX file.
