@@ -265,6 +265,7 @@ int main(int argc, char *argv[])
     g_palette = &palette;
 
     VMainWindow w(&guard);
+    app.setWindow(&w);
     QString style = palette.fetchQtStyleSheet();
     if (!style.isEmpty()) {
         app.setStyleSheet(style);
@@ -276,8 +277,8 @@ int main(int argc, char *argv[])
 
     w.kickOffStartUpTimer(filePaths);
 
-    app.setWindow(&w);
     int ret = app.exec();
+    app.setWindow(nullptr);
     if (ret == RESTART_EXIT_CODE) {
         // Ask to restart VNote.
         guard.exit();
