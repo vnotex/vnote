@@ -926,6 +926,7 @@ const QString &VConfigManager::getCommonCssUrl() const
     if (cssPath.isEmpty()) {
         cssPath = QDir(getResourceConfigFolder()).filePath("common.css");
         if (m_versionChanged || !QFileInfo::exists(cssPath)) {
+            VUtils::deleteFile(cssPath);
             // Output the default one.
             if (!VUtils::copyFile(":/resources/common.css", cssPath, false)) {
                 cssPath = "qrc:/resources/common.css";

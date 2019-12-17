@@ -108,27 +108,11 @@ var postProcessMathJax = function(identifier, id, timeStamp, container, isBlock)
     });
 };
 
-var mermaidParserErr = false;
 var mermaidIdx = 0;
 
 var flowchartIdx = 0;
 
 var wavedromIdx = 0;
-
-if (typeof mermaidAPI != "undefined") {
-    mermaidAPI.parseError = function(err, hash) {
-        mermaidParserErr = true;
-
-        // Clean the container element, or mermaidAPI won't render the graph with
-        // the same id.
-        var errGraph = document.getElementById('mermaid-diagram-' + mermaidIdx);
-        if (errGraph) {
-            var parentNode = errGraph.parentElement;
-            parentNode.outerHTML = '';
-            delete parentNode;
-        }
-    };
-}
 
 var previewDiagram = function(identifier, id, timeStamp, lang, text) {
     if (text.length == 0) {
@@ -173,19 +157,26 @@ var previewDiagram = function(identifier, id, timeStamp, lang, text) {
 };
 
 var renderMermaidOne = function(identifier, id, timeStamp, text) {
-    mermaidParserErr = false;
     mermaidIdx++;
     try {
         // Do not increment mermaidIdx here.
-        var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx,
-                                      text,
-                                      function(){});
+        var graph = mermaid.render('mermaid-diagram-' + mermaidIdx,
+                                   text,
+                                   function(){});
     } catch (err) {
         content.setLog("err: " + err);
+        // Clean the container element, or mermaid won't render the graph with
+        // the same id.
+        var errGraph = document.getElementById('mermaid-diagram-' + mermaidIdx);
+        if (errGraph) {
+            var parentNode = errGraph.parentElement;
+            parentNode.outerHTML = '';
+            delete parentNode;
+        }
         return null;
     }
 
-    if (mermaidParserErr || typeof graph == "undefined") {
+    if (typeof graph == "undefined") {
         return null;
     }
 
