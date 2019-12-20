@@ -1,4 +1,7 @@
 # Changes History
+## v2.8.2
+- Upgrade Mermaid.js;
+
 ## v2.8.1
 - Fix PlantUML online resources;
 - MacOS: support staying in tray;
