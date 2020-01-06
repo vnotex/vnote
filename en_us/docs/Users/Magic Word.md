@@ -1,7 +1,7 @@
 # Magic Word
 **Magic Words** are some characters that have special meanings. They will be evaluated to some pre-defined characters. For one simple example, `date` could be evaluated to the date of today.
 
-VNote support snippets in most of the input widgets. For example, you could use snippet for the note name when creating a note.
+VNote support magic words in most of the input widgets. For example, you could use magic word for the note name when creating a note.
 
 `%da% work log.md` will be evaluated as `20180128 work log.md` since `%da%` is a magic word which is defined as the date of today in the form `YYYYMMDD`.
 
