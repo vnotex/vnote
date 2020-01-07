@@ -56,7 +56,6 @@
         <file>utils/markdown-it/markdown-it.min.js</file>
         <file>utils/markdown-it/markdown-it-headinganchor.js</file>
         <file>utils/markdown-it/markdown-it-task-lists.min.js</file>
-        <file>utils/mermaid/mermaidAPI.min.js</file>
         <file>resources/icons/close_red.svg</file>
         <file>resources/docs/shortcuts_en.md</file>
         <file>resources/docs/shortcuts_zh.md</file>
@@ -358,5 +357,6 @@
         <file>resources/themes/v_next/v_next.qss</file>
         <file>resources/themes/v_next/v_next_codeblock.css</file>
         <file>resources/themes/v_next/v_next_mermaid.css</file>
+        <file>utils/mermaid/mermaid.min.js</file>
     </qresource>
 </RCC>

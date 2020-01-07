@@ -30,7 +30,7 @@ var VPreviewMode = false;
 if (typeof VEnableMermaid == 'undefined') {
     VEnableMermaid = false;
 } else if (VEnableMermaid) {
-    mermaidAPI.initialize({
+    mermaid.initialize({
         startOnLoad: false
     });
 }
@@ -608,22 +608,7 @@ document.onkeydown = function(e) {
     }
 };
 
-var mermaidParserErr = false;
 var mermaidIdx = 0;
-
-if (VEnableMermaid) {
-    mermaidAPI.parseError = function(err, hash) {
-        content.setLog("err: " + err);
-        mermaidParserErr = true;
-
-        // Clean the container element, or mermaidAPI won't render the graph with
-        // the same id.
-        var errGraph = document.getElementById('mermaid-diagram-' + mermaidIdx);
-        var parentNode = errGraph.parentElement;
-        parentNode.outerHTML = '';
-        delete parentNode;
-    };
-}
 
 // @className, the class name of the mermaid code block, such as 'lang-mermaid'.
 var renderMermaid = function(className) {
@@ -648,17 +633,26 @@ var renderMermaid = function(className) {
 // Returns true if succeeded.
 var renderMermaidOne = function(code) {
     // Mermaid code block.
-    mermaidParserErr = false;
     mermaidIdx++;
     try {
         // Do not increment mermaidIdx here.
-        var graph = mermaidAPI.render('mermaid-diagram-' + mermaidIdx, code.textContent, function(){});
+        var graph = mermaid.render('mermaid-diagram-' + mermaidIdx,
+                                   code.textContent,
+                                   function(){});
     } catch (err) {
         content.setLog("err: " + err);
+        // Clean the container element, or mermaid won't render the graph with
+        // the same id.
+        var errGraph = document.getElementById('mermaid-diagram-' + mermaidIdx);
+        if (errGraph) {
+            var parentNode = errGraph.parentElement;
+            parentNode.outerHTML = '';
+            delete parentNode;
+        }
         return false;
     }
 
-    if (mermaidParserErr || typeof graph == "undefined") {
+    if (typeof graph == "undefined") {
         return false;
     }
 

@@ -20,7 +20,7 @@ const QString VConfigManager::orgName = QString("vnote");
 
 const QString VConfigManager::appName = QString("vnote");
 
-const QString VConfigManager::c_version = QString("2.8");
+const QString VConfigManager::c_version = QString("2.8.2");
 
 const QString VConfigManager::c_dirConfigFile = QString("_vnote.json");
 
@@ -926,6 +926,7 @@ const QString &VConfigManager::getCommonCssUrl() const
     if (cssPath.isEmpty()) {
         cssPath = QDir(getResourceConfigFolder()).filePath("common.css");
         if (m_versionChanged || !QFileInfo::exists(cssPath)) {
+            VUtils::deleteFile(cssPath);
             // Output the default one.
             if (!VUtils::copyFile(":/resources/common.css", cssPath, false)) {
                 cssPath = "qrc:/resources/common.css";

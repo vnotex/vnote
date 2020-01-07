@@ -1274,6 +1274,10 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     QLabel *colorColumnLabel = new QLabel(tr("Color column:"));
     colorColumnLabel->setToolTip(m_colorColumnEdit->toolTip());
 
+    // Code block copy button.
+    m_codeBlockCopyButtonCB = new QCheckBox(tr("Code block copy button"));
+    m_codeBlockCopyButtonCB->setToolTip(tr("Display a copy button at the top right corner of each code block to copy the content in read mode"));
+
     // MathJax.
     m_mathjaxConfigEdit = new VLineEdit();
     m_mathjaxConfigEdit->setToolTip(tr("Location of MathJax JavaScript and its configuration "
@@ -1371,6 +1375,7 @@ VMarkdownTab::VMarkdownTab(QWidget *p_parent)
     mainLayout->addRow(tr("Open mode:"), m_openModeCombo);
     mainLayout->addRow(tr("Heading sequence:"), headingSequenceLayout);
     mainLayout->addRow(colorColumnLabel, m_colorColumnEdit);
+    mainLayout->addRow(m_codeBlockCopyButtonCB);
     mainLayout->addRow(tr("MathJax configuration:"), m_mathjaxConfigEdit);
     mainLayout->addRow(tr("PlantUML:"), m_plantUMLModeCombo);
     mainLayout->addRow(tr("PlantUML server:"), m_plantUMLServerEdit);
@@ -1392,6 +1397,10 @@ bool VMarkdownTab::loadConfiguration()
     }
 
     if (!loadColorColumn()) {
+        return false;
+    }
+
+    if (!loadCodeBlockCopyButton()) {
         return false;
     }
 
@@ -1421,6 +1430,10 @@ bool VMarkdownTab::saveConfiguration()
     }
 
     if (!saveColorColumn()) {
+        return false;
+    }
+
+    if (!saveCodeBlockCopyButton()) {
         return false;
     }
 
@@ -1504,6 +1517,18 @@ bool VMarkdownTab::saveColorColumn()
         g_config->setColorColumn(colorColumn);
     }
 
+    return true;
+}
+
+bool VMarkdownTab::loadCodeBlockCopyButton()
+{
+    m_codeBlockCopyButtonCB->setChecked(g_config->getEnableCodeBlockCopyButton());
+    return true;
+}
+
+bool VMarkdownTab::saveCodeBlockCopyButton()
+{
+    g_config->setEnableCodeBlockCopyButton(m_codeBlockCopyButtonCB->isChecked());
     return true;
 }
 

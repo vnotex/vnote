@@ -1,8 +1,16 @@
 # Changes History
+## v2.8.2
+- Upgrade Mermaid.js;
+
+## v2.8.1
+- Fix PlantUML online resources;
+- MacOS: support staying in tray;
+- Add a configuration in Settings to control code block copy button;
+
 ## v2.8
 - Add supports for image hosting, including service GitHub, Gitee, Wechat, and Tencent Cloud; (@fengwenhua)
 - Support sorting notebooks in context menu;
-- Add theme v_next; (@hzhu212)
+- Add theme v_next; (@hzhu212);
 
 ## v2.7.2
 - Use 5.9.8 on macOS;

@@ -223,6 +223,9 @@ private:
     bool loadColorColumn();
     bool saveColorColumn();
 
+    bool loadCodeBlockCopyButton();
+    bool saveCodeBlockCopyButton();
+
     bool loadMathJax();
     bool saveMathJax();
 
@@ -241,6 +244,9 @@ private:
 
     // Color column in code block.
     VLineEdit *m_colorColumnEdit;
+
+    // Copy button in code block.
+    QCheckBox *m_codeBlockCopyButtonCB;
 
     // MathJax.
     VLineEdit *m_mathjaxConfigEdit;
