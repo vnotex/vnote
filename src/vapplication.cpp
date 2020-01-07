@@ -9,7 +9,7 @@ VApplication::VApplication(int &argc, char **argv)
 void VApplication::onApplicationStateChanged(Qt::ApplicationState state)
 {
 #if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
-    if(state == Qt::ApplicationActive) {
+    if(state == Qt::ApplicationActive && this->window != NULL) {
         this->window->show();
         // Need to call raise() in macOS.
         this->window->raise();
