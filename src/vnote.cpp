@@ -52,7 +52,7 @@ const QString VNote::c_showdownAnchorExtraFile = ":/utils/showdown/showdown-head
 const QString VNote::c_turndownJsFile = ":/utils/turndown/turndown.js";
 const QString VNote::c_turndownGfmExtraFile = ":/utils/turndown/turndown-plugin-gfm.js";
 
-const QString VNote::c_mermaidApiJsFile = ":/utils/mermaid/mermaidAPI.min.js";
+const QString VNote::c_mermaidApiJsFile = ":/utils/mermaid/mermaid.min.js";
 const QString VNote::c_mermaidForestCssFile = ":/utils/mermaid/mermaid.forest.css";
 
 const QString VNote::c_flowchartJsFile = ":/utils/flowchart.js/flowchart.min.js";

@@ -21,7 +21,7 @@ public slots:
     void onApplicationStateChanged(Qt::ApplicationState state);
 
 private:
-    VMainWindow *window;
+    VMainWindow *window = nullptr;
 };
 
 #endif // VAPPLICATION_H

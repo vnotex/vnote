@@ -647,6 +647,7 @@ public:
     int getTableFormatInterval() const;
 
     bool getEnableCodeBlockCopyButton() const;
+    void setEnableCodeBlockCopyButton(bool p_enabled);
 
     // Github image hosting setting.
     const QString &getGithubPersonalAccessToken() const;
@@ -3079,6 +3080,16 @@ inline int VConfigManager::getTableFormatInterval() const
 inline bool VConfigManager::getEnableCodeBlockCopyButton() const
 {
     return m_enableCodeBlockCopyButton;
+}
+
+inline void VConfigManager::setEnableCodeBlockCopyButton(bool p_enabled)
+{
+    if (m_enableCodeBlockCopyButton == p_enabled) {
+        return;
+    }
+
+    m_enableCodeBlockCopyButton = p_enabled;
+    setConfigToSettings("web", "enable_code_block_copy_button", p_enabled);
 }
 
 inline const QString &VConfigManager::getGithubPersonalAccessToken() const
