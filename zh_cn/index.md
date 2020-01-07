@@ -10,7 +10,7 @@ VNote 2.8.2 已发布！ 看看都有 [哪些更新](https://github.com/tamlok/v
 :::
 
 - 加入VNote [GitHub](https://github.com/tamlok/vnote)
-- 聊聊VNote [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTQ1Yzk1YjA5MjAyYTU0MjJkMTUxNmRiYWQ2YjlkOWU0ZGZlMTFlZTAxNzg0ZGUyNzI0ZGY2NDg4MmU1M2FkMDg)
+- 聊聊VNote [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTVhMzBlOTY0YzVhMmQyMTFmZDdhY2M3MDQxYTBjOTA2Y2IxOGRiZjg2NzdhMjkzYmUyY2VkMWJlZTNhMTQyODU)
 - 关注VNote微信公众号 **vnote_md**  
 ![扫码关注](_v_images/20181125110021007_339926743.jpg =248x)
 
