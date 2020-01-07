@@ -10,7 +10,7 @@ Check this [showcase screencast](https://www.youtube.com/watch?v=EFCmCFZKxJ4) to
 :::
 
 - Join VNote on [GitHub](https://github.com/tamlok/vnote)
-- Chat on [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTQ1Yzk1YjA5MjAyYTU0MjJkMTUxNmRiYWQ2YjlkOWU0ZGZlMTFlZTAxNzg0ZGUyNzI0ZGY2NDg4MmU1M2FkMDg)
+- Chat on [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTVhMzBlOTY0YzVhMmQyMTFmZDdhY2M3MDQxYTBjOTA2Y2IxOGRiZjg2NzdhMjkzYmUyY2VkMWJlZTNhMTQyODU)
 - Subscribe to WeChat **vnote_md**
 
 ## Open source and free
