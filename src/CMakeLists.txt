@@ -1,142 +1,17 @@
-add_executable(VNote main.cpp
-               vmainwindow.cpp
-               vdirectorytree.cpp
-               vnote.cpp
-               vnotebook.cpp
-               dialog/vnewdirdialog.cpp
-               vconfigmanager.cpp
-               vfilelist.cpp
-               dialog/vnewfiledialog.cpp
-               vedit.cpp
-               vdocument.cpp
-               utils/vutils.cpp
-               vpreviewpage.cpp
-               vstyleparser.cpp
-               dialog/vnewnotebookdialog.cpp
-               vmarkdownconverter.cpp
-               dialog/vnotebookinfodialog.cpp
-               dialog/vdirinfodialog.cpp
-               dialog/vfileinfodialog.cpp
-               veditoperations.cpp
-               vmdeditoperations.cpp
-               dialog/vinsertimagedialog.cpp
-               vdownloader.cpp
-               veditarea.cpp
-               veditwindow.cpp
-               vedittab.cpp
-               voutline.cpp
-               vsingleinstanceguard.cpp
-               vdirectory.cpp
-               vfile.cpp
-               vnotebookselector.cpp
-               vnofocusitemdelegate.cpp
-               vmdedit.cpp
-               dialog/vfindreplacedialog.cpp
-               dialog/vsettingsdialog.cpp
-               dialog/vdeletenotebookdialog.cpp
-               dialog/vselectdialog.cpp
-               vcaptain.cpp
-               vopenedlistmenu.cpp
-               vnavigationmode.cpp
-               vorphanfile.cpp
-               vcodeblockhighlighthelper.cpp
-               vwebview.cpp
-               vmdtab.cpp
-               vhtmltab.cpp
-               utils/vvim.cpp
-               utils/veditutils.cpp
-               vvimindicator.cpp
-               vbuttonwithwidget.cpp
-               vtabindicator.cpp
-               dialog/vupdater.cpp
-               dialog/vorphanfileinfodialog.cpp
-               vtextblockdata.cpp
-               utils/vpreviewutils.cpp
-               dialog/vconfirmdeletiondialog.cpp
-               vnotefile.cpp
-               vattachmentlist.cpp
-               dialog/vsortdialog.cpp
-               vfilesessioninfo.cpp
-               vtableofcontent.cpp
-               utils/vmetawordmanager.cpp
-               vmetawordlineedit.cpp
-               dialog/vinsertlinkdialog.cpp
-               vplaintextedit.cpp
-               vimageresourcemanager.cpp
-               vlinenumberarea.cpp
-               veditor.cpp
-               vmdeditor.cpp
-               veditconfig.cpp
-               vpreviewmanager.cpp
-               vimageresourcemanager2.cpp
-               vtextdocumentlayout.cpp
-               vtextedit.cpp
-               vsnippetlist.cpp
-               vsnippet.cpp
-               dialog/veditsnippetdialog.cpp
-               utils/vimnavigationforwidget.cpp
-               vtoolbox.cpp
-               vinsertselector.cpp
-               utils/vclipboardutils.cpp
-               vpalette.cpp
-               vbuttonmenuitem.cpp
-               utils/viconutils.cpp
-               lineeditdelegate.cpp
-               dialog/vtipsdialog.cpp
-               dialog/vcopytextashtmldialog.cpp
-               vwaitingwidget.cpp
-               utils/vwebutils.cpp
-               vlineedit.cpp
-               vcart.cpp
-               vvimcmdlineedit.cpp
-               vlistwidget.cpp
-               vsimplesearchinput.cpp
-               vstyleditemdelegate.cpp
-               vtreewidget.cpp
-               dialog/vexportdialog.cpp
-               vexporter.cpp
-               vsearcher.cpp
-               vsearch.cpp
-               vsearchresulttree.cpp
-               vsearchengine.cpp
-               vuniversalentry.cpp
-               vlistwidgetdoublerows.cpp
-               vdoublerowitemwidget.cpp
-               vsearchue.cpp
-               voutlineue.cpp
-               vhelpue.cpp
-               vlistfolderue.cpp
-               dialog/vfixnotebookdialog.cpp
-               vplantumlhelper.cpp
-               vgraphvizhelper.cpp
-               vlivepreviewhelper.cpp
-               vmathjaxpreviewhelper.cpp
-               vmathjaxwebdocument.cpp
-               vmathjaxinplacepreviewhelper.cpp
-               vhistorylist.cpp
-               vexplorer.cpp
-               vlistue.cpp
-               vuetitlecontentpanel.cpp
-               utils/vprocessutils.cpp
-               vtagpanel.cpp
-               valltagspanel.cpp
-               vtaglabel.cpp
-               vtagexplorer.cpp
-               pegmarkdownhighlighter.cpp
-               pegparser.cpp
-               peghighlighterresult.cpp
-               vtexteditcompleter.cpp
-               utils/vkeyboardlayoutmanager.cpp
-               dialog/vkeyboardlayoutmappingdialog.cpp
-               vfilelistwidget.cpp
-               widgets/vcombobox.cpp
-               vtablehelper.cpp
-               vtable.cpp
-               dialog/vinserttabledialog.cpp
-               isearchengine.cpp
-               iuniversalentry.cpp
-               vimagehosting.cpp
-               vnote.qrc translations.qrc)
+add_executable(VNote main.cpp)
+
+file(GLOB SRC_FILES *.cpp)
+file(GLOB DIALOG_SRCS dialog/*.cpp)
+file(GLOB UTILS_SRCS utils/*.cpp)
+file(GLOB WIDGETS_SRCS widgets/*.cpp)
+
+target_sources(VNote PRIVATE ${SRC_FILES})
+target_sources(VNote PRIVATE ${DIALOG_SRCS})
+target_sources(VNote PRIVATE ${UTILS_SRCS})
+target_sources(VNote PRIVATE ${WIDGETS_SRCS})
+target_sources(VNote PRIVATE vnote.qrc translations.qrc)
+
+include_directories(dialog utils widgets)
 
 # Qt5 libraries
 target_link_libraries(VNote PRIVATE Qt5::Core Qt5::WebEngine Qt5::WebEngineWidgets
@@ -145,7 +20,8 @@ target_link_libraries(VNote PRIVATE Qt5::Core Qt5::WebEngine Qt5::WebEngineWidge
 set_property(TARGET VNote PROPERTY AUTORCC_OPTIONS "--compress;9")
 
 # Thirdparty libraries
-target_include_directories(VNote PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/peg-highlight ${CMAKE_SOURCE_DIR}/hoedown)
+target_include_directories(VNote PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+                                         ${CMAKE_SOURCE_DIR}/peg-highlight ${CMAKE_SOURCE_DIR}/hoedown)
 target_link_libraries(VNote PRIVATE peg-highlight hoedown)
 
 # Compile options
@@ -207,4 +83,3 @@ elseif(DARWIN)
     set_source_files_properties(${MACOSX_BUNDLE_ICON_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 endif()
 
-include(${CMAKE_CURRENT_LIST_DIR}/Packaging.cmake)
