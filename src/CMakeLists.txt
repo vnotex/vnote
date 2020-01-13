@@ -1,15 +1,17 @@
-add_executable(VNote main.cpp)
+add_executable(VNote MACOSX_BUNDLE main.cpp)
 
 file(GLOB SRC_FILES *.cpp)
 file(GLOB DIALOG_SRCS dialog/*.cpp)
 file(GLOB UTILS_SRCS utils/*.cpp)
 file(GLOB WIDGETS_SRCS widgets/*.cpp)
+file(GLOB QRC_FILES *.qrc)
+file(GLOB TRANSLATIONS translations/*.qm)
 
 target_sources(VNote PRIVATE ${SRC_FILES})
 target_sources(VNote PRIVATE ${DIALOG_SRCS})
 target_sources(VNote PRIVATE ${UTILS_SRCS})
 target_sources(VNote PRIVATE ${WIDGETS_SRCS})
-target_sources(VNote PRIVATE vnote.qrc translations.qrc)
+target_sources(VNote PRIVATE ${QRC_FILES})
 
 include_directories(dialog utils widgets)
 
@@ -29,11 +31,39 @@ if(GCC_VERSION VERSION_GREATER_EQUAL 8.0)
   target_compile_options(VNote PRIVATE "-Wno-class-memaccess")
 endif()
 
-## INSTALLS
-install(TARGETS VNote RUNTIME DESTINATION bin)
-install(FILES translations/vnote_zh_CN.qm translations/vnote_ja.qm DESTINATION translations )
+if (WIN32 AND NOT UNIX)
+    # MSVC and not mingw32
+    install(TARGETS VNote RUNTIME DESTINATION bin)
+    install(FILES ${TRANSLATIONS} DESTINATION translations )
+elseif (APPLE)
+    set_target_properties(VNote PROPERTIES MACOSX_PACKAGE_LOCATION "${PROJECT_NAME}.app/Contents")
+    if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+        set(CMAKE_INSTALL_PREFIX "/Applications" CACHE PATH "Reset installation path to MacOS default." FORCE)
+    endif()
+    install(TARGETS VNote BUNDLE DESTINATION . COMPONENT Runtime
+            RUNTIME DESTINATION bin COMPONENT Runtime)
+    install(FILES ${TRANSLATIONS} DESTINATION translations COMPONENT Runtime)
+    set(MACOSX_BUNDLE_BUNDLE_NAME "VNote")
+    set(MACOSX_BUNDLE_BUNDLE_GUI_IDENTIFIER "com.tamlok.VNote")
+    set(MACOSX_BUNDLE_ICON_FILE ${CMAKE_SOURCE_DIR}/src/resources/icons/vnote.icns)
+    set(MACOSX_BUNDLE_BUNDLE_VERSION "VNOTE ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+    set(MACOSX_BUNDLE_LONG_VERSION_STRING ${MACOSX_BUNDLE_BUNDLE_VERSION})
+    # Set short version independent with project version to be able to increment independendently.
+    math(EXPR SHORT_VERSION_MAJOR "${PROJECT_VERSION_MAJOR} * 100 + ${PROJECT_VERSION_MINOR}")
+    set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${SHORT_VERSION_MAJOR}.${PROJECT_VERSION_PATCH}.0")
+    set(MACOSX_BUNDLE_EXECUTABLE_NAME "VNote")
+    set(MACOSX_BUNDLE_COPYRIGHT "Distributed under MIT license. Copyright 2016-2019 Le Tan")
+    set(MACOSX_BUNDLE_INFO_STRING "VNote is a note-taking application that knows programmers and Markdown better. Distributed under MIT license. Copyright 2017 Le Tan")
 
-if(UNIX AND NOT DARWIN)
+    set_source_files_properties(${MACOSX_BUNDLE_ICON_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+else()
+    # Linux, mingw32
+    if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+        set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "Reset installation path to MacOS default." FORCE)
+    endif()
+    install(TARGETS VNote RUNTIME DESTINATION bin)
+    install(FILES ${TRANSLATIONS} DESTINATION translations )
+
     set(desktop.path applications)
     set(desktop.files vnote.desktop)
 
@@ -67,19 +97,5 @@ if(UNIX AND NOT DARWIN)
         DESTINATION share/doc/vnote/
         PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
         RENAME copyright)
-elseif(DARWIN)
-    set(MACOSX_BUNDLE_BUNDLE_NAME "VNote")
-    set(MACOSX_BUNDLE_BUNDLE_GUI_IDENTIFIER "com.tamlok.VNote")
-    set(MACOSX_BUNDLE_ICON_FILE ${CMAKE_SOURCE_DIR}/src/resources/icons/vnote.icns)
-    set(MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
-    set(MACOSX_BUNDLE_LONG_VERSION_STRING ${MACOSX_BUNDLE_BUNDLE_VERSION})
-    # Set short version independent with project version to be able to increment independendently.
-    math(EXPR SHORT_VERSION_MAJOR "${PROJECT_VERSION_MAJOR} * 100 + ${PROJECT_VERSION_MINOR}")
-    set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${SHORT_VERSION_MAJOR}.${PROJECT_VERSION_PATCH}.0")
-    set(MACOSX_BUNDLE_EXECUTABLE_NAME "VNote")
-    set(MACOSX_BUNDLE_COPYRIGHT "Distributed under MIT license. Copyright 2016-2019 Le Tan")
-    set(MACOSX_BUNDLE_INFO_STRING "VNote is a note-taking application that knows programmers and Markdown better. Distributed under MIT license. Copyright 2017 Le Tan")
-
-    set_source_files_properties(${MACOSX_BUNDLE_ICON_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 endif()
 

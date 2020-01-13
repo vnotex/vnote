@@ -1,3 +1,0 @@
-execute_process(COMMAND "${MACDEPLOYQT_EXECUTABLE}" ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app -dmg
-                 WORKING_DIRECTORY ${CPACK_PACKAGE_DIRECTORY}
-                )

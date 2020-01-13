@@ -1,3 +1,4 @@
+cmake_policy(SET CMP0042 NEW)
 cmake_minimum_required (VERSION 3.13)
 project(VNote VERSION 2.8.2
         DESCRIPTION "VNote is a markdown note taking application"

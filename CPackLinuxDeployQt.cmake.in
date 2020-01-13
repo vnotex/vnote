@@ -1,8 +1,0 @@
-execute_process(COMMAND ${CMAKE_MAKE_PROGRAM} DESTDIR=${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/Linux/External/AppImage install
-                WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-execute_process(COMMAND "${LINUXDEPLOYQT_EXECUTABLE}" ${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/Linux/External/AppImage${CMAKE_INSTALL_PREFIX}/share/applications/vnote.desktop -bundle-non-qt-libs -qmake=${_qmake_executable}
-                # hot fix for a known issue for libnss3 and libnssutils3.
-                COMMAND ${CMAKE_COMMAND} -E copy_directory ${NSS3_PLUGIN_PATH} ${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/Linux/External/AppImage${CMAKE_INSTALL_PREFIX}/lib/
-                COMMAND "${LINUXDEPLOYQT_EXECUTABLE}"  ${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/Linux/External/AppImage${CMAKE_INSTALL_PREFIX}/share/applications/vnote.desktop -appimage -qmake=${_qmake_executable}
-                 WORKING_DIRECTORY ${CPACK_PACKAGE_DIRECTORY}
-                )
