@@ -1,5 +1,5 @@
-cmake_minimum_required (VERSION 3.12)
-project(VNote VERSION 2.2.0
+cmake_minimum_required (VERSION 3.13)
+project(VNote VERSION 2.8.2
         DESCRIPTION "VNote is a markdown note taking application"
         HOMEPAGE_URL "https://tamlok.github.io/vnote"
         LANGUAGES C CXX)
