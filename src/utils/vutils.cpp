@@ -1482,13 +1482,13 @@ QWebEngineView *VUtils::getWebEngineView(const QColor &p_background, QWidget *p_
 QString VUtils::getDocFile(const QString &p_name)
 {
     QDir dir(VNote::c_docFileFolder);
-    QString full_locale = getLocale();
-    QString short_locale = full_locale.split('_')[0];
+    QString fullLocale = getLocale();
+    QString shortLocale = fullLocale.split('_')[0];
     // First looks full locale name folder (eg. zh_CN)
-    QString name = QString("%1/%2").arg(full_locale).arg(p_name);
+    QString name = QString("%1/%2").arg(fullLocale).arg(p_name);
     if (!dir.exists(name)) {
         // If not found, try 2-char locale name folder (eg. ja)
-        name = QString("%1/%2").arg(short_locale).arg(p_name);
+        name = QString("%1/%2").arg(shortLocale).arg(p_name);
     }
     if (!dir.exists(name)) {
         // even not found, fall back to default english folder.
