@@ -4,6 +4,7 @@
 #   3.12 or later for Windows
 #      because Qt5.9 only support MSVC2017,
 #      and MSVC2017 is integrated with cmake 3.12.
+cmake_policy(SET CMP0042 NEW)
 cmake_minimum_required (VERSION 3.12)
 project(VNote VERSION 2.8.2
         DESCRIPTION "VNote is a markdown note taking application"
