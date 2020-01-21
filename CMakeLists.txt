@@ -1,5 +1,11 @@
+# Minimum requirement for CMake version.
+#   3.13 or later for Linux and Mac OSX.
+#      it causes error for build with cmake 3.12 or earlier.
+#   3.12 or later for Windows
+#      because Qt5.9 only support MSVC2017,
+#      and MSVC2017 is integrated with cmake 3.12.
 cmake_policy(SET CMP0042 NEW)
-cmake_minimum_required (VERSION 3.13)
+cmake_minimum_required (VERSION 3.12)
 project(VNote VERSION 2.8.2
         DESCRIPTION "VNote is a markdown note taking application"
         HOMEPAGE_URL "https://tamlok.github.io/vnote"
