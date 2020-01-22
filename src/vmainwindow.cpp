@@ -1414,7 +1414,7 @@ void VMainWindow::initSearchDock()
     m_searchDock->setObjectName("SearchDock");
     m_searchDock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-    m_searcher = new VSearcher(this);
+    m_searcher = new VSearcher(m_searchDock);
 
     m_searchDock->setWidget(m_searcher);
 

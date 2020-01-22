@@ -32,6 +32,8 @@ public:
 protected:
     void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
 
+    void keyPressEvent(QKeyEvent *p_event) Q_DECL_OVERRIDE;
+
 private slots:
     void handleSearchFinished(const QSharedPointer<VSearchResult> &p_result);
 

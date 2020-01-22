@@ -625,3 +625,17 @@ void VSearcher::showEvent(QShowEvent *p_event)
 
     QWidget::showEvent(p_event);
 }
+
+void VSearcher::keyPressEvent(QKeyEvent *p_event)
+{
+    switch (p_event->key()) {
+        case Qt::Key_Escape:
+            auto *parent = (QDockWidget*)parentWidget();
+            if(parent->isFloating()) {
+                parent->setVisible(false);
+            }
+            return;
+    }
+
+    QWidget::keyPressEvent(p_event);
+}
