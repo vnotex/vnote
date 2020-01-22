@@ -318,11 +318,6 @@ public:
 
     static void setDynamicProperty(QWidget *p_widget, const char *p_prop, bool p_val = true);
 
-    // Return a file name with locale @p_locale.
-    // If @p_locale is empty, use system's locale instead.
-    static QString getFileNameWithLocale(const QString &p_name,
-                                         const QString &p_locale = QString());
-
     // Return a doc file path.
     static QString getDocFile(const QString &p_name);
 

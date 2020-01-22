@@ -1479,28 +1479,20 @@ QWebEngineView *VUtils::getWebEngineView(const QColor &p_background, QWidget *p_
     return viewer;
 }
 
-QString VUtils::getFileNameWithLocale(const QString &p_name, const QString &p_locale)
-{
-    QString locale = p_locale.isEmpty() ? getLocale() : p_locale;
-    locale = locale.split('_')[0];
-
-    QFileInfo fi(p_name);
-    QString baseName = fi.completeBaseName();
-    QString suffix = fi.suffix();
-
-    if (suffix.isEmpty()) {
-        return QString("%1_%2").arg(baseName).arg(locale);
-    } else {
-        return QString("%1_%2.%3").arg(baseName).arg(locale).arg(suffix);
-    }
-}
-
 QString VUtils::getDocFile(const QString &p_name)
 {
     QDir dir(VNote::c_docFileFolder);
-    QString name(getFileNameWithLocale(p_name));
+    QString fullLocale = getLocale();
+    QString shortLocale = fullLocale.split('_')[0];
+    // First looks full locale name folder (eg. zh_CN)
+    QString name = QString("%1/%2").arg(fullLocale).arg(p_name);
     if (!dir.exists(name)) {
-        name = getFileNameWithLocale(p_name, "en_US");
+        // If not found, try 2-char locale name folder (eg. ja)
+        name = QString("%1/%2").arg(shortLocale).arg(p_name);
+    }
+    if (!dir.exists(name)) {
+        // even not found, fall back to default english folder.
+        name = QString("%1/%2").arg("en").arg(p_name);
     }
 
     return dir.filePath(name);

@@ -1,0 +1,236 @@
+name: Build and Run tests
+
+on: [push]
+
+env:
+  BUILD_TYPE: Release
+  CMAKE_VER: 3.16.2
+
+jobs:
+  build_linux:
+    name: Build and package on Ubuntu
+    runs-on: ubuntu-latest
+    timeout-minutes: 3600
+    steps:
+      - uses: actions/checkout@v2
+      - name: Init submodules
+        shell: bash
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+
+      - name: Install a fresh CMake
+        run: |
+          wget --no-verbose https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-Linux-x86_64.sh
+          chmod +x cmake-${CMAKE_VER}-Linux-x86_64.sh
+          mkdir ${{runner.workspace}}/cmake
+          sudo ./cmake-${CMAKE_VER}-Linux-x86_64.sh --skip-license --prefix=${{runner.workspace}}/cmake
+          sudo rm -f /usr/local/bin/cmake /usr/local/bin/cpack
+          sudo ln -s ${{runner.workspace}}/cmake/bin/cmake /usr/local/bin/cmake
+          sudo ln -s ${{runner.workspace}}/cmake/bin/cpack /usr/local/bin/cpack
+
+      - name: Install linuxdeploy
+        uses: miurahr/install-linuxdeploy-action@v1.2.0
+        with:
+          plugins: qt appimage
+
+      - name: Install dependencies
+        run: |
+          sudo DEBIAN_FRONTEND=noninteractive apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx-qt5-dev
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v2
+        with:
+          version: 5.9.9
+          target: desktop
+          modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
+
+      - name: Create Build Directory
+        shell: bash
+        run: mkdir build
+        working-directory: ${{runner.workspace}}
+
+      # install-qt-action exports Qt5_Dir environment variable
+      - name: Configure the Project
+        shell: bash
+        run: cmake -DQt5_DIR=${Qt5_Dir}/lib/cmake/Qt5/ ${GITHUB_WORKSPACE}
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Build the Project
+        run: cmake --build . --target bundle
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          mv *.bz2 *.xz *.deb *.rpm *.AppImage artifacts || /bin/true
+        working-directory: ${{runner.workspace}}/build
+
+      - uses: actions/upload-artifact@v1
+        with:
+          name: linux packages
+          path: ${{runner.workspace}}/build/artifacts
+
+  build_macos:
+    name: Build and package on MacOS X
+    runs-on: macos-latest
+    timeout-minutes: 3600
+    steps:
+      - uses: actions/checkout@v2
+      - name: Init submodules
+        shell: bash
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+
+      - name: Install a fresh CMake
+        run: |
+          wget --no-verbose https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-Darwin-x86_64.tar.gz
+          tar xzf cmake-${CMAKE_VER}-Darwin-x86_64.tar.gz
+          sudo rm -f /usr/local/bin/cmake /usr/local/bin/cpack
+          sudo ln -s ${{runner.workspace}}/cmake-${CMAKE_VER}-Darwin-x86_64/CMake.app/Contents/bin/cmake /usr/local/bin/cmake
+          sudo ln -s ${{runner.workspace}}/cmake-${CMAKE_VER}-Darwin-x86_64/CMake.app/Contents/bin/cpack /usr/local/bin/cpack
+        working-directory: ${{runner.workspace}}
+
+      - name: Install macdeployqtFix
+        uses: actions/checkout@v2
+        with:
+          repository: aurelien-rainone/macdeployqtfix
+          path: macdeployqtfix
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v2
+        with:
+          version: 5.9.9
+          target: desktop
+          modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
+
+      - name: Create Build Directory
+        run: mkdir build
+        working-directory: ${{runner.workspace}}
+
+      # install-qt-action exports Qt5_Dir environment variable
+      - name: Configure the Project
+        run: cmake -DQt5_DIR=${Qt5_Dir}/lib/cmake/Qt5/ -DMACDEPLOYQTFIX_EXECUTABLE=${GITHUB_WORKSPACE}/macdeployqtfix/macdeployqtfix.py ${GITHUB_WORKSPACE}
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Build the Project
+        run: cmake --build . --target bundle
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          mv ./_CPack_Packages/Darwin/External/vnote-2.8.2-Darwin/Applications/VNote.dmg artifacts || (exit 0)
+        working-directory: ${{runner.workspace}}/build
+
+      - uses: actions/upload-artifact@v1
+        with:
+          name: mac osx packages
+          path: ${{runner.workspace}}/build/artifacts
+
+  build_win64:
+    name: Build and package on Windows(64bit)
+    runs-on: windows-latest
+    timeout-minutes: 3600
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Init submodules
+        shell: bash
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v2
+        with:
+          version: 5.9.9
+          target: desktop
+          arch: win64_msvc2017_64
+          modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
+
+      - name: Create Build Directory
+        shell: bash
+        run: mkdir build
+        working-directory: ${{runner.workspace}}
+
+      # install-qt-action exports Qt5_Dir environment variable
+      - name: Configure the Project
+        shell: bash
+        run: cmake -G "Visual Studio 16 2019" -A x64 -DQt5_DIR=${Qt5_Dir}/lib/cmake/Qt5/ ${GITHUB_WORKSPACE}
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Build the Project(Windows)
+        if: runner.os == 'Windows'
+        run: cmake --build . --target bundle --config ${env:BUILD_TYPE}
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          mv *.zip *.exe *.nupkg artifacts || (exit 0)
+        working-directory: ${{runner.workspace}}/build
+
+      - uses: actions/upload-artifact@v1
+        with:
+          name: windows packages
+          path: "${{runner.workspace}}\\build\\artifacts"
+
+  build_win32:
+    name: Build and package on Windows(32bit)
+    runs-on: windows-latest
+    timeout-minutes: 3600
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Init submodules
+        shell: bash
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+
+      # Qt 5.9 only support msvc 2015 for win32 but gh-a run on msvc2019
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v2
+        with:
+          version: 5.9.9
+          target: desktop
+          arch: win32_msvc2015
+          modules: qtwebchannel qtwebengine qtsvg qtlocation qttools qttranslations
+
+      - name: Create Build Directory
+        shell: bash
+        run: mkdir build
+        working-directory: ${{runner.workspace}}
+
+      # install-qt-action exports Qt5_Dir environment variable
+      - name: Configure the Project
+        shell: bash
+        run: cmake -G "Visual Studio 16 2019" -A Win32 -DQt5_DIR=${Qt5_Dir}/lib/cmake/Qt5/ ${GITHUB_WORKSPACE}
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Build the Project(Windows)
+        if: runner.os == 'Windows'
+        run: cmake --build . --target bundle --config ${env:BUILD_TYPE}
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          mv *.zip *.exe *.nupkg artifacts || (exit 0)
+        working-directory: ${{runner.workspace}}/build
+
+      - uses: actions/upload-artifact@v1
+        with:
+          name: win32 packages
+          path: "${{runner.workspace}}\\build\\artifacts"

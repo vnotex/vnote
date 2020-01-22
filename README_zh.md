@@ -5,6 +5,8 @@
 
 更多信息，请访问 [**VNote 主页**](https://tamlok.github.io/vnote) 。
 
+观看[展示录屏](https://www.bilibili.com/video/av77455284) ！
+
 ![VNote](screenshots/vnote.png)
 
 # 下载
@@ -89,7 +91,7 @@ VNote 不是一个简单的 Markdown 编辑器。通过提供笔记管理功能�
 # 支持
 - [Github issues](https://github.com/tamlok/vnote/issues)；
 - 邮箱: `tamlokveer at gmail.com` ；
-- [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTQ1Yzk1YjA5MjAyYTU0MjJkMTUxNmRiYWQ2YjlkOWU0ZGZlMTFlZTAxNzg0ZGUyNzI0ZGY2NDg4MmU1M2FkMDg)；
+- [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTVhMzBlOTY0YzVhMmQyMTFmZDdhY2M3MDQxYTBjOTA2Y2IxOGRiZjg2NzdhMjkzYmUyY2VkMWJlZTNhMTQyODU)；
 - 微信公众号: VNote笔记（vnote_md）；  
 ![VNote WeChat](screenshots/vnote_md.jpg)
 

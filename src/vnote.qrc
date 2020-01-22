@@ -57,9 +57,6 @@
         <file>utils/markdown-it/markdown-it-headinganchor.js</file>
         <file>utils/markdown-it/markdown-it-task-lists.min.js</file>
         <file>resources/icons/close_red.svg</file>
-        <file>resources/docs/shortcuts_en.md</file>
-        <file>resources/docs/shortcuts_zh.md</file>
-        <file>resources/docs/shortcuts_ja.md</file>
         <file>utils/showdown/showdown.min.js</file>
         <file>resources/showdown.js</file>
         <file>utils/showdown/showdown-headinganchor.js</file>
@@ -76,9 +73,6 @@
         <file>resources/icons/inline_code.svg</file>
         <file>resources/icons/close_note_tb.svg</file>
         <file>resources/icons/editing_modified.svg</file>
-        <file>resources/docs/markdown_guide_en.md</file>
-        <file>resources/docs/markdown_guide_zh.md</file>
-        <file>resources/docs/markdown_guide_ja.md</file>
         <file>utils/highlightjs/highlightjs-line-numbers.min.js</file>
         <file>resources/icons/recycle_bin.svg</file>
         <file>resources/icons/empty_recycle_bin.svg</file>
@@ -157,20 +151,8 @@
         <file>resources/themes/v_moonlight/v_moonlight_codeblock.css</file>
         <file>resources/simple_template.html</file>
         <file>resources/typewriter.css</file>
-        <file>resources/docs/tips_custom_shortcut_en.md</file>
-        <file>resources/docs/tips_custom_shortcut_zh.md</file>
-        <file>resources/docs/tips_custom_shortcut_ja.md</file>
         <file>resources/icons/add_style.svg</file>
-        <file>resources/docs/tips_add_theme_en.md</file>
-        <file>resources/docs/tips_add_theme_zh.md</file>
-        <file>resources/docs/tips_add_theme_ja.md</file>
-        <file>resources/docs/tips_add_style_en.md</file>
-        <file>resources/docs/tips_add_style_zh.md</file>
-        <file>resources/docs/tips_add_style_ja.md</file>
         <file>resources/icons/add_program.svg</file>
-        <file>resources/docs/tips_external_program_en.md</file>
-        <file>resources/docs/tips_external_program_zh.md</file>
-        <file>resources/docs/tips_external_program_ja.md</file>
         <file>translations/widgets_zh_CN.qm</file>
         <file>translations/qdialogbuttonbox_zh_CN.qm</file>
         <file>translations/qwebengine_zh_CN.qm</file>
@@ -278,9 +260,6 @@
         <file>resources/export/outline.js</file>
         <file>resources/icons/add.svg</file>
         <file>resources/icons/delete.svg</file>
-        <file>resources/docs/welcome_en.md</file>
-        <file>resources/docs/welcome_zh.md</file>
-        <file>resources/docs/welcome_ja.md</file>
         <file>resources/icons/256x256/vnote.png</file>
         <file>utils/markdown-it/markdown-it-container.min.js</file>
         <file>resources/icons/table.svg</file>
@@ -358,5 +337,26 @@
         <file>resources/themes/v_next/v_next_codeblock.css</file>
         <file>resources/themes/v_next/v_next_mermaid.css</file>
         <file>utils/mermaid/mermaid.min.js</file>
+        <file>resources/docs/en/markdown_guide.md</file>
+        <file>resources/docs/en/shortcuts.md</file>
+        <file>resources/docs/en/tips_add_style.md</file>
+        <file>resources/docs/en/tips_add_theme.md</file>
+        <file>resources/docs/en/tips_custom_shortcut.md</file>
+        <file>resources/docs/en/tips_external_program.md</file>
+        <file>resources/docs/en/welcome.md</file>
+        <file>resources/docs/ja/markdown_guide.md</file>
+        <file>resources/docs/ja/shortcuts.md</file>
+        <file>resources/docs/ja/tips_add_style.md</file>
+        <file>resources/docs/ja/tips_add_theme.md</file>
+        <file>resources/docs/ja/tips_custom_shortcut.md</file>
+        <file>resources/docs/ja/tips_external_program.md</file>
+        <file>resources/docs/ja/welcome.md</file>
+        <file>resources/docs/zh_CN/markdown_guide.md</file>
+        <file>resources/docs/zh_CN/shortcuts.md</file>
+        <file>resources/docs/zh_CN/tips_add_style.md</file>
+        <file>resources/docs/zh_CN/tips_add_theme.md</file>
+        <file>resources/docs/zh_CN/tips_custom_shortcut.md</file>
+        <file>resources/docs/zh_CN/tips_external_program.md</file>
+        <file>resources/docs/zh_CN/welcome.md</file>
     </qresource>
 </RCC>
