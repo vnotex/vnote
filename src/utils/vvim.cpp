@@ -8,13 +8,18 @@
 #include <QClipboard>
 #include <QApplication>
 #include <QMimeData>
+#include <QDir>
 #include "vconfigmanager.h"
 #include "veditor.h"
 #include "utils/veditutils.h"
 #include "vconstants.h"
 #include "vmdeditor.h"
+#include "vmainwindow.h"
+#include "vdirectory.h"
+#include "vdirectorytree.h"
 
 extern VConfigManager *g_config;
+extern VMainWindow *g_mainWin;
 
 const QChar VVim::c_unnamedRegister = QChar('"');
 const QChar VVim::c_blackHoleRegister = QChar('_');
@@ -5953,6 +5958,27 @@ bool VVim::executeCommand(const QString &p_cmd)
     } else if (p_cmd == "nohlsearch" || p_cmd == "noh") {
         // :nohlsearch, clear highlight search.
         clearSearchHighlight();
+    } else if (p_cmd.size() > 3 && p_cmd.left(2) == "e ") {
+        // :e <file>, open a note in edit mode.
+        auto filePath = p_cmd.mid(2).trimmed();
+
+        if(filePath.left(2) == "~/") {
+            filePath.remove(0, 1).insert(0, QDir::homePath());
+        } else if(filePath.left(2) == "./" || filePath[0] != '/') {
+            VDirectory *dir = g_mainWin->getDirectoryTree()->currentDirectory();
+            if(filePath.left(2) == "./") {
+                filePath.remove(0, 1);
+            } else {
+                filePath.insert(0, '/');
+            }
+            filePath.insert(0, dir->fetchPath());
+        }
+
+        if(g_mainWin->openFiles(QStringList(filePath), false, OpenFileMode::Edit).size()) {
+            msg = tr("Open %1 in edit mode.").arg(filePath);
+        } else {
+            msg = tr("Unable to open %1").arg(filePath);
+        }
     } else {
         validCommand = false;
     }
