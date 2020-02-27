@@ -282,10 +282,12 @@ var handleMathjaxReady = function() {
         eles.push(texToRender[i]);
     }
 
-    try {
-        MathJax.typesetPromise(eles).then(postProcessMathJaxWhenMathjaxReady);
-    } catch (err) {
-        content.setLog("err: " + err);
-        finishOneAsyncJob();
-    }
+    MathJax.texReset();
+    MathJax
+        .typesetPromise(eles)
+        .then(postProcessMathJaxWhenMathjaxReady)
+        .catch(function (err) {
+            content.setLog("err: " + err);
+            finishOneAsyncJob();
+        });
 };
