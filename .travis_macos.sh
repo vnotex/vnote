@@ -25,7 +25,7 @@ git clone https://github.com/tamlok/qtci.git
 source qtci/path.env
 
 echo Installing Qt 5.9.8
-install-qt 5.9.8 > /dev/null
+install-qt 5.9.8 > /dev/null 2> /dev/null
 source qt-5.9.8.env
 
 echo $PATH
