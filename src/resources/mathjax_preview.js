@@ -71,19 +71,16 @@ var previewMathJax = function(identifier, id, timeStamp, text, isHtml) {
     if (text.indexOf('$$') !== -1) {
         isBlock = true;
     }
-
-    try {
-        MathJax.Hub.Queue(["resetEquationNumbers",MathJax.InputJax.TeX],
-                          ["Typeset",
-                           MathJax.Hub,
-                           p,
-                           [postProcessMathJax, identifier, id, timeStamp, p, isBlock]]);
-    } catch (err) {
-        content.setLog("err: " + err);
-        content.mathjaxResultReady(identifier, id, timeStamp, 'png', '');
-        contentDiv.removeChild(p);
-        delete p;
-    }
+    MathJax
+        .typesetPromise([p])
+        .then(function () {
+            postProcessMathJax(identifier, id, timeStamp, p, isBlock);
+        }).catch(function (err) {
+            content.setLog("err: " + err);
+            content.mathjaxResultReady(identifier, id, timeStamp, 'png', '');
+            contentDiv.removeChild(p);
+            delete p;
+        });
 };
 
 var postProcessMathJax = function(identifier, id, timeStamp, container, isBlock) {
@@ -93,7 +90,7 @@ var postProcessMathJax = function(identifier, id, timeStamp, container, isBlock)
         return;
     }
 
-    var hei = (isBlock ? container.clientHeight * 1.5 : container.clientHeight * 1.6) + 5;
+    var hei = container.clientHeight * 1.5 + (isBlock ? 20 : 5);
     domtoimage.toPng(container, { height: hei }).then(function (dataUrl) {
         var png = dataUrl.substring(dataUrl.indexOf(',') + 1);
         content.mathjaxResultReady(identifier, id, timeStamp, 'png', png);

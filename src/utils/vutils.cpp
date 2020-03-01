@@ -788,23 +788,24 @@ QString VUtils::generateHtmlTemplate(const QString &p_template,
             mj.replace(reg, QString("\\1%1").arg("TeX-MML-AM_SVG"));
         }
 
-        extraFile += "<script type=\"text/x-mathjax-config\">"
-                     "MathJax.Hub.Config({\n"
-                     "                    tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']],\n"
-                                                    "processEscapes: true,\n"
-                                                    "processClass: \"tex2jax_process|language-mathjax|lang-mathjax\"},\n"
-                     "                    showProcessingMessages: false,\n"
-                     "                    skipStartupTypeset: " + QString("%1,\n").arg(mathjaxTypeSetOnLoad ? "false" : "true") +
-                     "                    TeX: {\n"
-                     "                          Macros: {\n"
-                     "                              bm: [\"\\\\boldsymbol{#1}\", 1]\n"
-                     "                          },\n"
-                     "                          equationNumbers: {\n"
-                     "                              autoNumber: \"AMS\"\n"
-                     "                          }\n"
-                     "                    },\n"
-                     "                    messageStyle: \"none\"});\n"
-                     "MathJax.Hub.Register.StartupHook(\"End\", function() { handleMathjaxReady(); });\n"
+        extraFile += "<script>"
+                     "MathJax = {\n"
+                     "    tex: {\n"
+                     "         inlineMath: [['$','$'], ['\\\\(','\\\\)']],\n"
+                     "         processEscapes: true,\n"
+                     "         tags: 'ams'\n"
+                     "    },\n"
+                     "    options: {\n"
+                     "         processHtmlClass: 'tex2jax_process|language-mathjax|lang-mathjax'\n"
+                     "    },\n"
+                     "    startup: {\n"
+                     "         typeset: " + QString("%1,\n").arg(mathjaxTypeSetOnLoad ? "true" : "false") +
+                     "         ready: function() {\n"
+                     "             MathJax.startup.defaultReady();\n"
+                     "             MathJax.startup.promise.then(handleMathjaxReady);\n"
+                     "         }\n"
+                     "    }\n"
+                     "}"
                      "</script>\n"
                      "<script type=\"text/javascript\" async src=\"" + mj + "\"></script>\n" +
                      "<script>var VEnableMathjax = true;</script>\n";
@@ -898,39 +899,22 @@ QString VUtils::generateExportHtmlTemplate(const QString &p_renderBg,
     QString templ = VNote::generateExportHtmlTemplate(g_config->getRenderBackgroundColor(p_renderBg));
     QString extra;
     if (p_includeMathJax) {
-        extra += "<script type=\"text/x-mathjax-config\">\n"
-                 "MathJax.Hub.Config({\n"
-                 "                    showProcessingMessages: false,\n"
-                 "                    messageStyle: \"none\",\n"
-                 "                    SVG: {\n"
-                 "                          minScaleAdjust: 100,\n"
-                 "                          styles: {\n"
-/*
-FIXME: Using wkhtmltopdf, without 2em, the math formula will be very small. However,
-with 2em, if there are Chinese characters in it, the font will be a mess.
-*/
-#if defined(Q_OS_WIN)
-                 "                                   \".MathJax_SVG\": {\n"
-                 "                                                      \"font-size\": \"2em !important\"\n"
-                 "                                   }\n"
-#endif
-                 "                          }\n"
-                 "                    },\n"
-                 "                    TeX: {\n"
-                 "                          Macros: {\n"
-                 "                                   bm: [\"\\\\boldsymbol{#1}\", 1]\n"
-                 "                          },\n"
-                 "                          equationNumbers: {\n"
-                 "                                            autoNumber: \"AMS\"\n"
-                 "                          }\n"
-                 "                    }\n"
-                 "});\n"
+        extra += "<script>"
+                 "MathJax = {\n"
+                 "    tex: {\n"
+                 "         inlineMath: [['$','$'], ['\\\\(','\\\\)']],\n"
+                 "         processEscapes: true,\n"
+                 "         tags: 'ams'\n"
+                 "    },\n"
+                 "    options: {\n"
+                 "         processHtmlClass: 'tex2jax_process|language-mathjax|lang-mathjax'\n"
+                 "    }\n"
+                 "}"
                  "</script>\n";
-
         QString mj = g_config->getMathjaxJavascript();
         // Chante MathJax to be rendered as SVG.
-        QRegExp reg("(Mathjax\\.js\\?config=)\\S+", Qt::CaseInsensitive);
-        mj.replace(reg, QString("\\1%1").arg("TeX-MML-AM_SVG"));
+        QRegExp reg("tex-mml-chtml\\.js\\S+", Qt::CaseInsensitive);
+        mj.replace(reg, QString("tex-mml-svg.js"));
 
         extra += "<script type=\"text/javascript\" async src=\"" + mj + "\"></script>\n";
     }
@@ -996,25 +980,19 @@ QString VUtils::generateMathJaxPreviewTemplate()
                  "<script src=\"qrc" + VNote::c_flowchartJsFile + "\"></script>\n";
 
     // MathJax.
-    extraFile += "<script type=\"text/x-mathjax-config\">"
-                 "MathJax.Hub.Config({\n"
-                 "                    tex2jax: {inlineMath: [['$','$'], ['\\\\(','\\\\)']],\n"
-                                               "processEscapes: true,\n"
-                                               "processClass: \"tex2jax_process|language-mathjax|lang-mathjax\"},\n"
-                 "                    \"HTML-CSS\": {\n"
-                 "                                   scale: " + mathjaxScale + "\n"
-                 "                                  },\n"
-                 "                    showProcessingMessages: false,\n"
-                 "                    TeX: {\n"
-                 "                          Macros: {\n"
-                 "                              bm: [\"\\\\boldsymbol{#1}\", 1]\n"
-                 "                          },\n"
-                 "                          equationNumbers: {\n"
-                 "                              autoNumber: \"AMS\"\n"
-                 "                          }\n"
-                 "                    },\n"
-                 "                    messageStyle: \"none\"});\n"
+    extraFile += "<script>"
+                 "MathJax = {\n"
+                 "    tex: {\n"
+                 "         inlineMath: [['$','$'], ['\\\\(','\\\\)']],\n"
+                 "         processEscapes: true,\n"
+                 "         tags: 'ams'\n"
+                 "    },\n"
+                 "    options: {\n"
+                 "         processHtmlClass: 'tex2jax_process|language-mathjax|lang-mathjax'\n"
+                 "    }\n"
+                 "}"
                  "</script>\n";
+
 
     extraFile += "<script src=\"qrc" + VNote::c_wavedromThemeFile + "\"></script>\n" +
                  "<script src=\"qrc" + VNote::c_wavedromJsFile + "\"></script>\n";
