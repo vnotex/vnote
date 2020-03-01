@@ -967,8 +967,6 @@ QString VUtils::generateMathJaxPreviewTemplate()
 
     QString extraFile;
 
-    QString mathjaxScale = QString::number((int)(100 * VUtils::calculateScaleFactor()));
-
     /*
     // Mermaid.
     extraFile += "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + g_config->getMermaidCssStyleUrl() + "\"/>\n" +

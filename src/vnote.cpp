@@ -195,6 +195,8 @@ QString VNote::generateMathJaxPreviewTemplate()
 
     templ.replace(HtmlHolder::c_cssHolder, g_config->getCssStyleUrl());
 
+    templ.replace(HtmlHolder::c_scaleFactorHolder, QString::number(VUtils::calculateScaleFactor()));
+
     return templ;
 }
 

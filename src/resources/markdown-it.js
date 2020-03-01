@@ -256,13 +256,6 @@ var postProcessMathJaxWhenMathjaxReady = function() {
                 content.setLog("err: " + err);
             }
         }
-
-        if (node.tagName.toLowerCase() == 'code') {
-            var pre = node.parentNode;
-            var p = document.createElement('p');
-            p.innerHTML = node.innerHTML;
-            pre.parentNode.replaceChild(p, pre);
-        }
     }
 };
 

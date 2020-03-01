@@ -12,12 +12,13 @@
     <!-- EXTRA_PLACE_HOLDER -->
     <script>
         MathJax = {
-          tex: {
-            inlineMath: [['$', '$'], ['\\(', '\\)']]
-          },
-          chtml: {
-            scale: 1 // http://docs.mathjax.org/en/latest/options/output/index.html#options-common-to-all-output-processors
-          }
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            },
+            chtml: {
+                // http://docs.mathjax.org/en/latest/options/output/index.html#options-common-to-all-output-processors
+                scale: SCALE_FACTOR_PLACE_HOLDER
+            }
         };
     </script>
     <script src="JS_PLACE_HOLDER" defer id="MathJax-script"></script>

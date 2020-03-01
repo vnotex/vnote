@@ -45,6 +45,7 @@ namespace HtmlHolder
     static const QString c_cssHolder = "CSS_PLACE_HOLDER";
     static const QString c_codeBlockCssHolder = "HIGHLIGHTJS_CSS_PLACE_HOLDER";
     static const QString c_commonCssHolder = "COMMON_CSS_PLACE_HOLDER";
+    static const QString c_scaleFactorHolder = "SCALE_FACTOR_PLACE_HOLDER";
     static const QString c_globalStyleHolder = "/* STYLE_GLOBAL_PLACE_HOLDER */";
     static const QString c_extraHolder = "<!-- EXTRA_PLACE_HOLDER -->";
     static const QString c_bodyHolder = "<!-- BODY_PLACE_HOLDER -->";

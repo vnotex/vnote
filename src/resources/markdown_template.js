@@ -1269,6 +1269,7 @@ var renderCodeBlockLineNumber = function() {
 
 var addClassToCodeBlock = function() {
     var codes = document.getElementsByTagName('code');
+    var mathCodes = [];
     for (var i = 0; i < codes.length; ++i) {
         var code = codes[i];
         var pare = code.parentElement;
@@ -1278,12 +1279,19 @@ var addClassToCodeBlock = function() {
             if (VEnableMathjax
                 && (code.classList.contains("lang-mathjax")
                     || code.classList.contains("language-mathjax"))) {
-                // Add the class to pre.
-                pare.classList.add("lang-mathjax");
-                pare.classList.add("language-mathjax");
-                pare.classList.add("tex-to-render");
+                mathCodes.push(code);
             }
         }
+    }
+
+    // Replace math codes with <x-eqn>.
+    for (var i = mathCodes.length - 1; i >= 0; --i) {
+        var code = mathCodes[i];
+        var pare = code.parentElement;
+        var xeqn = document.createElement('x-eqn');
+        xeqn.classList.add("tex-to-render");
+        xeqn.innerHTML = code.innerHTML;
+        pare.parentNode.replaceChild(xeqn, pare);
     }
 };
 
