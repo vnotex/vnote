@@ -24,8 +24,7 @@ export QT_CI_PACKAGES="qt.qt5.598.clang_64,qt.qt5.598.qtwebengine"
 git clone https://github.com/tamlok/qtci.git
 source qtci/path.env
 
-echo Installing Qt 5.9.8
-travis_wait 30 install-qt 5.9.8 > /dev/null 2> /dev/null
+install-qt 5.9.8
 source qt-5.9.8.env
 
 echo $PATH
