@@ -38,8 +38,10 @@ bool VSingleInstanceGuard::tryRun()
         m_online = true;
         return true;
     } else {
-        qDebug() << "fail to create shared memory segment";
-        return false;
+        qWarning() << "fail to create shared memory segment "
+                      "(keep in mind that do not run multiple instances of VNote)";
+        // On macOS, this happens a lot. Just let it go.
+        return true;
     }
 }
 
