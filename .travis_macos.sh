@@ -20,6 +20,8 @@ cd build
 
 export VERBOSE=1
 export QT_CI_PACKAGES="qt.qt5.598.clang_64,qt.qt5.598.qtwebengine"
+export QT_CI_LOGIN="tamlok@qq.com"
+export QT_CI_PASSWORD="TravisCI@VNote"
 
 git clone https://github.com/tamlok/qtci.git
 source qtci/path.env
