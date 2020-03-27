@@ -1,4 +1,9 @@
 # Changes History
+## v2.9
+- Upgrade to MathJax v3;
+- Support `e` command in Vim mode; (@gydeng)
+- Fix start issue on macOS (no need to add `-m` option);
+
 ## v2.8.2
 - Upgrade Mermaid.js;
 

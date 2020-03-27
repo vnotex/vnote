@@ -16,10 +16,10 @@
     },
 
     "version": {
-        "name": "2.8.2",
+        "name": "2.9",
         "desc": "VNote Releases",
-        "released": "2019-12-20",
-        "vcs_tag": "2.8.2",
+        "released": "2020-03-27",
+        "vcs_tag": "2.9",
         "gpgSign": false
     },
 
