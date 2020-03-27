@@ -216,7 +216,7 @@ In VNote, almost everything is configurable, such as background color, font, and
 - [markdown-it-container 2.0.0](https://github.com/markdown-it/markdown-it-container) (MIT License)
 - [mermaid 7.0.0](https://github.com/knsv/mermaid) (MIT License)
 - [MathJax](https://www.mathjax.org/) (Apache-2.0)
-- [showdown](https://github.com/showdownjs/showdown) (Unknown)
+- [showdown](https://github.com/showdownjs/showdown) (MIT License)
 - [flowchart.js](https://github.com/adrai/flowchart.js) (MIT License)
 - [PlantUML](http://plantuml.com/) (MIT License)
 - [dom-to-image](https://github.com/tsayen/dom-to-image) (MIT License)
