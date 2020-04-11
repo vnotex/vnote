@@ -120,7 +120,11 @@ void VLogger(QtMsgType type, const QMessageLogContext &context, const QString &m
 
 int main(int argc, char *argv[])
 {
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+    bool allowMultiInstances = true;
+#else
     bool allowMultiInstances = false;
+#endif
     for (int i = 1; i < argc; ++i) {
         if (!qstrcmp(argv[i], "-m")) {
             allowMultiInstances = true;
