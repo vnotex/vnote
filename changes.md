@@ -1,4 +1,7 @@
 # Changes History
+## v2.9.1
+- Fix start issue on macOS (no need to add `-m` option);
+
 ## v2.9
 - Upgrade to MathJax v3;
 - Support `e` command in Vim mode; (@gydeng)
