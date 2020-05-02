@@ -89,6 +89,7 @@ Qtを使用し、VNoteは、**Linux**, **Windows**そして、**macOS**で利用
 - [Github issues](https://github.com/tamlok/vnote/issues);
 - Email: `tamlokveer at gmail.com`;
 - [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTVhMzBlOTY0YzVhMmQyMTFmZDdhY2M3MDQxYTBjOTA2Y2IxOGRiZjg2NzdhMjkzYmUyY2VkMWJlZTNhMTQyODU);
+- [Telegram](https://t.me/vnotex);
 
 # ハイライト
 - 強力な**全文検索**;

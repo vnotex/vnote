@@ -92,6 +92,7 @@ VNote 不是一个简单的 Markdown 编辑器。通过提供笔记管理功能�
 - [Github issues](https://github.com/tamlok/vnote/issues)；
 - 邮箱: `tamlokveer at gmail.com` ；
 - [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTVhMzBlOTY0YzVhMmQyMTFmZDdhY2M3MDQxYTBjOTA2Y2IxOGRiZjg2NzdhMjkzYmUyY2VkMWJlZTNhMTQyODU)；
+- [Telegram](https://t.me/vnotex) ；
 - 微信公众号: VNote笔记（vnote_md）；  
 ![VNote WeChat](screenshots/vnote_md.jpg)
 
