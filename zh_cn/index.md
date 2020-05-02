@@ -3,7 +3,7 @@
 
 ::: alert-success
 
-VNote 2.9 已发布！ 看看都有 [哪些更新](https://github.com/tamlok/vnote/releases) ！
+VNote 2.9.1 已发布！ 看看都有 [哪些更新](https://github.com/tamlok/vnote/releases) ！
 
 观看[展示录屏](https://www.bilibili.com/video/av77455284) ！
 
@@ -11,6 +11,7 @@ VNote 2.9 已发布！ 看看都有 [哪些更新](https://github.com/tamlok/vno
 
 - 加入VNote [GitHub](https://github.com/tamlok/vnote)
 - 聊聊VNote [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTVhMzBlOTY0YzVhMmQyMTFmZDdhY2M3MDQxYTBjOTA2Y2IxOGRiZjg2NzdhMjkzYmUyY2VkMWJlZTNhMTQyODU)
+- [Telegram](https://t.me/vnotex)
 - 关注VNote微信公众号 **vnote_md**  
 ![扫码关注](_v_images/20181125110021007_339926743.jpg =248x)
 

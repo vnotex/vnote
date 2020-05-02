@@ -3,7 +3,7 @@
 
 ::: alert-success
 
-VNote 2.9 is released! Check out [what's new](https://github.com/tamlok/vnote/releases)!
+VNote 2.9.1 is released! Check out [what's new](https://github.com/tamlok/vnote/releases)!
 
 Check this [showcase screencast](https://www.youtube.com/watch?v=EFCmCFZKxJ4) to know what you could do with VNote!
 
@@ -11,6 +11,7 @@ Check this [showcase screencast](https://www.youtube.com/watch?v=EFCmCFZKxJ4) to
 
 - Join VNote on [GitHub](https://github.com/tamlok/vnote)
 - Chat on [Slack](https://join.slack.com/t/vnote/shared_invite/enQtNDg2MzY0NDg3NzI4LTVhMzBlOTY0YzVhMmQyMTFmZDdhY2M3MDQxYTBjOTA2Y2IxOGRiZjg2NzdhMjkzYmUyY2VkMWJlZTNhMTQyODU)
+- [Telegram](https://t.me/vnotex)
 - Subscribe to WeChat **vnote_md**
 
 ## Open source and free
