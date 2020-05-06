@@ -316,6 +316,8 @@ HEADERS  += vmainwindow.h \
 RESOURCES += \
     vnote.qrc \
     translations.qrc
+    
+QTQUICK_COMPILER_SKIPPED_RESOURCES += vnote.qrc
 
 macx {
     LIBS += -L/usr/local/lib
