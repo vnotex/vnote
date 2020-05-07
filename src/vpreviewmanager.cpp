@@ -517,8 +517,8 @@ void VPreviewManager::checkBlocksForObsoletePreview(const QList<int> &p_blocks)
     }
 
     OrderedIntSet affectedBlocks;
-    for (auto i : p_blocks) {
-        QTextBlock block = m_document->findBlockByNumber(i);
+    for (auto blockNum : p_blocks) {
+        QTextBlock block = m_document->findBlockByNumber(blockNum);
         if (!block.isValid()) {
             continue;
         }
@@ -539,7 +539,7 @@ void VPreviewManager::checkBlocksForObsoletePreview(const QList<int> &p_blocks)
 
             PreviewSource ps = static_cast<PreviewSource>(i);
             if (blockData->clearObsoletePreview(timeStamp(ps), ps)) {
-                affectedBlocks.insert(i, QMapDummyValue());
+                affectedBlocks.insert(blockNum, QMapDummyValue());
             }
         }
     }
