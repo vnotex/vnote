@@ -73,7 +73,7 @@ void VPlantUMLHelper::prepareCommand(QString &p_program,
     p_args << "java";
 #endif
 
-    p_args << "-jar" << (p_jar.isEmpty() ? g_config->getPlantUMLJar() : p_jar);
+    p_args << "-Djava.awt.headless=true -jar" << (p_jar.isEmpty() ? g_config->getPlantUMLJar() : p_jar);
     p_args << "-charset" << "UTF-8";
 
     /*
