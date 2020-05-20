@@ -10,7 +10,7 @@ Check this [showcase screencast](https://www.youtube.com/watch?v=EFCmCFZKxJ4) to
 ![VNote](screenshots/vnote.png)
 
 # Downloads
-Users from China can download the latest release of VNote from [Baidu Netdisk](http://pan.baidu.com/s/1jI5HROq).
+Users from China can download the latest release of VNote from [Baidu Netdisk](https://pan.baidu.com/s/1f404Mrzp3aMLSv3Bg2PSXg) with fetch code `mnac`.
 
 ## Windows
 ### Official Zip

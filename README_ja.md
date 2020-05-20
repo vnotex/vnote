@@ -8,8 +8,6 @@
 ![VNote](screenshots/vnote.png)
 
 # ダウンロード
-中国のユーザは、VNoteを[バイヅゥ(Baidu Netdisk)](http://pan.baidu.com/s/1jI5HROq)から入手できます。
-
 ## Windows
 ### Zipアーカイブ
 ![Windowsビルド・ステータス](https://ci.appveyor.com/api/projects/status/github/tamlok/vnote?svg=true)

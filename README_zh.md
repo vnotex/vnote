@@ -10,7 +10,7 @@
 ![VNote](screenshots/vnote.png)
 
 # 下载
-国内的用户可以尝试在[百度云盘](http://pan.baidu.com/s/1jI5HROq)下载 VNote 的最新发行版本。
+国内的用户可以尝试在[百度云盘](https://pan.baidu.com/s/1f404Mrzp3aMLSv3Bg2PSXg)下载 VNote 的最新发行版本，提取码`mnac`。
 
 ## Windows
 ### 官方压缩包
