@@ -71,6 +71,7 @@ var previewMathJax = function(identifier, id, timeStamp, text, isHtml) {
     if (text.indexOf('$$') !== -1) {
         isBlock = true;
     }
+    MathJax.texReset();
     MathJax
         .typesetPromise([p])
         .then(function () {
