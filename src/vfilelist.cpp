@@ -431,8 +431,10 @@ void VFileList::newFile()
 
         // Move cursor down if content has been inserted.
         if (moveCursorEnd) {
-            const VMdTab *tab = dynamic_cast<VMdTab *>(editArea->getCurrentTab());
+            VMdTab *tab = dynamic_cast<VMdTab *>(editArea->getCurrentTab());
             if (tab) {
+                // It will init markdown editor (within 50 ms)
+                // See VMdTab::VMdTab --> QTimer::singleShot(50, ...
                 VMdEditor *edit = tab->getEditor();
                 if (edit && edit->getFile() == file) {
                     QTextCursor cursor = edit->textCursor();

@@ -71,6 +71,9 @@ public:
     void clearSearchedWordHighlight() Q_DECL_OVERRIDE;
 
     VWebView *getWebViewer() const;
+    
+    // Get the markdown editor. If not init yet, init and return it.
+    VMdEditor *getEditor();
 
     VMdEditor *getEditor() const;
 
@@ -225,9 +228,6 @@ private:
 
     // Focus the proper child widget.
     void focusChild() Q_DECL_OVERRIDE;
-
-    // Get the markdown editor. If not init yet, init and return it.
-    VMdEditor *getEditor();
 
     // Restore from @p_fino.
     // Return true if succeed.

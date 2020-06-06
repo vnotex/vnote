@@ -14,6 +14,8 @@ DEFINES += QT_MESSAGELOGCONTEXT
 TARGET = VNote
 TEMPLATE = app
 
+CONFIG -= qtquickcompiler
+
 RC_ICONS = resources/icons/vnote.ico
 ICON = resources/icons/vnote.icns
 
@@ -316,8 +318,6 @@ HEADERS  += vmainwindow.h \
 RESOURCES += \
     vnote.qrc \
     translations.qrc
-    
-QTQUICK_COMPILER_SKIPPED_RESOURCES += vnote.qrc
 
 macx {
     LIBS += -L/usr/local/lib
