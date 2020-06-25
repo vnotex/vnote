@@ -52,6 +52,7 @@
 #include "vlistue.h"
 #include "vtagexplorer.h"
 #include "vmdeditor.h"
+#include "vgit.h"
 
 extern VConfigManager *g_config;
 
@@ -396,6 +397,7 @@ void VMainWindow::setupNotebookPanel()
             m_fileList, &VFileList::setDirectory);
 }
 
+//工具栏
 void VMainWindow::initToolBar()
 {
     const int tbIconSize = g_config->getToolBarIconSize() * VUtils::calculateScaleFactor();
@@ -807,12 +809,17 @@ QToolBar *VMainWindow::initFileToolBar(QSize p_iconSize)
     return m_fileToolBar;
 }
 
+//菜单栏
 void VMainWindow::initMenuBar()
 {
     initFileMenu();
     initEditMenu();
     initViewMenu();
     initMarkdownMenu();
+#if defined(Q_OS_WIN)
+    //同步菜单
+    initSyncMenu();
+#endif
     initHelpMenu();
 
     setMenuBarVisible(g_config->getMenuBarChecked());
@@ -988,6 +995,100 @@ void VMainWindow::initMarkdownMenu()
             this, &VMainWindow::enableImagePreviewConstraint);
     markdownMenu->addAction(previewWidthAct);
     previewWidthAct->setChecked(g_config->getEnablePreviewImageConstraint());
+}
+
+void VMainWindow::initSyncMenu()
+{
+	m_syncMenu = menuBar()->addMenu(tr("&Sync"));
+    m_syncMenu->setToolTipsVisible(true);
+	QAction* uploadAction = new QAction(tr("&Upload"), this);
+    uploadAction->setToolTip(tr("upload note"));
+	connect(uploadAction, &QAction::triggered, this, &VMainWindow::upload);
+    m_syncMenu->addAction(uploadAction);
+
+    QAction* downloadAction = new QAction(tr("&Download"), this);
+    downloadAction->setToolTip(tr("download note"));
+    connect(downloadAction, &QAction::triggered, this, &VMainWindow::download);
+    m_syncMenu->addAction(downloadAction);
+}
+
+void VMainWindow::upload()
+{
+    QString vnoteBookPath = g_config->getVnoteNotebookFolderPath();
+    qDebug() << "vnoteBookPath: " << vnoteBookPath;
+    QVector<VNotebook *>& noteBooks = vnote->getNotebooks();
+    for (QVector<VNotebook *>::iterator i = noteBooks.begin(); i < noteBooks.end(); i++)
+    {
+        QString notebookDir = (*i)->getPath();
+        QString notebookName = (*i)->getName();
+        /* code */
+        qDebug() << "notebook name: " << notebookName << "notebook path: " << notebookDir;
+        QString output;
+        QString error;
+        VGit* git = VGit::create(notebookDir, output, error);
+        git->Download();
+        if (!git->isSuccess())
+        {
+            QMessageBox::critical(
+                this,
+                "更新失败",
+                QString("%1更新失败\n%2").arg(notebookName).arg(git->getStandardError()),
+                QMessageBox::Ok,
+                QMessageBox::NoButton
+            );
+        }
+
+        git->Upload();
+        if (!git->isSuccess())
+        {
+            QMessageBox::critical(
+                this,
+                "上传失败",
+                QString("%1上传失败\n%2").arg(notebookName).arg(git->getStandardError()),
+                QMessageBox::Ok,
+                QMessageBox::NoButton
+            );
+        }
+        delete git;
+    }
+}
+
+void VMainWindow::download()
+{
+    QVector<VNotebook*>& noteBooks = vnote->getNotebooks();
+    for (QVector<VNotebook*>::iterator i = noteBooks.begin(); i < noteBooks.end(); i++)
+    {
+        QString notebookDir = (*i)->getPath();
+        QString notebookName = (*i)->getName();
+        /* code */
+        qDebug() << "notebook name: " << notebookName << "notebook path: " << notebookDir;
+        QString output("");
+        QString error("");
+        VGit* git = VGit::create(notebookDir, output, error);
+        git->Download();
+        if (!git->isSuccess())
+        {
+            QMessageBox::critical(
+                this,
+                "Download",
+                QString("%1更新失败\n%2").arg(notebookName).arg(git->getStandardError()),
+                QMessageBox::Ok,
+                QMessageBox::NoButton
+            );
+        }
+        else
+        {
+            QMessageBox::information(
+                this,
+                "Download",
+                QString("%1更新成功\n%2").arg(notebookName).arg(git->getStandardOutput()),
+                QMessageBox::Ok,
+                QMessageBox::NoButton
+            );
+        }
+        
+        delete git;
+    }
 }
 
 void VMainWindow::initViewMenu()

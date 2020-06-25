@@ -246,6 +246,9 @@ private:
     void initViewMenu();
     void initMarkdownMenu();
     void initHelpMenu();
+    void initSyncMenu();
+    void upload();
+    void download();
 
     void initDockWindows();
 
@@ -467,6 +470,9 @@ private:
     QToolBar *m_editToolBar;
 
     QToolBar *m_noteToolBar;
+
+    //Í¬²½²Ëµ¥
+    QMenu* m_syncMenu;
 
     // All the ToolBar.
     QVector<QToolBar *> m_toolBars;
