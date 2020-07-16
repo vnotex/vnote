@@ -45,6 +45,7 @@ class VUniversalEntry;
 class VHistoryList;
 class VExplorer;
 class VTagExplorer;
+class VGit;
 
 #define RESTART_EXIT_CODE   1000
 
@@ -471,7 +472,7 @@ private:
 
     QToolBar *m_noteToolBar;
 
-    //Í¬²½²Ëµ¥
+    //Í¬ï¿½ï¿½ï¿½Ëµï¿½
     QMenu* m_syncMenu;
 
     // All the ToolBar.
@@ -517,6 +518,8 @@ private:
     VExplorer *m_explorer;
 
     VTagExplorer *m_tagExplorer;
+
+    VGit* _git;
 
     // Whether sync note list to current tab.
     bool m_syncNoteListToCurrentTab;

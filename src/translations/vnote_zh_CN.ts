@@ -8860,5 +8860,55 @@ Please check the network or image size</source>
         <source>Word Count</source>
         <translation>字数</translation>
     </message>
+    <message>
+        <location filename="../utils/vgit.cpp" line="22"/>
+        <source>sure</source>
+        <translation>确认</translation>
+    </message>
+    <message>
+        <location filename="../utils/vgit.cpp" line="34"/>
+        <source>git status</source>
+        <translation>检查仓库状态</translation>
+    </message>
+    <message>
+        <location filename="../utils/vgit.cpp" line="41"/>
+        <source>git stash</source>
+        <translation>暂存所有文件</translation>
+    </message>
+    <message>
+        <location filename="../utils/vgit.cpp" line="48"/>
+        <source>git commit</source>
+        <translation>提交所有改动</translation>
+    </message>
+    <message>
+        <location filename="../utils/vgit.cpp" line="56"/>
+        <source>git push</source>
+        <translation>推送所有改动</translation>
+    </message>
+    <message>
+        <location filename="../utils/vgit.cpp" line="63"/>
+        <source>git pull</source>
+        <translation>拉取</translation>
+    </message>
+    <message>
+        <location filename="../utils/vgit.cpp" line="63"/>
+        <source>git authentication</source>
+        <translation>凭证存储</translation>
+    </message>
+    <message>
+        <location filename="../utils/vgit.cpp" line="71"/>
+        <source>git authentication</source>
+        <translation>凭证存储</translation>
+    </message>
+    <message>
+        <location filename="../utils/vgit.cpp" line="177"/>
+        <source>Download Success</source>
+        <translation>更新成功</translation>
+    </message>
+    <message>
+        <location filename="../utils/vgit.cpp" line="202"/>
+        <source>Upload Success</source>
+        <translation>上传成功</translation>
+    </message>
 </context>
 </TS>

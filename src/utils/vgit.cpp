@@ -1,205 +1,209 @@
 #include "vgit.h"
 #include "vgit.h"
-#include <qprocess.h>
 #include <qglobal.h>
 #include <qdatetime.h>
-#include <QDebug>
+#include <qdebug.h>
 #include <qstring.h>
+#include <qmessagebox.h>
+#include <qpushbutton.h>
 
-VGit* VGit::create(const QString& gitDir, QString& output, QString& error)
+VGit::VGit(QWidget *parent) : QObject(parent)
 {
-	Q_ASSERT(gitDir != NULL);
+	_process = new QProcess(this);
+	connect(_process, SIGNAL(readyReadStandardOutput()), this, SLOT(onReadOutput()));
+	connect(_process, SIGNAL(readyReadStandardError()), this, SLOT(onReadError()));
+	//connect(_process, SIGNAL(errorOccurred()), this, SLOT(onReadError()));
+	connect(_process, SIGNAL(finished(int)), this, SLOT(onProcessFinish(int)));
 
-	VGit::execute(VGit::getGitString(gitDir, VGit::GitType::Status), output, error);
-	if (!error.isEmpty()) {
-		return NULL;
+	_messageBox = new QMessageBox(parent);
+	_messageBox->setModal(true);
+	_messageBox->setWindowTitle(tr("git operation"));
+	_messageBox->resize(QSize(600,300));
+	_messageBox->setStandardButtons(QMessageBox::NoButton);
+	_messageButton = new QPushButton(_messageBox);
+	_messageButton->setText(tr("sure"));
+	connect(_messageButton, &QPushButton::clicked, this, &VGit::onMessageButtonClick);
+}
+
+VGit::~VGit()
+{
+	_process->close();
+}
+
+void VGit::status()
+{
+	this->_type = GitType::Status;
+	this->showMessageBox(tr("git status"), false);
+	this->start(getGitHead("status"));
+}
+
+void VGit::add()
+{
+	this->_type = GitType::Add;
+	showMessageBox(tr("git stash"), false);
+	this->start(getGitHead("add -A"));
+}
+
+void VGit::commit()
+{
+	this->_type = GitType::Commit;
+	showMessageBox(tr("git coommit"), false);
+	QString time = QDateTime::currentDateTime().toString("yyyy-MM-dd-hh:mm:ss");
+	this->start(getGitHead(QString("commit -m %1").arg(time)));
+}
+
+void VGit::push()
+{
+	this->_type = GitType::Push;
+	showMessageBox(tr("git push"), false);
+	this->start(getGitHead("push"));
+}
+
+void VGit::pull()
+{
+	this->_type = GitType::Pull;
+	showMessageBox(tr("git pull"), false);
+	this->start(getGitHead("pull"));
+}
+
+void VGit::authentication()
+{
+	this->_type = GitType::Authentication;
+	showMessageBox(tr("git authentication"), false);
+	this->start("git config --global credential.helper store");
+}
+
+void VGit::download()
+{
+	this->_target = GitTarget::Download;
+	this->status();
+}
+
+void VGit::upload()
+{
+	this->_target = GitTarget::Upload;
+	this->status();
+}
+
+void VGit::onReadOutput()
+{
+	qDebug() << "VGit.onReadOutput: " << _process->readAllStandardOutput();
+	_output.append(_process->readAllStandardOutput());
+}
+
+void VGit::onReadError()
+{
+	qDebug() << "VGit.onReadError: " << _process->readAllStandardError();
+	_error.append(_process->readAllStandardError());
+}
+
+void VGit::onProcessFinish(int exitCode)
+{
+	qDebug() << "VGit.onProcessFinish: " << exitCode;
+	if (exitCode == 0)
+	{
+		switch (this->_target)
+		{
+		case GitTarget::Download:
+			this->processDownload();
+			break;
+		case GitTarget::Upload:
+			this->processUpload();
+			break;
+		default:
+			break;
+		}
+	}
+	else
+	{
+		/* code */
+		QString message = QString::asprintf("git failed，exitCode: %d, reason:\n%s", exitCode, _error);
+		showMessageBox(message, true);
+	}
+}
+
+void VGit::start(const QString &cmd)
+{
+	_process->start("cmd", QStringList() << "/c" << cmd);
+	_process->waitForStarted();
+}
+
+void VGit::showMessageBox(const QString &message, bool showButton)
+{
+	_messageBox->setText(message);
+	if (showButton)
+	{
+		_messageBox->addButton(_messageButton, QMessageBox::ButtonRole::YesRole);
+	}
+	else
+	{
+		_messageBox->removeButton(_messageButton);
 	}
 
-	VGit* git = new VGit(gitDir);
-
-	return git;
-}
-
-void VGit::execute(const QString& cmd, QString& output, QString& error)
-{
-	Q_ASSERT(cmd != NULL);
-
-	qDebug() << "VGit.execute: " << cmd;
-	QProcess p(0);
-	p.start("cmd", QStringList() << "/c" << cmd);
-	p.waitForStarted();
-	p.waitForFinished();
-
-	error.clear();
-	error.append(QString::fromLocal8Bit(p.readAllStandardError()));
-
-	output.clear();
-	output.append(QString::fromLocal8Bit(p.readAllStandardOutput()));
-}
-
-QString VGit::getGitString(const QString& gitDir, GitType type, const QString& arg)
-{
-	QString option;
-	switch (type)
+	if (!_messageBox->isVisible())
 	{
-	case VGit::GitType::Status:
-		option = "status";
+		_messageBox->setVisible(true);
+	}
+}
+
+void VGit::hideMessageBox()
+{
+	_messageBox->removeButton(_messageButton);
+	_messageBox->setVisible(false);
+}
+
+void VGit::onMessageButtonClick()
+{
+	_messageBox->hide();
+}
+
+void VGit::clear()
+{
+	_error.clear();
+	_output.clear();
+	_type = VGit::GitType::None;
+}
+
+void VGit::processDownload()
+{
+	switch (this->_type)
+	{
+	case GitType::Status:
+		this->authentication();
 		break;
-	case VGit::GitType::Add:
-		option = "add -A";
+	case GitType::Authentication:
+		this->pull();
 		break;
-	case VGit::GitType::Commit:
-		option = QString("commit -m %1").arg(arg);
-		break;
-	case VGit::GitType::Push:
-		option = "push";
-		break;
-	case VGit::GitType::Pull:
-		option = "pull";
+	case GitType::Pull:
+		qDebug() << "download finish";	
+		showMessageBox(tr("Download Success"), true);
 		break;
 	default:
-		Q_ASSERT(false);
 		break;
 	}
-
-	qDebug() << "VGit.getGitString: option=" << option;
-	return QString("git -C %1 %2").arg(gitDir).arg(option);
 }
 
-const QString& VGit::getStandardOutput() const
+void VGit::processUpload()
 {
-	return this->_output;
-}
-
-const QString& VGit::getStandardError() const
-{
-	return this->_error;
-}
-
-bool VGit::isSuccess() const
-{
-	return this->_error.isEmpty();
-}
-
-void VGit::Upload()
-{
-	//add
-	VGit::execute(
-		VGit::getGitString(this->_gitDir, VGit::GitType::Add),
-		this->_output,
-		this->_error
-	);
-	if (!isSuccess())
+	switch (this->_type)
 	{
-		return;
+	case GitType::Status:
+		this->add();
+		break;
+	case GitType::Add:
+		this->commit();
+		break;
+	case GitType::Commit:
+		this->authentication();
+		break;
+	case GitType::Authentication:
+		this->push();
+		break;
+	case GitType::Push:
+		qDebug() << "upload finish";		
+		showMessageBox(tr("Upload Success"), true);
+		break;
+	default:
+		break;
 	}
-
-	//commit
-	VGit::execute(
-		VGit::getGitString(this->_gitDir, VGit::GitType::Commit, QDateTime::currentDateTime().toString("yyyy-MM-dd-hh:mm:ss")),
-		this->_output,
-		this->_error
-	);
-	if (!isSuccess())
-	{
-		return;
-	}
-
-	VGit::execute(
-		"git config --global credential.helper store",
-		this->_output,
-		this->_error
-	);
-	if (!isSuccess())
-	{
-		return;
-	}
-
-	//push
-	VGit::execute(
-		VGit::getGitString(this->_gitDir, VGit::GitType::Push),
-		this->_output,
-		this->_error
-	);
 }
-
-void VGit::Download()
-{
-	//pull
-	VGit::execute(
-		VGit::getGitString(this->_gitDir, VGit::GitType::Pull),
-		this->_output,
-		this->_error
-	);
-}
-
-// VGit::VGit(const QString& gitDir) : _gitDir(gitDir)
-// {
-// 	_success = true;
-// 	_process = new QProcess(this);
-// 	connect(_process, SIGNAL(readyReadStandardOutput()), this, SLOT(onReadOutput()));
-// 	connect(_process, SIGNAL(readyReadStandardError()), this, SLOT(onReadError()));
-// }
-
-// VGit::~VGit()
-// {
-// 	_process->close();
-// 	delete _process;
-// }
-
-// void VGit::status()
-// {
-// 	this->_currentType = GitType::Status;
-// 	clear();
-
-// 	_process->start("cmd", QStringList() << "/c" << getGitHead("status"))
-// 	_process->waitForStarted();
-// 	_process->waitForFinished();
-// }
-
-// void VGit::add()
-// {
-// 	this->_currentType = GitType::Add;
-// 	clear();
-
-// 	_process->start("cmd", QStringList() << "/c" << getGitHead("add -A"))
-// 	_process->waitForStarted();
-// 	_process->waitForFinished();
-// }
-
-// void VGit::commit()
-// {
-// 	clear();
-// }
-
-// void VGit::push()
-// {
-// 	clear();
-// }
-
-// void VGit::pull()
-// {
-// 	clear();
-// }
-
-// void VGit::onReadOutput()
-// {
-// }
-
-// void VGit::onReadError()
-// {
-// 	_success = false;
-// }
-
-// void VGit::clear()
-// {
-// 	_error.clear();
-// 	_output.clear();
-// 	_success = true;
-// 	_currentType = VGit::GitType::None;
-// }
-
-// inline QString VGit::getGitHead(const QString& args)const
-// {
-// 	return QString("git -C %1 %2").arg(this->_gitDir).arg(args);
-// }

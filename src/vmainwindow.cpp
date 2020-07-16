@@ -114,6 +114,8 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
 
     initDockWindows();
 
+    _git = new VGit();
+
     int state = g_config->getPanelViewState();
     if (state < 0 || state >= (int)PanelViewState::Invalid) {
         state = (int)PanelViewState::VerticalMode;
@@ -1014,42 +1016,18 @@ void VMainWindow::initSyncMenu()
 
 void VMainWindow::upload()
 {
-    QString vnoteBookPath = g_config->getVnoteNotebookFolderPath();
-    qDebug() << "vnoteBookPath: " << vnoteBookPath;
-    QVector<VNotebook *>& noteBooks = vnote->getNotebooks();
-    for (QVector<VNotebook *>::iterator i = noteBooks.begin(); i < noteBooks.end(); i++)
+    QVector<VNotebook*>& noteBooks = vnote->getNotebooks();
+    for (QVector<VNotebook*>::iterator i = noteBooks.begin(); i < noteBooks.end(); i++)
     {
         QString notebookDir = (*i)->getPath();
         QString notebookName = (*i)->getName();
-        /* code */
-        qDebug() << "notebook name: " << notebookName << "notebook path: " << notebookDir;
-        QString output;
-        QString error;
-        VGit* git = VGit::create(notebookDir, output, error);
-        git->Download();
-        if (!git->isSuccess())
-        {
-            QMessageBox::critical(
-                this,
-                "更新失败",
-                QString("%1更新失败\n%2").arg(notebookName).arg(git->getStandardError()),
-                QMessageBox::Ok,
-                QMessageBox::NoButton
-            );
-        }
-
-        git->Upload();
-        if (!git->isSuccess())
-        {
-            QMessageBox::critical(
-                this,
-                "上传失败",
-                QString("%1上传失败\n%2").arg(notebookName).arg(git->getStandardError()),
-                QMessageBox::Ok,
-                QMessageBox::NoButton
-            );
-        }
-        delete git;
+		if ((*i)->isOpened()) 
+		{
+			qDebug() << "notebook name: " << notebookName << "notebook path: " << notebookDir;
+			_git->setGitDir(notebookDir);
+			_git->upload();
+			break;
+		}
     }
 }
 
@@ -1060,34 +1038,13 @@ void VMainWindow::download()
     {
         QString notebookDir = (*i)->getPath();
         QString notebookName = (*i)->getName();
-        /* code */
-        qDebug() << "notebook name: " << notebookName << "notebook path: " << notebookDir;
-        QString output("");
-        QString error("");
-        VGit* git = VGit::create(notebookDir, output, error);
-        git->Download();
-        if (!git->isSuccess())
-        {
-            QMessageBox::critical(
-                this,
-                "Download",
-                QString("%1更新失败\n%2").arg(notebookName).arg(git->getStandardError()),
-                QMessageBox::Ok,
-                QMessageBox::NoButton
-            );
-        }
-        else
-        {
-            QMessageBox::information(
-                this,
-                "Download",
-                QString("%1更新成功\n%2").arg(notebookName).arg(git->getStandardOutput()),
-                QMessageBox::Ok,
-                QMessageBox::NoButton
-            );
-        }
-        
-        delete git;
+		if ((*i)->isOpened()) 
+		{
+			qDebug() << "notebook name: " << notebookName << "notebook path: " << notebookDir;
+			_git->setGitDir(notebookDir);
+			_git->download();
+			break;
+		}
     }
 }
 

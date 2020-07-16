@@ -2,58 +2,13 @@
 #define _V_GIT_H_
 #include <qstring.h>
 #include <QObject>
+#include <qprocess.h>
 
-// class QProcess;
-// class VGit : public QObject
-// {
-// 	Q_OBJECT
-// public:
-// 	enum class GitType
-// 	{
-// 		None,
-// 		Status,
-// 		Add,
-// 		Commit,
-// 		Push,
-// 		Pull
-// 	};
-// public:
-// 	VGit(const QString& gitDir);
-// 	~VGit();
-// 	void status();
-// 	void add();
-// 	void commit();
-// 	void push();
-// 	void pull();
-
-// private:
-// 	void onReadOutput();
-// 	void onReadError();
-// 	void clear();
-// 	QString getGitHead(const QString& args)const;
-// private:
-// 	QString _gitDir;
-
-// 	QProcess* _process;
-// 	GitType _currentType;
-// 	bool _success;
-// 	QString _output;
-// 	QString _error;
-// };
-
-class VGit
+class QMessageBox;
+class QPushButton;
+class VGit : public QObject
 {
-public:
-	VGit(const QString& gitDir) : 
-		_gitDir(gitDir)
-	{
-	}
-	static VGit* create(const QString& gitDir, QString& output, QString& error);
-	void Upload();
-	void Download();
-	bool isSuccess() const;
-	const QString& getStandardOutput() const;
-	const QString& getStandardError() const;
+	Q_OBJECT
 private:
 	enum class GitType
 	{
@@ -62,14 +17,64 @@ private:
 		Add,
 		Commit,
 		Push,
-		Pull
+		Pull,
+		Authentication
 	};
-	static void execute(const QString& cmd, QString& output, QString& error);
-	static QString getGitString(const QString& gitDir, GitType type, const QString& arg = NULL);
+
+	enum class GitTarget
+	{
+		Upload,
+		Download,
+	};
+
+public:
+	VGit(QWidget *parent = NULL);
+	~VGit();
+	void setGitDir(const QString &dir);
+	void upload();
+	void download();
+private slots:
+	void onReadOutput();
+	void onReadError();
+	void onProcessFinish(int exitCode);
+
+private:
+	void status();
+	void add();
+	void commit();
+	void push();
+	void pull();
+	void authentication();
+	void processDownload();
+	void processUpload();
+
+	void clear();
+	void start(const QString &cmd);
+	void showMessageBox(const QString &message, bool showButton);
+	void hideMessageBox();
+	void onMessageButtonClick();
+	QString VGit::getGitHead(const QString &args) const;
+
 private:
 	QString _gitDir;
+
+	QMessageBox *_messageBox;
+	QPushButton *_messageButton;
+	QProcess *_process;
+	GitType _type;
+	GitTarget _target;
 	QString _output;
 	QString _error;
 };
+
+inline void VGit::setGitDir(const QString &dir)
+{
+	this->_gitDir = dir;
+};
+
+inline QString VGit::getGitHead(const QString &args) const
+{
+	return QString("git -C %1 %2").arg(this->_gitDir).arg(args);
+}
 
 #endif
