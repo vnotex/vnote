@@ -52,7 +52,7 @@
 #include "vlistue.h"
 #include "vtagexplorer.h"
 #include "vmdeditor.h"
-#include "vgit.h"
+#include "vSync.h"
 
 extern VConfigManager *g_config;
 
@@ -114,7 +114,7 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
 
     initDockWindows();
 
-    _git = new VGit();
+    initSync();
 
     int state = g_config->getPanelViewState();
     if (state < 0 || state >= (int)PanelViewState::Invalid) {
@@ -1024,7 +1024,7 @@ void VMainWindow::upload()
 		if ((*i)->isOpened()) 
 		{
 			qDebug() << "notebook name: " << notebookName << "notebook path: " << notebookDir;
-			_git->setGitDir(notebookDir);
+			_git->setDir(notebookDir);
 			_git->upload();
 			break;
 		}
@@ -1041,7 +1041,7 @@ void VMainWindow::download()
 		if ((*i)->isOpened()) 
 		{
 			qDebug() << "notebook name: " << notebookName << "notebook path: " << notebookDir;
-			_git->setGitDir(notebookDir);
+			_git->setDir(notebookDir);
 			_git->download();
 			break;
 		}
@@ -3711,4 +3711,25 @@ void VMainWindow::checkIfNeedToShowWelcomePage()
         VFile *file = vnote->getFile(docFile, true);
         m_editArea->openFile(file, OpenFileMode::Read);
     }
+}
+
+void VMainWindow::initSync()
+{
+    _git = new VSync();
+    connect(_git, &VSync::downloadSuccess, this, &VMainWindow::onDownloadSuccess);
+    connect(_git, &VSync::uploadSuccess, this, &VMainWindow::onUploadSuccess);
+}
+
+void VMainWindow::onDownloadSuccess()
+{
+    //从磁盘重新加载
+    if (m_dirTree)
+    {
+        m_dirTree->reloadAllFromDisk();
+    }
+}
+
+void VMainWindow::onUploadSuccess()
+{
+
 }

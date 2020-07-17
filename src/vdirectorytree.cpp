@@ -668,6 +668,15 @@ void VDirectoryTree::openDirectoryLocation() const
     QDesktopServices::openUrl(url);
 }
 
+void VDirectoryTree::reloadAllFromDisk()
+{
+    if (!m_notebook) {
+        return;
+    }
+
+    
+}
+
 void VDirectoryTree::reloadFromDisk()
 {
     if (!m_notebook) {

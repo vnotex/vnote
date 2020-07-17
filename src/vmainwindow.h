@@ -45,7 +45,7 @@ class VUniversalEntry;
 class VHistoryList;
 class VExplorer;
 class VTagExplorer;
-class VGit;
+class VSync;
 
 #define RESTART_EXIT_CODE   1000
 
@@ -248,8 +248,11 @@ private:
     void initMarkdownMenu();
     void initHelpMenu();
     void initSyncMenu();
+    void initSync();
     void upload();
     void download();
+    void onDownloadSuccess();
+    void onUploadSuccess();
 
     void initDockWindows();
 
@@ -519,7 +522,7 @@ private:
 
     VTagExplorer *m_tagExplorer;
 
-    VGit* _git;
+    VSync* _git;
 
     // Whether sync note list to current tab.
     bool m_syncNoteListToCurrentTab;

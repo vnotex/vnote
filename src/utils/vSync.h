@@ -1,16 +1,16 @@
-#ifndef _V_GIT_H_
-#define _V_GIT_H_
+#ifndef _V_SYNC_H_
+#define _V_SYNC_H_
 #include <qstring.h>
 #include <QObject>
 #include <qprocess.h>
 
 class QMessageBox;
 class QPushButton;
-class VGit : public QObject
+class VSync : public QObject
 {
 	Q_OBJECT
 private:
-	enum class GitType
+	enum class SyncType
 	{
 		None,
 		Status,
@@ -21,16 +21,19 @@ private:
 		Authentication
 	};
 
-	enum class GitTarget
+	enum class SyncTarget
 	{
+		None,
 		Upload,
 		Download,
 	};
-
+signals:
+	void downloadSuccess();
+	void uploadSuccess();
 public:
-	VGit(QWidget *parent = NULL);
-	~VGit();
-	void setGitDir(const QString &dir);
+	VSync(QWidget *parent = NULL);
+	~VSync();
+	void setDir(const QString &dir);
 	void upload();
 	void download();
 private slots:
@@ -47,34 +50,35 @@ private:
 	void authentication();
 	void processDownload();
 	void processUpload();
+	void downloadFinish();
+	void uploadFinish();
 
-	void clear();
 	void start(const QString &cmd);
 	void showMessageBox(const QString &message, bool showButton);
 	void hideMessageBox();
 	void onMessageButtonClick();
-	QString VGit::getGitHead(const QString &args) const;
+	QString VSync::getSyncHead(const QString &args) const;
 
 private:
-	QString _gitDir;
+	QString _dir;
 
 	QMessageBox *_messageBox;
 	QPushButton *_messageButton;
 	QProcess *_process;
-	GitType _type;
-	GitTarget _target;
+	SyncType _type;
+	SyncTarget _target;
 	QString _output;
 	QString _error;
 };
 
-inline void VGit::setGitDir(const QString &dir)
+inline void VSync::setDir(const QString &dir)
 {
-	this->_gitDir = dir;
+	this->_dir = dir;
 };
 
-inline QString VGit::getGitHead(const QString &args) const
+inline QString VSync::getSyncHead(const QString &args) const
 {
-	return QString("git -C %1 %2").arg(this->_gitDir).arg(args);
+	return QString("git -C %1 %2").arg(this->_dir).arg(args);
 }
 
 #endif
