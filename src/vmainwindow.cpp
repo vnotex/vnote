@@ -1024,7 +1024,25 @@ void VMainWindow::upload()
 		if ((*i)->isOpened()) 
 		{
 			qDebug() << "notebook name: " << notebookName << "notebook path: " << notebookDir;
-			_git->setDir(notebookDir);
+            int ret = VUtils::showMessage(QMessageBox::Information, tr("Information"),
+                                          tr("Are you sure to close opened notes"),
+                                          tr("VNote will close all the opened notes before upload."),
+                                          QMessageBox::Ok | QMessageBox::Cancel,
+                                          QMessageBox::Ok,
+                                          this);
+            switch (ret)
+            {
+            case QMessageBox::Ok:
+                this->m_editArea->closeAllFiles(true);
+                break;
+
+            case QMessageBox::Cancel:
+                return;
+
+            default:
+                return;
+            }
+            _git->setDir(notebookDir);
 			_git->upload();
 			break;
 		}

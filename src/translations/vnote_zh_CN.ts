@@ -5544,6 +5544,16 @@ Please check the network or image size</source>
         <source>download note</source>
         <translation>更新当前笔记本</translation>
     </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="1028"/>
+        <source>Are you sure to close opened notes</source>
+        <translation>确认关闭已打开笔记</translation>
+    </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="1029"/>
+        <source>VNote will close all the opened notes before upload.</source>
+        <translation>VNote会在上传前关闭所有已打开笔记</translation>
+    </message>
 </context>
 <context>
     <name>VMarkdownTab</name>
