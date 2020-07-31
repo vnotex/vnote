@@ -5,7 +5,7 @@
 
 :::
 
-国内的用户可以尝试在[百度云盘](https://pan.baidu.com/s/1f404Mrzp3aMLSv3Bg2PSXg)下载 VNote 的最新发行版本，提取码`mnac`。
+国内的用户可以尝试在[天翼云盘](https://cloud.189.cn/t/Av67NvmEJVBv)下载 VNote 的最新发行版本。
 
 ## Windows
 ### 官方压缩包 ![](https://ci.appveyor.com/api/projects/status/github/tamlok/vnote?svg=true)
