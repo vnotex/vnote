@@ -1042,8 +1042,8 @@ void VMainWindow::upload()
             default:
                 return;
             }
-            _git->setDir(notebookDir);
-			_git->upload();
+            m_git->setDir(notebookDir);
+			m_git->upload();
 			break;
 		}
     }
@@ -1051,18 +1051,18 @@ void VMainWindow::upload()
 
 void VMainWindow::download()
 {
-    QVector<VNotebook*>& noteBooks = vnote->getNotebooks();
-    for (QVector<VNotebook*>::iterator i = noteBooks.begin(); i < noteBooks.end(); i++)
+    QVector<VNotebook *> &noteBooks = vnote->getNotebooks();
+    for (QVector<VNotebook *>::iterator i = noteBooks.begin(); i < noteBooks.end(); i++)
     {
         QString notebookDir = (*i)->getPath();
         QString notebookName = (*i)->getName();
-		if ((*i)->isOpened()) 
-		{
-			qDebug() << "notebook name: " << notebookName << "notebook path: " << notebookDir;
-			_git->setDir(notebookDir);
-			_git->download();
-			break;
-		}
+        if ((*i)->isOpened())
+        {
+            qDebug() << "notebook name: " << notebookName << "notebook path: " << notebookDir;
+            m_git->setDir(notebookDir);
+            m_git->download();
+            break;
+        }
     }
 }
 
@@ -3733,9 +3733,9 @@ void VMainWindow::checkIfNeedToShowWelcomePage()
 
 void VMainWindow::initSync()
 {
-    _git = new VSync();
-    connect(_git, &VSync::downloadSuccess, this, &VMainWindow::onDownloadSuccess);
-    connect(_git, &VSync::uploadSuccess, this, &VMainWindow::onUploadSuccess);
+    m_git = new VSync();
+    connect(m_git, &VSync::downloadSuccess, this, &VMainWindow::onDownloadSuccess);
+    connect(m_git, &VSync::uploadSuccess, this, &VMainWindow::onUploadSuccess);
 }
 
 void VMainWindow::onDownloadSuccess()

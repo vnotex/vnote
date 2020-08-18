@@ -475,8 +475,8 @@ private:
 
     QToolBar *m_noteToolBar;
 
-    //ͬ���˵�
-    QMenu* m_syncMenu;
+    // sync menu
+    QMenu *m_syncMenu;
 
     // All the ToolBar.
     QVector<QToolBar *> m_toolBars;
@@ -522,7 +522,7 @@ private:
 
     VTagExplorer *m_tagExplorer;
 
-    VSync* _git;
+    VSync *m_git;
 
     // Whether sync note list to current tab.
     bool m_syncNoteListToCurrentTab;
