@@ -35,10 +35,10 @@ VDirectoryTree::VDirectoryTree(QWidget *parent)
 
     initShortcuts();
 
-    connect(this, SIGNAL(itemExpanded(QTreeWidgetItem *)),
-            this, SLOT(handleItemExpanded(QTreeWidgetItem *)));
-    connect(this, SIGNAL(itemCollapsed(QTreeWidgetItem *)),
-            this, SLOT(handleItemCollapsed(QTreeWidgetItem *)));
+    connect(this, SIGNAL(itemExpanded(QTreeWidgetItem*)),
+            this, SLOT(handleItemExpanded(QTreeWidgetItem*)));
+    connect(this, SIGNAL(itemCollapsed(QTreeWidgetItem*)),
+            this, SLOT(handleItemCollapsed(QTreeWidgetItem*)));
     connect(this, SIGNAL(customContextMenuRequested(QPoint)),
             this, SLOT(contextMenuRequested(QPoint)));
     connect(this, &VDirectoryTree::currentItemChanged,
@@ -50,38 +50,37 @@ void VDirectoryTree::initShortcuts()
     QShortcut *infoShortcut = new QShortcut(QKeySequence(Shortcut::c_info), this);
     infoShortcut->setContext(Qt::WidgetWithChildrenShortcut);
     connect(infoShortcut, &QShortcut::activated,
-            this, [this]() {
+            this, [this](){
                 editDirectoryInfo();
             });
 
     QShortcut *copyShortcut = new QShortcut(QKeySequence(Shortcut::c_copy), this);
     copyShortcut->setContext(Qt::WidgetWithChildrenShortcut);
     connect(copyShortcut, &QShortcut::activated,
-            this, [this]() {
+            this, [this](){
                 copySelectedDirectories();
             });
 
     QShortcut *cutShortcut = new QShortcut(QKeySequence(Shortcut::c_cut), this);
     cutShortcut->setContext(Qt::WidgetWithChildrenShortcut);
     connect(cutShortcut, &QShortcut::activated,
-            this, [this]() {
+            this, [this](){
                 cutSelectedDirectories();
             });
 
     QShortcut *pasteShortcut = new QShortcut(QKeySequence(Shortcut::c_paste), this);
     pasteShortcut->setContext(Qt::WidgetWithChildrenShortcut);
     connect(pasteShortcut, &QShortcut::activated,
-            this, [this]() {
+            this, [this](){
                 pasteDirectoriesFromClipboard();
             });
 
     QKeySequence seq = QKeySequence(g_config->getShortcutKeySequence("NewSubfolder"));
-    if (!seq.isEmpty())
-    {
+    if (!seq.isEmpty()) {
         QShortcut *newSubDirShortcut = new QShortcut(seq, this);
         newSubDirShortcut->setContext(Qt::ApplicationShortcut);
         connect(newSubDirShortcut, &QShortcut::activated,
-                this, [this]() {
+                this, [this](){
                     newSubDirectory();
                 });
     }
@@ -89,28 +88,25 @@ void VDirectoryTree::initShortcuts()
 
 void VDirectoryTree::setNotebook(VNotebook *p_notebook)
 {
-    if (m_notebook == p_notebook)
-    {
+    if (m_notebook == p_notebook) {
         return;
     }
 
     clear();
     m_notebook = p_notebook;
-    if (!m_notebook)
-    {
+    if (!m_notebook) {
         return;
     }
 
-    if (!m_notebook->open())
-    {
+    if (!m_notebook->open()) {
         VUtils::showMessage(QMessageBox::Warning,
                             tr("Warning"),
                             tr("Fail to open notebook <span style=\"%1\">%2</span>.")
-                                .arg(g_config->c_dataTextStyle)
-                                .arg(m_notebook->getName()),
+                              .arg(g_config->c_dataTextStyle)
+                              .arg(m_notebook->getName()),
                             tr("Please check if the notebook's root folder <span style=\"%1\">%2</span> exists.")
-                                .arg(g_config->c_dataTextStyle)
-                                .arg(m_notebook->getPath()),
+                              .arg(g_config->c_dataTextStyle)
+                              .arg(m_notebook->getPath()),
                             QMessageBox::Ok,
                             QMessageBox::Ok,
                             this);
@@ -138,8 +134,7 @@ void VDirectoryTree::updateDirectoryTree()
 
     VDirectory *rootDir = m_notebook->getRootDir();
     const QVector<VDirectory *> &subDirs = rootDir->getSubDirs();
-    for (int i = 0; i < subDirs.size(); ++i)
-    {
+    for (int i = 0; i < subDirs.size(); ++i) {
         VDirectory *dir = subDirs[i];
         QTreeWidgetItem *item = new QTreeWidgetItem(this);
 
@@ -148,8 +143,7 @@ void VDirectoryTree::updateDirectoryTree()
         buildSubTree(item, 1);
     }
 
-    if (!restoreCurrentItem() && topLevelItemCount() > 0)
-    {
+    if (!restoreCurrentItem() && topLevelItemCount() > 0) {
         setCurrentItem(topLevelItem(0));
     }
 
@@ -159,11 +153,9 @@ void VDirectoryTree::updateDirectoryTree()
 bool VDirectoryTree::restoreCurrentItem()
 {
     auto it = m_notebookCurrentDirMap.find(m_notebook);
-    if (it != m_notebookCurrentDirMap.end())
-    {
+    if (it != m_notebookCurrentDirMap.end()) {
         QTreeWidgetItem *item = findVDirectory(it.value());
-        if (item)
-        {
+        if (item) {
             setCurrentItem(item);
             return true;
         }
@@ -174,44 +166,37 @@ bool VDirectoryTree::restoreCurrentItem()
 
 void VDirectoryTree::buildSubTree(QTreeWidgetItem *p_parent, int p_depth)
 {
-    if (p_depth == 0)
-    {
+    if (p_depth == 0) {
         return;
     }
 
     Q_ASSERT(p_parent);
 
     VDirectory *dir = getVDirectory(p_parent);
-    if (!dir->open())
-    {
+    if (!dir->open()) {
         VUtils::showMessage(QMessageBox::Warning,
                             tr("Warning"),
                             tr("Fail to open folder <span style=\"%1\">%2</span>.")
-                                .arg(g_config->c_dataTextStyle)
-                                .arg(dir->getName()),
+                              .arg(g_config->c_dataTextStyle)
+                              .arg(dir->getName()),
                             tr("Please check if directory <span style=\"%1\">%2</span> exists.")
-                                .arg(g_config->c_dataTextStyle)
-                                .arg(dir->fetchPath()),
+                              .arg(g_config->c_dataTextStyle)
+                              .arg(dir->fetchPath()),
                             QMessageBox::Ok,
                             QMessageBox::Ok,
                             this);
         return;
     }
 
-    if (p_parent->childCount() > 0)
-    {
+    if (p_parent->childCount() > 0) {
         // This directory has been built before. Try its children directly.
         int cnt = p_parent->childCount();
-        for (int i = 0; i < cnt; ++i)
-        {
-            buildSubTree(p_parent->child(i), p_depth - 1);
+        for (int i = 0; i < cnt; ++i) {
+            buildSubTree(p_parent->child(i), p_depth -1);
         }
-    }
-    else
-    {
+    } else {
         const QVector<VDirectory *> &subDirs = dir->getSubDirs();
-        for (int i = 0; i < subDirs.size(); ++i)
-        {
+        for (int i = 0; i < subDirs.size(); ++i) {
             VDirectory *subDir = subDirs[i];
             QTreeWidgetItem *item = new QTreeWidgetItem(p_parent);
             fillTreeItem(item, subDir);
@@ -219,16 +204,14 @@ void VDirectoryTree::buildSubTree(QTreeWidgetItem *p_parent, int p_depth)
         }
     }
 
-    if (dir->isExpanded())
-    {
+    if (dir->isExpanded()) {
         expandItem(p_parent);
     }
 }
 
 void VDirectoryTree::handleItemCollapsed(QTreeWidgetItem *p_item)
 {
-    if (p_item)
-    {
+    if (p_item) {
         VDirectory *dir = getVDirectory(p_item);
         dir->setExpanded(false);
     }
@@ -236,8 +219,7 @@ void VDirectoryTree::handleItemCollapsed(QTreeWidgetItem *p_item)
 
 void VDirectoryTree::handleItemExpanded(QTreeWidgetItem *p_item)
 {
-    if (p_item)
-    {
+    if (p_item) {
         buildChildren(p_item);
 
         VDirectory *dir = getVDirectory(p_item);
@@ -249,16 +231,13 @@ void VDirectoryTree::buildChildren(QTreeWidgetItem *p_item)
 {
     Q_ASSERT(p_item);
     int nrChild = p_item->childCount();
-    if (nrChild == 0)
-    {
+    if (nrChild == 0) {
         return;
     }
 
-    for (int i = 0; i < nrChild; ++i)
-    {
+    for (int i = 0; i < nrChild; ++i) {
         QTreeWidgetItem *childItem = p_item->child(i);
-        if (childItem->childCount() > 0)
-        {
+        if (childItem->childCount() > 0) {
             continue;
         }
 
@@ -269,12 +248,9 @@ void VDirectoryTree::buildChildren(QTreeWidgetItem *p_item)
 void VDirectoryTree::updateItemDirectChildren(QTreeWidgetItem *p_item)
 {
     QPointer<VDirectory> parentDir;
-    if (p_item)
-    {
+    if (p_item) {
         parentDir = getVDirectory(p_item);
-    }
-    else
-    {
+    } else {
         parentDir = m_notebook->getRootDir();
     }
 
@@ -282,41 +258,30 @@ void VDirectoryTree::updateItemDirectChildren(QTreeWidgetItem *p_item)
 
     QHash<VDirectory *, QTreeWidgetItem *> itemDirMap;
     int nrChild = p_item ? p_item->childCount() : topLevelItemCount();
-    for (int i = 0; i < nrChild; ++i)
-    {
+    for (int i = 0; i < nrChild; ++i) {
         QTreeWidgetItem *item = p_item ? p_item->child(i) : topLevelItem(i);
         itemDirMap.insert(getVDirectory(item), item);
     }
 
-    for (int i = 0; i < dirs.size(); ++i)
-    {
+    for (int i = 0; i < dirs.size(); ++i) {
         VDirectory *dir = dirs[i];
         QTreeWidgetItem *item = itemDirMap.value(dir, NULL);
-        if (item)
-        {
-            if (p_item)
-            {
+        if (item) {
+            if (p_item) {
                 p_item->removeChild(item);
                 p_item->insertChild(i, item);
-            }
-            else
-            {
+            } else {
                 int topIdx = indexOfTopLevelItem(item);
                 takeTopLevelItem(topIdx);
                 insertTopLevelItem(i, item);
             }
 
             itemDirMap.remove(dir);
-        }
-        else
-        {
+        } else {
             // Insert a new item
-            if (p_item)
-            {
+            if (p_item) {
                 item = new QTreeWidgetItem(p_item);
-            }
-            else
-            {
+            } else {
                 item = new QTreeWidgetItem(this);
             }
 
@@ -328,15 +293,11 @@ void VDirectoryTree::updateItemDirectChildren(QTreeWidgetItem *p_item)
     }
 
     // Delete items without corresponding VDirectory
-    for (auto iter = itemDirMap.begin(); iter != itemDirMap.end(); ++iter)
-    {
+    for (auto iter = itemDirMap.begin(); iter != itemDirMap.end(); ++iter) {
         QTreeWidgetItem *item = iter.value();
-        if (p_item)
-        {
+        if (p_item) {
             p_item->removeChild(item);
-        }
-        else
-        {
+        } else {
             int topIdx = indexOfTopLevelItem(item);
             takeTopLevelItem(topIdx);
         }
@@ -349,8 +310,7 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
 {
     QTreeWidgetItem *item = itemAt(pos);
 
-    if (!m_notebook)
-    {
+    if (!m_notebook) {
         return;
     }
 
@@ -371,18 +331,14 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
     connect(sortAct, SIGNAL(triggered(bool)),
             this, SLOT(sortItems()));
 
-    if (!item)
-    {
+    if (!item) {
         // Context menu on the free space of the QTreeWidget
         menu.addAction(newRootDirAct);
 
-        if (topLevelItemCount() > 1)
-        {
+        if (topLevelItemCount() > 1) {
             menu.addAction(sortAct);
         }
-    }
-    else
-    {
+    } else {
         // Context menu on a QTreeWidgetItem
         QAction *newNoteAct = new QAction(VIconUtils::menuIcon(":/resources/icons/create_note_tb.svg"),
                                           tr("New &Note"),
@@ -401,8 +357,7 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
         connect(newSiblingFolder, &QAction::triggered,
                 this, [this]() {
                     auto item = currentItem();
-                    if (item)
-                    {
+                    if (item) {
                         newDirectory(item->parent());
                     }
                 });
@@ -415,25 +370,20 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
         connect(newSubDirAct, &QAction::triggered,
                 this, &VDirectoryTree::newSubDirectory);
 
-        if (item->parent())
-        {
+        if (item->parent()) {
             // Low-level item
             menu.addAction(newSiblingFolder);
             menu.addAction(newSubDirAct);
 
-            if (item->parent()->childCount() > 1)
-            {
+            if (item->parent()->childCount() > 1) {
                 menu.addAction(sortAct);
             }
-        }
-        else
-        {
+        } else {
             // Top-level item
             menu.addAction(newRootDirAct);
             menu.addAction(newSubDirAct);
 
-            if (topLevelItemCount() > 1)
-            {
+            if (topLevelItemCount() > 1) {
                 menu.addAction(sortAct);
             }
         }
@@ -465,10 +415,8 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
         menu.addAction(cutAct);
     }
 
-    if (pasteAvailable())
-    {
-        if (!item)
-        {
+    if (pasteAvailable()) {
+        if (!item) {
             menu.addSeparator();
         }
 
@@ -489,8 +437,7 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
             this, &VDirectoryTree::reloadFromDisk);
     menu.addAction(reloadAct);
 
-    if (item)
-    {
+    if (item) {
         QAction *openLocationAct = new QAction(VIconUtils::menuIcon(":/resources/icons/open_location.svg"),
                                                tr("Open Folder &Location"),
                                                &menu);
@@ -521,8 +468,7 @@ void VDirectoryTree::contextMenuRequested(QPoint pos)
 
 void VDirectoryTree::newSubDirectory()
 {
-    if (!m_notebook)
-    {
+    if (!m_notebook) {
         return;
     }
 
@@ -531,31 +477,28 @@ void VDirectoryTree::newSubDirectory()
 
 void VDirectoryTree::newDirectory(QTreeWidgetItem *p_parentItem)
 {
-    if (!p_parentItem)
-    {
+    if (!p_parentItem) {
         return;
     }
 
     VDirectory *curDir = getVDirectory(p_parentItem);
 
     QString info = tr("Create a subfolder in <span style=\"%1\">%2</span>.")
-                       .arg(g_config->c_dataTextStyle)
-                       .arg(curDir->getName());
+                     .arg(g_config->c_dataTextStyle)
+                     .arg(curDir->getName());
     QString defaultName("new_folder");
     defaultName = VUtils::getDirNameWithSequence(curDir->fetchPath(), defaultName);
     VNewDirDialog dialog(tr("Create Folder"), info, defaultName, curDir, this);
-    if (dialog.exec() == QDialog::Accepted)
-    {
+    if (dialog.exec() == QDialog::Accepted) {
         QString name = dialog.getNameInput();
         QString msg;
         VDirectory *subDir = curDir->createSubDirectory(name, &msg);
-        if (!subDir)
-        {
+        if (!subDir) {
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Warning"),
                                 tr("Fail to create subfolder <span style=\"%1\">%2</span>.")
-                                    .arg(g_config->c_dataTextStyle)
-                                    .arg(name),
+                                  .arg(g_config->c_dataTextStyle)
+                                  .arg(name),
                                 msg,
                                 QMessageBox::Ok,
                                 QMessageBox::Ok,
@@ -571,31 +514,28 @@ void VDirectoryTree::newDirectory(QTreeWidgetItem *p_parentItem)
 
 void VDirectoryTree::newRootDirectory()
 {
-    if (!m_notebook)
-    {
+    if (!m_notebook) {
         return;
     }
 
     VDirectory *rootDir = m_notebook->getRootDir();
 
     QString info = tr("Create a root folder in notebook <span style=\"%1\">%2</span>.")
-                       .arg(g_config->c_dataTextStyle)
-                       .arg(m_notebook->getName());
+                     .arg(g_config->c_dataTextStyle)
+                     .arg(m_notebook->getName());
     QString defaultName("new_folder");
     defaultName = VUtils::getDirNameWithSequence(rootDir->fetchPath(), defaultName);
     VNewDirDialog dialog(tr("Create Root Folder"), info, defaultName, rootDir, this);
-    if (dialog.exec() == QDialog::Accepted)
-    {
+    if (dialog.exec() == QDialog::Accepted) {
         QString name = dialog.getNameInput();
         QString msg;
         VDirectory *dir = rootDir->createSubDirectory(name, &msg);
-        if (!dir)
-        {
+        if (!dir) {
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Warning"),
                                 tr("Fail to create root folder <span style=\"%1\">%2</span>.")
-                                    .arg(g_config->c_dataTextStyle)
-                                    .arg(name),
+                                  .arg(g_config->c_dataTextStyle)
+                                  .arg(name),
                                 msg,
                                 QMessageBox::Ok,
                                 QMessageBox::Ok,
@@ -614,8 +554,7 @@ void VDirectoryTree::deleteSelectedDirectory()
     Q_ASSERT(selectedItems().size() <= 1);
 
     QTreeWidgetItem *curItem = currentItem();
-    if (!curItem)
-    {
+    if (!curItem) {
         return;
     }
 
@@ -623,24 +562,23 @@ void VDirectoryTree::deleteSelectedDirectory()
     int ret = VUtils::showMessage(QMessageBox::Warning,
                                   tr("Warning"),
                                   tr("Are you sure to delete folder <span style=\"%1\">%2</span>?")
-                                      .arg(g_config->c_dataTextStyle)
-                                      .arg(curDir->getName()),
+                                    .arg(g_config->c_dataTextStyle)
+                                    .arg(curDir->getName()),
                                   tr("<span style=\"%1\">WARNING</span>: "
                                      "VNote will delete the whole directory "
                                      "<span style=\"%2\">%3</span>."
                                      "Deleted files could be found in the recycle bin "
                                      "of this folder.<br>"
                                      "The operation is IRREVERSIBLE!")
-                                      .arg(g_config->c_warningTextStyle)
-                                      .arg(g_config->c_dataTextStyle)
-                                      .arg(curDir->fetchPath()),
+                                    .arg(g_config->c_warningTextStyle)
+                                    .arg(g_config->c_dataTextStyle)
+                                    .arg(curDir->fetchPath()),
                                   QMessageBox::Ok | QMessageBox::Cancel,
                                   QMessageBox::Ok,
                                   this,
                                   MessageBoxType::Danger);
 
-    if (ret == QMessageBox::Ok)
-    {
+    if (ret == QMessageBox::Ok) {
         int nrDeleted = 1;
         m_editArea->closeFile(curDir, true);
 
@@ -650,33 +588,29 @@ void VDirectoryTree::deleteSelectedDirectory()
         QString msg;
         QString dirName = curDir->getName();
         QString dirPath = curDir->fetchPath();
-        if (!VDirectory::deleteDirectory(curDir, false, &msg))
-        {
+        if (!VDirectory::deleteDirectory(curDir, false, &msg)) {
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Warning"),
                                 tr("Fail to delete folder <span style=\"%1\">%2</span>.<br>"
                                    "Please check <span style=\"%1\">%3</span> and manually delete it.")
-                                    .arg(g_config->c_dataTextStyle)
-                                    .arg(dirName)
-                                    .arg(dirPath),
+                                  .arg(g_config->c_dataTextStyle)
+                                  .arg(dirName)
+                                  .arg(dirPath),
                                 msg,
                                 QMessageBox::Ok,
                                 QMessageBox::Ok,
                                 this);
-        }
-        else
-        {
+        } else {
             g_mainWin->showStatusMessage(tr("%1 %2 deleted")
-                                             .arg(nrDeleted)
-                                             .arg(nrDeleted > 1 ? tr("folders") : tr("folder")));
+                                           .arg(nrDeleted)
+                                           .arg(nrDeleted > 1 ? tr("folders") : tr("folder")));
         }
     }
 }
 
 void VDirectoryTree::currentDirectoryItemChanged(QTreeWidgetItem *currentItem)
 {
-    if (!currentItem)
-    {
+    if (!currentItem) {
         emit currentDirectoryChanged(NULL);
         return;
     }
@@ -689,8 +623,7 @@ void VDirectoryTree::currentDirectoryItemChanged(QTreeWidgetItem *currentItem)
 void VDirectoryTree::editDirectoryInfo()
 {
     QTreeWidgetItem *curItem = currentItem();
-    if (!curItem)
-    {
+    if (!curItem) {
         return;
     }
 
@@ -702,21 +635,18 @@ void VDirectoryTree::editDirectoryInfo()
                           curDir,
                           curDir->getParentDirectory(),
                           this);
-    if (dialog.exec() == QDialog::Accepted)
-    {
+    if (dialog.exec() == QDialog::Accepted) {
         QString name = dialog.getNameInput();
-        if (name == curName)
-        {
+        if (name == curName) {
             return;
         }
 
-        if (!curDir->rename(name))
-        {
+        if (!curDir->rename(name)) {
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Warning"),
                                 tr("Fail to rename folder <span style=\"%1\">%2</span>.")
-                                    .arg(g_config->c_dataTextStyle)
-                                    .arg(curName),
+                                  .arg(g_config->c_dataTextStyle)
+                                  .arg(curName),
                                 "",
                                 QMessageBox::Ok,
                                 QMessageBox::Ok,
@@ -740,76 +670,16 @@ void VDirectoryTree::openDirectoryLocation() const
 
 void VDirectoryTree::reloadAllFromDisk()
 {
-    if (!m_notebook)
-    {
+    if (!m_notebook) {
         return;
     }
 
-    QString info = tr("Are you sure to reload notebook <span style=\"%1\">%2</span>?")
-                       .arg(g_config->c_dataTextStyle)
-                       .arg(m_notebook->getName());
-    QString msg = tr("Notebook %1 reloaded from disk").arg(m_notebook->getName());
-
-    if (g_config->getConfirmReloadFolder())
-    {
-        int ret = VUtils::showMessage(QMessageBox::Information, tr("Information"),
-                                      info,
-                                      tr("VNote will close all the related notes before reload."),
-                                      QMessageBox::Ok | QMessageBox::YesToAll | QMessageBox::Cancel,
-                                      QMessageBox::Ok,
-                                      this);
-        switch (ret)
-        {
-        case QMessageBox::YesToAll:
-            g_config->setConfirmReloadFolder(false);
-            // Fall through.
-
-        case QMessageBox::Ok:
-            break;
-
-        case QMessageBox::Cancel:
-            return;
-
-        default:
-            return;
-        }
-    }
-
-    m_notebookCurrentDirMap.remove(m_notebook);
-
-    if (!m_editArea->closeFile(m_notebook, false))
-    {
-        return;
-    }
-
-    m_notebook->close();
-
-    if (!m_notebook->open())
-    {
-        VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
-                            tr("Fail to open notebook <span style=\"%1\">%2</span>.")
-                                .arg(g_config->c_dataTextStyle)
-                                .arg(m_notebook->getName()),
-                            tr("Please check if path <span style=\"%1\">%2</span> exists.")
-                                .arg(g_config->c_dataTextStyle)
-                                .arg(m_notebook->getPath()),
-                            QMessageBox::Ok, QMessageBox::Ok, this);
-        clear();
-        return;
-    }
-
-    updateDirectoryTree();
-
-    if (!msg.isEmpty())
-    {
-        g_mainWin->showStatusMessage(msg);
-    }
+    
 }
 
 void VDirectoryTree::reloadFromDisk()
 {
-    if (!m_notebook)
-    {
+    if (!m_notebook) {
         return;
     }
 
@@ -817,34 +687,27 @@ void VDirectoryTree::reloadFromDisk()
     QString info;
     VDirectory *curDir = NULL;
     QTreeWidgetItem *curItem = currentItem();
-    if (curItem)
-    {
+    if (curItem) {
         // Reload current directory.
         curDir = getVDirectory(curItem);
         info = tr("Are you sure to reload folder <span style=\"%1\">%2</span>?")
-                   .arg(g_config->c_dataTextStyle)
-                   .arg(curDir->getName());
+                 .arg(g_config->c_dataTextStyle).arg(curDir->getName());
         msg = tr("Folder %1 reloaded from disk").arg(curDir->getName());
-    }
-    else
-    {
+    } else {
         // Reload notebook.
         info = tr("Are you sure to reload notebook <span style=\"%1\">%2</span>?")
-                   .arg(g_config->c_dataTextStyle)
-                   .arg(m_notebook->getName());
+                 .arg(g_config->c_dataTextStyle).arg(m_notebook->getName());
         msg = tr("Notebook %1 reloaded from disk").arg(m_notebook->getName());
     }
 
-    if (g_config->getConfirmReloadFolder())
-    {
+    if (g_config->getConfirmReloadFolder()) {
         int ret = VUtils::showMessage(QMessageBox::Information, tr("Information"),
                                       info,
                                       tr("VNote will close all the related notes before reload."),
                                       QMessageBox::Ok | QMessageBox::YesToAll | QMessageBox::Cancel,
                                       QMessageBox::Ok,
                                       this);
-        switch (ret)
-        {
+        switch (ret) {
         case QMessageBox::YesToAll:
             g_config->setConfirmReloadFolder(false);
             // Fall through.
@@ -862,10 +725,8 @@ void VDirectoryTree::reloadFromDisk()
 
     m_notebookCurrentDirMap.remove(m_notebook);
 
-    if (curItem)
-    {
-        if (!m_editArea->closeFile(curDir, false))
-        {
+    if (curItem) {
+        if (!m_editArea->closeFile(curDir, false)) {
             return;
         }
 
@@ -878,33 +739,26 @@ void VDirectoryTree::reloadFromDisk()
 
         // Remove all its children.
         QList<QTreeWidgetItem *> children = curItem->takeChildren();
-        for (int i = 0; i < children.size(); ++i)
-        {
+        for (int i = 0; i < children.size(); ++i) {
             delete children[i];
         }
 
         buildSubTree(curItem, 1);
 
         setCurrentItem(curItem);
-    }
-    else
-    {
-        if (!m_editArea->closeFile(m_notebook, false))
-        {
+    } else {
+        if (!m_editArea->closeFile(m_notebook, false)) {
             return;
         }
 
         m_notebook->close();
 
-        if (!m_notebook->open())
-        {
+        if (!m_notebook->open()) {
             VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
                                 tr("Fail to open notebook <span style=\"%1\">%2</span>.")
-                                    .arg(g_config->c_dataTextStyle)
-                                    .arg(m_notebook->getName()),
+                                  .arg(g_config->c_dataTextStyle).arg(m_notebook->getName()),
                                 tr("Please check if path <span style=\"%1\">%2</span> exists.")
-                                    .arg(g_config->c_dataTextStyle)
-                                    .arg(m_notebook->getPath()),
+                                  .arg(g_config->c_dataTextStyle).arg(m_notebook->getPath()),
                                 QMessageBox::Ok, QMessageBox::Ok, this);
             clear();
             return;
@@ -913,8 +767,7 @@ void VDirectoryTree::reloadFromDisk()
         updateDirectoryTree();
     }
 
-    if (!msg.isEmpty())
-    {
+    if (!msg.isEmpty()) {
         g_mainWin->showStatusMessage(msg);
     }
 }
@@ -922,14 +775,12 @@ void VDirectoryTree::reloadFromDisk()
 void VDirectoryTree::copySelectedDirectories(bool p_isCut)
 {
     QList<QTreeWidgetItem *> items = selectedItems();
-    if (items.isEmpty())
-    {
+    if (items.isEmpty()) {
         return;
     }
 
     QJsonArray dirs;
-    for (int i = 0; i < items.size(); ++i)
-    {
+    for (int i = 0; i < items.size(); ++i) {
         VDirectory *dir = getVDirectory(items[i]);
         dirs.append(dir->fetchPath());
     }
@@ -947,9 +798,9 @@ void VDirectoryTree::copySelectedDirectories(bool p_isCut)
 
     int cnt = dirs.size();
     g_mainWin->showStatusMessage(tr("%1 %2 %3")
-                                     .arg(cnt)
-                                     .arg(cnt > 1 ? tr("folders") : tr("folder"))
-                                     .arg(p_isCut ? tr("cut") : tr("copied")));
+                                   .arg(cnt)
+                                   .arg(cnt > 1 ? tr("folders") : tr("folder"))
+                                   .arg(p_isCut ? tr("cut") : tr("copied")));
 }
 
 void VDirectoryTree::cutSelectedDirectories()
@@ -959,8 +810,7 @@ void VDirectoryTree::cutSelectedDirectories()
 
 void VDirectoryTree::pasteDirectoriesFromClipboard()
 {
-    if (!pasteAvailable())
-    {
+    if (!pasteAvailable()) {
         return;
     }
 
@@ -968,19 +818,15 @@ void VDirectoryTree::pasteDirectoriesFromClipboard()
     QJsonArray dirs = obj[ClipboardConfig::c_dirs].toArray();
     bool isCut = obj[ClipboardConfig::c_isCut].toBool();
     QVector<QString> dirsToPaste(dirs.size());
-    for (int i = 0; i < dirs.size(); ++i)
-    {
+    for (int i = 0; i < dirs.size(); ++i) {
         dirsToPaste[i] = dirs[i].toString();
     }
 
     VDirectory *destDir;
     QTreeWidgetItem *item = currentItem();
-    if (item)
-    {
+    if (item) {
         destDir = getVDirectory(item);
-    }
-    else
-    {
+    } else {
         destDir = m_notebook->getRootDir();
     }
 
@@ -994,23 +840,20 @@ void VDirectoryTree::pasteDirectories(VDirectory *p_destDir,
                                       const QVector<QString> &p_dirs,
                                       bool p_isCut)
 {
-    if (!p_destDir || p_dirs.isEmpty())
-    {
+    if (!p_destDir || p_dirs.isEmpty()) {
         return;
     }
 
     int nrPasted = 0;
-    for (int i = 0; i < p_dirs.size(); ++i)
-    {
+    for (int i = 0; i < p_dirs.size(); ++i) {
         VDirectory *dir = g_vnote->getInternalDirectory(p_dirs[i]);
-        if (!dir)
-        {
+        if (!dir) {
             qWarning() << "Copied dir is not an internal folder" << p_dirs[i];
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Warning"),
                                 tr("Fail to paste folder <span style=\"%1\">%2</span>.")
-                                    .arg(g_config->c_dataTextStyle)
-                                    .arg(p_dirs[i]),
+                                  .arg(g_config->c_dataTextStyle)
+                                  .arg(p_dirs[i]),
                                 tr("VNote could not find this folder in any notebook."),
                                 QMessageBox::Ok,
                                 QMessageBox::Ok,
@@ -1019,26 +862,21 @@ void VDirectoryTree::pasteDirectories(VDirectory *p_destDir,
             continue;
         }
 
-        if (dir == p_destDir)
-        {
+        if (dir == p_destDir) {
             continue;
         }
 
         QString dirName = dir->getName();
         VDirectory *paDir = dir->getParentDirectory();
-        if (paDir == p_destDir)
-        {
-            if (p_isCut)
-            {
+        if (paDir == p_destDir) {
+            if (p_isCut) {
                 continue;
             }
 
             // Copy and paste in the same folder.
             // Rename it to xxx_copy.
             dirName = VUtils::generateCopiedDirName(paDir->fetchPath(), dirName);
-        }
-        else
-        {
+        } else {
             // Rename it to xxx_copy if needed.
             dirName = VUtils::generateCopiedDirName(p_destDir->fetchPath(), dirName);
         }
@@ -1051,36 +889,31 @@ void VDirectoryTree::pasteDirectories(VDirectory *p_destDir,
                                              p_isCut,
                                              &destDir,
                                              &msg);
-        if (!ret)
-        {
+        if (!ret) {
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Warning"),
                                 tr("Fail to copy folder <span style=\"%1\">%2</span>.")
-                                    .arg(g_config->c_dataTextStyle)
-                                    .arg(p_dirs[i]),
+                                  .arg(g_config->c_dataTextStyle)
+                                  .arg(p_dirs[i]),
                                 msg,
                                 QMessageBox::Ok,
                                 QMessageBox::Ok,
                                 this);
         }
 
-        if (destDir)
-        {
+        if (destDir) {
             ++nrPasted;
 
             // Update QTreeWidget.
             bool isWidget;
             QTreeWidgetItem *destItem = findVDirectory(p_destDir, &isWidget);
-            if (destItem || isWidget)
-            {
+            if (destItem || isWidget) {
                 updateItemDirectChildren(destItem);
             }
 
-            if (p_isCut)
-            {
+            if (p_isCut) {
                 QTreeWidgetItem *srcItem = findVDirectory(paDir, &isWidget);
-                if (srcItem || isWidget)
-                {
+                if (srcItem || isWidget) {
                     updateItemDirectChildren(srcItem);
                 }
             }
@@ -1091,11 +924,10 @@ void VDirectoryTree::pasteDirectories(VDirectory *p_destDir,
     }
 
     qDebug() << "pasted" << nrPasted << "directories";
-    if (nrPasted > 0)
-    {
+    if (nrPasted > 0) {
         g_mainWin->showStatusMessage(tr("%1 %2 pasted")
-                                         .arg(nrPasted)
-                                         .arg(nrPasted > 1 ? tr("folders") : tr("folder")));
+                                       .arg(nrPasted)
+                                       .arg(nrPasted > 1 ? tr("folders") : tr("folder")));
     }
 
     getNewMagic();
@@ -1104,30 +936,27 @@ void VDirectoryTree::pasteDirectories(VDirectory *p_destDir,
 bool VDirectoryTree::pasteAvailable() const
 {
     QJsonObject obj = VUtils::clipboardToJson();
-    if (obj.isEmpty())
-    {
+    if (obj.isEmpty()) {
         return false;
     }
 
-    if (!obj.contains(ClipboardConfig::c_type))
-    {
+    if (!obj.contains(ClipboardConfig::c_type)) {
         return false;
     }
 
     ClipboardOpType type = (ClipboardOpType)obj[ClipboardConfig::c_type].toInt();
-    if (type != ClipboardOpType::CopyDir)
-    {
+    if (type != ClipboardOpType::CopyDir) {
         return false;
     }
 
-    if (!obj.contains(ClipboardConfig::c_magic) || !obj.contains(ClipboardConfig::c_isCut) || !obj.contains(ClipboardConfig::c_dirs))
-    {
+    if (!obj.contains(ClipboardConfig::c_magic)
+        || !obj.contains(ClipboardConfig::c_isCut)
+        || !obj.contains(ClipboardConfig::c_dirs)) {
         return false;
     }
 
     int magic = obj[ClipboardConfig::c_magic].toInt();
-    if (!checkMagic(magic))
-    {
+    if (!checkMagic(magic)) {
         return false;
     }
 
@@ -1138,8 +967,7 @@ bool VDirectoryTree::pasteAvailable() const
 void VDirectoryTree::mousePressEvent(QMouseEvent *event)
 {
     QTreeWidgetItem *item = itemAt(event->pos());
-    if (!item)
-    {
+    if (!item) {
         setCurrentItem(NULL);
     }
 
@@ -1151,13 +979,11 @@ void VDirectoryTree::keyPressEvent(QKeyEvent *event)
     int key = event->key();
     int modifiers = event->modifiers();
 
-    switch (key)
-    {
+    switch (key) {
     case Qt::Key_Return:
     {
         QTreeWidgetItem *item = currentItem();
-        if (item)
-        {
+        if (item) {
             item->setExpanded(!item->isExpanded());
         }
 
@@ -1166,13 +992,11 @@ void VDirectoryTree::keyPressEvent(QKeyEvent *event)
 
     case Qt::Key_Asterisk:
     {
-        if (modifiers == Qt::ShiftModifier)
-        {
+        if (modifiers == Qt::ShiftModifier) {
             // *, by default will expand current item recursively.
             // We build the tree recursively before the expanding.
             QTreeWidgetItem *item = currentItem();
-            if (item)
-            {
+            if (item) {
                 buildSubTree(item, -1);
             }
         }
@@ -1189,23 +1013,16 @@ void VDirectoryTree::keyPressEvent(QKeyEvent *event)
 
 QTreeWidgetItem *VDirectoryTree::findVDirectory(const VDirectory *p_dir, bool *p_widget)
 {
-    if (p_widget)
-    {
+    if (p_widget) {
         *p_widget = false;
     }
 
-    if (!p_dir)
-    {
+    if (!p_dir) {
         return NULL;
-    }
-    else if (p_dir->getNotebookName() != m_notebook->getName())
-    {
+    } else if (p_dir->getNotebookName() != m_notebook->getName()) {
         return NULL;
-    }
-    else if (p_dir == m_notebook->getRootDir())
-    {
-        if (p_widget)
-        {
+    } else if (p_dir == m_notebook->getRootDir()) {
+        if (p_widget) {
             *p_widget = true;
         }
         return NULL;
@@ -1213,28 +1030,21 @@ QTreeWidgetItem *VDirectoryTree::findVDirectory(const VDirectory *p_dir, bool *p
 
     bool isWidget;
     QTreeWidgetItem *pItem = findVDirectory(p_dir->getParentDirectory(), &isWidget);
-    if (pItem)
-    {
+    if (pItem) {
         // Iterate all its children to find the match.
         int nrChild = pItem->childCount();
-        for (int i = 0; i < nrChild; ++i)
-        {
+        for (int i = 0; i < nrChild; ++i) {
             QTreeWidgetItem *item = pItem->child(i);
-            if (getVDirectory(item) == p_dir)
-            {
+            if (getVDirectory(item) == p_dir) {
                 return item;
             }
         }
-    }
-    else if (isWidget)
-    {
+    } else if (isWidget) {
         // Iterate all the top-level items.
         int nrChild = topLevelItemCount();
-        for (int i = 0; i < nrChild; ++i)
-        {
+        for (int i = 0; i < nrChild; ++i) {
             QTreeWidgetItem *item = topLevelItem(i);
-            if (getVDirectory(item) == p_dir)
-            {
+            if (getVDirectory(item) == p_dir) {
                 return item;
             }
         }
@@ -1245,16 +1055,13 @@ QTreeWidgetItem *VDirectoryTree::findVDirectory(const VDirectory *p_dir, bool *p
 
 bool VDirectoryTree::locateDirectory(const VDirectory *p_directory)
 {
-    if (p_directory)
-    {
-        if (p_directory->getNotebook() != m_notebook)
-        {
+    if (p_directory) {
+        if (p_directory->getNotebook() != m_notebook) {
             return false;
         }
 
         QTreeWidgetItem *item = expandToVDirectory(p_directory);
-        if (item)
-        {
+        if (item) {
             setCurrentItem(item);
         }
 
@@ -1266,44 +1073,36 @@ bool VDirectoryTree::locateDirectory(const VDirectory *p_directory)
 
 QTreeWidgetItem *VDirectoryTree::expandToVDirectory(const VDirectory *p_directory)
 {
-    if (!p_directory || p_directory->getNotebook() != m_notebook || p_directory == m_notebook->getRootDir())
-    {
+    if (!p_directory
+        || p_directory->getNotebook() != m_notebook
+        || p_directory == m_notebook->getRootDir()) {
         return NULL;
     }
 
-    if (p_directory->getParentDirectory() == m_notebook->getRootDir())
-    {
+    if (p_directory->getParentDirectory() == m_notebook->getRootDir()) {
         // Top-level items.
         int nrChild = topLevelItemCount();
-        for (int i = 0; i < nrChild; ++i)
-        {
+        for (int i = 0; i < nrChild; ++i) {
             QTreeWidgetItem *item = topLevelItem(i);
-            if (getVDirectory(item) == p_directory)
-            {
+            if (getVDirectory(item) == p_directory) {
                 return item;
             }
         }
-    }
-    else
-    {
+    } else {
         QTreeWidgetItem *pItem = expandToVDirectory(p_directory->getParentDirectory());
-        if (!pItem)
-        {
+        if (!pItem) {
             return NULL;
         }
 
         int nrChild = pItem->childCount();
-        if (nrChild == 0)
-        {
+        if (nrChild == 0) {
             buildSubTree(pItem, 1);
         }
 
         nrChild = pItem->childCount();
-        for (int i = 0; i < nrChild; ++i)
-        {
+        for (int i = 0; i < nrChild; ++i) {
             QTreeWidgetItem *item = pItem->child(i);
-            if (getVDirectory(item) == p_directory)
-            {
+            if (getVDirectory(item) == p_directory) {
                 return item;
             }
         }
@@ -1314,20 +1113,17 @@ QTreeWidgetItem *VDirectoryTree::expandToVDirectory(const VDirectory *p_director
 
 void VDirectoryTree::expandSubTree(QTreeWidgetItem *p_item)
 {
-    if (!p_item)
-    {
+    if (!p_item) {
         return;
     }
 
     VDirectory *dir = getVDirectory(p_item);
     int nrChild = p_item->childCount();
-    for (int i = 0; i < nrChild; ++i)
-    {
+    for (int i = 0; i < nrChild; ++i) {
         expandSubTree(p_item->child(i));
     }
 
-    if (dir->isExpanded())
-    {
+    if (dir->isExpanded()) {
         Q_ASSERT(nrChild > 0);
         expandItem(p_item);
     }
@@ -1360,37 +1156,30 @@ bool VDirectoryTree::checkMagic(int p_magic) const
 
 void VDirectoryTree::sortItems()
 {
-    if (!m_notebook)
-    {
+    if (!m_notebook) {
         return;
     }
 
     QTreeWidgetItem *item = currentItem();
-    if (item && item->parent())
-    {
+    if (item && item->parent()) {
         sortItems(getVDirectory(item->parent()));
-    }
-    else
-    {
+    } else {
         sortItems(m_notebook->getRootDir());
     }
 
-    if (item)
-    {
+    if (item) {
         setCurrentItem(item);
     }
 }
 
 void VDirectoryTree::sortItems(VDirectory *p_dir)
 {
-    if (!p_dir)
-    {
+    if (!p_dir) {
         return;
     }
 
     const QVector<VDirectory *> &dirs = p_dir->getSubDirs();
-    if (dirs.size() < 2)
-    {
+    if (dirs.size() < 2) {
         return;
     }
 
@@ -1399,9 +1188,9 @@ void VDirectoryTree::sortItems(VDirectory *p_dir)
     VSortDialog dialog(tr("Sort Folders"),
                        tr("Sort folders in %1 <span style=\"%2\">%3</span> "
                           "in the configuration file.")
-                           .arg(isNotebook ? tr("notebook") : tr("folder"))
-                           .arg(g_config->c_dataTextStyle)
-                           .arg(isNotebook ? p_dir->getNotebook()->getName() : p_dir->getName()),
+                         .arg(isNotebook ? tr("notebook") : tr("folder"))
+                         .arg(g_config->c_dataTextStyle)
+                         .arg(isNotebook ? p_dir->getNotebook()->getName() : p_dir->getName()),
                        this);
     QTreeWidget *tree = dialog.getTreeWidget();
     tree->clear();
@@ -1410,8 +1199,7 @@ void VDirectoryTree::sortItems(VDirectory *p_dir)
     headers << tr("Name") << tr("Created Time");
     tree->setHeaderLabels(headers);
 
-    for (int i = 0; i < dirs.size(); ++i)
-    {
+    for (int i = 0; i < dirs.size(); ++i) {
         const VDirectory *dir = dirs[i];
         Q_ASSERT(dir->isOpened());
         QString createdTime = VUtils::displayDateTime(dir->getCreatedTimeUtc().toLocalTime(), true);
@@ -1424,25 +1212,22 @@ void VDirectoryTree::sortItems(VDirectory *p_dir)
 
     dialog.treeUpdated();
 
-    if (dialog.exec())
-    {
+    if (dialog.exec()) {
         QVector<QVariant> data = dialog.getSortedData();
         Q_ASSERT(data.size() == dirs.size());
         QVector<int> sortedIdx(data.size(), -1);
-        for (int i = 0; i < data.size(); ++i)
-        {
+        for (int i = 0; i < data.size(); ++i) {
             sortedIdx[i] = data[i].toInt();
         }
 
         qDebug() << "sort dirs" << sortedIdx;
-        if (!p_dir->sortSubDirectories(sortedIdx))
-        {
+        if (!p_dir->sortSubDirectories(sortedIdx)) {
             VUtils::showMessage(QMessageBox::Warning,
                                 tr("Warning"),
                                 tr("Fail to sort folders in %1 <span style=\"%2\">%3</span>.")
-                                    .arg(isNotebook ? tr("notebook") : tr("folder"))
-                                    .arg(g_config->c_dataTextStyle)
-                                    .arg(isNotebook ? p_dir->getNotebook()->getName() : p_dir->getName()),
+                                  .arg(isNotebook ? tr("notebook") : tr("folder"))
+                                  .arg(g_config->c_dataTextStyle)
+                                  .arg(isNotebook ? p_dir->getNotebook()->getName() : p_dir->getName()),
                                 "",
                                 QMessageBox::Ok,
                                 QMessageBox::Ok,
@@ -1456,8 +1241,7 @@ void VDirectoryTree::sortItems(VDirectory *p_dir)
 VDirectory *VDirectoryTree::currentDirectory() const
 {
     QTreeWidgetItem *item = currentItem();
-    if (item)
-    {
+    if (item) {
         return getVDirectory(item);
     }
 
@@ -1484,8 +1268,7 @@ bool VDirectoryTree::dropMimeData(QTreeWidgetItem *p_parent,
 {
     Q_UNUSED(p_index);
 
-    if (!p_parent)
-    {
+    if (!p_parent) {
         VUtils::showMessage(QMessageBox::Warning,
                             tr("Warning"),
                             tr("Please drop it on a folder item."),
@@ -1496,35 +1279,29 @@ bool VDirectoryTree::dropMimeData(QTreeWidgetItem *p_parent,
         return false;
     }
 
-    if (p_data->hasFormat(ClipboardConfig::c_format))
-    {
+    if (p_data->hasFormat(ClipboardConfig::c_format)) {
         VDirectory *dir = getVDirectory(p_parent);
-        if (!dir)
-        {
+        if (!dir) {
             return false;
         }
 
         QByteArray ba = p_data->data(ClipboardConfig::c_format);
         QJsonObject obj = QJsonDocument::fromJson(ba).object();
-        if (obj.isEmpty())
-        {
+        if (obj.isEmpty()) {
             return false;
         }
 
-        if (obj[ClipboardConfig::c_type] != (int)ClipboardOpType::CopyFile)
-        {
+        if (obj[ClipboardConfig::c_type] != (int)ClipboardOpType::CopyFile) {
             return false;
         }
 
         QJsonArray files = obj[ClipboardConfig::c_files].toArray();
-        if (files.isEmpty())
-        {
+        if (files.isEmpty()) {
             return false;
         }
 
         QVector<QString> filesToPaste;
-        for (auto const &file : files)
-        {
+        for (auto const & file : files) {
             filesToPaste.append(file.toString());
         }
 
@@ -1540,12 +1317,9 @@ void VDirectoryTree::dropEvent(QDropEvent *p_event)
 {
     // Distinguish copy and cut.
     int modifiers = p_event->keyboardModifiers();
-    if (modifiers & Qt::ControlModifier)
-    {
+    if (modifiers & Qt::ControlModifier) {
         p_event->setDropAction(Qt::CopyAction);
-    }
-    else
-    {
+    } else {
         // Cut.
         // Will pass to dropMimeData().
         p_event->setDropAction(Qt::MoveAction);
