@@ -90,14 +90,14 @@ private slots:
     // Open the folder's parent directory in system's file browser.
     void openDirectoryLocation() const;
 
+    // Reload the content of current directory.
+    void reloadFromDisk();
+
     // Sort sub-folders of current item's folder.
     void sortItems();
 
     // Pin selected directory to History.
     void pinDirectoryToHistory();
-
-    // Reload the content of current directory.
-    void reloadFromDisk();
 
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;

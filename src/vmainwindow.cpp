@@ -399,7 +399,6 @@ void VMainWindow::setupNotebookPanel()
             m_fileList, &VFileList::setDirectory);
 }
 
-//工具栏
 void VMainWindow::initToolBar()
 {
     const int tbIconSize = g_config->getToolBarIconSize() * VUtils::calculateScaleFactor();
@@ -811,7 +810,6 @@ QToolBar *VMainWindow::initFileToolBar(QSize p_iconSize)
     return m_fileToolBar;
 }
 
-//菜单栏
 void VMainWindow::initMenuBar()
 {
     initFileMenu();
@@ -819,7 +817,6 @@ void VMainWindow::initMenuBar()
     initViewMenu();
     initMarkdownMenu();
 #if defined(Q_OS_WIN)
-    //同步菜单
     initSyncMenu();
 #endif
     initHelpMenu();
@@ -3740,7 +3737,6 @@ void VMainWindow::initSync()
 
 void VMainWindow::onDownloadSuccess()
 {
-    //从磁盘重新加载
     if (m_dirTree)
     {
         m_dirTree->reloadAllFromDisk();
