@@ -8,77 +8,77 @@ class QMessageBox;
 class QPushButton;
 class VSync : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 private:
-	enum class SyncType
-	{
-		None,
-		Status,
-		Add,
-		Commit,
-		Push,
-		Pull,
-		Authentication
-	};
+    enum class SyncType
+    {
+        None,
+        Status,
+        Add,
+        Commit,
+        Push,
+        Pull,
+        Authentication
+    };
 
-	enum class SyncTarget
-	{
-		None,
-		Upload,
-		Download,
-	};
+    enum class SyncTarget
+    {
+        None,
+        Upload,
+        Download,
+    };
 signals:
-	void downloadSuccess();
-	void uploadSuccess();
+    void downloadSuccess();
+    void uploadSuccess();
 public:
-	VSync(QWidget *parent = NULL);
-	~VSync();
-	void setDir(const QString &dir);
-	void upload();
-	void download();
+    VSync(QWidget *parent = NULL);
+    ~VSync();
+    void setDir(const QString &dir);
+    void upload();
+    void download();
 private slots:
-	void onReadOutput();
-	void onReadError();
-	void onProcessFinish(int exitCode);
+    void onReadOutput();
+    void onReadError();
+    void onProcessFinish(int exitCode);
 
 private:
-	void status();
-	void add();
-	void commit();
-	void push();
-	void pull();
-	void authentication();
-	void processDownload();
-	void processUpload();
-	void downloadFinish();
-	void uploadFinish();
+    void status();
+    void add();
+    void commit();
+    void push();
+    void pull();
+    void authentication();
+    void processDownload();
+    void processUpload();
+    void downloadFinish();
+    void uploadFinish();
 
-	void start(const QString &cmd);
-	void showMessageBox(const QString &message, bool showButton);
-	void hideMessageBox();
-	void onMessageButtonClick();
-	QString VSync::getSyncHead(const QString &args) const;
+    void start(const QString &cmd);
+    void showMessageBox(const QString &message, bool showButton);
+    void hideMessageBox();
+    void onMessageButtonClick();
+    QString VSync::getSyncHead(const QString &args) const;
 
 private:
-	QString _dir;
+    QString m_dir;
 
-	QMessageBox *_messageBox;
-	QPushButton *_messageButton;
-	QProcess *_process;
-	SyncType _type;
-	SyncTarget _target;
-	QString _output;
-	QString _error;
+    QMessageBox *m_messageBox;
+    QPushButton *m_messageButton;
+    QProcess *m_process;
+    SyncType m_type;
+    SyncTarget m_target;
+    QString m_output;
+    QString m_error;
 };
 
 inline void VSync::setDir(const QString &dir)
 {
-	this->_dir = dir;
+    this->m_dir = dir;
 };
 
 inline QString VSync::getSyncHead(const QString &args) const
 {
-	return QString("git -C %1 %2").arg(this->_dir).arg(args);
+    return QString("git -C %1 %2").arg(this->m_dir).arg(args);
 }
 
 #endif

@@ -8,210 +8,210 @@
 
 VSync::VSync(QWidget *parent) : QObject(parent)
 {
-	_process = new QProcess(this);
-	connect(_process, SIGNAL(readyReadStandardOutput()), this, SLOT(onReadOutput()));
-	connect(_process, SIGNAL(readyReadStandardError()), this, SLOT(onReadError()));
-	connect(_process, SIGNAL(finished(int)), this, SLOT(onProcessFinish(int)));
+    m_process = new QProcess(this);
+    connect(m_process, SIGNAL(readyReadStandardOutput()), this, SLOT(onReadOutput()));
+    connect(m_process, SIGNAL(readyReadStandardError()), this, SLOT(onReadError()));
+    connect(m_process, SIGNAL(finished(int)), this, SLOT(onProcessFinish(int)));
 
-	_messageBox = new QMessageBox(parent);
-	_messageBox->setModal(true);
-	_messageBox->setWindowTitle(tr("Sync"));
-	_messageBox->setStandardButtons(QMessageBox::NoButton);
-	_messageButton = new QPushButton(_messageBox);
-	_messageButton->setText(tr("Sure"));
-	connect(_messageButton, &QPushButton::clicked, this, &VSync::onMessageButtonClick);
+    m_messageBox = new QMessageBox(parent);
+    m_messageBox->setModal(true);
+    m_messageBox->setWindowTitle(tr("Sync"));
+    m_messageBox->setStandardButtons(QMessageBox::NoButton);
+    m_messageButton = new QPushButton(m_messageBox);
+    m_messageButton->setText(tr("Sure"));
+    connect(m_messageButton, &QPushButton::clicked, this, &VSync::onMessageButtonClick);
 }
 
 VSync::~VSync()
 {
-	_process->close();
+    m_process->close();
 }
 
 void VSync::status()
 {
-	this->_type = SyncType::Status;
-	this->start(getSyncHead("status"));
+    this->m_type = SyncType::Status;
+    this->start(getSyncHead("status"));
 }
 
 void VSync::add()
 {
-	this->_type = SyncType::Add;
-	this->start(getSyncHead("add -A"));
+    this->m_type = SyncType::Add;
+    this->start(getSyncHead("add -A"));
 }
 
 void VSync::commit()
 {
-	this->_type = SyncType::Commit;
-	QString time = QDateTime::currentDateTime().toString("yyyy-MM-dd-hh:mm:ss");
-	this->start(getSyncHead(QString("commit -m %1").arg(time)));
+    this->m_type = SyncType::Commit;
+    QString time = QDateTime::currentDateTime().toString("yyyy-MM-dd-hh:mm:ss");
+    this->start(getSyncHead(QString("commit -m %1").arg(time)));
 }
 
 void VSync::push()
 {
-	this->_type = SyncType::Push;
-	this->start(getSyncHead("push"));
+    this->m_type = SyncType::Push;
+    this->start(getSyncHead("push"));
 }
 
 void VSync::pull()
 {
-	this->_type = SyncType::Pull;
-	this->start(getSyncHead("pull"));
+    this->m_type = SyncType::Pull;
+    this->start(getSyncHead("pull"));
 }
 
 void VSync::authentication()
 {
-	this->_type = SyncType::Authentication;
-	this->start("git config --global credential.helper store");
+    this->m_type = SyncType::Authentication;
+    this->start("git config --global credential.helper store");
 }
 
 void VSync::download()
 {
-	showMessageBox(tr("Downloading"), false);
-	this->_target = SyncTarget::Download;
-	this->status();
+    showMessageBox(tr("Downloading"), false);
+    this->m_target = SyncTarget::Download;
+    this->status();
 }
 
 void VSync::upload()
 {
-	showMessageBox(tr("Uploading"), false);
-	this->_target = SyncTarget::Upload;
-	this->status();
+    showMessageBox(tr("Uploading"), false);
+    this->m_target = SyncTarget::Upload;
+    this->status();
 }
 
 void VSync::onReadOutput()
 {
-	QString output = _process->readAllStandardOutput();
-	qDebug() << "VSync.onReadOutput: " << output;
-	_output.append(output);
+    QString output = m_process->readAllStandardOutput();
+    qDebug() << "VSync.onReadOutput: " << output;
+    m_output.append(output);
 }
 
 void VSync::onReadError()
 {
-	QString error = _process->readAllStandardError();
-	qDebug() << "VSync.onReadError: " << error;
-	_error.append(error);
+    QString error = m_process->readAllStandardError();
+    qDebug() << "VSync.onReadError: " << error;
+    m_error.append(error);
 }
 
 void VSync::onProcessFinish(int exitCode)
 {
-	qInfo() << "VSync.onProcessFinish: " << exitCode;
-	if (exitCode == 0)
-	{
-		switch (this->_target)
-		{
-		case SyncTarget::Download:
-			this->processDownload();
-			break;
-		case SyncTarget::Upload:
-			this->processUpload();
-			break;
-		default:
-			break;
-		}
-	}
-	else
-	{
-		/* code */
-		qCritical() << "sync failed, error: " << _error << ", info: " << _output;
-		QString message = QString("sync failed, exitCode: %1, error: %2, info: %3").arg(exitCode).arg(_error).arg(_output);
-		showMessageBox(message, true);
-	}
+    qInfo() << "VSync.onProcessFinish: " << exitCode;
+    if (exitCode == 0)
+    {
+        switch (this->m_target)
+        {
+        case SyncTarget::Download:
+            this->processDownload();
+            break;
+        case SyncTarget::Upload:
+            this->processUpload();
+            break;
+        default:
+            break;
+        }
+    }
+    else
+    {
+        /* code */
+        qCritical() << "sync failed, error: " << m_error << ", info: " << m_output;
+        QString message = QString("sync failed, exitCode: %1, error: %2, info: %3").arg(exitCode).arg(m_error).arg(m_output);
+        showMessageBox(message, true);
+    }
 
-	_error.clear();
-	_output.clear();
+    m_error.clear();
+    m_output.clear();
 }
 
 void VSync::start(const QString &cmd)
 {
-	_process->start("cmd", QStringList() << "/c" << cmd);
-	_process->waitForStarted();
+    m_process->start("cmd", QStringList() << "/c" << cmd);
+    m_process->waitForStarted();
 }
 
 void VSync::showMessageBox(const QString &message, bool showButton)
 {
-	_messageBox->setText(message);
-	if (showButton)
-	{
-		_messageBox->addButton(_messageButton, QMessageBox::ButtonRole::YesRole);
-	}
-	else
-	{
-		_messageBox->removeButton(_messageButton);
-	}
+    m_messageBox->setText(message);
+    if (showButton)
+    {
+        m_messageBox->addButton(m_messageButton, QMessageBox::ButtonRole::YesRole);
+    }
+    else
+    {
+        m_messageBox->removeButton(m_messageButton);
+    }
 
-	if (!_messageBox->isVisible())
-	{
-		_messageBox->setVisible(true);
-	}
+    if (!m_messageBox->isVisible())
+    {
+        m_messageBox->setVisible(true);
+    }
 }
 
 void VSync::hideMessageBox()
 {
-	_messageBox->removeButton(_messageButton);
-	_messageBox->setVisible(false);
+    m_messageBox->removeButton(m_messageButton);
+    m_messageBox->setVisible(false);
 }
 
 void VSync::onMessageButtonClick()
 {
-	_messageBox->hide();
+    m_messageBox->hide();
 }
 
 void VSync::processDownload()
 {
-	switch (this->_type)
-	{
-	case SyncType::Status:
-		this->authentication();
-		break;
-	case SyncType::Authentication:
-		this->pull();
-		break;
-	case SyncType::Pull:
-		this->downloadFinish();
-		break;
-	default:
-		break;
-	}
+    switch (this->m_type)
+    {
+    case SyncType::Status:
+        this->authentication();
+        break;
+    case SyncType::Authentication:
+        this->pull();
+        break;
+    case SyncType::Pull:
+        this->downloadFinish();
+        break;
+    default:
+        break;
+    }
 }
 
 void VSync::processUpload()
 {
-	switch (this->_type)
-	{
-	case SyncType::Status:
-		this->add();
-		break;
-	case SyncType::Add:
-		this->commit();
-		break;
-	case SyncType::Commit:
-		this->authentication();
-		break;
-	case SyncType::Authentication:
-		this->push();
-		break;
-	case SyncType::Push:
-		this->uploadFinish();
-		break;
-	default:
-		break;
-	}
+    switch (this->m_type)
+    {
+    case SyncType::Status:
+        this->add();
+        break;
+    case SyncType::Add:
+        this->commit();
+        break;
+    case SyncType::Commit:
+        this->authentication();
+        break;
+    case SyncType::Authentication:
+        this->push();
+        break;
+    case SyncType::Push:
+        this->uploadFinish();
+        break;
+    default:
+        break;
+    }
 }
 
 void VSync::downloadFinish()
 {
-	qInfo() << "download finish";
-	showMessageBox(tr("Download Success"), true);
-	_type = VSync::SyncType::None;
-	_target = VSync::SyncTarget::None;
-	emit this->downloadSuccess();
+    qInfo() << "download finish";
+    showMessageBox(tr("Download Success"), true);
+    m_type = VSync::SyncType::None;
+    m_target = VSync::SyncTarget::None;
+    emit this->downloadSuccess();
 }
 
 void VSync::uploadFinish()
 {
-	qInfo() << "upload finish";
-	showMessageBox(tr("Upload Success"), true);
-	_type = VSync::SyncType::None;
-	_target = VSync::SyncTarget::None;
-	emit this->uploadSuccess();
+    qInfo() << "upload finish";
+    showMessageBox(tr("Upload Success"), true);
+    m_type = VSync::SyncType::None;
+    m_target = VSync::SyncTarget::None;
+    emit this->uploadSuccess();
 }
