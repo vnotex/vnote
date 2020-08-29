@@ -5519,6 +5519,41 @@ Please check the network or image size</source>
         <source>Use system&apos;s background color configuration for editor</source>
         <translation>为编辑器使用系统的背景色设置</translation>
     </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="1004"/>
+        <source>&amp;Sync</source>
+        <translation>同步</translation>
+    </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="1006"/>
+        <source>&amp;Upload</source>
+        <translation>上传</translation>
+    </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="1011"/>
+        <source>&amp;Download</source>
+        <translation>更新</translation>
+    </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="1007"/>
+        <source>upload note</source>
+        <translation>上传当前笔记本</translation>
+    </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="1012"/>
+        <source>download note</source>
+        <translation>更新当前笔记本</translation>
+    </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="1028"/>
+        <source>Are you sure to close opened notes</source>
+        <translation>确认关闭已打开笔记</translation>
+    </message>
+    <message>
+        <location filename="../vmainwindow.cpp" line="1029"/>
+        <source>VNote will close all the opened notes before upload.</source>
+        <translation>VNote会在上传前关闭所有已打开笔记</translation>
+    </message>
 </context>
 <context>
     <name>VMarkdownTab</name>
@@ -8859,6 +8894,39 @@ Please check the network or image size</source>
         <location filename="../vtabindicator.cpp" line="51"/>
         <source>Word Count</source>
         <translation>字数</translation>
+    </message>
+</context>
+<context>
+    <name>VSync</name>
+    <message>
+        <location filename="../utils/vSync.cpp" line="22"/>
+        <source>Sync</source>
+        <translation>同步</translation>
+    </message>
+    <message>
+        <location filename="../utils/vSync.cpp" line="22"/>
+        <source>Sure</source>
+        <translation>确认</translation>
+    </message>
+    <message>
+        <location filename="../utils/vSync.cpp" line="34"/>
+        <source>Downloading</source>
+        <translation>更新中...</translation>
+    </message>
+    <message>
+        <location filename="../utils/vSync.cpp" line="41"/>
+        <source>Uploading</source>
+        <translation>上传中...</translation>
+    </message>
+    <message>
+        <location filename="../utils/vSync.cpp" line="177"/>
+        <source>Download Success</source>
+        <translation>更新成功</translation>
+    </message>
+    <message>
+        <location filename="../utils/vSync.cpp" line="202"/>
+        <source>Upload Success</source>
+        <translation>上传成功</translation>
     </message>
 </context>
 </TS>

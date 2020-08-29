@@ -12,8 +12,33 @@ target_sources(VNote PRIVATE ${DIALOG_SRCS})
 target_sources(VNote PRIVATE ${UTILS_SRCS})
 target_sources(VNote PRIVATE ${WIDGETS_SRCS})
 target_sources(VNote PRIVATE ${QRC_FILES})
+if(WIN32)
+target_sources(VNote PRIVATE resources/icon.rc)
+endif(WIN32)
 
 include_directories(dialog utils widgets)
+
+# Remove the console of gui program
+if(WIN32)
+	if(MSVC)
+		set_target_properties(VNote PROPERTIES
+			WIN32_EXECUTABLE YES
+			LINK_FLAGS "/ENTRY:mainCRTStartup"
+		)
+	elseif(CMAKE_COMPILER_IS_GNUCXX)
+			# SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mwindows") # Not tested
+	else()
+		message(SEND_ERROR "You are using an unsupported Windows compiler! (Not MSVC or GCC)")
+	endif(MSVC)
+elseif(APPLE)
+	set_target_properties(VNote PROPERTIES
+			MACOSX_BUNDLE YES
+	)
+elseif(UNIX)
+	# Nothing special required
+else()
+	message(SEND_ERROR "You are on an unsupported platform! (Not Win32, Mac OS X or Unix)")
+endif(WIN32)
 
 # Qt5 libraries
 target_link_libraries(VNote PRIVATE Qt5::Core Qt5::WebEngine Qt5::WebEngineWidgets

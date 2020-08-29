@@ -52,6 +52,7 @@
 #include "vlistue.h"
 #include "vtagexplorer.h"
 #include "vmdeditor.h"
+#include "vSync.h"
 
 extern VConfigManager *g_config;
 
@@ -112,6 +113,8 @@ VMainWindow::VMainWindow(VSingleInstanceGuard *p_guard, QWidget *p_parent)
     initShortcuts();
 
     initDockWindows();
+
+    initSync();
 
     int state = g_config->getPanelViewState();
     if (state < 0 || state >= (int)PanelViewState::Invalid) {
@@ -813,6 +816,9 @@ void VMainWindow::initMenuBar()
     initEditMenu();
     initViewMenu();
     initMarkdownMenu();
+#if defined(Q_OS_WIN)
+    initSyncMenu();
+#endif
     initHelpMenu();
 
     setMenuBarVisible(g_config->getMenuBarChecked());
@@ -988,6 +994,73 @@ void VMainWindow::initMarkdownMenu()
             this, &VMainWindow::enableImagePreviewConstraint);
     markdownMenu->addAction(previewWidthAct);
     previewWidthAct->setChecked(g_config->getEnablePreviewImageConstraint());
+}
+
+void VMainWindow::initSyncMenu()
+{
+	m_syncMenu = menuBar()->addMenu(tr("&Sync"));
+    m_syncMenu->setToolTipsVisible(true);
+	QAction* uploadAction = new QAction(tr("&Upload"), this);
+    uploadAction->setToolTip(tr("upload note"));
+	connect(uploadAction, &QAction::triggered, this, &VMainWindow::upload);
+    m_syncMenu->addAction(uploadAction);
+
+    QAction* downloadAction = new QAction(tr("&Download"), this);
+    downloadAction->setToolTip(tr("download note"));
+    connect(downloadAction, &QAction::triggered, this, &VMainWindow::download);
+    m_syncMenu->addAction(downloadAction);
+}
+
+void VMainWindow::upload()
+{
+    QVector<VNotebook*>& noteBooks = vnote->getNotebooks();
+    for (QVector<VNotebook*>::iterator i = noteBooks.begin(); i < noteBooks.end(); i++)
+    {
+        QString notebookDir = (*i)->getPath();
+        QString notebookName = (*i)->getName();
+		if ((*i)->isOpened()) 
+		{
+			qDebug() << "notebook name: " << notebookName << "notebook path: " << notebookDir;
+            int ret = VUtils::showMessage(QMessageBox::Information, tr("Information"),
+                                          tr("Are you sure to close opened notes"),
+                                          tr("VNote will close all the opened notes before upload."),
+                                          QMessageBox::Ok | QMessageBox::Cancel,
+                                          QMessageBox::Ok,
+                                          this);
+            switch (ret)
+            {
+            case QMessageBox::Ok:
+                this->m_editArea->closeAllFiles(true);
+                break;
+
+            case QMessageBox::Cancel:
+                return;
+
+            default:
+                return;
+            }
+            m_git->setDir(notebookDir);
+			m_git->upload();
+			break;
+		}
+    }
+}
+
+void VMainWindow::download()
+{
+    QVector<VNotebook *> &noteBooks = vnote->getNotebooks();
+    for (QVector<VNotebook *>::iterator i = noteBooks.begin(); i < noteBooks.end(); i++)
+    {
+        QString notebookDir = (*i)->getPath();
+        QString notebookName = (*i)->getName();
+        if ((*i)->isOpened())
+        {
+            qDebug() << "notebook name: " << notebookName << "notebook path: " << notebookDir;
+            m_git->setDir(notebookDir);
+            m_git->download();
+            break;
+        }
+    }
 }
 
 void VMainWindow::initViewMenu()
@@ -3653,4 +3726,24 @@ void VMainWindow::checkIfNeedToShowWelcomePage()
         VFile *file = vnote->getFile(docFile, true);
         m_editArea->openFile(file, OpenFileMode::Read);
     }
+}
+
+void VMainWindow::initSync()
+{
+    m_git = new VSync();
+    connect(m_git, &VSync::downloadSuccess, this, &VMainWindow::onDownloadSuccess);
+    connect(m_git, &VSync::uploadSuccess, this, &VMainWindow::onUploadSuccess);
+}
+
+void VMainWindow::onDownloadSuccess()
+{
+    if (m_dirTree)
+    {
+        m_dirTree->reloadAllFromDisk();
+    }
+}
+
+void VMainWindow::onUploadSuccess()
+{
+
 }

@@ -668,6 +668,74 @@ void VDirectoryTree::openDirectoryLocation() const
     QDesktopServices::openUrl(url);
 }
 
+void VDirectoryTree::reloadAllFromDisk()
+{
+    if (!m_notebook)
+    {
+        return;
+    }
+
+    QString info = tr("Are you sure to reload notebook <span style=\"%1\">%2</span>?")
+                       .arg(g_config->c_dataTextStyle)
+                       .arg(m_notebook->getName());
+    QString msg = tr("Notebook %1 reloaded from disk").arg(m_notebook->getName());
+
+    if (g_config->getConfirmReloadFolder())
+    {
+        int ret = VUtils::showMessage(QMessageBox::Information, tr("Information"),
+                                      info,
+                                      tr("VNote will close all the related notes before reload."),
+                                      QMessageBox::Ok | QMessageBox::YesToAll | QMessageBox::Cancel,
+                                      QMessageBox::Ok,
+                                      this);
+        switch (ret)
+        {
+        case QMessageBox::YesToAll:
+            g_config->setConfirmReloadFolder(false);
+            // Fall through.
+
+        case QMessageBox::Ok:
+            break;
+
+        case QMessageBox::Cancel:
+            return;
+
+        default:
+            return;
+        }
+    }
+
+    m_notebookCurrentDirMap.remove(m_notebook);
+
+    if (!m_editArea->closeFile(m_notebook, false))
+    {
+        return;
+    }
+
+    m_notebook->close();
+
+    if (!m_notebook->open())
+    {
+        VUtils::showMessage(QMessageBox::Warning, tr("Warning"),
+                            tr("Fail to open notebook <span style=\"%1\">%2</span>.")
+                                .arg(g_config->c_dataTextStyle)
+                                .arg(m_notebook->getName()),
+                            tr("Please check if path <span style=\"%1\">%2</span> exists.")
+                                .arg(g_config->c_dataTextStyle)
+                                .arg(m_notebook->getPath()),
+                            QMessageBox::Ok, QMessageBox::Ok, this);
+        clear();
+        return;
+    }
+
+    updateDirectoryTree();
+
+    if (!msg.isEmpty())
+    {
+        g_mainWin->showStatusMessage(msg);
+    }
+}
+
 void VDirectoryTree::reloadFromDisk()
 {
     if (!m_notebook) {
