@@ -52,7 +52,7 @@
 #include "vlistue.h"
 #include "vtagexplorer.h"
 #include "vmdeditor.h"
-#include "vSync.h"
+#include "utils/vSync.h"
 
 extern VConfigManager *g_config;
 

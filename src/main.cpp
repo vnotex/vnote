@@ -195,14 +195,10 @@ int main(int argc, char *argv[])
     vconfig.initialize();
     g_config = &vconfig;
 
-    bool checkSSL = true;
-
 #if defined(QT_NO_DEBUG)
-    checkSSL = false;
     for (int i = 1; i < argc; ++i) {
         if (!qstrcmp(argv[i], "-d")) {
             g_debugLog = true;
-            checkSSL = true;
             break;
         }
     }
@@ -224,12 +220,10 @@ int main(int argc, char *argv[])
     qDebug() << "files to open from arguments" << filePaths;
 
     // Check the openSSL.
-    if (checkSSL) {
-        qInfo() << "openGL" << QOpenGLContext::openGLModuleType();
-        qInfo() << "openSSL"
-                 << QSslSocket::sslLibraryBuildVersionString()
-                 << QSslSocket::sslLibraryVersionNumber();
-    }
+    qInfo() << "openGL" << QOpenGLContext::openGLModuleType();
+    qInfo() << "openSSL"
+             << QSslSocket::sslLibraryBuildVersionString()
+             << QSslSocket::sslLibraryVersionNumber();
 
     // Load missing translation for Qt (QTextEdit/QPlainTextEdit/QTextBrowser).
     QTranslator qtTranslator1;
