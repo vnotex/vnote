@@ -998,15 +998,15 @@ void VMainWindow::initMarkdownMenu()
 
 void VMainWindow::initSyncMenu()
 {
-	m_syncMenu = menuBar()->addMenu(tr("&Sync"));
+    m_syncMenu = menuBar()->addMenu(tr("Git &Sync"));
     m_syncMenu->setToolTipsVisible(true);
-	QAction* uploadAction = new QAction(tr("&Upload"), this);
-    uploadAction->setToolTip(tr("upload note"));
-	connect(uploadAction, &QAction::triggered, this, &VMainWindow::upload);
+    QAction* uploadAction = new QAction(tr("&Upload"), this);
+    uploadAction->setToolTip(tr("Upload notes to Git repo"));
+    connect(uploadAction, &QAction::triggered, this, &VMainWindow::upload);
     m_syncMenu->addAction(uploadAction);
 
     QAction* downloadAction = new QAction(tr("&Download"), this);
-    downloadAction->setToolTip(tr("download note"));
+    downloadAction->setToolTip(tr("Download notes from Git repo"));
     connect(downloadAction, &QAction::triggered, this, &VMainWindow::download);
     m_syncMenu->addAction(downloadAction);
 }
@@ -1018,9 +1018,9 @@ void VMainWindow::upload()
     {
         QString notebookDir = (*i)->getPath();
         QString notebookName = (*i)->getName();
-		if ((*i)->isOpened()) 
-		{
-			qDebug() << "notebook name: " << notebookName << "notebook path: " << notebookDir;
+        if ((*i)->isOpened())
+        {
+            qDebug() << "notebook name: " << notebookName << "notebook path: " << notebookDir;
             int ret = VUtils::showMessage(QMessageBox::Information, tr("Information"),
                                           tr("Are you sure to close opened notes"),
                                           tr("VNote will close all the opened notes before upload."),
@@ -1040,9 +1040,9 @@ void VMainWindow::upload()
                 return;
             }
             m_git->setDir(notebookDir);
-			m_git->upload();
-			break;
-		}
+            m_git->upload();
+            break;
+        }
     }
 }
 

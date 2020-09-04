@@ -123,7 +123,11 @@ void VSync::onProcessFinish(int exitCode)
 
 void VSync::start(const QString &cmd)
 {
+#if defined(Q_OS_WIN)
     m_process->start("cmd", QStringList() << "/c" << cmd);
+#else
+    m_process->start("/bin/sh", QStringList() << "-c" << cmd);
+#endif
     m_process->waitForStarted();
 }
 
