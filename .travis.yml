@@ -19,7 +19,7 @@ branches:
 before_install:
 - if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test; fi
 - if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then sudo apt-get -qq update ; fi
-- export version="2.9.1"
+- export version="2.10"
 
 install:
 - if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install p7zip-full ; fi

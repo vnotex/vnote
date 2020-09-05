@@ -1,6 +1,6 @@
 image: Visual Studio 2015
 
-version: 2.9.1.{build}
+version: 2.10.{build}
 
 branches:
     only:
@@ -39,7 +39,7 @@ build_script:
 
 # scripts that run after build
 after_build:
-    - set vnote_version=2.9.1
+    - set vnote_version=2.10
     # Clone OpenSSL DLLs
     - git clone https://github.com/tamlok/openssl-utils.git openssl-utils.git
     - mkdir distrib\VNote
@@ -72,7 +72,7 @@ deploy:
       subject: tamlok
       repo: vnote
       package: vnote
-      version: 2.9.1
+      version: 2.10
       publish: true
       override: true
       artifact: portable
