@@ -57,7 +57,7 @@ private:
     void showMessageBox(const QString &message, bool showButton);
     void hideMessageBox();
     void onMessageButtonClick();
-    QString VSync::getSyncHead(const QString &args) const;
+    QString getSyncHead(const QString &args) const;
 
 private:
     QString m_dir;
